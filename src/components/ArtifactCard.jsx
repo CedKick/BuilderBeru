@@ -462,36 +462,41 @@ const ArtifactCard = ({
   };
 
   // Handle désincrémentation substat
-  const handleDecreaseSubStat = (idx) => {
-    onArtifactChange(prev => {
-      const stat = prev.subStats[idx];
-      const newSubStatsLevels = [...prev.subStatsLevels];
-      const current = newSubStatsLevels[idx];
-      setInputValues(prev => ({
-        ...prev,
-        [idx]: stat.includes('%') ? updatedValue.toFixed(2) : Math.floor(updatedValue).toString()
-      }));
-      if (!current || current.level === 0 || !current.procOrders.length) return prev;
+ const handleDecreaseSubStat = (idx) => {
+  onArtifactChange(prev => {
+    const stat = prev.subStats[idx];
+    const newSubStatsLevels = [...prev.subStatsLevels];
+    const current = newSubStatsLevels[idx];
 
-      const removedValue = current.procValues[current.procValues.length - 1];
-      const updatedValue = +(current.value - removedValue).toFixed(2);
+    if (!current || current.level === 0 || !current.procOrders.length) return prev;
 
-      newSubStatsLevels[idx] = {
-        level: current.level - 1,
-        value: updatedValue,
-        procOrders: current.procOrders.slice(0, -1),
-        procValues: current.procValues.slice(0, -1),
-      };
-      const newState = {
-        ...prev,
-        subStatsLevels: newSubStatsLevels,
-      };
-      // 🧠 Mise à jour des stats calculées en bas
-      recalculateStatsFromArtifacts(newState);
-      return { ...prev, subStatsLevels: newSubStatsLevels };
-    });
+    const removedValue = current.procValues[current.procValues.length - 1];
+    const updatedValue = +(current.value - removedValue).toFixed(2);
 
-  };
+    // ✅ Déplacement ici — après calcul
+    setInputValues(prev => ({
+      ...prev,
+      [idx]: stat.includes('%')
+        ? updatedValue.toFixed(2)
+        : Math.floor(updatedValue).toString()
+    }));
+
+    newSubStatsLevels[idx] = {
+      level: current.level - 1,
+      value: updatedValue,
+      procOrders: current.procOrders.slice(0, -1),
+      procValues: current.procValues.slice(0, -1),
+    };
+
+    const newState = {
+      ...prev,
+      subStatsLevels: newSubStatsLevels,
+    };
+
+    recalculateStatsFromArtifacts(newState);
+    return newState;
+  });
+};
 
   return (
     <div className="artifact-card bg-[#0b0b1f] w-98 p-[1px] rounded-lg shadow-md text-white">

@@ -2040,9 +2040,9 @@ Kanae détourne le regard, croise les bras.
     const imgCenter = new Image();
     const imgRight = new Image();
 
-    imgLeft.src = '/neige.png';
-    imgCenter.src = '/sanctuaire.png';
-    imgRight.src = '/greenland.png';
+    imgLeft.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604093/neige_onpilk.png';
+    imgCenter.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604092/sanctuaire_rfcze5.png';
+    imgRight.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604092/greenland_cb4caw.png';
 
     let spawnCanvas = null;
     let imagesLoaded = 0;
@@ -2088,7 +2088,7 @@ Kanae détourne le regard, croise les bras.
       const target = candidates[Math.floor(Math.random() * candidates.length)];
       const tankRect = tankCanvas.getBoundingClientRect();
       const targetRect = target.getBoundingClientRect();
-      tank.img.src = '/tank_dos.png';
+      tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png';
       const startX = tankRect.left + tankRect.width / 2;
       const startY = tankRect.top + tank.y - 80;
       const endX = targetRect.left + targetRect.width / 2;
@@ -2254,16 +2254,16 @@ Kanae détourne le regard, croise les bras.
       if (tankIsWandering && tankDirection) {
         switch (tankDirection) {
           case 'left':
-            tank.img.src = '/tank_run_left.png';
+            tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_left_lxr3km.png';
             break;
           case 'right':
-            tank.img.src = '/tank_run_right.png';
+            tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_right_2_zrf0y1.png';
             break;
           case 'up':
-            tank.img.src = '/tank_dos.png';
+            tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png';
             break;
           case 'down':
-            tank.img.src = '/tank_face.png';
+            tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png.png';
             break;
         }
       }
@@ -2271,24 +2271,24 @@ Kanae détourne le regard, croise les bras.
       requestAnimationFrame(animate);
     }
 
-    tank.img.src = '/tank_face.png';
+    tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png';
 
     const handleKeyDown = (e) => {
       if (!spawnCanvas) return;
       if (e.key === 'ArrowLeft') {
         tank.speedX = -0.6;
         tank.direction = 'left';
-        tank.img.src = '/tank_run_left.png';
+        tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_left_lxr3km.png';
       } else if (e.key === 'ArrowRight') {
         tank.speedX = 0.6;
         tank.direction = 'right';
-        tank.img.src = '/tank_run_right.png';
+        tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_right_2_zrf0y1.png';
       } else if (e.key === 'ArrowUp') {
         tank.speedY = -0.15;
-        tank.img.src = '/tank_dos.png';
+        tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png';
       } else if (e.key === 'ArrowDown') {
         tank.speedY = 0.15;
-        tank.img.src = '/tank_face.png';
+        tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png';
       }
     };
 
@@ -2296,7 +2296,7 @@ Kanae détourne le regard, croise les bras.
       if (!spawnCanvas) return;
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         tank.speedX = 0;
-        tank.img.src = '/tank_face.png';
+        tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png';
       }
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         tank.speedY = 0;
@@ -2354,7 +2354,7 @@ Kanae détourne le regard, croise les bras.
           setTimeout(() => {
             tankIsWandering = false;
             tankDirection = null;
-            tank.img.src = '/tank_face.png';
+            tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png';
           }, returnDuration);
         }, wanderDuration);
       }
