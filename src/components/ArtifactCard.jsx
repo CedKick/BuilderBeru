@@ -467,13 +467,14 @@ const ArtifactCard = ({
     const stat = prev.subStats[idx];
     const newSubStatsLevels = [...prev.subStatsLevels];
     const current = newSubStatsLevels[idx];
-
+   const aaaa = 0;
     if (!current || current.level === 0 || !current.procOrders.length) return prev;
 
     const removedValue = current.procValues[current.procValues.length - 1];
     const updatedValue = +(current.value - removedValue).toFixed(2);
 
-    // ✅ Déplacement ici — après calcul
+
+    // ✅ Déplacement ici — 
     setInputValues(prev => ({
       ...prev,
       [idx]: stat.includes('%')
