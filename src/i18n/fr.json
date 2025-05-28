@@ -1,0 +1,68 @@
+{
+  "title": "Builder Béru – Optimiseur Solo Leveling",
+  "artefacts": "Artefacts",
+  "cores": "🧬 Noyaux",
+  "gems": "💎 Gemmes",
+  "save" : "save",
+  "modify" : "changer",
+  "reset": "Réinitialiser",
+  "selectStat": "Choisis une stat",
+  "noCores": "Aucun noyau défini",
+  "noGems": "Aucune gemme définie",
+  "weapon" : "⚔️ Arme",
+  "statFinals" : "Stats finales",
+  "stats": {
+  "Critical Rate": "Taux de coup critique",
+  "Critical Hit Damage": "Dégâts de coup critique",
+  "Defense Penetration": "Pénétration de Défense",
+  "Damage Increase": "Hausse des dégâts",
+  "MP Recovery Rate Increase (%)": "Hausse du taux de récupération des PM (%)",
+  "Additional MP": "PM supplémentaire",
+  "MP Consumption Reduction": "Baisse du coût de PM",
+  "Precision": "Précision",
+  "Damage Reduction": "Réduction des dégâts",
+  "Healing Given Increase (%)": "Soin prodigué (%)",
+  "Attack %" : "Attaque (%)",
+  "Additional Attack" : "Attaque supplémentaire",
+  "Additional Defense" : "Défense supplémentaire",
+  "Additional HP" : "PV supplémentaire",
+  "Fire Damage %" : "Dégâts de feu (%)",
+  "Water Damage %" : "Dégâts d'eau (%)",
+  "Wind Damage %" : "Dégâts de vent (%)",
+  "Light Damage %" : "Dégâts de lumière (%)",
+  "Dark Damage %" : "Dégâts de ténèbres (%)",
+  "HP %" : "PV (%)",
+  "Defense %" : "Défense (%)",
+  "HP": "PV",
+  "Attack": "Attaque",
+  "Defense": "Défense"
+
+
+  },
+  "coreTypes": {
+  "Offensif": "Offensif",
+  "Défensif": "Défensif",
+  "Endurance": "Endurance",
+  "noGems": "Aucune gemme définie",
+"gemColors": {
+  "Red": "Gemme rouge",
+  "Blue": "Gemme bleue",
+  "Green": "Gemme verte",
+  "Purple": "Gemme violette",
+  "Yellow": "Gemme jaune"
+}},
+
+ "titleArtifact": {
+  "Helmet": "Casque",
+  "Chest": "Plastron",
+  "Gloves": "Gants",
+  "Boots": "Bottes",
+  "Necklace": "Collier",
+  "Bracelet": "Bracelet",
+  "Ring": "Anneau",
+  "Earrings": "Boucles d'oreilles"
+
+},
+"confirmStat" : "Confirmer les stats détectées"
+
+}

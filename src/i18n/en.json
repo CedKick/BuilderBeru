@@ -1,0 +1,65 @@
+{
+  "title": "Builder Béru – Solo Leveling Optimizer",
+  "artefacts": "Artifacts",
+  "cores": "🧬 Cores",
+  "gems": "💎 Gems",
+  "save" : "save",
+  "modify" : "change Stats",
+  "reset": "Reset",
+  "selectStat": "Select a stat",
+  "noCores": "No cores defined",
+  "noGems": "No gems selected",
+  "weapon" : "⚔️ Weapon",
+  "statFinals" : "Final Stats with Artefacts",
+  "stats": {
+  "Critical Rate": "Crit Rate",
+  "Critical Hit Damage": "Crit DMG",
+  "Defense Penetration": "Defense Penetration",
+  "Damage Increase": "DMG Incr.",
+  "MP Recovery Rate Increase (%)": "MP Recovery Rate Incr. (%)",
+  "Additional MP": "Additional MP",
+  "MP Consumption Reduction": "MP Consumption Reduc.",
+  "Precision": "Precision",
+  "Damage Reduction": "DMG Reduction",
+  "Healing Given Increase (%)": "Healing Given Incr. (%)",
+  "Attack %" : "Attack %",
+  "Additional Attack" : "Additional Attack",
+  "Additional Defense" : "Additional Defense",
+  "Additional HP" : "Additional HP",
+  "Fire Damage %" : "Fire Damage %",
+  "Water Damage %" : "Dégâts d'eau (%)",
+  "Wind Damage %" : "Water Damage %",
+  "Light Damage %" : "Light Damage %",
+  "Dark Damage %" : "Dark Damage %",
+  "HP %" : "HP %",
+  "Defense %" : "Defense %",
+  "Attack": "Attack",
+  "Defense": "Defense",
+  "HP": "HP"
+  },
+  "coreTypes": {
+  "Offensif": "Offensive",
+  "Défensif": "Defensive",
+  "Endurance": "Endurance",
+  "noGems": "No gems selected",
+"gemColors": {
+  "Red": "Red Gem",
+  "Blue": "Blue Gem",
+  "Green": "Green Gem",
+  "Purple": "Purple Gem",
+  "Yellow": "Yellow Gem"
+}
+
+},
+"titleArtifact": {
+  "Helmet": "Helmet",
+  "Chest": "Chest",
+  "Gloves": "Gloves",
+  "Boots": "Boots",
+  "Necklace": "Necklace",
+  "Bracelet": "Bracelet",
+  "Ring": "Ring",
+  "Earrings": "Earrings"
+},
+"confirmStat" : "System has detected stats..."
+}

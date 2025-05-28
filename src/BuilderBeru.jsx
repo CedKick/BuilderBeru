@@ -12,6 +12,11 @@ import ArtifactCard from "./components/ArtifactCard";
 import NoyauxPopup from './components/NoyauxPopup';
 import GemmesPopup from './components/GemmePopup';
 import WeaponPopup from './components/weaponPopup';
+import OCRPasteListener from './components/OCRPasteListener';
+import './i18n/i18n';
+import i18n from 'i18next';
+import { useTranslation } from 'react-i18next';
+import OcrConfirmPopup from './components/OcrConfirmPopup';
 
 
 let tank = {
@@ -147,7 +152,7 @@ const glovesMainStats = ['Additional Attack', 'Attack %'];
 const bootsMainStats = ['Defense %', 'HP %', 'Critical Hit Damage', 'Defense Penetration', 'Healing Given Increase (%)'];
 const necklaceMainStats = ['Additional HP', 'HP %'];
 const braceletMainStats = ['Fire Damage %', 'Water Damage %', 'Wind Damage %', 'Light Damage %', 'Dark Damage %'];
-const ringMainStats = ['Additional Attack', 'Additional Defense', 'Attack %', 'Defense %'];
+const ringMainStats = ['Additional Attack', 'Additional Defense', 'Attack %', 'Defense %', 'Additional HP', 'HP %'];
 const earringsMainStats = ['Additional MP'];
 
 const leftArtifacts = [
@@ -320,25 +325,25 @@ export const mainStatMaxByIncrements = {
     4: 25.55,
   },
   'Critical Hit Damage': {
-    0: 81.5,
-    1: 81.5,
-    2: 81.5,
-    3: 81.5,
-    4: 81.5,
+    0: 5899,
+    1: 5899,
+    2: 5899,
+    3: 5899,
+    4: 5899,
   },
   'Defense Penetration': {
-    0: 36,
-    1: 36,
-    2: 36,
-    3: 36,
-    4: 36,
+    0: 4741,
+    1: 4741,
+    2: 4741,
+    3: 4741,
+    4: 4741,
   },
   'Healing Given Increase (%)': {
-    0: 30,
-    1: 30,
-    2: 30,
-    3: 30,
-    4: 30,
+    0: 6.12,
+    1: 6.12,
+    2: 6.12,
+    3: 6.12,
+    4: 6.12,
   },
   'MP Consumption Reduction': {
     0: 30,
@@ -348,11 +353,11 @@ export const mainStatMaxByIncrements = {
     4: 30,
   },
   'Additional MP': {
-    0: 1350,
-    1: 1350,
-    2: 1350,
-    3: 1350,
-    4: 1350,
+    0: 1044,
+    1: 1044,
+    2: 1044,
+    3: 1044,
+    4: 1044,
   },
   'MP Recovery Rate Increase (%)': {
     0: 30,
@@ -362,11 +367,11 @@ export const mainStatMaxByIncrements = {
     4: 30,
   },
   'Damage Increase': {
-    0: 24,
-    1: 24,
-    2: 24,
-    3: 24,
-    4: 24,
+    0: 5799,
+    1: 5799,
+    2: 5799,
+    3: 5799,
+    4: 5799,
   },
   'Damage Reduction': {
     0: 24,
@@ -419,6 +424,7 @@ const getChibiScreenPos = (ref) => {
 
 
 const BuilderBeru = () => {
+  const { t } = useTranslation();
   const darkAriaAudioRef = useRef(null);
   const believeMe = useRef(null);
   const isTankSpeaking = useRef(false);
@@ -433,6 +439,17 @@ const BuilderBeru = () => {
   // const popupRef = useRef();
   const mainImageRef = useRef();
   // const dytextRef = useRef();
+
+  const initialArtifacts = {
+  Helmet: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+  Chest: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+  Gloves: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+  Boots: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+  Necklace: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+  Bracelet: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+  Ring: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+  Earrings: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+};
 
   const openComparisonPopup = (artifactData) => {
     const emptyArtifact = {
@@ -461,6 +478,28 @@ const BuilderBeru = () => {
     'MP Recovery Rate Increase (%)', 'Additional MP', 'MP Consumption Reduction',
     'Precision', 'Damage Reduction', 'Healing Given Increase (%)'
   ];
+
+const applyOcrDataToArtifact = (ocrResult) => {
+  setArtifacts(prev => {
+    return prev.map(artifact => {
+      if (artifact.type !== ocrResult.type) return artifact;
+
+      return {
+        ...artifact,
+        mainStat: {
+          ...artifact.mainStat,
+          stat: ocrResult.mainStat.stat,
+          value: ocrResult.mainStat.value
+        },
+        subStats: ocrResult.subStats.map((sub, index) => ({
+          stat: sub.stat,
+          value: sub.value,
+          proc: sub.proc
+        }))
+      };
+    });
+  });
+};
 
   const initialStats = {};
   allStats.forEach(stat => {
@@ -727,46 +766,46 @@ const BuilderBeru = () => {
   };
 
   // 🧠 Fonction de recalcul des stats finales avec artefacts
- const recalculateStatsFromArtifacts = () => {
-  if (!selectedCharacter) return;
+  const recalculateStatsFromArtifacts = () => {
+    if (!selectedCharacter) return;
 
-  const flat = { ...flatStats }; // ⚠️ utilise flatStats réel du state
-  const updated = {};
+    const flat = { ...flatStats }; // ⚠️ utilise flatStats réel du state
+    const updated = {};
 
-  Object.values(artifactsData).forEach(artifact => {
-    if (!artifact) return;
+    Object.values(artifactsData).forEach(artifact => {
+      if (!artifact) return;
 
-    // ➤ Substats
-    artifact.subStats?.forEach((stat, i) => {
-      const levelInfo = artifact.subStatsLevels?.[i];
-      if (!stat || !levelInfo || typeof levelInfo.value !== 'number') return;
+      // ➤ Substats
+      artifact.subStats?.forEach((stat, i) => {
+        const levelInfo = artifact.subStatsLevels?.[i];
+        if (!stat || !levelInfo || typeof levelInfo.value !== 'number') return;
 
-      if (stat.endsWith('%')) {
-        const baseStat = stat.replace(' %', '');
-        const base = flat[baseStat] || 0;
-        updated[baseStat] = (updated[baseStat] || 0) + (base * levelInfo.value / 100);
-      } else {
-        updated[stat] = (updated[stat] || 0) + levelInfo.value;
+        if (stat.endsWith('%')) {
+          const baseStat = stat.replace(' %', '');
+          const base = flat[baseStat] || 0;
+          updated[baseStat] = (updated[baseStat] || 0) + (base * levelInfo.value / 100);
+        } else {
+          updated[stat] = (updated[stat] || 0) + levelInfo.value;
+        }
+      });
+
+      // ➤ Main stat
+      if (artifact.mainStat && artifact.mainStatValue) {
+        const stat = artifact.mainStat;
+        const value = artifact.mainStatValue;
+
+        if (stat.endsWith('%')) {
+          const baseStat = stat.replace(' %', '');
+          const base = flat[baseStat] || 0;
+          updated[baseStat] = (updated[baseStat] || 0) + (base * value / 100);
+        } else {
+          updated[stat] = (updated[stat] || 0) + value;
+        }
       }
     });
 
-    // ➤ Main stat
-    if (artifact.mainStat && artifact.mainStatValue) {
-      const stat = artifact.mainStat;
-      const value = artifact.mainStatValue;
-
-      if (stat.endsWith('%')) {
-        const baseStat = stat.replace(' %', '');
-        const base = flat[baseStat] || 0;
-        updated[baseStat] = (updated[baseStat] || 0) + (base * value / 100);
-      } else {
-        updated[stat] = (updated[stat] || 0) + value;
-      }
-    }
-  });
-
-  setStatsFromArtifacts(completeStats(updated));
-};
+    setStatsFromArtifacts(completeStats(updated));
+  };
 
   const tankMessageRef = useRef('');
   const messageOpacityRef = useRef(1);
@@ -774,13 +813,34 @@ const BuilderBeru = () => {
   const [messageOpacity, setMessageOpacity] = useState(1);
   const [showNoyauxPopup, setShowNoyauxPopup] = useState(false);
   const [hunterCores, setHunterCores] = useState({});
+  const [artifacts, setArtifacts] = useState(initialArtifacts);
   const [hunterWeapons, setHunterWeapons] = useState(() => {
     const fromStorage = JSON.parse(localStorage.getItem('hunterWeapons') || '{}');
     return fromStorage;
   });
+  const [parsedArtifactData, setParsedArtifactData] = useState(null);
   const [showWeaponPopup, setShowWeaponPopup] = useState(false);
 
+const onConfirm = (parsedData) => {
+  console.log('✅ Artefact OCR confirmé :', parsedData);
 
+  // Exemple simple : mise à jour du premier artefact
+  setArtifacts((prev) => {
+    const updated = [...prev];
+    const indexToUpdate = updated.findIndex(a => a.type === parsedData.type);
+    if (indexToUpdate !== -1) {
+      updated[indexToUpdate] = {
+        ...updated[indexToUpdate],
+        mainStat: parsedData.mainStat,
+        subStats: parsedData.subStats
+        // On pourra ajouter procValue etc. après
+      };
+    }
+    return updated;
+  });
+
+  setshowOcrPopup(false);
+};
 
 
   const [showHologram, setShowHologram] = useState(false);
@@ -1319,6 +1379,63 @@ Kanae détourne le regard, croise les bras.
     showTankMessage('📋 All builds copied to clipboard!', true);
   };
 
+//   const updateArtifactFromOCR = (parsedData) => {
+//   setArtifacts(prev => {
+//     const updated = [...prev];
+//     const index = updated.findIndex(a => a.type === parsedData.type);
+//     if (index === -1) return prev;
+
+//     const artifactToUpdate = updated[index];
+
+//     updated[index] = {
+//       ...artifactToUpdate,
+//       mainStat: parsedData.mainStat,
+//       subStats: parsedData.subStats,
+//       procValue: parsedData.procValue || artifactToUpdate.procValue || null
+//     };
+
+//     return updated;
+//   });
+// };
+
+const updateArtifactFromOCR = (parsedData) => {
+  setArtifacts(prev => {
+    const updated = { ...prev }; // ✅ Copie objet
+    const type = parsedData.type;
+    const current = updated[type];
+
+    if (!current) return prev;
+
+    updated[type] = {
+      ...current,
+      mainStat: parsedData.mainStat,
+      subStats: parsedData.subStats,
+      procValue: parsedData.procValue || current.procValue || null
+    };
+
+
+// Maj artifactsData (utilisé dans ArtifactCard)
+setArtifactsData(prev => ({
+  ...prev,
+  [type]: {
+    ...prev[type],
+    mainStat: parsedData.mainStat?.stat || '',
+    mainStatValue: parsedData.mainStat?.value || 0,
+    subStats: parsedData.subStats.map(s => s.stat),
+    subStatsLevels: parsedData.subStats.map(s => ({
+      level: s.proc || 0,
+      value: s.value || 0,
+      procOrders: Array(s.proc).fill(0).map((_, i) => i), // ordre factice
+      procValues: Array(s.proc).fill(s.value / (s.proc || 1)) // valeur répartie
+    }))
+  }
+}));
+
+
+    return updated;
+  });
+};
+
   const handleImportBuild = () => {
     if (isTankSpeaking.current) return;
     showTankMessage("You have 5 seconds to paste your build (CTRL+V)...", true);
@@ -1633,6 +1750,7 @@ Kanae détourne le regard, croise les bras.
   }, [selectedCharacter]);
 
   const [editStatsMode, setEditStatsMode] = useState(false);
+  const getEditLabel = () => t(editStatsMode ? 'save' : 'modify');
 
   const getFlatStatsWithWeapon = (char, weapon = {}) => {
 
@@ -2263,7 +2381,7 @@ Kanae détourne le regard, croise les bras.
             tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png';
             break;
           case 'down':
-            tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png.png';
+            tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png';
             break;
         }
       }
@@ -2598,6 +2716,8 @@ Kanae détourne le regard, croise les bras.
             <div className="w-full flex justify-between tank-target mt-0 gap-2 text-sm">
               {/* Bouton BobbyKick - Reset */}
               <div className="flex items-center space-x-2 tank-target">
+                <button onClick={() => i18n.changeLanguage('fr')}>FR</button>
+                <button onClick={() => i18n.changeLanguage('en')}>EN</button>
                 <button
                   onClick={handleResetStats}
                   className="bg-gradient-to-r tank-target from-black-900 to-black-700 hover:from-black-700 hover:to-black-500 text-white font-bold py-1 px-4 rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-red-500/40"
@@ -2613,8 +2733,10 @@ Kanae détourne le regard, croise les bras.
                   Save
                 </button>
               </div>
+
               <div className="w-full tank-target flex justify-between items-center mt-0 text-sm">
                 {/* Espace à droite (ex : icône future) */}
+
                 <div id="buildIcons" className="flex tank-target gap-2 items-center">
                   {recentBuilds.length > 0 && recentBuilds.map((charKey) => (
                     <img
@@ -2729,6 +2851,14 @@ Kanae détourne le regard, croise les bras.
               </div>
             )}
 
+   <OCRPasteListener
+  onParsed={(parsed) => {
+    console.log('Parsed envoyé à Builder :', parsed);
+    setParsedArtifactData(parsed);
+  }}
+  updateArtifactFromOCR={updateArtifactFromOCR}
+/>
+
             {comparisonData && (
               <ComparisonPopup
                 original={comparisonData}
@@ -2784,6 +2914,27 @@ Kanae détourne le regard, croise les bras.
               />
             )}
 
+            {parsedArtifactData && (
+  <OcrConfirmPopup
+    parsedData={parsedArtifactData}
+    onConfirm={(data) => {
+      // 🧠 Ici tu traites la sauvegarde finale (ex: mise à jour des artefactsData)
+      console.log("CONFIRMED", data); // ➕ à remplacer par le vrai traitement
+      setParsedArtifactData(null);
+    }}
+    onCancel={() => setParsedArtifactData(null)}
+  />
+)}
+
+<OcrConfirmPopup
+  parsedData={parsedArtifactData}
+  onConfirm={(data) => {
+    applyOcrDataToArtifact(data);
+    setShowPopup(false); // cache la pop-up
+  }}
+  onCancel={() => setShowPopup(false)}
+/>
+
             <div className={showSernPopup ? 'blur-background' : ''}>
               {/* Image + stats EN BAS */}
 
@@ -2797,37 +2948,37 @@ Kanae détourne le regard, croise les bras.
                       className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-pink-200 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
                       onClick={() => setShowNoyauxPopup(true)}
                     >
-                      🧬 Cores
+                      {t("cores")}
                     </button></h2>
                     {hunterCores[selectedCharacter] ? (
-  <div className="text-xs space-y-2">
-    {['Offensif', 'Défensif', 'Endurance'].map((type, index) => {
-      const core = hunterCores[selectedCharacter]?.[type];
-      if (!core) return null;
+                      <div className="text-xs space-y-2">
+                        {['Offensif', 'Défensif', 'Endurance'].map((type, index) => {
+                          const core = hunterCores[selectedCharacter]?.[type];
+                          if (!core) return null;
 
-      const showPrimary = core.primary && parseFloat(core.primaryValue) !== 0;
-      const showSecondary = core.secondary && parseFloat(core.secondaryValue) !== 0;
+                          const showPrimary = core.primary && parseFloat(core.primaryValue) !== 0;
+                          const showSecondary = core.secondary && parseFloat(core.secondaryValue) !== 0;
 
-      if (!showPrimary && !showSecondary) return null;
+                          if (!showPrimary && !showSecondary) return null;
 
-      return (
-        <div key={index} className="border-b border-purple-800 pb-1">
-          <p className="text-purple-200 font-semibold">{type} Core</p>
-          {showPrimary && (
-            <p>{core.primary}: {core.primaryValue}</p>
-          )}
-          {showSecondary && (
-            <p>{core.secondary}: {core.secondaryValue}</p>
-          )}
-        </div>
-      );
-    })}
-  </div>
-) : (
-  <p>No cores defined</p>
-)}
+                          return (
+                            <div key={index} className="border-b border-purple-800 pb-1">
+                              <p className="text-purple-200 font-semibold">{t(`coreTypes.${type}`)}</p>
+                              {showPrimary && (
+                                <p>{t(`stats.${core.primary}`)}: {core.primaryValue}</p>
+                              )}
+                              {showSecondary && (
+                                <p>{core.secondary}: {core.secondaryValue}</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p>No cores defined</p>
+                    )}
 
-                   
+
                   </div>
 
                   <div className="relative">
@@ -2861,42 +3012,42 @@ Kanae détourne le regard, croise les bras.
                   </div>
 
 
-                {/* Bloc Gemmes à droite */}
-<div className="w-48 text-white text-xs flex flex-col items-start">
-  <h2 className="text-blue-300 font-bold mb-2">
-    <button
-      className="bg-gradient-to-r font-bold from-blue-500 text-[20px] to-purple-500 hover:from-blue-600 hover:to-purple-600 text-blue-300 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-      onClick={() => setShowGemPopup(true)}
-    >
-      💎 Gems
-    </button>
-  </h2>
-  {
-    Object.entries(gemData || {}).every(([_, stats]) =>
-      Object.values(stats).every(value => !value)
-    ) ? (
-      <p>No gems defined</p>
-    ) : (
-      <div className="space-y-3">
-        {
-          Object.entries(gemData || {}).map(([color, stats]) => {
-            const filtered = Object.entries(stats || {}).filter(([_, value]) => value);
-            if (filtered.length === 0) return null;
-            return (
-              <div key={color}>
-                <p className="text-blue-200 font-semibold">{color} Gem</p>
-                {filtered.map(([stat, value], i) => (
-                  <p key={i}>{stat} : {value}</p>
-                ))}
-                <hr className="border-blue-700 my-1" />
-              </div>
-            );
-          })
-        }
-      </div>
-    )
-  }
-</div>
+                  {/* Bloc Gemmes à droite */}
+                  <div className="w-48 text-white text-xs flex flex-col items-start">
+                    <h2 className="text-blue-300 font-bold mb-2">
+                      <button
+                        className="bg-gradient-to-r font-bold from-blue-500 text-[20px] to-purple-500 hover:from-blue-600 hover:to-purple-600 text-blue-300 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                        onClick={() => setShowGemPopup(true)}
+                      >
+                        {t("gems")}
+                      </button>
+                    </h2>
+                    {
+                      Object.entries(gemData || {}).every(([_, stats]) =>
+                        Object.values(stats).every(value => !value)
+                      ) ? (
+                        <p>No gems defined</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {
+                            Object.entries(gemData || {}).map(([color, stats]) => {
+                              const filtered = Object.entries(stats || {}).filter(([_, value]) => value);
+                              if (filtered.length === 0) return null;
+                              return (
+                                <div key={color}>
+                                  <p className="text-blue-200 font-semibold">{t(`gemColors.${color}`, `${color} Gem`)}</p>
+                                  {filtered.map(([stat, value], i) => (
+                                    <p key={i}>{t(`stats.${stat}`, stat)} : {value}</p>
+                                  ))}
+                                  <hr className="border-blue-700 my-1" />
+                                </div>
+                              );
+                            })
+                          }
+                        </div>
+                      )
+                    }
+                  </div>
 
                 </div>
 
@@ -2908,7 +3059,7 @@ Kanae détourne le regard, croise les bras.
                         className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
                         onClick={() => setShowWeaponPopup(true)}
                       >
-                        ⚔️ Arme
+                        {t("weapon")}
                       </button>
                       <p className="text-white">
                         {hunterWeapons[selectedCharacter]
@@ -2920,9 +3071,9 @@ Kanae détourne le regard, croise les bras.
 
                     <button
                       onClick={() => setEditStatsMode(!editStatsMode)}
-                      className="bg-blue-700 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+                      className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
                     >
-                      {editStatsMode ? 'Save' : 'Modify'}
+                      {getEditLabel()}
                     </button>
                   </div>
 
@@ -2930,7 +3081,7 @@ Kanae détourne le regard, croise les bras.
 
                   {!editStatsMode ? (
                     <div className="bg-gray-900 p-2 rounded text-xs mt-2 relative group w-full">
-                      <div className="font-bold text-white text-center">Final Stats with Artefacts</div>
+                      <div className="font-bold text-white text-center">{t("statFinals")}</div>
                       <div className="flex flex-wrap w-full text-gray-200 text-xs">
                         {Array.from({ length: Math.ceil(allStats.length / 4) }).map((_, colIndex) => (
                           <div key={colIndex} className="flex flex-col mr-6">
@@ -2941,7 +3092,7 @@ Kanae détourne le regard, croise les bras.
 
                               return (
                                 <div key={key} className="mb-1 whitespace-nowrap">
-                                  <span className="text-blue-300">{key}</span>: <span className="text-white">{Math.floor(total)}</span>
+                                  <span className="text-blue-300">{t(`stats.${key}`)}</span>: <span className="text-white">{Math.floor(total)}</span>
                                 </div>
                               );
                             })}
@@ -2959,7 +3110,7 @@ Kanae détourne le regard, croise les bras.
 
                           return (
                             <div key={key}>
-                              {key}: <span className="text-blue-300">{base}</span> + <span className="text-green-400">{fromArtifact}</span> = <span className="text-white">{Math.floor(total)}</span>
+                              {t(`stats.${key}`)}: <span className="text-blue-300">{base}</span> + <span className="text-green-400">{fromArtifact}</span> = <span className="text-white">{Math.floor(total)}</span>
                             </div>
                           );
                         })}

@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import ArtifactScoreBadge from './ArtifactScoreBadge';
 import { getTheoreticalScore } from '../utils/statPriority';
+import { useEffect } from 'react';
 import { handleNumericInput } from '../utils/inputUtils';
+import '../i18n/i18n';
+import i18n from 'i18next';
+import { useTranslation } from 'react-i18next';
 
 
 const commonSubStats = [
@@ -81,11 +85,11 @@ const mainStatMaxByIncrements = {
     4: 30,
   },
   'Additional MP': {
-    0: 1350,
-    1: 1350,
-    2: 1350,
-    3: 1350,
-    4: 1350,
+    0: 1044,
+    1: 1044,
+    2: 1044,
+    3: 1044,
+    4: 1044,
   },
   'MP Recovery Rate Increase (%)': {
     0: 30,
@@ -144,14 +148,26 @@ const ArtifactCard = ({
   mode = "edit", // default
   disableComparisonButton = false, // 👈 AJOUT
 }) => {
-  //  if (!artifactData.subStats || !artifactData.subStatsLevels) {
-  //   console.warn(`⚠️ subStats or subStatsLevels missing for ${title}`, artifactData);
-  //   return null; // Ou tu peux afficher un message d’erreur visuel si tu préfères
-  // }
+  const { t } = useTranslation();
+
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [inputValues, setInputValues] = useState({});
   const selections = artifactData;
+  const [localMainStat, setLocalMainStat] = useState(artifactData.mainStat || '');
   const setArtifactsData = (newData) => onArtifactChange(newData);
+   const slot = title?.title || title; // sécurité double 😏
+useEffect(() => {
+  setLocalMainStat(artifactData.mainStat || '');
+}, [artifactData.mainStat]);
+
+
+const updateArtifactMainStat = (newValue) => {
+  // 🔧 Propager la mise à jour au parent (si nécessaire)
+  setArtifactsData(prev => ({
+    ...prev,
+    mainStat: newValue
+  }));
+};
 
   const shouldShowComparison = (artifact) => {
     const totalProcs = artifact.subStatsLevels?.reduce((sum, s) => sum + (s?.level || 0), 0);
@@ -354,70 +370,74 @@ const ArtifactCard = ({
   };
 
   // Handle incrémentation substat
-  const handleIncreaseSubStat = (idx) => {
-    setArtifactsData(prev => {
-      const totalProcs = (prev.subStatsLevels || []).reduce(
-        (sum, stat) => sum + (stat?.level || 0), 0
-      );
-      if (totalProcs >= 4 || prev.subStatsLevels[idx].level >= 4) return prev;
+ const handleIncreaseSubStat = (idx) => {
+  setArtifactsData(prev => {
+    const totalProcs = (prev.subStatsLevels || []).reduce(
+      (sum, stat) => sum + (stat?.level || 0), 0
+    );
+    if (totalProcs >= 4 || prev.subStatsLevels[idx].level >= 4) return prev;
 
-      const stat = prev.subStats[idx];
-      const ranges = substatsMinMaxByIncrements[stat];
-      if (!ranges) return prev;
+    const stat = prev.subStats[idx];
+    const ranges = substatsMinMaxByIncrements[stat];
+    if (!ranges) return prev;
 
-      const newSubStatsLevels = [...prev.subStatsLevels];
-      let current = newSubStatsLevels[idx] || {
-        level: 0,
-        value: 0,
-        procOrders: [],
-        procValues: [],
-      };
+    const newSubStatsLevels = [...prev.subStatsLevels];
+    let current = newSubStatsLevels[idx] || {
+      level: 0,
+      value: 0,
+      procOrders: [],
+      procValues: [],
+    };
+
+    if (current.manual) {
+      current.manual = false;
+    }
+
+    const allUsedProcOrders = newSubStatsLevels.flatMap(s => s.procOrders || []);
+    const procOrder = getNextProcOrder(allUsedProcOrders);
+    if (procOrder === null) return prev;
+
+    const rawProc = Math.random() * (ranges[procOrder].max - ranges[procOrder].min) + ranges[procOrder].min;
+    const procValue = stat.includes('%') ? +rawProc.toFixed(2) : Math.floor(rawProc);
+    const newValue = stat.includes('%')
+      ? +(current.value + procValue).toFixed(2)
+      : Math.floor(current.value + procValue);
+
+    const newProcOrders = [...current.procOrders, procOrder];
+    const newProcValues = [...(current.procValues || []), procValue];
+
+    newSubStatsLevels[idx] = {
+      level: current.level + 1,
+      value: newValue,
+      procOrders: newProcOrders,
+      procValues: newProcValues,
+      manual: false,
+    };
+
+    const newState = {
+      ...prev,
+      subStatsLevels: newSubStatsLevels,
+    };
+
+    // Recalcul stats
+    recalculateStatsFromArtifacts(newState);
+
+    // Envoie message de Tank
+    if (procValue > 7) showTankMessage('🔥 OP roll!');
+    else if (procValue < 5) showTankMessage('💩 Weak roll...');
+    else showTankMessage('😎 Decent!');
+
+    // 💡 Ajout d'un indicateur temporaire pour mettre à jour le champ visuel
+    setTimeout(() => {
       setInputValues(prev => ({
         ...prev,
         [idx]: stat.includes('%') ? newValue.toFixed(2) : Math.floor(newValue).toString()
       }));
+    }, 0);
 
-      if (current.manual) {
-        current.manual = false;
-      }
-
-      const allUsedProcOrders = newSubStatsLevels.flatMap(s => s.procOrders || []);
-      const procOrder = getNextProcOrder(allUsedProcOrders);
-      if (procOrder === null) return prev;
-
-      const rawProc = Math.random() * (ranges[procOrder].max - ranges[procOrder].min) + ranges[procOrder].min;
-      const procValue = stat.includes('%') ? +rawProc.toFixed(2) : Math.floor(rawProc);
-      const newValue = stat.includes('%')
-        ? +(current.value + procValue).toFixed(2)
-        : Math.floor(current.value + procValue);
-
-      const newProcOrders = [...current.procOrders, procOrder];
-      const newProcValues = [...(current.procValues || []), procValue];
-
-      newSubStatsLevels[idx] = {
-        level: current.level + 1,
-        value: newValue,
-        procOrders: newProcOrders,
-        procValues: newProcValues,
-        manual: false,
-      };
-
-      const newState = {
-        ...prev,
-        subStatsLevels: newSubStatsLevels,
-      };
-
-      // 🧠 Mise à jour des stats calculées en bas
-      recalculateStatsFromArtifacts(newState);
-
-      // 😈 Message de Tank en fonction du proc
-      if (procValue > 7) showTankMessage('🔥 OP roll!');
-      else if (procValue < 5) showTankMessage('💩 Weak roll...');
-      else showTankMessage('😎 Decent!');
-
-      return newState;
-    });
-  };
+    return newState;
+  });
+};
 
   const renderCustomHint = (stat, subStatData) => {
     if (!stat || !subStatData) return null;
@@ -462,25 +482,16 @@ const ArtifactCard = ({
   };
 
   // Handle désincrémentation substat
- const handleDecreaseSubStat = (idx) => {
-  onArtifactChange(prev => {
+const handleDecreaseSubStat = (idx) => {
+  setArtifactsData(prev => {
     const stat = prev.subStats[idx];
     const newSubStatsLevels = [...prev.subStatsLevels];
     const current = newSubStatsLevels[idx];
-   const aaaa = 0;
+
     if (!current || current.level === 0 || !current.procOrders.length) return prev;
 
     const removedValue = current.procValues[current.procValues.length - 1];
     const updatedValue = +(current.value - removedValue).toFixed(2);
-
-
-    // ✅ Déplacement ici — 
-    setInputValues(prev => ({
-      ...prev,
-      [idx]: stat.includes('%')
-        ? updatedValue.toFixed(2)
-        : Math.floor(updatedValue).toString()
-    }));
 
     newSubStatsLevels[idx] = {
       level: current.level - 1,
@@ -495,14 +506,26 @@ const ArtifactCard = ({
     };
 
     recalculateStatsFromArtifacts(newState);
+
+    // ⚠️ On évite le crash React en décalant le setInputValues
+    setTimeout(() => {
+      setInputValues(prev => ({
+        ...prev,
+        [idx]: stat.includes('%')
+          ? updatedValue.toFixed(2)
+          : Math.floor(updatedValue).toString()
+      }));
+    }, 0);
+
     return newState;
   });
 };
 
+
   return (
     <div className="artifact-card bg-[#0b0b1f] w-98 p-[1px] rounded-lg shadow-md text-white">
       <div className="flex justify-between items-center mb-[2px]">
-        <h2 className="text-base font-bold">{title}</h2>
+        <h2 className="text-base font-bold">{t(`titleArtifact.${title}`)}</h2>
         <div className="flex items-center gap-2">
           {shouldShowComparison(artifactData) && !disableComparisonButton && (
             <div className="w-5 h-5 rounded-full from-[#3b3b9c] to-[#6c63ff] flex items-center justify-center text-white text-[10px] shadow-sm hover:scale-110 transition-transform">
@@ -522,15 +545,21 @@ const ArtifactCard = ({
       {/* MAIN STAT */}
       <div className="flex items-center gap-2 mb-[2px]">
         <select
-          value={artifactData.mainStat || ''}
-          onChange={(e) => handleMainStatChange(e)}
-          className="w-full p-[1px] rounded bg-[#1c1c3c] text-xs"
-        >
-          <option value="">Select Main Stat</option>
-          {mainStats.map((stat, idx) => (
-            <option key={idx} value={stat}>{stat}</option>
-          ))}
-        </select>
+  value={localMainStat}
+  onChange={(e) => {
+    const selectedValue = e.target.value;
+    setLocalMainStat(selectedValue); // ⚡ Mise à jour visuelle
+    updateArtifactMainStat(selectedValue); // 🔁 Mise à jour logique
+  }}
+  className="w-full p-[1px] rounded bg-[#1c1c3c] text-xs"
+>
+  <option value="">{t("selectMainStat", "Select Main Stat")}</option>
+  {mainStats.map((stat, idx) => (
+    <option key={idx} value={stat}>
+      {t(`stats.${stat}`, stat)}
+    </option>
+  ))}
+</select>
 
         {artifactData.mainStat && (
           <input
@@ -549,17 +578,23 @@ const ArtifactCard = ({
       {Array.isArray(artifactData?.subStats) && artifactData.subStats.map((subStat, idx) => (
         <div key={idx} className="flex items-center gap-1 mb-[1px]">
           <select
-            value={subStat}
-            onChange={(e) => handleSubStatChange(idx, e.target.value)}
-            className="w-full p-[2px] rounded bg-[#1c1c3c] text-xs"
-          >
-            <option value="">Substat {idx + 1}</option>
-            {commonSubStats
-              .filter(stat => stat === subStat || (stat !== artifactData.mainStat && !artifactData.subStats.includes(stat)))
-              .map((stat, i) => (
-                <option key={i} value={stat}>{stat}</option>
-              ))}
-          </select>
+  value={subStat}
+  onChange={(e) => handleSubStatChange(idx, e.target.value)}
+  className="w-full p-[2px] rounded bg-[#1c1c3c] text-xs"
+>
+  <option value="">{t("subStatLabel", `Substat ${idx + 1}`)}</option>
+
+  {commonSubStats
+    .filter(stat =>
+      stat === subStat ||
+      (stat !== artifactData.mainStat && !artifactData.subStats.includes(stat))
+    )
+    .map((stat, i) => (
+      <option key={i} value={stat}>
+        {t(`stats.${stat}`, stat)}
+      </option>
+    ))}
+</select>
 
           {/* + / - boutons uniquement si une substat est sélectionnée */}
           {subStat && (

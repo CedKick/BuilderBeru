@@ -40,7 +40,7 @@ const GemmePopup = ({ onClose, onSave }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-80 z-[9999] flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center">
             <div className="bg-[#1c1c2c] p-6 rounded-xl w-[90%] max-w-5xl text-white">
                 <h2 className="text-center text-lg font-bold mb-4">💎 Configurer les Gemmes</h2>
                 <div className="grid grid-cols-3 gap-4 auto-rows-auto">
