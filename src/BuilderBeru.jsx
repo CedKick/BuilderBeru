@@ -2849,29 +2849,72 @@ Tank observe l’écran… d’un air confus.
 
                           <div className="flex flex-col justify-center items-center h-full tank-target">
                             {/* Filtres + select personnage EN HAUT */}
-                            <div className="flex items-center justify-start w-full px-1 mb-4 tank-target">
-                              {/* Colonne Gauche – Langues */}
-                              <div className="flex gap-1 items-center ml-0 mr-4">
-                                <div className="flex gap-2 items-center">
-                                  <img
-                                    src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png"
-                                    alt="Français"
-                                    onClick={() => i18n.changeLanguage('fr')}
-                                    className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
-                                  />
-                                  <img
-                                    src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png"
-                                    alt="English"
-                                    onClick={() => i18n.changeLanguage('en')}
-                                    className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
-                                  />
+                            <div className="flex flex-col w-fit gap-2">
+                              {/* Bloc – Langues + Select */}
+                              <div className="flex items-center gap-2">
+                                <div className="flex gap-1 items-center ml-0 mr-4">
+                                  <div className="flex gap-2 items-center">
+                                    <img
+                                      src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png"
+                                      alt="Français"
+                                      onClick={() => i18n.changeLanguage('fr')}
+                                      className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
+                                    />
+                                    <img
+                                      src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png"
+                                      alt="English"
+                                      onClick={() => i18n.changeLanguage('en')}
+                                      className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Colonne Centre – Éléments + Select + Classes */}
+                                <div className="flex items-center gap-3 mr-auto">
+
+                                  {/* Select Personnage */}
+                                  <select
+                                    value={selectedCharacter}
+                                    onChange={(e) => {
+                                      const selected = e.target.value;
+                                      setSelectedCharacter(selected);
+
+                                      const saved = localStorage.getItem(`build_${selected}`);
+                                      if (saved) {
+                                        const build = JSON.parse(saved);
+                                        setFlatStats(build.flatStats);
+                                        setStatsWithoutArtefact(build.statsWithoutArtefact);
+                                        setArtifactsData(build.artifactsData);
+                                        setHunterCores(build.hunterCores);
+                                        showTankMessage(`Loaded saved build for ${selected} 😏`);
+                                      } else {
+                                        handleResetStats();
+                                      }
+                                    }}
+                                    className="p-1 rounded bg-[#1c1c3c] text-white text-sm tank-target"
+                                  >
+                                    <option value="">Sélectionner un personnage</option>
+                                    {Object.entries(characters)
+                                      .filter(([key, char]) => {
+                                        if (key === '') return false;
+                                        if (selectedElement && char.element !== selectedElement) return false;
+                                        if (selectedClass) {
+                                          const classType = char.class === 'Tank' ? 'Tank'
+                                            : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
+                                          if (classType !== selectedClass) return false;
+                                        }
+                                        return true;
+                                      })
+                                      .map(([key, char]) => (
+                                        <option key={key} value={key}>{char.name}</option>
+                                      ))}
+                                  </select>
                                 </div>
                               </div>
-
-                              {/* Colonne Centre – Éléments + Select + Classes */}
-                              <div className="flex items-center gap-3 mr-auto">
+                              {/* Bloc en dessous – Éléments + Classes */}
+                              <div className="flex items-center gap-2"> {/* bloc vert */}
                                 {/* Icônes éléments */}
-                                <div className="flex gap-2">
+                                {/* <div className="flex gap-2">
                                   {['Fire', 'Water', 'Light', 'Dark', 'Wind'].map((el) => {
                                     const key = el.toLowerCase();
                                     return (
@@ -2885,48 +2928,12 @@ Tank observe l’écran… d’un air confus.
                                       />
                                     );
                                   })}
-                                </div>
+                                </div> */}
 
-                                {/* Select Personnage */}
-                                <select
-                                  value={selectedCharacter}
-                                  onChange={(e) => {
-                                    const selected = e.target.value;
-                                    setSelectedCharacter(selected);
 
-                                    const saved = localStorage.getItem(`build_${selected}`);
-                                    if (saved) {
-                                      const build = JSON.parse(saved);
-                                      setFlatStats(build.flatStats);
-                                      setStatsWithoutArtefact(build.statsWithoutArtefact);
-                                      setArtifactsData(build.artifactsData);
-                                      setHunterCores(build.hunterCores);
-                                      showTankMessage(`Loaded saved build for ${selected} 😏`);
-                                    } else {
-                                      handleResetStats();
-                                    }
-                                  }}
-                                  className="p-1 rounded bg-[#1c1c3c] text-white text-sm tank-target"
-                                >
-                                  <option value="">Sélectionner un personnage</option>
-                                  {Object.entries(characters)
-                                    .filter(([key, char]) => {
-                                      if (key === '') return false;
-                                      if (selectedElement && char.element !== selectedElement) return false;
-                                      if (selectedClass) {
-                                        const classType = char.class === 'Tank' ? 'Tank'
-                                          : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
-                                        if (classType !== selectedClass) return false;
-                                      }
-                                      return true;
-                                    })
-                                    .map(([key, char]) => (
-                                      <option key={key} value={key}>{char.name}</option>
-                                    ))}
-                                </select>
 
                                 {/* Icônes classes */}
-                                <div className="flex flex-row items-center gap-1 ml-2">
+                                {/* <div className="flex flex-row items-center gap-1 ml-2">
                                   {['Tank', 'DPS', 'Support'].map((type) => {
                                     const key = type.toLowerCase();
                                     return (
@@ -2940,57 +2947,57 @@ Tank observe l’écran… d’un air confus.
                                       />
                                     );
                                   })}
-                                </div>
+                                </div> */}
                               </div>
                             </div>
 
 
                             <div className="w-full flex justify-between tank-target mt-0 gap-2 text-sm flex-wrap sm:flex-nowrap">
-  <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full items-center tank-target">
+                              <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full items-center tank-target">
 
-    <button
-      onClick={handleResetStats}
-      className="bg-gradient-to-r from-black-900 to-black-700 hover:from-black-700 hover:to-black-500 text-white font-bold px-4 py-2 text-sm rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-red-500/40 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
-    >
-      BobbyKick
-    </button>
+                                <button
+                                  onClick={handleResetStats}
+                                  className="bg-gradient-to-r from-black-900 to-black-700 hover:from-black-700 hover:to-black-500 text-white font-bold px-4 py-2 text-sm rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-red-500/40 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
+                                >
+                                  BobbyKick
+                                </button>
 
-    <button
-      onClick={handleSaveBuild}
-      className="bg-gradient-to-r from-emerald-800 to-green-600 hover:from-green-600 hover:to-green-400 text-white font-bold px-4 py-2 text-sm rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-green-400/40 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
-    >
-      Save
-    </button>
+                                <button
+                                  onClick={handleSaveBuild}
+                                  className="bg-gradient-to-r from-emerald-800 to-green-600 hover:from-green-600 hover:to-green-400 text-white font-bold px-4 py-2 text-sm rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-green-400/40 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
+                                >
+                                  Save
+                                </button>
 
-    <button
-      onClick={handleExportAllBuilds}
-      className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
-    >
-      Export
-    </button>
+                                <button
+                                  onClick={handleExportAllBuilds}
+                                  className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
+                                >
+                                  Export
+                                </button>
 
-    <button
-      onClick={handleImportBuild}
-      className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
-    >
-      Import
-    </button>
+                                <button
+                                  onClick={handleImportBuild}
+                                  className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
+                                >
+                                  Import
+                                </button>
 
-    {/* Icons à droite */}
-    <div id="buildIcons" className="flex gap-2 items-center mt-1 sm:mt-0">
-      {recentBuilds.length > 0 && recentBuilds.map((charKey) => (
-        <img
-          key={charKey}
-          src={characters[charKey]?.icon || '/default.png'}
-          alt={characters[charKey]?.name || charKey}
-          onClick={() => handleClickBuildIcon(charKey)}
-          className="w-8 h-8 rounded-full cursor-pointer border-2 border-purple-700 hover:scale-110 transition"
-        />
-      ))}
-    </div>
+                                {/* Icons à droite */}
+                                <div id="buildIcons" className="flex gap-2 items-center mt-1 sm:mt-0">
+                                  {recentBuilds.length > 0 && recentBuilds.map((charKey) => (
+                                    <img
+                                      key={charKey}
+                                      src={characters[charKey]?.icon || '/default.png'}
+                                      alt={characters[charKey]?.name || charKey}
+                                      onClick={() => handleClickBuildIcon(charKey)}
+                                      className="w-8 h-8 rounded-full cursor-pointer border-2 border-purple-700 hover:scale-110 transition"
+                                    />
+                                  ))}
+                                </div>
 
-  </div>
-</div>
+                              </div>
+                            </div>
 
 
 
@@ -3392,22 +3399,22 @@ Tank observe l’écran… d’un air confus.
                               </div>
                             </div>
                           </div>
-                                           <div className="flex flex-col min-h-[20px]">
-                    <div className="fixed bottom-2 left-0 w-full px-4 flex justify-between gap-2 sm:hidden z-50">
-  <button
-    onClick={() => setMobileView('left')}
-    className="text-[11px] px-4 py-2 bg-[#2d2d5c] text-white rounded shadow-md"
-  >
-    ← Gauche
-  </button>
-  <button
-    onClick={() => setMobileView('right')}
-    className="text-[11px] px-4 py-2 bg-[#2d2d5c] text-white rounded shadow-md"
-  >
-    Droite →
-  </button>
-</div>
-</div>
+                          <div className="flex flex-col min-h-[20px]">
+                            <div className="fixed bottom-2 left-0 w-full px-4 flex justify-between gap-2 sm:hidden z-50">
+                              <button
+                                onClick={() => setMobileView('left')}
+                                className="text-[11px] px-4 py-2 bg-[#2d2d5c] text-white rounded shadow-md"
+                              >
+                                ← Gauche
+                              </button>
+                              <button
+                                onClick={() => setMobileView('right')}
+                                className="text-[11px] px-4 py-2 bg-[#2d2d5c] text-white rounded shadow-md"
+                              >
+                                Droite →
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -3511,30 +3518,30 @@ Tank observe l’écran… d’un air confus.
                   </>
                 )}
 
- <div className="h-[50px] mt-1">
+                <div className="h-[50px] mt-1">
 
 
-            <div className="relative w-full h-200">
-              {/* Zone pour positionner DOM au-dessus du canvas */}
+                  <div className="relative w-full h-200">
+                    {/* Zone pour positionner DOM au-dessus du canvas */}
 
 
 
 
-              {showChibiBubble && chibiMessage && (
-                <ChibiBubble
-                  key={`bubble-${bubbleId}`} // <-- force un rerender total à chaque message
-                  message={chibiMessage}
-                  position={chibiPos}
-                />
-              )}
-              <div className="flex justify-center items-center overflow-x-auto relative gap-1">
-                <canvas id="canvas-left" width="600" height="240" className="rounded-l-lg shadow-md bg-black w-[40vw] h-auto" />
-                <canvas id="canvas-center" width="600" height="240" className="shadow-md bg-black w-[40vw] h-auto" />
-                <canvas id="canvas-right" width="600" height="240" className="rounded-r-lg shadow-md bg-black w-[40vw] h-auto" />
+                    {showChibiBubble && chibiMessage && (
+                      <ChibiBubble
+                        key={`bubble-${bubbleId}`} // <-- force un rerender total à chaque message
+                        message={chibiMessage}
+                        position={chibiPos}
+                      />
+                    )}
+                    <div className="flex justify-center items-center overflow-x-auto relative gap-1">
+                      <canvas id="canvas-left" width="600" height="240" className="rounded-l-lg shadow-md bg-black w-[40vw] h-auto" />
+                      <canvas id="canvas-center" width="600" height="240" className="shadow-md bg-black w-[40vw] h-auto" />
+                      <canvas id="canvas-right" width="600" height="240" className="rounded-r-lg shadow-md bg-black w-[40vw] h-auto" />
 
-              </div>
-            </div>
-          </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -3547,9 +3554,6 @@ Tank observe l’écran… d’un air confus.
           <div className="w-full flex justify-center">
             <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)_240px] gap-x-2 max-w-[1400px] w-full px-2 min-w-0">
               <div className={showSernPopup ? 'blur-background' : ''}>
-                <div
-                  id="tank-laser"
-                  className="hidden fixed z-[9999] pointer-events-none transition-all duration-200 tank-target"></div>
                 <div className="flex flex-col gap-y-1 min-w-0 flex-shrink">
                   {[...leftArtifacts].map((item, idx) => (
                     <ArtifactCard
@@ -4208,6 +4212,9 @@ Tank observe l’écran… d’un air confus.
 
 
       )}
+      <div
+        id="tank-laser"
+        className="hidden fixed z-[9999] pointer-events-none transition-all duration-200 tank-target"></div>
     </>
   )
 };
