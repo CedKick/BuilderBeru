@@ -155,19 +155,19 @@ const ArtifactCard = ({
   const selections = artifactData;
   const [localMainStat, setLocalMainStat] = useState(artifactData.mainStat || '');
   const setArtifactsData = (newData) => onArtifactChange(newData);
-   const slot = title?.title || title; // sécurité double 😏
-useEffect(() => {
-  setLocalMainStat(artifactData.mainStat || '');
-}, [artifactData.mainStat]);
+  const slot = title?.title || title; // sécurité double 😏
+  useEffect(() => {
+    setLocalMainStat(artifactData.mainStat || '');
+  }, [artifactData.mainStat]);
 
 
-const updateArtifactMainStat = (newValue) => {
-  // 🔧 Propager la mise à jour au parent (si nécessaire)
-  setArtifactsData(prev => ({
-    ...prev,
-    mainStat: newValue
-  }));
-};
+  const updateArtifactMainStat = (newValue) => {
+    // 🔧 Propager la mise à jour au parent (si nécessaire)
+    setArtifactsData(prev => ({
+      ...prev,
+      mainStat: newValue
+    }));
+  };
 
   const shouldShowComparison = (artifact) => {
     const totalProcs = artifact.subStatsLevels?.reduce((sum, s) => sum + (s?.level || 0), 0);
@@ -370,74 +370,74 @@ const updateArtifactMainStat = (newValue) => {
   };
 
   // Handle incrémentation substat
- const handleIncreaseSubStat = (idx) => {
-  setArtifactsData(prev => {
-    const totalProcs = (prev.subStatsLevels || []).reduce(
-      (sum, stat) => sum + (stat?.level || 0), 0
-    );
-    if (totalProcs >= 4 || prev.subStatsLevels[idx].level >= 4) return prev;
+  const handleIncreaseSubStat = (idx) => {
+    setArtifactsData(prev => {
+      const totalProcs = (prev.subStatsLevels || []).reduce(
+        (sum, stat) => sum + (stat?.level || 0), 0
+      );
+      if (totalProcs >= 4 || prev.subStatsLevels[idx].level >= 4) return prev;
 
-    const stat = prev.subStats[idx];
-    const ranges = substatsMinMaxByIncrements[stat];
-    if (!ranges) return prev;
+      const stat = prev.subStats[idx];
+      const ranges = substatsMinMaxByIncrements[stat];
+      if (!ranges) return prev;
 
-    const newSubStatsLevels = [...prev.subStatsLevels];
-    let current = newSubStatsLevels[idx] || {
-      level: 0,
-      value: 0,
-      procOrders: [],
-      procValues: [],
-    };
+      const newSubStatsLevels = [...prev.subStatsLevels];
+      let current = newSubStatsLevels[idx] || {
+        level: 0,
+        value: 0,
+        procOrders: [],
+        procValues: [],
+      };
 
-    if (current.manual) {
-      current.manual = false;
-    }
+      if (current.manual) {
+        current.manual = false;
+      }
 
-    const allUsedProcOrders = newSubStatsLevels.flatMap(s => s.procOrders || []);
-    const procOrder = getNextProcOrder(allUsedProcOrders);
-    if (procOrder === null) return prev;
+      const allUsedProcOrders = newSubStatsLevels.flatMap(s => s.procOrders || []);
+      const procOrder = getNextProcOrder(allUsedProcOrders);
+      if (procOrder === null) return prev;
 
-    const rawProc = Math.random() * (ranges[procOrder].max - ranges[procOrder].min) + ranges[procOrder].min;
-    const procValue = stat.includes('%') ? +rawProc.toFixed(2) : Math.floor(rawProc);
-    const newValue = stat.includes('%')
-      ? +(current.value + procValue).toFixed(2)
-      : Math.floor(current.value + procValue);
+      const rawProc = Math.random() * (ranges[procOrder].max - ranges[procOrder].min) + ranges[procOrder].min;
+      const procValue = stat.includes('%') ? +rawProc.toFixed(2) : Math.floor(rawProc);
+      const newValue = stat.includes('%')
+        ? +(current.value + procValue).toFixed(2)
+        : Math.floor(current.value + procValue);
 
-    const newProcOrders = [...current.procOrders, procOrder];
-    const newProcValues = [...(current.procValues || []), procValue];
+      const newProcOrders = [...current.procOrders, procOrder];
+      const newProcValues = [...(current.procValues || []), procValue];
 
-    newSubStatsLevels[idx] = {
-      level: current.level + 1,
-      value: newValue,
-      procOrders: newProcOrders,
-      procValues: newProcValues,
-      manual: false,
-    };
+      newSubStatsLevels[idx] = {
+        level: current.level + 1,
+        value: newValue,
+        procOrders: newProcOrders,
+        procValues: newProcValues,
+        manual: false,
+      };
 
-    const newState = {
-      ...prev,
-      subStatsLevels: newSubStatsLevels,
-    };
-
-    // Recalcul stats
-    recalculateStatsFromArtifacts(newState);
-
-    // Envoie message de Tank
-    if (procValue > 7) showTankMessage('🔥 OP roll!');
-    else if (procValue < 5) showTankMessage('💩 Weak roll...');
-    else showTankMessage('😎 Decent!');
-
-    // 💡 Ajout d'un indicateur temporaire pour mettre à jour le champ visuel
-    setTimeout(() => {
-      setInputValues(prev => ({
+      const newState = {
         ...prev,
-        [idx]: stat.includes('%') ? newValue.toFixed(2) : Math.floor(newValue).toString()
-      }));
-    }, 0);
+        subStatsLevels: newSubStatsLevels,
+      };
 
-    return newState;
-  });
-};
+      // Recalcul stats
+      recalculateStatsFromArtifacts(newState);
+
+      // Envoie message de Tank
+      if (procValue > 7) showTankMessage('🔥 OP roll!');
+      else if (procValue < 5) showTankMessage('💩 Weak roll...');
+      else showTankMessage('😎 Decent!');
+
+      // 💡 Ajout d'un indicateur temporaire pour mettre à jour le champ visuel
+      setTimeout(() => {
+        setInputValues(prev => ({
+          ...prev,
+          [idx]: stat.includes('%') ? newValue.toFixed(2) : Math.floor(newValue).toString()
+        }));
+      }, 0);
+
+      return newState;
+    });
+  };
 
   const renderCustomHint = (stat, subStatData) => {
     if (!stat || !subStatData) return null;
@@ -482,48 +482,48 @@ const updateArtifactMainStat = (newValue) => {
   };
 
   // Handle désincrémentation substat
-const handleDecreaseSubStat = (idx) => {
-  setArtifactsData(prev => {
-    const stat = prev.subStats[idx];
-    const newSubStatsLevels = [...prev.subStatsLevels];
-    const current = newSubStatsLevels[idx];
+  const handleDecreaseSubStat = (idx) => {
+    setArtifactsData(prev => {
+      const stat = prev.subStats[idx];
+      const newSubStatsLevels = [...prev.subStatsLevels];
+      const current = newSubStatsLevels[idx];
 
-    if (!current || current.level === 0 || !current.procOrders.length) return prev;
+      if (!current || current.level === 0 || !current.procOrders.length) return prev;
 
-    const removedValue = current.procValues[current.procValues.length - 1];
-    const updatedValue = +(current.value - removedValue).toFixed(2);
+      const removedValue = current.procValues[current.procValues.length - 1];
+      const updatedValue = +(current.value - removedValue).toFixed(2);
 
-    newSubStatsLevels[idx] = {
-      level: current.level - 1,
-      value: updatedValue,
-      procOrders: current.procOrders.slice(0, -1),
-      procValues: current.procValues.slice(0, -1),
-    };
+      newSubStatsLevels[idx] = {
+        level: current.level - 1,
+        value: updatedValue,
+        procOrders: current.procOrders.slice(0, -1),
+        procValues: current.procValues.slice(0, -1),
+      };
 
-    const newState = {
-      ...prev,
-      subStatsLevels: newSubStatsLevels,
-    };
-
-    recalculateStatsFromArtifacts(newState);
-
-    // ⚠️ On évite le crash React en décalant le setInputValues
-    setTimeout(() => {
-      setInputValues(prev => ({
+      const newState = {
         ...prev,
-        [idx]: stat.includes('%')
-          ? updatedValue.toFixed(2)
-          : Math.floor(updatedValue).toString()
-      }));
-    }, 0);
+        subStatsLevels: newSubStatsLevels,
+      };
 
-    return newState;
-  });
-};
+      recalculateStatsFromArtifacts(newState);
+
+      // ⚠️ On évite le crash React en décalant le setInputValues
+      setTimeout(() => {
+        setInputValues(prev => ({
+          ...prev,
+          [idx]: stat.includes('%')
+            ? updatedValue.toFixed(2)
+            : Math.floor(updatedValue).toString()
+        }));
+      }, 0);
+
+      return newState;
+    });
+  };
 
 
   return (
-    <div className="artifact-card bg-[#0b0b1f] w-98 p-[1px] rounded-lg shadow-md text-white">
+    <div className="artifact-card bg-[#0b0b1f] w-75 p-[1px] rounded-lg shadow-md text-white">
       <div className="flex justify-between items-center mb-[2px]">
         <h2 className="text-base font-bold">{t(`titleArtifact.${title}`)}</h2>
         <div className="flex items-center gap-2">
@@ -531,7 +531,7 @@ const handleDecreaseSubStat = (idx) => {
             <div className="w-5 h-5 rounded-full from-[#3b3b9c] to-[#6c63ff] flex items-center justify-center text-white text-[10px] shadow-sm hover:scale-110 transition-transform">
               <button
                 onClick={() => openComparisonPopup({ ...artifactData, title })}
-                className="w-5 h-5 rounded-full from-[#3b3b9c] to-[#6c63ff] flex items-center justify-center text-white text-[10px] shadow-sm hover:scale-110 transition-transform"
+                className="w-1 h-1 rounded-full from-[#3b3b9c] to-[#6c63ff] flex items-center justify-center text-white text-[10px] shadow-sm hover:scale-110 transition-transform"
                 title="Comparer"
               >
                 🔍
@@ -545,21 +545,21 @@ const handleDecreaseSubStat = (idx) => {
       {/* MAIN STAT */}
       <div className="flex items-center gap-2 mb-[2px]">
         <select
-  value={localMainStat}
-  onChange={(e) => {
-    const selectedValue = e.target.value;
-    setLocalMainStat(selectedValue); // ⚡ Mise à jour visuelle
-    updateArtifactMainStat(selectedValue); // 🔁 Mise à jour logique
-  }}
-  className="w-full p-[1px] rounded bg-[#1c1c3c] text-xs"
->
-  <option value="">{t("selectMainStat", "Select Main Stat")}</option>
-  {mainStats.map((stat, idx) => (
-    <option key={idx} value={stat}>
-      {t(`stats.${stat}`, stat)}
-    </option>
-  ))}
-</select>
+          value={localMainStat}
+          onChange={(e) => {
+            const selectedValue = e.target.value;
+            setLocalMainStat(selectedValue); // ⚡ Mise à jour visuelle
+            updateArtifactMainStat(selectedValue); // 🔁 Mise à jour logique
+          }}
+          className="w-full p-[1px] rounded bg-[#1c1c3c] text-xs"
+        >
+          <option value="">{t("selectMainStat", "Select Main Stat")}</option>
+          {mainStats.map((stat, idx) => (
+            <option key={idx} value={stat}>
+              {t(`stats.${stat}`, stat)}
+            </option>
+          ))}
+        </select>
 
         {artifactData.mainStat && (
           <input
@@ -569,7 +569,7 @@ const handleDecreaseSubStat = (idx) => {
                 ? calculateMainStatValue(artifactData.mainStat, artifactData.subStatsLevels)
                 : 0
             }
-            className="w-16 p-[2px] rounded bg-[#2d2d5c] text-center text-xs text-white opacity-80 cursor-not-allowed"
+            className="w-8 p-[2px] rounded bg-[#2d2d5c] text-center text-xs text-white opacity-80 cursor-not-allowed"
           />
         )}
       </div>
@@ -578,40 +578,47 @@ const handleDecreaseSubStat = (idx) => {
       {Array.isArray(artifactData?.subStats) && artifactData.subStats.map((subStat, idx) => (
         <div key={idx} className="flex items-center gap-1 mb-[1px]">
           <select
-  value={subStat}
-  onChange={(e) => handleSubStatChange(idx, e.target.value)}
-  className="w-full p-[2px] rounded bg-[#1c1c3c] text-xs"
->
-  <option value="">{t("subStatLabel", `Substat ${idx + 1}`)}</option>
+            value={subStat}
+            onChange={(e) => handleSubStatChange(idx, e.target.value)}
+            className="w-full p-[2px] rounded bg-[#1c1c3c] text-xs"
+          >
+            <option value="">{t("subStatLabel", `Substat ${idx + 1}`)}</option>
 
-  {commonSubStats
-    .filter(stat =>
-      stat === subStat ||
-      (stat !== artifactData.mainStat && !artifactData.subStats.includes(stat))
-    )
-    .map((stat, i) => (
-      <option key={i} value={stat}>
-        {t(`stats.${stat}`, stat)}
-      </option>
-    ))}
-</select>
+            {commonSubStats
+              .filter(stat =>
+                stat === subStat ||
+                (stat !== artifactData.mainStat && !artifactData.subStats.includes(stat))
+              )
+              .map((stat, i) => (
+                <option key={i} value={stat}>
+                  {t(`stats.${stat}`, stat)}
+                </option>
+              ))}
+          </select>
 
           {/* + / - boutons uniquement si une substat est sélectionnée */}
           {subStat && (
             <>
-              <button
+              <img
+                src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748513494/BoutonMoins_zlzwcz.png"
+                alt="Moins"
                 onClick={() => handleDecreaseSubStat(idx)}
-                className="bg-[#2d2d5c] text-white rounded w-5 h-5 text-[10px] px-[2px] flex items-center justify-center"
-              >–</button>
-              <span className="w-6 text-center">{`+${artifactData.subStatsLevels[idx].level}`}</span>
-              <button
-                onClick={() => handleIncreaseSubStat(idx)}
-                disabled={artifactData.subStatsLevels[idx].level >= 4 || totalSubStatLevels >= 4}
-                className={`bg-[#2d2d5c] text-white rounded w-5 h-5 text-[10px] px-[2px] flex items-center justify-center ${artifactData.subStatsLevels[idx].level >= 4 || totalSubStatLevels >= 4
-                  ? 'bg-[#3c3c5c] cursor-not-allowed text-sm'
-                  : 'bg-[#2d2d5c] text-white text-sm'
+                className="w-4 h-4 cursor-pointer select-none"
+              />
+              <img
+                src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748513182/BoutonPlus_zc3k7t.png"
+                alt="Plus"
+                onClick={() => {
+                  if (artifactData.subStatsLevels[idx].level < 4 && totalSubStatLevels < 4) {
+                    handleIncreaseSubStat(idx);
+                  }
+                }}
+                className={`w-4 h-4 select-none ${artifactData.subStatsLevels[idx].level >= 4 || totalSubStatLevels >= 4
+                    ? 'opacity-30 cursor-not-allowed'
+                    : 'cursor-pointer hover:scale-105 transition'
                   }`}
-              >+</button>
+              />
+              <span className="w-6 text-center text-sm">{`+${artifactData.subStatsLevels[idx].level}`}</span>
 
               {/* INPUT + TOOLTIP */}
               <div className="relative">

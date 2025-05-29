@@ -441,15 +441,15 @@ const BuilderBeru = () => {
   // const dytextRef = useRef();
 
   const initialArtifacts = {
-  Helmet: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
-  Chest: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
-  Gloves: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
-  Boots: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
-  Necklace: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
-  Bracelet: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
-  Ring: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
-  Earrings: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
-};
+    Helmet: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+    Chest: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+    Gloves: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+    Boots: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+    Necklace: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+    Bracelet: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+    Ring: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+    Earrings: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+  };
 
   const openComparisonPopup = (artifactData) => {
     const emptyArtifact = {
@@ -479,27 +479,27 @@ const BuilderBeru = () => {
     'Precision', 'Damage Reduction', 'Healing Given Increase (%)'
   ];
 
-const applyOcrDataToArtifact = (ocrResult) => {
-  setArtifacts(prev => {
-    return prev.map(artifact => {
-      if (artifact.type !== ocrResult.type) return artifact;
+  const applyOcrDataToArtifact = (ocrResult) => {
+    setArtifacts(prev => {
+      return prev.map(artifact => {
+        if (artifact.type !== ocrResult.type) return artifact;
 
-      return {
-        ...artifact,
-        mainStat: {
-          ...artifact.mainStat,
-          stat: ocrResult.mainStat.stat,
-          value: ocrResult.mainStat.value
-        },
-        subStats: ocrResult.subStats.map((sub, index) => ({
-          stat: sub.stat,
-          value: sub.value,
-          proc: sub.proc
-        }))
-      };
+        return {
+          ...artifact,
+          mainStat: {
+            ...artifact.mainStat,
+            stat: ocrResult.mainStat.stat,
+            value: ocrResult.mainStat.value
+          },
+          subStats: ocrResult.subStats.map((sub, index) => ({
+            stat: sub.stat,
+            value: sub.value,
+            proc: sub.proc
+          }))
+        };
+      });
     });
-  });
-};
+  };
 
   const initialStats = {};
   allStats.forEach(stat => {
@@ -821,26 +821,26 @@ const applyOcrDataToArtifact = (ocrResult) => {
   const [parsedArtifactData, setParsedArtifactData] = useState(null);
   const [showWeaponPopup, setShowWeaponPopup] = useState(false);
 
-const onConfirm = (parsedData) => {
-  console.log('✅ Artefact OCR confirmé :', parsedData);
+  const onConfirm = (parsedData) => {
+    console.log('✅ Artefact OCR confirmé :', parsedData);
 
-  // Exemple simple : mise à jour du premier artefact
-  setArtifacts((prev) => {
-    const updated = [...prev];
-    const indexToUpdate = updated.findIndex(a => a.type === parsedData.type);
-    if (indexToUpdate !== -1) {
-      updated[indexToUpdate] = {
-        ...updated[indexToUpdate],
-        mainStat: parsedData.mainStat,
-        subStats: parsedData.subStats
-        // On pourra ajouter procValue etc. après
-      };
-    }
-    return updated;
-  });
+    // Exemple simple : mise à jour du premier artefact
+    setArtifacts((prev) => {
+      const updated = [...prev];
+      const indexToUpdate = updated.findIndex(a => a.type === parsedData.type);
+      if (indexToUpdate !== -1) {
+        updated[indexToUpdate] = {
+          ...updated[indexToUpdate],
+          mainStat: parsedData.mainStat,
+          subStats: parsedData.subStats
+          // On pourra ajouter procValue etc. après
+        };
+      }
+      return updated;
+    });
 
-  setshowOcrPopup(false);
-};
+    setshowOcrPopup(false);
+  };
 
 
   const [showHologram, setShowHologram] = useState(false);
@@ -986,7 +986,7 @@ BobbyJones:
 
 
 
-const mobileNarrativeTextFr = `
+  const mobileNarrativeTextFr = `
 {img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/BuilderBeruUnderConstruction_ew2r81.png}
 
 {delay=1000}
@@ -1540,62 +1540,62 @@ BobbyJones : "Allez l'Inter !"
     showTankMessage('📋 All builds copied to clipboard!', true);
   };
 
-//   const updateArtifactFromOCR = (parsedData) => {
-//   setArtifacts(prev => {
-//     const updated = [...prev];
-//     const index = updated.findIndex(a => a.type === parsedData.type);
-//     if (index === -1) return prev;
+  //   const updateArtifactFromOCR = (parsedData) => {
+  //   setArtifacts(prev => {
+  //     const updated = [...prev];
+  //     const index = updated.findIndex(a => a.type === parsedData.type);
+  //     if (index === -1) return prev;
 
-//     const artifactToUpdate = updated[index];
+  //     const artifactToUpdate = updated[index];
 
-//     updated[index] = {
-//       ...artifactToUpdate,
-//       mainStat: parsedData.mainStat,
-//       subStats: parsedData.subStats,
-//       procValue: parsedData.procValue || artifactToUpdate.procValue || null
-//     };
+  //     updated[index] = {
+  //       ...artifactToUpdate,
+  //       mainStat: parsedData.mainStat,
+  //       subStats: parsedData.subStats,
+  //       procValue: parsedData.procValue || artifactToUpdate.procValue || null
+  //     };
 
-//     return updated;
-//   });
-// };
+  //     return updated;
+  //   });
+  // };
 
-const updateArtifactFromOCR = (parsedData) => {
-  setArtifacts(prev => {
-    const updated = { ...prev }; // ✅ Copie objet
-    const type = parsedData.type;
-    const current = updated[type];
+  const updateArtifactFromOCR = (parsedData) => {
+    setArtifacts(prev => {
+      const updated = { ...prev }; // ✅ Copie objet
+      const type = parsedData.type;
+      const current = updated[type];
 
-    if (!current) return prev;
+      if (!current) return prev;
 
-    updated[type] = {
-      ...current,
-      mainStat: parsedData.mainStat,
-      subStats: parsedData.subStats,
-      procValue: parsedData.procValue || current.procValue || null
-    };
-
-
-// Maj artifactsData (utilisé dans ArtifactCard)
-setArtifactsData(prev => ({
-  ...prev,
-  [type]: {
-    ...prev[type],
-    mainStat: parsedData.mainStat?.stat || '',
-    mainStatValue: parsedData.mainStat?.value || 0,
-    subStats: parsedData.subStats.map(s => s.stat),
-    subStatsLevels: parsedData.subStats.map(s => ({
-      level: s.proc || 0,
-      value: s.value || 0,
-      procOrders: Array(s.proc).fill(0).map((_, i) => i), // ordre factice
-      procValues: Array(s.proc).fill(s.value / (s.proc || 1)) // valeur répartie
-    }))
-  }
-}));
+      updated[type] = {
+        ...current,
+        mainStat: parsedData.mainStat,
+        subStats: parsedData.subStats,
+        procValue: parsedData.procValue || current.procValue || null
+      };
 
 
-    return updated;
-  });
-};
+      // Maj artifactsData (utilisé dans ArtifactCard)
+      setArtifactsData(prev => ({
+        ...prev,
+        [type]: {
+          ...prev[type],
+          mainStat: parsedData.mainStat?.stat || '',
+          mainStatValue: parsedData.mainStat?.value || 0,
+          subStats: parsedData.subStats.map(s => s.stat),
+          subStatsLevels: parsedData.subStats.map(s => ({
+            level: s.proc || 0,
+            value: s.value || 0,
+            procOrders: Array(s.proc).fill(0).map((_, i) => i), // ordre factice
+            procValues: Array(s.proc).fill(s.value / (s.proc || 1)) // valeur répartie
+          }))
+        }
+      }));
+
+
+      return updated;
+    });
+  };
 
   const handleImportBuild = () => {
     if (isTankSpeaking.current) return;
@@ -1873,16 +1873,16 @@ setArtifactsData(prev => ({
     }
   };
 
-const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-useEffect(() => {
-  const handleResize = () => {
-    setIsMobile(window.innerWidth <= 768);
-  };
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
 
-  window.addEventListener('resize', handleResize);
-  return () => window.removeEventListener('resize', handleResize);
-}, []);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const recent = JSON.parse(localStorage.getItem('recentBuilds') || '[]');
@@ -2146,22 +2146,22 @@ useEffect(() => {
   //   setFlatStats(getFlatStatsWithWeapon(char, weapon));
   // }, [selectedCharacter, hunterWeapons]);
 
- useEffect(() => {
-  if (showNarrative) {
-    const isFrench = navigator.language.startsWith("fr"); // ou ton propre détecteur de langue
-    const selectedNarrative = isFrench ? mobileNarrativeTextFr : mobileNarrativeTextEn;
+  useEffect(() => {
+    if (showNarrative) {
+      const isFrench = navigator.language.startsWith("fr"); // ou ton propre détecteur de langue
+      const selectedNarrative = isFrench ? mobileNarrativeTextFr : mobileNarrativeTextEn;
 
-    const steps = parseNarrative(selectedNarrative);
-    runNarrativeSteps(steps, {
-      refs,
-      setCurrentImage,
-      dytextRef,
-      setShowNarrative,
-      triggerFadeOutAllMusic,
-      playingAudiosRef,
-    });
-  }
-}, [showNarrative]);
+      const steps = parseNarrative(selectedNarrative);
+      runNarrativeSteps(steps, {
+        refs,
+        setCurrentImage,
+        dytextRef,
+        setShowNarrative,
+        triggerFadeOutAllMusic,
+        playingAudiosRef,
+      });
+    }
+  }, [showNarrative]);
 
   useEffect(() => {
     if (showSernPopup) {
@@ -2771,11 +2771,11 @@ useEffect(() => {
     }
   }, [selectedElement, selectedClass, characters, selectedCharacter]);
 
-useEffect(() => {
-  // const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
- if (isMobile && !mobileNarrativeAlreadyShown) {
-    mobileNarrativeAlreadyShown = true; // 🔒 évite la redéclenchement
-    const mobileText = `
+  useEffect(() => {
+    // const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobile && !mobileNarrativeAlreadyShown) {
+      mobileNarrativeAlreadyShown = true; // 🔒 évite la redéclenchement
+      const mobileText = `
 {img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747834575/AnotherGagoldFound_yqrrnb.png ref=mainImage class=fade-in size=320}
 Chargement du rapport Tank...
 
@@ -2801,17 +2801,17 @@ Tank observe l’écran… d’un air confus.
 {delay=100000}
 `;
 
-    // setNarrativeText(mobileText);
-    setShowNarrative(true);
-  }
-}, []);
-  
+      // setNarrativeText(mobileText);
+      // setShowNarrative(true);
+    }
+  }, []);
+
 
 
   return (
     <div className="h-screen bg-gray-950 text-white p-1 overflow-y-auto tank-target">
       <div className="flex-1 overflow-hidden">
-        <div className="grid grid-cols-[1fr_2fr_1fr] gap-0.5 tank-target">
+         <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(600px,900px)_240px] gap-x-2 max-w-[1400px] w-full px-2">
           <div className={showSernPopup ? 'blur-background' : ''}>
             <div
               id="tank-laser"
@@ -2845,537 +2845,557 @@ Tank observe l’écran… d’un air confus.
             </div>
           </div>
 
-          <div className="flex flex-col justify-end items-center h-full tank-target">
-            {/* Filtres + select personnage EN HAUT */}
-            <div className="flex flex-wrap items-center justify-between w-full gap-2 px-1 mb-2 tank-target">
-              {/* Filtres éléments */}
-              <div className="flex flex-row items-center space-x-2 tank-target">
-                {['Fire', 'Water', 'Light', 'Dark', 'Wind'].map((el) => {
-                  const key = el.toLowerCase();
-                  return (
-                    <img
-                      key={el}
-                      src={ICON_ELEMENTS[key]}
-                      alt={el}
-                      onClick={() => handleElementClick(el)}
-                      className={`w-10 h-10 cursor-pointer transition-all duration-300 tank-target 
-        ${selectedElement === el ? 'opacity-100 drop-shadow-md' : 'opacity-40'}`}
-                    />
-                  );
-                })}
-              </div>
+          <div className="flex flex-col items-center w-full max-w-[1100px] mx-auto px-4">
 
-              {/* Select personnage */}
-              <div className="flex flex-col items-center tank-target">
-                <select
-                  value={selectedCharacter}
-                  onChange={(e) => {
-                    const selected = e.target.value;
-                    setSelectedCharacter(selected);
 
-                    const saved = localStorage.getItem(`build_${selected}`);
-                    if (saved) {
-                      const build = JSON.parse(saved);
-                      setFlatStats(build.flatStats);
-                      setStatsWithoutArtefact(build.statsWithoutArtefact);
-                      setArtifactsData(build.artifactsData);
-                      setHunterCores(build.hunterCores);
-                      showTankMessage(`Loaded saved build for ${selected} 😏`);
-                    } else {
-                      handleResetStats(); // aucun build → on réinitialise
-                      // showTankMessage(`${selected} has no saved build, starting fresh 🧹`);
-                    }
-                  }}
-                  className="p-1 rounded bg-[#1c1c3c] text-white text-sm mb-2 tank-target"
-                >
-                  <option value="">Sélectionner un personnage</option>
-                  {Object.entries(characters)
-                    .filter(([key, char]) => {
-                      if (key === '') return false;
-                      if (selectedElement && char.element !== selectedElement) return false;
-                      if (selectedClass) {
-                        const classType = char.class === 'Tank' ? 'Tank'
-                          : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
-                        if (classType !== selectedClass) return false;
+            <div className="flex flex-col justify-center items-center h-full tank-target">
+              {/* Filtres + select personnage EN HAUT */}
+              <div className="flex items-center justify-start w-full px-1 mb-4 tank-target">
+                {/* Colonne Gauche – Langues */}
+                <div className="flex gap-1 items-center ml-0 mr-4">
+                  <button className="px-2 py-1 text-sm rounded bg-zinc-800 text-white" onClick={() => i18n.changeLanguage('fr')}>FR</button>
+                  <button className="px-2 py-1 text-sm rounded bg-zinc-800 text-white" onClick={() => i18n.changeLanguage('en')}>EN</button>
+                </div>
+
+                {/* Colonne Centre – Éléments + Select + Classes */}
+                <div className="flex items-center gap-3 mr-auto">
+                  {/* Icônes éléments */}
+                  <div className="flex gap-2">
+                    {['Fire', 'Water', 'Light', 'Dark', 'Wind'].map((el) => {
+                      const key = el.toLowerCase();
+                      return (
+                        <img
+                          key={el}
+                          src={ICON_ELEMENTS[key]}
+                          alt={el}
+                          onClick={() => handleElementClick(el)}
+                          className={`w-9 h-9 cursor-pointer transition-all duration-300 tank-target 
+              ${selectedElement === el ? 'opacity-100 drop-shadow-md' : 'opacity-40'}`}
+                        />
+                      );
+                    })}
+                  </div>
+
+                  {/* Select Personnage */}
+                  <select
+                    value={selectedCharacter}
+                    onChange={(e) => {
+                      const selected = e.target.value;
+                      setSelectedCharacter(selected);
+
+                      const saved = localStorage.getItem(`build_${selected}`);
+                      if (saved) {
+                        const build = JSON.parse(saved);
+                        setFlatStats(build.flatStats);
+                        setStatsWithoutArtefact(build.statsWithoutArtefact);
+                        setArtifactsData(build.artifactsData);
+                        setHunterCores(build.hunterCores);
+                        showTankMessage(`Loaded saved build for ${selected} 😏`);
+                      } else {
+                        handleResetStats();
                       }
-                      return true;
-                    })
-                    .map(([key, char]) => (
-                      <option key={key} value={key}>{char.name}</option>
-                    ))}
-                </select>
-              </div>
+                    }}
+                    className="p-1 rounded bg-[#1c1c3c] text-white text-sm tank-target"
+                  >
+                    <option value="">Sélectionner un personnage</option>
+                    {Object.entries(characters)
+                      .filter(([key, char]) => {
+                        if (key === '') return false;
+                        if (selectedElement && char.element !== selectedElement) return false;
+                        if (selectedClass) {
+                          const classType = char.class === 'Tank' ? 'Tank'
+                            : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
+                          if (classType !== selectedClass) return false;
+                        }
+                        return true;
+                      })
+                      .map(([key, char]) => (
+                        <option key={key} value={key}>{char.name}</option>
+                      ))}
+                  </select>
 
-              {/* Filtres classes */}
-              <div className="flex flex-row items-center space-x-2 tank-target">
-                {['Tank', 'DPS', 'Support'].map((type) => {
-                  const key = type.toLowerCase();
-                  return (
-                    <img
-                      key={type}
-                      src={ICON_CLASSES[key]}
-                      alt={type}
-                      onClick={() => handleClassClick(type)}
-                      className={`w-10 h-10 cursor-pointer tank-target transition-all duration-300 
-        ${selectedClass === type ? 'opacity-100 drop-shadow-md' : 'opacity-40'}`}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="w-full flex justify-between tank-target mt-0 gap-2 text-sm">
-              {/* Bouton BobbyKick - Reset */}
-              <div className="flex items-center space-x-2 tank-target">
-                <button onClick={() => i18n.changeLanguage('fr')}>FR</button>
-                <button onClick={() => i18n.changeLanguage('en')}>EN</button>
-                <button
-                  onClick={handleResetStats}
-                  className="bg-gradient-to-r tank-target from-black-900 to-black-700 hover:from-black-700 hover:to-black-500 text-white font-bold py-1 px-4 rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-red-500/40"
-                >
-                  BobbyKick
-                </button>
-
-                {/* Bouton Save */}
-                <button
-                  onClick={handleSaveBuild}
-                  className="bg-gradient-to-r tank-target from-emerald-800 to-green-600 hover:from-green-600 hover:to-green-400 text-white font-bold py-1 px-4 rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-green-400/40"
-                >
-                  Save
-                </button>
-              </div>
-
-              <div className="w-full tank-target flex justify-between items-center mt-0 text-sm">
-                {/* Espace à droite (ex : icône future) */}
-
-                <div id="buildIcons" className="flex tank-target gap-2 items-center">
-                  {recentBuilds.length > 0 && recentBuilds.map((charKey) => (
-                    <img
-                      key={charKey}
-                      src={characters[charKey]?.icon || '/default.png'}
-                      alt={characters[charKey]?.name || charKey}
-                      onClick={() => handleClickBuildIcon(charKey)}
-                      className="w-8 h-8 rounded-full tank-targe cursor-pointer border-2 border-purple-700 hover:scale-110 transition"
-                    />
-                  ))}
+                  {/* Icônes classes */}
+                  <div className="flex flex-row items-center gap-1 ml-2">
+                    {['Tank', 'DPS', 'Support'].map((type) => {
+                      const key = type.toLowerCase();
+                      return (
+                        <img
+                          key={type}
+                          src={ICON_CLASSES[key]}
+                          alt={type}
+                          onClick={() => handleClassClick(type)}
+                          className={`w-8 h-8 cursor-pointer tank-target transition-all duration-300 
+              ${selectedClass === type ? 'opacity-100 drop-shadow-md' : 'opacity-40'}`}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-              <div className="w-full flex justify-between tank-targe items-center mt-0 text-sm">
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={handleExportAllBuilds}
-                    className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white text-xs font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                  >
-                    Export
-                  </button>
+
+
+
+
+              <div className="w-full flex justify-between tank-target mt-0 gap-2 text-sm">
+                {/* Bouton BobbyKick - Reset */}
+                <div className="flex items-center space-x-2 tank-target">
 
                   <button
-                    onClick={handleImportBuild}
-                    className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white text-xs font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                    onClick={handleResetStats}
+                    className="bg-gradient-to-r tank-target from-black-900 to-black-700 hover:from-black-700 hover:to-black-500 text-white font-bold py-1 px-4 rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-red-500/40"
                   >
-                    Import
+                    BobbyKick
                   </button>
-                </div>
-              </div>
-            </div>
+
+                  {/* Bouton Save */}
+                  <button
+                    onClick={handleSaveBuild}
+                    className="bg-gradient-to-r tank-target from-emerald-800 to-green-600 hover:from-green-600 hover:to-green-400 text-white font-bold py-1 px-4 rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-green-400/40"
+                  >
+                    Save
+                  </button>
 
 
-            {showImportSaveWarning && (
-              <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999]">
-                <div className="bg-[#1a1a2e] text-white p-6 rounded-xl shadow-lg border border-purple-700 text-center max-w-sm">
-                  <p className="text-lg font-bold mb-4">
-                    ⚠️ Shadow Override Detected
-                  </p>
-                  <p className="text-sm mb-6">
-                    If you save this data,<br />
-                    your current system build will be <span className="text-red-400">overwritten</span>.<br />
-                    Do you really want to save this imported shadow?
-                  </p>
-                  <div className="flex justify-center gap-4">
-                    <button
-                      onClick={() => {
+                  <div className="w-full tank-target flex justify-between items-center mt-0 text-sm">
+                    {/* Espace à droite (ex : icône future) */}
 
-                        setShowImportSaveWarning(false);
-                        setIsImportedBuild(false);
-                        handleSaveBuild();
-                        playMusic();
-                      }}
-                      className="bg-green-700 hover:bg-green-600 px-4 py-2 rounded text-white"
-                    >
-                      Yes
-                    </button>
-                    <button
-                      onClick={() => setShowImportSaveWarning(false)}
-                      className="bg-red-700 hover:bg-red-600 px-4 py-2 rounded text-white"
-                    >
-                      No
-                    </button>
+                    <div id="buildIcons" className="flex tank-target gap-2 items-center">
+                      {recentBuilds.length > 0 && recentBuilds.map((charKey) => (
+                        <img
+                          key={charKey}
+                          src={characters[charKey]?.icon || '/default.png'}
+                          alt={characters[charKey]?.name || charKey}
+                          onClick={() => handleClickBuildIcon(charKey)}
+                          className="w-8 h-8 rounded-full tank-targe cursor-pointer border-2 border-purple-700 hover:scale-110 transition"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="w-full flex justify-between tank-targe items-center mt-0 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={handleExportAllBuilds}
+                        className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white text-xs font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                      >
+                        Export
+                      </button>
+
+                      <button
+                        onClick={handleImportBuild}
+                        className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white text-xs font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                      >
+                        Import
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            )}
 
 
-            {showNoyauxPopup && (
-              <NoyauxPopup
-                hunterName={selectedCharacter}
-                onClose={() => setShowNoyauxPopup(false)}
-                onSave={handleSaveNoyaux}
-                existingCores={hunterCores[selectedCharacter] || {}}
-              />
-            )}
+              {showImportSaveWarning && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999]">
+                  <div className="bg-[#1a1a2e] text-white p-6 rounded-xl shadow-lg border border-purple-700 text-center max-w-sm">
+                    <p className="text-lg font-bold mb-4">
+                      ⚠️ Shadow Override Detected
+                    </p>
+                    <p className="text-sm mb-6">
+                      If you save this data,<br />
+                      your current system build will be <span className="text-red-400">overwritten</span>.<br />
+                      Do you really want to save this imported shadow?
+                    </p>
+                    <div className="flex justify-center gap-4">
+                      <button
+                        onClick={() => {
 
-            {showGemPopup && (
-              <GemmesPopup
-                gemData={gemData}
-                onClose={() => setShowGemPopup(false)}
-                onSave={handleSaveGems}
-              />
-            )}
+                          setShowImportSaveWarning(false);
+                          setIsImportedBuild(false);
+                          handleSaveBuild();
+                          playMusic();
+                        }}
+                        className="bg-green-700 hover:bg-green-600 px-4 py-2 rounded text-white"
+                      >
+                        Yes
+                      </button>
+                      <button
+                        onClick={() => setShowImportSaveWarning(false)}
+                        className="bg-red-700 hover:bg-red-600 px-4 py-2 rounded text-white"
+                      >
+                        No
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-            {showSernPopup && (
-              <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999] overflow-y-auto py-10">
-                <div
-                  ref={popupRef}
-                  className="relative w-[95vw] max-w-[1000px] p-4 bg-black/90 text-white 
+
+              {showNoyauxPopup && (
+                <NoyauxPopup
+                  hunterName={selectedCharacter}
+                  onClose={() => setShowNoyauxPopup(false)}
+                  onSave={handleSaveNoyaux}
+                  existingCores={hunterCores[selectedCharacter] || {}}
+                />
+              )}
+
+              {showGemPopup && (
+                <GemmesPopup
+                  gemData={gemData}
+                  onClose={() => setShowGemPopup(false)}
+                  onSave={handleSaveGems}
+                />
+              )}
+
+              {showSernPopup && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999] overflow-y-auto py-10">
+                  <div
+                    ref={popupRef}
+                    className="relative w-[95vw] max-w-[1000px] p-4 bg-black/90 text-white 
         border-4 border-white rounded-2xl shadow-2xl animate-pulse flex flex-col 
         overflow-y-auto max-h-[90vh] scrollbar-none scroll-smooth"
-                >
-                  {/* IMAGE */}
-                  <div className="w-full flex items-center justify-center">
-                    <img
-                      src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747680569/SERN_ab7od6.png"
-                      alt="Sung Bobby SERN"
-                      className="w-full max-w-full rounded-md opacity-90 object-contain"
-                    />
-                  </div>
-
-                  {/* TEXTE */}
-                  <div className="w-full mt-4 px-4">
-                    <h2 className="text-xl font-bold mb-2 text-center">⚠️ INFRACTION GAGOLDIQUE N-404 ⚠️</h2>
-                    <span
-                      ref={dytextRef}
-                      className="text-sm whitespace-pre-line font-mono leading-relaxed tracking-wide animate-fade-in text-left"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-   <OCRPasteListener
-  onParsed={(parsed) => {
-    console.log('Parsed envoyé à Builder :', parsed);
-    setParsedArtifactData(parsed);
-  }}
-  updateArtifactFromOCR={updateArtifactFromOCR}
-/>
-
-            {comparisonData && (
-              <ComparisonPopup
-                original={comparisonData}
-                onClose={() => setComparisonData(null)}
-                hunter={characters[selectedCharacter]}
-                flatStats={flatStats} // ← Ajouter
-                statsWithoutArtefact={statsWithoutArtefact} // ← Ajouter
-                substatsMinMaxByIncrements={substatsMinMaxByIncrements}
-                showTankMessage={showTankMessage} // ✅ Ajoute ça
-                recalculateStatsFromArtifacts={recalculateStatsFromArtifacts} // ✅ Ajoute ça aussi
-              />
-            )}
-
-            {showNarrative && (
-              <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999] overflow-y-auto py-10">
-                <div
-                  ref={popupRef}
-                  className="relative w-[95vw] max-w-[1000px] p-4 bg-black/90 text-white 
-        border-4 border-white rounded-2xl shadow-2xl animate-pulse flex flex-col 
-        overflow-y-auto max-h-[90vh] scrollbar-none scroll-smooth"
-                >
-                  {/* IMAGE dynamique */}
-                  {currentImage && (
+                  >
+                    {/* IMAGE */}
                     <div className="w-full flex items-center justify-center">
                       <img
-                        ref={mainImageRef}
-                        src={currentImage?.src}
-                        alt="Image narrative"
-                        className="w-1/2 mx-auto rounded-md opacity-90 object-contain"
+                        src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747680569/SERN_ab7od6.png"
+                        alt="Sung Bobby SERN"
+                        className="w-full max-w-full rounded-md opacity-90 object-contain"
                       />
                     </div>
-                  )}
 
-                  {/* TEXTE */}
-                  <div className="w-full mt-4 px-4">
-                    <h2 className="text-xl font-bold mb-2 text-center">⚠️ INFRACTION GAGOLDIQUE NARRATIVE ⚠️</h2>
-                    <span
-                      ref={dytextRef}
-                      className="text-sm whitespace-pre-line font-mono leading-relaxed tracking-wide animate-fade-in text-left"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {showWeaponPopup && (
-              <WeaponPopup
-                hunterName={selectedCharacter}
-                onClose={() => setShowWeaponPopup(false)}
-                onSave={handleSaveWeapon}
-                existingWeapon={hunterWeapons[selectedCharacter] || {}}
-                scaleStat={characters[selectedCharacter]?.scaleStat}
-              />
-            )}
-
-            {parsedArtifactData && (
-  <OcrConfirmPopup
-    parsedData={parsedArtifactData}
-    onConfirm={(data) => {
-      // 🧠 Ici tu traites la sauvegarde finale (ex: mise à jour des artefactsData)
-      console.log("CONFIRMED", data); // ➕ à remplacer par le vrai traitement
-      setParsedArtifactData(null);
-    }}
-    onCancel={() => setParsedArtifactData(null)}
-  />
-)}
-
-<OcrConfirmPopup
-  parsedData={parsedArtifactData}
-  onConfirm={(data) => {
-    applyOcrDataToArtifact(data);
-    setShowPopup(false); // cache la pop-up
-  }}
-  onCancel={() => setShowPopup(false)}
-/>
-
-            <div className={showSernPopup ? 'blur-background' : ''}>
-              {/* Image + stats EN BAS */}
-
-
-              <div className="flex flex-col items-center justify-start gap-1 mt-auto mb-2">
-
-                <div className="flex justify-start items-start space-x-6 mt-4">
-                  {/* Bloc Noyaux à gauche */}
-                  <div className="w-60 text-white text-[11px] flex flex-col justify-start">
-                    <h2 className="text-purple-300 font-bold mb-2"> <button
-                      className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-pink-200 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                      onClick={() => setShowNoyauxPopup(true)}
-                    >
-                      {t("cores")}
-                    </button></h2>
-                    {hunterCores[selectedCharacter] ? (
-                      <div className="text-xs space-y-2">
-                        {['Offensif', 'Défensif', 'Endurance'].map((type, index) => {
-                          const core = hunterCores[selectedCharacter]?.[type];
-                          if (!core) return null;
-
-                          const showPrimary = core.primary && parseFloat(core.primaryValue) !== 0;
-                          const showSecondary = core.secondary && parseFloat(core.secondaryValue) !== 0;
-
-                          if (!showPrimary && !showSecondary) return null;
-
-                          return (
-                            <div key={index} className="border-b border-purple-800 pb-1">
-                              <p className="text-purple-200 font-semibold">{t(`coreTypes.${type}`)}</p>
-                              {showPrimary && (
-                                <p>{t(`stats.${core.primary}`)}: {core.primaryValue}</p>
-                              )}
-                              {showSecondary && (
-                                <p>{core.secondary}: {core.secondaryValue}</p>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p>No cores defined</p>
-                    )}
-
-
-                  </div>
-
-                  <div className="relative">
-                    {selectedCharacter && characters[selectedCharacter] && characters[selectedCharacter].img ? (
-                      <>
-                        <img
-                          src={characters[selectedCharacter].img}
-                          alt={characters[selectedCharacter].name}
-                          className="w-64 mb-2 relative z-10"
-                          id="targetToDestroy"
-                        />
-                        {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
-                          <div
-                            className="absolute w-60 h-8 rounded-full blur-sm animate-fade-out z-0"
-                            style={{
-                              backgroundColor: getElementColor(characters[selectedCharacter].element),
-                              bottom: '0px'
-                            }}
-                          ></div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="relative">
-                        <img
-                          src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
-                          className="w-64 mb-2 relative z-10"
-                          id="targetToDestroy"
-                        />
-                      </div>
-                    )}
-                  </div>
-
-
-                  {/* Bloc Gemmes à droite */}
-                  <div className="w-48 text-white text-xs flex flex-col items-start">
-                    <h2 className="text-blue-300 font-bold mb-2">
-                      <button
-                        className="bg-gradient-to-r font-bold from-blue-500 text-[20px] to-purple-500 hover:from-blue-600 hover:to-purple-600 text-blue-300 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                        onClick={() => setShowGemPopup(true)}
-                      >
-                        {t("gems")}
-                      </button>
-                    </h2>
-                    {
-                      Object.entries(gemData || {}).every(([_, stats]) =>
-                        Object.values(stats).every(value => !value)
-                      ) ? (
-                        <p>No gems defined</p>
-                      ) : (
-                        <div className="space-y-3">
-                          {
-                            Object.entries(gemData || {}).map(([color, stats]) => {
-                              const filtered = Object.entries(stats || {}).filter(([_, value]) => value);
-                              if (filtered.length === 0) return null;
-                              return (
-                                <div key={color}>
-                                  <p className="text-blue-200 font-semibold">{t(`gemColors.${color}`, `${color} Gem`)}</p>
-                                  {filtered.map(([stat, value], i) => (
-                                    <p key={i}>{t(`stats.${stat}`, stat)} : {value}</p>
-                                  ))}
-                                  <hr className="border-blue-700 my-1" />
-                                </div>
-                              );
-                            })
-                          }
-                        </div>
-                      )
-                    }
-                  </div>
-
-                </div>
-
-                {/* BLOC STATS SOUS LE PERSONNAGE */}
-                <div className="w-full mt-2 tank-targe">
-                  <div className="flex justify-between items-center w-full -mb-1 pr-2 tank-target">
-                    <div className="flex items-center space-x-4">
-                      <button
-                        className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                        onClick={() => setShowWeaponPopup(true)}
-                      >
-                        {t("weapon")}
-                      </button>
-                      <p className="text-white">
-                        {hunterWeapons[selectedCharacter]
-                          ? `+${hunterWeapons[selectedCharacter].mainStat || 0} ${characters[selectedCharacter]?.scaleStat || ''}`
-                          : 'Aucune arme définie'}
-                      </p>
-
+                    {/* TEXTE */}
+                    <div className="w-full mt-4 px-4">
+                      <h2 className="text-xl font-bold mb-2 text-center">⚠️ INFRACTION GAGOLDIQUE N-404 ⚠️</h2>
+                      <span
+                        ref={dytextRef}
+                        className="text-sm whitespace-pre-line font-mono leading-relaxed tracking-wide animate-fade-in text-left"
+                      />
                     </div>
-
-                    <button
-                      onClick={() => setEditStatsMode(!editStatsMode)}
-                      className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                    >
-                      {getEditLabel()}
-                    </button>
                   </div>
+                </div>
+              )}
+
+              <OCRPasteListener
+                onParsed={(parsed) => {
+                  console.log('Parsed envoyé à Builder :', parsed);
+                  setParsedArtifactData(parsed);
+                }}
+                updateArtifactFromOCR={updateArtifactFromOCR}
+              />
+
+              {comparisonData && (
+                <ComparisonPopup
+                  original={comparisonData}
+                  onClose={() => setComparisonData(null)}
+                  hunter={characters[selectedCharacter]}
+                  flatStats={flatStats} // ← Ajouter
+                  statsWithoutArtefact={statsWithoutArtefact} // ← Ajouter
+                  substatsMinMaxByIncrements={substatsMinMaxByIncrements}
+                  showTankMessage={showTankMessage} // ✅ Ajoute ça
+                  recalculateStatsFromArtifacts={recalculateStatsFromArtifacts} // ✅ Ajoute ça aussi
+                />
+              )}
+
+              {showNarrative && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999] overflow-y-auto py-10">
+                  <div
+                    ref={popupRef}
+                    className="relative w-[95vw] max-w-[1000px] p-4 bg-black/90 text-white 
+        border-4 border-white rounded-2xl shadow-2xl animate-pulse flex flex-col 
+        overflow-y-auto max-h-[90vh] scrollbar-none scroll-smooth"
+                  >
+                    {/* IMAGE dynamique */}
+                    {currentImage && (
+                      <div className="w-full flex items-center justify-center">
+                        <img
+                          ref={mainImageRef}
+                          src={currentImage?.src}
+                          alt="Image narrative"
+                          className="w-1/2 mx-auto rounded-md opacity-90 object-contain"
+                        />
+                      </div>
+                    )}
+
+                    {/* TEXTE */}
+                    <div className="w-full mt-4 px-4">
+                      <h2 className="text-xl font-bold mb-2 text-center">⚠️ INFRACTION GAGOLDIQUE NARRATIVE ⚠️</h2>
+                      <span
+                        ref={dytextRef}
+                        className="text-sm whitespace-pre-line font-mono leading-relaxed tracking-wide animate-fade-in text-left"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {showWeaponPopup && (
+                <WeaponPopup
+                  hunterName={selectedCharacter}
+                  onClose={() => setShowWeaponPopup(false)}
+                  onSave={handleSaveWeapon}
+                  existingWeapon={hunterWeapons[selectedCharacter] || {}}
+                  scaleStat={characters[selectedCharacter]?.scaleStat}
+                />
+              )}
+
+              {parsedArtifactData && (
+                <OcrConfirmPopup
+                  parsedData={parsedArtifactData}
+                  onConfirm={(data) => {
+                    // 🧠 Ici tu traites la sauvegarde finale (ex: mise à jour des artefactsData)
+                    console.log("CONFIRMED", data); // ➕ à remplacer par le vrai traitement
+                    setParsedArtifactData(null);
+                  }}
+                  onCancel={() => setParsedArtifactData(null)}
+                />
+              )}
+
+              <OcrConfirmPopup
+                parsedData={parsedArtifactData}
+                onConfirm={(data) => {
+                  applyOcrDataToArtifact(data);
+                  setShowPopup(false); // cache la pop-up
+                }}
+                onCancel={() => setShowPopup(false)}
+              />
+
+              <div className={showSernPopup ? 'blur-background' : ''}>
+                {/* Image + stats EN BAS */}
 
 
+                <div className="flex items-center justify-start w-full px-1 mb-4 tank-target">
 
-                  {!editStatsMode ? (
-                    <div className="bg-gray-900 p-2 rounded text-xs mt-2 relative group w-full">
-                      <div className="font-bold text-white text-center">{t("statFinals")}</div>
-                      <div className="flex flex-wrap w-full text-gray-200 text-xs">
-                        {Array.from({ length: Math.ceil(allStats.length / 4) }).map((_, colIndex) => (
-                          <div key={colIndex} className="flex flex-col mr-6">
-                            {allStats.slice(colIndex * 4, colIndex * 4 + 4).map((key) => {
-                              const base = typeof statsWithoutArtefact[key] === 'number' ? statsWithoutArtefact[key] : 0;
-                              const fromArtifact = typeof statsFromArtifacts[key] === 'number' ? statsFromArtifacts[key] : 0;
-                              const total = base + fromArtifact;
+                  <div className="flex flex-col items-center w-full gap-2 tank-target">
+
+
+                    {/* Bloc Noyaux à gauche + Personnage Centre + Bloc gemmes à droite*/}
+                    <div className="flex justify-start items-start space-x-6 mt-4">
+                      {/* Bloc Noyaux à gauche */}
+                      <div className="w-60 text-white text-[11px] flex flex-col justify-start">
+                        <h2 className="text-purple-300 font-bold mb-2"> <button
+                          className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-pink-200 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                          onClick={() => setShowNoyauxPopup(true)}
+                        >
+                          {t("cores")}
+                        </button></h2>
+                        {hunterCores[selectedCharacter] ? (
+                          <div className="text-xs space-y-2">
+                            {['Offensif', 'Défensif', 'Endurance'].map((type, index) => {
+                              const core = hunterCores[selectedCharacter]?.[type];
+                              if (!core) return null;
+
+                              const showPrimary = core.primary && parseFloat(core.primaryValue) !== 0;
+                              const showSecondary = core.secondary && parseFloat(core.secondaryValue) !== 0;
+
+                              if (!showPrimary && !showSecondary) return null;
 
                               return (
-                                <div key={key} className="mb-1 whitespace-nowrap">
-                                  <span className="text-blue-300">{t(`stats.${key}`)}</span>: <span className="text-white">{Math.floor(total)}</span>
+                                <div key={index} className="border-b border-purple-800 pb-1">
+                                  <p className="text-purple-200 font-semibold">{t(`coreTypes.${type}`)}</p>
+                                  {showPrimary && (
+                                    <p>{t(`stats.${core.primary}`)}: {core.primaryValue}</p>
+                                  )}
+                                  {showSecondary && (
+                                    <p>{core.secondary}: {core.secondaryValue}</p>
+                                  )}
                                 </div>
                               );
                             })}
                           </div>
-                        ))}
+                        ) : (
+                          <p>No cores defined</p>
+                        )}
+
+
+                      </div>
+                      {/* Bloc Personnage Centre */}
+                      <div className="relative">
+                        {selectedCharacter && characters[selectedCharacter] && characters[selectedCharacter].img ? (
+                          <>
+                            <img
+                              src={characters[selectedCharacter].img}
+                              alt={characters[selectedCharacter].name}
+                              className="w-64 mb-2 relative z-10"
+                              id="targetToDestroy"
+                            />
+                            {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
+                              <div
+                                className="absolute w-60 h-8 rounded-full blur-sm animate-fade-out z-0"
+                                style={{
+                                  backgroundColor: getElementColor(characters[selectedCharacter].element),
+                                  bottom: '0px'
+                                }}
+                              ></div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="relative">
+                            <img
+                              src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
+                              className="w-64 mb-2 relative z-10"
+                              id="targetToDestroy"
+                            />
+                          </div>
+                        )}
                       </div>
 
-                      {/* Infobulle au hover */}
-                      <div className="absolute top-0 left-full ml-4 w-64 bg-[#322d59] hover:bg-[#4a3d89] text-white text-[10px] p-2 rounded shadow-lg hidden group-hover:block z-10 border border-purple-500">
-                        <div className="mb-1 font-bold">Stat Breakdown:</div>
-                        {allStats.map((key) => {
-                          const base = typeof flatStats[key] === 'number' ? statsWithoutArtefact[key] : 0;
-                          const fromArtifact = typeof statsFromArtifacts[key] === 'number' ? statsFromArtifacts[key] : 0;
-                          const total = base + fromArtifact;
 
-                          return (
-                            <div key={key}>
-                              {t(`stats.${key}`)}: <span className="text-blue-300">{base}</span> + <span className="text-green-400">{fromArtifact}</span> = <span className="text-white">{Math.floor(total)}</span>
+                      {/* Bloc Gemmes à droite */}
+                      <div className="w-48 text-white text-xs flex flex-col items-start">
+                        <h2 className="text-blue-300 font-bold mb-2">
+                          <button
+                            className="bg-gradient-to-r font-bold from-blue-500 text-[20px] to-purple-500 hover:from-blue-600 hover:to-purple-600 text-blue-300 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                            onClick={() => setShowGemPopup(true)}
+                          >
+                            {t("gems")}
+                          </button>
+                        </h2>
+                        {
+                          Object.entries(gemData || {}).every(([_, stats]) =>
+                            Object.values(stats).every(value => !value)
+                          ) ? (
+                            <p>No gems defined</p>
+                          ) : (
+                            <div className="space-y-3">
+                              {
+                                Object.entries(gemData || {}).map(([color, stats]) => {
+                                  const filtered = Object.entries(stats || {}).filter(([_, value]) => value);
+                                  if (filtered.length === 0) return null;
+                                  return (
+                                    <div key={color}>
+                                      <p className="text-blue-200 font-semibold">{t(`gemColors.${color}`, `${color} Gem`)}</p>
+                                      {filtered.map(([stat, value], i) => (
+                                        <p key={i}>{t(`stats.${stat}`, stat)} : {value}</p>
+                                      ))}
+                                      <hr className="border-blue-700 my-1" />
+                                    </div>
+                                  );
+                                })
+                              }
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex gap-4 tank-targe">
-                      {/* Bloc gauche - Flat Stats */}
-                      <div className="bg-gray-800 p-2 rounded text-xs w-1/2">
-                        <div className="font-bold mb-2 text-white">Your flat stats</div>
-                        {Object.entries(flatStats).map(([key, value]) => (
-                          <div key={key} className="flex justify-between items-center gap-2 mb-1">
-                            <label className="w-24 text-gray-300">{key}</label>
-                            <input
-                              type="number"
-                              value={value}
-                              onChange={(e) =>
-                                setFlatStats((prev) => ({ ...prev, [key]: +e.target.value }))
-                              }
-                              className="w-20 bg-black text-white px-1 py-0.5 rounded text-right no-spinner"
-                            />
-                          </div>
-                        ))}
+                          )
+                        }
                       </div>
 
-                      {/* Bloc droite - Stats Without Artefact */}
-                      <div className="bg-gray-800 p-2 rounded text-xs w-1/2">
-                        <div className="font-bold mb-2 text-white">Stats you see without Artefacts</div>
-                        {Object.entries(statsWithoutArtefact).map(([key, value]) => (
-                          <div key={key} className="flex justify-between items-center gap-2 mb-1">
-                            <label className="w-24 text-gray-300">{key}</label>
-                            <input
-                              type="number"
-                              value={value}
-                              onChange={(e) =>
-                                setStatsWithoutArtefact((prev) => ({
-                                  ...prev,
-                                  [key]: +e.target.value,
-                                }))
-                              }
-                              className="w-20 bg-black text-white px-1 py-0.5 rounded text-right no-spinner"
-                            />
+                    </div>
+
+                    {/* BLOC STATS SOUS LE PERSONNAGE */}
+                    <div className="flex justify-center mt-4 w-full">
+                      <div className="flex flex-col items-center w-full gap-2">
+
+                        <div className="flex justify-between items-center w-full -mb-1 pr-2 tank-target">
+                          <div className="flex items-center space-x-4">
+                            <button
+                              className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                              onClick={() => setShowWeaponPopup(true)}
+                            >
+                              {t("weapon")}
+                            </button>
+                            <p className="text-white">
+                              {hunterWeapons[selectedCharacter]
+                                ? `+${hunterWeapons[selectedCharacter].mainStat || 0} ${characters[selectedCharacter]?.scaleStat || ''}`
+                                : 'Aucune arme définie'}
+                            </p>
+
                           </div>
-                        ))}
+
+                          <button
+                            onClick={() => setEditStatsMode(!editStatsMode)}
+                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                          >
+                            {getEditLabel()}
+                          </button>
+                        </div>
+
+
+
+                        {!editStatsMode ? (
+                          <div className="bg-gray-900 p-2 rounded text-xs mt-2 relative group w-full">
+                            <div className="font-bold text-white text-center">{t("statFinals")}</div>
+                            <div className="flex flex-wrap w-full text-gray-200 text-xs">
+                              {Array.from({ length: Math.ceil(allStats.length / 4) }).map((_, colIndex) => (
+                                <div key={colIndex} className="flex flex-col mr-6">
+                                  {allStats.slice(colIndex * 4, colIndex * 4 + 4).map((key) => {
+                                    const base = typeof statsWithoutArtefact[key] === 'number' ? statsWithoutArtefact[key] : 0;
+                                    const fromArtifact = typeof statsFromArtifacts[key] === 'number' ? statsFromArtifacts[key] : 0;
+                                    const total = base + fromArtifact;
+
+                                    return (
+                                      <div key={key} className="mb-1 whitespace-nowrap">
+                                        <span className="text-blue-300">{t(`stats.${key}`)}</span>: <span className="text-white">{Math.floor(total)}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Infobulle au hover */}
+                            <div className="absolute top-0 left-full ml-4 w-64 bg-[#322d59] hover:bg-[#4a3d89] text-white text-[10px] p-2 rounded shadow-lg hidden group-hover:block z-10 border border-purple-500">
+                              <div className="mb-1 font-bold">Stat Breakdown:</div>
+                              {allStats.map((key) => {
+                                const base = typeof flatStats[key] === 'number' ? statsWithoutArtefact[key] : 0;
+                                const fromArtifact = typeof statsFromArtifacts[key] === 'number' ? statsFromArtifacts[key] : 0;
+                                const total = base + fromArtifact;
+
+                                return (
+                                  <div key={key}>
+                                    {t(`stats.${key}`)}: <span className="text-blue-300">{base}</span> + <span className="text-green-400">{fromArtifact}</span> = <span className="text-white">{Math.floor(total)}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex gap-4 tank-targe">
+                            {/* Bloc gauche - Flat Stats */}
+                            <div className="bg-gray-800 p-2 rounded text-xs w-1/2">
+                              <div className="font-bold mb-2 text-white">Your flat stats</div>
+                              {Object.entries(flatStats).map(([key, value]) => (
+                                <div key={key} className="flex justify-between items-center gap-2 mb-1">
+                                  <label className="w-24 text-gray-300">{key}</label>
+                                  <input
+                                    type="number"
+                                    value={value}
+                                    onChange={(e) =>
+                                      setFlatStats((prev) => ({ ...prev, [key]: +e.target.value }))
+                                    }
+                                    className="w-20 bg-black text-white px-1 py-0.5 rounded text-right no-spinner"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Bloc droite - Stats Without Artefact */}
+                            <div className="bg-gray-800 p-2 rounded text-xs w-1/2">
+                              <div className="font-bold mb-2 text-white">Stats you see without Artefacts</div>
+                              {Object.entries(statsWithoutArtefact).map(([key, value]) => (
+                                <div key={key} className="flex justify-between items-center gap-2 mb-1">
+                                  <label className="w-24 text-gray-300">{key}</label>
+                                  <input
+                                    type="number"
+                                    value={value}
+                                    onChange={(e) =>
+                                      setStatsWithoutArtefact((prev) => ({
+                                        ...prev,
+                                        [key]: +e.target.value,
+                                      }))
+                                    }
+                                    className="w-20 bg-black text-white px-1 py-0.5 rounded text-right no-spinner"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                       </div>
                     </div>
-                  )}
 
+                  </div>
                 </div>
-
               </div>
             </div>
           </div>
-
           <div className="flex flex-col gap-y-1">
             {[...rightArtifacts].map((item, idx) => (
               <ArtifactCard
