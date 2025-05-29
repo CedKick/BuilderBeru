@@ -25,7 +25,9 @@ export function parseOcrText(text) {
   boucles: 'Earrings',
   boucle: 'Earrings', 
   armure: 'Chest',
-  demon : 'Chest'
+  demon : 'Chest',
+  'niv. 100 e' : 'Earrings'
+
 };
 
 

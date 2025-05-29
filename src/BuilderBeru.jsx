@@ -869,65 +869,226 @@ const onConfirm = (parsedData) => {
   // {delay=5200}
   // `;
 
-
-  const narrativeText = `
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747834575/AnotherGagoldFound_yqrrnb.png ref=mainImage class=fade-in size=320}
-Chargement du rapport Kanae...
-{delay=1500}
-
-{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747685476/Sad_Anime_Ost_Believe_Me_udqopx.mp3}
-{delay=2500}
-
-{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747830888/Anime_girl_yawn_cq3iy3.mp3}
-
-*bâillement léger*
-
-Kanae entrouvre doucement la porte de sa chambre.
-
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747831036/kanae1_ealvhz.png ref=mainImage class=fade-in size=320}
-
-Ses cheveux sont en bataille, elle porte un pyjama trop grand pour elle, et ses joues sont un peu rouges.
-
-{delay=1500}
-
-"Encore ces... sauvegardes. Qui fait ça... à cette heure-là... ?"
-
-{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747831216/sigh_confused_ctuchy.mp3}
-
-Elle frotte ses yeux, l'air perdue.
-
-"J’ai rêvé que quelqu’un cliquait... encore... et encore..."
+  const mobileNarrativeTextEn = `
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/BuilderBeruUnderConstruction_ew2r81.png}
 
 {delay=1000}
 
-Elle observe autour d’elle. Sa chambre est un peu en désordre.
-Des peluches tombent d’une étagère.
-Un sabre traîne à côté d’un pot de nouilles froides.
+A faint traffic noise echoes through the streets of Seoul at dusk...
+
+{delay=1500}
+
+Tank turns to Béru, holding his phone firmly in one hand, an apple in the other.
+
+{delay=1500}
+
+"Béru... I’ve got bad news."
+
+{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747831216/sigh_confused_ctuchy.mp3}
+{delay=1000}
+
+"The mobile site... BuilderBeru... is down."
+
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/SernHacking_ymkjgg.png}
+
+"The SERN... took control of the domain."
+
+{delay=1500}
+
+Béru frowns. Kanae, a bit further away, is still playing on her phone, unaware of the growing threat.
 
 {sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747832147/Gong_Sound_Effect_k85f8f.mp3}
+{delay=1000}
 
-"...Vous... m’avez réveillée."
+Tank slowly places his phone on the ground. The construction lights flicker behind them. The “Under Construction” sign isn’t a joke… it’s a declaration of war.
 
-{delay=800}
+"What if we took back control... together?"
 
-Ses yeux croisent les vôtres. Un léger sourire gêné.
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/BuilderBeruWorking_ucfvoo.png}
 
-"Tu m’as déjà vue en pyjama maintenant... 😳"
+The team gathers in the IT room. Kly, eyes locked on lines of code, tries to find the bug’s origin. Béru remains silent. Kanae starts to worry. Tank… bites into his apple.
 
-{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747832552/Scared_anime_female_or9gvg.mp3}
+"I don’t get it… everything looks fine..."
 
-Kanae détourne le regard, croise les bras.
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482409/fromobile_pdlnzr.png}
 
-"Bon. J’vais retourner me coucher. Mais... juste cette fois, arrête les sauvegardes, d’accord ?"
+Tank, deep in thought, looks at Kanae.
 
-{delay=2000}
+"Let’s just throw your phone into the river… maybe it’ll free up the flow."  
+Caught off guard, Kanae complies without question.
 
-"Sinon je descends en vrai."
+Tank tries another idea…
+{delay=1000}
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/BuilderBeruWorking_ucfvoo.png}
+{delay=1000}
+"What if we deleted… the bug? Like… Béru?"
 
-{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747832749/Happy_Anime_girl_Sound_Effect_whlcx6.mp3}
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482386/BeruAngry_zkblsv.png}
 
-{delay=2000}
+Béru explodes:  
+"YOU WANNA END UP IN MY ANTHILL, TANK?  
+We’ll give you a GREAT welcome 😡😡😠"
 
+{delay=1000}
+
+Kly suddenly sits up.
+
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482388/Eureka_i5dii3.png}
+
+"EUREKA! We’ll bypass it. The PC version is already live!"
+
+The team lights up. The plan is simple. Kanae, dressed as a schoolteacher, will teach users how to copy their artefacts manually while they wait for more.
+
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482388/ExempleCopyPasta_xljgbr.png}
+
+Kanae beams.
+
+"So... to make an efficient copy pasta, just follow this model..."
+
+Tank listens closely, still chewing his apple. Béru, arms crossed, silently approves.
+
+{delay=1500}
+
+Final text appears on the screen...
+
+BuilderBeru.com – Solo Leveling Arise FanSite  
+Official PC Release: May 31, 2025
+
+Light mobile version expected end of June 2025...  
+If the SERN doesn’t block us. And if Tank doesn’t delete Béru. 😠
+
+{delay=1000}
+
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748485272/waitforyou_sspf8i.png}
+
+We’re waiting for you on BuilderBeru.com...  
+Thank you all!
+
+Signed, Kly – Member of Gagold Guild  
+Guild Leader: BobbyJones
+
+BobbyJones:  
+"We’re recruiting people who clear their Guild Bosses and do their dailies!"
+
+Kly:  
+"Not the time to advertise, Bob 🙄"
+
+{delay=1000}
+
+BobbyJones:  
+"Oops... 😏"
+
+BobbyJones:  
+"Forza Inter!"
+
+{delay=15000000}
+`;
+
+
+
+const mobileNarrativeTextFr = `
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/BuilderBeruUnderConstruction_ew2r81.png}
+
+{delay=1000}
+
+Un léger bruit de trafic résonne dans les rues de Séoul au crépuscule...
+
+{delay=1500}
+
+Tank se tourne vers Béru, tenant fermement son téléphone dans une main, une pomme dans l'autre.
+
+{delay=1500}
+
+"Béru... j’ai une mauvaise nouvelle."
+
+{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747831216/sigh_confused_ctuchy.mp3}
+{delay=1000}
+
+"Le site mobile... BuilderBeru... est en panne."
+
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/SernHacking_ymkjgg.png}
+
+"Le SERN... a pris le contrôle du domaine."
+
+{delay=1500}
+
+Béru fronce les sourcils. Kanae, un peu plus loin, s’amuse avec son propre téléphone, ignorant encore la gravité de la situation.
+
+{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747832147/Gong_Sound_Effect_k85f8f.mp3}
+{delay=1000}
+
+Tank pose lentement son téléphone au sol. La lumière des chantiers clignote derrière eux. Le panneau "Under Construction" n’est pas un mensonge... c’est un signal de guerre.
+
+"Et si on reprenait le contrôle... ensemble ?"
+
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/BuilderBeruWorking_ucfvoo.png}
+
+L’équipe se réunit dans la salle informatique. Kly, les yeux rivés sur les lignes de code, tente de comprendre l’origine du bug. Béru reste silencieux. Kanae commence à s’inquiéter. Tank... croque dans sa pomme.
+
+"Je comprends pas... tout semble correct..."
+
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482409/fromobile_pdlnzr.png}
+
+Tank, pensif, regarde Kanae.
+
+"On a qu’à jeter ton téléphone dans la rivière... peut-être que ça libérera le flux." Kanae, prise au dépourvu, exécute sans réfléchir.
+
+Tank tente une nouvelle proposition...
+{delay=1000}
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482387/BuilderBeruWorking_ucfvoo.png}
+{delay=1000}
+"Et si on supprimait... le bug ? Genre... Béru ?"
+
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482386/BeruAngry_zkblsv.png}
+
+Béru explose : "TU VEUX FINIR DANS MA FOURMILLÈRE, TANK ? On va BIEN t'accueillir 😡😡😠"
+
+{delay=1000}
+
+Kly se redresse soudainement.
+
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482388/Eureka_i5dii3.png}
+
+"EUREKA ! On va contourner. Une version PC est déjà en ligne !"
+
+L’équipe s’illumine. Le plan est simple. Kanae, en professeure écolière, va enseigner aux utilisateurs comment copier leurs artefacts manuellement, en attendant mieux.
+
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748482388/ExempleCopyPasta_xljgbr.png}
+
+Kanae rayonne.
+
+"Alors... pour faire un copy pasta efficace, suivez ce modèle..."
+
+Tank l’écoute attentivement, la bouche encore pleine de pomme. Béru, bras croisés, approuve silencieusement.
+
+{delay=1500}
+
+Texte final s'affiche à l’écran...
+
+BuilderBeru.com – FanSite Solo Leveling AriseSortie officielle PC : 31 Mai 2025
+
+Version mobile allégée prévue fin Juin 2025... si le SERN ne nous bloque pas. Et si Tank ne supprime pas Béru. 😠
+
+{delay=1000}
+
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748485272/waitforyou_sspf8i.png}
+
+Nous vous attendons sur BuilderBeru.com... Merci à vous !
+
+Signé Kly. Membre de la guilde Gagold
+Chef de Guilde : BobbyJones.
+
+BobbyJones : "Nous recrutons des gens qui font leur boss de guilde et qui font leur dailies !
+
+Kly : "C'est pas le moment de faire ta pub Bob 🙄"
+
+{delay=1000}
+
+BobbyJones : "Ah pardon... 😏"
+
+BobbyJones : "Allez l'Inter !"
+
+{delay=15000000}
 `;
 
 
@@ -1974,19 +2135,22 @@ setArtifactsData(prev => ({
   //   setFlatStats(getFlatStatsWithWeapon(char, weapon));
   // }, [selectedCharacter, hunterWeapons]);
 
-  useEffect(() => {
-    if (showNarrative) {
-      const steps = parseNarrative(narrativeText);
-      runNarrativeSteps(steps, {
-        refs,
-        setCurrentImage,
-        dytextRef,
-        setShowNarrative,
-        triggerFadeOutAllMusic, // 👈 ici aussi
-        playingAudiosRef
-      });
-    }
-  }, [showNarrative]);
+ useEffect(() => {
+  if (showNarrative) {
+    const isFrench = navigator.language.startsWith("fr"); // ou ton propre détecteur de langue
+    const selectedNarrative = isFrench ? mobileNarrativeTextFr : mobileNarrativeTextEn;
+
+    const steps = parseNarrative(selectedNarrative);
+    runNarrativeSteps(steps, {
+      refs,
+      setCurrentImage,
+      dytextRef,
+      setShowNarrative,
+      triggerFadeOutAllMusic,
+      playingAudiosRef,
+    });
+  }
+}, [showNarrative]);
 
   useEffect(() => {
     if (showSernPopup) {
@@ -2595,6 +2759,45 @@ setArtifactsData(prev => ({
       setSelectedCharacter('');
     }
   }, [selectedElement, selectedClass, characters, selectedCharacter]);
+
+useEffect(() => {
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const alreadyShown = sessionStorage.getItem('mobileNarrativeShown');
+
+  if (isMobile && !alreadyShown) {
+    sessionStorage.setItem('mobileNarrativeShown', 'true');
+
+    const mobileText = `
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747834575/AnotherGagoldFound_yqrrnb.png ref=mainImage class=fade-in size=320}
+Chargement du rapport Tank...
+
+{delay=1500}
+
+{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747830888/Anime_girl_yawn_cq3iy3.mp3}
+*bip bip*
+
+Tank observe l’écran… d’un air confus.
+
+"Monarque... cette version mobile n’est pas encore terminée…"
+
+{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747831036/kanae1_ealvhz.png ref=mainImage class=fade-in size=320}
+
+{delay=1500}
+
+"Mais ne t’inquiète pas… Béru travaille dur ! 😈"
+
+{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747832552/Scared_anime_female_or9gvg.mp3}
+
+"Reviens bientôt… et prends un cookie en attendant 🍪... ou une pomme 😶"
+
+{delay=20000000000}
+`;
+
+    // setNarrativeText(mobileText);
+    setShowNarrative(true);
+  }
+}, []);
+  
 
 
   return (
