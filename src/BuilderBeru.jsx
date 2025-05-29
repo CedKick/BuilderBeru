@@ -421,7 +421,7 @@ const getChibiScreenPos = (ref) => {
     y: rect.top,
   };
 };
-
+let mobileNarrativeAlreadyShown = false;
 
 const BuilderBeru = () => {
   const { t } = useTranslation();
@@ -949,7 +949,7 @@ Tank listens closely, still chewing his apple. Béru, arms crossed, silently app
 
 {delay=1500}
 
-Final text appears on the screen...
+Finally where we are.
 
 BuilderBeru.com – Solo Leveling Arise FanSite  
 Official PC Release: May 31, 2025
@@ -981,7 +981,7 @@ BobbyJones:
 BobbyJones:  
 "Forza Inter!"
 
-{delay=15000000}
+{delay=15000}
 `;
 
 
@@ -1063,7 +1063,7 @@ Tank l’écoute attentivement, la bouche encore pleine de pomme. Béru, bras cr
 
 {delay=1500}
 
-Texte final s'affiche à l’écran...
+Finalement... nous y sommes..
 
 BuilderBeru.com – FanSite Solo Leveling AriseSortie officielle PC : 31 Mai 2025
 
@@ -1088,7 +1088,7 @@ BobbyJones : "Ah pardon... 😏"
 
 BobbyJones : "Allez l'Inter !"
 
-{delay=15000000}
+{delay=15000}
 `;
 
 
@@ -2762,11 +2762,8 @@ setArtifactsData(prev => ({
 
 useEffect(() => {
   const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const alreadyShown = sessionStorage.getItem('mobileNarrativeShown');
-
-  if (isMobile && !alreadyShown) {
-    sessionStorage.setItem('mobileNarrativeShown', 'true');
-
+ if (isMobile && !mobileNarrativeAlreadyShown) {
+    mobileNarrativeAlreadyShown = true; // 🔒 évite la redéclenchement
     const mobileText = `
 {img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747834575/AnotherGagoldFound_yqrrnb.png ref=mainImage class=fade-in size=320}
 Chargement du rapport Tank...
@@ -2790,7 +2787,7 @@ Tank observe l’écran… d’un air confus.
 
 "Reviens bientôt… et prends un cookie en attendant 🍪... ou une pomme 😶"
 
-{delay=20000000000}
+{delay=100000}
 `;
 
     // setNarrativeText(mobileText);
@@ -2803,7 +2800,7 @@ Tank observe l’écran… d’un air confus.
   return (
     <div className="h-screen bg-gray-950 text-white p-1 overflow-y-auto tank-target">
       <div className="flex-1 overflow-hidden">
-        <div className="grid grid-cols-3 justify-items-center gap-2 px-1 tank-target">
+        <div className="grid grid-cols-[1fr_2fr_1fr] gap-0.5 tank-target">
           <div className={showSernPopup ? 'blur-background' : ''}>
             <div
               id="tank-laser"
