@@ -2945,60 +2945,53 @@ Tank observe l’écran… d’un air confus.
                             </div>
 
 
-                            <div className="w-full flex justify-between tank-target mt-0 gap-2 text-sm">
-                              {/* Bouton BobbyKick - Reset */}
-                              <div className="flex items-center space-x-2 tank-target">
+                            <div className="w-full flex justify-between tank-target mt-0 gap-2 text-sm flex-wrap sm:flex-nowrap">
+  <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full items-center tank-target">
 
-                                <button
-                                  onClick={handleResetStats}
-                                  className="bg-gradient-to-r tank-target from-black-900 to-black-700 hover:from-black-700 hover:to-black-500 text-white font-bold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-red-500/40"
-                                >
-                                  BobbyKick
-                                </button>
+    <button
+      onClick={handleResetStats}
+      className="bg-gradient-to-r from-black-900 to-black-700 hover:from-black-700 hover:to-black-500 text-white font-bold px-4 py-2 text-sm rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-red-500/40 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
+    >
+      BobbyKick
+    </button>
 
-                                {/* Bouton Save */}
-                                <button
-                                  onClick={handleSaveBuild}
-                                  className="bg-gradient-to-r tank-target from-emerald-800 to-green-600 hover:from-green-600 hover:to-green-400 text-white font-bold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-green-400/40"
-                                >
-                                  Save
-                                </button>
+    <button
+      onClick={handleSaveBuild}
+      className="bg-gradient-to-r from-emerald-800 to-green-600 hover:from-green-600 hover:to-green-400 text-white font-bold px-4 py-2 text-sm rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-green-400/40 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
+    >
+      Save
+    </button>
 
+    <button
+      onClick={handleExportAllBuilds}
+      className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
+    >
+      Export
+    </button>
 
-                                <div className="w-full tank-target flex justify-between items-center mt-0 text-sm">
-                                  {/* Espace à droite (ex : icône future) */}
+    <button
+      onClick={handleImportBuild}
+      className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
+    >
+      Import
+    </button>
 
-                                  <div id="buildIcons" className="flex tank-target gap-2 items-center">
-                                    {recentBuilds.length > 0 && recentBuilds.map((charKey) => (
-                                      <img
-                                        key={charKey}
-                                        src={characters[charKey]?.icon || '/default.png'}
-                                        alt={characters[charKey]?.name || charKey}
-                                        onClick={() => handleClickBuildIcon(charKey)}
-                                        className="w-8 h-8 rounded-full tank-targe cursor-pointer border-2 border-purple-700 hover:scale-110 transition"
-                                      />
-                                    ))}
-                                  </div>
-                                </div>
-                                <div className="w-full flex justify-between tank-targe items-center mt-0 text-sm">
-                                  <div className="flex items-center space-x-2">
-                                    <button
-                                      onClick={handleExportAllBuilds}
-                                      className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white text-xs font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                                    >
-                                      Export
-                                    </button>
+    {/* Icons à droite */}
+    <div id="buildIcons" className="flex gap-2 items-center mt-1 sm:mt-0">
+      {recentBuilds.length > 0 && recentBuilds.map((charKey) => (
+        <img
+          key={charKey}
+          src={characters[charKey]?.icon || '/default.png'}
+          alt={characters[charKey]?.name || charKey}
+          onClick={() => handleClickBuildIcon(charKey)}
+          className="w-8 h-8 rounded-full cursor-pointer border-2 border-purple-700 hover:scale-110 transition"
+        />
+      ))}
+    </div>
 
-                                    <button
-                                      onClick={handleImportBuild}
-                                      className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white text-xs font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                                    >
-                                      Import
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+  </div>
+</div>
+
 
 
                             {showImportSaveWarning && (
@@ -3518,6 +3511,30 @@ Tank observe l’écran… d’un air confus.
                   </>
                 )}
 
+ <div className="h-[50px] mt-1">
+
+
+            <div className="relative w-full h-200">
+              {/* Zone pour positionner DOM au-dessus du canvas */}
+
+
+
+
+              {showChibiBubble && chibiMessage && (
+                <ChibiBubble
+                  key={`bubble-${bubbleId}`} // <-- force un rerender total à chaque message
+                  message={chibiMessage}
+                  position={chibiPos}
+                />
+              )}
+              <div className="flex justify-center items-center overflow-x-auto relative gap-1">
+                <canvas id="canvas-left" width="600" height="240" className="rounded-l-lg shadow-md bg-black w-[40vw] h-auto" />
+                <canvas id="canvas-center" width="600" height="240" className="shadow-md bg-black w-[40vw] h-auto" />
+                <canvas id="canvas-right" width="600" height="240" className="rounded-r-lg shadow-md bg-black w-[40vw] h-auto" />
+
+              </div>
+            </div>
+          </div>
               </div>
             </div>
           </div>
