@@ -1873,6 +1873,17 @@ setArtifactsData(prev => ({
     }
   };
 
+const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+useEffect(() => {
+  const handleResize = () => {
+    setIsMobile(window.innerWidth <= 768);
+  };
+
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, []);
+
   useEffect(() => {
     const recent = JSON.parse(localStorage.getItem('recentBuilds') || '[]');
     if (recent.length > 0) {
@@ -2761,7 +2772,7 @@ setArtifactsData(prev => ({
   }, [selectedElement, selectedClass, characters, selectedCharacter]);
 
 useEffect(() => {
-  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
  if (isMobile && !mobileNarrativeAlreadyShown) {
     mobileNarrativeAlreadyShown = true; // 🔒 évite la redéclenchement
     const mobileText = `
