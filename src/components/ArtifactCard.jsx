@@ -57,25 +57,25 @@ const mainStatMaxByIncrements = {
     4: 25.5,
   },
   'Critical Hit Damage': {
-    0: 81.5,
-    1: 81.5,
-    2: 81.5,
-    3: 81.5,
-    4: 81.5,
+    0: 5899,
+    1: 5899,
+    2: 5899,
+    3: 5899,
+    4: 5899,
   },
   'Defense Penetration': {
-    0: 36,
-    1: 36,
-    2: 36,
-    3: 36,
-    4: 36,
+    0: 5899,
+    1: 5899,
+    2: 5899,
+    3: 5899,
+    4: 5899,
   },
   'Healing Given Increase (%)': {
-    0: 30,
-    1: 30,
-    2: 30,
-    3: 30,
-    4: 30,
+    0: 6.12,
+    1: 6.12,
+    2: 6.12,
+    3: 6.12,
+    4: 6.12,
   },
   'MP Consumption Reduction': {
     0: 30,
@@ -99,11 +99,11 @@ const mainStatMaxByIncrements = {
     4: 30,
   },
   'Damage Increase': {
-    0: 24,
-    1: 24,
-    2: 24,
-    3: 24,
-    4: 24,
+    0: 4899,
+    1: 4899,
+    2: 4899,
+    3: 4899,
+    4: 4899,
   },
   'Damage Reduction': {
     0: 24,
@@ -569,7 +569,7 @@ const ArtifactCard = ({
                 ? calculateMainStatValue(artifactData.mainStat, artifactData.subStatsLevels)
                 : 0
             }
-            className="w-8 p-[2px] rounded bg-[#2d2d5c] text-center text-xs text-white opacity-80 cursor-not-allowed"
+            className="w-16 p-[2px] rounded bg-[#2d2d5c] text-center text-xs text-white opacity-80 cursor-not-allowed"
           />
         )}
       </div>

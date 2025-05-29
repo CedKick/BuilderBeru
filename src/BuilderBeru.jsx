@@ -793,6 +793,13 @@ const BuilderBeru = () => {
   const recalculateStatsFromArtifacts = () => {
     if (!selectedCharacter) return;
 
+    const allowedRawStats = [
+      "Precision", "Defense Penetration", "Healing Given Increase (%)",
+      "MP Recovery Rate Incr. (%)", "Additional MP", "MP Consumption Reduc.",
+      "DMG Incr.", "DMG Reduction"
+      // Ajoute ici toutes les autres stats non liées aux stats de base
+    ];
+
     const flat = { ...flatStats }; // ⚠️ utilise flatStats réel du state
     const updated = {};
 
@@ -810,6 +817,8 @@ const BuilderBeru = () => {
           updated[baseStat] = (updated[baseStat] || 0) + (base * levelInfo.value / 100);
         } else {
           updated[stat] = (updated[stat] || 0) + levelInfo.value;
+
+
         }
       });
 
@@ -828,7 +837,15 @@ const BuilderBeru = () => {
       }
     });
 
+    // setStatsFromArtifacts(completeStats(updated));
+
+    // ➤ Ajouter les stats manquantes (non liées aux % et non présentes dans flatStats)
+
+
+
+
     setStatsFromArtifacts(completeStats(updated));
+
   };
 
   const tankMessageRef = useRef('');
@@ -1953,6 +1970,12 @@ BobbyJones : "Allez l'Inter !"
       'Defense': (char?.defense || 0) + (scaleStat === 'Defense' ? weaponBoost : 0),
       'HP': (char?.hp || 0) + (scaleStat === 'HP' ? weaponBoost : 0),
       'Critical Rate': char?.critRate || 0,
+      'Defense Penetration': 0,
+      'Healing Given Increase (%)': 0,
+      'Damage Increase': 0,
+      'MP Consumption Reduction': 0,
+      'Damage Reduction': 0,
+      'MP Recovery Rate Increase (%)': 0,
       'Precision': weapPrecision, // ✅ Ajouté ici
     };
   };
@@ -1968,13 +1991,26 @@ BobbyJones : "Allez l'Inter !"
     Defense: 0,
     HP: 0,
     'Critical Rate': 0,
+    'Defense Penetration': 0,
+    'Healing Given Increase (%)': 0,
+    'Damage Increase': 0,
+    'MP Consumption Reduction': 0,
+    'Damage Reduction': 0,
+    'MP Recovery Rate Increase (%)': 0,
   });
 
   const [statsFromArtifacts, setStatsFromArtifacts] = useState({
     Attack: 0,
     Defense: 0,
     HP: 0,
-    'Critical Rate': 0
+    'Critical Rate': 0,
+    'Defense Penetration': 0,
+    'Healing Given Increase (%)': 0,
+    'Additional MP': 0,
+    'Damage Increase': 0,
+    'MP Consumption Reduction': 0,
+    'Damage Reduction': 0,
+    'MP Recovery Rate Increase (%)': 0,
   });
 
 
@@ -2026,6 +2062,12 @@ BobbyJones : "Allez l'Inter !"
     'Defense': defaultCharacter?.defense || 0,
     'HP': defaultCharacter?.hp || 0,
     'Critical Rate': defaultCharacter?.critRate || 0,
+    'Defense Penetration': 0,
+    'Healing Given Increase (%)': 0,
+    'Damage Increase': 0,
+    'MP Consumption Reduction': 0,
+    'Damage Reduction': 0,
+    'MP Recovery Rate Increase (%)': 0,
   });
 
   const computeStatsWithoutArtefact = (flatStats, gemData, noyaux) => {
@@ -2033,7 +2075,14 @@ BobbyJones : "Allez l'Inter !"
       'Attack': 0,
       'HP': 0,
       'Defense': 0,
-      'Critical Rate': 0
+      'Critical Rate': 0,
+      'Defense Penetration': 0,
+      'Healing Given Increase (%)': 0,
+      'Additional MP': 0,
+      'Damage Increase': 0,
+      'MP Consumption Reduction': 0,
+      'Damage Reduction': 0,
+      'MP Recovery Rate Increase (%)': 0,
     };
 
     const percentMap = {
@@ -2068,6 +2117,14 @@ BobbyJones : "Allez l'Inter !"
       'HP': Math.round((flatStats.HP || 0) + allBonuses.HP),
       'Defense': Math.round((flatStats.Defense || 0) + allBonuses.Defense),
       'Critical Rate': Math.round((flatStats['Critical Rate'] || 0) + allBonuses['Critical Rate']),
+      'Defense Penetration': Math.round((flatStats['Defense Penetration'] || 0) + allBonuses['Defense Penetration']),
+      'Additional MP': Math.round((flatStats['Additional MP'] || 0) + allBonuses['Additional MP']),
+      'Healing Given Increase (%)': Math.round((flatStats['Healing Given Increase (%)'] || 0) + allBonuses['Healing Given Increase (%)']),
+      'Damage Increase': Math.round((flatStats['Damage Increase'] || 0) + allBonuses['Damage Increase']),
+      'MP Consumption Reduction': Math.round((flatStats['MP Consumption Reduction'] || 0) + allBonuses['MP Consumption Reduction']),
+      'Damage Reduction': Math.round((flatStats['Damage Reduction'] || 0) + allBonuses['Damage Reduction']),
+      'MP Recovery Rate Increase (%)': Math.round((flatStats['MP Recovery Rate Increase (%)'] || 0) + allBonuses['MP Recovery Rate Increase (%)']),
+
     };
   };
 
@@ -2152,6 +2209,14 @@ BobbyJones : "Allez l'Inter !"
         'Defense': charStats.defense + (scaleStat === 'Defense' ? weaponBoost : 0),
         'HP': charStats.hp + (scaleStat === 'HP' ? weaponBoost : 0),
         'Critical Rate': charStats.critRate,
+        'Defense Penetration': 0,
+        'Healing Given Increase (%)': 0,
+        'Additional MP': 0,
+        'Damage Increase': 0,
+        'MP Consumption Reduction': 0,
+        'Damage Reduction': 0,
+        'MP Recovery Rate Increase (%)': 0,
+
       })
     );
   }, [selectedCharacter, hunterWeapons]);
@@ -2280,6 +2345,14 @@ BobbyJones : "Allez l'Inter !"
         'Defense': char.defense,
         'HP': char.hp,
         'Critical Rate': char.critRate,
+        'Defense Penetration': 0,
+        'Healing Given Increase (%)': 0,
+        'Additional MP': 0,
+        'Damage Increase': 0,
+        'MP Consumption Reduction': 0,
+        'Damage Reduction': 0,
+        'MP Recovery Rate Increase (%)': 0,
+
       };
     }
   }, [selectedCharacter]);
@@ -2680,7 +2753,14 @@ BobbyJones : "Allez l'Inter !"
       Attack: 0,
       Defense: 0,
       HP: 0,
-      'Critical Rate': 0
+      'Critical Rate': 0,
+      'Defense Penetration': 0,
+      'Healing Given Increase (%)': 0,
+      'Additional MP': 0,
+      'Damage Increase': 0,
+      'MP Consumption Reduction': 0,
+      'Damage Reduction': 0,
+      'MP Recovery Rate Increase (%)': 0,
     };
 
     Object.values(artifactsData).forEach(({ mainStat, subStats, subStatsLevels }) => {
@@ -2698,13 +2778,14 @@ BobbyJones : "Allez l'Inter !"
 
         const cleanStat = stat.trim();
 
-        const key = ['Attack', 'HP', 'Defense', 'Critical Rate'].find(
+        const key = ['Attack', 'HP', 'Defense', 'Critical Rate', 'Defense Penetration', 'Healing Given Increase (%)', 'Additional MP', 'Damage Increase', 'MP Consumption Reduction', 'Damage Reduction', 'MP Recovery Rate Increase (%)',
+        ].find(
           valid => cleanStat === valid || cleanStat === `${valid} %`
         );
 
         if (!key) return;
 
-        if (stat.includes('%')) {
+        if (stat.endsWith('%')) {
           newStatsFromArtifacts[key] += Math.floor(flatStats[key] * value / 100);
         } else {
           newStatsFromArtifacts[key] += value;
