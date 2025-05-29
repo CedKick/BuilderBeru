@@ -2844,7 +2844,7 @@ Tank observe l’écran… d’un air confus.
         <div className="w-[95vw] mx-auto">
           {/* Ton bloc central ici */}
           {mobileView === 'main' && (
-         <div className="flex flex-col items-center w-full max-w-full sm:max-w-[1100px] mx-auto px-2 sm:px-4">
+         <div className="flex flex-col items-center w-full max-w-[95vw] sm:max-w-[1100px] mx-auto px-2 sm:px-4 text-[13px] sm:text-[14px]">
 
 
             <div className="flex flex-col justify-center items-center h-full tank-target">
@@ -2852,8 +2852,8 @@ Tank observe l’écran… d’un air confus.
               <div className="flex items-center justify-start w-full px-1 mb-4 tank-target">
                 {/* Colonne Gauche – Langues */}
                 <div className="flex gap-1 items-center ml-0 mr-4">
-                  <button className="px-2 py-1 text-sm rounded bg-zinc-800 text-white" onClick={() => i18n.changeLanguage('fr')}>FR</button>
-                  <button className="px-2 py-1 text-sm rounded bg-zinc-800 text-white" onClick={() => i18n.changeLanguage('en')}>EN</button>
+                  <button className="px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded bg-zinc-800 text-white" onClick={() => i18n.changeLanguage('fr')}>FR</button>
+                  <button className="px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded bg-zinc-800 text-white" onClick={() => i18n.changeLanguage('en')}>EN</button>
                 </div>
 
                 {/* Colonne Centre – Éléments + Select + Classes */}
@@ -2868,7 +2868,7 @@ Tank observe l’écran… d’un air confus.
                           src={ICON_ELEMENTS[key]}
                           alt={el}
                           onClick={() => handleElementClick(el)}
-                          className={`w-9 h-9 cursor-pointer transition-all duration-300 tank-target 
+                          className={`"w-9 h-9 max-sm:w-6 max-sm:h-6" cursor-pointer transition-all duration-300 tank-target 
               ${selectedElement === el ? 'opacity-100 drop-shadow-md' : 'opacity-40'}`}
                         />
                       );
@@ -2941,7 +2941,7 @@ Tank observe l’écran… d’un air confus.
 
                   <button
                     onClick={handleResetStats}
-                    className="bg-gradient-to-r tank-target from-black-900 to-black-700 hover:from-black-700 hover:to-black-500 text-white font-bold py-1 px-4 rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-red-500/40"
+                    className="bg-gradient-to-r tank-target from-black-900 to-black-700 hover:from-black-700 hover:to-black-500 text-white font-bold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-red-500/40"
                   >
                     BobbyKick
                   </button>
@@ -2949,7 +2949,7 @@ Tank observe l’écran… d’un air confus.
                   {/* Bouton Save */}
                   <button
                     onClick={handleSaveBuild}
-                    className="bg-gradient-to-r tank-target from-emerald-800 to-green-600 hover:from-green-600 hover:to-green-400 text-white font-bold py-1 px-4 rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-green-400/40"
+                    className="bg-gradient-to-r tank-target from-emerald-800 to-green-600 hover:from-green-600 hover:to-green-400 text-white font-bold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-green-400/40"
                   >
                     Save
                   </button>
@@ -2974,14 +2974,14 @@ Tank observe l’écran… d’un air confus.
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={handleExportAllBuilds}
-                        className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white text-xs font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                        className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white text-xs font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
                       >
                         Export
                       </button>
 
                       <button
                         onClick={handleImportBuild}
-                        className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white text-xs font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                        className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white text-xs font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
                       >
                         Import
                       </button>
@@ -3011,13 +3011,13 @@ Tank observe l’écran… d’un air confus.
                           handleSaveBuild();
                           playMusic();
                         }}
-                        className="bg-green-700 hover:bg-green-600 px-4 py-2 rounded text-white"
+                        className="bg-green-700 hover:bg-green-600 px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded text-white"
                       >
                         Yes
                       </button>
                       <button
                         onClick={() => setShowImportSaveWarning(false)}
-                        className="bg-red-700 hover:bg-red-600 px-4 py-2 rounded text-white"
+                        className="bg-red-700 hover:bg-red-600 px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded text-white"
                       >
                         No
                       </button>
@@ -3171,7 +3171,7 @@ Tank observe l’écran… d’un air confus.
                       {/* Bloc Noyaux à gauche */}
                       <div className="w-60 text-white text-[11px] flex flex-col justify-start">
                         <h2 className="text-purple-300 font-bold mb-2"> <button
-                          className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-pink-200 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                          className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-pink-200 font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
                           onClick={() => setShowNoyauxPopup(true)}
                         >
                           {t("cores")}
@@ -3242,7 +3242,7 @@ Tank observe l’écran… d’un air confus.
                       <div className="w-48 text-white text-xs flex flex-col items-start">
                         <h2 className="text-blue-300 font-bold mb-2">
                           <button
-                            className="bg-gradient-to-r font-bold from-blue-500 text-[20px] to-purple-500 hover:from-blue-600 hover:to-purple-600 text-blue-300 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                            className="bg-gradient-to-r font-bold from-blue-500 text-[20px] to-purple-500 hover:from-blue-600 hover:to-purple-600 text-blue-300 font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
                             onClick={() => setShowGemPopup(true)}
                           >
                             {t("gems")}
@@ -3284,7 +3284,7 @@ Tank observe l’écran… d’un air confus.
                         <div className="flex justify-between items-center w-full -mb-1 pr-2 tank-target">
                           <div className="flex items-center space-x-4">
                             <button
-                              className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                              className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
                               onClick={() => setShowWeaponPopup(true)}
                             >
                               {t("weapon")}
@@ -3299,7 +3299,7 @@ Tank observe l’écran… d’un air confus.
 
                           <button
                             onClick={() => setEditStatsMode(!editStatsMode)}
-                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
                           >
                             {getEditLabel()}
                           </button>
@@ -3398,8 +3398,8 @@ Tank observe l’écran… d’un air confus.
           )}
         </div>
         <div className="flex justify-between mt-2 px-2">
-          <button onClick={() => setMobileView('left')} className="text-sm bg-[#2d2d5c] px-2 py-1 rounded">Artifact Gauche</button>
-          <button onClick={() => setMobileView('right')} className="text-sm bg-[#2d2d5c] px-2 py-1 rounded">Artifact Droite</button>
+          <button onClick={() => setMobileView('left')} className="text-sm bg-[#2d2d5c] px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded">Artifact Gauche</button>
+          <button onClick={() => setMobileView('right')} className="text-sm bg-[#2d2d5c] px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded">Artifact Droite</button>
         </div>
       </>
     )}
@@ -3522,7 +3522,7 @@ Tank observe l’écran… d’un air confus.
 
           </div>
 
-          <div className="flex flex-col items-center w-full max-w-[1100px] mx-auto px-4">
+         <div className="flex flex-col items-center w-full max-w-full sm:max-w-[95vw] md:max-w-[1100px] mx-auto px-2 sm:px-4">
 
 
             <div className="flex flex-col justify-center items-center h-full tank-target">
