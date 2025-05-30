@@ -3184,6 +3184,7 @@ Tank observe l’écran… d’un air confus.
                                 onClose={() => setShowNoyauxPopup(false)}
                                 onSave={handleSaveNoyaux}
                                 existingCores={hunterCores[selectedCharacter] || {}}
+                                isMobile={isMobile}
                               />
                             )}
 
@@ -3192,6 +3193,7 @@ Tank observe l’écran… d’un air confus.
                                 gemData={gemData}
                                 onClose={() => setShowGemPopup(false)}
                                 onSave={handleSaveGems}
+                                isMobile={isMobile}
                               />
                             )}
 
@@ -3856,8 +3858,9 @@ Tank observe l’écran… d’un air confus.
 
                       <button
                         onClick={handleResetStats}
-                        className="bg-gradient-to-r tank-target from-black-900 to-black-700 hover:from-black-700 hover:to-black-500 text-white font-bold py-1 px-4 rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-red-500/40"
-                      >
+                        className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105">
+
+                    
                         BobbyKick
                       </button>
 

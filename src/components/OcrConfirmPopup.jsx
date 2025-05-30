@@ -118,14 +118,14 @@ export default function OcrConfirmPopup({ parsedData, onConfirm, onCancel }) {
         <div className="flex justify-end gap-4 mt-6">
           <button
             onClick={onCancel}
-            className="px-4 py-2 bg-gray-600 text-white hover:bg-gray-500 rounded"
+            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
           >
             ❌ Annuler (N)
           </button>
           <button
   onClick={handleConfirm}
   disabled={isConfirmDisabled}
-  className={`px-4 py-2 rounded text-yellow transition-all duration-200
+  className={`bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105
     ${isConfirmDisabled ? 'bg-gray-800 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500'}
   `}
 >

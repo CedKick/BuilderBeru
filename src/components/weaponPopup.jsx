@@ -63,13 +63,14 @@ const WeaponPopup = ({ hunterName, scaleStat, onClose, onSave, existingWeapon })
 
         <div className="flex justify-end gap-2">
           <button
-            className="bg-red-700 hover:bg-red-600 px-3 py-1 rounded"
+           className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
             onClick={onClose}
           >
             Cancel
           </button>
           <button
-            className="bg-green-700 hover:bg-green-600 px-3 py-1 rounded"
+            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+
             onClick={handleSave}
           >
             Save
