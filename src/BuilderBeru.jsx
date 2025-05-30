@@ -2572,6 +2572,7 @@ BobbyJones : "Allez l'Inter !"
 
         if (count >= 40) {
           fireTankLaser();
+          window.umami.track('LaserBurst');
           return 0; // Reset
         }
 
