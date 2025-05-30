@@ -3680,9 +3680,25 @@ Tank observe l’écran… d’un air confus.
 
         <div className="h-screen bg-gray-950 text-white p-1 overflow-y-auto tank-target">
           <div className="w-full flex justify-center">
-            <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)_240px] gap-x-2 max-w-[1400px] w-full px-2 min-w-0">
-              <div className={showSernPopup ? 'blur-background' : ''}>
-                <div className="flex flex-col gap-y-1 min-w-0 flex-shrink">
+            <div className="grid 
+  grid-cols-1 
+  lg:grid-cols-[260px_minmax(0,1fr)_240px] 
+  gap-x-4 
+  max-w-[1400px] 
+  w-full 
+  px-4 
+  mx-auto 
+  min-w-0
+">
+              <div className="{showSernPopup ? 'blur-background' : ''}">
+                <div className="flex flex-col items-center justify-center 
+         mx-auto 
+         w-full px-2 sm:px-4 
+         max-w-[64vw] 
+         md:max-w-[666px] 
+         lg:max-w-[600px] 
+         xl:max-w-[560px] 
+         2xl:max-w-[733px]">
                   {[...leftArtifacts].map((item, idx) => (
                     <ArtifactCard
                       key={idx}
@@ -3711,12 +3727,14 @@ Tank observe l’écran… d’un air confus.
 
               </div>
 
-              <div className="flex flex-col items-center w-full px-2 sm:px-4 mx-auto 
-  max-w-[95vw] 
-  md:max-w-[1000px] 
-  lg:max-w-[900px] 
-  xl:max-w-[840px] 
-  2xl:max-w-[1100px]">
+              <div className="flex flex-col items-center justify-center 
+         mx-auto 
+         w-full px-2 sm:px-4 
+         max-w-[95vw] 
+         md:max-w-[1000px] 
+         lg:max-w-[900px] 
+         xl:max-w-[840px] 
+         2xl:max-w-[1100px]">
 
 
                 <div className="flex flex-col justify-center items-center h-full tank-target">
