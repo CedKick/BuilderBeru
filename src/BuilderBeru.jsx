@@ -498,7 +498,7 @@ const BuilderBeru = () => {
 
   const allStats = [
     'Attack', 'Defense', 'HP', 'Critical Rate',
-    'Critical Hit Damage', 'Defense Penetration', 'Damage Increase',
+    'Critical Hit Damage', 'Defense Penetration', 'Additional Attack', 'Damage Increase',
     'MP Recovery Rate Increase (%)', 'Additional MP', 'MP Consumption Reduction',
     'Precision', 'Damage Reduction', 'Healing Given Increase (%)'
   ];
@@ -815,14 +815,17 @@ const BuilderBeru = () => {
           const baseStat = stat.replace(' %', '');
           const base = flat[baseStat] || 0;
           updated[baseStat] = (updated[baseStat] || 0) + (base * levelInfo.value / 100);
+        } else if (stat.startsWith('Additional ')) {
+          const baseStat = stat.replace('Additional ', '');
+          updated[baseStat] = (updated[baseStat] || 0) + levelInfo.value;
         } else {
           updated[stat] = (updated[stat] || 0) + levelInfo.value;
-
-
         }
       });
 
       // ➤ Main stat
+      if (artifact.mainStat) {
+        artifact.mainStatValue = mainStatMaxByIncrements[artifact.mainStat][4];
       if (artifact.mainStat && artifact.mainStatValue) {
         const stat = artifact.mainStat;
         const value = artifact.mainStatValue;
@@ -831,10 +834,13 @@ const BuilderBeru = () => {
           const baseStat = stat.replace(' %', '');
           const base = flat[baseStat] || 0;
           updated[baseStat] = (updated[baseStat] || 0) + (base * value / 100);
+        } else if (stat.startsWith('Additional ')) {
+          const baseStat = stat.replace('Additional ', '');
+          updated[baseStat] = (updated[baseStat] || 0) + value;
         } else {
           updated[stat] = (updated[stat] || 0) + value;
         }
-      }
+      }}
     });
 
     // setStatsFromArtifacts(completeStats(updated));
@@ -1971,6 +1977,7 @@ BobbyJones : "Allez l'Inter !"
       'HP': (char?.hp || 0) + (scaleStat === 'HP' ? weaponBoost : 0),
       'Critical Rate': char?.critRate || 0,
       'Defense Penetration': 0,
+      'Additional Attack': 0,
       'Healing Given Increase (%)': 0,
       'Damage Increase': 0,
       'MP Consumption Reduction': 0,
@@ -1997,6 +2004,22 @@ BobbyJones : "Allez l'Inter !"
     'MP Consumption Reduction': 0,
     'Damage Reduction': 0,
     'MP Recovery Rate Increase (%)': 0,
+    'Additional Attack': 0,
+  });
+
+
+  const [finalStatsWithoutArtefact, setFinalStatsWithoutArtefact] = useState({
+    Attack: 0,
+    Defense: 0,
+    HP: 0,
+    'Critical Rate': 0,
+    'Defense Penetration': 0,
+    'Healing Given Increase (%)': 0,
+    'Damage Increase': 0,
+    'MP Consumption Reduction': 0,
+    'Damage Reduction': 0,
+    'MP Recovery Rate Increase (%)': 0,
+    'Additional Attack': 0,
   });
 
   const [statsFromArtifacts, setStatsFromArtifacts] = useState({
@@ -2011,6 +2034,7 @@ BobbyJones : "Allez l'Inter !"
     'MP Consumption Reduction': 0,
     'Damage Reduction': 0,
     'MP Recovery Rate Increase (%)': 0,
+    'Additional Attack': 0,
   });
 
 
@@ -2097,8 +2121,12 @@ BobbyJones : "Allez l'Inter !"
       'Additional Defense': 'Defense'
     };
 
+
+
+
     const allSources = [gemData, ...Object.values(noyaux || {})];
 
+    // Phase de fusion
     for (const source of allSources) {
       for (const [stat, value] of Object.entries(source || {})) {
         if (percentMap[stat]) {
@@ -2106,8 +2134,12 @@ BobbyJones : "Allez l'Inter !"
           allBonuses[percentMap[stat]] += base * (value / 100);
         } else if (additionalMap[stat]) {
           allBonuses[additionalMap[stat]] += value;
-        } else if (stat === 'Critical Rate') {
-          allBonuses['Critical Rate'] += value;
+        } else {
+          // S'il n'existe pas encore, on initialise
+          if (!(stat in allBonuses)) {
+            allBonuses[stat] = 0;
+          }
+          allBonuses[stat] += value;
         }
       }
     }
@@ -2130,7 +2162,6 @@ BobbyJones : "Allez l'Inter !"
 
 
   useEffect(() => {
-    const updatedStats = completeStats({ ...flatStats }); // flat = base + weapon
     const allSources = [];
 
     // A. GEMMES
@@ -2158,38 +2189,46 @@ BobbyJones : "Allez l'Inter !"
       allSources.push(parsedCore);
     }
 
-    // C. Phase 1 – Additional uniquement
+    // C. FUSION TOTALE
+    const mergedStats = {};
     for (const source of allSources) {
       for (const [stat, value] of Object.entries(source || {})) {
-        if (stat.startsWith('Additional ')) {
-          const baseStatName = stat.replace('Additional ', '');
-          updatedStats[baseStatName] = (updatedStats[baseStatName] || 0) + value;
-        }
+        mergedStats[stat] = (mergedStats[stat] || 0) + value;
       }
     }
 
-    // C. Phase 2 – Pourcentages (sur flatStats uniquement)
-    for (const source of allSources) {
-      for (const [stat, value] of Object.entries(source || {})) {
-        if (stat.endsWith('%')) {
-          const baseStatName = stat.replace(' %', '');
-          const base = flatStats[baseStatName] || 0; // 🧠 c’est ici que tu corriges le bug
-          updatedStats[baseStatName] += (base * value) / 100;
-        }
+    // D. INJECTION FINAL – sur base flat
+    const baseStats = completeStats({ ...flatStats }); // flat = base + weapon
+    const updatedStats = { ...baseStats };
+
+    for (const key of ['Attack', 'Defense', 'HP']) {
+      const flat = baseStats[key] || 0;
+      const additional = mergedStats[`Additional ${key}`] || 0;
+      const percent = mergedStats[`${key} %`] || 0;
+
+      updatedStats[key] = flat + additional + (flat * percent) / 100;
+    }
+
+    // E. Les autres stats (pas Attack, Defense, HP)
+    for (const [stat, value] of Object.entries(mergedStats)) {
+      if (!['Attack', 'Defense', 'HP'].includes(stat) &&
+        !stat.startsWith('Additional ') &&
+        !stat.endsWith('%')) {
+        updatedStats[stat] = (updatedStats[stat] || 0) + value;
       }
     }
 
-    // C. Phase 3 – le reste (flat direct style : Precision, Critical Rate, etc.)
-    for (const source of allSources) {
-      for (const [stat, value] of Object.entries(source || {})) {
-        if (!stat.startsWith('Additional ') && !stat.endsWith('%')) {
-          updatedStats[stat] = (updatedStats[stat] || 0) + value;
-        }
-      }
-    }
 
-    setStatsWithoutArtefact(completeStats(updatedStats));
+    setStatsWithoutArtefact(updatedStats);
+   const finalStatsWithoutArtefact = completeStats(updatedStats);
+   setFinalStatsWithoutArtefact(finalStatsWithoutArtefact);
+
+
+// G. Mise à jour des stats finales AVEC artefacts
+const finalStats = recalculateStatsFromArtifacts(statsFromArtifacts);
+const a = "test";
   }, [flatStats, gemData, hunterCores, selectedCharacter]);
+
 
 
   useEffect(() => {
@@ -2346,6 +2385,7 @@ BobbyJones : "Allez l'Inter !"
         'HP': char.hp,
         'Critical Rate': char.critRate,
         'Defense Penetration': 0,
+        'Additional Attack' : 0,
         'Healing Given Increase (%)': 0,
         'Additional MP': 0,
         'Damage Increase': 0,
@@ -2753,6 +2793,9 @@ BobbyJones : "Allez l'Inter !"
       Attack: 0,
       Defense: 0,
       HP: 0,
+      'Additional Attack': 0,
+      'Additional Defense': 0,
+      'Additional HP': 0,
       'Critical Rate': 0,
       'Defense Penetration': 0,
       'Healing Given Increase (%)': 0,
@@ -2778,7 +2821,7 @@ BobbyJones : "Allez l'Inter !"
 
         const cleanStat = stat.trim();
 
-        const key = ['Attack', 'HP', 'Defense', 'Critical Rate', 'Defense Penetration', 'Healing Given Increase (%)', 'Additional MP', 'Damage Increase', 'MP Consumption Reduction', 'Damage Reduction', 'MP Recovery Rate Increase (%)',
+        const key = ['Attack', 'HP', 'Defense', 'Critical Rate', 'Additional Attack', 'Additional Defense', 'Additional HP', 'Defense Penetration', 'Healing Given Increase (%)', 'Additional MP', 'Damage Increase', 'MP Consumption Reduction', 'Damage Reduction', 'MP Recovery Rate Increase (%)',
         ].find(
           valid => cleanStat === valid || cleanStat === `${valid} %`
         );
@@ -2787,12 +2830,16 @@ BobbyJones : "Allez l'Inter !"
 
         if (stat.endsWith('%')) {
           newStatsFromArtifacts[key] += Math.floor(flatStats[key] * value / 100);
+        } else if (stat.startsWith('Additional ')) {
+          const baseStat = stat.replace('Additional ', '');
+          newStatsFromArtifacts[baseStat] += value;
         } else {
           newStatsFromArtifacts[key] += value;
         }
       });
     });
 
+    console.log("✅ Final updated from Artifacts before fusion:", JSON.stringify(newStatsFromArtifacts, null, 2));
     setStatsFromArtifacts(newStatsFromArtifacts);
   }, [artifactsData, flatStats]);
 
@@ -3403,7 +3450,7 @@ Tank observe l’écran… d’un air confus.
                                           <div className="font-bold text-white text-center">{t("statFinals")}</div>
                                           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-1 w-full text-gray-200 text-xs">
                                             {allStats.map((key) => {
-                                              const base = typeof statsWithoutArtefact[key] === 'number' ? statsWithoutArtefact[key] : 0;
+                                              const base = typeof finalStatsWithoutArtefact[key] === 'number' ? finalStatsWithoutArtefact[key] : 0;
                                               const fromArtifact = typeof statsFromArtifacts[key] === 'number' ? statsFromArtifacts[key] : 0;
                                               const total = base + fromArtifact;
 
@@ -4151,7 +4198,7 @@ Tank observe l’écran… d’un air confus.
                                   {Array.from({ length: Math.ceil(allStats.length / 4) }).map((_, colIndex) => (
                                     <div key={colIndex} className="flex flex-col mr-6">
                                       {allStats.slice(colIndex * 4, colIndex * 4 + 4).map((key) => {
-                                        const base = typeof statsWithoutArtefact[key] === 'number' ? statsWithoutArtefact[key] : 0;
+                                        const base = typeof finalStatsWithoutArtefact[key] === 'number' ? finalStatsWithoutArtefact[key] : 0;
                                         const fromArtifact = typeof statsFromArtifacts[key] === 'number' ? statsFromArtifacts[key] : 0;
                                         const total = base + fromArtifact;
 
