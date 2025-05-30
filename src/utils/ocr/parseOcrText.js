@@ -29,22 +29,40 @@ export function parseOcrText(text) {
     boucle: 'Earrings',
     armure: 'Chest',
     demon: 'Chest',
+    hat: 'Helmet',
+    'body armor': 'Chest',
     'niv. 100 e': 'Earrings'
 
   };
 
- const statReverseMap = {};
+  const statReverseMap = {};
 
-// Fusion FR + EN
-for (const [key, val] of Object.entries(enStats.stats)) {
-  statReverseMap[normalize(val)] = key;
-}
-for (const [key, val] of Object.entries(frStats.stats)) {
-  statReverseMap[normalize(val)] = key;
-}
+  // Fusion FR + EN
+  for (const [key, val] of Object.entries(enStats.stats)) {
+    statReverseMap[normalize(val)] = key;
+  }
+  for (const [key, val] of Object.entries(frStats.stats)) {
+    statReverseMap[normalize(val)] = key;
+  }
 
-// C’est ici qu’on corrige :
-const statLabels = Object.keys(statReverseMap).sort((a, b) => b.length - a.length);
+  // C’est ici qu’on corrige :
+  const statLabels = Object.keys(statReverseMap).sort((a, b) => b.length - a.length);
+
+  const artifactTitleReverseMap = {};
+
+  // Fusion FR + EN des titres d'artéfacts
+  for (const [key, val] of Object.entries(enStats.titleArtifact)) {
+    artifactTitleReverseMap[normalize(val)] = key;
+  }
+  for (const [key, val] of Object.entries(frStats.titleArtifact)) {
+    artifactTitleReverseMap[normalize(val)] = key;
+  }
+
+  // Tri pour que les plus longues chaînes soient vérifiées en premier (comme les stats)
+  const artifactTitles = Object.keys(artifactTitleReverseMap).sort((a, b) => b.length - a.length);
+
+
+
   const result = {
     type: '',
     mainStat: { stat: '', value: 0 },
@@ -142,7 +160,7 @@ const statLabels = Object.keys(statReverseMap).sort((a, b) => b.length - a.lengt
     const ocrSubStatSynonyms = {
       'baisse': 'Baisse du coût de PM',
       'taux de récupération': 'Hausse du taux de récupération des PM (%)',
-       'Hausse de soins (%)' : 'Hausse de soins',
+      'Hausse de soins (%)': 'Hausse de soins',
     };
 
     // 3. Substats à partir de la ligne suivante
@@ -210,7 +228,7 @@ const statLabels = Object.keys(statReverseMap).sort((a, b) => b.length - a.lengt
       let valueStr = valueMatch?.[0] || '';
       valueStr = cleanOCR(valueStr).replace(',', '.');
       // 7. Traitement du . ou , selon si c’est une stat en %
-      if (typeof matchedLabel === 'string' && matchedLabel.includes('%')) {
+      if (typeof matchedLabel === 'string') {
         if (matchedLabel.includes('%')) {
           valueStr = valueStr.replace(',', '.'); // ex : 2,5% → 2.5
         } else {
@@ -220,23 +238,26 @@ const statLabels = Object.keys(statReverseMap).sort((a, b) => b.length - a.lengt
 
 
 
-      
+
       const value = valueStr ? parseFloat(valueStr) : 0;
 
       console.log(
-  "[🧩 SubStat]",
-  "\n➡️ OCR line      :", line,
-  "\n➡️ Cleaned line :", cleanedLine,
-  "\n➡️ Matched label:", matchedLabel,
-  "\n➡️ Final stat key:", statReverseMap[normalize(matchedLabel)],
-  "\n➡️ Value        :", value,
-  "\n➡️ Proc         :", proc);
+        "[🧩 SubStat]",
+        "\n➡️ OCR line      :", line,
+        "\n➡️ Cleaned line :", cleanedLine,
+        "\n➡️ Matched label:", matchedLabel,
+        "\n➡️ Final stat key:", statReverseMap[normalize(matchedLabel)],
+        "\n➡️ Value        :", value,
+        "\n➡️ Proc         :", proc);
       // 7. Ajout à l’objet
       result.subStats.push({
         stat: statReverseMap[normalize(matchedLabel)],
         value,
         proc
       });
+       if (result.subStats.length === 4) {
+    break; // On sort de la boucle dès qu'on a nos 4 substats
+  }
     }
   }
 

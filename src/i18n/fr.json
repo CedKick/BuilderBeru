@@ -35,7 +35,8 @@
   "Defense %" : "Défense (%)",
   "HP": "PV",
   "Attack": "Attaque",
-  "Defense": "Défense"
+  "Defense": "Défense",
+  "MP" : "MP"
 
 
   },

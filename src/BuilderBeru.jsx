@@ -228,10 +228,7 @@ const substatsMinMaxByIncrements = {
     4: { min: 1300, max: 1500 },
   },
   'Defense Penetration': {
-    0: {
-      min: 900, max:
-        1300
-    },
+    0: { min: 900, max: 1300 },
     1: { min: 900, max: 1300 },
     2: { min: 900, max: 1300 },
     3: { min: 900, max: 1300 },
@@ -430,13 +427,21 @@ function useResponsive() {
     isDesktop: window.innerWidth >= 1150
   });
 
+const isTouch = navigator.maxTouchPoints > 1;
+  const userAgent = navigator.userAgent.toLowerCase();
+  const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+
+  // const screenWidth = window.innerWidth;
+
+  const isProbablyDesktop = !isTouch && !isMobileUA;
+
   React.useEffect(() => {
     const update = () => {
       const width = window.innerWidth;
       setScreen({
         isPhone: width < 640,
         isTablet: width >= 640 && width < 1024,
-        isDesktop: width >= 1024
+        isDesktop: isProbablyDesktop
       });
     };
 
@@ -497,9 +502,9 @@ const BuilderBeru = () => {
   };
 
   const allStats = [
-    'Attack', 'Defense', 'HP', 'Critical Rate',
-    'Critical Hit Damage', 'Defense Penetration', 'Additional Attack', 'Damage Increase',
-    'MP Recovery Rate Increase (%)', 'Additional MP', 'MP Consumption Reduction',
+    'Attack', 'Defense', 'HP', 'MP', 'Critical Rate',
+    'Critical Hit Damage', 'Defense Penetration', 'Damage Increase',
+    'MP Recovery Rate Increase (%)', 'MP Consumption Reduction',
     'Precision', 'Damage Reduction', 'Healing Given Increase (%)'
   ];
 
@@ -609,7 +614,7 @@ const BuilderBeru = () => {
   };
 
   const characterStats = {
-    'chae': { attack: 5495, defense: 5544, hp: 10825, critRate: 0 },
+    'chae': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 0 },
     'kanae': { attack: 5634, defense: 5028, hp: 11628, critRate: 0 },
     'alicia': { attack: 5836, defense: 5087, hp: 11075, critRate: 0 },
     'mirei': { attack: 5926, defense: 5040, hp: 10938, critRate: 0 },
@@ -782,6 +787,8 @@ const BuilderBeru = () => {
       flat['Defense'] += value;
     } else if (lowerStat.includes('hp')) {
       flat['HP'] += value;
+    } else if (lowerStat.includes('mp')) {
+      flat['MP'] += value;
     } else if (lowerStat.includes('Critical Rate') || lowerStat.includes('critical rate')) {
       flat['Critical Rate'] += value;
     } else {
@@ -826,21 +833,22 @@ const BuilderBeru = () => {
       // ➤ Main stat
       if (artifact.mainStat) {
         artifact.mainStatValue = mainStatMaxByIncrements[artifact.mainStat][4];
-      if (artifact.mainStat && artifact.mainStatValue) {
-        const stat = artifact.mainStat;
-        const value = artifact.mainStatValue;
+        if (artifact.mainStat && artifact.mainStatValue) {
+          const stat = artifact.mainStat;
+          const value = artifact.mainStatValue;
 
-        if (stat.endsWith('%')) {
-          const baseStat = stat.replace(' %', '');
-          const base = flat[baseStat] || 0;
-          updated[baseStat] = (updated[baseStat] || 0) + (base * value / 100);
-        } else if (stat.startsWith('Additional ')) {
-          const baseStat = stat.replace('Additional ', '');
-          updated[baseStat] = (updated[baseStat] || 0) + value;
-        } else {
-          updated[stat] = (updated[stat] || 0) + value;
+          if (stat.endsWith('%')) {
+            const baseStat = stat.replace(' %', '');
+            const base = flat[baseStat] || 0;
+            updated[baseStat] = (updated[baseStat] || 0) + (base * value / 100);
+          } else if (stat.startsWith('Additional ')) {
+            const baseStat = stat.replace('Additional ', '');
+            updated[baseStat] = (updated[baseStat] || 0) + value;
+          } else {
+            updated[stat] = (updated[stat] || 0) + value;
+          }
         }
-      }}
+      }
     });
 
     // setStatsFromArtifacts(completeStats(updated));
@@ -1977,9 +1985,11 @@ BobbyJones : "Allez l'Inter !"
       'HP': (char?.hp || 0) + (scaleStat === 'HP' ? weaponBoost : 0),
       'Critical Rate': char?.critRate || 0,
       'Defense Penetration': 0,
+      'Additional MP': 0,
       'Additional Attack': 0,
       'Healing Given Increase (%)': 0,
       'Damage Increase': 0,
+      'MP': 0,
       'MP Consumption Reduction': 0,
       'Damage Reduction': 0,
       'MP Recovery Rate Increase (%)': 0,
@@ -2005,6 +2015,8 @@ BobbyJones : "Allez l'Inter !"
     'Damage Reduction': 0,
     'MP Recovery Rate Increase (%)': 0,
     'Additional Attack': 0,
+    'Additional MP': 0,
+    'MP': 0,
   });
 
 
@@ -2020,6 +2032,8 @@ BobbyJones : "Allez l'Inter !"
     'Damage Reduction': 0,
     'MP Recovery Rate Increase (%)': 0,
     'Additional Attack': 0,
+    'Additional MP': 0,
+    'MP': 0,
   });
 
   const [statsFromArtifacts, setStatsFromArtifacts] = useState({
@@ -2035,6 +2049,8 @@ BobbyJones : "Allez l'Inter !"
     'Damage Reduction': 0,
     'MP Recovery Rate Increase (%)': 0,
     'Additional Attack': 0,
+    'Additional MP': 0,
+    'MP': 0,
   });
 
 
@@ -2092,6 +2108,8 @@ BobbyJones : "Allez l'Inter !"
     'MP Consumption Reduction': 0,
     'Damage Reduction': 0,
     'MP Recovery Rate Increase (%)': 0,
+    'Additional MP': 0,
+    'MP': 0,
   });
 
   const computeStatsWithoutArtefact = (flatStats, gemData, noyaux) => {
@@ -2107,6 +2125,7 @@ BobbyJones : "Allez l'Inter !"
       'MP Consumption Reduction': 0,
       'Damage Reduction': 0,
       'MP Recovery Rate Increase (%)': 0,
+      'MP': 0,
     };
 
     const percentMap = {
@@ -2118,7 +2137,8 @@ BobbyJones : "Allez l'Inter !"
     const additionalMap = {
       'Additional Attack': 'Attack',
       'Additional HP': 'HP',
-      'Additional Defense': 'Defense'
+      'Additional Defense': 'Defense',
+      'Additional MP': 'MP',
     };
 
 
@@ -2149,6 +2169,7 @@ BobbyJones : "Allez l'Inter !"
       'HP': Math.round((flatStats.HP || 0) + allBonuses.HP),
       'Defense': Math.round((flatStats.Defense || 0) + allBonuses.Defense),
       'Critical Rate': Math.round((flatStats['Critical Rate'] || 0) + allBonuses['Critical Rate']),
+      'MP': Math.round((flatStats['MP'] || 0) + allBonuses['MP']),
       'Defense Penetration': Math.round((flatStats['Defense Penetration'] || 0) + allBonuses['Defense Penetration']),
       'Additional MP': Math.round((flatStats['Additional MP'] || 0) + allBonuses['Additional MP']),
       'Healing Given Increase (%)': Math.round((flatStats['Healing Given Increase (%)'] || 0) + allBonuses['Healing Given Increase (%)']),
@@ -2201,7 +2222,7 @@ BobbyJones : "Allez l'Inter !"
     const baseStats = completeStats({ ...flatStats }); // flat = base + weapon
     const updatedStats = { ...baseStats };
 
-    for (const key of ['Attack', 'Defense', 'HP']) {
+    for (const key of ['Attack', 'Defense', 'HP', 'MP']) {
       const flat = baseStats[key] || 0;
       const additional = mergedStats[`Additional ${key}`] || 0;
       const percent = mergedStats[`${key} %`] || 0;
@@ -2211,7 +2232,7 @@ BobbyJones : "Allez l'Inter !"
 
     // E. Les autres stats (pas Attack, Defense, HP)
     for (const [stat, value] of Object.entries(mergedStats)) {
-      if (!['Attack', 'Defense', 'HP'].includes(stat) &&
+      if (!['Attack', 'Defense', 'HP', 'MP'].includes(stat) &&
         !stat.startsWith('Additional ') &&
         !stat.endsWith('%')) {
         updatedStats[stat] = (updatedStats[stat] || 0) + value;
@@ -2220,13 +2241,13 @@ BobbyJones : "Allez l'Inter !"
 
 
     setStatsWithoutArtefact(updatedStats);
-   const finalStatsWithoutArtefact = completeStats(updatedStats);
-   setFinalStatsWithoutArtefact(finalStatsWithoutArtefact);
+    const finalStatsWithoutArtefact = completeStats(updatedStats);
+    setFinalStatsWithoutArtefact(finalStatsWithoutArtefact);
 
 
-// G. Mise à jour des stats finales AVEC artefacts
-const finalStats = recalculateStatsFromArtifacts(statsFromArtifacts);
-const a = "test";
+    // G. Mise à jour des stats finales AVEC artefacts
+    const finalStats = recalculateStatsFromArtifacts(statsFromArtifacts);
+    const a = "test";
   }, [flatStats, gemData, hunterCores, selectedCharacter]);
 
 
@@ -2255,18 +2276,14 @@ const a = "test";
         'MP Consumption Reduction': 0,
         'Damage Reduction': 0,
         'MP Recovery Rate Increase (%)': 0,
+        'MP': 0
 
       })
     );
   }, [selectedCharacter, hunterWeapons]);
 
-  // useEffect(() => {
-  //   const char = characters[selectedCharacter];
-  //   const weapon = hunterWeapons[selectedCharacter] || {};
-  //   if (!char) return;
 
-  //   setFlatStats(getFlatStatsWithWeapon(char, weapon));
-  // }, [selectedCharacter, hunterWeapons]);
+
 
   useEffect(() => {
     if (showNarrative) {
@@ -2385,13 +2402,14 @@ const a = "test";
         'HP': char.hp,
         'Critical Rate': char.critRate,
         'Defense Penetration': 0,
-        'Additional Attack' : 0,
+        'Additional Attack': 0,
         'Healing Given Increase (%)': 0,
         'Additional MP': 0,
         'Damage Increase': 0,
         'MP Consumption Reduction': 0,
         'Damage Reduction': 0,
         'MP Recovery Rate Increase (%)': 0,
+        'MP': 0,
 
       };
     }
@@ -2420,14 +2438,7 @@ const a = "test";
     showTankMessage(`Loaded ${characterName}'s saved build 😌`);
   };
 
-  // useEffect(() => {
-  //   setStatsWithoutArtefact({
-  //     Attack: flatStats.Attack,
-  //     Defense: flatStats.Defense,
-  //     HP: flatStats.HP,
-  //     'Critical Rate': flatStats['Critical Rate'],
-  //   });
-  // }, []);
+
 
   useEffect(() => {
     let canvasLeft = document.getElementById('canvas-left');
@@ -2804,6 +2815,7 @@ const a = "test";
       'MP Consumption Reduction': 0,
       'Damage Reduction': 0,
       'MP Recovery Rate Increase (%)': 0,
+      'MP': 0,
     };
 
     Object.values(artifactsData).forEach(({ mainStat, subStats, subStatsLevels }) => {
@@ -2821,7 +2833,7 @@ const a = "test";
 
         const cleanStat = stat.trim();
 
-        const key = ['Attack', 'HP', 'Defense', 'Critical Rate', 'Additional Attack', 'Additional Defense', 'Additional HP', 'Defense Penetration', 'Healing Given Increase (%)', 'Additional MP', 'Damage Increase', 'MP Consumption Reduction', 'Damage Reduction', 'MP Recovery Rate Increase (%)',
+        const key = ['Attack', 'HP', 'Defense', 'Critical Rate', 'Additional Attack', 'Additional Defense', 'Additional HP', 'Defense Penetration', 'Healing Given Increase (%)', 'Additional MP', 'Damage Increase', 'MP Consumption Reduction', 'Damage Reduction', 'MP Recovery Rate Increase (%)', 'MP',
         ].find(
           valid => cleanStat === valid || cleanStat === `${valid} %`
         );
@@ -2957,7 +2969,7 @@ Tank observe l’écran… d’un air confus.
   return (
     <>
 
-      {isMobile.isPhone || isMobile.isTablet ? (
+      {((isMobile.isPhone || isMobile.isTablet) && !isMobile.isDesktop) ? (
         <>
           <div className="h-screen bg-gray-950 text-white p-1 overflow-y-auto tank-target">
             <div className="w-full flex justify-center">
