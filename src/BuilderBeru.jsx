@@ -1948,7 +1948,7 @@ BobbyJones : "Allez l'Inter !"
       setSelectedCharacter(recent[0]); // premier build dispo
       handleLoadBuild(recent[0]);
     } else {
-      setSelectedCharacter('chae'); // Chae à poil sinon
+      setSelectedCharacter('niermann'); // Chae à poil sinon
     }
   }, []);
 
