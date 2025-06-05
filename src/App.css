@@ -22,6 +22,10 @@ body, html, #root {
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
+/* Cacher la scrollbar horizontale */
+/* html, body {
+  overflow-x: hidden;
+} */
 
 @keyframes logo-spin {
   from {

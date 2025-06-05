@@ -2049,7 +2049,6 @@ BobbyJones : "Allez l'Inter !"
     'Damage Reduction': 0,
     'MP Recovery Rate Increase (%)': 0,
     'Additional Attack': 0,
-    'Additional MP': 0,
     'MP': 0,
   });
 
@@ -2972,7 +2971,7 @@ Tank observe l’écran… d’un air confus.
 
       {((isMobile.isPhone || isMobile.isTablet) && !isMobile.isDesktop) ? (
         <>
-          <div className="h-screen bg-gray-950 text-white p-1 overflow-y-auto tank-target">
+          <div className="h-screen bg-gray-950 text-white p-1  tank-target">
             <div className="w-full flex justify-center">
               <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(600px,900px)_240px] gap-x-2 max-w-[1400px] w-full px-2">
 
@@ -3198,12 +3197,12 @@ Tank observe l’écran… d’un air confus.
                             )}
 
                             {showSernPopup && (
-                              <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999] overflow-y-auto py-10">
+                              <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999]  py-10">
                                 <div
                                   ref={popupRef}
                                   className="relative w-[95vw] max-w-[1000px] p-4 bg-black/90 text-white 
         border-4 border-white rounded-2xl shadow-2xl animate-pulse flex flex-col 
-        overflow-y-auto max-h-[90vh] scrollbar-none scroll-smooth"
+         max-h-[90vh] scrollbar-none scroll-smooth"
                                 >
                                   {/* IMAGE */}
                                   <div className="w-full flex items-center justify-center">
@@ -3248,12 +3247,12 @@ Tank observe l’écran… d’un air confus.
                             )}
 
                             {showNarrative && (
-                              <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999] overflow-y-auto py-10">
+                              <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999]  py-10">
                                 <div
                                   ref={popupRef}
                                   className="relative w-[95vw] max-w-[1000px] p-4 bg-black/90 text-white 
         border-4 border-white rounded-2xl shadow-2xl animate-pulse flex flex-col 
-        overflow-y-auto max-h-[90vh] scrollbar-none scroll-smooth"
+         max-h-[90vh] scrollbar-none scroll-smooth"
                                 >
                                   {/* IMAGE dynamique */}
                                   {currentImage && (
@@ -3677,7 +3676,7 @@ Tank observe l’écran… d’un air confus.
                         position={chibiPos}
                       />
                     )}
-                    <div className="flex justify-center items-center overflow-x-auto relative gap-1">
+                    <div className="flex justify-center items-center relative gap-1">
                       <canvas id="canvas-left" width="600" height="240" className="rounded-l-lg shadow-md bg-black w-[40vw] h-auto" />
                       <canvas id="canvas-center" width="600" height="240" className="shadow-md bg-black w-[40vw] h-auto" />
                       <canvas id="canvas-right" width="600" height="240" className="rounded-r-lg shadow-md bg-black w-[40vw] h-auto" />
@@ -3693,7 +3692,7 @@ Tank observe l’écran… d’un air confus.
       ) : (
 
 
-        <div className="h-screen bg-gray-950 text-white p-1 overflow-y-auto tank-target">
+        <div className="h-screen bg-gray-950 text-white p-1  tank-target">
           <div className="w-full flex justify-center">
             <div className="grid 
   grid-cols-1 
@@ -3963,12 +3962,12 @@ Tank observe l’écran… d’un air confus.
                   )}
 
                   {showSernPopup && (
-                    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999] overflow-y-auto py-10">
+                    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999]  py-10">
                       <div
                         ref={popupRef}
                         className="relative w-[95vw] max-w-[1000px] p-4 bg-black/90 text-white 
         border-4 border-white rounded-2xl shadow-2xl animate-pulse flex flex-col 
-        overflow-y-auto max-h-[90vh] scrollbar-none scroll-smooth"
+         max-h-[90vh] scrollbar-none scroll-smooth"
                       >
                         {/* IMAGE */}
                         <div className="w-full flex items-center justify-center">
@@ -4013,12 +4012,12 @@ Tank observe l’écran… d’un air confus.
                   )}
 
                   {showNarrative && (
-                    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999] overflow-y-auto py-10">
+                    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999]  py-10">
                       <div
                         ref={popupRef}
                         className="relative w-[95vw] max-w-[1000px] p-4 bg-black/90 text-white 
         border-4 border-white rounded-2xl shadow-2xl animate-pulse flex flex-col 
-        overflow-y-auto max-h-[90vh] scrollbar-none scroll-smooth"
+         max-h-[90vh] scrollbar-none scroll-smooth"
                       >
                         {/* IMAGE dynamique */}
                         {currentImage && (
@@ -4362,9 +4361,28 @@ Tank observe l’écran… d’un air confus.
                   position={chibiPos}
                 />
               )}
-              <div className="flex justify-center items-center overflow-x-auto relative gap-1">
+              <div className="flex justify-center items-center relative gap-1">
                 <canvas id="canvas-left" width="600" height="240" className="rounded-l-lg shadow-md bg-black w-[40vw] h-auto" />
                 <canvas id="canvas-center" width="600" height="240" className="shadow-md bg-black w-[40vw] h-auto" />
+                {/* Portail cliquable */}
+  <div
+    className="absolute z-50 cursor-pointer hover:scale-105 transition background: red"
+    style={{
+      top: '45%',     // à ajuster selon ton image exacte
+      left: '43.2%',
+      width: '5%',
+      height: '25%'
+    }}
+    onClick={() => {
+      // const isMonarque = localStorage.getItem("isMonarque") === "true";
+      // if (isMonarque) {
+        window.location.href = "/guide-editor";
+      // } else {
+        showTankMessage("Seuls les Monarques peuvent franchir ce portail...", true);
+      // }
+    }}
+  />
+
                 <canvas id="canvas-right" width="600" height="240" className="rounded-r-lg shadow-md bg-black w-[40vw] h-auto" />
 
               </div>
