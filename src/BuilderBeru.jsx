@@ -1151,7 +1151,7 @@ BobbyJones : "Allez l'Inter !"
 
 
 
-  const [selectedCharacter, setSelectedCharacter] = useState('chae');
+  const [selectedCharacter, setSelectedCharacter] = useState('niermann');
 
   const characters = {
     '': {
