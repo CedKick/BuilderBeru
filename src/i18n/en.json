@@ -12,7 +12,7 @@
   "weapon" : "⚔️ Weapon",
   "statFinals" : "Final Stats with Artefacts",
   "stats": {
-  "Critical Rate": "Critical Hit Rate",
+  "Critical Hit Rate": "Critical Hit Rate",
   "Critical Hit Damage": "Critical Hit Damage",
   "Defense Penetration": "Defense Penetration",
   "Damage Increase": "Damage Increase",

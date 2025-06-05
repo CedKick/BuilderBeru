@@ -84,7 +84,7 @@ const tankPhrases = [
   "Béru dit que je suis une mascotte... mais moi je tank la vérité.",
   "Pourquoi j’ai pas de sprite animé moi aussi ? 😭",
   "JO n'a toujours pas d'images... Moi je dis ça moi je dis rien 😶"
-  // "Rappel : Critical Rate, c’est pas Crit DMG. N’oublie jamais.",
+  // "Rappel : Critical Hit Rate, c’est pas Crit DMG. N’oublie jamais.",
   // "Quand le serveur bug, c’est moi qui prends tout… #respecteTank",
   // "This build smells like a Gagold masterpiece.",
   // "Kly coded this with coffee and shadows.",
@@ -103,7 +103,7 @@ const tankPhrases = [
   // "This isn’t slagate, this is Kly's domain.",
   // "No BDG? No mercy from Bobby.",
   // "This ring is older than Kaisel.",
-  // "Missing Critical Rate again, huh?",
+  // "Missing Critical Hit Rate again, huh?",
   // "Your HP is as low as your chances vs Ant King.",
   // "Even Beru would say 'meh' to this stat.",
 
@@ -220,7 +220,7 @@ const substatsMinMaxByIncrements = {
     3: { min: 900, max: 1300 },
     4: { min: 1300, max: 1500 },
   },
-  'Critical Rate': {
+  'Critical Hit Rate': {
     0: { min: 900, max: 1300 },
     1: { min: 900, max: 1300 },
     2: { min: 900, max: 1300 },
@@ -377,6 +377,41 @@ export const mainStatMaxByIncrements = {
     3: 24,
     4: 24,
   },
+  'Fire Damage %': {
+  0: 13.82,
+  1: 13.82,
+  2: 13.82,
+  3: 13.82,
+  4: 13.82,
+},
+'Water Damage %': {
+  0: 13.82,
+  1: 13.82,
+  2: 13.82,
+  3: 13.82,
+  4: 13.82,
+},
+'Wind Damage %': {
+  0: 13.82,
+  1: 13.82,
+  2: 13.82,
+  3: 13.82,
+  4: 13.82,
+},
+'Light Damage %': {
+  0: 13.82,
+  1: 13.82,
+  2: 13.82,
+  3: 13.82,
+  4: 13.82,
+},
+'Dark Damage %': {
+  0: 13.82,
+  1: 13.82,
+  2: 13.82,
+  3: 13.82,
+  4: 13.82,
+}
 };
 
 const applyArtifactStat = (key, value, baseStats, currentArtifactStats) => {
@@ -502,7 +537,7 @@ const BuilderBeru = () => {
   };
 
   const allStats = [
-    'Attack', 'Defense', 'HP', 'MP', 'Critical Rate',
+    'Attack', 'Defense', 'HP', 'MP', 'Critical Hit Rate',
     'Critical Hit Damage', 'Defense Penetration', 'Damage Increase',
     'MP Recovery Rate Increase (%)', 'MP Consumption Reduction',
     'Precision', 'Damage Reduction', 'Healing Given Increase (%)'
@@ -790,8 +825,8 @@ const BuilderBeru = () => {
       flat['HP'] += value;
     } else if (lowerStat.includes('mp')) {
       flat['MP'] += value;
-    } else if (lowerStat.includes('Critical Rate') || lowerStat.includes('critical rate')) {
-      flat['Critical Rate'] += value;
+    } else if (lowerStat.includes('Critical Hit Rate') || lowerStat.includes('Critical Hit Rate')) {
+      flat['Critical Hit Rate'] += value;
     } else {
       flat[stat] = (flat[stat] || 0) + value;
     }
@@ -1992,7 +2027,7 @@ BobbyJones : "Allez l'Inter !"
       'Attack': (char?.attack || 0) + (scaleStat === 'Attack' ? weaponBoost : 0),
       'Defense': (char?.defense || 0) + (scaleStat === 'Defense' ? weaponBoost : 0),
       'HP': (char?.hp || 0) + (scaleStat === 'HP' ? weaponBoost : 0),
-      'Critical Rate': char?.critRate || 0,
+      'Critical Hit Rate': char?.critRate || 0,
       'Defense Penetration': 0,
       'Additional MP': 0,
       'Additional Attack': 0,
@@ -2016,7 +2051,7 @@ BobbyJones : "Allez l'Inter !"
     Attack: 0,
     Defense: 0,
     HP: 0,
-    'Critical Rate': 0,
+    'Critical Hit Rate': 0,
     'Defense Penetration': 0,
     'Healing Given Increase (%)': 0,
     'Damage Increase': 0,
@@ -2033,7 +2068,7 @@ BobbyJones : "Allez l'Inter !"
     Attack: 0,
     Defense: 0,
     HP: 0,
-    'Critical Rate': 0,
+    'Critical Hit Rate': 0,
     'Defense Penetration': 0,
     'Healing Given Increase (%)': 0,
     'Damage Increase': 0,
@@ -2049,7 +2084,7 @@ BobbyJones : "Allez l'Inter !"
     Attack: 0,
     Defense: 0,
     HP: 0,
-    'Critical Rate': 0,
+    'Critical Hit Rate': 0,
     'Defense Penetration': 0,
     'Healing Given Increase (%)': 0,
     'Additional MP': 0,
@@ -2109,7 +2144,7 @@ BobbyJones : "Allez l'Inter !"
     'Attack': defaultCharacter?.attack || 0,
     'Defense': defaultCharacter?.defense || 0,
     'HP': defaultCharacter?.hp || 0,
-    'Critical Rate': defaultCharacter?.critRate || 0,
+    'Critical Hit Rate': defaultCharacter?.critRate || 0,
     'Defense Penetration': 0,
     'Healing Given Increase (%)': 0,
     'Damage Increase': 0,
@@ -2125,7 +2160,7 @@ BobbyJones : "Allez l'Inter !"
       'Attack': 0,
       'HP': 0,
       'Defense': 0,
-      'Critical Rate': 0,
+      'Critical Hit Rate': 0,
       'Defense Penetration': 0,
       'Healing Given Increase (%)': 0,
       'Additional MP': 0,
@@ -2176,7 +2211,7 @@ BobbyJones : "Allez l'Inter !"
       'Attack': Math.round((flatStats.Attack || 0) + allBonuses.Attack),
       'HP': Math.round((flatStats.HP || 0) + allBonuses.HP),
       'Defense': Math.round((flatStats.Defense || 0) + allBonuses.Defense),
-      'Critical Rate': Math.round((flatStats['Critical Rate'] || 0) + allBonuses['Critical Rate']),
+      'Critical Hit Rate': Math.round((flatStats['Critical Hit Rate'] || 0) + allBonuses['Critical Hit Rate']),
       'MP': Math.round((flatStats['MP'] || 0) + allBonuses['MP']),
       'Defense Penetration': Math.round((flatStats['Defense Penetration'] || 0) + allBonuses['Defense Penetration']),
       'Additional MP': Math.round((flatStats['Additional MP'] || 0) + allBonuses['Additional MP']),
@@ -2276,7 +2311,7 @@ BobbyJones : "Allez l'Inter !"
         'Attack': charStats.attack + (scaleStat === 'Attack' ? weaponBoost : 0),
         'Defense': charStats.defense + (scaleStat === 'Defense' ? weaponBoost : 0),
         'HP': charStats.hp + (scaleStat === 'HP' ? weaponBoost : 0),
-        'Critical Rate': charStats.critRate,
+        'Critical Hit Rate': charStats.critRate,
         'Defense Penetration': 0,
         'Healing Given Increase (%)': 0,
         'Additional MP': 0,
@@ -2408,7 +2443,7 @@ BobbyJones : "Allez l'Inter !"
         'Attack': char.attack,
         'Defense': char.defense,
         'HP': char.hp,
-        'Critical Rate': char.critRate,
+        'Critical Hit Rate': char.critRate,
         'Defense Penetration': 0,
         'Additional Attack': 0,
         'Healing Given Increase (%)': 0,
@@ -2816,7 +2851,7 @@ BobbyJones : "Allez l'Inter !"
       'Additional Attack': 0,
       'Additional Defense': 0,
       'Additional HP': 0,
-      'Critical Rate': 0,
+      'Critical Hit Rate': 0,
       'Defense Penetration': 0,
       'Healing Given Increase (%)': 0,
       'Additional MP': 0,
@@ -2842,7 +2877,7 @@ BobbyJones : "Allez l'Inter !"
 
         const cleanStat = stat.trim();
 
-        const key = ['Attack', 'HP', 'Defense', 'Critical Rate', 'Additional Attack', 'Additional Defense', 'Additional HP', 'Defense Penetration', 'Healing Given Increase (%)', 'Additional MP', 'Damage Increase', 'MP Consumption Reduction', 'Damage Reduction', 'MP Recovery Rate Increase (%)', 'MP',
+        const key = ['Attack', 'HP', 'Defense', 'Critical Hit Rate', 'Additional Attack', 'Additional Defense', 'Additional HP', 'Defense Penetration', 'Healing Given Increase (%)', 'Additional MP', 'Damage Increase', 'MP Consumption Reduction', 'Damage Reduction', 'MP Recovery Rate Increase (%)', 'MP',
         ].find(
           valid => cleanStat === valid || cleanStat === `${valid} %`
         );

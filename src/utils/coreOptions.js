@@ -11,7 +11,7 @@ export const CORE_OPTIONS = {
       'Additional MP': 1170,
       'MP Recovery Rate Increase (%)': 5000,
       'MP Consumption Reduction': 1135,
-      'Critical Rate': 6644,
+      'Critical Hit Rate': 6644,
     },
     secondary: [
       'Critical Hit Damage',
@@ -21,7 +21,7 @@ export const CORE_OPTIONS = {
       'Additional MP',
       'MP Recovery Rate Increase (%)',
       'MP Consumption Reduction',
-      'Critical Rate',
+      'Critical Hit Rate',
     ],
   },
   Défensif: {
@@ -36,7 +36,7 @@ export const CORE_OPTIONS = {
       'Additional MP': 1170,
       'MP Recovery Rate Increase (%)': 5000,
       'MP Consumption Reduction': 1135,
-      'Critical Rate': 6644,
+      'Critical Hit Rate': 6644,
     },
     secondary: [
       'Critical Hit Damage',
@@ -46,7 +46,7 @@ export const CORE_OPTIONS = {
       'Additional MP',
       'MP Recovery Rate Increase (%)',
       'MP Consumption Reduction',
-      'Critical Rate',
+      'Critical Hit Rate',
     ],
   },
   Endurance: {
@@ -61,7 +61,7 @@ export const CORE_OPTIONS = {
       'Additional MP': 1170,
       'MP Recovery Rate Increase (%)': 5000,
       'MP Consumption Reduction': 1135,
-      'Critical Rate': 6644,
+      'Critical Hit Rate': 6644,
     },
     secondary: [
       'Critical Hit Damage',
@@ -71,7 +71,7 @@ export const CORE_OPTIONS = {
       'Additional MP',
       'MP Recovery Rate Increase (%)',
       'MP Consumption Reduction',
-      'Critical Rate',
+      'Critical Hit Rate',
     ],
   },
 };

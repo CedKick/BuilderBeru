@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 const commonSubStats = [
   'Attack %', 'Additional Attack', 'Defense Penetration', 'Damage Increase', 'Additional Defense',
   'Defense %', 'Additional HP', 'HP %', 'MP Consumption Reduction',
-  'Additional MP', 'MP Recovery Rate Increase (%)', 'Damage Reduction', 'Critical Hit Damage', 'Critical Rate'
+  'Additional MP', 'MP Recovery Rate Increase (%)', 'Damage Reduction', 'Critical Hit Damage', 'Critical Hit Rate'
 ];
 const mainStatMaxByIncrements = {
   'Additional Defense': {
@@ -112,6 +112,41 @@ const mainStatMaxByIncrements = {
     3: 24,
     4: 24,
   },
+  'Fire Damage %': {
+  0: 13.82,
+  1: 13.82,
+  2: 13.82,
+  3: 13.82,
+  4: 13.82,
+},
+'Water Damage %': {
+  0: 13.82,
+  1: 13.82,
+  2: 13.82,
+  3: 13.82,
+  4: 13.82,
+},
+'Wind Damage %': {
+  0: 13.82,
+  1: 13.82,
+  2: 13.82,
+  3: 13.82,
+  4: 13.82,
+},
+'Light Damage %': {
+  0: 13.82,
+  1: 13.82,
+  2: 13.82,
+  3: 13.82,
+  4: 13.82,
+},
+'Dark Damage %': {
+  0: 13.82,
+  1: 13.82,
+  2: 13.82,
+  3: 13.82,
+  4: 13.82,
+}
 };
 
 

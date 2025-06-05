@@ -80,7 +80,7 @@ function computeScalingStat(scale, artifact, flatStats) {
   "Additional Defense", "Defense %",
   "Additional HP", "HP %",
   "Defense Penetration",
-  "Critical Rate",
+  "Critical Hit Rate",
   "Critical Hit Damage",
   "Damage Increase"
 ];
@@ -102,9 +102,9 @@ function computeImportantStats(original, candidate, hunter, flatStats) {
       right: computeScalingStat(scale, right, flatStats),
     },
     {
-      label: 'Critical Rate',
-      left: computeStatValue('Critical Rate', left),
-      right: computeStatValue('Critical Rate', right),
+      label: 'Critical Hit Rate',
+      left: computeStatValue('Critical Hit Rate', left),
+      right: computeStatValue('Critical Hit Rate', right),
     },
     {
       label: 'Critical Hit Damage',
@@ -178,7 +178,7 @@ const statDiffSummary = [
     right: `${rightFlatScaling}`,
     diff: (rightFlatScaling - leftFlatScaling).toFixed(2),
   },
-  ...['Damage Increase', 'Defense Penetration', 'Critical Rate', 'Critical Hit Damage'].map(stat => {
+  ...['Damage Increase', 'Defense Penetration', 'Critical Hit Rate', 'Critical Hit Damage'].map(stat => {
     const leftIdx = original.original.subStats.indexOf(stat);
     const rightIdx = draftArtifact.subStats.indexOf(stat);
 

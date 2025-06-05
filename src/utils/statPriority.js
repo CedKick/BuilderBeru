@@ -29,7 +29,7 @@ const earringsMainStats = ['Additional MP'];
 
 export const SUBSTAT_PRIORITY = {
   Type1: {
-    priority2: ['Critical Rate', 'Damage Increase', 'Defense Penetration']
+    priority2: ['Critical Hit Rate', 'Damage Increase', 'Defense Penetration']
   },
   Type2: {
     priority2: ['Critical Hit Damage', 'Damage Increase', 'Defense Penetration']

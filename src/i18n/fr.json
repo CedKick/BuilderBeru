@@ -12,7 +12,7 @@
   "weapon" : "⚔️ Arme",
   "statFinals" : "Stats finales",
   "stats": {
-  "Critical Rate": "Taux de coup critique",
+  "Critical Hit Rate": "Taux de coup critique",
   "Critical Hit Damage": "Dégâts de coup critique",
   "Defense Penetration": "Pénétration de Défense",
   "Damage Increase": "Hausse des dégâts",
