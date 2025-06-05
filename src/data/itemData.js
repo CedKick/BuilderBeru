@@ -1274,6 +1274,39 @@ export const sungData = [
             }
         },
         BoT: {
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
+            }
+        }
+    }
+]
+
+
+export const characters = [
+
+    {
+        name: 'Lennart Niermann',
+        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749114179/niermann_arxjer.png',
+        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749114267/build-niermann_phfwmu.png',
+        class: 'Fighter',
+        grade: 'SSR',
+        element: 'Water',
+        scaleStat: 'Defense',
+        presets: {
+            PoD: {
+                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+                core: {
+                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
+                }
+            },
+            BdG: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
                 rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
                 core: {
@@ -1282,11 +1315,20 @@ export const sungData = [
                     Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
                 }
             }
+        },
+        BoT: {
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
+            }
+        }
     }
-]
+    ,
 
 
-export const characters = [
 
     {
         name: 'Cha Hae-In Valkyrie',
@@ -1317,14 +1359,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     }
     ,
     {
@@ -1356,14 +1398,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Alicia Blanche',
@@ -1394,14 +1436,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Amamiya Mirei',
@@ -1432,14 +1474,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Baek Yoonho',
@@ -1470,14 +1512,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Cha Hae In',
@@ -1508,14 +1550,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Charlotte',
@@ -1555,14 +1597,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Emma Laurent',
@@ -1593,14 +1635,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Esil Radiru',
@@ -1631,14 +1673,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Gina',
@@ -1669,14 +1711,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Go Gunhee',
@@ -1707,14 +1749,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Goto Ryuji',
@@ -1745,14 +1787,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Han Se-Mi',
@@ -1783,14 +1825,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Harper',
@@ -1821,14 +1863,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Hwang Dongsoo',
@@ -1859,14 +1901,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Isla Wright',
@@ -1897,14 +1939,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Lee Bora',
@@ -1935,14 +1977,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Lim Tae-Gyu',
@@ -1973,14 +2015,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Meilin Fisher',
@@ -2011,14 +2053,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Min Byung-Gu',
@@ -2049,14 +2091,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Seo Jiwoo',
@@ -2065,7 +2107,7 @@ export const characters = [
         class: 'Tank',
         grade: 'SSR',
         element: 'Water',
-        scaleStat: 'HP',presets: {
+        scaleStat: 'HP', presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
                 rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
@@ -2086,14 +2128,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Seorin',
@@ -2124,14 +2166,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Shimizu Akari',
@@ -2162,14 +2204,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Silver Mane Baek Yoonho',
@@ -2218,14 +2260,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Yoo Soohyun',
@@ -2256,14 +2298,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Anna Ruiz',
@@ -2294,14 +2336,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Han Song-Yi',
@@ -2332,14 +2374,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Hwang Dongsuk',
@@ -2370,14 +2412,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Jo Kyuhwan',
@@ -2408,14 +2450,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Kang Taeshik',
@@ -2446,14 +2488,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Kim Chul',
@@ -2484,14 +2526,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Kim Sangshik',
@@ -2522,14 +2564,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Lee Johee',
@@ -2560,14 +2602,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Nam Chae-Young',
@@ -2598,14 +2640,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Park Beom-Shik',
@@ -2636,14 +2678,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Park Heejin',
@@ -2674,14 +2716,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Song Chiyul',
@@ -2712,14 +2754,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     },
     {
         name: 'Yoo Jinho',
@@ -2750,14 +2792,14 @@ export const characters = [
             }
         },
         BoT: {
-                leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
-                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
-                core: {
-                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
-                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
-                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
-                }
+            leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
             }
+        }
     }
 
 ]
@@ -2835,9 +2877,9 @@ export const bossData = [
 ]
 
 export const elementData = {
-  fire: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604376/fire_u8p8qm.png",
-  water: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604378/water_ygxeiv.png",
-  light: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604374/light_rkqtga.png",
-  dark: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604377/dark_k8go8q.png",
-  wind: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604376/wind_zqnxhk.png"
+    fire: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604376/fire_u8p8qm.png",
+    water: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604378/water_ygxeiv.png",
+    light: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604374/light_rkqtga.png",
+    dark: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604377/dark_k8go8q.png",
+    wind: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604376/wind_zqnxhk.png"
 };

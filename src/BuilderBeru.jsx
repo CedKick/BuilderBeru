@@ -614,6 +614,7 @@ const BuilderBeru = () => {
   };
 
   const characterStats = {
+    'niermann': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 0 },
     'chae': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 0 },
     'kanae': { attack: 5634, defense: 5028, hp: 11628, critRate: 0 },
     'alicia': { attack: 5836, defense: 5087, hp: 11075, critRate: 0 },
@@ -1160,6 +1161,14 @@ BobbyJones : "Allez l'Inter !"
       grade: '',
       element: '',
       scaleStat: ''
+    },'niermann': {
+      name: 'Lennart Niermann',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749114179/niermann_arxjer.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749114267/build-niermann_phfwmu.png',
+      class: 'Fighter',
+      grade: 'SSR',
+      element: 'Water',
+      scaleStat: 'Defense'
     },
 
     'chae': {
