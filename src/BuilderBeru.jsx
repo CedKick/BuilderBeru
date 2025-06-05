@@ -649,7 +649,7 @@ const BuilderBeru = () => {
   };
 
   const characterStats = {
-    'niermann': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 0 },
+    'niermann': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
     'chae': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 0 },
     'kanae': { attack: 5634, defense: 5028, hp: 11628, critRate: 0 },
     'alicia': { attack: 5836, defense: 5087, hp: 11075, critRate: 0 },
