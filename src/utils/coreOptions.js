@@ -3,7 +3,7 @@ export const CORE_OPTIONS = {
     primary: ['Additional Attack', 'Attack %'],
     defaultValues: {
       'Additional Attack': 5473,
-      'Attack %': 53.44,
+      'Attack %': 53.34,
       'Critical Hit Damage': 6644,
       'Defense Penetration': 6644,
       'Damage Reduction': 6644,
@@ -28,7 +28,7 @@ export const CORE_OPTIONS = {
     primary: ['Additional Defense', 'Defense %'],
     defaultValues: {
       'Additional Defense': 5473,
-      'Defense %': 53.44,
+      'Defense %': 53.34,
       'Critical Hit Damage': 6644,
       'Defense Penetration': 6644,
       'Damage Reduction': 5000,
@@ -53,7 +53,7 @@ export const CORE_OPTIONS = {
     primary: ['Additional HP', 'HP %'],
     defaultValues: {
       'Additional HP': 10946,
-      'HP %': 53.44,
+      'HP %': 53.34,
       'Critical Hit Damage': 6644,
       'Defense Penetration': 6644,
       'Damage Reduction': 5000,
