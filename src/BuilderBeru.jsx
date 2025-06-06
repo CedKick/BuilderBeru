@@ -83,60 +83,60 @@ const tankPhrases = [
   "Tank : 'Est-ce qu’un artefact peut aimer ?'... Ok j’ai faim.",
   "Béru dit que je suis une mascotte... mais moi je tank la vérité.",
   "Pourquoi j’ai pas de sprite animé moi aussi ? 😭",
-  "JO n'a toujours pas d'images... Moi je dis ça moi je dis rien 😶"
-  // "Rappel : Critical Hit Rate, c’est pas Crit DMG. N’oublie jamais.",
-  // "Quand le serveur bug, c’est moi qui prends tout… #respecteTank",
-  // "This build smells like a Gagold masterpiece.",
-  // "Kly coded this with coffee and shadows.",
-  // "Don’t forget your daily pulls, or BobbyJones will kick you.",
-  // "Who's skipping the Guild Boss today? 👀",
-  // "Artifacts don't roll themselves, you know.",
-  // "Another +0 Helmet? Really?",
-  // "This chest piece looks... cursed.",
-  // "I saw Sung Jin-Woo roll better than that.",
-  // "The Gagold guild expects greatness!",
-  // "Legends say BobbyJones kicked someone for missing 1 BDG.",
-  // "Is this build Gagold-approved?",
-  // "Imagine Kly sees this gear. 😬",
-  // "Don't let Tank down. Enhance your boots!",
-  // "Did someone say... legendary artifact?",
-  // "This isn’t slagate, this is Kly's domain.",
-  // "No BDG? No mercy from Bobby.",
-  // "This ring is older than Kaisel.",
-  // "Missing Critical Hit Rate again, huh?",
-  // "Your HP is as low as your chances vs Ant King.",
-  // "Even Beru would say 'meh' to this stat.",
+  "JO n'a toujours pas d'images... Moi je dis ça moi je dis rien 😶",
+  "Rappel : Critical Hit Rate, c’est pas Crit DMG. N’oublie jamais.",
+  "Quand le serveur bug, c’est moi qui prends tout… #respecteTank",
+  "This build smells like a Gagold masterpiece.",
+  "Kly coded this with coffee and shadows.",
+  "Don’t forget your daily pulls, or BobbyJones will kick you.",
+  "Who's skipping the Guild Boss today? 👀",
+  "Artifacts don't roll themselves, you know.",
+  "Another +0 Helmet? Really?",
+  "This chest piece looks... cursed.",
+  "I saw Sung Jin-Woo roll better than that.",
+  "The Gagold guild expects greatness!",
+  "Legends say BobbyJones kicked someone for missing 1 BDG.",
+  "Is this build Gagold-approved?",
+  "Imagine Kly sees this gear. 😬",
+  "Don't let Tank down. Enhance your boots!",
+  "Did someone say... legendary artifact?",
+  "This isn’t slagate, this is Kly's domain.",
+  "No BDG? No mercy from Bobby.",
+  "This ring is older than Kaisel.",
+  "Missing Critical Hit Rate again, huh?",
+  "Your HP is as low as your chances vs Ant King.",
+  "Even Beru would say 'meh' to this stat.",
 
-  // // Solo Leveling / Artifacts
-  // "These artifacts are crying for a reforge.",
-  // "Did you just roll flat DEF again? 😂",
-  // "Shadow Soldiers would laugh at this gear.",
-  // "You need a dungeon, not luck.",
-  // "That’s not RNG, that’s sabotage.",
-  // "Even Baruka had better rolls.",
-  // "Cha Hae-In wouldn't wear this... even blindfolded.",
-  // "Looks like the System's trolling you today.",
+  // Solo Leveling / Artifacts
+  "These artifacts are crying for a reforge.",
+  "Did you just roll flat DEF again? 😂",
+  "Shadow Soldiers would laugh at this gear.",
+  "You need a dungeon, not luck.",
+  "That’s not RNG, that’s sabotage.",
+  "Even Baruka had better rolls.",
+  "Cha Hae-In wouldn't wear this... even blindfolded.",
+  "Looks like the System's trolling you today.",
 
-  // // Gagold / Lore
-  // "BobbyJones is watching... 👁",
-  // "Miss one BDG and you're out. Gagold rules.",
-  // "You think Gagold tolerates +3 gear?",
-  // "Pull your weight or pull the door 🚪",
-  // "This is Gagold, not a daycare.",
-  // "Kly built this place in the shadow of Solo Leveling itself.",
-  // "Respect the rank, fear the BDG.",
-  // "Guild motto: no excuses, only crits.",
+  // Gagold / Lore
+  "BobbyJones is watching... 👁",
+  "Miss one BDG and you're out. Gagold rules.",
+  "You think Gagold tolerates +3 gear?",
+  "Pull your weight or pull the door 🚪",
+  "This is Gagold, not a daycare.",
+  "Kly built this place in the shadow of Solo Leveling itself.",
+  "Respect the rank, fear the BDG.",
+  "Guild motto: no excuses, only crits.",
 
-  // // Meta / Fun
-  // "Bet you thought that was a good roll. You thought wrong.",
-  // "Tank's watching. Tank's judging.",
-  // "I've seen better builds in tutorial zones.",
-  // "What’s next, flat luck as a main stat?",
-  // "Every time you reroll, a shadow cries.",
-  // "I auto-attack harder than this weapon does.",
-  // "You call this optimization? I call it disappointment.",
-  // "I heard SLAGATE finally finished their site... 😭😭😭😝😌",
-  // "This build was handcrafted in mediocrity."
+  // Meta / Fun
+  "Bet you thought that was a good roll. You thought wrong.",
+  "Tank's watching. Tank's judging.",
+  "I've seen better builds in tutorial zones.",
+  "What’s next, flat luck as a main stat?",
+  "Every time you reroll, a shadow cries.",
+  "I auto-attack harder than this weapon does.",
+  "You call this optimization? I call it disappointment.",
+  "I heard SLAGATE finally finished their site... 😭😭😭😝😌",
+  "This build was handcrafted in mediocrity."
 ];
 
 
@@ -2028,6 +2028,7 @@ BobbyJones : "Allez l'Inter !"
       'Defense': (char?.defense || 0) + (scaleStat === 'Defense' ? weaponBoost : 0),
       'HP': (char?.hp || 0) + (scaleStat === 'HP' ? weaponBoost : 0),
       'Critical Hit Rate': char?.critRate || 0,
+      'Critical Hit Damage': 0,
       'Defense Penetration': 0,
       'Additional MP': 0,
       'Additional Attack': 0,
@@ -2052,6 +2053,7 @@ BobbyJones : "Allez l'Inter !"
     Defense: 0,
     HP: 0,
     'Critical Hit Rate': 0,
+    'Critical Hit Damage': 0,
     'Defense Penetration': 0,
     'Healing Given Increase (%)': 0,
     'Damage Increase': 0,
@@ -2069,6 +2071,7 @@ BobbyJones : "Allez l'Inter !"
     Defense: 0,
     HP: 0,
     'Critical Hit Rate': 0,
+    'Critical Hit Damage': 0,
     'Defense Penetration': 0,
     'Healing Given Increase (%)': 0,
     'Damage Increase': 0,
@@ -2085,6 +2088,7 @@ BobbyJones : "Allez l'Inter !"
     Defense: 0,
     HP: 0,
     'Critical Hit Rate': 0,
+    'Critical Hit Damage': 0,
     'Defense Penetration': 0,
     'Healing Given Increase (%)': 0,
     'Additional MP': 0,
@@ -2145,6 +2149,7 @@ BobbyJones : "Allez l'Inter !"
     'Defense': defaultCharacter?.defense || 0,
     'HP': defaultCharacter?.hp || 0,
     'Critical Hit Rate': defaultCharacter?.critRate || 0,
+    'Critical Hit Damage': 0,
     'Defense Penetration': 0,
     'Healing Given Increase (%)': 0,
     'Damage Increase': 0,
@@ -2161,6 +2166,7 @@ BobbyJones : "Allez l'Inter !"
       'HP': 0,
       'Defense': 0,
       'Critical Hit Rate': 0,
+      'Critical Hit Damage': 0,
       'Defense Penetration': 0,
       'Healing Given Increase (%)': 0,
       'Additional MP': 0,
@@ -2212,6 +2218,7 @@ BobbyJones : "Allez l'Inter !"
       'HP': Math.round((flatStats.HP || 0) + allBonuses.HP),
       'Defense': Math.round((flatStats.Defense || 0) + allBonuses.Defense),
       'Critical Hit Rate': Math.round((flatStats['Critical Hit Rate'] || 0) + allBonuses['Critical Hit Rate']),
+      'Critical Hit Damage': Math.round((flatStats['Critical Hit Damage'] || 0) + allBonuses['Critical Hit Damage']),
       'MP': Math.round((flatStats['MP'] || 0) + allBonuses['MP']),
       'Defense Penetration': Math.round((flatStats['Defense Penetration'] || 0) + allBonuses['Defense Penetration']),
       'Additional MP': Math.round((flatStats['Additional MP'] || 0) + allBonuses['Additional MP']),
@@ -2312,6 +2319,7 @@ BobbyJones : "Allez l'Inter !"
         'Defense': charStats.defense + (scaleStat === 'Defense' ? weaponBoost : 0),
         'HP': charStats.hp + (scaleStat === 'HP' ? weaponBoost : 0),
         'Critical Hit Rate': charStats.critRate,
+        'Critical Hit Damage': 0,
         'Defense Penetration': 0,
         'Healing Given Increase (%)': 0,
         'Additional MP': 0,
@@ -2444,6 +2452,7 @@ BobbyJones : "Allez l'Inter !"
         'Defense': char.defense,
         'HP': char.hp,
         'Critical Hit Rate': char.critRate,
+        'Critical Hit Damage': 0,
         'Defense Penetration': 0,
         'Additional Attack': 0,
         'Healing Given Increase (%)': 0,
@@ -2852,6 +2861,7 @@ BobbyJones : "Allez l'Inter !"
       'Additional Defense': 0,
       'Additional HP': 0,
       'Critical Hit Rate': 0,
+      'Critical Hit Damage': 0,
       'Defense Penetration': 0,
       'Healing Given Increase (%)': 0,
       'Additional MP': 0,
@@ -2877,7 +2887,7 @@ BobbyJones : "Allez l'Inter !"
 
         const cleanStat = stat.trim();
 
-        const key = ['Attack', 'HP', 'Defense', 'Critical Hit Rate', 'Additional Attack', 'Additional Defense', 'Additional HP', 'Defense Penetration', 'Healing Given Increase (%)', 'Additional MP', 'Damage Increase', 'MP Consumption Reduction', 'Damage Reduction', 'MP Recovery Rate Increase (%)', 'MP',
+        const key = ['Attack', 'HP', 'Defense', 'Critical Hit Rate', 'Critical Hit Damage', 'Additional Attack', 'Additional Defense', 'Additional HP', 'Defense Penetration', 'Healing Given Increase (%)', 'Additional MP', 'Damage Increase', 'MP Consumption Reduction', 'Damage Reduction', 'MP Recovery Rate Increase (%)', 'MP',
         ].find(
           valid => cleanStat === valid || cleanStat === `${valid} %`
         );
@@ -2885,7 +2895,7 @@ BobbyJones : "Allez l'Inter !"
         if (!key) return;
 
         if (stat.endsWith('%')) {
-          newStatsFromArtifacts[key] += Math.floor(flatStats[key] * value / 100);
+          newStatsFromArtifacts[key] += (flatStats[key] * value / 100);
         } else if (stat.startsWith('Additional ')) {
           const baseStat = stat.replace('Additional ', '');
           newStatsFromArtifacts[baseStat] += value;

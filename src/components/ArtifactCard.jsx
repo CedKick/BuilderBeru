@@ -297,7 +297,7 @@ const ArtifactCard = ({
     if (!config || !config[0]) return 0;
     const { min, max } = config[0];
     const rawValue = Math.random() * (max - min) + min;
-    return subStatData.stat?.includes("%") ? +rawValue.toFixed(2) : Math.floor(rawValue);
+    return subStatData.stat?.includes("%") ? +rawValue.toFixed(2) : (rawValue);
   };
 
   // const handleManualSubStatChange = (index, e) => {
@@ -372,7 +372,7 @@ const ArtifactCard = ({
 
       const ranges = substatsMinMaxByIncrements[value];
       const rawInit = Math.random() * (ranges[0].max - ranges[0].min) + ranges[0].min;
-      const initValue = value.includes('%') ? +rawInit.toFixed(2) : Math.floor(rawInit);
+      const initValue = value.includes('%') ? +rawInit.toFixed(2) : (rawInit);
 
       newSubStatsLevels[index] = {
         level: 0,
@@ -433,10 +433,10 @@ const ArtifactCard = ({
       if (procOrder === null) return prev;
 
       const rawProc = Math.random() * (ranges[procOrder].max - ranges[procOrder].min) + ranges[procOrder].min;
-      const procValue = stat.includes('%') ? +rawProc.toFixed(2) : Math.floor(rawProc);
+      const procValue = stat.includes('%') ? +rawProc.toFixed(2) : Math.round(rawProc);
       const newValue = stat.includes('%')
         ? +(current.value + procValue).toFixed(2)
-        : Math.floor(current.value + procValue);
+        : (current.value + procValue);
 
       const newProcOrders = [...current.procOrders, procOrder];
       const newProcValues = [...(current.procValues || []), procValue];
@@ -466,7 +466,7 @@ const ArtifactCard = ({
       setTimeout(() => {
         setInputValues(prev => ({
           ...prev,
-          [idx]: stat.includes('%') ? newValue.toFixed(2) : Math.floor(newValue).toString()
+          [idx]: stat.includes('%') ? newValue.toFixed(2) : (newValue).toString()
         }));
       }, 0);
 
@@ -661,12 +661,17 @@ const ArtifactCard = ({
                   type="text"
                   className="w-16 p-[1px] rounded bg-[#1c1c3c] text-center text-xs"
                   value={
-                    inputValues[idx] !== undefined
-                      ? inputValues[idx]
-                      : artifactData.subStats[idx]?.includes('%')
-                        ? (artifactData.subStatsLevels[idx]?.value || 0).toFixed(2)
-                        : Math.floor(artifactData.subStatsLevels[idx]?.value || 0).toString()
-                  }
+  inputValues[idx] !== undefined
+    ? inputValues[idx]
+    : (() => {
+        const val = artifactData.subStatsLevels[idx]?.value || 0;
+        return artifactData.subStats[idx]?.includes('%')
+          ? val.toFixed(2)
+          : Number.isInteger(val)
+            ? val
+            : Math.round(val);
+      })()
+}
                   onChange={(e) => {
                     let raw = e.target.value;
 
