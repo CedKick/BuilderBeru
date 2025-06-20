@@ -543,6 +543,36 @@ function useResponsive() {
   return screen;
 }
 
+// 🐉 KAISEL MIGRATION SCRIPT - À ajouter dans ton useEffect de chargement
+
+// 🐉 KAISEL MIGRATION FUNCTION - Nettoie automatiquement l'ancien localStorage
+const migrateOldDataToNewSystem = () => {
+  console.log("🐉 Kaisel: Début migration localStorage...");
+  
+  // Identifier les anciennes clés à nettoyer
+  const toCleanup = [];
+  
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    
+    // Nettoyer les anciennes clés
+    if (key.startsWith('build_') || 
+        ['recentBuilds', 'hunterWeapons', 'gems', 'global_gem_data'].includes(key)) {
+      toCleanup.push(key);
+    }
+  }
+  
+  // Nettoyer les anciennes clés
+  toCleanup.forEach(key => {
+    localStorage.removeItem(key);
+    console.log(`🗑️ Supprimé: ${key}`);
+  });
+  
+  console.log("✅ Migration terminée ! localStorage nettoyé.");
+};
+
+
+
 const BuilderBeru = () => {
   const { t } = useTranslation();
   const darkAriaAudioRef = useRef(null);
@@ -1657,25 +1687,53 @@ const getShadowScreenPosition = (entityType = 'tank') => {
   };
 
   // 🧠 Fonction de recalcul des stats finales avec artefacts
-  const recalculateStatsFromArtifacts = () => {
-    if (!selectedCharacter) return;
+// 🐉 KAISEL VERSION PROTÉGÉE - REMPLACE ta fonction existante
+const recalculateStatsFromArtifacts = () => {
+  if (!selectedCharacter) return;
 
-    const allowedRawStats = [
-      "Precision", "Defense Penetration", "Healing Given Increase (%)",
-      "MP Recovery Rate Incr. (%)", "Additional MP", "MP Consumption Reduc.",
-      "DMG Incr.", "DMG Reduction"
-      // Ajoute ici toutes les autres stats non liées aux stats de base
-    ];
+  const allowedRawStats = [
+    "Precision", "Defense Penetration", "Healing Given Increase (%)",
+    "MP Recovery Rate Incr. (%)", "Additional MP", "MP Consumption Reduc.",
+    "DMG Incr.", "DMG Reduction"
+  ];
 
-    const flat = { ...flatStats }; // ⚠️ utilise flatStats réel du state
-    const updated = {};
+  const flat = { ...flatStats };
+  const updated = {};
 
-    Object.values(artifactsData).forEach(artifact => {
-      if (!artifact) return;
+  Object.values(artifactsData).forEach(artifact => {
+    if (!artifact) return;
 
-      // ➤ Substats
-      artifact.subStats?.forEach((stat, i) => {
-        const levelInfo = artifact.subStatsLevels?.[i];
+    // 🛡️ PROTECTION MAINSTAT KAISEL
+    if (artifact.mainStat && 
+        typeof artifact.mainStat === 'string' && 
+        artifact.mainStat.trim() !== '' &&
+        mainStatMaxByIncrements[artifact.mainStat]) {
+      
+      // ✅ Calcul sécurisé de mainStatValue
+      artifact.mainStatValue = mainStatMaxByIncrements[artifact.mainStat][4];
+      
+      const stat = artifact.mainStat;
+      const value = artifact.mainStatValue;
+
+      if (stat.endsWith('%')) {
+        const baseStat = stat.replace(' %', '');
+        const base = flat[baseStat] || 0;
+        updated[baseStat] = (updated[baseStat] || 0) + (base * value / 100);
+      } else if (stat.startsWith('Additional ')) {
+        const baseStat = stat.replace('Additional ', '');
+        updated[baseStat] = (updated[baseStat] || 0) + value;
+      } else {
+        updated[stat] = (updated[stat] || 0) + value;
+      }
+    } else if (artifact.mainStat && artifact.mainStat.trim() !== '') {
+      // 🚨 Log les mainStats problématiques sans crasher
+      console.warn(`⚠️ Kaisel: MainStat invalide ignoré: "${artifact.mainStat}"`);
+    }
+
+    // ➤ Substats (protection renforcée)
+    if (Array.isArray(artifact.subStats) && Array.isArray(artifact.subStatsLevels)) {
+      artifact.subStats.forEach((stat, i) => {
+        const levelInfo = artifact.subStatsLevels[i];
         if (!stat || !levelInfo || typeof levelInfo.value !== 'number') return;
 
         if (stat.endsWith('%')) {
@@ -1689,38 +1747,13 @@ const getShadowScreenPosition = (entityType = 'tank') => {
           updated[stat] = (updated[stat] || 0) + levelInfo.value;
         }
       });
+    } else {
+      console.warn(`⚠️ Kaisel: SubStats invalides pour un artefact:`, artifact);
+    }
+  });
 
-      // ➤ Main stat
-      if (artifact.mainStat) {
-        artifact.mainStatValue = mainStatMaxByIncrements[artifact.mainStat][4];
-        if (artifact.mainStat && artifact.mainStatValue) {
-          const stat = artifact.mainStat;
-          const value = artifact.mainStatValue;
-
-          if (stat.endsWith('%')) {
-            const baseStat = stat.replace(' %', '');
-            const base = flat[baseStat] || 0;
-            updated[baseStat] = (updated[baseStat] || 0) + (base * value / 100);
-          } else if (stat.startsWith('Additional ')) {
-            const baseStat = stat.replace('Additional ', '');
-            updated[baseStat] = (updated[baseStat] || 0) + value;
-          } else {
-            updated[stat] = (updated[stat] || 0) + value;
-          }
-        }
-      }
-    });
-
-    // setStatsFromArtifacts(completeStats(updated));
-
-    // ➤ Ajouter les stats manquantes (non liées aux % et non présentes dans flatStats)
-
-
-
-
-    setStatsFromArtifacts(completeStats(updated));
-
-  };
+  setStatsFromArtifacts(completeStats(updated));
+};
 
   const tankMessageRef = useRef('');
   const messageOpacityRef = useRef(1);
@@ -2688,6 +2721,9 @@ BobbyJones : "Allez l'Inter !"
 
   useEffect(() => {
     console.log("🔄 useEffect [INIT & CHARGEMENT MULTI-COMPTE - KAISEL FIX]");
+
+
+ migrateOldDataToNewSystem();
 
     const defaultUserData = {
       activeAccount: "main",
