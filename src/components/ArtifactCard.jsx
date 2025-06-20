@@ -6,7 +6,21 @@ import { handleNumericInput } from '../utils/inputUtils';
 import '../i18n/i18n';
 import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
+import { getSetIcon } from "../utils/artifactUtils"; // adapte le chemin
+import ArtifactSavePopup from './ArtifactSavePopup';
+import ArtifactLibrary from './ArtifactLibrary'; // 👈 🔥 AJOUTE ÇA !
 
+
+// const getSetIcon = (setName) => {
+//   const iconMap = {
+//     "Toughness (Hard Leather Set)": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png",
+//     "Solid Analysis (New Hunter Set)": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png",
+//     "Guardian (Palace Guard Set)": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png",
+//     // Ajoute tes vrais liens plus tard 👆
+//   };
+
+//   return iconMap[setName] || "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png";
+// };
 
 const commonSubStats = [
   'Attack %', 'Additional Attack', 'Defense Penetration', 'Damage Increase', 'Additional Defense',
@@ -168,6 +182,7 @@ const calculateMainStatValue = (mainStat, subStatsLevels) => {
 };
 
 
+
 const ArtifactCard = ({
   title,
   mainStats,
@@ -177,24 +192,148 @@ const ArtifactCard = ({
   onArtifactChange,
   statsWithoutArtefact,
   flatStats,
+  onArtifactSave, // 🔥 NOUVEAU PROP
+   onSetIconClick, // 👈 ajoute-le ici
+   handleLoadSavedSet,
   hunter,
   substatsMinMaxByIncrements,
   openComparisonPopup, // 👈 ajoute-le ici
   mode = "edit", // default
   disableComparisonButton = false, // 👈 AJOUT
+   artifactLibrary,  // 👈 NOUVEAU !
+  activeAccount     // 👈 NOUVEAU !
 }) => {
   const { t } = useTranslation();
 
+
+// 🔥 AJOUTE AUSSI UN BOUTON DE TEST TEMPORAIRE dans le JSX :
+// Juste après le titre, avant les icônes :
+
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [inputValues, setInputValues] = useState({});
+  const [showLibrary, setShowLibrary] = useState(false);
+const [librarySlot, setLibrarySlot] = useState(null); // 👈 GARDE LE SLOT
+  const [showSavePopup, setShowSavePopup] = useState(false);
   const selections = artifactData;
   const [localMainStat, setLocalMainStat] = useState(artifactData.mainStat || '');
+  const [currentSetIcon, setCurrentSetIcon] = useState(
+  artifactData.set 
+    ? getSetIcon(artifactData.set, title) || "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
+    : "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
+);
   const setArtifactsData = (newData) => onArtifactChange(newData);
   const slot = title?.title || title; // sécurité double 😏
+
+  const handleResetArtifact = (slot) => {
+
+  // Réinitialise complètement l'artefact
+  onArtifactChange(() => ({
+    mainStat: '',
+    subStats: ['', '', '', ''],
+    subStatsLevels: [
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] }
+    ],
+    set: '',
+    mainStatValue: 0,
+    savedArtifactId: undefined,
+    savedArtifactName: undefined
+  }));
+  
+  // Reset l'icône de set aussi
+  setCurrentSetIcon("https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png");
+  
+  // Message Tank
+  showTankMessage && showTankMessage(`🔄 ${slot} remis à zéro !`, true);
+  
+
+
+  
+  // Recalcul des stats
+  recalculateStatsFromArtifacts && recalculateStatsFromArtifacts();
+};
+
+  const handleSelectFromLibrary = (selectedArtifact) => {
+  
+  // Applique l'artefact sélectionné
+  onArtifactChange(() => ({
+    mainStat: selectedArtifact.mainStat,
+    subStats: selectedArtifact.subStats,
+    subStatsLevels: selectedArtifact.subStatsLevels,
+    set: selectedArtifact.set,
+    mainStatValue: selectedArtifact.mainStatValue,
+    savedArtifactId: selectedArtifact.id,
+    savedArtifactName: selectedArtifact.name
+  }));
+  
+  // Met à jour l'icône de set
+  setCurrentSetIcon(
+    getSetIcon(selectedArtifact.set, title) || 
+    "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
+  );
+  
+  // Recalcule les stats
+  recalculateStatsFromArtifacts && recalculateStatsFromArtifacts();
+  
+  // Message Tank
+  showTankMessage && showTankMessage(`📦 "${selectedArtifact.name}" chargé !`, true);
+  
+  // Ferme la librairie
+  setShowLibrary(false);
+  setLibrarySlot(null);
+};
+
+const handleOpenLibrary = (slot) => {
+  setLibrarySlot(slot); // 👈 GARDE LE SLOT !
+  setShowLibrary(true);
+};
+
+  useEffect(() => {
+  }, [artifactData.set]);
+
+  // 🔥 useEffect POUR L'ICÔNE ICI !
+  useEffect(() => {
+    
+    if (artifactData.set) {
+      const newIcon = getSetIcon(artifactData.set, title);
+      
+      setCurrentSetIcon(
+        newIcon || "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
+      );
+    } else {
+      setCurrentSetIcon("https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png");
+    }
+  }, [artifactData.set, title]);
+
   useEffect(() => {
     setLocalMainStat(artifactData.mainStat || '');
   }, [artifactData.mainStat]);
 
+  useEffect(() => {
+}, [artifactData.set]);
+
+const handleSaveSet = (slot) => {
+  
+  if (!shouldShowSave(artifactData)) {
+    showTankMessage && showTankMessage("❌ Artefact incomplet !");
+    return;
+  }
+  
+  setShowSavePopup(true);
+};
+
+// Ajoute cette fonction pour gérer la sauvegarde :
+const handleArtifactSave = (saveData) => {
+  
+  // On va l'envoyer au parent BuilderBeru.jsx
+  if (onArtifactSave) {
+    onArtifactSave(saveData);
+  }
+  
+  showTankMessage && showTankMessage(`💾 "${saveData.name}" sauvé !`);
+};
 
   const updateArtifactMainStat = (newValue) => {
     // 🔧 Propager la mise à jour au parent (si nécessaire)
@@ -211,6 +350,29 @@ const ArtifactCard = ({
 
     return allProcsDone && allStatsSelected;
   };
+
+  const shouldShowSave = (artifact) => {
+  
+  // 1. Set choisi
+  const hasSet = artifact.set && artifact.set !== '';
+  
+  // 2. Main stat sélectionnée
+  const hasMainStat = artifact.mainStat && artifact.mainStat !== '';
+  
+  // 3. Toutes les substats sélectionnées (4 substats non-vides)
+  const allSubStatsSelected = artifact.subStats?.every(s => s && s !== '') && artifact.subStats?.length === 4;
+
+  
+  // 4. Total de 4 procs
+  const totalProcs = artifact.subStatsLevels?.reduce((sum, s) => sum + (s?.level || 0), 0);
+  const allProcsDone = totalProcs === 4;
+
+  
+  const canSave = hasSet && hasMainStat && allSubStatsSelected && allProcsDone;
+
+  
+  return canSave;
+};
 
   // Mise à jour de la fonction getSubstatHint
   const getSubstatHint = (stat, subStatData) => {
@@ -394,7 +556,8 @@ const ArtifactCard = ({
     const ranges = substatsMinMaxByIncrements[stat]?.[procOrder];
     if (!ranges) return 0;
     const { min, max } = ranges;
-    return +(Math.random() * (max - min) + min); // Number, pas de .toFixed ici
+     // Appliquer la règle de formatage selon si c'est un pourcentage ou non
+  return stat.includes('%') ? +rawValue.toFixed(2) : Math.round(rawValue);
   };
 
   const getNextProcOrder = (allProcOrders) => {
@@ -435,8 +598,8 @@ const ArtifactCard = ({
       const rawProc = Math.random() * (ranges[procOrder].max - ranges[procOrder].min) + ranges[procOrder].min;
       const procValue = stat.includes('%') ? +rawProc.toFixed(2) : Math.round(rawProc);
       const newValue = stat.includes('%')
-        ? +(current.value + procValue).toFixed(2)
-        : (current.value + procValue);
+      ? +(current.value + procValue).toFixed(2)
+      : Math.round(current.value + procValue);
 
       const newProcOrders = [...current.procOrders, procOrder];
       const newProcValues = [...(current.procValues || []), procValue];
@@ -561,6 +724,51 @@ const ArtifactCard = ({
     <div className="artifact-card bg-[#0b0b1f] w-75 p-[1px] rounded-lg shadow-md text-white">
       <div className="flex justify-between items-center mb-[2px]">
         <h2 className="text-base font-bold">{t(`titleArtifact.${title}`)}</h2>
+        <div className="flex items-center gap-1">
+  
+
+{/* Icône pour charger un set (ANCIEN NOM, NOUVELLE FONCTION) */}
+<img
+  src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750335621/chooseSet_fo08yb.png"
+  onClick={() => handleOpenLibrary(title)} // 👈 GARDE LE TITLE !
+  alt="Charger un set existant"
+  className="w-4 h-4 cursor-pointer hover:scale-110 transition"
+  title="Charger un set existant"
+/>
+
+
+
+   {/* Bouton d’ouverture de set (avec ou sans set existant) */}
+<img
+  src={currentSetIcon}  // 🔥 AU LIEU DE getSetIcon()
+  onClick={() => onSetIconClick(title)}
+  alt={artifactData.set || "Sélectionner un Set"}
+  title={artifactData.set || "Choisir un Set"}
+  className="w-5 h-5 cursor-pointer hover:scale-110 transition"
+/>
+
+ {/* 🔥 NOUVEAU BOUTON RESET - À DROITE DU DIAMANT */}
+    <img
+      src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750356736/resetArtifact_eobh2e.png"
+      onClick={() => handleResetArtifact(title)}
+      alt="Reset Artifact"
+      title="Reset Artifact"
+      className="w-4 h-4 cursor-pointer hover:scale-110 transition"
+    />
+
+   
+ {/* Icône du save - CONDITIONNELLE */}
+{shouldShowSave(artifactData) && (
+  <img
+    src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750335754/saveSet_gp2hfr.png"
+    onClick={() => handleSaveSet(title)}
+    alt="Save le set"
+    className="w-4 h-4 cursor-pointer hover:scale-110 transition"
+    title="Save le set"
+  />
+)}
+
+  </div>
         <div className="flex items-center gap-2">
           {shouldShowComparison(artifactData) && !disableComparisonButton && (
             <div className="w-5 h-5 rounded-full from-[#3b3b9c] to-[#6c63ff] flex items-center justify-center text-white text-[10px] shadow-sm hover:scale-110 transition-transform">
@@ -730,8 +938,32 @@ const ArtifactCard = ({
               </div>
             </>
           )}
+          
         </div>
       ))}
+        {/* Popup de sauvegarde */}
+    {showSavePopup && (
+      <ArtifactSavePopup
+        artifactData={artifactData}
+        slot={title}
+        onSave={handleArtifactSave}
+        onClose={() => setShowSavePopup(false)}
+        hunter={hunter?.name || 'unknown'}
+      />
+    )}
+    {/* Librairie avec le bon slot */}
+{showLibrary && librarySlot && (
+  <ArtifactLibrary
+    slot={librarySlot} // 👈 UTILISE LE SLOT STOCKÉ !
+    onSelect={handleSelectFromLibrary}
+    onClose={() => {
+      setShowLibrary(false);
+      setLibrarySlot(null); // 👈 RESET
+    }}
+    artifactLibrary={artifactLibrary}
+    activeAccount={activeAccount}
+  />
+)}
     </div>
   );
 }

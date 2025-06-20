@@ -62,5 +62,125 @@
   "Ring": "Ring",
   "Earrings": "Earrings"
 },
-"confirmStat" : "System has detected stats..."
+"confirmStat" : "System has detected stats...",
+ "characters": {
+    "tank": {
+      "name": "Tank",
+      "description": "Defensive bruiser with his apple",
+      "personality": "defensive_funny"
+    },
+    "beru": {
+      "name": "Beru",
+      "description": "Shadow strategist and analyst",
+      "personality": "intelligent_strategic"
+    },
+    "kaisel": {
+      "name": "Kaisel",
+      "description": "Technical scalpel of the team",
+      "personality": "efficient_precise"
+    }
+  },
+  "beruMessages": {
+    "analysis": {
+      "good": [
+        "Analysis complete. Build approved by my calculations.",
+        "Excellent strategic choice, Monarch.",
+        "Theoretical score: 87%. My algorithms are satisfied.",
+        "This combination... logical and efficient."
+      ],
+      "bad": [
+        "Error detected. Recalculate your priorities.",
+        "This decision... my algorithms weep.",
+        "Sub-optimal score. Reflection required.",
+        "Even Tank would do better... maybe."
+      ],
+      "tips": [
+        "Priority: Critical Hit Rate before Critical Hit Damage.",
+        "Suggestion: focus Defense % for Tank role.",
+        "Pattern detected: you're neglecting Defense Penetration.",
+        "Optimization required: your gems don't match your role."
+      ]
+    },
+    "interactions": [
+      "Seeking my advice? Wise decision.",
+      "My algorithms detect... curiosity.",
+      "I calculate therefore I am. You... exist.",
+      "Interaction noted. Improvement: questionable."
+    ],
+    "comparisons": [
+      "Tank says nonsense. Listen to me instead.",
+      "While Tank eats, I calculate.",
+      "Tank protects. I optimize. You... try."
+    ]
+  },
+
+  "tankMessages": {
+    "casual": [
+      "It's me, Tank! I protect this builder 🛡️",
+      "Want to modify artifacts? Not scared!",
+      "I wonder if Beru really respects me 😤",
+      "I rolled 4 artifacts today. Weird, right?"
+    ],
+    "bobby": [
+      "BobbyJones will yell at me if I miss the boss...",
+      "If you forget your dailies, I'm calling BobbyJones.",
+      "Miss one BDG and you're out. Gagold rules.",
+      "Respect the rank, fear the BDG."
+    ],
+    "food": [
+      "Tank: 'Can an artifact love?'... Ok I'm hungry.",
+      "BobbyJones: *bites apple* Well, we have an intellectual now...",
+      "Even if Tank ate all the apples, he'd still be confused."
+    ]
+  },
+  "analysis": {
+    "score": "Theoretical score",
+    "recommendation": "Recommendation",
+    "priority": "Priority",
+    "optimization": "Possible optimization",
+    "synergy": "Synergy detected",
+    "warning": "Warning"
+  },
+"beruLore": [
+    "Once Ant King, now loyal advisor. Born in darkness, saved by the Monarch.",
+    "In Demon Castle depths, I learned true strength lies in strategic analysis.",
+    "My Ant King memories remind me: every battle is won first in the mind.",
+    "The Monarch gave me a second chance. In return, I calculate your build perfection.",
+    "Shadow Soldiers, Ant Army... all obey mathematics. Like your artifacts should.",
+    "My evolution: from blind destruction to precise optimization. Inspiring, no?",
+    "Other Shadow Soldiers strike. I think. That's why I'm indispensable.",
+    "In my anthill, every tunnel had purpose. Your substats should have the same planning level."
+  ],
+  
+  "beruJokes": [
+    "Tank thinks his apple boosts stats... My calculations: 0% bonus 🍎",
+    "Error 404: logic not found in your build",
+    "Even Shadow Soldiers have better substats than you",
+    "My IQ > your current artifact score",
+    "Tank rates your choices 3/10. Me: 4/10. Progress detected.",
+    "I have more coherence as a pixelated insect than your current build.",
+    "You want a balanced build? Start by uninstalling instinct.",
+    "HP on a DPS Hunter... I call that a crime."
+  ],
+  
+  "beruTutorial": [
+    "Welcome, Monarch! BuilderBeru optimizes your Solo Leveling Arise artifacts. Select a Hunter, configure stats, then equip artifacts!",
+    "First step to perfection: choose your Hunter, then click on my advice.",
+    "This site is your optimization laboratory. I am your guide in the shadows."
+  ],
+  
+  "beruAnalysis": {
+    "withCharacter": "Analysis of {hunterName}... My algorithms detect possible improvements. Focus on priority stats!",
+    "noCharacter": "Select a Hunter first for analysis, Monarch."
+  },
+  
+  "tankReplies": [
+    "What Beru? I was busy with my apple! 🍎",
+    "Your calculations vs my field experience!",
+    "Team up? You analyze, I protect! 🛡️",
+    "I'm not slow, I'm... strategic.",
+    "You talked about me? I was in my defense bubble.",
+    "If life gives you apples... eat them.",
+    "I think slowly, but I hit hard."
+  ]
 }

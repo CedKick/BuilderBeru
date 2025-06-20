@@ -1,17 +1,19 @@
 import { gemTypes } from '../utils/gemOptions';
 import React, { useState, useEffect } from 'react';
 
-const GemmePopup = ({ onClose, onSave, isMobile }) => {
+const GemmePopup = ({ gemData, onClose, onSave, isMobile }) => { // ← 🐉 AJOUT gemData en props !
   const [gemValues, setGemValues] = useState({});
 
   useEffect(() => {
-    const saved = localStorage.getItem('gems');
-    if (saved) {
-      setGemValues(JSON.parse(saved));
+    // 🐉 KAISEL FIX : Utilise les gemData du compte actif, pas le localStorage global !
+    if (gemData && Object.keys(gemData).length > 0) {
+      console.log("🐉 Kaisel: Chargement gemmes depuis props:", gemData);
+      setGemValues(gemData);
     } else {
+      console.log("🐉 Kaisel: Aucune gemme en props, utilisation des valeurs par défaut");
       setGemValues(gemTypes);
     }
-  }, []);
+  }, [gemData]); // ← 🐉 DÉPENDANCE sur gemData !
 
   const handleChange = (category, stat, value) => {
     setGemValues(prev => ({
@@ -24,8 +26,11 @@ const GemmePopup = ({ onClose, onSave, isMobile }) => {
   };
 
   const handleSave = () => {
-    localStorage.setItem('gems', JSON.stringify(gemValues));
-    onSave(gemValues);
+    // 🐉 KAISEL FIX : SUPPRIME la sauvegarde localStorage globale !
+    // localStorage.setItem('gems', JSON.stringify(gemValues)); ← SUPPRIMÉ !
+    
+    console.log("🐉 Kaisel: Sauvegarde gemmes via onSave callback:", gemValues);
+    onSave(gemValues); // ← Seule sauvegarde : via le callback parent !
     onClose();
   };
 
@@ -101,6 +106,5 @@ const GemmePopup = ({ onClose, onSave, isMobile }) => {
     </div>
   );
 };
-
 
 export default GemmePopup;

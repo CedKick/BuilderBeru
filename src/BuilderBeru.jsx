@@ -17,6 +17,9 @@ import './i18n/i18n';
 import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
 import OcrConfirmPopup from './components/OcrConfirmPopup';
+import NewAccountPopup from './NewAccountPopup'; // ou ton chemin réel
+import SetSelectorPopup from "./components/SetSelectorPopup";
+import BeruInteractionMenu from './components/BeruInteractionMenu';
 
 
 let tank = {
@@ -29,6 +32,23 @@ let tank = {
   direction: 'down',
 };
 
+let beru = {
+  x: 0,
+  y: 0,
+  img: new Image(),
+  speedX: 0,
+  speedY: 0,
+  size: 80, // Légèrement plus grand que Tank
+  direction: 'down',
+  isPresent: false, // Beru n'apparaît que lors d'événements spéciaux
+  currentCanvas: 'canvas-left', // Beru préfère la gauche (zone mystérieuse)
+};
+
+let currentBeruCanvasId = 'canvas-left';
+let beruMessageQueue = [];
+let beruIntervalRef = null;
+let isBeruSpeaking = false;
+
 let currentTankCanvasId = 'canvas-center'; // par défaut
 let tankAlreadySpawned = false;
 
@@ -38,6 +58,42 @@ function encodeUTF8(str) {
 function decodeUTF8(encoded) {
   return decodeURIComponent(escape(atob(encoded)));
 }
+
+
+const getBeruInteractionOptions = (selectedCharacter) => ({
+  newbie: {
+    icon: "👋",
+    label: "Nouveau sur le site ?",
+    action: "tutorial",
+    priority: 1
+  },
+  advice: {
+    icon: "🎯",
+    label: `Conseils sur ${characters[selectedCharacter]?.name || 'ce Hunter'}`, // ← DYNAMIQUE !
+    action: "analyze_build",
+    priority: 2,
+    condition: () => selectedCharacter // Seulement si hunter sélectionné
+  },
+  lore: {
+    icon: "📖",
+    label: "Du lore sur Béru ?",
+    action: "show_lore",
+    priority: 3
+  },
+  humor: {
+    icon: "😈",
+    label: "Fais-moi rire Béru",
+    action: "beru_joke",
+    priority: 4
+  },
+  tank_talk: {
+    icon: "💬",
+    label: "Parler à Tank",
+    action: "tank_interaction",
+    priority: 5
+  }
+});
+
 
 const tankPhrases = [
   "Bob m’a dit : 'Si tu veux tanker, commence par shut up'. J’ai obéi.",
@@ -378,40 +434,40 @@ export const mainStatMaxByIncrements = {
     4: 24,
   },
   'Fire Damage %': {
-  0: 13.82,
-  1: 13.82,
-  2: 13.82,
-  3: 13.82,
-  4: 13.82,
-},
-'Water Damage %': {
-  0: 13.82,
-  1: 13.82,
-  2: 13.82,
-  3: 13.82,
-  4: 13.82,
-},
-'Wind Damage %': {
-  0: 13.82,
-  1: 13.82,
-  2: 13.82,
-  3: 13.82,
-  4: 13.82,
-},
-'Light Damage %': {
-  0: 13.82,
-  1: 13.82,
-  2: 13.82,
-  3: 13.82,
-  4: 13.82,
-},
-'Dark Damage %': {
-  0: 13.82,
-  1: 13.82,
-  2: 13.82,
-  3: 13.82,
-  4: 13.82,
-}
+    0: 13.82,
+    1: 13.82,
+    2: 13.82,
+    3: 13.82,
+    4: 13.82,
+  },
+  'Water Damage %': {
+    0: 13.82,
+    1: 13.82,
+    2: 13.82,
+    3: 13.82,
+    4: 13.82,
+  },
+  'Wind Damage %': {
+    0: 13.82,
+    1: 13.82,
+    2: 13.82,
+    3: 13.82,
+    4: 13.82,
+  },
+  'Light Damage %': {
+    0: 13.82,
+    1: 13.82,
+    2: 13.82,
+    3: 13.82,
+    4: 13.82,
+  },
+  'Dark Damage %': {
+    0: 13.82,
+    1: 13.82,
+    2: 13.82,
+    3: 13.82,
+    4: 13.82,
+  }
 };
 
 const applyArtifactStat = (key, value, baseStats, currentArtifactStats) => {
@@ -462,7 +518,7 @@ function useResponsive() {
     isDesktop: window.innerWidth >= 1150
   });
 
-const isTouch = navigator.maxTouchPoints > 1;
+  const isTouch = navigator.maxTouchPoints > 1;
   const userAgent = navigator.userAgent.toLowerCase();
   const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
 
@@ -503,16 +559,653 @@ const BuilderBeru = () => {
   // const popupRef = useRef();
   const mainImageRef = useRef();
   // const dytextRef = useRef();
+  const [showBeruInteractionMenu, setShowBeruInteractionMenu] = useState(false);
+  const [beruMenuPosition, setBeruMenuPosition] = useState({ x: 0, y: 0 });
+  const [beruMenuCharacter, setBeruMenuCharacter] = useState('');
+
+  const SHADOW_ENTITIES = {
+  tank: {
+    id: 'tank',
+    size: 64,
+    preferredCanvas: 'random',
+    personality: 'defensive_funny',
+    moveSpeed: 0.8,
+    messageInterval: 30000,
+    sprites: {
+      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png',
+      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_left_lxr3km.png',
+      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_right_2_zrf0y1.png',
+      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png',
+      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png'
+    },
+    phrases: t('shadowEntities.tank.automaticPhrases', { returnObjects: true })
+  },
+  beru: {
+    id: 'beru',
+    size: 80,
+    preferredCanvas: 'canvas-center',
+    personality: 'strategic_analyst',
+    moveSpeed: 0.6,
+    messageInterval: 45000,
+    sprites: {
+      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png', // À créer
+      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414823/beru_left_bvtyba.png',
+      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414822/beru_right_ofwvy5.png',
+      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414738/beru_dos_dtk5ln.png',
+      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png',
+      analyzing: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748550000/beru_thinking.png'
+    },
+    phrases: t('shadowEntities.beru.automaticPhrases', { returnObjects: true })
+  },
+  kaisel: {
+    id: 'kaisel',
+    size: 72,
+    preferredCanvas: 'canvas-right',
+    personality: 'efficient_debugger',
+    moveSpeed: 1.2,
+    messageInterval: 60000,
+    sprites: {
+      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748550000/kaisel_coding.png',
+      debugging: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748550000/kaisel_debug.png'
+    },
+    phrases: [
+      "Console.log: Performance optimized. ✅",
+      "Debug terminé. 0 errors, 3 warnings ignorées.",
+      "Refactor suggéré : ton code ressemble à du spaghetti.",
+      "Git commit: 'Fix Tank logic, again.' 🙄",
+      "Stack trace analysé. Le problème c'est... toi.",
+      "npm install brain --save. Command failed.",
+      "Kaisel.exe stopped working. Reason: your build choices.",
+      "Efficiency mode: ON. Patience mode: OFF.",
+      "Code review: Tank = legacy code. Beru = clean architecture.",
+      "Memory leak détecté dans ton cerveau.",
+      "Breakpoint set sur tes mauvaises décisions.",
+      "Docker containerize ton chaos, please.",
+      "API call failed: common_sense.get() returned null."
+    ]
+  }
+};
+
+class ShadowManager {
+  constructor() {
+    this.entities = new Map();
+    this.canvasContexts = new Map();
+    this.backgroundImages = new Map();
+     this.t = null; 
+    this.animationId = null;
+    this.messageIntervals = new Map();
+    this.wanderTimers = new Map();
+
+    
+
+    // Backgrounds
+    this.backgrounds = {
+      'canvas-left': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604093/neige_onpilk.png',
+      'canvas-center': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604092/sanctuaire_rfcze5.png',
+      'canvas-right': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604092/greenland_cb4caw.png'
+    };
+  }
+
+  setTranslation(tFunction) {
+    this.t = tFunction;
+  }
+
+  // 🚀 Initialisation
+  init(canvasIds, callbacks = {}) {
+    this.cleanup();
+    this.callbacks = callbacks;
+
+    // 🔧 Reset et récupérer les nouvelles références comme dans le code original
+    this.canvasLeft = this.resetCanvas('canvas-left');
+    this.canvasCenter = this.resetCanvas('canvas-center');
+    this.canvasRight = this.resetCanvas('canvas-right');
+
+    if (!this.canvasLeft || !this.canvasCenter || !this.canvasRight) {
+      return;
+    }
+
+    // Setup contexts avec les bonnes références
+    this.canvasContexts.set('canvas-left', this.canvasLeft.getContext('2d'));
+    this.canvasContexts.set('canvas-center', this.canvasCenter.getContext('2d'));
+    this.canvasContexts.set('canvas-right', this.canvasRight.getContext('2d'));
+
+    // Clear tous les canvas
+    this.canvasContexts.forEach((ctx, canvasId) => {
+      const canvas = this.getCanvasRef(canvasId);
+      if (canvas) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    });
+
+    this.loadBackgrounds();
+    this.startAnimation();
+  }
+
+  // 🧹 Reset canvas anti-duplication
+  resetCanvas(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return null;
+
+    const newCanvas = canvas.cloneNode(true);
+    canvas.parentNode.replaceChild(newCanvas, canvas);
+
+    // Retourner la nouvelle référence
+    return document.getElementById(canvasId);
+  }
+
+  // 🖼️ Load backgrounds
+  loadBackgrounds() {
+    Object.entries(this.backgrounds).forEach(([canvasId, src]) => {
+      const img = new Image();
+      img.onload = () => {
+        this.backgroundImages.set(canvasId, img);
+        const ctx = this.canvasContexts.get(canvasId);
+        const canvas = this.getCanvasRef(canvasId); // Utilise la référence locale
+        if (ctx && canvas) {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
+      };
+      img.src = src;
+    });
+  }
+
+  // 👤 Spawn entity
+  spawnEntity(entityType, forceCanvas = null) {
+    const config = SHADOW_ENTITIES[entityType];
+    if (!config) {
+      return null;
+    }
+    // Charge les phrases selon la langue
+  let phrases = [];
+  if (entityType === 'beru') {
+    phrases = t('shadowEntities.beru.automaticPhrases', { returnObjects: true });
+  } else if (entityType === 'tank') {
+    phrases = t('shadowEntities.tank.automaticPhrases', { returnObjects: true });
+  }
+
+    const canvasId = forceCanvas || this.selectCanvas(config.preferredCanvas);
+    const canvas = this.getCanvasRef(canvasId); // Utilise la référence locale
+    if (!canvas) return null;
+
+    const entity = {
+      ...config,
+      x: config.preferredCanvas === 'random' ? canvas.width / 2 :
+        Math.random() * (canvas.width * 0.6) + (canvas.width * 0.2), // Position aléatoire
+      y: canvas.height - 80,
+      speedX: 0,
+      speedY: 0,
+      phrases: phrases,
+      isWandering: false,
+      direction: null,
+      currentCanvas: canvasId,
+      spawnCanvas: canvas, // 🔧 Garde une référence directe comme dans ton code
+      img: new Image(),
+      lastMessage: 0,
+      isActive: true,
+      clickCount: 0
+    };
+
+    entity.img.src = config.sprites.idle;
+
+    this.entities.set(entityType, entity);
+    this.setupEntityEvents(entity);
+    this.startEntityMessages(entity);
+
+    return entity;
+  }
+
+  // 🎯 Helper pour récupérer la bonne référence canvas
+  getCanvasRef(canvasId) {
+    switch (canvasId) {
+      case 'canvas-left': return this.canvasLeft;
+      case 'canvas-center': return this.canvasCenter;
+      case 'canvas-right': return this.canvasRight;
+      default: return null;
+    }
+  }
+
+  // 🎯 Canvas selection
+  selectCanvas(preference) {
+    if (preference === 'random') {
+      const canvases = [this.canvasLeft, this.canvasCenter, this.canvasRight];
+      const selectedCanvas = canvases[Math.floor(Math.random() * canvases.length)];
+      return selectedCanvas.id;
+    }
+    return preference;
+  }
+
+  // 🎮 Setup events pour entity
+  setupEntityEvents(entity) {
+    const canvas = entity.spawnCanvas; // Utilise la référence directe
+    if (!canvas) return;
+
+    const handleClick = () => {
+      entity.clickCount++;
+
+      if (entity.id === 'tank') {
+        this.handleTankClick(entity);
+      } else if (entity.id === 'beru') {
+        this.handleBeruClick(entity);
+      } else if (entity.id === 'kaisel') {
+        this.handleKaiselClick(entity);
+      }
+    };
+
+    canvas.addEventListener('click', handleClick);
+  }
+
+  // 🛡️ Tank click handler (garde la logique existante)
+  handleTankClick(entity) {
+    const count = entity.clickCount;
+
+    if (count === 5) {
+      this.showEntityMessage('tank', "Hé ! C'est pas un bouton ici 😐", true);
+    } else if (count === 10) {
+      this.showEntityMessage('tank', "Encore un clic et j'appelle BobbyJones 😠", true);
+    } else if (count === 20) {
+      this.showEntityMessage('tank', "Ok, là j'en ai marre.", true);
+    } else if (count === 30) {
+      this.showEntityMessage('tank', "...Dernier avertissement.", true);
+    } else if (count >= 40) {
+      this.fireTankLaser(entity);
+      entity.clickCount = 0; // Reset
+    }
+  }
+
+  // Dans handleBeruClick (ShadowManager) :
+  handleBeruClick(entity) {
+    const pos = window.getShadowScreenPosition('beru'); // ← Ajouter window.
+
+    this.callbacks.showBeruMenu({
+      x: pos.x,
+      y: pos.y,
+      selectedCharacter: this.callbacks.getSelectedCharacter?.()
+    });
+  }
+
+  // ⚡ Kaisel click handler
+  handleKaiselClick(entity) {
+    const messages = [
+      "Console.log('User clicked Kaisel');",
+      "Debug session activated. Stand by...",
+      "Performance analysis: 12ms response time. Not bad.",
+      "Git log: 'User interaction detected'",
+      "Stack overflow: why did you click me?"
+    ];
+
+    const msg = messages[Math.floor(Math.random() * messages.length)];
+    this.showEntityMessage('kaisel', msg, true);
+  }
+
+  // 💥 Tank laser (garde la logique existante)
+  fireTankLaser(entity) {
+
+    const tankCanvas = entity.spawnCanvas; // Utilise la référence directe
+    const laser = document.getElementById("tank-laser");
+    const candidates = document.querySelectorAll(".tank-target");
+
+    if (!tankCanvas || !laser || !candidates.length) return;
+
+    const target = candidates[Math.floor(Math.random() * candidates.length)];
+    const tankRect = tankCanvas.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+
+    entity.img.src = entity.sprites.up;
+
+    const startX = tankRect.left + tankRect.width / 2;
+    const startY = tankRect.top + entity.y - 80;
+    const endX = targetRect.left + targetRect.width / 2;
+    const endY = targetRect.top + targetRect.height / 2;
+
+    const deltaX = endX - startX;
+    const deltaY = endY - startY;
+    const length = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+    const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+
+    laser.style.width = `${length}px`;
+    laser.style.height = `4px`;
+    laser.style.left = `${startX}px`;
+    laser.style.top = `${startY}px`;
+    laser.style.transform = `rotate(${angle}deg)`;
+    laser.style.transformOrigin = "0 0";
+    laser.classList.remove("hidden");
+
+    setTimeout(() => {
+      laser.classList.add("hidden");
+      target.classList.add("laser-hit");
+      setTimeout(() => target.remove(), 500);
+    }, 300);
+
+    if (window.umami) window.umami.track('LaserBurst');
+  }
+
+  showEntityMessage(entityType, message, priority = false) {
+    if (!this.callbacks.showMessage) return;
+
+    console.log("🔍 ShadowManager.showEntityMessage appelé avec:", entityType); // ← AJOUTE ÇA
+
+    const entity = this.entities.get(entityType);
+    if (!entity) return;
+
+    const prefix = entityType === 'tank' ? '' :
+      entityType === 'beru' ? '🧠 ' :
+        entityType === 'kaisel' ? '🐉 ' : '';
+
+    console.log("🔍 Va appeler showMessage avec entityType:", entityType); // ← AJOUTE ÇA
+
+    this.callbacks.showMessage(prefix + message, priority, entityType); // ← Vérifie cette ligne
+  }
+
+  // ⏰ Start entity messages
+  startEntityMessages(entity) {
+    if (this.messageIntervals.has(entity.id)) return;
+
+    const interval = setInterval(() => {
+      if (Math.random() < 0.33) {
+        const msg = entity.phrases[Math.floor(Math.random() * entity.phrases.length)];
+        this.showEntityMessage(entity.id, msg);
+      }
+    }, entity.messageInterval);
+
+    this.messageIntervals.set(entity.id, interval);
+  }
+
+  // 🎮 Keyboard controls
+  setupKeyboardControls() {
+    const handleKeyDown = (e) => {
+      const tank = this.entities.get('tank');
+      if (!tank) return;
+
+      if (e.key === 'ArrowLeft') {
+        tank.speedX = -0.6;
+        tank.direction = 'left';
+        tank.img.src = tank.sprites.left;
+      } else if (e.key === 'ArrowRight') {
+        tank.speedX = 0.6;
+        tank.direction = 'right';
+        tank.img.src = tank.sprites.right;
+      } else if (e.key === 'ArrowUp') {
+        tank.speedY = -0.15;
+        tank.img.src = tank.sprites.up;
+      } else if (e.key === 'ArrowDown') {
+        tank.speedY = 0.15;
+        tank.img.src = tank.sprites.down;
+      }
+    };
+
+    const handleKeyUp = (e) => {
+      const tank = this.entities.get('tank');
+      if (!tank) return;
+
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        tank.speedX = 0;
+        tank.img.src = tank.sprites.idle;
+      }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        tank.speedY = 0;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }
+
+  // 🎨 Animation loop principal
+  animate = () => {
+    // Clear tous les canvas en utilisant les références locales
+    this.canvasContexts.forEach((ctx, canvasId) => {
+      const canvas = this.getCanvasRef(canvasId);
+      if (!canvas) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Redraw background
+      const bgImg = this.backgroundImages.get(canvasId);
+      if (bgImg) {
+        ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+      }
+    });
+
+    // Update et draw chaque entité
+    this.entities.forEach((entity) => {
+      if (entity.isActive) {
+        this.updateEntity(entity);
+        this.drawEntity(entity);
+      }
+    });
+
+    this.animationId = requestAnimationFrame(this.animate);
+  };
+
+  // 🏃 Update entity
+  updateEntity(entity) {
+
+
+    if (entity.id === 'beru' && entity.isMenuActive) {
+      return; // Skip tout mouvement
+    }
+
+    entity.x += entity.speedX;
+    entity.y += entity.speedY;
+
+    const friction = 0.9;
+    const maxSpeed = 1.2;
+
+    entity.speedX *= friction;
+    entity.speedY *= friction;
+
+    if (entity.speedX > maxSpeed) entity.speedX = maxSpeed;
+    if (entity.speedX < -maxSpeed) entity.speedX = -maxSpeed;
+    if (entity.speedY > maxSpeed) entity.speedY = maxSpeed;
+    if (entity.speedY < -maxSpeed) entity.speedY = -maxSpeed;
+
+    // Limites canvas - utilise spawnCanvas comme dans ton code original
+    const canvas = entity.spawnCanvas;
+    if (canvas) {
+      entity.x = Math.max(0, Math.min(canvas.width, entity.x));
+      entity.y = Math.max(canvas.height / 2, Math.min(canvas.height, entity.y));
+    }
+
+    // Wandering pour Tank uniquement (pour l'instant)
+    if (entity.id === 'tank') {
+      this.handleTankWandering(entity);
+    } else if (entity.id === 'beru') {
+      this.handleBeruWandering(entity); // 🆕 AJOUTER CETTE LIGNE
+    }
+  }
+
+  // 🚶 Tank wandering logic
+  handleTankWandering(entity) {
+    if (!entity.isWandering && Math.random() < 0.0003) {
+      const directions = ["left", "right", "up", "down"];
+      entity.direction = directions[Math.floor(Math.random() * directions.length)];
+      entity.isWandering = true;
+
+      const wanderDuration = 2000 + Math.random() * 3000;
+      const returnDuration = wanderDuration / 4;
+      const originalDirection = entity.direction;
+
+      const timer = setTimeout(() => {
+        // Phase de retour
+        switch (originalDirection) {
+          case 'left': entity.direction = 'right'; break;
+          case 'right': entity.direction = 'left'; break;
+          case 'up': entity.direction = 'down'; break;
+          case 'down': entity.direction = 'up'; break;
+        }
+
+        setTimeout(() => {
+          entity.isWandering = false;
+          entity.direction = null;
+          entity.img.src = entity.sprites.idle;
+        }, returnDuration);
+      }, wanderDuration);
+
+      this.wanderTimers.set(entity.id, timer);
+    }
+
+    // Apply wandering movement - garde la logique de ton drawTankMessage
+    if (entity.isWandering && entity.direction) {
+      const speed = entity.moveSpeed;
+      switch (entity.direction) {
+        case 'left':
+          entity.x -= speed;
+          entity.img.src = entity.sprites.left;
+          break;
+        case 'right':
+          entity.x += speed;
+          entity.img.src = entity.sprites.right;
+          break;
+        case 'up':
+          entity.y -= speed;
+          entity.img.src = entity.sprites.up;
+          break;
+        case 'down':
+          entity.y += speed;
+          entity.img.src = entity.sprites.down;
+          break;
+      }
+
+      // Garde Tank dans les limites du canvas - comme dans ton code original
+      const canvas = entity.spawnCanvas;
+      if (canvas) {
+        entity.x = Math.max(0, Math.min(canvas.width, entity.x));
+        entity.y = Math.max(canvas.height / 2, Math.min(canvas.height, entity.y));
+      }
+    }
+  }
+
+  // 🧠 Beru wandering logic (après handleTankWandering)
+  handleBeruWandering(entity) {
+    // Beru bouge moins souvent (plus réfléchi)
+    if (!entity.isWandering && Math.random() < 0.003) { // Plus rare que Tank
+      const directions = ["left", "right", "up", "down"];
+      entity.direction = directions[Math.floor(Math.random() * directions.length)];
+      entity.isWandering = true;
+
+      // Beru reste plus longtemps en mouvement (analyse en cours)
+      const wanderDuration = 3000 + Math.random() * 2000; // Plus long que Tank
+      const returnDuration = wanderDuration / 3;
+      const originalDirection = entity.direction;
+
+      const timer = setTimeout(() => {
+        // Phase de retour
+        switch (originalDirection) {
+          case 'left': entity.direction = 'right'; break;
+          case 'right': entity.direction = 'left'; break;
+          case 'up': entity.direction = 'down'; break;
+          case 'down': entity.direction = 'up'; break;
+        }
+
+        setTimeout(() => {
+          entity.isWandering = false;
+          entity.direction = null;
+          entity.img.src = entity.sprites.idle;
+        }, returnDuration);
+      }, wanderDuration);
+
+      this.wanderTimers.set(entity.id, timer);
+    }
+
+    // Apply wandering movement pour Beru
+    if (entity.isWandering && entity.direction) {
+      const speed = entity.moveSpeed; // 0.6 (plus lent que Tank)
+      switch (entity.direction) {
+        case 'left':
+          entity.x -= speed;
+          entity.img.src = entity.sprites.left;
+          break;
+        case 'right':
+          entity.x += speed;
+          entity.img.src = entity.sprites.right;
+          break;
+        case 'up':
+          entity.y -= speed;
+          entity.img.src = entity.sprites.up;
+          break;
+        case 'down':
+          entity.y += speed;
+          entity.img.src = entity.sprites.down;
+          break;
+      }
+
+      // Limites canvas pour Beru
+      const canvas = entity.spawnCanvas;
+      if (canvas) {
+        entity.x = Math.max(0, Math.min(canvas.width, entity.x));
+        entity.y = Math.max(canvas.height / 2, Math.min(canvas.height, entity.y));
+      }
+    }
+  }
+
+  // 🎨 Draw entity
+  drawEntity(entity) {
+    const ctx = this.canvasContexts.get(entity.currentCanvas);
+    if (!ctx || !entity.img.complete) return;
+
+    ctx.save();
+
+    // Effets visuels par personnalité
+    if (entity.personality === 'strategic_analyst') {
+      ctx.shadowColor = '#8a2be2'; // Violet mystique pour Beru
+      ctx.shadowBlur = 15;
+    } else if (entity.personality === 'efficient_debugger') {
+      ctx.shadowColor = '#00ff41'; // Vert Matrix pour Kaisel
+      ctx.shadowBlur = 10;
+    }
+
+    const canvas = entity.spawnCanvas; // Utilise la référence directe
+    const scale = ((entity.y / 2) / canvas.height) * 4;
+
+    ctx.translate(entity.x, entity.y);
+    ctx.scale(scale, scale);
+    ctx.drawImage(entity.img, -entity.size / 2, -entity.size, entity.size, entity.size);
+
+    ctx.restore();
+  }
+
+  // 🚀 Start animation
+  startAnimation() {
+    if (this.animationId) return;
+    this.animate();
+  }
+
+  // 🧹 Cleanup complet
+  cleanup() {
+
+    if (this.animationId) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
+
+    this.messageIntervals.forEach(interval => clearInterval(interval));
+    this.messageIntervals.clear();
+
+    this.wanderTimers.forEach(timer => clearTimeout(timer));
+    this.wanderTimers.clear();
+
+    this.entities.clear();
+    this.canvasContexts.clear();
+    this.backgroundImages.clear();
+  }
+}
+
+
 
   const initialArtifacts = {
-    Helmet: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
-    Chest: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
-    Gloves: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
-    Boots: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
-    Necklace: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
-    Bracelet: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
-    Ring: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
-    Earrings: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [] },
+    Helmet: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [], set: '' },
+    Chest: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [], set: '' },
+    Gloves: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [], set: '' },
+    Boots: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [], set: '' },
+    Necklace: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [], set: '' },
+    Bracelet: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [], set: '' },
+    Ring: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [], set: '' },
+    Earrings: { mainStat: '', subStats: [], mainStatValue: 0, subStatsLevels: [], set: '' },
   };
 
   const openComparisonPopup = (artifactData) => {
@@ -527,9 +1220,7 @@ const BuilderBeru = () => {
         { value: 0, level: 0, procOrders: [], procValues: [] },
       ]
     };
-    console.log("📦 artifactData reçu :", artifactData);
     setComparisonData({ original: artifactData, candidate: emptyArtifact });
-    console.log("Lancement de la comparaison avec :", artifactData.title);
   };
 
   const refs = {
@@ -542,6 +1233,136 @@ const BuilderBeru = () => {
     'MP Recovery Rate Increase (%)', 'MP Consumption Reduction',
     'Precision', 'Damage Reduction', 'Healing Given Increase (%)'
   ];
+
+  const openSetSelector = (slotName) => {
+    setSetSelectorSlot(slotName);
+    setIsSetSelectorOpen(true);
+  };
+
+  const handleSelectSet = (slot, setName) => {
+
+    if (!slot || !setName) {
+      return;
+    }
+
+
+    setArtifactsData((prev) => {
+      const updated = {
+        ...prev,
+        [slot]: {
+          ...prev[slot],
+          set: setName,
+        },
+      };
+      console.log("📦 Nouveau artifactsData :", updated);
+      console.log(`🔧 Set "${setName}" appliqué au slot "${slot}"`);
+      return updated;
+    });
+
+    // 🔥 FORCE un re-render de l'ArtifactCard
+    setTimeout(() => {
+      console.log("🔄 Force refresh après 100ms");
+    }, 100);
+
+    setIsSetSelectorOpen(false);
+    setSetSelectorSlot(null);
+  };
+
+  // Dans handleLoadSavedSet :
+  const handleLoadSavedSet = (slot) => {
+    console.log("🚀 handleLoadSavedSet APPELÉ avec slot :", slot);
+
+    const savedSets = JSON.parse(localStorage.getItem("savedSets") || "{}");
+    console.log("💾 savedSets trouvés :", savedSets);
+
+    if (savedSets[slot]) {
+      console.log("✅ Set trouvé pour ce slot :", savedSets[slot]);
+      setArtifactsData((prev) => ({
+        ...prev,
+        [slot]: {
+          ...prev[slot],
+          set: savedSets[slot],
+        },
+      }));
+      console.log(`🔁 Set chargé pour ${slot} : ${savedSets[slot]}`);
+    } else {
+      console.warn(`❌ Aucun set enregistré pour ${slot}`);
+    }
+  };
+  
+
+  const handleSaveArtifactToLibrary = (saveData) => {
+    console.log("🐉 Kaisel: Sauvegarde/modification artefact dans la librairie + hunter", saveData);
+
+    const storage = JSON.parse(localStorage.getItem("builderberu_users")) || {};
+    storage.user = storage.user || {};
+    storage.user.accounts = storage.user.accounts || {};
+    storage.user.accounts[activeAccount] = storage.user.accounts[activeAccount] || {};
+
+    const currentAccount = storage.user.accounts[activeAccount];
+
+    // 🔥 1️⃣ SAUVEGARDE DANS ARTIFACT LIBRARY (comme avant)
+    currentAccount.artifactLibrary = currentAccount.artifactLibrary || {};
+    currentAccount.artifactLibrary[saveData.slot] = currentAccount.artifactLibrary[saveData.slot] || {};
+    currentAccount.artifactLibrary[saveData.slot][saveData.id] = {
+      id: saveData.id,
+      name: saveData.name,
+      mainStat: saveData.mainStat,
+      subStats: saveData.subStats,
+      subStatsLevels: saveData.subStatsLevels,
+      set: saveData.set,
+      slot: saveData.slot,
+      hunter: saveData.hunter,
+      dateCreated: saveData.dateCreated,
+      mainStatValue: saveData.mainStatValue || 0,
+      tags: saveData.tags || []
+    };
+
+    // 🔥 2️⃣ NOUVEAU : SAUVEGARDE AUSSI DANS LE BUILD DU HUNTER
+    currentAccount.builds = currentAccount.builds || {};
+    currentAccount.builds[selectedCharacter] = currentAccount.builds[selectedCharacter] || {};
+    currentAccount.builds[selectedCharacter].artifactsData = currentAccount.builds[selectedCharacter].artifactsData || {};
+
+    // ✅ Écraser l'artefact actuel du hunter avec les données complètes
+    currentAccount.builds[selectedCharacter].artifactsData[saveData.slot] = {
+      mainStat: saveData.mainStat,
+      subStats: saveData.subStats,
+      subStatsLevels: saveData.subStatsLevels,
+      set: saveData.set,
+      mainStatValue: saveData.mainStatValue || 0,
+      // 🆕 AJOUT : référence vers la librairie
+      savedArtifactId: saveData.id,
+      savedArtifactName: saveData.name
+    };
+
+    // 📦 Écriture localStorage
+    localStorage.setItem("builderberu_users", JSON.stringify(storage));
+
+    // 🔄 Mise à jour du state accounts
+    setAccounts(prevAccounts => ({
+      ...prevAccounts,
+      [activeAccount]: {
+        ...prevAccounts[activeAccount],
+        artifactLibrary: currentAccount.artifactLibrary,
+        builds: currentAccount.builds
+      }
+    }));
+
+    // 🔄 Mise à jour du state artifactsData ACTUEL
+    setArtifactsData(prev => ({
+      ...prev,
+      [saveData.slot]: {
+        ...prev[saveData.slot],
+        savedArtifactId: saveData.id,
+        savedArtifactName: saveData.name
+      }
+    }));
+
+    // 🔥 MESSAGE ADAPTÉ SELON LE CONTEXTE
+    const action = saveData.isModifying ? "modifié" : "sauvé";
+    showTankMessage(`💾 "${saveData.name}" ${action} dans la librairie ET sur ${selectedCharacter} !`, true);
+    console.log(`✅ Artefact ${action} dans artifactLibrary ET builds[hunter]`);
+  };
 
   const applyOcrDataToArtifact = (ocrResult) => {
     setArtifacts(prev => {
@@ -569,6 +1390,8 @@ const BuilderBeru = () => {
   allStats.forEach(stat => {
     initialStats[stat] = 0;
   });
+
+
 
   const completeStats = (statsObject) => {
     const completed = { ...statsObject };
@@ -607,41 +1430,34 @@ const BuilderBeru = () => {
   };
   const handleSaveCores = (hunterName, coreData) => {
 
-    setHunterCores((prev) => ({
+    updateHunterCores((prev) => ({
       ...prev,
       [hunterName]: coreData,
     }));
   };
 
-  const getTankScreenPosition = () => {
-    // Toujours revalider à chaque appel
-    const canvas = document.getElementById(currentTankCanvasId);
-    console.log("🧪 currentTankCanvasId utilisé :", currentTankCanvasId);
-    if (!canvas) {
-      // Forcer une recherche dynamique
-      const fallbackIds = ['canvas-left', 'canvas-center', 'canvas-right'];
-      for (const id of fallbackIds) {
-        const tryCanvas = document.getElementById(id);
-        if (tryCanvas) {
-          currentTankCanvasId = id;
-          console.log("✅ Canvas retrouvé dynamiquement :", id);
+const getShadowScreenPosition = (entityType = 'tank') => {
+  const shadowManager = window.shadowManager;
+  const entity = shadowManager?.entities?.get(entityType);
 
-          return getTankScreenPosition(); // 🔁 appel récursif avec nouveau ID
-        }
-      }
+  if (!entity || !entity.spawnCanvas) {
+    console.warn(`❌ ${entityType} entity introuvable`);
+    return { x: 0, y: 0 };
+  }
 
-      console.error("❌ Aucun canvas valide trouvé.");
-      return { x: 0, y: 0 };
-    }
+  const canvas = entity.spawnCanvas;
+  const rect = canvas.getBoundingClientRect();
+  
+  // 🎯 CALCUL CORRECT avec scaling + OFFSET DE CENTRAGE
+  const scaleX = rect.width / canvas.width;
+  const scaleY = rect.height / canvas.height;
 
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: rect.left + tank.x,
-      y: rect.top + tank.y,
-      currentTankCanvasId
-    };
+  return {
+    x: rect.left + (entity.x * scaleX),
+    y: rect.top + (entity.y * scaleY) - 40, // ← AJUSTE cette valeur pour centrer verticalement
+    currentCanvasId: canvas.id
   };
-
+};
   const getRandomMystEggLine = (charKey, context) => {
     const data = MYST_EGGS?.[charKey]?.[context];
     if (!data || !Array.isArray(data)) return null;
@@ -703,6 +1519,7 @@ const BuilderBeru = () => {
         { value: 0, level: 0, procOrders: [] },
         { value: 0, level: 0, procOrders: [] },
       ],
+      set: '',
     },
     Chest: {
       mainStat: '',
@@ -723,6 +1540,7 @@ const BuilderBeru = () => {
         { value: 0, level: 0, procOrders: [] },
         { value: 0, level: 0, procOrders: [] },
       ],
+      set: '',
     },
     Boots: {
       mainStat: '',
@@ -733,6 +1551,7 @@ const BuilderBeru = () => {
         { value: 0, level: 0, procOrders: [] },
         { value: 0, level: 0, procOrders: [] },
       ],
+      set: '',
     },
     Earrings: {
       mainStat: '',
@@ -753,6 +1572,7 @@ const BuilderBeru = () => {
         { value: 0, level: 0, procOrders: [] },
         { value: 0, level: 0, procOrders: [] },
       ],
+      set: '',
     },
     Bracelet: {
       mainStat: '',
@@ -763,6 +1583,7 @@ const BuilderBeru = () => {
         { value: 0, level: 0, procOrders: [] },
         { value: 0, level: 0, procOrders: [] },
       ],
+      set: '',
     },
     Ring: {
       mainStat: '',
@@ -773,20 +1594,23 @@ const BuilderBeru = () => {
         { value: 0, level: 0, procOrders: [] },
         { value: 0, level: 0, procOrders: [] },
       ],
+      set: '',
     },
   });
   const [comparisonData, setComparisonData] = useState(null); // 👈 ici
 
-  const [gemData, setGemData] = useState(() => {
-    const saved = localStorage.getItem('global_gem_data');
-    return saved ? JSON.parse(saved) : {
-      Red: { 'Additional Attack': 0, 'Attack %': 0 },
-      Blue: { 'Additional HP': 0, 'HP %': 0, 'Healing Given Increase (%)': 0 },
-      Green: { 'Additional Defense': 0, 'Defense %': 0, 'Damage Reduction': 0 },
-      Purple: { 'MP Recovery Rate Increase (%)': 0, 'Additional MP': 0, 'MP Consumption Reduction': 0 },
-      Yellow: { 'Precision': 0, 'Critical Hit Damage': 0, 'Defense Penetration': 0 }
-    };
-  });
+  // const [gemData, setGemData] = useState(() => {
+  //   const saved = localStorage.getItem('global_gem_data');
+  //   return saved ? JSON.parse(saved) : {
+  //     Red: { 'Additional Attack': 0, 'Attack %': 0 },
+  //     Blue: { 'Additional HP': 0, 'HP %': 0, 'Healing Given Increase (%)': 0 },
+  //     Green: { 'Additional Defense': 0, 'Defense %': 0, 'Damage Reduction': 0 },
+  //     Purple: { 'MP Recovery Rate Increase (%)': 0, 'Additional MP': 0, 'MP Consumption Reduction': 0 },
+  //     Yellow: { 'Precision': 0, 'Critical Hit Damage': 0, 'Defense Penetration': 0 }
+  //   };
+  // });
+
+  const [gemData, setGemData] = useState({});
 
   Object.entries(artifactsData).forEach(([slot, artifact]) => {
     if (!artifact || typeof artifact !== 'object') return;
@@ -901,9 +1725,19 @@ const BuilderBeru = () => {
   const tankMessageRef = useRef('');
   const messageOpacityRef = useRef(1);
   const [tankMessage, setTankMessage] = useState('');
+  const [isBuildsReady, setIsBuildsReady] = useState(false);
   const [messageOpacity, setMessageOpacity] = useState(1);
+  const [showPopup, setShowPopup] = useState(false);
+  const [isSetSelectorOpen, setIsSetSelectorOpen] = useState(false);
+  const [setSelectorSlot, setSetSelectorSlot] = useState(null); // ex: 'Helmet'
   const [showNoyauxPopup, setShowNoyauxPopup] = useState(false);
+  const [mergedUser, setMergedUser] = useState({
+    activeAccount: "main",
+    accounts: {}
+  });
   const [hunterCores, setHunterCores] = useState({});
+  const [showNewAccountPopup, setShowNewAccountPopup] = useState(false);
+  const [newAccountName, setNewAccountName] = useState('');
   const [artifacts, setArtifacts] = useState(initialArtifacts);
   const [hunterWeapons, setHunterWeapons] = useState(() => {
     const fromStorage = JSON.parse(localStorage.getItem('hunterWeapons') || '{}');
@@ -911,6 +1745,164 @@ const BuilderBeru = () => {
   });
   const [parsedArtifactData, setParsedArtifactData] = useState(null);
   const [showWeaponPopup, setShowWeaponPopup] = useState(false);
+
+
+  const showBeruMenu = ({ x, y, selectedCharacter }) => {
+    console.log("🧠 Menu Beru demandé à position:", { x, y, selectedCharacter });
+
+    // 🔒 BLOQUER le mouvement de Beru
+    if (window.shadowManager) {
+      const beruEntity = window.shadowManager.entities.get('beru');
+      if (beruEntity) {
+        beruEntity.isMenuActive = true; // Nouveau flag
+      }
+    }
+
+    setShowBeruInteractionMenu(true);
+    setBeruMenuPosition({ x, y });
+    setBeruMenuCharacter(selectedCharacter);
+  };
+  const createNewAccount = () => {
+    const name = newAccountName.trim().toLowerCase();
+    if (!name || accounts[name]) {
+      alert("Nom invalide ou déjà existant");
+      return;
+    }
+
+    // 🏗️ Build initial minimal (pour quand on sélectionnera un personnage)
+    const emptyArtifactsData = {
+      Helmet: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+      Chest: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+      Gloves: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+      Boots: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+      Necklace: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+      Bracelet: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+      Ring: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+      Earrings: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+    };
+
+    // 🔄 Création d'un compte COMPLÈTEMENT VIDE
+    const emptyAccount = {
+      builds: {}, // ← Aucun build au début
+      hunterWeapons: {},
+      recentBuilds: [], // ← Aucun personnage récent
+      hunterCores: {},
+      gems: {}, // ← 🐉 KAISEL FIX : Gemmes vides !
+    };
+
+    // 🧠 Mise à jour des accounts
+    const newAccounts = {
+      ...accounts,
+      [name]: emptyAccount,
+    };
+
+    const updatedUser = {
+      ...mergedUser,
+      accounts: newAccounts,
+    };
+
+    // 💾 Stockage
+    localStorage.setItem("builderberu_users", JSON.stringify({ user: updatedUser }));
+
+    // 🔁 Mise à jour des states React - TOUT VIDE
+    setAccounts(newAccounts);
+    setMergedUser(updatedUser);
+    setActiveAccount(name);
+    setRecentBuilds([]); // ← Vide !
+    setSelectedCharacter(''); // ← Aucun personnage sélectionné
+    setHunterCores({});
+    setHunterWeapons({});
+
+    // 🐉 KAISEL FIX CRITIQUE : Réinitialiser TOUS les states React !
+    setFlatStats({
+      'Attack': 0,
+      'Defense': 0,
+      'HP': 0,
+      'Critical Hit Rate': 0,
+      'Critical Hit Damage': 0,
+      'Defense Penetration': 0,
+      'Additional MP': 0,
+      'Additional Attack': 0,
+      'Healing Given Increase (%)': 0,
+      'Damage Increase': 0,
+      'MP Consumption Reduction': 0,
+      'Damage Reduction': 0,
+      'MP Recovery Rate Increase (%)': 0,
+      'MP': 0,
+      'Precision': 0,
+    });
+
+    setStatsWithoutArtefact({
+      'Attack': 0,
+      'Defense': 0,
+      'HP': 0,
+      'Critical Hit Rate': 0,
+      'Critical Hit Damage': 0,
+      'Defense Penetration': 0,
+      'Additional MP': 0,
+      'Additional Attack': 0,
+      'Healing Given Increase (%)': 0,
+      'Damage Increase': 0,
+      'MP Consumption Reduction': 0,
+      'Damage Reduction': 0,
+      'MP Recovery Rate Increase (%)': 0,
+      'MP': 0,
+      'Precision': 0,
+    });
+
+    setStatsFromArtifacts({
+      'Attack': 0,
+      'Defense': 0,
+      'HP': 0,
+      'Critical Hit Rate': 0,
+      'Critical Hit Damage': 0,
+      'Defense Penetration': 0,
+      'Additional MP': 0,
+      'Additional Attack': 0,
+      'Healing Given Increase (%)': 0,
+      'Damage Increase': 0,
+      'MP Consumption Reduction': 0,
+      'Damage Reduction': 0,
+      'MP Recovery Rate Increase (%)': 0,
+      'MP': 0,
+      'Precision': 0,
+    });
+
+    setArtifactsData(emptyArtifactsData); // ← Artefacts vides
+
+    // 🐉 KAISEL FIX PRINCIPAL : Gemmes VIDES !
+    setGemData({}); // ← CRITIQUE ! Réinitialise les gemmes dans le state React
+
+    // 🔐 UI
+    setNewAccountName('');
+    setShowNewAccountPopup(false);
+
+    // 💬 Message de confirmation
+    showTankMessage(`✅ Nouveau compte "${name}" créé ! Sélectionne un personnage pour commencer.`, true);
+  };
+
+  const updateHunterCores = (newCores) => {
+    setHunterCores(newCores);
+
+    // 🔄 Mise à jour dans le compte actif
+    const updatedAccounts = {
+      ...accounts,
+      [activeAccount]: {
+        ...accounts[activeAccount],
+        hunterCores: newCores,
+      },
+    };
+
+    const updatedUser = {
+      ...mergedUser,
+      accounts: updatedAccounts,
+    };
+
+    setAccounts(updatedAccounts);
+    setMergedUser(updatedUser);
+    localStorage.setItem("builderberu_users", JSON.stringify({ user: updatedUser }));
+  };
+
 
   const onConfirm = (parsedData) => {
     console.log('✅ Artefact OCR confirmé :', parsedData);
@@ -1184,7 +2176,8 @@ BobbyJones : "Allez l'Inter !"
 `;
 
 
-
+  const [accounts, setAccounts] = useState({});
+  const [activeAccount, setActiveAccount] = useState("main");
 
   const [selectedCharacter, setSelectedCharacter] = useState('niermann');
 
@@ -1196,7 +2189,7 @@ BobbyJones : "Allez l'Inter !"
       grade: '',
       element: '',
       scaleStat: ''
-    },'niermann': {
+    }, 'niermann': {
       name: 'Lennart Niermann',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749114179/niermann_arxjer.png',
       icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749114267/build-niermann_phfwmu.png',
@@ -1583,81 +2576,219 @@ BobbyJones : "Allez l'Inter !"
   };
 
   const handleSaveNoyaux = (hunterName, coreData) => {
-    // deep copy pour forcer React à capter le changement
-    const cleanData = JSON.parse(JSON.stringify(coreData));
+    // 🔁 Mise à jour du state uniquement (affichage en live)
     setHunterCores(prev => ({
       ...prev,
-      [hunterName]: cleanData
+      [hunterName]: coreData,
     }));
+
+    showTankMessage("🧪 Noyaux appliqués pour visualisation", true);
   };
 
+
   const handleSaveWeapon = (hunterName, weaponData) => {
-    setHunterWeapons(prev => ({
-      ...prev,
-      [hunterName]: weaponData
-    }));
+    const updatedWeapons = {
+      ...accounts[activeAccount]?.hunterWeapons,
+      [hunterName]: weaponData,
+    };
+
+    setHunterWeapons(updatedWeapons);
+
+    const storage = JSON.parse(localStorage.getItem("builderberu_users")) || {};
+    if (!storage.user || !storage.user.accounts[activeAccount]) return;
+
+    storage.user.accounts[activeAccount].hunterWeapons = updatedWeapons;
+
+    localStorage.setItem("builderberu_users", JSON.stringify(storage));
+  };
+
+
+
+
+  // 🐉 KAISEL DEBUG COMPLET - À ajouter temporairement dans ton code
+
+  // 1️⃣ Fonction de debug pour voir le localStorage
+  const debugLocalStorage = () => {
+    const stored = JSON.parse(localStorage.getItem("builderberu_users"));
+    console.log("🐉 Kaisel DEBUG localStorage complet:", stored);
+
+    if (stored?.user?.accounts) {
+      Object.entries(stored.user.accounts).forEach(([accountName, accountData]) => {
+        console.log(`🐉 Compte "${accountName}":`, {
+          builds: Object.keys(accountData.builds || {}),
+          gems: accountData.gems || {},
+          recentBuilds: accountData.recentBuilds || []
+        });
+      });
+    }
+  };
+
+  // 🐉 KAISEL FIX - Lecture gemmes UNIQUEMENT au niveau compte
+
+  // 1️⃣ handleSaveGems corrigé - Sauvegarde UNIQUEMENT dans le compte
+  const handleSaveGems = (data) => {
+    setGemData(data); // État local
+
+    const storage = JSON.parse(localStorage.getItem("builderberu_users")) || {};
+    storage.user = storage.user || {};
+    storage.user.accounts = storage.user.accounts || {};
+    storage.user.accounts[activeAccount] = storage.user.accounts[activeAccount] || {};
+
+    // 💎 SAUVEGARDER UNIQUEMENT dans accounts[activeAccount].gems
+    storage.user.accounts[activeAccount].gems = data;
+
+    localStorage.setItem("builderberu_users", JSON.stringify(storage));
+    showTankMessage("💎 Gemmes mises à jour et sauvegardées !", true);
   };
 
   const [showGemPopup, setShowGemPopup] = useState(false);
 
-  const handleSaveGems = (data) => {
-    setGemData(data);
-    localStorage.setItem('global_gem_data', JSON.stringify(data));
-    showTankMessage('💎 Gemmes mises à jour et sauvegardées !', true);
+  const saveGemData = (data) => {
+    setGemData(data); // si tu l'utilises encore dans le state React
+    const storage = JSON.parse(localStorage.getItem("builderberu_users")) || {};
+    if (!storage.user || !storage.user.accounts || !storage.user.accounts[activeAccount]) return;
+
+    storage.user.accounts[activeAccount].gems = data; // 🔁 ici on utilise bien 'gems'
+    localStorage.setItem("builderberu_users", JSON.stringify(storage));
+    showTankMessage("💎 Gemmes mises à jour et sauvegardées !", true);
   };
 
   const handleExportAllBuilds = () => {
-    const allBuilds = {};
+    const storage = JSON.parse(localStorage.getItem("builderberu_users"));
+    if (!storage?.user?.accounts?.[activeAccount]?.builds) {
+      showTankMessage("No builds to export 😢", true);
+      return;
+    }
 
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith('build_')) {
-        try {
-          allBuilds[key] = JSON.parse(localStorage.getItem(key));
-        } catch (e) {
-          console.warn(`Failed to parse build for ${key}`);
-        }
-      }
-    });
+    const builds = storage.user.accounts[activeAccount].builds;
 
-    // Ajoute la liste des builds récents
-    allBuilds.recentBuilds = JSON.parse(localStorage.getItem('recentBuilds') || '[]');
-
-    // 🧬 Intègre les hunterCores (noyaux) si dispo
+    // 🧬 Ajout des hunterCores si présents dans state
     Object.entries(hunterCores).forEach(([character, cores]) => {
-      const key = `build_${character}`;
-      if (allBuilds[key]) {
-        allBuilds[key].hunterCores = cores;
+      if (builds[character]) {
+        builds[character].hunterCores = cores;
       }
     });
 
-    // Encodage & copie
-    const exportString = JSON.stringify(allBuilds);
+    const exportData = {
+      ...builds,
+      recentBuilds: recentBuilds || [],
+    };
+
+    const exportString = JSON.stringify(exportData);
     const salted = exportString + salt;
     const encoded = btoa(salted);
 
     navigator.clipboard.writeText(encoded);
-
     showTankMessage('📋 All builds copied to clipboard!', true);
   };
 
-  //   const updateArtifactFromOCR = (parsedData) => {
-  //   setArtifacts(prev => {
-  //     const updated = [...prev];
-  //     const index = updated.findIndex(a => a.type === parsedData.type);
-  //     if (index === -1) return prev;
 
-  //     const artifactToUpdate = updated[index];
+  // 🐉 Kaisel Correction 1/2 - 18/01/2025
+  // Fix du personnage par défaut au chargement de la page
 
-  //     updated[index] = {
-  //       ...artifactToUpdate,
-  //       mainStat: parsedData.mainStat,
-  //       subStats: parsedData.subStats,
-  //       procValue: parsedData.procValue || artifactToUpdate.procValue || null
-  //     };
+  useEffect(() => {
+    console.log("🔄 useEffect [INIT & CHARGEMENT MULTI-COMPTE - KAISEL FIX]");
 
-  //     return updated;
-  //   });
-  // };
+    const defaultUserData = {
+      activeAccount: "main",
+      accounts: {
+        main: {
+          builds: {},
+          hunterWeapons: {},
+          recentBuilds: [],
+          hunterCores: {},
+          gems: {},
+        },
+      },
+    };
+
+    try {
+      const stored = localStorage.getItem("builderberu_users");
+      const parsed = stored ? JSON.parse(stored) : null;
+
+      let userData = parsed?.user || defaultUserData;
+
+      // ✅ Validation minimale
+      if (!userData.accounts || Object.keys(userData.accounts).length === 0) {
+        console.warn("⚠️ Aucun compte valide détecté. Rechargement avec defaults.");
+        userData = defaultUserData;
+      }
+
+      const currentAccount = userData.accounts[userData.activeAccount || "main"] || defaultUserData.accounts.main;
+
+      // 🧹 Sécurise les builds existants (filtrage des builds de persos inconnus)
+      const recent = (currentAccount.recentBuilds || []).filter((id) => characters[id]);
+
+      // 🎯 KAISEL FIX : Choisir le personnage par défaut
+      let defaultCharacter = '';
+
+      if (recent.length > 0) {
+        // Si il y a des builds récents dans le compte actuel, prendre le premier
+        defaultCharacter = recent[0];
+        console.log(`🐉 Kaisel: Personnage par défaut trouvé: ${defaultCharacter} (dernier du compte ${userData.activeAccount})`);
+      } else {
+        // Sinon, essayer le compte "main"
+        const mainAccount = userData.accounts.main;
+        const mainRecent = (mainAccount?.recentBuilds || []).filter((id) => characters[id]);
+
+        if (mainRecent.length > 0) {
+          defaultCharacter = mainRecent[0];
+          console.log(`🐉 Kaisel: Personnage par défaut du compte main: ${defaultCharacter}`);
+        } else {
+          // En dernier recours, Niermann
+          defaultCharacter = 'niermann';
+          console.log(`🐉 Kaisel: Personnage par défaut final: niermann (fallback)`);
+        }
+      }
+
+      // 📌 Setup des états initiaux
+      setMergedUser(userData);
+      setAccounts(userData.accounts);
+      setActiveAccount(userData.activeAccount || "main");
+      setRecentBuilds(recent);
+      setSelectedCharacter(defaultCharacter); // ← KAISEL FIX ICI
+
+      // 📦 Chargement du build actif (si existe)
+      if (defaultCharacter && currentAccount.builds?.[defaultCharacter]) {
+        const build = currentAccount.builds[defaultCharacter];
+        console.log(`🐉 Kaisel: Chargement auto du build ${defaultCharacter}`, build);
+
+        setFlatStats(build.flatStats || {});
+        setStatsWithoutArtefact(build.statsWithoutArtefact || {});
+        setArtifactsData(build.artifactsData || {});
+        setHunterCores(prev => ({
+          ...prev,
+          [defaultCharacter]: build.hunterCores || {}
+        }));
+        setHunterWeapons(prev => ({
+          ...prev,
+          [defaultCharacter]: build.hunterWeapons || {}
+        }));
+      } else if (defaultCharacter === 'niermann') {
+        // Si c'est Niermann par défaut, pas de build à charger
+        console.log(`🐉 Kaisel: Niermann par défaut, pas de build à charger`);
+      }
+
+      // ⚔️ Données hors build
+      setHunterWeapons(currentAccount.hunterWeapons || {});
+      setHunterCores(currentAccount.hunterCores || {});
+
+      // 💎 KAISEL FIX : Charger les gemmes du compte actif (pas global!)
+      setGemData(currentAccount.gems || {});
+      console.log(`🐉 Kaisel: Gemmes chargées pour compte ${userData.activeAccount}:`, currentAccount.gems);
+
+      setIsBuildsReady(true);
+    } catch (error) {
+      console.error("❌ Erreur localStorage :", error);
+      localStorage.setItem("builderberu_users", JSON.stringify({ user: defaultUserData }));
+      setMergedUser(defaultUserData);
+      setAccounts(defaultUserData.accounts);
+      setActiveAccount("main");
+      setRecentBuilds([]);
+      setSelectedCharacter('niermann'); // Fallback en cas d'erreur
+      setGemData({});
+    }
+  }, []);
 
   const updateArtifactFromOCR = (parsedData) => {
     setArtifacts(prev => {
@@ -1710,41 +2841,72 @@ BobbyJones : "Allez l'Inter !"
             showTankMessage("Corrupted import 😶‍🌫️");
             return;
           }
+
           const jsonData = decoded.replace(salt, '');
           const imported = JSON.parse(jsonData);
 
-          if (
-            imported.flatStats &&
-            imported.statsWithoutArtefact &&
-            imported.artifactsData
-          ) {
-            // Cas ancien (1 seul build)
-            localStorage.setItem(`build_${selectedCharacter}`, JSON.stringify(imported));
-            setFlatStats(imported.flatStats);
-            setStatsWithoutArtefact(imported.statsWithoutArtefact);
-            setArtifactsData(imported.artifactsData);
-            setHunterCores(imported.hunterCores);
+          const isSingleBuild = imported.flatStats && imported.statsWithoutArtefact && imported.artifactsData;
+
+          if (isSingleBuild) {
+            // 🧱 Format simple : build unique
+            const build = {
+              flatStats: imported.flatStats,
+              statsWithoutArtefact: imported.statsWithoutArtefact,
+              artifactsData: imported.artifactsData,
+              hunterCores: imported.hunterCores,
+            };
+
+            setFlatStats(build.flatStats);
+            setStatsWithoutArtefact(build.statsWithoutArtefact);
+            setArtifactsData(build.artifactsData);
+            setHunterCores(build.hunterCores);
+
+            saveToLocalStorage({
+              builds: {
+                ...accounts[activeAccount]?.builds,
+                [selectedCharacter]: build,
+              },
+            });
+
             showTankMessage("Single build imported for current character 🥸");
             setIsImportedBuild(true);
+
           } else if (
             typeof imported === 'object' &&
-            Object.keys(imported).some((key) => key.startsWith('build_'))
+            Object.keys(imported).some((key) =>
+              imported[key]?.flatStats && imported[key]?.artifactsData
+            )
           ) {
-            // Cas nouveau (plusieurs builds)
-            Object.entries(imported).forEach(([key, value]) => {
-              localStorage.setItem(key, JSON.stringify(value));
+            // 📦 Nouveau format : multi builds (plus de build_ 🔥)
+            const importedBuilds = {};
+            Object.entries(imported).forEach(([charName, build]) => {
+              if (build.flatStats && build.artifactsData) {
+                importedBuilds[charName] = build;
+              }
             });
+
+            const updates = {
+              builds: {
+                ...accounts[activeAccount]?.builds,
+                ...importedBuilds,
+              },
+            };
+
             if (imported.recentBuilds) {
-              localStorage.setItem('recentBuilds', JSON.stringify(imported.recentBuilds));
+              updates.recentBuilds = imported.recentBuilds;
+              setRecentBuilds(imported.recentBuilds);
               showTankMessage("Builds & Icons imported with success 😎", true);
-              setRecentBuilds(imported.recentBuilds)
             } else {
               showTankMessage("Builds imported (no icons info) 😶", true);
             }
+
+            saveToLocalStorage(updates);
             setIsImportedBuild(true);
+
           } else {
             showTankMessage("Invalid build format 😢", true);
           }
+
         } catch (err) {
           showTankMessage("Invalid or unreadable JSON format 😵", true);
         }
@@ -1760,6 +2922,7 @@ BobbyJones : "Allez l'Inter !"
       showTankMessage("⏱️ Import timed out...");
     }, 5000);
   };
+
 
 
   const handleResetStats = () => {
@@ -1787,10 +2950,10 @@ BobbyJones : "Allez l'Inter !"
 
     // 💾 Force la sauvegarde dans le state + localStorage
     handleSaveWeapon(name, weapon);
-    localStorage.setItem('hunterWeapons', JSON.stringify({
-      ...hunterWeapons,
-      [name]: weapon
-    }));
+    // localStorage.setItem('hunterWeapons', JSON.stringify({
+    //   ...hunterWeapons,
+    //   [name]: weapon
+    // }));
 
     const cores = hunterCores[name] || {};
     const gems = gemData || {};
@@ -1887,6 +3050,50 @@ BobbyJones : "Allez l'Inter !"
     }
   };
 
+
+  // 🧹 Fonction de nettoyage (inchangée)
+  const handleAccountSwitchCleanup = (accountName, recentBuilds) => {
+    console.log(`🐉 Kaisel: Nettoyage du compte ${accountName}`);
+
+    const filteredRecent = recentBuilds.filter(charKey =>
+      characters[charKey] && accounts[accountName]?.builds?.[charKey]
+    );
+
+    // Mise à jour avec la liste nettoyée
+    const updatedAccounts = {
+      ...accounts,
+      [accountName]: {
+        ...accounts[accountName],
+        recentBuilds: filteredRecent
+      }
+    };
+
+    setAccounts(updatedAccounts);
+    setRecentBuilds(filteredRecent);
+
+    // Sauvegarder dans localStorage
+    const storage = JSON.parse(localStorage.getItem("builderberu_users")) || {};
+    if (storage.user?.accounts?.[accountName]) {
+      storage.user.accounts[accountName].recentBuilds = filteredRecent;
+      localStorage.setItem("builderberu_users", JSON.stringify(storage));
+    }
+
+    // Réessayer le chargement avec la liste propre
+    if (filteredRecent.length > 0) {
+      console.log(`🐉 Kaisel: Retry après nettoyage avec ${filteredRecent[0]}`);
+      setTimeout(() => {
+        handleClickBuildIcon(filteredRecent[0]);
+      }, 150);
+    } else {
+      setSelectedCharacter('');
+      showTankMessage(`🧹 Compte "${accountName}" nettoyé. Aucun build valide.`, true);
+    }
+  };
+
+  // 🐉 Kaisel Correction 2/2 - 18/01/2025
+  // Fix : Gemmes dépendantes du compte (pas globales)
+
+  // 1️⃣ MISE À JOUR handleSaveBuild pour sauvegarder les gemmes du compte
   const handleSaveBuild = () => {
     if (!selectedCharacter) return;
 
@@ -1894,8 +3101,8 @@ BobbyJones : "Allez l'Inter !"
       flatStats,
       statsWithoutArtefact,
       artifactsData,
-      hunterCores, // ← ici 🧠
-      hunterWeapons         // ✅ à ajouter
+      hunterCores: hunterCores[selectedCharacter] || {},
+      hunterWeapons: hunterWeapons[selectedCharacter] || {},
     };
 
     if (isImportedBuild) {
@@ -1903,89 +3110,129 @@ BobbyJones : "Allez l'Inter !"
       return;
     }
 
-    localStorage.setItem(`build_${selectedCharacter}`, JSON.stringify(build));
+    // 📦 Chargement localStorage
+    const storedData = JSON.parse(localStorage.getItem("builderberu_users")) || {};
+    storedData.user = storedData.user || {};
+    storedData.user.accounts = storedData.user.accounts || {};
+    storedData.user.accounts[activeAccount] = storedData.user.accounts[activeAccount] || {};
 
-    // Mise à jour des builds récents
-    let recent = JSON.parse(localStorage.getItem('recentBuilds') || '[]');
+    const currentAccount = storedData.user.accounts[activeAccount];
+
+    // 🔄 Mise à jour des builds
+    currentAccount.builds = currentAccount.builds || {};
+    currentAccount.builds[selectedCharacter] = build;
+
+    // 🔁 Recent builds
+    let recent = Array.isArray(currentAccount.recentBuilds) ? [...currentAccount.recentBuilds] : [];
     recent = recent.filter((id) => id !== selectedCharacter);
     recent.unshift(selectedCharacter);
-    if (recent.length > 4) recent = recent.slice(0, 4);
-    localStorage.setItem('recentBuilds', JSON.stringify(recent));
+    recent = recent.slice(0, 5);
+    recent = recent.filter((id) => characters[id]);
+    currentAccount.recentBuilds = recent;
 
-    // Messages mystiques
-    const mystLine = getRandomMystEggLine(selectedCharacter, 'messageSaved');
-    const defaultLine = `Build for ${selectedCharacter} saved! 😌`;
+    // ✅ Hunter cores
+    currentAccount.hunterCores = {
+      ...currentAccount.hunterCores,
+      [selectedCharacter]: hunterCores[selectedCharacter] || {},
+    };
 
-    if (selectedCharacter === "jo") {
-      setJoSaveCount(prev => prev + 1);
-      if (joSaveCount + 1 >= 5) {
-        triggerSernIntervention();
-        return;
+    // 💎 KAISEL FIX : Sauvegarder les gemmes DU COMPTE ACTIF
+    currentAccount.gems = gemData || {};
+    console.log(`🐉 Kaisel: Sauvegarde gemmes pour compte ${activeAccount}:`, gemData);
+
+    // 💾 Sauvegarde localStorage
+    localStorage.setItem("builderberu_users", JSON.stringify(storedData));
+
+    // 🔧 Mise à jour du state React accounts
+    setAccounts(prevAccounts => {
+      const updatedAccounts = {
+        ...prevAccounts,
+        [activeAccount]: {
+          ...prevAccounts[activeAccount],
+          builds: {
+            ...prevAccounts[activeAccount]?.builds,
+            [selectedCharacter]: build
+          },
+          recentBuilds: recent,
+          hunterCores: {
+            ...prevAccounts[activeAccount]?.hunterCores,
+            [selectedCharacter]: hunterCores[selectedCharacter] || {}
+          },
+          gems: gemData || {} // ← KAISEL FIX : Gemmes par compte
+        }
+      };
+
+      console.log("✅ Updated accounts state:", updatedAccounts[activeAccount].recentBuilds);
+      return updatedAccounts;
+    });
+
+    // 🔁 Mise à jour des autres states React
+    setRecentBuilds([...recent]);
+    setMergedUser(prevUser => ({
+      ...prevUser,
+      accounts: {
+        ...prevUser.accounts,
+        [activeAccount]: {
+          ...prevUser.accounts[activeAccount],
+          builds: {
+            ...prevUser.accounts[activeAccount]?.builds,
+            [selectedCharacter]: build
+          },
+          recentBuilds: recent,
+          gems: gemData || {} // ← KAISEL FIX : Gemmes par compte
+        }
       }
-    } else if (selectedCharacter === "kanae") {
-      setKanaeSaveCount(prev => prev + 1);
-      if (kanaeSaveCount + 1 >= 5) {
-        setShowNarrative(true);
-        return;
-      }
-    }
+    }));
 
-    showTankMessage(mystLine || defaultLine, true);
-    setRecentBuilds(recent);
+    setIsBuildsReady(true);
+    showTankMessage(`✅ Build sauvegardé pour ${selectedCharacter}!`, true);
   };
-
 
 
   const handleLoadBuild = (characterKey) => {
     const key = characterKey || selectedCharacter;
     if (!key) return;
 
+    const storedData = JSON.parse(localStorage.getItem("builderberu_users"));
+    const build = storedData?.user?.accounts?.[activeAccount]?.builds?.[key];
 
+    if (build) {
+      setFlatStats(build.flatStats || {});
+      setStatsWithoutArtefact(build.statsWithoutArtefact || {});
+      setArtifactsData(build.artifactsData || {});
+      setHunterCores(prev => ({
+        ...prev,
+        [key]: build.hunterCores || {}
+      }));
+      setHunterWeapons(prev => ({
+        ...prev,
+        [key]: build.hunterWeapons || {}
+      }));
 
-    const saved = localStorage.getItem(`build_${key}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setFlatStats(parsed.flatStats || {});
-        setStatsWithoutArtefact(parsed.statsWithoutArtefact || {});
-        setArtifactsData(parsed.artifactsData || {});
-        if (selectedCharacter !== key) {
-          setSelectedCharacter(key);
-        }
-
-        if (parsed.hunterCores) {
-          setHunterCores(prev => ({
-            ...prev,
-            [key]: parsed.hunterCores[key] || {}
-          }));
-        }
-        // setHunterCores(prev => {
-        //    parsed.hunterCores || {};
-
-        // });
-        // showTankMessage(`Build for ${key} loaded! 😈`);
-      } catch (e) {
-        console.error('❌ Failed to load build:', e);
-        showTankMessage(`Corrupted build for ${key}... 😱`);
+      if (selectedCharacter !== key) {
+        setSelectedCharacter(key);
       }
+
+      showTankMessage(`Build for ${key} loaded! 😈`);
     } else {
       showTankMessage(`No saved build for ${key} yet! 😶`);
     }
   };
 
+
   const isMobile = useResponsive();
 
 
 
-  useEffect(() => {
-    const recent = JSON.parse(localStorage.getItem('recentBuilds') || '[]');
-    if (recent.length > 0) {
-      setSelectedCharacter(recent[0]); // premier build dispo
-      handleLoadBuild(recent[0]);
-    } else {
-      setSelectedCharacter('niermann'); // Chae à poil sinon haha
-    }
-  }, []);
+  // useEffect(() => {
+  //   const recent = JSON.parse(localStorage.getItem('recentBuilds') || '[]');
+  //   if (recent.length > 0) {
+  //     setSelectedCharacter(recent[0]); // premier build dispo
+  //     handleLoadBuild(recent[0]);
+  //   } else {
+  //     setSelectedCharacter('niermann'); // Chae à poil sinon haha
+  //   }
+  // }, []);
 
   const simulateWeaponSaveIfMissing = (hunterKey) => {
     if (!hunterWeapons[hunterKey]) {
@@ -1994,20 +3241,17 @@ BobbyJones : "Allez l'Inter !"
 
       if (scale === 'Defense') mainStat = 3080;
       else if (scale === 'HP') mainStat = 6120;
-      else mainStat = 3080; // Attack par défaut
+      else mainStat = 3080;
 
       const defaultWeapon = {
         mainStat,
         precision: 4000,
       };
 
-      handleSaveWeapon(hunterKey, defaultWeapon); // 👈 simulate true Save
-      localStorage.setItem('hunterWeapons', JSON.stringify({
-        ...hunterWeapons,
-        [hunterKey]: defaultWeapon
-      }));
+      handleSaveWeapon(hunterKey, defaultWeapon); // suffit !
     }
   };
+
 
   useEffect(() => {
     if (!selectedCharacter) return;
@@ -2473,383 +3717,219 @@ BobbyJones : "Allez l'Inter !"
   const [showImportSaveWarning, setShowImportSaveWarning] = useState(false);
   const [tankClickCount, setTankClickCount] = useState(0);
 
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('recentBuilds') || '[]');
-    setRecentBuilds(saved);
-  }, []);
+
+  // 🐉 Kaisel Detective - 18/01/2025
+  // Debug COMPLET de handleClickBuildIcon pour voir où ça bloque
 
   const handleClickBuildIcon = (characterName) => {
-    const saved = localStorage.getItem(`build_${characterName}`);
-    if (!saved) return;
-    const build = JSON.parse(saved);
+    console.log(`🐉 Kaisel DEBUG: ===== DÉBUT handleClickBuildIcon(${characterName}) =====`);
+
+    // 🔍 Vérification 1 : activeAccount
+    console.log(`🐉 Kaisel DEBUG: activeAccount actuel:`, activeAccount);
+
+    // 🔍 Vérification 2 : localStorage
+    const stored = JSON.parse(localStorage.getItem("builderberu_users"));
+    console.log(`🐉 Kaisel DEBUG: localStorage complet:`, stored);
+
+
+    if (stored?.artifactsData) {
+      let modified = false;
+      const updated = {};
+
+      for (const slot in stored.artifactsData) {
+        updated[slot] = {
+          ...stored.artifactsData[slot],
+          set: stored.artifactsData[slot].set || '',
+        };
+        if (!stored.artifactsData[slot].set) modified = true;
+      }
+
+      if (modified) {
+        localStorage.setItem("builderberu_users", JSON.stringify({
+          ...stored,
+          artifactsData: updated,
+        }));
+        setArtifactsData(updated);
+      }
+    }
+
+    // 🔍 Vérification 3 : accounts disponibles
+    console.log(`🐉 Kaisel DEBUG: accounts disponibles:`, Object.keys(stored?.user?.accounts || {}));
+
+    // 🔍 Vérification 4 : path complet
+    const userAccounts = stored?.user?.accounts;
+    console.log(`🐉 Kaisel DEBUG: userAccounts:`, userAccounts);
+
+    const targetAccount = userAccounts?.[activeAccount];
+    console.log(`🐉 Kaisel DEBUG: targetAccount [${activeAccount}]:`, targetAccount);
+
+    const builds = targetAccount?.builds;
+    console.log(`🐉 Kaisel DEBUG: builds dans ${activeAccount}:`, builds);
+
+    const build = builds?.[characterName];
+    console.log(`🐉 Kaisel DEBUG: build [${characterName}]:`, build);
+
+    if (!build) {
+      console.log(`🐉 Kaisel DEBUG: ❌ Pas de build trouvé pour ${characterName} dans compte ${activeAccount}`);
+      showTankMessage(`Aucun build sauvegardé pour ${characterName} 😶`, true);
+      return;
+    }
+
+    console.log(`🐉 Kaisel DEBUG: ✅ Build trouvé! Chargement...`);
+
+    // 📦 CHARGEMENT COMPLET de TOUTES les données du build
+
+    // 1️⃣ Personnage sélectionné
+    console.log(`🐉 Kaisel DEBUG: setSelectedCharacter(${characterName})`);
     setSelectedCharacter(characterName);
-    setFlatStats(build.flatStats);
-    setStatsWithoutArtefact(build.statsWithoutArtefact);
-    setArtifactsData(build.artifactsData);
-    setHunterCores(build.hunterCores || {});
-    showTankMessage(`Loaded ${characterName}'s saved build 😌`);
+
+    // 2️⃣ Stats de base
+    console.log(`🐉 Kaisel DEBUG: setFlatStats`, build.flatStats);
+    setFlatStats(build.flatStats || {});
+
+    console.log(`🐉 Kaisel DEBUG: setStatsWithoutArtefact`, build.statsWithoutArtefact);
+    setStatsWithoutArtefact(build.statsWithoutArtefact || {});
+
+    // 3️⃣ Artefacts complets
+    console.log(`🐉 Kaisel DEBUG: setArtifactsData`, build.artifactsData);
+    setArtifactsData(build.artifactsData || {});
+
+    // 4️⃣ Hunter cores
+    console.log(`🐉 Kaisel DEBUG: setHunterCores pour ${characterName}`, build.hunterCores);
+    setHunterCores(prev => ({
+      ...prev,
+      [characterName]: build.hunterCores || {}
+    }));
+
+    // 5️⃣ Hunter weapons
+    console.log(`🐉 Kaisel DEBUG: setHunterWeapons pour ${characterName}`, build.hunterWeapons);
+    setHunterWeapons(prev => ({
+      ...prev,
+      [characterName]: build.hunterWeapons || {}
+    }));
+
+    // 6️⃣ Gemmes du compte
+    if (build.gems) {
+      console.log(`🐉 Kaisel DEBUG: setGemData`, build.gems);
+      setGemData(build.gems);
+    }
+
+    // 7️⃣ Message de confirmation
+    showTankMessage(`✅ ${characters[characterName]?.name || characterName} chargé !`, true);
+
+    console.log(`🐉 Kaisel DEBUG: ===== FIN handleClickBuildIcon =====`);
   };
 
 
+  const handleAccountSwitch = (newAccountName) => {
+    console.log(`🐉 Kaisel FINAL: ===== SWITCH vers ${newAccountName} =====`);
 
-  useEffect(() => {
-    let canvasLeft = document.getElementById('canvas-left');
-    let canvasCenter = document.getElementById('canvas-center');
-    let canvasRight = document.getElementById('canvas-right');
+    // 📦 LECTURE DIRECTE dans localStorage AVANT de modifier quoi que ce soit
+    const storedData = JSON.parse(localStorage.getItem("builderberu_users")) || {};
+    const allAccounts = storedData?.user?.accounts || {};
 
-    function resetCanvas(canvas) {
-      if (!canvas) return;
-      const newCanvas = canvas.cloneNode(true);
-      canvas.parentNode.replaceChild(newCanvas, canvas);
+    console.log(`🐉 Kaisel: localStorage AVANT switch:`, storedData);
+    console.log(`🐉 Kaisel: Tous les comptes disponibles:`, Object.keys(allAccounts));
+
+    // ✅ Vérification que le compte existe
+    if (!allAccounts[newAccountName]) {
+      console.error(`🐉 Kaisel: ERREUR - Compte "${newAccountName}" introuvable !`);
+      showTankMessage(`Compte "${newAccountName}" introuvable !`, true);
+      return;
     }
 
-    // Réinitialiser les trois canvas
-    resetCanvas(canvasLeft);
-    resetCanvas(canvasCenter);
-    resetCanvas(canvasRight);
+    const newAccountData = allAccounts[newAccountName];
+    const recentBuilds = newAccountData.recentBuilds || [];
 
-    // IMPORTANT : récupérer les nouveaux canvas recréés
-    canvasLeft = document.getElementById('canvas-left');
-    canvasCenter = document.getElementById('canvas-center');
-    canvasRight = document.getElementById('canvas-right');
+    console.log(`🐉 Kaisel: Données du compte ${newAccountName}:`, newAccountData);
+    console.log(`🐉 Kaisel: Gemmes du compte ${newAccountName}:`, newAccountData.gems);
 
+    // 🔄 Mise à jour de l'activeAccount SEULEMENT
+    setActiveAccount(newAccountName);
 
-    if (!canvasLeft || !canvasCenter || !canvasRight) return;
-
-    const ctxLeft = canvasLeft.getContext('2d');
-    const ctxCenter = canvasCenter.getContext('2d');
-    const ctxRight = canvasRight.getContext('2d');
-    ctxLeft.clearRect(0, 0, canvasLeft.width, canvasLeft.height);
-    ctxCenter.clearRect(0, 0, canvasCenter.width, canvasCenter.height);
-    ctxRight.clearRect(0, 0, canvasRight.width, canvasRight.height);
-
-    const imgLeft = new Image();
-    const imgCenter = new Image();
-    const imgRight = new Image();
-
-    imgLeft.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604093/neige_onpilk.png';
-    imgCenter.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604092/sanctuaire_rfcze5.png';
-    imgRight.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604092/greenland_cb4caw.png';
-
-    let spawnCanvas = null;
-    let imagesLoaded = 0;
-
-
-    imgLeft.onload = () => {
-      ctxLeft.drawImage(imgLeft, 0, 0, canvasLeft.width, canvasLeft.height);
-
+    // 🔄 Mise à jour mergedUser SANS écraser les accounts !
+    const updatedUser = {
+      ...storedData.user, // ← GARDE tout ce qui existait avant !
+      activeAccount: newAccountName
     };
-    imgCenter.onload = () => {
-      ctxCenter.drawImage(imgCenter, 0, 0, canvasCenter.width, canvasCenter.height);
+    setMergedUser(updatedUser);
 
-    };
-    imgRight.onload = () => {
-      ctxRight.drawImage(imgRight, 0, 0, canvasRight.width, canvasRight.height);
+    // 💾 SAUVEGARDER seulement l'activeAccount (PAS les accounts !)
+    storedData.user.activeAccount = newAccountName;
+    localStorage.setItem("builderberu_users", JSON.stringify(storedData)); // ← Garde TOUT !
 
-    };
+    console.log(`🐉 Kaisel: localStorage APRÈS switch:`, JSON.parse(localStorage.getItem("builderberu_users")));
 
-    spawnTank();
-    animate();
-    function spawnTank() {
-      const canvases = [canvasLeft, canvasCenter, canvasRight];
-      const randomIndex = Math.floor(Math.random() * canvases.length);
-      spawnCanvas = canvases[randomIndex];
-      // const canvasIds = ['canvas-left', 'canvas-center', 'canvas-right'];
-      currentTankCanvasId = spawnCanvas.id; // 👈 À définir en global
-      console.log("✅ Tank spawn dans :", spawnCanvas.id);
-      spawnCanvas.addEventListener('click', handleTankClick);
+    // 🔁 Mise à jour recentBuilds
+    setRecentBuilds(recentBuilds);
 
-      tank.x = spawnCanvas.width / 2;
-      tank.y = spawnCanvas.height - 80;
-    }
+    // 💎 KAISEL FIX : Charger les gemmes UNIQUEMENT du compte (jamais global!)
+    const accountGems = newAccountData.gems || {};
+    console.log(`🐉 Kaisel: Chargement gemmes COMPTE SEULEMENT pour ${newAccountName}:`, accountGems);
+    setGemData(accountGems); // ← LECTURE UNIQUEMENT DU COMPTE !
 
-    function fireTankLaser() {
-      console.log("💥 LASER DE TANK ACTIVÉ !");
+    // 🔄 Mise à jour du state accounts AVANT le chargement du build (pour éviter les races)
+    setAccounts(allAccounts);
 
-      const tankCanvas = document.getElementById(currentTankCanvasId);
-      // const target = document.getElementById("targetToDestroy");
-      const laser = document.getElementById("tank-laser");
-      const candidates = document.querySelectorAll(".tank-target");
+    // 🎯 CHARGEMENT DIRECT (pas d'appel de fonction séparée!)
+    if (recentBuilds.length > 0) {
+      const firstCharacter = recentBuilds[0];
+      console.log(`🐉 Kaisel FINAL: Premier personnage:`, firstCharacter);
 
-      if (!tankCanvas || !laser || !candidates) return;
-      const target = candidates[Math.floor(Math.random() * candidates.length)];
-      const tankRect = tankCanvas.getBoundingClientRect();
-      const targetRect = target.getBoundingClientRect();
-      tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png';
-      const startX = tankRect.left + tankRect.width / 2;
-      const startY = tankRect.top + tank.y - 80;
-      const endX = targetRect.left + targetRect.width / 2;
-      const endY = targetRect.top + targetRect.height / 2;
+      if (characters[firstCharacter]) {
+        const build = newAccountData.builds?.[firstCharacter];
+        console.log(`🐉 Kaisel FINAL: Build trouvé:`, !!build);
 
-      const deltaX = endX - startX;
-      const deltaY = endY - startY;
-      const length = Math.sqrt(deltaX ** 2 + deltaY ** 2);
-      const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+        if (build) {
+          console.log(`🐉 Kaisel FINAL: 🚀 CHARGEMENT DIRECT...`);
 
-      // Appliquer styles
-      laser.style.width = `${length}px`;
-      laser.style.height = `4px`;
-      laser.style.left = `${startX}px`;
-      laser.style.top = `${startY}px`;
-      laser.style.transform = `rotate(${angle}deg)`;
-      laser.style.transformOrigin = "0 0"; // origine : début du rayon
-      laser.classList.remove("hidden");
+          // 📦 CHARGEMENT DIRECT IMMÉDIAT - Avec sécurités supplémentaires
+          setSelectedCharacter(firstCharacter);
+          setFlatStats(build.flatStats || {});
+          setStatsWithoutArtefact(build.statsWithoutArtefact || {});
+          setArtifactsData(build.artifactsData || {});
 
-      // 💥 Effet et destruction
-      setTimeout(() => {
-        laser.classList.add("hidden");
-        target.classList.add("laser-hit");
+          // 🧪 Hunter cores avec merge intelligent
+          setHunterCores(prev => ({
+            ...prev,
+            [firstCharacter]: build.hunterCores || {}
+          }));
 
-        setTimeout(() => {
-          target.remove();
-        }, 500);
-      }, 300);
-    }
+          // ⚔️ Hunter weapons avec merge intelligent
+          setHunterWeapons(prev => ({
+            ...prev,
+            [firstCharacter]: build.hunterWeapons || {}
+          }));
 
-    function handleTankClick() {
-      setTankClickCount(prev => {
-        const count = prev + 1;
-        console.log(`🔥 ${count} fois que Tank est cliqué... 👀`);
+          showTankMessage(`✅ ${characters[firstCharacter]?.name} chargé dans "${newAccountName}"!`, true);
 
-        if (count === 5) {
-          showTankMessage("Hé ! C’est pas un bouton ici 😐", true);
-        } else if (count === 10) {
-          showTankMessage("Encore un clic et j'appelle BobbyJones 😠", true);
-        } else if (count === 20) {
-          showTankMessage("Ok, là j’en ai marre.", true);
-        } else if (count === 30) {
-          showTankMessage("...Dernier avertissement.", true);
+        } else {
+          console.warn(`🐉 Kaisel FINAL: ⚠️ Pas de build pour ${firstCharacter}`);
+          setSelectedCharacter('');
         }
+      } else {
+        console.warn(`🐉 Kaisel FINAL: ⚠️ Personnage ${firstCharacter} inexistant`);
+        setSelectedCharacter('');
+      }
+    } else {
+      console.log(`🐉 Kaisel FINAL: 📁 Compte vide`);
+      setSelectedCharacter('');
 
+      // 🧹 Reset tous les states pour un compte vide
+      setFlatStats({});
+      setStatsWithoutArtefact({});
+      setArtifactsData({});
+      setHunterCores({});
+      setHunterWeapons({});
 
-        if (count >= 40) {
-          fireTankLaser();
-          window.umami.track('LaserBurst');
-          return 0; // Reset
-        }
-
-        return count; // Incrémente
-      });
+      showTankMessage(`📁 Compte "${newAccountName}" vide. Sélectionne un personnage!`, true);
     }
 
-    function drawTankMessage(ctx) {
-      if (tankIsWandering) {
-        const speed = 0.8;
-        if (tankDirection === "left") tank.x -= speed;
-        if (tankDirection === "right") tank.x += speed;
-        if (tankDirection === "up") tank.y -= speed;
-        if (tankDirection === "down") tank.y += speed;
+    console.log(`🐉 Kaisel FINAL: ===== FIN SWITCH =====`);
+  };
 
-        // Garde Tank dans les limites du canvas
-        tank.x = Math.max(0, Math.min(spawnCanvas.width, tank.x));
-        tank.y = Math.max(spawnCanvas.height / 2, Math.min(spawnCanvas.height, tank.y));
-      }
-      const message = tankMessageRef.current;
-      const opacity = messageOpacityRef.current;
-
-      if (!message || opacity <= 0) return;
-
-      const paddingX = 20;
-      const paddingY = 14;
-      const fontSize = 16;
-
-      ctx.save();
-      ctx.globalAlpha = opacity;
-
-      ctx.font = `bold ${fontSize}px Arial`;
-      const textWidth = ctx.measureText(message).width;
-      const bubbleWidth = textWidth + paddingX * 2;
-      const bubbleHeight = fontSize + paddingY * 2;
-      const radius = 12;
-
-      const x = tank.x - bubbleWidth / 2;
-      const y = tank.y - tank.size - bubbleHeight - 20;
-
-      // 💬 Bulle arrondie
-      ctx.beginPath();
-      ctx.moveTo(x + radius, y);
-      ctx.lineTo(x + bubbleWidth - radius, y);
-      ctx.quadraticCurveTo(x + bubbleWidth, y, x + bubbleWidth, y + radius);
-      ctx.lineTo(x + bubbleWidth, y + bubbleHeight - radius);
-      ctx.quadraticCurveTo(x + bubbleWidth, y + bubbleHeight, x + bubbleWidth - radius, y + bubbleHeight);
-      ctx.lineTo(x + radius, y + bubbleHeight);
-      ctx.quadraticCurveTo(x, y + bubbleHeight, x, y + bubbleHeight - radius);
-      ctx.lineTo(x, y + radius);
-      ctx.quadraticCurveTo(x, y, x + radius, y);
-      ctx.closePath();
-
-      ctx.fillStyle = 'white';
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = 2;
-      ctx.fill();
-      ctx.stroke();
-
-      // ✍️ Texte
-      ctx.fillStyle = 'black';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(message, x + bubbleWidth / 2, y + bubbleHeight / 2);
-
-      ctx.restore();
-    }
-
-
-    function drawTank() {
-      if (!spawnCanvas) return;
-      const ctx = spawnCanvas.getContext('2d');
-      if (!ctx) return;
-
-      // 1. Effacer tout
-      ctx.clearRect(0, 0, spawnCanvas.width, spawnCanvas.height);
-
-      // 2. Redessiner le fond
-      if (spawnCanvas === canvasLeft) ctx.drawImage(imgLeft, 0, 0, canvasLeft.width, canvasLeft.height);
-      if (spawnCanvas === canvasCenter) ctx.drawImage(imgCenter, 0, 0, canvasCenter.width, canvasCenter.height);
-      if (spawnCanvas === canvasRight) ctx.drawImage(imgRight, 0, 0, canvasRight.width, canvasRight.height);
-
-      // 3. Dessiner Tank
-      ctx.save();
-      const scale = ((tank.y / 2) / spawnCanvas.height) * 4;
-      ctx.translate(tank.x, tank.y);
-      ctx.scale(scale, scale);
-      ctx.drawImage(tank.img, -tank.size / 2, -tank.size, tank.size, tank.size);
-      ctx.restore();
-      drawTankMessage(ctx);
-    }
-
-    function animate() {
-      if (!spawnCanvas) return;
-
-      tank.x += tank.speedX;
-      tank.y += tank.speedY;
-
-      const friction = 0.9;
-      const maxSpeed = 1.2;
-
-      tank.speedX *= friction;
-      tank.speedY *= friction;
-
-      if (tank.speedX > maxSpeed) tank.speedX = maxSpeed;
-      if (tank.speedX < -maxSpeed) tank.speedX = -maxSpeed;
-      if (tank.speedY > maxSpeed) tank.speedY = maxSpeed;
-      if (tank.speedY < -maxSpeed) tank.speedY = -maxSpeed;
-
-      // Limites
-      if (tank.x < 0) tank.x = 0;
-      if (tank.x > spawnCanvas.width) tank.x = spawnCanvas.width;
-      if (tank.y < spawnCanvas.height / 2) tank.y = spawnCanvas.height / 2;
-      if (tank.y > spawnCanvas.height) tank.y = spawnCanvas.height;
-      if (tankIsWandering && tankDirection) {
-        switch (tankDirection) {
-          case 'left':
-            tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_left_lxr3km.png';
-            break;
-          case 'right':
-            tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_right_2_zrf0y1.png';
-            break;
-          case 'up':
-            tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png';
-            break;
-          case 'down':
-            tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png';
-            break;
-        }
-      }
-      drawTank();
-      requestAnimationFrame(animate);
-    }
-
-    tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png';
-
-    const handleKeyDown = (e) => {
-      if (!spawnCanvas) return;
-      if (e.key === 'ArrowLeft') {
-        tank.speedX = -0.6;
-        tank.direction = 'left';
-        tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_left_lxr3km.png';
-      } else if (e.key === 'ArrowRight') {
-        tank.speedX = 0.6;
-        tank.direction = 'right';
-        tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_right_2_zrf0y1.png';
-      } else if (e.key === 'ArrowUp') {
-        tank.speedY = -0.15;
-        tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png';
-      } else if (e.key === 'ArrowDown') {
-        tank.speedY = 0.15;
-        tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png';
-      }
-    };
-
-    const handleKeyUp = (e) => {
-      if (!spawnCanvas) return;
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        tank.speedX = 0;
-        tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png';
-      }
-      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        tank.speedY = 0;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (tankIntervalRef.current) return; // déjà lancé ? on stoppe
-
-    tankIntervalRef.current = setInterval(() => {
-      const shouldSpeak = Math.random() < 0.33;
-      if (shouldSpeak) {
-        const msg = tankPhrases[Math.floor(Math.random() * tankPhrases.length)];
-        showTankMessage(msg);
-      }
-    }, 30000); // toutes les 30 secondes
-
-    return () => {
-      clearInterval(tankIntervalRef.current);
-      tankIntervalRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    const wanderInterval = setInterval(() => {
-      if (!tankIsWandering && Math.random() < 0.02) { // 2% toutes les 30s
-        const directions = ["left", "right", "up", "down"];
-        tankDirection = directions[Math.floor(Math.random() * directions.length)];
-        tankIsWandering = true;
-
-        const wanderDuration = 2000 + Math.random() * 3000;
-        const returnDuration = wanderDuration / 4;
-        const originalDirection = tankDirection;
-
-        // Timer de retour
-        wanderTimer = setTimeout(() => {
-          // Phase de retour
-          switch (originalDirection) {
-            case 'left': tankDirection = 'right'; break;
-            case 'right': tankDirection = 'left'; break;
-            case 'up': tankDirection = 'down'; break;
-            case 'down': tankDirection = 'up'; break;
-          }
-
-          // Nouvelle phase courte de retour
-          setTimeout(() => {
-            tankIsWandering = false;
-            tankDirection = null;
-            tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png';
-          }, returnDuration);
-        }, wanderDuration);
-      }
-    }, 1000); // toutes les 30 sec
-
-    return () => clearInterval(wanderInterval);
-  }, []);
+  // 4️⃣ Ajoute cette fonction temporaire pour debug
+  window.debugGems = debugLocalStorage;
 
 
   useEffect(() => {
@@ -2905,7 +3985,6 @@ BobbyJones : "Allez l'Inter !"
       });
     });
 
-    console.log("✅ Final updated from Artifacts before fusion:", JSON.stringify(newStatsFromArtifacts, null, 2));
     setStatsFromArtifacts(newStatsFromArtifacts);
   }, [artifactsData, flatStats]);
 
@@ -2931,8 +4010,94 @@ BobbyJones : "Allez l'Inter !"
   }, [selectedCharacter]);
 
 
-  const showTankMessage = (message, priority = false, queue = false) => {
-    if (isTankSpeaking.current && !priority && queue) {
+  // 3️⃣ NOUVEAU useEffect - REMPLACE TON useEffect CANVAS EXISTANT
+  useEffect(() => {
+    console.log("🐉 Kaisel: Starting Shadow System...");
+
+    const shadowManager = new ShadowManager();
+    window.shadowManager = shadowManager;
+     shadowManager.setTranslation(t);
+    window.getShadowScreenPosition = getShadowScreenPosition;
+
+    const callbacks = {
+      showMessage: showTankMessage,
+      showBeruMenu: showBeruMenu,
+      getSelectedCharacter: () => selectedCharacter
+    };
+
+    shadowManager.init(['canvas-left', 'canvas-center', 'canvas-right'], callbacks);
+    shadowManager.spawnEntity('tank');
+    shadowManager.spawnEntity('beru');
+
+    const keyboardCleanup = shadowManager.setupKeyboardControls();
+
+    return () => {
+      shadowManager.cleanup();
+      if (keyboardCleanup) keyboardCleanup();
+      console.log("🐉 Kaisel: Shadow System cleaned up ✅");
+    };
+  }, [t]);
+  // 4️⃣ FONCTIONS UTILITAIRES pour Beru (à ajouter)
+  const triggerBeruAnalysis = (artifactData, hunter) => {
+    const shadowManager = window.shadowManager; // Si besoin d'accès global
+    // Logique d'analyse Beru
+  };
+
+
+  useEffect(() => {
+    if (tankIntervalRef.current) return; // déjà lancé ? on stoppe
+
+    tankIntervalRef.current = setInterval(() => {
+      const shouldSpeak = Math.random() < 0.33;
+      if (shouldSpeak) {
+        const msg = tankPhrases[Math.floor(Math.random() * tankPhrases.length)];
+        showTankMessage(msg);
+      }
+    }, 30000); // toutes les 30 secondes
+
+    return () => {
+      clearInterval(tankIntervalRef.current);
+      tankIntervalRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const wanderInterval = setInterval(() => {
+      if (!tankIsWandering && Math.random() < 0.02) { // 2% toutes les 30s
+        const directions = ["left", "right", "up", "down"];
+        tankDirection = directions[Math.floor(Math.random() * directions.length)];
+        tankIsWandering = true;
+
+        const wanderDuration = 2000 + Math.random() * 3000;
+        const returnDuration = wanderDuration / 4;
+        const originalDirection = tankDirection;
+
+        // Timer de retour
+        wanderTimer = setTimeout(() => {
+          // Phase de retour
+          switch (originalDirection) {
+            case 'left': tankDirection = 'right'; break;
+            case 'right': tankDirection = 'left'; break;
+            case 'up': tankDirection = 'down'; break;
+            case 'down': tankDirection = 'up'; break;
+          }
+
+          // Nouvelle phase courte de retour
+          setTimeout(() => {
+            tankIsWandering = false;
+            tankDirection = null;
+            tank.img.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png';
+          }, returnDuration);
+        }, wanderDuration);
+      }
+    }, 1000); // toutes les 30 sec
+
+    return () => clearInterval(wanderInterval);
+  }, []);
+
+
+  const showTankMessage = (message, priority = false, entityType = 'tank') => {
+    if (isTankSpeaking.current && !priority) {
       messageQueue.current.push(message);
       return;
     }
@@ -2944,13 +4109,26 @@ BobbyJones : "Allez l'Inter !"
     setShowChibiBubble(false); // ← force clean
     setBubbleId(Date.now());
 
+    console.log("🔍 showTankMessage appelée avec entityType:", entityType);
+    const pos = getShadowScreenPosition(entityType);
+    console.log("🔍 Position calculée:", pos);
 
-    const pos = getTankScreenPosition();
-    setChibiPos({ x: pos.x, y: pos.y, currentTankCanvasId });
+    setChibiPos({ x: pos.x, y: pos.y, currentCanvasId: pos.currentCanvasId });
+    console.log("🔍 setChibiPos appelée avec:", { x: pos.x, y: pos.y, currentCanvasId: pos.currentCanvasId });
     setShowChibiBubble(true);
     setChibiMessage(message);
 
+    // 🎯 DURÉE DYNAMIQUE selon la longueur du message
+    const calculateDisplayDuration = (message) => {
+      const baseTime = 4000; // 4 secondes minimum
+      const readingTime = message.length * 80; // 80ms par caractère (vitesse de lecture normale)
+      const maxTime = 20000; // 20 secondes maximum pour éviter les messages trop longs
 
+      return Math.min(Math.max(baseTime, readingTime), maxTime);
+    };
+
+    const displayDuration = calculateDisplayDuration(message);
+    console.log(`🕐 Durée d'affichage calculée: ${displayDuration}ms pour "${message.substring(0, 30)}..."`);
 
     setTimeout(() => {
       setShowChibiBubble(false);
@@ -2959,7 +4137,7 @@ BobbyJones : "Allez l'Inter !"
         const next = messageQueue.current.shift();
         showTankMessage(next);
       }
-    }, 8000);
+    }, displayDuration);
   };
 
   // Filtre du select Personnage
@@ -2983,40 +4161,6 @@ BobbyJones : "Allez l'Inter !"
     }
   }, [selectedElement, selectedClass, characters, selectedCharacter]);
 
-  useEffect(() => {
-    // const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isMobile && !mobileNarrativeAlreadyShown) {
-      mobileNarrativeAlreadyShown = true; // 🔒 évite la redéclenchement
-      const mobileText = `
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747834575/AnotherGagoldFound_yqrrnb.png ref=mainImage class=fade-in size=320}
-Chargement du rapport Tank...
-
-{delay=1500}
-
-{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747830888/Anime_girl_yawn_cq3iy3.mp3}
-*bip bip*
-
-Tank observe l’écran… d’un air confus.
-
-"Monarque... cette version mobile n’est pas encore terminée…"
-
-{img:https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747831036/kanae1_ealvhz.png ref=mainImage class=fade-in size=320}
-
-{delay=1500}
-
-"Mais ne t’inquiète pas… Béru travaille dur ! 😈"
-
-{sound:https://res.cloudinary.com/dbg7m8qjd/video/upload/v1747832552/Scared_anime_female_or9gvg.mp3}
-
-"Reviens bientôt… et prends un cookie en attendant 🍪... ou une pomme 😶"
-
-{delay=100000}
-`;
-
-      // setNarrativeText(mobileText);
-      // setShowNarrative(true);
-    }
-  }, []);
 
 
 
@@ -3073,7 +4217,7 @@ Tank observe l’écran… d’un air confus.
                                       const selected = e.target.value;
                                       setSelectedCharacter(selected);
 
-                                      const saved = localStorage.getItem(`build_${selected}`);
+                                      const saved = localStorage.getItem(`${selected}`);
                                       if (saved) {
                                         const build = JSON.parse(saved);
                                         setFlatStats(build.flatStats);
@@ -3177,17 +4321,46 @@ Tank observe l’écran… d’un air confus.
                                   Import
                                 </button>
 
+                                <button
+                                  onClick={() => setShowNewAccountPopup(true)}
+                                  className="bg-green-700 px-4 py-2 rounded text-white ml-2"
+                                >
+                                  ➕ Nouveau compte
+                                </button>
+
+                                {Object.keys(accounts).length > 1 && (
+                                  <select
+                                    value={activeAccount}
+                                    onChange={(e) => {
+                                      const newAcc = e.target.value;
+
+
+                                      // 🎯 Utiliser la nouvelle fonction d'auto-load
+                                      handleAccountSwitch(newAcc);
+                                    }}
+                                    className="bg-gray-800 text-white px-3 py-2 rounded ml-2"
+                                  >
+                                    {Object.keys(accounts).map(acc => (
+                                      <option key={acc} value={acc}>{acc}</option>
+                                    ))}
+                                  </select>
+                                )}
+
                                 {/* Icons à droite */}
                                 <div id="buildIcons" className="flex gap-2 items-center mt-1 sm:mt-0">
-                                  {recentBuilds.length > 0 && recentBuilds.map((charKey) => (
-                                    <img
-                                      key={charKey}
-                                      src={characters[charKey]?.icon || '/default.png'}
-                                      alt={characters[charKey]?.name || charKey}
-                                      onClick={() => handleClickBuildIcon(charKey)}
-                                      className="w-8 h-8 rounded-full cursor-pointer border-2 border-purple-700 hover:scale-110 transition"
-                                    />
-                                  ))}
+                                  {isBuildsReady && recentBuilds.length > 0 && (
+                                    recentBuilds
+                                      .filter((charKey) => characters[charKey]) // <-- Sécurité
+                                      .map((charKey) => (
+                                        <img
+                                          key={charKey}
+                                          src={characters[charKey]?.icon || '/default.png'}
+                                          alt={characters[charKey]?.name || charKey}
+                                          onClick={() => handleClickBuildIcon(charKey)}
+                                          className="w-8 h-8 rounded-full cursor-pointer border-2 border-purple-700 hover:scale-110 transition"
+                                        />
+                                      ))
+                                  )}
                                 </div>
 
                               </div>
@@ -3281,7 +4454,6 @@ Tank observe l’écran… d’un air confus.
 
                             <OCRPasteListener
                               onParsed={(parsed) => {
-                                console.log('Parsed envoyé à Builder :', parsed);
                                 setParsedArtifactData(parsed);
                               }}
                               updateArtifactFromOCR={updateArtifactFromOCR}
@@ -3347,7 +4519,6 @@ Tank observe l’écran… d’un air confus.
                                 parsedData={parsedArtifactData}
                                 onConfirm={(data) => {
                                   // 🧠 Ici tu traites la sauvegarde finale (ex: mise à jour des artefactsData)
-                                  console.log("CONFIRMED", data); // ➕ à remplacer par le vrai traitement
                                   setParsedArtifactData(null);
                                 }}
                                 onCancel={() => setParsedArtifactData(null)}
@@ -3624,7 +4795,7 @@ Tank observe l’écran… d’un air confus.
                       <div className="flex flex-col gap-y-1">
                         {[...leftArtifacts].map((item, idx) => (
                           <ArtifactCard
-                            key={idx}
+                            key={`${item.title}-${artifactsData[item.title]?.set || 'none'}`}
                             title={item.title}
                             mainStats={item.mainStats}
                             showTankMessage={showTankMessage}
@@ -3632,10 +4803,13 @@ Tank observe l’écran… d’un air confus.
                             artifactData={artifactsData[item.title]}
                             statsWithoutArtefact={statsWithoutArtefact}  // ← AJOUT ICI
                             flatStats={flatStats}
+                            onSetIconClick={openSetSelector}
+                            onArtifactSave={handleSaveArtifactToLibrary}
                             hunter={characters[selectedCharacter]}                        // ← UTILE SI BESOIN
                             substatsMinMaxByIncrements={substatsMinMaxByIncrements}  // ✅ C’EST ICI
                             disableComparisonButton={false} // 👈 AJOUT
                             openComparisonPopup={openComparisonPopup}
+                            artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
                             onArtifactChange={(updaterFn) =>
                               setArtifactsData(prev => ({
                                 ...prev,
@@ -3673,18 +4847,22 @@ Tank observe l’écran… d’un air confus.
                       <div className="flex flex-col gap-y-1">
                         {[...rightArtifacts].map((item, idx) => (
                           <ArtifactCard
-                            key={idx}
+                            key={`${item.title}-${artifactsData[item.title]?.set || 'none'}`}
                             title={item.title}
                             mainStats={item.mainStats}
                             showTankMessage={showTankMessage}
                             recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
                             artifactData={artifactsData[item.title]}
                             statsWithoutArtefact={statsWithoutArtefact}  // ← AJOUT ICI
-                            flatStats={flatStats}                        // ← UTILE SI BESOIN
+                            flatStats={flatStats}
+                            onSetIconClick={openSetSelector}                     // ← UTILE SI BESOIN
+                            onArtifactSave={handleSaveArtifactToLibrary}
+                            handleLoadSavedSet={handleLoadSavedSet}
                             hunter={characters[selectedCharacter]}                        // ← UTILE SI BESOIN
                             substatsMinMaxByIncrements={substatsMinMaxByIncrements}  // ✅ C’EST ICI
                             disableComparisonButton={false} // 👈 AJOUT
                             openComparisonPopup={openComparisonPopup}
+                            artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
                             onArtifactChange={(updaterFn) =>
                               setArtifactsData(prev => ({
                                 ...prev,
@@ -3769,7 +4947,7 @@ Tank observe l’écran… d’un air confus.
          2xl:max-w-[733px]">
                   {[...leftArtifacts].map((item, idx) => (
                     <ArtifactCard
-                      key={idx}
+                      key={`${item.title}-${artifactsData[item.title]?.set || 'none'}`}
                       title={item.title}
                       mainStats={item.mainStats}
                       showTankMessage={showTankMessage}
@@ -3777,10 +4955,14 @@ Tank observe l’écran… d’un air confus.
                       artifactData={artifactsData[item.title]}
                       statsWithoutArtefact={statsWithoutArtefact}
                       flatStats={flatStats}
+                      onSetIconClick={openSetSelector}
+                      handleLoadSavedSet={handleLoadSavedSet}
+                      onArtifactSave={handleSaveArtifactToLibrary}
                       hunter={characters[selectedCharacter]}
                       substatsMinMaxByIncrements={substatsMinMaxByIncrements}
                       disableComparisonButton={false}
                       openComparisonPopup={openComparisonPopup}
+                      artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
                       onArtifactChange={(updaterFn) =>
                         setArtifactsData(prev => ({
                           ...prev,
@@ -3852,7 +5034,7 @@ Tank observe l’écran… d’un air confus.
                           const selected = e.target.value;
                           setSelectedCharacter(selected);
 
-                          const saved = localStorage.getItem(`build_${selected}`);
+                          const saved = localStorage.getItem(`${selected}`);
                           if (saved) {
                             const build = JSON.parse(saved);
                             setFlatStats(build.flatStats);
@@ -3913,7 +5095,7 @@ Tank observe l’écran… d’un air confus.
                         onClick={handleResetStats}
                         className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105">
 
-                    
+
                         BobbyKick
                       </button>
 
@@ -3930,15 +5112,19 @@ Tank observe l’écran… d’un air confus.
                         {/* Espace à droite (ex : icône future) */}
 
                         <div id="buildIcons" className="flex tank-target gap-2 items-center">
-                          {recentBuilds.length > 0 && recentBuilds.map((charKey) => (
-                            <img
-                              key={charKey}
-                              src={characters[charKey]?.icon || '/default.png'}
-                              alt={characters[charKey]?.name || charKey}
-                              onClick={() => handleClickBuildIcon(charKey)}
-                              className="w-8 h-8 rounded-full tank-targe cursor-pointer border-2 border-purple-700 hover:scale-110 transition"
-                            />
-                          ))}
+                          {isBuildsReady && recentBuilds.length > 0 && (
+                            recentBuilds
+                              .filter((charKey) => characters[charKey]) // <-- Sécurité
+                              .map((charKey) => (
+                                <img
+                                  key={charKey}
+                                  src={characters[charKey]?.icon || '/default.png'}
+                                  alt={characters[charKey]?.name || charKey}
+                                  onClick={() => handleClickBuildIcon(charKey)}
+                                  className="w-8 h-8 rounded-full cursor-pointer border-2 border-purple-700 hover:scale-110 transition"
+                                />
+                              ))
+                          )}
                         </div>
                       </div>
                       <div className="w-full flex justify-between tank-targe items-center mt-0 text-sm">
@@ -3956,6 +5142,30 @@ Tank observe l’écran… d’un air confus.
                           >
                             Import
                           </button>
+
+                          <button
+                            onClick={() => setShowNewAccountPopup(true)}
+                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white text-xs font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                          >
+                            New
+                          </button>
+
+                          {Object.keys(accounts).length > 1 && (
+                            <select
+                              value={activeAccount}
+                              onChange={(e) => {
+                                const newAcc = e.target.value;
+
+                                // 🎯 Utiliser la nouvelle fonction d'auto-load
+                                handleAccountSwitch(newAcc);
+                              }}
+                              className="bg-gray-800 text-white px-3 py-2 rounded ml-2"
+                            >
+                              {Object.keys(accounts).map(acc => (
+                                <option key={acc} value={acc}>{acc}</option>
+                              ))}
+                            </select>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -4015,6 +5225,36 @@ Tank observe l’écran… d’un air confus.
                     />
                   )}
 
+                  {showNewAccountPopup && (
+                    <NewAccountPopup
+                      newAccountName={newAccountName}
+                      setNewAccountName={setNewAccountName}
+                      setShowNewAccountPopup={setShowNewAccountPopup}
+                      createNewAccount={createNewAccount}
+                    />
+                  )}
+
+
+                 {showBeruInteractionMenu && (
+  <BeruInteractionMenu
+    position={beruMenuPosition}
+    onClose={() => {
+      setShowBeruInteractionMenu(false);
+      // 🔧 CORRECTION : Accès via window.shadowManager !
+      if (window.shadowManager) {
+        const beruEntity = window.shadowManager.entities.get('beru');
+        if (beruEntity) {
+          beruEntity.isMenuActive = false;
+        }
+      }
+    }}
+    selectedCharacter={selectedCharacter}
+    characters={characters}
+    showTankMessage={showTankMessage}
+  />
+)}
+
+
                   {showSernPopup && (
                     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999]  py-10">
                       <div
@@ -4042,11 +5282,21 @@ Tank observe l’écran… d’un air confus.
                         </div>
                       </div>
                     </div>
+                  )}¨
+
+                  {isSetSelectorOpen && setSelectorSlot && (
+                    <SetSelectorPopup
+                      slot={setSelectorSlot}
+                      onSelect={handleSelectSet}
+                      onClose={() => {
+                        setIsSetSelectorOpen(false);
+                        setSetSelectorSlot(null);
+                      }}
+                    />
                   )}
 
                   <OCRPasteListener
                     onParsed={(parsed) => {
-                      console.log('Parsed envoyé à Builder :', parsed);
                       setParsedArtifactData(parsed);
                     }}
                     updateArtifactFromOCR={updateArtifactFromOCR}
@@ -4112,7 +5362,6 @@ Tank observe l’écran… d’un air confus.
                       parsedData={parsedArtifactData}
                       onConfirm={(data) => {
                         // 🧠 Ici tu traites la sauvegarde finale (ex: mise à jour des artefactsData)
-                        console.log("CONFIRMED", data); // ➕ à remplacer par le vrai traitement
                         setParsedArtifactData(null);
                       }}
                       onCancel={() => setParsedArtifactData(null)}
@@ -4372,18 +5621,22 @@ Tank observe l’écran… d’un air confus.
               <div className="flex flex-col gap-y-1 min-w-0 flex-shrink">
                 {[...rightArtifacts].map((item, idx) => (
                   <ArtifactCard
-                    key={idx}
+                    key={`${item.title}-${artifactsData[item.title]?.set || 'none'}`}
                     title={item.title}
                     mainStats={item.mainStats}
                     showTankMessage={showTankMessage}
                     recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
                     artifactData={artifactsData[item.title]}
                     statsWithoutArtefact={statsWithoutArtefact}  // ← AJOUT ICI
-                    flatStats={flatStats}                        // ← UTILE SI BESOIN
+                    flatStats={flatStats}
+                    onSetIconClick={openSetSelector}                       // ← UTILE SI BESOIN
+                    handleLoadSavedSet={handleLoadSavedSet}
+                    onArtifactSave={handleSaveArtifactToLibrary}
                     hunter={characters[selectedCharacter]}                        // ← UTILE SI BESOIN
                     substatsMinMaxByIncrements={substatsMinMaxByIncrements}  // ✅ C’EST ICI
                     disableComparisonButton={false} // 👈 AJOUT
                     openComparisonPopup={openComparisonPopup}
+                    artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
                     onArtifactChange={(updaterFn) =>
                       setArtifactsData(prev => ({
                         ...prev,
@@ -4419,23 +5672,23 @@ Tank observe l’écran… d’un air confus.
                 <canvas id="canvas-left" width="600" height="240" className="rounded-l-lg shadow-md bg-black w-[40vw] h-auto" />
                 <canvas id="canvas-center" width="600" height="240" className="shadow-md bg-black w-[40vw] h-auto" />
                 {/* Portail cliquable */}
-  <div
-    className="absolute z-50 cursor-pointer hover:scale-105 transition background: red"
-    style={{
-      top: '45%',     // à ajuster selon ton image exacte
-      left: '43.2%',
-      width: '5%',
-      height: '25%'
-    }}
-    onClick={() => {
-      // const isMonarque = localStorage.getItem("isMonarque") === "true";
-      // if (isMonarque) {
-        window.location.href = "/guide-editor";
-      // } else {
-        showTankMessage("Seuls les Monarques peuvent franchir ce portail...", true);
-      // }
-    }}
-  />
+                <div
+                  className="absolute z-50 cursor-pointer hover:scale-105 transition background: red"
+                  style={{
+                    top: '45%',     // à ajuster selon ton image exacte
+                    left: '43.2%',
+                    width: '5%',
+                    height: '25%'
+                  }}
+                  onClick={() => {
+                    // const isMonarque = localStorage.getItem("isMonarque") === "true";
+                    // if (isMonarque) {
+                    window.location.href = "/guide-editor";
+                    // } else {
+                    showTankMessage("Seuls les Monarques peuvent franchir ce portail...", true);
+                    // }
+                  }}
+                />
 
                 <canvas id="canvas-right" width="600" height="240" className="rounded-r-lg shadow-md bg-black w-[40vw] h-auto" />
 
