@@ -543,32 +543,71 @@ function useResponsive() {
   return screen;
 }
 
-// 🐉 KAISEL MIGRATION SCRIPT - À ajouter dans ton useEffect de chargement
-
-// 🐉 KAISEL MIGRATION FUNCTION - Nettoie automatiquement l'ancien localStorage
+// 🐉 KAISEL NETTOYAGE RADICAL - REMPLACE ta fonction migrateOldDataToNewSystem
 const migrateOldDataToNewSystem = () => {
-  console.log("🐉 Kaisel: Début migration localStorage...");
+  console.log("🐉 Kaisel: NETTOYAGE RADICAL localStorage...");
   
-  // Identifier les anciennes clés à nettoyer
-  const toCleanup = [];
+  // 1️⃣ IDENTIFIER ET SUPPRIMER TOUTES les anciennes clés
+  const toDelete = [];
   
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     
-    // Nettoyer les anciennes clés
-    if (key.startsWith('build_') || 
-        ['recentBuilds', 'hunterWeapons', 'gems', 'global_gem_data'].includes(key)) {
-      toCleanup.push(key);
+    // ❌ SUPPRIMER tout sauf le nouveau système et la langue
+    if (key !== 'builderberu_users' && key !== 'i18nextLng') {
+      toDelete.push(key);
     }
   }
   
-  // Nettoyer les anciennes clés
-  toCleanup.forEach(key => {
+  // 🗑️ SUPPRESSION MASSIVE
+  toDelete.forEach(key => {
     localStorage.removeItem(key);
-    console.log(`🗑️ Supprimé: ${key}`);
+    console.log(`🗑️ SUPPRIMÉ: ${key}`);
   });
   
-  console.log("✅ Migration terminée ! localStorage nettoyé.");
+  console.log(`✅ NETTOYAGE TERMINÉ ! ${toDelete.length} anciennes clés supprimées.`);
+  
+  // 2️⃣ VÉRIFIER que le nouveau système existe
+  const current = localStorage.getItem('builderberu_users');
+  if (!current) {
+    console.log("🔧 Création du système propre...");
+    const cleanSystem = {
+      user: {
+        activeAccount: "main",
+        accounts: {
+          main: {
+            builds: {},
+            hunterWeapons: {},
+            recentBuilds: [],
+            hunterCores: {},
+            gems: {}
+          }
+        }
+      }
+    };
+    localStorage.setItem('builderberu_users', JSON.stringify(cleanSystem));
+  }
+  
+  console.log("🎯 Système 100% propre !");
+};
+
+// 🛡️ PROTECTION GLOBALE - AJOUTE aussi cette fonction pour protéger PARTOUT
+const safeArtifactAccess = (artifact, property) => {
+  if (!artifact || typeof artifact !== 'object') {
+    console.warn('⚠️ Kaisel: Artifact null/undefined ignoré');
+    return null;
+  }
+  
+  if (property === 'mainStat') {
+    const mainStat = artifact.mainStat;
+    if (!mainStat || typeof mainStat !== 'string' || mainStat.trim() === '') {
+      console.warn('⚠️ Kaisel: MainStat vide/invalide ignoré:', mainStat);
+      return null;
+    }
+    return mainStat;
+  }
+  
+  return artifact[property];
 };
 
 
@@ -1690,6 +1729,8 @@ const getShadowScreenPosition = (entityType = 'tank') => {
 // 🐉 KAISEL VERSION PROTÉGÉE - REMPLACE ta fonction existante
 const recalculateStatsFromArtifacts = () => {
   if (!selectedCharacter) return;
+   if (!artifactsData || typeof artifactsData !== 'object') return;
+  if (Object.keys(artifactsData).length === 0) return;
 
   const allowedRawStats = [
     "Precision", "Defense Penetration", "Healing Given Increase (%)",
@@ -1762,6 +1803,7 @@ const recalculateStatsFromArtifacts = () => {
   const [messageOpacity, setMessageOpacity] = useState(1);
   const [showPopup, setShowPopup] = useState(false);
   const [isSetSelectorOpen, setIsSetSelectorOpen] = useState(false);
+  const [isAccountSwitching, setIsAccountSwitching] = useState(false);
   const [setSelectorSlot, setSetSelectorSlot] = useState(null); // ex: 'Helmet'
   const [showNoyauxPopup, setShowNoyauxPopup] = useState(false);
   const [mergedUser, setMergedUser] = useState({
@@ -2725,6 +2767,8 @@ BobbyJones : "Allez l'Inter !"
 
  migrateOldDataToNewSystem();
 
+  
+
     const defaultUserData = {
       activeAccount: "main",
       accounts: {
@@ -2804,6 +2848,23 @@ BobbyJones : "Allez l'Inter !"
         // Si c'est Niermann par défaut, pas de build à charger
         console.log(`🐉 Kaisel: Niermann par défaut, pas de build à charger`);
       }
+      // 🔥 AJOUTE ICI, JUSTE APRÈS setSelectedCharacter :
+  if (defaultCharacter && !currentAccount.builds?.[defaultCharacter]) {
+    console.log(`🐉 Kaisel: Initialisation artefacts vides pour ${defaultCharacter}`);
+    
+    const emptyArtifactsData = {
+      Helmet: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+      Chest: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+      Gloves: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+      Boots: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+      Necklace: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+      Bracelet: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+      Ring: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+      Earrings: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+    };
+    
+    setArtifactsData(emptyArtifactsData);
+  }
 
       // ⚔️ Données hors build
       setHunterWeapons(currentAccount.hunterWeapons || {});
@@ -3857,112 +3918,171 @@ BobbyJones : "Allez l'Inter !"
   };
 
 
-  const handleAccountSwitch = (newAccountName) => {
-    console.log(`🐉 Kaisel FINAL: ===== SWITCH vers ${newAccountName} =====`);
+// 2️⃣ REMPLACE ta fonction handleAccountSwitch par cette version smooth :
+const handleAccountSwitch = async (newAccountName) => {
+  console.log(`🐉 Kaisel SMOOTH: ===== SWITCH vers ${newAccountName} =====`);
 
-    // 📦 LECTURE DIRECTE dans localStorage AVANT de modifier quoi que ce soit
-    const storedData = JSON.parse(localStorage.getItem("builderberu_users")) || {};
-    const allAccounts = storedData?.user?.accounts || {};
+  // 🎭 MASQUER l'interface pendant le switch
+  setIsAccountSwitching(true);
 
-    console.log(`🐉 Kaisel: localStorage AVANT switch:`, storedData);
-    console.log(`🐉 Kaisel: Tous les comptes disponibles:`, Object.keys(allAccounts));
+  // 📦 LECTURE DIRECTE dans localStorage
+  const storedData = JSON.parse(localStorage.getItem("builderberu_users")) || {};
+  const allAccounts = storedData?.user?.accounts || {};
 
-    // ✅ Vérification que le compte existe
-    if (!allAccounts[newAccountName]) {
-      console.error(`🐉 Kaisel: ERREUR - Compte "${newAccountName}" introuvable !`);
-      showTankMessage(`Compte "${newAccountName}" introuvable !`, true);
-      return;
-    }
+  if (!allAccounts[newAccountName]) {
+    console.error(`🐉 Kaisel: ERREUR - Compte "${newAccountName}" introuvable !`);
+    showTankMessage(`Compte "${newAccountName}" introuvable !`, true);
+    setIsAccountSwitching(false);
+    return;
+  }
 
-    const newAccountData = allAccounts[newAccountName];
-    const recentBuilds = newAccountData.recentBuilds || [];
+  const newAccountData = allAccounts[newAccountName];
+  const recentBuilds = newAccountData.recentBuilds || [];
 
-    console.log(`🐉 Kaisel: Données du compte ${newAccountName}:`, newAccountData);
-    console.log(`🐉 Kaisel: Gemmes du compte ${newAccountName}:`, newAccountData.gems);
+  // 🧹 RESET COMPLET - BATCH UPDATE pour éviter les re-renders multiples
+  const emptyArtifactsData = {
+    Helmet: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] }
+    ], set: '' },
+    Chest: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] }
+    ], set: '' },
+    Gloves: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] }
+    ], set: '' },
+    Boots: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] }
+    ], set: '' },
+    Necklace: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] }
+    ], set: '' },
+    Bracelet: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] }
+    ], set: '' },
+    Ring: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] }
+    ], set: '' },
+    Earrings: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] },
+      { value: 0, level: 0, procOrders: [], procValues: [] }
+    ], set: '' },
+  };
 
-    // 🔄 Mise à jour de l'activeAccount SEULEMENT
+  // 🔄 UPDATE localStorage d'abord
+  const updatedUser = {
+    ...storedData.user,
+    activeAccount: newAccountName
+  };
+  storedData.user.activeAccount = newAccountName;
+  localStorage.setItem("builderberu_users", JSON.stringify(storedData));
+
+  // ⏱️ Petit délai pour simulation + smoothness
+  await new Promise(resolve => setTimeout(resolve, 150));
+
+  // 🎯 BATCH UPDATE - Tout en une fois avec React.unstable_batchedUpdates si disponible
+  const batchedUpdate = () => {
+    // Reset states
+    setArtifactsData(emptyArtifactsData);
+    setSelectedCharacter('');
+    setFlatStats({});
+    setStatsWithoutArtefact({});
+    setHunterCores({});
+    setHunterWeapons({});
+    
+    // Update comptes
     setActiveAccount(newAccountName);
-
-    // 🔄 Mise à jour mergedUser SANS écraser les accounts !
-    const updatedUser = {
-      ...storedData.user, // ← GARDE tout ce qui existait avant !
-      activeAccount: newAccountName
-    };
     setMergedUser(updatedUser);
-
-    // 💾 SAUVEGARDER seulement l'activeAccount (PAS les accounts !)
-    storedData.user.activeAccount = newAccountName;
-    localStorage.setItem("builderberu_users", JSON.stringify(storedData)); // ← Garde TOUT !
-
-    console.log(`🐉 Kaisel: localStorage APRÈS switch:`, JSON.parse(localStorage.getItem("builderberu_users")));
-
-    // 🔁 Mise à jour recentBuilds
-    setRecentBuilds(recentBuilds);
-
-    // 💎 KAISEL FIX : Charger les gemmes UNIQUEMENT du compte (jamais global!)
-    const accountGems = newAccountData.gems || {};
-    console.log(`🐉 Kaisel: Chargement gemmes COMPTE SEULEMENT pour ${newAccountName}:`, accountGems);
-    setGemData(accountGems); // ← LECTURE UNIQUEMENT DU COMPTE !
-
-    // 🔄 Mise à jour du state accounts AVANT le chargement du build (pour éviter les races)
     setAccounts(allAccounts);
+    setRecentBuilds(recentBuilds);
+    setGemData(newAccountData.gems || {});
+  };
 
-    // 🎯 CHARGEMENT DIRECT (pas d'appel de fonction séparée!)
-    if (recentBuilds.length > 0) {
-      const firstCharacter = recentBuilds[0];
-      console.log(`🐉 Kaisel FINAL: Premier personnage:`, firstCharacter);
+  // 🚀 BATCH UPDATE pour éviter les re-renders multiples
+  if (window.React && window.React.unstable_batchedUpdates) {
+    window.React.unstable_batchedUpdates(batchedUpdate);
+  } else {
+    batchedUpdate();
+  }
 
-      if (characters[firstCharacter]) {
-        const build = newAccountData.builds?.[firstCharacter];
-        console.log(`🐉 Kaisel FINAL: Build trouvé:`, !!build);
+  // ⏱️ Autre petit délai avant le chargement du build
+  await new Promise(resolve => setTimeout(resolve, 50));
 
-        if (build) {
-          console.log(`🐉 Kaisel FINAL: 🚀 CHARGEMENT DIRECT...`);
-
-          // 📦 CHARGEMENT DIRECT IMMÉDIAT - Avec sécurités supplémentaires
+  // 🎯 CHARGEMENT DU BUILD
+  if (recentBuilds.length > 0) {
+    const firstCharacter = recentBuilds[0];
+    
+    if (characters[firstCharacter]) {
+      const build = newAccountData.builds?.[firstCharacter];
+      
+      if (build) {
+        console.log(`🐉 Kaisel SMOOTH: Chargement ${firstCharacter}...`);
+        
+        // 📦 CLONAGE PROFOND + BATCH UPDATE FINAL
+        const clonedArtifacts = JSON.parse(JSON.stringify(build.artifactsData || emptyArtifactsData));
+        
+        const finalUpdate = () => {
           setSelectedCharacter(firstCharacter);
           setFlatStats(build.flatStats || {});
           setStatsWithoutArtefact(build.statsWithoutArtefact || {});
-          setArtifactsData(build.artifactsData || {});
-
-          // 🧪 Hunter cores avec merge intelligent
+          setArtifactsData(clonedArtifacts);
           setHunterCores(prev => ({
             ...prev,
             [firstCharacter]: build.hunterCores || {}
           }));
-
-          // ⚔️ Hunter weapons avec merge intelligent
           setHunterWeapons(prev => ({
             ...prev,
             [firstCharacter]: build.hunterWeapons || {}
           }));
+        };
 
-          showTankMessage(`✅ ${characters[firstCharacter]?.name} chargé dans "${newAccountName}"!`, true);
-
+        if (window.React && window.React.unstable_batchedUpdates) {
+          window.React.unstable_batchedUpdates(finalUpdate);
         } else {
-          console.warn(`🐉 Kaisel FINAL: ⚠️ Pas de build pour ${firstCharacter}`);
-          setSelectedCharacter('');
+          finalUpdate();
         }
+
+        showTankMessage(`✅ ${characters[firstCharacter]?.name} chargé dans "${newAccountName}"!`, true);
       } else {
-        console.warn(`🐉 Kaisel FINAL: ⚠️ Personnage ${firstCharacter} inexistant`);
         setSelectedCharacter('');
       }
     } else {
-      console.log(`🐉 Kaisel FINAL: 📁 Compte vide`);
       setSelectedCharacter('');
-
-      // 🧹 Reset tous les states pour un compte vide
-      setFlatStats({});
-      setStatsWithoutArtefact({});
-      setArtifactsData({});
-      setHunterCores({});
-      setHunterWeapons({});
-
-      showTankMessage(`📁 Compte "${newAccountName}" vide. Sélectionne un personnage!`, true);
     }
+  } else {
+    setSelectedCharacter('');
+    showTankMessage(`📁 Compte "${newAccountName}" vide. Sélectionne un personnage!`, true);
+  }
 
-    console.log(`🐉 Kaisel FINAL: ===== FIN SWITCH =====`);
-  };
+  // 🎭 RÉVÉLER l'interface après 100ms
+  setTimeout(() => {
+    setIsAccountSwitching(false);
+  }, 100);
+
+  console.log(`🐉 Kaisel SMOOTH: ===== FIN SWITCH =====`);
+};
 
   // 4️⃣ Ajoute cette fonction temporaire pour debug
   window.debugGems = debugLocalStorage;
@@ -4196,7 +4316,6 @@ BobbyJones : "Allez l'Inter !"
       setSelectedCharacter('');
     }
   }, [selectedElement, selectedClass, characters, selectedCharacter]);
-
 
 
 
@@ -4831,7 +4950,7 @@ BobbyJones : "Allez l'Inter !"
                       <div className="flex flex-col gap-y-1">
                         {[...leftArtifacts].map((item, idx) => (
                           <ArtifactCard
-                            key={`${item.title}-${artifactsData[item.title]?.set || 'none'}`}
+                            key={`${activeAccount}-${item.title}-${JSON.stringify(artifactsData[item.title])}`} // ← NOUVELLE KEY !
                             title={item.title}
                             mainStats={item.mainStats}
                             showTankMessage={showTankMessage}
@@ -4883,7 +5002,7 @@ BobbyJones : "Allez l'Inter !"
                       <div className="flex flex-col gap-y-1">
                         {[...rightArtifacts].map((item, idx) => (
                           <ArtifactCard
-                            key={`${item.title}-${artifactsData[item.title]?.set || 'none'}`}
+                            key={`${activeAccount}-${item.title}-${JSON.stringify(artifactsData[item.title])}`} // ← NOUVELLE KEY !
                             title={item.title}
                             mainStats={item.mainStats}
                             showTankMessage={showTankMessage}
@@ -4983,7 +5102,7 @@ BobbyJones : "Allez l'Inter !"
          2xl:max-w-[733px]">
                   {[...leftArtifacts].map((item, idx) => (
                     <ArtifactCard
-                      key={`${item.title}-${artifactsData[item.title]?.set || 'none'}`}
+                      key={`${activeAccount}-${item.title}-${JSON.stringify(artifactsData[item.title])}`} // ← NOUVELLE KEY !
                       title={item.title}
                       mainStats={item.mainStats}
                       showTankMessage={showTankMessage}
@@ -5657,7 +5776,7 @@ BobbyJones : "Allez l'Inter !"
               <div className="flex flex-col gap-y-1 min-w-0 flex-shrink">
                 {[...rightArtifacts].map((item, idx) => (
                   <ArtifactCard
-                    key={`${item.title}-${artifactsData[item.title]?.set || 'none'}`}
+                    key={`${activeAccount}-${item.title}-${JSON.stringify(artifactsData[item.title])}`} // ← NOUVELLE KEY !
                     title={item.title}
                     mainStats={item.mainStats}
                     showTankMessage={showTankMessage}
@@ -5735,6 +5854,19 @@ BobbyJones : "Allez l'Inter !"
 
 
       )}
+
+{/* 🎭 OVERLAY DE LOADING - AJOUTE ÇA JUSTE AVANT la fermeture du fragment */}
+    {isAccountSwitching && (
+      <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[9999] backdrop-blur-sm">
+        <div className="flex flex-col items-center space-y-4 bg-gray-900 p-8 rounded-xl border border-purple-500 shadow-2xl">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-500 border-t-4 border-t-transparent"></div>
+          <p className="text-purple-300 animate-pulse text-lg font-semibold">🐉 Switching accounts...</p>
+          <p className="text-gray-400 text-sm">Loading artifacts & builds...</p>
+        </div>
+      </div>
+    )}
+
+
       <div
         id="tank-laser"
         className="hidden fixed z-[9999] pointer-events-none transition-all duration-200 tank-target"></div>

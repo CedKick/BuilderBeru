@@ -205,6 +205,7 @@ const ArtifactCard = ({
 }) => {
   const { t } = useTranslation();
 
+   
 
 // 🔥 AJOUTE AUSSI UN BOUTON DE TEST TEMPORAIRE dans le JSX :
 // Juste après le titre, avant les icônes :
@@ -215,9 +216,9 @@ const ArtifactCard = ({
 const [librarySlot, setLibrarySlot] = useState(null); // 👈 GARDE LE SLOT
   const [showSavePopup, setShowSavePopup] = useState(false);
   const selections = artifactData;
-  const [localMainStat, setLocalMainStat] = useState(artifactData.mainStat || '');
-  const [currentSetIcon, setCurrentSetIcon] = useState(
-  artifactData.set 
+ const [localMainStat, setLocalMainStat] = useState((artifactData && artifactData.mainStat) || '');
+const [currentSetIcon, setCurrentSetIcon] = useState(
+  (artifactData && artifactData.set)
     ? getSetIcon(artifactData.set, title) || "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
     : "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
 );
@@ -290,29 +291,28 @@ const handleOpenLibrary = (slot) => {
   setShowLibrary(true);
 };
 
-  useEffect(() => {
-  }, [artifactData.set]);
+ useEffect(() => {
+    if (artifactData && artifactData.mainStat) {
+      setLocalMainStat(artifactData.mainStat);
+    }
+  }, [artifactData?.mainStat]);
 
-  // 🔥 useEffect POUR L'ICÔNE ICI !
-  useEffect(() => {
-    
-    if (artifactData.set) {
+useEffect(() => {
+    if (artifactData && artifactData.set) {
       const newIcon = getSetIcon(artifactData.set, title);
-      
       setCurrentSetIcon(
         newIcon || "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
       );
     } else {
       setCurrentSetIcon("https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png");
     }
-  }, [artifactData.set, title]);
+  }, [artifactData?.set, title]);
 
-  useEffect(() => {
+useEffect(() => {
+  if (artifactData && artifactData.mainStat !== undefined) {
     setLocalMainStat(artifactData.mainStat || '');
-  }, [artifactData.mainStat]);
-
-  useEffect(() => {
-}, [artifactData.set]);
+  }
+}, [artifactData?.mainStat]);
 
 const handleSaveSet = (slot) => {
   
@@ -344,6 +344,8 @@ const handleArtifactSave = (saveData) => {
   };
 
   const shouldShowComparison = (artifact) => {
+  // 🛡️ PROTECTION KAISEL
+  if (!artifact || typeof artifact !== 'object') return false;
     const totalProcs = artifact.subStatsLevels?.reduce((sum, s) => sum + (s?.level || 0), 0);
     const allProcsDone = totalProcs === 4;
     const allStatsSelected = artifact.mainStat && artifact.subStats?.every(s => s !== '');
@@ -351,7 +353,9 @@ const handleArtifactSave = (saveData) => {
     return allProcsDone && allStatsSelected;
   };
 
-  const shouldShowSave = (artifact) => {
+ const shouldShowSave = (artifact) => {
+  // 🛡️ PROTECTION KAISEL
+  if (!artifact || typeof artifact !== 'object') return false;
   
   // 1. Set choisi
   const hasSet = artifact.set && artifact.set !== '';
@@ -740,10 +744,10 @@ const handleArtifactSave = (saveData) => {
 
    {/* Bouton d’ouverture de set (avec ou sans set existant) */}
 <img
-  src={currentSetIcon}  // 🔥 AU LIEU DE getSetIcon()
+  src={currentSetIcon}
   onClick={() => onSetIconClick(title)}
-  alt={artifactData.set || "Sélectionner un Set"}
-  title={artifactData.set || "Choisir un Set"}
+  alt={(artifactData && artifactData.set) || "Sélectionner un Set"}     // ← PROTÉGÉ
+  title={(artifactData && artifactData.set) || "Choisir un Set"}        // ← PROTÉGÉ
   className="w-5 h-5 cursor-pointer hover:scale-110 transition"
 />
 
@@ -804,21 +808,21 @@ const handleArtifactSave = (saveData) => {
           ))}
         </select>
 
-        {artifactData.mainStat && (
-          <input
-            type="text"
-            value={
-              artifactData.mainStat && artifactData.subStatsLevels
-                ? calculateMainStatValue(artifactData.mainStat, artifactData.subStatsLevels)
-                : 0
-            }
-            className="w-16 p-[2px] rounded bg-[#2d2d5c] text-center text-xs text-white opacity-80 cursor-not-allowed"
-          />
-        )}
+        {(artifactData && artifactData.mainStat) && (
+  <input
+    type="text"
+    value={
+      (artifactData && artifactData.mainStat && artifactData.subStatsLevels)
+        ? calculateMainStatValue(artifactData.mainStat, artifactData.subStatsLevels)
+        : 0
+    }
+    className="w-16 p-[2px] rounded bg-[#2d2d5c] text-center text-xs text-white opacity-80 cursor-not-allowed"
+  />
+)}
       </div>
 
       {/* SUBSTATS */}
-      {Array.isArray(artifactData?.subStats) && artifactData.subStats.map((subStat, idx) => (
+      {(artifactData && Array.isArray(artifactData.subStats)) && artifactData.subStats.map((subStat, idx) => (
         <div key={idx} className="flex items-center gap-1 mb-[1px]">
           <select
             value={subStat}
