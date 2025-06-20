@@ -5437,7 +5437,7 @@ const handleAccountSwitch = async (newAccountName) => {
                         </div>
                       </div>
                     </div>
-                  )}¨
+                  )}
 
                   {isSetSelectorOpen && setSelectorSlot && (
                     <SetSelectorPopup
