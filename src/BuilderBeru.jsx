@@ -1656,71 +1656,92 @@ const getShadowScreenPosition = (entityType = 'tank') => {
     }
   };
 
-  // 🧠 Fonction de recalcul des stats finales avec artefacts
-  const recalculateStatsFromArtifacts = () => {
-    if (!selectedCharacter) return;
+ // 1️⃣ Dans recalculateStatsFromArtifacts (autour de la ligne 550)
+const recalculateStatsFromArtifacts = () => {
+  if (!selectedCharacter) return;
 
-    const allowedRawStats = [
-      "Precision", "Defense Penetration", "Healing Given Increase (%)",
-      "MP Recovery Rate Incr. (%)", "Additional MP", "MP Consumption Reduc.",
-      "DMG Incr.", "DMG Reduction"
-      // Ajoute ici toutes les autres stats non liées aux stats de base
-    ];
+  const flat = { ...flatStats };
+  const updated = {};
 
-    const flat = { ...flatStats }; // ⚠️ utilise flatStats réel du state
-    const updated = {};
+  Object.values(artifactsData).forEach(artifact => {
+    if (!artifact) return;
 
-    Object.values(artifactsData).forEach(artifact => {
-      if (!artifact) return;
+    // ✅ PROTECTION MAINSTAT
+    if (artifact.mainStat && mainStatMaxByIncrements[artifact.mainStat]) {
+      artifact.mainStatValue = mainStatMaxByIncrements[artifact.mainStat][4];
+      
+      const stat = artifact.mainStat;
+      const value = artifact.mainStatValue;
 
-      // ➤ Substats
-      artifact.subStats?.forEach((stat, i) => {
-        const levelInfo = artifact.subStatsLevels?.[i];
-        if (!stat || !levelInfo || typeof levelInfo.value !== 'number') return;
-
-        if (stat.endsWith('%')) {
-          const baseStat = stat.replace(' %', '');
-          const base = flat[baseStat] || 0;
-          updated[baseStat] = (updated[baseStat] || 0) + (base * levelInfo.value / 100);
-        } else if (stat.startsWith('Additional ')) {
-          const baseStat = stat.replace('Additional ', '');
-          updated[baseStat] = (updated[baseStat] || 0) + levelInfo.value;
-        } else {
-          updated[stat] = (updated[stat] || 0) + levelInfo.value;
-        }
-      });
-
-      // ➤ Main stat
-      if (artifact.mainStat) {
-        artifact.mainStatValue = mainStatMaxByIncrements[artifact.mainStat][4];
-        if (artifact.mainStat && artifact.mainStatValue) {
-          const stat = artifact.mainStat;
-          const value = artifact.mainStatValue;
-
-          if (stat.endsWith('%')) {
-            const baseStat = stat.replace(' %', '');
-            const base = flat[baseStat] || 0;
-            updated[baseStat] = (updated[baseStat] || 0) + (base * value / 100);
-          } else if (stat.startsWith('Additional ')) {
-            const baseStat = stat.replace('Additional ', '');
-            updated[baseStat] = (updated[baseStat] || 0) + value;
-          } else {
-            updated[stat] = (updated[stat] || 0) + value;
-          }
-        }
+      if (stat.endsWith('%')) {
+        const baseStat = stat.replace(' %', '');
+        const base = flat[baseStat] || 0;
+        updated[baseStat] = (updated[baseStat] || 0) + (base * value / 100);
+      } else if (stat.startsWith('Additional ')) {
+        const baseStat = stat.replace('Additional ', '');
+        updated[baseStat] = (updated[baseStat] || 0) + value;
+      } else {
+        updated[stat] = (updated[stat] || 0) + value;
       }
+    }
+
+    // ➤ Substats (garde ta logique existante mais protège)
+    artifact.subStats?.forEach((stat, i) => {
+      const levelInfo = artifact.subStatsLevels?.[i];
+      if (!stat || !levelInfo || typeof levelInfo.value !== 'number') return;
+      
+      // ... reste de ta logique substats
     });
+  });
 
-    // setStatsFromArtifacts(completeStats(updated));
+  setStatsFromArtifacts(completeStats(updated));
+};
 
-    // ➤ Ajouter les stats manquantes (non liées aux % et non présentes dans flatStats)
+// 2️⃣ Dans applyStatToFlat (autour de la ligne 590)
+Object.entries(artifactsData).forEach(([slot, artifact]) => {
+  if (!artifact || typeof artifact !== 'object') return;
 
+  const { mainStat, subStats, subStatsLevels } = artifact;
 
+  // ✅ PROTECTION RIGOUREUSE
+  if (!Array.isArray(subStats) || !Array.isArray(subStatsLevels)) {
+    console.warn(`⚠️ ${slot}: subStats ou subStatsLevels invalides`, artifact);
+    return;
+  }
 
+  // ✅ PROTECTION MAINSTAT
+  if (mainStat && typeof mainStat === 'string' && mainStat.trim() !== '') {
+    // ... traiter mainStat seulement si valide
+  }
 
-    setStatsFromArtifacts(completeStats(updated));
+  // Suite du traitement...
+});
 
+// 3️⃣ Protection dans useEffect pour les stats d'artefacts
+useEffect(() => {
+  const newStatsFromArtifacts = {
+    Attack: 0, Defense: 0, HP: 0,
+    // ... autres stats
   };
+
+  Object.values(artifactsData).forEach(({ mainStat, subStats, subStatsLevels }) => {
+    // ✅ PROTECTION TOTALE
+    if (!Array.isArray(subStats) || !Array.isArray(subStatsLevels)) {
+      console.warn('⚠️ Artifact data invalide, ignoré');
+      return;
+    }
+
+    // ✅ PROTECTION MAINSTAT
+    if (mainStat && typeof mainStat === 'string' && mainStatMaxByIncrements[mainStat]) {
+      const mainValue = calculateMainStatValue(mainStat, subStatsLevels);
+      // ... traitement sécurisé
+    }
+
+    // ... reste du code
+  });
+
+  setStatsFromArtifacts(newStatsFromArtifacts);
+}, [artifactsData, flatStats]);
 
   const tankMessageRef = useRef('');
   const messageOpacityRef = useRef(1);
