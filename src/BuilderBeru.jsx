@@ -20,6 +20,7 @@ import OcrConfirmPopup from './components/OcrConfirmPopup';
 import NewAccountPopup from './NewAccountPopup'; // ou ton chemin réel
 import SetSelectorPopup from "./components/SetSelectorPopup";
 import BeruInteractionMenu from './components/BeruInteractionMenu';
+import { BeruReportSystem, GoldenPapyrusIcon } from './components/BeruReportSystem';
 
 
 let tank = {
@@ -546,27 +547,27 @@ function useResponsive() {
 // 🐉 KAISEL NETTOYAGE RADICAL - REMPLACE ta fonction migrateOldDataToNewSystem
 const migrateOldDataToNewSystem = () => {
   console.log("🐉 Kaisel: NETTOYAGE RADICAL localStorage...");
-  
+
   // 1️⃣ IDENTIFIER ET SUPPRIMER TOUTES les anciennes clés
   const toDelete = [];
-  
+
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    
+
     // ❌ SUPPRIMER tout sauf le nouveau système et la langue
     if (key !== 'builderberu_users' && key !== 'i18nextLng') {
       toDelete.push(key);
     }
   }
-  
+
   // 🗑️ SUPPRESSION MASSIVE
   toDelete.forEach(key => {
     localStorage.removeItem(key);
     console.log(`🗑️ SUPPRIMÉ: ${key}`);
   });
-  
+
   console.log(`✅ NETTOYAGE TERMINÉ ! ${toDelete.length} anciennes clés supprimées.`);
-  
+
   // 2️⃣ VÉRIFIER que le nouveau système existe
   const current = localStorage.getItem('builderberu_users');
   if (!current) {
@@ -587,7 +588,7 @@ const migrateOldDataToNewSystem = () => {
     };
     localStorage.setItem('builderberu_users', JSON.stringify(cleanSystem));
   }
-  
+
   console.log("🎯 Système 100% propre !");
 };
 
@@ -597,7 +598,7 @@ const safeArtifactAccess = (artifact, property) => {
     console.warn('⚠️ Kaisel: Artifact null/undefined ignoré');
     return null;
   }
-  
+
   if (property === 'mainStat') {
     const mainStat = artifact.mainStat;
     if (!mainStat || typeof mainStat !== 'string' || mainStat.trim() === '') {
@@ -606,7 +607,7 @@ const safeArtifactAccess = (artifact, property) => {
     }
     return mainStat;
   }
-  
+
   return artifact[property];
 };
 
@@ -633,636 +634,636 @@ const BuilderBeru = () => {
   const [beruMenuCharacter, setBeruMenuCharacter] = useState('');
 
   const SHADOW_ENTITIES = {
-  tank: {
-    id: 'tank',
-    size: 64,
-    preferredCanvas: 'random',
-    personality: 'defensive_funny',
-    moveSpeed: 0.8,
-    messageInterval: 30000,
-    sprites: {
-      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png',
-      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_left_lxr3km.png',
-      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_right_2_zrf0y1.png',
-      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png',
-      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png'
+    tank: {
+      id: 'tank',
+      size: 64,
+      preferredCanvas: 'random',
+      personality: 'defensive_funny',
+      moveSpeed: 0.8,
+      messageInterval: 30000,
+      sprites: {
+        idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png',
+        left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_left_lxr3km.png',
+        right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748294466/tank_run_right_2_zrf0y1.png',
+        up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png',
+        down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png'
+      },
+      phrases: t('shadowEntities.tank.automaticPhrases', { returnObjects: true })
     },
-    phrases: t('shadowEntities.tank.automaticPhrases', { returnObjects: true })
-  },
-  beru: {
-    id: 'beru',
-    size: 80,
-    preferredCanvas: 'canvas-center',
-    personality: 'strategic_analyst',
-    moveSpeed: 0.6,
-    messageInterval: 45000,
-    sprites: {
-      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png', // À créer
-      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414823/beru_left_bvtyba.png',
-      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414822/beru_right_ofwvy5.png',
-      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414738/beru_dos_dtk5ln.png',
-      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png',
-      analyzing: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748550000/beru_thinking.png'
+    beru: {
+      id: 'beru',
+      size: 80,
+      preferredCanvas: 'canvas-center',
+      personality: 'strategic_analyst',
+      moveSpeed: 0.6,
+      messageInterval: 45000,
+      sprites: {
+        idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png', // À créer
+        left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414823/beru_left_bvtyba.png',
+        right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414822/beru_right_ofwvy5.png',
+        up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414738/beru_dos_dtk5ln.png',
+        down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png',
+        analyzing: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748550000/beru_thinking.png'
+      },
+      phrases: t('shadowEntities.beru.automaticPhrases', { returnObjects: true })
     },
-    phrases: t('shadowEntities.beru.automaticPhrases', { returnObjects: true })
-  },
-  kaisel: {
-    id: 'kaisel',
-    size: 72,
-    preferredCanvas: 'canvas-right',
-    personality: 'efficient_debugger',
-    moveSpeed: 1.2,
-    messageInterval: 60000,
-    sprites: {
-      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748550000/kaisel_coding.png',
-      debugging: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748550000/kaisel_debug.png'
-    },
-    phrases: [
-      "Console.log: Performance optimized. ✅",
-      "Debug terminé. 0 errors, 3 warnings ignorées.",
-      "Refactor suggéré : ton code ressemble à du spaghetti.",
-      "Git commit: 'Fix Tank logic, again.' 🙄",
-      "Stack trace analysé. Le problème c'est... toi.",
-      "npm install brain --save. Command failed.",
-      "Kaisel.exe stopped working. Reason: your build choices.",
-      "Efficiency mode: ON. Patience mode: OFF.",
-      "Code review: Tank = legacy code. Beru = clean architecture.",
-      "Memory leak détecté dans ton cerveau.",
-      "Breakpoint set sur tes mauvaises décisions.",
-      "Docker containerize ton chaos, please.",
-      "API call failed: common_sense.get() returned null."
-    ]
-  }
-};
-
-class ShadowManager {
-  constructor() {
-    this.entities = new Map();
-    this.canvasContexts = new Map();
-    this.backgroundImages = new Map();
-     this.t = null; 
-    this.animationId = null;
-    this.messageIntervals = new Map();
-    this.wanderTimers = new Map();
-
-    
-
-    // Backgrounds
-    this.backgrounds = {
-      'canvas-left': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604093/neige_onpilk.png',
-      'canvas-center': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604092/sanctuaire_rfcze5.png',
-      'canvas-right': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604092/greenland_cb4caw.png'
-    };
-  }
-
-  setTranslation(tFunction) {
-    this.t = tFunction;
-  }
-
-  // 🚀 Initialisation
-  init(canvasIds, callbacks = {}) {
-    this.cleanup();
-    this.callbacks = callbacks;
-
-    // 🔧 Reset et récupérer les nouvelles références comme dans le code original
-    this.canvasLeft = this.resetCanvas('canvas-left');
-    this.canvasCenter = this.resetCanvas('canvas-center');
-    this.canvasRight = this.resetCanvas('canvas-right');
-
-    if (!this.canvasLeft || !this.canvasCenter || !this.canvasRight) {
-      return;
+    kaisel: {
+      id: 'kaisel',
+      size: 72,
+      preferredCanvas: 'canvas-right',
+      personality: 'efficient_debugger',
+      moveSpeed: 1.2,
+      messageInterval: 60000,
+      sprites: {
+        idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748550000/kaisel_coding.png',
+        debugging: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748550000/kaisel_debug.png'
+      },
+      phrases: [
+        "Console.log: Performance optimized. ✅",
+        "Debug terminé. 0 errors, 3 warnings ignorées.",
+        "Refactor suggéré : ton code ressemble à du spaghetti.",
+        "Git commit: 'Fix Tank logic, again.' 🙄",
+        "Stack trace analysé. Le problème c'est... toi.",
+        "npm install brain --save. Command failed.",
+        "Kaisel.exe stopped working. Reason: your build choices.",
+        "Efficiency mode: ON. Patience mode: OFF.",
+        "Code review: Tank = legacy code. Beru = clean architecture.",
+        "Memory leak détecté dans ton cerveau.",
+        "Breakpoint set sur tes mauvaises décisions.",
+        "Docker containerize ton chaos, please.",
+        "API call failed: common_sense.get() returned null."
+      ]
     }
-
-    // Setup contexts avec les bonnes références
-    this.canvasContexts.set('canvas-left', this.canvasLeft.getContext('2d'));
-    this.canvasContexts.set('canvas-center', this.canvasCenter.getContext('2d'));
-    this.canvasContexts.set('canvas-right', this.canvasRight.getContext('2d'));
-
-    // Clear tous les canvas
-    this.canvasContexts.forEach((ctx, canvasId) => {
-      const canvas = this.getCanvasRef(canvasId);
-      if (canvas) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
-    });
-
-    this.loadBackgrounds();
-    this.startAnimation();
-  }
-
-  // 🧹 Reset canvas anti-duplication
-  resetCanvas(canvasId) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return null;
-
-    const newCanvas = canvas.cloneNode(true);
-    canvas.parentNode.replaceChild(newCanvas, canvas);
-
-    // Retourner la nouvelle référence
-    return document.getElementById(canvasId);
-  }
-
-  // 🖼️ Load backgrounds
-  loadBackgrounds() {
-    Object.entries(this.backgrounds).forEach(([canvasId, src]) => {
-      const img = new Image();
-      img.onload = () => {
-        this.backgroundImages.set(canvasId, img);
-        const ctx = this.canvasContexts.get(canvasId);
-        const canvas = this.getCanvasRef(canvasId); // Utilise la référence locale
-        if (ctx && canvas) {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        }
-      };
-      img.src = src;
-    });
-  }
-
-  // 👤 Spawn entity
-  spawnEntity(entityType, forceCanvas = null) {
-    const config = SHADOW_ENTITIES[entityType];
-    if (!config) {
-      return null;
-    }
-    // Charge les phrases selon la langue
-  let phrases = [];
-  if (entityType === 'beru') {
-    phrases = t('shadowEntities.beru.automaticPhrases', { returnObjects: true });
-  } else if (entityType === 'tank') {
-    phrases = t('shadowEntities.tank.automaticPhrases', { returnObjects: true });
-  }
-
-    const canvasId = forceCanvas || this.selectCanvas(config.preferredCanvas);
-    const canvas = this.getCanvasRef(canvasId); // Utilise la référence locale
-    if (!canvas) return null;
-
-    const entity = {
-      ...config,
-      x: config.preferredCanvas === 'random' ? canvas.width / 2 :
-        Math.random() * (canvas.width * 0.6) + (canvas.width * 0.2), // Position aléatoire
-      y: canvas.height - 80,
-      speedX: 0,
-      speedY: 0,
-      phrases: phrases,
-      isWandering: false,
-      direction: null,
-      currentCanvas: canvasId,
-      spawnCanvas: canvas, // 🔧 Garde une référence directe comme dans ton code
-      img: new Image(),
-      lastMessage: 0,
-      isActive: true,
-      clickCount: 0
-    };
-
-    entity.img.src = config.sprites.idle;
-
-    this.entities.set(entityType, entity);
-    this.setupEntityEvents(entity);
-    this.startEntityMessages(entity);
-
-    return entity;
-  }
-
-  // 🎯 Helper pour récupérer la bonne référence canvas
-  getCanvasRef(canvasId) {
-    switch (canvasId) {
-      case 'canvas-left': return this.canvasLeft;
-      case 'canvas-center': return this.canvasCenter;
-      case 'canvas-right': return this.canvasRight;
-      default: return null;
-    }
-  }
-
-  // 🎯 Canvas selection
-  selectCanvas(preference) {
-    if (preference === 'random') {
-      const canvases = [this.canvasLeft, this.canvasCenter, this.canvasRight];
-      const selectedCanvas = canvases[Math.floor(Math.random() * canvases.length)];
-      return selectedCanvas.id;
-    }
-    return preference;
-  }
-
-  // 🎮 Setup events pour entity
-  setupEntityEvents(entity) {
-    const canvas = entity.spawnCanvas; // Utilise la référence directe
-    if (!canvas) return;
-
-    const handleClick = () => {
-      entity.clickCount++;
-
-      if (entity.id === 'tank') {
-        this.handleTankClick(entity);
-      } else if (entity.id === 'beru') {
-        this.handleBeruClick(entity);
-      } else if (entity.id === 'kaisel') {
-        this.handleKaiselClick(entity);
-      }
-    };
-
-    canvas.addEventListener('click', handleClick);
-  }
-
-  // 🛡️ Tank click handler (garde la logique existante)
-  handleTankClick(entity) {
-    const count = entity.clickCount;
-
-    if (count === 5) {
-      this.showEntityMessage('tank', "Hé ! C'est pas un bouton ici 😐", true);
-    } else if (count === 10) {
-      this.showEntityMessage('tank', "Encore un clic et j'appelle BobbyJones 😠", true);
-    } else if (count === 20) {
-      this.showEntityMessage('tank', "Ok, là j'en ai marre.", true);
-    } else if (count === 30) {
-      this.showEntityMessage('tank', "...Dernier avertissement.", true);
-    } else if (count >= 40) {
-      this.fireTankLaser(entity);
-      entity.clickCount = 0; // Reset
-    }
-  }
-
-  // Dans handleBeruClick (ShadowManager) :
-  handleBeruClick(entity) {
-    const pos = window.getShadowScreenPosition('beru'); // ← Ajouter window.
-
-    this.callbacks.showBeruMenu({
-      x: pos.x,
-      y: pos.y,
-      selectedCharacter: this.callbacks.getSelectedCharacter?.()
-    });
-  }
-
-  // ⚡ Kaisel click handler
-  handleKaiselClick(entity) {
-    const messages = [
-      "Console.log('User clicked Kaisel');",
-      "Debug session activated. Stand by...",
-      "Performance analysis: 12ms response time. Not bad.",
-      "Git log: 'User interaction detected'",
-      "Stack overflow: why did you click me?"
-    ];
-
-    const msg = messages[Math.floor(Math.random() * messages.length)];
-    this.showEntityMessage('kaisel', msg, true);
-  }
-
-  // 💥 Tank laser (garde la logique existante)
-  fireTankLaser(entity) {
-
-    const tankCanvas = entity.spawnCanvas; // Utilise la référence directe
-    const laser = document.getElementById("tank-laser");
-    const candidates = document.querySelectorAll(".tank-target");
-
-    if (!tankCanvas || !laser || !candidates.length) return;
-
-    const target = candidates[Math.floor(Math.random() * candidates.length)];
-    const tankRect = tankCanvas.getBoundingClientRect();
-    const targetRect = target.getBoundingClientRect();
-
-    entity.img.src = entity.sprites.up;
-
-    const startX = tankRect.left + tankRect.width / 2;
-    const startY = tankRect.top + entity.y - 80;
-    const endX = targetRect.left + targetRect.width / 2;
-    const endY = targetRect.top + targetRect.height / 2;
-
-    const deltaX = endX - startX;
-    const deltaY = endY - startY;
-    const length = Math.sqrt(deltaX ** 2 + deltaY ** 2);
-    const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
-
-    laser.style.width = `${length}px`;
-    laser.style.height = `4px`;
-    laser.style.left = `${startX}px`;
-    laser.style.top = `${startY}px`;
-    laser.style.transform = `rotate(${angle}deg)`;
-    laser.style.transformOrigin = "0 0";
-    laser.classList.remove("hidden");
-
-    setTimeout(() => {
-      laser.classList.add("hidden");
-      target.classList.add("laser-hit");
-      setTimeout(() => target.remove(), 500);
-    }, 300);
-
-    if (window.umami) window.umami.track('LaserBurst');
-  }
-
-  showEntityMessage(entityType, message, priority = false) {
-    if (!this.callbacks.showMessage) return;
-
-    console.log("🔍 ShadowManager.showEntityMessage appelé avec:", entityType); // ← AJOUTE ÇA
-
-    const entity = this.entities.get(entityType);
-    if (!entity) return;
-
-    const prefix = entityType === 'tank' ? '' :
-      entityType === 'beru' ? '🧠 ' :
-        entityType === 'kaisel' ? '🐉 ' : '';
-
-    console.log("🔍 Va appeler showMessage avec entityType:", entityType); // ← AJOUTE ÇA
-
-    this.callbacks.showMessage(prefix + message, priority, entityType); // ← Vérifie cette ligne
-  }
-
-  // ⏰ Start entity messages
-  startEntityMessages(entity) {
-    if (this.messageIntervals.has(entity.id)) return;
-
-    const interval = setInterval(() => {
-      if (Math.random() < 0.33) {
-        const msg = entity.phrases[Math.floor(Math.random() * entity.phrases.length)];
-        this.showEntityMessage(entity.id, msg);
-      }
-    }, entity.messageInterval);
-
-    this.messageIntervals.set(entity.id, interval);
-  }
-
-  // 🎮 Keyboard controls
-  setupKeyboardControls() {
-    const handleKeyDown = (e) => {
-      const tank = this.entities.get('tank');
-      if (!tank) return;
-
-      if (e.key === 'ArrowLeft') {
-        tank.speedX = -0.6;
-        tank.direction = 'left';
-        tank.img.src = tank.sprites.left;
-      } else if (e.key === 'ArrowRight') {
-        tank.speedX = 0.6;
-        tank.direction = 'right';
-        tank.img.src = tank.sprites.right;
-      } else if (e.key === 'ArrowUp') {
-        tank.speedY = -0.15;
-        tank.img.src = tank.sprites.up;
-      } else if (e.key === 'ArrowDown') {
-        tank.speedY = 0.15;
-        tank.img.src = tank.sprites.down;
-      }
-    };
-
-    const handleKeyUp = (e) => {
-      const tank = this.entities.get('tank');
-      if (!tank) return;
-
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-        tank.speedX = 0;
-        tank.img.src = tank.sprites.idle;
-      }
-      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        tank.speedY = 0;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }
-
-  // 🎨 Animation loop principal
-  animate = () => {
-    // Clear tous les canvas en utilisant les références locales
-    this.canvasContexts.forEach((ctx, canvasId) => {
-      const canvas = this.getCanvasRef(canvasId);
-      if (!canvas) return;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Redraw background
-      const bgImg = this.backgroundImages.get(canvasId);
-      if (bgImg) {
-        ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-      }
-    });
-
-    // Update et draw chaque entité
-    this.entities.forEach((entity) => {
-      if (entity.isActive) {
-        this.updateEntity(entity);
-        this.drawEntity(entity);
-      }
-    });
-
-    this.animationId = requestAnimationFrame(this.animate);
   };
 
-  // 🏃 Update entity
-  updateEntity(entity) {
-
-
-    if (entity.id === 'beru' && entity.isMenuActive) {
-      return; // Skip tout mouvement
-    }
-
-    entity.x += entity.speedX;
-    entity.y += entity.speedY;
-
-    const friction = 0.9;
-    const maxSpeed = 1.2;
-
-    entity.speedX *= friction;
-    entity.speedY *= friction;
-
-    if (entity.speedX > maxSpeed) entity.speedX = maxSpeed;
-    if (entity.speedX < -maxSpeed) entity.speedX = -maxSpeed;
-    if (entity.speedY > maxSpeed) entity.speedY = maxSpeed;
-    if (entity.speedY < -maxSpeed) entity.speedY = -maxSpeed;
-
-    // Limites canvas - utilise spawnCanvas comme dans ton code original
-    const canvas = entity.spawnCanvas;
-    if (canvas) {
-      entity.x = Math.max(0, Math.min(canvas.width, entity.x));
-      entity.y = Math.max(canvas.height / 2, Math.min(canvas.height, entity.y));
-    }
-
-    // Wandering pour Tank uniquement (pour l'instant)
-    if (entity.id === 'tank') {
-      this.handleTankWandering(entity);
-    } else if (entity.id === 'beru') {
-      this.handleBeruWandering(entity); // 🆕 AJOUTER CETTE LIGNE
-    }
-  }
-
-  // 🚶 Tank wandering logic
-  handleTankWandering(entity) {
-    if (!entity.isWandering && Math.random() < 0.0003) {
-      const directions = ["left", "right", "up", "down"];
-      entity.direction = directions[Math.floor(Math.random() * directions.length)];
-      entity.isWandering = true;
-
-      const wanderDuration = 2000 + Math.random() * 3000;
-      const returnDuration = wanderDuration / 4;
-      const originalDirection = entity.direction;
-
-      const timer = setTimeout(() => {
-        // Phase de retour
-        switch (originalDirection) {
-          case 'left': entity.direction = 'right'; break;
-          case 'right': entity.direction = 'left'; break;
-          case 'up': entity.direction = 'down'; break;
-          case 'down': entity.direction = 'up'; break;
-        }
-
-        setTimeout(() => {
-          entity.isWandering = false;
-          entity.direction = null;
-          entity.img.src = entity.sprites.idle;
-        }, returnDuration);
-      }, wanderDuration);
-
-      this.wanderTimers.set(entity.id, timer);
-    }
-
-    // Apply wandering movement - garde la logique de ton drawTankMessage
-    if (entity.isWandering && entity.direction) {
-      const speed = entity.moveSpeed;
-      switch (entity.direction) {
-        case 'left':
-          entity.x -= speed;
-          entity.img.src = entity.sprites.left;
-          break;
-        case 'right':
-          entity.x += speed;
-          entity.img.src = entity.sprites.right;
-          break;
-        case 'up':
-          entity.y -= speed;
-          entity.img.src = entity.sprites.up;
-          break;
-        case 'down':
-          entity.y += speed;
-          entity.img.src = entity.sprites.down;
-          break;
-      }
-
-      // Garde Tank dans les limites du canvas - comme dans ton code original
-      const canvas = entity.spawnCanvas;
-      if (canvas) {
-        entity.x = Math.max(0, Math.min(canvas.width, entity.x));
-        entity.y = Math.max(canvas.height / 2, Math.min(canvas.height, entity.y));
-      }
-    }
-  }
-
-  // 🧠 Beru wandering logic (après handleTankWandering)
-  handleBeruWandering(entity) {
-    // Beru bouge moins souvent (plus réfléchi)
-    if (!entity.isWandering && Math.random() < 0.003) { // Plus rare que Tank
-      const directions = ["left", "right", "up", "down"];
-      entity.direction = directions[Math.floor(Math.random() * directions.length)];
-      entity.isWandering = true;
-
-      // Beru reste plus longtemps en mouvement (analyse en cours)
-      const wanderDuration = 3000 + Math.random() * 2000; // Plus long que Tank
-      const returnDuration = wanderDuration / 3;
-      const originalDirection = entity.direction;
-
-      const timer = setTimeout(() => {
-        // Phase de retour
-        switch (originalDirection) {
-          case 'left': entity.direction = 'right'; break;
-          case 'right': entity.direction = 'left'; break;
-          case 'up': entity.direction = 'down'; break;
-          case 'down': entity.direction = 'up'; break;
-        }
-
-        setTimeout(() => {
-          entity.isWandering = false;
-          entity.direction = null;
-          entity.img.src = entity.sprites.idle;
-        }, returnDuration);
-      }, wanderDuration);
-
-      this.wanderTimers.set(entity.id, timer);
-    }
-
-    // Apply wandering movement pour Beru
-    if (entity.isWandering && entity.direction) {
-      const speed = entity.moveSpeed; // 0.6 (plus lent que Tank)
-      switch (entity.direction) {
-        case 'left':
-          entity.x -= speed;
-          entity.img.src = entity.sprites.left;
-          break;
-        case 'right':
-          entity.x += speed;
-          entity.img.src = entity.sprites.right;
-          break;
-        case 'up':
-          entity.y -= speed;
-          entity.img.src = entity.sprites.up;
-          break;
-        case 'down':
-          entity.y += speed;
-          entity.img.src = entity.sprites.down;
-          break;
-      }
-
-      // Limites canvas pour Beru
-      const canvas = entity.spawnCanvas;
-      if (canvas) {
-        entity.x = Math.max(0, Math.min(canvas.width, entity.x));
-        entity.y = Math.max(canvas.height / 2, Math.min(canvas.height, entity.y));
-      }
-    }
-  }
-
-  // 🎨 Draw entity
-  drawEntity(entity) {
-    const ctx = this.canvasContexts.get(entity.currentCanvas);
-    if (!ctx || !entity.img.complete) return;
-
-    ctx.save();
-
-    // Effets visuels par personnalité
-    if (entity.personality === 'strategic_analyst') {
-      ctx.shadowColor = '#8a2be2'; // Violet mystique pour Beru
-      ctx.shadowBlur = 15;
-    } else if (entity.personality === 'efficient_debugger') {
-      ctx.shadowColor = '#00ff41'; // Vert Matrix pour Kaisel
-      ctx.shadowBlur = 10;
-    }
-
-    const canvas = entity.spawnCanvas; // Utilise la référence directe
-    const scale = ((entity.y / 2) / canvas.height) * 4;
-
-    ctx.translate(entity.x, entity.y);
-    ctx.scale(scale, scale);
-    ctx.drawImage(entity.img, -entity.size / 2, -entity.size, entity.size, entity.size);
-
-    ctx.restore();
-  }
-
-  // 🚀 Start animation
-  startAnimation() {
-    if (this.animationId) return;
-    this.animate();
-  }
-
-  // 🧹 Cleanup complet
-  cleanup() {
-
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
+  class ShadowManager {
+    constructor() {
+      this.entities = new Map();
+      this.canvasContexts = new Map();
+      this.backgroundImages = new Map();
+      this.t = null;
       this.animationId = null;
+      this.messageIntervals = new Map();
+      this.wanderTimers = new Map();
+
+
+
+      // Backgrounds
+      this.backgrounds = {
+        'canvas-left': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604093/neige_onpilk.png',
+        'canvas-center': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604092/sanctuaire_rfcze5.png',
+        'canvas-right': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604092/greenland_cb4caw.png'
+      };
     }
 
-    this.messageIntervals.forEach(interval => clearInterval(interval));
-    this.messageIntervals.clear();
+    setTranslation(tFunction) {
+      this.t = tFunction;
+    }
 
-    this.wanderTimers.forEach(timer => clearTimeout(timer));
-    this.wanderTimers.clear();
+    // 🚀 Initialisation
+    init(canvasIds, callbacks = {}) {
+      this.cleanup();
+      this.callbacks = callbacks;
 
-    this.entities.clear();
-    this.canvasContexts.clear();
-    this.backgroundImages.clear();
+      // 🔧 Reset et récupérer les nouvelles références comme dans le code original
+      this.canvasLeft = this.resetCanvas('canvas-left');
+      this.canvasCenter = this.resetCanvas('canvas-center');
+      this.canvasRight = this.resetCanvas('canvas-right');
+
+      if (!this.canvasLeft || !this.canvasCenter || !this.canvasRight) {
+        return;
+      }
+
+      // Setup contexts avec les bonnes références
+      this.canvasContexts.set('canvas-left', this.canvasLeft.getContext('2d'));
+      this.canvasContexts.set('canvas-center', this.canvasCenter.getContext('2d'));
+      this.canvasContexts.set('canvas-right', this.canvasRight.getContext('2d'));
+
+      // Clear tous les canvas
+      this.canvasContexts.forEach((ctx, canvasId) => {
+        const canvas = this.getCanvasRef(canvasId);
+        if (canvas) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      });
+
+      this.loadBackgrounds();
+      this.startAnimation();
+    }
+
+    // 🧹 Reset canvas anti-duplication
+    resetCanvas(canvasId) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return null;
+
+      const newCanvas = canvas.cloneNode(true);
+      canvas.parentNode.replaceChild(newCanvas, canvas);
+
+      // Retourner la nouvelle référence
+      return document.getElementById(canvasId);
+    }
+
+    // 🖼️ Load backgrounds
+    loadBackgrounds() {
+      Object.entries(this.backgrounds).forEach(([canvasId, src]) => {
+        const img = new Image();
+        img.onload = () => {
+          this.backgroundImages.set(canvasId, img);
+          const ctx = this.canvasContexts.get(canvasId);
+          const canvas = this.getCanvasRef(canvasId); // Utilise la référence locale
+          if (ctx && canvas) {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          }
+        };
+        img.src = src;
+      });
+    }
+
+    // 👤 Spawn entity
+    spawnEntity(entityType, forceCanvas = null) {
+      const config = SHADOW_ENTITIES[entityType];
+      if (!config) {
+        return null;
+      }
+      // Charge les phrases selon la langue
+      let phrases = [];
+      if (entityType === 'beru') {
+        phrases = t('shadowEntities.beru.automaticPhrases', { returnObjects: true });
+      } else if (entityType === 'tank') {
+        phrases = t('shadowEntities.tank.automaticPhrases', { returnObjects: true });
+      }
+
+      const canvasId = forceCanvas || this.selectCanvas(config.preferredCanvas);
+      const canvas = this.getCanvasRef(canvasId); // Utilise la référence locale
+      if (!canvas) return null;
+
+      const entity = {
+        ...config,
+        x: config.preferredCanvas === 'random' ? canvas.width / 2 :
+          Math.random() * (canvas.width * 0.6) + (canvas.width * 0.2), // Position aléatoire
+        y: canvas.height - 80,
+        speedX: 0,
+        speedY: 0,
+        phrases: phrases,
+        isWandering: false,
+        direction: null,
+        currentCanvas: canvasId,
+        spawnCanvas: canvas, // 🔧 Garde une référence directe comme dans ton code
+        img: new Image(),
+        lastMessage: 0,
+        isActive: true,
+        clickCount: 0
+      };
+
+      entity.img.src = config.sprites.idle;
+
+      this.entities.set(entityType, entity);
+      this.setupEntityEvents(entity);
+      this.startEntityMessages(entity);
+
+      return entity;
+    }
+
+    // 🎯 Helper pour récupérer la bonne référence canvas
+    getCanvasRef(canvasId) {
+      switch (canvasId) {
+        case 'canvas-left': return this.canvasLeft;
+        case 'canvas-center': return this.canvasCenter;
+        case 'canvas-right': return this.canvasRight;
+        default: return null;
+      }
+    }
+
+    // 🎯 Canvas selection
+    selectCanvas(preference) {
+      if (preference === 'random') {
+        const canvases = [this.canvasLeft, this.canvasCenter, this.canvasRight];
+        const selectedCanvas = canvases[Math.floor(Math.random() * canvases.length)];
+        return selectedCanvas.id;
+      }
+      return preference;
+    }
+
+    // 🎮 Setup events pour entity
+    setupEntityEvents(entity) {
+      const canvas = entity.spawnCanvas; // Utilise la référence directe
+      if (!canvas) return;
+
+      const handleClick = () => {
+        entity.clickCount++;
+
+        if (entity.id === 'tank') {
+          this.handleTankClick(entity);
+        } else if (entity.id === 'beru') {
+          this.handleBeruClick(entity);
+        } else if (entity.id === 'kaisel') {
+          this.handleKaiselClick(entity);
+        }
+      };
+
+      canvas.addEventListener('click', handleClick);
+    }
+
+    // 🛡️ Tank click handler (garde la logique existante)
+    handleTankClick(entity) {
+      const count = entity.clickCount;
+
+      if (count === 5) {
+        this.showEntityMessage('tank', "Hé ! C'est pas un bouton ici 😐", true);
+      } else if (count === 10) {
+        this.showEntityMessage('tank', "Encore un clic et j'appelle BobbyJones 😠", true);
+      } else if (count === 20) {
+        this.showEntityMessage('tank', "Ok, là j'en ai marre.", true);
+      } else if (count === 30) {
+        this.showEntityMessage('tank', "...Dernier avertissement.", true);
+      } else if (count >= 40) {
+        this.fireTankLaser(entity);
+        entity.clickCount = 0; // Reset
+      }
+    }
+
+    // Dans handleBeruClick (ShadowManager) :
+    handleBeruClick(entity) {
+      const pos = window.getShadowScreenPosition('beru'); // ← Ajouter window.
+
+      this.callbacks.showBeruMenu({
+        x: pos.x,
+        y: pos.y,
+        selectedCharacter: this.callbacks.getSelectedCharacter?.()
+      });
+    }
+
+    // ⚡ Kaisel click handler
+    handleKaiselClick(entity) {
+      const messages = [
+        "Console.log('User clicked Kaisel');",
+        "Debug session activated. Stand by...",
+        "Performance analysis: 12ms response time. Not bad.",
+        "Git log: 'User interaction detected'",
+        "Stack overflow: why did you click me?"
+      ];
+
+      const msg = messages[Math.floor(Math.random() * messages.length)];
+      this.showEntityMessage('kaisel', msg, true);
+    }
+
+    // 💥 Tank laser (garde la logique existante)
+    fireTankLaser(entity) {
+
+      const tankCanvas = entity.spawnCanvas; // Utilise la référence directe
+      const laser = document.getElementById("tank-laser");
+      const candidates = document.querySelectorAll(".tank-target");
+
+      if (!tankCanvas || !laser || !candidates.length) return;
+
+      const target = candidates[Math.floor(Math.random() * candidates.length)];
+      const tankRect = tankCanvas.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+
+      entity.img.src = entity.sprites.up;
+
+      const startX = tankRect.left + tankRect.width / 2;
+      const startY = tankRect.top + entity.y - 80;
+      const endX = targetRect.left + targetRect.width / 2;
+      const endY = targetRect.top + targetRect.height / 2;
+
+      const deltaX = endX - startX;
+      const deltaY = endY - startY;
+      const length = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+      const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+
+      laser.style.width = `${length}px`;
+      laser.style.height = `4px`;
+      laser.style.left = `${startX}px`;
+      laser.style.top = `${startY}px`;
+      laser.style.transform = `rotate(${angle}deg)`;
+      laser.style.transformOrigin = "0 0";
+      laser.classList.remove("hidden");
+
+      setTimeout(() => {
+        laser.classList.add("hidden");
+        target.classList.add("laser-hit");
+        setTimeout(() => target.remove(), 500);
+      }, 300);
+
+      if (window.umami) window.umami.track('LaserBurst');
+    }
+
+    showEntityMessage(entityType, message, priority = false) {
+      if (!this.callbacks.showMessage) return;
+
+      console.log("🔍 ShadowManager.showEntityMessage appelé avec:", entityType); // ← AJOUTE ÇA
+
+      const entity = this.entities.get(entityType);
+      if (!entity) return;
+
+      const prefix = entityType === 'tank' ? '' :
+        entityType === 'beru' ? '🧠 ' :
+          entityType === 'kaisel' ? '🐉 ' : '';
+
+      console.log("🔍 Va appeler showMessage avec entityType:", entityType); // ← AJOUTE ÇA
+
+      this.callbacks.showMessage(prefix + message, priority, entityType); // ← Vérifie cette ligne
+    }
+
+    // ⏰ Start entity messages
+    startEntityMessages(entity) {
+      if (this.messageIntervals.has(entity.id)) return;
+
+      const interval = setInterval(() => {
+        if (Math.random() < 0.33) {
+          const msg = entity.phrases[Math.floor(Math.random() * entity.phrases.length)];
+          this.showEntityMessage(entity.id, msg);
+        }
+      }, entity.messageInterval);
+
+      this.messageIntervals.set(entity.id, interval);
+    }
+
+    // 🎮 Keyboard controls
+    setupKeyboardControls() {
+      const handleKeyDown = (e) => {
+        const tank = this.entities.get('tank');
+        if (!tank) return;
+
+        if (e.key === 'ArrowLeft') {
+          tank.speedX = -0.6;
+          tank.direction = 'left';
+          tank.img.src = tank.sprites.left;
+        } else if (e.key === 'ArrowRight') {
+          tank.speedX = 0.6;
+          tank.direction = 'right';
+          tank.img.src = tank.sprites.right;
+        } else if (e.key === 'ArrowUp') {
+          tank.speedY = -0.15;
+          tank.img.src = tank.sprites.up;
+        } else if (e.key === 'ArrowDown') {
+          tank.speedY = 0.15;
+          tank.img.src = tank.sprites.down;
+        }
+      };
+
+      const handleKeyUp = (e) => {
+        const tank = this.entities.get('tank');
+        if (!tank) return;
+
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          tank.speedX = 0;
+          tank.img.src = tank.sprites.idle;
+        }
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+          tank.speedY = 0;
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keyup', handleKeyUp);
+
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
+      };
+    }
+
+    // 🎨 Animation loop principal
+    animate = () => {
+      // Clear tous les canvas en utilisant les références locales
+      this.canvasContexts.forEach((ctx, canvasId) => {
+        const canvas = this.getCanvasRef(canvasId);
+        if (!canvas) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Redraw background
+        const bgImg = this.backgroundImages.get(canvasId);
+        if (bgImg) {
+          ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+        }
+      });
+
+      // Update et draw chaque entité
+      this.entities.forEach((entity) => {
+        if (entity.isActive) {
+          this.updateEntity(entity);
+          this.drawEntity(entity);
+        }
+      });
+
+      this.animationId = requestAnimationFrame(this.animate);
+    };
+
+    // 🏃 Update entity
+    updateEntity(entity) {
+
+
+      if (entity.id === 'beru' && entity.isMenuActive) {
+        return; // Skip tout mouvement
+      }
+
+      entity.x += entity.speedX;
+      entity.y += entity.speedY;
+
+      const friction = 0.9;
+      const maxSpeed = 1.2;
+
+      entity.speedX *= friction;
+      entity.speedY *= friction;
+
+      if (entity.speedX > maxSpeed) entity.speedX = maxSpeed;
+      if (entity.speedX < -maxSpeed) entity.speedX = -maxSpeed;
+      if (entity.speedY > maxSpeed) entity.speedY = maxSpeed;
+      if (entity.speedY < -maxSpeed) entity.speedY = -maxSpeed;
+
+      // Limites canvas - utilise spawnCanvas comme dans ton code original
+      const canvas = entity.spawnCanvas;
+      if (canvas) {
+        entity.x = Math.max(0, Math.min(canvas.width, entity.x));
+        entity.y = Math.max(canvas.height / 2, Math.min(canvas.height, entity.y));
+      }
+
+      // Wandering pour Tank uniquement (pour l'instant)
+      if (entity.id === 'tank') {
+        this.handleTankWandering(entity);
+      } else if (entity.id === 'beru') {
+        this.handleBeruWandering(entity); // 🆕 AJOUTER CETTE LIGNE
+      }
+    }
+
+    // 🚶 Tank wandering logic
+    handleTankWandering(entity) {
+      if (!entity.isWandering && Math.random() < 0.0003) {
+        const directions = ["left", "right", "up", "down"];
+        entity.direction = directions[Math.floor(Math.random() * directions.length)];
+        entity.isWandering = true;
+
+        const wanderDuration = 2000 + Math.random() * 3000;
+        const returnDuration = wanderDuration / 4;
+        const originalDirection = entity.direction;
+
+        const timer = setTimeout(() => {
+          // Phase de retour
+          switch (originalDirection) {
+            case 'left': entity.direction = 'right'; break;
+            case 'right': entity.direction = 'left'; break;
+            case 'up': entity.direction = 'down'; break;
+            case 'down': entity.direction = 'up'; break;
+          }
+
+          setTimeout(() => {
+            entity.isWandering = false;
+            entity.direction = null;
+            entity.img.src = entity.sprites.idle;
+          }, returnDuration);
+        }, wanderDuration);
+
+        this.wanderTimers.set(entity.id, timer);
+      }
+
+      // Apply wandering movement - garde la logique de ton drawTankMessage
+      if (entity.isWandering && entity.direction) {
+        const speed = entity.moveSpeed;
+        switch (entity.direction) {
+          case 'left':
+            entity.x -= speed;
+            entity.img.src = entity.sprites.left;
+            break;
+          case 'right':
+            entity.x += speed;
+            entity.img.src = entity.sprites.right;
+            break;
+          case 'up':
+            entity.y -= speed;
+            entity.img.src = entity.sprites.up;
+            break;
+          case 'down':
+            entity.y += speed;
+            entity.img.src = entity.sprites.down;
+            break;
+        }
+
+        // Garde Tank dans les limites du canvas - comme dans ton code original
+        const canvas = entity.spawnCanvas;
+        if (canvas) {
+          entity.x = Math.max(0, Math.min(canvas.width, entity.x));
+          entity.y = Math.max(canvas.height / 2, Math.min(canvas.height, entity.y));
+        }
+      }
+    }
+
+    // 🧠 Beru wandering logic (après handleTankWandering)
+    handleBeruWandering(entity) {
+      // Beru bouge moins souvent (plus réfléchi)
+      if (!entity.isWandering && Math.random() < 0.003) { // Plus rare que Tank
+        const directions = ["left", "right", "up", "down"];
+        entity.direction = directions[Math.floor(Math.random() * directions.length)];
+        entity.isWandering = true;
+
+        // Beru reste plus longtemps en mouvement (analyse en cours)
+        const wanderDuration = 3000 + Math.random() * 2000; // Plus long que Tank
+        const returnDuration = wanderDuration / 3;
+        const originalDirection = entity.direction;
+
+        const timer = setTimeout(() => {
+          // Phase de retour
+          switch (originalDirection) {
+            case 'left': entity.direction = 'right'; break;
+            case 'right': entity.direction = 'left'; break;
+            case 'up': entity.direction = 'down'; break;
+            case 'down': entity.direction = 'up'; break;
+          }
+
+          setTimeout(() => {
+            entity.isWandering = false;
+            entity.direction = null;
+            entity.img.src = entity.sprites.idle;
+          }, returnDuration);
+        }, wanderDuration);
+
+        this.wanderTimers.set(entity.id, timer);
+      }
+
+      // Apply wandering movement pour Beru
+      if (entity.isWandering && entity.direction) {
+        const speed = entity.moveSpeed; // 0.6 (plus lent que Tank)
+        switch (entity.direction) {
+          case 'left':
+            entity.x -= speed;
+            entity.img.src = entity.sprites.left;
+            break;
+          case 'right':
+            entity.x += speed;
+            entity.img.src = entity.sprites.right;
+            break;
+          case 'up':
+            entity.y -= speed;
+            entity.img.src = entity.sprites.up;
+            break;
+          case 'down':
+            entity.y += speed;
+            entity.img.src = entity.sprites.down;
+            break;
+        }
+
+        // Limites canvas pour Beru
+        const canvas = entity.spawnCanvas;
+        if (canvas) {
+          entity.x = Math.max(0, Math.min(canvas.width, entity.x));
+          entity.y = Math.max(canvas.height / 2, Math.min(canvas.height, entity.y));
+        }
+      }
+    }
+
+    // 🎨 Draw entity
+    drawEntity(entity) {
+      const ctx = this.canvasContexts.get(entity.currentCanvas);
+      if (!ctx || !entity.img.complete) return;
+
+      ctx.save();
+
+      // Effets visuels par personnalité
+      if (entity.personality === 'strategic_analyst') {
+        ctx.shadowColor = '#8a2be2'; // Violet mystique pour Beru
+        ctx.shadowBlur = 15;
+      } else if (entity.personality === 'efficient_debugger') {
+        ctx.shadowColor = '#00ff41'; // Vert Matrix pour Kaisel
+        ctx.shadowBlur = 10;
+      }
+
+      const canvas = entity.spawnCanvas; // Utilise la référence directe
+      const scale = ((entity.y / 2) / canvas.height) * 4;
+
+      ctx.translate(entity.x, entity.y);
+      ctx.scale(scale, scale);
+      ctx.drawImage(entity.img, -entity.size / 2, -entity.size, entity.size, entity.size);
+
+      ctx.restore();
+    }
+
+    // 🚀 Start animation
+    startAnimation() {
+      if (this.animationId) return;
+      this.animate();
+    }
+
+    // 🧹 Cleanup complet
+    cleanup() {
+
+      if (this.animationId) {
+        cancelAnimationFrame(this.animationId);
+        this.animationId = null;
+      }
+
+      this.messageIntervals.forEach(interval => clearInterval(interval));
+      this.messageIntervals.clear();
+
+      this.wanderTimers.forEach(timer => clearTimeout(timer));
+      this.wanderTimers.clear();
+
+      this.entities.clear();
+      this.canvasContexts.clear();
+      this.backgroundImages.clear();
+    }
   }
-}
 
 
 
@@ -1358,7 +1359,7 @@ class ShadowManager {
       console.warn(`❌ Aucun set enregistré pour ${slot}`);
     }
   };
-  
+
 
   const handleSaveArtifactToLibrary = (saveData) => {
     console.log("🐉 Kaisel: Sauvegarde/modification artefact dans la librairie + hunter", saveData);
@@ -1505,28 +1506,28 @@ class ShadowManager {
     }));
   };
 
-const getShadowScreenPosition = (entityType = 'tank') => {
-  const shadowManager = window.shadowManager;
-  const entity = shadowManager?.entities?.get(entityType);
+  const getShadowScreenPosition = (entityType = 'tank') => {
+    const shadowManager = window.shadowManager;
+    const entity = shadowManager?.entities?.get(entityType);
 
-  if (!entity || !entity.spawnCanvas) {
-    console.warn(`❌ ${entityType} entity introuvable`);
-    return { x: 0, y: 0 };
-  }
+    if (!entity || !entity.spawnCanvas) {
+      console.warn(`❌ ${entityType} entity introuvable`);
+      return { x: 0, y: 0 };
+    }
 
-  const canvas = entity.spawnCanvas;
-  const rect = canvas.getBoundingClientRect();
-  
-  // 🎯 CALCUL CORRECT avec scaling + OFFSET DE CENTRAGE
-  const scaleX = rect.width / canvas.width;
-  const scaleY = rect.height / canvas.height;
+    const canvas = entity.spawnCanvas;
+    const rect = canvas.getBoundingClientRect();
 
-  return {
-    x: rect.left + (entity.x * scaleX),
-    y: rect.top + (entity.y * scaleY) - 40, // ← AJUSTE cette valeur pour centrer verticalement
-    currentCanvasId: canvas.id
+    // 🎯 CALCUL CORRECT avec scaling + OFFSET DE CENTRAGE
+    const scaleX = rect.width / canvas.width;
+    const scaleY = rect.height / canvas.height;
+
+    return {
+      x: rect.left + (entity.x * scaleX),
+      y: rect.top + (entity.y * scaleY) - 40, // ← AJUSTE cette valeur pour centrer verticalement
+      currentCanvasId: canvas.id
+    };
   };
-};
   const getRandomMystEggLine = (charKey, context) => {
     const data = MYST_EGGS?.[charKey]?.[context];
     if (!data || !Array.isArray(data)) return null;
@@ -1726,75 +1727,75 @@ const getShadowScreenPosition = (entityType = 'tank') => {
   };
 
   // 🧠 Fonction de recalcul des stats finales avec artefacts
-// 🐉 KAISEL VERSION PROTÉGÉE - REMPLACE ta fonction existante
-const recalculateStatsFromArtifacts = () => {
-  if (!selectedCharacter) return;
-   if (!artifactsData || typeof artifactsData !== 'object') return;
-  if (Object.keys(artifactsData).length === 0) return;
+  // 🐉 KAISEL VERSION PROTÉGÉE - REMPLACE ta fonction existante
+  const recalculateStatsFromArtifacts = () => {
+    if (!selectedCharacter) return;
+    if (!artifactsData || typeof artifactsData !== 'object') return;
+    if (Object.keys(artifactsData).length === 0) return;
 
-  const allowedRawStats = [
-    "Precision", "Defense Penetration", "Healing Given Increase (%)",
-    "MP Recovery Rate Incr. (%)", "Additional MP", "MP Consumption Reduc.",
-    "DMG Incr.", "DMG Reduction"
-  ];
+    const allowedRawStats = [
+      "Precision", "Defense Penetration", "Healing Given Increase (%)",
+      "MP Recovery Rate Incr. (%)", "Additional MP", "MP Consumption Reduc.",
+      "DMG Incr.", "DMG Reduction"
+    ];
 
-  const flat = { ...flatStats };
-  const updated = {};
+    const flat = { ...flatStats };
+    const updated = {};
 
-  Object.values(artifactsData).forEach(artifact => {
-    if (!artifact) return;
+    Object.values(artifactsData).forEach(artifact => {
+      if (!artifact) return;
 
-    // 🛡️ PROTECTION MAINSTAT KAISEL
-    if (artifact.mainStat && 
-        typeof artifact.mainStat === 'string' && 
+      // 🛡️ PROTECTION MAINSTAT KAISEL
+      if (artifact.mainStat &&
+        typeof artifact.mainStat === 'string' &&
         artifact.mainStat.trim() !== '' &&
         mainStatMaxByIncrements[artifact.mainStat]) {
-      
-      // ✅ Calcul sécurisé de mainStatValue
-      artifact.mainStatValue = mainStatMaxByIncrements[artifact.mainStat][4];
-      
-      const stat = artifact.mainStat;
-      const value = artifact.mainStatValue;
 
-      if (stat.endsWith('%')) {
-        const baseStat = stat.replace(' %', '');
-        const base = flat[baseStat] || 0;
-        updated[baseStat] = (updated[baseStat] || 0) + (base * value / 100);
-      } else if (stat.startsWith('Additional ')) {
-        const baseStat = stat.replace('Additional ', '');
-        updated[baseStat] = (updated[baseStat] || 0) + value;
-      } else {
-        updated[stat] = (updated[stat] || 0) + value;
-      }
-    } else if (artifact.mainStat && artifact.mainStat.trim() !== '') {
-      // 🚨 Log les mainStats problématiques sans crasher
-      console.warn(`⚠️ Kaisel: MainStat invalide ignoré: "${artifact.mainStat}"`);
-    }
+        // ✅ Calcul sécurisé de mainStatValue
+        artifact.mainStatValue = mainStatMaxByIncrements[artifact.mainStat][4];
 
-    // ➤ Substats (protection renforcée)
-    if (Array.isArray(artifact.subStats) && Array.isArray(artifact.subStatsLevels)) {
-      artifact.subStats.forEach((stat, i) => {
-        const levelInfo = artifact.subStatsLevels[i];
-        if (!stat || !levelInfo || typeof levelInfo.value !== 'number') return;
+        const stat = artifact.mainStat;
+        const value = artifact.mainStatValue;
 
         if (stat.endsWith('%')) {
           const baseStat = stat.replace(' %', '');
           const base = flat[baseStat] || 0;
-          updated[baseStat] = (updated[baseStat] || 0) + (base * levelInfo.value / 100);
+          updated[baseStat] = (updated[baseStat] || 0) + (base * value / 100);
         } else if (stat.startsWith('Additional ')) {
           const baseStat = stat.replace('Additional ', '');
-          updated[baseStat] = (updated[baseStat] || 0) + levelInfo.value;
+          updated[baseStat] = (updated[baseStat] || 0) + value;
         } else {
-          updated[stat] = (updated[stat] || 0) + levelInfo.value;
+          updated[stat] = (updated[stat] || 0) + value;
         }
-      });
-    } else {
-      console.warn(`⚠️ Kaisel: SubStats invalides pour un artefact:`, artifact);
-    }
-  });
+      } else if (artifact.mainStat && artifact.mainStat.trim() !== '') {
+        // 🚨 Log les mainStats problématiques sans crasher
+        console.warn(`⚠️ Kaisel: MainStat invalide ignoré: "${artifact.mainStat}"`);
+      }
 
-  setStatsFromArtifacts(completeStats(updated));
-};
+      // ➤ Substats (protection renforcée)
+      if (Array.isArray(artifact.subStats) && Array.isArray(artifact.subStatsLevels)) {
+        artifact.subStats.forEach((stat, i) => {
+          const levelInfo = artifact.subStatsLevels[i];
+          if (!stat || !levelInfo || typeof levelInfo.value !== 'number') return;
+
+          if (stat.endsWith('%')) {
+            const baseStat = stat.replace(' %', '');
+            const base = flat[baseStat] || 0;
+            updated[baseStat] = (updated[baseStat] || 0) + (base * levelInfo.value / 100);
+          } else if (stat.startsWith('Additional ')) {
+            const baseStat = stat.replace('Additional ', '');
+            updated[baseStat] = (updated[baseStat] || 0) + levelInfo.value;
+          } else {
+            updated[stat] = (updated[stat] || 0) + levelInfo.value;
+          }
+        });
+      } else {
+        console.warn(`⚠️ Kaisel: SubStats invalides pour un artefact:`, artifact);
+      }
+    });
+
+    setStatsFromArtifacts(completeStats(updated));
+  };
 
   const tankMessageRef = useRef('');
   const messageOpacityRef = useRef(1);
@@ -1820,6 +1821,30 @@ const recalculateStatsFromArtifacts = () => {
   });
   const [parsedArtifactData, setParsedArtifactData] = useState(null);
   const [showWeaponPopup, setShowWeaponPopup] = useState(false);
+  // 🎯 STATES À AJOUTER (dans le composant BuilderBeru)
+  const [reportHistory, setReportHistory] = useState([]);
+  const [currentReport, setCurrentReport] = useState(null);
+  const [showReportSystem, setShowReportSystem] = useState(false);
+  const [showPapyrus, setShowPapyrus] = useState(false);
+
+  const handleReportGenerated = (report) => {
+    setCurrentReport(report);
+    setShowPapyrus(true);
+  };
+
+  const handleSaveReport = (report) => {
+    setReportHistory(prev => [report, ...prev.slice(0, 9)]); // Garde 10 rapports max
+    setShowPapyrus(false);
+  };
+
+  const handleOpenReport = () => {
+    setShowReportSystem(true);
+    setShowPapyrus(false);
+  };
+
+  const handleCloseReport = () => {
+    setShowReportSystem(false);
+  };
 
 
   const showBeruMenu = ({ x, y, selectedCharacter }) => {
@@ -2765,9 +2790,9 @@ BobbyJones : "Allez l'Inter !"
     console.log("🔄 useEffect [INIT & CHARGEMENT MULTI-COMPTE - KAISEL FIX]");
 
 
- migrateOldDataToNewSystem();
+    migrateOldDataToNewSystem();
 
-  
+
 
     const defaultUserData = {
       activeAccount: "main",
@@ -2849,22 +2874,22 @@ BobbyJones : "Allez l'Inter !"
         console.log(`🐉 Kaisel: Niermann par défaut, pas de build à charger`);
       }
       // 🔥 AJOUTE ICI, JUSTE APRÈS setSelectedCharacter :
-  if (defaultCharacter && !currentAccount.builds?.[defaultCharacter]) {
-    console.log(`🐉 Kaisel: Initialisation artefacts vides pour ${defaultCharacter}`);
-    
-    const emptyArtifactsData = {
-      Helmet: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
-      Chest: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
-      Gloves: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
-      Boots: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
-      Necklace: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
-      Bracelet: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
-      Ring: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
-      Earrings: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
-    };
-    
-    setArtifactsData(emptyArtifactsData);
-  }
+      if (defaultCharacter && !currentAccount.builds?.[defaultCharacter]) {
+        console.log(`🐉 Kaisel: Initialisation artefacts vides pour ${defaultCharacter}`);
+
+        const emptyArtifactsData = {
+          Helmet: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+          Chest: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+          Gloves: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+          Boots: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+          Necklace: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+          Bracelet: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+          Ring: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+          Earrings: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
+        };
+
+        setArtifactsData(emptyArtifactsData);
+      }
 
       // ⚔️ Données hors build
       setHunterWeapons(currentAccount.hunterWeapons || {});
@@ -3918,171 +3943,187 @@ BobbyJones : "Allez l'Inter !"
   };
 
 
-// 2️⃣ REMPLACE ta fonction handleAccountSwitch par cette version smooth :
-const handleAccountSwitch = async (newAccountName) => {
-  console.log(`🐉 Kaisel SMOOTH: ===== SWITCH vers ${newAccountName} =====`);
+  // 2️⃣ REMPLACE ta fonction handleAccountSwitch par cette version smooth :
+  const handleAccountSwitch = async (newAccountName) => {
+    console.log(`🐉 Kaisel SMOOTH: ===== SWITCH vers ${newAccountName} =====`);
 
-  // 🎭 MASQUER l'interface pendant le switch
-  setIsAccountSwitching(true);
+    // 🎭 MASQUER l'interface pendant le switch
+    setIsAccountSwitching(true);
 
-  // 📦 LECTURE DIRECTE dans localStorage
-  const storedData = JSON.parse(localStorage.getItem("builderberu_users")) || {};
-  const allAccounts = storedData?.user?.accounts || {};
+    // 📦 LECTURE DIRECTE dans localStorage
+    const storedData = JSON.parse(localStorage.getItem("builderberu_users")) || {};
+    const allAccounts = storedData?.user?.accounts || {};
 
-  if (!allAccounts[newAccountName]) {
-    console.error(`🐉 Kaisel: ERREUR - Compte "${newAccountName}" introuvable !`);
-    showTankMessage(`Compte "${newAccountName}" introuvable !`, true);
-    setIsAccountSwitching(false);
-    return;
-  }
+    if (!allAccounts[newAccountName]) {
+      console.error(`🐉 Kaisel: ERREUR - Compte "${newAccountName}" introuvable !`);
+      showTankMessage(`Compte "${newAccountName}" introuvable !`, true);
+      setIsAccountSwitching(false);
+      return;
+    }
 
-  const newAccountData = allAccounts[newAccountName];
-  const recentBuilds = newAccountData.recentBuilds || [];
+    const newAccountData = allAccounts[newAccountName];
+    const recentBuilds = newAccountData.recentBuilds || [];
 
-  // 🧹 RESET COMPLET - BATCH UPDATE pour éviter les re-renders multiples
-  const emptyArtifactsData = {
-    Helmet: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] }
-    ], set: '' },
-    Chest: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] }
-    ], set: '' },
-    Gloves: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] }
-    ], set: '' },
-    Boots: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] }
-    ], set: '' },
-    Necklace: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] }
-    ], set: '' },
-    Bracelet: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] }
-    ], set: '' },
-    Ring: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] }
-    ], set: '' },
-    Earrings: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] }
-    ], set: '' },
-  };
+    // 🧹 RESET COMPLET - BATCH UPDATE pour éviter les re-renders multiples
+    const emptyArtifactsData = {
+      Helmet: {
+        mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] }
+        ], set: ''
+      },
+      Chest: {
+        mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] }
+        ], set: ''
+      },
+      Gloves: {
+        mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] }
+        ], set: ''
+      },
+      Boots: {
+        mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] }
+        ], set: ''
+      },
+      Necklace: {
+        mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] }
+        ], set: ''
+      },
+      Bracelet: {
+        mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] }
+        ], set: ''
+      },
+      Ring: {
+        mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] }
+        ], set: ''
+      },
+      Earrings: {
+        mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] }
+        ], set: ''
+      },
+    };
 
-  // 🔄 UPDATE localStorage d'abord
-  const updatedUser = {
-    ...storedData.user,
-    activeAccount: newAccountName
-  };
-  storedData.user.activeAccount = newAccountName;
-  localStorage.setItem("builderberu_users", JSON.stringify(storedData));
+    // 🔄 UPDATE localStorage d'abord
+    const updatedUser = {
+      ...storedData.user,
+      activeAccount: newAccountName
+    };
+    storedData.user.activeAccount = newAccountName;
+    localStorage.setItem("builderberu_users", JSON.stringify(storedData));
 
-  // ⏱️ Petit délai pour simulation + smoothness
-  await new Promise(resolve => setTimeout(resolve, 150));
+    // ⏱️ Petit délai pour simulation + smoothness
+    await new Promise(resolve => setTimeout(resolve, 150));
 
-  // 🎯 BATCH UPDATE - Tout en une fois avec React.unstable_batchedUpdates si disponible
-  const batchedUpdate = () => {
-    // Reset states
-    setArtifactsData(emptyArtifactsData);
-    setSelectedCharacter('');
-    setFlatStats({});
-    setStatsWithoutArtefact({});
-    setHunterCores({});
-    setHunterWeapons({});
-    
-    // Update comptes
-    setActiveAccount(newAccountName);
-    setMergedUser(updatedUser);
-    setAccounts(allAccounts);
-    setRecentBuilds(recentBuilds);
-    setGemData(newAccountData.gems || {});
-  };
+    // 🎯 BATCH UPDATE - Tout en une fois avec React.unstable_batchedUpdates si disponible
+    const batchedUpdate = () => {
+      // Reset states
+      setArtifactsData(emptyArtifactsData);
+      setSelectedCharacter('');
+      setFlatStats({});
+      setStatsWithoutArtefact({});
+      setHunterCores({});
+      setHunterWeapons({});
 
-  // 🚀 BATCH UPDATE pour éviter les re-renders multiples
-  if (window.React && window.React.unstable_batchedUpdates) {
-    window.React.unstable_batchedUpdates(batchedUpdate);
-  } else {
-    batchedUpdate();
-  }
+      // Update comptes
+      setActiveAccount(newAccountName);
+      setMergedUser(updatedUser);
+      setAccounts(allAccounts);
+      setRecentBuilds(recentBuilds);
+      setGemData(newAccountData.gems || {});
+    };
 
-  // ⏱️ Autre petit délai avant le chargement du build
-  await new Promise(resolve => setTimeout(resolve, 50));
+    // 🚀 BATCH UPDATE pour éviter les re-renders multiples
+    if (window.React && window.React.unstable_batchedUpdates) {
+      window.React.unstable_batchedUpdates(batchedUpdate);
+    } else {
+      batchedUpdate();
+    }
 
-  // 🎯 CHARGEMENT DU BUILD
-  if (recentBuilds.length > 0) {
-    const firstCharacter = recentBuilds[0];
-    
-    if (characters[firstCharacter]) {
-      const build = newAccountData.builds?.[firstCharacter];
-      
-      if (build) {
-        console.log(`🐉 Kaisel SMOOTH: Chargement ${firstCharacter}...`);
-        
-        // 📦 CLONAGE PROFOND + BATCH UPDATE FINAL
-        const clonedArtifacts = JSON.parse(JSON.stringify(build.artifactsData || emptyArtifactsData));
-        
-        const finalUpdate = () => {
-          setSelectedCharacter(firstCharacter);
-          setFlatStats(build.flatStats || {});
-          setStatsWithoutArtefact(build.statsWithoutArtefact || {});
-          setArtifactsData(clonedArtifacts);
-          setHunterCores(prev => ({
-            ...prev,
-            [firstCharacter]: build.hunterCores || {}
-          }));
-          setHunterWeapons(prev => ({
-            ...prev,
-            [firstCharacter]: build.hunterWeapons || {}
-          }));
-        };
+    // ⏱️ Autre petit délai avant le chargement du build
+    await new Promise(resolve => setTimeout(resolve, 50));
 
-        if (window.React && window.React.unstable_batchedUpdates) {
-          window.React.unstable_batchedUpdates(finalUpdate);
+    // 🎯 CHARGEMENT DU BUILD
+    if (recentBuilds.length > 0) {
+      const firstCharacter = recentBuilds[0];
+
+      if (characters[firstCharacter]) {
+        const build = newAccountData.builds?.[firstCharacter];
+
+        if (build) {
+          console.log(`🐉 Kaisel SMOOTH: Chargement ${firstCharacter}...`);
+
+          // 📦 CLONAGE PROFOND + BATCH UPDATE FINAL
+          const clonedArtifacts = JSON.parse(JSON.stringify(build.artifactsData || emptyArtifactsData));
+
+          const finalUpdate = () => {
+            setSelectedCharacter(firstCharacter);
+            setFlatStats(build.flatStats || {});
+            setStatsWithoutArtefact(build.statsWithoutArtefact || {});
+            setArtifactsData(clonedArtifacts);
+            setHunterCores(prev => ({
+              ...prev,
+              [firstCharacter]: build.hunterCores || {}
+            }));
+            setHunterWeapons(prev => ({
+              ...prev,
+              [firstCharacter]: build.hunterWeapons || {}
+            }));
+          };
+
+          if (window.React && window.React.unstable_batchedUpdates) {
+            window.React.unstable_batchedUpdates(finalUpdate);
+          } else {
+            finalUpdate();
+          }
+
+          showTankMessage(`✅ ${characters[firstCharacter]?.name} chargé dans "${newAccountName}"!`, true);
         } else {
-          finalUpdate();
+          setSelectedCharacter('');
         }
-
-        showTankMessage(`✅ ${characters[firstCharacter]?.name} chargé dans "${newAccountName}"!`, true);
       } else {
         setSelectedCharacter('');
       }
     } else {
       setSelectedCharacter('');
+      showTankMessage(`📁 Compte "${newAccountName}" vide. Sélectionne un personnage!`, true);
     }
-  } else {
-    setSelectedCharacter('');
-    showTankMessage(`📁 Compte "${newAccountName}" vide. Sélectionne un personnage!`, true);
-  }
 
-  // 🎭 RÉVÉLER l'interface après 100ms
-  setTimeout(() => {
-    setIsAccountSwitching(false);
-  }, 100);
+    // 🎭 RÉVÉLER l'interface après 100ms
+    setTimeout(() => {
+      setIsAccountSwitching(false);
+    }, 100);
 
-  console.log(`🐉 Kaisel SMOOTH: ===== FIN SWITCH =====`);
-};
+    console.log(`🐉 Kaisel SMOOTH: ===== FIN SWITCH =====`);
+  };
 
   // 4️⃣ Ajoute cette fonction temporaire pour debug
   window.debugGems = debugLocalStorage;
@@ -4172,7 +4213,7 @@ const handleAccountSwitch = async (newAccountName) => {
 
     const shadowManager = new ShadowManager();
     window.shadowManager = shadowManager;
-     shadowManager.setTranslation(t);
+    shadowManager.setTranslation(t);
     window.getShadowScreenPosition = getShadowScreenPosition;
 
     const callbacks = {
@@ -4251,48 +4292,77 @@ const handleAccountSwitch = async (newAccountName) => {
     return () => clearInterval(wanderInterval);
   }, []);
 
+  const currentTimeout = useRef(null);
+
+  // 🧹 CLEANUP au unmount :
+  useEffect(() => {
+    return () => {
+      if (currentTimeout.current) {
+        clearTimeout(currentTimeout.current);
+      }
+    };
+  }, []);
 
   const showTankMessage = (message, priority = false, entityType = 'tank') => {
+    // 🛡️ Si Tank parle ET pas prioritaire → queue
     if (isTankSpeaking.current && !priority) {
-      messageQueue.current.push(message);
+      messageQueue.current.push({ message, entityType }); // 🔥 STOCKE AUSSI entityType !
       return;
     }
-    if (isTankSpeaking.current && !priority && !queue) {
-      return;
+
+    // 🚀 Si prioritaire, on force l'affichage
+    if (priority && isTankSpeaking.current) {
+      // Annuler le timeout précédent si il existe
+      if (currentTimeout.current) {
+        clearTimeout(currentTimeout.current);
+      }
     }
 
     isTankSpeaking.current = true;
-    setShowChibiBubble(false); // ← force clean
+    setShowChibiBubble(false);
     setBubbleId(Date.now());
 
     console.log("🔍 showTankMessage appelée avec entityType:", entityType);
     const pos = getShadowScreenPosition(entityType);
     console.log("🔍 Position calculée:", pos);
 
-    setChibiPos({ x: pos.x, y: pos.y, currentCanvasId: pos.currentCanvasId });
-    console.log("🔍 setChibiPos appelée avec:", { x: pos.x, y: pos.y, currentCanvasId: pos.currentCanvasId });
+    // 🔥 AJOUTER CET OFFSET INTELLIGENT ICI :
+    const messageOffset = Math.min(200, message.length * 0.6); // Plus le message est long, plus on remonte
+    const adjustedPos = {
+      x: pos.x,
+      y: pos.y - messageOffset, // Décaler vers le haut
+      currentCanvasId: pos.currentCanvasId
+    };
+
+    setChibiPos(adjustedPos); // 🔧 UTILISER LA POSITION AJUSTÉE
+    console.log("🔍 setChibiPos appelée avec position ajustée:", adjustedPos);
+
     setShowChibiBubble(true);
     setChibiMessage(message);
 
     // 🎯 DURÉE DYNAMIQUE selon la longueur du message
     const calculateDisplayDuration = (message) => {
-      const baseTime = 4000; // 4 secondes minimum
-      const readingTime = message.length * 80; // 80ms par caractère (vitesse de lecture normale)
-      const maxTime = 20000; // 20 secondes maximum pour éviter les messages trop longs
-
+      const baseTime = 4000;
+      const readingTime = message.length * 80;
+      const maxTime = 20000;
       return Math.min(Math.max(baseTime, readingTime), maxTime);
     };
 
     const displayDuration = calculateDisplayDuration(message);
     console.log(`🕐 Durée d'affichage calculée: ${displayDuration}ms pour "${message.substring(0, 30)}..."`);
 
-    setTimeout(() => {
+    // 🔥 STOCKER LE TIMEOUT POUR POUVOIR L'ANNULER
+    currentTimeout.current = setTimeout(() => {
       setShowChibiBubble(false);
       isTankSpeaking.current = false;
+
+      // 🔄 TRAITER LA QUEUE (avec entityType)
       if (messageQueue.current.length > 0) {
         const next = messageQueue.current.shift();
-        showTankMessage(next);
+        showTankMessage(next.message, false, next.entityType);
       }
+
+      currentTimeout.current = null; // Reset
     }, displayDuration);
   };
 
@@ -4577,6 +4647,60 @@ const handleAccountSwitch = async (newAccountName) => {
                                 isMobile={isMobile}
                               />
                             )}
+
+                            {showNewAccountPopup && (
+                              <NewAccountPopup
+                                newAccountName={newAccountName}
+                                setNewAccountName={setNewAccountName}
+                                setShowNewAccountPopup={setShowNewAccountPopup}
+                                createNewAccount={createNewAccount}
+                              />
+                            )}
+
+                            {showBeruInteractionMenu && (() => {
+                              console.log("🐛 MONARQUE DEBUG: artifactsData avant menu Béru:", artifactsData);
+                              console.log("🐛 Slots avec des noms:", Object.entries(artifactsData).filter(([slot, art]) => art?.name));
+                              return null;
+                            })()}
+
+                            {showBeruInteractionMenu && (
+
+                              <BeruInteractionMenu
+                                position={beruMenuPosition}
+                                onClose={() => {
+                                  setShowBeruInteractionMenu(false);
+                                  // 🔧 CORRECTION : Accès via window.shadowManager !
+                                  if (window.shadowManager) {
+                                    const beruEntity = window.shadowManager.entities.get('beru');
+                                    if (beruEntity) {
+                                      beruEntity.isMenuActive = false;
+                                    }
+                                  }
+                                }}
+                                selectedCharacter={selectedCharacter}
+                                characters={characters}
+                                showTankMessage={showTankMessage}
+                                currentArtifacts={artifactsData}
+                                currentStats={finalStats}                   // ← STATS FINALES COMPLÈTES !
+                                currentCores={hunterCores[selectedCharacter] || {}}
+                                currentGems={gemData}
+                                multiAccountsData={accounts}
+                              />
+                            )}
+
+                            {/* Papyrus doré */}
+                            <GoldenPapyrusIcon
+                              isVisible={showPapyrus}
+                              onClick={handleOpenReport}
+                            />
+
+                            <BeruReportSystem
+                              isOpen={showReportSystem}
+                              onClose={handleCloseReport}
+                              currentReport={currentReport}
+                              reportHistory={reportHistory}
+                              onSaveReport={handleSaveReport}
+                            />
 
                             {showSernPopup && (
                               <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999]  py-10">
@@ -5389,26 +5513,48 @@ const handleAccountSwitch = async (newAccountName) => {
                     />
                   )}
 
+                  {showBeruInteractionMenu && (() => {
+                    console.log("🐛 MONARQUE DEBUG: artifactsData avant menu Béru:", artifactsData);
+                    console.log("🐛 Slots avec des noms:", Object.entries(artifactsData).filter(([slot, art]) => art?.name));
+                    return null;
+                  })()}
+                  {showBeruInteractionMenu && (
+                    <BeruInteractionMenu
+                      position={beruMenuPosition}
+                      onClose={() => {
+                        setShowBeruInteractionMenu(false);
+                        // 🔧 CORRECTION : Accès via window.shadowManager !
+                        if (window.shadowManager) {
+                          const beruEntity = window.shadowManager.entities.get('beru');
+                          if (beruEntity) {
+                            beruEntity.isMenuActive = false;
+                          }
+                        }
+                      }}
+                      selectedCharacter={selectedCharacter}
+                      characters={characters}
+                      showTankMessage={showTankMessage}
+                      currentArtifacts={artifactsData}
+                      currentStats={finalStats}                   // ← STATS FINALES COMPLÈTES !
+                      currentCores={hunterCores[selectedCharacter] || {}}
+                      currentGems={gemData}
+                      multiAccountsData={accounts}
+                    />
+                  )}
 
-                 {showBeruInteractionMenu && (
-  <BeruInteractionMenu
-    position={beruMenuPosition}
-    onClose={() => {
-      setShowBeruInteractionMenu(false);
-      // 🔧 CORRECTION : Accès via window.shadowManager !
-      if (window.shadowManager) {
-        const beruEntity = window.shadowManager.entities.get('beru');
-        if (beruEntity) {
-          beruEntity.isMenuActive = false;
-        }
-      }
-    }}
-    selectedCharacter={selectedCharacter}
-    characters={characters}
-    showTankMessage={showTankMessage}
-  />
-)}
+                  {/* Papyrus doré */}
+                  <GoldenPapyrusIcon
+                    isVisible={showPapyrus}
+                    onClick={handleOpenReport}
+                  />
 
+                  <BeruReportSystem
+                    isOpen={showReportSystem}
+                    onClose={handleCloseReport}
+                    currentReport={currentReport}
+                    reportHistory={reportHistory}
+                    onSaveReport={handleSaveReport}
+                  />
 
                   {showSernPopup && (
                     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999]  py-10">
@@ -5855,16 +6001,16 @@ const handleAccountSwitch = async (newAccountName) => {
 
       )}
 
-{/* 🎭 OVERLAY DE LOADING - AJOUTE ÇA JUSTE AVANT la fermeture du fragment */}
-    {isAccountSwitching && (
-      <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[9999] backdrop-blur-sm">
-        <div className="flex flex-col items-center space-y-4 bg-gray-900 p-8 rounded-xl border border-purple-500 shadow-2xl">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-500 border-t-4 border-t-transparent"></div>
-          <p className="text-purple-300 animate-pulse text-lg font-semibold">🐉 Switching accounts...</p>
-          <p className="text-gray-400 text-sm">Loading artifacts & builds...</p>
+      {/* 🎭 OVERLAY DE LOADING - AJOUTE ÇA JUSTE AVANT la fermeture du fragment */}
+      {isAccountSwitching && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[9999] backdrop-blur-sm">
+          <div className="flex flex-col items-center space-y-4 bg-gray-900 p-8 rounded-xl border border-purple-500 shadow-2xl">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-500 border-t-4 border-t-transparent"></div>
+            <p className="text-purple-300 animate-pulse text-lg font-semibold">🐉 Switching accounts...</p>
+            <p className="text-gray-400 text-sm">Loading artifacts & builds...</p>
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
 
       <div

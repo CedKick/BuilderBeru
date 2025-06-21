@@ -6,169 +6,79 @@ import { handleNumericInput } from '../utils/inputUtils';
 import '../i18n/i18n';
 import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
-import { getSetIcon } from "../utils/artifactUtils"; // adapte le chemin
+import { getSetIcon } from "../utils/artifactUtils";
 import ArtifactSavePopup from './ArtifactSavePopup';
-import ArtifactLibrary from './ArtifactLibrary'; // 👈 🔥 AJOUTE ÇA !
-
-
-// const getSetIcon = (setName) => {
-//   const iconMap = {
-//     "Toughness (Hard Leather Set)": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png",
-//     "Solid Analysis (New Hunter Set)": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png",
-//     "Guardian (Palace Guard Set)": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png",
-//     // Ajoute tes vrais liens plus tard 👆
-//   };
-
-//   return iconMap[setName] || "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png";
-// };
+import ArtifactLibrary from './ArtifactLibrary';
 
 const commonSubStats = [
   'Attack %', 'Additional Attack', 'Defense Penetration', 'Damage Increase', 'Additional Defense',
   'Defense %', 'Additional HP', 'HP %', 'MP Consumption Reduction',
   'Additional MP', 'MP Recovery Rate Increase (%)', 'Damage Reduction', 'Critical Hit Damage', 'Critical Hit Rate'
 ];
+
 const mainStatMaxByIncrements = {
   'Additional Defense': {
-    0: 2433,
-    1: 2433,
-    2: 2433,
-    3: 2433,
-    4: 2433,
+    0: 2433, 1: 2433, 2: 2433, 3: 2433, 4: 2433,
   },
   'Defense %': {
-    0: 25.5,
-    1: 25.5,
-    2: 25.5,
-    3: 25.5,
-    4: 25.5,
+    0: 25.5, 1: 25.5, 2: 25.5, 3: 25.5, 4: 25.5,
   },
   'Additional Attack': {
-    0: 2433,
-    1: 2433,
-    2: 2433,
-    3: 2433,
-    4: 2433,
+    0: 2433, 1: 2433, 2: 2433, 3: 2433, 4: 2433,
   },
   'Attack %': {
-    0: 25.5,
-    1: 25.5,
-    2: 25.5,
-    3: 25.5,
-    4: 25.5,
+    0: 25.5, 1: 25.5, 2: 25.5, 3: 25.5, 4: 25.5,
   },
   'Additional HP': {
-    0: 4866,
-    1: 4866,
-    2: 4866,
-    3: 4866,
-    4: 4866,
+    0: 4866, 1: 4866, 2: 4866, 3: 4866, 4: 4866,
   },
   'HP %': {
-    0: 25.5,
-    1: 25.5,
-    2: 25.5,
-    3: 25.5,
-    4: 25.5,
+    0: 25.5, 1: 25.5, 2: 25.5, 3: 25.5, 4: 25.5,
   },
   'Critical Hit Damage': {
-    0: 5899,
-    1: 5899,
-    2: 5899,
-    3: 5899,
-    4: 5899,
+    0: 5899, 1: 5899, 2: 5899, 3: 5899, 4: 5899,
   },
   'Defense Penetration': {
-    0: 5899,
-    1: 5899,
-    2: 5899,
-    3: 5899,
-    4: 5899,
+    0: 5899, 1: 5899, 2: 5899, 3: 5899, 4: 5899,
   },
   'Healing Given Increase (%)': {
-    0: 6.12,
-    1: 6.12,
-    2: 6.12,
-    3: 6.12,
-    4: 6.12,
+    0: 6.12, 1: 6.12, 2: 6.12, 3: 6.12, 4: 6.12,
   },
   'MP Consumption Reduction': {
-    0: 30,
-    1: 30,
-    2: 30,
-    3: 30,
-    4: 30,
+    0: 30, 1: 30, 2: 30, 3: 30, 4: 30,
   },
   'Additional MP': {
-    0: 1044,
-    1: 1044,
-    2: 1044,
-    3: 1044,
-    4: 1044,
+    0: 1044, 1: 1044, 2: 1044, 3: 1044, 4: 1044,
   },
   'MP Recovery Rate Increase (%)': {
-    0: 30,
-    1: 30,
-    2: 30,
-    3: 30,
-    4: 30,
+    0: 30, 1: 30, 2: 30, 3: 30, 4: 30,
   },
   'Damage Increase': {
-    0: 4899,
-    1: 4899,
-    2: 4899,
-    3: 4899,
-    4: 4899,
+    0: 4899, 1: 4899, 2: 4899, 3: 4899, 4: 4899,
   },
   'Damage Reduction': {
-    0: 24,
-    1: 24,
-    2: 24,
-    3: 24,
-    4: 24,
+    0: 24, 1: 24, 2: 24, 3: 24, 4: 24,
   },
   'Fire Damage %': {
-  0: 13.82,
-  1: 13.82,
-  2: 13.82,
-  3: 13.82,
-  4: 13.82,
-},
-'Water Damage %': {
-  0: 13.82,
-  1: 13.82,
-  2: 13.82,
-  3: 13.82,
-  4: 13.82,
-},
-'Wind Damage %': {
-  0: 13.82,
-  1: 13.82,
-  2: 13.82,
-  3: 13.82,
-  4: 13.82,
-},
-'Light Damage %': {
-  0: 13.82,
-  1: 13.82,
-  2: 13.82,
-  3: 13.82,
-  4: 13.82,
-},
-'Dark Damage %': {
-  0: 13.82,
-  1: 13.82,
-  2: 13.82,
-  3: 13.82,
-  4: 13.82,
-}
+    0: 13.82, 1: 13.82, 2: 13.82, 3: 13.82, 4: 13.82,
+  },
+  'Water Damage %': {
+    0: 13.82, 1: 13.82, 2: 13.82, 3: 13.82, 4: 13.82,
+  },
+  'Wind Damage %': {
+    0: 13.82, 1: 13.82, 2: 13.82, 3: 13.82, 4: 13.82,
+  },
+  'Light Damage %': {
+    0: 13.82, 1: 13.82, 2: 13.82, 3: 13.82, 4: 13.82,
+  },
+  'Dark Damage %': {
+    0: 13.82, 1: 13.82, 2: 13.82, 3: 13.82, 4: 13.82,
+  }
 };
-
 
 const calculateMainStatValue = (mainStat, subStatsLevels) => {
   if (!Array.isArray(subStatsLevels)) return 0;
-
   const sum = subStatsLevels.reduce((acc, s) => acc + (s?.level || 0), 0);
-
   if (
     typeof mainStat === 'string' &&
     mainStatMaxByIncrements[mainStat] &&
@@ -176,12 +86,8 @@ const calculateMainStatValue = (mainStat, subStatsLevels) => {
   ) {
     return mainStatMaxByIncrements[mainStat][sum];
   }
-
-
   return 0;
 };
-
-
 
 const ArtifactCard = ({
   title,
@@ -192,112 +98,209 @@ const ArtifactCard = ({
   onArtifactChange,
   statsWithoutArtefact,
   flatStats,
-  onArtifactSave, // 🔥 NOUVEAU PROP
-   onSetIconClick, // 👈 ajoute-le ici
-   handleLoadSavedSet,
+  onArtifactSave,
+  onSetIconClick,
+  handleLoadSavedSet,
   hunter,
   substatsMinMaxByIncrements,
-  openComparisonPopup, // 👈 ajoute-le ici
-  mode = "edit", // default
-  disableComparisonButton = false, // 👈 AJOUT
-   artifactLibrary,  // 👈 NOUVEAU !
-  activeAccount     // 👈 NOUVEAU !
+  openComparisonPopup,
+  mode = "edit",
+  disableComparisonButton = false,
+  artifactLibrary,
+  activeAccount
 }) => {
   const { t } = useTranslation();
 
-   
-
-// 🔥 AJOUTE AUSSI UN BOUTON DE TEST TEMPORAIRE dans le JSX :
-// Juste après le titre, avant les icônes :
-
   const [hoveredIndex, setHoveredIndex] = useState(null);
-  const [inputValues, setInputValues] = useState({});
+  
+  // 🔥 NOUVELLE GESTION DES INPUTS - État local séparé
+  const [inputStates, setInputStates] = useState({});
+  const [isFocused, setIsFocused] = useState({});
+  
   const [showLibrary, setShowLibrary] = useState(false);
-const [librarySlot, setLibrarySlot] = useState(null); // 👈 GARDE LE SLOT
+  const [librarySlot, setLibrarySlot] = useState(null);
   const [showSavePopup, setShowSavePopup] = useState(false);
   const selections = artifactData;
- const [localMainStat, setLocalMainStat] = useState((artifactData && artifactData.mainStat) || '');
-const [currentSetIcon, setCurrentSetIcon] = useState(
-  (artifactData && artifactData.set)
-    ? getSetIcon(artifactData.set, title) || "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
-    : "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
-);
-  const setArtifactsData = (newData) => onArtifactChange(newData);
-  const slot = title?.title || title; // sécurité double 😏
-
-  const handleResetArtifact = (slot) => {
-
-  // Réinitialise complètement l'artefact
-  onArtifactChange(() => ({
-    mainStat: '',
-    subStats: ['', '', '', ''],
-    subStatsLevels: [
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] },
-      { value: 0, level: 0, procOrders: [], procValues: [] }
-    ],
-    set: '',
-    mainStatValue: 0,
-    savedArtifactId: undefined,
-    savedArtifactName: undefined
-  }));
-  
-  // Reset l'icône de set aussi
-  setCurrentSetIcon("https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png");
-  
-  // Message Tank
-  showTankMessage && showTankMessage(`🔄 ${slot} remis à zéro !`, true);
-  
-
-
-  
-  // Recalcul des stats
-  recalculateStatsFromArtifacts && recalculateStatsFromArtifacts();
-};
-
-  const handleSelectFromLibrary = (selectedArtifact) => {
-  
-  // Applique l'artefact sélectionné
-  onArtifactChange(() => ({
-    mainStat: selectedArtifact.mainStat,
-    subStats: selectedArtifact.subStats,
-    subStatsLevels: selectedArtifact.subStatsLevels,
-    set: selectedArtifact.set,
-    mainStatValue: selectedArtifact.mainStatValue,
-    savedArtifactId: selectedArtifact.id,
-    savedArtifactName: selectedArtifact.name
-  }));
-  
-  // Met à jour l'icône de set
-  setCurrentSetIcon(
-    getSetIcon(selectedArtifact.set, title) || 
-    "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
+  const [localMainStat, setLocalMainStat] = useState((artifactData && artifactData.mainStat) || '');
+  const [currentSetIcon, setCurrentSetIcon] = useState(
+    (artifactData && artifactData.set)
+      ? getSetIcon(artifactData.set, title) || "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
+      : "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
   );
   
-  // Recalcule les stats
-  recalculateStatsFromArtifacts && recalculateStatsFromArtifacts();
-  
-  // Message Tank
-  showTankMessage && showTankMessage(`📦 "${selectedArtifact.name}" chargé !`, true);
-  
-  // Ferme la librairie
-  setShowLibrary(false);
-  setLibrarySlot(null);
-};
+  const setArtifactsData = (newData) => onArtifactChange(newData);
+  const slot = title?.title || title;
 
-const handleOpenLibrary = (slot) => {
-  setLibrarySlot(slot); // 👈 GARDE LE SLOT !
-  setShowLibrary(true);
-};
+  // 🔥 FONCTION POUR FORMATER LA VALEUR SELON LE TYPE
+  const formatValue = (value, statName) => {
+    if (!statName) return '';
+    const isPercentage = statName.includes('%');
+    
+    if (isPercentage) {
+      return Number(value).toFixed(2);
+    } else {
+      return Math.round(Number(value)).toString();
+    }
+  };
 
- useEffect(() => {
+  // 🔥 FONCTION POUR OBTENIR LA VALEUR D'AFFICHAGE
+  const getDisplayValue = (idx) => {
+    const artifactValue = artifactData?.subStatsLevels?.[idx]?.value || 0;
+    const statName = artifactData?.subStats?.[idx];
+    
+    // Si l'input est focus et qu'on a un état local, on l'utilise
+    if (isFocused[idx] && inputStates[idx] !== undefined) {
+      return inputStates[idx];
+    }
+    
+    // Sinon on affiche la valeur formatée de l'artefact
+    return formatValue(artifactValue, statName);
+  };
+
+  // 🔥 VALIDATION ET NETTOYAGE DE LA SAISIE
+  const validateAndCleanInput = (input, statName) => {
+    if (!statName) return '';
+    
+    const isPercentage = statName.includes('%');
+    
+    // Autoriser seulement chiffres, point et virgule
+    let cleaned = input.replace(/[^0-9.,]/g, '');
+    
+    // Remplacer virgule par point
+    cleaned = cleaned.replace(/,/g, '.');
+    
+    // Pour les non-pourcentages, supprimer les points
+    if (!isPercentage) {
+      cleaned = cleaned.replace(/\./g, '');
+    }
+    
+    // Garder un seul point pour les pourcentages
+    if (isPercentage && cleaned.includes('.')) {
+      const parts = cleaned.split('.');
+      if (parts.length > 2) {
+        cleaned = parts[0] + '.' + parts[1];
+      }
+      // Limiter à 2 décimales
+      if (parts[1] && parts[1].length > 2) {
+        cleaned = parts[0] + '.' + parts[1].slice(0, 2);
+      }
+    }
+    
+    return cleaned;
+  };
+
+  // 🔥 GESTION DU FOCUS SUR L'INPUT
+  const handleInputFocus = (idx) => {
+    setIsFocused(prev => ({ ...prev, [idx]: true }));
+    
+    const currentValue = artifactData?.subStatsLevels?.[idx]?.value || 0;
+    
+    // Si la valeur est 0, on vide l'input
+    if (currentValue === 0) {
+      setInputStates(prev => ({ ...prev, [idx]: '' }));
+    } else {
+      // Sinon on garde la valeur actuelle
+      const statName = artifactData?.subStats?.[idx];
+      setInputStates(prev => ({ 
+        ...prev, 
+        [idx]: formatValue(currentValue, statName)
+      }));
+    }
+  };
+
+  // 🔥 GESTION DE LA PERTE DE FOCUS
+  const handleInputBlur = (idx) => {
+    setIsFocused(prev => ({ ...prev, [idx]: false }));
+    
+    const inputValue = inputStates[idx];
+    const statName = artifactData?.subStats?.[idx];
+    
+    if (inputValue === '' || inputValue === undefined) {
+      // Si l'input est vide, on met 0
+      handleManualSubStatChange(idx, 0);
+    } else {
+      // Sinon on parse et applique la valeur
+      const parsed = parseFloat(inputValue);
+      if (!isNaN(parsed)) {
+        handleManualSubStatChange(idx, parsed);
+      }
+    }
+    
+    // Reset de l'état local pour cet input
+    setInputStates(prev => {
+      const newState = { ...prev };
+      delete newState[idx];
+      return newState;
+    });
+  };
+
+  // 🔥 GESTION DU CHANGEMENT DE VALEUR
+  const handleInputChange = (idx, rawValue) => {
+    const statName = artifactData?.subStats?.[idx];
+    const cleanedValue = validateAndCleanInput(rawValue, statName);
+    
+    // Mise à jour de l'état local uniquement
+    setInputStates(prev => ({ ...prev, [idx]: cleanedValue }));
+  };
+
+  // Fonction de reset d'artefact (inchangée)
+  const handleResetArtifact = (slot) => {
+    onArtifactChange(() => ({
+      mainStat: '',
+      subStats: ['', '', '', ''],
+      subStatsLevels: [
+        { value: 0, level: 0, procOrders: [], procValues: [] },
+        { value: 0, level: 0, procOrders: [], procValues: [] },
+        { value: 0, level: 0, procOrders: [], procValues: [] },
+        { value: 0, level: 0, procOrders: [], procValues: [] }
+      ],
+      set: '',
+      mainStatValue: 0,
+      savedArtifactId: undefined,
+      savedArtifactName: undefined
+    }));
+    
+    setCurrentSetIcon("https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png");
+    showTankMessage && showTankMessage(`🔄 ${slot} remis à zéro !`, true);
+    recalculateStatsFromArtifacts && recalculateStatsFromArtifacts();
+  };
+
+  // Fonction de sélection depuis la librairie (inchangée)
+  const handleSelectFromLibrary = (selectedArtifact) => {
+    onArtifactChange(() => ({
+      mainStat: selectedArtifact.mainStat,
+      subStats: selectedArtifact.subStats,
+      subStatsLevels: selectedArtifact.subStatsLevels,
+      set: selectedArtifact.set,
+      mainStatValue: selectedArtifact.mainStatValue,
+      savedArtifactId: selectedArtifact.id,
+      savedArtifactName: selectedArtifact.name
+    }));
+    
+    setCurrentSetIcon(
+      getSetIcon(selectedArtifact.set, title) || 
+      "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png"
+    );
+    
+    recalculateStatsFromArtifacts && recalculateStatsFromArtifacts();
+    showTankMessage && showTankMessage(`📦 "${selectedArtifact.name}" chargé !`, true);
+    
+    setShowLibrary(false);
+    setLibrarySlot(null);
+  };
+
+  const handleOpenLibrary = (slot) => {
+    setLibrarySlot(slot);
+    setShowLibrary(true);
+  };
+
+  useEffect(() => {
     if (artifactData && artifactData.mainStat) {
       setLocalMainStat(artifactData.mainStat);
     }
   }, [artifactData?.mainStat]);
 
-useEffect(() => {
+  useEffect(() => {
     if (artifactData && artifactData.set) {
       const newIcon = getSetIcon(artifactData.set, title);
       setCurrentSetIcon(
@@ -308,35 +311,28 @@ useEffect(() => {
     }
   }, [artifactData?.set, title]);
 
-useEffect(() => {
-  if (artifactData && artifactData.mainStat !== undefined) {
-    setLocalMainStat(artifactData.mainStat || '');
-  }
-}, [artifactData?.mainStat]);
+  useEffect(() => {
+    if (artifactData && artifactData.mainStat !== undefined) {
+      setLocalMainStat(artifactData.mainStat || '');
+    }
+  }, [artifactData?.mainStat]);
 
-const handleSaveSet = (slot) => {
-  
-  if (!shouldShowSave(artifactData)) {
-    showTankMessage && showTankMessage("❌ Artefact incomplet !");
-    return;
-  }
-  
-  setShowSavePopup(true);
-};
+  const handleSaveSet = (slot) => {
+    if (!shouldShowSave(artifactData)) {
+      showTankMessage && showTankMessage("❌ Artefact incomplet !");
+      return;
+    }
+    setShowSavePopup(true);
+  };
 
-// Ajoute cette fonction pour gérer la sauvegarde :
-const handleArtifactSave = (saveData) => {
-  
-  // On va l'envoyer au parent BuilderBeru.jsx
-  if (onArtifactSave) {
-    onArtifactSave(saveData);
-  }
-  
-  showTankMessage && showTankMessage(`💾 "${saveData.name}" sauvé !`);
-};
+  const handleArtifactSave = (saveData) => {
+    if (onArtifactSave) {
+      onArtifactSave(saveData);
+    }
+    showTankMessage && showTankMessage(`💾 "${saveData.name}" sauvé !`);
+  };
 
   const updateArtifactMainStat = (newValue) => {
-    // 🔧 Propager la mise à jour au parent (si nécessaire)
     setArtifactsData(prev => ({
       ...prev,
       mainStat: newValue
@@ -344,41 +340,23 @@ const handleArtifactSave = (saveData) => {
   };
 
   const shouldShowComparison = (artifact) => {
-  // 🛡️ PROTECTION KAISEL
-  if (!artifact || typeof artifact !== 'object') return false;
+    if (!artifact || typeof artifact !== 'object') return false;
     const totalProcs = artifact.subStatsLevels?.reduce((sum, s) => sum + (s?.level || 0), 0);
     const allProcsDone = totalProcs === 4;
     const allStatsSelected = artifact.mainStat && artifact.subStats?.every(s => s !== '');
-
     return allProcsDone && allStatsSelected;
   };
 
- const shouldShowSave = (artifact) => {
-  // 🛡️ PROTECTION KAISEL
-  if (!artifact || typeof artifact !== 'object') return false;
-  
-  // 1. Set choisi
-  const hasSet = artifact.set && artifact.set !== '';
-  
-  // 2. Main stat sélectionnée
-  const hasMainStat = artifact.mainStat && artifact.mainStat !== '';
-  
-  // 3. Toutes les substats sélectionnées (4 substats non-vides)
-  const allSubStatsSelected = artifact.subStats?.every(s => s && s !== '') && artifact.subStats?.length === 4;
+  const shouldShowSave = (artifact) => {
+    if (!artifact || typeof artifact !== 'object') return false;
+    const hasSet = artifact.set && artifact.set !== '';
+    const hasMainStat = artifact.mainStat && artifact.mainStat !== '';
+    const allSubStatsSelected = artifact.subStats?.every(s => s && s !== '') && artifact.subStats?.length === 4;
+    const totalProcs = artifact.subStatsLevels?.reduce((sum, s) => sum + (s?.level || 0), 0);
+    const allProcsDone = totalProcs === 4;
+    return hasSet && hasMainStat && allSubStatsSelected && allProcsDone;
+  };
 
-  
-  // 4. Total de 4 procs
-  const totalProcs = artifact.subStatsLevels?.reduce((sum, s) => sum + (s?.level || 0), 0);
-  const allProcsDone = totalProcs === 4;
-
-  
-  const canSave = hasSet && hasMainStat && allSubStatsSelected && allProcsDone;
-
-  
-  return canSave;
-};
-
-  // Mise à jour de la fonction getSubstatHint
   const getSubstatHint = (stat, subStatData) => {
     if (!stat || !subStatData) return '';
 
@@ -403,8 +381,6 @@ const handleArtifactSave = (saveData) => {
     }
 
     const ranges = substatsMinMaxByIncrements[stat];
-    // const { min, max } = ranges[nextProcOrder];
-    // const value = Math.random() * (max - min) + min;
     const orders = subStatData.procOrders;
     const values = subStatData.procValues;
 
@@ -426,11 +402,6 @@ const handleArtifactSave = (saveData) => {
 
     return hint;
   };
-
-
-
-
-
 
   const handleMainStatChange = (e) => {
     setArtifactsData(prev => {
@@ -454,9 +425,8 @@ const handleArtifactSave = (saveData) => {
       return newData;
     });
   };
+  
   const totalSubStatLevels = (artifactData?.subStatsLevels || []).reduce((sum, s) => sum + (s?.level || 0), 0);
-
-
 
   const getInitialSubstatValue = (statName) => {
     const config = substatsMinMaxByIncrements[statName];
@@ -466,7 +436,7 @@ const handleArtifactSave = (saveData) => {
     return subStatData.stat?.includes("%") ? +rawValue.toFixed(2) : (rawValue);
   };
 
-  // const handleManualSubStatChange = (index, e) => {
+  // 🔥 VERSION OPTIMISÉE DE handleManualSubStatChange
   const handleManualSubStatChange = (index, parsedValue) => {
     const newValue = parsedValue === null || isNaN(parsedValue) ? 0 : parsedValue;
     if (isNaN(newValue)) return;
@@ -483,26 +453,21 @@ const handleArtifactSave = (saveData) => {
         procValues: current.procValues || []
       };
 
-      // Créer un nouvel état temporaire pour recalculer proprement
       const newState = {
         ...prev,
         subStatsLevels: newLevels,
       };
 
-      // Recalculer le score
       const baseScore = getTheoreticalScore(
         hunter,
         {
           ...newState,
-          title, // ← très important pour savoir quel type d'artefact
+          title,
         },
         substatsMinMaxByIncrements
       );
 
-      // Stocker le score recalculé (si tu veux l’utiliser ailleurs)
       newState.score = baseScore;
-
-      // Optionnel : met à jour les stats affichées en bas si nécessaire
       recalculateStatsFromArtifacts(newState);
 
       return newState;
@@ -514,10 +479,8 @@ const handleArtifactSave = (saveData) => {
       const newSubStats = [...prev.subStats];
       const newSubStatsLevels = [...prev.subStatsLevels];
 
-      // 🛡️ Si l'utilisateur remet la stat à une valeur par défaut (vide ou Substat 1/2/3/4)
       if (!value || value.includes('Substat') || value.includes('Select')) {
         newSubStats[index] = '';
-
         newSubStatsLevels[index] = {
           level: 0,
           value: 0,
@@ -530,10 +493,8 @@ const handleArtifactSave = (saveData) => {
           subStats: newSubStats,
           subStatsLevels: newSubStatsLevels,
         };
-
       }
 
-      // 🧮 Sinon, on initialise normalement la nouvelle stat
       newSubStats[index] = value;
 
       const ranges = substatsMinMaxByIncrements[value];
@@ -555,13 +516,12 @@ const handleArtifactSave = (saveData) => {
     });
   };
 
-
   const getRandomProcValue = (stat, procOrder) => {
     const ranges = substatsMinMaxByIncrements[stat]?.[procOrder];
     if (!ranges) return 0;
     const { min, max } = ranges;
-     // Appliquer la règle de formatage selon si c'est un pourcentage ou non
-  return stat.includes('%') ? +rawValue.toFixed(2) : Math.round(rawValue);
+    const rawValue = Math.random() * (max - min) + min;
+    return stat.includes('%') ? +rawValue.toFixed(2) : Math.round(rawValue);
   };
 
   const getNextProcOrder = (allProcOrders) => {
@@ -571,7 +531,6 @@ const handleArtifactSave = (saveData) => {
     return null;
   };
 
-  // Handle incrémentation substat
   const handleIncreaseSubStat = (idx) => {
     setArtifactsData(prev => {
       const totalProcs = (prev.subStatsLevels || []).reduce(
@@ -602,8 +561,8 @@ const handleArtifactSave = (saveData) => {
       const rawProc = Math.random() * (ranges[procOrder].max - ranges[procOrder].min) + ranges[procOrder].min;
       const procValue = stat.includes('%') ? +rawProc.toFixed(2) : Math.round(rawProc);
       const newValue = stat.includes('%')
-      ? +(current.value + procValue).toFixed(2)
-      : Math.round(current.value + procValue);
+        ? +(current.value + procValue).toFixed(2)
+        : Math.round(current.value + procValue);
 
       const newProcOrders = [...current.procOrders, procOrder];
       const newProcValues = [...(current.procValues || []), procValue];
@@ -621,21 +580,11 @@ const handleArtifactSave = (saveData) => {
         subStatsLevels: newSubStatsLevels,
       };
 
-      // Recalcul stats
       recalculateStatsFromArtifacts(newState);
 
-      // Envoie message de Tank
       if (procValue > 7) showTankMessage('🔥 OP roll!');
       else if (procValue < 5) showTankMessage('💩 Weak roll...');
       else showTankMessage('😎 Decent!');
-
-      // 💡 Ajout d'un indicateur temporaire pour mettre à jour le champ visuel
-      setTimeout(() => {
-        setInputValues(prev => ({
-          ...prev,
-          [idx]: stat.includes('%') ? newValue.toFixed(2) : (newValue).toString()
-        }));
-      }, 0);
 
       return newState;
     });
@@ -683,7 +632,6 @@ const handleArtifactSave = (saveData) => {
     );
   };
 
-  // Handle désincrémentation substat
   const handleDecreaseSubStat = (idx) => {
     setArtifactsData(prev => {
       const stat = prev.subStats[idx];
@@ -708,71 +656,49 @@ const handleArtifactSave = (saveData) => {
       };
 
       recalculateStatsFromArtifacts(newState);
-
-      // ⚠️ On évite le crash React en décalant le setInputValues
-      setTimeout(() => {
-        setInputValues(prev => ({
-          ...prev,
-          [idx]: stat.includes('%')
-            ? updatedValue.toFixed(2)
-            : Math.floor(updatedValue).toString()
-        }));
-      }, 0);
-
       return newState;
     });
   };
-
 
   return (
     <div className="artifact-card bg-[#0b0b1f] w-75 p-[1px] rounded-lg shadow-md text-white">
       <div className="flex justify-between items-center mb-[2px]">
         <h2 className="text-base font-bold">{t(`titleArtifact.${title}`)}</h2>
         <div className="flex items-center gap-1">
-  
+          <img
+            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750335621/chooseSet_fo08yb.png"
+            onClick={() => handleOpenLibrary(title)}
+            alt="Charger un set existant"
+            className="w-4 h-4 cursor-pointer hover:scale-110 transition"
+            title="Charger un set existant"
+          />
 
-{/* Icône pour charger un set (ANCIEN NOM, NOUVELLE FONCTION) */}
-<img
-  src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750335621/chooseSet_fo08yb.png"
-  onClick={() => handleOpenLibrary(title)} // 👈 GARDE LE TITLE !
-  alt="Charger un set existant"
-  className="w-4 h-4 cursor-pointer hover:scale-110 transition"
-  title="Charger un set existant"
-/>
+          <img
+            src={currentSetIcon}
+            onClick={() => onSetIconClick(title)}
+            alt={(artifactData && artifactData.set) || "Sélectionner un Set"}
+            title={(artifactData && artifactData.set) || "Choisir un Set"}
+            className="w-5 h-5 cursor-pointer hover:scale-110 transition"
+          />
 
+          <img
+            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750356736/resetArtifact_eobh2e.png"
+            onClick={() => handleResetArtifact(title)}
+            alt="Reset Artifact"
+            title="Reset Artifact"
+            className="w-4 h-4 cursor-pointer hover:scale-110 transition"
+          />
 
-
-   {/* Bouton d’ouverture de set (avec ou sans set existant) */}
-<img
-  src={currentSetIcon}
-  onClick={() => onSetIconClick(title)}
-  alt={(artifactData && artifactData.set) || "Sélectionner un Set"}     // ← PROTÉGÉ
-  title={(artifactData && artifactData.set) || "Choisir un Set"}        // ← PROTÉGÉ
-  className="w-5 h-5 cursor-pointer hover:scale-110 transition"
-/>
-
- {/* 🔥 NOUVEAU BOUTON RESET - À DROITE DU DIAMANT */}
-    <img
-      src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750356736/resetArtifact_eobh2e.png"
-      onClick={() => handleResetArtifact(title)}
-      alt="Reset Artifact"
-      title="Reset Artifact"
-      className="w-4 h-4 cursor-pointer hover:scale-110 transition"
-    />
-
-   
- {/* Icône du save - CONDITIONNELLE */}
-{shouldShowSave(artifactData) && (
-  <img
-    src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750335754/saveSet_gp2hfr.png"
-    onClick={() => handleSaveSet(title)}
-    alt="Save le set"
-    className="w-4 h-4 cursor-pointer hover:scale-110 transition"
-    title="Save le set"
-  />
-)}
-
-  </div>
+          {shouldShowSave(artifactData) && (
+            <img
+              src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750335754/saveSet_gp2hfr.png"
+              onClick={() => handleSaveSet(title)}
+              alt="Save le set"
+              className="w-4 h-4 cursor-pointer hover:scale-110 transition"
+              title="Save le set"
+            />
+          )}
+        </div>
         <div className="flex items-center gap-2">
           {shouldShowComparison(artifactData) && !disableComparisonButton && (
             <div className="w-5 h-5 rounded-full from-[#3b3b9c] to-[#6c63ff] flex items-center justify-center text-white text-[10px] shadow-sm hover:scale-110 transition-transform">
@@ -795,8 +721,8 @@ const handleArtifactSave = (saveData) => {
           value={localMainStat}
           onChange={(e) => {
             const selectedValue = e.target.value;
-            setLocalMainStat(selectedValue); // ⚡ Mise à jour visuelle
-            updateArtifactMainStat(selectedValue); // 🔁 Mise à jour logique
+            setLocalMainStat(selectedValue);
+            updateArtifactMainStat(selectedValue);
           }}
           className="w-full p-[1px] rounded bg-[#1c1c3c] text-xs"
         >
@@ -809,16 +735,17 @@ const handleArtifactSave = (saveData) => {
         </select>
 
         {(artifactData && artifactData.mainStat) && (
-  <input
-    type="text"
-    value={
-      (artifactData && artifactData.mainStat && artifactData.subStatsLevels)
-        ? calculateMainStatValue(artifactData.mainStat, artifactData.subStatsLevels)
-        : 0
-    }
-    className="w-16 p-[2px] rounded bg-[#2d2d5c] text-center text-xs text-white opacity-80 cursor-not-allowed"
-  />
-)}
+          <input
+            type="text"
+            value={
+              (artifactData && artifactData.mainStat && artifactData.subStatsLevels)
+                ? calculateMainStatValue(artifactData.mainStat, artifactData.subStatsLevels)
+                : 0
+            }
+            className="w-16 p-[2px] rounded bg-[#2d2d5c] text-center text-xs text-white opacity-80 cursor-not-allowed"
+            readOnly
+          />
+        )}
       </div>
 
       {/* SUBSTATS */}
@@ -860,69 +787,29 @@ const handleArtifactSave = (saveData) => {
                     handleIncreaseSubStat(idx);
                   }
                 }}
-                className={`w-4 h-4 select-none ${artifactData.subStatsLevels[idx].level >= 4 || totalSubStatLevels >= 4
+                className={`w-4 h-4 select-none ${
+                  artifactData.subStatsLevels[idx].level >= 4 || totalSubStatLevels >= 4
                     ? 'opacity-30 cursor-not-allowed'
                     : 'cursor-pointer hover:scale-105 transition'
-                  }`}
+                }`}
               />
               <span className="w-6 text-center text-sm">{`+${artifactData.subStatsLevels[idx].level}`}</span>
 
-              {/* INPUT + TOOLTIP */}
+              {/* 🔥 NOUVEL INPUT OPTIMISÉ */}
               <div className="relative">
                 <input
                   type="text"
-                  className="w-16 p-[1px] rounded bg-[#1c1c3c] text-center text-xs"
-                  value={
-  inputValues[idx] !== undefined
-    ? inputValues[idx]
-    : (() => {
-        const val = artifactData.subStatsLevels[idx]?.value || 0;
-        return artifactData.subStats[idx]?.includes('%')
-          ? val.toFixed(2)
-          : Number.isInteger(val)
-            ? val
-            : Math.round(val);
-      })()
-}
-                  onChange={(e) => {
-                    let raw = e.target.value;
-
-                    // 🔒 Étape 1 : caractères valides seulement
-                    raw = raw.replace(/[^0-9.,]/g, '');
-                    raw = raw.replace(/,/g, '.');
-
-                    const allowDecimal = artifactData.subStats[idx]?.includes('%');
-
-                    // 🔁 Garder un seul point
-                    const parts = raw.split('.');
-                    if (parts.length > 2) {
-                      raw = parts[0] + '.' + parts[1];
-                    }
-
-                    // ✂️ Limiter à 2 décimales
-                    if (allowDecimal && raw.includes('.')) {
-                      const [intPart, decPart] = raw.split('.');
-                      raw = intPart + '.' + decPart.slice(0, 2);
-                    }
-
-                    // 💾 Maj visuelle de l’input
-                    setInputValues(prev => ({ ...prev, [idx]: raw }));
-
-                    // 💣 On accepte temporairement champ vide sans appliquer
-                    if (raw === '') return;
-
-                    // 🧠 Nettoyage et parse
-                    const cleaned = allowDecimal ? raw : raw.replace(/\./g, '');
-                    const parsed = parseFloat(cleaned);
-                    raw = cleaned;
-
-                    if (!isNaN(parsed)) {
-                      handleManualSubStatChange(idx, parsed);
-                    }
-                  }}
+                  className="w-16 p-[1px] rounded bg-[#1c1c3c] text-center text-xs focus:bg-[#2d2d5c] focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                  value={getDisplayValue(idx)}
+                  onChange={(e) => handleInputChange(idx, e.target.value)}
+                  onFocus={() => handleInputFocus(idx)}
+                  onBlur={() => handleInputBlur(idx)}
                   onMouseEnter={() => setHoveredIndex(idx)}
                   onMouseLeave={() => setHoveredIndex(null)}
+                  placeholder="0"
                 />
+                
+                {/* TOOLTIP */}
                 {hoveredIndex === idx && (
                   <div
                     className="absolute z-50 text-xs p-2 rounded shadow-lg ml-2"
@@ -942,32 +829,33 @@ const handleArtifactSave = (saveData) => {
               </div>
             </>
           )}
-          
         </div>
       ))}
-        {/* Popup de sauvegarde */}
-    {showSavePopup && (
-      <ArtifactSavePopup
-        artifactData={artifactData}
-        slot={title}
-        onSave={handleArtifactSave}
-        onClose={() => setShowSavePopup(false)}
-        hunter={hunter?.name || 'unknown'}
-      />
-    )}
-    {/* Librairie avec le bon slot */}
-{showLibrary && librarySlot && (
-  <ArtifactLibrary
-    slot={librarySlot} // 👈 UTILISE LE SLOT STOCKÉ !
-    onSelect={handleSelectFromLibrary}
-    onClose={() => {
-      setShowLibrary(false);
-      setLibrarySlot(null); // 👈 RESET
-    }}
-    artifactLibrary={artifactLibrary}
-    activeAccount={activeAccount}
-  />
-)}
+
+      {/* Popup de sauvegarde */}
+      {showSavePopup && (
+        <ArtifactSavePopup
+          artifactData={artifactData}
+          slot={title}
+          onSave={handleArtifactSave}
+          onClose={() => setShowSavePopup(false)}
+          hunter={hunter?.name || 'unknown'}
+        />
+      )}
+
+      {/* Librairie avec le bon slot */}
+      {showLibrary && librarySlot && (
+        <ArtifactLibrary
+          slot={librarySlot}
+          onSelect={handleSelectFromLibrary}
+          onClose={() => {
+            setShowLibrary(false);
+            setLibrarySlot(null);
+          }}
+          artifactLibrary={artifactLibrary}
+          activeAccount={activeAccount}
+        />
+      )}
     </div>
   );
 }
