@@ -107,7 +107,8 @@ const ArtifactCard = ({
   mode = "edit",
   disableComparisonButton = false,
   artifactLibrary,
-  activeAccount
+  activeAccount,
+  onScoreCalculated // ← NOUVEAU PROP CALLBACK
 }) => {
   const { t } = useTranslation();
 
@@ -711,7 +712,7 @@ const ArtifactCard = ({
               </button>
             </div>
           )}
-          <ArtifactScoreBadge artifact={{ ...artifactData, title }} hunter={hunter} substatsMinMaxByIncrements={substatsMinMaxByIncrements} />
+          <ArtifactScoreBadge artifact={{ ...artifactData, title }} hunter={hunter} substatsMinMaxByIncrements={substatsMinMaxByIncrements} onScoreCalculated={onScoreCalculated}/>
         </div>
       </div>
 

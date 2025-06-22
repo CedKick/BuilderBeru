@@ -18,7 +18,9 @@ const BeruInteractionMenu = ({
   currentCores = {},
   currentGems = {},
   multiAccountsData = {}, // Pour les comparaisons
-   onReportGenerated // ← NOUVEAU PROP
+   onReportGenerated, // ← NOUVEAU PROP
+   substatsMinMaxByIncrements,
+   existingScores = {} // ← NOUVEAU PROP
 }) => {
   const [showMenu, setShowMenu] = useState(true);
   const [animationClass, setAnimationClass] = useState('');
@@ -285,15 +287,19 @@ const BeruInteractionMenu = ({
         break;
 
       case 'stat_optimization':
-        performIntelligentAnalysis(
-          selectedCharacter,
-          currentArtifacts,
-          showTankMessage,
-          onClose,
-          onReportGenerated // ← PASSER LE CALLBACK
-        );
-        onClose(); // Ferme le menu immédiatement
-        break;
+  console.log("🔥 KAISEL: existingScores reçus dans BeruMenu:", existingScores);
+  
+  performIntelligentAnalysis(
+    selectedCharacter,
+    currentArtifacts,
+    showTankMessage,
+    onClose,
+    onReportGenerated,
+    substatsMinMaxByIncrements,
+    existingScores // ← PASSER LES SCORES EXISTANTS !
+  );
+  onClose();
+  break;
       case 'compare_builds':
         const similarBuilds = findSimilarBuilds(selectedCharacter);
         let compareMessage = `⚖️ **COMPARAISON BUILDS - ${characters[selectedCharacter]?.name || 'Hunter'}**\n\n`;
@@ -391,14 +397,14 @@ const BeruInteractionMenu = ({
               `}</style>
 
       {/* Container principal */}
-      <div
-        className="beru-bubble-menu fixed z-[9999] bubble-container"
-        style={{
-          left: position.x,
-          top: position.y,
-          transform: 'translate(-50%, -50%)'
-        }}
-      >
+     <div
+  className="beru-bubble-menu fixed z-[9999] bubble-container"
+  style={{
+    // 🔥 SUPPRIME les -50 ! Le translate(-50%, -50%) s'en charge déjà
+    left: position.x,  // ← SANS -50
+    top: position.y    // ← SANS -50
+  }}
+>
         {/* Centre de Beru - COULEUR DYNAMIQUE SELON LE SUBMENU */}
         <div
           className={`absolute w-6 h-6 rounded-full animate-pulse shadow-lg border-2 border-white ${currentSubMenu === 'advice' ? 'bg-green-500/80' : 'bg-red-500/80'

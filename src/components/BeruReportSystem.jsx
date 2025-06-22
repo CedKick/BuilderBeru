@@ -35,9 +35,14 @@ const GoldenPapyrusIcon = ({ onClick, isVisible }) => {
                         className="w-full h-full object-contain drop-shadow-2xl filter brightness-110"
                     />
                     
-                    {/* Badge notification */}
-                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-bounce">
-                        !
+                    {/* Badge fermeture ou notification */}
+                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold hover:bg-red-600 cursor-pointer transition-colors"
+                         onClick={(e) => {
+                             e.stopPropagation();
+                             // Si déjà vu, fermer définitivement
+                             setIsVisible(false);
+                         }}>
+                        ✕
                     </div>
                 </div>
             </motion.div>
@@ -281,13 +286,33 @@ const ReportCard = ({ report, isActive, scoreColor }) => {
                 {/* Section Priorité critique */}
                 {report.criticalPriority && (
                     <div className="bg-slate-800/30 rounded-lg p-4">
-                        <h4 className="text-lg font-semibold text-orange-400 mb-3">🚨 Priorité Absolue</h4>
+                        <h4 className="text-lg font-semibold text-orange-400 mb-3">
+                            {report.criticalPriority.missingCount > 0 ? '🚨 PRIORITÉ ABSOLUE - ARTEFACTS MANQUANTS' : '🚨 Priorité Absolue'}
+                        </h4>
                         <div className="bg-orange-900/20 rounded p-3">
-                            <p className="font-semibold text-white">{report.criticalPriority.slot}</p>
-                            <p className="text-orange-400">Score: {report.criticalPriority.score}/100</p>
-                            <div className="text-sm text-slate-300 mt-2">
-                                {report.criticalPriority.issues.join(' • ')}
-                            </div>
+                            {report.criticalPriority.missingCount > 0 ? (
+                                <>
+                                    <p className="font-semibold text-white text-lg">
+                                        {report.criticalPriority.missingCount} ARTEFACTS MANQUANTS
+                                    </p>
+                                    <p className="text-orange-400 mb-2">
+                                        Slots vides : {report.criticalPriority.missingSlots?.join(', ')}
+                                    </p>
+                                    <div className="text-sm text-slate-300 mt-2 bg-red-900/30 p-2 rounded">
+                                        <strong>⚠️ BÉRU RECOMMANDE :</strong><br/>
+                                        Équipe ces {report.criticalPriority.missingCount} slots AVANT toute optimisation !<br/>
+                                        Un Hunter incomplet ne peut pas révéler son potentiel !
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="font-semibold text-white">{report.criticalPriority.slot}</p>
+                                    <p className="text-orange-400">Score: {report.criticalPriority.score}/100</p>
+                                    <div className="text-sm text-slate-300 mt-2">
+                                        {report.criticalPriority.issues?.join(' • ')}
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 )}

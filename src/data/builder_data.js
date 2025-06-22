@@ -4,487 +4,595 @@
 
 const BUILDER_DATA = {
   "niermann": {
-    "name": "Lennart Niermann",
-    "element": "Water",
-    "class": "Fighter", 
-    "grade": "SSR",
-    "scaleStat": "Defense",
+  "name": "Lennart Niermann",
+  "element": "Water",
+  "class": "Fighter", 
+  "grade": "SSR",
+  "scaleStat": "Defense",
 
-    // 🎯 PRIORITÉS D'OPTIMISATION - LOGIQUE UNIFIÉE
-    "optimizationPriority": [
-      {
-        stat: "Additional Defense",
-        priority: 1,
-        target: "maximum_possible",
-        reason: "Prioriser Defense au maximum (scaleStat)",
-        description: "Niermann scale sur Defense - maximise cette stat avant tout"
-      },
-      {
-        stat: "Damage Increase",
-        priority: 2,
-        target: "maximum_possible",
-        reason: "Dégâts optimaux"
-      },
-      {
-        stat: "Critical Hit Damage",
-        priority: 3,
-        target: "200%+",
-        reason: "Dégâts critiques optimaux"
-      },
-      {
-        stat: "Critical Hit Rate",
-        priority: 4,
-        target: 5000, // 50% minimum pour tank
-        reason: "Taux critique pour contre-attaques"
-      },
-      {
-        stat: "Defense Penetration",
-        priority: 5,
-        target: "10-20%",
-        reason: "Pénétration pour efficacité"
-      }
-    ],
-
-    // 📊 STATS RECOMMANDÉES (optimisées BuilderBeru)
-    "recommendedStats": {
-      "criticalHitRate": "50%",
-      "criticalHitDamage": "200% - 210%",
-      "healingIncrease": "30% +",
-      "defensePenetration": "10% - 20%",
-      "additionalDefense": "Le plus possible",
-      "additionalAttack": null,
-      "precision": null,
-      "damageReduction": null,
-      "healingReceived": null,
-      "mpRecoveryRate": null,
-      "mpCostReduction": null
+  // 🎯 PRIORITÉS D'OPTIMISATION - LOGIQUE UNIFIÉE (inchangé)
+  "optimizationPriority": [
+    {
+      stat: "Additional Defense",
+      priority: 1,
+      target: "maximum_possible",
+      reason: "Prioriser Defense au maximum (scaleStat)",
+      description: "Niermann scale sur Defense - maximise cette stat avant tout"
     },
-
-    // 🎮 MODES DE JEU & SETS
-    "gameModes": {
-      "general": {
-        "recommendedSet": "Iron Will", 
-        "priority": "Defense focused tank build",
-        "description": "Build polyvalent défensif",
-        "availability": "L"
-      },
-      "pod": {
-        "recommendedSet": "Stigma Chaotic", 
-        "priority": "PvP survivability", 
-        "description": "Build PvP axé survie",
-        "availability": "missing"
-      },
-      "bdg": {
-        "recommendedSet": "Stigma Chaotic", 
-        "priority": "Guild boss tanking",
-        "description": "Build boss de guilde",
-        "availability": "missing"
-      }
+    {
+      stat: "Damage Increase",
+      priority: 2,
+      target: "maximum_possible",
+      reason: "Dégâts optimaux"
     },
-
-    // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS
-    "artifactSets": {
-      "ironWill": {
-        "name": "Iron Will",
-        "frenchName": "Volonté de fer",
-        "availability": "L",
-        "pieces": {
-          "helmet": "Casque de la volonté de fer",
-          "armor": "Armure de la volonté de fer", 
-          "gloves": "Gants de la volonté de fer",
-          "boots": "Bottes de la volonté de fer",
-          "necklace": "Collier en obsidienne",
-          "bracelet": "Bracelet en obsidienne", 
-          "ring": "Bague en obsidienne",
-          "earrings": "Boucles d'oreilles en obsidienne"
-        },
-        "mainStats": {
-          "helmet": "Additional Defense",
-          "armor": "Additional Defense",  
-          "gloves": "Additional Attack",
-          "boots": "Critical Hit Damage",
-          "necklace": "Additional Defense",
-          "bracelet": "Wind Damage %",
-          "ring": "Additional Defense",
-          "earrings": "Additional MP"
-        }
-      },
-      "stigmaChaotic": {
-        "name": "Stigma Chaotic",
-        "frenchName": "Stigmate chaotique",
-        "availability": "missing",
-        "pieces": {
-          "helmet": "Casque du Stigmate chaotique",
-          "armor": "Armure du Stigmate chaotique",
-          "gloves": "Gants du Stigmate chaotique", 
-          "boots": "Bottes du Stigmate chaotique",
-          "necklace": "Collier du Stigmate chaotique",
-          "bracelet": "Bracelet du Stigmate chaotique",
-          "ring": "Bague du Stigmate chaotique", 
-          "earrings": "Boucles d'oreilles du Stigmate chaotique"
-        },
-        "mainStats": {
-          "helmet": "Additional Defense",
-          "armor": "Additional Defense",
-          "gloves": "Additional Attack", 
-          "boots": "Critical Hit Damage",
-          "necklace": "Additional Defense",
-          "bracelet": "Wind Damage %",
-          "ring": "Additional Defense", 
-          "earrings": "Additional MP"
-        }
-      }
+    {
+      stat: "Critical Hit Damage",
+      priority: 3,
+      target: "200%+",
+      reason: "Dégâts critiques optimaux"
     },
-
-    // 🧪 NOYAUX RECOMMANDÉS
-    "recommendedCores": {
-      "offensive": {
-        "name": "Trompette du Démon Anonyme",
-        "type": "Additional Attack",
-        "bonus": "Lors de l'utilisation de la Compétence ultime, les Dégâts de coup critique de l'utilisateur augmentent de 30% pendant 8 secondes"
-      },
-      "defensive": {
-        "name": "Corne du Démon Anonyme", 
-        "type": "Additional Defense",
-        "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
-      },
-      "endurance": {
-        "name": "Dents du Veilleur",
-        "type": "Additional MP",
-        "bonus": "Diminue le taux de récupération de PM de 15% et la Consommation de PM de 15% lors de l'utilisation d'une compétence"
-      }
+    {
+      stat: "Critical Hit Rate",
+      priority: 4,
+      target: 5000, // 50% minimum pour tank
+      reason: "Taux critique pour contre-attaques"
     },
+    {
+      stat: "Defense Penetration",
+      priority: 5,
+      target: "10-20%",
+      reason: "Pénétration pour efficacité"
+    }
+  ],
 
-    // 💡 CONSEILS BÉRU
-    "beruAdvice": {
-      "newbie": "Niermann est un tank défensif. Priorise Additional Defense au maximum !",
-      "intermediate": "Scale sur Defense = focus Additional Defense, puis Damage Increase.",
-      "advanced": "Balance entre défense pure et dégâts pour les boss de guilde.",
-      "expert": "Switch entre Iron Will (général) et Stigma Chaotic (PvP/BdG) selon le contenu."
+  // 📊 STATS RECOMMANDÉES (inchangé)
+  "recommendedStats": {
+    "criticalHitRate": "50%",
+    "criticalHitDamage": "200% - 210%",
+    "healingIncrease": "30% +",
+    "defensePenetration": "10% - 20%",
+    "additionalDefense": "Le plus possible",
+    "additionalAttack": null,
+    "precision": null,
+    "damageReduction": null,
+    "healingReceived": null,
+    "mpRecoveryRate": null,
+    "mpCostReduction": null
+  },
+
+  // 🎮 MODES DE JEU & SETS - KAISEL FIX COMPLET
+  "gameModes": {
+    "general": {
+      "recommendedSet": "Hybrid Iron Will/Outstanding", // ← SET 1
+      "priority": "Balanced tank build",
+      "description": "Build tank équilibré défensif",
+      "availability": "L",
+      "setComposition": "4x Iron Will + 4x Outstanding Ability"
+    },
+    "pod": {
+      "recommendedSet": "Full Chaotic Infamy", // ← SET 2
+      "priority": "PvP maximum survivability",
+      "description": "Build PvP survie maximum",
+      "availability": "LR",
+      "setComposition": "8x Chaotic Infamy"
+    },
+    "bdg": {
+      "recommendedSet": "Full Chaotic Infamy", // ← SET 2 aussi
+      "priority": "Guild boss tanking",
+      "description": "Build boss de guilde tank",
+      "availability": "LR",
+      "setComposition": "8x Chaotic Infamy"
     }
   },
+
+  // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS - KAISEL FIX 2 BUILDS
+  "artifactSets": {
+    "hybridIronWillOutstanding": {
+      "name": "Hybrid Iron Will/Outstanding",
+      "frenchName": "Hybride Volonté/Remarquable",
+      "availability": "L",
+      "setComposition": "4x Iron Will + 4x Outstanding Ability",
+      "pieces": {
+        "helmet": "Casque de la volonté de fer",        // Iron Will
+        "armor": "Armure de la volonté de fer",         // Iron Will
+        "gloves": "Gants de la volonté de fer",         // Iron Will
+        "boots": "Bottes de la volonté de fer",         // Iron Will
+        "necklace": "Collier en obsidienne",            // Outstanding Ability
+        "bracelet": "Bracelet en obsidienne",           // Outstanding Ability
+        "ring": "Bague en obsidienne",                  // Outstanding Ability
+        "earrings": "Boucles d'oreilles en obsidienne" // Outstanding Ability
+      },
+      "mainStats": {
+        "helmet": "Additional Defense",
+        "armor": "Additional Defense",  
+        "gloves": "Additional Attack",
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional Defense",
+        "bracelet": "Water Damage %",
+        "ring": "Additional Defense",
+        "earrings": "Additional MP"
+      }
+    },
+    "fullChaoticInfamy": {
+      "name": "Full Chaotic Infamy",
+      "frenchName": "Infamie chaotique complète",
+      "availability": "LR",
+      "setComposition": "8x Chaotic Infamy",
+      "pieces": {
+        "helmet": "Casque d'infamie chaotique",
+        "armor": "Armure d'infamie chaotique",
+        "gloves": "Gants d'infamie chaotique",
+        "boots": "Bottes d'infamie chaotique",
+        "necklace": "Collier d'infamie chaotique",
+        "bracelet": "Bracelet d'infamie chaotique",
+        "ring": "Bague d'infamie chaotique",
+        "earrings": "Boucles d'oreilles d'infamie chaotique"
+      },
+      "mainStats": {
+        "helmet": "Additional Defense",
+        "armor": "Additional Defense",
+        "gloves": "Additional Attack",
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional Defense",
+        "bracelet": "Water Damage %",
+        "ring": "Additional Defense",
+        "earrings": "Additional MP"
+      }
+    },
+    // 🔥 KAISEL: GARDER AUSSI L'ANCIEN IRON WILL POUR COMPATIBILITÉ
+    "ironWill": {
+      "name": "Iron Will",
+      "frenchName": "Volonté de fer",
+      "availability": "L",
+      "setComposition": "8x Iron Will (build de base)",
+      "pieces": {
+        "helmet": "Casque de la volonté de fer",
+        "armor": "Armure de la volonté de fer", 
+        "gloves": "Gants de la volonté de fer",
+        "boots": "Bottes de la volonté de fer",
+        "necklace": "Collier en obsidienne",
+        "bracelet": "Bracelet en obsidienne", 
+        "ring": "Bague en obsidienne",
+        "earrings": "Boucles d'oreilles en obsidienne"
+      },
+      "mainStats": {
+        "helmet": "Additional Defense",
+        "armor": "Additional Defense",  
+        "gloves": "Additional Attack",
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional Defense",
+        "bracelet": "Water Damage %",
+        "ring": "Additional Defense",
+        "earrings": "Additional MP"
+      }
+    }
+  },
+
+  // 🧪 NOYAUX RECOMMANDÉS (inchangé)
+  "recommendedCores": {
+    "offensive": {
+      "name": "Trompette du Démon Anonyme",
+      "type": "Additional Attack",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, les Dégâts de coup critique de l'utilisateur augmentent de 30% pendant 8 secondes"
+    },
+    "defensive": {
+      "name": "Corne du Démon Anonyme", 
+      "type": "Additional Defense",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
+    },
+    "endurance": {
+      "name": "Dents du Veilleur",
+      "type": "Additional MP",
+      "bonus": "Diminue le taux de récupération de PM de 15% et la Consommation de PM de 15% lors de l'utilisation d'une compétence"
+    }
+  },
+
+  // 💡 CONSEILS BÉRU - KAISEL UPDATE
+  "beruAdvice": {
+    "newbie": "Niermann est un tank défensif avec 2 builds ! Commence par Iron Will/Outstanding.",
+    "intermediate": "Scale sur Defense = focus Additional Defense. Général vs PvP/BdG !",
+    "advanced": "2 builds : Hybride (Général), Full Chaotic (PvP/BdG).",
+    "expert": "Iron Will/Outstanding pour le général, Chaotic Infamy pour tryhard !"
+  }
+},
 
   "chae": {
-    "name": "Cha Hae-In",
-    "element": "Light",
-    "class": "Fighter",
-    "grade": "SSR",
-    "scaleStat": "Attack",
+  "name": "Cha Hae-In",
+  "element": "Light",
+  "class": "Fighter",
+  "grade": "SSR",
+  "scaleStat": "Attack",
 
-    // 🎯 PRIORITÉS D'OPTIMISATION - LOGIQUE UNIFIÉE
-    "optimizationPriority": [
-      {
-        stat: "Additional Attack",
-        priority: 1,
-        target: "maximum_possible",
-        reason: "Prioriser Attack au maximum (scaleStat)",
-        description: "Chae scale sur Attack - maximise cette stat avant tout"
-      },
-      {
-        stat: "Damage Increase",
-        priority: 2,
-        target: "maximum_possible",
-        reason: "Dégâts optimaux"
-      },
-      {
-        stat: "Critical Hit Damage",
-        priority: 3,
-        target: "200%+",
-        reason: "Dégâts critiques optimaux"
-      },
-      {
-        stat: "Critical Hit Rate",
-        priority: 4,
-        target: 8000, // 80% pour DPS standard
-        reason: "Taux critique pour DPS"
-      },
-      {
-        stat: "Defense Penetration",
-        priority: 5,
-        target: "10-20%",
-        reason: "Pénétration pour efficacité"
-      }
-    ],
-
-    // 📊 STATS RECOMMANDÉES
-    "recommendedStats": {
-      "criticalHitRate": "80%",
-      "criticalHitDamage": "200% - 210%",
-      "healingIncrease": "30% +",
-      "defensePenetration": "10% - 20%",
-      "additionalDefense": "Modéré",
-      "additionalAttack": "Le plus possible",
-      "precision": null,
-      "damageReduction": null,
-      "healingReceived": null,
-      "mpRecoveryRate": null,
-      "mpCostReduction": null
+  // 🎯 PRIORITÉS D'OPTIMISATION - LOGIQUE UNIFIÉE
+  "optimizationPriority": [
+    {
+      stat: "Additional Attack",
+      priority: 1,
+      target: "maximum_possible",
+      reason: "Prioriser Attack au maximum (scaleStat)",
+      description: "Chae scale sur Attack - maximise cette stat avant tout"
     },
-
-    // 🎮 MODES DE JEU & SETS
-    "gameModes": {
-      "general": {
-        "recommendedSet": "Burning Curse",
-        "priority": "Balanced attack build",
-        "description": "Build équilibré attaque",
-        "availability": "LR"
-      },
-      "pod": {
-        "recommendedSet": "Stigma Chaotic",
-        "priority": "PvP damage", 
-        "description": "Build PvP axé dégâts",
-        "availability": "missing"
-      },
-      "bdg": {
-        "recommendedSet": "Stigma Chaotic",
-        "priority": "Guild boss damage",
-        "description": "Build boss de guilde",
-        "availability": "missing"
-      }
+    {
+      stat: "Damage Increase",
+      priority: 2,
+      target: "maximum_possible",
+      reason: "Dégâts optimaux"
     },
-
-    // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS
-    "artifactSets": {
-      "burningCurse": {
-        "name": "Burning Curse",
-        "frenchName": "Malédiction ardente",
-        "availability": "LR",
-        "pieces": {
-          "helmet": "Casque de malédiction ardente",
-          "armor": "Armure de malédiction ardente",
-          "gloves": "Gants de malédiction ardente", 
-          "boots": "Bottes de malédiction ardente",
-          "necklace": "Collier en obsidienne",
-          "bracelet": "Bracelet en obsidienne",
-          "ring": "Bague en obsidienne", 
-          "earrings": "Boucles d'oreilles en obsidienne"
-        },
-        "mainStats": {
-          "helmet": "Additional Defense",
-          "armor": "Additional Defense",
-          "gloves": "Additional Attack", 
-          "boots": "Critical Hit Damage",
-          "necklace": "Additional HP",
-          "bracelet": "Light Damage %", // Light element pour Chae
-          "ring": "Additional Defense", 
-          "earrings": "Additional MP"
-        }
-      },
-      "stigmaChaotic": {
-        "name": "Stigma Chaotic",
-        "frenchName": "Stigmate chaotique",
-        "availability": "missing",
-        "pieces": {
-          "helmet": "Casque du Stigmate chaotique",
-          "armor": "Armure du Stigmate chaotique",
-          "gloves": "Gants du Stigmate chaotique", 
-          "boots": "Bottes du Stigmate chaotique",
-          "necklace": "Collier du Stigmate chaotique",
-          "bracelet": "Bracelet du Stigmate chaotique",
-          "ring": "Bague du Stigmate chaotique", 
-          "earrings": "Boucles d'oreilles du Stigmate chaotique"
-        },
-        "mainStats": {
-          "helmet": "Additional Defense",
-          "armor": "Additional Defense",
-          "gloves": "Additional Attack", 
-          "boots": "Critical Hit Damage",
-          "necklace": "Additional HP",
-          "bracelet": "Light Damage %",
-          "ring": "Additional Defense", 
-          "earrings": "Additional MP"
-        }
-      }
+    {
+      stat: "Critical Hit Damage",
+      priority: 3,
+      target: "200%+",
+      reason: "Dégâts critiques optimaux"
     },
-
-    // 🧪 NOYAUX RECOMMANDÉS
-    "recommendedCores": {
-      "offensive": {
-        "name": "Yeux du Veilleur",
-        "type": "Additional Attack",
-        "bonus": "Augmente les Dégâts de coup critique des attaques de noyau de 20%"
-      },
-      "defensive": {
-        "name": "Corne du Démon Anonyme", 
-        "type": "Additional Defense",
-        "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
-      },
-      "endurance": {
-        "name": "Dents du Veilleur",
-        "type": "Additional HP",
-        "bonus": "Diminue le Taux de récupération de PM de 10% et la Consommation de PM de 12% lors de l'utilisation d'une compétence"
-      }
+    {
+      stat: "Critical Hit Rate",
+      priority: 4,
+      target: 8000, // 80% pour DPS standard
+      reason: "Taux critique pour DPS"
     },
+    {
+      stat: "Defense Penetration",
+      priority: 5,
+      target: "10-20%",
+      reason: "Pénétration pour efficacité"
+    }
+  ],
 
-    // 💡 CONSEILS BÉRU
-    "beruAdvice": {
-      "newbie": "Chae est une DPS Fighter. Priorise Additional Attack au maximum !",
-      "intermediate": "Scale sur Attack = focus Additional Attack, puis Damage Increase.",
-      "advanced": "80% de crit minimum pour maximiser tes dégâts en Fighter.",
-      "expert": "Switch entre Burning Curse (général) et Stigma Chaotic (PvP/BdG) selon le contenu."
+  // 📊 STATS RECOMMANDÉES
+  "recommendedStats": {
+    "criticalHitRate": "80%",
+    "criticalHitDamage": "200% - 210%",
+    "healingIncrease": "30% +",
+    "defensePenetration": "10% - 20%",
+    "additionalDefense": "Modéré",
+    "additionalAttack": "Le plus possible",
+    "precision": null,
+    "damageReduction": null,
+    "healingReceived": null,
+    "mpRecoveryRate": null,
+    "mpCostReduction": null
+  },
+
+  // 🎮 MODES DE JEU & SETS - KAISEL FIX COMPLET
+  "gameModes": {
+    "general": {
+      "recommendedSet": "Hybrid Burning/Chaotic", // ← SET 1
+      "priority": "Balanced content build",
+      "description": "Build équilibré pour contenu général",
+      "availability": "LR",
+      "setComposition": "2x Burning Curse + 2x Chaotic Infamy + 4x Outstanding Ability"
+    },
+    "bdg": {
+      "recommendedSet": "Hybrid Chaotic/Outstanding", // ← SET 2
+      "priority": "Guild boss optimization",
+      "description": "Build optimisé boss de guilde",
+      "availability": "LR", 
+      "setComposition": "4x Chaotic Infamy + 4x Outstanding Ability"
+    },
+    "pod": {
+      "recommendedSet": "Full Chaotic Infamy", // ← SET 3
+      "priority": "PvP maximum damage",
+      "description": "Build PvP dégâts maximum",
+      "availability": "LR",
+      "setComposition": "8x Chaotic Infamy"
     }
   },
 
-  "kanae": {
-    "name": "Tawata Kanae",
-    "element": "Fire",
-    "class": "Assassin",
-    "grade": "SSR",
-    "scaleStat": "Attack",
-
-    // 🎯 PRIORITÉS D'OPTIMISATION - LOGIQUE UNIFIÉE
-    "optimizationPriority": [
-      {
-        stat: "Additional Attack",
-        priority: 1,
-        target: "maximum_possible",
-        reason: "Prioriser Attack au maximum (scaleStat)",
-        description: "Kanae scale sur Attack - maximise cette stat avant tout"
+  // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS - KAISEL FIX 3 BUILDS
+  "artifactSets": {
+    "hybridBurningChaotic": {
+      "name": "Hybrid Burning/Chaotic",
+      "frenchName": "Hybride Malédiction/Infamie",
+      "availability": "LR",
+      "setComposition": "2x Burning Curse + 2x Chaotic Infamy + 4x Outstanding Ability",
+      "pieces": {
+        "helmet": "Casque de malédiction ardente", // Burning Curse
+        "armor": "Armure de malédiction ardente",  // Burning Curse
+        "gloves": "Gants d'infamie chaotique",     // Chaotic Infamy
+        "boots": "Bottes d'infamie chaotique",    // Chaotic Infamy
+        "necklace": "Collier en obsidienne",      // Outstanding Ability
+        "bracelet": "Bracelet en obsidienne",     // Outstanding Ability
+        "ring": "Bague en obsidienne",            // Outstanding Ability
+        "earrings": "Boucles d'oreilles en obsidienne" // Outstanding Ability
       },
-      {
-        stat: "Damage Increase",
-        priority: 2,
-        target: "maximum_possible",
-        reason: "Dégâts optimaux"
-      },
-      {
-        stat: "Critical Hit Damage",
-        priority: 3,
-        target: "200%+",
-        reason: "Dégâts critiques optimaux"
-      },
-      {
-        stat: "Critical Hit Rate",
-        priority: 4,
-        target: 12000, // 120% pour lead crit du groupe !
-        reason: "Kanae doit lead le crit du groupe (10000-12000)"
-      },
-      {
-        stat: "Defense Penetration",
-        priority: 5,
-        target: "10-20%",
-        reason: "Pénétration pour efficacité"
-      }
-    ],
-
-    // 📊 STATS RECOMMANDÉES
-    "recommendedStats": {
-      "criticalHitRate": "100-120%", // Spécial Kanae
-      "criticalHitDamage": "200% - 210%",
-      "healingIncrease": "30% +",
-      "defensePenetration": "10% - 20%",
-      "additionalDefense": null,
-      "additionalAttack": "Le plus possible",
-      "precision": null,
-      "damageReduction": null,
-      "healingReceived": null,
-      "mpRecoveryRate": null,
-      "mpCostReduction": null
-    },
-
-    // 🎮 MODES DE JEU & SETS
-    "gameModes": {
-      "general": {
-        "recommendedSet": "Mixed Build",
-        "priority": "Hybrid assassin build",
-        "description": "Build assassin hybride",
-        "availability": "partial"
-      },
-      "pod": {
-        "recommendedSet": "Mixed Build",
-        "priority": "PvP assassin", 
-        "description": "Build PvP assassin",
-        "availability": "partial"
-      },
-      "bdg": {
-        "recommendedSet": "Mixed Build",
-        "priority": "Guild boss assassin",
-        "description": "Build boss de guilde assassin",
-        "availability": "partial"
+      "mainStats": {
+        "helmet": "Additional Attack",
+        "armor": "Additional Defense",
+        "gloves": "Additional Attack", 
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional HP",
+        "bracelet": "Light Damage %",
+        "ring": "Additional Attack",
+        "earrings": "Additional MP"
       }
     },
-
-    // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS
-    "artifactSets": {
-      "mixedBuild": {
-        "name": "Mixed Build",
-        "frenchName": "Build hybride",
-        "availability": "partial",
-        "pieces": {
-          "helmet": "Chapeau de grand enchanteur",
-          "armor": "Robe de grand enchanteur",
-          "gloves": "Gants de malédiction ardente",
-          "boots": "Bottes de malédiction ardente",
-          "necklace": "Collier de bête",
-          "bracelet": "Bracelet de bête",
-          "ring": "Bague de bête",
-          "earrings": "Boucles d'oreilles de bête"
-        },
-        "mainStats": {
-          "helmet": "Additional Attack",
-          "armor": "Additional Defense",
-          "gloves": "Additional Attack", 
-          "boots": "Critical Hit Damage",
-          "necklace": "Additional HP",
-          "bracelet": "Fire Damage %",
-          "ring": "Additional Attack",
-          "earrings": "Additional MP"
-        }
+    "hybridChaoticOutstanding": {
+      "name": "Hybrid Chaotic/Outstanding",
+      "frenchName": "Hybride Infamie/Remarquable", 
+      "availability": "LR",
+      "setComposition": "4x Chaotic Infamy + 4x Outstanding Ability",
+      "pieces": {
+        "helmet": "Casque d'infamie chaotique",   // Chaotic Infamy
+        "armor": "Armure d'infamie chaotique",    // Chaotic Infamy
+        "gloves": "Gants d'infamie chaotique",    // Chaotic Infamy
+        "boots": "Bottes d'infamie chaotique",    // Chaotic Infamy
+        "necklace": "Collier en obsidienne",      // Outstanding Ability
+        "bracelet": "Bracelet en obsidienne",     // Outstanding Ability
+        "ring": "Bague en obsidienne",            // Outstanding Ability
+        "earrings": "Boucles d'oreilles en obsidienne" // Outstanding Ability
       },
-      "burningCurse": {
-        "name": "Burning Curse",
-        "frenchName": "Malédiction ardente",
-        "availability": "LR",
-        "pieces": {
-          "helmet": "Casque de malédiction ardente",
-          "armor": "Armure de malédiction ardente",
-          "gloves": "Gants de malédiction ardente", 
-          "boots": "Bottes de malédiction ardente",
-          "necklace": "Collier en obsidienne",
-          "bracelet": "Bracelet en obsidienne",
-          "ring": "Bague en obsidienne", 
-          "earrings": "Boucles d'oreilles en obsidienne"
-        },
-        "mainStats": {
-          "helmet": "Additional Attack",
-          "armor": "Additional Defense",
-          "gloves": "Additional Attack", 
-          "boots": "Critical Hit Damage",
-          "necklace": "Additional Attack",
-          "bracelet": "Fire Damage %",
-          "ring": "Additional Attack", 
-          "earrings": "Additional MP"
-        }
+      "mainStats": {
+        "helmet": "Additional Attack",
+        "armor": "Additional Defense",
+        "gloves": "Additional Attack", 
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional HP",
+        "bracelet": "Light Damage %",
+        "ring": "Additional Attack",
+        "earrings": "Additional MP"
       }
     },
-
-    // 🧪 NOYAUX RECOMMANDÉS
-    "recommendedCores": {
-      "offensive": {
-        "name": "Trompette du Démon Anonyme",
-        "type": "Additional Attack",
-        "bonus": "Lors de l'utilisation de la Compétence ultime, les Dégâts de coup critique de l'utilisateur augmentent de 30% pendant 8 secondes"
+    "fullChaoticInfamy": {
+      "name": "Full Chaotic Infamy",
+      "frenchName": "Infamie chaotique complète",
+      "availability": "LR",
+      "setComposition": "8x Chaotic Infamy",
+      "pieces": {
+        "helmet": "Casque d'infamie chaotique",
+        "armor": "Armure d'infamie chaotique",
+        "gloves": "Gants d'infamie chaotique",
+        "boots": "Bottes d'infamie chaotique",
+        "necklace": "Collier d'infamie chaotique",
+        "bracelet": "Bracelet d'infamie chaotique",
+        "ring": "Bague d'infamie chaotique",
+        "earrings": "Boucles d'oreilles d'infamie chaotique"
       },
-      "defensive": {
-        "name": "Corne du Démon Anonyme", 
-        "type": "Additional Defense",
-        "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
-      },
-      "endurance": {
-        "name": "Dents du Veilleur",
-        "type": "Additional HP",
-        "bonus": "Diminue le Taux de récupération de PM de 10% et la Consommation de PM de 12% lors de l'utilisation d'une compétence"
+      "mainStats": {
+        "helmet": "Additional Attack",
+        "armor": "Additional Defense",
+        "gloves": "Additional Attack", 
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional HP",
+        "bracelet": "Light Damage %",
+        "ring": "Additional Attack",
+        "earrings": "Additional MP"
       }
     },
-
-    // 💡 CONSEILS BÉRU
-    "beruAdvice": {
-      "newbie": "Kanae est un Assassin spécial. Priorise Additional Attack au maximum !",
-      "intermediate": "Scale sur Attack = focus Additional Attack, puis Damage Increase.",
-      "advanced": "Kanae DOIT avoir 10000-12000 crit pour lead le groupe !",
-      "expert": "Build hybride complexe - utilise Burning Curse en alternative simple."
+    // 🔥 KAISEL: GARDER AUSSI L'ANCIEN BURNING CURSE POUR COMPATIBILITÉ
+    "burningCurse": {
+      "name": "Burning Curse",
+      "frenchName": "Malédiction ardente",
+      "availability": "LR",
+      "setComposition": "8x Burning Curse (build de base)",
+      "pieces": {
+        "helmet": "Casque de malédiction ardente",
+        "armor": "Armure de malédiction ardente",
+        "gloves": "Gants de malédiction ardente", 
+        "boots": "Bottes de malédiction ardente",
+        "necklace": "Collier en obsidienne",
+        "bracelet": "Bracelet en obsidienne",
+        "ring": "Bague en obsidienne", 
+        "earrings": "Boucles d'oreilles en obsidienne"
+      },
+      "mainStats": {
+        "helmet": "Additional Attack",
+        "armor": "Additional Defense",
+        "gloves": "Additional Attack", 
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional HP",
+        "bracelet": "Light Damage %",
+        "ring": "Additional Attack",
+        "earrings": "Additional MP"
+      }
     }
   },
+
+  // 🧪 NOYAUX RECOMMANDÉS (inchangé)
+  "recommendedCores": {
+    "offensive": {
+      "name": "Yeux du Veilleur",
+      "type": "Additional Attack",
+      "bonus": "Augmente les Dégâts de coup critique des attaques de noyau de 20%"
+    },
+    "defensive": {
+      "name": "Corne du Démon Anonyme", 
+      "type": "Additional Defense",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
+    },
+    "endurance": {
+      "name": "Dents du Veilleur",
+      "type": "Additional HP",
+      "bonus": "Diminue le Taux de récupération de PM de 10% et la Consommation de PM de 12% lors de l'utilisation d'une compétence"
+    }
+  },
+
+  // 💡 CONSEILS BÉRU - KAISEL UPDATE
+  "beruAdvice": {
+    "newbie": "Chae est une DPS Fighter avec 3 builds différents ! Commence par Burning Curse simple.",
+    "intermediate": "Scale sur Attack = focus Additional Attack. Choisis ton build selon le contenu !",
+    "advanced": "3 builds : Général (Hybrid), BdG (Chaotic/Outstanding), PvP (Full Chaotic).",
+    "expert": "Maîtrise les 3 builds pour optimiser selon chaque contenu spécifique !"
+  }
+},
+
+ "kanae": {
+  "name": "Tawata Kanae",
+  "element": "Fire",
+  "class": "Assassin",
+  "grade": "SSR",
+  "scaleStat": "Attack",
+
+  // 🎯 PRIORITÉS D'OPTIMISATION - LOGIQUE UNIFIÉE
+  "optimizationPriority": [
+    {
+      stat: "Additional Attack",
+      priority: 1,
+      target: "maximum_possible",
+      reason: "Prioriser Attack au maximum (scaleStat)",
+      description: "Kanae scale sur Attack - maximise cette stat avant tout"
+    },
+    {
+      stat: "Damage Increase",
+      priority: 2,
+      target: "maximum_possible",
+      reason: "Dégâts optimaux"
+    },
+    {
+      stat: "Critical Hit Damage",
+      priority: 3,
+      target: "200%+",
+      reason: "Dégâts critiques optimaux"
+    },
+    {
+      stat: "Critical Hit Rate",
+      priority: 4,
+      target: 12000, // 120% pour lead crit du groupe !
+      reason: "Kanae doit lead le crit du groupe (10000-12000)"
+    },
+    {
+      stat: "Defense Penetration",
+      priority: 5,
+      target: "10-20%",
+      reason: "Pénétration pour efficacité"
+    }
+  ],
+
+  // 📊 STATS RECOMMANDÉES
+  "recommendedStats": {
+    "criticalHitRate": "100-120%", // Spécial Kanae !
+    "criticalHitDamage": "200% - 210%",
+    "healingIncrease": "30% +",
+    "defensePenetration": "10% - 20%",
+    "additionalDefense": null,
+    "additionalAttack": "Le plus possible",
+    "precision": null,
+    "damageReduction": null,
+    "healingReceived": null,
+    "mpRecoveryRate": null,
+    "mpCostReduction": null
+  },
+
+  // 🎮 MODES DE JEU & SETS - KAISEL FIX COMPLET
+  "gameModes": {
+    "general": {
+      "recommendedSet": "Hybrid Assassin Build", // ← SET 1 UNIQUE
+      "priority": "Crit lead assassin build",
+      "description": "Build assassin leader de crit pour tous contenus",
+      "availability": "LR+",
+      "setComposition": "2x Burning Curse + 2x One-hit Kill + 4x Expert"
+    },
+    "pod": {
+      "recommendedSet": "Hybrid Assassin Build", // ← MÊME BUILD
+      "priority": "PvP crit lead assassin",
+      "description": "Build PvP assassin leader de crit",
+      "availability": "LR+",
+      "setComposition": "2x Burning Curse + 2x One-hit Kill + 4x Expert"
+    },
+    "bdg": {
+      "recommendedSet": "Hybrid Assassin Build", // ← MÊME BUILD
+      "priority": "Guild boss crit lead",
+      "description": "Build boss de guilde assassin leader",
+      "availability": "LR+",
+      "setComposition": "2x Burning Curse + 2x One-hit Kill + 4x Expert"
+    }
+  },
+
+  // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS - KAISEL FIX 1 BUILD COMPLEXE
+  "artifactSets": {
+    "hybridAssassinBuild": {
+      "name": "Hybrid Assassin Build",
+      "frenchName": "Build assassin hybride",
+      "availability": "LR+",
+      "setComposition": "2x Burning Curse + 2x One-hit Kill + 4x Expert",
+      "pieces": {
+        "helmet": "Casque de malédiction ardente",     // Burning Curse
+        "armor": "Armure de malédiction ardente",      // Burning Curse
+        "gloves": "Gants de frappe unique",            // One-hit Kill ⚠️ NOMMAGE À STANDARDISER
+        "boots": "Bottes de frappe unique",            // One-hit Kill ⚠️ NOMMAGE À STANDARDISER
+        "necklace": "Collier d'expert",                // Expert
+        "bracelet": "Bracelet d'expert",               // Expert
+        "ring": "Bague d'expert",                      // Expert
+        "earrings": "Boucles d'oreilles d'expert"     // Expert
+      },
+      "mainStats": {
+        "helmet": "Additional Attack",
+        "armor": "Additional Defense",
+        "gloves": "Additional Attack", 
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional HP",
+        "bracelet": "Fire Damage %",
+        "ring": "Additional Attack",
+        "earrings": "Additional MP"
+      }
+    },
+    // 🔥 KAISEL: GARDER LES ANCIENS BUILDS POUR COMPATIBILITÉ
+    "mixedBuild": {
+      "name": "Mixed Build (Legacy)",
+      "frenchName": "Build hybride (ancien)",
+      "availability": "partial",
+      "setComposition": "Build simplifié - utiliser Hybrid Assassin Build",
+      "pieces": {
+        "helmet": "Chapeau de grand enchanteur",
+        "armor": "Robe de grand enchanteur",
+        "gloves": "Gants de malédiction ardente",
+        "boots": "Bottes de malédiction ardente",
+        "necklace": "Collier de bête",
+        "bracelet": "Bracelet de bête",
+        "ring": "Bague de bête",
+        "earrings": "Boucles d'oreilles de bête"
+      },
+      "mainStats": {
+        "helmet": "Additional Attack",
+        "armor": "Additional Defense",
+        "gloves": "Additional Attack", 
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional HP",
+        "bracelet": "Fire Damage %",
+        "ring": "Additional Attack",
+        "earrings": "Additional MP"
+      }
+    }
+  },
+
+  // 🧪 NOYAUX RECOMMANDÉS (inchangé)
+  "recommendedCores": {
+    "offensive": {
+      "name": "Trompette du Démon Anonyme",
+      "type": "Additional Attack",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, les Dégâts de coup critique de l'utilisateur augmentent de 30% pendant 8 secondes"
+    },
+    "defensive": {
+      "name": "Corne du Démon Anonyme", 
+      "type": "Additional Defense",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
+    },
+    "endurance": {
+      "name": "Dents du Veilleur",
+      "type": "Additional HP",
+      "bonus": "Diminue le Taux de récupération de PM de 10% et la Consommation de PM de 12% lors de l'utilisation d'une compétence"
+    }
+  },
+
+  // 💡 CONSEILS BÉRU - KAISEL UPDATE
+  "beruAdvice": {
+    "newbie": "Kanae est un Assassin critique spécial ! UN SEUL build complexe pour tout !",
+    "intermediate": "Scale sur Attack + LEADER DE CRIT ! 10000-12000 crit obligatoire !",
+    "advanced": "Build unique : 2x Burning + 2x One-hit Kill + 4x Expert. Complexe mais puissant !",
+    "expert": "Maîtrise ce build hybride pour lead le crit de l'équipe sur TOUS les contenus !"
+  },
+
+  // 🚨 KAISEL NOTE POUR STANDARDISATION FUTURE
+  "setNamingIssues": {
+    "oneHitKill": [
+      "One-hit Kill",     // ← Version actuelle
+      "One hit-Kill",     // ← Variante détectée
+      "One Hit Kill",     // ← Possibilité
+      "Almighty Shaman"   // ← Nom alternatif
+    ],
+    "standardizedName": "One-hit Kill",
+    "note": "⚠️ MONARQUE : standardiser ce nommage plus tard pour éviter les erreurs de détection !"
+  }
+},
 
   "seorin": {
     "name": "Seorin",
