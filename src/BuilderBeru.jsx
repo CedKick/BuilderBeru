@@ -1833,6 +1833,7 @@ const getShadowScreenPosition = (entityType = 'tank') => {
   const [isAccountSwitching, setIsAccountSwitching] = useState(false);
   const [setSelectorSlot, setSetSelectorSlot] = useState(null); // ex: 'Helmet'
   const [showNoyauxPopup, setShowNoyauxPopup] = useState(false);
+  
   // 🐉 KAISEL FIX 4 - INITIALISATION STATE artifactScores SÉCURISÉE
   const [artifactScores, setArtifactScores] = useState(() => {
     try {

@@ -10,6 +10,7 @@ import { getSetIcon } from "../utils/artifactUtils";
 import ArtifactSavePopup from './ArtifactSavePopup';
 import ArtifactLibrary from './ArtifactLibrary';
 
+
 const commonSubStats = [
   'Attack %', 'Additional Attack', 'Defense Penetration', 'Damage Increase', 'Additional Defense',
   'Defense %', 'Additional HP', 'HP %', 'MP Consumption Reduction',
@@ -712,7 +713,7 @@ const ArtifactCard = ({
               </button>
             </div>
           )}
-          <ArtifactScoreBadge artifact={{ ...artifactData, title }} hunter={hunter} substatsMinMaxByIncrements={substatsMinMaxByIncrements} onScoreCalculated={onScoreCalculated}/>
+          <ArtifactScoreBadge artifact={{ ...artifactData, title }} hunter={hunter} substatsMinMaxByIncrements={substatsMinMaxByIncrements} onScoreCalculated={onScoreCalculated} showTankMessage={showTankMessage}/>
         </div>
       </div>
 

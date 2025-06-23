@@ -1,385 +1,636 @@
-// 🧠 SYSTÈME D'ANALYSE INTELLIGENTE BÉRU - VERSION FINALE BY KAISEL 🔥
-// UTILISE LES SCORES CALCULÉS PAR ArtifactScoreBadge - AUCUNE DIVERGENCE !
+// 📁 /utils/BeruIntelligentAnalysis.js - SYSTÈME IA COMPLET KAISEL 🧠
+// VERSION FINALE - INTÉGRATION PARFAITE AVEC ArtifactScoreBadge
 
 import { BUILDER_DATA } from '../data/builder_data';
+import { getTheoreticalScore } from './statPriority';
 
-// 🎯 FONCTION PRINCIPALE - VERSION FINALE
-export const performIntelligentAnalysis = (
-    selectedCharacter, 
-    currentArtifacts, 
+// 🧠 ANALYSE SPÉCIFIQUE D'ARTEFACT DÉCLENCHÉE DEPUIS LE BADGE
+export const performSpecificArtifactAnalysis = (
+    artifactData, 
+    hunter, 
     showTankMessage, 
     onClose, 
+    substatsMinMaxByIncrements
+) => {
+    console.log("🧠 Béru démarre l'analyse spécifique d'artefact:", artifactData.title);
+
+    // Phase 1: Annonce
+    setTimeout(() => {
+        showTankMessage(`🧠 Béru analyse ${artifactData.title} pour ${hunter.name}...`, true, 'beru');
+    }, 100);
+
+    // Phase 2: Analyse set (1.5s)
+    setTimeout(() => {
+        const setAnalysis = analyzeArtifactSet(artifactData, hunter);
+        showTankMessage(`🎁 SET: ${setAnalysis.message}`, true, 'beru');
+    }, 1500);
+
+    // Phase 3: Analyse mainStat (3s)
+    setTimeout(() => {
+        const mainStatAnalysis = analyzeMainStatDetailed(artifactData, hunter);
+        showTankMessage(`🎯 MAIN: ${mainStatAnalysis.message}`, true, 'beru');
+    }, 3000);
+
+    // Phase 4: Analyse substats (4.5s)
+    setTimeout(() => {
+        const subStatsAnalysis = analyzeSubStatsDetailed(artifactData, hunter, substatsMinMaxByIncrements);
+        showTankMessage(`📈 SUBS: ${subStatsAnalysis.message}`, true, 'beru');
+    }, 4500);
+
+    // Phase 5: Analyse localStorage (6s)
+    setTimeout(() => {
+        const alternatives = findBetterAlternativesInStorage(artifactData, hunter, substatsMinMaxByIncrements);
+        if (alternatives.length > 0) {
+            const best = alternatives[0];
+            showTankMessage(
+                `🔍 ALTERNATIVE: "${best.name}" (+${best.improvement} points) avec ${best.mainStat} et ${best.topSubstats.join(', ')}`, 
+                true, 
+                'beru'
+            );
+        } else {
+            showTankMessage(`✅ OPTIMAL: Aucun artefact ${artifactData.title} meilleur trouvé !`, true, 'beru');
+        }
+    }, 6000);
+
+    // Phase 6: Conclusion et génération rapport (7.5s)
+    setTimeout(() => {
+        const finalScore = getTheoreticalScore(hunter, artifactData, substatsMinMaxByIncrements);
+        let conclusion = '';
+        
+        if (finalScore >= 85) conclusion = `🔥 Artefact EXCEPTIONNEL (${finalScore}/100) ! Garde-le précieusement !`;
+        else if (finalScore >= 65) conclusion = `👍 Bon artefact (${finalScore}/100), quelques améliorations possibles.`;
+        else if (finalScore >= 40) conclusion = `⚠️ Artefact moyen (${finalScore}/100), reroll conseillé.`;
+        else conclusion = `❌ Artefact faible (${finalScore}/100), change-le rapidement !`;
+
+        showTankMessage(conclusion, true, 'beru');
+
+        // 📊 Génération du rapport après conclusion (8.5s)
+        setTimeout(() => {
+            generateDetailedReport(artifactData, hunter, substatsMinMaxByIncrements, showTankMessage);
+        }, 1000);
+    }, 7500);
+};
+
+// 🔥 ANALYSE GLOBALE INTELLIGENTE FINALE - SYSTÈME ORIGINAL RESTAURÉ
+export const performIntelligentAnalysis = (
+    selectedCharacter,
+    currentArtifacts,
+    showTankMessage,
+    onClose,
     onReportGenerated,
     substatsMinMaxByIncrements,
-    existingScores // ← NOUVEAU : scores des ArtifactScoreBadge
+    existingScores = {}
 ) => {
+    console.log("🔥 KAISEL FINAL: performIntelligentAnalysis avec scores:", existingScores);
+    
     const hunterData = BUILDER_DATA[selectedCharacter];
     if (!hunterData) {
         showTankMessage("🤔 Je ne connais pas ce Hunter... Aide-moi à apprendre !", true, 'beru');
         return;
     }
 
-    console.log("🔥 KAISEL FINAL: existingScores reçus:", existingScores);
-
-    // 🔍 VÉRIFICATIONS DE BASE
-    const artifactCount = Object.values(currentArtifacts || {}).filter(artifact => {
-        return artifact && (artifact.set || artifact.mainStat);
-    }).length;
+    // 🎯 SYSTÈME ORIGINAL AVEC DÉLAIS CONFORTABLES
     
-    if (artifactCount === 0) {
-        showTankMessage(`😤 **${hunterData.name.toUpperCase()} N'EST MÊME PAS BUILDÉ !**\n\nVa d'abord construire ton Hunter ! 🔨`, true, 'beru');
-        return;
-    }
-    
-    if (artifactCount < 4) {
-        showTankMessage(`⚠️ **SEULEMENT ${artifactCount}/8 ARTEFACTS !**\n\n🎯 Remplis au moins 4 slots pour une analyse sérieuse !`, true, 'beru');
-        return;
-    }
+    // Phase 1: Annonce (500ms)
+    setTimeout(() => {
+        showTankMessage(`🧠 Béru lance l'analyse complète de ${getHunterNameFromKey(selectedCharacter)}...`, true, 'beru');
+    }, 500);
 
-    // 🚀 ANALYSE AVEC SCORES EXISTANTS
-    startFinalAnalysis(hunterData, currentArtifacts, existingScores, showTankMessage, onReportGenerated);
+    // Phase 2: Scan des artefacts (3000ms)
+    setTimeout(() => {
+        const artifactCount = Object.values(currentArtifacts).filter(a => a && a.mainStat).length;
+        const scoresCount = Object.keys(existingScores).filter(slot => existingScores[slot] > 0).length;
+        showTankMessage(`🔍 Scan: ${artifactCount}/8 artefacts équipés. ${scoresCount} scores calculés.`, true, 'beru');
+    }, 3000);
+
+    // Phase 3: Analyse des scores (5500ms)
+    setTimeout(() => {
+        if (existingScores && Object.keys(existingScores).length > 0) {
+            const scores = Object.values(existingScores).filter(s => s > 0);
+            const avgScore = scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0;
+            const maxScore = Math.max(...scores, 0);
+            showTankMessage(`📊 Score moyen: ${Math.round(avgScore)}/100. Meilleur: ${maxScore}/100 sur ${scores.length} artefacts.`, true, 'beru');
+        }
+    }, 5500);
+
+    // Phase 4: Message final (8000ms)
+    setTimeout(() => {
+        showTankMessage(`📜 Analyse terminée ! Génération du rapport détaillé...`, true, 'beru');
+    }, 8000);
+
+    // Phase 5: Génération rapport (10500ms - APRÈS tous les messages)
+    setTimeout(() => {
+        generateCompleteReport(selectedCharacter, currentArtifacts, substatsMinMaxByIncrements, existingScores, onReportGenerated);
+        showTankMessage(`📊 Rapport complet généré ! Consulte le papyrus doré pour les détails.`, true, 'beru');
+    }, 10500);
 };
 
-// ✅ FONCTION CORRIGÉE - getFinalArtifactScores
-const getFinalArtifactScores = (currentArtifacts, existingScores) => {
-    console.log("🔥 KAISEL FINAL: Compilation des scores existants");
-    console.log("🔍 DEBUG currentArtifacts reçus:", currentArtifacts);
-    
-    const scores = [];
-    const allSlots = ['Helmet', 'Chest', 'Gloves', 'Boots', 'Necklace', 'Bracelet', 'Ring', 'Earrings'];
-    
-    allSlots.forEach(slot => {
-        const artifact = currentArtifacts[slot];
-        const existingScore = existingScores[slot] || 0;
-        
-        console.log(`🔍 DEBUG ${slot}:`, {
-            artifact: artifact,
-            set: artifact?.set,
-            mainStat: artifact?.mainStat,
-            score: existingScore
+// 🔍 RECHERCHE ALTERNATIVES DANS LOCALSTORAGE - VERSION CORRIGÉE
+const findBetterAlternativesInStorage = (currentArtifact, hunter, substatsMinMaxByIncrements) => {
+    try {
+        const storage = JSON.parse(localStorage.getItem("builderberu_users"));
+        if (!storage?.user?.accounts) {
+            console.log("🔍 KAISEL: Pas de comptes trouvés dans localStorage");
+            return [];
+        }
+
+        const alternatives = [];
+        const currentScore = getTheoreticalScore(hunter, currentArtifact, substatsMinMaxByIncrements);
+
+        // 🔍 Scanner tous les comptes - STRUCTURE CORRIGÉE
+        Object.values(storage.user.accounts).forEach(accountData => {
+            const artifactLibrary = accountData.artifactLibrary || {};
+            const sameSlotArtifacts = artifactLibrary[currentArtifact.title] || {};
+            
+            Object.values(sameSlotArtifacts).forEach(artifact => {
+                // Skip l'artefact actuel si même ID
+                if (artifact.id === currentArtifact.savedArtifactId) return;
+                
+                // 🧮 Calculer le score de l'alternative
+                const alternativeScore = getTheoreticalScore(hunter, artifact, substatsMinMaxByIncrements);
+                
+                if (alternativeScore > currentScore) {
+                    // 📊 Extraire les meilleures substats pour description
+                    const topSubstats = artifact.subStats.filter(stat => 
+                        stat && (stat.includes('Additional') || stat.includes('Critical Hit') || stat.includes('Damage'))
+                    ).slice(0, 2);
+
+                    alternatives.push({
+                        name: artifact.name || 'Artefact sans nom',
+                        score: alternativeScore,
+                        improvement: Math.round(alternativeScore - currentScore),
+                        set: artifact.set || 'Aucun set',
+                        mainStat: artifact.mainStat || 'Pas de main stat',
+                        topSubstats: topSubstats.length > 0 ? topSubstats : ['Pas de substats notables'],
+                        artifact
+                    });
+                }
+            });
         });
         
-        if (artifact && (artifact.set || artifact.mainStat)) {
-            scores.push({
-                slot,
-                score: existingScore,
-                artifact: artifact.set || 'No Set', // ← CORRECTION ICI !
-                setName: artifact.set, // ← AJOUTER POUR CLARTÉ
-                hasMainStat: !!artifact.mainStat,
-                hasSet: !!artifact.set,
-                isEmpty: false
-            });
-        } else {
-            scores.push({
-                slot,
-                score: 0,
-                artifact: 'Empty',
-                setName: null,
-                hasMainStat: false,
-                hasSet: false,
-                isEmpty: true
-            });
-        }
-    });
-    
-    console.log("🔥 KAISEL FINAL: Scores compilés avec sets:", scores.map(s => `${s.slot}: ${s.setName} (${s.score})`));
-    return scores;
+        // 📊 Trier par amélioration décroissante
+        return alternatives.sort((a, b) => b.improvement - a.improvement).slice(0, 3);
+        
+    } catch (error) {
+        console.error("🐉 Kaisel: Erreur analyse localStorage:", error);
+        return [];
+    }
 };
 
-// 🔍 ANALYSE SIMPLIFIÉE FINALE
-const analyzeFinalScores = (scores, hunterData) => {
-    const filledSlots = scores.filter(s => !s.isEmpty);
-    const emptySlots = scores.filter(s => s.isEmpty);
-    const weakArtifacts = filledSlots.filter(s => s.score < 70).sort((a, b) => a.score - b.score);
-    const strongArtifacts = filledSlots.filter(s => s.score >= 100);
-    
-    const globalScore = filledSlots.length > 0 
-        ? Math.round(filledSlots.reduce((sum, s) => sum + s.score, 0) / filledSlots.length)
-        : 0;
-    
-    return {
+// 📊 GÉNÉRATION RAPPORT COMPLET - VERSION FINALE
+const generateCompleteReport = (characterKey, artifacts, substatsMinMax, existingScores, onReportGenerated) => {
+    const hunterData = BUILDER_DATA[characterKey];
+    if (!hunterData) return;
+
+    console.log("🔥 KAISEL FINAL: Génération rapport avec existingScores:", existingScores);
+
+    // 🎯 ANALYSER TOUS LES ARTEFACTS AVEC SCORES EXISTANTS
+    const allSlots = ['Helmet', 'Chest', 'Gloves', 'Boots', 'Necklace', 'Bracelet', 'Ring', 'Earrings'];
+    const artifactAnalyses = [];
+    const weakArtifacts = [];
+    const emptySlots = [];
+    let totalScore = 0;
+    let artifactCount = 0;
+
+    allSlots.forEach(slot => {
+        const artifact = artifacts[slot];
+        const existingScore = existingScores[slot] || 0;
+        
+        if (!artifact || (!artifact.mainStat && !artifact.set)) {
+            emptySlots.push(slot);
+            return;
+        }
+
+        artifactCount++;
+        totalScore += existingScore;
+
+        // Analyse détaillée avec score existant
+        if (existingScore < 60) {
+            const analysis = analyzeArtifactForReport(artifact, slot, hunterData);
+            weakArtifacts.push({
+                slot,
+                score: existingScore,
+                issues: analysis.issues
+            });
+        }
+
+        artifactAnalyses.push({
+            slot,
+            score: existingScore,
+            artifact: artifact.set || 'Aucun set',
+            mainStat: artifact.mainStat || 'Aucune main stat'
+        });
+    });
+
+    const globalScore = artifactCount > 0 ? Math.round(totalScore / artifactCount) : 0;
+    const maxScore = Math.max(...Object.values(existingScores), 0);
+
+    // Analyser les sets
+    const setAnalysis = analyzeOverallSets(artifacts);
+
+    // Créer le rapport final
+    const report = {
+        id: Date.now(),
+        timestamp: new Date().toLocaleString('fr-FR'),
+        hunterName: getHunterNameFromKey(characterKey),
+        artifactCount,
         globalScore,
-        maxScore: Math.max(...filledSlots.map(s => s.score), 0),
-        weakArtifacts: weakArtifacts.slice(0, 2), // 2 pires
-        strongArtifacts,
+        maxScore,
+        
+        setAnalysis: {
+            dominantSet: setAnalysis.dominantSet || 'Aucun',
+            optimalSetCount: setAnalysis.optimalSetCount || 0,
+            recommendedSet: hunterData.gameModes[Object.keys(hunterData.gameModes)[0]]?.recommendedSet || 'Inconnu'
+        },
+        
+        weakArtifacts: weakArtifacts.sort((a, b) => a.score - b.score),
         emptySlots,
-        filledCount: filledSlots.length,
-        totalSlots: 8
+        
+        // Priorité critique
+        criticalPriority: emptySlots.length > 0 ? {
+            missingCount: emptySlots.length,
+            missingSlots: emptySlots,
+            score: 0
+        } : (weakArtifacts.length > 0 ? weakArtifacts[0] : null),
+        
+        substatAnalysis: analyzeOverallSubstats(artifacts, hunterData),
+        actionPlan: generateActionPlan(artifacts, weakArtifacts, emptySlots, hunterData, globalScore),
+        
+        // Données supplémentaires
+        artifactDetails: artifactAnalyses,
+        enhancedAnalysis: true,
+        unlimitedScoring: true,
+        type: 'complete_build_analysis',
+        triggeredFrom: 'beru_menu'
+    };
+
+    console.log("🔥 KAISEL FINAL: Rapport généré:", report);
+
+    if (onReportGenerated) {
+        onReportGenerated(report);
+    }
+};
+
+// 🎁 ANALYSE SET DÉTAILLÉE
+const analyzeArtifactSet = (artifactData, hunter) => {
+    const hunterKey = getHunterKey(hunter);
+    const hunterData = BUILDER_DATA[hunterKey];
+    
+    if (!hunterData) {
+        return { score: 0, status: 'unknown', message: '❓ Hunter non supporté par l\'IA Béru' };
+    }
+    
+    if (!artifactData.set || artifactData.set === '') {
+        return { 
+            score: 0, 
+            status: 'missing', 
+            message: '❌ Aucun set défini ! Sélectionne un set pour les bonus.' 
+        };
+    }
+
+    // Récupérer tous les sets recommandés
+    const recommendedSets = Object.values(hunterData.gameModes).map(mode => mode.recommendedSet);
+    const primarySet = recommendedSets[0];
+    
+    // Vérification intelligente des sets
+    const currentSet = artifactData.set.toLowerCase();
+    const isOptimal = recommendedSets.some(recSet => {
+        const recSetLower = recSet.toLowerCase();
+        return currentSet.includes(recSetLower.split(' ')[0]) || 
+               recSetLower.includes(currentSet.split(' ')[0]) ||
+               currentSet === recSetLower;
+    });
+
+    if (isOptimal) {
+        return { 
+            score: 100, 
+            status: 'perfect', 
+            message: `✅ Set "${artifactData.set}" PARFAIT pour ${hunterData.name} !`,
+            recommended: primarySet
+        };
+    }
+
+    return { 
+        score: 20, 
+        status: 'poor', 
+        message: `❌ Set "${artifactData.set}" NON-OPTIMAL ! Change pour "${primarySet}".`,
+        recommended: primarySet
     };
 };
 
-// ✅ FONCTION CORRIGÉE - analyzeFinalSetStatus
-const analyzeFinalSetStatus = (scores, hunterData) => {
-    console.log("🔍 DEBUG analyzeFinalSetStatus - scores reçus:", scores);
+// 🎯 ANALYSE MAINSTAT ULTRA-DÉTAILLÉE
+const analyzeMainStatDetailed = (artifactData, hunter) => {
+    const hunterKey = getHunterKey(hunter);
+    const hunterData = BUILDER_DATA[hunterKey];
     
+    if (!hunterData || !artifactData.mainStat) {
+        return { score: 0, status: 'unknown', message: '❌ Impossible d\'analyser la MainStat' };
+    }
+
+    // Récupérer les mainStats recommandées pour ce slot
+    const firstSet = Object.keys(hunterData.artifactSets)[0];
+    const recommendedMainStats = hunterData.artifactSets[firstSet]?.mainStats;
+    const slotKey = artifactData.title.toLowerCase();
+    const expectedMainStat = recommendedMainStats?.[slotKey];
+    
+    const currentMainStat = artifactData.mainStat;
+    const scaleStat = hunterData.scaleStat;
+
+    // PERFECT: MainStat recommandée exacte
+    if (currentMainStat === expectedMainStat) {
+        return { 
+            score: 100, 
+            status: 'perfect', 
+            message: `✅ MainStat "${currentMainStat}" PARFAITE ! Exactement comme recommandé pour ${hunterData.name}.`,
+            expected: expectedMainStat
+        };
+    }
+
+    // GOOD: Stat de scale du hunter
+    if (currentMainStat.includes(scaleStat)) {
+        return { 
+            score: 80, 
+            status: 'good', 
+            message: `👍 MainStat "${currentMainStat}" BONNE (scale stat), mais "${expectedMainStat}" serait optimal.`,
+            expected: expectedMainStat
+        };
+    }
+
+    // POOR: Stat inadaptée
+    return { 
+        score: 20, 
+        status: 'poor', 
+        message: `❌ MainStat "${currentMainStat}" MAUVAISE pour ${hunterData.name} ! Change pour "${expectedMainStat}".`,
+        expected: expectedMainStat
+    };
+};
+
+// 📊 ANALYSE SUBSTATS ULTRA-DÉTAILLÉE
+const analyzeSubStatsDetailed = (artifactData, hunter, substatsMinMaxByIncrements) => {
+    const hunterKey = getHunterKey(hunter);
+    const hunterData = BUILDER_DATA[hunterKey];
+    
+    if (!hunterData || !artifactData.subStats) {
+        return { averageScore: 0, message: '❌ Impossible d\'analyser les substats' };
+    }
+
+    const priorities = hunterData.optimizationPriority;
+    const topPriorityStats = priorities.slice(0, 4).map(p => p.stat);
+    
+    let totalScore = 0;
+    let totalRollQuality = 0;
+    const analysis = [];
+    let procCount = 0;
+
+    artifactData.subStats.forEach((stat, idx) => {
+        if (!stat) return;
+
+        const levelInfo = artifactData.subStatsLevels?.[idx];
+        if (!levelInfo) return;
+
+        procCount += levelInfo.level || 0;
+
+        // 🎯 Score de pertinence selon priorités hunter
+        let relevanceScore = 10;
+        const priorityIndex = topPriorityStats.findIndex(pStat => 
+            stat.includes(pStat.replace('Additional ', '').replace(' %', ''))
+        );
+        
+        if (priorityIndex === 0) relevanceScore = 100;
+        else if (priorityIndex === 1) relevanceScore = 85;
+        else if (priorityIndex === 2) relevanceScore = 70;
+        else if (priorityIndex === 3) relevanceScore = 55;
+        else if (stat.includes('Critical Hit')) relevanceScore = 45;
+        else relevanceScore = 15;
+        
+        // 🎲 Qualité du roll
+        const rollQuality = calculateRollQualityPercent(stat, levelInfo, substatsMinMaxByIncrements);
+        totalRollQuality += rollQuality;
+        
+        // 📊 Score final de cette substat  
+        const finalScore = (relevanceScore * 0.7) + (rollQuality * 0.3);
+        totalScore += finalScore;
+
+        analysis.push({
+            stat,
+            relevanceScore,
+            rollQuality: Math.round(rollQuality),
+            finalScore: Math.round(finalScore),
+            level: levelInfo.level || 0,
+            value: levelInfo.value || 0
+        });
+    });
+
+    const validSubstats = analysis.length;
+    const averageScore = validSubstats > 0 ? totalScore / validSubstats : 0;
+    const averageRollQuality = validSubstats > 0 ? totalRollQuality / validSubstats : 0;
+
+    // 🔍 Messages personnalisés selon l'analyse
+    let message = '';
+    let topStats = analysis.filter(a => a.relevanceScore >= 70).map(a => a.stat);
+    let wastedStats = analysis.filter(a => a.relevanceScore <= 20).map(a => a.stat);
+
+    if (averageScore >= 80) {
+        message = `🔥 Substats EXCELLENTES (${Math.round(averageScore)}/100) ! ${topStats.length} stats prioritaires trouvées.`;
+    } else if (averageScore >= 60) {
+        message = `👍 Bonnes substats (${Math.round(averageScore)}/100). `;
+        if (wastedStats.length > 0) {
+            message += `Attention aux stats inutiles: ${wastedStats.join(', ')}.`;
+        }
+    } else if (averageScore >= 40) {
+        message = `⚠️ Substats moyennes (${Math.round(averageScore)}/100). Reroll conseillé. Manque: ${topPriorityStats.slice(0, 2).join(', ')}.`;
+    } else {
+        message = `❌ Substats FAIBLES (${Math.round(averageScore)}/100) ! Change cet artefact rapidement.`;
+    }
+
+    if (procCount < 4) {
+        message += ` | ${procCount}/4 procs terminés.`;
+    } else {
+        message += ` | Rolls à ${Math.round(averageRollQuality)}%.`;
+    }
+
+    return {
+        averageScore: Math.round(averageScore),
+        averageRollQuality: Math.round(averageRollQuality),
+        analysis,
+        topStats,
+        wastedStats,
+        message
+    };
+};
+
+// 📊 GÉNÉRATION DU RAPPORT DÉTAILLÉ
+const generateDetailedReport = (artifactData, hunter, substatsMinMaxByIncrements, showTankMessage) => {
+    const setAnalysis = analyzeArtifactSet(artifactData, hunter);
+    const mainStatAnalysis = analyzeMainStatDetailed(artifactData, hunter);
+    const subStatsAnalysis = analyzeSubStatsDetailed(artifactData, hunter, substatsMinMaxByIncrements);
+    const alternatives = findBetterAlternativesInStorage(artifactData, hunter, substatsMinMaxByIncrements);
+    const globalScore = getTheoreticalScore(hunter, artifactData, substatsMinMaxByIncrements);
+
+    // 🎯 Créer le plan d'action personnalisé
+    let actionPlan = `🎯 PLAN D'ACTION POUR ${artifactData.title.toUpperCase()}\n\n`;
+    
+    if (setAnalysis.status !== 'perfect') {
+        actionPlan += `1️⃣ PRIORITÉ SET: Change pour "${setAnalysis.recommended}"\n`;
+    }
+    
+    if (mainStatAnalysis.status !== 'perfect') {
+        actionPlan += `2️⃣ PRIORITÉ MAINSTAT: Change pour "${mainStatAnalysis.expected}"\n`;
+    }
+    
+    if (subStatsAnalysis.averageScore < 70) {
+        actionPlan += `3️⃣ PRIORITÉ SUBSTATS: Reroll pour obtenir ${BUILDER_DATA[getHunterKey(hunter)]?.optimizationPriority.slice(0, 2).map(p => p.stat).join(', ')}\n`;
+    }
+    
+    if (alternatives.length > 0) {
+        actionPlan += `4️⃣ ALTERNATIVE: Utilise "${alternatives[0].name}" (+${alternatives[0].improvement} points)\n`;
+    }
+    
+    if (globalScore >= 85) {
+        actionPlan += `✅ CET ARTEFACT EST DÉJÀ EXCELLENT ! Garde-le précieusement.`;
+    }
+
+    // Structure pour BeruReportSystem si nécessaire
+    const report = {
+        timestamp: new Date().toLocaleString('fr-FR'),
+        hunterName: hunter.name,
+        artifactSlot: artifactData.title,
+        artifactCount: 1,
+        globalScore,
+        actionPlan,
+        alternatives: alternatives.slice(0, 3),
+        type: 'single_artifact_analysis',
+        triggeredFrom: 'score_badge'
+    };
+
+    setTimeout(() => {
+        showTankMessage(`📊 Rapport d'analyse généré ! Consulte le papyrus doré pour les détails.`, true, 'beru');
+        
+        if (window.handleReportGenerated) {
+            window.handleReportGenerated(report);
+        }
+    }, 500);
+
+    return report;
+};
+
+// 🧮 HELPER: Calcul qualité roll
+const calculateRollQualityPercent = (stat, levelInfo, substatsMinMaxByIncrements) => {
+    if (!substatsMinMaxByIncrements[stat] || !levelInfo.procOrders) return 50;
+    
+    const maxPossible = levelInfo.procOrders.reduce((sum, order) => {
+        return sum + (substatsMinMaxByIncrements[stat][order]?.max || 0);
+    }, 0);
+    
+    const actualValue = levelInfo.value || 0;
+    
+    if (maxPossible === 0) return 50;
+    return Math.min((actualValue / maxPossible) * 100, 100);
+};
+// 🔍 HELPER: Clé hunter pour builder_data
+const getHunterKey = (hunter) => {
+    const nameMapping = {
+        'Lennart Niermann': 'niermann',
+        'Cha Hae-In': 'chae',
+        'Tawata Kanae': 'kanae',
+        'Seorin': 'seorin',
+        'Goto Ryuji': 'goto',
+        'Shimizu Akari': 'shimizu',
+        'Thomas André': 'thomas',
+        'Isla Wright': 'isla',
+        'Gina': 'gina',
+        'Esil Radiru': 'esil'
+    };
+    return nameMapping[hunter?.name] || null;
+};
+
+// 🔍 HELPER: Nom hunter depuis clé
+const getHunterNameFromKey = (key) => {
+    const keyMapping = {
+        'niermann': 'Lennart Niermann',
+        'chae': 'Cha Hae-In',
+        'kanae': 'Tawata Kanae',
+        'seorin': 'Seorin',
+        'goto': 'Goto Ryuji',
+        'shimizu': 'Shimizu Akari',
+        'thomas': 'Thomas André',
+        'isla': 'Isla Wright',
+        'gina': 'Gina',
+        'esil': 'Esil Radiru'
+    };
+    return keyMapping[key] || key;
+};
+
+// 🎯 HELPERS POUR RAPPORT COMPLET
+const analyzeArtifactForReport = (artifact, slot, hunterData) => {
+    const issues = [];
+    
+    if (!artifact.set) issues.push(`Aucun set sélectionné`);
+    if (!artifact.mainStat) issues.push(`Aucune main stat`);
+    
+    return { issues };
+};
+
+const analyzeOverallSets = (artifacts) => {
     const sets = {};
-    const setsDetails = []; // Pour debug
-    
-    // 🔥 CORRECTION : Utiliser setName au lieu de artifact
-    scores.filter(s => !s.isEmpty && s.setName).forEach(score => {
-        const setName = score.setName; // ← CORRECTION !
-        sets[setName] = (sets[setName] || 0) + 1;
-        setsDetails.push(`${score.slot}: ${setName}`);
+    Object.values(artifacts).forEach(artifact => {
+        if (artifact?.set) {
+            sets[artifact.set] = (sets[artifact.set] || 0) + 1;
+        }
     });
     
-    console.log("🔍 DEBUG Sets trouvés:", sets);
-    console.log("🔍 DEBUG Sets détails:", setsDetails);
-    
-    const recommendedSet = hunterData.gameModes[Object.keys(hunterData.gameModes)[0]]?.recommendedSet;
-    const optimalSetCount = sets[recommendedSet] || 0;
     const dominantSet = Object.keys(sets).length > 0 
         ? Object.keys(sets).reduce((a, b) => sets[a] > sets[b] ? a : b) 
         : null;
     
-    console.log("🔍 DEBUG Analyse finale:", {
-        recommendedSet,
-        optimalSetCount,
+    return {
         dominantSet,
-        setDistribution: sets
+        optimalSetCount: Math.max(...Object.values(sets), 0)
+    };
+};
+
+const analyzeOverallSubstats = (artifacts, hunterData) => {
+    const allSubstats = [];
+    Object.values(artifacts).forEach(artifact => {
+        if (artifact?.subStats) {
+            allSubstats.push(...artifact.subStats.filter(s => s));
+        }
     });
     
-    return {
-        recommendedSet,
-        optimalSetCount,
-        dominantSet,
-        setDistribution: sets,
-        setsDetails // Pour debug
-    };
+    const priorities = hunterData.optimizationPriority.slice(0, 3).map(p => p.stat);
+    const criticalMissing = priorities.filter(stat => 
+        !allSubstats.some(s => s.includes(stat.replace('Additional ', '')))
+    );
+    
+    const wastedStats = allSubstats.filter(stat => 
+        stat.includes('MP') && !priorities.some(p => p.includes('MP'))
+    );
+    
+    return { criticalMissing, wastedStats };
 };
 
-// 🎯 ANALYSE SÉQUENTIELLE FINALE
-const startFinalAnalysis = (hunterData, currentArtifacts, existingScores, showTankMessage, onReportGenerated) => {
-    showTankMessage(`🧠 **ANALYSE BÉRU FINALE**\n\n🔍 Inspection de ${hunterData.name}...\n⚡ Utilisation des scores ArtifactScoreBadge...\n🎯 **GARANTIE:** Aucune divergence de scoring !`, true, 'beru');
+const generateActionPlan = (artifacts, weakArtifacts, emptySlots, hunterData, globalScore) => {
+    let plan = `🎯 PLAN D'ACTION ${hunterData.name.toUpperCase()}\n\n`;
     
-    setTimeout(() => {
-        runFinalStep(1, hunterData, currentArtifacts, existingScores, showTankMessage, onReportGenerated);
-    }, 3000);
-};
-
-const runFinalStep = (stepNumber, hunterData, currentArtifacts, existingScores, showTankMessage, onReportGenerated) => {
-    console.log(`🔥 KAISEL FINAL: === ÉTAPE ${stepNumber} ===`);
-    
-    const scores = getFinalArtifactScores(currentArtifacts, existingScores);
-    const analysis = analyzeFinalScores(scores, hunterData);
-    const setStatus = analyzeFinalSetStatus(scores, hunterData);
-    
-    let message = '';
-    
-    switch(stepNumber) {
-        case 1:
-            message = generateFinalStep1(analysis, setStatus, hunterData);
-            break;
-        case 2:
-            message = generateFinalStep2(analysis, hunterData);
-            break;
-        case 3:
-            message = generateFinalStep3(analysis, setStatus, hunterData);
-            break;
-        default:
-            // 📜 GÉNÉRATION DU RAPPORT FINAL
-            setTimeout(() => {
-                const report = generateFinalReport(hunterData, scores, analysis, setStatus);
-                if (onReportGenerated) {
-                    onReportGenerated(report);
-                }
-            }, 1000);
-            return;
+    if (emptySlots.length > 0) {
+        plan += `🚨 PRIORITÉ ABSOLUE: Équiper les ${emptySlots.length} slots manquants\n`;
+        plan += `Slots vides: ${emptySlots.join(', ')}\n\n`;
     }
     
-    showTankMessageWithCallback(message, () => {
-        setTimeout(() => {
-            runFinalStep(stepNumber + 1, hunterData, currentArtifacts, existingScores, showTankMessage, onReportGenerated);
-        }, 2000);
-    }, showTankMessage);
-};
-
-// 🔥 KAISEL: CALLBACK HELPER (IDENTIQUE)
-const showTankMessageWithCallback = (message, onComplete, originalShowTankMessage) => {
-    const calculateWritingDuration = (text) => {
-        let duration = 0;
-        for (let char of text) {
-            if (char === '.') duration += 400;
-            else if (char === ',') duration += 200;
-            else duration += 35;
-        }
-        return duration + 1000;
-    };
-    
-    const writingDuration = calculateWritingDuration(message);
-    originalShowTankMessage(message, true, 'beru');
-    
-    setTimeout(() => {
-        try {
-            onComplete();
-        } catch (error) {
-            console.error("🔥 ERREUR dans onComplete:", error);
-        }
-    }, writingDuration);
-};
-
-// 🎯 MESSAGES FINAUX
-const generateFinalStep1 = (analysis, setStatus, hunterData) => {
-    let message = `🎯 **ÉTAPE 1 : ÉTAT GÉNÉRAL**\n\n`;
-    
-    message += `📊 **SCORE GLOBAL : ${analysis.globalScore}/100**\n`;
-    message += `📈 **MEILLEUR ARTEFACT : ${analysis.maxScore} points**\n`;
-    message += `📦 **ARTEFACTS ÉQUIPÉS : ${analysis.filledCount}/8**\n\n`;
-    
-    if (analysis.emptySlots.length > 0) {
-        message += `❌ **SLOTS VIDES (${analysis.emptySlots.length}) :**\n`;
-        analysis.emptySlots.slice(0, 3).forEach(slot => {
-            message += `• ${slot.slot}\n`;
+    if (weakArtifacts.length > 0) {
+        plan += `🔧 ARTEFACTS À AMÉLIORER:\n`;
+        weakArtifacts.slice(0, 3).forEach((artifact, i) => {
+            plan += `${i + 1}. ${artifact.slot} (${artifact.score}/100)\n`;
         });
-        message += `\n🎯 **PRIORITÉ 1 : Équiper ces slots !**`;
-    } else {
-        message += `✅ **TOUS LES SLOTS ÉQUIPÉS !**\n`;
-        message += `🔥 Excellent ! Passons à l'optimisation...`;
+        plan += `\n`;
     }
     
-    return message;
-};
-
-const generateFinalStep2 = (analysis, hunterData) => {
-    let message = `⚠️ **ÉTAPE 2 : ARTEFACTS FAIBLES**\n\n`;
+    plan += `📊 BUILD RECOMMANDÉ: ${hunterData.gameModes[Object.keys(hunterData.gameModes)[0]].recommendedSet}\n`;
+    plan += `🎯 PRIORITÉS: ${hunterData.optimizationPriority.slice(0, 3).map(p => p.stat).join(', ')}`;
     
-    if (analysis.weakArtifacts.length === 0) {
-        message += `💎 **AUCUN ARTEFACT FAIBLE !**\n`;
-        message += `✨ Tous tes artefacts ≥ 70 points !\n`;
-        message += `🚀 Build excellent détecté !`;
-    } else {
-        message += `🚨 **${analysis.weakArtifacts.length} ARTEFACTS À AMÉLIORER :**\n\n`;
-        
-        analysis.weakArtifacts.forEach((artifact, index) => {
-            message += `${index + 1}. **${artifact.slot}** : ${artifact.score} points\n`;
-        });
-        
-        message += `\n🎯 **PRIORITÉ : Focus sur ces ${analysis.weakArtifacts.length} artefacts !**`;
-        
-        if (analysis.strongArtifacts.length > 0) {
-            message += `\n\n🌟 **BONUS :** ${analysis.strongArtifacts.length} artefacts déjà excellents (≥100) !`;
-        }
+    if (globalScore >= 85) {
+        plan += `\n\n✨ FÉLICITATIONS ! Ton build est excellent !`;
     }
     
-    return message;
-};
-
-// ✅ MESSAGE CORRIGÉ - generateFinalStep3
-const generateFinalStep3 = (analysis, setStatus, hunterData) => {
-    let message = `🎯 **ÉTAPE 3 : PLAN D'ACTION FINAL**\n\n`;
-    
-    // 🎯 PRIORITÉ ABSOLUE
-    if (analysis.emptySlots.length > 0) {
-        message += `🚨 **PRIORITÉ ABSOLUE :** Équiper les ${analysis.emptySlots.length} slots vides\n\n`;
-    } else if (analysis.weakArtifacts.length > 0) {
-        const worstArtifact = analysis.weakArtifacts[0];
-        message += `🎯 **PRIORITÉ 1 :** Remplacer ${worstArtifact.slot} (${worstArtifact.score} pts)\n\n`;
-    } else {
-        message += `✨ **OPTIMISATION FINE :** Build déjà excellent !\n\n`;
-    }
-    
-    // 🔥 ANALYSE DES SETS CORRIGÉE
-    message += `📦 **ANALYSE DES SETS :**\n`;
-    
-    if (Object.keys(setStatus.setDistribution).length === 0) {
-        message += `⚠️ **AUCUN SET DÉTECTÉ !**\n`;
-        message += `🎯 Assure-toi de sélectionner les sets sur tes artefacts !\n\n`;
-    } else {
-        message += `📋 **Sets actuels :**\n`;
-        Object.entries(setStatus.setDistribution).forEach(([setName, count]) => {
-            message += `• ${setName}: ${count} pièces\n`;
-        });
-        
-        message += `\n• Set recommandé : ${setStatus.recommendedSet}\n`;
-        message += `• Set dominant : ${setStatus.dominantSet || 'Aucun'}\n\n`;
-        
-        if (setStatus.optimalSetCount >= 6) {
-            message += `💪 **SET EXCELLENT !** ${setStatus.optimalSetCount}/8 pièces optimales !`;
-        } else if (setStatus.optimalSetCount >= 4) {
-            message += `⚡ **SET CORRECT !** ${setStatus.optimalSetCount}/8 pièces. Continue le farm !`;
-        } else if (setStatus.optimalSetCount >= 2) {
-            message += `⚠️ **SET PARTIEL !** Seulement ${setStatus.optimalSetCount}/8. Priorité après optimisation scores !`;
-        } else {
-            message += `🚨 **SET À CONSTRUIRE !** Focus sur ${setStatus.recommendedSet} après avoir fixé les artefacts faibles !`;
-        }
-    }
-    
-    message += `\n\n📜 **Rapport détaillé final en préparation...**`;
-    
-    return message;
-};
-// 📜 RAPPORT FINAL
-const generateFinalReport = (hunterData, scores, analysis, setStatus) => {
-    console.log("🔥 KAISEL FINAL: Génération rapport final avec scores existants");
-    
-    // 🎯 KAISEL: PRIORITÉ SELON LES SLOTS VIDES D'ABORD !
-    let actionPlan = '';
-    
-    if (analysis.emptySlots.length > 0) {
-        // 🚨 PRIORITÉ ABSOLUE : SLOTS VIDES
-        actionPlan = `🚨 **PRIORITÉ ABSOLUE : ${analysis.emptySlots.length} ARTEFACTS MANQUANTS !**\n\n`;
-        actionPlan += `📋 **Slots à équiper d'urgence :**\n`;
-        analysis.emptySlots.forEach(slot => {
-            actionPlan += `• ${slot.slot}\n`;
-        });
-        actionPlan += `\n💡 **Béru recommande :** Équipe ces slots AVANT toute optimisation !\n`;
-        actionPlan += `🎯 Un Hunter sans artefacts complets ne peut pas révéler son potentiel !`;
-    } else if (analysis.globalScore >= 85) {
-        actionPlan = `🌟 BUILD EXCELLENT !\n🎯 ${hunterData.name} est très bien optimisé !\n💡 Scores identiques aux badges affichés !`;
-    } else if (analysis.globalScore >= 70) {
-        actionPlan = `⚡ BUILD SOLIDE !\n🔧 Quelques améliorations possibles.\n💡 Focus sur les 2 artefacts les plus faibles !`;
-    } else {
-        actionPlan = `🚨 BUILD À AMÉLIORER !\n💪 Focus sur les priorités identifiées.\n💡 Optimise les artefacts avec scores <70 !`;
-    }
-    
-    return {
-        id: Date.now(),
-        timestamp: new Date().toLocaleString('fr-FR'),
-        hunterName: hunterData.name,
-        globalScore: analysis.globalScore,
-        maxScore: analysis.maxScore,
-        enhancedAnalysis: false,
-        unlimitedScoring: true,
-        artifactCount: analysis.filledCount,
-        
-        // 🎯 DONNÉES FINALES
-        emptySlots: analysis.emptySlots.map(s => s.slot),
-        weakArtifacts: analysis.weakArtifacts.map(artifact => ({
-            slot: artifact.slot,
-            score: artifact.score,
-            issues: [`Score: ${artifact.score}/100 (identique au badge)`]
-        })),
-        strongArtifacts: analysis.strongArtifacts.map(artifact => ({
-            slot: artifact.slot,
-            score: artifact.score
-        })),
-        
-        setAnalysis: {
-            recommendedSet: setStatus.recommendedSet,
-            dominantSet: setStatus.dominantSet,
-            optimalSetCount: setStatus.optimalSetCount,
-            allSets: setStatus.setDistribution
-        },
-        
-        criticalPriority: analysis.emptySlots.length > 0 ? {
-            slot: analysis.emptySlots[0].slot,
-            score: 0,
-            issues: [`SLOT VIDE - ${analysis.emptySlots.length} artefacts manquants au total`],
-            reason: `PRIORITÉ ABSOLUE : ${analysis.emptySlots.length} slots vides à équiper`,
-            missingCount: analysis.emptySlots.length,
-            missingSlots: analysis.emptySlots.map(s => s.slot)
-        } : analysis.weakArtifacts.length > 0 ? {
-            slot: analysis.weakArtifacts[0].slot,
-            score: analysis.weakArtifacts[0].score,
-            issues: [`Score le plus faible: ${analysis.weakArtifacts[0].score}/100`],
-            reason: "Score le plus faible (identique au badge)"
-        } : null,
-        
-        substatAnalysis: {
-            criticalMissing: [], // Simplifié pour cette version
-            wastedStats: []
-        },
-        
-        actionPlan,
-        artifactDetails: scores.filter(s => !s.isEmpty)
-    };
+    return plan;
 };
