@@ -109,7 +109,8 @@ const ArtifactCard = ({
   disableComparisonButton = false,
   artifactLibrary,
   activeAccount,
-  onScoreCalculated // ← NOUVEAU PROP CALLBACK
+  onScoreCalculated, // ← NOUVEAU PROP CALLBACK
+  onReportGenerated // ← NOUVELLE PROP
 }) => {
   const { t } = useTranslation();
 
@@ -713,7 +714,7 @@ const ArtifactCard = ({
               </button>
             </div>
           )}
-          <ArtifactScoreBadge artifact={{ ...artifactData, title }} hunter={hunter} substatsMinMaxByIncrements={substatsMinMaxByIncrements} onScoreCalculated={onScoreCalculated} showTankMessage={showTankMessage}/>
+          <ArtifactScoreBadge artifact={{ ...artifactData, title }} hunter={hunter} flatStats={flatStats} substatsMinMaxByIncrements={substatsMinMaxByIncrements} onScoreCalculated={onScoreCalculated} showTankMessage={showTankMessage} onReportGenerated={onReportGenerated}/>
         </div>
       </div>
 

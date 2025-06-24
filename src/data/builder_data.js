@@ -10,40 +10,39 @@ const BUILDER_DATA = {
   "grade": "SSR",
   "scaleStat": "Defense",
 
-  // 🎯 PRIORITÉS D'OPTIMISATION - LOGIQUE UNIFIÉE (inchangé)
   "optimizationPriority": [
-    {
-      stat: "Additional Defense",
-      priority: 1,
-      target: "maximum_possible",
-      reason: "Prioriser Defense au maximum (scaleStat)",
-      description: "Niermann scale sur Defense - maximise cette stat avant tout"
-    },
-    {
-      stat: "Damage Increase",
-      priority: 2,
-      target: "maximum_possible",
-      reason: "Dégâts optimaux"
-    },
-    {
-      stat: "Critical Hit Damage",
-      priority: 3,
-      target: "200%+",
-      reason: "Dégâts critiques optimaux"
-    },
-    {
-      stat: "Critical Hit Rate",
-      priority: 4,
-      target: 5000, // 50% minimum pour tank
-      reason: "Taux critique pour contre-attaques"
-    },
-    {
-      stat: "Defense Penetration",
-      priority: 5,
-      target: "10-20%",
-      reason: "Pénétration pour efficacité"
-    }
-  ],
+  {
+    stat: "Additional Defense",           
+    priority: 1,
+    target: "maximum_possible",
+    reason: "Prioriser Defense au maximum (scaleStat)",
+    description: "Niermann scale sur Defense - maximise cette stat avant tout"
+  },
+  {
+    stat: "Damage Increase",              
+    priority: 2,
+    target: "maximum_possible",
+    reason: "Dégâts optimaux après défense"
+  },
+  {
+    stat: "Critical Hit Damage",
+    priority: 3,
+    target: "200%+",
+    reason: "Dégâts critiques optimaux"
+  },
+  {
+    stat: "Critical Hit Rate",
+    priority: 4,
+    target: 5000, // 50% minimum pour tank
+    reason: "Taux critique pour contre-attaques"
+  },
+  {
+    stat: "Defense Penetration",
+    priority: 5,
+    target: "10-20%",
+    reason: "Pénétration pour efficacité"
+  }
+],
 
   // 📊 STATS RECOMMANDÉES (inchangé)
   "recommendedStats": {
@@ -94,7 +93,7 @@ const BUILDER_DATA = {
       "setComposition": "4x Iron Will + 4x Outstanding Ability",
       "pieces": {
         "helmet": "Casque de la volonté de fer",        // Iron Will
-        "armor": "Armure de la volonté de fer",         // Iron Will
+        "chest": "Armure de la volonté de fer",         // Iron Will
         "gloves": "Gants de la volonté de fer",         // Iron Will
         "boots": "Bottes de la volonté de fer",         // Iron Will
         "necklace": "Collier en obsidienne",            // Outstanding Ability
@@ -104,11 +103,11 @@ const BUILDER_DATA = {
       },
       "mainStats": {
         "helmet": "Additional Defense",
-        "armor": "Additional Defense",  
+        "chest": "Additional Defense",  
         "gloves": "Additional Attack",
         "boots": "Critical Hit Damage",
         "necklace": "Additional Defense",
-        "bracelet": "Water Damage %",
+        "bracelet": "Wind Damage %",
         "ring": "Additional Defense",
         "earrings": "Additional MP"
       }
@@ -120,7 +119,7 @@ const BUILDER_DATA = {
       "setComposition": "8x Chaotic Infamy",
       "pieces": {
         "helmet": "Casque d'infamie chaotique",
-        "armor": "Armure d'infamie chaotique",
+        "chest": "Armure d'infamie chaotique",
         "gloves": "Gants d'infamie chaotique",
         "boots": "Bottes d'infamie chaotique",
         "necklace": "Collier d'infamie chaotique",
@@ -130,42 +129,15 @@ const BUILDER_DATA = {
       },
       "mainStats": {
         "helmet": "Additional Defense",
-        "armor": "Additional Defense",
+        "chest": "Additional Defense",
         "gloves": "Additional Attack",
         "boots": "Critical Hit Damage",
         "necklace": "Additional Defense",
-        "bracelet": "Water Damage %",
+        "bracelet": "Wind Damage %",
         "ring": "Additional Defense",
         "earrings": "Additional MP"
       }
     },
-    // 🔥 KAISEL: GARDER AUSSI L'ANCIEN IRON WILL POUR COMPATIBILITÉ
-    "ironWill": {
-      "name": "Iron Will",
-      "frenchName": "Volonté de fer",
-      "availability": "L",
-      "setComposition": "8x Iron Will (build de base)",
-      "pieces": {
-        "helmet": "Casque de la volonté de fer",
-        "armor": "Armure de la volonté de fer", 
-        "gloves": "Gants de la volonté de fer",
-        "boots": "Bottes de la volonté de fer",
-        "necklace": "Collier en obsidienne",
-        "bracelet": "Bracelet en obsidienne", 
-        "ring": "Bague en obsidienne",
-        "earrings": "Boucles d'oreilles en obsidienne"
-      },
-      "mainStats": {
-        "helmet": "Additional Defense",
-        "armor": "Additional Defense",  
-        "gloves": "Additional Attack",
-        "boots": "Critical Hit Damage",
-        "necklace": "Additional Defense",
-        "bracelet": "Water Damage %",
-        "ring": "Additional Defense",
-        "earrings": "Additional MP"
-      }
-    }
   },
 
   // 🧪 NOYAUX RECOMMANDÉS (inchangé)
@@ -197,20 +169,27 @@ const BUILDER_DATA = {
 },
 
   "chae": {
-  "name": "Cha Hae-In",
-  "element": "Light",
+  "name": "Cha Hae-In Valkyrie",
+  "element": "Water",
   "class": "Fighter",
   "grade": "SSR",
-  "scaleStat": "Attack",
+  "scaleStat": "Defense",
 
   // 🎯 PRIORITÉS D'OPTIMISATION - LOGIQUE UNIFIÉE
   "optimizationPriority": [
     {
-      stat: "Additional Attack",
+      stat: "Additional Defense",
       priority: 1,
       target: "maximum_possible",
-      reason: "Prioriser Attack au maximum (scaleStat)",
-      description: "Chae scale sur Attack - maximise cette stat avant tout"
+      reason: "Prioriser Defense au maximum (scaleStat)",
+      description: "Chae scale sur Defense - maximise cette stat avant tout"
+    },
+    {
+      stat: "Defense %",
+      priority: 1,
+      target: "maximum_possible",
+      reason: "Prioriser Defense au maximum (scaleStat)",
+      description: "Chae scale sur Defense - maximise cette stat avant tout"
     },
     {
       stat: "Damage Increase",
@@ -242,9 +221,9 @@ const BUILDER_DATA = {
   "recommendedStats": {
     "criticalHitRate": "80%",
     "criticalHitDamage": "200% - 210%",
-    "healingIncrease": "30% +",
+    "DamageIncrease": "30% +",
     "defensePenetration": "10% - 20%",
-    "additionalDefense": "Modéré",
+    "additionalDefense": null,
     "additionalAttack": "Le plus possible",
     "precision": null,
     "damageReduction": null,
@@ -281,13 +260,13 @@ const BUILDER_DATA = {
   // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS - KAISEL FIX 3 BUILDS
   "artifactSets": {
     "hybridBurningChaotic": {
-      "name": "Hybrid Burning/Chaotic",
+      "name": "Hybrid Burning/Chaotic+Outstanding",
       "frenchName": "Hybride Malédiction/Infamie",
       "availability": "LR",
       "setComposition": "2x Burning Curse + 2x Chaotic Infamy + 4x Outstanding Ability",
       "pieces": {
         "helmet": "Casque de malédiction ardente", // Burning Curse
-        "armor": "Armure de malédiction ardente",  // Burning Curse
+        "chest": "Armure de malédiction ardente",  // Burning Curse
         "gloves": "Gants d'infamie chaotique",     // Chaotic Infamy
         "boots": "Bottes d'infamie chaotique",    // Chaotic Infamy
         "necklace": "Collier en obsidienne",      // Outstanding Ability
@@ -296,13 +275,13 @@ const BUILDER_DATA = {
         "earrings": "Boucles d'oreilles en obsidienne" // Outstanding Ability
       },
       "mainStats": {
-        "helmet": "Additional Attack",
-        "armor": "Additional Defense",
+        "helmet": "Additional Defense",
+        "chest": "Additional Defense",
         "gloves": "Additional Attack", 
         "boots": "Critical Hit Damage",
         "necklace": "Additional HP",
-        "bracelet": "Light Damage %",
-        "ring": "Additional Attack",
+        "bracelet": "Water Damage %",
+        "ring": "Additional Defense",
         "earrings": "Additional MP"
       }
     },
@@ -313,7 +292,7 @@ const BUILDER_DATA = {
       "setComposition": "4x Chaotic Infamy + 4x Outstanding Ability",
       "pieces": {
         "helmet": "Casque d'infamie chaotique",   // Chaotic Infamy
-        "armor": "Armure d'infamie chaotique",    // Chaotic Infamy
+        "chest": "Armure d'infamie chaotique",    // Chaotic Infamy
         "gloves": "Gants d'infamie chaotique",    // Chaotic Infamy
         "boots": "Bottes d'infamie chaotique",    // Chaotic Infamy
         "necklace": "Collier en obsidienne",      // Outstanding Ability
@@ -322,13 +301,13 @@ const BUILDER_DATA = {
         "earrings": "Boucles d'oreilles en obsidienne" // Outstanding Ability
       },
       "mainStats": {
-        "helmet": "Additional Attack",
-        "armor": "Additional Defense",
+        "helmet": "Additional Defense",
+        "chest": "Additional Defense",
         "gloves": "Additional Attack", 
         "boots": "Critical Hit Damage",
         "necklace": "Additional HP",
         "bracelet": "Light Damage %",
-        "ring": "Additional Attack",
+        "ring": "Additional Defense",
         "earrings": "Additional MP"
       }
     },
@@ -339,7 +318,7 @@ const BUILDER_DATA = {
       "setComposition": "8x Chaotic Infamy",
       "pieces": {
         "helmet": "Casque d'infamie chaotique",
-        "armor": "Armure d'infamie chaotique",
+        "chest": "Armure d'infamie chaotique",
         "gloves": "Gants d'infamie chaotique",
         "boots": "Bottes d'infamie chaotique",
         "necklace": "Collier d'infamie chaotique",
@@ -348,8 +327,8 @@ const BUILDER_DATA = {
         "earrings": "Boucles d'oreilles d'infamie chaotique"
       },
       "mainStats": {
-        "helmet": "Additional Attack",
-        "armor": "Additional Defense",
+        "helmet": "Additional Defense",
+        "chest": "Additional Defense",
         "gloves": "Additional Attack", 
         "boots": "Critical Hit Damage",
         "necklace": "Additional HP",
@@ -366,7 +345,7 @@ const BUILDER_DATA = {
       "setComposition": "8x Burning Curse (build de base)",
       "pieces": {
         "helmet": "Casque de malédiction ardente",
-        "armor": "Armure de malédiction ardente",
+        "chest": "Armure de malédiction ardente",
         "gloves": "Gants de malédiction ardente", 
         "boots": "Bottes de malédiction ardente",
         "necklace": "Collier en obsidienne",
@@ -375,13 +354,13 @@ const BUILDER_DATA = {
         "earrings": "Boucles d'oreilles en obsidienne"
       },
       "mainStats": {
-        "helmet": "Additional Attack",
-        "armor": "Additional Defense",
+        "helmet": "Additional Defense",
+        "chest": "Additional Defense",
         "gloves": "Additional Attack", 
         "boots": "Critical Hit Damage",
         "necklace": "Additional HP",
         "bracelet": "Light Damage %",
-        "ring": "Additional Attack",
+        "ring": "Additional Defense",
         "earrings": "Additional MP"
       }
     }
@@ -409,7 +388,7 @@ const BUILDER_DATA = {
   // 💡 CONSEILS BÉRU - KAISEL UPDATE
   "beruAdvice": {
     "newbie": "Chae est une DPS Fighter avec 3 builds différents ! Commence par Burning Curse simple.",
-    "intermediate": "Scale sur Attack = focus Additional Attack. Choisis ton build selon le contenu !",
+    "intermediate": "Scale sur Defense = focus Additional Defense. Choisis ton build selon le contenu !",
     "advanced": "3 builds : Général (Hybrid), BdG (Chaotic/Outstanding), PvP (Full Chaotic).",
     "expert": "Maîtrise les 3 builds pour optimiser selon chaque contenu spécifique !"
   }
@@ -506,7 +485,7 @@ const BUILDER_DATA = {
       "setComposition": "2x Burning Curse + 2x One-hit Kill + 4x Expert",
       "pieces": {
         "helmet": "Casque de malédiction ardente",     // Burning Curse
-        "armor": "Armure de malédiction ardente",      // Burning Curse
+        "chest": "Armure de malédiction ardente",      // Burning Curse
         "gloves": "Gants de frappe unique",            // One-hit Kill ⚠️ NOMMAGE À STANDARDISER
         "boots": "Bottes de frappe unique",            // One-hit Kill ⚠️ NOMMAGE À STANDARDISER
         "necklace": "Collier d'expert",                // Expert
@@ -516,7 +495,7 @@ const BUILDER_DATA = {
       },
       "mainStats": {
         "helmet": "Additional Attack",
-        "armor": "Additional Defense",
+        "chest": "Additional Defense",
         "gloves": "Additional Attack", 
         "boots": "Critical Hit Damage",
         "necklace": "Additional HP",
@@ -533,7 +512,7 @@ const BUILDER_DATA = {
       "setComposition": "Build simplifié - utiliser Hybrid Assassin Build",
       "pieces": {
         "helmet": "Chapeau de grand enchanteur",
-        "armor": "Robe de grand enchanteur",
+        "chest": "Robe de grand enchanteur",
         "gloves": "Gants de malédiction ardente",
         "boots": "Bottes de malédiction ardente",
         "necklace": "Collier de bête",
@@ -543,7 +522,7 @@ const BUILDER_DATA = {
       },
       "mainStats": {
         "helmet": "Additional Attack",
-        "armor": "Additional Defense",
+        "chest": "Additional Defense",
         "gloves": "Additional Attack", 
         "boots": "Critical Hit Damage",
         "necklace": "Additional HP",
@@ -699,7 +678,7 @@ const BUILDER_DATA = {
         "availability": "LR",
         "pieces": {
           "helmet": "Casque du désir chaotique",
-          "armor": "Armure du désir chaotique",
+          "chest": "Armure du désir chaotique",
           "gloves": "Gants du désir chaotique", 
           "boots": "Bottes du désir chaotique",
           "necklace": "Collier du désir chaotique",
@@ -709,7 +688,7 @@ const BUILDER_DATA = {
         },
         "mainStats": {
           "helmet": "Additional HP",
-          "armor": "Additional Defense",
+          "chest": "Additional Defense",
           "gloves": "Additional Attack", 
           "boots": "Critical Hit Damage",
           "necklace": "Additional HP",
@@ -724,7 +703,7 @@ const BUILDER_DATA = {
         "availability": "LR",
         "pieces": {
           "helmet": "Casque d'avarice ardente",
-          "armor": "Armure d'avarice ardente",
+          "chest": "Armure d'avarice ardente",
           "gloves": "Gants d'avarice ardente", 
           "boots": "Bottes d'avarice ardente",
           "necklace": "Collier du désir chaotique",
@@ -734,7 +713,7 @@ const BUILDER_DATA = {
         },
         "mainStats": {
           "helmet": "Additional HP",
-          "armor": "Additional Defense",
+          "chest": "Additional Defense",
           "gloves": "Additional Attack", 
           "boots": "Critical Hit Damage",
           "necklace": "Additional HP",
@@ -860,7 +839,7 @@ const BUILDER_DATA = {
         "availability": "LR",
         "pieces": {
           "helmet": "Casque d'avarice ardente",
-          "armor": "Armure d'avarice ardente",
+          "chest": "Armure d'avarice ardente",
           "gloves": "Gants d'avarice ardente",
           "boots": "Bottes d'avarice ardente",
           "necklace": "Collier en obsidienne",
@@ -870,7 +849,7 @@ const BUILDER_DATA = {
         },
         "mainStats": {
           "helmet": "Additional HP",
-          "armor": "Additional Defense",
+          "chest": "Additional Defense",
           "gloves": "Additional Attack", 
           "boots": "Critical Hit Damage",
           "necklace": "Additional HP",
@@ -996,7 +975,7 @@ const BUILDER_DATA = {
         "availability": "partial",
         "pieces": {
           "helmet": "Chapeau de grand enchanteur",
-          "armor": "Robe de grand enchanteur",
+          "chest": "Robe de grand enchanteur",
           "gloves": "Gants de malédiction ardente",
           "boots": "Bottes de malédiction ardente",
           "necklace": "Collier de bête",
@@ -1006,7 +985,7 @@ const BUILDER_DATA = {
         },
         "mainStats": {
           "helmet": "Additional Attack",
-          "armor": "Additional Defense",
+          "chest": "Additional Defense",
           "gloves": "Additional Attack", 
           "boots": "Critical Hit Damage",
           "necklace": "Additional HP",
@@ -1021,7 +1000,7 @@ const BUILDER_DATA = {
         "availability": "LR",
         "pieces": {
           "helmet": "Casque de malédiction ardente",
-          "armor": "Armure de malédiction ardente",
+          "chest": "Armure de malédiction ardente",
           "gloves": "Gants de malédiction ardente", 
           "boots": "Bottes de malédiction ardente",
           "necklace": "Collier en obsidienne",
@@ -1031,7 +1010,7 @@ const BUILDER_DATA = {
         },
         "mainStats": {
           "helmet": "Additional Attack",
-          "armor": "Additional Defense",
+          "chest": "Additional Defense",
           "gloves": "Additional Attack", 
           "boots": "Critical Hit Damage",
           "necklace": "Additional Attack",
@@ -1163,7 +1142,7 @@ const BUILDER_DATA = {
         "availability": "LR",
         "pieces": {
           "helmet": "Casque d'avarice ardente",
-          "armor": "Armure d'avarice ardente",
+          "chest": "Armure d'avarice ardente",
           "gloves": "Gants d'avarice ardente", 
           "boots": "Bottes d'avarice ardente",
           "necklace": "Collier d'avarice ardente",
@@ -1173,7 +1152,7 @@ const BUILDER_DATA = {
         },
         "mainStats": {
           "helmet": "Additional Attack",
-          "armor": "Additional Defense",
+          "chest": "Additional Defense",
           "gloves": "Additional Attack", 
           "boots": "Critical Hit Damage",
           "necklace": "Additional HP",
@@ -1188,7 +1167,7 @@ const BUILDER_DATA = {
         "availability": "LR",
         "pieces": {
           "helmet": "Casque du désir chaotique",
-          "armor": "Armure du désir chaotique",
+          "chest": "Armure du désir chaotique",
           "gloves": "Gants du désir chaotique", 
           "boots": "Bottes du désir chaotique",
           "necklace": "Collier d'avarice ardente",
@@ -1198,7 +1177,7 @@ const BUILDER_DATA = {
         },
         "mainStats": {
           "helmet": "Additional Attack",
-          "armor": "Additional Defense",
+          "chest": "Additional Defense",
           "gloves": "Additional Attack", 
           "boots": "Critical Hit Damage",
           "necklace": "Additional HP",
@@ -1336,7 +1315,7 @@ const BUILDER_DATA = {
         "availability": "missing",
         "pieces": {
           "helmet": "Chapeau de grand enchanteur",
-          "armor": "Robe de grand enchanteur",
+          "chest": "Robe de grand enchanteur",
           "gloves": "Gants de grand enchanteur", 
           "boots": "Bottes de grand enchanteur",
           "necklace": "Collier de péridot",
@@ -1346,7 +1325,7 @@ const BUILDER_DATA = {
         },
         "mainStats": {
           "helmet": "Additional HP",
-          "armor": "Additional Defense",
+          "chest": "Additional Defense",
           "gloves": "Additional Attack", 
           "boots": "Critical Hit Damage",
           "necklace": "Additional HP",
@@ -1361,7 +1340,7 @@ const BUILDER_DATA = {
         "availability": "missing",
         "pieces": {
           "helmet": "Casque de garde du palais",
-          "armor": "Armure de garde du palais",
+          "chest": "Armure de garde du palais",
           "gloves": "Gants de garde du palais", 
           "boots": "Bottes de garde du palais",
           "necklace": "Collier de péridot",
@@ -1371,7 +1350,7 @@ const BUILDER_DATA = {
         },
         "mainStats": {
           "helmet": "Additional HP",
-          "armor": "Additional Defense",
+          "chest": "Additional Defense",
           "gloves": "Additional Attack", 
           "boots": "Critical Hit Damage",
           "necklace": "Additional HP",
@@ -1386,7 +1365,7 @@ const BUILDER_DATA = {
         "availability": "LR",
         "pieces": {
           "helmet": "Casque de bénédiction ardente",
-          "armor": "Armure de bénédiction ardente",
+          "chest": "Armure de bénédiction ardente",
           "gloves": "Gants de bénédiction ardente", 
           "boots": "Bottes de bénédiction ardente",
           "necklace": "Collier de bénédiction ardente",
@@ -1396,7 +1375,7 @@ const BUILDER_DATA = {
         },
         "mainStats": {
           "helmet": "Additional HP",
-          "armor": "Additional Defense",
+          "chest": "Additional Defense",
           "gloves": "Additional Attack", 
           "boots": "Critical Hit Damage",
           "necklace": "Additional HP",
@@ -1522,7 +1501,7 @@ const BUILDER_DATA = {
         "availability": "L",
         "pieces": {
           "helmet": "Casque de la volonté de fer",
-          "armor": "Armure de la volonté de fer",
+          "chest": "Armure de la volonté de fer",
           "gloves": "Gants de la volonté de fer", 
           "boots": "Bottes de la volonté de fer",
           "necklace": "Collier en obsidienne",
@@ -1532,7 +1511,7 @@ const BUILDER_DATA = {
         },
         "mainStats": {
           "helmet": "Additional Defense",
-          "armor": "Additional Defense",
+          "chest": "Additional Defense",
           "gloves": "Additional Attack", 
           "boots": "Critical Hit Damage",
           "necklace": "Additional HP",
@@ -1670,7 +1649,7 @@ const BUILDER_DATA = {
         "availability": "missing",
         "pieces": {
           "helmet": "Casque de garde du palais",
-          "armor": "Armure de garde du palais",
+          "chest": "Armure de garde du palais",
           "gloves": "Gants de garde du palais", 
           "boots": "Bottes de garde du palais",
           "necklace": "Collier de péridot",
@@ -1680,7 +1659,7 @@ const BUILDER_DATA = {
         },
         "mainStats": {
           "helmet": "Additional Attack",
-          "armor": "Additional Defense",
+          "chest": "Additional Defense",
           "gloves": "Additional Attack", 
           "boots": "Critical Hit Damage",
           "necklace": "Additional HP",
@@ -1695,7 +1674,7 @@ const BUILDER_DATA = {
         "availability": "LR",
         "pieces": {
           "helmet": "Casque de bénédiction ardente",
-          "armor": "Armure de bénédiction ardente",
+          "chest": "Armure de bénédiction ardente",
           "gloves": "Gants de bénédiction ardente", 
           "boots": "Bottes de bénédiction ardente",
           "necklace": "Collier de bénédiction ardente",
@@ -1705,7 +1684,7 @@ const BUILDER_DATA = {
         },
         "mainStats": {
           "helmet": "Additional Attack",
-          "armor": "Additional Defense",
+          "chest": "Additional Defense",
           "gloves": "Additional Attack", 
           "boots": "Critical Hit Damage",
           "necklace": "Additional HP",
@@ -1831,7 +1810,7 @@ const BUILDER_DATA = {
         "availability": "missing",
         "pieces": {
           "helmet": "Casque de garde du palais",
-          "armor": "Armure de garde du palais",
+          "chest": "Armure de garde du palais",
           "gloves": "Gants de garde du palais", 
           "boots": "Bottes de garde du palais",
           "necklace": "Collier de péridot",
@@ -1841,7 +1820,7 @@ const BUILDER_DATA = {
         },
         "mainStats": {
           "helmet": "Additional Attack",
-          "armor": "Additional Defense",
+          "chest": "Additional Defense",
           "gloves": "Additional Attack", 
           "boots": "Critical Hit Damage",
           "necklace": "Additional HP",

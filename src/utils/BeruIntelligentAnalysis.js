@@ -10,9 +10,11 @@ export const performSpecificArtifactAnalysis = (
     hunter, 
     showTankMessage, 
     onClose, 
-    substatsMinMaxByIncrements
+    substatsMinMaxByIncrements,
+    onReportGenerated  // ← AJOUTER CE PARAMÈTRE !
 ) => {
     console.log("🧠 Béru démarre l'analyse spécifique d'artefact:", artifactData.title);
+    console.log("🔥 KAISEL DEBUG: onReportGenerated reçu =", typeof onReportGenerated);
 
     // Phase 1: Annonce
     setTimeout(() => {
@@ -64,9 +66,17 @@ export const performSpecificArtifactAnalysis = (
 
         showTankMessage(conclusion, true, 'beru');
 
-        // 📊 Génération du rapport après conclusion (8.5s)
+        // 📊 NOUVEAU : Génération du rapport avec callback (8.5s)
         setTimeout(() => {
-            generateDetailedReport(artifactData, hunter, substatsMinMaxByIncrements, showTankMessage);
+            const report = generateDetailedReport(artifactData, hunter, substatsMinMaxByIncrements, showTankMessage);
+            
+            // 🔥 APPELER LE CALLBACK onReportGenerated !
+            if (onReportGenerated) {
+                console.log("📊 KAISEL: Appel onReportGenerated avec rapport:", report);
+                onReportGenerated(report);
+            } else {
+                console.warn("⚠️ KAISEL: onReportGenerated non fourni à performSpecificArtifactAnalysis");
+            }
         }, 1000);
     }, 7500);
 };
@@ -271,8 +281,9 @@ const generateCompleteReport = (characterKey, artifacts, substatsMinMax, existin
     }
 };
 
-// 🎁 ANALYSE SET DÉTAILLÉE
-const analyzeArtifactSet = (artifactData, hunter) => {
+// 🎁 ANALYSE SET DÉTAILLÉE - VERSION CORRIGÉE KAISEL
+// 🎁 ANALYSE SET DÉTAILLÉE - VERSION RAPPORT INTÉGRÉE KAISEL
+const analyzeArtifactSet = (artifactData, hunter, onReportGenerated = null) => {
     const hunterKey = getHunterKey(hunter);
     const hunterData = BUILDER_DATA[hunterKey];
     
@@ -281,6 +292,18 @@ const analyzeArtifactSet = (artifactData, hunter) => {
     }
     
     if (!artifactData.set || artifactData.set === '') {
+        // 📊 Générer un rapport si callback fourni
+        if (onReportGenerated) {
+            const report = generateSingleArtifactReport(artifactData, hunter, {
+                score: 0,
+                status: 'missing',
+                message: '❌ Aucun set défini ! Sélectionne un set pour les bonus.',
+                issues: ['Aucun set sélectionné'],
+                recommendation: 'Sélectionner un set approprié'
+            });
+            onReportGenerated(report);
+        }
+        
         return { 
             score: 0, 
             status: 'missing', 
@@ -288,34 +311,258 @@ const analyzeArtifactSet = (artifactData, hunter) => {
         };
     }
 
-    // Récupérer tous les sets recommandés
-    const recommendedSets = Object.values(hunterData.gameModes).map(mode => mode.recommendedSet);
-    const primarySet = recommendedSets[0];
-    
-    // Vérification intelligente des sets
-    const currentSet = artifactData.set.toLowerCase();
-    const isOptimal = recommendedSets.some(recSet => {
-        const recSetLower = recSet.toLowerCase();
-        return currentSet.includes(recSetLower.split(' ')[0]) || 
-               recSetLower.includes(currentSet.split(' ')[0]) ||
-               currentSet === recSetLower;
-    });
+    // 🔍 Déterminer le slot depuis le title de l'artefact
+    const slotMapping = {
+        'helmet': 'helmet',
+        'casque': 'helmet',
+        'chest': 'chest', 
+        'armure': 'chest',
+        'armor': 'chest',
+        'gloves': 'gloves',
+        'gants': 'gloves',
+        'boots': 'boots',
+        'bottes': 'boots',
+        'necklace': 'necklace',
+        'collier': 'necklace',
+        'bracelet': 'bracelet',
+        'ring': 'ring',
+        'bague': 'ring',
+        'earrings': 'earrings',
+        'boucles': 'earrings'
+    };
 
-    if (isOptimal) {
-        return { 
-            score: 100, 
-            status: 'perfect', 
-            message: `✅ Set "${artifactData.set}" PARFAIT pour ${hunterData.name} !`,
-            recommended: primarySet
+    const currentSlot = Object.keys(slotMapping).find(key => 
+        artifactData.title.toLowerCase().includes(key)
+    );
+    const mappedSlot = slotMapping[currentSlot];
+
+    if (!mappedSlot) {
+        const analysis = {
+            score: 0,
+            status: 'unknown',
+            message: `❓ Impossible d'identifier le slot de "${artifactData.title}"`,
+            issues: ['Slot non identifiable'],
+            recommendation: 'Vérifier le nom de l\'artefact'
         };
+
+        // 📊 Générer rapport si callback fourni
+        if (onReportGenerated) {
+            const report = generateSingleArtifactReport(artifactData, hunter, analysis);
+            onReportGenerated(report);
+        }
+
+        return analysis;
     }
 
-    return { 
-        score: 20, 
-        status: 'poor', 
-        message: `❌ Set "${artifactData.set}" NON-OPTIMAL ! Change pour "${primarySet}".`,
-        recommended: primarySet
+    // 🎯 Récupérer tous les sets autorisés pour ce slot spécifique
+    const allowedSets = [];
+    const setRecommendations = [];
+
+    Object.entries(hunterData.artifactSets).forEach(([setKey, setData]) => {
+        const pieceForSlot = setData.pieces[mappedSlot];
+        if (pieceForSlot) {
+            // Extraire le nom du set depuis le nom de la pièce
+            let setName = '';
+            if (pieceForSlot.includes('volonté de fer') || pieceForSlot.includes('Iron Will')) {
+                setName = 'Iron Will';
+            } else if (pieceForSlot.includes('obsidienne') || pieceForSlot.includes('Outstanding')) {
+                setName = 'Outstanding Ability';
+            } else if (pieceForSlot.includes('infamie chaotique') || pieceForSlot.includes('Chaotic Infamy')) {
+                setName = 'Chaotic Infamy';
+            } else if (pieceForSlot.includes('Limit Break')) {
+                setName = 'Limit Break';
+            } else if (pieceForSlot.includes('Seven Deadly Sins')) {
+                setName = 'Seven Deadly Sins';
+            }
+            
+            if (setName && !allowedSets.includes(setName)) {
+                allowedSets.push(setName);
+                setRecommendations.push({
+                    setName,
+                    buildName: setData.name,
+                    availability: setData.availability
+                });
+            }
+        }
+    });
+
+    if (allowedSets.length === 0) {
+        const analysis = {
+            score: 0,
+            status: 'unknown',
+            message: `❓ Aucun set recommandé trouvé pour le slot ${mappedSlot}`,
+            issues: ['Aucun set recommandé pour ce slot'],
+            recommendation: 'Consulter les builds recommandés'
+        };
+
+        // 📊 Générer rapport si callback fourni
+        if (onReportGenerated) {
+            const report = generateSingleArtifactReport(artifactData, hunter, analysis);
+            onReportGenerated(report);
+        }
+
+        return analysis;
+    }
+
+    // 🔍 Vérifier si le set actuel est dans les sets autorisés
+    const currentSet = artifactData.set;
+    const isOptimalSet = allowedSets.some(allowedSet => {
+        // Vérification flexible des noms de sets
+        const currentSetLower = currentSet.toLowerCase();
+        const allowedSetLower = allowedSet.toLowerCase();
+        
+        return currentSetLower.includes(allowedSetLower.split(' ')[0]) || 
+               allowedSetLower.includes(currentSetLower.split(' ')[0]) ||
+               currentSetLower === allowedSetLower;
+    });
+
+    if (isOptimalSet) {
+        const matchingRecommendation = setRecommendations.find(rec => 
+            currentSet.toLowerCase().includes(rec.setName.toLowerCase().split(' ')[0])
+        );
+        
+        const analysis = {
+            score: 100,
+            status: 'perfect',
+            message: `✅ Set "${currentSet}" PARFAIT pour ${hunterData.name} ${mappedSlot} ! (${matchingRecommendation?.buildName || 'Build optimal'})`,
+            allowedSets,
+            currentBuild: matchingRecommendation?.buildName,
+            issues: [],
+            recommendation: 'Set optimal - aucune action requise'
+        };
+
+        // 📊 Générer rapport si callback fourni
+        if (onReportGenerated) {
+            const report = generateSingleArtifactReport(artifactData, hunter, analysis);
+            onReportGenerated(report);
+        }
+
+        return analysis;
+    }
+
+    // 🎯 Récupérer directement les noms des pièces pour ce slot
+    const pieceNames = Object.values(hunterData.artifactSets)
+        .map(setData => setData.pieces[mappedSlot])
+        .filter(piece => piece); // Enlever les undefined
+
+    console.log("🔍 KAISEL DEBUG:", { mappedSlot, pieceNames });
+
+    const analysis = {
+        score: 20,
+        status: 'poor',
+        message: `❌ Set "${currentSet}" NON-OPTIMAL pour ${mappedSlot} ! Change pour "${pieceNames.join(' ou ')}"`,
+        allowedSets,
+        recommendedPieces: pieceNames,
+        issues: ['Set non-optimal pour ce hunter'],
+        recommendation: `Changer pour: ${pieceNames.join(' ou ')}`
     };
+
+    // 📊 Générer rapport si callback fourni
+    if (onReportGenerated) {
+        const report = generateSingleArtifactReport(artifactData, hunter, analysis);
+        onReportGenerated(report);
+    }
+
+    return analysis;
+};
+
+// 📊 GÉNÉRATEUR RAPPORT ARTEFACT UNIQUE - NOUVEAU
+const generateSingleArtifactReport = (artifactData, hunter, setAnalysis) => {
+    const hunterKey = getHunterKey(hunter);
+    const hunterData = BUILDER_DATA[hunterKey];
+    
+    // Créer un rapport compatible avec BeruReportSystem
+    const report = {
+        id: Date.now(),
+        timestamp: new Date().toLocaleString('fr-FR'),
+        hunterName: hunter.name,
+        artifactCount: 1,
+        globalScore: setAnalysis.score,
+        maxScore: setAnalysis.score,
+        
+        // Analyse spécifique du set
+        setAnalysis: {
+            dominantSet: artifactData.set || 'Aucun',
+            optimalSetCount: setAnalysis.status === 'perfect' ? 1 : 0,
+            recommendedSet: setAnalysis.recommendedPieces?.join(' ou ') || 'Inconnu',
+            currentStatus: setAnalysis.status,
+            allowedSets: setAnalysis.allowedSets || []
+        },
+        
+        // Artefacts problématiques (si ce n'est pas parfait)
+        weakArtifacts: setAnalysis.status !== 'perfect' ? [{
+            slot: artifactData.title,
+            score: setAnalysis.score,
+            issues: setAnalysis.issues || ['Set non-optimal']
+        }] : [],
+        
+        // Slots vides (aucun dans ce cas)
+        emptySlots: [],
+        
+        // Priorité critique
+        criticalPriority: setAnalysis.status === 'missing' ? {
+            missingCount: 0,
+            missingSlots: [],
+            score: 0,
+            slot: artifactData.title,
+            issues: setAnalysis.issues
+        } : (setAnalysis.status === 'poor' ? {
+            slot: artifactData.title,
+            score: setAnalysis.score,
+            issues: setAnalysis.issues
+        } : null),
+        
+        // Analyse substats (basique pour ce cas)
+        substatAnalysis: {
+            criticalMissing: [],
+            wastedStats: []
+        },
+        
+        // Plan d'action personnalisé
+        actionPlan: generateSetActionPlan(artifactData, hunter, setAnalysis),
+        
+        // Métadonnées
+        type: 'single_artifact_set_analysis',
+        triggeredFrom: 'set_analysis',
+        enhancedAnalysis: true,
+        artifactDetails: [{
+            slot: artifactData.title,
+            score: setAnalysis.score,
+            artifact: artifactData.set || 'Aucun set',
+            mainStat: artifactData.mainStat || 'Aucune main stat'
+        }]
+    };
+
+    console.log("🎁 KAISEL: Rapport set généré:", report);
+    return report;
+};
+
+// 🎯 PLAN D'ACTION SPÉCIFIQUE SET
+const generateSetActionPlan = (artifactData, hunter, setAnalysis) => {
+    const hunterData = BUILDER_DATA[getHunterKey(hunter)];
+    
+    let plan = `🎯 PLAN D'ACTION SET - ${artifactData.title.toUpperCase()}\n\n`;
+    
+    if (setAnalysis.status === 'missing') {
+        plan += `🚨 PRIORITÉ ABSOLUE: Sélectionner un set pour cet artefact\n`;
+        plan += `📋 Sets recommandés: ${setAnalysis.allowedSets?.join(', ') || 'Consulter les builds'}\n\n`;
+    } else if (setAnalysis.status === 'poor') {
+        plan += `🔧 AMÉLIORATION SET REQUISE:\n`;
+        plan += `❌ Set actuel: "${artifactData.set}" (non-optimal)\n`;
+        plan += `✅ Change pour: ${setAnalysis.recommendedPieces?.join(' ou ')}\n\n`;
+    } else if (setAnalysis.status === 'perfect') {
+        plan += `✨ SET PARFAIT ! Aucune action requise.\n`;
+        plan += `🎯 Set "${artifactData.set}" est optimal pour ${hunter.name}\n\n`;
+    }
+    
+    plan += `📊 BUILDS RECOMMANDÉS: ${Object.values(hunterData?.artifactSets || {}).map(set => set.name).join(', ')}\n`;
+    plan += `🎯 HUNTER: ${hunter.name} - ${artifactData.title}`;
+    
+    if (setAnalysis.currentBuild) {
+        plan += `\n🏗️ BUILD ACTUEL: ${setAnalysis.currentBuild}`;
+    }
+    
+    return plan;
 };
 
 // 🎯 ANALYSE MAINSTAT ULTRA-DÉTAILLÉE
@@ -327,11 +574,44 @@ const analyzeMainStatDetailed = (artifactData, hunter) => {
         return { score: 0, status: 'unknown', message: '❌ Impossible d\'analyser la MainStat' };
     }
 
+    // 🔍 Déterminer le slot depuis le title de l'artefact
+    const slotMapping = {
+        'helmet': 'helmet',
+        'casque': 'helmet',
+        'chest': 'chest', 
+        'armure': 'chest',
+        'armor': 'chest',
+        'gloves': 'gloves',
+        'gants': 'gloves',
+        'boots': 'boots',
+        'bottes': 'boots',
+        'necklace': 'necklace',
+        'collier': 'necklace',
+        'bracelet': 'bracelet',
+        'ring': 'ring',
+        'bague': 'ring',
+        'earrings': 'earrings',
+        'boucles': 'earrings'
+    };
+
+    const currentSlot = Object.keys(slotMapping).find(key => 
+        artifactData.title.toLowerCase().includes(key)
+    );
+    const mappedSlot = slotMapping[currentSlot];
+
+    if (!mappedSlot) {
+        return { 
+            score: 0, 
+            status: 'unknown', 
+            message: `❓ Impossible d'identifier le slot de "${artifactData.title}"` 
+        };
+    }
+
     // Récupérer les mainStats recommandées pour ce slot
     const firstSet = Object.keys(hunterData.artifactSets)[0];
     const recommendedMainStats = hunterData.artifactSets[firstSet]?.mainStats;
-    const slotKey = artifactData.title.toLowerCase();
-    const expectedMainStat = recommendedMainStats?.[slotKey];
+    // const slotKey = artifactData.title.toLowerCase();
+    const expectedMainStat = recommendedMainStats?.[mappedSlot];
     
     const currentMainStat = artifactData.mainStat;
     const scaleStat = hunterData.scaleStat;
@@ -459,7 +739,7 @@ const analyzeSubStatsDetailed = (artifactData, hunter, substatsMinMaxByIncrement
     };
 };
 
-// 📊 GÉNÉRATION DU RAPPORT DÉTAILLÉ
+// 3️⃣ CORRIGER generateDetailedReport pour retourner le rapport
 const generateDetailedReport = (artifactData, hunter, substatsMinMaxByIncrements, showTankMessage) => {
     const setAnalysis = analyzeArtifactSet(artifactData, hunter);
     const mainStatAnalysis = analyzeMainStatDetailed(artifactData, hunter);
@@ -471,7 +751,7 @@ const generateDetailedReport = (artifactData, hunter, substatsMinMaxByIncrements
     let actionPlan = `🎯 PLAN D'ACTION POUR ${artifactData.title.toUpperCase()}\n\n`;
     
     if (setAnalysis.status !== 'perfect') {
-        actionPlan += `1️⃣ PRIORITÉ SET: Change pour "${setAnalysis.recommended}"\n`;
+        actionPlan += `1️⃣ PRIORITÉ SET: Change pour "${setAnalysis.recommendedPieces?.join(' ou ')}"}\n`;
     }
     
     if (mainStatAnalysis.status !== 'perfect') {
@@ -490,28 +770,69 @@ const generateDetailedReport = (artifactData, hunter, substatsMinMaxByIncrements
         actionPlan += `✅ CET ARTEFACT EST DÉJÀ EXCELLENT ! Garde-le précieusement.`;
     }
 
-    // Structure pour BeruReportSystem si nécessaire
+    // 📊 CRÉER LE RAPPORT COMPATIBLE AVEC BeruReportSystem
     const report = {
+        id: Date.now(),
         timestamp: new Date().toLocaleString('fr-FR'),
         hunterName: hunter.name,
-        artifactSlot: artifactData.title,
         artifactCount: 1,
         globalScore,
+        maxScore: globalScore,
+        
+        // Analyse spécifique
+        setAnalysis: {
+            dominantSet: artifactData.set || 'Aucun',
+            optimalSetCount: setAnalysis.status === 'perfect' ? 1 : 0,
+            recommendedSet: setAnalysis.recommendedPieces?.join(' ou ') || 'Consulter builds'
+        },
+        
+        // Artefacts problématiques
+        weakArtifacts: globalScore < 70 ? [{
+            slot: artifactData.title,
+            score: globalScore,
+            issues: [
+                ...(setAnalysis.status !== 'perfect' ? ['Set non-optimal'] : []),
+                ...(mainStatAnalysis.status !== 'perfect' ? ['MainStat suboptimale'] : []),
+                ...(subStatsAnalysis.averageScore < 70 ? ['Substats à améliorer'] : [])
+            ]
+        }] : [],
+        
+        // Priorité critique
+        criticalPriority: globalScore < 40 ? {
+            slot: artifactData.title,
+            score: globalScore,
+            issues: ['Artefact critique à remplacer']
+        } : null,
+        
+        // Analyse substats
+        substatAnalysis: {
+            criticalMissing: subStatsAnalysis.wastedStats || [],
+            wastedStats: subStatsAnalysis.wastedStats || []
+        },
+        
         actionPlan,
         alternatives: alternatives.slice(0, 3),
         type: 'single_artifact_analysis',
-        triggeredFrom: 'score_badge'
+        triggeredFrom: 'score_badge',
+        
+        // Détails
+        artifactDetails: [{
+            slot: artifactData.title,
+            score: globalScore,
+            artifact: artifactData.set || 'Aucun set',
+            mainStat: artifactData.mainStat || 'Aucune main stat'
+        }],
+        
+        emptySlots: [] // Pas de slots vides pour un seul artefact
     };
 
+    console.log("📊 KAISEL: Rapport détaillé créé:", report);
+    
     setTimeout(() => {
         showTankMessage(`📊 Rapport d'analyse généré ! Consulte le papyrus doré pour les détails.`, true, 'beru');
-        
-        if (window.handleReportGenerated) {
-            window.handleReportGenerated(report);
-        }
     }, 500);
 
-    return report;
+    return report;  // ← IMPORTANT : RETOURNER LE RAPPORT !
 };
 
 // 🧮 HELPER: Calcul qualité roll
@@ -531,7 +852,7 @@ const calculateRollQualityPercent = (stat, levelInfo, substatsMinMaxByIncrements
 const getHunterKey = (hunter) => {
     const nameMapping = {
         'Lennart Niermann': 'niermann',
-        'Cha Hae-In': 'chae',
+        'Cha Hae-In Valkyrie': 'chae',
         'Tawata Kanae': 'kanae',
         'Seorin': 'seorin',
         'Goto Ryuji': 'goto',
@@ -625,7 +946,7 @@ const generateActionPlan = (artifacts, weakArtifacts, emptySlots, hunterData, gl
         plan += `\n`;
     }
     
-    plan += `📊 BUILD RECOMMANDÉ: ${hunterData.gameModes[Object.keys(hunterData.gameModes)[0]].recommendedSet}\n`;
+    plan += `📊 BUILDS RECOMMANDÉS: ${Object.values(hunterData.artifactSets).map(set => set.name).join(', ')}\n`;
     plan += `🎯 PRIORITÉS: ${hunterData.optimizationPriority.slice(0, 3).map(p => p.stat).join(', ')}`;
     
     if (globalScore >= 85) {

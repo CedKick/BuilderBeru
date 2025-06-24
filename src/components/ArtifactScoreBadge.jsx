@@ -9,7 +9,9 @@ const ArtifactScoreBadge = ({
     hunter, 
     substatsMinMaxByIncrements,
     onScoreCalculated,
-    showTankMessage 
+    showTankMessage,
+    onReportGenerated,
+    flatStats // ← NOUVELLE PROP
 }) => {
     const [showTooltip, setShowTooltip] = useState(false);
     const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0, transform: 'translate(-50%, -100%)' });
@@ -32,15 +34,159 @@ const ArtifactScoreBadge = ({
         return null;
     }
 
-    // 🧠 KAISEL: Calcul intelligent des flat stats avec builder_data
+    // 🧮 HELPER : Extraire valeur numérique d'un string - VERSION DEBUG
+    const extractNumericValue = (statString) => {
+        console.log(`🔍 extractNumericValue input: "${statString}"`);
+        
+        // Regex pour extraire le nombre (avec ou sans décimales)
+        const match = statString.match(/(\d+(?:\.\d+)?)/);
+        console.log(`🔍 Regex match result:`, match);
+        
+        const result = match ? parseFloat(match[1]) : 0;
+        console.log(`🔍 Final extracted value: ${result}`);
+        
+        return result;
+    };
+
+    // 🧮 HELPER : Calculer flat depuis pourcentage - VERSION CORRIGÉE
+    const calculateFlatFromPercent = (percentValue, scaleStat) => {
+        if (!flatStats) {
+            console.warn("⚠️ KAISEL: flatStats manquantes, impossible de calculer % correctement");
+            return 0;
+        }
+        
+        console.log(`🧮 calculateFlatFromPercent: ${percentValue}% de ${scaleStat}`);
+        console.log(`🧮 flatStats disponible:`, flatStats);
+        
+        // 🎯 Utiliser les VRAIES flatStats du hunter - MAJUSCULES CORRIGÉES
+        let baseFlatStat = 0;
+        
+        switch(scaleStat) {
+            case 'Defense':
+                baseFlatStat = flatStats.Defense || 0;  // ← MAJUSCULE !
+                break;
+            case 'Attack':
+                baseFlatStat = flatStats.Attack || 0;   // ← MAJUSCULE !
+                break;
+            case 'HP':
+                baseFlatStat = flatStats.HP || 0;       // ← MAJUSCULE !
+                break;
+            default:
+                console.warn(`⚠️ KAISEL: scaleStat inconnu: ${scaleStat}`);
+                return 0;
+        }
+        
+        console.log(`🧮 Base ${scaleStat}: ${baseFlatStat}`);
+        
+        const flatEquivalent = Math.round((percentValue / 100) * baseFlatStat);
+        console.log(`🧮 Calcul: (${percentValue} / 100) * ${baseFlatStat} = ${flatEquivalent}`);
+        
+        return flatEquivalent;
+    };
+
+    // 🆕 NOUVELLE FONCTION : Calcul réel des flat stats depuis l'artefact - VERSION DEBUG
+    const calculateRealFlatStatsFromArtifact = (scaleStat) => {
+        let totalFlatStats = 0;
+        
+        console.log(`🔥 DEBUG: scaleStat reçu = "${scaleStat}"`);
+        console.log(`🔥 DEBUG: artifact.mainStat = "${artifact.mainStat}"`);
+        console.log(`🔥 DEBUG: artifact.mainStatValue = ${artifact.mainStatValue}`);
+        console.log(`🔥 DEBUG: flatStats =`, flatStats);
+        console.log(`🔥 DEBUG: artifact.subStats =`, artifact.subStats);
+        console.log(`🔥 DEBUG: artifact.subStatsLevels =`, artifact.subStatsLevels);
+        
+        // 🎯 PATTERNS EXACTS POUR DEFENSE
+        const defensePatterns = [
+            'Défense supplémentaire', 
+            'Additional Defense', 
+            'Défense (%)', 
+            'Defense %',     // ← Pattern exact de ton mainStat
+            'Defense (%)',
+            'Défense %'
+        ];
+        
+        // 📊 TEST MAINSTAT
+        if (artifact.mainStat) {
+            console.log(`🔍 TEST MainStat: "${artifact.mainStat}"`);
+            console.log(`🔍 MainStatValue disponible: ${artifact.mainStatValue}`);
+            
+            // Test chaque pattern un par un
+            defensePatterns.forEach(pattern => {
+                const contains = artifact.mainStat.includes(pattern);
+                console.log(`  Pattern "${pattern}": ${contains ? '✅' : '❌'}`);
+                
+                if (contains) {
+                    if (pattern.includes('%') || pattern.includes('(%)')) {
+                        // C'est un pourcentage - utiliser mainStatValue avec flatStats
+                        const percentValue = artifact.mainStatValue || 0;
+                        console.log(`  🧮 Calcul %: ${percentValue}% de flatStats.defense (${flatStats?.defense})`);
+                        const flatEquivalent = calculateFlatFromPercent(percentValue, scaleStat);
+                        totalFlatStats += flatEquivalent;
+                        console.log(`  ✅ MAINSTAT %: ${percentValue}% = +${flatEquivalent} flat`);
+                    } else {
+                        // C'est un flat - utiliser directement mainStatValue
+                        const value = artifact.mainStatValue || 0;
+                        totalFlatStats += value;
+                        console.log(`  ✅ MAINSTAT FLAT: +${value} (depuis mainStatValue)`);
+                    }
+                }
+            });
+        }
+        
+        // 📊 TEST SUBSTATS
+        if (artifact.subStats && artifact.subStatsLevels) {
+            artifact.subStats.forEach((stat, idx) => {
+                if (!stat) return;
+                
+                console.log(`🔍 TEST SubStat ${idx}: "${stat}"`);
+                
+                const levelInfo = artifact.subStatsLevels[idx];
+                if (!levelInfo) {
+                    console.log(`  ❌ Pas de levelInfo`);
+                    return;
+                }
+                
+                console.log(`  LevelInfo:`, levelInfo);
+                
+                // Test chaque pattern un par un
+                defensePatterns.forEach(pattern => {
+                    const contains = stat.includes(pattern);
+                    console.log(`    Pattern "${pattern}": ${contains ? '✅' : '❌'}`);
+                    
+                    if (contains) {
+                        if (pattern.includes('%') || pattern.includes('(%)')) {
+                            // C'est un pourcentage - utiliser DIRECTEMENT levelInfo.value !
+                            const percentValue = levelInfo.value || 0;  // ← CORRIGÉ !
+                            console.log(`    🧮 SubStat %: ${percentValue}% de flatStats.Defense (${flatStats?.Defense})`);
+                            const flatEquivalent = calculateFlatFromPercent(percentValue, scaleStat);
+                            totalFlatStats += flatEquivalent;
+                            console.log(`    ✅ SUBSTAT %: ${percentValue}% = +${flatEquivalent} flat`);
+                        } else {
+                            // C'est un flat - utiliser DIRECTEMENT levelInfo.value !
+                            const value = levelInfo.value || 0;
+                            totalFlatStats += value;
+                            console.log(`    ✅ SUBSTAT FLAT: +${value} (depuis levelInfo.value)`);
+                        }
+                    }
+                });
+            });
+        }
+        
+        console.log(`🎯 TOTAL FINAL: +${Math.round(totalFlatStats)} ${scaleStat}`);
+        return Math.round(totalFlatStats);
+    };
+
+    // 🧠 KAISEL: Calcul intelligent des flat stats avec builder_data - VERSION CORRIGÉE
     const calculateIntelligentBreakdown = () => {
         const hunterKey = getHunterKey(hunter);
         const hunterData = BUILDER_DATA[hunterKey];
         
         if (!hunterData) return null;
 
-        const scaleStat = hunterData.scaleStat;
-        const flatStatsFromScore = Math.round(score * getScaleConversionRate(scaleStat));
+        const scaleStat = hunterData.scaleStat; // 'Defense', 'Attack', ou 'HP'
+        
+        // 🎯 NOUVEAU CALCUL PRÉCIS selon scaleStat
+        const flatStatsFromArtifact = calculateRealFlatStatsFromArtifact(scaleStat);
         
         // 🔍 Analyse détaillée du score
         const breakdown = {
@@ -52,7 +198,7 @@ const ArtifactScoreBadge = ({
 
         return {
             scaleStat,
-            flatStatsFromScore,
+            flatStatsFromArtifact, // ← Changé de flatStatsFromScore
             breakdown,
             hunterData
         };
@@ -157,42 +303,63 @@ const ArtifactScoreBadge = ({
         };
     };
 
-    // 🎁 KAISEL: Analyse Set avec builder_data
-    const analyzeSet = () => {
-        const hunterKey = getHunterKey(hunter);
-        const hunterData = BUILDER_DATA[hunterKey];
-        
-        if (!hunterData) return { score: 0, status: 'unknown', message: 'Hunter non supporté' };
-        
-        if (!artifact.set || artifact.set === '') {
-            return { score: 0, status: 'missing', message: '❌ Aucun set défini' };
-        }
-
-        // Récupérer tous les sets recommandés pour ce hunter
-        const recommendedSets = Object.values(hunterData.gameModes).map(mode => mode.recommendedSet);
-        
-        // Vérifier si le set actuel est dans les recommandations
-        const isRecommended = recommendedSets.some(recSet => 
-            artifact.set.toLowerCase().includes(recSet.toLowerCase()) ||
-            recSet.toLowerCase().includes(artifact.set.toLowerCase())
-        );
-
-        if (isRecommended) {
-            return { 
-                score: 100, 
-                status: 'perfect', 
-                message: `✅ Set optimal pour ${hunterData.name}`,
-                recommended: recommendedSets[0]
+  // 🎁 KAISEL: Analyse Set avec builder_data - VERSION RAPPORT INTÉGRÉE
+ const analyzeSet = () => {
+    import('../utils/BeruIntelligentAnalysis').then(module => {
+        if (module.analyzeArtifactSet) {
+            const handleSetReportGenerated = (report) => {
+                console.log("📊 Rapport set généré depuis ArtifactScoreBadge:", report);
+                
+                // Utiliser la prop au lieu de window
+                if (onReportGenerated) {
+                    onReportGenerated(report);
+                } else {
+                    console.warn("⚠️ onReportGenerated prop manquante");
+                }
             };
+            
+            const result = module.analyzeArtifactSet(artifact, hunter, handleSetReportGenerated);
+            return result;
         }
+    }).catch(err => {
+        console.error('🐉 Kaisel: Erreur import analyzeArtifactSet:', err);
+    });
+    
+    // 🔄 FALLBACK : Logique existante en attendant l'import
+    const hunterKey = getHunterKey(hunter);
+    const hunterData = BUILDER_DATA[hunterKey];
+    
+    if (!hunterData) return { score: 0, status: 'unknown', message: 'Hunter non supporté' };
+    
+    if (!artifact.set || artifact.set === '') {
+        return { score: 0, status: 'missing', message: '❌ Aucun set défini' };
+    }
 
+    // Récupérer tous les sets recommandés pour ce hunter
+    const recommendedSets = Object.values(hunterData.gameModes).map(mode => mode.recommendedSet);
+    
+    // Vérifier si le set actuel est dans les recommandations
+    const isRecommended = recommendedSets.some(recSet => 
+        artifact.set.toLowerCase().includes(recSet.toLowerCase()) ||
+        recSet.toLowerCase().includes(artifact.set.toLowerCase())
+    );
+
+    if (isRecommended) {
         return { 
-            score: 30, 
-            status: 'poor', 
-            message: `⚠️ Set non-optimal, recommandé: ${recommendedSets[0]}`,
+            score: 100, 
+            status: 'perfect', 
+            message: `✅ Set optimal pour ${hunterData.name}`,
             recommended: recommendedSets[0]
         };
+    }
+
+    return { 
+        score: 30, 
+        status: 'poor', 
+        message: `⚠️ Set non-optimal, recommandé: ${recommendedSets[0]}`,
+        recommended: recommendedSets[0]
     };
+};
 
     // 🎲 KAISEL: Analyse qualité des rolls
     const analyzeRollQuality = () => {
@@ -241,21 +408,11 @@ const ArtifactScoreBadge = ({
         return Math.min((actualValue / maxPossible) * 100, 100);
     };
 
-    // 🎯 HELPER: Conversion rate selon scaleStat
-    const getScaleConversionRate = (scaleStat) => {
-        const rates = {
-            'Attack': 45,
-            'Defense': 45,
-            'HP': 90
-        };
-        return rates[scaleStat] || 45;
-    };
-
     // 🔍 HELPER: Clé hunter pour builder_data
     const getHunterKey = (hunter) => {
         const nameMapping = {
             'Lennart Niermann': 'niermann',
-            'Cha Hae-In': 'chae',
+            'Cha Hae-In Valkyrie': 'chae',
             'Tawata Kanae': 'kanae',
             'Seorin': 'seorin',
             'Goto Ryuji': 'goto',
@@ -380,45 +537,42 @@ const handleMouseEnter = (e) => {
 };
 
     // 🚀 KAISEL: Analyse directe d'artefact (bypass menu)
-   const triggerDirectArtifactAnalysis = () => {
-    console.log("🔥 KAISEL: showTankMessage reçu:", typeof showTankMessage);
-    console.log("🔥 KAISEL: showTankMessage === parent?", showTankMessage.toString());
-    // Import dynamique du système d'analyse
+ const triggerDirectArtifactAnalysis = () => {
+    console.log("🔥 KAISEL DEBUG: onReportGenerated type =", typeof onReportGenerated);
+    
     import('../utils/BeruIntelligentAnalysis').then(module => {
         if (module.performSpecificArtifactAnalysis) {
-            console.log("🔥 KAISEL: Déclenchement analyse spécifique pour", artifact.title);
-            
-            // 🎯 UTILISER showTankMessage depuis les props
             const showTankMessageFn = showTankMessage || ((msg) => {
                 console.log("🧠 Béru dit:", msg);
-                alert(msg); // Fallback temporaire
+                alert(msg);
             });
             
-            // 📜 GESTION DU RAPPORT
+            // 📜 CALLBACK RAPPORT
             const handleReportGenerated = (report) => {
                 console.log("📊 Rapport généré depuis ArtifactScoreBadge:", report);
-                // Déclencher l'affichage du rapport depuis le parent
-                if (window.handleReportGenerated) {
-                    window.handleReportGenerated(report);
+                
+                if (onReportGenerated) {
+                    console.log("🔥 KAISEL: Transmission rapport vers parent");
+                    onReportGenerated(report);
                 } else {
-                    console.warn("⚠️ window.handleReportGenerated non trouvé");
+                    console.warn("⚠️ onReportGenerated prop manquante");
                 }
             };
             
+            // 🚀 APPEL AVEC LE NOUVEAU PARAMÈTRE
             module.performSpecificArtifactAnalysis(
-    artifact,
-    hunter,
-    (msg) => showTankMessageFn(msg, false, 'beru'), // ← WRAPPER avec priority = false
-    () => {}, // onClose callback
-    substatsMinMaxByIncrements
-);
+                artifact,
+                hunter,
+                (msg) => showTankMessageFn(msg, false, 'beru'),
+                () => {},
+                substatsMinMaxByIncrements,
+                handleReportGenerated  // ← AJOUTER CE PARAMÈTRE !
+            );
         }
     }).catch(err => {
         console.error('🐉 Kaisel: Erreur import analyse Béru:', err);
-        alert('Erreur lors de l\'analyse ! Vérifiez la console.');
     });
 };
-
     const getColor = () => {
         if (score >= 90) return 'bg-yellow-400 text-black';
         if (score >= 70) return 'bg-green-500 text-white';
@@ -473,10 +627,10 @@ const handleMouseEnter = (e) => {
                     <div className="mb-3 p-2 bg-gray-800 rounded">
                         <div className="text-blue-300 font-semibold mb-1">🎯 Équivalent Flat Stats</div>
                         <div className="text-green-400 text-sm">
-                            ≈ +{intelligentInfo.flatStatsFromScore} {intelligentInfo.scaleStat}
+                            ≈ +{intelligentInfo.flatStatsFromArtifact} {intelligentInfo.scaleStat}
                         </div>
                         <div className="text-gray-400 text-[10px] mt-1">
-                            Basé sur scale {intelligentInfo.hunterData.scaleStat} de {intelligentInfo.hunterData.name}
+                            Calculé depuis Additional {intelligentInfo.scaleStat} + {intelligentInfo.scaleStat} % de cet artefact
                         </div>
                     </div>
 

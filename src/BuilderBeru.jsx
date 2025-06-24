@@ -546,7 +546,6 @@ function useResponsive() {
 
 // 🐉 KAISEL NETTOYAGE RADICAL - REMPLACE ta fonction migrateOldDataToNewSystem
 const migrateOldDataToNewSystem = () => {
-  console.log("🐉 Kaisel: NETTOYAGE RADICAL localStorage...");
 
   // 1️⃣ IDENTIFIER ET SUPPRIMER TOUTES les anciennes clés
   const toDelete = [];
@@ -563,15 +562,12 @@ const migrateOldDataToNewSystem = () => {
   // 🗑️ SUPPRESSION MASSIVE
   toDelete.forEach(key => {
     localStorage.removeItem(key);
-    console.log(`🗑️ SUPPRIMÉ: ${key}`);
   });
 
-  console.log(`✅ NETTOYAGE TERMINÉ ! ${toDelete.length} anciennes clés supprimées.`);
 
   // 2️⃣ VÉRIFIER que le nouveau système existe
   const current = localStorage.getItem('builderberu_users');
   if (!current) {
-    console.log("🔧 Création du système propre...");
     const cleanSystem = {
       user: {
         activeAccount: "main",
@@ -1562,47 +1558,47 @@ const getShadowScreenPosition = (entityType = 'tank') => {
 
   const characterStats = {
     'niermann': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
-    'chae': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 0 },
-    'kanae': { attack: 5634, defense: 5028, hp: 11628, critRate: 0 },
-    'alicia': { attack: 5836, defense: 5087, hp: 11075, critRate: 0 },
-    'mirei': { attack: 5926, defense: 5040, hp: 10938, critRate: 0 },
-    'baek': { attack: 5171, defense: 5737, hp: 11105, critRate: 0 },
-    'chae-in': { attack: 5854, defense: 5168, hp: 10863, critRate: 0 },
-    'charlotte': { attack: 5113, defense: 5878, hp: 10930, critRate: 0 },
-    'choi': { attack: 5879, defense: 5010, hp: 11144, critRate: 0 },
-    'emma': { attack: 5145, defense: 5102, hp: 12511, critRate: 0 },
-    'esil': { attack: 5866, defense: 5180, hp: 10812, critRate: 0 },
-    'gina': { attack: 5929, defense: 5132, hp: 10781, critRate: 0 },
-    'go': { attack: 5102, defense: 5798, hp: 11125, critRate: 0 },
-    'goto': { attack: 5087, defense: 5186, hp: 12457, critRate: 0 },
-    'han': { attack: 5077, defense: 5187, hp: 12474, critRate: 0 },
-    'harper': { attack: 5146, defense: 5157, hp: 12389, critRate: 0 },
-    'hwang': { attack: 5168, defense: 5786, hp: 11010, critRate: 0 },
-    'isla': { attack: 5243, defense: 5892, hp: 10621, critRate: 0 },
-    'lee': { attack: 5825, defense: 5139, hp: 10986, critRate: 0 },
-    'lim': { attack: 5850, defense: 5240, hp: 10720, critRate: 0 },
-    'meilin': { attack: 5719, defense: 5211, hp: 11058, critRate: 0 },
-    'min': { attack: 5095, defense: 5131, hp: 12555, critRate: 0 },
-    'seo': { attack: 5195, defense: 5262, hp: 12062, critRate: 0 },
-    'seorin': { attack: 5047, defense: 5197, hp: 12517, critRate: 0 },
-    'shimizu': { attack: 5226, defense: 5022, hp: 12509, critRate: 0 },
-    'silverbaek': { attack: 5817, defense: 5162, hp: 10956, critRate: 0 },
-    'thomas': { attack: 5188, defense: 5928, hp: 10622, critRate: 0 },
-    'woo': { attack: 5205, defense: 5862, hp: 10768, critRate: 0 },
-    'yoo': { attack: 5880, defense: 5030, hp: 11100, critRate: 0 },
-    'anna': { attack: 5163, defense: 4487, hp: 9705, critRate: 0 },
-    'han-song': { attack: 5066, defense: 4567, hp: 9741, critRate: 0 },
-    'hwang-dongsuk': { attack: 4533, defense: 4595, hp: 10815, critRate: 0 },
-    'jo': { attack: 5081, defense: 4585, hp: 9673, critRate: 0 },
-    'kang': { attack: 5128, defense: 4506, hp: 9740, critRate: 0 },
-    'kim-chul': { attack: 4561, defense: 5167, hp: 9542, critRate: 0 },
-    'kim-sangshik': { attack: 4670, defense: 5071, hp: 9513, critRate: 0 },
-    'lee-johee': { attack: 4604, defense: 4407, hp: 11064, critRate: 0 },
-    'nam': { attack: 4556, defense: 4563, hp: 10836, critRate: 0 },
-    'park-beom': { attack: 4621, defense: 5096, hp: 9568, critRate: 0 },
-    'park-heejin': { attack: 5024, defense: 4619, hp: 9721, critRate: 0 },
-    'song': { attack: 5252, defense: 4490, hp: 9513, critRate: 0 },
-    'yoo-jinho': { attack: 4591, defense: 5079, hp: 9665, critRate: 0 }
+    'chae': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
+    'kanae': { attack: 5634, defense: 5028, hp: 11628, critRate: 0, mp: 1000 },
+    'alicia': { attack: 5836, defense: 5087, hp: 11075, critRate: 0, mp: 1000 },
+    'mirei': { attack: 5926, defense: 5040, hp: 10938, critRate: 0, mp: 1000 },
+    'baek': { attack: 5171, defense: 5737, hp: 11105, critRate: 0, mp: 1000 },
+    'chae-in': { attack: 5854, defense: 5168, hp: 10863, critRate: 0, mp: 1000 },
+    'charlotte': { attack: 5113, defense: 5878, hp: 10930, critRate: 0, mp: 1000 },
+    'choi': { attack: 5879, defense: 5010, hp: 11144, critRate: 0, mp: 1000 },
+    'emma': { attack: 5145, defense: 5102, hp: 12511, critRate: 0, mp: 1000 },
+    'esil': { attack: 5866, defense: 5180, hp: 10812, critRate: 0, mp: 1000 },
+    'gina': { attack: 5929, defense: 5132, hp: 10781, critRate: 0, mp: 1000 },
+    'go': { attack: 5102, defense: 5798, hp: 11125, critRate: 0, mp: 1000 },
+    'goto': { attack: 5087, defense: 5186, hp: 12457, critRate: 0, mp: 1000 },
+    'han': { attack: 5077, defense: 5187, hp: 12474, critRate: 0, mp: 1000 },
+    'harper': { attack: 5146, defense: 5157, hp: 12389, critRate: 0, mp: 1000 },
+    'hwang': { attack: 5168, defense: 5786, hp: 11010, critRate: 0, mp: 1000 },
+    'isla': { attack: 5243, defense: 5892, hp: 10621, critRate: 0, mp: 1000 },
+    'lee': { attack: 5825, defense: 5139, hp: 10986, critRate: 0, mp: 1000 },
+    'lim': { attack: 5850, defense: 5240, hp: 10720, critRate: 0, mp: 1000 },
+    'meilin': { attack: 5719, defense: 5211, hp: 11058, critRate: 0, mp: 1000 },
+    'min': { attack: 5095, defense: 5131, hp: 12555, critRate: 0, mp: 1000 },
+    'seo': { attack: 5195, defense: 5262, hp: 12062, critRate: 0, mp: 1000 },
+    'seorin': { attack: 5047, defense: 5197, hp: 12517, critRate: 0, mp: 1000 },
+    'shimizu': { attack: 5226, defense: 5022, hp: 12509, critRate: 0, mp: 1000 },
+    'silverbaek': { attack: 5817, defense: 5162, hp: 10956, critRate: 0, mp: 1000 },
+    'thomas': { attack: 5188, defense: 5928, hp: 10622, critRate: 0, mp: 1000 },
+    'woo': { attack: 5205, defense: 5862, hp: 10768, critRate: 0, mp: 1000 },
+    'yoo': { attack: 5880, defense: 5030, hp: 11100, critRate: 0, mp: 1000 },
+    'anna': { attack: 5163, defense: 4487, hp: 9705, critRate: 0, mp: 1000 },
+    'han-song': { attack: 5066, defense: 4567, hp: 9741, critRate: 0, mp: 1000 },
+    'hwang-dongsuk': { attack: 4533, defense: 4595, hp: 10815, critRate: 0, mp: 1000 },
+    'jo': { attack: 5081, defense: 4585, hp: 9673, critRate: 0, mp: 1000 },
+    'kang': { attack: 5128, defense: 4506, hp: 9740, critRate: 0, mp: 1000 },
+    'kim-chul': { attack: 4561, defense: 5167, hp: 9542, critRate: 0, mp: 1000 },
+    'kim-sangshik': { attack: 4670, defense: 5071, hp: 9513, critRate: 0, mp: 1000 },
+    'lee-johee': { attack: 4604, defense: 4407, hp: 11064, critRate: 0, mp: 1000 },
+    'nam': { attack: 4556, defense: 4563, hp: 10836, critRate: 0, mp: 1000 },
+    'park-beom': { attack: 4621, defense: 5096, hp: 9568, critRate: 0, mp: 1000 },
+    'park-heejin': { attack: 5024, defense: 4619, hp: 9721, critRate: 0, mp: 1000 },
+    'song': { attack: 5252, defense: 4490, hp: 9513, critRate: 0, mp: 1000 },
+    'yoo-jinho': { attack: 4591, defense: 5079, hp: 9665, critRate: 0, mp: 1000 }
   };
 
   const [artifactsData, setArtifactsData] = useState({
@@ -5274,6 +5270,7 @@ BobbyJones : "Allez l'Inter !"
                               }))
                             }
                             onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
+                            onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
                           />
                         ))}
                       </div>
@@ -5328,6 +5325,7 @@ BobbyJones : "Allez l'Inter !"
                               }))
                             }
                             onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
+                            onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
                           />
                         ))}
                       </div>
@@ -5429,6 +5427,7 @@ BobbyJones : "Allez l'Inter !"
                         }))
                       }
                       onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
+                      onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
                     />
                   ))}
                 </div>
@@ -6120,6 +6119,7 @@ BobbyJones : "Allez l'Inter !"
                       }))
                     }
                     onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
+                    onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
                   />
                 ))}
               </div>
