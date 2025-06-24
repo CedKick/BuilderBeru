@@ -153,16 +153,16 @@ const KaiselInteractionMenu = ({
         break;
 
       case 'show_twitch_streams':
-        try {
-          const response = await fetch('/api/kaisel/get-streams');
-          const data = await response.json();
-          showTankMessage(data.message, true, 'kaisel');
-        } catch (error) {
-            console.error('🐛 Kaisel Debug:', error); // ← Pour toi dans console
-          showTankMessage("🚨 Erreur API Kaisel - Retry plus tard ⚡", true, 'kaisel');
-        }
-        onClose();
-        break;
+  try {
+    const response = await fetch('/api/kaisel/get-streams');
+    const data = await response.json();
+    showTankMessage(data.message, true, 'kaisel');
+  } catch (error) {
+    console.error('Kaisel Debug:', error);
+    showTankMessage('Erreur API Kaisel - Retry plus tard', true, 'kaisel');
+  }
+  onClose();
+  break;
 
       case 'show_youtube_videos':
         const youtubeData = await scanYouTubeVideos();
