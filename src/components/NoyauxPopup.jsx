@@ -1,3 +1,5 @@
+// 🐉 KAISEL FIX - NoyauxPopup Mobile Optimisé
+
 import React, { useState, useEffect, useRef } from 'react';
 import { CORE_OPTIONS } from '../utils/coreOptions';
 
@@ -13,6 +15,9 @@ const NoyauxPopup = ({ hunterName, onClose, onSave, existingCores = {}, isMobile
   // 🔥 KAISEL FIX : Tracking pour éviter les re-renders inutiles
   const hasInitialized = useRef(false);
   const lastExistingCores = useRef(null);
+
+  // 🛡️ DÉTECTION MOBILE AMÉLIORÉE
+  const isMobileDevice = isMobile?.isPhone || isMobile?.isTablet || window.innerWidth < 768;
 
   // 🛡️ FONCTION HELPER POUR COMPARER DEEP LES OBJETS
   const deepEqual = (obj1, obj2) => {
@@ -37,21 +42,18 @@ const NoyauxPopup = ({ hunterName, onClose, onSave, existingCores = {}, isMobile
     return true;
   };
 
-  // 🔥 USEEFFECT OPTIMISÉ - Plus de re-render de l'enfer !
+  // 🔥 USEEFFECT OPTIMISÉ
   useEffect(() => {
-    // Ne s'initialise qu'une seule fois OU si existingCores change vraiment
     if (!hasInitialized.current || !deepEqual(existingCores, lastExistingCores.current)) {
       const merged = {
         ...initialState,
         ...(existingCores || {}),
       };
       
-      // 🛡️ Protection contre les objets incomplets
       Object.keys(merged).forEach(type => {
         if (!merged[type] || typeof merged[type] !== 'object') {
           merged[type] = initialState[type];
         } else {
-          // Assurer que tous les champs existent
           merged[type] = {
             primary: merged[type].primary || '',
             primaryValue: merged[type].primaryValue || '',
@@ -70,7 +72,6 @@ const NoyauxPopup = ({ hunterName, onClose, onSave, existingCores = {}, isMobile
   // 🔧 HANDLERS OPTIMISÉS
   const handleChange = (type, field, value) => {
     setCoreData(prev => {
-      // 🛡️ Protection contre les états corrompus
       if (!prev[type]) {
         prev[type] = initialState[type];
       }
@@ -128,11 +129,70 @@ const NoyauxPopup = ({ hunterName, onClose, onSave, existingCores = {}, isMobile
     onClose();
   };
 
-  // 🎨 RENDER BLOCK OPTIMISÉ
-  const renderTypeBlock = (type) => {
+  // 🎨 RENDER BLOCK MOBILE OPTIMISÉ
+  const renderMobileTypeBlock = (type) => {
     const safeData = coreData[type] || initialState[type];
+    const primary = safeData.primary || '';
+    const primaryValue = safeData.primaryValue || '';
+    const secondary = safeData.secondary || '';
+    const secondaryValue = safeData.secondaryValue || '';
 
-    // 🛡️ Double protection contre les données corrompues
+    return (
+      <div key={type} className="bg-gray-800 rounded-lg p-3 mb-3 border border-gray-600">
+        <h3 className="text-base font-semibold mb-3 text-purple-300 text-center">{type}</h3>
+        
+        {/* PRIMARY STAT */}
+        <div className="mb-3">
+          <label className="text-xs text-gray-300 mb-1 block">Primary Stat</label>
+          <select
+            className="w-full bg-black p-2 rounded text-xs border border-gray-600 focus:border-purple-400 transition-colors mb-2"
+            value={primary}
+            onChange={e => handlePrimaryChange(type, e.target.value)}
+          >
+            <option value="">Select Primary</option>
+            {CORE_OPTIONS[type]?.primary?.map(stat => (
+              <option key={stat} value={stat}>{stat}</option>
+            )) || []}
+          </select>
+          <input
+            type="number"
+            step="0.01"
+            className="w-full bg-[#222] p-2 rounded text-xs border border-gray-600 focus:border-purple-400 transition-colors"
+            value={primaryValue}
+            onChange={e => handleChange(type, 'primaryValue', e.target.value)}
+            placeholder="Valeur"
+          />
+        </div>
+
+        {/* SECONDARY STAT */}
+        <div>
+          <label className="text-xs text-gray-300 mb-1 block">Secondary Stat</label>
+          <select
+            className="w-full bg-black p-2 rounded text-xs border border-gray-600 focus:border-purple-400 transition-colors mb-2"
+            value={secondary}
+            onChange={e => handleSecondaryChange(type, e.target.value)}
+          >
+            <option value="">Select Secondary</option>
+            {CORE_OPTIONS[type]?.secondary?.map(stat => (
+              <option key={stat} value={stat}>{stat}</option>
+            )) || []}
+          </select>
+          <input
+            type="number"
+            step="0.01"
+            className="w-full bg-[#222] p-2 rounded text-xs border border-gray-600 focus:border-purple-400 transition-colors"
+            value={secondaryValue}
+            onChange={e => handleChange(type, 'secondaryValue', e.target.value)}
+            placeholder="Valeur"
+          />
+        </div>
+      </div>
+    );
+  };
+
+  // 🎨 RENDER BLOCK DESKTOP
+  const renderDesktopTypeBlock = (type) => {
+    const safeData = coreData[type] || initialState[type];
     const primary = safeData.primary || '';
     const primaryValue = safeData.primaryValue || '';
     const secondary = safeData.secondary || '';
@@ -192,32 +252,38 @@ const NoyauxPopup = ({ hunterName, onClose, onSave, existingCores = {}, isMobile
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center overflow-y-auto p-2">
-      {(isMobile?.isPhone || isMobile?.isTablet) && !isMobile?.isDesktop ? (
-        <div className="bg-[#1a1a2f] p-4 rounded-lg shadow-xl w-[95%] text-white max-h-[90%] overflow-y-auto border border-purple-500/30">
-          <h2 className="text-lg font-bold mb-3 text-center text-purple-300">⚙️ Noyaux Configuration</h2>
-          <div className="space-y-3">
-            {['Offensif', 'Défensif', 'Endurance'].map(renderTypeBlock)}
+      {isMobileDevice ? (
+        // 📱 VERSION MOBILE OPTIMISÉE
+        <div className="bg-[#1a1a2f] p-4 rounded-lg shadow-xl w-[90%] max-w-[400px] text-white max-h-[85vh] overflow-y-auto border border-purple-500/30">
+          <h2 className="text-lg font-bold mb-4 text-center text-purple-300">⚙️ Noyaux</h2>
+          
+          {/* SCROLL CONTAINER POUR MOBILE */}
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {['Offensif', 'Défensif', 'Endurance'].map(renderMobileTypeBlock)}
           </div>
-          <div className="flex justify-center mt-4 gap-3">
+          
+          {/* BOUTONS FIXES EN BAS */}
+          <div className="flex justify-center mt-4 gap-3 pt-3 border-t border-gray-600">
             <button 
               onClick={onClose} 
-              className="text-xs px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors border border-gray-500"
+              className="flex-1 max-w-[120px] text-sm px-3 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors border border-gray-500"
             >
               ❌ Annuler
             </button>
             <button 
               onClick={handleSave} 
-              className="text-xs px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg hover:from-purple-500 hover:to-purple-600 transition-all border border-purple-400"
+              className="flex-1 max-w-[120px] text-sm px-3 py-2 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg hover:from-purple-500 hover:to-purple-600 transition-all border border-purple-400"
             >
-              💾 Sauvegarder
+              💾 Sauver
             </button>
           </div>
         </div>
       ) : (
+        // 🖥️ VERSION DESKTOP
         <div className="bg-[#1a1a2f] p-6 rounded-lg shadow-xl w-[650px] text-white border border-purple-500/30">
           <h2 className="text-xl font-bold mb-4 text-center text-purple-300">⚙️ Configuration des Noyaux</h2>
           <div className="space-y-4">
-            {['Offensif', 'Défensif', 'Endurance'].map(renderTypeBlock)}
+            {['Offensif', 'Défensif', 'Endurance'].map(renderDesktopTypeBlock)}
           </div>
           <div className="flex justify-end mt-6 gap-4">
             <button 

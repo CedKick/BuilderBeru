@@ -925,11 +925,6 @@ showClickFeedback(entity, clickX, clickY) {
   ctx.fill();
   ctx.restore();
   
-  // Disparaît après 500ms
-  setTimeout(() => {
-    // Redraw canvas sans le feedback
-    this.render();
-  }, 500);
 }
 
 // 🔧 ALTERNATIVE - HITBOX RELATIVE À LA TAILLE
@@ -970,7 +965,11 @@ getEntityHitbox(entity, padding = 0.3) {
 
    // ⚡ Kaisel click handler - VERSION CORRIGÉE
 handleKaiselClick(entity) {
-  // ✅ NOUVEAU : appel simplifié sans x,y comme Béru
+  const count = entity.clickCount;
+  
+  // 🔥 AJOUTE ÇA POUR TESTER
+  
+  // Menu après
   this.callbacks.showKaiselMenu(this.callbacks.getSelectedCharacter?.());
 }
 
@@ -2046,6 +2045,7 @@ normalKaiselWandering(entity) {
   const [messageOpacity, setMessageOpacity] = useState(1);
   const [showPopup, setShowPopup] = useState(false);
   const [isSetSelectorOpen, setIsSetSelectorOpen] = useState(false);
+  const [currentSpeaker, setCurrentSpeaker] = useState('tank');
   const [isAccountSwitching, setIsAccountSwitching] = useState(false);
   const [setSelectorSlot, setSetSelectorSlot] = useState(null); // ex: 'Helmet'
   const [showNoyauxPopup, setShowNoyauxPopup] = useState(false);
@@ -4671,78 +4671,69 @@ BobbyJones : "Allez l'Inter !"
     };
   }, []);
 
-  const showTankMessage = (message, priority = false, entityType = 'tank') => {
-    try {
-      // 🛡️ Protection basique
-      if (!message || typeof message !== 'string') {
-        console.warn("🐉 Kaisel: Message invalide ignoré");
-        return;
-      }
-
-      // 🛡️ Si Tank parle ET pas prioritaire → queue
-      if (isTankSpeaking.current && !priority) {
-        messageQueue.current.push({ message, entityType });
-        return;
-      }
-
-      // 🚀 Si prioritaire, on force l'affichage
-      if (priority && isTankSpeaking.current) {
-        if (currentTimeout.current) {
-          clearTimeout(currentTimeout.current);
-        }
-      }
-
-      isTankSpeaking.current = true;
-      setShowChibiBubble(false);
-      setBubbleId(Date.now());
-
-      // 🛡️ PROTECTION getShadowScreenPosition
-      const pos = getShadowScreenPosition(entityType);
-
-      // 🔥 OFFSET INTELLIGENT
-      const messageOffset = Math.min(200, message.length * 0.6);
-      const adjustedPos = {
-        x: pos.x,
-        y: pos.y - messageOffset,
-        currentCanvasId: pos.currentCanvasId
-      };
-
-      setChibiPos(adjustedPos);
-      setShowChibiBubble(true);
-      setChibiMessage(message);
-
-      // 🎯 DURÉE DYNAMIQUE
-      const calculateDisplayDuration = (message) => {
-        const baseTime = 4000;
-        const readingTime = message.length * 80;
-        const maxTime = 20000;
-        return Math.min(Math.max(baseTime, readingTime), maxTime);
-      };
-
-      const displayDuration = calculateDisplayDuration(message);
-
-      // 🔥 TIMEOUT SÉCURISÉ
-      currentTimeout.current = setTimeout(() => {
-        setShowChibiBubble(false);
-        isTankSpeaking.current = false;
-
-        // 🔄 TRAITER LA QUEUE
-        if (messageQueue.current.length > 0) {
-          const next = messageQueue.current.shift();
-          setTimeout(() => {
-            showTankMessage(next.message, false, next.entityType);
-          }, 100); // Petit délai pour éviter les conflits
-        }
-
-        currentTimeout.current = null;
-      }, displayDuration);
-
-    } catch (error) {
-      console.error("🐉 Kaisel: showTankMessage error:", error);
-      // Fallback silencieux
-      isTankSpeaking.current = false;
+ const showTankMessage = (message, priority = false, entityType = 'tank') => {
+  try {
+    if (!message || typeof message !== 'string') {
+      console.warn("🐉 Kaisel: Message invalide ignoré");
+      return;
     }
-  };
+
+    if (isTankSpeaking.current && !priority) {
+      messageQueue.current.push({ message, entityType });
+      return;
+    }
+
+    if (priority && isTankSpeaking.current) {
+      if (currentTimeout.current) {
+        clearTimeout(currentTimeout.current);
+      }
+    }
+
+    isTankSpeaking.current = true;
+    setShowChibiBubble(false);
+    setBubbleId(Date.now());
+    setCurrentSpeaker(entityType); // ← NOUVEAU : Track l'entité
+
+    const pos = getShadowScreenPosition(entityType);
+    const isMobileDevice = isMobile?.isPhone || isMobile?.isTablet || window.innerWidth < 768;
+    
+    const adjustedPos = isMobileDevice ? {
+      x: window.innerWidth / 2,
+      y: 80,
+      currentCanvasId: pos.currentCanvasId
+    } : {
+      x: pos.x,
+      y: pos.y - Math.min(200, message.length * 0.6),
+      currentCanvasId: pos.currentCanvasId
+    };
+
+    setChibiPos(adjustedPos);
+    setShowChibiBubble(true);
+    setChibiMessage(message);
+
+    const displayDuration = isMobileDevice ? 
+      Math.min(Math.max(6000, message.length * 120), 30000) :
+      Math.min(Math.max(4000, message.length * 80), 20000);
+
+    currentTimeout.current = setTimeout(() => {
+      setShowChibiBubble(false);
+      isTankSpeaking.current = false;
+
+      if (messageQueue.current.length > 0) {
+        const next = messageQueue.current.shift();
+        setTimeout(() => {
+          showTankMessage(next.message, false, next.entityType);
+        }, 100);
+      }
+
+      currentTimeout.current = null;
+    }, displayDuration);
+
+  } catch (error) {
+    console.error("🐉 Kaisel: showTankMessage error:", error);
+    isTankSpeaking.current = false;
+  }
+};
 
   // Filtre du select Personnage
   useEffect(() => {
@@ -4765,835 +4756,786 @@ BobbyJones : "Allez l'Inter !"
     }
   }, [selectedElement, selectedClass, characters, selectedCharacter]);
 
-
+const handleCloseBubble = () => {
+  setShowChibiBubble(false);
+  isTankSpeaking.current = false;
+  
+  // Clear le timeout actuel
+  if (currentTimeout.current) {
+    clearTimeout(currentTimeout.current);
+    currentTimeout.current = null;
+  }
+  
+  // Traiter la queue si messages en attente
+  if (messageQueue.current.length > 0) {
+    const next = messageQueue.current.shift();
+    setTimeout(() => {
+      showTankMessage(next.message, false, next.entityType);
+    }, 100);
+  }
+};
 
   return (
     <>
 
       {((isMobile.isPhone || isMobile.isTablet) && !isMobile.isDesktop) ? (
-        <>
-          <div className="h-screen bg-gray-950 text-white p-1  tank-target">
-            <div className="w-full flex justify-center">
-              <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(600px,900px)_240px] gap-x-2 max-w-[1400px] w-full px-2">
-
-
-
-
-
-                {mobileView === 'main' && (
-                  <>
-                    <div className="w-[85vw] sm:w-[85vw] md:w-[1000px] mx-auto">
-                      {/* Ton bloc central ici */}
-                      {mobileView === 'main' && (
-                        <div className="flex flex-col items-center w-full max-w-[95vw] sm:max-w-[1100px] mx-auto px-2 sm:px-4 text-[13px] sm:text-[14px]">
-
-
-                          <div className="flex flex-col justify-center items-center h-full tank-target">
-                            {/* Filtres + select personnage EN HAUT */}
-                            <div className="flex flex-col w-fit gap-2">
-                              {/* Bloc – Langues + Select */}
-                              <div className="flex items-center gap-2">
-                                <div className="flex gap-1 items-center ml-0 mr-4">
-                                  <div className="flex gap-2 items-center">
-                                    <img
-                                      src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png"
-                                      alt="Français"
-                                      onClick={() => i18n.changeLanguage('fr')}
-                                      className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
-                                    />
-                                    <img
-                                      src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png"
-                                      alt="English"
-                                      onClick={() => i18n.changeLanguage('en')}
-                                      className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
-                                    />
-                                  </div>
-                                </div>
-
-                                {/* Colonne Centre – Éléments + Select + Classes */}
-                                <div className="flex items-center gap-3 mr-auto">
-
-                                  {/* Select Personnage */}
-                                  <select
-                                    value={selectedCharacter}
-                                    onChange={(e) => {
-                                      const selected = e.target.value;
-                                      setSelectedCharacter(selected);
-
-                                      const saved = localStorage.getItem(`${selected}`);
-                                      if (saved) {
-                                        const build = JSON.parse(saved);
-                                        setFlatStats(build.flatStats);
-                                        setStatsWithoutArtefact(build.statsWithoutArtefact);
-                                        setArtifactsData(build.artifactsData);
-                                        setHunterCores(build.hunterCores);
-                                        showTankMessage(`Loaded saved build for ${selected} 😏`);
-                                      } else {
-                                        handleResetStats();
-                                      }
-                                    }}
-                                    className="p-1 rounded bg-[#1c1c3c] text-white text-sm tank-target"
-                                  >
-                                    <option value="">Sélectionner un personnage</option>
-                                    {Object.entries(characters)
-                                      .filter(([key, char]) => {
-                                        if (key === '') return false;
-                                        if (selectedElement && char.element !== selectedElement) return false;
-                                        if (selectedClass) {
-                                          const classType = char.class === 'Tank' ? 'Tank'
-                                            : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
-                                          if (classType !== selectedClass) return false;
-                                        }
-                                        return true;
-                                      })
-                                      .map(([key, char]) => (
-                                        <option key={key} value={key}>{char.name}</option>
-                                      ))}
-                                  </select>
-                                </div>
-                              </div>
-                              {/* Bloc en dessous – Éléments + Classes */}
-                              <div className="flex items-center gap-2"> {/* bloc vert */}
-                                {/* Icônes éléments */}
-                                {/* <div className="flex gap-2">
-                                  {['Fire', 'Water', 'Light', 'Dark', 'Wind'].map((el) => {
-                                    const key = el.toLowerCase();
-                                    return (
-                                      <img
-                                        key={el}
-                                        src={ICON_ELEMENTS[key]}
-                                        alt={el}
-                                        onClick={() => handleElementClick(el)}
-                                        className={`"w-9 h-9 max-sm:w-6 max-sm:h-6" cursor-pointer transition-all duration-300 tank-target 
-              ${selectedElement === el ? 'opacity-100 drop-shadow-md' : 'opacity-40'}`}
-                                      />
-                                    );
-                                  })}
-                                </div> */}
-
-
-
-                                {/* Icônes classes */}
-                                {/* <div className="flex flex-row items-center gap-1 ml-2">
-                                  {['Tank', 'DPS', 'Support'].map((type) => {
-                                    const key = type.toLowerCase();
-                                    return (
-                                      <img
-                                        key={type}
-                                        src={ICON_CLASSES[key]}
-                                        alt={type}
-                                        onClick={() => handleClassClick(type)}
-                                        className={`w-8 h-8 cursor-pointer tank-target transition-all duration-300 
-              ${selectedClass === type ? 'opacity-100 drop-shadow-md' : 'opacity-40'}`}
-                                      />
-                                    );
-                                  })}
-                                </div> */}
-                              </div>
-                            </div>
-
-
-                            <div className="w-full flex justify-between tank-target mt-0 gap-2 text-sm flex-wrap sm:flex-nowrap">
-                              <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full items-center tank-target">
-
-                                <button
-                                  onClick={handleResetStats}
-                                  className="bg-gradient-to-r from-black-900 to-black-700 hover:from-black-700 hover:to-black-500 text-white font-bold px-4 py-2 text-sm rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-red-500/40 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
-                                >
-                                  BobbyKick
-                                </button>
-
-                                <button
-                                  onClick={handleSaveBuild}
-                                  className="bg-gradient-to-r from-emerald-800 to-green-600 hover:from-green-600 hover:to-green-400 text-white font-bold px-4 py-2 text-sm rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-green-400/40 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
-                                >
-                                  Save
-                                </button>
-
-                                <button
-                                  onClick={handleExportAllBuilds}
-                                  className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
-                                >
-                                  Export
-                                </button>
-
-                                <button
-                                  onClick={handleImportBuild}
-                                  className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105 max-sm:px-2 max-sm:py-1 max-sm:text-xs"
-                                >
-                                  Import
-                                </button>
-
-                                <button
-                                  onClick={() => setShowNewAccountPopup(true)}
-                                  className="bg-green-700 px-4 py-2 rounded text-white ml-2"
-                                >
-                                  ➕ Nouveau compte
-                                </button>
-
-                                {Object.keys(accounts).length > 1 && (
-                                  <select
-                                    value={activeAccount}
-                                    onChange={(e) => {
-                                      const newAcc = e.target.value;
-
-
-                                      // 🎯 Utiliser la nouvelle fonction d'auto-load
-                                      handleAccountSwitch(newAcc);
-                                    }}
-                                    className="bg-gray-800 text-white px-3 py-2 rounded ml-2"
-                                  >
-                                    {Object.keys(accounts).map(acc => (
-                                      <option key={acc} value={acc}>{acc}</option>
-                                    ))}
-                                  </select>
-                                )}
-
-                                {/* Icons à droite */}
-                                <div id="buildIcons" className="flex gap-2 items-center mt-1 sm:mt-0">
-                                  {isBuildsReady && recentBuilds.length > 0 && (
-                                    recentBuilds
-                                      .filter((charKey) => characters[charKey]) // <-- Sécurité
-                                      .map((charKey) => (
-                                        <img
-                                          key={charKey}
-                                          src={characters[charKey]?.icon || '/default.png'}
-                                          alt={characters[charKey]?.name || charKey}
-                                          onClick={() => handleClickBuildIcon(charKey)}
-                                          className="w-8 h-8 rounded-full cursor-pointer border-2 border-purple-700 hover:scale-110 transition"
-                                        />
-                                      ))
-                                  )}
-                                </div>
-
-                              </div>
-                            </div>
-
-
-
-                            {showImportSaveWarning && (
-                              <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999]">
-                                <div className="bg-[#1a1a2e] text-white p-6 rounded-xl shadow-lg border border-purple-700 text-center max-w-sm">
-                                  <p className="text-lg font-bold mb-4">
-                                    ⚠️ Shadow Override Detected
-                                  </p>
-                                  <p className="text-sm mb-6">
-                                    If you save this data,<br />
-                                    your current system build will be <span className="text-red-400">overwritten</span>.<br />
-                                    Do you really want to save this imported shadow?
-                                  </p>
-                                  <div className="flex justify-center gap-4">
-                                    <button
-                                      onClick={() => {
-
-                                        setShowImportSaveWarning(false);
-                                        setIsImportedBuild(false);
-                                        handleSaveBuild();
-                                        playMusic();
-                                      }}
-                                      className="bg-green-700 hover:bg-green-600 px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded text-white"
-                                    >
-                                      Yes
-                                    </button>
-                                    <button
-                                      onClick={() => setShowImportSaveWarning(false)}
-                                      className="bg-red-700 hover:bg-red-600 px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded text-white"
-                                    >
-                                      No
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-
-                            {showNoyauxPopup && (
-                              <NoyauxPopup
-                                hunterName={selectedCharacter}
-                                onClose={() => setShowNoyauxPopup(false)}
-                                onSave={handleSaveNoyaux}
-                                existingCores={hunterCores[selectedCharacter] || {}}
-                                isMobile={isMobile}
-                              />
-                            )}
-
-                            {showGemPopup && (
-                              <GemmesPopup
-                                gemData={gemData}
-                                onClose={() => setShowGemPopup(false)}
-                                onSave={handleSaveGems}
-                                isMobile={isMobile}
-                              />
-                            )}
-
-                            {showNewAccountPopup && (
-                              <NewAccountPopup
-                                newAccountName={newAccountName}
-                                setNewAccountName={setNewAccountName}
-                                setShowNewAccountPopup={setShowNewAccountPopup}
-                                createNewAccount={createNewAccount}
-                              />
-                            )}
-
-                            {showBeruInteractionMenu && (() => {
-                              return null;
-                            })()}
-
-                            {showBeruInteractionMenu && (
-
-                              <BeruInteractionMenu
-                                position={beruMenuPosition}
-                                onClose={closeBeruMenu} // ← UTILISER LA FONCTION SÉCURISÉE
-                                selectedCharacter={selectedCharacter}
-                                characters={characters}
-                                showTankMessage={showTankMessage}
-                                currentArtifacts={artifactsData}
-                                currentStats={finalStats}                   // ← STATS FINALES COMPLÈTES !
-                                currentCores={hunterCores[selectedCharacter] || {}}
-                                currentGems={gemData}
-                                multiAccountsData={accounts}
-                                onReportGenerated={handleReportGenerated}
-                                substatsMinMaxByIncrements={substatsMinMaxByIncrements} // ← AJOUTER CETTE LIGNE !
-                                existingScores={artifactScores} // ← UTILISER LE STATE PROTÉGÉ
-                              />
-                            )}
-
-                            {showKaiselInteractionMenu && (
-                              <KaiselInteractionMenu
-                                position={kaiselMenuPosition}
-                                onClose={closeKaiselMenu}
-                                selectedCharacter={selectedCharacter}
-                                characters={characters}
-                                showTankMessage={showTankMessage}
-                                currentArtifacts={artifactsData}
-                                currentStats={finalStats}
-                                currentCores={hunterCores[selectedCharacter] || {}}
-                                multiAccountsData={accounts}
-                                substatsMinMaxByIncrements={substatsMinMaxByIncrements}
-                                existingScores={artifactScores}
-                              />
-                            )}
-
-                            {/* Papyrus doré */}
-                            <GoldenPapyrusIcon
-                              isVisible={showPapyrus}
-                              onClick={handleOpenReport}
-                            />
-
-                            <BeruReportSystem
-                              isOpen={showReportSystem}
-                              onClose={handleCloseReport}
-                              currentReport={currentReport}
-                              reportHistory={reportHistory}
-                              onSaveReport={handleSaveReport}
-                            />
-
-                            {showSernPopup && (
-                              <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999]  py-10">
-                                <div
-                                  ref={popupRef}
-                                  className="relative w-[95vw] max-w-[1000px] p-4 bg-black/90 text-white 
-        border-4 border-white rounded-2xl shadow-2xl animate-pulse flex flex-col 
-         max-h-[90vh] scrollbar-none scroll-smooth"
-                                >
-                                  {/* IMAGE */}
-                                  <div className="w-full flex items-center justify-center">
-                                    <img
-                                      src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747680569/SERN_ab7od6.png"
-                                      alt="Sung Bobby SERN"
-                                      className="w-full max-w-full rounded-md opacity-90 object-contain"
-                                    />
-                                  </div>
-
-                                  {/* TEXTE */}
-                                  <div className="w-full mt-4 px-4">
-                                    <h2 className="text-xl font-bold mb-2 text-center">⚠️ INFRACTION GAGOLDIQUE N-404 ⚠️</h2>
-                                    <span
-                                      ref={dytextRef}
-                                      className="text-sm whitespace-pre-line font-mono leading-relaxed tracking-wide animate-fade-in text-left"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            <OCRPasteListener
-                              onParsed={(parsed) => {
-                                setParsedArtifactData(parsed);
-                              }}
-                              updateArtifactFromOCR={updateArtifactFromOCR}
-                            />
-
-                            {comparisonData && (
-                              <ComparisonPopup
-                                original={comparisonData}
-                                onClose={() => setComparisonData(null)}
-                                hunter={characters[selectedCharacter]}
-                                flatStats={flatStats} // ← Ajouter
-                                statsWithoutArtefact={statsWithoutArtefact} // ← Ajouter
-                                substatsMinMaxByIncrements={substatsMinMaxByIncrements}
-                                showTankMessage={showTankMessage} // ✅ Ajoute ça
-                                recalculateStatsFromArtifacts={recalculateStatsFromArtifacts} // ✅ Ajoute ça aussi
-                              />
-                            )}
-
-                            {showNarrative && (
-                              <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999]  py-10">
-                                <div
-                                  ref={popupRef}
-                                  className="relative w-[95vw] max-w-[1000px] p-4 bg-black/90 text-white 
-        border-4 border-white rounded-2xl shadow-2xl animate-pulse flex flex-col 
-         max-h-[90vh] scrollbar-none scroll-smooth"
-                                >
-                                  {/* IMAGE dynamique */}
-                                  {currentImage && (
-                                    <div className="w-full flex items-center justify-center">
-                                      <img
-                                        ref={mainImageRef}
-                                        src={currentImage?.src}
-                                        alt="Image narrative"
-                                        className="w-1/2 mx-auto rounded-md opacity-90 object-contain"
-                                      />
-                                    </div>
-                                  )}
-
-                                  {/* TEXTE */}
-                                  <div className="w-full mt-4 px-4">
-                                    <h2 className="text-xl font-bold mb-2 text-center">⚠️ INFRACTION GAGOLDIQUE NARRATIVE ⚠️</h2>
-                                    <span
-                                      ref={dytextRef}
-                                      className="text-sm whitespace-pre-line font-mono leading-relaxed tracking-wide animate-fade-in text-left"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {showWeaponPopup && (
-                              <WeaponPopup
-                                hunterName={selectedCharacter}
-                                onClose={() => setShowWeaponPopup(false)}
-                                onSave={handleSaveWeapon}
-                                existingWeapon={hunterWeapons[selectedCharacter] || {}}
-                                scaleStat={characters[selectedCharacter]?.scaleStat}
-                              />
-                            )}
-
-                            {parsedArtifactData && (
-                              <OcrConfirmPopup
-                                parsedData={parsedArtifactData}
-                                onConfirm={(data) => {
-                                  // 🧠 Ici tu traites la sauvegarde finale (ex: mise à jour des artefactsData)
-                                  setParsedArtifactData(null);
-                                }}
-                                onCancel={() => setParsedArtifactData(null)}
-                              />
-                            )}
-
-                            <OcrConfirmPopup
-                              parsedData={parsedArtifactData}
-                              onConfirm={(data) => {
-                                applyOcrDataToArtifact(data);
-                                setShowPopup(false); // cache la pop-up
-                              }}
-                              onCancel={() => setShowPopup(false)}
-                            />
-
-                            <div className={showSernPopup ? 'blur-background' : ''}>
-                              {/* Image + stats EN BAS */}
-
-
-                              <div className="flex items-center justify-start w-full px-1 mb-4 tank-target">
-
-                                <div className="flex flex-col items-center w-full gap-2 tank-target">
-
-
-                                  {/* Bloc Noyaux à gauche + Personnage Centre + Bloc gemmes à droite*/}
-                                  <div className="flex justify-start items-start space-x-6 mt-4">
-                                    {/* Bloc Noyaux à gauche */}
-                                    <div className="w-40 text-white text-[11px] flex flex-col justify-start">
-                                      <h2 className="text-purple-300 font-bold mb-2"> <button
-                                        className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-pink-200 font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                                        onClick={() => setShowNoyauxPopup(true)}
-                                      >
-                                        {t("cores")}
-                                      </button></h2>
-                                      {hunterCores[selectedCharacter] ? (
-                                        <div className="text-xs space-y-2">
-                                          {['Offensif', 'Défensif', 'Endurance'].map((type, index) => {
-                                            const core = hunterCores[selectedCharacter]?.[type];
-                                            if (!core) return null;
-
-                                            const showPrimary = core.primary && parseFloat(core.primaryValue) !== 0;
-                                            const showSecondary = core.secondary && parseFloat(core.secondaryValue) !== 0;
-
-                                            if (!showPrimary && !showSecondary) return null;
-
-                                            return (
-                                              <div key={index} className="border-b border-purple-800 pb-1">
-                                                <p className="text-purple-200 font-semibold">{t(`coreTypes.${type}`)}</p>
-                                                {showPrimary && (
-                                                  <p>{t(`stats.${core.primary}`)}: {core.primaryValue}</p>
-                                                )}
-                                                {showSecondary && (
-                                                  <p>{core.secondary}: {core.secondaryValue}</p>
-                                                )}
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      ) : (
-                                        <p>No cores defined</p>
-                                      )}
-
-
-                                    </div>
-                                    {/* Bloc Personnage Centre */}
-                                    <div className="relative">
-                                      {selectedCharacter && characters[selectedCharacter] && characters[selectedCharacter].img ? (
-                                        <>
-                                          <img
-                                            src={characters[selectedCharacter].img}
-                                            alt={characters[selectedCharacter].name}
-                                            className="w-50 mb-1 relative z-10"
-                                            id="targetToDestroy"
-                                          />
-                                          {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
-                                            <div
-                                              className="absolute w-60 h-8 rounded-full blur-sm animate-fade-out z-0"
-                                              style={{
-                                                backgroundColor: getElementColor(characters[selectedCharacter].element),
-                                                bottom: '0px'
-                                              }}
-                                            ></div>
-                                          )}
-                                        </>
-                                      ) : (
-                                        <div className="relative">
-                                          <img
-                                            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
-                                            className="w-64 mb-2 relative z-10"
-                                            id="targetToDestroy"
-                                          />
-                                        </div>
-                                      )}
-                                    </div>
-
-
-                                    {/* Bloc Gemmes à droite */}
-                                    <div className="w-40 text-white text-xs flex flex-col items-start">
-                                      <h2 className="text-blue-300 font-bold mb-2">
-                                        <button
-                                          className="bg-gradient-to-r font-bold from-blue-500 text-[20px] to-purple-500 hover:from-blue-600 hover:to-purple-600 text-blue-300 font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                                          onClick={() => setShowGemPopup(true)}
-                                        >
-                                          {t("gems")}
-                                        </button>
-                                      </h2>
-                                      {
-                                        Object.entries(gemData || {}).every(([_, stats]) =>
-                                          Object.values(stats).every(value => !value)
-                                        ) ? (
-                                          <p>No gems defined</p>
-                                        ) : (
-                                          <div className="space-y-3">
-                                            {
-                                              Object.entries(gemData || {}).map(([color, stats]) => {
-                                                const filtered = Object.entries(stats || {}).filter(([_, value]) => value);
-                                                if (filtered.length === 0) return null;
-                                                return (
-                                                  <div key={color}>
-                                                    <p className="text-blue-200 font-semibold">{t(`gemColors.${color}`, `${color} Gem`)}</p>
-                                                    {filtered.map(([stat, value], i) => (
-                                                      <p key={i}>{t(`stats.${stat}`, stat)} : {value}</p>
-                                                    ))}
-                                                    <hr className="border-blue-700 my-1" />
-                                                  </div>
-                                                );
-                                              })
-                                            }
-                                          </div>
-                                        )
-                                      }
-                                    </div>
-
-                                  </div>
-
-                                  {/* BLOC STATS SOUS LE PERSONNAGE */}
-                                  <div className="flex justify-center mt-4 w-full">
-                                    <div className="flex flex-col items-center w-full gap-2">
-
-                                      <div className="flex justify-between items-center w-full -mb-1 pr-2 tank-target">
-                                        <div className="flex items-center space-x-4">
-                                          <button
-                                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                                            onClick={() => setShowWeaponPopup(true)}
-                                          >
-                                            {t("weapon")}
-                                          </button>
-                                          <p className="text-white">
-                                            {hunterWeapons[selectedCharacter]
-                                              ? `+${hunterWeapons[selectedCharacter].mainStat || 0} ${characters[selectedCharacter]?.scaleStat || ''}`
-                                              : 'Aucune arme définie'}
-                                          </p>
-
-                                        </div>
-
-                                        <button
-                                          onClick={() => setEditStatsMode(!editStatsMode)}
-                                          className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                                        >
-                                          {getEditLabel()}
-                                        </button>
-                                      </div>
-
-
-
-                                      {!editStatsMode ? (
-                                        <div className="bg-gray-900 p-2 rounded text-xs mt-2 relative group w-full">
-                                          <div className="font-bold text-white text-center">{t("statFinals")}</div>
-                                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-1 w-full text-gray-200 text-xs">
-                                            {allStats.map((key) => {
-                                              const base = typeof finalStatsWithoutArtefact[key] === 'number' ? finalStatsWithoutArtefact[key] : 0;
-                                              const fromArtifact = typeof statsFromArtifacts[key] === 'number' ? statsFromArtifacts[key] : 0;
-                                              const total = base + fromArtifact;
-
-                                              return (
-                                                <div key={key} className="break-words max-w-[140px]">
-                                                  <span className="text-blue-300">{t(`stats.${key}`)}</span>: <span className="text-white">{Math.floor(total)}</span>
-                                                </div>
-                                              );
-                                            })}
-                                          </div>
-
-                                          {/* Infobulle au hover */}
-                                          <div className="absolute top-0 left-full ml-4 w-64 bg-[#322d59] hover:bg-[#4a3d89] text-white text-[10px] p-2 rounded shadow-lg hidden group-hover:block z-10 border border-purple-500">
-                                            <div className="mb-1 font-bold">Stat Breakdown:</div>
-                                            {allStats.map((key) => {
-                                              const base = typeof flatStats[key] === 'number' ? statsWithoutArtefact[key] : 0;
-                                              const fromArtifact = typeof statsFromArtifacts[key] === 'number' ? statsFromArtifacts[key] : 0;
-                                              const total = base + fromArtifact;
-
-                                              return (
-                                                <div key={key}>
-                                                  {t(`stats.${key}`)}: <span className="text-blue-300">{base}</span> + <span className="text-green-400">{fromArtifact}</span> = <span className="text-white">{Math.floor(total)}</span>
-                                                </div>
-                                              );
-                                            })}
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        <div className="flex gap-4 tank-targe">
-                                          {/* Bloc gauche - Flat Stats */}
-                                          <div className="bg-gray-800 p-2 rounded text-xs w-1/2">
-                                            <div className="font-bold mb-2 text-white">Your flat stats</div>
-                                            {Object.entries(flatStats).map(([key, value]) => (
-                                              <div key={key} className="flex justify-between items-center gap-2 mb-1">
-                                                <label className="w-24 text-gray-300">{key}</label>
-                                                <input
-                                                  type="number"
-                                                  value={value}
-                                                  onChange={(e) =>
-                                                    setFlatStats((prev) => ({ ...prev, [key]: +e.target.value }))
-                                                  }
-                                                  className="w-20 bg-black text-white px-1 py-0.5 rounded text-right no-spinner"
-                                                />
-                                              </div>
-                                            ))}
-                                          </div>
-
-                                          {/* Bloc droite - Stats Without Artefact */}
-                                          <div className="bg-gray-800 p-2 rounded text-xs w-1/2">
-                                            <div className="font-bold mb-2 text-white">Stats you see without Artefacts</div>
-                                            {Object.entries(statsWithoutArtefact).map(([key, value]) => (
-                                              <div key={key} className="flex justify-between items-center gap-2 mb-1">
-                                                <label className="w-24 text-gray-300">{key}</label>
-                                                <input
-                                                  type="number"
-                                                  value={value}
-                                                  onChange={(e) =>
-                                                    setStatsWithoutArtefact((prev) => ({
-                                                      ...prev,
-                                                      [key]: +e.target.value,
-                                                    }))
-                                                  }
-                                                  className="w-20 bg-black text-white px-1 py-0.5 rounded text-right no-spinner"
-                                                />
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      )}
-
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex flex-col min-h-[20px]">
-                            <div className="fixed bottom-2 left-0 w-full px-4 flex justify-between gap-2 sm:hidden z-50">
-                              <button
-                                onClick={() => setMobileView('left')}
-                                className="text-[11px] px-4 py-2 bg-[#2d2d5c] text-white rounded shadow-md"
-                              >
-                                ← Gauche
-                              </button>
-                              <button
-                                onClick={() => setMobileView('right')}
-                                className="text-[11px] px-4 py-2 bg-[#2d2d5c] text-white rounded shadow-md"
-                              >
-                                Droite →
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                  </>
-                )}
-
-                {mobileView === 'left' && (
-                  <>
-                    <div className="w-[95vw] mx-auto">
-                      <div className="flex flex-col gap-y-1">
-                        {[...leftArtifacts].map((item, idx) => (
-                          <ArtifactCard
-                            key={`${activeAccount}-${item.title}-${JSON.stringify(artifactsData[item.title])}`} // ← NOUVELLE KEY !
-                            title={item.title}
-                            mainStats={item.mainStats}
-                            showTankMessage={showTankMessage}
-                            recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
-                            artifactData={artifactsData[item.title]}
-                            statsWithoutArtefact={statsWithoutArtefact}  // ← AJOUT ICI
-                            flatStats={flatStats}
-                            onSetIconClick={openSetSelector}
-                            onArtifactSave={handleSaveArtifactToLibrary}
-                            hunter={characters[selectedCharacter]}                        // ← UTILE SI BESOIN
-                            substatsMinMaxByIncrements={substatsMinMaxByIncrements}  // ✅ C’EST ICI
-                            disableComparisonButton={false} // 👈 AJOUT
-                            openComparisonPopup={openComparisonPopup}
-                            artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
-                            onArtifactChange={(updaterFn) =>
-                              setArtifactsData(prev => ({
-                                ...prev,
-                                [item.title]: typeof updaterFn === 'function'
-                                  ? updaterFn(prev[item.title])
-                                  : { ...prev[item.title], ...updaterFn }
-                              }))
-                            }
-                            onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
-                            onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
+  <>
+    {/* 🔥 CONTAINER PRINCIPAL - HAUTEUR DYNAMIQUE */}
+    <div className="min-h-screen bg-gray-950 text-white tank-target overflow-y-auto">
+      <div className="w-full flex justify-center">
+        <div className="w-full max-w-[95vw] mx-auto px-2">
+
+          {/* 🎯 VUE MAIN */}
+          {mobileView === 'main' && (
+            <div className="w-full mx-auto py-4 pb-32 space-y-6">
+              {/* ← pb-32 pour navigation + canvas */}
+              
+              {/* SECTION FILTRES + SELECT */}
+              <div className="flex flex-col w-full gap-4">
+                {/* Langues + Select */}
+                <div className="flex items-center gap-2 justify-between">
+                  <div className="flex gap-2 items-center">
+                    <img
+                      src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png"
+                      alt="Français"
+                      onClick={() => i18n.changeLanguage('fr')}
+                      className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
+                    />
+                    <img
+                      src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png"
+                      alt="English"
+                      onClick={() => i18n.changeLanguage('en')}
+                      className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
+                    />
+                  </div>
+                  
+                  {/* Select Personnage */}
+                  <select
+                    value={selectedCharacter}
+                    onChange={(e) => {
+                      const selected = e.target.value;
+                      setSelectedCharacter(selected);
+                      const saved = localStorage.getItem(`${selected}`);
+                      if (saved) {
+                        const build = JSON.parse(saved);
+                        setFlatStats(build.flatStats);
+                        setStatsWithoutArtefact(build.statsWithoutArtefact);
+                        setArtifactsData(build.artifactsData);
+                        setHunterCores(build.hunterCores);
+                        showTankMessage(`Loaded saved build for ${selected} 😏`);
+                      } else {
+                        handleResetStats();
+                      }
+                    }}
+                    className="p-2 rounded bg-[#1c1c3c] text-white text-sm tank-target flex-1 max-w-[200px]"
+                  >
+                    <option value="">Sélectionner un personnage</option>
+                    {Object.entries(characters)
+                      .filter(([key, char]) => {
+                        if (key === '') return false;
+                        if (selectedElement && char.element !== selectedElement) return false;
+                        if (selectedClass) {
+                          const classType = char.class === 'Tank' ? 'Tank'
+                            : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
+                          if (classType !== selectedClass) return false;
+                        }
+                        return true;
+                      })
+                      .map(([key, char]) => (
+                        <option key={key} value={key}>{char.name}</option>
+                      ))}
+                  </select>
+                </div>
+ {/* 🔥 BOUTONS D'ACTION - VERSION COMPACTE */}
+       
+        {/* 🔥 BOUTONS D'ACTION - LAYOUT FINAL PERFECTIONNÉ */}
+              <div className="flex flex-col gap-2 w-full max-w-[95vw] mx-auto">
+                
+                {/* LIGNE 1 - BOUTONS VRAIMENT RÉTRÉCIS */}
+                <div className="flex items-center justify-center gap-1 w-full">
+                  <button
+                    onClick={handleResetStats}
+                    className="bg-gradient-to-r from-red-800 to-red-600 hover:from-red-700 hover:to-red-500 text-white font-bold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
+                  >
+                    Reset
+                  </button>
+
+                  <button
+                    onClick={handleSaveBuild}
+                    className="bg-gradient-to-r from-emerald-800 to-green-600 hover:from-green-600 hover:to-green-400 text-white font-bold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
+                  >
+                    Save
+                  </button>
+
+                  <button
+                    onClick={handleExportAllBuilds}
+                    className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
+                  >
+                    Export
+                  </button>
+
+                  <button
+                    onClick={handleImportBuild}
+                    className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
+                  >
+                    Import
+                  </button>
+                </div>
+
+                {/* LIGNE 2 - ICÔNES VERTICALES À GAUCHE + COMPTES CENTRÉS À DROITE */}
+                <div className="flex items-start justify-between w-full">
+                  
+                  {/* ICÔNES BUILDS - GRILLE 3x2 FINALE */}
+                  {isBuildsReady && recentBuilds.length > 0 && (
+                    <div className="grid grid-cols-3 grid-rows-2 gap-1 items-start max-h-16">
+                      {recentBuilds
+                        .filter((charKey) => characters[charKey])
+                        .slice(0, 6) // ← 6 icônes max en grille 3x2
+                        .map((charKey) => (
+                          <img
+                            key={charKey}
+                            src={characters[charKey]?.icon || '/default.png'}
+                            alt={characters[charKey]?.name || charKey}
+                            onClick={() => handleClickBuildIcon(charKey)}
+                            className="w-7 h-7 rounded-full cursor-pointer border-2 border-purple-700 hover:scale-110 transition flex-shrink-0"
                           />
                         ))}
-                      </div>
                     </div>
+                  )}
 
-                    <div className="flex justify-center gap-2 mt-4 sm:hidden">
-                      <button
-                        onClick={() => setMobileView(mobileView === 'left' ? 'right' : 'left')}
-                        className="text-[11px] px-3 py-1 bg-[#2d2d5c] rounded shadow-sm"
+                  {/* COMPTES SUR LA MÊME LIGNE CENTRÉS À DROITE */}
+                  <div className="flex items-center gap-1 justify-end">
+                    <button
+                      onClick={() => setShowNewAccountPopup(true)}
+                      className="bg-green-700 hover:bg-green-600 px-2 py-1 rounded text-white text-[8px] transition-colors flex-shrink-0"
+                    >
+                      ➕ Nouveau
+                    </button>
+
+                    {Object.keys(accounts).length > 1 && (
+                      <select
+                        value={activeAccount}
+                        onChange={(e) => handleAccountSwitch(e.target.value)}
+                        className="bg-gray-800 text-white px-1 py-1 rounded text-[8px] max-w-[60px] flex-shrink-0"
                       >
-                        {mobileView === 'left' ? '→ Droite' : '← Gauche'}
-                      </button>
-                      <button
-                        onClick={() => setMobileView('main')}
-                        className="text-[11px] px-3 py-1 bg-[#2d2d5c] rounded shadow-sm"
-                      >
-                        Retour
-                      </button>
-                    </div>
-
-                  </>
-                )}
-
-                {mobileView === 'right' && (
-                  <>
-                    <div className="w-[95vw] mx-auto">
-                      <div className="flex flex-col gap-y-1">
-                        {[...rightArtifacts].map((item, idx) => (
-                          <ArtifactCard
-                            key={`${activeAccount}-${item.title}-${JSON.stringify(artifactsData[item.title])}`} // ← NOUVELLE KEY !
-                            title={item.title}
-                            mainStats={item.mainStats}
-                            showTankMessage={showTankMessage}
-                            recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
-                            artifactData={artifactsData[item.title]}
-                            statsWithoutArtefact={statsWithoutArtefact}  // ← AJOUT ICI
-                            flatStats={flatStats}
-                            onSetIconClick={openSetSelector}                     // ← UTILE SI BESOIN
-                            onArtifactSave={handleSaveArtifactToLibrary}
-                            handleLoadSavedSet={handleLoadSavedSet}
-                            hunter={characters[selectedCharacter]}                        // ← UTILE SI BESOIN
-                            substatsMinMaxByIncrements={substatsMinMaxByIncrements}  // ✅ C’EST ICI
-                            disableComparisonButton={false} // 👈 AJOUT
-                            openComparisonPopup={openComparisonPopup}
-                            artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
-                            onArtifactChange={(updaterFn) =>
-                              setArtifactsData(prev => ({
-                                ...prev,
-                                [item.title]: typeof updaterFn === 'function'
-                                  ? updaterFn(prev[item.title])
-                                  : { ...prev[item.title], ...updaterFn }
-                              }))
-                            }
-                            onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
-                            onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
-                          />
+                        {Object.keys(accounts).map(acc => (
+                          <option key={acc} value={acc}>
+                            {acc.length > 5 ? acc.slice(0, 5) + '...' : acc}
+                          </option>
                         ))}
-                      </div>
-                    </div>
-                    <div className="flex justify-center gap-2 mt-4 sm:hidden">
-                      <button
-                        onClick={() => setMobileView(mobileView === 'left' ? 'right' : 'left')}
-                        className="text-[11px] px-3 py-1 bg-[#2d2d5c] rounded shadow-sm"
-                      >
-                        {mobileView === 'left' ? '→ Droite' : '← Gauche'}
-                      </button>
-                      <button
-                        onClick={() => setMobileView('main')}
-                        className="text-[11px] px-3 py-1 bg-[#2d2d5c] rounded shadow-sm"
-                      >
-                        Retour
-                      </button>
-                    </div>
-                  </>
-                )}
-
-                <div className="h-[50px] mt-1">
-
-
-                  <div className="relative w-full h-200">
-                    {/* Zone pour positionner DOM au-dessus du canvas */}
-
-
-
-
-                    {showChibiBubble && chibiMessage && (
-                      <ChibiBubble
-                        key={`bubble-${bubbleId}`} // <-- force un rerender total à chaque message
-                        message={chibiMessage}
-                        position={chibiPos}
-                      />
+                      </select>
                     )}
-                    <div className="flex justify-center items-center relative gap-1">
-                      <canvas id="canvas-left" width="600" height="240" className="rounded-l-lg shadow-md bg-black w-[40vw] h-auto" />
-                      <canvas id="canvas-center" width="600" height="240" className="shadow-md bg-black w-[40vw] h-auto" />
-                      <canvas id="canvas-right" width="600" height="240" className="rounded-r-lg shadow-md bg-black w-[40vw] h-auto" />
-
-                    </div>
                   </div>
                 </div>
               </div>
+            
+              </div>
+
+              {/* SECTION PRINCIPALE - NOYAUX + PERSONNAGE + GEMMES */}
+              <div className="flex flex-col items-center space-y-6">
+                
+                {/* LAYOUT RESPONSIVE NOYAUX/PERSONNAGE/GEMMES */}
+                <div className="w-full flex flex-col sm:flex-row justify-between items-start gap-4">
+                  
+                  {/* Bloc Noyaux */}
+                  <div className="w-full sm:w-1/3 text-white text-xs">
+                    <div className="text-center mb-2">
+                      <button
+                        className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-pink-200 font-semibold px-3 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                        onClick={() => setShowNoyauxPopup(true)}
+                      >
+                        {t("cores")}
+                      </button>
+                    </div>
+                    
+                    {hunterCores[selectedCharacter] ? (
+                      <div className="space-y-2 text-center">
+                        {['Offensif', 'Défensif', 'Endurance'].map((type, index) => {
+                          const core = hunterCores[selectedCharacter]?.[type];
+                          if (!core) return null;
+
+                          const showPrimary = core.primary && parseFloat(core.primaryValue) !== 0;
+                          const showSecondary = core.secondary && parseFloat(core.secondaryValue) !== 0;
+
+                          if (!showPrimary && !showSecondary) return null;
+
+                          return (
+                            <div key={index} className="border border-purple-800 rounded p-2 bg-gray-800">
+                              <p className="text-purple-200 font-semibold">{t(`coreTypes.${type}`)}</p>
+                              {showPrimary && (
+                                <p className="text-xs">{t(`stats.${core.primary}`)}: {core.primaryValue}</p>
+                              )}
+                              {showSecondary && (
+                                <p className="text-xs">{core.secondary}: {core.secondaryValue}</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-center text-gray-400">No cores defined</p>
+                    )}
+                  </div>
+
+                  {/* Bloc Personnage Centre */}
+                  <div className="w-full sm:w-1/3 flex flex-col items-center">
+                    <div className="relative">
+                      {selectedCharacter && characters[selectedCharacter] && characters[selectedCharacter].img ? (
+                        <>
+                          <img
+                            src={characters[selectedCharacter].img}
+                            alt={characters[selectedCharacter].name}
+                            className="w-48 h-auto mb-2 relative z-10"
+                            id="targetToDestroy"
+                          />
+                          {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
+                            <div
+                              className="absolute w-44 h-6 rounded-full blur-sm animate-fade-out z-0"
+                              style={{
+                                backgroundColor: getElementColor(characters[selectedCharacter].element),
+                                bottom: '8px',
+                                left: '50%',
+                                transform: 'translateX(-50%)'
+                              }}
+                            />
+                          )}
+                        </>
+                      ) : (
+                        <img
+                          src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
+                          className="w-48 h-auto mb-2 relative z-10"
+                          id="targetToDestroy"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Bloc Gemmes */}
+                  <div className="w-full sm:w-1/3 text-white text-xs">
+                    <div className="text-center mb-2">
+                      <button
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-blue-100 font-semibold px-3 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                        onClick={() => setShowGemPopup(true)}
+                      >
+                        {t("gems")}
+                      </button>
+                    </div>
+                    
+                    {Object.entries(gemData || {}).every(([_, stats]) =>
+                      Object.values(stats).every(value => !value)
+                    ) ? (
+                      <p className="text-center text-gray-400">No gems defined</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {Object.entries(gemData || {}).map(([color, stats]) => {
+                          const filtered = Object.entries(stats || {}).filter(([_, value]) => value);
+                          if (filtered.length === 0) return null;
+                          return (
+                            <div key={color} className="border border-blue-700 rounded p-2 bg-gray-800 text-center">
+                              <p className="text-blue-200 font-semibold">{t(`gemColors.${color}`, `${color} Gem`)}</p>
+                              {filtered.map(([stat, value], i) => (
+                                <p key={i} className="text-xs">{t(`stats.${stat}`, stat)}: {value}</p>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* SECTION ARME + STATS */}
+                <div className="w-full space-y-4">
+                  
+                  {/* Bouton Arme */}
+                  <div className="flex items-center justify-center space-x-4">
+                    <button
+                      className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                      onClick={() => setShowWeaponPopup(true)}
+                    >
+                      {t("weapon")}
+                    </button>
+                    <p className="text-white text-sm">
+                      {hunterWeapons[selectedCharacter]
+                        ? `+${hunterWeapons[selectedCharacter].mainStat || 0} ${characters[selectedCharacter]?.scaleStat || ''}`
+                        : 'Aucune arme définie'}
+                    </p>
+                    <button
+                      onClick={() => setEditStatsMode(!editStatsMode)}
+                      className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                    >
+                      {getEditLabel()}
+                    </button>
+                  </div>
+
+                  {/* STATS FINALES OU ÉDITION */}
+                  {!editStatsMode ? (
+                    <div className="bg-gray-900 p-3 rounded-lg text-xs relative group w-full">
+                      <div className="font-bold text-white text-center mb-3">{t("statFinals")}</div>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-2 w-full text-gray-200 text-xs">
+                        {allStats.map((key) => {
+                          const base = typeof finalStatsWithoutArtefact[key] === 'number' ? finalStatsWithoutArtefact[key] : 0;
+                          const fromArtifact = typeof statsFromArtifacts[key] === 'number' ? statsFromArtifacts[key] : 0;
+                          const total = base + fromArtifact;
+
+                          return (
+                            <div key={key} className="break-words text-center">
+                              <span className="text-blue-300 block text-[10px]">{t(`stats.${key}`)}</span>
+                              <span className="text-white font-semibold">{Math.floor(total)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      {/* Flat Stats */}
+                      <div className="bg-gray-800 p-3 rounded-lg text-xs">
+                        <div className="font-bold mb-2 text-white text-center">Your flat stats</div>
+                        <div className="space-y-2">
+                          {Object.entries(flatStats).map(([key, value]) => (
+                            <div key={key} className="flex justify-between items-center gap-2">
+                              <label className="text-gray-300 text-xs flex-1">{key}</label>
+                              <input
+                                type="number"
+                                value={value}
+                                onChange={(e) =>
+                                  setFlatStats((prev) => ({ ...prev, [key]: +e.target.value }))
+                                }
+                                className="w-20 bg-black text-white px-2 py-1 rounded text-right text-xs"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Stats Without Artefact */}
+                      <div className="bg-gray-800 p-3 rounded-lg text-xs">
+                        <div className="font-bold mb-2 text-white text-center">Stats you see without Artefacts</div>
+                        <div className="space-y-2">
+                          {Object.entries(statsWithoutArtefact).map(([key, value]) => (
+                            <div key={key} className="flex justify-between items-center gap-2">
+                              <label className="text-gray-300 text-xs flex-1">{key}</label>
+                              <input
+                                type="number"
+                                value={value}
+                                onChange={(e) =>
+                                  setStatsWithoutArtefact((prev) => ({
+                                    ...prev,
+                                    [key]: +e.target.value,
+                                  }))
+                                }
+                                className="w-20 bg-black text-white px-2 py-1 rounded text-right text-xs"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* CANVAS SECTION - Plus petit et en bas */}
+              <div className="w-full mt-8 mb-24">
+  <div className="flex flex-col items-center gap-4 max-w-[350px] mx-auto">
+    
+    {/* Canvas 1 - Neige */}
+    <div className="w-full">
+      <canvas 
+        id="canvas-left" 
+        width="350" 
+        height="140" 
+        className="rounded-lg shadow-lg bg-black w-full h-auto border border-blue-500/30" 
+      />
+      <p className="text-center text-xs text-blue-300 mt-1">🌨️ Royaume de Neige</p>
+    </div>
+    
+    {/* Canvas 2 - Sanctuaire avec Portail */}
+    <div className="w-full relative">
+      <canvas 
+        id="canvas-center" 
+        width="350" 
+        height="140" 
+        className="rounded-lg shadow-lg bg-black w-full h-auto border border-purple-500/30" 
+      />
+      
+      {/* Portail cliquable */}
+      <div
+  className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
+  style={{
+    top: '35%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '25%',
+    height: '30%'
+  }}
+  onClick={() => {
+    showTankMessage("🚪 Portail secret activé !", true);
+  }}
+>
+  {/* Zone cliquable invisible */}
+</div>
+      
+      <p className="text-center text-xs text-purple-300 mt-1">🏛️ Sanctuaire Central</p>
+    </div>
+    
+    {/* Canvas 3 - Terres Vertes */}
+    <div className="w-full">
+      <canvas 
+        id="canvas-right" 
+        width="350" 
+        height="140" 
+        className="rounded-lg shadow-lg bg-black w-full h-auto border border-green-500/30" 
+      />
+      <p className="text-center text-xs text-green-300 mt-1">🌿 Terres Vertes</p>
+    </div>
+    
+  </div>
+</div>
+            </div>
+          )}
+
+          {/* 🎯 VUE GAUCHE - ARTEFACTS */}
+          {mobileView === 'left' && (
+            <div className="w-full mx-auto py-4 pb-24">
+              <div className="space-y-4">
+                {leftArtifacts.map((item, idx) => (
+                  <ArtifactCard
+                    key={`${activeAccount}-mobile-left-${item.title}`}
+                    title={item.title}
+                    mainStats={item.mainStats}
+                    showTankMessage={showTankMessage}
+                    recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
+                    artifactData={artifactsData[item.title]}
+                    statsWithoutArtefact={statsWithoutArtefact}
+                    flatStats={flatStats}
+                    onSetIconClick={openSetSelector}
+                    onArtifactSave={handleSaveArtifactToLibrary}
+                    hunter={characters[selectedCharacter]}
+                    substatsMinMaxByIncrements={substatsMinMaxByIncrements}
+                    disableComparisonButton={false}
+                    openComparisonPopup={openComparisonPopup}
+                    artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
+                    onArtifactChange={(updaterFn) =>
+                      setArtifactsData(prev => ({
+                        ...prev,
+                        [item.title]: typeof updaterFn === 'function'
+                          ? updaterFn(prev[item.title])
+                          : { ...prev[item.title], ...updaterFn }
+                      }))
+                    }
+                    onScoreCalculated={handleArtifactScoreUpdate}
+                    onReportGenerated={handleReportGenerated}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 🎯 VUE DROITE - ARTEFACTS */}
+          {mobileView === 'right' && (
+            <div className="w-full mx-auto py-4 pb-24">
+              <div className="space-y-4">
+                {rightArtifacts.map((item, idx) => (
+                  <ArtifactCard
+                    key={`${activeAccount}-mobile-right-${item.title}`}
+                    title={item.title}
+                    mainStats={item.mainStats}
+                    showTankMessage={showTankMessage}
+                    recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
+                    artifactData={artifactsData[item.title]}
+                    statsWithoutArtefact={statsWithoutArtefact}
+                    flatStats={flatStats}
+                    onSetIconClick={openSetSelector}
+                    onArtifactSave={handleSaveArtifactToLibrary}
+                    handleLoadSavedSet={handleLoadSavedSet}
+                    hunter={characters[selectedCharacter]}
+                    substatsMinMaxByIncrements={substatsMinMaxByIncrements}
+                    disableComparisonButton={false}
+                    openComparisonPopup={openComparisonPopup}
+                    artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
+                    onArtifactChange={(updaterFn) =>
+                      setArtifactsData(prev => ({
+                        ...prev,
+                        [item.title]: typeof updaterFn === 'function'
+                          ? updaterFn(prev[item.title])
+                          : { ...prev[item.title], ...updaterFn }
+                      }))
+                    }
+                    onScoreCalculated={handleArtifactScoreUpdate}
+                    onReportGenerated={handleReportGenerated}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 🎯 NAVIGATION MOBILE FIXE */}
+          <div className="fixed bottom-4 left-0 right-0 z-50 px-4">
+            <div className="flex justify-center gap-3">
+              {mobileView !== 'main' && (
+                <button
+                  onClick={() => setMobileView('main')}
+                  className="px-4 py-2 bg-[#2d2d5c] hover:bg-[#3d3d7c] text-white rounded-lg shadow-lg text-sm font-medium transition-colors"
+                >
+                  🏠 Main
+                </button>
+              )}
+              
+              {mobileView !== 'left' && (
+                <button
+                  onClick={() => setMobileView('left')}
+                  className="px-4 py-2 bg-[#2d2d5c] hover:bg-[#3d3d7c] text-white rounded-lg shadow-lg text-sm font-medium transition-colors"
+                >
+                  ← Gauche
+                </button>
+              )}
+              
+              {mobileView !== 'right' && (
+                <button
+                  onClick={() => setMobileView('right')}
+                  className="px-4 py-2 bg-[#2d2d5c] hover:bg-[#3d3d7c] text-white rounded-lg shadow-lg text-sm font-medium transition-colors"
+                >
+                  Droite →
+                </button>
+              )}
             </div>
           </div>
 
-        </>
+          {/* POPUPS ET MODALES (restent identiques) */}
+          {showImportSaveWarning && (
+            <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999]">
+              <div className="bg-[#1a1a2e] text-white p-6 rounded-xl shadow-lg border border-purple-700 text-center max-w-sm">
+                <p className="text-lg font-bold mb-4">
+                  ⚠️ Shadow Override Detected
+                </p>
+                <p className="text-sm mb-6">
+                  If you save this data,<br />
+                  your current system build will be <span className="text-red-400">overwritten</span>.<br />
+                  Do you really want to save this imported shadow?
+                </p>
+                <div className="flex justify-center gap-4">
+                  <button
+                    onClick={() => {
+                      setShowImportSaveWarning(false);
+                      setIsImportedBuild(false);
+                      handleSaveBuild();
+                      playMusic();
+                    }}
+                    className="bg-green-700 hover:bg-green-600 px-4 py-2 rounded text-white"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={() => setShowImportSaveWarning(false)}
+                    className="bg-red-700 hover:bg-red-600 px-4 py-2 rounded text-white"
+                  >
+                    No
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Autres popups... (garde tes popups existants) */}
+          {showNoyauxPopup && (
+            <NoyauxPopup
+              hunterName={selectedCharacter}
+              onClose={() => setShowNoyauxPopup(false)}
+              onSave={handleSaveNoyaux}
+              existingCores={hunterCores[selectedCharacter] || {}}
+              isMobile={isMobile}
+            />
+          )}
+
+          {showGemPopup && (
+            <GemmesPopup
+              gemData={gemData}
+              onClose={() => setShowGemPopup(false)}
+              onSave={handleSaveGems}
+              isMobile={isMobile}
+            />
+          )}
+
+          {showNewAccountPopup && (
+            <NewAccountPopup
+              newAccountName={newAccountName}
+              setNewAccountName={setNewAccountName}
+              setShowNewAccountPopup={setShowNewAccountPopup}
+              createNewAccount={createNewAccount}
+            />
+          )}
+
+          {showBeruInteractionMenu && (
+            <BeruInteractionMenu
+              position={beruMenuPosition}
+              onClose={closeBeruMenu}
+              selectedCharacter={selectedCharacter}
+              characters={characters}
+              showTankMessage={showTankMessage}
+              currentArtifacts={artifactsData}
+              currentStats={finalStats}
+              currentCores={hunterCores[selectedCharacter] || {}}
+              currentGems={gemData}
+              multiAccountsData={accounts}
+              onReportGenerated={handleReportGenerated}
+              substatsMinMaxByIncrements={substatsMinMaxByIncrements}
+              existingScores={artifactScores}
+            />
+          )}
+
+          {showKaiselInteractionMenu && (
+            <KaiselInteractionMenu
+              position={kaiselMenuPosition}
+              onClose={closeKaiselMenu}
+              selectedCharacter={selectedCharacter}
+              characters={characters}
+              showTankMessage={showTankMessage}
+              currentArtifacts={artifactsData}
+              currentStats={finalStats}
+              currentCores={hunterCores[selectedCharacter] || {}}
+              multiAccountsData={accounts}
+              substatsMinMaxByIncrements={substatsMinMaxByIncrements}
+              existingScores={artifactScores}
+            />
+          )}
+
+          <GoldenPapyrusIcon
+            isVisible={showPapyrus}
+            onClick={handleOpenReport}
+          />
+
+          <BeruReportSystem
+            isOpen={showReportSystem}
+            onClose={handleCloseReport}
+            currentReport={currentReport}
+            reportHistory={reportHistory}
+            onSaveReport={handleSaveReport}
+          />
+
+          {showSernPopup && (
+            <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999] py-10">
+              <div
+                ref={popupRef}
+                className="relative w-[95vw] max-w-[1000px] p-4 bg-black/90 text-white border-4 border-white rounded-2xl shadow-2xl animate-pulse flex flex-col max-h-[90vh] scrollbar-none scroll-smooth"
+              >
+                <div className="w-full flex items-center justify-center">
+                  <img
+                    src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747680569/SERN_ab7od6.png"
+                    alt="Sung Bobby SERN"
+                    className="w-full max-w-full rounded-md opacity-90 object-contain"
+                  />
+                </div>
+                <div className="w-full mt-4 px-4">
+                  <h2 className="text-xl font-bold mb-2 text-center">⚠️ INFRACTION GAGOLDIQUE N-404 ⚠️</h2>
+                  <span
+                    ref={dytextRef}
+                    className="text-sm whitespace-pre-line font-mono leading-relaxed tracking-wide animate-fade-in text-left"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <OCRPasteListener
+            onParsed={(parsed) => {
+              setParsedArtifactData(parsed);
+            }}
+            updateArtifactFromOCR={updateArtifactFromOCR}
+          />
+
+          {comparisonData && (
+            <ComparisonPopup
+              original={comparisonData}
+              onClose={() => setComparisonData(null)}
+              hunter={characters[selectedCharacter]}
+              flatStats={flatStats}
+              statsWithoutArtefact={statsWithoutArtefact}
+              substatsMinMaxByIncrements={substatsMinMaxByIncrements}
+              showTankMessage={showTankMessage}
+              recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
+            />
+          )}
+
+          {showNarrative && (
+            <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999] py-10">
+              <div
+                ref={popupRef}
+                className="relative w-[95vw] max-w-[1000px] p-4 bg-black/90 text-white border-4 border-white rounded-2xl shadow-2xl animate-pulse flex flex-col max-h-[90vh] scrollbar-none scroll-smooth"
+              >
+                {currentImage && (
+                  <div className="w-full flex items-center justify-center">
+                    <img
+                      ref={mainImageRef}
+                      src={currentImage?.src}
+                      alt="Image narrative"
+                      className="w-1/2 mx-auto rounded-md opacity-90 object-contain"
+                    />
+                  </div>
+                )}
+                <div className="w-full mt-4 px-4">
+                  <h2 className="text-xl font-bold mb-2 text-center">⚠️ INFRACTION GAGOLDIQUE NARRATIVE ⚠️</h2>
+                  <span
+                    ref={dytextRef}
+                    className="text-sm whitespace-pre-line font-mono leading-relaxed tracking-wide animate-fade-in text-left"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showWeaponPopup && (
+            <WeaponPopup
+              hunterName={selectedCharacter}
+              onClose={() => setShowWeaponPopup(false)}
+              onSave={handleSaveWeapon}
+              existingWeapon={hunterWeapons[selectedCharacter] || {}}
+              scaleStat={characters[selectedCharacter]?.scaleStat}
+            />
+          )}
+
+          {parsedArtifactData && (
+            <OcrConfirmPopup
+              parsedData={parsedArtifactData}
+              onConfirm={(data) => {
+                setParsedArtifactData(null);
+              }}
+              onCancel={() => setParsedArtifactData(null)}
+            />
+          )}
+
+          <OcrConfirmPopup
+            parsedData={parsedArtifactData}
+            onConfirm={(data) => {
+              applyOcrDataToArtifact(data);
+              setShowPopup(false);
+            }}
+            onCancel={() => setShowPopup(false)}
+          />
+
+          
+
+          {/* CHIBI BUBBLE */}
+      {showChibiBubble && chibiMessage && (
+  <ChibiBubble
+    key={`bubble-${bubbleId}`}
+    message={chibiMessage}
+    position={chibiPos}
+    entityType={currentSpeaker}
+    isMobile={isMobile}       
+    onClose={handleCloseBubble}
+  />
+)}
+
+        </div>
+      </div>
+    </div>
+  </>
       ) : (
 
 
-        <div className="h-screen bg-gray-950 text-white p-1  tank-target">
+        <div className="min-h-screen bg-gray-950 text-white p-1 tank-target">
           <div className="w-full flex justify-center">
             <div className="grid 
   grid-cols-1 
@@ -5660,7 +5602,7 @@ BobbyJones : "Allez l'Inter !"
 
                 <div className="flex flex-col justify-center items-center h-full tank-target">
                   {/* Filtres + select personnage EN HAUT */}
-                  <div className="flex items-center justify-start w-full px-1 mb-4 tank-target">
+                  <div className="flex items-center justify-start w-full px-1 mb-1 tank-target">
                     {/* Colonne Gauche – Langues */}
                     <div className="flex gap-1 items-center ml-0 mr-4">
                       <div className="flex gap-2 items-center">
@@ -6082,9 +6024,9 @@ BobbyJones : "Allez l'Inter !"
                     {/* Image + stats EN BAS */}
 
 
-                    <div className="flex items-center justify-start w-full px-1 mb-4 tank-target">
+                    <div className="flex items-center justify-start w-full px-1 mb-1 tank-target">
 
-                      <div className="flex flex-col items-center w-full gap-2 tank-target">
+                      <div className="flex flex-col items-center w-full gap-1 tank-target">
 
 
                         {/* Bloc Noyaux à gauche + Personnage Centre + Bloc gemmes à droite*/}
@@ -6200,7 +6142,7 @@ BobbyJones : "Allez l'Inter !"
 
                         {/* BLOC STATS SOUS LE PERSONNAGE */}
                         <div className="flex justify-center mt-4 w-full">
-                          <div className="flex flex-col items-center w-full gap-2">
+                          <div className="flex flex-col items-center w-full gap-1">
 
                             <div className="flex justify-between items-center w-full -mb-1 pr-2 tank-target">
                               <div className="flex items-center space-x-4">
@@ -6355,10 +6297,8 @@ BobbyJones : "Allez l'Inter !"
             </div>
           </div>
           {/* <div className={showSernPopup ? 'blur-background' : ''}></div> */}
-          <div className="h-[50px] mt-1">
-
-
-            <div className="relative w-full h-[580px]">
+          <div class="mt-1">
+  <div class="relative w-full min-h-[240px]">
               {/* Zone pour positionner DOM au-dessus du canvas */}
 
 
@@ -6367,35 +6307,110 @@ BobbyJones : "Allez l'Inter !"
               {showChibiBubble && chibiMessage && (
                 <ChibiBubble
                   key={`bubble-${bubbleId}`} // <-- force un rerender total à chaque message
+                   entityType={currentSpeaker} // ← REMPLACE PAR entityType direct
                   message={chibiMessage}
+                  isMobile={isMobile}   
                   position={chibiPos}
                 />
               )}
-              <div className="flex justify-center items-center relative gap-1">
-                <canvas id="canvas-left" width="600" height="240" className="rounded-l-lg shadow-md bg-black w-[40vw] h-auto" />
-                <canvas id="canvas-center" width="600" height="240" className="shadow-md bg-black w-[40vw] h-auto" />
-                {/* Portail cliquable */}
-                <div
-                  className="absolute z-50 cursor-pointer hover:scale-105 transition background: red"
-                  style={{
-                    top: '45%',     // à ajuster selon ton image exacte
-                    left: '43.2%',
-                    width: '5%',
-                    height: '25%'
-                  }}
-                  // onClick={() => {
-                  //   // const isMonarque = localStorage.getItem("isMonarque") === "true";
-                  //   // if (isMonarque) {
-                  //   window.location.href = "/guide-editor";
-                  //   // } else {
-                  //   showTankMessage("Seuls les Monarques peuvent franchir ce portail...", true);
-                  //   // }
-                  // }}
-                />
+              {/* 🎨 CANVAS SECTION - RESPONSIVE MOBILE/DESKTOP */}
+<div className="w-full mt-4 mb-2">
+  {/* 📱 VERSION MOBILE - 3 LIGNES VERTICALES */}
+  {((isMobile.isPhone || isMobile.isTablet) && !isMobile.isDesktop) ? (
+    <div className="flex flex-col items-center gap-2">
+      {/* Canvas Left - Ligne 1 */}
+      <div className="relative w-full flex justify-center">
+        <canvas 
+          id="canvas-left" 
+          width="400" 
+          height="160" 
+          className="rounded-lg shadow-md bg-black w-[80vw] max-w-[350px] h-auto" 
+        />
+      </div>
+      
+      {/* Canvas Center - Ligne 2 avec Portail */}
+      <div className="relative w-full flex justify-center">
+        <canvas 
+          id="canvas-center" 
+          width="400" 
+          height="160" 
+          className="rounded-lg shadow-md bg-black w-[80vw] max-w-[350px] h-auto" 
+        />
+        
+        {/* Portail Mobile - Repositionné */}
+        <div
+          className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
+          style={{
+            top: '40%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '20%',
+            height: '30%',
+            background: 'rgba(255, 0, 0, 0.1)', // Debug - retire en prod
+            border: '1px solid rgba(255, 0, 0, 0.3)' // Debug - retire en prod
+          }}
+          onClick={() => {
+            showTankMessage("🚪 Portail mobile détecté ! Fonctionnalité à venir...", true);
+          }}
+        />
+      </div>
+      
+      {/* Canvas Right - Ligne 3 */}
+      <div className="relative w-full flex justify-center">
+        <canvas 
+          id="canvas-right" 
+          width="400" 
+          height="160" 
+          className="rounded-lg shadow-md bg-black w-[80vw] max-w-[350px] h-auto" 
+        />
+      </div>
+      
+      {/* Label Mobile */}
+      <div className="text-center mt-2 text-gray-400 text-xs">
+        <p>🌌 Royaumes des Ombres</p>
+        <p className="text-[10px]">Neige • Sanctuaire • Terre Verte</p>
+      </div>
+    </div>
+  ) : (
+    // 🖥️ VERSION DESKTOP - LIGNE HORIZONTALE
+    <div className="flex justify-center items-center relative gap-1">
+      <canvas 
+        id="canvas-left" 
+        width="600" 
+        height="240" 
+        className="rounded-l-lg shadow-md bg-black w-[30vw] max-w-[400px] h-auto" 
+      />
+      
+      <canvas 
+        id="canvas-center" 
+        width="600" 
+        height="240" 
+        className="shadow-md bg-black w-[30vw] max-w-[400px] h-auto" 
+      />
+      
+      {/* Portail Desktop */}
+      <div
+        className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
+        style={{
+          top: '45%',
+          left: '43.2%',
+          width: '5%',
+          height: '25%'
+        }}
+        onClick={() => {
+          showTankMessage("🚪 Portail des Monarques... Accès restreint.", true);
+        }}
+      />
 
-                <canvas id="canvas-right" width="600" height="240" className="rounded-r-lg shadow-md bg-black w-[40vw] h-auto" />
-
-              </div>
+      <canvas 
+        id="canvas-right" 
+        width="600" 
+        height="240" 
+        className="rounded-r-lg shadow-md bg-black w-[30vw] max-w-[400px] h-auto" 
+      />
+    </div>
+  )}
+</div>
             </div>
           </div>
         </div>
