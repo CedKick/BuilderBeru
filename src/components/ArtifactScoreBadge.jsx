@@ -19,7 +19,6 @@ const ArtifactScoreBadge = ({
     const score = getTheoreticalScore(hunter, artifact, substatsMinMaxByIncrements);
 
     const showTankMessageFn = showTankMessage || ((msg) => {
-    console.log("🧠 Béru dit:", msg);
     alert(msg); // Fallback si showTankMessage n'est pas passé
 });
 
@@ -36,14 +35,11 @@ const ArtifactScoreBadge = ({
 
     // 🧮 HELPER : Extraire valeur numérique d'un string - VERSION DEBUG
     const extractNumericValue = (statString) => {
-        console.log(`🔍 extractNumericValue input: "${statString}"`);
         
         // Regex pour extraire le nombre (avec ou sans décimales)
         const match = statString.match(/(\d+(?:\.\d+)?)/);
-        console.log(`🔍 Regex match result:`, match);
         
         const result = match ? parseFloat(match[1]) : 0;
-        console.log(`🔍 Final extracted value: ${result}`);
         
         return result;
     };
@@ -55,8 +51,6 @@ const ArtifactScoreBadge = ({
             return 0;
         }
         
-        console.log(`🧮 calculateFlatFromPercent: ${percentValue}% de ${scaleStat}`);
-        console.log(`🧮 flatStats disponible:`, flatStats);
         
         // 🎯 Utiliser les VRAIES flatStats du hunter - MAJUSCULES CORRIGÉES
         let baseFlatStat = 0;
@@ -76,10 +70,8 @@ const ArtifactScoreBadge = ({
                 return 0;
         }
         
-        console.log(`🧮 Base ${scaleStat}: ${baseFlatStat}`);
         
         const flatEquivalent = Math.round((percentValue / 100) * baseFlatStat);
-        console.log(`🧮 Calcul: (${percentValue} / 100) * ${baseFlatStat} = ${flatEquivalent}`);
         
         return flatEquivalent;
     };
@@ -88,12 +80,6 @@ const ArtifactScoreBadge = ({
     const calculateRealFlatStatsFromArtifact = (scaleStat) => {
         let totalFlatStats = 0;
         
-        console.log(`🔥 DEBUG: scaleStat reçu = "${scaleStat}"`);
-        console.log(`🔥 DEBUG: artifact.mainStat = "${artifact.mainStat}"`);
-        console.log(`🔥 DEBUG: artifact.mainStatValue = ${artifact.mainStatValue}`);
-        console.log(`🔥 DEBUG: flatStats =`, flatStats);
-        console.log(`🔥 DEBUG: artifact.subStats =`, artifact.subStats);
-        console.log(`🔥 DEBUG: artifact.subStatsLevels =`, artifact.subStatsLevels);
         
         // 🎯 PATTERNS EXACTS POUR DEFENSE
         const defensePatterns = [
@@ -107,27 +93,21 @@ const ArtifactScoreBadge = ({
         
         // 📊 TEST MAINSTAT
         if (artifact.mainStat) {
-            console.log(`🔍 TEST MainStat: "${artifact.mainStat}"`);
-            console.log(`🔍 MainStatValue disponible: ${artifact.mainStatValue}`);
             
             // Test chaque pattern un par un
             defensePatterns.forEach(pattern => {
                 const contains = artifact.mainStat.includes(pattern);
-                console.log(`  Pattern "${pattern}": ${contains ? '✅' : '❌'}`);
                 
                 if (contains) {
                     if (pattern.includes('%') || pattern.includes('(%)')) {
                         // C'est un pourcentage - utiliser mainStatValue avec flatStats
                         const percentValue = artifact.mainStatValue || 0;
-                        console.log(`  🧮 Calcul %: ${percentValue}% de flatStats.defense (${flatStats?.defense})`);
                         const flatEquivalent = calculateFlatFromPercent(percentValue, scaleStat);
                         totalFlatStats += flatEquivalent;
-                        console.log(`  ✅ MAINSTAT %: ${percentValue}% = +${flatEquivalent} flat`);
                     } else {
                         // C'est un flat - utiliser directement mainStatValue
                         const value = artifact.mainStatValue || 0;
                         totalFlatStats += value;
-                        console.log(`  ✅ MAINSTAT FLAT: +${value} (depuis mainStatValue)`);
                     }
                 }
             });
@@ -138,41 +118,33 @@ const ArtifactScoreBadge = ({
             artifact.subStats.forEach((stat, idx) => {
                 if (!stat) return;
                 
-                console.log(`🔍 TEST SubStat ${idx}: "${stat}"`);
                 
                 const levelInfo = artifact.subStatsLevels[idx];
                 if (!levelInfo) {
-                    console.log(`  ❌ Pas de levelInfo`);
                     return;
                 }
                 
-                console.log(`  LevelInfo:`, levelInfo);
                 
                 // Test chaque pattern un par un
                 defensePatterns.forEach(pattern => {
                     const contains = stat.includes(pattern);
-                    console.log(`    Pattern "${pattern}": ${contains ? '✅' : '❌'}`);
                     
                     if (contains) {
                         if (pattern.includes('%') || pattern.includes('(%)')) {
                             // C'est un pourcentage - utiliser DIRECTEMENT levelInfo.value !
                             const percentValue = levelInfo.value || 0;  // ← CORRIGÉ !
-                            console.log(`    🧮 SubStat %: ${percentValue}% de flatStats.Defense (${flatStats?.Defense})`);
                             const flatEquivalent = calculateFlatFromPercent(percentValue, scaleStat);
                             totalFlatStats += flatEquivalent;
-                            console.log(`    ✅ SUBSTAT %: ${percentValue}% = +${flatEquivalent} flat`);
                         } else {
                             // C'est un flat - utiliser DIRECTEMENT levelInfo.value !
                             const value = levelInfo.value || 0;
                             totalFlatStats += value;
-                            console.log(`    ✅ SUBSTAT FLAT: +${value} (depuis levelInfo.value)`);
                         }
                     }
                 });
             });
         }
         
-        console.log(`🎯 TOTAL FINAL: +${Math.round(totalFlatStats)} ${scaleStat}`);
         return Math.round(totalFlatStats);
     };
 
@@ -308,7 +280,6 @@ const ArtifactScoreBadge = ({
     import('../utils/BeruIntelligentAnalysis').then(module => {
         if (module.analyzeArtifactSet) {
             const handleSetReportGenerated = (report) => {
-                console.log("📊 Rapport set généré depuis ArtifactScoreBadge:", report);
                 
                 // Utiliser la prop au lieu de window
                 if (onReportGenerated) {
@@ -514,11 +485,6 @@ const handleMouseEnter = (e) => {
         }
     }
     
-    console.log("🔥 KAISEL: Position intelligente:", { 
-        quadrant: `${isTop ? 'HAUT' : 'BAS'}-${isLeft ? 'GAUCHE' : 'DROITE'}`,
-        x, y, transform, 
-        rect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom }
-    });
     
     setTooltipPosition({ x, y, transform });
     setShowTooltip(true);
@@ -530,7 +496,6 @@ const handleMouseEnter = (e) => {
     // 🧠 KAISEL: Clic pour déclencher analyse Béru complète
   const handleClick = (e) => {
     e.stopPropagation();
-    console.log(`🧠 Analyse Béru demandée pour ${artifact.title}`, { artifact, hunter: hunter?.name, score });
     
     // 🔥 SOLUTION DIRECTE : Import et exécution immédiate
     triggerDirectArtifactAnalysis();
@@ -538,21 +503,17 @@ const handleMouseEnter = (e) => {
 
     // 🚀 KAISEL: Analyse directe d'artefact (bypass menu)
  const triggerDirectArtifactAnalysis = () => {
-    console.log("🔥 KAISEL DEBUG: onReportGenerated type =", typeof onReportGenerated);
     
     import('../utils/BeruIntelligentAnalysis').then(module => {
         if (module.performSpecificArtifactAnalysis) {
             const showTankMessageFn = showTankMessage || ((msg) => {
-                console.log("🧠 Béru dit:", msg);
                 alert(msg);
             });
             
             // 📜 CALLBACK RAPPORT
             const handleReportGenerated = (report) => {
-                console.log("📊 Rapport généré depuis ArtifactScoreBadge:", report);
                 
                 if (onReportGenerated) {
-                    console.log("🔥 KAISEL: Transmission rapport vers parent");
                     onReportGenerated(report);
                 } else {
                     console.warn("⚠️ onReportGenerated prop manquante");

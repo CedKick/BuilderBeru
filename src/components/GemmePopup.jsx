@@ -39,7 +39,6 @@ const GemmePopup = ({ gemData, onClose, onSave, isMobile }) => {
   useEffect(() => {
     if (!hasInitialized.current || !deepEqual(gemData, lastGemData.current)) {
       if (gemData && Object.keys(gemData).length > 0) {
-        console.log("💎 Kaisel: Chargement gemmes depuis props:", gemData);
         
         // 🛡️ Merge intelligent avec protection
         const safeGemValues = {};
@@ -52,7 +51,6 @@ const GemmePopup = ({ gemData, onClose, onSave, isMobile }) => {
         
         setGemValues(safeGemValues);
       } else {
-        console.log("💎 Kaisel: Aucune gemme en props, utilisation des valeurs par défaut");
         
         // 🔧 Initialisation propre avec valeurs par défaut
         const defaultGemValues = {};
@@ -192,7 +190,6 @@ const GemmePopup = ({ gemData, onClose, onSave, isMobile }) => {
   };
 
   const handleSave = () => {
-    console.log("💎 Kaisel: Sauvegarde gemmes via onSave callback:", gemValues);
     onSave(gemValues);
     onClose();
   };

@@ -1,7 +1,4 @@
 {
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
-  ],
   "crons": [
     {
       "path": "/api/kaisel/collect-streams",

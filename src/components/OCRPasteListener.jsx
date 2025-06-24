@@ -32,16 +32,12 @@ const OCRPasteListener = ({ updateArtifactFromOCR}) => {
     };
 
     const processImage = async (image) => {
-      console.log("📸 OCR en cours...");
 
       Tesseract.recognize(image, 'eng', {
         logger: m => console.log(m), // Pour suivre la progression
       }).then(({ data: { text } }) => {
-       console.log("🧠 Texte détecté par OCR :");
-console.log(text);
 const parsed = parseOcrText(text, t);
 if (parsed) {
-  console.log('Parsed envoyé à onParsed :', parsed);
   setParsedData(parsed); // Et onParsed DOIT pointer sur setParsedArtifactData
 }
       }).catch(err => {
@@ -59,12 +55,10 @@ if (parsed) {
       <OcrConfirmPopup
         parsedData={parsedData}
         onConfirm={(parsedData) => {
-  console.log("✅ Confirmé !", parsedData);
   updateArtifactFromOCR(parsedData); // => fonction qu'on crée
   setParsedData(null);
 }}
         onCancel={() => {
-          console.log("❌ Annulé");
           setParsedData(null); // cacher la popup
         }}
       />

@@ -6,7 +6,6 @@ const ChibiBubble = ({ message, position }) => {
 
     useEffect(() => {
         if (bubbleRef.current && message) {
-            console.log("🟨 Bubble position:", position.x, position.y);
             dytextAnimate(bubbleRef, message, 35); // fonction, plus un Hook !
         }
     }, [message]);

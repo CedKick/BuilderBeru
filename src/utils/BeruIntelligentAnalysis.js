@@ -13,8 +13,6 @@ export const performSpecificArtifactAnalysis = (
     substatsMinMaxByIncrements,
     onReportGenerated  // ← AJOUTER CE PARAMÈTRE !
 ) => {
-    console.log("🧠 Béru démarre l'analyse spécifique d'artefact:", artifactData.title);
-    console.log("🔥 KAISEL DEBUG: onReportGenerated reçu =", typeof onReportGenerated);
 
     // Phase 1: Annonce
     setTimeout(() => {
@@ -72,7 +70,6 @@ export const performSpecificArtifactAnalysis = (
             
             // 🔥 APPELER LE CALLBACK onReportGenerated !
             if (onReportGenerated) {
-                console.log("📊 KAISEL: Appel onReportGenerated avec rapport:", report);
                 onReportGenerated(report);
             } else {
                 console.warn("⚠️ KAISEL: onReportGenerated non fourni à performSpecificArtifactAnalysis");
@@ -91,7 +88,6 @@ export const performIntelligentAnalysis = (
     substatsMinMaxByIncrements,
     existingScores = {}
 ) => {
-    console.log("🔥 KAISEL FINAL: performIntelligentAnalysis avec scores:", existingScores);
     
     const hunterData = BUILDER_DATA[selectedCharacter];
     if (!hunterData) {
@@ -140,7 +136,6 @@ const findBetterAlternativesInStorage = (currentArtifact, hunter, substatsMinMax
     try {
         const storage = JSON.parse(localStorage.getItem("builderberu_users"));
         if (!storage?.user?.accounts) {
-            console.log("🔍 KAISEL: Pas de comptes trouvés dans localStorage");
             return [];
         }
 
@@ -192,7 +187,6 @@ const generateCompleteReport = (characterKey, artifacts, substatsMinMax, existin
     const hunterData = BUILDER_DATA[characterKey];
     if (!hunterData) return;
 
-    console.log("🔥 KAISEL FINAL: Génération rapport avec existingScores:", existingScores);
 
     // 🎯 ANALYSER TOUS LES ARTEFACTS AVEC SCORES EXISTANTS
     const allSlots = ['Helmet', 'Chest', 'Gloves', 'Boots', 'Necklace', 'Bracelet', 'Ring', 'Earrings'];
@@ -274,7 +268,6 @@ const generateCompleteReport = (characterKey, artifacts, substatsMinMax, existin
         triggeredFrom: 'beru_menu'
     };
 
-    console.log("🔥 KAISEL FINAL: Rapport généré:", report);
 
     if (onReportGenerated) {
         onReportGenerated(report);
@@ -445,7 +438,6 @@ const analyzeArtifactSet = (artifactData, hunter, onReportGenerated = null) => {
         .map(setData => setData.pieces[mappedSlot])
         .filter(piece => piece); // Enlever les undefined
 
-    console.log("🔍 KAISEL DEBUG:", { mappedSlot, pieceNames });
 
     const analysis = {
         score: 20,
@@ -533,7 +525,6 @@ const generateSingleArtifactReport = (artifactData, hunter, setAnalysis) => {
         }]
     };
 
-    console.log("🎁 KAISEL: Rapport set généré:", report);
     return report;
 };
 
@@ -826,7 +817,6 @@ const generateDetailedReport = (artifactData, hunter, substatsMinMaxByIncrements
         emptySlots: [] // Pas de slots vides pour un seul artefact
     };
 
-    console.log("📊 KAISEL: Rapport détaillé créé:", report);
     
     setTimeout(() => {
         showTankMessage(`📊 Rapport d'analyse généré ! Consulte le papyrus doré pour les détails.`, true, 'beru');

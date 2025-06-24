@@ -287,10 +287,9 @@ export function getTheoreticalScore(hunter, artifact, substatsMinMaxByIncrements
     if (artifact.set) {
       if (artifact.set.includes(recommendedSet) || recommendedSet.includes(artifact.set)) {
         score += 20; // Bon set = +20 points
-        console.log(`🔥 SET BONUS: +20 pour ${artifact.set}`);
       } else {
         score -= 20; // Mauvais set = -20 points
-        console.log(`🔥 SET MALUS: -20 pour ${artifact.set} (attendu: ${recommendedSet})`);
+
       }
     }
   }

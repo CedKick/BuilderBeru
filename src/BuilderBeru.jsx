@@ -20,6 +20,7 @@ import OcrConfirmPopup from './components/OcrConfirmPopup';
 import NewAccountPopup from './NewAccountPopup'; // ou ton chemin réel
 import SetSelectorPopup from "./components/SetSelectorPopup";
 import BeruInteractionMenu from './components/BeruInteractionMenu';
+import KaiselInteractionMenu from './components/KaiselInteractionMenu';
 import { BeruReportSystem, GoldenPapyrusIcon } from './components/BeruReportSystem';
 
 
@@ -585,7 +586,7 @@ const migrateOldDataToNewSystem = () => {
     localStorage.setItem('builderberu_users', JSON.stringify(cleanSystem));
   }
 
-  console.log("🎯 Système 100% propre !");
+
 };
 
 // 🛡️ PROTECTION GLOBALE - AJOUTE aussi cette fonction pour protéger PARTOUT
@@ -626,6 +627,9 @@ const BuilderBeru = () => {
   const mainImageRef = useRef();
   // const dytextRef = useRef();
   const [showBeruInteractionMenu, setShowBeruInteractionMenu] = useState(false);
+  const [showKaiselInteractionMenu, setShowKaiselInteractionMenu] = useState(false);
+  const [kaiselMenuPosition, setKaiselMenuPosition] = useState({ x: 0, y: 0 });
+  const [kaiselMenuCharacter, setKaiselMenuCharacter] = useState('');
   const [beruMenuPosition, setBeruMenuPosition] = useState({ x: 0, y: 0 });
   const [beruMenuCharacter, setBeruMenuCharacter] = useState('');
 
@@ -666,13 +670,19 @@ const BuilderBeru = () => {
     kaisel: {
       id: 'kaisel',
       size: 72,
-      preferredCanvas: 'canvas-right',
+      preferredCanvas: 'canvas-center',
       personality: 'efficient_debugger',
       moveSpeed: 1.2,
       messageInterval: 60000,
       sprites: {
-        idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748550000/kaisel_coding.png',
-        debugging: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748550000/kaisel_debug.png'
+        idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
+        left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_left_m8qkyi.png',
+        right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_right_hmgppo.png',
+        up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750772247/Kaisel_dos_dstl0d.png',
+        down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
+        // 🔥 NOUVEAUX ÉTATS POUR MES FONCTIONS
+        scanning: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
+        debugging: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_hmgppo.png'
       },
       phrases: [
         "Console.log: Performance optimized. ✅",
@@ -840,24 +850,52 @@ const BuilderBeru = () => {
     }
 
     // 🎮 Setup events pour entity
-    setupEntityEvents(entity) {
-      const canvas = entity.spawnCanvas; // Utilise la référence directe
-      if (!canvas) return;
+setupEntityEvents(entity) {
+  const canvas = entity.spawnCanvas;
+  if (!canvas) return;
 
-      const handleClick = () => {
-        entity.clickCount++;
+  const handleClick = (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const clickY = event.clientY - rect.top;
 
-        if (entity.id === 'tank') {
-          this.handleTankClick(entity);
-        } else if (entity.id === 'beru') {
-          this.handleBeruClick(entity);
-        } else if (entity.id === 'kaisel') {
-          this.handleKaiselClick(entity);
-        }
-      };
+    // 🔧 COMPENSATION DU DÉCALAGE VERS LE BAS
+    const VERTICAL_OFFSET = 40; // Ajuste cette valeur selon le décalage
+    
+    const spriteLeft = entity.x - entity.size/2;
+    const spriteRight = entity.x + entity.size/2;
+    const spriteTop = entity.y - entity.size/2 - VERTICAL_OFFSET;  // Remonter la zone
+    const spriteBottom = entity.y + entity.size/2 - VERTICAL_OFFSET;
 
-      canvas.addEventListener('click', handleClick);
+    console.log(`🐛 DEBUG ${entity.id} (avec offset):`);
+    console.log(`Click: (${clickX}, ${clickY})`);
+    console.log(`Entity center: (${entity.x}, ${entity.y})`);
+    console.log(`Sprite bounds (centré): (${spriteLeft}, ${spriteTop}) to (${spriteRight}, ${spriteBottom})`);
+
+    const isClickOnSprite = (
+      clickX >= spriteLeft && 
+      clickX <= spriteRight && 
+      clickY >= spriteTop && 
+      clickY <= spriteBottom
+    );
+
+    console.log(`🎯 Click on sprite (centré): ${isClickOnSprite}`);
+
+    if (isClickOnSprite) {
+      entity.clickCount++;
+
+      if (entity.id === 'tank') {
+        this.handleTankClick(entity);
+      } else if (entity.id === 'beru') {
+        this.handleBeruClick(entity);
+      } else if (entity.id === 'kaisel') {
+        this.handleKaiselClick(entity);
+      }
     }
+  };
+
+  canvas.addEventListener('click', handleClick);
+}
 
     // 🛡️ Tank click handler (garde la logique existante)
     handleTankClick(entity) {
@@ -878,23 +916,15 @@ const BuilderBeru = () => {
     }
 
     handleBeruClick(entity) {
-  // ✅ NOUVEAU : appel simplifié sans x,y
-  this.callbacks.showBeruMenu(this.callbacks.getSelectedCharacter?.());
-}
-
-    // ⚡ Kaisel click handler
-    handleKaiselClick(entity) {
-      const messages = [
-        "Console.log('User clicked Kaisel');",
-        "Debug session activated. Stand by...",
-        "Performance analysis: 12ms response time. Not bad.",
-        "Git log: 'User interaction detected'",
-        "Stack overflow: why did you click me?"
-      ];
-
-      const msg = messages[Math.floor(Math.random() * messages.length)];
-      this.showEntityMessage('kaisel', msg, true);
+      // ✅ NOUVEAU : appel simplifié sans x,y
+      this.callbacks.showBeruMenu(this.callbacks.getSelectedCharacter?.());
     }
+
+   // ⚡ Kaisel click handler - VERSION CORRIGÉE
+handleKaiselClick(entity) {
+  // ✅ NOUVEAU : appel simplifié sans x,y comme Béru
+  this.callbacks.showKaiselMenu(this.callbacks.getSelectedCharacter?.());
+}
 
     // 💥 Tank laser (garde la logique existante)
     fireTankLaser(entity) {
@@ -941,8 +971,6 @@ const BuilderBeru = () => {
     showEntityMessage(entityType, message, priority = false) {
       if (!this.callbacks.showMessage) return;
 
-      console.log("🔍 ShadowManager.showEntityMessage appelé avec:", entityType); // ← AJOUTE ÇA
-
       const entity = this.entities.get(entityType);
       if (!entity) return;
 
@@ -950,7 +978,6 @@ const BuilderBeru = () => {
         entityType === 'beru' ? '🧠 ' :
           entityType === 'kaisel' ? '🐉 ' : '';
 
-      console.log("🔍 Va appeler showMessage avec entityType:", entityType); // ← AJOUTE ÇA
 
       this.callbacks.showMessage(prefix + message, priority, entityType); // ← Vérifie cette ligne
     }
@@ -1075,6 +1102,9 @@ const BuilderBeru = () => {
         this.handleTankWandering(entity);
       } else if (entity.id === 'beru') {
         this.handleBeruWandering(entity); // 🆕 AJOUTER CETTE LIGNE
+      } else if (entity.id === 'kaisel') {
+        this.handleKaiselWandering(entity); // 🆕 AJOUTER CETTE LIGNE
+
       }
     }
 
@@ -1201,6 +1231,300 @@ const BuilderBeru = () => {
         }
       }
     }
+// 🤝 SYSTÈME ANTI-COLLISION POUR KAISEL & BÉRU
+handleKaiselWandering(entity) {
+  // 🔍 VÉRIFIER LA DISTANCE AVEC BÉRU
+  const beruEntity = this.entities.get('beru');
+  const MIN_DISTANCE = 150; // Distance plus large pour éviter oscillations
+  const SAFE_DISTANCE = 200; // Distance de sécurité pour arrêter l'évitement
+  
+  if (beruEntity) {
+    const distance = this.calculateDistance(entity, beruEntity);
+    
+    // 🚨 TROP PROCHE DE BÉRU !
+    if (distance < MIN_DISTANCE && !entity.isAvoidingCollision) {
+      this.initiateAvoidanceMovement(entity, beruEntity);
+      return; // Skip normal wandering
+    }
+    
+    // ✅ DISTANCE SÉCURISÉE, reprendre mouvement normal
+    if (distance >= SAFE_DISTANCE && entity.isAvoidingCollision) {
+      entity.isAvoidingCollision = false;
+      entity.avoidanceDirection = null;
+      entity.img.src = entity.sprites.idle;
+    }
+  }
+
+  // 🎯 MOUVEMENT NORMAL (si pas d'évitement en cours)
+  if (!entity.isAvoidingCollision) {
+    this.normalKaiselWandering(entity);
+  } else {
+    this.executeAvoidanceMovement(entity);
+  }
+}
+
+// 📐 CALCULER DISTANCE ENTRE ENTITÉS
+calculateDistance(entity1, entity2) {
+  const dx = entity1.x - entity2.x;
+  const dy = entity1.y - entity2.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// 🚨 INITIER MOUVEMENT D'ÉVITEMENT
+initiateAvoidanceMovement(entity, otherEntity) {
+  // 🛡️ COOLDOWN ANTI-OSCILLATION
+  const now = Date.now();
+  if (entity.lastAvoidanceTime && (now - entity.lastAvoidanceTime) < 1000) {
+    return; // Skip si évitement récent (< 1 seconde)
+  }
+  
+  entity.isAvoidingCollision = true;
+  entity.lastAvoidanceTime = now;
+  
+  // 🧠 CALCULER DIRECTION D'ÉVITEMENT STABLE
+  const dx = entity.x - otherEntity.x;
+  const dy = entity.y - otherEntity.y;
+  
+  // 🔒 GARDER LA MÊME DIRECTION si déjà en évitement récent
+  if (!entity.avoidanceDirection) {
+    if (Math.abs(dx) > Math.abs(dy)) {
+      entity.avoidanceDirection = dx > 0 ? 'right' : 'left';
+    } else {
+      entity.avoidanceDirection = dy > 0 ? 'down' : 'up';
+    }
+  }
+  
+  // ⏰ DURÉE D'ÉVITEMENT PLUS LONGUE
+  entity.avoidanceTimer = 3000 + Math.random() * 2000; // 3-5 secondes
+}
+
+// ⚡ EXÉCUTER MOUVEMENT D'ÉVITEMENT
+executeAvoidanceMovement(entity) {
+  if (!entity.avoidanceDirection || entity.avoidanceTimer <= 0) {
+    entity.isAvoidingCollision = false;
+    return;
+  }
+  
+  const speed = entity.moveSpeed * 1.5; // Plus rapide en évitement
+  
+  switch (entity.avoidanceDirection) {
+    case 'left':
+      entity.x -= speed;
+      entity.img.src = entity.sprites.left;
+      break;
+    case 'right':
+      entity.x += speed;
+      entity.img.src = entity.sprites.right;
+      break;
+    case 'up':
+      entity.y -= speed;
+      entity.img.src = entity.sprites.up;
+      break;
+    case 'down':
+      entity.y += speed;
+      entity.img.src = entity.sprites.down;
+      break;
+  }
+  
+  // ⏱️ DÉCOMPTE DU TIMER
+  entity.avoidanceTimer -= 16; // ~60fps
+  
+  // 🚧 LIMITES CANVAS
+  const canvas = entity.spawnCanvas;
+  if (canvas) {
+    entity.x = Math.max(0, Math.min(canvas.width - entity.size, entity.x));
+    entity.y = Math.max(canvas.height / 2, Math.min(canvas.height - entity.size, entity.y));
+  }
+}
+
+// 🎯 MOUVEMENT NORMAL KAISEL
+normalKaiselWandering(entity) {
+  // Kaisel bouge de façon efficace et rapide (personnalité debugger)
+  if (!entity.isWandering && Math.random() < 0.005) {
+    const directions = ["left", "right", "up", "down"];
+    entity.direction = directions[Math.floor(Math.random() * directions.length)];
+    entity.isWandering = true;
+
+    const wanderDuration = 2000 + Math.random() * 1500;
+    const returnDuration = wanderDuration / 4;
+    const originalDirection = entity.direction;
+
+    const timer = setTimeout(() => {
+      // Phase de retour
+      switch (originalDirection) {
+        case 'left': entity.direction = 'right'; break;
+        case 'right': entity.direction = 'left'; break;
+        case 'up': entity.direction = 'down'; break;
+        case 'down': entity.direction = 'up'; break;
+      }
+
+      setTimeout(() => {
+        entity.isWandering = false;
+        entity.direction = null;
+        entity.img.src = entity.sprites.idle;
+      }, returnDuration);
+    }, wanderDuration);
+
+    this.wanderTimers.set(entity.id, timer);
+  }
+
+  // Apply wandering movement
+  if (entity.isWandering && entity.direction) {
+    const speed = entity.moveSpeed;
+    switch (entity.direction) {
+      case 'left':
+        entity.x -= speed;
+        entity.img.src = entity.sprites.left;
+        break;
+      case 'right':
+        entity.x += speed;
+        entity.img.src = entity.sprites.right;
+        break;
+      case 'up':
+        entity.y -= speed;
+        entity.img.src = entity.sprites.up;
+        break;
+      case 'down':
+        entity.y += speed;
+        entity.img.src = entity.sprites.down;
+        break;
+    }
+
+    // Limites canvas
+    const canvas = entity.spawnCanvas;
+    if (canvas) {
+      entity.x = Math.max(0, Math.min(canvas.width - entity.size, entity.x));
+      entity.y = Math.max(canvas.height / 2, Math.min(canvas.height - entity.size, entity.y));
+    }
+  }
+}
+
+// 📐 CALCULER DISTANCE ENTRE ENTITÉS
+calculateDistance(entity1, entity2) {
+  const dx = entity1.x - entity2.x;
+  const dy = entity1.y - entity2.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// 🚨 INITIER MOUVEMENT D'ÉVITEMENT
+initiateAvoidanceMovement(entity, otherEntity) {
+  entity.isAvoidingCollision = true;
+  
+  // 🧠 CALCULER DIRECTION D'ÉVITEMENT OPTIMALE
+  const dx = entity.x - otherEntity.x;
+  const dy = entity.y - otherEntity.y;
+  
+  // Déterminer la meilleure direction pour s'éloigner
+  if (Math.abs(dx) > Math.abs(dy)) {
+    entity.avoidanceDirection = dx > 0 ? 'right' : 'left';
+  } else {
+    entity.avoidanceDirection = dy > 0 ? 'down' : 'up';
+  }
+  
+  // ⏰ DURÉE D'ÉVITEMENT
+  entity.avoidanceTimer = 2000 + Math.random() * 1000; // 2-3 secondes
+}
+
+// ⚡ EXÉCUTER MOUVEMENT D'ÉVITEMENT
+executeAvoidanceMovement(entity) {
+  if (!entity.avoidanceDirection || entity.avoidanceTimer <= 0) {
+    entity.isAvoidingCollision = false;
+    return;
+  }
+  
+  const speed = entity.moveSpeed * 1.5; // Plus rapide en évitement
+  
+  switch (entity.avoidanceDirection) {
+    case 'left':
+      entity.x -= speed;
+      entity.img.src = entity.sprites.left;
+      break;
+    case 'right':
+      entity.x += speed;
+      entity.img.src = entity.sprites.right;
+      break;
+    case 'up':
+      entity.y -= speed;
+      entity.img.src = entity.sprites.up;
+      break;
+    case 'down':
+      entity.y += speed;
+      entity.img.src = entity.sprites.down;
+      break;
+  }
+  
+  // ⏱️ DÉCOMPTE DU TIMER
+  entity.avoidanceTimer -= 16; // ~60fps
+  
+  // 🚧 LIMITES CANVAS
+  const canvas = entity.spawnCanvas;
+  if (canvas) {
+    entity.x = Math.max(0, Math.min(canvas.width - entity.size, entity.x));
+    entity.y = Math.max(canvas.height / 2, Math.min(canvas.height - entity.size, entity.y));
+  }
+}
+
+// 🎯 MOUVEMENT NORMAL KAISEL
+normalKaiselWandering(entity) {
+  // Kaisel bouge de façon efficace et rapide (personnalité debugger)
+  if (!entity.isWandering && Math.random() < 0.005) {
+    const directions = ["left", "right", "up", "down"];
+    entity.direction = directions[Math.floor(Math.random() * directions.length)];
+    entity.isWandering = true;
+
+    const wanderDuration = 2000 + Math.random() * 1500;
+    const returnDuration = wanderDuration / 4;
+    const originalDirection = entity.direction;
+
+    const timer = setTimeout(() => {
+      // Phase de retour
+      switch (originalDirection) {
+        case 'left': entity.direction = 'right'; break;
+        case 'right': entity.direction = 'left'; break;
+        case 'up': entity.direction = 'down'; break;
+        case 'down': entity.direction = 'up'; break;
+      }
+
+      setTimeout(() => {
+        entity.isWandering = false;
+        entity.direction = null;
+        entity.img.src = entity.sprites.idle;
+      }, returnDuration);
+    }, wanderDuration);
+
+    this.wanderTimers.set(entity.id, timer);
+  }
+
+  // Apply wandering movement
+  if (entity.isWandering && entity.direction) {
+    const speed = entity.moveSpeed;
+    switch (entity.direction) {
+      case 'left':
+        entity.x -= speed;
+        entity.img.src = entity.sprites.left;
+        break;
+      case 'right':
+        entity.x += speed;
+        entity.img.src = entity.sprites.right;
+        break;
+      case 'up':
+        entity.y -= speed;
+        entity.img.src = entity.sprites.up;
+        break;
+      case 'down':
+        entity.y += speed;
+        entity.img.src = entity.sprites.down;
+        break;
+    }
+
+    // Limites canvas
+    const canvas = entity.spawnCanvas;
+    if (canvas) {
+      entity.x = Math.max(0, Math.min(canvas.width - entity.size, entity.x));
+      entity.y = Math.max(canvas.height / 2, Math.min(canvas.height - entity.size, entity.y));
+    }
+  }
+}
 
     // 🎨 Draw entity
     drawEntity(entity) {
@@ -1313,14 +1637,11 @@ const BuilderBeru = () => {
           set: setName,
         },
       };
-      console.log("📦 Nouveau artifactsData :", updated);
-      console.log(`🔧 Set "${setName}" appliqué au slot "${slot}"`);
       return updated;
     });
 
     // 🔥 FORCE un re-render de l'ArtifactCard
     setTimeout(() => {
-      console.log("🔄 Force refresh après 100ms");
     }, 100);
 
     setIsSetSelectorOpen(false);
@@ -1329,13 +1650,10 @@ const BuilderBeru = () => {
 
   // Dans handleLoadSavedSet :
   const handleLoadSavedSet = (slot) => {
-    console.log("🚀 handleLoadSavedSet APPELÉ avec slot :", slot);
 
     const savedSets = JSON.parse(localStorage.getItem("savedSets") || "{}");
-    console.log("💾 savedSets trouvés :", savedSets);
 
     if (savedSets[slot]) {
-      console.log("✅ Set trouvé pour ce slot :", savedSets[slot]);
       setArtifactsData((prev) => ({
         ...prev,
         [slot]: {
@@ -1343,7 +1661,6 @@ const BuilderBeru = () => {
           set: savedSets[slot],
         },
       }));
-      console.log(`🔁 Set chargé pour ${slot} : ${savedSets[slot]}`);
     } else {
       console.warn(`❌ Aucun set enregistré pour ${slot}`);
     }
@@ -1351,8 +1668,6 @@ const BuilderBeru = () => {
 
 
   const handleSaveArtifactToLibrary = (saveData) => {
-    console.log("🐉 Kaisel: Sauvegarde/modification artefact dans la librairie + hunter", saveData);
-
     const storage = JSON.parse(localStorage.getItem("builderberu_users")) || {};
     storage.user = storage.user || {};
     storage.user.accounts = storage.user.accounts || {};
@@ -1420,7 +1735,6 @@ const BuilderBeru = () => {
     // 🔥 MESSAGE ADAPTÉ SELON LE CONTEXTE
     const action = saveData.isModifying ? "modifié" : "sauvé";
     showTankMessage(`💾 "${saveData.name}" ${action} dans la librairie ET sur ${selectedCharacter} !`, true);
-    console.log(`✅ Artefact ${action} dans artifactLibrary ET builds[hunter]`);
   };
 
   const applyOcrDataToArtifact = (ocrResult) => {
@@ -1495,61 +1809,45 @@ const BuilderBeru = () => {
     }));
   };
 
- // 🐉 KAISEL FIX COMPLET - REMPLACE ta fonction getShadowScreenPosition
+  // 🐉 KAISEL FIX COMPLET - REMPLACE ta fonction getShadowScreenPosition
 
-const getShadowScreenPosition = (entityType = 'tank') => {
-  const shadowManager = window.shadowManager;
-  const entity = shadowManager?.entities?.get(entityType);
-  
-  if (!entity || !entity.spawnCanvas) {
-    console.warn(`❌ ${entityType} entity introuvable`);
-    return { x: window.innerWidth / 2, y: window.innerHeight / 2 }; // Fallback centre écran
-  }
+  const getShadowScreenPosition = (entityType = 'tank') => {
+    const shadowManager = window.shadowManager;
+    const entity = shadowManager?.entities?.get(entityType);
 
-  const canvas = entity.spawnCanvas;
-  const rect = canvas.getBoundingClientRect();
-  
-  console.log(`🔍 DEBUG ${entityType}:`, {
-    entity: { x: entity.x, y: entity.y },
-    canvas: { 
-      id: canvas.id, 
-      width: canvas.width, 
-      height: canvas.height,
-      rect: { width: rect.width, height: rect.height }
+    if (!entity || !entity.spawnCanvas) {
+      console.warn(`❌ ${entityType} entity introuvable`);
+      return { x: window.innerWidth / 2, y: window.innerHeight / 2 }; // Fallback centre écran
     }
-  });
 
-  // 🔥 CALCUL CORRECT avec les bonnes dimensions
-  const scaleX = rect.width / canvas.width;   // Scale horizontal
-  const scaleY = rect.height / canvas.height; // Scale vertical
-  
-  // 🎯 POSITION ÉCRAN EXACTE
-  const screenX = rect.left + (entity.x * scaleX);
-  const screenY = rect.top + (entity.y * scaleY);
-  
-  // 🔧 AJUSTEMENT RESPONSIVE selon la taille d'écran
-  const screenWidth = window.innerWidth;
-  const baseWidth = 1920; // Référence de design
-  const responsiveFactor = screenWidth / baseWidth;
-  
-  // Offset adaptatif pour bien centrer le menu
-  const offsetY = -40 * responsiveFactor; // S'adapte à la taille d'écran
-  
-  const finalX = screenX;
-  const finalY = screenY + offsetY;
-  
-  console.log(`🎯 Position finale ${entityType}:`, {
-    screen: { screenX, screenY },
-    responsive: { responsiveFactor, offsetY },
-    final: { x: finalX, y: finalY }
-  });
+    const canvas = entity.spawnCanvas;
+    const rect = canvas.getBoundingClientRect();
 
-  return {
-    x: finalX,
-    y: finalY,
-    currentCanvasId: canvas.id
+    // 🔥 CALCUL CORRECT avec les bonnes dimensions
+    const scaleX = rect.width / canvas.width;   // Scale horizontal
+    const scaleY = rect.height / canvas.height; // Scale vertical
+
+    // 🎯 POSITION ÉCRAN EXACTE
+    const screenX = rect.left + (entity.x * scaleX);
+    const screenY = rect.top + (entity.y * scaleY);
+
+    // 🔧 AJUSTEMENT RESPONSIVE selon la taille d'écran
+    const screenWidth = window.innerWidth;
+    const baseWidth = 1920; // Référence de design
+    const responsiveFactor = screenWidth / baseWidth;
+
+    // Offset adaptatif pour bien centrer le menu
+    const offsetY = -40 * responsiveFactor; // S'adapte à la taille d'écran
+
+    const finalX = screenX;
+    const finalY = screenY + offsetY;
+
+    return {
+      x: finalX,
+      y: finalY,
+      currentCanvasId: canvas.id
+    };
   };
-};
   const getRandomMystEggLine = (charKey, context) => {
     const data = MYST_EGGS?.[charKey]?.[context];
     if (!data || !Array.isArray(data)) return null;
@@ -1829,7 +2127,7 @@ const getShadowScreenPosition = (entityType = 'tank') => {
   const [isAccountSwitching, setIsAccountSwitching] = useState(false);
   const [setSelectorSlot, setSetSelectorSlot] = useState(null); // ex: 'Helmet'
   const [showNoyauxPopup, setShowNoyauxPopup] = useState(false);
-  
+
   // 🐉 KAISEL FIX 4 - INITIALISATION STATE artifactScores SÉCURISÉE
   const [artifactScores, setArtifactScores] = useState(() => {
     try {
@@ -1910,11 +2208,26 @@ const getShadowScreenPosition = (entityType = 'tank') => {
         const beruEntity = window.shadowManager.entities.get('beru');
         if (beruEntity) {
           beruEntity.isMenuActive = false;
-          console.log("🔓 Beru movement restored");
         }
       }
     } catch (error) {
       console.error("🐉 Kaisel: Erreur closeBeruMenu:", error);
+    }
+  };
+
+  const closeKaiselMenu = () => {
+    try {
+      setShowKaiselInteractionMenu(false);
+
+      // 🔓 DÉBLOQUER le mouvement de Kaisel
+      if (window.shadowManager?.entities) {
+        const kaiselEntity = window.shadowManager.entities.get('kaisel');
+        if (kaiselEntity) {
+          kaiselEntity.isMenuActive = false;
+        }
+      }
+    } catch (error) {
+      console.error("🐉 Kaisel: Erreur closeKaiselMenu:", error);
     }
   };
 
@@ -2061,7 +2374,6 @@ const getShadowScreenPosition = (entityType = 'tank') => {
 
 
   const onConfirm = (parsedData) => {
-    console.log('✅ Artefact OCR confirmé :', parsedData);
 
     // Exemple simple : mise à jour du premier artefact
     setArtifacts((prev) => {
@@ -2766,15 +3078,9 @@ BobbyJones : "Allez l'Inter !"
   // 1️⃣ Fonction de debug pour voir le localStorage
   const debugLocalStorage = () => {
     const stored = JSON.parse(localStorage.getItem("builderberu_users"));
-    console.log("🐉 Kaisel DEBUG localStorage complet:", stored);
 
     if (stored?.user?.accounts) {
       Object.entries(stored.user.accounts).forEach(([accountName, accountData]) => {
-        console.log(`🐉 Compte "${accountName}":`, {
-          builds: Object.keys(accountData.builds || {}),
-          gems: accountData.gems || {},
-          recentBuilds: accountData.recentBuilds || []
-        });
       });
     }
   };
@@ -2843,12 +3149,8 @@ BobbyJones : "Allez l'Inter !"
   // Fix du personnage par défaut au chargement de la page
 
   useEffect(() => {
-    console.log("🔄 useEffect [INIT & CHARGEMENT MULTI-COMPTE - KAISEL FIX]");
-
 
     migrateOldDataToNewSystem();
-
-
 
     const defaultUserData = {
       activeAccount: "main",
@@ -2886,7 +3188,6 @@ BobbyJones : "Allez l'Inter !"
       if (recent.length > 0) {
         // Si il y a des builds récents dans le compte actuel, prendre le premier
         defaultCharacter = recent[0];
-        console.log(`🐉 Kaisel: Personnage par défaut trouvé: ${defaultCharacter} (dernier du compte ${userData.activeAccount})`);
       } else {
         // Sinon, essayer le compte "main"
         const mainAccount = userData.accounts.main;
@@ -2894,11 +3195,9 @@ BobbyJones : "Allez l'Inter !"
 
         if (mainRecent.length > 0) {
           defaultCharacter = mainRecent[0];
-          console.log(`🐉 Kaisel: Personnage par défaut du compte main: ${defaultCharacter}`);
         } else {
           // En dernier recours, Niermann
           defaultCharacter = 'niermann';
-          console.log(`🐉 Kaisel: Personnage par défaut final: niermann (fallback)`);
         }
       }
 
@@ -2912,8 +3211,6 @@ BobbyJones : "Allez l'Inter !"
       // 📦 Chargement du build actif (si existe)
       if (defaultCharacter && currentAccount.builds?.[defaultCharacter]) {
         const build = currentAccount.builds[defaultCharacter];
-        console.log(`🐉 Kaisel: Chargement auto du build ${defaultCharacter}`, build);
-
         setFlatStats(build.flatStats || {});
         setStatsWithoutArtefact(build.statsWithoutArtefact || {});
         setArtifactsData(build.artifactsData || {});
@@ -2927,11 +3224,9 @@ BobbyJones : "Allez l'Inter !"
         }));
       } else if (defaultCharacter === 'niermann') {
         // Si c'est Niermann par défaut, pas de build à charger
-        console.log(`🐉 Kaisel: Niermann par défaut, pas de build à charger`);
       }
       // 🔥 AJOUTE ICI, JUSTE APRÈS setSelectedCharacter :
       if (defaultCharacter && !currentAccount.builds?.[defaultCharacter]) {
-        console.log(`🐉 Kaisel: Initialisation artefacts vides pour ${defaultCharacter}`);
 
         const emptyArtifactsData = {
           Helmet: { mainStat: '', subStats: ['', '', '', ''], mainStatValue: 0, subStatsLevels: [{}, {}, {}, {}], set: '' },
@@ -2953,7 +3248,6 @@ BobbyJones : "Allez l'Inter !"
 
       // 💎 KAISEL FIX : Charger les gemmes du compte actif (pas global!)
       setGemData(currentAccount.gems || {});
-      console.log(`🐉 Kaisel: Gemmes chargées pour compte ${userData.activeAccount}:`, currentAccount.gems);
 
       setIsBuildsReady(true);
     } catch (error) {
@@ -3215,9 +3509,7 @@ BobbyJones : "Allez l'Inter !"
     setStatsFromArtifacts(completeStats({}));
     setArtifactsData(resetArtifacts);
 
-    // showTankMessage(`🧹 ${name} reset complet. Tu repars de zéro, mais puissant 😌`);
-    console.log("Flat DEF", flatStats["Defense"]);
-    console.log("Final DEF", statsWithoutArtefact["Defense"]);
+
 
   };
   const playMusic = () => {
@@ -3231,7 +3523,6 @@ BobbyJones : "Allez l'Inter !"
 
   // 🧹 Fonction de nettoyage (inchangée)
   const handleAccountSwitchCleanup = (accountName, recentBuilds) => {
-    console.log(`🐉 Kaisel: Nettoyage du compte ${accountName}`);
 
     const filteredRecent = recentBuilds.filter(charKey =>
       characters[charKey] && accounts[accountName]?.builds?.[charKey]
@@ -3258,7 +3549,6 @@ BobbyJones : "Allez l'Inter !"
 
     // Réessayer le chargement avec la liste propre
     if (filteredRecent.length > 0) {
-      console.log(`🐉 Kaisel: Retry après nettoyage avec ${filteredRecent[0]}`);
       setTimeout(() => {
         handleClickBuildIcon(filteredRecent[0]);
       }, 150);
@@ -3316,7 +3606,6 @@ BobbyJones : "Allez l'Inter !"
 
     // 💎 KAISEL FIX : Sauvegarder les gemmes DU COMPTE ACTIF
     currentAccount.gems = gemData || {};
-    console.log(`🐉 Kaisel: Sauvegarde gemmes pour compte ${activeAccount}:`, gemData);
 
     // 💾 Sauvegarde localStorage
     localStorage.setItem("builderberu_users", JSON.stringify(storedData));
@@ -3340,7 +3629,6 @@ BobbyJones : "Allez l'Inter !"
         }
       };
 
-      console.log("✅ Updated accounts state:", updatedAccounts[activeAccount].recentBuilds);
       return updatedAccounts;
     });
 
@@ -3900,14 +4188,10 @@ BobbyJones : "Allez l'Inter !"
   // Debug COMPLET de handleClickBuildIcon pour voir où ça bloque
 
   const handleClickBuildIcon = (characterName) => {
-    console.log(`🐉 Kaisel DEBUG: ===== DÉBUT handleClickBuildIcon(${characterName}) =====`);
 
-    // 🔍 Vérification 1 : activeAccount
-    console.log(`🐉 Kaisel DEBUG: activeAccount actuel:`, activeAccount);
 
     // 🔍 Vérification 2 : localStorage
     const stored = JSON.parse(localStorage.getItem("builderberu_users"));
-    console.log(`🐉 Kaisel DEBUG: localStorage complet:`, stored);
 
 
     if (stored?.artifactsData) {
@@ -3931,56 +4215,41 @@ BobbyJones : "Allez l'Inter !"
       }
     }
 
-    // 🔍 Vérification 3 : accounts disponibles
-    console.log(`🐉 Kaisel DEBUG: accounts disponibles:`, Object.keys(stored?.user?.accounts || {}));
-
     // 🔍 Vérification 4 : path complet
     const userAccounts = stored?.user?.accounts;
-    console.log(`🐉 Kaisel DEBUG: userAccounts:`, userAccounts);
 
     const targetAccount = userAccounts?.[activeAccount];
-    console.log(`🐉 Kaisel DEBUG: targetAccount [${activeAccount}]:`, targetAccount);
 
     const builds = targetAccount?.builds;
-    console.log(`🐉 Kaisel DEBUG: builds dans ${activeAccount}:`, builds);
 
     const build = builds?.[characterName];
-    console.log(`🐉 Kaisel DEBUG: build [${characterName}]:`, build);
 
     if (!build) {
-      console.log(`🐉 Kaisel DEBUG: ❌ Pas de build trouvé pour ${characterName} dans compte ${activeAccount}`);
       showTankMessage(`Aucun build sauvegardé pour ${characterName} 😶`, true);
       return;
     }
 
-    console.log(`🐉 Kaisel DEBUG: ✅ Build trouvé! Chargement...`);
 
     // 📦 CHARGEMENT COMPLET de TOUTES les données du build
 
     // 1️⃣ Personnage sélectionné
-    console.log(`🐉 Kaisel DEBUG: setSelectedCharacter(${characterName})`);
     setSelectedCharacter(characterName);
 
     // 2️⃣ Stats de base
-    console.log(`🐉 Kaisel DEBUG: setFlatStats`, build.flatStats);
     setFlatStats(build.flatStats || {});
 
-    console.log(`🐉 Kaisel DEBUG: setStatsWithoutArtefact`, build.statsWithoutArtefact);
     setStatsWithoutArtefact(build.statsWithoutArtefact || {});
 
     // 3️⃣ Artefacts complets
-    console.log(`🐉 Kaisel DEBUG: setArtifactsData`, build.artifactsData);
     setArtifactsData(build.artifactsData || {});
 
     // 4️⃣ Hunter cores
-    console.log(`🐉 Kaisel DEBUG: setHunterCores pour ${characterName}`, build.hunterCores);
     setHunterCores(prev => ({
       ...prev,
       [characterName]: build.hunterCores || {}
     }));
 
     // 5️⃣ Hunter weapons
-    console.log(`🐉 Kaisel DEBUG: setHunterWeapons pour ${characterName}`, build.hunterWeapons);
     setHunterWeapons(prev => ({
       ...prev,
       [characterName]: build.hunterWeapons || {}
@@ -3988,20 +4257,17 @@ BobbyJones : "Allez l'Inter !"
 
     // 6️⃣ Gemmes du compte
     if (build.gems) {
-      console.log(`🐉 Kaisel DEBUG: setGemData`, build.gems);
       setGemData(build.gems);
     }
 
     // 7️⃣ Message de confirmation
     showTankMessage(`✅ ${characters[characterName]?.name || characterName} chargé !`, true);
 
-    console.log(`🐉 Kaisel DEBUG: ===== FIN handleClickBuildIcon =====`);
   };
 
 
   // 2️⃣ REMPLACE ta fonction handleAccountSwitch par cette version smooth :
   const handleAccountSwitch = async (newAccountName) => {
-    console.log(`🐉 Kaisel SMOOTH: ===== SWITCH vers ${newAccountName} =====`);
 
     // 🎭 MASQUER l'interface pendant le switch
     setIsAccountSwitching(true);
@@ -4135,7 +4401,6 @@ BobbyJones : "Allez l'Inter !"
         const build = newAccountData.builds?.[firstCharacter];
 
         if (build) {
-          console.log(`🐉 Kaisel SMOOTH: Chargement ${firstCharacter}...`);
 
           // 📦 CLONAGE PROFOND + BATCH UPDATE FINAL
           const clonedArtifacts = JSON.parse(JSON.stringify(build.artifactsData || emptyArtifactsData));
@@ -4177,8 +4442,6 @@ BobbyJones : "Allez l'Inter !"
     setTimeout(() => {
       setIsAccountSwitching(false);
     }, 100);
-
-    console.log(`🐉 Kaisel SMOOTH: ===== FIN SWITCH =====`);
   };
 
   // 4️⃣ Ajoute cette fonction temporaire pour debug
@@ -4320,12 +4583,11 @@ BobbyJones : "Allez l'Inter !"
 
 
   // 3️⃣ NOUVEAU useEffect - REMPLACE TON useEffect CANVAS EXISTANT
-// 🐉 KAISEL VERSION COMPLÈTE - REMPLACE ton useEffect ShadowManager existant
+  // 🐉 KAISEL VERSION COMPLÈTE - REMPLACE ton useEffect ShadowManager existant
 
 
   // 🐉 KAISEL ALTERNATIVE - Si tu préfères limiter les dépendances :
   useEffect(() => {
-    console.log("🐉 Kaisel: Starting Shadow System...");
 
     // 🔒 PROTECTION : Nettoyage préalable
     if (window.shadowManager) {
@@ -4342,36 +4604,55 @@ BobbyJones : "Allez l'Inter !"
     const callbacks = {
       showMessage: showTankMessage,
       showBeruMenu: (selectedCharacter) => {
-  try {
-    console.log("🧠 Menu Beru demandé pour:", selectedCharacter);
+        try {
 
-    if (window.shadowManager?.entities) {
-      const beruEntity = window.shadowManager.entities.get('beru');
-      if (beruEntity) {
-        beruEntity.isMenuActive = true;
-      }
-    }
+          if (window.shadowManager?.entities) {
+            const beruEntity = window.shadowManager.entities.get('beru');
+            if (beruEntity) {
+              beruEntity.isMenuActive = true;
+            }
+          }
 
-    // 🎯 COPIE EXACTE de showTankMessage !
-    const pos = getShadowScreenPosition('beru');
-    // const messageOffset = Math.min(200, 150 * 0.6); // MÊME calcul que showTankMessage
-    
-    const adjustedPos = {
-      x: pos.x - 10,
-      y: pos.y,
-      currentCanvasId: pos.currentCanvasId
-    };
+          // 🎯 COPIE EXACTE de showTankMessage !
+          const pos = getShadowScreenPosition('beru');
+          // const messageOffset = Math.min(200, 150 * 0.6); // MÊME calcul que showTankMessage
 
-    console.log("🔧 Position Béru RÉELLE:", pos);
-    console.log("🔧 Position menu calculée:", adjustedPos);
+          const adjustedPos = {
+            x: pos.x - 10,
+            y: pos.y,
+            currentCanvasId: pos.currentCanvasId
+          };
 
-    setShowBeruInteractionMenu(true);
-    setBeruMenuPosition({ x: adjustedPos.x, y: adjustedPos.y }); // ← PAS de safeX/safeY !
-    setBeruMenuCharacter(selectedCharacter || '');
-  } catch (error) {
-    console.error("🐉 Kaisel: Erreur showBeruMenu:", error);
-  }
-},
+          setShowBeruInteractionMenu(true);
+          setBeruMenuPosition({ x: adjustedPos.x, y: adjustedPos.y }); // ← PAS de safeX/safeY !
+          setBeruMenuCharacter(selectedCharacter || '');
+        } catch (error) {
+          console.error("🐉 Kaisel: Erreur showBeruMenu:", error);
+        }
+      },
+      showKaiselMenu: (selectedCharacter) => {
+        try {
+          if (window.shadowManager?.entities) {
+            const kaiselEntity = window.shadowManager.entities.get('kaisel');
+            if (kaiselEntity) {
+              kaiselEntity.isMenuActive = true;
+            }
+          }
+
+          const pos = getShadowScreenPosition('kaisel');
+          const adjustedPos = {
+            x: pos.x - 10,
+            y: pos.y,
+            currentCanvasId: pos.currentCanvasId
+          };
+
+          setShowKaiselInteractionMenu(true);
+          setKaiselMenuPosition({ x: adjustedPos.x, y: adjustedPos.y });
+          setKaiselMenuCharacter(selectedCharacter || '');
+        } catch (error) {
+          console.error("🐉 Kaisel: Erreur showKaiselMenu:", error);
+        }
+      },
       getSelectedCharacter: () => selectedCharacter
     };
 
@@ -4381,6 +4662,7 @@ BobbyJones : "Allez l'Inter !"
         shadowManager.init(['canvas-left', 'canvas-center', 'canvas-right'], callbacks);
         shadowManager.spawnEntity('tank');
         shadowManager.spawnEntity('beru');
+        shadowManager.spawnEntity('kaisel');
       } catch (error) {
         console.error("🐉 Kaisel: Shadow init error:", error);
       }
@@ -4396,7 +4678,6 @@ BobbyJones : "Allez l'Inter !"
       if (keyboardCleanup) keyboardCleanup();
       window.shadowManager = null;
       window.getShadowScreenPosition = null;
-      console.log("🐉 Kaisel: Shadow System cleaned up ✅");
     };
   }, [t, selectedCharacter]);
   // 4️⃣ FONCTIONS UTILITAIRES pour Beru (à ajouter)
@@ -4493,11 +4774,8 @@ BobbyJones : "Allez l'Inter !"
       setShowChibiBubble(false);
       setBubbleId(Date.now());
 
-      console.log("🔍 showTankMessage appelée avec entityType:", entityType);
-
       // 🛡️ PROTECTION getShadowScreenPosition
       const pos = getShadowScreenPosition(entityType);
-      console.log("🔍 Position calculée:", pos);
 
       // 🔥 OFFSET INTELLIGENT
       const messageOffset = Math.min(200, message.length * 0.6);
@@ -4836,8 +5114,6 @@ BobbyJones : "Allez l'Inter !"
                             )}
 
                             {showBeruInteractionMenu && (() => {
-                              console.log("🐛 MONARQUE DEBUG: artifactsData avant menu Béru:", artifactsData);
-                              console.log("🐛 Slots avec des noms:", Object.entries(artifactsData).filter(([slot, art]) => art?.name));
                               return null;
                             })()}
 
@@ -4857,6 +5133,22 @@ BobbyJones : "Allez l'Inter !"
                                 onReportGenerated={handleReportGenerated}
                                 substatsMinMaxByIncrements={substatsMinMaxByIncrements} // ← AJOUTER CETTE LIGNE !
                                 existingScores={artifactScores} // ← UTILISER LE STATE PROTÉGÉ
+                              />
+                            )}
+
+                            {showKaiselInteractionMenu && (
+                              <KaiselInteractionMenu
+                                position={kaiselMenuPosition}
+                                onClose={closeKaiselMenu}
+                                selectedCharacter={selectedCharacter}
+                                characters={characters}
+                                showTankMessage={showTankMessage}
+                                currentArtifacts={artifactsData}
+                                currentStats={finalStats}
+                                currentCores={hunterCores[selectedCharacter] || {}}
+                                multiAccountsData={accounts}
+                                substatsMinMaxByIncrements={substatsMinMaxByIncrements}
+                                existingScores={artifactScores}
                               />
                             )}
 
@@ -5692,8 +5984,6 @@ BobbyJones : "Allez l'Inter !"
                   )}
 
                   {showBeruInteractionMenu && (() => {
-                    console.log("🐛 MONARQUE DEBUG: artifactsData avant menu Béru:", artifactsData);
-                    console.log("🐛 Slots avec des noms:", Object.entries(artifactsData).filter(([slot, art]) => art?.name));
                     return null;
                   })()}
                   {showBeruInteractionMenu && (
@@ -5711,6 +6001,22 @@ BobbyJones : "Allez l'Inter !"
                       onReportGenerated={handleReportGenerated}
                       substatsMinMaxByIncrements={substatsMinMaxByIncrements} // ← AJOUTER CETTE LIGNE !
                       existingScores={artifactScores} // ← UTILISER LE STATE PROTÉGÉ
+                    />
+                  )}
+
+                  {showKaiselInteractionMenu && (
+                    <KaiselInteractionMenu
+                      position={kaiselMenuPosition}
+                      onClose={closeKaiselMenu}
+                      selectedCharacter={selectedCharacter}
+                      characters={characters}
+                      showTankMessage={showTankMessage}
+                      currentArtifacts={artifactsData}
+                      currentStats={finalStats}
+                      currentCores={hunterCores[selectedCharacter] || {}}
+                      multiAccountsData={accounts}
+                      substatsMinMaxByIncrements={substatsMinMaxByIncrements}
+                      existingScores={artifactScores}
                     />
                   )}
 

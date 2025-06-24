@@ -48,7 +48,7 @@ const BUILDER_DATA = {
   "recommendedStats": {
     "criticalHitRate": "50%",
     "criticalHitDamage": "200% - 210%",
-    "healingIncrease": "30% +",
+    "DamageIncrease": "30% +",
     "defensePenetration": "10% - 20%",
     "additionalDefense": "Le plus possible",
     "additionalAttack": null,
@@ -186,32 +186,32 @@ const BUILDER_DATA = {
     },
     {
       stat: "Defense %",
-      priority: 1,
+      priority: 2,
       target: "maximum_possible",
       reason: "Prioriser Defense au maximum (scaleStat)",
       description: "Chae scale sur Defense - maximise cette stat avant tout"
     },
     {
       stat: "Damage Increase",
-      priority: 2,
+      priority: 3,
       target: "maximum_possible",
       reason: "Dégâts optimaux"
     },
     {
       stat: "Critical Hit Damage",
-      priority: 3,
+      priority: 4,
       target: "200%+",
       reason: "Dégâts critiques optimaux"
     },
     {
       stat: "Critical Hit Rate",
-      priority: 4,
+      priority: 5,
       target: 8000, // 80% pour DPS standard
       reason: "Taux critique pour DPS"
     },
     {
       stat: "Defense Penetration",
-      priority: 5,
+      priority: 6,
       target: "10-20%",
       reason: "Pénétration pour efficacité"
     }
@@ -440,7 +440,7 @@ const BUILDER_DATA = {
   "recommendedStats": {
     "criticalHitRate": "100-120%", // Spécial Kanae !
     "criticalHitDamage": "200% - 210%",
-    "healingIncrease": "30% +",
+    "DamageIncrease": "30% +",
     "defensePenetration": "10% - 20%",
     "additionalDefense": null,
     "additionalAttack": "Le plus possible",
@@ -479,7 +479,7 @@ const BUILDER_DATA = {
   // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS - KAISEL FIX 1 BUILD COMPLEXE
   "artifactSets": {
     "hybridAssassinBuild": {
-      "name": "Hybrid Assassin Build",
+      "name": "x2 One-Hit Kill x2 Burning cursed/x4 Expert",
       "frenchName": "Build assassin hybride",
       "availability": "LR+",
       "setComposition": "2x Burning Curse + 2x One-hit Kill + 4x Expert",
@@ -619,7 +619,7 @@ const BUILDER_DATA = {
     "recommendedStats": {
       "criticalHitRate": "80%",
       "criticalHitDamage": "200% - 210%",
-      "healingIncrease": "30% +",
+      "DamageIncrease": "30% +",
       "defensePenetration": "10% - 20%",
       "additionalDefense": null,
       "additionalAttack": "Le plus possible",
@@ -698,7 +698,7 @@ const BUILDER_DATA = {
         }
       },
       "burningGreed": {
-        "name": "Burning Greed",
+        "name": "x4 Greed/x4 Desire Chaotic",
         "frenchName": "Avarice ardente",
         "availability": "LR",
         "pieces": {
@@ -798,7 +798,7 @@ const BUILDER_DATA = {
     "recommendedStats": {
       "criticalHitRate": "50%",
       "criticalHitDamage": "200% - 210%",
-      "healingIncrease": "30% +",
+      "DamageIncrease": "30% +",
       "defensePenetration": "10% - 20%",
       "additionalDefense": "Modéré",
       "additionalAttack": null,
@@ -834,7 +834,7 @@ const BUILDER_DATA = {
     // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS
     "artifactSets": {
       "burningGreed": {
-        "name": "Burning Greed",
+        "name": "x4 Greed/ x4 Obsidian",
         "frenchName": "Avarice ardente",
         "availability": "LR",
         "pieces": {
@@ -846,6 +846,31 @@ const BUILDER_DATA = {
           "bracelet": "Bracelet en obsidienne",
           "ring": "Bague en obsidienne", 
           "earrings": "Boucles d'oreilles en obsidienne"
+        },
+        "mainStats": {
+          "helmet": "Additional HP",
+          "chest": "Additional Defense",
+          "gloves": "Additional Attack", 
+          "boots": "Critical Hit Damage",
+          "necklace": "Additional HP",
+          "bracelet": "Wind Damage %",
+          "ring": "Additional HP",
+          "earrings": "Additional MP"
+        }
+      },
+       "DesireGreed": {
+        "name": "x4 Greed/ x4 Desire Chaotic",
+        "frenchName": "Avarice ardente/ Désir Chaotic",
+        "availability": "LR",
+        "pieces": {
+          "helmet": "Casque d'avarice ardente",
+          "chest": "Armure d'avarice ardente",
+          "gloves": "Gants d'avarice ardente",
+          "boots": "Bottes d'avarice ardente",
+          "necklace": "Collier du désir chaotique",
+          "bracelet": "Bracelet du désir chaotique",
+          "ring": "Bague du désir chaotique", 
+          "earrings": "Boucles d'oreilles du désir chaotique"
         },
         "mainStats": {
           "helmet": "Additional HP",
@@ -888,167 +913,6 @@ const BUILDER_DATA = {
     }
   },
 
-  "kanae": {
-    "name": "Tawata Kanae",
-    "element": "Fire",
-    "class": "Assassin",
-    "grade": "SSR",
-    "scaleStat": "Attack",
-
-    // 🎯 PRIORITÉS D'OPTIMISATION - LOGIQUE UNIFIÉE CORRIGÉE
-    "optimizationPriority": [
-      {
-        stat: "Additional Attack",
-        priority: 1,
-        target: "maximum_possible",
-        reason: "Prioriser Attack au maximum (scaleStat)",
-        description: "Kanae scale sur Attack - maximise cette stat avant tout"
-      },
-      {
-        stat: "Damage Increase",
-        priority: 2,
-        target: "maximum_possible",
-        reason: "Dégâts optimaux"
-      },
-      {
-        stat: "Critical Hit Damage",
-        priority: 3,
-        target: "200%+",
-        reason: "Dégâts critiques optimaux"
-      },
-      {
-        stat: "Critical Hit Rate",
-        priority: 4,
-        target: 12000, // 120% pour lead crit du groupe !
-        reason: "Kanae doit lead le crit du groupe (10000-12000)"
-      },
-      {
-        stat: "Defense Penetration",
-        priority: 5,
-        target: "10-20%",
-        reason: "Pénétration pour efficacité"
-      }
-    ],
-
-    // 📊 STATS RECOMMANDÉES - CORRIGÉES
-    "recommendedStats": {
-      "criticalHitRate": "100-120%", // Spécial Kanae !
-      "criticalHitDamage": "200% - 210%",
-      "healingIncrease": "30% +",
-      "defensePenetration": "10% - 20%",
-      "additionalDefense": null,
-      "additionalAttack": "Le plus possible",
-      "precision": null,
-      "damageReduction": null,
-      "healingReceived": null,
-      "mpRecoveryRate": null,
-      "mpCostReduction": null
-    },
-
-    // 🎮 MODES DE JEU & SETS
-    "gameModes": {
-      "general": {
-        "recommendedSet": "Mixed Build",
-        "priority": "Hybrid assassin build",
-        "description": "Build assassin hybride",
-        "availability": "partial"
-      },
-      "pod": {
-        "recommendedSet": "Mixed Build",
-        "priority": "PvP assassin", 
-        "description": "Build PvP assassin",
-        "availability": "partial"
-      },
-      "bdg": {
-        "recommendedSet": "Mixed Build",
-        "priority": "Guild boss assassin",
-        "description": "Build boss de guilde assassin",
-        "availability": "partial"
-      }
-    },
-
-    // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS
-    "artifactSets": {
-      "mixedBuild": {
-        "name": "Mixed Build",
-        "frenchName": "Build hybride",
-        "availability": "partial",
-        "pieces": {
-          "helmet": "Chapeau de grand enchanteur",
-          "chest": "Robe de grand enchanteur",
-          "gloves": "Gants de malédiction ardente",
-          "boots": "Bottes de malédiction ardente",
-          "necklace": "Collier de bête",
-          "bracelet": "Bracelet de bête",
-          "ring": "Bague de bête",
-          "earrings": "Boucles d'oreilles de bête"
-        },
-        "mainStats": {
-          "helmet": "Additional Attack",
-          "chest": "Additional Defense",
-          "gloves": "Additional Attack", 
-          "boots": "Critical Hit Damage",
-          "necklace": "Additional HP",
-          "bracelet": "Fire Damage %",
-          "ring": "Additional Attack",
-          "earrings": "Additional MP"
-        }
-      },
-      "burningCurse": {
-        "name": "Burning Curse",
-        "frenchName": "Malédiction ardente",
-        "availability": "LR",
-        "pieces": {
-          "helmet": "Casque de malédiction ardente",
-          "chest": "Armure de malédiction ardente",
-          "gloves": "Gants de malédiction ardente", 
-          "boots": "Bottes de malédiction ardente",
-          "necklace": "Collier en obsidienne",
-          "bracelet": "Bracelet en obsidienne",
-          "ring": "Bague en obsidienne", 
-          "earrings": "Boucles d'oreilles en obsidienne"
-        },
-        "mainStats": {
-          "helmet": "Additional Attack",
-          "chest": "Additional Defense",
-          "gloves": "Additional Attack", 
-          "boots": "Critical Hit Damage",
-          "necklace": "Additional Attack",
-          "bracelet": "Fire Damage %",
-          "ring": "Additional Attack", 
-          "earrings": "Additional MP"
-        }
-      }
-    },
-
-    // 🧪 NOYAUX RECOMMANDÉS
-    "recommendedCores": {
-      "offensive": {
-        "name": "Trompette du Démon Anonyme",
-        "type": "Additional Attack",
-        "bonus": "Lors de l'utilisation de la Compétence ultime, les Dégâts de coup critique de l'utilisateur augmentent de 30% pendant 8 secondes"
-      },
-      "defensive": {
-        "name": "Corne du Démon Anonyme", 
-        "type": "Additional Defense",
-        "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
-      },
-      "endurance": {
-        "name": "Dents du Veilleur",
-        "type": "Additional HP",
-        "bonus": "Diminue le Taux de récupération de PM de 10% et la Consommation de PM de 12% lors de l'utilisation d'une compétence"
-      }
-    },
-
-    // 💡 CONSEILS BÉRU - CORRIGÉS
-    "beruAdvice": {
-      "newbie": "Kanae est un Assassin spécial. Priorise Additional Attack au maximum !",
-      "intermediate": "Scale sur Attack = focus Additional Attack, puis Damage Increase.",
-      "advanced": "Kanae DOIT avoir 10000-12000 crit pour lead le groupe !",
-      "expert": "Build hybride complexe - utilise Burning Curse en alternative simple."
-    }
-  },
-  
   "esil": {
     "name": "Esil Radiru",
     "element": "Fire",
@@ -1095,7 +959,7 @@ const BUILDER_DATA = {
     "recommendedStats": {
       "criticalHitRate": "80%",
       "criticalHitDamage": "200% - 210%",
-      "healingIncrease": "30% +",
+      "DamageIncrease": "30% +",
       "defensePenetration": "10% - 20%",
       "additionalDefense": null,
       "additionalAttack": "Le plus possible",
@@ -1137,7 +1001,7 @@ const BUILDER_DATA = {
     // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS
     "artifactSets": {
       "burningGreed": {
-        "name": "Burning Greed",
+        "name": "x4 Burning Greed",
         "frenchName": "Avarice ardente",
         "availability": "LR",
         "pieces": {
@@ -1162,7 +1026,7 @@ const BUILDER_DATA = {
         }
       },
       "chaoticDesire": {
-        "name": "Chaotic Desire",
+        "name": "x8 Chaotic Desire",
         "frenchName": "Désir chaotique",
         "availability": "LR",
         "pieces": {
@@ -1262,7 +1126,7 @@ const BUILDER_DATA = {
     "recommendedStats": {
       "criticalHitRate": "50%",
       "criticalHitDamage": "200% - 210%",
-      "healingIncrease": "30% +",
+      "DamageIncrease": "30% +",
       "defensePenetration": "10% - 20%",
       "additionalDefense": null,
       "additionalAttack": null,
@@ -1460,7 +1324,7 @@ const BUILDER_DATA = {
     "recommendedStats": {
       "criticalHitRate": "50%",
       "criticalHitDamage": "200% - 210%",
-      "healingIncrease": "30% +",
+      "DamageIncrease": "30% +",
       "defensePenetration": "10% - 20%",
       "additionalDefense": "Le plus possible",
       "additionalAttack": "Modéré",
@@ -1496,7 +1360,7 @@ const BUILDER_DATA = {
     // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS
     "artifactSets": {
       "ironWill": {
-        "name": "Iron Will",
+        "name": "x4 Iron Will/ x4 Obsidian",
         "frenchName": "Volonté de fer",
         "availability": "L",
         "pieces": {
@@ -1596,7 +1460,7 @@ const BUILDER_DATA = {
     "recommendedStats": {
       "criticalHitRate": "50%",
       "criticalHitDamage": "200% - 210%",
-      "healingIncrease": "Le plus possible",
+      "DamageIncrease": "Le plus possible",
       "defensePenetration": "10% - 20%",
       "additionalDefense": "Le plus possible",
       "additionalAttack": null,
@@ -1769,7 +1633,7 @@ const BUILDER_DATA = {
     "recommendedStats": {
       "criticalHitRate": "80%",
       "criticalHitDamage": "200% - 210%",
-      "healingIncrease": "30% +",
+      "DamageIncrease": "30% +",
       "defensePenetration": "10% - 20%",
       "additionalDefense": null,
       "additionalAttack": "Le plus possible",

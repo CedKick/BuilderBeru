@@ -145,10 +145,7 @@ const ComparisonPopup = ({ original, onClose, hunter, flatStats,
 }, [original.original.title]);
 
   const candidate = { ...draftArtifact, title: original.original.title };
-  console.log("ORIGINAL TITLE DONNE :", original.original.title);
 
-
-  
   const getMainStatsForType = (title) => {
     switch (title) {
       case "Helmet": return ["Attack", "Defense", "HP"];

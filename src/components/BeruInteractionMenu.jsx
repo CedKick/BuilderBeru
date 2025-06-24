@@ -287,7 +287,6 @@ const BeruInteractionMenu = ({
         break;
 
       case 'stat_optimization':
-  console.log("🔥 KAISEL: existingScores reçus dans BeruMenu:", existingScores);
   
   performIntelligentAnalysis(
     selectedCharacter,

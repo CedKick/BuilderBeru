@@ -81,7 +81,6 @@ export default function FormPod() {
       // boss,                      // optionnel, valeur par défaut = 'Ennio'
     };
 
-    console.log('✅ JSON final prêt à l\'export ou preview :', fullData);
     setFinalFormData(fullData);  // stocke-le si tu veux l'utiliser ailleurs (comme dans PodPreviewLayout)
   };
 
