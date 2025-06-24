@@ -855,23 +855,37 @@ setupEntityEvents(entity) {
   if (!canvas) return;
 
   const handleClick = (event) => {
+    // 🎯 CALCUL PRÉCIS AVEC ZOOM ET SCALE
     const rect = canvas.getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
-    const clickY = event.clientY - rect.top;
-
-    // 🔧 COMPENSATION DU DÉCALAGE VERS LE BAS
-    const VERTICAL_OFFSET = 40; // Ajuste cette valeur selon le décalage
     
-    const spriteLeft = entity.x - entity.size/2;
-    const spriteRight = entity.x + entity.size/2;
-    const spriteTop = entity.y - entity.size/2 - VERTICAL_OFFSET;  // Remonter la zone
-    const spriteBottom = entity.y + entity.size/2 - VERTICAL_OFFSET;
+    // Récupérer le scaling du canvas (zoom, transform CSS, etc.)
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    // Position du clic ajustée au scaling
+    const clickX = (event.clientX - rect.left) * scaleX;
+    const clickY = (event.clientY - rect.top) * scaleY;
 
-    console.log(`🐛 DEBUG ${entity.id} (avec offset):`);
-    console.log(`Click: (${clickX}, ${clickY})`);
-    console.log(`Entity center: (${entity.x}, ${entity.y})`);
-    console.log(`Sprite bounds (centré): (${spriteLeft}, ${spriteTop}) to (${spriteRight}, ${spriteBottom})`);
+    // 🔧 HITBOX PLUS LARGE POUR FACILITER LE CLIC
+    const hitboxPadding = 20; // Marge de 20px autour du sprite
+    
 
+    const VERTICAL_OFFSET = 50; // Ajuste cette valeur (+ = remonte)
+    const spriteLeft = entity.x - hitboxPadding;
+    const spriteRight = entity.x + entity.size + hitboxPadding;
+    const spriteTop = entity.y - hitboxPadding - VERTICAL_OFFSET;
+    const spriteBottom = entity.y + entity.size + hitboxPadding - VERTICAL_OFFSET;
+
+    console.log(`🐛 Click Debug ${entity.id}:`, {
+      click: `(${clickX.toFixed(1)}, ${clickY.toFixed(1)})`,
+      entity: `(${entity.x}, ${entity.y})`,
+      hitbox: `(${spriteLeft}, ${spriteTop}) to (${spriteRight}, ${spriteBottom})`,
+      scale: `${scaleX.toFixed(2)}x${scaleY.toFixed(2)}`,
+      canvasSize: `${canvas.width}x${canvas.height}`,
+      displaySize: `${rect.width.toFixed(1)}x${rect.height.toFixed(1)}`
+    });
+
+    // ✅ COLLISION DETECTION AMÉLIORÉE
     const isClickOnSprite = (
       clickX >= spriteLeft && 
       clickX <= spriteRight && 
@@ -879,10 +893,11 @@ setupEntityEvents(entity) {
       clickY <= spriteBottom
     );
 
-    console.log(`🎯 Click on sprite (centré): ${isClickOnSprite}`);
-
     if (isClickOnSprite) {
       entity.clickCount++;
+
+      // 🎯 FEEDBACK VISUEL (optionnel)
+      this.showClickFeedback(entity, clickX, clickY);
 
       if (entity.id === 'tank') {
         this.handleTankClick(entity);
@@ -895,6 +910,39 @@ setupEntityEvents(entity) {
   };
 
   canvas.addEventListener('click', handleClick);
+}
+
+// 🎯 FEEDBACK VISUEL OPTIONNEL (pour debug)
+showClickFeedback(entity, clickX, clickY) {
+  const canvas = entity.spawnCanvas;
+  const ctx = canvas.getContext('2d');
+  
+  // Petit cercle pour montrer où on a cliqué
+  ctx.save();
+  ctx.fillStyle = 'rgba(0, 255, 255, 0.8)';
+  ctx.beginPath();
+  ctx.arc(clickX, clickY, 5, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.restore();
+  
+  // Disparaît après 500ms
+  setTimeout(() => {
+    // Redraw canvas sans le feedback
+    this.render();
+  }, 500);
+}
+
+// 🔧 ALTERNATIVE - HITBOX RELATIVE À LA TAILLE
+getEntityHitbox(entity, padding = 0.3) {
+  // Padding proportionnel à la taille (30% par défaut)
+  const paddingPx = entity.size * padding;
+  
+  return {
+    left: entity.x - paddingPx,
+    right: entity.x + entity.size + paddingPx,
+    top: entity.y - paddingPx,
+    bottom: entity.y + entity.size + paddingPx
+  };
 }
 
     // 🛡️ Tank click handler (garde la logique existante)
@@ -6335,14 +6383,14 @@ BobbyJones : "Allez l'Inter !"
                     width: '5%',
                     height: '25%'
                   }}
-                  onClick={() => {
-                    // const isMonarque = localStorage.getItem("isMonarque") === "true";
-                    // if (isMonarque) {
-                    window.location.href = "/guide-editor";
-                    // } else {
-                    showTankMessage("Seuls les Monarques peuvent franchir ce portail...", true);
-                    // }
-                  }}
+                  // onClick={() => {
+                  //   // const isMonarque = localStorage.getItem("isMonarque") === "true";
+                  //   // if (isMonarque) {
+                  //   window.location.href = "/guide-editor";
+                  //   // } else {
+                  //   showTankMessage("Seuls les Monarques peuvent franchir ce portail...", true);
+                  //   // }
+                  // }}
                 />
 
                 <canvas id="canvas-right" width="600" height="240" className="rounded-r-lg shadow-md bg-black w-[40vw] h-auto" />
