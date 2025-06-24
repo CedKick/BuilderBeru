@@ -137,7 +137,7 @@ const BUILDER_DATA = {
         "ring": "Additional Defense",
         "earrings": "Additional MP"
       }
-    },
+    }
   },
 
   // 🧪 NOYAUX RECOMMANDÉS (inchangé)

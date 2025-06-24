@@ -1,19 +1,5 @@
 {
   "rewrites": [
     { "source": "/(.*)", "destination": "/" }
-  ],
-  "crons": [
-    {
-      "path": "/api/kaisel/collect-streams",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/kaisel/collect-videos", 
-      "schedule": "0 */2 * * *"
-    },
-    {
-      "path": "/api/kaisel/collect-news",
-      "schedule": "0 */4 * * *"
-    }
   ]
 }
