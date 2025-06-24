@@ -158,7 +158,7 @@ const KaiselInteractionMenu = ({
     const data = await response.json();
     showTankMessage(data.message, true, 'kaisel');
   } catch (error) {
-    console.error('Kaisel Debug:', error);
+    console.error('Kaisel Debug test:', error);
     showTankMessage('Erreur API Kaisel - Retry plus tard', true, 'kaisel');
   }
   onClose();
