@@ -5291,7 +5291,7 @@ const handleCloseBubble = () => {
     height: '30%'
   }}
   onClick={() => {
-    showTankMessage("🚪 Portail secret activé !", true);
+    showTankMessage("🚪 Vivement Séville et ses 40! Qu'on se cache d'ici 👀😈🐍", true);
   }}
 >
   {/* Zone cliquable invisible */}
