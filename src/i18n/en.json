@@ -11,6 +11,8 @@
   "noGems": "No gems selected",
   "weapon" : "⚔️ Weapon",
   "statFinals" : "Final Stats with Artefacts",
+  "left" : "Left",
+  "right" : "Right",
   "stats": {
   "Critical Hit Rate": "Critical Hit Rate",
   "Critical Hit Damage": "Critical Hit Damage",

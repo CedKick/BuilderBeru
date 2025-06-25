@@ -1,7 +1,7 @@
 // KaiselInteractionMenu.jsx - TECHNICAL INTELLIGENCE SYSTEM BY KAISEL
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { scanTwitchStreams } from '../utils/TwitchIntelligence'; // ← IMPORT KAISEL
+import { scanTwitchStreams } from '../utils/TwitchIntelligence';
 import '../i18n/i18n';
 
 const KaiselInteractionMenu = ({
@@ -10,7 +10,6 @@ const KaiselInteractionMenu = ({
   selectedCharacter,
   characters,
   showTankMessage,
-  // 🔥 PROPS POUR L'INTELLIGENCE TECHNIQUE
   currentArtifacts = {},
   currentStats = {},
   currentCores = {},
@@ -24,6 +23,9 @@ const KaiselInteractionMenu = ({
   const [isScanning, setIsScanning] = useState(false);
   const { t } = useTranslation();
 
+  // 🔍 DÉTECTION MOBILE
+  const isMobileDevice = window.innerWidth < 768;
+
   useEffect(() => {
     setAnimationClass('bubble-appear');
   }, []);
@@ -33,115 +35,70 @@ const KaiselInteractionMenu = ({
     live_streams: {
       icon: "📺",
       label: "Streams Twitch Live",
-      action: "show_twitch_streams",
-      position: { x: "-12vw", y: "-8vh" }
+      action: "show_twitch_streams"
     },
     youtube_news: {
       icon: "🎬",
       label: "Dernières vidéos YouTube",
-      action: "show_youtube_videos", 
-      position: { x: "0vw", y: "-12vh" }
+      action: "show_youtube_videos"
     },
     netmarble_updates: {
       icon: "📰",
       label: "News Netmarble",
-      action: "show_netmarble_news",
-      position: { x: "12vw", y: "-8vh" }
+      action: "show_netmarble_news"
     },
     site_news: {
       icon: "🔄",
       label: "News du Site",
-      action: "show_site_updates",
-      position: { x: "-8vw", y: "3vh" }
+      action: "show_site_updates"
     },
     debug_mode: {
       icon: "🐛",
       label: "Mode Debug Pro",
-      action: "show_debug_submenu",
-      position: { x: "8vw", y: "3vh" }
+      action: "show_debug_submenu"
     }
   });
 
-  // 🤖 SOUS-MENU DEBUG RÉVOLUTIONNAIRE
+  // 🤖 SOUS-MENU DEBUG
   const getDebugSubMenu = () => ({
     artifact_calculator: {
       icon: "🧮",
       label: "Calculateur Artefacts",
-      action: "advanced_artifact_calc",
-      position: { x: "-15vw", y: "-10vh" }
+      action: "advanced_artifact_calc"
     },
     build_simulator: {
       icon: "🎯", 
       label: "Simulateur de Build",
-      action: "build_simulation",
-      position: { x: "-5vw", y: "-14vh" }
+      action: "build_simulation"
     },
     meta_analysis: {
       icon: "📈",
       label: "Analyse Méta Global", 
-      action: "meta_trends",
-      position: { x: "5vw", y: "-14vh" }
+      action: "meta_trends"
     },
     damage_calculator: {
       icon: "💥",
       label: "Calculateur DPS",
-      action: "dps_calculator",
-      position: { x: "15vw", y: "-10vh" }
+      action: "dps_calculator"
     },
     optimization_ai: {
       icon: "🤖",
       label: "IA d'Optimisation",
-      action: "ai_optimization",
-      position: { x: "0vw", y: "-6vh" }
+      action: "ai_optimization"
+    },
+    toggle_hitbox_debug: {
+      icon: "👁️",
+      label: "Toggle Hitbox Debug",
+      action: "toggle_hitbox_debug"
     },
     back: {
       icon: "↩️",
       label: "Retour",
-      action: "back_to_main",
-      position: { x: "0vw", y: "-18vh" }
+      action: "back_to_main"
     }
   });
 
-  // 🌐 FONCTIONS API (vraies maintenant)
-  // Plus de fonctions simulées - tout géré par TwitchIntelligence.js
-
-  const scanYouTubeVideos = async () => {
-    setIsScanning(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const mockVideos = [
-      "🎬 'Best Artifacts Guide 2025' - YouTuberSLA (2h ago)",
-      "🎬 'New Meta Hunters Analysis' - SLArise_News (5h ago)",
-      "🎬 'F2P Guild War Strategy' - ProHunter (1d ago)"
-    ];
-    
-    const message = `🎬 **DERNIÈRES VIDÉOS YOUTUBE - SOLO LEVELING ARISE**\n\n` +
-      `${mockVideos.join('\n')}\n\n` +
-      `🎯 Scan terminé par Kaisel ⚡`;
-    
-    setIsScanning(false);
-    return message;
-  };
-
-  const scanNetmarbleNews = async () => {
-    setIsScanning(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const mockNews = [
-      "📰 'Update 1.5.2 - New Artifacts Released' (Today)",
-      "📰 'Guild War Season 3 Announcement' (Yesterday)",
-      "📰 'Bug Fixes & Balance Changes' (2 days ago)"
-    ];
-    
-    const message = `📰 **NEWS NETMARBLE - SOLO LEVELING ARISE**\n\n` +
-      `${mockNews.join('\n')}\n\n` +
-      `🎯 Scan terminé par Kaisel ⚡`;
-    
-    setIsScanning(false);
-    return message;
-  };
-
-  // 🧠 ACTIONS KAISEL
+  // 🧠 ACTIONS KAISEL (RESTAURE TOUTE LA LOGIQUE EXISTANTE)
   const handleOption = async (action) => {
     switch (action) {
       case 'show_debug_submenu':
@@ -153,16 +110,26 @@ const KaiselInteractionMenu = ({
         break;
 
       case 'show_twitch_streams':
-  try {
-    const response = await fetch('/api/kaisel/get-streams');
-    const data = await response.json();
-    showTankMessage(data.message, true, 'kaisel');
-  } catch (error) {
-    console.error('Kaisel Debug test:', error);
-    showTankMessage('Erreur API Kaisel - Retry plus tard', true, 'kaisel');
-  }
-  onClose();
-  break;
+        try {
+          const response = await fetch('/api/kaisel/get-streams');
+          const data = await response.json();
+          showTankMessage(data.message, true, 'kaisel');
+        } catch (error) {
+          console.error('Kaisel Debug test:', error);
+          showTankMessage('Erreur API Kaisel - Retry plus tard', true, 'kaisel');
+        }
+        onClose();
+        break;
+
+      case 'toggle_hitbox_debug':
+        if (window.toggleDebug) {
+          window.toggleDebug();
+          showTankMessage("🐛 Kaisel a activé le debug mode ! Regarde en haut à droite...", true, 'kaisel');
+        } else {
+          showTankMessage("🤖 Debug system non trouvé... Kaisel enquête...", true, 'kaisel');
+        }
+        onClose();
+        break;
 
       case 'show_youtube_videos':
         const youtubeData = await scanYouTubeVideos();
@@ -210,7 +177,7 @@ const KaiselInteractionMenu = ({
         onClose();
         break;
 
-      case 'meta_trends':
+      case 'meta_analysis':
         const metaMessage = `📈 **ANALYSE MÉTA GLOBAL**\n\n` +
           `🌍 Scan des tendances communauté...\n` +
           `🏆 Hunters les plus utilisés en PvP...\n` +
@@ -249,10 +216,47 @@ const KaiselInteractionMenu = ({
     }
   };
 
+  // 🌐 FONCTIONS API YOUTUBE ET NETMARBLE (RESTAURÉES)
+  const scanYouTubeVideos = async () => {
+    setIsScanning(true);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const mockVideos = [
+      "🎬 'Best Artifacts Guide 2025' - YouTuberSLA (2h ago)",
+      "🎬 'New Meta Hunters Analysis' - SLArise_News (5h ago)",
+      "🎬 'F2P Guild War Strategy' - ProHunter (1d ago)"
+    ];
+    
+    const message = `🎬 **DERNIÈRES VIDÉOS YOUTUBE - SOLO LEVELING ARISE**\n\n` +
+      `${mockVideos.join('\n')}\n\n` +
+      `🎯 Scan terminé par Kaisel ⚡`;
+    
+    setIsScanning(false);
+    return message;
+  };
+
+  const scanNetmarbleNews = async () => {
+    setIsScanning(true);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const mockNews = [
+      "📰 'Update 1.5.2 - New Artifacts Released' (Today)",
+      "📰 'Guild War Season 3 Announcement' (Yesterday)",
+      "📰 'Bug Fixes & Balance Changes' (2 days ago)"
+    ];
+    
+    const message = `📰 **NEWS NETMARBLE - SOLO LEVELING ARISE**\n\n` +
+      `${mockNews.join('\n')}\n\n` +
+      `🎯 Scan terminé par Kaisel ⚡`;
+    
+    setIsScanning(false);
+    return message;
+  };
+
   // Fermer au clic extérieur
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest('.kaisel-bubble-menu')) {
+      if (!event.target.closest('.kaisel-interaction-menu')) {
         onClose();
       }
     };
@@ -267,107 +271,267 @@ const KaiselInteractionMenu = ({
 
   return (
     <>
-      {/* Styles CSS Kaisel */}
-      <style jsx>{`
-        @keyframes bubble-appear {
-          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
-          60% { transform: translate(-50%, -50%) scale(1.1); }
-          100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      {/* 🎨 STYLES CSS KAISEL */}
+      <style jsx="true">{`
+        @keyframes kaisel-appear {
+          0% { opacity: 0; transform: translateY(20px) scale(0.8); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         @keyframes kaisel-scanning {
-          0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); }
-          50% { box-shadow: 0 0 30px rgba(0, 255, 255, 0.8); }
+          0%, 100% { box-shadow: 0 0 15px rgba(0, 255, 65, 0.4); }
+          50% { box-shadow: 0 0 25px rgba(0, 255, 65, 0.8); }
         }
 
-        .bubble-appear { animation: bubble-appear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        .bubble-option { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-        .bubble-option:hover {
-          transform: translate(-50%, -50%) scale(1.05) !important;
-          box-shadow: 0 8px 25px rgba(0, 255, 255, 0.4), 0 0 20px rgba(0, 200, 255, 0.3);
+        .kaisel-bubble {
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(0, 255, 65, 0.3);
+          background: linear-gradient(135deg, 
+            rgba(0, 40, 80, 0.85) 0%, 
+            rgba(0, 60, 100, 0.9) 50%, 
+            rgba(0, 255, 65, 0.1) 100%);
+          box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.4),
+            0 0 0 1px rgba(0, 255, 65, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          animation: kaisel-appear 0.4s ease-out;
         }
-        .bubble-text { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); color: #FFFFFF !important; }
-        .bubble-container { backdrop-filter: blur(1px); }
-        .scanning { animation: kaisel-scanning 1s infinite; }
+
+        .kaisel-bubble:hover {
+          transform: translateY(-2px) scale(1.02);
+          box-shadow: 
+            0 12px 40px rgba(0, 0, 0, 0.5),
+            0 0 20px rgba(0, 255, 65, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+          border-color: rgba(0, 255, 65, 0.5);
+        }
+
+        .kaisel-scanning {
+          animation: kaisel-scanning 1.5s infinite;
+        }
+
+        .kaisel-icon {
+          background: linear-gradient(45deg, #00ff41, #00ccff);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(0 0 8px rgba(0, 255, 65, 0.3));
+        }
+
+        .kaisel-text {
+          color: #ffffff;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+          font-family: 'Courier New', monospace;
+        }
+
+        .kaisel-close {
+          background: linear-gradient(135deg, rgba(255, 0, 0, 0.8), rgba(200, 0, 0, 0.9));
+          border: 1px solid rgba(255, 100, 100, 0.4);
+        }
+
+        .kaisel-close:hover {
+          background: linear-gradient(135deg, rgba(255, 50, 50, 0.9), rgba(220, 20, 20, 1));
+          box-shadow: 0 0 15px rgba(255, 0, 0, 0.4);
+        }
+
+        /* 📱 MOBILE SPECIFIC */
+        .kaisel-mobile-container {
+          backdrop-filter: blur(4px);
+          background: rgba(0, 0, 0, 0.3);
+          border-radius: 16px;
+          padding: 8px;
+        }
       `}</style>
 
-      {/* Container principal Kaisel */}
-      <div
-        className="kaisel-bubble-menu fixed z-[9999] bubble-container"
-        style={{
-          left: position.x,
-          top: position.y
-        }}
-      >
-        {/* Centre de Kaisel - COULEUR CYAN TECHNIQUE */}
+      {isMobileDevice ? (
+        // 📱 VERSION MOBILE - COLONNE VERTICALE
         <div
-          className={`absolute w-6 h-6 rounded-full animate-pulse shadow-lg border-2 border-white ${
-            currentSubMenu === 'debug' 
-              ? 'bg-cyan-400/80' 
-              : isScanning 
-                ? 'bg-cyan-300/90 scanning' 
-                : 'bg-cyan-500/80'
-          }`}
-          style={{ left: '-3px', top: '-3px' }}
-        ></div>
-
-        {/* Bulles d'options Kaisel */}
-        {Object.entries(currentOptions).map(([key, option], index) => {
-          const textLength = option.label.length;
-          const bubbleWidth = Math.max(140, Math.min(260, textLength * 9 + 70));
-          const bubbleHeight = 45;
-
-          return (
-            <button
-              key={key}
-              onClick={() => handleOption(option.action)}
-              className={`bubble-option absolute bg-gradient-to-br ${
-                currentSubMenu === 'debug'
-                  ? 'from-cyan-600/80 to-blue-700/80 border-cyan-400/40'
-                  : 'from-slate-700/80 to-cyan-700/80 border-cyan-400/40'
-              } text-white rounded-full shadow-xl border-2 backdrop-blur-sm ${animationClass} ${
-                isScanning ? 'scanning' : ''
-              }`}
-              style={{
-                left: typeof option.position.x === 'string' ? option.position.x : `${option.position.x}px`,
-                top: typeof option.position.y === 'string' ? option.position.y : `${option.position.y}px`,
-                width: `${bubbleWidth}px`,
-                height: `${bubbleHeight}px`,
-                animationDelay: `${index * 0.1}s`,
-                zIndex: 10,
-                transform: 'translate(-50%, -50%)'
-              }}
-            >
-              <div className="flex items-center justify-center gap-2 px-3 h-full">
-                <span className="text-base flex-shrink-0">{option.icon}</span>
-                <span
-                  className="bubble-text text-white text-xs font-bold leading-tight flex-1 min-w-0"
-                  style={{
-                    fontSize: textLength > 20 ? '11px' : '12px',
-                    color: '#FFFFFF'
-                  }}
-                >
-                  {option.label}
-                </span>
-              </div>
-            </button>
-          );
-        })}
-
-        {/* Croix de fermeture Kaisel */}
-        <button
-          onClick={onClose}
-          className="bubble-option absolute bg-gradient-to-br from-red-500/80 to-red-700/80 hover:from-red-600/80 hover:to-red-800/80 text-white rounded-full shadow-xl border-2 border-red-400/40 backdrop-blur-sm w-9 h-9 flex items-center justify-center"
+          className="kaisel-interaction-menu fixed z-[9999] kaisel-mobile-container"
           style={{
-            left: "1.5vw",
-            top: "5vh",
-            animationDelay: '0.6s',
-            transform: 'translate(-50%, -50%)'
+            top: '80px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '90vw',
+            maxWidth: '320px',
+            maxHeight: '70vh',
+            overflowY: 'auto'
           }}
         >
-          <span className="text-xs font-bold">✕</span>
-        </button>
-      </div>
+          {/* 🎯 HEADER KAISEL MOBILE */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '12px',
+            padding: '8px 12px',
+            background: 'linear-gradient(90deg, rgba(0, 255, 65, 0.1), rgba(0, 150, 255, 0.1))',
+            borderRadius: '8px',
+            border: '1px solid rgba(0, 255, 65, 0.2)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <img 
+                src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png"
+                alt="Kaisel"
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  border: '2px solid #00ff41'
+                }}
+              />
+              <span style={{
+                color: '#00ff41',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                fontFamily: 'monospace'
+              }}>
+                Kaisel {currentSubMenu === 'debug' ? 'Debug' : 'Tech'}
+              </span>
+            </div>
+            
+            <button
+              onClick={onClose}
+              className="kaisel-close"
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                color: 'white'
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* 🔥 OPTIONS EN COLONNE */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {Object.entries(currentOptions).map(([key, option], index) => (
+              <button
+                key={key}
+                onClick={() => handleOption(option.action)}
+                className={`kaisel-bubble ${isScanning ? 'kaisel-scanning' : ''}`}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  animationDelay: `${index * 0.1}s`
+                }}
+              >
+                <span className="kaisel-icon" style={{ fontSize: '18px', flexShrink: 0 }}>
+                  {option.icon}
+                </span>
+                <span className="kaisel-text" style={{
+                  fontSize: '13px',
+                  fontWeight: 'bold',
+                  textAlign: 'left',
+                  flex: 1
+                }}>
+                  {option.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        // 🖥️ VERSION DESKTOP - GARDE TON STYLE EXISTANT MAIS AVEC NOUVEAUX STYLES
+        <div
+          className="kaisel-interaction-menu fixed z-[9999]"
+          style={{
+            left: position.x,
+            top: position.y
+          }}
+        >
+          {/* Centre de Kaisel */}
+          <div
+            className={`absolute w-6 h-6 rounded-full border-2 border-white ${currentSubMenu === 'debug' ? 'bg-cyan-400/80' : isScanning ? 'bg-cyan-300/90 kaisel-scanning' : 'bg-cyan-500/80'}`}
+            style={{ 
+              left: '-3px', 
+              top: '-3px',
+              boxShadow: '0 0 15px rgba(0, 255, 65, 0.5)'
+            }}
+          ></div>
+
+          {/* Bulles d'options en cercle (garde tes positions existantes) */}
+          {Object.entries(currentOptions).map(([key, option], index) => {
+            const textLength = option.label.length;
+            const bubbleWidth = Math.max(140, Math.min(260, textLength * 9 + 70));
+            const bubbleHeight = 45;
+
+            // Utilise tes positions existantes du code original
+            const positions = {
+              live_streams: { x: "0.7vw", y: "-11.5vh" },
+              youtube_news: { x: "-10vw", y: "-3vh" },
+              netmarble_updates: { x: "12vw", y: "-3vh" },
+              site_news: { x: "-10vw", y: "3vh" },
+              debug_mode: { x: "12vw", y: "3vh" },
+              // Debug submenu positions
+              artifact_calculator: { x: "-15vw", y: "-10vh" },
+              build_simulator: { x: "-5vw", y: "-14vh" },
+              meta_analysis: { x: "5vw", y: "-14vh" },
+              damage_calculator: { x: "15vw", y: "-10vh" },
+              optimization_ai: { x: "0vw", y: "-6vh" },
+              toggle_hitbox_debug: { x: "-10vw", y: "-2vh" },
+              back: { x: "0vw", y: "-18vh" }
+            };
+
+            const pos = positions[key] || { x: "0vw", y: "0vh" };
+
+            return (
+              <button
+                key={key}
+                onClick={() => handleOption(option.action)}
+                className={`kaisel-bubble ${isScanning ? 'kaisel-scanning' : ''}`}
+                style={{
+                  position: 'absolute',
+                  left: pos.x,
+                  top: pos.y,
+                  width: `${bubbleWidth}px`,
+                  height: `${bubbleHeight}px`,
+                  borderRadius: '25px',
+                  cursor: 'pointer',
+                  transform: 'translate(-50%, -50%)',
+                  animationDelay: `${index * 0.1}s`
+                }}
+              >
+                <div className="flex items-center justify-center gap-2 px-3 h-full">
+                  <span className="kaisel-icon text-base flex-shrink-0">{option.icon}</span>
+                  <span
+                    className="kaisel-text text-xs font-bold leading-tight flex-1 min-w-0"
+                    style={{
+                      fontSize: textLength > 20 ? '11px' : '12px'
+                    }}
+                  >
+                    {option.label}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+
+          {/* Croix de fermeture */}
+          <button
+            onClick={onClose}
+            className="kaisel-close absolute w-9 h-9 flex items-center justify-center rounded-full"
+            style={{
+              left: "1.5vw",
+              top: "5vh",
+              transform: 'translate(-50%, -50%)',
+              animationDelay: '0.6s'
+            }}
+          >
+            <span className="text-xs font-bold">✕</span>
+          </button>
+        </div>
+      )}
     </>
   );
 };

@@ -632,6 +632,9 @@ const BuilderBeru = () => {
   const [kaiselMenuCharacter, setKaiselMenuCharacter] = useState('');
   const [beruMenuPosition, setBeruMenuPosition] = useState({ x: 0, y: 0 });
   const [beruMenuCharacter, setBeruMenuCharacter] = useState('');
+  const [showHitboxes, setShowHitboxes] = useState(false);
+const [hitboxPositions, setHitboxPositions] = useState({});
+const [showDebugButton, setShowDebugButton] = useState(false);
 
   const SHADOW_ENTITIES = {
     tank: {
@@ -855,37 +858,36 @@ setupEntityEvents(entity) {
   if (!canvas) return;
 
   const handleClick = (event) => {
-    // 🎯 CALCUL PRÉCIS AVEC ZOOM ET SCALE
     const rect = canvas.getBoundingClientRect();
-    
-    // Récupérer le scaling du canvas (zoom, transform CSS, etc.)
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    
-    // Position du clic ajustée au scaling
     const clickX = (event.clientX - rect.left) * scaleX;
     const clickY = (event.clientY - rect.top) * scaleY;
 
-    // 🔧 HITBOX PLUS LARGE POUR FACILITER LE CLIC
-    const hitboxPadding = 20; // Marge de 20px autour du sprite
+    const hitboxPadding = 5;
+    const VERTICAL_OFFSET = 90;
     
-
-    const VERTICAL_OFFSET = 50; // Ajuste cette valeur (+ = remonte)
     const spriteLeft = entity.x - hitboxPadding;
     const spriteRight = entity.x + entity.size + hitboxPadding;
     const spriteTop = entity.y - hitboxPadding - VERTICAL_OFFSET;
     const spriteBottom = entity.y + entity.size + hitboxPadding - VERTICAL_OFFSET;
 
-    console.log(`🐛 Click Debug ${entity.id}:`, {
-      click: `(${clickX.toFixed(1)}, ${clickY.toFixed(1)})`,
-      entity: `(${entity.x}, ${entity.y})`,
-      hitbox: `(${spriteLeft}, ${spriteTop}) to (${spriteRight}, ${spriteBottom})`,
-      scale: `${scaleX.toFixed(2)}x${scaleY.toFixed(2)}`,
-      canvasSize: `${canvas.width}x${canvas.height}`,
-      displaySize: `${rect.width.toFixed(1)}x${rect.height.toFixed(1)}`
-    });
+    // 🔥 CALCULER LA POSITION ÉCRAN pour les hitboxes
+    if (window.updateHitboxPosition) {
+      const screenLeft = rect.left + (spriteLeft * scaleX);
+      const screenTop = rect.top + (spriteTop * scaleY);
+      const screenWidth = (spriteRight - spriteLeft) * scaleX;
+      const screenHeight = (spriteBottom - spriteTop) * scaleY;
+      
+      window.updateHitboxPosition(entity.id, {
+        left: screenLeft,
+        top: screenTop,
+        width: screenWidth,
+        height: screenHeight,
+        color: entity.id === 'tank' ? 'red' : entity.id === 'beru' ? 'green' : 'cyan'
+      });
+    }
 
-    // ✅ COLLISION DETECTION AMÉLIORÉE
     const isClickOnSprite = (
       clickX >= spriteLeft && 
       clickX <= spriteRight && 
@@ -895,10 +897,6 @@ setupEntityEvents(entity) {
 
     if (isClickOnSprite) {
       entity.clickCount++;
-
-      // 🎯 FEEDBACK VISUEL (optionnel)
-      this.showClickFeedback(entity, clickX, clickY);
-
       if (entity.id === 'tank') {
         this.handleTankClick(entity);
       } else if (entity.id === 'beru') {
@@ -911,7 +909,6 @@ setupEntityEvents(entity) {
 
   canvas.addEventListener('click', handleClick);
 }
-
 // 🎯 FEEDBACK VISUEL OPTIONNEL (pour debug)
 showClickFeedback(entity, clickX, clickY) {
   const canvas = entity.spawnCanvas;
@@ -4017,9 +4014,94 @@ BobbyJones : "Allez l'Inter !"
       }
     }
   }, [showSernPopup]);
+useEffect(() => {
+  if (!showHitboxes) {
+    setHitboxPositions({});
+    return;
+  }
 
+  // Fonction globale pour recevoir les positions
+  window.updateHitboxPosition = (entityId, position) => {
+    setHitboxPositions(prev => ({
+      ...prev,
+      [entityId]: position
+    }));
+  };
 
+  // Update toutes les 100ms quand actif
+  const interval = setInterval(() => {
+    if (window.shadowManager?.entities) {
+      window.shadowManager.entities.forEach((entity) => {
+        if (entity.spawnCanvas) {
+          const canvas = entity.spawnCanvas;
+          const rect = canvas.getBoundingClientRect();
+          const scaleX = canvas.width / rect.width;
+          const scaleY = canvas.height / rect.height;
+          
+          const hitboxPadding = 20;
+          const VERTICAL_OFFSET = 50;
+          
+          const spriteLeft = entity.x - hitboxPadding;
+          const spriteRight = entity.x + entity.size + hitboxPadding;
+          const spriteTop = entity.y - hitboxPadding - VERTICAL_OFFSET;
+          const spriteBottom = entity.y + entity.size + hitboxPadding - VERTICAL_OFFSET;
+          
+          const screenLeft = rect.left + (spriteLeft * scaleX);
+          const screenTop = rect.top + (spriteTop * scaleY);
+          const screenWidth = (spriteRight - spriteLeft) * scaleX;
+          const screenHeight = (spriteBottom - spriteTop) * scaleY;
+          
+          // 🔥 DEBUG - Ajoute juste ça pour voir
+          console.log(`🎯 ${entity.id}:`, { left: screenLeft, top: screenTop, width: screenWidth, height: screenHeight });
+          
+          setHitboxPositions(prev => ({
+            ...prev,
+            [entity.id]: {
+              left: screenLeft,
+              top: screenTop,
+              width: screenWidth,
+              height: screenHeight,
+              color: entity.id === 'tank' ? 'red' : entity.id === 'beru' ? 'green' : 'cyan'
+            }
+          }));
+        }
+      });
+    }
+  }, 100);
 
+  return () => {
+    clearInterval(interval);
+    window.updateHitboxPosition = null;
+  };
+}, [showHitboxes]);
+
+// 5️⃣ AJOUTE CES HITBOXES dans le return de BuilderBeru (à la fin, juste avant </> )
+{/* 🐛 HITBOXES DEBUG OVERLAY */}
+{showHitboxes && Object.entries(hitboxPositions).map(([entityId, pos]) => (
+  <div
+    key={entityId}
+    style={{
+      position: 'fixed',
+      left: pos.left,
+      top: pos.top,
+      width: pos.width,
+      height: pos.height,
+      border: `2px dashed ${pos.color}`,
+      backgroundColor: `${pos.color}33`, // 33 = transparence
+      pointerEvents: 'none',
+      zIndex: 9999,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '10px',
+      color: 'white',
+      fontWeight: 'bold',
+      textShadow: '1px 1px 2px black'
+    }}
+  >
+    {entityId.toUpperCase()}
+  </div>
+))}
 
   useEffect(() => {
     if (!showSernPopup || !popupRef.current) return;
@@ -4487,6 +4569,23 @@ BobbyJones : "Allez l'Inter !"
     };
   };
 
+  // 2️⃣ AJOUTE un raccourci clavier pour l'afficher
+useEffect(() => {
+  // Fonction accessible depuis la console
+  window.toggleDebug = () => {
+    setShowDebugButton(prev => {
+      const newValue = !prev;
+      console.log(`🐛 Debug button: ${newValue ? 'VISIBLE' : 'HIDDEN'}`);
+      return newValue;
+    });
+  };
+
+  return () => {
+    delete window.toggleDebug;
+  };
+}, []);
+
+
 
   useEffect(() => {
     if (selectedCharacter) {
@@ -4504,104 +4603,118 @@ BobbyJones : "Allez l'Inter !"
   }, [selectedCharacter]);
 
 
-  // 3️⃣ NOUVEAU useEffect - REMPLACE TON useEffect CANVAS EXISTANT
-  // 🐉 KAISEL VERSION COMPLÈTE - REMPLACE ton useEffect ShadowManager existant
-
-
-  // 🐉 KAISEL ALTERNATIVE - Si tu préfères limiter les dépendances :
-  useEffect(() => {
-
-    // 🔒 PROTECTION : Nettoyage préalable
+// 🐉 REMPLACE ton useEffect ShadowManager par celui-ci :
+useEffect(() => {
+  // ✅ VÉRIFICATION : Seulement si on est sur la vue 'main' 
+  const isMobileDevice = window.innerWidth < 1024;
+  const shouldInitShadows = !isMobileDevice || mobileView === 'main';
+  
+  if (!shouldInitShadows) {
+    // 🧹 CLEANUP si on quitte la vue main sur mobile
     if (window.shadowManager) {
       window.shadowManager.cleanup();
       window.shadowManager = null;
     }
+    return;
+  }
 
-    const shadowManager = new ShadowManager();
-    window.shadowManager = shadowManager;
-    shadowManager.setTranslation(t);
-    window.getShadowScreenPosition = getShadowScreenPosition;
+  // 🔒 PROTECTION : Nettoyage préalable
+  if (window.shadowManager) {
+    window.shadowManager.cleanup();
+    window.shadowManager = null;
+  }
 
-    // 🔥 CALLBACKS avec références stables
-    const callbacks = {
-      showMessage: showTankMessage,
-      showBeruMenu: (selectedCharacter) => {
-        try {
+  const shadowManager = new ShadowManager();
+  window.shadowManager = shadowManager;
+  shadowManager.setTranslation(t);
+  window.getShadowScreenPosition = getShadowScreenPosition;
 
-          if (window.shadowManager?.entities) {
-            const beruEntity = window.shadowManager.entities.get('beru');
-            if (beruEntity) {
-              beruEntity.isMenuActive = true;
-            }
-          }
-
-          // 🎯 COPIE EXACTE de showTankMessage !
-          const pos = getShadowScreenPosition('beru');
-          // const messageOffset = Math.min(200, 150 * 0.6); // MÊME calcul que showTankMessage
-
-          const adjustedPos = {
-            x: pos.x - 10,
-            y: pos.y,
-            currentCanvasId: pos.currentCanvasId
-          };
-
-          setShowBeruInteractionMenu(true);
-          setBeruMenuPosition({ x: adjustedPos.x, y: adjustedPos.y }); // ← PAS de safeX/safeY !
-          setBeruMenuCharacter(selectedCharacter || '');
-        } catch (error) {
-          console.error("🐉 Kaisel: Erreur showBeruMenu:", error);
-        }
-      },
-      showKaiselMenu: (selectedCharacter) => {
-        try {
-          if (window.shadowManager?.entities) {
-            const kaiselEntity = window.shadowManager.entities.get('kaisel');
-            if (kaiselEntity) {
-              kaiselEntity.isMenuActive = true;
-            }
-          }
-
-          const pos = getShadowScreenPosition('kaisel');
-          const adjustedPos = {
-            x: pos.x - 10,
-            y: pos.y,
-            currentCanvasId: pos.currentCanvasId
-          };
-
-          setShowKaiselInteractionMenu(true);
-          setKaiselMenuPosition({ x: adjustedPos.x, y: adjustedPos.y });
-          setKaiselMenuCharacter(selectedCharacter || '');
-        } catch (error) {
-          console.error("🐉 Kaisel: Erreur showKaiselMenu:", error);
-        }
-      },
-      getSelectedCharacter: () => selectedCharacter
-    };
-
-    // 🎯 DELAY pour éviter les conflits de rendu
-    const initTimer = setTimeout(() => {
+  // 🔥 CALLBACKS avec références stables
+  const callbacks = {
+    showMessage: showTankMessage,
+    showBeruMenu: (selectedCharacter) => {
       try {
-        shadowManager.init(['canvas-left', 'canvas-center', 'canvas-right'], callbacks);
-        shadowManager.spawnEntity('tank');
-        shadowManager.spawnEntity('beru');
-        shadowManager.spawnEntity('kaisel');
+        if (window.shadowManager?.entities) {
+          const beruEntity = window.shadowManager.entities.get('beru');
+          if (beruEntity) {
+            beruEntity.isMenuActive = true;
+          }
+        }
+
+        const pos = getShadowScreenPosition('beru');
+        const adjustedPos = {
+          x: pos.x - 10,
+          y: pos.y,
+          currentCanvasId: pos.currentCanvasId
+        };
+
+        setShowBeruInteractionMenu(true);
+        setBeruMenuPosition({ x: adjustedPos.x, y: adjustedPos.y });
+        setBeruMenuCharacter(selectedCharacter || '');
       } catch (error) {
-        console.error("🐉 Kaisel: Shadow init error:", error);
+        console.error("🐉 Kaisel: Erreur showBeruMenu:", error);
       }
-    }, 100);
+    },
+    showKaiselMenu: (selectedCharacter) => {
+      try {
+        if (window.shadowManager?.entities) {
+          const kaiselEntity = window.shadowManager.entities.get('kaisel');
+          if (kaiselEntity) {
+            kaiselEntity.isMenuActive = true;
+          }
+        }
 
-    const keyboardCleanup = shadowManager.setupKeyboardControls();
+        const pos = getShadowScreenPosition('kaisel');
+        const adjustedPos = {
+          x: pos.x - 10,
+          y: pos.y,
+          currentCanvasId: pos.currentCanvasId
+        };
 
-    return () => {
-      clearTimeout(initTimer);
-      if (shadowManager) {
-        shadowManager.cleanup();
+        setShowKaiselInteractionMenu(true);
+        setKaiselMenuPosition({ x: adjustedPos.x, y: adjustedPos.y });
+        setKaiselMenuCharacter(selectedCharacter || '');
+      } catch (error) {
+        console.error("🐉 Kaisel: Erreur showKaiselMenu:", error);
       }
-      if (keyboardCleanup) keyboardCleanup();
-      window.shadowManager = null;
-      window.getShadowScreenPosition = null;
-    };
-  }, [t, selectedCharacter]);
+    },
+    getSelectedCharacter: () => selectedCharacter
+  };
+
+  // 🎯 DELAY pour éviter les conflits de rendu
+  const initTimer = setTimeout(() => {
+    try {
+      // ✅ VÉRIFICATION CANVAS EXISTE AVANT INIT
+      const canvasLeft = document.getElementById('canvas-left');
+      const canvasCenter = document.getElementById('canvas-center');
+      const canvasRight = document.getElementById('canvas-right');
+      
+      if (!canvasLeft || !canvasCenter || !canvasRight) {
+        console.warn("🐉 Kaisel: Canvas manquants, skip init");
+        return;
+      }
+
+      shadowManager.init(['canvas-left', 'canvas-center', 'canvas-right'], callbacks);
+      shadowManager.spawnEntity('tank');
+      shadowManager.spawnEntity('beru');
+      shadowManager.spawnEntity('kaisel');
+    } catch (error) {
+      console.error("🐉 Kaisel: Shadow init error:", error);
+    }
+  }, 100);
+
+  const keyboardCleanup = shadowManager.setupKeyboardControls();
+
+  return () => {
+    clearTimeout(initTimer);
+    if (shadowManager) {
+      shadowManager.cleanup();
+    }
+    if (keyboardCleanup) keyboardCleanup();
+    window.shadowManager = null;
+    window.getShadowScreenPosition = null;
+  };
+}, [t, selectedCharacter, mobileView]); // ← AJOUT mobileView dans les dépendances
   // 4️⃣ FONCTIONS UTILITAIRES pour Beru (à ajouter)
   const triggerBeruAnalysis = (artifactData, hunter) => {
     const shadowManager = window.shadowManager; // Si besoin d'accès global
@@ -4859,6 +4972,14 @@ const handleCloseBubble = () => {
                   >
                     Reset
                   </button>
+                      {showDebugButton && (
+  <button
+    onClick={() => setShowHitboxes(!showHitboxes)}
+    className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs z-[10001]"
+  >
+    🐛 {showHitboxes ? 'HIDE' : 'SHOW'} HITBOX
+  </button>
+)}
 
                   <button
                     onClick={handleSaveBuild}
@@ -4988,17 +5109,16 @@ const handleCloseBubble = () => {
                             className="w-48 h-auto mb-2 relative z-10"
                             id="targetToDestroy"
                           />
-                          {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
-                            <div
-                              className="absolute w-44 h-6 rounded-full blur-sm animate-fade-out z-0"
-                              style={{
-                                backgroundColor: getElementColor(characters[selectedCharacter].element),
-                                bottom: '8px',
-                                left: '50%',
-                                transform: 'translateX(-50%)'
-                              }}
-                            />
-                          )}
+                         {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
+                                  <div
+                                    className="absolute w-60 h-8 rounded-full blur-sm animate-fade-out z-0"
+                                    style={{
+                                      backgroundColor: getElementColor(characters[selectedCharacter].element),
+                                      bottom: '0px',
+                                      marginLeft: '-15px'
+                                    }}
+                                  ></div>
+                                )}
                         </>
                       ) : (
                         <img
@@ -5284,22 +5404,30 @@ const handleCloseBubble = () => {
               )}
               
               {mobileView !== 'left' && (
-                <button
-                  onClick={() => setMobileView('left')}
-                  className="px-4 py-2 bg-[#2d2d5c] hover:bg-[#3d3d7c] text-white rounded-lg shadow-lg text-sm font-medium transition-colors"
-                >
-                  ← Gauche
-                </button>
-              )}
-              
-              {mobileView !== 'right' && (
-                <button
-                  onClick={() => setMobileView('right')}
-                  className="px-4 py-2 bg-[#2d2d5c] hover:bg-[#3d3d7c] text-white rounded-lg shadow-lg text-sm font-medium transition-colors"
-                >
-                  Droite →
-                </button>
-              )}
+  <button
+    onClick={() => setMobileView('left')}
+    className="px-4 py-2 text-white rounded-lg shadow-lg text-sm font-medium transition-colors"
+    style={{
+      backgroundColor: 'rgba(45, 45, 92, 0.3)', // ← Plus transparent
+      backdropFilter: 'blur(8px)' // ← Effet blur optionnel
+    }}
+  >
+    {t('left')}
+  </button>
+)}
+
+{mobileView !== 'right' && (
+  <button
+    onClick={() => setMobileView('right')}
+    className="px-4 py-2 text-white rounded-lg shadow-lg text-sm font-medium transition-colors"
+    style={{
+      backgroundColor: 'rgba(45, 45, 92, 0.3)', // ← Plus transparent
+      backdropFilter: 'blur(8px)' // ← Effet blur optionnel
+    }}
+  >
+    {t('right')}
+  </button>
+)}
             </div>
           </div>
 
@@ -5413,7 +5541,29 @@ const handleCloseBubble = () => {
             reportHistory={reportHistory}
             onSaveReport={handleSaveReport}
           />
-
+    
+          
+          {showHitboxes && Object.entries(hitboxPositions).map(([entityId, pos]) => (
+  <div
+    key={entityId}
+    style={{
+      position: 'fixed',
+      left: pos.left,
+      top: pos.top,
+      width: pos.width,
+      height: pos.height,
+      border: `2px dashed ${pos.color}`,
+      backgroundColor: `${pos.color}33`,
+      pointerEvents: 'none',
+      zIndex: 9999,
+      fontSize: '10px',
+      color: 'white',
+      fontWeight: 'bold'
+    }}
+  >
+    {entityId}
+  </div>
+))}
           {showSernPopup && (
             <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999] py-10">
               <div
@@ -5711,6 +5861,14 @@ const handleCloseBubble = () => {
 
                         BobbyKick
                       </button>
+                          {showDebugButton && (
+  <button
+    onClick={() => setShowHitboxes(!showHitboxes)}
+    className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs z-[10001]"
+  >
+    🐛 {showHitboxes ? 'HIDE' : 'SHOW'} HITBOX
+  </button>
+)}
 
                       {/* Bouton Save */}
                       <button
@@ -5897,7 +6055,27 @@ const handleCloseBubble = () => {
                     reportHistory={reportHistory}
                     onSaveReport={handleSaveReport}
                   />
-
+{showHitboxes && Object.entries(hitboxPositions).map(([entityId, pos]) => (
+  <div
+    key={entityId}
+    style={{
+      position: 'fixed',
+      left: pos.left,
+      top: pos.top,
+      width: pos.width,
+      height: pos.height,
+      border: `2px dashed ${pos.color}`,
+      backgroundColor: `${pos.color}33`,
+      pointerEvents: 'none',
+      zIndex: 9999,
+      fontSize: '10px',
+      color: 'white',
+      fontWeight: 'bold'
+    }}
+  >
+    {entityId}
+  </div>
+))}
                   {showSernPopup && (
                     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999]  py-10">
                       <div
@@ -6297,8 +6475,8 @@ const handleCloseBubble = () => {
             </div>
           </div>
           {/* <div className={showSernPopup ? 'blur-background' : ''}></div> */}
-          <div class="mt-1">
-  <div class="relative w-full min-h-[240px]">
+          <div className="mt-1">
+  <div className="relative w-full min-h-[240px]">
               {/* Zone pour positionner DOM au-dessus du canvas */}
 
 
@@ -6350,7 +6528,7 @@ const handleCloseBubble = () => {
             border: '1px solid rgba(255, 0, 0, 0.3)' // Debug - retire en prod
           }}
           onClick={() => {
-            showTankMessage("🚪 Portail mobile détecté ! Fonctionnalité à venir...", true);
+            showTankMessage("🚪 Vivement Séville et ses 45°... Qu'on se cache d'ici !", true);
           }}
         />
       </div>
@@ -6398,7 +6576,7 @@ const handleCloseBubble = () => {
           height: '25%'
         }}
         onClick={() => {
-          showTankMessage("🚪 Portail des Monarques... Accès restreint.", true);
+          showTankMessage("🚪 Vivement Séville et ses 45° 👀😈🐍", true);
         }}
       />
 

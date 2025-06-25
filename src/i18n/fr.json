@@ -11,6 +11,8 @@
   "noGems": "Aucune gemme définie",
   "weapon" : "⚔️ Arme",
   "statFinals" : "Stats finales",
+  "left" : "Gauche",
+  "right" : "Droite",
   "stats": {
   "Critical Hit Rate": "Taux de coup critique",
   "Critical Hit Damage": "Dégâts de coup critique",

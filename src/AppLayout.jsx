@@ -33,7 +33,8 @@ export default function AppLayout({ children }) {
             zIndex: 1000,
             width: '32px',
             height: '32px',
-            backgroundColor: '#2d2d44',
+            backgroundColor: 'rgba(45, 45, 68, 0.3)',
+            backdropFilter: 'blur(8px)', // ← Effet de flou en arrière-plan
             border: '1px solid rgba(255, 255, 255, 0.2)',
             borderRadius: '8px',
             display: 'flex',
