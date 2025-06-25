@@ -1,12 +1,31 @@
 // useDyText.js
 import { useEffect } from "react";
 
+// 🔥 MODIFIE ta fonction dytextAnimate dans useDytext.js
+
 export function dytextAnimate(ref, text = "", delay = 30, options = {}) {
   if (!ref?.current || !text) return;
 
   const el = ref.current;
   let i = 0;
   el.textContent = "";
+
+  // 🎯 FONCTION AUTOSCROLL INTELLIGENTE
+  const autoScrollToBottom = () => {
+    // Cherche le conteneur scrollable (popup SERN)
+    const scrollContainer = document.getElementById('sern-text-container') || 
+                           el.closest('.overflow-y-auto') ||
+                           el.closest('.max-h-\\[40vh\\]') ||
+                           el.parentElement;
+    
+    if (scrollContainer) {
+      // ✨ SCROLL SMOOTH vers le bas
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const writeNext = () => {
     const char = text.charAt(i);
@@ -28,6 +47,99 @@ export function dytextAnimate(ref, text = "", delay = 30, options = {}) {
       const delInterval = setInterval(() => {
         current = current.slice(0, -1);
         el.textContent = current;
+        autoScrollToBottom(); // 🔥 SCROLL pendant la suppression
+        if (current.length === 0) {
+          clearInterval(delInterval);
+          i++;
+          setTimeout(writeNext, 200);
+        }
+      }, 50);
+      return;
+    }
+
+    // 🎨 ÉCRITURE AVEC SUPPORT HTML + AUTOSCROLL
+    if (options.useHTML) {
+      el.innerHTML = text.substring(0, i + 1).replace(/\n/g, '<br>');
+    } else {
+      el.textContent = text.substring(0, i + 1);
+    }
+    
+    i++;
+
+    // 🚀 AUTOSCROLL À CHAQUE CARACTÈRE (mais optimisé)
+    if (i % 5 === 0) { // Scroll tous les 5 caractères pour performance
+      autoScrollToBottom();
+    }
+
+    if (i < text.length) {
+      setTimeout(writeNext, delay);
+    } else {
+      // 🎯 SCROLL FINAL pour être sûr
+      setTimeout(() => {
+        autoScrollToBottom();
+        if (options.onComplete) {
+          options.onComplete();
+        }
+      }, 100);
+    }
+  };
+
+  writeNext();
+}
+
+// 🔥 NOUVELLE FONCTION : DyText spécial SERN avec effets
+export function dytextAnimateSERN(ref, text = "", delay = 30, options = {}) {
+  if (!ref?.current || !text) return;
+
+  const el = ref.current;
+  let i = 0;
+  el.textContent = "";
+
+  // 🎯 AUTOSCROLL OPTIMISÉ POUR SERN
+  const autoScrollSERN = () => {
+    const container = document.getElementById('sern-text-container');
+    if (container) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // 🔥 EFFETS SPÉCIAUX SERN
+  const addSERNEffect = () => {
+    // Petit flash red sur le conteneur
+    const container = document.getElementById('sern-text-container');
+    if (container && Math.random() < 0.1) { // 10% de chance
+      container.style.boxShadow = 'inset 0 0 20px rgba(255, 0, 0, 0.3)';
+      setTimeout(() => {
+        container.style.boxShadow = '';
+      }, 150);
+    }
+  };
+
+  const writeNext = () => {
+    const char = text.charAt(i);
+
+    // 🎵 Pause plus longue sur la ponctuation pour effet dramatique
+    if (char === ".") {
+      setTimeout(writeNext, 600); // Plus long pour SERN
+      i++;
+      return;
+    }
+
+    if (char === ",") {
+      setTimeout(writeNext, 300);
+      i++;
+      return;
+    }
+
+    if (char === "§") {
+      let current = el.textContent;
+      const delInterval = setInterval(() => {
+        current = current.slice(0, -1);
+        el.textContent = current;
+        autoScrollSERN();
         if (current.length === 0) {
           clearInterval(delInterval);
           i++;
@@ -40,10 +152,21 @@ export function dytextAnimate(ref, text = "", delay = 30, options = {}) {
     el.textContent = text.substring(0, i + 1);
     i++;
 
+    // 🔥 EFFETS SERN + AUTOSCROLL
+    if (i % 3 === 0) {
+      autoScrollSERN();
+      addSERNEffect();
+    }
+
     if (i < text.length) {
       setTimeout(writeNext, delay);
-    } else if (options.onComplete) {
-      options.onComplete();
+    } else {
+      setTimeout(() => {
+        autoScrollSERN();
+        if (options.onComplete) {
+          options.onComplete();
+        }
+      }, 200);
     }
   };
 
