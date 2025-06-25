@@ -4142,28 +4142,44 @@ useEffect(() => {
     return () => clearInterval(scrollInterval);
   }, [showSernPopup]);
 
-  useEffect(() => {
-    if (showSernPopup) {
+useEffect(() => {
+  if (showSernPopup) {
+    try {
+      let messageSource;
+      
+      // Essaie d'abord i18n, sinon fallback sur mystSernMsg
       try {
-        const encoded = mystSernMsg.message[Math.floor(Math.random() * mystSernMsg.message.length)];
-        const decoded = decodeURIComponent(escape(atob(encoded)));
-
-        dytextAnimate(dytextRef, decoded, 30, {
-          onComplete: () => {
-
-            setTimeout(() => {
-              triggerFadeOutAllMusic();;
-            }, 13000);
-            setTimeout(() => {
-              setShowSernPopup(false);
-            }, 10000); // 10 sec après le texte
-          },
-        });
-      } catch (error) {
-        console.warn("💥 Le SERN a corrompu un message encodé :", error);
+        messageSource = t('mystSerNMsg.message', { returnObjects: true });
+        if (!Array.isArray(messageSource) || messageSource.length === 0) {
+          throw new Error('No i18n messages found');
+        }
+      } catch {
+        // Fallback sur l'ancien système
+        messageSource = mystSernMsg.message;
       }
+      
+      // Sélection aléatoire
+      const randomEncoded = messageSource[Math.floor(Math.random() * messageSource.length)];
+      
+      // Décodage Base64
+      const decoded = decodeURIComponent(escape(atob(randomEncoded)));
+
+      dytextAnimate(dytextRef, decoded, 30, {
+        onComplete: () => {
+          setTimeout(() => {
+            triggerFadeOutAllMusic();
+          }, 13000);
+          setTimeout(() => {
+            setShowSernPopup(false);
+          }, 10000);
+        },
+      });
+      
+    } catch (error) {
+      console.warn("💥 Le SERN a subi une interférence temporelle :", error);
     }
-  }, [showSernPopup]);
+  }
+}, [showSernPopup, t]);
 
 
 
