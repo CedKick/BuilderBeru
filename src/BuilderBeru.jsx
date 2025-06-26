@@ -22,6 +22,8 @@ import SetSelectorPopup from "./components/SetSelectorPopup";
 import BeruInteractionMenu from './components/BeruInteractionMenu';
 import KaiselInteractionMenu from './components/KaiselInteractionMenu';
 import { BeruReportSystem, GoldenPapyrusIcon } from './components/BeruReportSystem';
+import HallOfFlameDebugPopup from './components/HallOfFlameDebugPopup';
+import HallOfFlamePage from './components/HallOfFlamePage';
 
 
 
@@ -634,8 +636,11 @@ const BuilderBeru = () => {
   const [beruMenuPosition, setBeruMenuPosition] = useState({ x: 0, y: 0 });
   const [beruMenuCharacter, setBeruMenuCharacter] = useState('');
   const [showHitboxes, setShowHitboxes] = useState(false);
-const [hitboxPositions, setHitboxPositions] = useState({});
-const [showDebugButton, setShowDebugButton] = useState(false);
+  const [hitboxPositions, setHitboxPositions] = useState({});
+  const [showDebugButton, setShowDebugButton] = useState(false);
+  const [showHallOfFlameDebug, setShowHallOfFlameDebug] = useState(false);
+const [hallOfFlameData, setHallOfFlameData] = useState({ name: '', guild: '' });
+const [showHallOfFlamePage, setShowHallOfFlamePage] = useState(false);
 
   const SHADOW_ENTITIES = {
     tank: {
@@ -854,89 +859,89 @@ const [showDebugButton, setShowDebugButton] = useState(false);
     }
 
     // 🎮 Setup events pour entity
-setupEntityEvents(entity) {
-  const canvas = entity.spawnCanvas;
-  if (!canvas) return;
+    setupEntityEvents(entity) {
+      const canvas = entity.spawnCanvas;
+      if (!canvas) return;
 
-  const handleClick = (event) => {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const clickX = (event.clientX - rect.left) * scaleX;
-    const clickY = (event.clientY - rect.top) * scaleY;
+      const handleClick = (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const clickX = (event.clientX - rect.left) * scaleX;
+        const clickY = (event.clientY - rect.top) * scaleY;
 
-    const hitboxPadding = 5;
-    const VERTICAL_OFFSET = 90;
-    
-    const spriteLeft = entity.x - hitboxPadding;
-    const spriteRight = entity.x + entity.size + hitboxPadding;
-    const spriteTop = entity.y - hitboxPadding - VERTICAL_OFFSET;
-    const spriteBottom = entity.y + entity.size + hitboxPadding - VERTICAL_OFFSET;
+        const hitboxPadding = 5;
+        const VERTICAL_OFFSET = 90;
 
-    // 🔥 CALCULER LA POSITION ÉCRAN pour les hitboxes
-    if (window.updateHitboxPosition) {
-      const screenLeft = rect.left + (spriteLeft * scaleX);
-      const screenTop = rect.top + (spriteTop * scaleY);
-      const screenWidth = (spriteRight - spriteLeft) * scaleX;
-      const screenHeight = (spriteBottom - spriteTop) * scaleY;
-      
-      window.updateHitboxPosition(entity.id, {
-        left: screenLeft,
-        top: screenTop,
-        width: screenWidth,
-        height: screenHeight,
-        color: entity.id === 'tank' ? 'red' : entity.id === 'beru' ? 'green' : 'cyan'
-      });
+        const spriteLeft = entity.x - hitboxPadding;
+        const spriteRight = entity.x + entity.size + hitboxPadding;
+        const spriteTop = entity.y - hitboxPadding - VERTICAL_OFFSET;
+        const spriteBottom = entity.y + entity.size + hitboxPadding - VERTICAL_OFFSET;
+
+        // 🔥 CALCULER LA POSITION ÉCRAN pour les hitboxes
+        if (window.updateHitboxPosition) {
+          const screenLeft = rect.left + (spriteLeft * scaleX);
+          const screenTop = rect.top + (spriteTop * scaleY);
+          const screenWidth = (spriteRight - spriteLeft) * scaleX;
+          const screenHeight = (spriteBottom - spriteTop) * scaleY;
+
+          window.updateHitboxPosition(entity.id, {
+            left: screenLeft,
+            top: screenTop,
+            width: screenWidth,
+            height: screenHeight,
+            color: entity.id === 'tank' ? 'red' : entity.id === 'beru' ? 'green' : 'cyan'
+          });
+        }
+
+        const isClickOnSprite = (
+          clickX >= spriteLeft &&
+          clickX <= spriteRight &&
+          clickY >= spriteTop &&
+          clickY <= spriteBottom
+        );
+
+        if (isClickOnSprite) {
+          entity.clickCount++;
+          if (entity.id === 'tank') {
+            this.handleTankClick(entity);
+          } else if (entity.id === 'beru') {
+            this.handleBeruClick(entity);
+          } else if (entity.id === 'kaisel') {
+            this.handleKaiselClick(entity);
+          }
+        }
+      };
+
+      canvas.addEventListener('click', handleClick);
+    }
+    // 🎯 FEEDBACK VISUEL OPTIONNEL (pour debug)
+    showClickFeedback(entity, clickX, clickY) {
+      const canvas = entity.spawnCanvas;
+      const ctx = canvas.getContext('2d');
+
+      // Petit cercle pour montrer où on a cliqué
+      ctx.save();
+      ctx.fillStyle = 'rgba(0, 255, 255, 0.8)';
+      ctx.beginPath();
+      ctx.arc(clickX, clickY, 5, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.restore();
+
     }
 
-    const isClickOnSprite = (
-      clickX >= spriteLeft && 
-      clickX <= spriteRight && 
-      clickY >= spriteTop && 
-      clickY <= spriteBottom
-    );
+    // 🔧 ALTERNATIVE - HITBOX RELATIVE À LA TAILLE
+    getEntityHitbox(entity, padding = 0.3) {
+      // Padding proportionnel à la taille (30% par défaut)
+      const paddingPx = entity.size * padding;
 
-    if (isClickOnSprite) {
-      entity.clickCount++;
-      if (entity.id === 'tank') {
-        this.handleTankClick(entity);
-      } else if (entity.id === 'beru') {
-        this.handleBeruClick(entity);
-      } else if (entity.id === 'kaisel') {
-        this.handleKaiselClick(entity);
-      }
+      return {
+        left: entity.x - paddingPx,
+        right: entity.x + entity.size + paddingPx,
+        top: entity.y - paddingPx,
+        bottom: entity.y + entity.size + paddingPx
+      };
     }
-  };
-
-  canvas.addEventListener('click', handleClick);
-}
-// 🎯 FEEDBACK VISUEL OPTIONNEL (pour debug)
-showClickFeedback(entity, clickX, clickY) {
-  const canvas = entity.spawnCanvas;
-  const ctx = canvas.getContext('2d');
-  
-  // Petit cercle pour montrer où on a cliqué
-  ctx.save();
-  ctx.fillStyle = 'rgba(0, 255, 255, 0.8)';
-  ctx.beginPath();
-  ctx.arc(clickX, clickY, 5, 0, 2 * Math.PI);
-  ctx.fill();
-  ctx.restore();
-  
-}
-
-// 🔧 ALTERNATIVE - HITBOX RELATIVE À LA TAILLE
-getEntityHitbox(entity, padding = 0.3) {
-  // Padding proportionnel à la taille (30% par défaut)
-  const paddingPx = entity.size * padding;
-  
-  return {
-    left: entity.x - paddingPx,
-    right: entity.x + entity.size + paddingPx,
-    top: entity.y - paddingPx,
-    bottom: entity.y + entity.size + paddingPx
-  };
-}
 
     // 🛡️ Tank click handler (garde la logique existante)
     handleTankClick(entity) {
@@ -961,15 +966,15 @@ getEntityHitbox(entity, padding = 0.3) {
       this.callbacks.showBeruMenu(this.callbacks.getSelectedCharacter?.());
     }
 
-   // ⚡ Kaisel click handler - VERSION CORRIGÉE
-handleKaiselClick(entity) {
-  const count = entity.clickCount;
-  
-  // 🔥 AJOUTE ÇA POUR TESTER
-  
-  // Menu après
-  this.callbacks.showKaiselMenu(this.callbacks.getSelectedCharacter?.());
-}
+    // ⚡ Kaisel click handler - VERSION CORRIGÉE
+    handleKaiselClick(entity) {
+      const count = entity.clickCount;
+
+      // 🔥 AJOUTE ÇA POUR TESTER
+
+      // Menu après
+      this.callbacks.showKaiselMenu(this.callbacks.getSelectedCharacter?.());
+    }
 
     // 💥 Tank laser (garde la logique existante)
     fireTankLaser(entity) {
@@ -1276,173 +1281,173 @@ handleKaiselClick(entity) {
         }
       }
     }
-// 🤝 SYSTÈME ANTI-COLLISION POUR KAISEL & BÉRU
-handleKaiselWandering(entity) {
-  // 🔍 VÉRIFIER LA DISTANCE AVEC BÉRU
-  const beruEntity = this.entities.get('beru');
-  const MIN_DISTANCE = 150; // Distance plus large pour éviter oscillations
-  const SAFE_DISTANCE = 200; // Distance de sécurité pour arrêter l'évitement
-  
-  if (beruEntity) {
-    const distance = this.calculateDistance(entity, beruEntity);
-    
-    // 🚨 TROP PROCHE DE BÉRU !
-    if (distance < MIN_DISTANCE && !entity.isAvoidingCollision) {
-      this.initiateAvoidanceMovement(entity, beruEntity);
-      return; // Skip normal wandering
-    }
-    
-    // ✅ DISTANCE SÉCURISÉE, reprendre mouvement normal
-    if (distance >= SAFE_DISTANCE && entity.isAvoidingCollision) {
-      entity.isAvoidingCollision = false;
-      entity.avoidanceDirection = null;
-      entity.img.src = entity.sprites.idle;
-    }
-  }
+    // 🤝 SYSTÈME ANTI-COLLISION POUR KAISEL & BÉRU
+    handleKaiselWandering(entity) {
+      // 🔍 VÉRIFIER LA DISTANCE AVEC BÉRU
+      const beruEntity = this.entities.get('beru');
+      const MIN_DISTANCE = 150; // Distance plus large pour éviter oscillations
+      const SAFE_DISTANCE = 200; // Distance de sécurité pour arrêter l'évitement
 
-  // 🎯 MOUVEMENT NORMAL (si pas d'évitement en cours)
-  if (!entity.isAvoidingCollision) {
-    this.normalKaiselWandering(entity);
-  } else {
-    this.executeAvoidanceMovement(entity);
-  }
-}
+      if (beruEntity) {
+        const distance = this.calculateDistance(entity, beruEntity);
 
-// 📐 CALCULER DISTANCE ENTRE ENTITÉS
-calculateDistance(entity1, entity2) {
-  const dx = entity1.x - entity2.x;
-  const dy = entity1.y - entity2.y;
-  return Math.sqrt(dx * dx + dy * dy);
-}
+        // 🚨 TROP PROCHE DE BÉRU !
+        if (distance < MIN_DISTANCE && !entity.isAvoidingCollision) {
+          this.initiateAvoidanceMovement(entity, beruEntity);
+          return; // Skip normal wandering
+        }
 
-// 🚨 INITIER MOUVEMENT D'ÉVITEMENT
-initiateAvoidanceMovement(entity, otherEntity) {
-  // 🛡️ COOLDOWN ANTI-OSCILLATION
-  const now = Date.now();
-  if (entity.lastAvoidanceTime && (now - entity.lastAvoidanceTime) < 1000) {
-    return; // Skip si évitement récent (< 1 seconde)
-  }
-  
-  entity.isAvoidingCollision = true;
-  entity.lastAvoidanceTime = now;
-  
-  // 🧠 CALCULER DIRECTION D'ÉVITEMENT STABLE
-  const dx = entity.x - otherEntity.x;
-  const dy = entity.y - otherEntity.y;
-  
-  // 🔒 GARDER LA MÊME DIRECTION si déjà en évitement récent
-  if (!entity.avoidanceDirection) {
-    if (Math.abs(dx) > Math.abs(dy)) {
-      entity.avoidanceDirection = dx > 0 ? 'right' : 'left';
-    } else {
-      entity.avoidanceDirection = dy > 0 ? 'down' : 'up';
-    }
-  }
-  
-  // ⏰ DURÉE D'ÉVITEMENT PLUS LONGUE
-  entity.avoidanceTimer = 3000 + Math.random() * 2000; // 3-5 secondes
-}
-
-// ⚡ EXÉCUTER MOUVEMENT D'ÉVITEMENT
-executeAvoidanceMovement(entity) {
-  if (!entity.avoidanceDirection || entity.avoidanceTimer <= 0) {
-    entity.isAvoidingCollision = false;
-    return;
-  }
-  
-  const speed = entity.moveSpeed * 1.5; // Plus rapide en évitement
-  
-  switch (entity.avoidanceDirection) {
-    case 'left':
-      entity.x -= speed;
-      entity.img.src = entity.sprites.left;
-      break;
-    case 'right':
-      entity.x += speed;
-      entity.img.src = entity.sprites.right;
-      break;
-    case 'up':
-      entity.y -= speed;
-      entity.img.src = entity.sprites.up;
-      break;
-    case 'down':
-      entity.y += speed;
-      entity.img.src = entity.sprites.down;
-      break;
-  }
-  
-  // ⏱️ DÉCOMPTE DU TIMER
-  entity.avoidanceTimer -= 16; // ~60fps
-  
-  // 🚧 LIMITES CANVAS
-  const canvas = entity.spawnCanvas;
-  if (canvas) {
-    entity.x = Math.max(0, Math.min(canvas.width - entity.size, entity.x));
-    entity.y = Math.max(canvas.height / 2, Math.min(canvas.height - entity.size, entity.y));
-  }
-}
-
-// 🎯 MOUVEMENT NORMAL KAISEL
-normalKaiselWandering(entity) {
-  // Kaisel bouge de façon efficace et rapide (personnalité debugger)
-  if (!entity.isWandering && Math.random() < 0.005) {
-    const directions = ["left", "right", "up", "down"];
-    entity.direction = directions[Math.floor(Math.random() * directions.length)];
-    entity.isWandering = true;
-
-    const wanderDuration = 2000 + Math.random() * 1500;
-    const returnDuration = wanderDuration / 4;
-    const originalDirection = entity.direction;
-
-    const timer = setTimeout(() => {
-      // Phase de retour
-      switch (originalDirection) {
-        case 'left': entity.direction = 'right'; break;
-        case 'right': entity.direction = 'left'; break;
-        case 'up': entity.direction = 'down'; break;
-        case 'down': entity.direction = 'up'; break;
+        // ✅ DISTANCE SÉCURISÉE, reprendre mouvement normal
+        if (distance >= SAFE_DISTANCE && entity.isAvoidingCollision) {
+          entity.isAvoidingCollision = false;
+          entity.avoidanceDirection = null;
+          entity.img.src = entity.sprites.idle;
+        }
       }
 
-      setTimeout(() => {
-        entity.isWandering = false;
-        entity.direction = null;
-        entity.img.src = entity.sprites.idle;
-      }, returnDuration);
-    }, wanderDuration);
-
-    this.wanderTimers.set(entity.id, timer);
-  }
-
-  // Apply wandering movement
-  if (entity.isWandering && entity.direction) {
-    const speed = entity.moveSpeed;
-    switch (entity.direction) {
-      case 'left':
-        entity.x -= speed;
-        entity.img.src = entity.sprites.left;
-        break;
-      case 'right':
-        entity.x += speed;
-        entity.img.src = entity.sprites.right;
-        break;
-      case 'up':
-        entity.y -= speed;
-        entity.img.src = entity.sprites.up;
-        break;
-      case 'down':
-        entity.y += speed;
-        entity.img.src = entity.sprites.down;
-        break;
+      // 🎯 MOUVEMENT NORMAL (si pas d'évitement en cours)
+      if (!entity.isAvoidingCollision) {
+        this.normalKaiselWandering(entity);
+      } else {
+        this.executeAvoidanceMovement(entity);
+      }
     }
 
-    // Limites canvas
-    const canvas = entity.spawnCanvas;
-    if (canvas) {
-      entity.x = Math.max(0, Math.min(canvas.width - entity.size, entity.x));
-      entity.y = Math.max(canvas.height / 2, Math.min(canvas.height - entity.size, entity.y));
+    // 📐 CALCULER DISTANCE ENTRE ENTITÉS
+    calculateDistance(entity1, entity2) {
+      const dx = entity1.x - entity2.x;
+      const dy = entity1.y - entity2.y;
+      return Math.sqrt(dx * dx + dy * dy);
     }
-  }
-}
+
+    // 🚨 INITIER MOUVEMENT D'ÉVITEMENT
+    initiateAvoidanceMovement(entity, otherEntity) {
+      // 🛡️ COOLDOWN ANTI-OSCILLATION
+      const now = Date.now();
+      if (entity.lastAvoidanceTime && (now - entity.lastAvoidanceTime) < 1000) {
+        return; // Skip si évitement récent (< 1 seconde)
+      }
+
+      entity.isAvoidingCollision = true;
+      entity.lastAvoidanceTime = now;
+
+      // 🧠 CALCULER DIRECTION D'ÉVITEMENT STABLE
+      const dx = entity.x - otherEntity.x;
+      const dy = entity.y - otherEntity.y;
+
+      // 🔒 GARDER LA MÊME DIRECTION si déjà en évitement récent
+      if (!entity.avoidanceDirection) {
+        if (Math.abs(dx) > Math.abs(dy)) {
+          entity.avoidanceDirection = dx > 0 ? 'right' : 'left';
+        } else {
+          entity.avoidanceDirection = dy > 0 ? 'down' : 'up';
+        }
+      }
+
+      // ⏰ DURÉE D'ÉVITEMENT PLUS LONGUE
+      entity.avoidanceTimer = 3000 + Math.random() * 2000; // 3-5 secondes
+    }
+
+    // ⚡ EXÉCUTER MOUVEMENT D'ÉVITEMENT
+    executeAvoidanceMovement(entity) {
+      if (!entity.avoidanceDirection || entity.avoidanceTimer <= 0) {
+        entity.isAvoidingCollision = false;
+        return;
+      }
+
+      const speed = entity.moveSpeed * 1.5; // Plus rapide en évitement
+
+      switch (entity.avoidanceDirection) {
+        case 'left':
+          entity.x -= speed;
+          entity.img.src = entity.sprites.left;
+          break;
+        case 'right':
+          entity.x += speed;
+          entity.img.src = entity.sprites.right;
+          break;
+        case 'up':
+          entity.y -= speed;
+          entity.img.src = entity.sprites.up;
+          break;
+        case 'down':
+          entity.y += speed;
+          entity.img.src = entity.sprites.down;
+          break;
+      }
+
+      // ⏱️ DÉCOMPTE DU TIMER
+      entity.avoidanceTimer -= 16; // ~60fps
+
+      // 🚧 LIMITES CANVAS
+      const canvas = entity.spawnCanvas;
+      if (canvas) {
+        entity.x = Math.max(0, Math.min(canvas.width - entity.size, entity.x));
+        entity.y = Math.max(canvas.height / 2, Math.min(canvas.height - entity.size, entity.y));
+      }
+    }
+
+    // 🎯 MOUVEMENT NORMAL KAISEL
+    normalKaiselWandering(entity) {
+      // Kaisel bouge de façon efficace et rapide (personnalité debugger)
+      if (!entity.isWandering && Math.random() < 0.005) {
+        const directions = ["left", "right", "up", "down"];
+        entity.direction = directions[Math.floor(Math.random() * directions.length)];
+        entity.isWandering = true;
+
+        const wanderDuration = 2000 + Math.random() * 1500;
+        const returnDuration = wanderDuration / 4;
+        const originalDirection = entity.direction;
+
+        const timer = setTimeout(() => {
+          // Phase de retour
+          switch (originalDirection) {
+            case 'left': entity.direction = 'right'; break;
+            case 'right': entity.direction = 'left'; break;
+            case 'up': entity.direction = 'down'; break;
+            case 'down': entity.direction = 'up'; break;
+          }
+
+          setTimeout(() => {
+            entity.isWandering = false;
+            entity.direction = null;
+            entity.img.src = entity.sprites.idle;
+          }, returnDuration);
+        }, wanderDuration);
+
+        this.wanderTimers.set(entity.id, timer);
+      }
+
+      // Apply wandering movement
+      if (entity.isWandering && entity.direction) {
+        const speed = entity.moveSpeed;
+        switch (entity.direction) {
+          case 'left':
+            entity.x -= speed;
+            entity.img.src = entity.sprites.left;
+            break;
+          case 'right':
+            entity.x += speed;
+            entity.img.src = entity.sprites.right;
+            break;
+          case 'up':
+            entity.y -= speed;
+            entity.img.src = entity.sprites.up;
+            break;
+          case 'down':
+            entity.y += speed;
+            entity.img.src = entity.sprites.down;
+            break;
+        }
+
+        // Limites canvas
+        const canvas = entity.spawnCanvas;
+        if (canvas) {
+          entity.x = Math.max(0, Math.min(canvas.width - entity.size, entity.x));
+          entity.y = Math.max(canvas.height / 2, Math.min(canvas.height - entity.size, entity.y));
+        }
+      }
+    }
 
 
     // 🎨 Draw entity
@@ -3570,33 +3575,33 @@ BobbyJones : "Allez l'Inter !"
       }
     }));
 
-if (selectedCharacter === 'kanae') {
-  const newKanaeCount = kanaeSaveCount + 1;
-  setKanaeSaveCount(newKanaeCount);
-  
-  if (newKanaeCount === 5) {
-    showTankMessage("🌸 Kanae... encore ? Le SERN t'observe...", true);
-    setTimeout(() => {  
-      triggerSernIntervention(); // ← Déclenche le popup
-      setKanaeSaveCount(0); // Reset
-    }, 2000);
-  } else if (newKanaeCount === 3) {
-    showTankMessage("🌸 Kanae sauvegardée 3 fois... Suspect...", true, 'kaisel');
-  }
-}
+    if (selectedCharacter === 'kanae') {
+      const newKanaeCount = kanaeSaveCount + 1;
+      setKanaeSaveCount(newKanaeCount);
 
-// 🃏 EASTER EGG JO (si tu veux le remettre aussi)
-if (selectedCharacter === 'jo') {
-  const newJoCount = joSaveCount + 1;
-  setJoSaveCount(newJoCount);
-  
-  if (newJoCount === 7) {
-    setTimeout(() => {
-      triggerSernIntervention();
-      setJoSaveCount(0);
-    }, 1000);
-  }
-}
+      if (newKanaeCount === 5) {
+        showTankMessage("🌸 Kanae... encore ? Le SERN t'observe...", true);
+        setTimeout(() => {
+          triggerSernIntervention(); // ← Déclenche le popup
+          setKanaeSaveCount(0); // Reset
+        }, 2000);
+      } else if (newKanaeCount === 3) {
+        showTankMessage("🌸 Kanae sauvegardée 3 fois... Suspect...", true, 'kaisel');
+      }
+    }
+
+    // 🃏 EASTER EGG JO (si tu veux le remettre aussi)
+    if (selectedCharacter === 'jo') {
+      const newJoCount = joSaveCount + 1;
+      setJoSaveCount(newJoCount);
+
+      if (newJoCount === 7) {
+        setTimeout(() => {
+          triggerSernIntervention();
+          setJoSaveCount(0);
+        }, 1000);
+      }
+    }
 
     setIsBuildsReady(true);
     showTankMessage(`✅ Build sauvegardé pour ${selectedCharacter}!`, true);
@@ -4043,94 +4048,96 @@ if (selectedCharacter === 'jo') {
       }
     }
   }, [showSernPopup]);
-useEffect(() => {
-  if (!showHitboxes) {
-    setHitboxPositions({});
-    return;
-  }
-
-  // Fonction globale pour recevoir les positions
-  window.updateHitboxPosition = (entityId, position) => {
-    setHitboxPositions(prev => ({
-      ...prev,
-      [entityId]: position
-    }));
-  };
-
-  // Update toutes les 100ms quand actif
-  const interval = setInterval(() => {
-    if (window.shadowManager?.entities) {
-      window.shadowManager.entities.forEach((entity) => {
-        if (entity.spawnCanvas) {
-          const canvas = entity.spawnCanvas;
-          const rect = canvas.getBoundingClientRect();
-          const scaleX = canvas.width / rect.width;
-          const scaleY = canvas.height / rect.height;
-          
-          const hitboxPadding = 20;
-          const VERTICAL_OFFSET = 50;
-          
-          const spriteLeft = entity.x - hitboxPadding;
-          const spriteRight = entity.x + entity.size + hitboxPadding;
-          const spriteTop = entity.y - hitboxPadding - VERTICAL_OFFSET;
-          const spriteBottom = entity.y + entity.size + hitboxPadding - VERTICAL_OFFSET;
-          
-          const screenLeft = rect.left + (spriteLeft * scaleX);
-          const screenTop = rect.top + (spriteTop * scaleY);
-          const screenWidth = (spriteRight - spriteLeft) * scaleX;
-          const screenHeight = (spriteBottom - spriteTop) * scaleY;
-          
-          // 🔥 DEBUG - Ajoute juste ça pour voir
-          console.log(`🎯 ${entity.id}:`, { left: screenLeft, top: screenTop, width: screenWidth, height: screenHeight });
-          
-          setHitboxPositions(prev => ({
-            ...prev,
-            [entity.id]: {
-              left: screenLeft,
-              top: screenTop,
-              width: screenWidth,
-              height: screenHeight,
-              color: entity.id === 'tank' ? 'red' : entity.id === 'beru' ? 'green' : 'cyan'
-            }
-          }));
-        }
-      });
+  useEffect(() => {
+    if (!showHitboxes) {
+      setHitboxPositions({});
+      return;
     }
-  }, 100);
 
-  return () => {
-    clearInterval(interval);
-    window.updateHitboxPosition = null;
-  };
-}, [showHitboxes]);
+    // Fonction globale pour recevoir les positions
+    window.updateHitboxPosition = (entityId, position) => {
+      setHitboxPositions(prev => ({
+        ...prev,
+        [entityId]: position
+      }));
+    };
 
-// 5️⃣ AJOUTE CES HITBOXES dans le return de BuilderBeru (à la fin, juste avant </> )
-{/* 🐛 HITBOXES DEBUG OVERLAY */}
-{showHitboxes && Object.entries(hitboxPositions).map(([entityId, pos]) => (
-  <div
-    key={entityId}
-    style={{
-      position: 'fixed',
-      left: pos.left,
-      top: pos.top,
-      width: pos.width,
-      height: pos.height,
-      border: `2px dashed ${pos.color}`,
-      backgroundColor: `${pos.color}33`, // 33 = transparence
-      pointerEvents: 'none',
-      zIndex: 9999,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '10px',
-      color: 'white',
-      fontWeight: 'bold',
-      textShadow: '1px 1px 2px black'
-    }}
-  >
-    {entityId.toUpperCase()}
-  </div>
-))}
+    // Update toutes les 100ms quand actif
+    const interval = setInterval(() => {
+      if (window.shadowManager?.entities) {
+        window.shadowManager.entities.forEach((entity) => {
+          if (entity.spawnCanvas) {
+            const canvas = entity.spawnCanvas;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            const hitboxPadding = 20;
+            const VERTICAL_OFFSET = 50;
+
+            const spriteLeft = entity.x - hitboxPadding;
+            const spriteRight = entity.x + entity.size + hitboxPadding;
+            const spriteTop = entity.y - hitboxPadding - VERTICAL_OFFSET;
+            const spriteBottom = entity.y + entity.size + hitboxPadding - VERTICAL_OFFSET;
+
+            const screenLeft = rect.left + (spriteLeft * scaleX);
+            const screenTop = rect.top + (spriteTop * scaleY);
+            const screenWidth = (spriteRight - spriteLeft) * scaleX;
+            const screenHeight = (spriteBottom - spriteTop) * scaleY;
+
+            // 🔥 DEBUG - Ajoute juste ça pour voir
+            console.log(`🎯 ${entity.id}:`, { left: screenLeft, top: screenTop, width: screenWidth, height: screenHeight });
+
+            setHitboxPositions(prev => ({
+              ...prev,
+              [entity.id]: {
+                left: screenLeft,
+                top: screenTop,
+                width: screenWidth,
+                height: screenHeight,
+                color: entity.id === 'tank' ? 'red' : entity.id === 'beru' ? 'green' : 'cyan'
+              }
+            }));
+          }
+        });
+      }
+    }, 100);
+
+    return () => {
+      clearInterval(interval);
+      window.updateHitboxPosition = null;
+    };
+  }, [showHitboxes]);
+
+  // 5️⃣ AJOUTE CES HITBOXES dans le return de BuilderBeru (à la fin, juste avant </> )
+  {/* 🐛 HITBOXES DEBUG OVERLAY */ }
+  {
+    showHitboxes && Object.entries(hitboxPositions).map(([entityId, pos]) => (
+      <div
+        key={entityId}
+        style={{
+          position: 'fixed',
+          left: pos.left,
+          top: pos.top,
+          width: pos.width,
+          height: pos.height,
+          border: `2px dashed ${pos.color}`,
+          backgroundColor: `${pos.color}33`, // 33 = transparence
+          pointerEvents: 'none',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '10px',
+          color: 'white',
+          fontWeight: 'bold',
+          textShadow: '1px 1px 2px black'
+        }}
+      >
+        {entityId.toUpperCase()}
+      </div>
+    ))
+  }
 
   useEffect(() => {
     if (!showSernPopup || !popupRef.current) return;
@@ -4142,44 +4149,44 @@ useEffect(() => {
     return () => clearInterval(scrollInterval);
   }, [showSernPopup]);
 
-useEffect(() => {
-  if (showSernPopup) {
-    try {
-      let messageSource;
-      
-      // Essaie d'abord i18n, sinon fallback sur mystSernMsg
+  useEffect(() => {
+    if (showSernPopup) {
       try {
-        messageSource = t('mystSerNMsg.message', { returnObjects: true });
-        if (!Array.isArray(messageSource) || messageSource.length === 0) {
-          throw new Error('No i18n messages found');
-        }
-      } catch {
-        // Fallback sur l'ancien système
-        messageSource = mystSernMsg.message;
-      }
-      
-      // Sélection aléatoire
-      const randomEncoded = messageSource[Math.floor(Math.random() * messageSource.length)];
-      
-      // Décodage Base64
-      const decoded = decodeURIComponent(escape(atob(randomEncoded)));
+        let messageSource;
 
-      dytextAnimate(dytextRef, decoded, 30, {
-        onComplete: () => {
-          setTimeout(() => {
-            triggerFadeOutAllMusic();
-          }, 13000);
-          setTimeout(() => {
-            setShowSernPopup(false);
-          }, 10000);
-        },
-      });
-      
-    } catch (error) {
-      console.warn("💥 Le SERN a subi une interférence temporelle :", error);
+        // Essaie d'abord i18n, sinon fallback sur mystSernMsg
+        try {
+          messageSource = t('mystSerNMsg.message', { returnObjects: true });
+          if (!Array.isArray(messageSource) || messageSource.length === 0) {
+            throw new Error('No i18n messages found');
+          }
+        } catch {
+          // Fallback sur l'ancien système
+          messageSource = mystSernMsg.message;
+        }
+
+        // Sélection aléatoire
+        const randomEncoded = messageSource[Math.floor(Math.random() * messageSource.length)];
+
+        // Décodage Base64
+        const decoded = decodeURIComponent(escape(atob(randomEncoded)));
+
+        dytextAnimate(dytextRef, decoded, 30, {
+          onComplete: () => {
+            setTimeout(() => {
+              triggerFadeOutAllMusic();
+            }, 13000);
+            setTimeout(() => {
+              setShowSernPopup(false);
+            }, 10000);
+          },
+        });
+
+      } catch (error) {
+        console.warn("💥 Le SERN a subi une interférence temporelle :", error);
+      }
     }
-  }
-}, [showSernPopup, t]);
+  }, [showSernPopup, t]);
 
 
 
@@ -4615,20 +4622,20 @@ useEffect(() => {
   };
 
   // 2️⃣ AJOUTE un raccourci clavier pour l'afficher
-useEffect(() => {
-  // Fonction accessible depuis la console
-  window.toggleDebug = () => {
-    setShowDebugButton(prev => {
-      const newValue = !prev;
-      console.log(`🐛 Debug button: ${newValue ? 'VISIBLE' : 'HIDDEN'}`);
-      return newValue;
-    });
-  };
+  useEffect(() => {
+    // Fonction accessible depuis la console
+    window.toggleDebug = () => {
+      setShowDebugButton(prev => {
+        const newValue = !prev;
+        console.log(`🐛 Debug button: ${newValue ? 'VISIBLE' : 'HIDDEN'}`);
+        return newValue;
+      });
+    };
 
-  return () => {
-    delete window.toggleDebug;
-  };
-}, []);
+    return () => {
+      delete window.toggleDebug;
+    };
+  }, []);
 
 
 
@@ -4648,118 +4655,121 @@ useEffect(() => {
   }, [selectedCharacter]);
 
 
-// 🐉 REMPLACE ton useEffect ShadowManager par celui-ci :
-useEffect(() => {
-  // ✅ VÉRIFICATION : Seulement si on est sur la vue 'main' 
-  const isMobileDevice = window.innerWidth < 1024;
-  const shouldInitShadows = !isMobileDevice || mobileView === 'main';
-  
-  if (!shouldInitShadows) {
-    // 🧹 CLEANUP si on quitte la vue main sur mobile
+  // 🐉 REMPLACE ton useEffect ShadowManager par celui-ci :
+  useEffect(() => {
+    // ✅ VÉRIFICATION : Seulement si on est sur la vue 'main' 
+    const isMobileDevice = window.innerWidth < 1024;
+    const shouldInitShadows = !isMobileDevice || mobileView === 'main';
+
+    if (!shouldInitShadows) {
+      // 🧹 CLEANUP si on quitte la vue main sur mobile
+      if (window.shadowManager) {
+        window.shadowManager.cleanup();
+        window.shadowManager = null;
+      }
+      return;
+    }
+
+    // 🔒 PROTECTION : Nettoyage préalable
     if (window.shadowManager) {
       window.shadowManager.cleanup();
       window.shadowManager = null;
     }
-    return;
-  }
 
-  // 🔒 PROTECTION : Nettoyage préalable
-  if (window.shadowManager) {
-    window.shadowManager.cleanup();
-    window.shadowManager = null;
-  }
+    const shadowManager = new ShadowManager();
+    window.shadowManager = shadowManager;
+    shadowManager.setTranslation(t);
+    window.getShadowScreenPosition = getShadowScreenPosition;
 
-  const shadowManager = new ShadowManager();
-  window.shadowManager = shadowManager;
-  shadowManager.setTranslation(t);
-  window.getShadowScreenPosition = getShadowScreenPosition;
-
-  // 🔥 CALLBACKS avec références stables
-  const callbacks = {
-    showMessage: showTankMessage,
-    showBeruMenu: (selectedCharacter) => {
-      try {
-        if (window.shadowManager?.entities) {
-          const beruEntity = window.shadowManager.entities.get('beru');
-          if (beruEntity) {
-            beruEntity.isMenuActive = true;
+    // 🔥 CALLBACKS avec références stables
+    const callbacks = {
+      showMessage: showTankMessage,
+      showBeruMenu: (selectedCharacter) => {
+        try {
+          if (window.shadowManager?.entities) {
+            const beruEntity = window.shadowManager.entities.get('beru');
+            if (beruEntity) {
+              beruEntity.isMenuActive = true;
+            }
           }
+
+          const pos = getShadowScreenPosition('beru');
+          const adjustedPos = {
+            x: pos.x - 10,
+            y: pos.y,
+            currentCanvasId: pos.currentCanvasId
+          };
+
+          setShowBeruInteractionMenu(true);
+          setBeruMenuPosition({ x: adjustedPos.x, y: adjustedPos.y });
+          setBeruMenuCharacter(selectedCharacter || '');
+        } catch (error) {
+          console.error("🐉 Kaisel: Erreur showBeruMenu:", error);
+        }
+      },
+      showKaiselMenu: (selectedCharacter) => {
+        try {
+          if (window.shadowManager?.entities) {
+            const kaiselEntity = window.shadowManager.entities.get('kaisel');
+            if (kaiselEntity) {
+              kaiselEntity.isMenuActive = true;
+            }
+          }
+
+          const pos = getShadowScreenPosition('kaisel');
+          const adjustedPos = {
+            x: pos.x - 10,
+            y: pos.y,
+            currentCanvasId: pos.currentCanvasId
+          };
+
+          setShowKaiselInteractionMenu(true);
+          setKaiselMenuPosition({ x: adjustedPos.x, y: adjustedPos.y });
+          setKaiselMenuCharacter(selectedCharacter || '');
+        } catch (error) {
+          console.error("🐉 Kaisel: Erreur showKaiselMenu:", error);
+        }
+      },
+      getSelectedCharacter: () => selectedCharacter,
+      onShowHallOfFlame: () => {
+        setShowHallOfFlameDebug(true);
+      }
+    };
+
+    // 🎯 DELAY pour éviter les conflits de rendu
+    const initTimer = setTimeout(() => {
+      try {
+        // ✅ VÉRIFICATION CANVAS EXISTE AVANT INIT
+        const canvasLeft = document.getElementById('canvas-left');
+        const canvasCenter = document.getElementById('canvas-center');
+        const canvasRight = document.getElementById('canvas-right');
+
+        if (!canvasLeft || !canvasCenter || !canvasRight) {
+          console.warn("🐉 Kaisel: Canvas manquants, skip init");
+          return;
         }
 
-        const pos = getShadowScreenPosition('beru');
-        const adjustedPos = {
-          x: pos.x - 10,
-          y: pos.y,
-          currentCanvasId: pos.currentCanvasId
-        };
-
-        setShowBeruInteractionMenu(true);
-        setBeruMenuPosition({ x: adjustedPos.x, y: adjustedPos.y });
-        setBeruMenuCharacter(selectedCharacter || '');
+        shadowManager.init(['canvas-left', 'canvas-center', 'canvas-right'], callbacks);
+        shadowManager.spawnEntity('tank');
+        shadowManager.spawnEntity('beru');
+        shadowManager.spawnEntity('kaisel');
       } catch (error) {
-        console.error("🐉 Kaisel: Erreur showBeruMenu:", error);
+        console.error("🐉 Kaisel: Shadow init error:", error);
       }
-    },
-    showKaiselMenu: (selectedCharacter) => {
-      try {
-        if (window.shadowManager?.entities) {
-          const kaiselEntity = window.shadowManager.entities.get('kaisel');
-          if (kaiselEntity) {
-            kaiselEntity.isMenuActive = true;
-          }
-        }
+    }, 100);
 
-        const pos = getShadowScreenPosition('kaisel');
-        const adjustedPos = {
-          x: pos.x - 10,
-          y: pos.y,
-          currentCanvasId: pos.currentCanvasId
-        };
+    const keyboardCleanup = shadowManager.setupKeyboardControls();
 
-        setShowKaiselInteractionMenu(true);
-        setKaiselMenuPosition({ x: adjustedPos.x, y: adjustedPos.y });
-        setKaiselMenuCharacter(selectedCharacter || '');
-      } catch (error) {
-        console.error("🐉 Kaisel: Erreur showKaiselMenu:", error);
+    return () => {
+      clearTimeout(initTimer);
+      if (shadowManager) {
+        shadowManager.cleanup();
       }
-    },
-    getSelectedCharacter: () => selectedCharacter
-  };
-
-  // 🎯 DELAY pour éviter les conflits de rendu
-  const initTimer = setTimeout(() => {
-    try {
-      // ✅ VÉRIFICATION CANVAS EXISTE AVANT INIT
-      const canvasLeft = document.getElementById('canvas-left');
-      const canvasCenter = document.getElementById('canvas-center');
-      const canvasRight = document.getElementById('canvas-right');
-      
-      if (!canvasLeft || !canvasCenter || !canvasRight) {
-        console.warn("🐉 Kaisel: Canvas manquants, skip init");
-        return;
-      }
-
-      shadowManager.init(['canvas-left', 'canvas-center', 'canvas-right'], callbacks);
-      shadowManager.spawnEntity('tank');
-      shadowManager.spawnEntity('beru');
-      shadowManager.spawnEntity('kaisel');
-    } catch (error) {
-      console.error("🐉 Kaisel: Shadow init error:", error);
-    }
-  }, 100);
-
-  const keyboardCleanup = shadowManager.setupKeyboardControls();
-
-  return () => {
-    clearTimeout(initTimer);
-    if (shadowManager) {
-      shadowManager.cleanup();
-    }
-    if (keyboardCleanup) keyboardCleanup();
-    window.shadowManager = null;
-    window.getShadowScreenPosition = null;
-  };
-}, [t, selectedCharacter, mobileView]); // ← AJOUT mobileView dans les dépendances
+      if (keyboardCleanup) keyboardCleanup();
+      window.shadowManager = null;
+      window.getShadowScreenPosition = null;
+    };
+  }, [t, selectedCharacter, mobileView]); // ← AJOUT mobileView dans les dépendances
   // 4️⃣ FONCTIONS UTILITAIRES pour Beru (à ajouter)
   const triggerBeruAnalysis = (artifactData, hunter) => {
     const shadowManager = window.shadowManager; // Si besoin d'accès global
@@ -4829,69 +4839,69 @@ useEffect(() => {
     };
   }, []);
 
- const showTankMessage = (message, priority = false, entityType = 'tank') => {
-  try {
-    if (!message || typeof message !== 'string') {
-      console.warn("🐉 Kaisel: Message invalide ignoré");
-      return;
-    }
-
-    if (isTankSpeaking.current && !priority) {
-      messageQueue.current.push({ message, entityType });
-      return;
-    }
-
-    if (priority && isTankSpeaking.current) {
-      if (currentTimeout.current) {
-        clearTimeout(currentTimeout.current);
+  const showTankMessage = (message, priority = false, entityType = 'tank') => {
+    try {
+      if (!message || typeof message !== 'string') {
+        console.warn("🐉 Kaisel: Message invalide ignoré");
+        return;
       }
-    }
 
-    isTankSpeaking.current = true;
-    setShowChibiBubble(false);
-    setBubbleId(Date.now());
-    setCurrentSpeaker(entityType); // ← NOUVEAU : Track l'entité
+      if (isTankSpeaking.current && !priority) {
+        messageQueue.current.push({ message, entityType });
+        return;
+      }
 
-    const pos = getShadowScreenPosition(entityType);
-    const isMobileDevice = isMobile?.isPhone || isMobile?.isTablet || window.innerWidth < 768;
-    
-    const adjustedPos = isMobileDevice ? {
-      x: window.innerWidth / 2,
-      y: 80,
-      currentCanvasId: pos.currentCanvasId
-    } : {
-      x: pos.x,
-      y: pos.y - Math.min(200, message.length * 0.6),
-      currentCanvasId: pos.currentCanvasId
-    };
+      if (priority && isTankSpeaking.current) {
+        if (currentTimeout.current) {
+          clearTimeout(currentTimeout.current);
+        }
+      }
 
-    setChibiPos(adjustedPos);
-    setShowChibiBubble(true);
-    setChibiMessage(message);
-
-    const displayDuration = isMobileDevice ? 
-      Math.min(Math.max(6000, message.length * 120), 30000) :
-      Math.min(Math.max(4000, message.length * 80), 20000);
-
-    currentTimeout.current = setTimeout(() => {
+      isTankSpeaking.current = true;
       setShowChibiBubble(false);
+      setBubbleId(Date.now());
+      setCurrentSpeaker(entityType); // ← NOUVEAU : Track l'entité
+
+      const pos = getShadowScreenPosition(entityType);
+      const isMobileDevice = isMobile?.isPhone || isMobile?.isTablet || window.innerWidth < 768;
+
+      const adjustedPos = isMobileDevice ? {
+        x: window.innerWidth / 2,
+        y: 80,
+        currentCanvasId: pos.currentCanvasId
+      } : {
+        x: pos.x,
+        y: pos.y - Math.min(200, message.length * 0.6),
+        currentCanvasId: pos.currentCanvasId
+      };
+
+      setChibiPos(adjustedPos);
+      setShowChibiBubble(true);
+      setChibiMessage(message);
+
+      const displayDuration = isMobileDevice ?
+        Math.min(Math.max(6000, message.length * 120), 30000) :
+        Math.min(Math.max(4000, message.length * 80), 20000);
+
+      currentTimeout.current = setTimeout(() => {
+        setShowChibiBubble(false);
+        isTankSpeaking.current = false;
+
+        if (messageQueue.current.length > 0) {
+          const next = messageQueue.current.shift();
+          setTimeout(() => {
+            showTankMessage(next.message, false, next.entityType);
+          }, 100);
+        }
+
+        currentTimeout.current = null;
+      }, displayDuration);
+
+    } catch (error) {
+      console.error("🐉 Kaisel: showTankMessage error:", error);
       isTankSpeaking.current = false;
-
-      if (messageQueue.current.length > 0) {
-        const next = messageQueue.current.shift();
-        setTimeout(() => {
-          showTankMessage(next.message, false, next.entityType);
-        }, 100);
-      }
-
-      currentTimeout.current = null;
-    }, displayDuration);
-
-  } catch (error) {
-    console.error("🐉 Kaisel: showTankMessage error:", error);
-    isTankSpeaking.current = false;
-  }
-};
+    }
+  };
 
   // Filtre du select Personnage
   useEffect(() => {
@@ -4914,247 +4924,263 @@ useEffect(() => {
     }
   }, [selectedElement, selectedClass, characters, selectedCharacter]);
 
-const handleCloseBubble = () => {
-  setShowChibiBubble(false);
-  isTankSpeaking.current = false;
+const getCurrentHunterData = () => {
+  if (!selectedCharacter) return null;
   
-  // Clear le timeout actuel
-  if (currentTimeout.current) {
-    clearTimeout(currentTimeout.current);
-    currentTimeout.current = null;
-  }
-  
-  // Traiter la queue si messages en attente
-  if (messageQueue.current.length > 0) {
-    const next = messageQueue.current.shift();
-    setTimeout(() => {
-      showTankMessage(next.message, false, next.entityType);
-    }, 100);
-  }
+  return {
+    character: selectedCharacter,
+    characterName: characters[selectedCharacter]?.name || selectedCharacter,
+    stats: finalStats,
+    artifacts: artifactsData,
+    cores: hunterCores[selectedCharacter] || {},
+    gems: gemData || {},
+    weapon: hunterWeapons[selectedCharacter] || {},
+    // Score global (si tu as un système de scoring)
+    totalScore: Object.values(artifactScores).reduce((sum, score) => sum + score, 0)
+  };
 };
+
+  const handleCloseBubble = () => {
+    setShowChibiBubble(false);
+    isTankSpeaking.current = false;
+
+    // Clear le timeout actuel
+    if (currentTimeout.current) {
+      clearTimeout(currentTimeout.current);
+      currentTimeout.current = null;
+    }
+
+    // Traiter la queue si messages en attente
+    if (messageQueue.current.length > 0) {
+      const next = messageQueue.current.shift();
+      setTimeout(() => {
+        showTankMessage(next.message, false, next.entityType);
+      }, 100);
+    }
+  };
 
   return (
     <>
 
       {((isMobile.isPhone || isMobile.isTablet) && !isMobile.isDesktop) ? (
-  <>
-    {/* 🔥 CONTAINER PRINCIPAL - HAUTEUR DYNAMIQUE */}
-    <div className="min-h-screen bg-gray-950 text-white tank-target overflow-y-auto">
-      <div className="w-full flex justify-center">
-        <div className="w-full max-w-[95vw] mx-auto px-2">
+        <>
+          {/* 🔥 CONTAINER PRINCIPAL - HAUTEUR DYNAMIQUE */}
+          <div className="min-h-screen bg-gray-950 text-white tank-target overflow-y-auto">
+            <div className="w-full flex justify-center">
+              <div className="w-full max-w-[95vw] mx-auto px-2">
 
-          {/* 🎯 VUE MAIN */}
-          {mobileView === 'main' && (
-            <div className="w-full mx-auto py-4 pb-32 space-y-6">
-              {/* ← pb-32 pour navigation + canvas */}
-              
-              {/* SECTION FILTRES + SELECT */}
-              <div className="flex flex-col w-full gap-4">
-                {/* Langues + Select */}
-                <div className="flex items-center gap-2 justify-between">
-                  <div className="flex gap-2 items-center">
-                    <img
-                      src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png"
-                      alt="Français"
-                      onClick={() => i18n.changeLanguage('fr')}
-                      className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
-                    />
-                    <img
-                      src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png"
-                      alt="English"
-                      onClick={() => i18n.changeLanguage('en')}
-                      className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
-                    />
-                  </div>
-                  
-                  {/* Select Personnage */}
-                  <select
-                    value={selectedCharacter}
-                    onChange={(e) => {
-                      const selected = e.target.value;
-                      setSelectedCharacter(selected);
-                      const saved = localStorage.getItem(`${selected}`);
-                      if (saved) {
-                        const build = JSON.parse(saved);
-                        setFlatStats(build.flatStats);
-                        setStatsWithoutArtefact(build.statsWithoutArtefact);
-                        setArtifactsData(build.artifactsData);
-                        setHunterCores(build.hunterCores);
-                        showTankMessage(`Loaded saved build for ${selected} 😏`);
-                      } else {
-                        handleResetStats();
-                      }
-                    }}
-                    className="p-2 rounded bg-[#1c1c3c] text-white text-sm tank-target flex-1 max-w-[200px]"
-                  >
-                    <option value="">Sélectionner un personnage</option>
-                    {Object.entries(characters)
-                      .filter(([key, char]) => {
-                        if (key === '') return false;
-                        if (selectedElement && char.element !== selectedElement) return false;
-                        if (selectedClass) {
-                          const classType = char.class === 'Tank' ? 'Tank'
-                            : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
-                          if (classType !== selectedClass) return false;
-                        }
-                        return true;
-                      })
-                      .map(([key, char]) => (
-                        <option key={key} value={key}>{char.name}</option>
-                      ))}
-                  </select>
-                </div>
- {/* 🔥 BOUTONS D'ACTION - VERSION COMPACTE */}
-       
-        {/* 🔥 BOUTONS D'ACTION - LAYOUT FINAL PERFECTIONNÉ */}
-              <div className="flex flex-col gap-2 w-full max-w-[95vw] mx-auto">
-                
-                {/* LIGNE 1 - BOUTONS VRAIMENT RÉTRÉCIS */}
-                <div className="flex items-center justify-center gap-1 w-full">
-                  <button
-                    onClick={handleResetStats}
-                    className="bg-gradient-to-r from-red-800 to-red-600 hover:from-red-700 hover:to-red-500 text-white font-bold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
-                  >
-                    Reset
-                  </button>
-                      {showDebugButton && (
-  <button
-    onClick={() => setShowHitboxes(!showHitboxes)}
-    className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs z-[10001]"
-  >
-    🐛 {showHitboxes ? 'HIDE' : 'SHOW'} HITBOX
-  </button>
-)}
+                {/* 🎯 VUE MAIN */}
+                {mobileView === 'main' && (
+                  <div className="w-full mx-auto py-4 pb-32 space-y-6">
+                    {/* ← pb-32 pour navigation + canvas */}
 
-                  <button
-                    onClick={handleSaveBuild}
-                    className="bg-gradient-to-r from-emerald-800 to-green-600 hover:from-green-600 hover:to-green-400 text-white font-bold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
-                  >
-                    Save
-                  </button>
-
-                  <button
-                    onClick={handleExportAllBuilds}
-                    className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
-                  >
-                    Export
-                  </button>
-
-                  <button
-                    onClick={handleImportBuild}
-                    className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
-                  >
-                    Import
-                  </button>
-                </div>
-
-                {/* LIGNE 2 - ICÔNES VERTICALES À GAUCHE + COMPTES CENTRÉS À DROITE */}
-                <div className="flex items-start justify-between w-full">
-                  
-                  {/* ICÔNES BUILDS - GRILLE 3x2 FINALE */}
-                  {isBuildsReady && recentBuilds.length > 0 && (
-                    <div className="grid grid-cols-3 grid-rows-2 gap-1 items-start max-h-16">
-                      {recentBuilds
-                        .filter((charKey) => characters[charKey])
-                        .slice(0, 6) // ← 6 icônes max en grille 3x2
-                        .map((charKey) => (
+                    {/* SECTION FILTRES + SELECT */}
+                    <div className="flex flex-col w-full gap-4">
+                      {/* Langues + Select */}
+                      <div className="flex items-center gap-2 justify-between">
+                        <div className="flex gap-2 items-center">
                           <img
-                            key={charKey}
-                            src={characters[charKey]?.icon || '/default.png'}
-                            alt={characters[charKey]?.name || charKey}
-                            onClick={() => handleClickBuildIcon(charKey)}
-                            className="w-7 h-7 rounded-full cursor-pointer border-2 border-purple-700 hover:scale-110 transition flex-shrink-0"
+                            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png"
+                            alt="Français"
+                            onClick={() => i18n.changeLanguage('fr')}
+                            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
                           />
-                        ))}
-                    </div>
-                  )}
+                          <img
+                            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png"
+                            alt="English"
+                            onClick={() => i18n.changeLanguage('en')}
+                            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
+                          />
+                        </div>
 
-                  {/* COMPTES SUR LA MÊME LIGNE CENTRÉS À DROITE */}
-                  <div className="flex items-center gap-1 justify-end">
-                    <button
-                      onClick={() => setShowNewAccountPopup(true)}
-                      className="bg-green-700 hover:bg-green-600 px-2 py-1 rounded text-white text-[8px] transition-colors flex-shrink-0"
-                    >
-                      ➕ Nouveau
-                    </button>
-
-                    {Object.keys(accounts).length > 1 && (
-                      <select
-                        value={activeAccount}
-                        onChange={(e) => handleAccountSwitch(e.target.value)}
-                        className="bg-gray-800 text-white px-1 py-1 rounded text-[8px] max-w-[60px] flex-shrink-0"
-                      >
-                        {Object.keys(accounts).map(acc => (
-                          <option key={acc} value={acc}>
-                            {acc.length > 5 ? acc.slice(0, 5) + '...' : acc}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                </div>
-              </div>
-            
-              </div>
-
-              {/* SECTION PRINCIPALE - NOYAUX + PERSONNAGE + GEMMES */}
-              <div className="flex flex-col items-center space-y-6">
-                
-                {/* LAYOUT RESPONSIVE NOYAUX/PERSONNAGE/GEMMES */}
-                <div className="w-full flex flex-col sm:flex-row justify-between items-start gap-4">
-                  
-                  {/* Bloc Noyaux */}
-                  <div className="w-full sm:w-1/3 text-white text-xs">
-                    <div className="text-center mb-2">
-                      <button
-                        className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-pink-200 font-semibold px-3 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                        onClick={() => setShowNoyauxPopup(true)}
-                      >
-                        {t("cores")}
-                      </button>
-                    </div>
-                    
-                    {hunterCores[selectedCharacter] ? (
-                      <div className="space-y-2 text-center">
-                        {['Offensif', 'Défensif', 'Endurance'].map((type, index) => {
-                          const core = hunterCores[selectedCharacter]?.[type];
-                          if (!core) return null;
-
-                          const showPrimary = core.primary && parseFloat(core.primaryValue) !== 0;
-                          const showSecondary = core.secondary && parseFloat(core.secondaryValue) !== 0;
-
-                          if (!showPrimary && !showSecondary) return null;
-
-                          return (
-                            <div key={index} className="border border-purple-800 rounded p-2 bg-gray-800">
-                              <p className="text-purple-200 font-semibold">{t(`coreTypes.${type}`)}</p>
-                              {showPrimary && (
-                                <p className="text-xs">{t(`stats.${core.primary}`)}: {core.primaryValue}</p>
-                              )}
-                              {showSecondary && (
-                                <p className="text-xs">{core.secondary}: {core.secondaryValue}</p>
-                              )}
-                            </div>
-                          );
-                        })}
+                        {/* Select Personnage */}
+                        <select
+                          value={selectedCharacter}
+                          onChange={(e) => {
+                            const selected = e.target.value;
+                            setSelectedCharacter(selected);
+                            const saved = localStorage.getItem(`${selected}`);
+                            if (saved) {
+                              const build = JSON.parse(saved);
+                              setFlatStats(build.flatStats);
+                              setStatsWithoutArtefact(build.statsWithoutArtefact);
+                              setArtifactsData(build.artifactsData);
+                              setHunterCores(build.hunterCores);
+                              showTankMessage(`Loaded saved build for ${selected} 😏`);
+                            } else {
+                              handleResetStats();
+                            }
+                          }}
+                          className="p-2 rounded bg-[#1c1c3c] text-white text-sm tank-target flex-1 max-w-[200px]"
+                        >
+                          <option value="">Sélectionner un personnage</option>
+                          {Object.entries(characters)
+                            .filter(([key, char]) => {
+                              if (key === '') return false;
+                              if (selectedElement && char.element !== selectedElement) return false;
+                              if (selectedClass) {
+                                const classType = char.class === 'Tank' ? 'Tank'
+                                  : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
+                                if (classType !== selectedClass) return false;
+                              }
+                              return true;
+                            })
+                            .map(([key, char]) => (
+                              <option key={key} value={key}>{char.name}</option>
+                            ))}
+                        </select>
                       </div>
-                    ) : (
-                      <p className="text-center text-gray-400">No cores defined</p>
-                    )}
-                  </div>
+                      {/* 🔥 BOUTONS D'ACTION - VERSION COMPACTE */}
 
-                  {/* Bloc Personnage Centre */}
-                  <div className="w-full sm:w-1/3 flex flex-col items-center">
-                    <div className="relative">
-                      {selectedCharacter && characters[selectedCharacter] && characters[selectedCharacter].img ? (
-                        <>
-                          <img
-                            src={characters[selectedCharacter].img}
-                            alt={characters[selectedCharacter].name}
-                            className="w-48 h-auto mb-2 relative z-10"
-                            id="targetToDestroy"
-                          />
-                         {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
+                      {/* 🔥 BOUTONS D'ACTION - LAYOUT FINAL PERFECTIONNÉ */}
+                      <div className="flex flex-col gap-2 w-full max-w-[95vw] mx-auto">
+
+                        {/* LIGNE 1 - BOUTONS VRAIMENT RÉTRÉCIS */}
+                        <div className="flex items-center justify-center gap-1 w-full">
+                          <button
+                            onClick={handleResetStats}
+                            className="bg-gradient-to-r from-red-800 to-red-600 hover:from-red-700 hover:to-red-500 text-white font-bold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
+                          >
+                            Reset
+                          </button>
+                          {showDebugButton && (
+                            <button
+                              onClick={() => setShowHitboxes(!showHitboxes)}
+                              className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs z-[10001]"
+                            >
+                              🐛 {showHitboxes ? 'HIDE' : 'SHOW'} HITBOX
+                            </button>
+                          )}
+
+                          <button
+                            onClick={handleSaveBuild}
+                            className="bg-gradient-to-r from-emerald-800 to-green-600 hover:from-green-600 hover:to-green-400 text-white font-bold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
+                          >
+                            Save
+                          </button>
+
+                          <button
+                            onClick={handleExportAllBuilds}
+                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
+                          >
+                            Export
+                          </button>
+
+                          <button
+                            onClick={handleImportBuild}
+                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
+                          >
+                            Import
+                          </button>
+                        </div>
+
+                        {/* LIGNE 2 - ICÔNES VERTICALES À GAUCHE + COMPTES CENTRÉS À DROITE */}
+                        <div className="flex items-start justify-between w-full">
+
+                          {/* ICÔNES BUILDS - GRILLE 3x2 FINALE */}
+                          {isBuildsReady && recentBuilds.length > 0 && (
+                            <div className="grid grid-cols-3 grid-rows-2 gap-1 items-start max-h-16">
+                              {recentBuilds
+                                .filter((charKey) => characters[charKey])
+                                .slice(0, 6) // ← 6 icônes max en grille 3x2
+                                .map((charKey) => (
+                                  <img
+                                    key={charKey}
+                                    src={characters[charKey]?.icon || '/default.png'}
+                                    alt={characters[charKey]?.name || charKey}
+                                    onClick={() => handleClickBuildIcon(charKey)}
+                                    className="w-7 h-7 rounded-full cursor-pointer border-2 border-purple-700 hover:scale-110 transition flex-shrink-0"
+                                  />
+                                ))}
+                            </div>
+                          )}
+
+                          {/* COMPTES SUR LA MÊME LIGNE CENTRÉS À DROITE */}
+                          <div className="flex items-center gap-1 justify-end">
+                            <button
+                              onClick={() => setShowNewAccountPopup(true)}
+                              className="bg-green-700 hover:bg-green-600 px-2 py-1 rounded text-white text-[8px] transition-colors flex-shrink-0"
+                            >
+                              ➕ Nouveau
+                            </button>
+
+                            {Object.keys(accounts).length > 1 && (
+                              <select
+                                value={activeAccount}
+                                onChange={(e) => handleAccountSwitch(e.target.value)}
+                                className="bg-gray-800 text-white px-1 py-1 rounded text-[8px] max-w-[60px] flex-shrink-0"
+                              >
+                                {Object.keys(accounts).map(acc => (
+                                  <option key={acc} value={acc}>
+                                    {acc.length > 5 ? acc.slice(0, 5) + '...' : acc}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* SECTION PRINCIPALE - NOYAUX + PERSONNAGE + GEMMES */}
+                    <div className="flex flex-col items-center space-y-6">
+
+                      {/* LAYOUT RESPONSIVE NOYAUX/PERSONNAGE/GEMMES */}
+                      <div className="w-full flex flex-col sm:flex-row justify-between items-start gap-4">
+
+                        {/* Bloc Noyaux */}
+                        <div className="w-full sm:w-1/3 text-white text-xs">
+                          <div className="text-center mb-2">
+                            <button
+                              className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-pink-200 font-semibold px-3 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                              onClick={() => setShowNoyauxPopup(true)}
+                            >
+                              {t("cores")}
+                            </button>
+                          </div>
+
+                          {hunterCores[selectedCharacter] ? (
+                            <div className="space-y-2 text-center">
+                              {['Offensif', 'Défensif', 'Endurance'].map((type, index) => {
+                                const core = hunterCores[selectedCharacter]?.[type];
+                                if (!core) return null;
+
+                                const showPrimary = core.primary && parseFloat(core.primaryValue) !== 0;
+                                const showSecondary = core.secondary && parseFloat(core.secondaryValue) !== 0;
+
+                                if (!showPrimary && !showSecondary) return null;
+
+                                return (
+                                  <div key={index} className="border border-purple-800 rounded p-2 bg-gray-800">
+                                    <p className="text-purple-200 font-semibold">{t(`coreTypes.${type}`)}</p>
+                                    {showPrimary && (
+                                      <p className="text-xs">{t(`stats.${core.primary}`)}: {core.primaryValue}</p>
+                                    )}
+                                    {showSecondary && (
+                                      <p className="text-xs">{core.secondary}: {core.secondaryValue}</p>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <p className="text-center text-gray-400">No cores defined</p>
+                          )}
+                        </div>
+
+                        {/* Bloc Personnage Centre */}
+                        <div className="w-full sm:w-1/3 flex flex-col items-center">
+                          <div className="relative">
+                            {selectedCharacter && characters[selectedCharacter] && characters[selectedCharacter].img ? (
+                              <>
+                                <img
+                                  src={characters[selectedCharacter].img}
+                                  alt={characters[selectedCharacter].name}
+                                  className="w-48 h-auto mb-2 relative z-10"
+                                  id="targetToDestroy"
+                                />
+                                {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
                                   <div
                                     className="absolute w-60 h-8 rounded-full blur-sm animate-fade-out z-0"
                                     style={{
@@ -5164,558 +5190,592 @@ const handleCloseBubble = () => {
                                     }}
                                   ></div>
                                 )}
-                        </>
-                      ) : (
-                        <img
-                          src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
-                          className="w-48 h-auto mb-2 relative z-10"
-                          id="targetToDestroy"
-                        />
-                      )}
+                              </>
+                            ) : (
+                              <img
+                                src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
+                                className="w-48 h-auto mb-2 relative z-10"
+                                id="targetToDestroy"
+                              />
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Bloc Gemmes */}
+                        <div className="w-full sm:w-1/3 text-white text-xs">
+                          <div className="text-center mb-2">
+                            <button
+                              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-blue-100 font-semibold px-3 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                              onClick={() => setShowGemPopup(true)}
+                            >
+                              {t("gems")}
+                            </button>
+                          </div>
+
+                          {Object.entries(gemData || {}).every(([_, stats]) =>
+                            Object.values(stats).every(value => !value)
+                          ) ? (
+                            <p className="text-center text-gray-400">No gems defined</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {Object.entries(gemData || {}).map(([color, stats]) => {
+                                const filtered = Object.entries(stats || {}).filter(([_, value]) => value);
+                                if (filtered.length === 0) return null;
+                                return (
+                                  <div key={color} className="border border-blue-700 rounded p-2 bg-gray-800 text-center">
+                                    <p className="text-blue-200 font-semibold">{t(`gemColors.${color}`, `${color} Gem`)}</p>
+                                    {filtered.map(([stat, value], i) => (
+                                      <p key={i} className="text-xs">{t(`stats.${stat}`, stat)}: {value}</p>
+                                    ))}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* SECTION ARME + STATS */}
+                      <div className="w-full space-y-4">
+
+                        {/* Bouton Arme */}
+                        <div className="flex items-center justify-center space-x-4">
+                          <button
+                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                            onClick={() => setShowWeaponPopup(true)}
+                          >
+                            {t("weapon")}
+                          </button>
+                          <p className="text-white text-sm">
+                            {hunterWeapons[selectedCharacter]
+                              ? `+${hunterWeapons[selectedCharacter].mainStat || 0} ${characters[selectedCharacter]?.scaleStat || ''}`
+                              : 'Aucune arme définie'}
+                          </p>
+                          <button
+                            onClick={() => setEditStatsMode(!editStatsMode)}
+                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                          >
+                            {getEditLabel()}
+                          </button>
+                        </div>
+
+                        {/* STATS FINALES OU ÉDITION */}
+                        {!editStatsMode ? (
+                          <div className="bg-gray-900 p-3 rounded-lg text-xs relative group w-full">
+                            <div className="font-bold text-white text-center mb-3">{t("statFinals")}</div>
+                            <div className="grid grid-cols-2 gap-x-3 gap-y-2 w-full text-gray-200 text-xs">
+                              {allStats.map((key) => {
+                                const base = typeof finalStatsWithoutArtefact[key] === 'number' ? finalStatsWithoutArtefact[key] : 0;
+                                const fromArtifact = typeof statsFromArtifacts[key] === 'number' ? statsFromArtifacts[key] : 0;
+                                const total = base + fromArtifact;
+
+                                return (
+                                  <div key={key} className="break-words text-center">
+                                    <span className="text-blue-300 block text-[10px]">{t(`stats.${key}`)}</span>
+                                    <span className="text-white font-semibold">{Math.floor(total)}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-4">
+                            {/* Flat Stats */}
+                            <div className="bg-gray-800 p-3 rounded-lg text-xs">
+                              <div className="font-bold mb-2 text-white text-center">Your flat stats</div>
+                              <div className="space-y-2">
+                                {Object.entries(flatStats).map(([key, value]) => (
+                                  <div key={key} className="flex justify-between items-center gap-2">
+                                    <label className="text-gray-300 text-xs flex-1">{key}</label>
+                                    <input
+                                      type="number"
+                                      value={value}
+                                      onChange={(e) =>
+                                        setFlatStats((prev) => ({ ...prev, [key]: +e.target.value }))
+                                      }
+                                      className="w-20 bg-black text-white px-2 py-1 rounded text-right text-xs"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Stats Without Artefact */}
+                            <div className="bg-gray-800 p-3 rounded-lg text-xs">
+                              <div className="font-bold mb-2 text-white text-center">Stats you see without Artefacts</div>
+                              <div className="space-y-2">
+                                {Object.entries(statsWithoutArtefact).map(([key, value]) => (
+                                  <div key={key} className="flex justify-between items-center gap-2">
+                                    <label className="text-gray-300 text-xs flex-1">{key}</label>
+                                    <input
+                                      type="number"
+                                      value={value}
+                                      onChange={(e) =>
+                                        setStatsWithoutArtefact((prev) => ({
+                                          ...prev,
+                                          [key]: +e.target.value,
+                                        }))
+                                      }
+                                      className="w-20 bg-black text-white px-2 py-1 rounded text-right text-xs"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* CANVAS SECTION - Plus petit et en bas */}
+                    <div className="w-full mt-8 mb-24">
+                      <div className="flex flex-col items-center gap-4 max-w-[350px] mx-auto">
+
+                        {/* Canvas 1 - Neige */}
+                        <div className="w-full">
+                          <canvas
+                            id="canvas-left"
+                            width="350"
+                            height="140"
+                            className="rounded-lg shadow-lg bg-black w-full h-auto border border-blue-500/30"
+                          />
+                          <p className="text-center text-xs text-blue-300 mt-1">🌨️ Royaume de Neige</p>
+                        </div>
+
+                        {/* Canvas 2 - Sanctuaire avec Portail */}
+                        <div className="w-full relative">
+                          <canvas
+                            id="canvas-center"
+                            width="350"
+                            height="140"
+                            className="rounded-lg shadow-lg bg-black w-full h-auto border border-purple-500/30"
+                          />
+
+                          {/* Portail cliquable */}
+                          <div
+                            className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
+                            style={{
+                              top: '35%',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              width: '25%',
+                              height: '30%'
+                            }}
+                            onClick={() => {
+                              showTankMessage("🚪 Vivement Séville et ses 40! Qu'on se cache d'ici", true);
+                            }}
+                          >
+                            {/* Zone cliquable invisible */}
+                          </div>
+
+                          <p className="text-center text-xs text-purple-300 mt-1">🏛️ Sanctuaire Central</p>
+                        </div>
+
+                        {/* Canvas 3 - Terres Vertes */}
+                        <div className="w-full">
+                          <canvas
+                            id="canvas-right"
+                            width="350"
+                            height="140"
+                            className="rounded-lg shadow-lg bg-black w-full h-auto border border-green-500/30"
+                          />
+                          <p className="text-center text-xs text-green-300 mt-1">🌿 Terres Vertes</p>
+                        </div>
+
+                      </div>
                     </div>
                   </div>
+                )}
 
-                  {/* Bloc Gemmes */}
-                  <div className="w-full sm:w-1/3 text-white text-xs">
-                    <div className="text-center mb-2">
-                      <button
-                        className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-blue-100 font-semibold px-3 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                        onClick={() => setShowGemPopup(true)}
-                      >
-                        {t("gems")}
-                      </button>
+                {/* 🎯 VUE GAUCHE - ARTEFACTS */}
+                {mobileView === 'left' && (
+                  <div className="w-full mx-auto py-4 pb-24">
+                    <div className="space-y-4">
+                      {leftArtifacts.map((item, idx) => (
+                        <ArtifactCard
+                          key={`${activeAccount}-mobile-left-${item.title}`}
+                          title={item.title}
+                          mainStats={item.mainStats}
+                          showTankMessage={showTankMessage}
+                          recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
+                          artifactData={artifactsData[item.title]}
+                          statsWithoutArtefact={statsWithoutArtefact}
+                          flatStats={flatStats}
+                          onSetIconClick={openSetSelector}
+                          onArtifactSave={handleSaveArtifactToLibrary}
+                          hunter={characters[selectedCharacter]}
+                          substatsMinMaxByIncrements={substatsMinMaxByIncrements}
+                          disableComparisonButton={false}
+                          openComparisonPopup={openComparisonPopup}
+                          artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
+                          onArtifactChange={(updaterFn) =>
+                            setArtifactsData(prev => ({
+                              ...prev,
+                              [item.title]: typeof updaterFn === 'function'
+                                ? updaterFn(prev[item.title])
+                                : { ...prev[item.title], ...updaterFn }
+                            }))
+                          }
+                          onScoreCalculated={handleArtifactScoreUpdate}
+                          onReportGenerated={handleReportGenerated}
+                        />
+                      ))}
                     </div>
-                    
-                    {Object.entries(gemData || {}).every(([_, stats]) =>
-                      Object.values(stats).every(value => !value)
-                    ) ? (
-                      <p className="text-center text-gray-400">No gems defined</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {Object.entries(gemData || {}).map(([color, stats]) => {
-                          const filtered = Object.entries(stats || {}).filter(([_, value]) => value);
-                          if (filtered.length === 0) return null;
-                          return (
-                            <div key={color} className="border border-blue-700 rounded p-2 bg-gray-800 text-center">
-                              <p className="text-blue-200 font-semibold">{t(`gemColors.${color}`, `${color} Gem`)}</p>
-                              {filtered.map(([stat, value], i) => (
-                                <p key={i} className="text-xs">{t(`stats.${stat}`, stat)}: {value}</p>
-                              ))}
-                            </div>
-                          );
-                        })}
-                      </div>
+                  </div>
+                )}
+
+                {/* 🎯 VUE DROITE - ARTEFACTS */}
+                {mobileView === 'right' && (
+                  <div className="w-full mx-auto py-4 pb-24">
+                    <div className="space-y-4">
+                      {rightArtifacts.map((item, idx) => (
+                        <ArtifactCard
+                          key={`${activeAccount}-mobile-right-${item.title}`}
+                          title={item.title}
+                          mainStats={item.mainStats}
+                          showTankMessage={showTankMessage}
+                          recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
+                          artifactData={artifactsData[item.title]}
+                          statsWithoutArtefact={statsWithoutArtefact}
+                          flatStats={flatStats}
+                          onSetIconClick={openSetSelector}
+                          onArtifactSave={handleSaveArtifactToLibrary}
+                          handleLoadSavedSet={handleLoadSavedSet}
+                          hunter={characters[selectedCharacter]}
+                          substatsMinMaxByIncrements={substatsMinMaxByIncrements}
+                          disableComparisonButton={false}
+                          openComparisonPopup={openComparisonPopup}
+                          artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
+                          onArtifactChange={(updaterFn) =>
+                            setArtifactsData(prev => ({
+                              ...prev,
+                              [item.title]: typeof updaterFn === 'function'
+                                ? updaterFn(prev[item.title])
+                                : { ...prev[item.title], ...updaterFn }
+                            }))
+                          }
+                          onScoreCalculated={handleArtifactScoreUpdate}
+                          onReportGenerated={handleReportGenerated}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 🎯 NAVIGATION MOBILE FIXE */}
+                <div className="fixed bottom-4 left-0 right-0 z-50 px-4">
+                  <div className="flex justify-center gap-3">
+                    {mobileView !== 'main' && (
+                      <button
+                        onClick={() => setMobileView('main')}
+                        className="px-4 py-2 bg-[#2d2d5c] hover:bg-[#3d3d7c] text-white rounded-lg shadow-lg text-sm font-medium transition-colors"
+                      >
+                        🏠 Main
+                      </button>
+                    )}
+
+                    {mobileView !== 'left' && (
+                      <button
+                        onClick={() => setMobileView('left')}
+                        className="px-4 py-2 text-white rounded-lg shadow-lg text-sm font-medium transition-colors"
+                        style={{
+                          backgroundColor: 'rgba(45, 45, 92, 0.3)', // ← Plus transparent
+                          backdropFilter: 'blur(8px)' // ← Effet blur optionnel
+                        }}
+                      >
+                        {t('left')}
+                      </button>
+                    )}
+
+                    {mobileView !== 'right' && (
+                      <button
+                        onClick={() => setMobileView('right')}
+                        className="px-4 py-2 text-white rounded-lg shadow-lg text-sm font-medium transition-colors"
+                        style={{
+                          backgroundColor: 'rgba(45, 45, 92, 0.3)', // ← Plus transparent
+                          backdropFilter: 'blur(8px)' // ← Effet blur optionnel
+                        }}
+                      >
+                        {t('right')}
+                      </button>
                     )}
                   </div>
                 </div>
 
-                {/* SECTION ARME + STATS */}
-                <div className="w-full space-y-4">
-                  
-                  {/* Bouton Arme */}
-                  <div className="flex items-center justify-center space-x-4">
-                    <button
-                      className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                      onClick={() => setShowWeaponPopup(true)}
-                    >
-                      {t("weapon")}
-                    </button>
-                    <p className="text-white text-sm">
-                      {hunterWeapons[selectedCharacter]
-                        ? `+${hunterWeapons[selectedCharacter].mainStat || 0} ${characters[selectedCharacter]?.scaleStat || ''}`
-                        : 'Aucune arme définie'}
-                    </p>
-                    <button
-                      onClick={() => setEditStatsMode(!editStatsMode)}
-                      className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                    >
-                      {getEditLabel()}
-                    </button>
+                {/* POPUPS ET MODALES (restent identiques) */}
+                {showImportSaveWarning && (
+                  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999]">
+                    <div className="bg-[#1a1a2e] text-white p-6 rounded-xl shadow-lg border border-purple-700 text-center max-w-sm">
+                      <p className="text-lg font-bold mb-4">
+                        ⚠️ Shadow Override Detected
+                      </p>
+                      <p className="text-sm mb-6">
+                        If you save this data,<br />
+                        your current system build will be <span className="text-red-400">overwritten</span>.<br />
+                        Do you really want to save this imported shadow?
+                      </p>
+                      <div className="flex justify-center gap-4">
+                        <button
+                          onClick={() => {
+                            setShowImportSaveWarning(false);
+                            setIsImportedBuild(false);
+                            handleSaveBuild();
+                            playMusic();
+                          }}
+                          className="bg-green-700 hover:bg-green-600 px-4 py-2 rounded text-white"
+                        >
+                          Yes
+                        </button>
+                        <button
+                          onClick={() => setShowImportSaveWarning(false)}
+                          className="bg-red-700 hover:bg-red-600 px-4 py-2 rounded text-white"
+                        >
+                          No
+                        </button>
+                      </div>
+                    </div>
                   </div>
+                )}
 
-                  {/* STATS FINALES OU ÉDITION */}
-                  {!editStatsMode ? (
-                    <div className="bg-gray-900 p-3 rounded-lg text-xs relative group w-full">
-                      <div className="font-bold text-white text-center mb-3">{t("statFinals")}</div>
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-2 w-full text-gray-200 text-xs">
-                        {allStats.map((key) => {
-                          const base = typeof finalStatsWithoutArtefact[key] === 'number' ? finalStatsWithoutArtefact[key] : 0;
-                          const fromArtifact = typeof statsFromArtifacts[key] === 'number' ? statsFromArtifacts[key] : 0;
-                          const total = base + fromArtifact;
-
-                          return (
-                            <div key={key} className="break-words text-center">
-                              <span className="text-blue-300 block text-[10px]">{t(`stats.${key}`)}</span>
-                              <span className="text-white font-semibold">{Math.floor(total)}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-4">
-                      {/* Flat Stats */}
-                      <div className="bg-gray-800 p-3 rounded-lg text-xs">
-                        <div className="font-bold mb-2 text-white text-center">Your flat stats</div>
-                        <div className="space-y-2">
-                          {Object.entries(flatStats).map(([key, value]) => (
-                            <div key={key} className="flex justify-between items-center gap-2">
-                              <label className="text-gray-300 text-xs flex-1">{key}</label>
-                              <input
-                                type="number"
-                                value={value}
-                                onChange={(e) =>
-                                  setFlatStats((prev) => ({ ...prev, [key]: +e.target.value }))
-                                }
-                                className="w-20 bg-black text-white px-2 py-1 rounded text-right text-xs"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Stats Without Artefact */}
-                      <div className="bg-gray-800 p-3 rounded-lg text-xs">
-                        <div className="font-bold mb-2 text-white text-center">Stats you see without Artefacts</div>
-                        <div className="space-y-2">
-                          {Object.entries(statsWithoutArtefact).map(([key, value]) => (
-                            <div key={key} className="flex justify-between items-center gap-2">
-                              <label className="text-gray-300 text-xs flex-1">{key}</label>
-                              <input
-                                type="number"
-                                value={value}
-                                onChange={(e) =>
-                                  setStatsWithoutArtefact((prev) => ({
-                                    ...prev,
-                                    [key]: +e.target.value,
-                                  }))
-                                }
-                                className="w-20 bg-black text-white px-2 py-1 rounded text-right text-xs"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* CANVAS SECTION - Plus petit et en bas */}
-              <div className="w-full mt-8 mb-24">
-  <div className="flex flex-col items-center gap-4 max-w-[350px] mx-auto">
-    
-    {/* Canvas 1 - Neige */}
-    <div className="w-full">
-      <canvas 
-        id="canvas-left" 
-        width="350" 
-        height="140" 
-        className="rounded-lg shadow-lg bg-black w-full h-auto border border-blue-500/30" 
-      />
-      <p className="text-center text-xs text-blue-300 mt-1">🌨️ Royaume de Neige</p>
-    </div>
-    
-    {/* Canvas 2 - Sanctuaire avec Portail */}
-    <div className="w-full relative">
-      <canvas 
-        id="canvas-center" 
-        width="350" 
-        height="140" 
-        className="rounded-lg shadow-lg bg-black w-full h-auto border border-purple-500/30" 
-      />
-      
-      {/* Portail cliquable */}
-      <div
-  className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
-  style={{
-    top: '35%',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: '25%',
-    height: '30%'
-  }}
-  onClick={() => {
-    showTankMessage("🚪 Vivement Séville et ses 40! Qu'on se cache d'ici", true);
-  }}
->
-  {/* Zone cliquable invisible */}
-</div>
-      
-      <p className="text-center text-xs text-purple-300 mt-1">🏛️ Sanctuaire Central</p>
-    </div>
-    
-    {/* Canvas 3 - Terres Vertes */}
-    <div className="w-full">
-      <canvas 
-        id="canvas-right" 
-        width="350" 
-        height="140" 
-        className="rounded-lg shadow-lg bg-black w-full h-auto border border-green-500/30" 
-      />
-      <p className="text-center text-xs text-green-300 mt-1">🌿 Terres Vertes</p>
-    </div>
-    
-  </div>
-</div>
-            </div>
-          )}
-
-          {/* 🎯 VUE GAUCHE - ARTEFACTS */}
-          {mobileView === 'left' && (
-            <div className="w-full mx-auto py-4 pb-24">
-              <div className="space-y-4">
-                {leftArtifacts.map((item, idx) => (
-                  <ArtifactCard
-                    key={`${activeAccount}-mobile-left-${item.title}`}
-                    title={item.title}
-                    mainStats={item.mainStats}
-                    showTankMessage={showTankMessage}
-                    recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
-                    artifactData={artifactsData[item.title]}
-                    statsWithoutArtefact={statsWithoutArtefact}
-                    flatStats={flatStats}
-                    onSetIconClick={openSetSelector}
-                    onArtifactSave={handleSaveArtifactToLibrary}
-                    hunter={characters[selectedCharacter]}
-                    substatsMinMaxByIncrements={substatsMinMaxByIncrements}
-                    disableComparisonButton={false}
-                    openComparisonPopup={openComparisonPopup}
-                    artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
-                    onArtifactChange={(updaterFn) =>
-                      setArtifactsData(prev => ({
-                        ...prev,
-                        [item.title]: typeof updaterFn === 'function'
-                          ? updaterFn(prev[item.title])
-                          : { ...prev[item.title], ...updaterFn }
-                      }))
-                    }
-                    onScoreCalculated={handleArtifactScoreUpdate}
-                    onReportGenerated={handleReportGenerated}
+                {/* Autres popups... (garde tes popups existants) */}
+                {showNoyauxPopup && (
+                  <NoyauxPopup
+                    hunterName={selectedCharacter}
+                    onClose={() => setShowNoyauxPopup(false)}
+                    onSave={handleSaveNoyaux}
+                    existingCores={hunterCores[selectedCharacter] || {}}
+                    isMobile={isMobile}
                   />
-                ))}
-              </div>
-            </div>
-          )}
+                )}
 
-          {/* 🎯 VUE DROITE - ARTEFACTS */}
-          {mobileView === 'right' && (
-            <div className="w-full mx-auto py-4 pb-24">
-              <div className="space-y-4">
-                {rightArtifacts.map((item, idx) => (
-                  <ArtifactCard
-                    key={`${activeAccount}-mobile-right-${item.title}`}
-                    title={item.title}
-                    mainStats={item.mainStats}
-                    showTankMessage={showTankMessage}
-                    recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
-                    artifactData={artifactsData[item.title]}
-                    statsWithoutArtefact={statsWithoutArtefact}
-                    flatStats={flatStats}
-                    onSetIconClick={openSetSelector}
-                    onArtifactSave={handleSaveArtifactToLibrary}
-                    handleLoadSavedSet={handleLoadSavedSet}
-                    hunter={characters[selectedCharacter]}
-                    substatsMinMaxByIncrements={substatsMinMaxByIncrements}
-                    disableComparisonButton={false}
-                    openComparisonPopup={openComparisonPopup}
-                    artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
-                    onArtifactChange={(updaterFn) =>
-                      setArtifactsData(prev => ({
-                        ...prev,
-                        [item.title]: typeof updaterFn === 'function'
-                          ? updaterFn(prev[item.title])
-                          : { ...prev[item.title], ...updaterFn }
-                      }))
-                    }
-                    onScoreCalculated={handleArtifactScoreUpdate}
-                    onReportGenerated={handleReportGenerated}
+                {showGemPopup && (
+                  <GemmesPopup
+                    gemData={gemData}
+                    onClose={() => setShowGemPopup(false)}
+                    onSave={handleSaveGems}
+                    isMobile={isMobile}
                   />
-                ))}
-              </div>
-            </div>
-          )}
+                )}
 
-          {/* 🎯 NAVIGATION MOBILE FIXE */}
-          <div className="fixed bottom-4 left-0 right-0 z-50 px-4">
-            <div className="flex justify-center gap-3">
-              {mobileView !== 'main' && (
-                <button
-                  onClick={() => setMobileView('main')}
-                  className="px-4 py-2 bg-[#2d2d5c] hover:bg-[#3d3d7c] text-white rounded-lg shadow-lg text-sm font-medium transition-colors"
-                >
-                  🏠 Main
-                </button>
-              )}
-              
-              {mobileView !== 'left' && (
-  <button
-    onClick={() => setMobileView('left')}
-    className="px-4 py-2 text-white rounded-lg shadow-lg text-sm font-medium transition-colors"
-    style={{
-      backgroundColor: 'rgba(45, 45, 92, 0.3)', // ← Plus transparent
-      backdropFilter: 'blur(8px)' // ← Effet blur optionnel
+                {showNewAccountPopup && (
+                  <NewAccountPopup
+                    newAccountName={newAccountName}
+                    setNewAccountName={setNewAccountName}
+                    setShowNewAccountPopup={setShowNewAccountPopup}
+                    createNewAccount={createNewAccount}
+                  />
+                )}
+
+                {showBeruInteractionMenu && (
+                  <BeruInteractionMenu
+                    position={beruMenuPosition}
+                    onClose={closeBeruMenu}
+                    selectedCharacter={selectedCharacter}
+                    characters={characters}
+                    showTankMessage={showTankMessage}
+                    currentArtifacts={artifactsData}
+                    currentStats={finalStats}
+                    currentCores={hunterCores[selectedCharacter] || {}}
+                    currentGems={gemData}
+                    multiAccountsData={accounts}
+                    onReportGenerated={handleReportGenerated}
+                    substatsMinMaxByIncrements={substatsMinMaxByIncrements}
+                    existingScores={artifactScores}
+                  />
+                )}
+
+                {showKaiselInteractionMenu && (
+                  <KaiselInteractionMenu
+                    position={kaiselMenuPosition}
+                    onClose={closeKaiselMenu}
+                    selectedCharacter={selectedCharacter}
+                    characters={characters}
+                    showTankMessage={showTankMessage}
+                    currentArtifacts={artifactsData}
+                    currentStats={finalStats}
+                    currentCores={hunterCores[selectedCharacter] || {}}
+                    multiAccountsData={accounts}
+                    substatsMinMaxByIncrements={substatsMinMaxByIncrements}
+                    existingScores={artifactScores}
+                    onShowHallOfFlame={() => setShowHallOfFlameDebug(true)} // ← AJOUTE CETTE LIGNE
+                    showDebugButton={showDebugButton} // ← ET CETTE LIGNE AUSSI
+                  />
+                )}
+
+{showHallOfFlameDebug && (
+  <HallOfFlameDebugPopup
+    isOpen={showHallOfFlameDebug}
+    onClose={() => setShowHallOfFlameDebug(false)}
+    selectedCharacter={selectedCharacter}
+    characterData={characters[selectedCharacter]}
+    currentStats={finalStats}
+    currentArtifacts={artifactsData}
+    statsFromArtifacts={statsFromArtifacts} 
+    currentCores={hunterCores[selectedCharacter] || {}}
+    currentGems={gemData}
+    currentWeapon={hunterWeapons[selectedCharacter] || {}}
+    showTankMessage={showTankMessage}
+    onSave={{
+      // 🎯 Fonction avec callback pour la page classement
+      showRankings: () => setShowHallOfFlamePage(true)
     }}
-  >
-    {t('left')}
-  </button>
+  />
 )}
 
-{mobileView !== 'right' && (
-  <button
-    onClick={() => setMobileView('right')}
-    className="px-4 py-2 text-white rounded-lg shadow-lg text-sm font-medium transition-colors"
-    style={{
-      backgroundColor: 'rgba(45, 45, 92, 0.3)', // ← Plus transparent
-      backdropFilter: 'blur(8px)' // ← Effet blur optionnel
+{showHallOfFlamePage && (
+  <HallOfFlamePage
+    onClose={() => setShowHallOfFlamePage(false)}
+    showTankMessage={showTankMessage}
+    characters={characters}
+    onNavigateToBuilder={() => {
+      setShowHallOfFlamePage(false);
+      showTankMessage("🚀 Retour au Builder ! Créez un build légendaire !", true, 'kaisel');
     }}
-  >
-    {t('right')}
-  </button>
+  />
 )}
-            </div>
-          </div>
 
-          {/* POPUPS ET MODALES (restent identiques) */}
-          {showImportSaveWarning && (
-            <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999]">
-              <div className="bg-[#1a1a2e] text-white p-6 rounded-xl shadow-lg border border-purple-700 text-center max-w-sm">
-                <p className="text-lg font-bold mb-4">
-                  ⚠️ Shadow Override Detected
-                </p>
-                <p className="text-sm mb-6">
-                  If you save this data,<br />
-                  your current system build will be <span className="text-red-400">overwritten</span>.<br />
-                  Do you really want to save this imported shadow?
-                </p>
-                <div className="flex justify-center gap-4">
-                  <button
-                    onClick={() => {
-                      setShowImportSaveWarning(false);
-                      setIsImportedBuild(false);
-                      handleSaveBuild();
-                      playMusic();
+                <GoldenPapyrusIcon
+                  isVisible={showPapyrus}
+                  onClick={handleOpenReport}
+                />
+
+                <BeruReportSystem
+                  isOpen={showReportSystem}
+                  onClose={handleCloseReport}
+                  currentReport={currentReport}
+                  reportHistory={reportHistory}
+                  onSaveReport={handleSaveReport}
+                />
+
+
+                {showHitboxes && Object.entries(hitboxPositions).map(([entityId, pos]) => (
+                  <div
+                    key={entityId}
+                    style={{
+                      position: 'fixed',
+                      left: pos.left,
+                      top: pos.top,
+                      width: pos.width,
+                      height: pos.height,
+                      border: `2px dashed ${pos.color}`,
+                      backgroundColor: `${pos.color}33`,
+                      pointerEvents: 'none',
+                      zIndex: 9999,
+                      fontSize: '10px',
+                      color: 'white',
+                      fontWeight: 'bold'
                     }}
-                    className="bg-green-700 hover:bg-green-600 px-4 py-2 rounded text-white"
                   >
-                    Yes
-                  </button>
-                  <button
-                    onClick={() => setShowImportSaveWarning(false)}
-                    className="bg-red-700 hover:bg-red-600 px-4 py-2 rounded text-white"
-                  >
-                    No
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+                    {entityId}
+                  </div>
+                ))}
+                {showSernPopup && (
+                  <>
+                    {/* 🌫️ BLUR OVERLAY - TOUT LE SITE */}
+                    <div
+                      className="fixed inset-0 z-[9998]"
+                      style={{
+                        backdropFilter: 'blur(8px)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        animation: 'sernAppear 0.5s ease-out'
+                      }}
+                    />
 
-          {/* Autres popups... (garde tes popups existants) */}
-          {showNoyauxPopup && (
-            <NoyauxPopup
-              hunterName={selectedCharacter}
-              onClose={() => setShowNoyauxPopup(false)}
-              onSave={handleSaveNoyaux}
-              existingCores={hunterCores[selectedCharacter] || {}}
-              isMobile={isMobile}
-            />
-          )}
-
-          {showGemPopup && (
-            <GemmesPopup
-              gemData={gemData}
-              onClose={() => setShowGemPopup(false)}
-              onSave={handleSaveGems}
-              isMobile={isMobile}
-            />
-          )}
-
-          {showNewAccountPopup && (
-            <NewAccountPopup
-              newAccountName={newAccountName}
-              setNewAccountName={setNewAccountName}
-              setShowNewAccountPopup={setShowNewAccountPopup}
-              createNewAccount={createNewAccount}
-            />
-          )}
-
-          {showBeruInteractionMenu && (
-            <BeruInteractionMenu
-              position={beruMenuPosition}
-              onClose={closeBeruMenu}
-              selectedCharacter={selectedCharacter}
-              characters={characters}
-              showTankMessage={showTankMessage}
-              currentArtifacts={artifactsData}
-              currentStats={finalStats}
-              currentCores={hunterCores[selectedCharacter] || {}}
-              currentGems={gemData}
-              multiAccountsData={accounts}
-              onReportGenerated={handleReportGenerated}
-              substatsMinMaxByIncrements={substatsMinMaxByIncrements}
-              existingScores={artifactScores}
-            />
-          )}
-
-          {showKaiselInteractionMenu && (
-            <KaiselInteractionMenu
-              position={kaiselMenuPosition}
-              onClose={closeKaiselMenu}
-              selectedCharacter={selectedCharacter}
-              characters={characters}
-              showTankMessage={showTankMessage}
-              currentArtifacts={artifactsData}
-              currentStats={finalStats}
-              currentCores={hunterCores[selectedCharacter] || {}}
-              multiAccountsData={accounts}
-              substatsMinMaxByIncrements={substatsMinMaxByIncrements}
-              existingScores={artifactScores}
-            />
-          )}
-
-          <GoldenPapyrusIcon
-            isVisible={showPapyrus}
-            onClick={handleOpenReport}
-          />
-
-          <BeruReportSystem
-            isOpen={showReportSystem}
-            onClose={handleCloseReport}
-            currentReport={currentReport}
-            reportHistory={reportHistory}
-            onSaveReport={handleSaveReport}
-          />
-    
-          
-          {showHitboxes && Object.entries(hitboxPositions).map(([entityId, pos]) => (
-  <div
-    key={entityId}
-    style={{
-      position: 'fixed',
-      left: pos.left,
-      top: pos.top,
-      width: pos.width,
-      height: pos.height,
-      border: `2px dashed ${pos.color}`,
-      backgroundColor: `${pos.color}33`,
-      pointerEvents: 'none',
-      zIndex: 9999,
-      fontSize: '10px',
-      color: 'white',
-      fontWeight: 'bold'
-    }}
-  >
-    {entityId}
-  </div>
-))}
-          {showSernPopup && (
-  <>
-    {/* 🌫️ BLUR OVERLAY - TOUT LE SITE */}
-    <div 
-      className="fixed inset-0 z-[9998]"
-      style={{
-        backdropFilter: 'blur(8px)',
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        animation: 'sernAppear 0.5s ease-out'
-      }}
-    />
-    
-    {/* 🚨 POPUP PRINCIPALE */}
-    <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4">
-      <div
-        ref={popupRef}
-        className="relative bg-black border-4 border-red-500 rounded-xl shadow-2xl 
+                    {/* 🚨 POPUP PRINCIPALE */}
+                    <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4">
+                      <div
+                        ref={popupRef}
+                        className="relative bg-black border-4 border-red-500 rounded-xl shadow-2xl 
                    max-w-[800px] w-full max-h-[85vh] overflow-hidden
                    animate-bounce-gentle"
-        style={{
-          background: 'linear-gradient(135deg, #000000 0%, #1a0000 50%, #000000 100%)',
-          boxShadow: '0 0 50px rgba(255, 0, 0, 0.5), 0 0 100px rgba(255, 0, 0, 0.3), inset 0 0 50px rgba(255, 0, 0, 0.1)',
-          border: '4px solid #ff0000',
-          animation: 'sernPulse 2s infinite, sernSlideIn 0.8s ease-out'
-        }}
-      >
-        {/* 🔴 HEADER DRAMATIQUE */}
-        <div className="relative p-4 border-b-2 border-red-500 bg-gradient-to-r from-red-900/50 to-black/50">
-          <div className="flex items-center justify-center gap-3">
-            <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
-            <h1 className="text-red-400 font-bold text-xl tracking-widest animate-pulse">
-              ⚠️ ALERTE SERN - INFRACTION N-404 ⚠️
-            </h1>
-            <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
-          </div>
-          
-          {/* 🎯 SCANNING EFFECT */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent animate-scan"></div>
-        </div>
+                        style={{
+                          background: 'linear-gradient(135deg, #000000 0%, #1a0000 50%, #000000 100%)',
+                          boxShadow: '0 0 50px rgba(255, 0, 0, 0.5), 0 0 100px rgba(255, 0, 0, 0.3), inset 0 0 50px rgba(255, 0, 0, 0.1)',
+                          border: '4px solid #ff0000',
+                          animation: 'sernPulse 2s infinite, sernSlideIn 0.8s ease-out'
+                        }}
+                      >
+                        {/* 🔴 HEADER DRAMATIQUE */}
+                        <div className="relative p-4 border-b-2 border-red-500 bg-gradient-to-r from-red-900/50 to-black/50">
+                          <div className="flex items-center justify-center gap-3">
+                            <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+                            <h1 className="text-red-400 font-bold text-xl tracking-widest animate-pulse">
+                              ⚠️ ALERTE SERN - INFRACTION N-404 ⚠️
+                            </h1>
+                            <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+                          </div>
 
-        {/* 🖼️ IMAGE SECTION */}
-        <div className="relative p-6 flex justify-center bg-gradient-to-b from-black/80 to-gray-900/80">
-          <img
-            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747680569/SERN_ab7od6.png"
-            alt="SERN - Sung Bobby Jones"
-            className="max-w-full max-h-[300px] object-contain rounded-lg shadow-2xl"
-            style={{
-              filter: 'drop-shadow(0 0 20px rgba(255, 0, 0, 0.5))',
-              animation: 'sernGlow 3s ease-in-out infinite'
-            }}
-          />
-          
-          {/* 🌟 PARTICULES FLOTTANTES */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-[20%] left-[10%] w-2 h-2 bg-red-400 rounded-full animate-float-1"></div>
-            <div className="absolute top-[60%] right-[15%] w-1 h-1 bg-red-300 rounded-full animate-float-2"></div>
-            <div className="absolute bottom-[30%] left-[80%] w-1.5 h-1.5 bg-red-500 rounded-full animate-float-3"></div>
-          </div>
-        </div>
+                          {/* 🎯 SCANNING EFFECT */}
+                          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent animate-scan"></div>
+                        </div>
 
-        {/* 📜 TEXTE ZONE AVEC AUTOSCROLL */}
-        <div 
-          ref={popupRef}
-          className="relative p-6 bg-gradient-to-b from-gray-900/90 to-black/95 max-h-[40vh] overflow-y-auto scrollbar-custom scroll-smooth"
-          id="sern-text-container"
-        >
-          <div
-            ref={dytextRef}
-            className="text-green-400 font-mono text-sm leading-relaxed tracking-wide 
+                        {/* 🖼️ IMAGE SECTION */}
+                        <div className="relative p-6 flex justify-center bg-gradient-to-b from-black/80 to-gray-900/80">
+                          <img
+                            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747680569/SERN_ab7od6.png"
+                            alt="SERN - Sung Bobby Jones"
+                            className="max-w-full max-h-[300px] object-contain rounded-lg shadow-2xl"
+                            style={{
+                              filter: 'drop-shadow(0 0 20px rgba(255, 0, 0, 0.5))',
+                              animation: 'sernGlow 3s ease-in-out infinite'
+                            }}
+                          />
+
+                          {/* 🌟 PARTICULES FLOTTANTES */}
+                          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            <div className="absolute top-[20%] left-[10%] w-2 h-2 bg-red-400 rounded-full animate-float-1"></div>
+                            <div className="absolute top-[60%] right-[15%] w-1 h-1 bg-red-300 rounded-full animate-float-2"></div>
+                            <div className="absolute bottom-[30%] left-[80%] w-1.5 h-1.5 bg-red-500 rounded-full animate-float-3"></div>
+                          </div>
+                        </div>
+
+                        {/* 📜 TEXTE ZONE AVEC AUTOSCROLL */}
+                        <div
+                          ref={popupRef}
+                          className="relative p-6 bg-gradient-to-b from-gray-900/90 to-black/95 max-h-[40vh] overflow-y-auto scrollbar-custom scroll-smooth"
+                          id="sern-text-container"
+                        >
+                          <div
+                            ref={dytextRef}
+                            className="text-green-400 font-mono text-sm leading-relaxed tracking-wide 
                        whitespace-pre-wrap break-words overflow-wrap-anywhere 
                        min-h-[100px] max-w-full"
-            style={{
-              textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
-              wordBreak: 'break-word',
-              overflowWrap: 'break-word',
-              animation: 'textGlow 2s ease-in-out infinite alternate'
-            }}
-          />
-          
-          {/* 🔥 TERMINAL CURSOR */}
-          <span className="inline-block w-2 h-4 bg-green-400 ml-1 animate-pulse"></span>
-        </div>
+                            style={{
+                              textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word',
+                              animation: 'textGlow 2s ease-in-out infinite alternate'
+                            }}
+                          />
 
-        {/* ⚡ FOOTER EFFECTS */}
-        <div className="relative p-4 border-t-2 border-red-500 bg-gradient-to-r from-black/90 to-red-900/30">
-          <div className="flex justify-center items-center gap-4 text-red-300 text-xs">
-            <span className="animate-pulse">● CONNEXION SÉCURISÉE</span>
-            <span className="animate-bounce">● ANALYSE EN COURS</span>
-            <span className="animate-ping">● VERDICT IMMINENT</span>
-          </div>
-          
-          {/* 🎯 PROGRESS BAR FAKE */}
-          <div className="mt-2 w-full bg-gray-800 rounded-full h-1 overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-red-500 to-red-300 rounded-full animate-progress"></div>
-          </div>
-        </div>
+                          {/* 🔥 TERMINAL CURSOR */}
+                          <span className="inline-block w-2 h-4 bg-green-400 ml-1 animate-pulse"></span>
+                        </div>
 
-        {/* 🔴 CORNER ACCENTS */}
-        <div className="absolute top-2 left-2 w-4 h-4 border-l-2 border-t-2 border-red-500"></div>
-        <div className="absolute top-2 right-2 w-4 h-4 border-r-2 border-t-2 border-red-500"></div>
-        <div className="absolute bottom-2 left-2 w-4 h-4 border-l-2 border-b-2 border-red-500"></div>
-        <div className="absolute bottom-2 right-2 w-4 h-4 border-r-2 border-b-2 border-red-500"></div>
-      </div>
-    </div>
+                        {/* ⚡ FOOTER EFFECTS */}
+                        <div className="relative p-4 border-t-2 border-red-500 bg-gradient-to-r from-black/90 to-red-900/30">
+                          <div className="flex justify-center items-center gap-4 text-red-300 text-xs">
+                            <span className="animate-pulse">● CONNEXION SÉCURISÉE</span>
+                            <span className="animate-bounce">● ANALYSE EN COURS</span>
+                            <span className="animate-ping">● VERDICT IMMINENT</span>
+                          </div>
 
-    {/* 🎨 ANIMATIONS CSS */}
-    <style jsx>{`
+                          {/* 🎯 PROGRESS BAR FAKE */}
+                          <div className="mt-2 w-full bg-gray-800 rounded-full h-1 overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-red-500 to-red-300 rounded-full animate-progress"></div>
+                          </div>
+                        </div>
+
+                        {/* 🔴 CORNER ACCENTS */}
+                        <div className="absolute top-2 left-2 w-4 h-4 border-l-2 border-t-2 border-red-500"></div>
+                        <div className="absolute top-2 right-2 w-4 h-4 border-r-2 border-t-2 border-red-500"></div>
+                        <div className="absolute bottom-2 left-2 w-4 h-4 border-l-2 border-b-2 border-red-500"></div>
+                        <div className="absolute bottom-2 right-2 w-4 h-4 border-r-2 border-b-2 border-red-500"></div>
+                      </div>
+                    </div>
+
+                    {/* 🎨 ANIMATIONS CSS */}
+                    <style jsx>{`
       @keyframes sernAppear {
         from { opacity: 0; backdrop-filter: blur(0px); }
         to { opacity: 1; backdrop-filter: blur(8px); }
@@ -5819,103 +5879,105 @@ const handleCloseBubble = () => {
         background: linear-gradient(to bottom, #ff3333, #ff0000);
       }
     `}</style>
-  </>
-)}
+                  </>
+                )}
 
-          <OCRPasteListener
-            onParsed={(parsed) => {
-              setParsedArtifactData(parsed);
-            }}
-            updateArtifactFromOCR={updateArtifactFromOCR}
-          />
 
-          {comparisonData && (
-            <ComparisonPopup
-              original={comparisonData}
-              onClose={() => setComparisonData(null)}
-              hunter={characters[selectedCharacter]}
-              flatStats={flatStats}
-              statsWithoutArtefact={statsWithoutArtefact}
-              substatsMinMaxByIncrements={substatsMinMaxByIncrements}
-              showTankMessage={showTankMessage}
-              recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
-            />
-          )}
 
-          {showNarrative && (
-            <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999] py-10">
-              <div
-                ref={popupRef}
-                className="relative w-[95vw] max-w-[1000px] p-4 bg-black/90 text-white border-4 border-white rounded-2xl shadow-2xl animate-pulse flex flex-col max-h-[90vh] scrollbar-none scroll-smooth"
-              >
-                {currentImage && (
-                  <div className="w-full flex items-center justify-center">
-                    <img
-                      ref={mainImageRef}
-                      src={currentImage?.src}
-                      alt="Image narrative"
-                      className="w-1/2 mx-auto rounded-md opacity-90 object-contain"
-                    />
+                <OCRPasteListener
+                  onParsed={(parsed) => {
+                    setParsedArtifactData(parsed);
+                  }}
+                  updateArtifactFromOCR={updateArtifactFromOCR}
+                />
+
+                {comparisonData && (
+                  <ComparisonPopup
+                    original={comparisonData}
+                    onClose={() => setComparisonData(null)}
+                    hunter={characters[selectedCharacter]}
+                    flatStats={flatStats}
+                    statsWithoutArtefact={statsWithoutArtefact}
+                    substatsMinMaxByIncrements={substatsMinMaxByIncrements}
+                    showTankMessage={showTankMessage}
+                    recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
+                  />
+                )}
+
+                {showNarrative && (
+                  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-start justify-center z-[9999] py-10">
+                    <div
+                      ref={popupRef}
+                      className="relative w-[95vw] max-w-[1000px] p-4 bg-black/90 text-white border-4 border-white rounded-2xl shadow-2xl animate-pulse flex flex-col max-h-[90vh] scrollbar-none scroll-smooth"
+                    >
+                      {currentImage && (
+                        <div className="w-full flex items-center justify-center">
+                          <img
+                            ref={mainImageRef}
+                            src={currentImage?.src}
+                            alt="Image narrative"
+                            className="w-1/2 mx-auto rounded-md opacity-90 object-contain"
+                          />
+                        </div>
+                      )}
+                      <div className="w-full mt-4 px-4">
+                        <h2 className="text-xl font-bold mb-2 text-center">⚠️ INFRACTION GAGOLDIQUE NARRATIVE ⚠️</h2>
+                        <span
+                          ref={dytextRef}
+                          className="text-sm whitespace-pre-line font-mono leading-relaxed tracking-wide animate-fade-in text-left"
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
-                <div className="w-full mt-4 px-4">
-                  <h2 className="text-xl font-bold mb-2 text-center">⚠️ INFRACTION GAGOLDIQUE NARRATIVE ⚠️</h2>
-                  <span
-                    ref={dytextRef}
-                    className="text-sm whitespace-pre-line font-mono leading-relaxed tracking-wide animate-fade-in text-left"
+
+                {showWeaponPopup && (
+                  <WeaponPopup
+                    hunterName={selectedCharacter}
+                    onClose={() => setShowWeaponPopup(false)}
+                    onSave={handleSaveWeapon}
+                    existingWeapon={hunterWeapons[selectedCharacter] || {}}
+                    scaleStat={characters[selectedCharacter]?.scaleStat}
                   />
-                </div>
+                )}
+
+                {parsedArtifactData && (
+                  <OcrConfirmPopup
+                    parsedData={parsedArtifactData}
+                    onConfirm={(data) => {
+                      setParsedArtifactData(null);
+                    }}
+                    onCancel={() => setParsedArtifactData(null)}
+                  />
+                )}
+
+                <OcrConfirmPopup
+                  parsedData={parsedArtifactData}
+                  onConfirm={(data) => {
+                    applyOcrDataToArtifact(data);
+                    setShowPopup(false);
+                  }}
+                  onCancel={() => setShowPopup(false)}
+                />
+
+
+
+                {/* CHIBI BUBBLE */}
+                {showChibiBubble && chibiMessage && (
+                  <ChibiBubble
+                    key={`bubble-${bubbleId}`}
+                    message={chibiMessage}
+                    position={chibiPos}
+                    entityType={currentSpeaker}
+                    isMobile={isMobile}
+                    onClose={handleCloseBubble}
+                  />
+                )}
+
               </div>
             </div>
-          )}
-
-          {showWeaponPopup && (
-            <WeaponPopup
-              hunterName={selectedCharacter}
-              onClose={() => setShowWeaponPopup(false)}
-              onSave={handleSaveWeapon}
-              existingWeapon={hunterWeapons[selectedCharacter] || {}}
-              scaleStat={characters[selectedCharacter]?.scaleStat}
-            />
-          )}
-
-          {parsedArtifactData && (
-            <OcrConfirmPopup
-              parsedData={parsedArtifactData}
-              onConfirm={(data) => {
-                setParsedArtifactData(null);
-              }}
-              onCancel={() => setParsedArtifactData(null)}
-            />
-          )}
-
-          <OcrConfirmPopup
-            parsedData={parsedArtifactData}
-            onConfirm={(data) => {
-              applyOcrDataToArtifact(data);
-              setShowPopup(false);
-            }}
-            onCancel={() => setShowPopup(false)}
-          />
-
-          
-
-          {/* CHIBI BUBBLE */}
-      {showChibiBubble && chibiMessage && (
-  <ChibiBubble
-    key={`bubble-${bubbleId}`}
-    message={chibiMessage}
-    position={chibiPos}
-    entityType={currentSpeaker}
-    isMobile={isMobile}       
-    onClose={handleCloseBubble}
-  />
-)}
-
-        </div>
-      </div>
-    </div>
-  </>
+          </div>
+        </>
       ) : (
 
 
@@ -6095,14 +6157,14 @@ const handleCloseBubble = () => {
 
                         BobbyKick
                       </button>
-                          {showDebugButton && (
-  <button
-    onClick={() => setShowHitboxes(!showHitboxes)}
-    className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs z-[10001]"
-  >
-    🐛 {showHitboxes ? 'HIDE' : 'SHOW'} HITBOX
-  </button>
-)}
+                      {showDebugButton && (
+                        <button
+                          onClick={() => setShowHitboxes(!showHitboxes)}
+                          className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs z-[10001]"
+                        >
+                          🐛 {showHitboxes ? 'HIDE' : 'SHOW'} HITBOX
+                        </button>
+                      )}
 
                       {/* Bouton Save */}
                       <button
@@ -6273,8 +6335,43 @@ const handleCloseBubble = () => {
                       multiAccountsData={accounts}
                       substatsMinMaxByIncrements={substatsMinMaxByIncrements}
                       existingScores={artifactScores}
+                      onShowHallOfFlame={() => setShowHallOfFlameDebug(true)} // ← AJOUTE CETTE LIGNE
+                      showDebugButton={showDebugButton} // ← ET CETTE LIGNE AUSSI
                     />
                   )}
+
+ 
+{showHallOfFlameDebug && (
+  <HallOfFlameDebugPopup
+    isOpen={showHallOfFlameDebug}
+    onClose={() => setShowHallOfFlameDebug(false)}
+    selectedCharacter={selectedCharacter}
+    characterData={characters[selectedCharacter]}
+    currentStats={finalStats}
+    currentArtifacts={artifactsData}
+    statsFromArtifacts={statsFromArtifacts} 
+    currentCores={hunterCores[selectedCharacter] || {}}
+    currentGems={gemData}
+    currentWeapon={hunterWeapons[selectedCharacter] || {}}
+    showTankMessage={showTankMessage}
+    onSave={{
+      // 🎯 Fonction avec callback pour la page classement
+      showRankings: () => setShowHallOfFlamePage(true)
+    }}
+  />
+)}
+
+{showHallOfFlamePage && (
+  <HallOfFlamePage
+    onClose={() => setShowHallOfFlamePage(false)}
+    showTankMessage={showTankMessage}
+    characters={characters}
+    onNavigateToBuilder={() => {
+      setShowHallOfFlamePage(false);
+      showTankMessage("🚀 Retour au Builder ! Créez un build légendaire !", true, 'kaisel');
+    }}
+  />
+)}
 
                   {/* Papyrus doré */}
                   <GoldenPapyrusIcon
@@ -6289,136 +6386,136 @@ const handleCloseBubble = () => {
                     reportHistory={reportHistory}
                     onSaveReport={handleSaveReport}
                   />
-{showHitboxes && Object.entries(hitboxPositions).map(([entityId, pos]) => (
-  <div
-    key={entityId}
-    style={{
-      position: 'fixed',
-      left: pos.left,
-      top: pos.top,
-      width: pos.width,
-      height: pos.height,
-      border: `2px dashed ${pos.color}`,
-      backgroundColor: `${pos.color}33`,
-      pointerEvents: 'none',
-      zIndex: 9999,
-      fontSize: '10px',
-      color: 'white',
-      fontWeight: 'bold'
-    }}
-  >
-    {entityId}
-  </div>
-))}
+                  {showHitboxes && Object.entries(hitboxPositions).map(([entityId, pos]) => (
+                    <div
+                      key={entityId}
+                      style={{
+                        position: 'fixed',
+                        left: pos.left,
+                        top: pos.top,
+                        width: pos.width,
+                        height: pos.height,
+                        border: `2px dashed ${pos.color}`,
+                        backgroundColor: `${pos.color}33`,
+                        pointerEvents: 'none',
+                        zIndex: 9999,
+                        fontSize: '10px',
+                        color: 'white',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {entityId}
+                    </div>
+                  ))}
 
 
-{showSernPopup && (
-  <>
-    {/* 🌫️ BLUR OVERLAY - TOUT LE SITE */}
-    <div 
-      className="fixed inset-0 z-[9998]"
-      style={{
-        backdropFilter: 'blur(8px)',
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        animation: 'sernAppear 0.5s ease-out'
-      }}
-    />
-    
-    {/* 🚨 POPUP PRINCIPALE */}
-    <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4">
-      <div
-        ref={popupRef}
-        className="relative bg-black border-4 border-red-500 rounded-xl shadow-2xl 
+                  {showSernPopup && (
+                    <>
+                      {/* 🌫️ BLUR OVERLAY - TOUT LE SITE */}
+                      <div
+                        className="fixed inset-0 z-[9998]"
+                        style={{
+                          backdropFilter: 'blur(8px)',
+                          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                          animation: 'sernAppear 0.5s ease-out'
+                        }}
+                      />
+
+                      {/* 🚨 POPUP PRINCIPALE */}
+                      <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4">
+                        <div
+                          ref={popupRef}
+                          className="relative bg-black border-4 border-red-500 rounded-xl shadow-2xl 
                    max-w-[800px] w-full max-h-[85vh] overflow-hidden
                    animate-bounce-gentle"
-        style={{
-          background: 'linear-gradient(135deg, #000000 0%, #1a0000 50%, #000000 100%)',
-          boxShadow: '0 0 50px rgba(255, 0, 0, 0.5), 0 0 100px rgba(255, 0, 0, 0.3), inset 0 0 50px rgba(255, 0, 0, 0.1)',
-          border: '4px solid #ff0000',
-          animation: 'sernPulse 2s infinite, sernSlideIn 0.8s ease-out'
-        }}
-      >
-        {/* 🔴 HEADER DRAMATIQUE */}
-        <div className="relative p-4 border-b-2 border-red-500 bg-gradient-to-r from-red-900/50 to-black/50">
-          <div className="flex items-center justify-center gap-3">
-            <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
-            <h1 className="text-red-400 font-bold text-xl tracking-widest animate-pulse">
-              ⚠️ ALERTE SERN - INFRACTION N-404 ⚠️
-            </h1>
-            <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
-          </div>
-          
-          {/* 🎯 SCANNING EFFECT */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent animate-scan"></div>
-        </div>
+                          style={{
+                            background: 'linear-gradient(135deg, #000000 0%, #1a0000 50%, #000000 100%)',
+                            boxShadow: '0 0 50px rgba(255, 0, 0, 0.5), 0 0 100px rgba(255, 0, 0, 0.3), inset 0 0 50px rgba(255, 0, 0, 0.1)',
+                            border: '4px solid #ff0000',
+                            animation: 'sernPulse 2s infinite, sernSlideIn 0.8s ease-out'
+                          }}
+                        >
+                          {/* 🔴 HEADER DRAMATIQUE */}
+                          <div className="relative p-4 border-b-2 border-red-500 bg-gradient-to-r from-red-900/50 to-black/50">
+                            <div className="flex items-center justify-center gap-3">
+                              <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+                              <h1 className="text-red-400 font-bold text-xl tracking-widest animate-pulse">
+                                ⚠️ ALERTE SERN - INFRACTION N-404 ⚠️
+                              </h1>
+                              <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+                            </div>
 
-        {/* 🖼️ IMAGE SECTION */}
-        <div className="relative p-6 flex justify-center bg-gradient-to-b from-black/80 to-gray-900/80">
-          <img
-            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747680569/SERN_ab7od6.png"
-            alt="SERN - Sung Bobby Jones"
-            className="max-w-full max-h-[300px] object-contain rounded-lg shadow-2xl"
-            style={{
-              filter: 'drop-shadow(0 0 20px rgba(255, 0, 0, 0.5))',
-              animation: 'sernGlow 3s ease-in-out infinite'
-            }}
-          />
-          
-          {/* 🌟 PARTICULES FLOTTANTES */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-[20%] left-[10%] w-2 h-2 bg-red-400 rounded-full animate-float-1"></div>
-            <div className="absolute top-[60%] right-[15%] w-1 h-1 bg-red-300 rounded-full animate-float-2"></div>
-            <div className="absolute bottom-[30%] left-[80%] w-1.5 h-1.5 bg-red-500 rounded-full animate-float-3"></div>
-          </div>
-        </div>
+                            {/* 🎯 SCANNING EFFECT */}
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent animate-scan"></div>
+                          </div>
 
-        {/* 📜 TEXTE ZONE AVEC AUTOSCROLL */}
-        <div 
-          ref={popupRef}
-          className="relative p-6 bg-gradient-to-b from-gray-900/90 to-black/95 max-h-[40vh] overflow-y-auto scrollbar-custom scroll-smooth"
-          id="sern-text-container"
-        >
-          <div
-            ref={dytextRef}
-            className="text-green-400 font-mono text-sm leading-relaxed tracking-wide 
+                          {/* 🖼️ IMAGE SECTION */}
+                          <div className="relative p-6 flex justify-center bg-gradient-to-b from-black/80 to-gray-900/80">
+                            <img
+                              src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747680569/SERN_ab7od6.png"
+                              alt="SERN - Sung Bobby Jones"
+                              className="max-w-full max-h-[300px] object-contain rounded-lg shadow-2xl"
+                              style={{
+                                filter: 'drop-shadow(0 0 20px rgba(255, 0, 0, 0.5))',
+                                animation: 'sernGlow 3s ease-in-out infinite'
+                              }}
+                            />
+
+                            {/* 🌟 PARTICULES FLOTTANTES */}
+                            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                              <div className="absolute top-[20%] left-[10%] w-2 h-2 bg-red-400 rounded-full animate-float-1"></div>
+                              <div className="absolute top-[60%] right-[15%] w-1 h-1 bg-red-300 rounded-full animate-float-2"></div>
+                              <div className="absolute bottom-[30%] left-[80%] w-1.5 h-1.5 bg-red-500 rounded-full animate-float-3"></div>
+                            </div>
+                          </div>
+
+                          {/* 📜 TEXTE ZONE AVEC AUTOSCROLL */}
+                          <div
+                            ref={popupRef}
+                            className="relative p-6 bg-gradient-to-b from-gray-900/90 to-black/95 max-h-[40vh] overflow-y-auto scrollbar-custom scroll-smooth"
+                            id="sern-text-container"
+                          >
+                            <div
+                              ref={dytextRef}
+                              className="text-green-400 font-mono text-sm leading-relaxed tracking-wide 
                        whitespace-pre-wrap break-words overflow-wrap-anywhere 
                        min-h-[100px] max-w-full"
-            style={{
-              textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
-              wordBreak: 'break-word',
-              overflowWrap: 'break-word',
-              animation: 'textGlow 2s ease-in-out infinite alternate'
-            }}
-          />
-          
-          {/* 🔥 TERMINAL CURSOR */}
-          <span className="inline-block w-2 h-4 bg-green-400 ml-1 animate-pulse"></span>
-        </div>
+                              style={{
+                                textShadow: '0 0 10px rgba(0, 255, 0, 0.5)',
+                                wordBreak: 'break-word',
+                                overflowWrap: 'break-word',
+                                animation: 'textGlow 2s ease-in-out infinite alternate'
+                              }}
+                            />
 
-        {/* ⚡ FOOTER EFFECTS */}
-        <div className="relative p-4 border-t-2 border-red-500 bg-gradient-to-r from-black/90 to-red-900/30">
-          <div className="flex justify-center items-center gap-4 text-red-300 text-xs">
-            <span className="animate-pulse">● CONNEXION SÉCURISÉE</span>
-            <span className="animate-bounce">● ANALYSE EN COURS</span>
-            <span className="animate-ping">● VERDICT IMMINENT</span>
-          </div>
-          
-          {/* 🎯 PROGRESS BAR FAKE */}
-          <div className="mt-2 w-full bg-gray-800 rounded-full h-1 overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-red-500 to-red-300 rounded-full animate-progress"></div>
-          </div>
-        </div>
+                            {/* 🔥 TERMINAL CURSOR */}
+                            <span className="inline-block w-2 h-4 bg-green-400 ml-1 animate-pulse"></span>
+                          </div>
 
-        {/* 🔴 CORNER ACCENTS */}
-        <div className="absolute top-2 left-2 w-4 h-4 border-l-2 border-t-2 border-red-500"></div>
-        <div className="absolute top-2 right-2 w-4 h-4 border-r-2 border-t-2 border-red-500"></div>
-        <div className="absolute bottom-2 left-2 w-4 h-4 border-l-2 border-b-2 border-red-500"></div>
-        <div className="absolute bottom-2 right-2 w-4 h-4 border-r-2 border-b-2 border-red-500"></div>
-      </div>
-    </div>
+                          {/* ⚡ FOOTER EFFECTS */}
+                          <div className="relative p-4 border-t-2 border-red-500 bg-gradient-to-r from-black/90 to-red-900/30">
+                            <div className="flex justify-center items-center gap-4 text-red-300 text-xs">
+                              <span className="animate-pulse">● CONNEXION SÉCURISÉE</span>
+                              <span className="animate-bounce">● ANALYSE EN COURS</span>
+                              <span className="animate-ping">● VERDICT IMMINENT</span>
+                            </div>
 
-    {/* 🎨 ANIMATIONS CSS */}
-    <style jsx>{`
+                            {/* 🎯 PROGRESS BAR FAKE */}
+                            <div className="mt-2 w-full bg-gray-800 rounded-full h-1 overflow-hidden">
+                              <div className="h-full bg-gradient-to-r from-red-500 to-red-300 rounded-full animate-progress"></div>
+                            </div>
+                          </div>
+
+                          {/* 🔴 CORNER ACCENTS */}
+                          <div className="absolute top-2 left-2 w-4 h-4 border-l-2 border-t-2 border-red-500"></div>
+                          <div className="absolute top-2 right-2 w-4 h-4 border-r-2 border-t-2 border-red-500"></div>
+                          <div className="absolute bottom-2 left-2 w-4 h-4 border-l-2 border-b-2 border-red-500"></div>
+                          <div className="absolute bottom-2 right-2 w-4 h-4 border-r-2 border-b-2 border-red-500"></div>
+                        </div>
+                      </div>
+
+                      {/* 🎨 ANIMATIONS CSS */}
+                      <style jsx>{`
       @keyframes sernAppear {
         from { opacity: 0; backdrop-filter: blur(0px); }
         to { opacity: 1; backdrop-filter: blur(8px); }
@@ -6522,8 +6619,8 @@ const handleCloseBubble = () => {
         background: linear-gradient(to bottom, #ff3333, #ff0000);
       }
     `}</style>
-  </>
-)}
+                    </>
+                  )}
 
                   {isSetSelectorOpen && setSelectorSlot && (
                     <SetSelectorPopup
@@ -6896,7 +6993,7 @@ const handleCloseBubble = () => {
           </div>
           {/* <div className={showSernPopup ? 'blur-background' : ''}></div> */}
           <div className="mt-1">
-  <div className="relative w-full min-h-[240px]">
+            <div className="relative w-full min-h-[240px]">
               {/* Zone pour positionner DOM au-dessus du canvas */}
 
 
@@ -6905,110 +7002,110 @@ const handleCloseBubble = () => {
               {showChibiBubble && chibiMessage && (
                 <ChibiBubble
                   key={`bubble-${bubbleId}`} // <-- force un rerender total à chaque message
-                   entityType={currentSpeaker} // ← REMPLACE PAR entityType direct
+                  entityType={currentSpeaker} // ← REMPLACE PAR entityType direct
                   message={chibiMessage}
-                  isMobile={isMobile}   
+                  isMobile={isMobile}
                   position={chibiPos}
                 />
               )}
               {/* 🎨 CANVAS SECTION - RESPONSIVE MOBILE/DESKTOP */}
-<div className="w-full mt-4 mb-2">
-  {/* 📱 VERSION MOBILE - 3 LIGNES VERTICALES */}
-  {((isMobile.isPhone || isMobile.isTablet) && !isMobile.isDesktop) ? (
-    <div className="flex flex-col items-center gap-2">
-      {/* Canvas Left - Ligne 1 */}
-      <div className="relative w-full flex justify-center">
-        <canvas 
-          id="canvas-left" 
-          width="400" 
-          height="160" 
-          className="rounded-lg shadow-md bg-black w-[80vw] max-w-[350px] h-auto" 
-        />
-      </div>
-      
-      {/* Canvas Center - Ligne 2 avec Portail */}
-      <div className="relative w-full flex justify-center">
-        <canvas 
-          id="canvas-center" 
-          width="400" 
-          height="160" 
-          className="rounded-lg shadow-md bg-black w-[80vw] max-w-[350px] h-auto" 
-        />
-        
-        {/* Portail Mobile - Repositionné */}
-        <div
-          className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
-          style={{
-            top: '40%',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '20%',
-            height: '30%',
-            background: 'rgba(255, 0, 0, 0.1)', // Debug - retire en prod
-            border: '1px solid rgba(255, 0, 0, 0.3)' // Debug - retire en prod
-          }}
-          onClick={() => {
-            showTankMessage("🚪 Vivement Séville et ses 45°... Qu'on se cache d'ici !", true);
-          }}
-        />
-      </div>
-      
-      {/* Canvas Right - Ligne 3 */}
-      <div className="relative w-full flex justify-center">
-        <canvas 
-          id="canvas-right" 
-          width="400" 
-          height="160" 
-          className="rounded-lg shadow-md bg-black w-[80vw] max-w-[350px] h-auto" 
-        />
-      </div>
-      
-      {/* Label Mobile */}
-      <div className="text-center mt-2 text-gray-400 text-xs">
-        <p>🌌 Royaumes des Ombres</p>
-        <p className="text-[10px]">Neige • Sanctuaire • Terre Verte</p>
-      </div>
-    </div>
-  ) : (
-    // 🖥️ VERSION DESKTOP - LIGNE HORIZONTALE
-    <div className="flex justify-center items-center relative gap-1">
-      <canvas 
-        id="canvas-left" 
-        width="600" 
-        height="240" 
-        className="rounded-l-lg shadow-md bg-black w-[30vw] max-w-[400px] h-auto" 
-      />
-      
-      <canvas 
-        id="canvas-center" 
-        width="600" 
-        height="240" 
-        className="shadow-md bg-black w-[30vw] max-w-[400px] h-auto" 
-      />
-      
-      {/* Portail Desktop */}
-      <div
-        className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
-        style={{
-          top: '45%',
-          left: '43.2%',
-          width: '5%',
-          height: '25%'
-        }}
-        onClick={() => {
-          showTankMessage("🚪 Vivement Séville et ses 45° 👀😈🐍", true);
-        }}
-      />
+              <div className="w-full mt-4 mb-2">
+                {/* 📱 VERSION MOBILE - 3 LIGNES VERTICALES */}
+                {((isMobile.isPhone || isMobile.isTablet) && !isMobile.isDesktop) ? (
+                  <div className="flex flex-col items-center gap-2">
+                    {/* Canvas Left - Ligne 1 */}
+                    <div className="relative w-full flex justify-center">
+                      <canvas
+                        id="canvas-left"
+                        width="400"
+                        height="160"
+                        className="rounded-lg shadow-md bg-black w-[80vw] max-w-[350px] h-auto"
+                      />
+                    </div>
 
-      <canvas 
-        id="canvas-right" 
-        width="600" 
-        height="240" 
-        className="rounded-r-lg shadow-md bg-black w-[30vw] max-w-[400px] h-auto" 
-      />
-    </div>
-  )}
-</div>
+                    {/* Canvas Center - Ligne 2 avec Portail */}
+                    <div className="relative w-full flex justify-center">
+                      <canvas
+                        id="canvas-center"
+                        width="400"
+                        height="160"
+                        className="rounded-lg shadow-md bg-black w-[80vw] max-w-[350px] h-auto"
+                      />
+
+                      {/* Portail Mobile - Repositionné */}
+                      <div
+                        className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
+                        style={{
+                          top: '40%',
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          width: '20%',
+                          height: '30%',
+                          background: 'rgba(255, 0, 0, 0.1)', // Debug - retire en prod
+                          border: '1px solid rgba(255, 0, 0, 0.3)' // Debug - retire en prod
+                        }}
+                        onClick={() => {
+                          showTankMessage("🚪 Vivement Séville et ses 45°... Qu'on se cache d'ici !", true);
+                        }}
+                      />
+                    </div>
+
+                    {/* Canvas Right - Ligne 3 */}
+                    <div className="relative w-full flex justify-center">
+                      <canvas
+                        id="canvas-right"
+                        width="400"
+                        height="160"
+                        className="rounded-lg shadow-md bg-black w-[80vw] max-w-[350px] h-auto"
+                      />
+                    </div>
+
+                    {/* Label Mobile */}
+                    <div className="text-center mt-2 text-gray-400 text-xs">
+                      <p>🌌 Royaumes des Ombres</p>
+                      <p className="text-[10px]">Neige • Sanctuaire • Terre Verte</p>
+                    </div>
+                  </div>
+                ) : (
+                  // 🖥️ VERSION DESKTOP - LIGNE HORIZONTALE
+                  <div className="flex justify-center items-center relative gap-1">
+                    <canvas
+                      id="canvas-left"
+                      width="600"
+                      height="240"
+                      className="rounded-l-lg shadow-md bg-black w-[30vw] max-w-[400px] h-auto"
+                    />
+
+                    <canvas
+                      id="canvas-center"
+                      width="600"
+                      height="240"
+                      className="shadow-md bg-black w-[30vw] max-w-[400px] h-auto"
+                    />
+
+                    {/* Portail Desktop */}
+                    <div
+                      className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
+                      style={{
+                        top: '45%',
+                        left: '43.2%',
+                        width: '5%',
+                        height: '25%'
+                      }}
+                      onClick={() => {
+                        showTankMessage("🚪 Vivement Séville et ses 45° 👀😈🐍", true);
+                      }}
+                    />
+
+                    <canvas
+                      id="canvas-right"
+                      width="600"
+                      height="240"
+                      className="rounded-r-lg shadow-md bg-black w-[30vw] max-w-[400px] h-auto"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

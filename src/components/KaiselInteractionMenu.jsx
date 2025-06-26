@@ -15,7 +15,9 @@ const KaiselInteractionMenu = ({
   currentCores = {},
   multiAccountsData = {},
   substatsMinMaxByIncrements,
-  existingScores = {}
+  existingScores = {},
+  onShowHallOfFlame, // ← NOUVEAU CALLBACK
+  showDebugButton = false // ← NOUVEAU PARAMÈTRE
 }) => {
   const [showMenu, setShowMenu] = useState(true);
   const [animationClass, setAnimationClass] = useState('');
@@ -59,46 +61,67 @@ const KaiselInteractionMenu = ({
     }
   });
 
-  // 🤖 SOUS-MENU DEBUG
-  const getDebugSubMenu = () => ({
-    artifact_calculator: {
-      icon: "🧮",
-      label: "Calculateur Artefacts",
-      action: "advanced_artifact_calc"
-    },
-    build_simulator: {
-      icon: "🎯", 
-      label: "Simulateur de Build",
-      action: "build_simulation"
-    },
-    meta_analysis: {
-      icon: "📈",
-      label: "Analyse Méta Global", 
-      action: "meta_trends"
-    },
-    damage_calculator: {
-      icon: "💥",
-      label: "Calculateur DPS",
-      action: "dps_calculator"
-    },
-    optimization_ai: {
-      icon: "🤖",
-      label: "IA d'Optimisation",
-      action: "ai_optimization"
-    },
-    toggle_hitbox_debug: {
-      icon: "👁️",
-      label: "Toggle Hitbox Debug",
-      action: "toggle_hitbox_debug"
-    },
-    back: {
+  // 🤖 SOUS-MENU DEBUG - VERSION CORRIGÉE
+  const getDebugSubMenu = () => {
+    const baseMenu = {
+      artifact_calculator: {
+        icon: "🧮",
+        label: "Calculateur Artefacts",
+        action: "advanced_artifact_calc"
+      },
+      build_simulator: {
+        icon: "🎯", 
+        label: "Simulateur de Build",
+        action: "build_simulation"
+      },
+      meta_analysis: {
+        icon: "📈",
+        label: "Analyse Méta Global", 
+        action: "meta_trends"
+      },
+      damage_calculator: {
+        icon: "💥",
+        label: "Calculateur DPS",
+        action: "dps_calculator"
+      },
+      optimization_ai: {
+        icon: "🤖",
+        label: "IA d'Optimisation",
+        action: "ai_optimization"
+      },
+      toggle_hitbox_debug: {
+        icon: "👁️",
+        label: "Toggle Hitbox Debug",
+        action: "toggle_hitbox_debug"
+      }
+    };
+
+    // 🏆 AJOUTER L'OPTION HALLOFFLAME SI DEBUG BUTTON ACTIVÉ
+   if (showDebugButton) {
+  baseMenu.hall_of_flame_debug = {
+    icon: "🏆",
+    label: "HallOfFlame Debug",
+    action: "show_hall_debug"
+  };
+  
+  // 🆕 NOUVEAU BOUTON POUR VOIR LE CLASSEMENT
+  baseMenu.hall_of_flame_rankings = {
+    icon: "📊",
+    label: "Voir Classements",
+    action: "show_hall_rankings"
+  };
+}
+
+    baseMenu.back = {
       icon: "↩️",
       label: "Retour",
       action: "back_to_main"
-    }
-  });
+    };
 
-  // 🧠 ACTIONS KAISEL (RESTAURE TOUTE LA LOGIQUE EXISTANTE)
+    return baseMenu;
+  };
+
+  // 🧠 ACTIONS KAISEL - VERSION COMPLÈTE
   const handleOption = async (action) => {
     switch (action) {
       case 'show_debug_submenu':
@@ -108,6 +131,26 @@ const KaiselInteractionMenu = ({
       case 'back_to_main':
         setCurrentSubMenu(null);
         break;
+
+        case 'show_hall_rankings':
+  // Tu peux passer cette fonction en prop depuis BuilderBeru
+  if (onShowRankings) {
+    onShowRankings();
+    showTankMessage("📊 Kaisel ouvre les classements HallOfFlame !", true, 'kaisel');
+  }
+  onClose();
+  break;
+
+      // 🏆 NOUVEAU CASE HALLOFFLAME
+      case 'show_hall_debug':
+        if (onShowHallOfFlame) {
+    onShowHallOfFlame();
+    showTankMessage("🏆 Kaisel lance le système HallOfFlame ! Interface de niveau légendaire activée ⚡", true, 'kaisel');
+  } else {
+    showTankMessage("🤖 HallOfFlame callback non trouvé... Debug en cours...", true, 'kaisel');
+  }
+  onClose();
+  break;
 
       case 'show_twitch_streams':
         try {
@@ -216,7 +259,7 @@ const KaiselInteractionMenu = ({
     }
   };
 
-  // 🌐 FONCTIONS API YOUTUBE ET NETMARBLE (RESTAURÉES)
+  // 🌐 FONCTIONS API YOUTUBE ET NETMARBLE
   const scanYouTubeVideos = async () => {
     setIsScanning(true);
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -460,13 +503,13 @@ const KaiselInteractionMenu = ({
             }}
           ></div>
 
-          {/* Bulles d'options en cercle (garde tes positions existantes) */}
+          {/* Bulles d'options en cercle */}
           {Object.entries(currentOptions).map(([key, option], index) => {
             const textLength = option.label.length;
             const bubbleWidth = Math.max(140, Math.min(260, textLength * 9 + 70));
             const bubbleHeight = 45;
 
-            // Utilise tes positions existantes du code original
+            // 🏆 POSITIONS MISES À JOUR AVEC HALLOFFLAME
             const positions = {
               live_streams: { x: "0.7vw", y: "-11.5vh" },
               youtube_news: { x: "-10vw", y: "-3vh" },
@@ -480,6 +523,7 @@ const KaiselInteractionMenu = ({
               damage_calculator: { x: "15vw", y: "-10vh" },
               optimization_ai: { x: "0vw", y: "-6vh" },
               toggle_hitbox_debug: { x: "-10vw", y: "-2vh" },
+              hall_of_flame_debug: { x: "10vw", y: "-2vh" }, // ← NOUVELLE POSITION
               back: { x: "0vw", y: "-18vh" }
             };
 
