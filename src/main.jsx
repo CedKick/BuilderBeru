@@ -9,6 +9,8 @@ import GuideEditor from './pages/GuideEditor.jsx';
 import POD from './components/Guide/POD.jsx';
 import HomePage from './HomePage.jsx';
 import AppLayout from './AppLayout.jsx';
+import HallOfFlameStandalone from './components/HallOfFlameStandalone.jsx';
+
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -19,6 +21,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/build" element={<Builder />} />
           <Route path="/guide-editor" element={<GuideEditor />} />
           <Route path="/pod" element={<POD />} />
+          <Route path="/hall-of-flame" element={<HallOfFlameStandalone />} />
         </Routes>
       </AppLayout>
     </BrowserRouter>

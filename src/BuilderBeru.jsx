@@ -24,6 +24,7 @@ import KaiselInteractionMenu from './components/KaiselInteractionMenu';
 import { BeruReportSystem, GoldenPapyrusIcon } from './components/BeruReportSystem';
 import HallOfFlameDebugPopup from './components/HallOfFlameDebugPopup';
 import HallOfFlamePage from './components/HallOfFlamePage';
+import AdminValidationPage from './components/AdminValidationPage';
 
 
 
@@ -639,8 +640,9 @@ const BuilderBeru = () => {
   const [hitboxPositions, setHitboxPositions] = useState({});
   const [showDebugButton, setShowDebugButton] = useState(false);
   const [showHallOfFlameDebug, setShowHallOfFlameDebug] = useState(false);
-const [hallOfFlameData, setHallOfFlameData] = useState({ name: '', guild: '' });
-const [showHallOfFlamePage, setShowHallOfFlamePage] = useState(false);
+  const [showAdminPage, setShowAdminPage] = useState(false);
+  const [hallOfFlameData, setHallOfFlameData] = useState({ name: '', guild: '' });
+  const [showHallOfFlamePage, setShowHallOfFlamePage] = useState(false);
 
   const SHADOW_ENTITIES = {
     tank: {
@@ -4924,21 +4926,21 @@ BobbyJones : "Allez l'Inter !"
     }
   }, [selectedElement, selectedClass, characters, selectedCharacter]);
 
-const getCurrentHunterData = () => {
-  if (!selectedCharacter) return null;
-  
-  return {
-    character: selectedCharacter,
-    characterName: characters[selectedCharacter]?.name || selectedCharacter,
-    stats: finalStats,
-    artifacts: artifactsData,
-    cores: hunterCores[selectedCharacter] || {},
-    gems: gemData || {},
-    weapon: hunterWeapons[selectedCharacter] || {},
-    // Score global (si tu as un système de scoring)
-    totalScore: Object.values(artifactScores).reduce((sum, score) => sum + score, 0)
+  const getCurrentHunterData = () => {
+    if (!selectedCharacter) return null;
+
+    return {
+      character: selectedCharacter,
+      characterName: characters[selectedCharacter]?.name || selectedCharacter,
+      stats: finalStats,
+      artifacts: artifactsData,
+      cores: hunterCores[selectedCharacter] || {},
+      gems: gemData || {},
+      weapon: hunterWeapons[selectedCharacter] || {},
+      // Score global (si tu as un système de scoring)
+      totalScore: Object.values(artifactScores).reduce((sum, score) => sum + score, 0)
+    };
   };
-};
 
   const handleCloseBubble = () => {
     setShowChibiBubble(false);
@@ -5566,6 +5568,25 @@ const getCurrentHunterData = () => {
                   />
                 )}
 
+                {showAdminPage && (
+                  <AdminValidationPage
+  onClose={() => setShowAdminPage(false)}
+  showTankMessage={showTankMessage}
+  
+  // 🆕 TOUTES LES PROPS POUR UNE PAGE ADMIN COMPLÈTE
+  selectedCharacter={selectedCharacter}
+  characterData={characters[selectedCharacter]}
+  currentStats={finalStats}
+  currentArtifacts={artifactsData}
+  statsFromArtifacts={statsFromArtifacts}
+  currentCores={hunterCores[selectedCharacter] || {}}
+  currentGems={gemData}
+  currentWeapon={hunterWeapons[selectedCharacter] || {}}
+  characters={characters}
+  onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
+/>
+                )}
+
                 {showBeruInteractionMenu && (
                   <BeruInteractionMenu
                     position={beruMenuPosition}
@@ -5594,45 +5615,54 @@ const getCurrentHunterData = () => {
                     currentArtifacts={artifactsData}
                     currentStats={finalStats}
                     currentCores={hunterCores[selectedCharacter] || {}}
+                    onShowAdminValidation={() => setShowAdminPage(true)} // ← AJOUTER CETTE LIGNE
                     multiAccountsData={accounts}
                     substatsMinMaxByIncrements={substatsMinMaxByIncrements}
                     existingScores={artifactScores}
-                    onShowHallOfFlame={() => setShowHallOfFlameDebug(true)} // ← AJOUTE CETTE LIGNE
+                    onShowHallOfFlame={() => setShowHallOfFlamePage(true)}
                     showDebugButton={showDebugButton} // ← ET CETTE LIGNE AUSSI
                   />
                 )}
 
-{showHallOfFlameDebug && (
-  <HallOfFlameDebugPopup
-    isOpen={showHallOfFlameDebug}
-    onClose={() => setShowHallOfFlameDebug(false)}
-    selectedCharacter={selectedCharacter}
-    characterData={characters[selectedCharacter]}
-    currentStats={finalStats}
-    currentArtifacts={artifactsData}
-    statsFromArtifacts={statsFromArtifacts} 
-    currentCores={hunterCores[selectedCharacter] || {}}
-    currentGems={gemData}
-    currentWeapon={hunterWeapons[selectedCharacter] || {}}
-    showTankMessage={showTankMessage}
-    onSave={{
-      // 🎯 Fonction avec callback pour la page classement
-      showRankings: () => setShowHallOfFlamePage(true)
-    }}
-  />
-)}
+                {showHallOfFlameDebug && (
+                  <HallOfFlameDebugPopup
+                    isOpen={showHallOfFlameDebug}
+                    onClose={() => setShowHallOfFlameDebug(false)}
+                    selectedCharacter={selectedCharacter}
+                    characterData={characters[selectedCharacter]}
+                    currentStats={finalStats}
+                    currentArtifacts={artifactsData}
+                    statsFromArtifacts={statsFromArtifacts}
+                    currentCores={hunterCores[selectedCharacter] || {}}
+                    onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
+                    currentGems={gemData}
+                    currentWeapon={hunterWeapons[selectedCharacter] || {}}
+                    showTankMessage={showTankMessage}
+                    onSave={{
+                      // 🎯 Fonction avec callback pour la page classement
+                      showRankings: () => setShowHallOfFlamePage(true)
+                    }}
+                  />
+                )}
 
-{showHallOfFlamePage && (
-  <HallOfFlamePage
-    onClose={() => setShowHallOfFlamePage(false)}
-    showTankMessage={showTankMessage}
-    characters={characters}
-    onNavigateToBuilder={() => {
-      setShowHallOfFlamePage(false);
-      showTankMessage("🚀 Retour au Builder ! Créez un build légendaire !", true, 'kaisel');
-    }}
-  />
-)}
+                {showHallOfFlamePage && (
+                  <HallOfFlamePage
+                    onClose={() => setShowHallOfFlamePage(false)}
+                    showTankMessage={showTankMessage}
+                    characters={characters}
+                    onNavigateToBuilder={() => {
+                      setShowHallOfFlamePage(false);
+                      showTankMessage("🚀 Retour au Builder ! Créez un build légendaire !", true, 'kaisel');
+                    }}
+                    selectedCharacter={selectedCharacter}           // Pour le contexte du personnage actuel
+                    currentStats={finalStats}                    // Stats totales calculées
+                    currentArtifacts={artifactsData}            // Artefacts équipés
+                    statsFromArtifacts={statsFromArtifacts}         // Stats des artefacts uniquement
+                    currentCores={hunterCores[selectedCharacter] || {}}
+                    currentGems={gemData}
+                    currentWeapon={hunterWeapons[selectedCharacter] || {}}
+                  />
+                )}
 
                 <GoldenPapyrusIcon
                   isVisible={showPapyrus}
@@ -6301,6 +6331,25 @@ const getCurrentHunterData = () => {
                     />
                   )}
 
+                  {showAdminPage && (
+                    <AdminValidationPage
+  onClose={() => setShowAdminPage(false)}
+  showTankMessage={showTankMessage}
+  
+  // 🆕 TOUTES LES PROPS POUR UNE PAGE ADMIN COMPLÈTE
+  selectedCharacter={selectedCharacter}
+  characterData={characters[selectedCharacter]}
+  currentStats={finalStats}
+  currentArtifacts={artifactsData}
+  statsFromArtifacts={statsFromArtifacts}
+  currentCores={hunterCores[selectedCharacter] || {}}
+  currentGems={gemData}
+  currentWeapon={hunterWeapons[selectedCharacter] || {}}
+  characters={characters}
+  onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
+/>
+                  )}
+
                   {showBeruInteractionMenu && (() => {
                     return null;
                   })()}
@@ -6332,46 +6381,55 @@ const getCurrentHunterData = () => {
                       currentArtifacts={artifactsData}
                       currentStats={finalStats}
                       currentCores={hunterCores[selectedCharacter] || {}}
+                      onShowAdminValidation={() => setShowAdminPage(true)} // ← AJOUTER CETTE LIGNE
                       multiAccountsData={accounts}
                       substatsMinMaxByIncrements={substatsMinMaxByIncrements}
                       existingScores={artifactScores}
-                      onShowHallOfFlame={() => setShowHallOfFlameDebug(true)} // ← AJOUTE CETTE LIGNE
+                      onShowHallOfFlame={() => setShowHallOfFlamePage(true)}
                       showDebugButton={showDebugButton} // ← ET CETTE LIGNE AUSSI
                     />
                   )}
 
- 
-{showHallOfFlameDebug && (
-  <HallOfFlameDebugPopup
-    isOpen={showHallOfFlameDebug}
-    onClose={() => setShowHallOfFlameDebug(false)}
-    selectedCharacter={selectedCharacter}
-    characterData={characters[selectedCharacter]}
-    currentStats={finalStats}
-    currentArtifacts={artifactsData}
-    statsFromArtifacts={statsFromArtifacts} 
-    currentCores={hunterCores[selectedCharacter] || {}}
-    currentGems={gemData}
-    currentWeapon={hunterWeapons[selectedCharacter] || {}}
-    showTankMessage={showTankMessage}
-    onSave={{
-      // 🎯 Fonction avec callback pour la page classement
-      showRankings: () => setShowHallOfFlamePage(true)
-    }}
-  />
-)}
 
-{showHallOfFlamePage && (
-  <HallOfFlamePage
-    onClose={() => setShowHallOfFlamePage(false)}
-    showTankMessage={showTankMessage}
-    characters={characters}
-    onNavigateToBuilder={() => {
-      setShowHallOfFlamePage(false);
-      showTankMessage("🚀 Retour au Builder ! Créez un build légendaire !", true, 'kaisel');
-    }}
-  />
-)}
+                  {showHallOfFlameDebug && (
+                    <HallOfFlameDebugPopup
+                      isOpen={showHallOfFlameDebug}
+                      onClose={() => setShowHallOfFlameDebug(false)}
+                      selectedCharacter={selectedCharacter}
+                      characterData={characters[selectedCharacter]}
+                      currentStats={finalStats}
+                      currentArtifacts={artifactsData}
+                      statsFromArtifacts={statsFromArtifacts}
+                      currentCores={hunterCores[selectedCharacter] || {}}
+                      onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
+                      currentGems={gemData}
+                      currentWeapon={hunterWeapons[selectedCharacter] || {}}
+                      showTankMessage={showTankMessage}
+                      onSave={{
+                        // 🎯 Fonction avec callback pour la page classement
+                        showRankings: () => setShowHallOfFlamePage(true)
+                      }}
+                    />
+                  )}
+
+                  {showHallOfFlamePage && (
+                    <HallOfFlamePage
+                      onClose={() => setShowHallOfFlamePage(false)}
+                      showTankMessage={showTankMessage}
+                      characters={characters}
+                      onNavigateToBuilder={() => {
+                        setShowHallOfFlamePage(false);
+                        showTankMessage("🚀 Retour au Builder ! Créez un build légendaire !", true, 'kaisel');
+                      }}
+                      selectedCharacter={selectedCharacter}           // Pour le contexte du personnage actuel
+                      currentStats={finalStats}                    // Stats totales calculées
+                      currentArtifacts={artifactsData}            // Artefacts équipés
+                      statsFromArtifacts={statsFromArtifacts}         // Stats des artefacts uniquement
+                      currentCores={hunterCores[selectedCharacter] || {}}
+                      currentGems={gemData}
+                      currentWeapon={hunterWeapons[selectedCharacter] || {}}
+                    />
+                  )}
 
                   {/* Papyrus doré */}
                   <GoldenPapyrusIcon

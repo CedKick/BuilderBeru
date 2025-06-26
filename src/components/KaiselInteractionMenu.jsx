@@ -17,7 +17,8 @@ const KaiselInteractionMenu = ({
   substatsMinMaxByIncrements,
   existingScores = {},
   onShowHallOfFlame, // ← NOUVEAU CALLBACK
-  showDebugButton = false // ← NOUVEAU PARAMÈTRE
+  showDebugButton = false, // ← NOUVEAU PARAMÈTRE
+  onShowAdminValidation
 }) => {
   const [showMenu, setShowMenu] = useState(true);
   const [animationClass, setAnimationClass] = useState('');
@@ -93,7 +94,12 @@ const KaiselInteractionMenu = ({
         icon: "👁️",
         label: "Toggle Hitbox Debug",
         action: "toggle_hitbox_debug"
-      }
+      },
+      admin_validation: {
+  icon: "🛡️",
+  label: "Admin Validation",
+  action: "show_admin_validation"
+}
     };
 
     // 🏆 AJOUTER L'OPTION HALLOFFLAME SI DEBUG BUTTON ACTIVÉ
@@ -128,18 +134,32 @@ const KaiselInteractionMenu = ({
         setCurrentSubMenu('debug');
         break;
 
+        case 'show_admin_validation':
+          if (onShowAdminValidation) {
+            onShowAdminValidation();
+            showTankMessage("🛡️ Kaisel ouvre le système de validation admin !", true, 'kaisel');
+          } else {
+            showTankMessage("🤖 Admin validation callback non trouvé...", true, 'kaisel');
+          }
+          onClose();
+          break;
+
       case 'back_to_main':
         setCurrentSubMenu(null);
         break;
 
-        case 'show_hall_rankings':
-  // Tu peux passer cette fonction en prop depuis BuilderBeru
-  if (onShowRankings) {
-    onShowRankings();
-    showTankMessage("📊 Kaisel ouvre les classements HallOfFlame !", true, 'kaisel');
-  }
-  onClose();
-  break;
+        
+
+         case 'show_hall_rankings':
+          // Fonction pour ouvrir le HallOfFlamePage 
+          if (onShowHallOfFlame) {
+            onShowHallOfFlame();
+            showTankMessage("📊 Kaisel ouvre les classements HallOfFlame !", true, 'kaisel');
+          } else {
+            showTankMessage("🤖 Classements callback non trouvé... Debug en cours...", true, 'kaisel');
+          }
+          onClose();
+          break;
 
       // 🏆 NOUVEAU CASE HALLOFFLAME
       case 'show_hall_debug':

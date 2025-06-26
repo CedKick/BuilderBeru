@@ -319,7 +319,7 @@ const HallOfFlameDebugPopup = ({
     return uploadedUrls;
   };
 
-  // 💾 SAUVEGARDE FINALE (avec screenshots Imgur)
+ // 💾 SAUVEGARDE FINALE (avec screenshots Imgur + API Backend)
   const handleFinalSave = async () => {
     if (!currentStats || Object.keys(currentStats).length === 0) {
       showTankMessage("❌ Aucune donnée à sauvegarder", true, 'kaisel');
@@ -370,19 +370,58 @@ const HallOfFlameDebugPopup = ({
       builderInfo: BUILDER_DATA[selectedCharacter] || {}
     };
     
-    // TODO: Remplacer par API call au backend
-    console.log('🏆 Données prêtes pour le backend:', hunterData);
-    
-    showTankMessage(
-      `🏆 ${hunterData.hunterName} préparé ! Total: ${hunterData.totalScore.toLocaleString()} CP, Screenshots: ${screenshotUrls.length}`,
-      true,
-      'kaisel'
-    );
+    // 🚀 ENVOI VERS LE BACKEND KAISEL
+    try {
+      showTankMessage("🌐 Envoi vers le backend BuilderBeru...", true, 'kaisel');
+      
+      const response = await fetch('http://159.223.225.71:3001/api/hallofflame/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(hunterData)
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        showTankMessage(
+          `🏆 ${result.hunter.hunterName} sauvegardé ! Rang #${result.rank} • Total hunters: ${result.totalHunters}`,
+          true,
+          'kaisel'
+        );
+        
+        console.log('✅ Réponse backend:', result);
+      } else {
+        throw new Error(result.error || 'Erreur backend inconnue');
+      }
+      
+    } catch (error) {
+      console.error('❌ Erreur API:', error);
+      showTankMessage(
+        `❌ Erreur sauvegarde: ${error.message}. Données conservées localement.`,
+        true,
+        'kaisel'
+      );
+      
+      // Fallback localStorage en cas d'erreur
+      console.log('🏆 Fallback - Données:', hunterData);
+    }
     
     // Appeler onSave avec les données si fourni
     if (onSave && typeof onSave === 'function') {
       onSave(hunterData);
     }
+    
+    // 🏆 PROPOSITION D'OUVRIR LE HALLOFFLAME
+    setTimeout(() => {
+      if (window.confirm("🏆 Hunter sauvegardé ! Voulez-vous voir le classement Hall Of Flame ?")) {
+        // Tu peux passer cette fonction en prop depuis BuilderBeru
+        if (onNavigateToHallOfFlame) {
+          onNavigateToHallOfFlame();
+        }
+      }
+    }, 1000);
     
     onClose();
   };
