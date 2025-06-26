@@ -43,7 +43,7 @@ const AdminValidationPage = ({
       setLoading(true);
       showTankMessage("🛡️ Chargement des hunters en attente v2.0...", true, 'kaisel');
       
-      const response = await fetch('http://159.223.225.71:3001/api/admin/pending');
+      const response = await fetch('https://api.builderberu.com/api/admin/pending');
       const result = await response.json();
       
       if (response.ok && result.success) {
@@ -65,7 +65,7 @@ const AdminValidationPage = ({
 
   const loadAdminStats = async () => {
     try {
-      const response = await fetch('http://159.223.225.71:3001/api/admin/stats');
+      const response = await fetch('https://api.builderberu.com/api/admin/stats');
       const result = await response.json();
       
       if (response.ok && result.success) {
@@ -78,7 +78,7 @@ const AdminValidationPage = ({
 
   const loadDuplicates = async () => {
     try {
-      const response = await fetch('http://159.223.225.71:3001/api/admin/duplicates');
+      const response = await fetch('https://api.builderberu.com/api/admin/duplicates');
       const result = await response.json();
       
       if (response.ok && result.success) {
@@ -94,7 +94,7 @@ const AdminValidationPage = ({
     try {
       showTankMessage("✅ Approbation en cours...", true, 'kaisel');
       
-      const response = await fetch(`http://159.223.225.71:3001/api/admin/approve/${hunterId}`, {
+      const response = await fetch(`https://api.builderberu.com/api/admin/approve/${hunterId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ confidenceLevel, issues, adminNotes })
@@ -128,7 +128,7 @@ const AdminValidationPage = ({
     try {
       showTankMessage("🗑️ Suppression en cours...", true, 'kaisel');
       
-      const response = await fetch(`http://159.223.225.71:3001/api/admin/reject/${hunterId}`, {
+      const response = await fetch(`https://api.builderberu.com/api/admin/reject/${hunterId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason })

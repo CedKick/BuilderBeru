@@ -469,7 +469,7 @@ const HallOfFlameDebugPopup = ({
     try {
       showTankMessage("🌐 Envoi vers le backend BuilderBeru...", true, 'kaisel');
       
-      const response = await fetch('http://159.223.225.71:3001/api/hallofflame/submit', {
+      const response = await fetch('https://api.builderberu.com/api/hallofflame/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
