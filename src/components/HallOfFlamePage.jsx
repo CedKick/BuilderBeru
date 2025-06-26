@@ -40,7 +40,7 @@ const HallOfFlamePage = ({
       try {
         showTankMessage("🌐 Chargement du Hall Of Flame depuis l'API...", true, 'kaisel');
         
-        const response = await fetch('http://159.223.225.71:3001/api/hallofflame/hunters');
+        const response = await fetch('https://159.223.225.71:3001/api/hallofflame/hunters');
         const result = await response.json();
         
         if (response.ok && result.success) {
@@ -155,7 +155,7 @@ const HallOfFlamePage = ({
     try {
       showTankMessage("🔄 Actualisation depuis le backend...", true, 'kaisel');
       
-      const response = await fetch('http://159.223.225.71:3001/api/hallofflame/hunters');
+      const response = await fetch('https://159.223.225.71:3001/api/hallofflame/hunters');
       const result = await response.json();
       
       if (response.ok && result.success) {

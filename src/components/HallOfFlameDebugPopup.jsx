@@ -1,43 +1,10 @@
 // HallOfFlameDebugPopup.jsx - 🏆 HALL OF FLAME ADVANCED SYSTEM BY KAISEL - VERSION PROPS CLEAN
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { BUILDER_DATA } from '../data/builder_data.js';
 
-// 🗡️ BUILDER DATA - INTÉGRÉ TEMPORAIREMENT (à importer depuis ../data/builder_data.js)
-const BUILDER_DATA = {
-  "niermann": {
-    "name": "Lennart Niermann",
-    "element": "Water",
-    "class": "Fighter", 
-    "grade": "SSR",
-    "scaleStat": "Defense",
-    "artifactSets": {
-      "hybridIronWillOutstanding": {
-        "name": "Hybrid Iron Will/Outstanding",
-        "setComposition": "4x Iron Will + 4x Outstanding Ability"
-      },
-      "fullChaoticInfamy": {
-        "name": "Full Chaotic Infamy",
-        "setComposition": "8x Chaotic Infamy"
-      }
-    }
-  },
-  "kanae": {
-    "name": "Tawata Kanae",
-    "element": "Fire",
-    "class": "Assassin",
-    "grade": "SSR",
-    "scaleStat": "Attack",
-    "artifactSets": {
-      "hybridAssassinBuild": {
-        "name": "x2 One-Hit Kill x2 Burning cursed/x4 Expert",
-        "setComposition": "2x Burning Curse + 2x One-hit Kill + 4x Expert"
-      }
-    }
-  }
-};
-
-// 🧮 CALCUL CP AVANCÉ KAISEL - VERSION PROPS
-const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false) => {
+// 🧮 CALCUL CP AVANCÉ KAISEL - VERSION PROPS + SET BONUS
+const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false, setBonus = false) => {
   if (!stats || !selectedCharacter) return returnDetails ? { total: 0, details: [] } : 0;
   
   const builderInfo = BUILDER_DATA[selectedCharacter];
@@ -122,6 +89,19 @@ const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false) =>
     color: "#eab308"
   });
   
+  // 🏆 BONUS SET OPTIMAL (+5% CP si set parfait)
+  if (setBonus) {
+    const bonus = totalCP * 0.05;
+    totalCP += bonus;
+    details.push({
+      name: "Set Optimal Bonus",
+      value: "Perfect",
+      multiplier: "+5%",
+      points: Math.round(bonus),
+      color: "#10b981"
+    });
+  }
+  
   if (returnDetails) {
     return {
       total: Math.round(totalCP),
@@ -132,9 +112,14 @@ const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false) =>
   return Math.round(totalCP);
 };
 
-// 🎯 ANALYSER SETS D'ARTEFACTS - VERSION SIMPLIFIÉE
+// 🎯 ANALYSER SETS D'ARTEFACTS - VERSION AVANCÉE KAISEL
 const analyzeArtifactSets = (artifacts, selectedCharacter) => {
-  if (!artifacts) return { equipped: {}, analysis: "" };
+  if (!artifacts) return { 
+    equipped: {}, 
+    analysis: "", 
+    isOptimal: false, 
+    recommendedSets: []
+  };
   
   const equippedSets = {};
   
@@ -145,14 +130,78 @@ const analyzeArtifactSets = (artifacts, selectedCharacter) => {
     }
   });
   
-  // Analyser selon BUILDER_DATA
+  // Construire la string des sets détectés
   let analysis = "Sets détectés : ";
+  const detectedSetsList = [];
   
   Object.entries(equippedSets).forEach(([setName, count]) => {
-    analysis += `${setName} (${count}), `;
+    const setString = `${setName} (${count})`;
+    detectedSetsList.push(setString);
+    analysis += `${setString}, `;
   });
   
-  return { equipped: equippedSets, analysis: analysis.slice(0, -2) };
+  analysis = analysis.slice(0, -2); // Supprimer la dernière virgule
+  
+  // 🚀 VALIDATION AVEC BUILDER_DATA
+  const builderInfo = BUILDER_DATA[selectedCharacter];
+  let isOptimal = false;
+  let recommendedSets = [];
+  
+  if (builderInfo && builderInfo.artifactSets) {
+    // Récupérer tous les sets recommandés
+    Object.values(builderInfo.artifactSets).forEach(artifactSet => {
+      if (artifactSet.setComposition) {
+        recommendedSets.push({
+          name: artifactSet.name,
+          composition: artifactSet.setComposition,
+          availability: artifactSet.availability
+        });
+      }
+    });
+    
+    // 🧮 FONCTION DE NORMALISATION POUR COMPARAISON
+    const normalizeSetString = (setString) => {
+      if (!setString) return "";
+      
+      // Convertir "4x Iron Will + 4x Outstanding Ability" 
+      // en "Iron Will (4), Outstanding Ability (4)"
+      if (setString.includes('x') && setString.includes('+')) {
+        const parts = setString.split('+').map(part => part.trim());
+        const normalized = parts.map(part => {
+          const match = part.match(/(\d+)x\s*(.+)/);
+          if (match) {
+            const count = match[1];
+            const setName = match[2].trim();
+            return `${setName} (${count})`;
+          }
+          return part;
+        });
+        return normalized.sort().join(', ');
+      }
+      
+      // Si déjà au bon format, on trie juste
+      return setString.split(',').map(s => s.trim()).sort().join(', ');
+    };
+    
+    const detectedNormalized = normalizeSetString(detectedSetsList.sort().join(', '));
+    
+    // Vérifier si un des sets recommandés correspond
+    for (const recSet of recommendedSets) {
+      const recommendedNormalized = normalizeSetString(recSet.composition);
+      
+      if (detectedNormalized === recommendedNormalized) {
+        isOptimal = true;
+        break;
+      }
+    }
+  }
+  
+  return { 
+    equipped: equippedSets, 
+    analysis: analysis || "Aucun set détecté",
+    isOptimal: isOptimal,
+    recommendedSets: recommendedSets
+  };
 };
 
 const HallOfFlameDebugPopup = ({
@@ -165,13 +214,14 @@ const HallOfFlameDebugPopup = ({
   currentCores = {},
   currentGems = {},
   currentWeapon = {},
-  statsFromArtifacts = {}, // 🆕 NOUVELLE PROP
+  statsFromArtifacts = {},
   onSave,
   showTankMessage
 }) => {
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
-    hunterName: '',
+    pseudo: '',
+    accountId: '',
     guildName: '',
     screenshots: [],
     notes: ''
@@ -179,11 +229,16 @@ const HallOfFlameDebugPopup = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [isValidating, setIsValidating] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
-  const [cpDetailsTotal, setCpDetailsTotal] = useState({ total: 0, details: [] }); // 🆕 CP Total
-  const [cpDetailsArtifacts, setCpDetailsArtifacts] = useState({ total: 0, details: [] }); // 🆕 CP Artifacts
+  const [cpDetailsTotal, setCpDetailsTotal] = useState({ total: 0, details: [] });
+  const [cpDetailsArtifacts, setCpDetailsArtifacts] = useState({ total: 0, details: [] });
   const [showCpTooltipTotal, setShowCpTooltipTotal] = useState(false);
   const [showCpTooltipArtifacts, setShowCpTooltipArtifacts] = useState(false);
-  const [setAnalysis, setSetAnalysis] = useState({ equipped: {}, analysis: "" });
+  const [setAnalysis, setSetAnalysis] = useState({ 
+    equipped: {}, 
+    analysis: "", 
+    isOptimal: false, 
+    recommendedSets: []
+  });
   const popupRef = useRef(null);
 
   const isMobileDevice = window.innerWidth < 768;
@@ -191,19 +246,25 @@ const HallOfFlameDebugPopup = ({
   // 🚀 AUTO-CALCUL DES CP AU CHARGEMENT
   useEffect(() => {
     if (isOpen && selectedCharacter && (currentStats || statsFromArtifacts)) {
-      // Calculer CP des stats totales
-      const cpTotal = calculateAdvancedCP(currentStats, selectedCharacter, true);
-      setCpDetailsTotal(cpTotal);
-      
-      // Calculer CP des artifacts
-      const cpArtifacts = calculateAdvancedCP(statsFromArtifacts, selectedCharacter, true);
-      setCpDetailsArtifacts(cpArtifacts);
-      
-      // Analyser les sets
+      // Analyser les sets d'abord
       const setsAnalysis = analyzeArtifactSets(currentArtifacts, selectedCharacter);
       setSetAnalysis(setsAnalysis);
       
-      showTankMessage(`✅ ${selectedCharacter} chargé: ${cpTotal.total.toLocaleString()} CP total`, true, 'kaisel');
+      // Calculer CP des stats totales (avec bonus set)
+      const cpTotal = calculateAdvancedCP(currentStats, selectedCharacter, true, setsAnalysis.isOptimal);
+      setCpDetailsTotal(cpTotal);
+      
+      // Calculer CP des artifacts (avec bonus set)
+      const cpArtifacts = calculateAdvancedCP(statsFromArtifacts, selectedCharacter, true, setsAnalysis.isOptimal);
+      setCpDetailsArtifacts(cpArtifacts);
+      
+      // Message selon l'état des sets
+      let message = `✅ ${selectedCharacter} chargé: ${cpTotal.total.toLocaleString()} CP total`;
+      if (setsAnalysis.isOptimal) {
+        message += " 🏆 SET OPTIMAL!";
+      }
+      
+      showTankMessage(message, true, 'kaisel');
     }
   }, [isOpen, selectedCharacter, currentStats, statsFromArtifacts, currentArtifacts]);
 
@@ -211,7 +272,8 @@ const HallOfFlameDebugPopup = ({
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        hunterName: '',
+        pseudo: '',
+        accountId: '',
         guildName: '',
         screenshots: [],
         notes: ''
@@ -220,7 +282,12 @@ const HallOfFlameDebugPopup = ({
       setValidationErrors([]);
       setCpDetailsTotal({ total: 0, details: [] });
       setCpDetailsArtifacts({ total: 0, details: [] });
-      setSetAnalysis({ equipped: {}, analysis: "" });
+      setSetAnalysis({ 
+        equipped: {}, 
+        analysis: "", 
+        isOptimal: false, 
+        recommendedSets: []
+      });
     }
   }, [isOpen]);
 
@@ -243,12 +310,28 @@ const HallOfFlameDebugPopup = ({
     
     const errors = [];
     
-    if (!formData.hunterName.trim()) {
-      errors.push("❌ Nom du hunter requis");
+    if (!formData.pseudo.trim()) {
+      errors.push("❌ Pseudo requis");
     }
     
-    if (formData.hunterName.trim().length < 2) {
-      errors.push("❌ Nom du hunter trop court (min 2 caractères)");
+    if (formData.pseudo.trim().length < 2) {
+      errors.push("❌ Pseudo trop court (min 2 caractères)");
+    }
+
+    if (!formData.accountId.trim()) {
+      errors.push("❌ ID Account requis");
+    }
+    
+    if (formData.accountId.trim().length < 4) {
+      errors.push("❌ ID Account trop court (min 4 caractères, ex: #Kly123)");
+    }
+
+    if (!formData.accountId.startsWith('#')) {
+      errors.push("❌ ID Account doit commencer par # (ex: #Kly123)");
+    }
+
+    if (!formData.screenshots || formData.screenshots.length === 0) {
+      errors.push("❌ Screenshot obligatoire pour validation");
     }
     
     if (!currentStats || Object.keys(currentStats).length === 0) {
@@ -260,10 +343,12 @@ const HallOfFlameDebugPopup = ({
       errors.push("⚠️ CP avancé très faible (< 10k), êtes-vous sûr ?");
     }
     
-    // Validation sets
+    // Validation sets avancée
     const builderInfo = BUILDER_DATA[selectedCharacter];
     if (builderInfo && Object.keys(setAnalysis.equipped).length === 0) {
       errors.push("⚠️ Aucun set d'artefact détecté");
+    } else if (builderInfo && !setAnalysis.isOptimal && setAnalysis.recommendedSets.length > 0) {
+      errors.push("⚠️ Set d'artefacts non optimal - bonus CP manqué");
     }
     
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -282,7 +367,7 @@ const HallOfFlameDebugPopup = ({
 
   // 📸 UPLOAD SCREENSHOTS TO IMGUR
   const uploadToImgur = async (files) => {
-    const CLIENT_ID = '52dd60224842c5b'; // BuilderBeru Imgur Client ID
+    const CLIENT_ID = '52dd60224842c5b';
     const uploadedUrls = [];
     
     for (const file of files) {
@@ -319,7 +404,7 @@ const HallOfFlameDebugPopup = ({
     return uploadedUrls;
   };
 
- // 💾 SAUVEGARDE FINALE (avec screenshots Imgur + API Backend)
+ // 💾 SAUVEGARDE FINALE
   const handleFinalSave = async () => {
     if (!currentStats || Object.keys(currentStats).length === 0) {
       showTankMessage("❌ Aucune donnée à sauvegarder", true, 'kaisel');
@@ -328,15 +413,18 @@ const HallOfFlameDebugPopup = ({
 
     let screenshotUrls = [];
     
-    // Upload screenshots si présents
     if (formData.screenshots && formData.screenshots.length > 0) {
       showTankMessage("📸 Upload screenshots vers Imgur...", true, 'kaisel');
       screenshotUrls = await uploadToImgur(formData.screenshots);
     }
 
     const hunterData = {
-      hunterName: formData.hunterName.trim(),
+      // 🆕 NOUVELLES DONNÉES IDENTIFICATRICES
+      pseudo: formData.pseudo.trim(),
+      accountId: formData.accountId.trim(),
       guildName: formData.guildName.trim(),
+      
+      // Données du personnage
       character: selectedCharacter,
       characterName: characterData?.name || selectedCharacter,
       
@@ -354,6 +442,13 @@ const HallOfFlameDebugPopup = ({
       cpDetailsTotal: cpDetailsTotal,
       cpDetailsArtifacts: cpDetailsArtifacts,
       setAnalysis: setAnalysis,
+      
+      // 🆕 VALIDATION SETS
+      setValidation: {
+        isOptimal: setAnalysis.isOptimal,
+        recommendedSets: setAnalysis.recommendedSets,
+        detectedSets: Object.entries(setAnalysis.equipped).map(([name, count]) => `${name} (${count})`)
+      },
       
       // Screenshots Imgur
       screenshots: screenshotUrls,
@@ -386,7 +481,7 @@ const HallOfFlameDebugPopup = ({
       
       if (response.ok && result.success) {
         showTankMessage(
-          `🏆 ${result.hunter.hunterName} sauvegardé ! Rang #${result.rank} • Total hunters: ${result.totalHunters}`,
+          `🏆 ${result.hunter.pseudo} sauvegardé ! Rang #${result.rank} • Total hunters: ${result.totalHunters}`,
           true,
           'kaisel'
         );
@@ -404,19 +499,15 @@ const HallOfFlameDebugPopup = ({
         'kaisel'
       );
       
-      // Fallback localStorage en cas d'erreur
       console.log('🏆 Fallback - Données:', hunterData);
     }
     
-    // Appeler onSave avec les données si fourni
     if (onSave && typeof onSave === 'function') {
       onSave(hunterData);
     }
     
-    // 🏆 PROPOSITION D'OUVRIR LE HALLOFFLAME
     setTimeout(() => {
       if (window.confirm("🏆 Hunter sauvegardé ! Voulez-vous voir le classement Hall Of Flame ?")) {
-        // Tu peux passer cette fonction en prop depuis BuilderBeru
         if (onNavigateToHallOfFlame) {
           onNavigateToHallOfFlame();
         }
@@ -432,7 +523,6 @@ const HallOfFlameDebugPopup = ({
     return Math.round(value).toLocaleString();
   };
 
-  // Vérifier si on a des données
   const hasData = currentStats && Object.keys(currentStats).length > 0;
 
   if (!isOpen) return null;
@@ -515,12 +605,6 @@ const HallOfFlameDebugPopup = ({
           gap: 1rem;
         }
 
-        .stat-bar {
-          height: 4px;
-          background: linear-gradient(90deg, var(--color), transparent);
-          border-radius: 2px;
-        }
-
         .error-item {
           background: rgba(239, 68, 68, 0.1);
           border-left: 4px solid #ef4444;
@@ -559,8 +643,8 @@ const HallOfFlameDebugPopup = ({
         <div
           ref={popupRef}
           className={`flame-popup rounded-2xl shadow-2xl w-full transition-all duration-300 ${
-            isMobileDevice ? 'max-w-sm max-h-[90vh]' : 'max-w-4xl max-h-[90vh]'
-          } overflow-hidden`}
+            isMobileDevice ? 'max-w-sm max-h-[85vh]' : 'max-w-4xl max-h-[85vh]'
+          } overflow-hidden flex flex-col`}
         >
           
           {/* 🎯 HEADER */}
@@ -573,7 +657,7 @@ const HallOfFlameDebugPopup = ({
                 <div>
                   <h2 className="text-xl font-bold text-yellow-400">HallOfFlame Advanced</h2>
                   <p className="text-gray-300 text-sm">
-                    Kaisel CP System v3.0 • Props Direct
+                    Kaisel CP System v3.1 • Set Validation
                     {hasData && (
                       <span className="text-green-400 ml-2">
                         • Total: {cpDetailsTotal.total.toLocaleString()} CP
@@ -609,7 +693,7 @@ const HallOfFlameDebugPopup = ({
           </div>
 
           {/* 📋 CONTENU PRINCIPAL */}
-          <div className="p-6 overflow-y-auto max-h-[70vh]">
+          <div className="flex-1 p-6 overflow-y-auto min-h-0">
             
             {/* STEP 1: CONFIGURATION & DONNÉES AVANCÉES */}
             {currentStep === 1 && (
@@ -637,10 +721,10 @@ const HallOfFlameDebugPopup = ({
                           {cpDetailsTotal.total.toLocaleString()}
                         </p>
                         
-                        {/* 🆕 TOOLTIP CP TOTAL */}
+                        {/* TOOLTIP CP TOTAL */}
                         {showCpTooltipTotal && cpDetailsTotal.details.length > 0 && (
                           <div className="cp-tooltip">
-                            <p className="text-yellow-400 font-bold mb-2">📊 CP Total (currentStats):</p>
+                            <p className="text-yellow-400 font-bold mb-2">📊 CP Total:</p>
                             {cpDetailsTotal.details.map((detail, index) => (
                               <div key={index} className="flex justify-between items-center mb-1">
                                 <span style={{ color: detail.color }}>{detail.name}:</span>
@@ -668,10 +752,10 @@ const HallOfFlameDebugPopup = ({
                           {cpDetailsArtifacts.total.toLocaleString()}
                         </p>
                         
-                        {/* 🆕 TOOLTIP CP ARTIFACTS */}
+                        {/* TOOLTIP CP ARTIFACTS */}
                         {showCpTooltipArtifacts && cpDetailsArtifacts.details.length > 0 && (
                           <div className="cp-tooltip">
-                            <p className="text-purple-400 font-bold mb-2">🎨 CP Artifacts (statsFromArtifacts):</p>
+                            <p className="text-purple-400 font-bold mb-2">🎨 CP Artifacts:</p>
                             {cpDetailsArtifacts.details.map((detail, index) => (
                               <div key={index} className="flex justify-between items-center mb-1">
                                 <span style={{ color: detail.color }}>{detail.name}:</span>
@@ -697,10 +781,44 @@ const HallOfFlameDebugPopup = ({
                       </div>
                     </div>
 
-                    {/* Sets Analysis */}
+                    {/* Sets Analysis Avancée */}
                     <div className="bg-black/30 rounded p-3 border border-blue-500/20">
-                      <p className="text-blue-300 text-sm font-bold mb-1">🎨 Sets d'Artefacts:</p>
-                      <p className="text-gray-300 text-xs">{setAnalysis.analysis || "Aucun set détecté"}</p>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-blue-300 text-sm font-bold">🎨 Sets d'Artefacts:</p>
+                        {setAnalysis.isOptimal && (
+                          <span className="text-green-400 text-xs font-bold bg-green-900/30 px-2 py-1 rounded">
+                            ✅ OPTIMAL (+5% CP)
+                          </span>
+                        )}
+                        {!setAnalysis.isOptimal && setAnalysis.recommendedSets.length > 0 && Object.keys(setAnalysis.equipped).length > 0 && (
+                          <span className="text-yellow-400 text-xs font-bold bg-yellow-900/30 px-2 py-1 rounded">
+                            ⚠️ NON OPTIMAL
+                          </span>
+                        )}
+                        {Object.keys(setAnalysis.equipped).length === 0 && (
+                          <span className="text-red-400 text-xs font-bold bg-red-900/30 px-2 py-1 rounded">
+                            ❌ AUCUN SET
+                          </span>
+                        )}
+                      </div>
+                      
+                      <p className="text-gray-300 text-xs mb-3">
+                        {setAnalysis.analysis || "Aucun set détecté"}
+                      </p>
+                      
+                      {/* Afficher les sets recommandés */}
+                      {setAnalysis.recommendedSets && setAnalysis.recommendedSets.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          <p className="text-cyan-300 text-xs font-bold">🎯 Sets Recommandés:</p>
+                          {setAnalysis.recommendedSets.map((recSet, index) => (
+                            <div key={index} className="text-xs">
+                              <span className="text-cyan-400">{recSet.name}:</span>
+                              <span className="text-gray-300 ml-1">{recSet.composition}</span>
+                              <span className="text-gray-500 ml-1">({recSet.availability})</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -713,35 +831,49 @@ const HallOfFlameDebugPopup = ({
                   </div>
                 )}
 
-                {/* Hunter Info */}
+                {/* Hunter Info Mis à Jour */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      🎯 Nom du Hunter *
+                      🎯 Pseudo *
                     </label>
                     <input
                       type="text"
-                      value={formData.hunterName}
-                      onChange={(e) => setFormData(prev => ({...prev, hunterName: e.target.value}))}
+                      value={formData.pseudo}
+                      onChange={(e) => setFormData(prev => ({...prev, pseudo: e.target.value}))}
                       className="flame-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
-                      placeholder="Entrez votre nom..."
+                      placeholder="Votre pseudo de jeu..."
                       maxLength={20}
                     />
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      🏰 Guilde
+                      🆔 ID Account *
                     </label>
                     <input
                       type="text"
-                      value={formData.guildName}
-                      onChange={(e) => setFormData(prev => ({...prev, guildName: e.target.value}))}
+                      value={formData.accountId}
+                      onChange={(e) => setFormData(prev => ({...prev, accountId: e.target.value}))}
                       className="flame-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
-                      placeholder="Nom de votre guilde..."
+                      placeholder="#Kly123"
                       maxLength={15}
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    🏰 Nom Guilde (Optionnel)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.guildName}
+                    onChange={(e) => setFormData(prev => ({...prev, guildName: e.target.value}))}
+                    className="flame-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
+                    placeholder="Nom de votre guilde..."
+                    maxLength={25}
+                  />
                 </div>
 
                 {/* 📊 COMPARAISON STATS AVANCÉE */}
@@ -754,7 +886,7 @@ const HallOfFlameDebugPopup = ({
                     <div className="stat-comparison">
                       {/* Current Stats */}
                       <div>
-                        <h4 className="text-sm font-bold text-yellow-300 mb-2">⚡ Stats Totales (currentStats)</h4>
+                        <h4 className="text-sm font-bold text-yellow-300 mb-2">⚡ Stats Totales</h4>
                         <div className="space-y-2 text-xs">
                           <div className="flex justify-between">
                             <span className="text-gray-400">HP:</span>
@@ -789,7 +921,7 @@ const HallOfFlameDebugPopup = ({
 
                       {/* Stats From Artifacts */}
                       <div>
-                        <h4 className="text-sm font-bold text-purple-300 mb-2">🎨 Stats des Artefacts (statsFromArtifacts)</h4>
+                        <h4 className="text-sm font-bold text-purple-300 mb-2">🎨 Stats des Artefacts</h4>
                         <div className="space-y-2 text-xs">
                           <div className="flex justify-between">
                             <span className="text-gray-400">HP:</span>
@@ -825,151 +957,11 @@ const HallOfFlameDebugPopup = ({
                   </div>
                 )}
 
-                {/* 🎨 ARTIFACTS DÉTAILLÉS */}
-                {currentArtifacts && Object.keys(currentArtifacts).length > 0 && (
-                  <div className="bg-black/30 rounded-lg p-4 border border-yellow-500/20">
-                    <h3 className="font-bold text-yellow-300 mb-4 flex items-center gap-2">
-                      🎨 Artefacts Équipés ({Object.keys(currentArtifacts).length}/8)
-                    </h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                      {Object.entries(currentArtifacts).map(([slot, artifact]) => (
-                        <div key={slot} className="artifact-slot rounded-lg p-3">
-                          <div className="text-center">
-                            <p className="text-xs font-bold text-gray-300 mb-1">{slot}</p>
-                            <p className="text-xs text-yellow-400 mb-2">{artifact.set || 'Aucun Set'}</p>
-                            
-                            {/* Main Stat */}
-                            <div className="mb-2">
-                              <p className="text-xs text-gray-400">Main:</p>
-                              <p className="text-xs font-bold text-white">
-                                {artifact.mainStat || 'N/A'}
-                                {artifact.mainStatValue ? ` (+${Math.round(artifact.mainStatValue)})` : ''}
-                              </p>
-                            </div>
-                            
-                            {/* Sub Stats avec procOrders */}
-                            <div>
-                              <p className="text-xs text-gray-400 mb-1">Sub:</p>
-                              <div className="space-y-1">
-                                {artifact.subStats && artifact.subStats.slice(0, 4).map((subStat, index) => {
-                                  const subStatValue = artifact.subStatsLevels && artifact.subStatsLevels[index] 
-                                    ? artifact.subStatsLevels[index].value 
-                                    : null;
-                                  const procCount = artifact.procOrders && artifact.procOrders[index] 
-                                    ? artifact.procOrders[index].length - 1 
-                                    : 0;
-                                  
-                                  // Si le nom de la stat contient %, on garde les décimales
-                                  const isPercentageStat = subStat && subStat.includes('%');
-                                  
-                                  return (
-                                    <p key={index} className="text-xs text-gray-300">
-                                      {subStat ? (
-                                        <>
-                                          {subStat}
-                                          {procCount >= 1 && <span className="text-yellow-400"> (+{procCount})</span>}
-                                          {subStatValue && (
-                                            <span className="text-white">
-                                              : {isPercentageStat ? Number(subStatValue).toFixed(2) : Math.round(subStatValue)}
-                                              {isPercentageStat ? '%' : ''}
-                                            </span>
-                                          )}
-                                        </>
-                                      ) : '-'}
-                                    </p>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 💎 GEMS & WEAPON & CORES INFO */}
-                {(currentGems || currentWeapon || currentCores) && (
-                  <div className="bg-black/30 rounded-lg p-4 border border-green-500/20">
-                    <h3 className="font-bold text-green-300 mb-4 flex items-center gap-2">
-                      💎 Équipements Additionnels
-                    </h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      {/* Gems */}
-                      {currentGems && Object.keys(currentGems).length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-bold text-emerald-300 mb-2">💎 Gems ({Object.keys(currentGems).length})</h4>
-                          <div className="space-y-1 text-xs">
-                            {Object.entries(currentGems).map(([color, gemData]) => (
-                              <div key={color} className="text-gray-300">
-                                <span className="text-emerald-400">{color}:</span>
-                                <div className="ml-2">
-                                  {Object.entries(gemData).map(([statName, statValue]) => (
-                                    <div key={statName}>
-                                      {statName}: {typeof statValue === 'number' ? Math.round(statValue) : statValue}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Weapon */}
-                      {currentWeapon && Object.keys(currentWeapon).length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-bold text-orange-300 mb-2">⚔️ Weapon</h4>
-                          <div className="space-y-1 text-xs text-gray-300">
-                            <div>
-                              <span className="text-orange-400">Main Stat:</span> {currentWeapon.mainStat || 'N/A'}
-                              {currentWeapon.mainStat && BUILDER_DATA[selectedCharacter]?.scaleStat === currentWeapon.mainStat && (
-                                <span className="text-yellow-400 ml-1">⭐</span>
-                              )}
-                            </div>
-                            <div><span className="text-orange-400">Precision:</span> {currentWeapon.precision || 'N/A'}</div>
-                            {currentWeapon.mainStatValue && (
-                              <div><span className="text-orange-400">Value:</span> {Math.round(currentWeapon.mainStatValue)}</div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Cores */}
-                      {currentCores && Object.keys(currentCores).length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-bold text-cyan-300 mb-2">🔮 Cores ({Object.keys(currentCores).length})</h4>
-                          <div className="space-y-1 text-xs">
-                            {Object.entries(currentCores).map(([coreType, coreData]) => (
-                              <div key={coreType} className="text-gray-300">
-                                <span className="text-cyan-400">{coreType}:</span>
-                                <div className="ml-2">
-                                  <div>Primary: {coreData.primary || 'N/A'}</div>
-                                  {coreData.primaryValue && (
-                                    <div>Value: {Math.round(coreData.primaryValue)}</div>
-                                  )}
-                                  {coreData.secondary && (
-                                    <div>Secondary: {coreData.secondary}</div>
-                                  )}
-                                  {coreData.secondaryValue && (
-                                    <div>Sec Value: {Math.round(coreData.secondaryValue)}</div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Screenshots Upload */}
+                {/* Screenshots Upload OBLIGATOIRE */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    📸 Screenshots (optionnel)
+                    📸 Screenshots *
+                    <span className="text-red-400 text-xs ml-2">(Obligatoire pour validation)</span>
                   </label>
                   <input
                     type="file"
@@ -978,12 +970,17 @@ const HallOfFlameDebugPopup = ({
                     onChange={(e) => setFormData(prev => ({...prev, screenshots: Array.from(e.target.files)}))}
                     className="flame-input w-full px-4 py-3 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-yellow-500 file:text-black hover:file:bg-yellow-400"
                   />
-                  {formData.screenshots.length > 0 && (
+                  {formData.screenshots.length > 0 ? (
                     <p className="text-green-400 text-sm mt-2">
-                      {formData.screenshots.length} screenshot(s) sélectionné(s)
+                      ✅ {formData.screenshots.length} screenshot(s) sélectionné(s)
+                    </p>
+                  ) : (
+                    <p className="text-red-400 text-sm mt-2">
+                      ❌ Screenshots requis pour soumettre
                     </p>
                   )}
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     📝 Notes (optionnel)
@@ -1002,81 +999,87 @@ const HallOfFlameDebugPopup = ({
 
             {/* STEP 2: VALIDATION */}
             {currentStep === 2 && (
-              <div className={`text-center py-8 ${isValidating ? 'validation-screen' : ''}`}>
-                {isValidating ? (
-                  <>
-                    <div className="text-6xl mb-4 animate-spin">🔍</div>
-                    <h3 className="text-xl font-bold text-yellow-400 mb-2">Validation avancée en cours...</h3>
-                    <p className="text-gray-400">Kaisel analyse le système CP avancé...</p>
-                    
-                    <div className="mt-6 space-y-2 text-left max-w-md mx-auto">
-                      <div className="text-sm text-gray-300">✓ Vérification scaleStat...</div>
-                      <div className="text-sm text-gray-300">✓ Validation multiplicateurs CP...</div>
-                      <div className="text-sm text-gray-300">✓ Analyse sets d'artefacts...</div>
-                      <div className="text-sm text-gray-300">✓ Cohérence stats props...</div>
+              <div className="flex flex-col h-full">
+                <div className={`flex-1 flex items-center justify-center py-4 ${isValidating ? 'validation-screen' : ''}`}>
+                  {isValidating ? (
+                    <div className="text-center">
+                      <div className="text-4xl mb-4 animate-spin">🔍</div>
+                      <h3 className="text-lg font-bold text-yellow-400 mb-2">Validation avancée en cours...</h3>
+                      <p className="text-gray-400 text-sm">Kaisel analyse le système CP + Sets...</p>
+                      
+                      <div className="mt-4 space-y-1 text-xs">
+                        <div className="text-gray-300">✓ Vérification scaleStat...</div>
+                        <div className="text-gray-300">✓ Validation multiplicateurs CP...</div>
+                        <div className="text-gray-300">✓ Analyse sets d'artefacts...</div>
+                        <div className="text-gray-300">✓ Validation bonus optimal...</div>
+                      </div>
                     </div>
-                  </>
-                ) : (
-                  <>
-                    {validationErrors.length > 0 ? (
-                      <>
-                        <div className="text-6xl mb-4">❌</div>
-                        <h3 className="text-xl font-bold text-red-400 mb-4">Erreurs détectées</h3>
-                        
-                        <div className="space-y-2 text-left max-w-md mx-auto">
-                          {validationErrors.map((error, index) => (
-                            <div key={index} className="error-item text-sm text-red-300">
-                              {error}
+                  ) : (
+                    <div className="text-center max-w-md mx-auto">
+                      {validationErrors.length > 0 ? (
+                        <>
+                          <div className="text-4xl mb-4">❌</div>
+                          <h3 className="text-lg font-bold text-red-400 mb-4">Erreurs détectées</h3>
+                          
+                          <div className="space-y-2 text-left mb-6 max-h-48 overflow-y-auto">
+                            {validationErrors.map((error, index) => (
+                              <div key={index} className="error-item text-sm text-red-300">
+                                {error}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-4xl mb-4">✅</div>
+                          <h3 className="text-lg font-bold text-green-400 mb-4">Validation avancée réussie !</h3>
+                          
+                          <div className="space-y-2 text-left mb-6">
+                            <div className="success-item text-sm text-green-300">
+                              ✅ Système CP avancé validé
                             </div>
-                          ))}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-6xl mb-4">✅</div>
-                        <h3 className="text-xl font-bold text-green-400 mb-4">Validation avancée réussie !</h3>
-                        
-                        <div className="space-y-2 text-left max-w-md mx-auto">
-                          <div className="success-item text-sm text-green-300">
-                            ✅ Système CP avancé validé
+                            <div className="success-item text-sm text-green-300">
+                              ✅ ScaleStat détecté: {BUILDER_DATA[selectedCharacter]?.scaleStat}
+                            </div>
+                            <div className="success-item text-sm text-green-300">
+                              ✅ Stats totales: {cpDetailsTotal.total.toLocaleString()} CP
+                            </div>
+                            {setAnalysis.isOptimal && (
+                              <div className="success-item text-sm text-green-300">
+                                🏆 Set optimal détecté ! Bonus +5% CP appliqué
+                              </div>
+                            )}
+                            <div className="success-item text-sm text-green-300">
+                              ✅ Prêt pour le HallOfFlame
+                            </div>
                           </div>
-                          <div className="success-item text-sm text-green-300">
-                            ✅ ScaleStat détecté: {BUILDER_DATA[selectedCharacter]?.scaleStat}
-                          </div>
-                          <div className="success-item text-sm text-green-300">
-                            ✅ Stats totales: {cpDetailsTotal.total.toLocaleString()} CP
-                          </div>
-                          <div className="success-item text-sm text-green-300">
-                            ✅ Stats artefacts: {cpDetailsArtifacts.total.toLocaleString()} CP
-                          </div>
-                          <div className="success-item text-sm text-green-300">
-                            ✅ Prêt pour le HallOfFlame
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </>
-                )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
             {/* STEP 3: SUCCESS */}
             {currentStep === 3 && (
-              <div className="text-center py-8">
-                <div className="text-6xl mb-4">🏆</div>
-                <h3 className="text-xl font-bold text-yellow-400 mb-2">Prêt pour l'enregistrement avancé !</h3>
-                <p className="text-gray-400 mb-6">
-                  {formData.hunterName} sera préparé pour le backend avec le système CP avancé
+              <div className="text-center py-4">
+                <div className="text-4xl mb-4">🏆</div>
+                <h3 className="text-lg font-bold text-yellow-400 mb-2">Prêt pour l'enregistrement avancé !</h3>
+                <p className="text-gray-400 mb-4 text-sm">
+                  {formData.pseudo} sera préparé pour le backend avec validation des sets
                 </p>
                 
-                <div className="bg-yellow-900/20 rounded-lg p-4 border border-yellow-500/30">
-                  <p className="text-yellow-300 text-sm">
-                    🔥 Hunter: <strong>{formData.hunterName}</strong><br/>
+                <div className="bg-yellow-900/20 rounded-lg p-3 border border-yellow-500/30">
+                  <p className="text-yellow-300 text-xs">
+                    🔥 Pseudo: <strong>{formData.pseudo}</strong><br/>
+                    🆔 Account ID: <strong>{formData.accountId}</strong><br/>
                     🏰 Guilde: <strong>{formData.guildName || 'Aucune'}</strong><br/>
                     ⚡ CP Total: <strong>{cpDetailsTotal.total.toLocaleString()}</strong><br/>
                     🎨 CP Artifacts: <strong>{cpDetailsArtifacts.total.toLocaleString()}</strong><br/>
                     🎯 ScaleStat: <strong>{BUILDER_DATA[selectedCharacter]?.scaleStat}</strong><br/>
-                    🔮 Sets: <strong>{Object.keys(setAnalysis.equipped).length} détectés</strong>
+                    🔮 Sets: <strong>{setAnalysis.isOptimal ? '✅ OPTIMAL' : '⚠️ Non optimal'}</strong><br/>
+                    📸 Screenshots: <strong>{formData.screenshots.length} fichier(s)</strong>
                   </p>
                 </div>
               </div>
@@ -1084,14 +1087,14 @@ const HallOfFlameDebugPopup = ({
           </div>
 
           {/* 🎯 FOOTER ACTIONS */}
-          <div className="p-6 border-t border-yellow-500/30 bg-black/20">
-            <div className="flex flex-col gap-3 md:flex-row">
+          <div className="flex-shrink-0 p-4 border-t border-yellow-500/30 bg-black/20">
+            <div className="flex flex-col gap-2 md:flex-row">
               
               {/* Bouton Retour */}
               {currentStep > 1 && (
                 <button
                   onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}
-                  className="px-4 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-center"
+                  className="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-center text-sm"
                 >
                   ← Retour
                 </button>
@@ -1100,7 +1103,7 @@ const HallOfFlameDebugPopup = ({
               {/* Bouton Annuler */}
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-center"
+                className="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-center text-sm"
               >
                 Annuler
               </button>
@@ -1109,8 +1112,8 @@ const HallOfFlameDebugPopup = ({
               {currentStep === 1 && (
                 <button
                   onClick={() => setCurrentStep(2)}
-                  className="flex-1 flame-button px-4 py-3 rounded-lg transition-all text-center min-h-[48px] flex items-center justify-center"
-                  disabled={!formData.hunterName.trim() || !hasData}
+                  className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
+                  disabled={!formData.pseudo.trim() || !formData.accountId.trim() || !hasData || formData.screenshots.length === 0}
                 >
                   <span>Validation Avancée →</span>
                 </button>
@@ -1121,14 +1124,14 @@ const HallOfFlameDebugPopup = ({
                   {validationErrors.length > 0 ? (
                     <button
                       onClick={() => validateData()}
-                      className="flex-1 flame-button px-4 py-3 rounded-lg transition-all text-center min-h-[48px] flex items-center justify-center"
+                      className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
                     >
                       <span>🔄 Réessayer</span>
                     </button>
                   ) : (
                     <button
                       onClick={() => setCurrentStep(3)}
-                      className="flex-1 flame-button px-4 py-3 rounded-lg transition-all text-center min-h-[48px] flex items-center justify-center"
+                      className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
                     >
                       <span>Continuer →</span>
                     </button>
@@ -1138,7 +1141,7 @@ const HallOfFlameDebugPopup = ({
 
               {currentStep === 2 && isValidating && (
                 <button
-                  className="flex-1 flame-button px-4 py-3 rounded-lg transition-all text-center min-h-[48px] flex items-center justify-center"
+                  className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
                   disabled
                 >
                   <span>Validation en cours...</span>
@@ -1148,9 +1151,9 @@ const HallOfFlameDebugPopup = ({
               {currentStep === 3 && (
                 <button
                   onClick={handleFinalSave}
-                  className="flex-1 flame-button px-4 py-3 rounded-lg transition-all text-center min-h-[48px] flex items-center justify-center"
+                  className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
                 >
-                  <span>🏆 Préparer pour Backend</span>
+                  <span>🏆 Envoyer vers Backend</span>
                 </button>
               )}
             </div>

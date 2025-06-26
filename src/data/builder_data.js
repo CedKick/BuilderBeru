@@ -482,7 +482,7 @@ const BUILDER_DATA = {
       "name": "x2 One-Hit Kill x2 Burning cursed/x4 Expert",
       "frenchName": "Build assassin hybride",
       "availability": "LR+",
-      "setComposition": "2x Burning Curse + 2x One-hit Kill + 4x Expert",
+      "setComposition": "One-hit Kill (Almighty Shaman Set) (2), Burning Curse (2), Expert (Beast Set) (4)",
       "pieces": {
         "helmet": "Casque de malédiction ardente",     // Burning Curse
         "chest": "Armure de malédiction ardente",      // Burning Curse

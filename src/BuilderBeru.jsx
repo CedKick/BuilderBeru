@@ -3189,6 +3189,117 @@ BobbyJones : "Allez l'Inter !"
     }
   }, []);
 
+
+// 🏆 AJOUTE CES FONCTIONS AU DÉBUT DE TON COMPOSANT BuilderBeru (après les autres fonctions)
+
+// 🔍 FONCTION DE VALIDATION COMPLÈTE DU HUNTER
+const validateHunterForHallOfFame = (currentArtifacts, currentCores, currentGems) => {
+  const validation = {
+    isValid: true,
+    missing: [],
+    details: {}
+  };
+
+  // 🎨 VÉRIFICATION DES 8 ARTEFACTS
+  const requiredArtifactSlots = ['Helmet', 'Chest', 'Gloves', 'Boots', 'Necklace', 'Bracelet', 'Ring', 'Earrings'];
+  const artifactCount = requiredArtifactSlots.filter(slot => {
+    const artifact = currentArtifacts[slot];
+    return artifact && (artifact.mainStat || artifact.set); // Au minimum un mainStat ou set défini
+  }).length;
+
+  validation.details.artifacts = {
+    current: artifactCount,
+    required: 8,
+    isComplete: artifactCount === 8
+  };
+
+  if (artifactCount < 8) {
+    validation.isValid = false;
+    validation.missing.push(`Artefacts manquants (${artifactCount}/8)`);
+  }
+
+  // 🔮 VÉRIFICATION DES CORES
+  const requiredCoreSlots = ['Offensif', 'Défensif', 'Endurance'];
+  const coreCount = requiredCoreSlots.filter(slot => {
+    const core = currentCores[slot];
+    return core && core.primary; // Au minimum un primary défini
+  }).length;
+
+  validation.details.cores = {
+    current: coreCount,
+    required: 3,
+    isComplete: coreCount === 3
+  };
+
+  if (coreCount < 3) {
+    validation.isValid = false;
+    validation.missing.push(`Cores manquants (${coreCount}/3)`);
+  }
+
+  // 💎 VÉRIFICATION DES GEMMES (optionnel mais recommandé)
+  const gemCount = Object.keys(currentGems || {}).filter(slot => {
+    const gem = currentGems[slot];
+    return gem && Object.values(gem).some(value => value > 0); // Au moins une valeur > 0
+  }).length;
+
+  validation.details.gems = {
+    current: gemCount,
+    recommended: 5,
+    isComplete: gemCount >= 3 // Au moins 3 types de gemmes
+  };
+
+  if (gemCount < 3) {
+    validation.missing.push(`Gemmes recommandées (${gemCount}/5)`);
+    // Pas bloquant mais warning
+  }
+
+  return validation;
+};
+
+// 🏆 FONCTION POUR LE BOUTON SUBMIT HALL OF FAME
+const handleSubmitToHallOfFame = () => {
+  const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
+  
+  if (!validation.isValid) {
+    // 🚫 HUNTER INCOMPLET - MESSAGE KAISEL
+    const missingItems = validation.missing.join(', ');
+    showTankMessage(
+      `🏆 **SUBMISSION HALL OF FAME REFUSÉE**\n\n` +
+      `❌ Hunter incomplet détecté par Kaisel !\n\n` +
+      `**Éléments manquants :**\n${missingItems}\n\n` +
+      `📋 **Détails :**\n` +
+      `🎨 Artefacts: ${validation.details.artifacts.current}/8\n` +
+      `🔮 Cores: ${validation.details.cores.current}/3\n` +
+      `💎 Gemmes: ${validation.details.gems.current}/5\n\n` +
+      `⚡ Complète ton build avant de le soumettre !`,
+      true,
+      'kaisel'
+    );
+    return;
+  }
+
+  // ✅ HUNTER COMPLET - OUVRIR LA POPUP
+  showTankMessage(
+    `🏆 **HUNTER VALIDÉ PAR KAISEL !**\n\n` +
+    `✅ Build complet détecté :\n` +
+    `🎨 ${validation.details.artifacts.current}/8 Artefacts\n` +
+    `🔮 ${validation.details.cores.current}/3 Cores\n` +
+    `💎 ${validation.details.gems.current}/5 Gemmes\n\n` +
+    `🚀 Ouverture du système de soumission...`,
+    true,
+    'kaisel'
+  );
+
+  // Ouvrir la popup HallOfFlameDebug
+  if (typeof setShowHallOfFlameDebug === 'function') {
+    setShowHallOfFlameDebug(true);
+  } else {
+    showTankMessage("🤖 Erreur : système HallOfFlame non trouvé", true, 'kaisel');
+  }
+};
+
+
+
   const updateArtifactFromOCR = (parsedData) => {
     setArtifacts(prev => {
       const updated = { ...prev }; // ✅ Copie objet
@@ -5061,12 +5172,38 @@ BobbyJones : "Allez l'Inter !"
                             Save
                           </button>
 
-                          <button
-                            onClick={handleExportAllBuilds}
-                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
-                          >
-                            Export
-                          </button>
+    <button
+  onClick={() => {
+    const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
+    
+    if (validation.isValid) {
+      handleSubmitToHallOfFame();
+    } else {
+      showTankMessage(
+        `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
+        true,
+        'kaisel'
+      );
+    }
+  }}
+  className={`
+    ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+      ? 'bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white' 
+      : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+    } 
+    font-semibold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0
+  `}
+  disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
+  title={validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid 
+    ? 'Soumettre au Hall of Fame' 
+    : `Manque: ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).missing.join(', ')}`
+  }
+>
+  {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid 
+    ? 'Submit' 
+    : 'Incomplet'
+  }
+</button>
 
                           <button
                             onClick={handleImportBuild}
@@ -5570,21 +5707,21 @@ BobbyJones : "Allez l'Inter !"
 
                 {showAdminPage && (
                   <AdminValidationPage
-  onClose={() => setShowAdminPage(false)}
-  showTankMessage={showTankMessage}
-  
-  // 🆕 TOUTES LES PROPS POUR UNE PAGE ADMIN COMPLÈTE
-  selectedCharacter={selectedCharacter}
-  characterData={characters[selectedCharacter]}
-  currentStats={finalStats}
-  currentArtifacts={artifactsData}
-  statsFromArtifacts={statsFromArtifacts}
-  currentCores={hunterCores[selectedCharacter] || {}}
-  currentGems={gemData}
-  currentWeapon={hunterWeapons[selectedCharacter] || {}}
-  characters={characters}
-  onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
-/>
+                    onClose={() => setShowAdminPage(false)}
+                    showTankMessage={showTankMessage}
+
+                    // 🆕 TOUTES LES PROPS POUR UNE PAGE ADMIN COMPLÈTE
+                    selectedCharacter={selectedCharacter}
+                    characterData={characters[selectedCharacter]}
+                    currentStats={finalStats}
+                    currentArtifacts={artifactsData}
+                    statsFromArtifacts={statsFromArtifacts}
+                    currentCores={hunterCores[selectedCharacter] || {}}
+                    currentGems={gemData}
+                    currentWeapon={hunterWeapons[selectedCharacter] || {}}
+                    characters={characters}
+                    onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
+                  />
                 )}
 
                 {showBeruInteractionMenu && (
@@ -5619,6 +5756,7 @@ BobbyJones : "Allez l'Inter !"
                     multiAccountsData={accounts}
                     substatsMinMaxByIncrements={substatsMinMaxByIncrements}
                     existingScores={artifactScores}
+                    onShowHallOfFlameDebug={() => setShowHallOfFlameDebug(true)}
                     onShowHallOfFlame={() => setShowHallOfFlamePage(true)}
                     showDebugButton={showDebugButton} // ← ET CETTE LIGNE AUSSI
                   />
@@ -6226,12 +6364,38 @@ BobbyJones : "Allez l'Inter !"
                       </div>
                       <div className="w-full flex justify-between tank-targe items-center mt-0 text-sm">
                         <div className="flex items-center space-x-2">
-                          <button
-                            onClick={handleExportAllBuilds}
-                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white text-xs font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                          >
-                            Export
-                          </button>
+  <button
+  onClick={() => {
+    const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
+    
+    if (validation.isValid) {
+      handleSubmitToHallOfFame();
+    } else {
+      showTankMessage(
+        `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
+        true,
+        'kaisel'
+      );
+    }
+  }}
+  className={`
+    ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+      ? 'bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white' 
+      : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+    } 
+    text-xs font-semibold py-1 px-3 rounded-lg shadow-md transition-colors
+  `}
+  disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
+  title={validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid 
+    ? 'Soumettre au Hall of Fame' 
+    : `Manque: ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).missing.join(', ')}`
+  }
+>
+  {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid 
+    ? 'Submit' 
+    : 'Incomplet'
+  }
+</button>
 
                           <button
                             onClick={handleImportBuild}
@@ -6333,21 +6497,21 @@ BobbyJones : "Allez l'Inter !"
 
                   {showAdminPage && (
                     <AdminValidationPage
-  onClose={() => setShowAdminPage(false)}
-  showTankMessage={showTankMessage}
-  
-  // 🆕 TOUTES LES PROPS POUR UNE PAGE ADMIN COMPLÈTE
-  selectedCharacter={selectedCharacter}
-  characterData={characters[selectedCharacter]}
-  currentStats={finalStats}
-  currentArtifacts={artifactsData}
-  statsFromArtifacts={statsFromArtifacts}
-  currentCores={hunterCores[selectedCharacter] || {}}
-  currentGems={gemData}
-  currentWeapon={hunterWeapons[selectedCharacter] || {}}
-  characters={characters}
-  onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
-/>
+                      onClose={() => setShowAdminPage(false)}
+                      showTankMessage={showTankMessage}
+
+                      // 🆕 TOUTES LES PROPS POUR UNE PAGE ADMIN COMPLÈTE
+                      selectedCharacter={selectedCharacter}
+                      characterData={characters[selectedCharacter]}
+                      currentStats={finalStats}
+                      currentArtifacts={artifactsData}
+                      statsFromArtifacts={statsFromArtifacts}
+                      currentCores={hunterCores[selectedCharacter] || {}}
+                      currentGems={gemData}
+                      currentWeapon={hunterWeapons[selectedCharacter] || {}}
+                      characters={characters}
+                      onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
+                    />
                   )}
 
                   {showBeruInteractionMenu && (() => {
@@ -6385,6 +6549,7 @@ BobbyJones : "Allez l'Inter !"
                       multiAccountsData={accounts}
                       substatsMinMaxByIncrements={substatsMinMaxByIncrements}
                       existingScores={artifactScores}
+                      onShowHallOfFlameDebug={() => setShowHallOfFlameDebug(true)}
                       onShowHallOfFlame={() => setShowHallOfFlamePage(true)}
                       showDebugButton={showDebugButton} // ← ET CETTE LIGNE AUSSI
                     />

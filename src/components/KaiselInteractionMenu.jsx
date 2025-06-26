@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { scanTwitchStreams } from '../utils/TwitchIntelligence';
 import '../i18n/i18n';
+import HallOfFlameDebugPopup from "./HallOfFlameDebugPopup";
 
 const KaiselInteractionMenu = ({
   position,
@@ -16,14 +17,17 @@ const KaiselInteractionMenu = ({
   multiAccountsData = {},
   substatsMinMaxByIncrements,
   existingScores = {},
-  onShowHallOfFlame, // ← NOUVEAU CALLBACK
-  showDebugButton = false, // ← NOUVEAU PARAMÈTRE
+  onShowHallOfFlameDebug,
+  onShowHallOfFlame,
+  showDebugButton = false,
   onShowAdminValidation
 }) => {
   const [showMenu, setShowMenu] = useState(true);
   const [animationClass, setAnimationClass] = useState('');
   const [currentSubMenu, setCurrentSubMenu] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false); // ← NOUVEAU STATE
+  const [adminChecked, setAdminChecked] = useState(false); // ← POUR ÉVITER SPAM
   const { t } = useTranslation();
 
   // 🔍 DÉTECTION MOBILE
@@ -31,39 +35,98 @@ const KaiselInteractionMenu = ({
 
   useEffect(() => {
     setAnimationClass('bubble-appear');
+    // 🔐 VÉRIFIER LES DROITS ADMIN AU CHARGEMENT
+    checkAdminStatus();
   }, []);
 
-  // 🔧 OPTIONS PRINCIPALES KAISEL
-  const getMainOptions = () => ({
-    live_streams: {
-      icon: "📺",
-      label: "Streams Twitch Live",
-      action: "show_twitch_streams"
-    },
-    youtube_news: {
-      icon: "🎬",
-      label: "Dernières vidéos YouTube",
-      action: "show_youtube_videos"
-    },
-    netmarble_updates: {
-      icon: "📰",
-      label: "News Netmarble",
-      action: "show_netmarble_news"
-    },
-    site_news: {
-      icon: "🔄",
-      label: "News du Site",
-      action: "show_site_updates"
-    },
-    debug_mode: {
-      icon: "🐛",
-      label: "Mode Debug Pro",
-      action: "show_debug_submenu"
-    }
-  });
+  // 🔐 VÉRIFICATION ADMIN SILENCIEUSE
+  const checkAdminStatus = async () => {
+    if (adminChecked) return; // Éviter les appels multiples
+    
+    try {
+      const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+      const accounts = userData.user?.accounts || {};
 
-  // 🤖 SOUS-MENU DEBUG - VERSION CORRIGÉE
+      const response = await fetch('https://api.builderberu.com/api/auth/verify-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          localStorageData: { multiAccounts: accounts }
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success && result.isAdmin) {
+        setIsAdmin(true);
+        console.log('🔓 Mode Admin Kaisel activé pour', result.verificationDetails.accountFound);
+      } else {
+        setIsAdmin(false);
+        console.log('🔒 Kaisel mode standard - pas de droits admin');
+      }
+    } catch (error) {
+      console.error('❌ Erreur vérification admin Kaisel:', error);
+      setIsAdmin(false);
+    } finally {
+      setAdminChecked(true);
+    }
+  };
+
+  // 🔧 OPTIONS PRINCIPALES KAISEL - CONDITIONNELLES
+  const getMainOptions = () => {
+    const baseOptions = {
+      live_streams: {
+        icon: "📺",
+        label: "Streams Twitch Live",
+        action: "show_twitch_streams"
+      },
+      youtube_news: {
+        icon: "🎬",
+        label: "Dernières vidéos YouTube",
+        action: "show_youtube_videos"
+      },
+      netmarble_updates: {
+        icon: "📰",
+        label: "News Netmarble",
+        action: "show_netmarble_news"
+      },
+      site_news: {
+        icon: "🔄",
+        label: "News du Site",
+        action: "show_site_updates"
+      }
+    };
+
+    // 🔐 AJOUTER DEBUG MODE SEULEMENT SI ADMIN
+    if (isAdmin) {
+      baseOptions.debug_mode = {
+        icon: "🐛",
+        label: "Mode Debug Pro",
+        action: "show_debug_submenu"
+      };
+    }
+
+    return baseOptions;
+  };
+
+  // 🤖 SOUS-MENU DEBUG - ADMIN SEULEMENT
   const getDebugSubMenu = () => {
+    // 🔒 PROTECTION : Si pas admin, retourner menu vide
+    if (!isAdmin) {
+      return {
+        access_denied: {
+          icon: "🔒",
+          label: "Accès Refusé",
+          action: "access_denied"
+        },
+        back: {
+          icon: "↩️",
+          label: "Retour",
+          action: "back_to_main"
+        }
+      };
+    }
+
     const baseMenu = {
       artifact_calculator: {
         icon: "🧮",
@@ -96,27 +159,26 @@ const KaiselInteractionMenu = ({
         action: "toggle_hitbox_debug"
       },
       admin_validation: {
-  icon: "🛡️",
-  label: "Admin Validation",
-  action: "show_admin_validation"
-}
+        icon: "🛡️",
+        label: "Admin Validation",
+        action: "show_admin_validation"
+      }
     };
 
-    // 🏆 AJOUTER L'OPTION HALLOFFLAME SI DEBUG BUTTON ACTIVÉ
-   if (showDebugButton) {
-  baseMenu.hall_of_flame_debug = {
-    icon: "🏆",
-    label: "HallOfFlame Debug",
-    action: "show_hall_debug"
-  };
-  
-  // 🆕 NOUVEAU BOUTON POUR VOIR LE CLASSEMENT
-  baseMenu.hall_of_flame_rankings = {
-    icon: "📊",
-    label: "Voir Classements",
-    action: "show_hall_rankings"
-  };
-}
+    // 🏆 AJOUTER HALLOFFLAME SI DEBUG BUTTON ET ADMIN
+    if (showDebugButton && isAdmin) {
+      baseMenu.hall_of_flame_debug = {
+        icon: "🏆",
+        label: "HallOfFlame Debug",
+        action: "show_hall_debug"
+      };
+      
+      baseMenu.hall_of_flame_rankings = {
+        icon: "📊",
+        label: "Voir Classements",
+        action: "show_hall_rankings"
+      };
+    }
 
     baseMenu.back = {
       icon: "↩️",
@@ -127,50 +189,69 @@ const KaiselInteractionMenu = ({
     return baseMenu;
   };
 
-  // 🧠 ACTIONS KAISEL - VERSION COMPLÈTE
+  // 🧠 ACTIONS KAISEL - AVEC PROTECTION ADMIN
   const handleOption = async (action) => {
     switch (action) {
+      case 'access_denied':
+        showTankMessage("🔒 Kaisel : Accès refusé ! Seuls les admins peuvent accéder au mode Debug Pro.", true, 'kaisel');
+        onClose();
+        break;
+
       case 'show_debug_submenu':
+        // 🔐 DOUBLE VÉRIFICATION ADMIN
+        if (!isAdmin) {
+          showTankMessage("🔒 Kaisel : Tu n'as pas les permissions pour accéder au Debug Pro !", true, 'kaisel');
+          onClose();
+          return;
+        }
         setCurrentSubMenu('debug');
         break;
 
-        case 'show_admin_validation':
-          if (onShowAdminValidation) {
-            onShowAdminValidation();
-            showTankMessage("🛡️ Kaisel ouvre le système de validation admin !", true, 'kaisel');
-          } else {
-            showTankMessage("🤖 Admin validation callback non trouvé...", true, 'kaisel');
-          }
+      case 'show_admin_validation':
+        // 🔐 PROTECTION ADMIN
+        if (!isAdmin) {
+          showTankMessage("🔒 Kaisel : Fonction réservée aux administrateurs !", true, 'kaisel');
           onClose();
-          break;
+          return;
+        }
+        if (onShowAdminValidation) {
+          onShowAdminValidation();
+          showTankMessage("🛡️ Kaisel ouvre le système de validation admin !", true, 'kaisel');
+        } else {
+          showTankMessage("🤖 Admin validation callback non trouvé...", true, 'kaisel');
+        }
+        onClose();
+        break;
 
       case 'back_to_main':
         setCurrentSubMenu(null);
         break;
 
-        
-
-         case 'show_hall_rankings':
-          // Fonction pour ouvrir le HallOfFlamePage 
-          if (onShowHallOfFlame) {
-            onShowHallOfFlame();
-            showTankMessage("📊 Kaisel ouvre les classements HallOfFlame !", true, 'kaisel');
-          } else {
-            showTankMessage("🤖 Classements callback non trouvé... Debug en cours...", true, 'kaisel');
-          }
-          onClose();
-          break;
-
-      // 🏆 NOUVEAU CASE HALLOFFLAME
-      case 'show_hall_debug':
+      case 'show_hall_rankings':
         if (onShowHallOfFlame) {
-    onShowHallOfFlame();
-    showTankMessage("🏆 Kaisel lance le système HallOfFlame ! Interface de niveau légendaire activée ⚡", true, 'kaisel');
-  } else {
-    showTankMessage("🤖 HallOfFlame callback non trouvé... Debug en cours...", true, 'kaisel');
-  }
-  onClose();
-  break;
+          onShowHallOfFlame();
+          showTankMessage("📊 Kaisel ouvre les classements HallOfFlame !", true, 'kaisel');
+        } else {
+          showTankMessage("🤖 Classements callback non trouvé... Debug en cours...", true, 'kaisel');
+        }
+        onClose();
+        break;
+
+      case 'show_hall_debug':
+        // 🔐 PROTECTION ADMIN
+        if (!isAdmin) {
+          showTankMessage("🔒 Kaisel : HallOfFlame Debug réservé aux admins !", true, 'kaisel');
+          onClose();
+          return;
+        }
+        if (onShowHallOfFlameDebug) {
+          onShowHallOfFlameDebug();
+          showTankMessage("🏆 Kaisel lance le système HallOfFlame ! Interface de niveau légendaire activée ⚡", true, 'kaisel');
+        } else {
+          showTankMessage("🤖 HallOfFlame callback non trouvé... Debug en cours...", true, 'kaisel');
+        }
+        onClose();
+        break;
 
       case 'show_twitch_streams':
         try {
@@ -185,6 +266,12 @@ const KaiselInteractionMenu = ({
         break;
 
       case 'toggle_hitbox_debug':
+        // 🔐 PROTECTION ADMIN
+        if (!isAdmin) {
+          showTankMessage("🔒 Kaisel : Debug mode réservé aux admins !", true, 'kaisel');
+          onClose();
+          return;
+        }
         if (window.toggleDebug) {
           window.toggleDebug();
           showTankMessage("🐛 Kaisel a activé le debug mode ! Regarde en haut à droite...", true, 'kaisel');
@@ -217,59 +304,28 @@ const KaiselInteractionMenu = ({
         onClose();
         break;
 
-      // 🤖 ACTIONS DEBUG RÉVOLUTIONNAIRES
+      // 🤖 ACTIONS DEBUG - ADMIN SEULEMENT
       case 'advanced_artifact_calc':
-        const calcMessage = `🧮 **CALCULATEUR ARTEFACTS AVANCÉ**\n\n` +
-          `🔍 Analyse en cours des substats optimaux...\n` +
-          `📊 Calcul des probabilités de roll...\n` +
-          `🎯 Comparaison avec la base de données...\n\n` +
-          `⚠️ Fonctionnalité en développement\n` +
-          `🤖 Kaisel code encore... ⚡`;
-        showTankMessage(calcMessage, true, 'kaisel');
-        onClose();
-        break;
-
       case 'build_simulation':
-        const simMessage = `🎯 **SIMULATEUR DE BUILD**\n\n` +
-          `⚙️ Chargement des configurations...\n` +
-          `🧪 Test des combinaisons d'artefacts...\n` +
-          `📈 Projection des performances...\n\n` +
-          `⚠️ Mode simulation à venir\n` +
-          `🤖 Intelligence artificielle en cours ⚡`;
-        showTankMessage(simMessage, true, 'kaisel');
-        onClose();
-        break;
-
       case 'meta_analysis':
-        const metaMessage = `📈 **ANALYSE MÉTA GLOBAL**\n\n` +
-          `🌍 Scan des tendances communauté...\n` +
-          `🏆 Hunters les plus utilisés en PvP...\n` +
-          `💎 Sets d'artefacts populaires...\n\n` +
-          `⚠️ Base de données en construction\n` +
-          `🤖 Big Data processing... ⚡`;
-        showTankMessage(metaMessage, true, 'kaisel');
-        onClose();
-        break;
-
       case 'dps_calculator':
-        const dpsMessage = `💥 **CALCULATEUR DPS PRÉCIS**\n\n` +
-          `🔢 Formules de dégâts avancées...\n` +
-          `⚔️ Calcul critiques & pénétration...\n` +
-          `🎯 Optimisation rotation skills...\n\n` +
-          `⚠️ Mathématiques complexes en cours\n` +
-          `🤖 Algorithmes de combat ⚡`;
-        showTankMessage(dpsMessage, true, 'kaisel');
-        onClose();
-        break;
-
       case 'ai_optimization':
-        const aiMessage = `🤖 **IA D'OPTIMISATION KAISEL**\n\n` +
-          `🧠 Machine Learning activé...\n` +
-          `📊 Analyse de tes patterns de jeu...\n` +
-          `🎯 Suggestions personnalisées...\n\n` +
-          `⚠️ Neural Network en entraînement\n` +
-          `🤖 Deep Learning en cours... ⚡`;
-        showTankMessage(aiMessage, true, 'kaisel');
+        // 🔐 PROTECTION ADMIN
+        if (!isAdmin) {
+          showTankMessage("🔒 Kaisel : Fonctionnalités avancées réservées aux admins !", true, 'kaisel');
+          onClose();
+          return;
+        }
+        
+        const messages = {
+          'advanced_artifact_calc': `🧮 **CALCULATEUR ARTEFACTS AVANCÉ**\n\n🔍 Analyse en cours des substats optimaux...\n📊 Calcul des probabilités de roll...\n🎯 Comparaison avec la base de données...\n\n⚠️ Fonctionnalité en développement\n🤖 Kaisel code encore... ⚡`,
+          'build_simulation': `🎯 **SIMULATEUR DE BUILD**\n\n⚙️ Chargement des configurations...\n🧪 Test des combinaisons d'artefacts...\n📈 Projection des performances...\n\n⚠️ Mode simulation à venir\n🤖 Intelligence artificielle en cours ⚡`,
+          'meta_analysis': `📈 **ANALYSE MÉTA GLOBAL**\n\n🌍 Scan des tendances communauté...\n🏆 Hunters les plus utilisés en PvP...\n💎 Sets d'artefacts populaires...\n\n⚠️ Base de données en construction\n🤖 Big Data processing... ⚡`,
+          'dps_calculator': `💥 **CALCULATEUR DPS PRÉCIS**\n\n🔢 Formules de dégâts avancées...\n⚔️ Calcul critiques & pénétration...\n🎯 Optimisation rotation skills...\n\n⚠️ Mathématiques complexes en cours\n🤖 Algorithmes de combat ⚡`,
+          'ai_optimization': `🤖 **IA D'OPTIMISATION KAISEL**\n\n🧠 Machine Learning activé...\n📊 Analyse de tes patterns de jeu...\n🎯 Suggestions personnalisées...\n\n⚠️ Neural Network en entraînement\n🤖 Deep Learning en cours... ⚡`
+        };
+        
+        showTankMessage(messages[action], true, 'kaisel');
         onClose();
         break;
 
@@ -279,7 +335,7 @@ const KaiselInteractionMenu = ({
     }
   };
 
-  // 🌐 FONCTIONS API YOUTUBE ET NETMARBLE
+  // 🌐 FONCTIONS API YOUTUBE ET NETMARBLE (inchangées)
   const scanYouTubeVideos = async () => {
     setIsScanning(true);
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -334,7 +390,7 @@ const KaiselInteractionMenu = ({
 
   return (
     <>
-      {/* 🎨 STYLES CSS KAISEL */}
+      {/* 🎨 STYLES CSS KAISEL (inchangés) */}
       <style jsx="true">{`
         @keyframes kaisel-appear {
           0% { opacity: 0; transform: translateY(20px) scale(0.8); }
@@ -404,10 +460,20 @@ const KaiselInteractionMenu = ({
           border-radius: 16px;
           padding: 8px;
         }
+
+        /* 🔐 ADMIN INDICATOR */
+        .admin-indicator {
+          background: linear-gradient(45deg, #ffd700, #ff6b35);
+          color: #000;
+          padding: 2px 6px;
+          border-radius: 8px;
+          font-size: 10px;
+          font-weight: bold;
+        }
       `}</style>
 
       {isMobileDevice ? (
-        // 📱 VERSION MOBILE - COLONNE VERTICALE
+        // 📱 VERSION MOBILE AVEC INDICATEUR ADMIN
         <div
           className="kaisel-interaction-menu fixed z-[9999] kaisel-mobile-container"
           style={{
@@ -442,14 +508,19 @@ const KaiselInteractionMenu = ({
                   border: '2px solid #00ff41'
                 }}
               />
-              <span style={{
-                color: '#00ff41',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                fontFamily: 'monospace'
-              }}>
-                Kaisel {currentSubMenu === 'debug' ? 'Debug' : 'Tech'}
-              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <span style={{
+                  color: '#00ff41',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  fontFamily: 'monospace'
+                }}>
+                  Kaisel {currentSubMenu === 'debug' ? 'Debug' : 'Tech'}
+                </span>
+                {isAdmin && (
+                  <span className="admin-indicator">👑 ADMIN</span>
+                )}
+              </div>
             </div>
             
             <button
@@ -505,7 +576,7 @@ const KaiselInteractionMenu = ({
           </div>
         </div>
       ) : (
-        // 🖥️ VERSION DESKTOP - GARDE TON STYLE EXISTANT MAIS AVEC NOUVEAUX STYLES
+        // 🖥️ VERSION DESKTOP
         <div
           className="kaisel-interaction-menu fixed z-[9999]"
           style={{
@@ -513,23 +584,34 @@ const KaiselInteractionMenu = ({
             top: position.y
           }}
         >
-          {/* Centre de Kaisel */}
+          {/* Centre de Kaisel avec indicateur admin */}
           <div
-            className={`absolute w-6 h-6 rounded-full border-2 border-white ${currentSubMenu === 'debug' ? 'bg-cyan-400/80' : isScanning ? 'bg-cyan-300/90 kaisel-scanning' : 'bg-cyan-500/80'}`}
+            className={`absolute w-6 h-6 rounded-full border-2 ${isAdmin ? 'border-yellow-400' : 'border-white'} ${currentSubMenu === 'debug' ? 'bg-cyan-400/80' : isScanning ? 'bg-cyan-300/90 kaisel-scanning' : 'bg-cyan-500/80'}`}
             style={{ 
               left: '-3px', 
               top: '-3px',
-              boxShadow: '0 0 15px rgba(0, 255, 65, 0.5)'
+              boxShadow: isAdmin ? '0 0 15px rgba(255, 215, 0, 0.5)' : '0 0 15px rgba(0, 255, 65, 0.5)'
             }}
-          ></div>
+          >
+            {isAdmin && (
+              <div style={{
+                position: 'absolute',
+                top: '-8px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                fontSize: '8px'
+              }}>
+                👑
+              </div>
+            )}
+          </div>
 
-          {/* Bulles d'options en cercle */}
+          {/* Bulles d'options en cercle (positions inchangées) */}
           {Object.entries(currentOptions).map(([key, option], index) => {
             const textLength = option.label.length;
             const bubbleWidth = Math.max(140, Math.min(260, textLength * 9 + 70));
             const bubbleHeight = 45;
 
-            // 🏆 POSITIONS MISES À JOUR AVEC HALLOFFLAME
             const positions = {
               live_streams: { x: "0.7vw", y: "-11.5vh" },
               youtube_news: { x: "-10vw", y: "-3vh" },
@@ -543,7 +625,10 @@ const KaiselInteractionMenu = ({
               damage_calculator: { x: "15vw", y: "-10vh" },
               optimization_ai: { x: "0vw", y: "-6vh" },
               toggle_hitbox_debug: { x: "-10vw", y: "-2vh" },
-              hall_of_flame_debug: { x: "10vw", y: "-2vh" }, // ← NOUVELLE POSITION
+              hall_of_flame_debug: { x: "10vw", y: "-2vh" },
+              hall_of_flame_rankings: { x: "-5vw", y: "2vh" },
+              admin_validation: { x: "5vw", y: "2vh" },
+              access_denied: { x: "0vw", y: "-10vh" },
               back: { x: "0vw", y: "-18vh" }
             };
 
