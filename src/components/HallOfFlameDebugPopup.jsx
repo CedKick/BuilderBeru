@@ -216,7 +216,8 @@ const HallOfFlameDebugPopup = ({
   currentWeapon = {},
   statsFromArtifacts = {},
   onSave,
-  showTankMessage
+  showTankMessage,
+  onNavigateToHallOfFlame
 }) => {
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
