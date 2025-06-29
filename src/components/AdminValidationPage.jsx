@@ -53,12 +53,19 @@ const AdminValidationPage = ({
       setLoading(true);
       showTankMessage("🛡️ Chargement des hunters en attente v3.0...", true, 'kaisel');
       
-      const response = await fetch('https://api.builderberu.com/api/admin/pending');
+      // 🌐 URL AVEC SOUS-DOMAINE DNS
+      const apiUrl = 'https://api.builderberu.com/api/admin/pending';
+      
+      console.log(`🔍 Connexion à: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl);
       
       // 🔧 VÉRIFICATION CONTENT-TYPE
       const contentType = response.headers.get('content-type');
+      console.log(`📋 Content-Type: ${contentType}`);
+      
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Réponse non-JSON détectée: ${contentType}. API potentiellement down.`);
+        throw new Error(`Réponse non-JSON: ${contentType}`);
       }
       
       const result = await response.json();
@@ -75,16 +82,15 @@ const AdminValidationPage = ({
     } catch (error) {
       console.error('❌ Erreur chargement pending:', error);
       
-      // 🆕 MESSAGE D'ERREUR DÉTAILLÉ
-      if (error.message.includes('<!doctype') || error.message.includes('Réponse non-JSON')) {
-        showTankMessage(`❌ API Backend indisponible. Vérifiez que le serveur builderberu.com est démarré.`, true, 'kaisel');
-      } else if (error.message.includes('Failed to fetch')) {
-        showTankMessage(`❌ Impossible de joindre l'API. Vérifiez votre connexion internet.`, true, 'kaisel');
+      // 🆕 MESSAGE D'ERREUR SPÉCIFIQUE
+      if (error.message.includes('Failed to fetch')) {
+        showTankMessage(`❌ Impossible de joindre api.builderberu.com. DNS configuré ? Serveur démarré ?`, true, 'kaisel');
+      } else if (error.message.includes('Réponse non-JSON')) {
+        showTankMessage(`❌ api.builderberu.com retourne du HTML. Vérifiez la config DNS/Nginx.`, true, 'kaisel');
       } else {
         showTankMessage(`❌ Erreur: ${error.message}`, true, 'kaisel');
       }
       
-      // 🆕 FALLBACK MODE - Données de test
       setPendingHunters([]);
       
     } finally {
@@ -96,7 +102,6 @@ const AdminValidationPage = ({
     try {
       const response = await fetch('https://api.builderberu.com/api/admin/stats');
       
-      // 🔧 VÉRIFICATION CONTENT-TYPE
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         console.warn('⚠️ Stats admin: Réponse non-JSON, skip');
@@ -110,7 +115,6 @@ const AdminValidationPage = ({
       }
     } catch (error) {
       console.error('❌ Erreur stats admin (non-critique):', error);
-      // Pas de showTankMessage pour éviter le spam
     }
   };
 
@@ -118,7 +122,6 @@ const AdminValidationPage = ({
     try {
       const response = await fetch('https://api.builderberu.com/api/admin/duplicates');
       
-      // 🔧 VÉRIFICATION CONTENT-TYPE
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         console.warn('⚠️ Duplicates: Réponse non-JSON, skip');
@@ -132,7 +135,6 @@ const AdminValidationPage = ({
       }
     } catch (error) {
       console.error('❌ Erreur doublons (non-critique):', error);
-      // Pas de showTankMessage pour éviter le spam
     }
   };
 
