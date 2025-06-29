@@ -241,10 +241,6 @@ const HallOfFlameDebugPopup = ({
     recommendedSets: []
   });
   const popupRef = useRef(null);
-  const prevSetAnalysisRef = useRef(null);
-const prevCpTotalRef = useRef(null);
-const prevCpArtifactsRef = useRef(null);
-const hasInitializedRef = useRef(false);
 
   const isMobileDevice = window.innerWidth < 768;
 
@@ -273,74 +269,41 @@ const hasInitializedRef = useRef(false);
     return calculateAdvancedCP(statsFromArtifacts, selectedCharacter, true, memoizedSetAnalysis.isOptimal);
   }, [isOpen, selectedCharacter, statsFromArtifacts, memoizedSetAnalysis.isOptimal]);
 
-// 2️⃣ useEffect POUR SETS ANALYSIS - Isolé
-useEffect(() => {
-  if (!isOpen || !selectedCharacter || !currentArtifacts) return;
-  
-  const newSetAnalysis = analyzeArtifactSets(currentArtifacts, selectedCharacter);
-  const newSetAnalysisString = JSON.stringify(newSetAnalysis);
-  
-  if (prevSetAnalysisRef.current !== newSetAnalysisString) {
-    setSetAnalysis(newSetAnalysis);
-    prevSetAnalysisRef.current = newSetAnalysisString;
-  }
-}, [isOpen, selectedCharacter, currentArtifacts]);
+  // 🚀 useEffect OPTIMISÉ AVEC DEPENDENCIES STABLES
+  useEffect(() => {
+    if (!isOpen) return;
 
-// 3️⃣ useEffect POUR CP TOTAL - Isolé 
-useEffect(() => {
-  if (!isOpen || !selectedCharacter || !currentStats || Object.keys(currentStats).length === 0) return;
-  if (!setAnalysis.hasOwnProperty('isOptimal')) return; // Attendre que setAnalysis soit prêt
-  
-  const newCpTotal = calculateAdvancedCP(currentStats, selectedCharacter, true, setAnalysis.isOptimal);
-  const newCpTotalString = JSON.stringify(newCpTotal);
-  
-  if (prevCpTotalRef.current !== newCpTotalString) {
-    setCpDetailsTotal(newCpTotal);
-    prevCpTotalRef.current = newCpTotalString;
-  }
-}, [isOpen, selectedCharacter, currentStats, setAnalysis.isOptimal]);
+    // Mise à jour des states SEULEMENT si nécessaire
+    setSetAnalysis(prev => {
+      if (JSON.stringify(prev) !== JSON.stringify(memoizedSetAnalysis)) {
+        return memoizedSetAnalysis;
+      }
+      return prev;
+    });
 
-// 4️⃣ useEffect POUR CP ARTIFACTS - Isolé
-useEffect(() => {
-  if (!isOpen || !selectedCharacter || !statsFromArtifacts || Object.keys(statsFromArtifacts).length === 0) return;
-  if (!setAnalysis.hasOwnProperty('isOptimal')) return; // Attendre que setAnalysis soit prêt
-  
-  const newCpArtifacts = calculateAdvancedCP(statsFromArtifacts, selectedCharacter, true, setAnalysis.isOptimal);
-  const newCpArtifactsString = JSON.stringify(newCpArtifacts);
-  
-  if (prevCpArtifactsRef.current !== newCpArtifactsString) {
-    setCpDetailsArtifacts(newCpArtifacts);
-    prevCpArtifactsRef.current = newCpArtifactsString;
-  }
-}, [isOpen, selectedCharacter, statsFromArtifacts, setAnalysis.isOptimal]);
+    setCpDetailsTotal(prev => {
+      if (JSON.stringify(prev) !== JSON.stringify(memoizedCpTotal)) {
+        return memoizedCpTotal;
+      }
+      return prev;
+    });
 
-// 5️⃣ useEffect POUR MESSAGE TANK - Une seule fois
-useEffect(() => {
-  if (!isOpen || hasInitializedRef.current) return;
-  if (!selectedCharacter || !cpDetailsTotal.total || cpDetailsTotal.total === 0) return;
-  
-  // Message Tank SEULEMENT au premier chargement complet
-  let message = `✅ ${selectedCharacter} chargé: ${cpDetailsTotal.total.toLocaleString()} CP total`;
-  if (setAnalysis.isOptimal) {
-    message += " 🏆 SET OPTIMAL!";
-  }
-  
-  if (showTankMessage) {
-    showTankMessage(message, true, 'kaisel');
-  }
-  
-  hasInitializedRef.current = true;
-}, [isOpen, selectedCharacter, cpDetailsTotal.total, setAnalysis.isOptimal, showTankMessage]);
+    setCpDetailsArtifacts(prev => {
+      if (JSON.stringify(prev) !== JSON.stringify(memoizedCpArtifacts)) {
+        return memoizedCpArtifacts;
+      }
+      return prev;
+    });
 
-// 6️⃣ RESET quand popup se ferme
-useEffect(() => {
-  if (!isOpen) {
-    hasInitializedRef.current = false;
-    prevSetAnalysisRef.current = null;
-    prevCpTotalRef.current = null;
-    prevCpArtifactsRef.current = null;
-  }
-}, [isOpen]);
+    // Message Tank SEULEMENT au premier chargement
+    if (selectedCharacter && memoizedCpTotal.total > 0 && showTankMessage) {
+      let message = `✅ ${selectedCharacter} chargé: ${memoizedCpTotal.total.toLocaleString()} CP total`;
+      if (memoizedSetAnalysis.isOptimal) {
+        message += " 🏆 SET OPTIMAL!";
+      }
+      showTankMessage(message, true, 'kaisel');
+    }
+  }, [isOpen, selectedCharacter, memoizedSetAnalysis, memoizedCpTotal, memoizedCpArtifacts]);
 
   // Reset form when popup opens - OPTIMISÉ
   useEffect(() => {
@@ -396,8 +359,10 @@ useEffect(() => {
       errors.push("❌ ID Account doit commencer par # (ex: #Kly123)");
     }
 
-    if (!formData.screenshots || formData.screenshots.length === 0) {
-      errors.push("❌ Screenshot obligatoire pour validation");
+    // Screenshots optionnels en local, obligatoires en prod
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!isLocalhost && (!formData.screenshots || formData.screenshots.length === 0)) {
+      errors.push("❌ Screenshot obligatoire pour validation (prod)");
     }
     
     if (!currentStats || Object.keys(currentStats).length === 0) {
@@ -488,6 +453,9 @@ useEffect(() => {
     }
 
     const hunterData = {
+      // 🆕 CLÉ COMPOSITE UNIQUE - Évite les doublons
+      uniqueKey: `${selectedCharacter}-${formData.pseudo.trim()}-${formData.accountId.trim()}`,
+      
       // 🆕 NOUVELLES DONNÉES IDENTIFICATRICES
       pseudo: formData.pseudo.trim(),
       accountId: formData.accountId.trim(),
@@ -1039,7 +1007,12 @@ useEffect(() => {
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     📸 Screenshots *
-                    <span className="text-red-400 text-xs ml-2">(Obligatoire pour validation)</span>
+                    <span className={`text-xs ml-2 ${window.location.hostname === 'localhost' ? 'text-yellow-400' : 'text-red-400'}`}>
+                      {window.location.hostname === 'localhost' 
+                        ? '(Optionnel en local)' 
+                        : '(Obligatoire pour validation)'
+                      }
+                    </span>
                   </label>
                   <input
                     type="file"
@@ -1053,8 +1026,11 @@ useEffect(() => {
                       ✅ {formData.screenshots.length} screenshot(s) sélectionné(s)
                     </p>
                   ) : (
-                    <p className="text-red-400 text-sm mt-2">
-                      ❌ Screenshots requis pour soumettre
+                    <p className={`text-sm mt-2 ${window.location.hostname === 'localhost' ? 'text-yellow-400' : 'text-red-400'}`}>
+                      {window.location.hostname === 'localhost' 
+                        ? "⚠️ Screenshots optionnels en local" 
+                        : "❌ Screenshots requis pour soumettre"
+                      }
                     </p>
                   )}
                 </div>
@@ -1191,7 +1167,8 @@ useEffect(() => {
                 <button
                   onClick={() => setCurrentStep(2)}
                   className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
-                  disabled={!formData.pseudo.trim() || !formData.accountId.trim() || !hasData || formData.screenshots.length === 0}
+                  disabled={!formData.pseudo.trim() || !formData.accountId.trim() || !hasData || 
+                    (window.location.hostname !== 'localhost' && formData.screenshots.length === 0)}
                 >
                   <span>Validation Avancée →</span>
                 </button>
