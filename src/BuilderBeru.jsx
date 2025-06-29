@@ -5569,33 +5569,33 @@ const handleSubmitToHallOfFame = () => {
                     <div className="space-y-4">
                       {rightArtifacts.map((item, idx) => (
                         <ArtifactCard
-                          key={`${activeAccount}-mobile-right-${item.title}`}
-                          title={item.title}
-                          mainStats={item.mainStats}
-                          showTankMessage={showTankMessage}
-                          recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
-                          artifactData={artifactsData[item.title]}
-                          statsWithoutArtefact={statsWithoutArtefact}
-                          flatStats={flatStats}
-                          onSetIconClick={openSetSelector}
-                          onArtifactSave={handleSaveArtifactToLibrary}
-                          handleLoadSavedSet={handleLoadSavedSet}
-                          hunter={characters[selectedCharacter]}
-                          substatsMinMaxByIncrements={substatsMinMaxByIncrements}
-                          disableComparisonButton={false}
-                          openComparisonPopup={openComparisonPopup}
-                          artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
-                          onArtifactChange={(updaterFn) =>
-                            setArtifactsData(prev => ({
-                              ...prev,
-                              [item.title]: typeof updaterFn === 'function'
-                                ? updaterFn(prev[item.title])
-                                : { ...prev[item.title], ...updaterFn }
-                            }))
-                          }
-                          onScoreCalculated={handleArtifactScoreUpdate}
-                          onReportGenerated={handleReportGenerated}
-                        />
+                    key={`${activeAccount}-${item.title}-${JSON.stringify(artifactsData[item.title])}`} // ← NOUVELLE KEY !
+                    title={item.title}
+                    mainStats={item.mainStats}
+                    showTankMessage={showTankMessage}
+                    recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
+                    artifactData={artifactsData[item.title]}
+                    statsWithoutArtefact={statsWithoutArtefact}  // ← AJOUT ICI
+                    flatStats={flatStats}
+                    onSetIconClick={openSetSelector}                       // ← UTILE SI BESOIN
+                    handleLoadSavedSet={handleLoadSavedSet}
+                    onArtifactSave={handleSaveArtifactToLibrary}
+                    hunter={characters[selectedCharacter]}                        // ← UTILE SI BESOIN
+                    substatsMinMaxByIncrements={substatsMinMaxByIncrements}  // ✅ C’EST ICI
+                    disableComparisonButton={false} // 👈 AJOUT
+                    openComparisonPopup={openComparisonPopup}
+                    artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
+                    onArtifactChange={(updaterFn) =>
+                      setArtifactsData(prev => ({
+                        ...prev,
+                        [item.title]: typeof updaterFn === 'function'
+                          ? updaterFn(prev[item.title])
+                          : { ...prev[item.title], ...updaterFn }
+                      }))
+                    }
+                    onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
+                    onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
+                  />
                       ))}
                     </div>
                   </div>
@@ -6050,7 +6050,16 @@ const handleSubmitToHallOfFame = () => {
                   </>
                 )}
 
-
+                  {isSetSelectorOpen && setSelectorSlot && (
+                    <SetSelectorPopup
+                      slot={setSelectorSlot}
+                      onSelect={handleSelectSet}
+                      onClose={() => {
+                        setIsSetSelectorOpen(false);
+                        setSetSelectorSlot(null);
+                      }}
+                    />
+                  )}
 
                 <OCRPasteListener
                   onParsed={(parsed) => {
@@ -6172,33 +6181,33 @@ const handleSubmitToHallOfFame = () => {
          2xl:max-w-[733px]">
                   {[...leftArtifacts].map((item, idx) => (
                     <ArtifactCard
-                      key={`${activeAccount}-${item.title}-${JSON.stringify(artifactsData[item.title])}`} // ← NOUVELLE KEY !
-                      title={item.title}
-                      mainStats={item.mainStats}
-                      showTankMessage={showTankMessage}
-                      recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
-                      artifactData={artifactsData[item.title]}
-                      statsWithoutArtefact={statsWithoutArtefact}
-                      flatStats={flatStats}
-                      onSetIconClick={openSetSelector}
-                      handleLoadSavedSet={handleLoadSavedSet}
-                      onArtifactSave={handleSaveArtifactToLibrary}
-                      hunter={characters[selectedCharacter]}
-                      substatsMinMaxByIncrements={substatsMinMaxByIncrements}
-                      disableComparisonButton={false}
-                      openComparisonPopup={openComparisonPopup}
-                      artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
-                      onArtifactChange={(updaterFn) =>
-                        setArtifactsData(prev => ({
-                          ...prev,
-                          [item.title]: typeof updaterFn === 'function'
-                            ? updaterFn(prev[item.title])
-                            : { ...prev[item.title], ...updaterFn }
-                        }))
-                      }
-                      onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
-                      onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
-                    />
+                    key={`${activeAccount}-${item.title}-${JSON.stringify(artifactsData[item.title])}`} // ← NOUVELLE KEY !
+                    title={item.title}
+                    mainStats={item.mainStats}
+                    showTankMessage={showTankMessage}
+                    recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
+                    artifactData={artifactsData[item.title]}
+                    statsWithoutArtefact={statsWithoutArtefact}  // ← AJOUT ICI
+                    flatStats={flatStats}
+                    onSetIconClick={openSetSelector}                       // ← UTILE SI BESOIN
+                    handleLoadSavedSet={handleLoadSavedSet}
+                    onArtifactSave={handleSaveArtifactToLibrary}
+                    hunter={characters[selectedCharacter]}                        // ← UTILE SI BESOIN
+                    substatsMinMaxByIncrements={substatsMinMaxByIncrements}  // ✅ C’EST ICI
+                    disableComparisonButton={false} // 👈 AJOUT
+                    openComparisonPopup={openComparisonPopup}
+                    artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
+                    onArtifactChange={(updaterFn) =>
+                      setArtifactsData(prev => ({
+                        ...prev,
+                        [item.title]: typeof updaterFn === 'function'
+                          ? updaterFn(prev[item.title])
+                          : { ...prev[item.title], ...updaterFn }
+                      }))
+                    }
+                    onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
+                    onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
+                  />
                   ))}
                 </div>
 
