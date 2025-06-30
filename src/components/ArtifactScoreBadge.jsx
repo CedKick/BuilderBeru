@@ -240,7 +240,7 @@ const ArtifactScoreBadge = ({
         if (!hunterData || !artifact.subStats) return { averageScore: 0, details: [] };
 
         const priorities = hunterData.optimizationPriority;
-        const topPriorityStats = priorities.slice(0, 3).map(p => p.stat);
+        const topPriorityStats = priorities.slice(0, 6).map(p => p.stat);
         
         let totalScore = 0;
         const details = [];
@@ -260,6 +260,9 @@ const ArtifactScoreBadge = ({
             if (priorityIndex === 0) relevanceScore = 100; // Priorité 1
             else if (priorityIndex === 1) relevanceScore = 80; // Priorité 2  
             else if (priorityIndex === 2) relevanceScore = 60; // Priorité 3
+            else if (priorityIndex === 3) relevanceScore = 50; // Priorité 4
+            else if (priorityIndex === 4) relevanceScore = 40; // Priorité 4
+             else if (priorityIndex === 5) relevanceScore = 40; // Priorité 5
             else if (stat.includes('Critical Hit')) relevanceScore = 50; // Crit = toujours acceptable
             
             // 🎲 Qualité du roll
@@ -323,7 +326,7 @@ const ArtifactScoreBadge = ({
     }
 
     // Récupérer tous les sets recommandés pour ce hunter
-    const recommendedSets = Object.values(hunterData.gameModes).map(mode => mode.recommendedSet);
+    const recommendedSets = Object.values(hunterData.artifactSets).map(mode => mode.setComposition);
     
     // Vérifier si le set actuel est dans les recommandations
     const isRecommended = recommendedSets.some(recSet => 

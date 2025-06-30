@@ -89,7 +89,7 @@ const BUILDER_DATA = {
     "hybridIronWillOutstanding": {
       "name": "Hybrid Iron Will/Outstanding",
       "frenchName": "Hybride Volonté/Remarquable",
-      "availability": "L",
+      "availability": "LR",
       "setComposition": "4x Iron Will + 4x Outstanding Ability",
       "pieces": {
         "helmet": "Casque de la volonté de fer",        // Iron Will
@@ -263,7 +263,7 @@ const BUILDER_DATA = {
       "name": "Hybrid Burning/Chaotic+Outstanding",
       "frenchName": "Hybride Malédiction/Infamie",
       "availability": "LR",
-      "setComposition": "2x Burning Curse + 2x Chaotic Infamy + 4x Outstanding Ability",
+      "setComposition": "Burning Curse (2), Chaotic Infamy (2), Outstanding Ability (Obsidian Set) (4)",
       "pieces": {
         "helmet": "Casque de malédiction ardente", // Burning Curse
         "chest": "Armure de malédiction ardente",  // Burning Curse
@@ -289,7 +289,7 @@ const BUILDER_DATA = {
       "name": "Hybrid Chaotic/Outstanding",
       "frenchName": "Hybride Infamie/Remarquable", 
       "availability": "LR",
-      "setComposition": "4x Chaotic Infamy + 4x Outstanding Ability",
+      "setComposition": "Chaotic Infamy (4), Outstanding Ability (Obsidian Set) (4)",
       "pieces": {
         "helmet": "Casque d'infamie chaotique",   // Chaotic Infamy
         "chest": "Armure d'infamie chaotique",    // Chaotic Infamy
@@ -315,7 +315,7 @@ const BUILDER_DATA = {
       "name": "Full Chaotic Infamy",
       "frenchName": "Infamie chaotique complète",
       "availability": "LR",
-      "setComposition": "8x Chaotic Infamy",
+      "setComposition": "Chaotic Infamy (8)",
       "pieces": {
         "helmet": "Casque d'infamie chaotique",
         "chest": "Armure d'infamie chaotique",
@@ -342,16 +342,16 @@ const BUILDER_DATA = {
       "name": "Burning Curse",
       "frenchName": "Malédiction ardente",
       "availability": "LR",
-      "setComposition": "8x Burning Curse (build de base)",
+      "setComposition": "Burning Curse (8)",
       "pieces": {
         "helmet": "Casque de malédiction ardente",
         "chest": "Armure de malédiction ardente",
         "gloves": "Gants de malédiction ardente", 
         "boots": "Bottes de malédiction ardente",
-        "necklace": "Collier en obsidienne",
-        "bracelet": "Bracelet en obsidienne",
-        "ring": "Bague en obsidienne", 
-        "earrings": "Boucles d'oreilles en obsidienne"
+        "necklace": "Collier de malédiction ardente",
+        "bracelet": "Bracelet de malédiction ardente",
+        "ring": "Bague de malédiction ardente", 
+        "earrings": "Boucles d'oreilles de malédiction ardente"
       },
       "mainStats": {
         "helmet": "Additional Defense",
@@ -844,6 +844,7 @@ const BUILDER_DATA = {
         "name": "x4 Greed/ x4 Obsidian",
         "frenchName": "Avarice ardente",
         "availability": "LR",
+        "setComposition": "Burning Greed (4), Outstanding Ability (Obsidian Set) (4)",
         "pieces": {
           "helmet": "Casque d'avarice ardente",
           "chest": "Armure d'avarice ardente",
@@ -869,6 +870,7 @@ const BUILDER_DATA = {
         "name": "x4 Greed/ x4 Desire Chaotic",
         "frenchName": "Avarice ardente/ Désir Chaotic",
         "availability": "LR",
+        "setComposition": "Burning Greed (4), Chaotic Desire (4)",
         "pieces": {
           "helmet": "Casque d'avarice ardente",
           "chest": "Armure d'avarice ardente",

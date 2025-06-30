@@ -366,6 +366,8 @@ const analyzeArtifactSet = (artifactData, hunter, onReportGenerated = null) => {
                 setName = 'Limit Break';
             } else if (pieceForSlot.includes('Seven Deadly Sins')) {
                 setName = 'Seven Deadly Sins';
+            } else if (pieceForSlot.includes('malédiction ardente')) {
+                setName = 'Burning Curse';
             }
             
             if (setName && !allowedSets.includes(setName)) {
@@ -646,7 +648,7 @@ const analyzeSubStatsDetailed = (artifactData, hunter, substatsMinMaxByIncrement
     }
 
     const priorities = hunterData.optimizationPriority;
-    const topPriorityStats = priorities.slice(0, 4).map(p => p.stat);
+    const topPriorityStats = priorities.slice(0, 6).map(p => p.stat);
     
     let totalScore = 0;
     let totalRollQuality = 0;
@@ -671,6 +673,8 @@ const analyzeSubStatsDetailed = (artifactData, hunter, substatsMinMaxByIncrement
         else if (priorityIndex === 1) relevanceScore = 85;
         else if (priorityIndex === 2) relevanceScore = 70;
         else if (priorityIndex === 3) relevanceScore = 55;
+        else if (priorityIndex === 4) relevanceScore = 45;
+        else if (priorityIndex === 5) relevanceScore = 35;
         else if (stat.includes('Critical Hit')) relevanceScore = 45;
         else relevanceScore = 15;
         

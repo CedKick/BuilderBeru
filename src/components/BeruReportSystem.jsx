@@ -329,7 +329,7 @@ const ReportCard = ({ report, isActive, scoreColor }) => {
                         )}
                         {report.substatAnalysis.wastedStats.length > 0 && (
                             <div>
-                                <p className="text-yellow-400 font-semibold">⚠️ Substats inutiles:</p>
+                                <p className="text-yellow-400 font-semibold">⚠️ Substat non-optimal:</p>
                                 <p className="text-slate-300">{report.substatAnalysis.wastedStats.join(', ')}</p>
                             </div>
                         )}

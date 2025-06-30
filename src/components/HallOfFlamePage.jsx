@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { data_chars } from '../data/data_char.js'; // 🆕 IMPORT DATA_CHARS
+import { data_chars } from '../data/data_char.js';
 
 const HallOfFlamePage = ({ 
   onClose, 
@@ -28,35 +28,51 @@ const HallOfFlamePage = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGuild, setSelectedGuild] = useState('');
   const [selectedElement, setSelectedElement] = useState('');
-  const [selectedCharacterFilter, setSelectedCharacterFilter] = useState(''); // 🆕 FILTRE CHARACTER
+  const [selectedCharacterFilter, setSelectedCharacterFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [huntersPerPage] = useState(12);
   const [selectedHunter, setSelectedHunter] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   
-  // 🆕 ÉTATS POUR HOVER CP TOOLTIPS
+  // 🆕 ÉTATS POUR FILTRAGE CHECKED v5.0
+  const [showOnlyChecked, setShowOnlyChecked] = useState(true); // Par défaut true
+  const [showPending, setShowPending] = useState(false);
+  
+  // États pour hover CP tooltips
   const [showCpTooltipTotal, setShowCpTooltipTotal] = useState(null);
   const [showCpTooltipArtifacts, setShowCpTooltipArtifacts] = useState(null);
 
-  // 🔍 DÉTECTION MOBILE
+  // Détection mobile
   const isMobileDevice = window.innerWidth < 768;
   const isTabletDevice = window.innerWidth >= 768 && window.innerWidth < 1024;
 
-  // 📊 CHARGER LES HUNTERS DEPUIS L'API BACKEND
+  // 📊 CHARGER LES HUNTERS DEPUIS L'API BACKEND - v5.0 AVEC FILTRE CHECKED
   useEffect(() => {
     const loadHunters = async () => {
       setLoading(true);
       try {
         showTankMessage("🌐 Chargement du Hall Of Flame depuis l'API...", true, 'kaisel');
         
-        const response = await fetch('https://api.builderberu.com/api/hallofflame/hunters');
+        // 🆕 PARAMS QUERY v5.0
+        const params = new URLSearchParams({
+          checked: showOnlyChecked && !showPending ? 'true' : 'false',
+          showPending: showPending ? 'true' : 'false'
+        });
+        
+        const response = await fetch(`https://api.builderberu.com/api/hallofflame/hunters?${params}`);
         const result = await response.json();
         
         if (response.ok && result.success) {
-          // 🛡️ FILTRER SEULEMENT LES HUNTERS VALIDÉS
-          const validatedHunters = result.hunters.filter(h => h.validated === true);
-          setHunters(validatedHunters);
-          showTankMessage(`✅ ${validatedHunters.length} hunters validés chargés!`, true, 'kaisel');
+          setHunters(result.hunters);
+          
+          // 🆕 MESSAGE ADAPTÉ v5.0
+          const message = showOnlyChecked && !showPending ? 
+            `✅ ${result.hunters.length} hunters vérifiés chargés!` :
+            showPending ? 
+            `📋 ${result.hunters.length} hunters (vérifiés + en attente)` :
+            `⏳ ${result.hunters.length} hunters en attente`;
+            
+          showTankMessage(message, true, 'kaisel');
         } else {
           throw new Error(result.error || 'Erreur API');
         }
@@ -69,8 +85,16 @@ const HallOfFlamePage = ({
         try {
           const stored = localStorage.getItem('builderberu_hallofflame');
           const huntersData = stored ? JSON.parse(stored) : [];
-          const validatedHunters = huntersData.filter(h => h.validated === true);
-          setHunters(validatedHunters);
+          
+          // 🆕 FILTRE LOCAL v5.0
+          let filteredData = huntersData;
+          if (showOnlyChecked && !showPending) {
+            filteredData = huntersData.filter(h => h.checked === true);
+          } else if (!showPending) {
+            filteredData = huntersData.filter(h => h.checked !== true);
+          }
+          
+          setHunters(filteredData);
         } catch {
           setHunters([]);
         }
@@ -80,7 +104,7 @@ const HallOfFlamePage = ({
     };
 
     loadHunters();
-  }, []);
+  }, [showOnlyChecked, showPending]); // 🆕 RELOAD QUAND FILTRE CHANGE
 
   useEffect(() => {
     if (isMobileDevice) {
@@ -89,7 +113,7 @@ const HallOfFlamePage = ({
     }
   }, []);
 
-  // 🆕 DEBUG HELPER - Vérifier les données CP des hunters
+  // Debug helper
   useEffect(() => {
     if (hunters.length > 0) {
       console.log('🔍 Premier hunter pour debug:', hunters[0]);
@@ -104,10 +128,11 @@ const HallOfFlamePage = ({
 
     if (searchTerm) {
       filtered = filtered.filter(hunter =>
+        (hunter.pseudo && hunter.pseudo.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (hunter.character && hunter.character.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (hunter.characterName && hunter.characterName.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (characters[hunter.character]?.name && characters[hunter.character].name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (data_chars[hunter.character]?.name && data_chars[hunter.character].name.toLowerCase().includes(searchTerm.toLowerCase())) // 🆕 RECHERCHE DATA_CHARS
+        (data_chars[hunter.character]?.name && data_chars[hunter.character].name.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -118,11 +143,10 @@ const HallOfFlamePage = ({
     if (selectedElement) {
       filtered = filtered.filter(hunter => 
         characters[hunter.character]?.element === selectedElement ||
-        data_chars[hunter.character]?.element === selectedElement // 🆕 FILTRE ELEMENT DATA_CHARS
+        data_chars[hunter.character]?.element === selectedElement
       );
     }
 
-    // 🆕 FILTRE PAR CHARACTER
     if (selectedCharacterFilter) {
       filtered = filtered.filter(hunter => hunter.character === selectedCharacterFilter);
     }
@@ -155,14 +179,13 @@ const HallOfFlamePage = ({
     return guilds.sort();
   }, [hunters]);
 
-  // 🆕 CHARACTERS UNIQUES (basé sur les hunters présents)
+  // CHARACTERS UNIQUES (basé sur les hunters présents)
   const uniqueCharacters = useMemo(() => {
     const characterIds = hunters
       .map(h => h.character)
       .filter(c => c && c.trim())
       .filter((c, i, arr) => arr.indexOf(c) === i);
     
-    // Mapper avec les noms depuis data_chars ou characters fallback
     return characterIds
       .map(charId => ({
         id: charId,
@@ -184,11 +207,10 @@ const HallOfFlamePage = ({
     return colors[element] || '#888';
   };
 
-  // 🆕 OBTENIR L'IMAGE DU CHARACTER DEPUIS DATA_CHARS
+  // OBTENIR L'IMAGE DU CHARACTER DEPUIS DATA_CHARS
   const getCharacterImage = (characterId) => {
     const charData = data_chars[characterId];
     if (charData) {
-      // Utiliser icon pour les cartes (plus petit) et img pour les détails
       return {
         icon: charData.icon,
         img: charData.img,
@@ -199,45 +221,45 @@ const HallOfFlamePage = ({
     return null;
   };
 
-  // 🆕 COMPOSANT TOOLTIP CP SÉCURISÉ
+  // COMPOSANT TOOLTIP CP SÉCURISÉ
   const CpTooltip = ({ details, title, color }) => {
-  if (!details || !Array.isArray(details) || details.length === 0) {
+    if (!details || !Array.isArray(details) || details.length === 0) {
+      return ReactDOM.createPortal(
+        <div className="cp-tooltip-hall">
+          <p className="font-bold mb-2 text-red-400">⚠️ Pas de détails CP</p>
+          <p className="text-gray-300 text-xs">Données CP non disponibles</p>
+        </div>,
+        document.body
+      );
+    }
+
     return ReactDOM.createPortal(
       <div className="cp-tooltip-hall">
-        <p className="font-bold mb-2 text-red-400">⚠️ Pas de détails CP</p>
-        <p className="text-gray-300 text-xs">Données CP non disponibles</p>
+        <p className="font-bold mb-2" style={{ color }}>{title}:</p>
+        {details.map((detail, index) => (
+          <div key={index} className="flex justify-between items-center mb-1">
+            <span style={{ color: detail.color || '#fff' }} className="text-sm">
+              {detail.name || 'Stat inconnue'}:
+            </span>
+            <span className="text-gray-300 text-sm">
+              {(detail.value || 0).toLocaleString()} × {detail.multiplier || '?'} = 
+              <span className="text-white font-bold ml-1">
+                {(detail.points || 0).toLocaleString()}
+              </span>
+            </span>
+          </div>
+        ))}
+        <hr className="border-gray-600 my-2" />
+        <div className="flex justify-between font-bold">
+          <span style={{ color }}>Total:</span>
+          <span style={{ color }}>
+            {details.reduce((sum, d) => sum + (d.points || 0), 0).toLocaleString()}
+          </span>
+        </div>
       </div>,
       document.body
     );
-  }
-
-  return ReactDOM.createPortal(
-    <div className="cp-tooltip-hall">
-      <p className="font-bold mb-2" style={{ color }}>{title}:</p>
-      {details.map((detail, index) => (
-        <div key={index} className="flex justify-between items-center mb-1">
-          <span style={{ color: detail.color || '#fff' }} className="text-sm">
-            {detail.name || 'Stat inconnue'}:
-          </span>
-          <span className="text-gray-300 text-sm">
-            {(detail.value || 0).toLocaleString()} × {detail.multiplier || '?'} = 
-            <span className="text-white font-bold ml-1">
-              {(detail.points || 0).toLocaleString()}
-            </span>
-          </span>
-        </div>
-      ))}
-      <hr className="border-gray-600 my-2" />
-      <div className="flex justify-between font-bold">
-        <span style={{ color }}>Total:</span>
-        <span style={{ color }}>
-          {details.reduce((sum, d) => sum + (d.points || 0), 0).toLocaleString()}
-        </span>
-      </div>
-    </div>,
-    document.body
-  );
-};
+  };
 
   // 🏆 BADGE DE RANG
   const getRankBadge = (index) => {
@@ -254,13 +276,17 @@ const HallOfFlamePage = ({
     try {
       showTankMessage("🔄 Actualisation...", true, 'kaisel');
       
-      const response = await fetch('https://api.builderberu.com/api/hallofflame/hunters');
+      const params = new URLSearchParams({
+        checked: showOnlyChecked && !showPending ? 'true' : 'false',
+        showPending: showPending ? 'true' : 'false'
+      });
+      
+      const response = await fetch(`https://api.builderberu.com/api/hallofflame/hunters?${params}`);
       const result = await response.json();
       
       if (response.ok && result.success) {
-        const validatedHunters = result.hunters.filter(h => h.validated === true);
-        setHunters(validatedHunters);
-        showTankMessage(`🔄 ${validatedHunters.length} hunters actualisés !`, true, 'kaisel');
+        setHunters(result.hunters);
+        showTankMessage(`🔄 ${result.hunters.length} hunters actualisés !`, true, 'kaisel');
       } else {
         throw new Error(result.error || 'Erreur refresh');
       }
@@ -286,9 +312,9 @@ const HallOfFlamePage = ({
 
   return (
     <>
-      {/* 🎨 STYLES CSS - TOOLTIP CENTRÉ ÉCRAN */}
+      {/* 🎨 STYLES CSS - GARDEZ TOUT IDENTIQUE + AJOUTS v5.0 */}
       <style jsx="true">{`
-/* 🔥 BUILDERBERU HALL OF FLAME - TOOLTIP CENTRÉ ÉCRAN 🔥 */
+/* 🔥 BUILDERBERU HALL OF FLAME - v5.0 CHECKED SYSTEM 🔥 */
 
 @keyframes page-enter {
   0% { opacity: 0; transform: translateY(20px); }
@@ -350,6 +376,19 @@ body.modal-open {
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
 }
 
+/* 🆕 HUNTER CARD NON VÉRIFIÉ v5.0 */
+.hunter-card.unchecked {
+  border: 1px solid rgba(255, 140, 0, 0.3);
+  background: linear-gradient(135deg, 
+    rgba(40, 26, 20, 0.9) 0%, 
+    rgba(35, 22, 15, 0.95) 50%, 
+    rgba(25, 15, 10, 0.9) 100%);
+}
+
+.hunter-card.unchecked:hover {
+  border-color: rgba(255, 140, 0, 0.6);
+}
+
 /* 🏅 BADGES ET ÉLÉMENTS */
 .rank-badge {
   background: linear-gradient(135deg, var(--rank-color), var(--rank-color-light));
@@ -373,6 +412,52 @@ body.modal-open {
   padding: 2px 6px;
   border-radius: 6px;
   margin-left: 4px;
+}
+
+/* 🆕 BADGE NON VÉRIFIÉ v5.0 */
+.unchecked-badge {
+  background: linear-gradient(135deg, #ff8c00, #ff6b00);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: bold;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* 🆕 TOGGLE CHECKED v5.0 */
+.checked-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.checked-toggle:hover {
+  border-color: rgba(255, 215, 0, 0.5);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.checked-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.checked-toggle label {
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  color: #ffd700;
 }
 
 /* 🎭 CHARACTER IMAGES */
@@ -704,6 +789,13 @@ body.modal-open {
     border-radius: 8px !important;
   }
 
+  /* 🆕 TOGGLE MOBILE v5.0 */
+  .mobile-filters .checked-toggle {
+    justify-content: center;
+    width: 100%;
+    padding: 8px 16px;
+  }
+
   /* 📊 STATS MOBILE */
   .mobile-stats {
     grid-template-columns: 1fr 1fr !important;
@@ -840,7 +932,10 @@ html, body, #root {
                   Hall Of Flame
                 </h1>
                 <p className={`text-gray-300 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
-                  {filteredAndSortedHunters.length} Hunter{filteredAndSortedHunters.length > 1 ? 's' : ''} validés
+                  {filteredAndSortedHunters.length} Hunter{filteredAndSortedHunters.length > 1 ? 's' : ''}
+                  {showOnlyChecked && !showPending && <span className="text-green-400"> vérifiés</span>}
+                  {!showOnlyChecked && !showPending && <span className="text-orange-400"> en attente</span>}
+                  {showPending && <span className="text-yellow-400"> (tous)</span>}
                   {selectedCharacterFilter && (
                     <span className="text-cyan-400 ml-2">• {data_chars[selectedCharacterFilter]?.name || characters[selectedCharacterFilter]?.name || selectedCharacterFilter}</span>
                   )}
@@ -868,7 +963,7 @@ html, body, #root {
 
         {/* 🎯 TABS RANKING */}
         <div className={`relative z-10 border-b border-gray-700/50 ${isMobileDevice ? 'px-3 pt-2' : 'px-4 md:px-6 pt-4'}`}>
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <div className={`flex mb-3 ${isMobileDevice ? 'gap-1' : 'gap-2'}`}>
               <button
                 onClick={() => {
@@ -896,19 +991,60 @@ html, body, #root {
           </div>
         </div>
 
-        {/* 🔍 FILTRES ET RECHERCHE */}
+        {/* 🔍 FILTRES ET RECHERCHE - v5.0 AVEC TOGGLE CHECKED */}
         <div className={`relative z-10 border-b border-gray-700/50 ${isMobileDevice ? 'mobile-filters p-3' : 'p-4 md:p-6'}`}>
-          <div className="max-w-7xl mx-auto space-y-3">
+          <div className="max-w-6xl mx-auto space-y-1 md:space-y-1">
+            
+            {/* 🆕 TOGGLE VÉRIFIÉS/NON-VÉRIFIÉS v5.0 */}
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex gap-4">
+                <div className="checked-toggle">
+                  <input
+                    type="checkbox"
+                    id="showOnlyChecked"
+                    checked={showOnlyChecked}
+                    onChange={(e) => {
+                      setShowOnlyChecked(e.target.checked);
+                      if (e.target.checked) {
+                        setShowPending(false);
+                      }
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <label htmlFor="showOnlyChecked">
+                    ✅ Hunters vérifiés uniquement
+                  </label>
+                </div>
+                
+                <div className="checked-toggle">
+                  <input
+                    type="checkbox"
+                    id="showPending"
+                    checked={showPending}
+                    onChange={(e) => {
+                      setShowPending(e.target.checked);
+                      if (e.target.checked) {
+                        setShowOnlyChecked(false);
+                      }
+                      setCurrentPage(1);
+                    }}
+                  />
+                  <label htmlFor="showPending">
+                    🌟 Voir tous (vérifiés + en attente)
+                  </label>
+                </div>
+              </div>
+            </div>
             
             {/* Barre de recherche */}
-            <div className="flex flex-col md:flex-row gap-3">
+            <div className="w-full md:w-1/2 px-2">
               <div className="flex-1">
                 <input
                   type="text"
-                  placeholder="🔍 Rechercher un personnage..."
+                  placeholder="🔍 Rechercher un hunter ou personnage..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`w-full bg-black/30 border border-yellow-500/30 rounded-lg text-white placeholder-gray-400 focus:border-yellow-500 focus:outline-none ${
+                  className={`w-full px-2 py-1 text-sm md:text-base bg-black/30 border border-yellow-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500 ${
                     isMobileDevice ? 'px-3 py-2 text-sm' : 'px-4 py-3'
                   }`}
                 />
@@ -950,7 +1086,7 @@ html, body, #root {
                 <option value="Dark">🌙 Dark</option>
               </select>
 
-              {/* 🆕 FILTRE CHARACTER */}
+              {/* FILTRE CHARACTER */}
               {uniqueCharacters.length > 0 && (
                 <select
                   value={selectedCharacterFilter}
@@ -1000,8 +1136,8 @@ html, body, #root {
         </div>
 
         {/* 📱 CONTENU PRINCIPAL */}
-        <div className="flex-1 overflow-y-auto mobile-scroll h-[calc(100dvh-220px)] sm:h-auto px-2">
-          <div className={`max-w-7xl mx-auto ${isMobileDevice ? 'p-2' : 'p-4 md:p-6'}`}>
+        <div className="flex-1 overflow-y-auto mobile-scroll h-[calc(100dvh-220px)]">
+          <div className={`max-w-7xl mx-auto ${isMobileDevice ? 'p-2' : 'p-2 md:p-4'}`}>
 
             {loading ? (
               // Loading state
@@ -1019,10 +1155,10 @@ html, body, #root {
               <div className="text-center py-16">
                 <div className={isMobileDevice ? 'text-4xl mb-3' : 'text-6xl mb-4'}>🏆</div>
                 <h3 className={`text-yellow-400 mb-2 ${isMobileDevice ? 'text-lg' : 'text-xl'}`}>
-                  Aucun Hunter validé
+                  {showOnlyChecked ? 'Aucun Hunter vérifié' : 'Aucun Hunter en attente'}
                 </h3>
                 <p className={`text-gray-400 mb-4 ${isMobileDevice ? 'text-sm' : ''}`}>
-                  Soyez le premier à être validé !
+                  {showOnlyChecked ? 'Soyez le premier à être validé !' : 'Tous les hunters ont été vérifiés !'}
                 </p>
                 <button
                   onClick={onNavigateToBuilder}
@@ -1053,7 +1189,7 @@ html, body, #root {
                         Total
                       </p>
                       <p className={`font-bold text-yellow-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>
-                        {hunters.length}
+                        {filteredAndSortedHunters.length}
                       </p>
                     </div>
                   </div>
@@ -1063,7 +1199,7 @@ html, body, #root {
                         CP Moyen
                       </p>
                       <p className={`font-bold text-red-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>
-                        {hunters.length > 0 ? Math.floor(hunters.reduce((sum, h) => sum + (selectedRanking === 'artifactsScore' ? (h.artifactsScore || 0) : h.totalScore), 0) / hunters.length).toLocaleString() : 0}
+                        {filteredAndSortedHunters.length > 0 ? Math.floor(filteredAndSortedHunters.reduce((sum, h) => sum + (selectedRanking === 'artifactsScore' ? (h.artifactsScore || 0) : h.totalScore), 0) / filteredAndSortedHunters.length).toLocaleString() : 0}
                       </p>
                     </div>
                   </div>
@@ -1083,27 +1219,28 @@ html, body, #root {
                         CP Max
                       </p>
                       <p className={`font-bold text-green-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>
-                        {hunters.length > 0 ? Math.max(...hunters.map(h => selectedRanking === 'artifactsScore' ? (h.artifactsScore || 0) : h.totalScore)).toLocaleString() : 0}
+                        {filteredAndSortedHunters.length > 0 ? Math.max(...filteredAndSortedHunters.map(h => selectedRanking === 'artifactsScore' ? (h.artifactsScore || 0) : h.totalScore)).toLocaleString() : 0}
                       </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Grille des hunters */}
-                <div className={`grid gap-4 mb-6 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
+                <div className={`grid gap-2 mb-3 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
                   {paginatedHunters.map((hunter, index) => {
                     const globalRank = (currentPage - 1) * huntersPerPage + index;
                     const rankBadge = getRankBadge(globalRank);
-                    const character = data_chars[hunter.character] || characters[hunter.character] || {}; // 🆕 PRIORISER DATA_CHARS
+                    const character = data_chars[hunter.character] || characters[hunter.character] || {};
                     const elementColor = getElementColor(character?.element);
                     const currentScore = selectedRanking === 'artifactsScore' ? (hunter.artifactsScore || 0) : hunter.totalScore;
                     const displayName = hunter.pseudo || hunter.hunterName || 'Hunter';
-                    const characterImage = getCharacterImage(hunter.character); // 🆕 IMAGE CHARACTER
+                    const characterImage = getCharacterImage(hunter.character);
+                    const isChecked = hunter.checked === true; // 🆕 v5.0
                     
                     return (
                       <div
                         key={hunter.id}
-                        className={`hunter-card rounded-xl group cursor-pointer mobile-touch ${globalRank === 0 ? 'emperor' : ''} ${isMobileDevice ? 'p-3' : 'p-6'}`}
+                        className={`hunter-card rounded-xl group cursor-pointer mobile-touch ${globalRank === 0 && isChecked ? 'emperor' : ''} ${!isChecked ? 'unchecked' : ''} ${isMobileDevice ? 'p-3' : 'p-6'}`}
                         onClick={() => handleViewDetails(hunter)}
                       >
                         {/* Header avec rang et image character */}
@@ -1112,15 +1249,15 @@ html, body, #root {
                             <div
                               className={`rank-badge rounded-full font-bold flex items-center gap-2 ${isMobileDevice ? 'px-2 py-1 text-xs' : 'px-3 py-1 text-sm'}`}
                               style={{ 
-                                '--rank-color': rankBadge.color,
-                                '--rank-color-light': rankBadge.color + '40'
+                                '--rank-color': isChecked ? rankBadge.color : '#ff8c00',
+                                '--rank-color-light': isChecked ? rankBadge.color + '40' : '#ff8c0040'
                               }}
                             >
-                              <span>{rankBadge.emoji}</span>
-                              <span>{rankBadge.text}</span>
+                              <span>{isChecked ? rankBadge.emoji : '⏳'}</span>
+                              <span>{isChecked ? rankBadge.text : 'En attente'}</span>
                             </div>
 
-                            {/* 🆕 IMAGE CHARACTER */}
+                            {/* IMAGE CHARACTER */}
                             {characterImage && (
                               <img
                                 src={characterImage.icon}
@@ -1137,6 +1274,13 @@ html, body, #root {
                           </div>
                           
                           <div className="flex items-center gap-1">
+                            {/* 🆕 BADGE NON VÉRIFIÉ v5.0 */}
+                            {!isChecked && (
+                              <div className="unchecked-badge">
+                                ⏳ NON VÉRIFIÉ
+                              </div>
+                            )}
+                            
                             {character?.element && (
                               <div
                                 className="element-badge rounded font-bold"
@@ -1174,7 +1318,7 @@ html, body, #root {
                           </p>
                         </div>
 
-                        {/* 🔧 Score principal AVEC TOOLTIPS CP - VERSION FIXÉE */}
+                        {/* Score principal AVEC TOOLTIPS CP */}
                         <div className="mb-3">
                           <div className={`flex justify-between mb-1 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
                             <span className="text-gray-400">
@@ -1184,7 +1328,7 @@ html, body, #root {
                               className="cp-score-hover relative"
                               onMouseEnter={() => {
                                 if (!isMobileDevice) {
-                                  console.log('🔍 Hover hunter:', hunter.id, 'CP Details:', hunter.cpDetailsTotal); // 🆕 DEBUG
+                                  console.log('🔍 Hover hunter:', hunter.id, 'CP Details:', hunter.cpDetailsTotal);
                                   setShowCpTooltipTotal(hunter.id);
                                 }
                               }}
@@ -1192,7 +1336,7 @@ html, body, #root {
                               onClick={(e) => {
                                 if (isMobileDevice) {
                                   e.stopPropagation();
-                                  console.log('📱 Click hunter:', hunter.id, 'CP Details:', hunter.cpDetailsTotal); // 🆕 DEBUG
+                                  console.log('📱 Click hunter:', hunter.id, 'CP Details:', hunter.cpDetailsTotal);
                                   setShowCpTooltipTotal(showCpTooltipTotal === hunter.id ? null : hunter.id);
                                 }
                               }}
@@ -1201,7 +1345,7 @@ html, body, #root {
                                 {currentScore.toLocaleString()}
                               </span>
                               
-                              {/* 🆕 TOOLTIP CP PRINCIPAL - VERSION SÉCURISÉE */}
+                              {/* TOOLTIP CP PRINCIPAL */}
                               {showCpTooltipTotal === hunter.id && (
                                 selectedRanking === 'artifactsScore' 
                                   ? hunter.cpDetailsArtifacts?.details?.length > 0 && (
@@ -1220,7 +1364,7 @@ html, body, #root {
                                     )
                               )}
                               
-                              {/* 🆕 FALLBACK SI PAS DE DONNÉES CP DÉTAILLÉES */}
+                              {/* FALLBACK SI PAS DE DONNÉES CP DÉTAILLÉES */}
                               {showCpTooltipTotal === hunter.id && !hunter.cpDetailsTotal?.details?.length && !hunter.cpDetailsArtifacts?.details?.length && (
                                 <div className="cp-tooltip-hall">
                                   <p className="font-bold mb-2 text-yellow-400">🚨 Données CP manquantes</p>
@@ -1233,7 +1377,7 @@ html, body, #root {
                             </div>
                           </div>
                           
-                          {/* Score secondaire AVEC TOOLTIPS - VERSION SÉCURISÉE */}
+                          {/* Score secondaire AVEC TOOLTIPS */}
                           {selectedRanking === 'totalScore' && hunter.artifactsScore && (
                             <div className={`flex justify-between mb-2 ${isMobileDevice ? 'text-xs' : 'text-xs'}`}>
                               <span className="text-gray-500">CP Artefacts</span>
@@ -1241,7 +1385,7 @@ html, body, #root {
                                 className="cp-score-hover relative"
                                 onMouseEnter={() => {
                                   if (!isMobileDevice) {
-                                    console.log('🔍 Hover artifacts:', hunter.id, 'Details:', hunter.cpDetailsArtifacts); // 🆕 DEBUG
+                                    console.log('🔍 Hover artifacts:', hunter.id, 'Details:', hunter.cpDetailsArtifacts);
                                     setShowCpTooltipArtifacts(hunter.id);
                                   }
                                 }}
@@ -1255,7 +1399,7 @@ html, body, #root {
                               >
                                 <span className="text-purple-300 cursor-help">{hunter.artifactsScore.toLocaleString()}</span>
                                 
-                                {/* TOOLTIP CP ARTIFACTS SECONDAIRE - VERSION SÉCURISÉE */}
+                                {/* TOOLTIP CP ARTIFACTS SECONDAIRE */}
                                 {showCpTooltipArtifacts === hunter.id && hunter.cpDetailsArtifacts?.details?.length > 0 && (
                                   <CpTooltip 
                                     details={hunter.cpDetailsArtifacts.details} 
@@ -1270,395 +1414,391 @@ html, body, #root {
                           {selectedRanking === 'artifactsScore' && hunter.totalScore && (
                             <div className={`flex justify-between mb-2 ${isMobileDevice ? 'text-xs' : 'text-xs'}`}>
                               <span className="text-gray-500">CP Total</span>
-                              <div 
-                                className="cp-score-hover relative"
-                                onMouseEnter={() => !isMobileDevice && setShowCpTooltipTotal(`${hunter.id}-secondary`)}
-                                onMouseLeave={() => setShowCpTooltipTotal(null)}
-                                onClick={(e) => {
-                                  if (isMobileDevice) {
-                                    e.stopPropagation();
-                                    setShowCpTooltipTotal(showCpTooltipTotal === `${hunter.id}-secondary` ? null : `${hunter.id}-secondary`);
-                                  }
-                                }}
-                              >
-                                <span className="text-yellow-300 cursor-help">{hunter.totalScore.toLocaleString()}</span>
-                                
-                                {/* TOOLTIP CP TOTAL SECONDAIRE */}
-                                {showCpTooltipTotal === `${hunter.id}-secondary` && hunter.cpDetailsTotal?.details?.length > 0 && (
-                                  <CpTooltip 
-                                    details={hunter.cpDetailsTotal.details} 
-                                    title="🏆 CP Total"
-                                    color="#ffd700"
-                                  />
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                              <div className="cp-score-hover relative"
+                               onMouseEnter={() => !isMobileDevice && setShowCpTooltipTotal(`${hunter.id}-secondary`)}
+                               onMouseLeave={() => setShowCpTooltipTotal(null)}
+                               onClick={(e) => {
+                                 if (isMobileDevice) {
+                                   e.stopPropagation();
+                                   setShowCpTooltipTotal(showCpTooltipTotal === `${hunter.id}-secondary` ? null : `${hunter.id}-secondary`);
+                                 }
+                               }}
+                             >
+                               <span className="text-yellow-300 cursor-help">{hunter.totalScore.toLocaleString()}</span>
+                               
+                               {/* TOOLTIP CP TOTAL SECONDAIRE */}
+                               {showCpTooltipTotal === `${hunter.id}-secondary` && hunter.cpDetailsTotal?.details?.length > 0 && (
+                                 <CpTooltip 
+                                   details={hunter.cpDetailsTotal.details} 
+                                   title="🏆 CP Total"
+                                   color="#ffd700"
+                                 />
+                               )}
+                             </div>
+                           </div>
+                         )}
+                       </div>
 
-                        {/* Stats principales */}
-                        <div className="space-y-2">
-                          <div>
-                            <div className={`flex justify-between mb-1 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
-                              <span className="text-gray-400">Attack</span>
-                              <span className="text-red-400">{formatStat(hunter.currentStats?.Attack || 0)}</span>
-                            </div>
-                            <div 
-                              className="stat-bar"
-                              style={{ 
-                                '--stat-color': '#ef4444',
-                                width: `${Math.min(100, (hunter.currentStats?.Attack || 0) / 200000 * 100)}%`
-                              }}
-                            ></div>
-                          </div>
-                          
-                          <div>
-                            <div className={`flex justify-between mb-1 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
-                              <span className="text-gray-400">Defense</span>
-                              <span className="text-blue-400">{formatStat(hunter.currentStats?.Defense || 0)}</span>
-                            </div>
-                            <div 
-                              className="stat-bar"
-                              style={{ 
-                                '--stat-color': '#3b82f6',
-                                width: `${Math.min(100, (hunter.currentStats?.Defense || 0) / 200000 * 100)}%`
-                              }}
-                            ></div>
-                          </div>
-                          
-                          <div>
-                            <div className={`flex justify-between mb-1 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
-                              <span className="text-gray-400">HP</span>
-                              <span className="text-green-400">{formatStat(hunter.currentStats?.HP || 0)}</span>
-                            </div>
-                            <div 
-                              className="stat-bar"
-                              style={{ 
-                                '--stat-color': '#22c55e',
-                                width: `${Math.min(100, (hunter.currentStats?.HP || 0) / 200000 * 100)}%`
-                              }}
-                            ></div>
-                          </div>
-                        </div>
+                       {/* Stats principales */}
+                       <div className="space-y-2">
+                         <div>
+                           <div className={`flex justify-between mb-1 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
+                             <span className="text-gray-400">Attack</span>
+                             <span className="text-red-400">{formatStat(hunter.currentStats?.Attack || 0)}</span>
+                           </div>
+                           <div 
+                             className="stat-bar"
+                             style={{ 
+                               '--stat-color': '#ef4444',
+                               width: `${Math.min(100, (hunter.currentStats?.Attack || 0) / 200000 * 100)}%`
+                             }}
+                           ></div>
+                         </div>
+                         
+                         <div>
+                           <div className={`flex justify-between mb-1 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
+                             <span className="text-gray-400">Defense</span>
+                             <span className="text-blue-400">{formatStat(hunter.currentStats?.Defense || 0)}</span>
+                           </div>
+                           <div 
+                             className="stat-bar"
+                             style={{ 
+                               '--stat-color': '#3b82f6',
+                               width: `${Math.min(100, (hunter.currentStats?.Defense || 0) / 200000 * 100)}%`
+                             }}
+                           ></div>
+                         </div>
+                         
+                         <div>
+                           <div className={`flex justify-between mb-1 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
+                             <span className="text-gray-400">HP</span>
+                             <span className="text-green-400">{formatStat(hunter.currentStats?.HP || 0)}</span>
+                           </div>
+                           <div 
+                             className="stat-bar"
+                             style={{ 
+                               '--stat-color': '#22c55e',
+                               width: `${Math.min(100, (hunter.currentStats?.HP || 0) / 200000 * 100)}%`
+                             }}
+                           ></div>
+                         </div>
+                       </div>
 
-                        {/* Footer avec date */}
-                        <div className={`mt-3 pt-3 border-t border-gray-700/50 ${isMobileDevice ? 'text-xs' : ''}`}>
-                          <div className="flex justify-between items-center">
-                            <p className="text-gray-500 text-xs">
-                              📅 {new Date(hunter.timestamp).toLocaleDateString()}
-                            </p>
-                            {hunter.setAnalysis?.equipped && Object.keys(hunter.setAnalysis.equipped).length > 0 && (
-                              <p className="text-blue-400 text-xs">
-                                🎨 {Object.keys(hunter.setAnalysis.equipped).length} sets
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                       {/* Footer avec date */}
+                       <div className={`mt-3 pt-3 border-t border-gray-700/50 ${isMobileDevice ? 'text-xs' : ''}`}>
+                         <div className="flex justify-between items-center">
+                           <p className="text-gray-500 text-xs">
+                             📅 {new Date(hunter.timestamp).toLocaleDateString()}
+                           </p>
+                           {hunter.setAnalysis?.equipped && Object.keys(hunter.setAnalysis.equipped).length > 0 && (
+                             <p className="text-blue-400 text-xs">
+                               🎨 {Object.keys(hunter.setAnalysis.equipped).length} sets
+                             </p>
+                           )}
+                         </div>
+                       </div>
+                     </div>
+                   );
+                 })}
+               </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className={`flex justify-center items-center mt-6 ${isMobileDevice ? 'mobile-pagination gap-2' : 'gap-4 mt-8'}`}>
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                      className={`filter-button rounded-lg disabled:opacity-50 disabled:cursor-not-allowed ${isMobileDevice ? 'px-3 py-2 text-xs' : 'px-4 py-2'}`}
-                    >
-                      ← Préc
-                    </button>
-                    
-                    <span className={`text-gray-300 ${isMobileDevice ? 'text-xs px-2' : ''}`}>
-                      {isMobileDevice ? `${currentPage}/${totalPages}` : `Page ${currentPage} sur ${totalPages}`}
-                    </span>
-                    
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
-                      className={`filter-button rounded-lg disabled:opacity-50 disabled:cursor-not-allowed ${isMobileDevice ? 'px-3 py-2 text-xs' : 'px-4 py-2'}`}
-                    >
-                      Suiv →
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+               {/* Pagination */}
+               {totalPages > 1 && (
+                 <div className={`flex justify-center items-center mt-6 ${isMobileDevice ? 'mobile-pagination gap-2' : 'gap-4 mt-8'}`}>
+                   <button
+                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                     disabled={currentPage === 1}
+                     className={`filter-button rounded-lg disabled:opacity-50 disabled:cursor-not-allowed ${isMobileDevice ? 'px-3 py-2 text-xs' : 'px-4 py-2'}`}
+                   >
+                     ← Préc
+                   </button>
+                   
+                   <span className={`text-gray-300 ${isMobileDevice ? 'text-xs px-2' : ''}`}>
+                     {isMobileDevice ? `${currentPage}/${totalPages}` : `Page ${currentPage} sur ${totalPages}`}
+                   </span>
+                   
+                   <button
+                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                     disabled={currentPage === totalPages}
+                     className={`filter-button rounded-lg disabled:opacity-50 disabled:cursor-not-allowed ${isMobileDevice ? 'px-3 py-2 text-xs' : 'px-4 py-2'}`}
+                   >
+                     Suiv →
+                   </button>
+                 </div>
+               )}
+             </>
+           )}
+         </div>
+       </div>
+     </div>
 
-      {/* 🔍 MODAL DÉTAILS HUNTER */}
-      {showDetails && selectedHunter && (
-        <div className="details-modal fixed inset-0 z-[10000] flex items-center justify-center">
-          <div className={`details-content shadow-2xl overflow-y-auto mobile-scroll ${
-            isMobileDevice ? 'mobile-modal' : 'rounded-2xl w-full max-w-6xl max-h-[90vh] m-4'
-          }`}>
-            
-            {/* Header Modal */}
-            <div className={`border-b border-yellow-500/30 ${isMobileDevice ? 'mobile-modal-header' : 'p-6'}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center ${isMobileDevice ? 'w-8 h-8' : 'w-12 h-12'}`}>
-                    <span className={isMobileDevice ? 'text-lg' : 'text-2xl'}>🔍</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {/* 🆕 IMAGE CHARACTER DANS LE HEADER */}
-                    {(() => {
-                      const characterImage = getCharacterImage(selectedHunter.character);
-                      const character = data_chars[selectedHunter.character] || characters[selectedHunter.character] || {};
-                      const elementColor = getElementColor(character?.element);
-                      
-                      return characterImage && (
-                        <img
-                          src={characterImage.img}
-                          alt={characterImage.name}
-                          className="character-image-large"
-                          style={{
-                            '--element-color': elementColor
-                          }}
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                      );
-                    })()}
-                    
-                    <div>
-                      <h2 className={`font-bold text-yellow-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>
-                        {selectedHunter.pseudo || selectedHunter.hunterName}
-                      </h2>
-                      <p className={`text-gray-300 ${isMobileDevice ? 'text-sm' : ''}`}>
-                        {selectedHunter.characterName || selectedHunter.character} • {selectedHunter.guildName || 'Sans guilde'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <button
-                  onClick={() => {
-                    setShowDetails(false);
-                    setSelectedHunter(null);
-                  }}
-                  className={`rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-400 flex items-center justify-center transition-colors ${isMobileDevice ? 'w-8 h-8' : 'w-10 h-10'}`}
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
+     {/* 🔍 MODAL DÉTAILS HUNTER */}
+     {showDetails && selectedHunter && (
+       <div className="details-modal fixed inset-0 z-[10000] flex items-center justify-center">
+         <div className={`details-content shadow-2xl overflow-y-auto mobile-scroll ${
+           isMobileDevice ? 'mobile-modal' : 'rounded-2xl w-full max-w-6xl max-h-[90vh] m-4'
+         }`}>
+           
+           {/* Header Modal */}
+           <div className={`border-b border-yellow-500/30 ${isMobileDevice ? 'mobile-modal-header' : 'p-6'}`}>
+             <div className="flex items-center justify-between">
+               <div className="flex items-center gap-3">
+                 <div className={`bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center ${isMobileDevice ? 'w-8 h-8' : 'w-12 h-12'}`}>
+                   <span className={isMobileDevice ? 'text-lg' : 'text-2xl'}>🔍</span>
+                 </div>
+                 <div className="flex items-center gap-3">
+                   {/* IMAGE CHARACTER DANS LE HEADER */}
+                   {(() => {
+                     const characterImage = getCharacterImage(selectedHunter.character);
+                     const character = data_chars[selectedHunter.character] || characters[selectedHunter.character] || {};
+                     const elementColor = getElementColor(character?.element);
+                     
+                     return characterImage && (
+                       <img
+                         src={characterImage.img}
+                         alt={characterImage.name}
+                         className="character-image-large"
+                         style={{
+                           '--element-color': elementColor
+                         }}
+                         onError={(e) => {
+                           e.target.style.display = 'none';
+                         }}
+                       />
+                     );
+                   })()}
+                   
+                   <div>
+                     <h2 className={`font-bold text-yellow-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>
+                       {selectedHunter.pseudo || selectedHunter.hunterName}
+                     </h2>
+                     <p className={`text-gray-300 ${isMobileDevice ? 'text-sm' : ''}`}>
+                       {selectedHunter.characterName || selectedHunter.character} • {selectedHunter.guildName || 'Sans guilde'}
+                     </p>
+                     {/* 🆕 BADGE VÉRIFIÉ/NON VÉRIFIÉ v5.0 */}
+                     {selectedHunter.checked ? (
+                       <span className="text-green-400 text-sm">✅ Hunter vérifié</span>
+                     ) : (
+                       <span className="text-orange-400 text-sm">⏳ En attente de vérification</span>
+                     )}
+                   </div>
+                 </div>
+               </div>
+               
+               <button
+                 onClick={() => {
+                   setShowDetails(false);
+                   setSelectedHunter(null);
+                 }}
+                 className={`rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-400 flex items-center justify-center transition-colors ${isMobileDevice ? 'w-8 h-8' : 'w-10 h-10'}`}
+               >
+                 ✕
+               </button>
+             </div>
+           </div>
 
-            {/* Contenu Modal */}
-            <div className={isMobileDevice ? 'mobile-modal-content' : 'p-6'}>
-              
-              {/* Scores CP avec Tooltips dans la modal */}
-              <div className={`grid gap-4 mb-6 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3 gap-6 mb-8'}`}>
-                <div className="bg-black/30 rounded-lg p-4 border border-yellow-500/20">
-                  <h3 className={`text-yellow-400 font-bold mb-2 ${isMobileDevice ? 'text-sm' : ''}`}>
-                    🏆 CP Total
-                  </h3>
-                  <div 
-                    className="cp-score-hover relative"
-                    onMouseEnter={() => !isMobileDevice && setShowCpTooltipTotal('modal-total')}
-                    onMouseLeave={() => setShowCpTooltipTotal(null)}
-                    onClick={() => isMobileDevice && setShowCpTooltipTotal(showCpTooltipTotal === 'modal-total' ? null : 'modal-total')}
-                  >
-                    <p className={`font-bold text-yellow-400 cursor-help ${isMobileDevice ? 'text-xl' : 'text-3xl'}`}>
-                      {selectedHunter.totalScore?.toLocaleString() || 0}
-                    </p>
-                    
-                    {/* TOOLTIP CP TOTAL MODAL */}
-                    {showCpTooltipTotal === 'modal-total' && selectedHunter.cpDetailsTotal?.details?.length > 0 && (
-                      <CpTooltip 
-                        details={selectedHunter.cpDetailsTotal.details} 
-                        title="🏆 CP Total Détaillé"
-                        color="#ffd700"
-                      />
-                    )}
-                  </div>
-                </div>
-                
-                <div className="bg-black/30 rounded-lg p-4 border border-purple-500/20">
-                  <h3 className={`text-purple-400 font-bold mb-2 ${isMobileDevice ? 'text-sm' : ''}`}>
-                    🎨 CP Artefacts
-                  </h3>
-                  <div 
-                    className="cp-score-hover relative"
-                    onMouseEnter={() => !isMobileDevice && setShowCpTooltipArtifacts('modal-artifacts')}
-                    onMouseLeave={() => setShowCpTooltipArtifacts(null)}
-                    onClick={() => isMobileDevice && setShowCpTooltipArtifacts(showCpTooltipArtifacts === 'modal-artifacts' ? null : 'modal-artifacts')}
-                  >
-                    <p className={`font-bold text-purple-400 cursor-help ${isMobileDevice ? 'text-xl' : 'text-3xl'}`}>
-                      {selectedHunter.artifactsScore?.toLocaleString() || 0}
-                    </p>
-                    
-                    {/* TOOLTIP CP ARTIFACTS MODAL */}
-                    {showCpTooltipArtifacts === 'modal-artifacts' && selectedHunter.cpDetailsArtifacts?.details?.length > 0 && (
-                      <CpTooltip 
-                        details={selectedHunter.cpDetailsArtifacts.details} 
-                        title="🎨 CP Artefacts Détaillé"
-                        color="#a855f7"
-                      />
-                    )}
-                  </div>
-                </div>
-                
-                <div className="bg-black/30 rounded-lg p-4 border border-blue-500/20">
-                  <h3 className={`text-blue-400 font-bold mb-2 ${isMobileDevice ? 'text-sm' : ''}`}>
-                    🎭 Character & Element
-                  </h3>
-                  <p className={`font-bold text-blue-400 ${isMobileDevice ? 'text-lg' : 'text-xl'}`}>
-                    {data_chars[selectedHunter.character]?.name || characters[selectedHunter.character]?.name || selectedHunter.character}
-                  </p>
-                  <p className={`text-gray-400 mt-1 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
-                    {data_chars[selectedHunter.character]?.element || characters[selectedHunter.character]?.element || 'Unknown'} • Scale: {selectedHunter.builderInfo?.scaleStat || 'N/A'}
-                  </p>
-                </div>
-              </div>
+           {/* Contenu Modal */}
+           <div className={isMobileDevice ? 'mobile-modal-content' : 'p-6'}>
+             
+             {/* Scores CP avec Tooltips dans la modal */}
+             <div className={`grid gap-4 mb-2 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3 gap-6 mb-8'}`}>
+               <div className="bg-black/30 rounded-lg p-4 border border-yellow-500/20">
+                 <h3 className={`text-yellow-400 font-bold mb-2 ${isMobileDevice ? 'text-sm' : ''}`}>
+                   🏆 CP Total
+                 </h3>
+                 <div 
+                   className="cp-score-hover relative"
+                   onMouseEnter={() => !isMobileDevice && setShowCpTooltipTotal('modal-total')}
+                   onMouseLeave={() => setShowCpTooltipTotal(null)}
+                   onClick={() => isMobileDevice && setShowCpTooltipTotal(showCpTooltipTotal === 'modal-total' ? null : 'modal-total')}
+                 >
+                   <p className={`font-bold text-yellow-400 cursor-help ${isMobileDevice ? 'text-xl' : 'text-3xl'}`}>
+                     {selectedHunter.totalScore?.toLocaleString() || 0}
+                   </p>
+                   
+                   {/* TOOLTIP CP TOTAL MODAL */}
+                   {showCpTooltipTotal === 'modal-total' && selectedHunter.cpDetailsTotal?.details?.length > 0 && (
+                     <CpTooltip 
+                       details={selectedHunter.cpDetailsTotal.details} 
+                       title="🏆 CP Total Détaillé"
+                       color="#ffd700"
+                     />
+                   )}
+                 </div>
+               </div>
+               
+               <div className="bg-black/30 rounded-lg p-4 border border-purple-500/20">
+                 <h3 className={`text-purple-400 font-bold mb-2 ${isMobileDevice ? 'text-sm' : ''}`}>
+                   🎨 CP Artefacts
+                 </h3>
+                 <div 
+                   className="cp-score-hover relative"
+                   onMouseEnter={() => !isMobileDevice && setShowCpTooltipArtifacts('modal-artifacts')}
+                   onMouseLeave={() => setShowCpTooltipArtifacts(null)}
+                   onClick={() => isMobileDevice && setShowCpTooltipArtifacts(showCpTooltipArtifacts === 'modal-artifacts' ? null : 'modal-artifacts')}
+                 >
+                   <p className={`font-bold text-purple-400 cursor-help ${isMobileDevice ? 'text-xl' : 'text-3xl'}`}>
+                     {selectedHunter.artifactsScore?.toLocaleString() || 0}
+                   </p>
+                   
+                   {/* TOOLTIP CP ARTIFACTS MODAL */}
+                   {showCpTooltipArtifacts === 'modal-artifacts' && selectedHunter.cpDetailsArtifacts?.details?.length > 0 && (
+                     <CpTooltip 
+                       details={selectedHunter.cpDetailsArtifacts.details} 
+                       title="🎨 CP Artefacts Détaillé"
+                       color="#a855f7"
+                     />
+                   )}
+                 </div>
+               </div>
+               
+               <div className="bg-black/30 rounded-lg p-4 border border-blue-500/20">
+                 <h3 className={`text-blue-400 font-bold mb-2 ${isMobileDevice ? 'text-sm' : ''}`}>
+                   🎭 Character & Element
+                 </h3>
+                 <p className={`font-bold text-blue-400 ${isMobileDevice ? 'text-lg' : 'text-xl'}`}>
+                   {data_chars[selectedHunter.character]?.name || characters[selectedHunter.character]?.name || selectedHunter.character}
+                 </p>
+                 <p className={`text-gray-400 mt-1 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
+                   {data_chars[selectedHunter.character]?.element || characters[selectedHunter.character]?.element || 'Unknown'} • Scale: {selectedHunter.builderInfo?.scaleStat || 'N/A'}
+                 </p>
+               </div>
+             </div>
 
-              {/* Stats Détaillées */}
-              <div className={`grid gap-4 mb-6 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 gap-6 mb-8'}`}>
-                <div className="bg-black/30 rounded-lg p-4 border border-green-500/20">
-                  <h3 className={`text-green-400 font-bold mb-4 ${isMobileDevice ? 'text-sm' : ''}`}>
-                    ⚡ Stats Totales
-                  </h3>
-                  <div className="space-y-2">
-                    {selectedHunter.currentStats && Object.entries(selectedHunter.currentStats).map(([stat, value]) => (
-                      <div key={stat} className={`flex justify-between ${isMobileDevice ? 'text-xs' : ''}`}>
-                        <span className="text-gray-400">{stat}:</span>
-                        <span className="text-white font-bold">{formatStat(value)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+             {/* Stats Détaillées */}
+             <div className={`grid gap-4 mb-2 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 gap-6 mb-8'}`}>
+               <div className="bg-black/30 rounded-lg p-4 border border-green-500/20">
+                 <h3 className={`text-green-400 font-bold mb-4 ${isMobileDevice ? 'text-sm' : ''}`}>
+                   ⚡ Stats Totales
+                 </h3>
+                 <div className="space-y-2">
+                   {selectedHunter.currentStats && Object.entries(selectedHunter.currentStats).map(([stat, value]) => (
+                     <div key={stat} className={`flex justify-between ${isMobileDevice ? 'text-xs' : ''}`}>
+                       <span className="text-gray-400">{stat}:</span>
+                       <span className="text-white font-bold">{formatStat(value)}</span>
+                     </div>
+                   ))}
+                 </div>
+               </div>
 
-                <div className="bg-black/30 rounded-lg p-4 border border-purple-500/20">
-                  <h3 className={`text-purple-400 font-bold mb-4 ${isMobileDevice ? 'text-sm' : ''}`}>
-                    🎨 Stats Artefacts
-                  </h3>
-                  <div className="space-y-2">
-                    {selectedHunter.statsFromArtifacts && Object.entries(selectedHunter.statsFromArtifacts).map(([stat, value]) => (
-                      <div key={stat} className={`flex justify-between ${isMobileDevice ? 'text-xs' : ''}`}>
-                        <span className="text-gray-400">{stat}:</span>
-                        <span className="text-white font-bold">{formatStat(value)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+               <div className="bg-black/30 rounded-lg p-4 border border-purple-500/20">
+                 <h3 className={`text-purple-400 font-bold mb-4 ${isMobileDevice ? 'text-sm' : ''}`}>
+                   🎨 Stats Artefacts
+                 </h3>
+                 <div className="space-y-2">
+                   {selectedHunter.statsFromArtifacts && Object.entries(selectedHunter.statsFromArtifacts).map(([stat, value]) => (
+                     <div key={stat} className={`flex justify-between ${isMobileDevice ? 'text-xs' : ''}`}>
+                       <span className="text-gray-400">{stat}:</span>
+                       <span className="text-white font-bold">{formatStat(value)}</span>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+             </div>
 
-              {/* Sets d'Artefacts */}
-              {selectedHunter.setAnalysis && (
-                <div className={`bg-black/30 rounded-lg p-4 border border-blue-500/20 mb-6 ${isMobileDevice ? 'mb-4' : 'mb-8'}`}>
-                  <h3 className={`text-blue-400 font-bold mb-4 ${isMobileDevice ? 'text-sm' : ''}`}>
-                    🎨 Sets d'Artefacts
-                  </h3>
-                  <p className={`text-gray-300 ${isMobileDevice ? 'text-sm' : ''}`}>
-                    {selectedHunter.setAnalysis.analysis || "Aucune analyse disponible"}
-                  </p>
-                  
-                  {selectedHunter.setAnalysis.equipped && Object.keys(selectedHunter.setAnalysis.equipped).length > 0 && (
-                    <div className={`mt-4 grid gap-3 ${isMobileDevice ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-4'}`}>
-                      {Object.entries(selectedHunter.setAnalysis.equipped).map(([setName, count]) => (
-                        <div key={setName} className="bg-black/40 rounded-lg p-3 text-center">
-                          <p className={`text-yellow-400 font-bold ${isMobileDevice ? 'text-xs' : ''}`}>
-                            {setName}
-                          </p>
-                          <p className={`text-gray-300 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
-                            {count} pièces
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+             {/* Sets d'Artefacts */}
+             {selectedHunter.setAnalysis && (
+               <div className={`bg-black/30 rounded-lg p-4 border border-blue-500/20 mb-2 ${isMobileDevice ? 'mb-4' : 'mb-8'}`}>
+                 <h3 className={`text-blue-400 font-bold mb-4 ${isMobileDevice ? 'text-sm' : ''}`}>
+                   🎨 Sets d'Artefacts
+                 </h3>
+                 <p className={`text-gray-300 ${isMobileDevice ? 'text-sm' : ''}`}>
+                   {selectedHunter.setAnalysis.analysis || "Aucune analyse disponible"}
+                 </p>
+                 
+                 {selectedHunter.setAnalysis.equipped && Object.keys(selectedHunter.setAnalysis.equipped).length > 0 && (
+                   <div className={`mt-4 grid gap-3 ${isMobileDevice ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-4'}`}>
+                     {Object.entries(selectedHunter.setAnalysis.equipped).map(([setName, count]) => (
+                       <div key={setName} className="bg-black/40 rounded-lg p-3 text-center">
+                         <p className={`text-yellow-400 font-bold ${isMobileDevice ? 'text-xs' : ''}`}>
+                           {setName}
+                         </p>
+                         <p className={`text-gray-300 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
+                           {count} pièces
+                         </p>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+               </div>
+             )}
 
-              {/* Artefacts Détaillés */}
-              {selectedHunter.currentArtifacts && Object.keys(selectedHunter.currentArtifacts).length > 0 && (
-                <div className={`bg-black/30 rounded-lg p-4 border border-yellow-500/20 mb-6 ${isMobileDevice ? 'mb-4' : 'mb-8'}`}>
-                  <h3 className={`text-yellow-400 font-bold mb-4 ${isMobileDevice ? 'text-sm' : ''}`}>
-                    🎨 Artefacts Équipés
-                  </h3>
-                  <div className="artifact-grid">
-                    {Object.entries(selectedHunter.currentArtifacts).map(([slot, artifact]) => (
-                      <div key={slot} className="artifact-slot">
-                        <h4 className={`text-yellow-400 font-bold mb-2 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
-                          {slot}
-                        </h4>
-                        <p className={`text-blue-400 mb-2 ${isMobileDevice ? 'text-xs' : 'text-xs'}`}>
-                          {artifact.set || 'Aucun Set'}
-                        </p>
-                        
-                        {/* Main Stat */}
-                        <div className="mb-3">
-                          <p className={`text-gray-400 ${isMobileDevice ? 'text-xs' : 'text-xs'}`}>
-                            Main:
-                          </p>
-                          <p className={`text-white font-bold ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
-                            {artifact.mainStat || 'N/A'}
-                            {artifact.mainStatValue && ` (+${Math.round(artifact.mainStatValue)})`}
-                          </p>
-                        </div>
+             {/* Artefacts Détaillés */}
+             {selectedHunter.currentArtifacts && Object.keys(selectedHunter.currentArtifacts).length > 0 && (
+               <div className={`bg-black/30 rounded-lg p-4 border border-yellow-500/20 mb-2 ${isMobileDevice ? 'mb-4' : 'mb-8'}`}>
+                 <h3 className={`text-yellow-400 font-bold mb-4 ${isMobileDevice ? 'text-sm' : ''}`}>
+                   🎨 Artefacts Équipés
+                 </h3>
+                 <div className="artifact-grid">
+                   {Object.entries(selectedHunter.currentArtifacts).map(([slot, artifact]) => (
+                     <div key={slot} className="artifact-slot">
+                       <h4 className={`text-yellow-400 font-bold mb-2 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
+                         {slot}
+                       </h4>
+                       <p className={`text-blue-400 mb-2 ${isMobileDevice ? 'text-xs' : 'text-xs'}`}>
+                         {artifact.set || 'Aucun Set'}
+                       </p>
+                       
+                       {/* Main Stat */}
+                       <div className="mb-3">
+                         <p className={`text-gray-400 ${isMobileDevice ? 'text-xs' : 'text-xs'}`}>
+                           Main:
+                         </p>
+                         <p className={`text-white font-bold ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
+                           {artifact.mainStat || 'N/A'}
+                           {artifact.mainStatValue && ` (+${Math.round(artifact.mainStatValue)})`}
+                         </p>
+                       </div>
 
-                        {/* Sub Stats */}
-                        <div>
-                          <p className={`text-gray-400 mb-1 ${isMobileDevice ? 'text-xs' : 'text-xs'}`}>
-                            Sub:
-                          </p>
-                          <div className="space-y-1">
-                            {artifact.subStats && artifact.subStats.slice(0, 4).map((subStat, index) => {
-                              const subStatValue = artifact.subStatsLevels && artifact.subStatsLevels[index] 
-                                ? artifact.subStatsLevels[index].value 
-                                : null;
-                              const procCount = artifact.procOrders && artifact.procOrders[index] 
-                                ? artifact.procOrders[index].length - 1 
-                                : 0;
-                              
-                              const isPercentageStat = subStat && subStat.includes('%');
-                              
-                              return (
-                                <p key={index} className={`text-gray-300 ${isMobileDevice ? 'text-xs' : 'text-xs'}`}>
-                                  {subStat ? (
-                                    <>
-                                      {subStat}
-                                      {procCount >= 1 && <span className="text-yellow-400"> (+{procCount})</span>}
-                                      {subStatValue && (
-                                        <span className="text-white">
-                                          : {isPercentageStat ? Number(subStatValue).toFixed(2) : Math.round(subStatValue)}
-                                          {isPercentageStat ? '%' : ''}
-                                        </span>
-                                      )}
-                                    </>
-                                  ) : '-'}
-                                </p>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                       {/* Sub Stats */}
+                       <div>
+                         <p className={`text-gray-400 mb-1 ${isMobileDevice ? 'text-xs' : 'text-xs'}`}>
+                           Sub:
+                         </p>
+                         <div className="space-y-1">
+                           {artifact.subStats && artifact.subStats.slice(0, 4).map((subStat, index) => {
+                             const subStatValue = artifact.subStatsLevels && artifact.subStatsLevels[index] 
+                               ? artifact.subStatsLevels[index].value 
+                               : null;
+                             const procCount = artifact.procOrders && artifact.procOrders[index] 
+                               ? artifact.procOrders[index].length - 1 
+                               : 0;
+                             
+                             const isPercentageStat = subStat && subStat.includes('%');
+                             
+                             return (
+                               <p key={index} className={`text-gray-300 ${isMobileDevice ? 'text-xs' : 'text-xs'}`}>
+                                 {subStat ? (
+                                   <>
+                                     {subStat}
+                                     {procCount >= 1 && <span className="text-yellow-400"> (+{procCount})</span>}
+                                     {subStatValue && (
+                                       <span className="text-white">
+                                         : {isPercentageStat ? Number(subStatValue).toFixed(2) : Math.round(subStatValue)}
+                                         {isPercentageStat ? '%' : ''}
+                                       </span>
+                                     )}
+                                   </>
+                                 ) : '-'}
+                               </p>
+                             );
+                           })}
+                         </div>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+             )}
 
-              {/* Notes */}
-              {selectedHunter.notes && (
-                <div className="bg-black/30 rounded-lg p-4 border border-gray-500/20">
-                  <h3 className={`text-gray-400 font-bold mb-2 ${isMobileDevice ? 'text-sm' : ''}`}>
-                    📝 Notes
-                  </h3>
-                  <p className={`text-gray-300 ${isMobileDevice ? 'text-sm' : ''}`}>
-                    {selectedHunter.notes}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
+             {/* 🚫 PAS D'AFFICHAGE DES NOTES v5.0 - SÉCURITÉ */}
+             {/* Notes supprimées pour éviter les problèmes de sécurité */}
+           </div>
+         </div>
+       </div>
+     )}
+   </>
+ );
 };
 
 export default HallOfFlamePage;
