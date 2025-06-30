@@ -1,4 +1,4 @@
-// AdminValidationPage.jsx - 🛡️ ADMIN VALIDATION ENHANCED v3.0 - CP TOOLTIPS + MOBILE + DOUBLONS
+// AdminValidationPage.jsx - 🛡️ ADMIN VALIDATION ENHANCED v3.1 - MANUAL DUPLICATE VALIDATION + CP TOOLTIPS + MOBILE
 import React, { useState, useEffect } from 'react';
 
 const AdminValidationPage = ({ 
@@ -41,6 +41,14 @@ const AdminValidationPage = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+  document.body.style.overflow = 'hidden';
+  return () => {
+    document.body.style.overflow = '';
+  };
+}, []);
+
+
   // 📊 CHARGER LES HUNTERS EN ATTENTE
   useEffect(() => {
     loadPendingHunters();
@@ -51,16 +59,14 @@ const AdminValidationPage = ({
   const loadPendingHunters = async () => {
     try {
       setLoading(true);
-      showTankMessage("🛡️ Chargement des hunters en attente v3.0...", true, 'kaisel');
+      showTankMessage("🛡️ Chargement des hunters en attente v3.1...", true, 'kaisel');
       
-      // 🌐 URL AVEC SOUS-DOMAINE DNS
       const apiUrl = 'https://api.builderberu.com/api/admin/pending';
       
       console.log(`🔍 Connexion à: ${apiUrl}`);
       
       const response = await fetch(apiUrl);
       
-      // 🔧 VÉRIFICATION CONTENT-TYPE
       const contentType = response.headers.get('content-type');
       console.log(`📋 Content-Type: ${contentType}`);
       
@@ -82,7 +88,6 @@ const AdminValidationPage = ({
     } catch (error) {
       console.error('❌ Erreur chargement pending:', error);
       
-      // 🆕 MESSAGE D'ERREUR SPÉCIFIQUE
       if (error.message.includes('Failed to fetch')) {
         showTankMessage(`❌ Impossible de joindre api.builderberu.com. DNS configuré ? Serveur démarré ?`, true, 'kaisel');
       } else if (error.message.includes('Réponse non-JSON')) {
@@ -138,16 +143,51 @@ const AdminValidationPage = ({
     }
   };
 
-  // ✅ APPROUVER UN HUNTER - AMÉLIORÉ POUR DOUBLONS
+  // ✅ APPROUVER UN HUNTER - 🚨 NOUVELLE LOGIQUE ANTI-DOUBLON AUTOMATIQUE
   const handleApprove = async (hunterId, confidenceLevel, issues = [], adminNotes = '') => {
     try {
       const hunter = pendingHunters.find(h => h.id === hunterId);
+      
+      // 🚨 VÉRIFICATION DOUBLONS CRITIQUE
+      const hasCriticalDuplicates = hunter?.autoAnalysis?.potentialDuplicates?.some(dup => 
+        dup.type === 'exact_duplicate' || 
+        dup.type === 'same_pseudo_diff_account_same_char' ||
+        dup.type === 'same_account_diff_pseudo_same_char'
+      );
+
+      if (hasCriticalDuplicates) {
+        const duplicatesList = hunter.autoAnalysis.potentialDuplicates
+          .filter(dup => dup.type !== 'multi_character_normal')
+          .map(dup => `${dup.hunter.pseudo} (${dup.hunter.accountId}) - ${dup.hunter.character}`)
+          .join('\n');
+
+        const confirmed = window.confirm(
+          `🚨 ATTENTION DOUBLON CRITIQUE DÉTECTÉ!\n\n` +
+          `Hunter: ${hunter.pseudo} (${hunter.accountId}) - ${hunter.character}\n\n` +
+          `Doublons trouvés:\n${duplicatesList}\n\n` +
+          `⚠️ EN VALIDANT, VOUS CONFIRMEZ QUE:\n` +
+          `• Ce n'est PAS un doublon malveillant\n` +
+          `• L'ancien sera ÉCRASÉ automatiquement\n` +
+          `• Vous acceptez cette mise à jour\n\n` +
+          `Continuer la validation ?`
+        );
+
+        if (!confirmed) {
+          showTankMessage("🛡️ Validation annulée par l'admin - Doublon non confirmé", true, 'kaisel');
+          return;
+        }
+      }
+
       showTankMessage(`✅ Approbation de ${hunter?.pseudo} (${hunter?.accountId}) en cours...`, true, 'kaisel');
       
       const response = await fetch(`https://api.builderberu.com/api/admin/approve/${hunterId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ confidenceLevel, issues, adminNotes })
+        body: JSON.stringify({ 
+          confidenceLevel, 
+          issues, 
+          adminNotes: adminNotes + (hasCriticalDuplicates ? ' [DOUBLON CONFIRMÉ PAR ADMIN]' : '')
+        })
       });
       
       const result = await response.json();
@@ -159,8 +199,8 @@ const AdminValidationPage = ({
           true, 
           'kaisel'
         );
-        loadPendingHunters(); // Recharger la liste
-        loadDuplicates(); // Recharger les doublons
+        loadPendingHunters();
+        loadDuplicates();
         setShowDetails(false);
       } else {
         throw new Error(result.error || 'Erreur approbation');
@@ -194,8 +234,8 @@ const AdminValidationPage = ({
       
       if (response.ok && result.success) {
         showTankMessage(`🗑️ ${result.rejected.pseudo} (${result.rejected.accountId}) supprimé`, true, 'kaisel');
-        loadPendingHunters(); // Recharger la liste
-        loadDuplicates(); // Recharger les doublons
+        loadPendingHunters();
+        loadDuplicates();
         setShowDetails(false);
       } else {
         throw new Error(result.error || 'Erreur suppression');
@@ -264,17 +304,21 @@ const AdminValidationPage = ({
     </div>
   );
 
-  // 🆕 COMPOSANT DUPLICATE BADGE INTELLIGENT
+  // 🆕 COMPOSANT DUPLICATE BADGE INTELLIGENT MISE À JOUR
   const DuplicateBadge = ({ duplicates }) => {
     if (!duplicates || duplicates.length === 0) return null;
     
     const hasExactDuplicate = duplicates.some(d => d.type === 'exact_duplicate');
+    const hasSuspiciousDuplicate = duplicates.some(d => 
+      d.type === 'same_pseudo_diff_account_same_char' || 
+      d.type === 'same_account_diff_pseudo_same_char'
+    );
     const hasMultiChar = duplicates.some(d => d.type === 'multi_character_normal');
     
-    if (hasExactDuplicate) {
+    if (hasExactDuplicate || hasSuspiciousDuplicate) {
       return (
         <div className="duplicate-badge-critical">
-          🚨 DOUBLON EXACT
+          🚨 VALIDATION MANUELLE REQUISE
         </div>
       );
     } else if (hasMultiChar) {
@@ -302,6 +346,8 @@ const AdminValidationPage = ({
             rgba(25, 15, 35, 0.98) 50%, 
             rgba(15, 5, 15, 0.95) 100%);
         }
+            document.body.style.overflow = 'hidden';
+document.body.style.overflow = '';
 
         .admin-card {
           background: linear-gradient(135deg, 
@@ -362,6 +408,12 @@ const AdminValidationPage = ({
         .approval-button:hover {
           background: linear-gradient(135deg, #16a34a, #15803d);
           transform: translateY(-2px);
+        }
+
+        .approval-button:disabled {
+          background: linear-gradient(135deg, #374151, #4b5563);
+          cursor: not-allowed;
+          transform: none;
         }
 
         .reject-button {
@@ -463,7 +515,7 @@ const AdminValidationPage = ({
           }
         }
 
-        /* 🆕 DUPLICATE BADGES */
+        /* 🆕 DUPLICATE BADGES MISE À JOUR */
         .duplicate-badge-critical {
           background: linear-gradient(135deg, #dc2626, #991b1b);
           color: white;
@@ -472,6 +524,7 @@ const AdminValidationPage = ({
           font-size: 10px;
           font-weight: bold;
           animation: pulse 2s infinite;
+          border: 1px solid #ef4444;
         }
 
         .duplicate-badge-normal {
@@ -512,8 +565,26 @@ const AdminValidationPage = ({
             width: 100%;
           }
         }
-      `}</style>
 
+        /* 🚨 DUPLICATE WARNING OVERLAY */
+        .duplicate-warning-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(153, 27, 27, 0.2));
+          border: 2px solid #dc2626;
+          border-radius: 8px;
+          padding: 4px;
+          pointer-events: none;
+        }
+      `}</style>
+<div
+  className="fixed inset-0 z-50 overflow-y-auto"
+  style={{ WebkitOverflowScrolling: 'touch' }}
+>
+  <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+    <div className="max-w-4xl mx-auto bg-zinc-900 border border-purple-700 rounded-xl p-4 shadow-md">
       {/* 🖼️ OVERLAY FULLSCREEN */}
       <div className="fixed inset-0 z-[9999]">
         <div className="admin-page absolute inset-0">
@@ -527,10 +598,10 @@ const AdminValidationPage = ({
                 </div>
                 <div>
                   <h1 className={`font-bold text-red-400 ${isMobileDevice ? 'text-lg' : 'text-2xl md:text-3xl'}`}>
-                    Admin Validation Ultimate v3.0
+                    Admin Validation Ultimate v3.1
                   </h1>
                   <p className={`text-gray-300 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
-                    CP Tooltips + Mobile + Doublons Intelligents • {pendingHunters.length} en attente
+                    Manual Duplicate Control + CP Tooltips + Mobile • {pendingHunters.length} en attente
                     {duplicateGroups.length > 0 && (
                       <span className="text-yellow-400 ml-2">• {duplicateGroups.length} doublons</span>
                     )}
@@ -565,7 +636,7 @@ const AdminValidationPage = ({
             </div>
           </div>
 
-          {/* Stats Admin v3.0 */}
+          {/* Stats Admin v3.1 */}
           {adminStats.total > 0 && (
             <div className="relative z-10 p-4 md:p-6 border-b border-gray-700/50">
               <div className="max-w-7xl mx-auto">
@@ -634,7 +705,7 @@ const AdminValidationPage = ({
               {showDuplicates && (
                 <div>
                   <h2 className={`font-bold text-yellow-400 mb-6 ${isMobileDevice ? 'text-lg' : 'text-xl'}`}>
-                    🔍 Doublons Intelligents v3.0 ({duplicateGroups.length})
+                    🔍 Doublons Intelligents v3.1 ({duplicateGroups.length})
                   </h2>
                   
                   {duplicateGroups.length === 0 ? (
@@ -650,14 +721,14 @@ const AdminValidationPage = ({
                           <div className="flex items-center justify-between mb-3">
                             <h3 className="text-red-400 font-bold">⚠️ Groupe #{index + 1}</h3>
                             <div className="text-xs text-gray-400">
-                              Actions recommandées: Validez pour écraser l'ancien
+                              🚨 Validation manuelle OBLIGATOIRE par l'admin
                             </div>
                           </div>
                           
                           <div className={`grid gap-4 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
                             {/* Original */}
                             <div className="bg-black/30 rounded-lg p-3">
-                              <h4 className="text-yellow-400 font-bold mb-2">📋 Original</h4>
+                              <h4 className="text-yellow-400 font-bold mb-2">📋 Original (Base de données)</h4>
                               <p className="text-white"><strong>Pseudo:</strong> {group.original.pseudo}</p>
                               <p className="text-white"><strong>Account ID:</strong> {group.original.accountId}</p>
                               <p className="text-gray-300"><strong>Character:</strong> {group.original.character}</p>
@@ -669,14 +740,19 @@ const AdminValidationPage = ({
                             <div className="space-y-2">
                               <h4 className="text-red-400 font-bold mb-2">🔄 Nouvelle Soumission ({group.duplicates.length})</h4>
                               {group.duplicates.map((dup, dupIndex) => (
-                                <div key={dupIndex} className="bg-green-900/20 rounded p-2 text-sm border border-green-500/30">
+                                <div key={dupIndex} className="bg-red-900/20 rounded p-2 text-sm border border-red-500/30">
                                   <p className="text-white"><strong>{dup.hunter.pseudo}</strong> ({dup.hunter.accountId})</p>
                                   <p className="text-gray-300">{dup.hunter.character}</p>
                                   <div className="mt-2">
-                                    <DuplicateBadge duplicates={[dup]} />
+                                    <span className="bg-red-600 text-white px-2 py-1 rounded text-xs font-bold">
+                                      {dup.type === 'exact_duplicate' ? '🚨 DOUBLON EXACT' :
+                                       dup.type === 'same_pseudo_diff_account_same_char' ? '⚠️ MÊME PSEUDO, ACCOUNT DIFFÉRENT' :
+                                       dup.type === 'same_account_diff_pseudo_same_char' ? '⚠️ MÊME ACCOUNT, PSEUDO DIFFÉRENT' :
+                                       dup.type === 'multi_character_normal' ? '✅ MULTI-CHARACTER' : '❓ SUSPECT'}
+                                    </span>
                                   </div>
-                                  <p className="text-green-400 text-xs mt-1">
-                                    💡 Validation = Mise à jour automatique
+                                  <p className="text-red-400 text-xs mt-1">
+                                    🛡️ Validation = Confirmation manuelle admin requise
                                   </p>
                                 </div>
                               ))}
@@ -695,8 +771,8 @@ const AdminValidationPage = ({
                   {loading ? (
                     <div className="flex flex-col items-center justify-center py-20">
                       <div className="text-6xl mb-4 animate-spin">🛡️</div>
-                      <h3 className="text-xl text-red-400 mb-2">Chargement des validations v3.0...</h3>
-                      <p className="text-gray-400">Kaisel analyse les CP avec tooltips...</p>
+                      <h3 className="text-xl text-red-400 mb-2">Chargement des validations v3.1...</h3>
+                      <p className="text-gray-400">Kaisel analyse les CP avec contrôle doublons...</p>
                     </div>
                   ) : pendingHunters.length === 0 ? (
                     <div className="text-center py-20">
@@ -716,14 +792,30 @@ const AdminValidationPage = ({
                           const elementColor = getElementColor(character?.element);
                           const riskColor = getRiskColor(hunter.autoAnalysis?.riskLevel);
                           
+                          // 🚨 VÉRIFIER SI CE HUNTER A DES DOUBLONS CRITIQUES
+                          const hasCriticalDuplicates = hunter.autoAnalysis?.potentialDuplicates?.some(dup => 
+                            dup.type === 'exact_duplicate' || 
+                            dup.type === 'same_pseudo_diff_account_same_char' ||
+                            dup.type === 'same_account_diff_pseudo_same_char'
+                          );
+                          
                           return (
                             <div
                               key={hunter.id}
-                              className={`admin-card rounded-xl p-6 cursor-pointer ${
+                              className={`admin-card rounded-xl p-6 cursor-pointer relative ${
                                 hunter.autoAnalysis?.riskLevel === 'high' ? 'high-risk' : ''
                               }`}
                               onClick={() => handleViewDetails(hunter)}
                             >
+                              {/* 🚨 OVERLAY DOUBLON CRITIQUE */}
+                              {hasCriticalDuplicates && (
+                                <div className="duplicate-warning-overlay">
+                                  <div className="text-center text-red-400 font-bold text-xs">
+                                    🚨 VALIDATION MANUELLE OBLIGATOIRE
+                                  </div>
+                                </div>
+                              )}
+
                               {/* Header avec status */}
                               <div className="flex items-start justify-between mb-4">
                                 <div className="flex flex-col gap-1">
@@ -782,7 +874,7 @@ const AdminValidationPage = ({
                                 </div>
                               </div>
 
-                              {/* Info Hunter v3.0 */}
+                              {/* Info Hunter v3.1 */}
                               <div className="mb-4">
                                 <h3 className="text-xl font-bold text-white mb-1">{hunter.pseudo}</h3>
                                 <p className="text-gray-400 text-sm">
@@ -867,11 +959,11 @@ const AdminValidationPage = ({
                                 </div>
                               </div>
 
-                              {/* Analyse auto v3.0 */}
+                              {/* Analyse auto v3.1 */}
                               {hunter.autoAnalysis && (
                                 <div className="mb-4">
                                   <div className="flex items-center justify-between mb-2">
-                                    <span className="text-gray-400 text-sm">Analyse Auto v3.0:</span>
+                                    <span className="text-gray-400 text-sm">Analyse Auto v3.1:</span>
                                     <span
                                       className="confidence-badge px-2 py-1 rounded text-xs font-bold"
                                       style={{
@@ -901,30 +993,41 @@ const AdminValidationPage = ({
                                     </div>
                                   )}
 
-                                  {/* Message pour doublons */}
-                                  {hunter.autoAnalysis.potentialDuplicates && hunter.autoAnalysis.potentialDuplicates.length > 0 && (
+                                  {/* Message pour doublons MISE À JOUR */}
+                                  {hasCriticalDuplicates && (
+                                    <div className="mt-2 text-xs text-red-400 bg-red-900/20 p-2 rounded border border-red-500/30">
+                                      🚨 Validation manuelle obligatoire - Doublon critique détecté
+                                    </div>
+                                  )}
+                                  
+                                  {hunter.autoAnalysis.potentialDuplicates && hunter.autoAnalysis.potentialDuplicates.length > 0 && 
+                                   hunter.autoAnalysis.potentialDuplicates.some(d => d.type === 'multi_character_normal') && (
                                     <div className="mt-2 text-xs text-green-400">
-                                      💡 Validation = Écrasement automatique de l'ancien
+                                      ✅ Multi-character normal détecté
                                     </div>
                                   )}
                                 </div>
                               )}
 
-                              {/* Actions rapides */}
+                              {/* Actions rapides MISE À JOUR */}
                               <div className="flex gap-2 mt-4">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleApprove(hunter.id, hunter.autoAnalysis?.suggestedScore || 70);
                                   }}
-                                  className="approval-button flex-1 px-3 py-2 rounded text-white text-sm font-bold"
+                                  disabled={hasCriticalDuplicates}
+                                  className={`approval-button flex-1 px-3 py-2 rounded text-white text-sm font-bold ${
+                                    hasCriticalDuplicates ? 'opacity-50 cursor-not-allowed' : ''
+                                  }`}
+                                  title={hasCriticalDuplicates ? 'Validation manuelle requise - Utilisez le bouton détails' : 'Approuver rapidement'}
                                 >
-                                  ✅ Approuver
+                                  {hasCriticalDuplicates ? '🚨 Voir Détails' : '✅ Approuver'}
                                 </button>
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleReject(hunter.id, 'Non conforme v3.0');
+                                    handleReject(hunter.id, 'Non conforme v3.1');
                                   }}
                                   className="reject-button flex-1 px-3 py-2 rounded text-white text-sm font-bold"
                                 >
@@ -943,17 +1046,19 @@ const AdminValidationPage = ({
           </div>
         </div>
       </div>
-
-      {/* 🔍 MODAL DÉTAILS VALIDATION ULTIMATE v3.0 */}
+</div>
+</div>
+</div>
+      {/* 🔍 MODAL DÉTAILS VALIDATION ULTIMATE v3.1 */}
       {showDetails && selectedHunter && (
         <div className="fixed inset-0 z-[10000] bg-black/90 flex items-center justify-center p-4">
           <div className={`bg-gray-900 rounded-2xl shadow-2xl w-full max-h-[90vh] overflow-y-auto border-2 border-red-500 ${isMobileDevice ? 'max-w-sm' : 'max-w-6xl'}`}>
             
-            {/* Header Modal v3.0 */}
+            {/* Header Modal v3.1 */}
             <div className="p-6 border-b border-red-500/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className={`font-bold text-red-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>🛡️ Validation Détaillée v3.0</h2>
+                  <h2 className={`font-bold text-red-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>🛡️ Validation Détaillée v3.1</h2>
                   <div className={`flex items-center gap-4 mt-2 ${isMobileDevice ? 'flex-col items-start gap-2' : ''}`}>
                     <div>
                       <p className="text-white font-bold">{selectedHunter.pseudo}</p>
@@ -969,6 +1074,22 @@ const AdminValidationPage = ({
                     {selectedHunter.builderInfo?.scaleStat && ` Scale: ${selectedHunter.builderInfo.scaleStat}`}
                     {selectedHunter.setValidation?.isOptimal && ' • 🏆 Set Optimal'}
                   </p>
+                  
+                  {/* 🚨 ALERTE DOUBLON DANS LE HEADER */}
+                  {selectedHunter.autoAnalysis?.potentialDuplicates?.some(dup => 
+                    dup.type === 'exact_duplicate' || 
+                    dup.type === 'same_pseudo_diff_account_same_char' ||
+                    dup.type === 'same_account_diff_pseudo_same_char'
+                  ) && (
+                    <div className="mt-3 p-3 bg-red-900/30 rounded-lg border border-red-500/50">
+                      <p className="text-red-400 font-bold text-sm">
+                        🚨 DOUBLON CRITIQUE DÉTECTÉ - Validation manuelle obligatoire
+                      </p>
+                      <p className="text-red-300 text-xs mt-1">
+                        Ce hunter a des doublons suspects. Vérifiez attentivement avant validation.
+                      </p>
+                    </div>
+                  )}
                 </div>
                 
                 <button
@@ -980,10 +1101,10 @@ const AdminValidationPage = ({
               </div>
             </div>
 
-            {/* Contenu Modal v3.0 avec responsive */}
+            {/* Contenu Modal v3.1 avec responsive */}
             <div className="p-6">
               
-              {/* 🆕 Scores & Analyse v3.0 AVEC TOOLTIPS MOBILES */}
+              {/* 🆕 Scores & Analyse v3.1 AVEC TOOLTIPS MOBILES */}
               <div className={`grid gap-4 mb-6 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-4'}`}>
                 <div className="bg-black/30 rounded-lg p-4">
                   <h3 className="text-yellow-400 font-bold mb-2">🏆 CP Total</h3>
@@ -1036,7 +1157,7 @@ const AdminValidationPage = ({
                 </div>
                 
                 <div className="bg-black/30 rounded-lg p-4">
-                  <h3 className="text-blue-400 font-bold mb-2">🤖 Score Auto v3.0</h3>
+                  <h3 className="text-blue-400 font-bold mb-2">🤖 Score Auto v3.1</h3>
                   <p className={`font-bold text-blue-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>
                     {selectedHunter.autoAnalysis?.suggestedScore || 0}%
                   </p>
@@ -1060,14 +1181,19 @@ const AdminValidationPage = ({
                 </div>
               </div>
 
-              {/* Actions de validation v3.0 - MOBILE OPTIMIZED */}
+              {/* Actions de validation v3.1 - MOBILE OPTIMIZED + DOUBLON CONTROL */}
               <div className="border-t border-gray-700 pt-6">
-                <h3 className="text-white font-bold mb-4">🎯 Actions de Validation v3.0</h3>
+                <h3 className="text-white font-bold mb-4">🎯 Actions de Validation v3.1</h3>
                 
                 <div className={`grid gap-4 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
                   {/* Approbation */}
                   <div className="bg-green-900/20 rounded-lg p-4 border border-green-500/30">
-                    <h4 className="text-green-400 font-bold mb-3">✅ Approuver {selectedHunter.autoAnalysis?.potentialDuplicates?.length > 0 ? '(Écrasement automatique)' : ''}</h4>
+                    <h4 className="text-green-400 font-bold mb-3">
+                      ✅ Approuver 
+                      {selectedHunter.autoAnalysis?.potentialDuplicates?.length > 0 && (
+                        <span className="text-yellow-400 text-sm"> (Attention Doublons)</span>
+                      )}
+                    </h4>
                     
                     <div className="space-y-3">
                       <div>
@@ -1087,7 +1213,7 @@ const AdminValidationPage = ({
                       </div>
                       
                       <div>
-                        <label className="block text-sm text-gray-300 mb-2">Notes admin v3.0 :</label>
+                        <label className="block text-sm text-gray-300 mb-2">Notes admin v3.1 :</label>
                         <textarea 
                           className="w-full bg-black/50 border border-green-500/30 rounded px-3 py-2 text-white text-sm"
                           rows="3"
@@ -1115,12 +1241,12 @@ const AdminValidationPage = ({
                     
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-sm text-gray-300 mb-2">Raison du rejet v3.0 :</label>
+                        <label className="block text-sm text-gray-300 mb-2">Raison du rejet v3.1 :</label>
                         <select 
                           className="w-full bg-black/50 border border-red-500/30 rounded px-3 py-2 text-white"
                           id="rejectReason"
                         >
-                          <option value="Non conforme v3.0">Non conforme aux standards v3.0</option>
+                          <option value="Non conforme v3.1">Non conforme aux standards v3.1</option>
                           <option value="Pseudo/AccountID invalide">Pseudo ou Account ID invalide</option>
                           <option value="Screenshots manquants">Screenshots obligatoires manquants</option>
                           <option value="Stats impossibles">Stats impossibles/trichées</option>
@@ -1135,7 +1261,7 @@ const AdminValidationPage = ({
                       
                       <div className="bg-red-900/30 rounded p-3">
                         <p className="text-red-300 text-sm">
-                          ⚠️ <strong>Action irréversible v3.0</strong><br/>
+                          ⚠️ <strong>Action irréversible v3.1</strong><br/>
                           Ce hunter ({selectedHunter.pseudo} - {selectedHunter.accountId}) sera définitivement supprimé.
                         </p>
                       </div>

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { data_chars } from '../data/data_char.js'; // 🆕 IMPORT DATA_CHARS
 
@@ -82,22 +81,6 @@ const HallOfFlamePage = ({
     loadHunters();
   }, []);
 
-  useEffect(() => {
-    if (isMobileDevice) {
-      document.body.classList.add('modal-open');
-      return () => document.body.classList.remove('modal-open');
-    }
-  }, []);
-
-  // 🆕 DEBUG HELPER - Vérifier les données CP des hunters
-  useEffect(() => {
-    if (hunters.length > 0) {
-      console.log('🔍 Premier hunter pour debug:', hunters[0]);
-      console.log('📊 CP Details Total:', hunters[0].cpDetailsTotal);
-      console.log('🎨 CP Details Artifacts:', hunters[0].cpDetailsArtifacts);
-    }
-  }, [hunters]);
-
   // 🎯 FILTRAGE ET TRI DES HUNTERS
   const filteredAndSortedHunters = useMemo(() => {
     let filtered = [...hunters];
@@ -136,7 +119,7 @@ const HallOfFlamePage = ({
     });
 
     return filtered;
-  }, [hunters, searchTerm, selectedGuild, selectedElement, selectedCharacterFilter, selectedRanking, characters]);
+  }, [hunters, searchTerm, selectedGuild, selectedElement, selectedCharacter, selectedRanking, characters]);
 
   // 📄 PAGINATION
   const paginatedHunters = useMemo(() => {
@@ -199,31 +182,16 @@ const HallOfFlamePage = ({
     return null;
   };
 
-  // 🆕 COMPOSANT TOOLTIP CP SÉCURISÉ
-  const CpTooltip = ({ details, title, color }) => {
-  if (!details || !Array.isArray(details) || details.length === 0) {
-    return ReactDOM.createPortal(
-      <div className="cp-tooltip-hall">
-        <p className="font-bold mb-2 text-red-400">⚠️ Pas de détails CP</p>
-        <p className="text-gray-300 text-xs">Données CP non disponibles</p>
-      </div>,
-      document.body
-    );
-  }
-
-  return ReactDOM.createPortal(
+  // 🆕 COMPOSANT TOOLTIP CP (même que DebugPopup)
+  const CpTooltip = ({ details, title, color }) => (
     <div className="cp-tooltip-hall">
       <p className="font-bold mb-2" style={{ color }}>{title}:</p>
-      {details.map((detail, index) => (
+      {details && details.map((detail, index) => (
         <div key={index} className="flex justify-between items-center mb-1">
-          <span style={{ color: detail.color || '#fff' }} className="text-sm">
-            {detail.name || 'Stat inconnue'}:
-          </span>
+          <span style={{ color: detail.color }} className="text-sm">{detail.name}:</span>
           <span className="text-gray-300 text-sm">
-            {(detail.value || 0).toLocaleString()} × {detail.multiplier || '?'} = 
-            <span className="text-white font-bold ml-1">
-              {(detail.points || 0).toLocaleString()}
-            </span>
+            {detail.value?.toLocaleString()} × {detail.multiplier} = 
+            <span className="text-white font-bold ml-1">{detail.points?.toLocaleString()}</span>
           </span>
         </div>
       ))}
@@ -231,13 +199,11 @@ const HallOfFlamePage = ({
       <div className="flex justify-between font-bold">
         <span style={{ color }}>Total:</span>
         <span style={{ color }}>
-          {details.reduce((sum, d) => sum + (d.points || 0), 0).toLocaleString()}
+          {details?.reduce((sum, d) => sum + (d.points || 0), 0).toLocaleString()}
         </span>
       </div>
-    </div>,
-    document.body
+    </div>
   );
-};
 
   // 🏆 BADGE DE RANG
   const getRankBadge = (index) => {
@@ -286,542 +252,372 @@ const HallOfFlamePage = ({
 
   return (
     <>
-      {/* 🎨 STYLES CSS - TOOLTIP CENTRÉ ÉCRAN */}
+      {/* 🎨 STYLES CSS MOBILE-FIRST + TOOLTIPS */}
       <style jsx="true">{`
-/* 🔥 BUILDERBERU HALL OF FLAME - TOOLTIP CENTRÉ ÉCRAN 🔥 */
-
-@keyframes page-enter {
-  0% { opacity: 0; transform: translateY(20px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* 🏰 LAYOUT PRINCIPAL */
-.hall-page {
-  backdrop-filter: blur(15px);
-  background: linear-gradient(135deg, 
-    rgba(10, 10, 25, 0.95) 0%, 
-    rgba(15, 15, 35, 0.98) 50%, 
-    rgba(5, 5, 15, 0.95) 100%);
-  animation: page-enter 0.6s ease-out;
-  overflow: visible !important;
-}
-
-/* 🔒 BODY LOCK POUR MODAL */
-body.modal-open {
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-}
-
-/* 🃏 HUNTER CARDS */
-.hunter-card {
-  background: linear-gradient(145deg, rgba(36, 0, 70, 0.85), rgba(0, 0, 20, 0.95));
-  border: 1px solid #a855f7;
-  border-radius: 20px;
-  box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
-
-  backdrop-filter: blur(8px);
-  background: linear-gradient(135deg, 
-    rgba(26, 26, 46, 0.9) 0%, 
-    rgba(22, 33, 62, 0.95) 50%, 
-    rgba(15, 20, 25, 0.9) 100%);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  transition: all 0.3s ease;
-  overflow: visible !important;
-  position: relative;
-}
-
-.hunter-card:hover {
-  border-color: rgba(255, 215, 0, 0.5);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-  z-index: 100;
-}
-
-.hunter-card.emperor {
-  border: 2px solid #ffd700;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-}
-
-/* 🏅 BADGES ET ÉLÉMENTS */
-.rank-badge {
-  background: linear-gradient(135deg, var(--rank-color), var(--rank-color-light));
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.element-badge {
-  border: 1px solid var(--element-color);
-  color: var(--element-color);
-  background: rgba(var(--element-rgb), 0.1);
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 6px;
-}
-
-.character-badge {
-  border: 1px solid var(--character-color);
-  color: var(--character-color);
-  background: rgba(var(--character-rgb), 0.1);
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 6px;
-  margin-left: 4px;
-}
-
-/* 🎭 CHARACTER IMAGES */
-.character-image {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px solid var(--element-color);
-  object-fit: cover;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.character-image:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 15px var(--element-color);
-}
-
-.character-image-large {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  border: 3px solid var(--element-color);
-  object-fit: cover;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
-
-/* 🎯 BOUTONS ET TABS */
-.ranking-tab, .filter-button {
-  background-color: rgba(159, 122, 234, 0.1);
-  border: 1px solid rgba(168, 85, 247, 0.4);
-  color: #d8b4fe;
-  font-weight: 600;
-  transition: all 0.2s ease-in-out;
-
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  color: #ffd700;
-  transition: all 0.3s ease;
-}
-
-.ranking-tab:hover, .filter-button:hover {
-  background-color: rgba(168, 85, 247, 0.2);
-  border-color: #a855f7;
-  color: #fff;
-
-  background: rgba(255, 215, 0, 0.2);
-  border-color: #ffd700;
-}
-
-.ranking-tab.active, .filter-button.active {
-  background: linear-gradient(135deg, #ffd700, #ffed4a);
-  color: #1a1a2e;
-  font-weight: bold;
-}
-
-/* ⚡ LOADING */
-.loading-spinner {
-  border: 3px solid rgba(255, 215, 0, 0.3);
-  border-top: 3px solid #ffd700;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  animation: spin 1s linear infinite;
-}
-
-/* 📊 STATS BARS */
-.stat-bar {
-  background: linear-gradient(90deg, var(--stat-color), rgba(255,255,255,0.05));
-  height: 3px;
-  border-radius: 2px;
-  will-change: width;
-}
-
-/* 💡 TOOLTIPS CP - CENTRÉ ÉCRAN POUR TOUS 🎯 */
-.cp-score-hover {
-  position: relative;
-  cursor: help;
-  transition: all 0.3s ease;
-  display: inline-block;
-  z-index: 1;
-}
-
-.cp-score-hover:hover {
-  transform: scale(1.05);
-  z-index: 9999;
-}
-
-/* 🎯 TOOLTIP - TOUJOURS CENTRÉ ÉCRAN */
-.cp-tooltip-hall {
-  /* 🔧 POSITION FIXE CENTRÉE ÉCRAN */
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  
-  /* 🎨 STYLE */
-  background: rgba(0, 0, 0, 0.98);
-  border: 2px solid rgba(255, 215, 0, 0.8);
-  border-radius: 8px;
-  padding: 16px;
-  
-  /* 📏 TAILLE RESPONSIVE */
-  width: 320px;
-  max-width: calc(100vw - 40px);
-  
-  /* 🔧 Z-INDEX MAXIMUM */
-  z-index: 999999;
-  
-  /* 📝 TEXTE */
-  font-size: 13px;
-  white-space: normal;
-  word-wrap: break-word;
-  
-  /* 🌟 EFFECTS */
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(15px);
-  
-  /* 🔧 POINTER EVENTS */
-  pointer-events: auto;
-}
-
-/* 🔧 OVERLAY BACKGROUND */
-.cp-tooltip-hall::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: -1;
-}
-
-/* 🔧 PAS D'ARROW - PLUS BESOIN */
-.cp-tooltip-hall::before {
-  display: none;
-}
-
-/* 🎨 MODAL DÉTAILS */
-.details-modal {
-  backdrop-filter: blur(20px);
-  background: rgba(0, 0, 0, 0.92);
-  z-index: 10000;
-}
-
-.details-content {
-  background: linear-gradient(135deg, 
-    rgba(26, 26, 46, 0.98) 0%, 
-    rgba(22, 33, 62, 0.98) 50%, 
-    rgba(15, 20, 25, 0.98) 100%);
-  border: 1px solid #ffd700;
-}
-
-.artifact-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 0.75rem;
-}
-
-.artifact-slot {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 6px;
-  padding: 8px;
-  transition: all 0.3s ease;
-}
-
-.artifact-slot:hover {
-  border-color: rgba(255, 215, 0, 0.5);
-  background: rgba(255, 215, 0, 0.05);
-}
-
-/* 🔧 CONTAINERS OVERFLOW VISIBLE DESKTOP */
-.max-w-7xl {
-  overflow: visible !important;
-}
-
-.grid {
-  overflow: visible !important;
-}
-
-.relative.z-10.flex-1.overflow-y-auto {
-  overflow: visible !important;
-}
-
-/* 🖼️ NO SCREENSHOTS */
-.screenshot-section,
-.screenshot-gallery,
-.screenshot-item,
-.screenshot-info {
-  display: none !important;
-}
-
-/* ⚡ PERFORMANCE */
-.hunter-card, .details-content {
-  contain: style paint;
-}
-
-/* 🌙 DARK MODE */
-@media (prefers-color-scheme: dark) {
-  .hall-page {
-    background: linear-gradient(135deg, 
-      rgba(5, 5, 15, 0.98) 0%, 
-      rgba(10, 10, 25, 0.98) 50%, 
-      rgba(5, 5, 15, 0.98) 100%);
-    overflow: visible !important;
-  }
-}
-
-/* 📱 MOBILE STYLES */
-@media (max-width: 768px) {
-  /* 🏰 LAYOUT MOBILE */
-  .hall-page {
-    padding: 0 !important;
-    overflow: hidden !important;
-    height: 100vh;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* 📱 MOBILE SCROLL CONTAINER */
-  .mobile-scroll {
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    flex: 1;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-  }
-
-  /* 📦 CONTENT CONTAINER */
-  .max-w-7xl.mx-auto {
-    padding: 8px 4px 60px 4px !important;
-  }
-
-  /* 🃏 HUNTER CARDS MOBILE */
-  .hunter-card {
-  background: linear-gradient(145deg, rgba(36, 0, 70, 0.85), rgba(0, 0, 20, 0.95));
-  border: 1px solid #a855f7;
-  border-radius: 20px;
-  box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
-
-    margin: 8px 12px !important;
-    padding: 16px !important;
-    border-radius: 12px !important;
-    overflow: visible !important;
-    min-height: auto !important;
-    height: auto !important;
-  }
-
-  .hunter-card:hover {
-    transform: none !important;
-    z-index: 1000;
-  }
-
-  /* 🏅 BADGES MOBILE */
-  .rank-badge {
-    font-size: 11px !important;
-    padding: 4px 8px !important;
-  }
-
-  .element-badge, .character-badge {
-    font-size: 9px !important;
-    padding: 2px 4px !important;
-  }
-
-  /* 🎭 IMAGES MOBILE */
-  .character-image {
-    width: 32px;
-    height: 32px;
-  }
-  
-  .character-image-large {
-    width: 48px;
-    height: 48px;
-  }
-
-  /* 💡 TOOLTIPS MOBILE - MÊME STYLE CENTRÉ */
-  .cp-tooltip-hall {
-    width: 300px !important;
-    max-width: calc(100vw - 30px) !important;
-    font-size: 13px !important;
-  }
-
-  /* 📱 HEADER MOBILE */
-  .mobile-header {
-    flex-shrink: 0 !important;
-    min-height: 60px !important;
-    padding: 8px 12px !important;
-    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
-  }
-
-  .mobile-header h1 {
-    font-size: 1.25rem !important;
-    margin: 0;
-  }
-
-  .mobile-header p {
-    font-size: 11px !important;
-    margin: 2px 0 0 0;
-  }
-
-  .mobile-header .actions {
-    gap: 8px !important;
-  }
-
-  .mobile-header button {
-    padding: 6px 12px !important;
-    font-size: 12px !important;
-    border-radius: 6px !important;
-  }
-
-  /* 🔍 FILTRES MOBILE */
-  .mobile-filters {
-    padding: 12px !important;
-    flex-direction: column !important;
-    gap: 8px !important;
-    flex-shrink: 0 !important;
-  }
-
-  .mobile-filters input, .mobile-filters select {
-    width: 100% !important;
-    padding: 10px 12px !important;
-    font-size: 16px !important;
-    border-radius: 8px !important;
-  }
-
-  /* 📊 STATS MOBILE */
-  .mobile-stats {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 8px !important;
-    margin-bottom: 16px !important;
-    padding: 0 4px !important;
-  }
-
-  .mobile-stats > div {
-    padding: 8px !important;
-    border-radius: 6px !important;
-  }
-
-  .mobile-stats p {
-    font-size: 11px !important;
-    margin: 0 !important;
-  }
-
-  .mobile-stats .text-2xl {
-    font-size: 16px !important;
-  }
-
-  /* 📄 GRID MOBILE */
-  .grid.gap-4.mb-6 {
-    gap: 16px !important;
-    margin-bottom: 24px !important;
-    padding: 0 4px !important;
-  }
-
-  /* 📄 PAGINATION MOBILE */
-  .mobile-pagination {
-    margin-top: 20px !important;
-    margin-bottom: 20px !important;
-    padding: 0 16px !important;
-    flex-wrap: wrap !important;
-    gap: 4px !important;
-    justify-content: center !important;
-  }
-
-  .mobile-pagination button {
-    padding: 6px 12px !important;
-    font-size: 12px !important;
-    min-width: 80px !important;
-  }
-
-  /* 🎨 MODAL MOBILE */
-  .mobile-modal {
-    margin: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
-    border-radius: 0 !important;
-    border: none !important;
-  }
-
-  .mobile-modal-header {
-    padding: 12px !important;
-    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
-  }
-
-  .mobile-modal-content {
-    padding: 12px !important;
-    font-size: 13px !important;
-  }
-
-  .artifact-grid {
-    grid-template-columns: 1fr !important;
-    gap: 8px !important;
-  }
-
-  .artifact-slot {
-    padding: 8px !important;
-    font-size: 11px !important;
-  }
-
-  /* 🏷️ TABS MOBILE */
-  .border-b.border-gray-700\/50 {
-    flex-shrink: 0 !important;
-  }
-}
-
-/* 📱 TABLET ADJUSTMENTS */
-@media (min-width: 768px) and (max-width: 1024px) {
-  .hunter-card {
-  background: linear-gradient(145deg, rgba(36, 0, 70, 0.85), rgba(0, 0, 20, 0.95));
-  border: 1px solid #a855f7;
-  border-radius: 20px;
-  box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
-
-    padding: 16px !important;
-    overflow: visible !important;
-  }
-  
-  .artifact-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-}
-
-/* 🌐 HTML/BODY BASE */
-html, body, #root {
-  height: 100%;
-}
-
-@media (max-width: 768px) {
-  html, body {
-    overflow: hidden !important;
-    position: fixed !important;
-    width: 100% !important;
-    height: 100vh !important;
-    height: 100dvh !important;
-  }
-  
-  #root {
-    height: 100vh !important;
-    height: 100dvh !important;
-    overflow: hidden !important;
-  }
-}
+        @keyframes page-enter {
+          0% { opacity: 0; transform: translateY(20px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .hall-page {
+          backdrop-filter: blur(15px);
+          background: linear-gradient(135deg, 
+            rgba(10, 10, 25, 0.95) 0%, 
+            rgba(15, 15, 35, 0.98) 50%, 
+            rgba(5, 5, 15, 0.95) 100%);
+          animation: page-enter 0.6s ease-out;
+        }
+
+        .hunter-card {
+          backdrop-filter: blur(8px);
+          background: linear-gradient(135deg, 
+            rgba(26, 26, 46, 0.9) 0%, 
+            rgba(22, 33, 62, 0.95) 50%, 
+            rgba(15, 20, 25, 0.9) 100%);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          transition: all 0.3s ease;
+        }
+
+        .hunter-card:hover {
+          border-color: rgba(255, 215, 0, 0.5);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .hunter-card.emperor {
+          border: 2px solid #ffd700;
+          box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .rank-badge {
+          background: linear-gradient(135deg, var(--rank-color), var(--rank-color-light));
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .ranking-tab, .filter-button {
+          background: rgba(255, 215, 0, 0.1);
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          color: #ffd700;
+          transition: all 0.3s ease;
+        }
+
+        .ranking-tab:hover, .filter-button:hover {
+          background: rgba(255, 215, 0, 0.2);
+          border-color: #ffd700;
+        }
+
+        .ranking-tab.active, .filter-button.active {
+          background: linear-gradient(135deg, #ffd700, #ffed4a);
+          color: #1a1a2e;
+          font-weight: bold;
+        }
+
+        .loading-spinner {
+          border: 3px solid rgba(255, 215, 0, 0.3);
+          border-top: 3px solid #ffd700;
+          border-radius: 50%;
+          width: 32px;
+          height: 32px;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .stat-bar {
+          background: linear-gradient(90deg, var(--stat-color), transparent);
+          height: 3px;
+          border-radius: 2px;
+        }
+
+        .element-badge {
+          border: 1px solid var(--element-color);
+          color: var(--element-color);
+          background: rgba(var(--element-rgb), 0.1);
+          font-size: 10px;
+          padding: 2px 6px;
+          border-radius: 6px;
+        }
+
+        .character-badge {
+          border: 1px solid var(--character-color);
+          color: var(--character-color);
+          background: rgba(var(--character-rgb), 0.1);
+          font-size: 10px;
+          padding: 2px 6px;
+          border-radius: 6px;
+          margin-left: 4px;
+        }
+
+        /* 🆕 CHARACTER IMAGE STYLES */
+        .character-image {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          border: 2px solid var(--element-color);
+          object-fit: cover;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .character-image:hover {
+          transform: scale(1.1);
+          box-shadow: 0 0 15px var(--element-color);
+        }
+
+        .character-image-large {
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          border: 3px solid var(--element-color);
+          object-fit: cover;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        @media (max-width: 768px) {
+          .character-image {
+            width: 32px;
+            height: 32px;
+          }
+          
+          .character-image-large {
+            width: 48px;
+            height: 48px;
+          }
+        }
+
+        /* 🆕 TOOLTIPS CP STYLES (même que DebugPopup) */
+        .cp-score-hover {
+          position: relative;
+          cursor: help;
+          transition: all 0.3s ease;
+        }
+
+        .cp-score-hover:hover {
+          transform: scale(1.05);
+        }
+
+        .cp-tooltip-hall {
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          margin-top: 8px;
+          background: rgba(0, 0, 0, 0.95);
+          border: 1px solid rgba(255, 215, 0, 0.5);
+          border-radius: 8px;
+          padding: 12px;
+          width: 300px;
+          z-index: 1000;
+          font-size: 12px;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        @media (max-width: 768px) {
+          .cp-tooltip-hall {
+            width: 280px;
+            left: 0;
+            transform: none;
+          }
+        }
+
+        .details-modal {
+          backdrop-filter: blur(20px);
+          background: rgba(0, 0, 0, 0.92);
+        }
+
+        .details-content {
+          background: linear-gradient(135deg, 
+            rgba(26, 26, 46, 0.98) 0%, 
+            rgba(22, 33, 62, 0.98) 50%, 
+            rgba(15, 20, 25, 0.98) 100%);
+          border: 1px solid #ffd700;
+        }
+
+        .artifact-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+          gap: 0.75rem;
+        }
+
+        .artifact-slot {
+          background: rgba(0, 0, 0, 0.4);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          border-radius: 6px;
+          padding: 8px;
+          transition: all 0.3s ease;
+        }
+
+        .artifact-slot:hover {
+          border-color: rgba(255, 215, 0, 0.5);
+          background: rgba(255, 215, 0, 0.05);
+        }
+
+        /* 📱 MOBILE SPECIFIC STYLES */
+        @media (max-width: 768px) {
+          .hall-page {
+            padding: 0 !important;
+          }
+
+          .mobile-header {
+            padding: 8px 12px !important;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+          }
+
+          .mobile-header h1 {
+            font-size: 1.25rem !important;
+            margin: 0;
+          }
+
+          .mobile-header p {
+            font-size: 11px !important;
+            margin: 2px 0 0 0;
+          }
+
+          .mobile-header .actions {
+            gap: 8px !important;
+          }
+
+          .mobile-header button {
+            padding: 6px 12px !important;
+            font-size: 12px !important;
+            border-radius: 6px !important;
+          }
+
+          .mobile-filters {
+            padding: 12px !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+
+          .mobile-filters input, .mobile-filters select {
+            width: 100% !important;
+            padding: 10px 12px !important;
+            font-size: 16px !important; /* Évite le zoom iOS */
+            border-radius: 8px !important;
+          }
+
+          .hunter-card {
+            margin: 8px !important;
+            padding: 12px !important;
+            border-radius: 10px !important;
+          }
+
+          .hunter-card:hover {
+            transform: none !important; /* Pas d'animation hover sur mobile */
+          }
+
+          .rank-badge {
+            font-size: 11px !important;
+            padding: 4px 8px !important;
+          }
+
+          .element-badge, .character-badge {
+            font-size: 9px !important;
+            padding: 2px 4px !important;
+          }
+
+          .mobile-stats {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 6px !important;
+            margin-bottom: 12px !important;
+          }
+
+          .mobile-stats > div {
+            padding: 8px !important;
+            border-radius: 6px !important;
+          }
+
+          .mobile-stats p {
+            font-size: 11px !important;
+            margin: 0 !important;
+          }
+
+          .mobile-stats .text-2xl {
+            font-size: 16px !important;
+          }
+
+          .mobile-modal {
+            margin: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
+            border-radius: 0 !important;
+            border: none !important;
+          }
+
+          .mobile-modal-header {
+            padding: 12px !important;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+          }
+
+          .mobile-modal-content {
+            padding: 12px !important;
+            font-size: 13px !important;
+          }
+
+          .artifact-grid {
+            grid-template-columns: 1fr !important;
+            gap: 8px !important;
+          }
+
+          .artifact-slot {
+            padding: 8px !important;
+            font-size: 11px !important;
+          }
+
+          .mobile-pagination {
+            flex-wrap: wrap !important;
+            gap: 4px !important;
+            justify-content: center !important;
+          }
+
+          .mobile-pagination button {
+            padding: 6px 12px !important;
+            font-size: 12px !important;
+            min-width: 80px !important;
+          }
+        }
+
+        /* 📱 TABLET ADJUSTMENTS */
+        @media (min-width: 768px) and (max-width: 1024px) {
+          .hunter-card {
+            padding: 16px !important;
+          }
+          
+          .artifact-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+
+        /* 🖼️ NO SCREENSHOTS - HIDDEN COMPLETELY */
+        .screenshot-section,
+        .screenshot-gallery,
+        .screenshot-item,
+        .screenshot-info {
+          display: none !important;
+        }
+
+        /* ⚡ PERFORMANCE OPTIMIZATIONS */
+        .hunter-card, .details-content {
+          contain: layout style paint;
+        }
+
+        .stat-bar {
+          will-change: width;
+        }
+
+        /* 🌙 BETTER DARK MODE */
+        @media (prefers-color-scheme: dark) {
+          .hall-page {
+            background: linear-gradient(135deg, 
+              rgba(5, 5, 15, 0.98) 0%, 
+              rgba(10, 10, 25, 0.98) 50%, 
+              rgba(5, 5, 15, 0.98) 100%);
+          }
+        }
       `}</style>
 
       {/* 🖼️ LAYOUT PRINCIPAL */}
@@ -841,8 +637,8 @@ html, body, #root {
                 </h1>
                 <p className={`text-gray-300 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
                   {filteredAndSortedHunters.length} Hunter{filteredAndSortedHunters.length > 1 ? 's' : ''} validés
-                  {selectedCharacterFilter && (
-                    <span className="text-cyan-400 ml-2">• {data_chars[selectedCharacterFilter]?.name || characters[selectedCharacterFilter]?.name || selectedCharacterFilter}</span>
+                  {selectedCharacter && (
+                    <span className="text-cyan-400 ml-2">• {data_chars[selectedCharacter]?.name || characters[selectedCharacter]?.name || selectedCharacter}</span>
                   )}
                 </p>
               </div>
@@ -953,7 +749,7 @@ html, body, #root {
               {/* 🆕 FILTRE CHARACTER */}
               {uniqueCharacters.length > 0 && (
                 <select
-                  value={selectedCharacterFilter}
+                  value={selectedCharacter}
                   onChange={(e) => setSelectedCharacterFilter(e.target.value)}
                   className={`filter-button rounded-lg bg-black/30 focus:outline-none ${
                     isMobileDevice ? 'px-3 py-2 text-sm w-full' : 'px-3 py-2 text-sm'
@@ -979,7 +775,7 @@ html, body, #root {
               )}
 
               {/* Reset filtres */}
-              {(searchTerm || selectedGuild || selectedElement || selectedCharacterFilter) && (
+              {(searchTerm || selectedGuild || selectedElement || selectedCharacter) && (
                 <button
                   onClick={() => {
                     setSearchTerm('');
@@ -1000,7 +796,7 @@ html, body, #root {
         </div>
 
         {/* 📱 CONTENU PRINCIPAL */}
-        <div className="flex-1 overflow-y-auto mobile-scroll h-[calc(100dvh-220px)] sm:h-auto px-2">
+        <div className="relative z-10 flex-1 overflow-y-auto mobile-scroll">
           <div className={`max-w-7xl mx-auto ${isMobileDevice ? 'p-2' : 'p-4 md:p-6'}`}>
 
             {loading ? (
@@ -1070,10 +866,10 @@ html, body, #root {
                   <div className="bg-black/30 rounded-lg p-3 border border-blue-500/20">
                     <div className="text-center">
                       <p className={`text-gray-400 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
-                        {selectedCharacterFilter ? 'Character' : 'Guildes'}
+                        {selectedCharacter ? 'Character' : 'Guildes'}
                       </p>
                       <p className={`font-bold text-blue-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>
-                        {selectedCharacterFilter ? uniqueCharacters.find(c => c.id === selectedCharacterFilter)?.name || selectedCharacterFilter : uniqueGuilds.length}
+                        {selectedCharacter ? uniqueCharacters.find(c => c.id === selectedCharacter)?.name || selectedCharacter : uniqueGuilds.length}
                       </p>
                     </div>
                   </div>
@@ -1174,7 +970,7 @@ html, body, #root {
                           </p>
                         </div>
 
-                        {/* 🔧 Score principal AVEC TOOLTIPS CP - VERSION FIXÉE */}
+                        {/* Score principal AVEC TOOLTIPS CP */}
                         <div className="mb-3">
                           <div className={`flex justify-between mb-1 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
                             <span className="text-gray-400">
@@ -1182,17 +978,11 @@ html, body, #root {
                             </span>
                             <div 
                               className="cp-score-hover relative"
-                              onMouseEnter={() => {
-                                if (!isMobileDevice) {
-                                  console.log('🔍 Hover hunter:', hunter.id, 'CP Details:', hunter.cpDetailsTotal); // 🆕 DEBUG
-                                  setShowCpTooltipTotal(hunter.id);
-                                }
-                              }}
+                              onMouseEnter={() => !isMobileDevice && setShowCpTooltipTotal(hunter.id)}
                               onMouseLeave={() => setShowCpTooltipTotal(null)}
                               onClick={(e) => {
                                 if (isMobileDevice) {
                                   e.stopPropagation();
-                                  console.log('📱 Click hunter:', hunter.id, 'CP Details:', hunter.cpDetailsTotal); // 🆕 DEBUG
                                   setShowCpTooltipTotal(showCpTooltipTotal === hunter.id ? null : hunter.id);
                                 }
                               }}
@@ -1201,17 +991,17 @@ html, body, #root {
                                 {currentScore.toLocaleString()}
                               </span>
                               
-                              {/* 🆕 TOOLTIP CP PRINCIPAL - VERSION SÉCURISÉE */}
+                              {/* TOOLTIP CP PRINCIPAL */}
                               {showCpTooltipTotal === hunter.id && (
                                 selectedRanking === 'artifactsScore' 
-                                  ? hunter.cpDetailsArtifacts?.details?.length > 0 && (
+                                  ? hunter.cpDetailsArtifacts?.details && (
                                       <CpTooltip 
                                         details={hunter.cpDetailsArtifacts.details} 
                                         title="🎨 CP Artefacts"
                                         color="#a855f7"
                                       />
                                     )
-                                  : hunter.cpDetailsTotal?.details?.length > 0 && (
+                                  : hunter.cpDetailsTotal?.details && (
                                       <CpTooltip 
                                         details={hunter.cpDetailsTotal.details} 
                                         title="🏆 CP Total"
@@ -1219,32 +1009,16 @@ html, body, #root {
                                       />
                                     )
                               )}
-                              
-                              {/* 🆕 FALLBACK SI PAS DE DONNÉES CP DÉTAILLÉES */}
-                              {showCpTooltipTotal === hunter.id && !hunter.cpDetailsTotal?.details?.length && !hunter.cpDetailsArtifacts?.details?.length && (
-                                <div className="cp-tooltip-hall">
-                                  <p className="font-bold mb-2 text-yellow-400">🚨 Données CP manquantes</p>
-                                  <p className="text-gray-300 text-xs">
-                                    Ce hunter n'a pas de détails CP calculés.
-                                    <br />Utilisez le nouveau système Kaisel pour des données complètes.
-                                  </p>
-                                </div>
-                              )}
                             </div>
                           </div>
                           
-                          {/* Score secondaire AVEC TOOLTIPS - VERSION SÉCURISÉE */}
+                          {/* Score secondaire AVEC TOOLTIPS */}
                           {selectedRanking === 'totalScore' && hunter.artifactsScore && (
                             <div className={`flex justify-between mb-2 ${isMobileDevice ? 'text-xs' : 'text-xs'}`}>
                               <span className="text-gray-500">CP Artefacts</span>
                               <div 
                                 className="cp-score-hover relative"
-                                onMouseEnter={() => {
-                                  if (!isMobileDevice) {
-                                    console.log('🔍 Hover artifacts:', hunter.id, 'Details:', hunter.cpDetailsArtifacts); // 🆕 DEBUG
-                                    setShowCpTooltipArtifacts(hunter.id);
-                                  }
-                                }}
+                                onMouseEnter={() => !isMobileDevice && setShowCpTooltipArtifacts(hunter.id)}
                                 onMouseLeave={() => setShowCpTooltipArtifacts(null)}
                                 onClick={(e) => {
                                   if (isMobileDevice) {
@@ -1255,8 +1029,8 @@ html, body, #root {
                               >
                                 <span className="text-purple-300 cursor-help">{hunter.artifactsScore.toLocaleString()}</span>
                                 
-                                {/* TOOLTIP CP ARTIFACTS SECONDAIRE - VERSION SÉCURISÉE */}
-                                {showCpTooltipArtifacts === hunter.id && hunter.cpDetailsArtifacts?.details?.length > 0 && (
+                                {/* TOOLTIP CP ARTIFACTS SECONDAIRE */}
+                                {showCpTooltipArtifacts === hunter.id && hunter.cpDetailsArtifacts?.details && (
                                   <CpTooltip 
                                     details={hunter.cpDetailsArtifacts.details} 
                                     title="🎨 CP Artefacts"
@@ -1284,7 +1058,7 @@ html, body, #root {
                                 <span className="text-yellow-300 cursor-help">{hunter.totalScore.toLocaleString()}</span>
                                 
                                 {/* TOOLTIP CP TOTAL SECONDAIRE */}
-                                {showCpTooltipTotal === `${hunter.id}-secondary` && hunter.cpDetailsTotal?.details?.length > 0 && (
+                                {showCpTooltipTotal === `${hunter.id}-secondary` && hunter.cpDetailsTotal?.details && (
                                   <CpTooltip 
                                     details={hunter.cpDetailsTotal.details} 
                                     title="🏆 CP Total"
@@ -1468,7 +1242,7 @@ html, body, #root {
                     </p>
                     
                     {/* TOOLTIP CP TOTAL MODAL */}
-                    {showCpTooltipTotal === 'modal-total' && selectedHunter.cpDetailsTotal?.details?.length > 0 && (
+                    {showCpTooltipTotal === 'modal-total' && selectedHunter.cpDetailsTotal?.details && (
                       <CpTooltip 
                         details={selectedHunter.cpDetailsTotal.details} 
                         title="🏆 CP Total Détaillé"
@@ -1493,7 +1267,7 @@ html, body, #root {
                     </p>
                     
                     {/* TOOLTIP CP ARTIFACTS MODAL */}
-                    {showCpTooltipArtifacts === 'modal-artifacts' && selectedHunter.cpDetailsArtifacts?.details?.length > 0 && (
+                    {showCpTooltipArtifacts === 'modal-artifacts' && selectedHunter.cpDetailsArtifacts?.details && (
                       <CpTooltip 
                         details={selectedHunter.cpDetailsArtifacts.details} 
                         title="🎨 CP Artefacts Détaillé"

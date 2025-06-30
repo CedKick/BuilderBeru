@@ -5706,23 +5706,29 @@ const handleSubmitToHallOfFame = () => {
                 )}
 
                 {showAdminPage && (
-                  <AdminValidationPage
-                    onClose={() => setShowAdminPage(false)}
-                    showTankMessage={showTankMessage}
+  <div
+    className="fixed inset-0 z-50 bg-black/80 flex justify-center items-center"
+    style={{ overflowY: "auto", WebkitOverflowScrolling: "touch" }}
+  >
+    <div className="relative w-full max-w-4xl mx-auto my-8 max-h-[90vh] overflow-y-auto rounded-lg bg-black p-4">
+      <AdminValidationPage
+        onClose={() => setShowAdminPage(false)}
+        showTankMessage={showTankMessage}
+        selectedCharacter={selectedCharacter}
+        characterData={characters[selectedCharacter]}
+        currentStats={finalStats}
+        currentArtifacts={artifactsData}
+        statsFromArtifacts={statsFromArtifacts}
+        currentCores={hunterCores[selectedCharacter] || {}}
+        currentGems={gemData}
+        currentWeapon={hunterWeapons[selectedCharacter] || {}}
+        characters={characters}
+        onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
+      />
+    </div>
+  </div>
+)}
 
-                    // 🆕 TOUTES LES PROPS POUR UNE PAGE ADMIN COMPLÈTE
-                    selectedCharacter={selectedCharacter}
-                    characterData={characters[selectedCharacter]}
-                    currentStats={finalStats}
-                    currentArtifacts={artifactsData}
-                    statsFromArtifacts={statsFromArtifacts}
-                    currentCores={hunterCores[selectedCharacter] || {}}
-                    currentGems={gemData}
-                    currentWeapon={hunterWeapons[selectedCharacter] || {}}
-                    characters={characters}
-                    onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
-                  />
-                )}
 
                 {showBeruInteractionMenu && (
                   <BeruInteractionMenu
@@ -6504,24 +6510,29 @@ const handleSubmitToHallOfFame = () => {
                     />
                   )}
 
-                  {showAdminPage && (
-                    <AdminValidationPage
-                      onClose={() => setShowAdminPage(false)}
-                      showTankMessage={showTankMessage}
-
-                      // 🆕 TOUTES LES PROPS POUR UNE PAGE ADMIN COMPLÈTE
-                      selectedCharacter={selectedCharacter}
-                      characterData={characters[selectedCharacter]}
-                      currentStats={finalStats}
-                      currentArtifacts={artifactsData}
-                      statsFromArtifacts={statsFromArtifacts}
-                      currentCores={hunterCores[selectedCharacter] || {}}
-                      currentGems={gemData}
-                      currentWeapon={hunterWeapons[selectedCharacter] || {}}
-                      characters={characters}
-                      onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
-                    />
-                  )}
+                 {showAdminPage && (
+  <div
+    className="fixed inset-0 z-50 bg-black/80 flex justify-center items-center"
+    style={{ overflowY: "auto", WebkitOverflowScrolling: "touch" }}
+  >
+    <div className="relative w-full max-w-4xl mx-auto my-8 max-h-[90vh] overflow-y-auto rounded-lg bg-black p-4">
+      <AdminValidationPage
+        onClose={() => setShowAdminPage(false)}
+        showTankMessage={showTankMessage}
+        selectedCharacter={selectedCharacter}
+        characterData={characters[selectedCharacter]}
+        currentStats={finalStats}
+        currentArtifacts={artifactsData}
+        statsFromArtifacts={statsFromArtifacts}
+        currentCores={hunterCores[selectedCharacter] || {}}
+        currentGems={gemData}
+        currentWeapon={hunterWeapons[selectedCharacter] || {}}
+        characters={characters}
+        onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
+      />
+    </div>
+  </div>
+)}
 
                   {showBeruInteractionMenu && (() => {
                     return null;
