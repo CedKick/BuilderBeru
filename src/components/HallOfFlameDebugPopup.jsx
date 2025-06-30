@@ -1,4 +1,4 @@
-// HallOfFlameDebugPopup.jsx - 🔧 FIX IMGUR + useEffect + CORS par Kaisel - v3.0 CHECKED/NOTATION
+// HallOfFlameDebugPopup.jsx - 🔧 DIGITALOCEAN UPLOAD + useEffect + CORS par Kaisel - v4.0
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BUILDER_DATA } from '../data/builder_data.js';
@@ -486,48 +486,63 @@ const HallOfFlameDebugPopup = ({
     }
   }, [formData, currentStats, selectedCharacter, memoizedCpTotal.total, memoizedSetAnalysis]);
 
-  // 📸 UPLOAD SCREENSHOTS IMGUR - VERSION FIXÉE CORS
-  const uploadToImgur = useCallback(async (files) => {
-    // 🔧 MÉTHODE ALTERNATIVE SANS CORS
-    showTankMessage("📸 Upload via fallback (CORS bypass)...", true, 'kaisel');
+  // 📸 UPLOAD SCREENSHOTS DIGITALOCEAN - VERSION KAISEL v4.0
+  const uploadToDigitalOcean = useCallback(async (files) => {
+    if (!files || files.length === 0) return [];
     
-    const uploadedUrls = [];
+    showTankMessage("📸 Upload vers DigitalOcean en cours...", true, 'kaisel');
     
-    // Simuler upload local + génération liens temporaires
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      try {
-        // Créer un blob URL temporaire
-        const blobUrl = URL.createObjectURL(file);
-        
-        // Convertir en base64 pour stockage (fallback)
-        const reader = new FileReader();
-        const base64Promise = new Promise((resolve) => {
-          reader.onload = () => resolve(reader.result);
-          reader.readAsDataURL(file);
-        });
-        
-        const base64Data = await base64Promise;
-        
-        // Dans uploadToImgur(), au lieu de créer base64 :
-uploadedUrls.push({
-  url: "https://i.imgur.com/realurl.jpg", // URL réelle Imgur
-  filename: file.name,
-  uploadMethod: 'imgur'
-});
-        
-        showTankMessage(`📸 Screenshot ${i + 1} traité: ${file.name}`, true, 'kaisel');
-        
-      } catch (error) {
-        console.error('Erreur traitement image:', error);
-        showTankMessage(`❌ Erreur image ${i + 1}: ${error.message}`, true, 'kaisel');
+    try {
+      // Créer FormData pour upload multipart
+      const uploadFormData = new FormData();
+      
+      // Ajouter tous les fichiers
+      for (let i = 0; i < files.length; i++) {
+        uploadFormData.append('screenshots', files[i]);
       }
+      
+      // Upload vers votre backend DigitalOcean
+      const response = await fetch('https://api.builderberu.com/api/upload-screenshots', {
+        method: 'POST',
+        body: uploadFormData // Pas de Content-Type header avec FormData
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Upload failed: HTTP ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && result.screenshots) {
+        showTankMessage(
+          `✅ ${result.screenshots.length} screenshot(s) uploadé(s) sur DigitalOcean !`,
+          true,
+          'kaisel'
+        );
+        
+        console.log('📸 Screenshots uploadés:', result.screenshots);
+        return result.screenshots;
+        
+      } else {
+        throw new Error(result.error || 'Upload échoué');
+      }
+      
+    } catch (error) {
+      console.error('❌ Erreur upload DigitalOcean:', error);
+      
+      // Fallback en cas d'erreur - ne pas créer de base64
+      showTankMessage(
+        `❌ Upload échoué: ${error.message}. Screenshots non inclus.`,
+        true,
+        'kaisel'
+      );
+      
+      // Retourner tableau vide plutôt que base64
+      return [];
     }
-    
-    return uploadedUrls;
   }, [showTankMessage]);
 
-  // 💾 SAUVEGARDE FINALE - VERSION MISE À JOUR v3.0
+  // 💾 SAUVEGARDE FINALE - VERSION DIGITALOCEAN v4.0
   const handleFinalSave = useCallback(async () => {
     if (!currentStats || Object.keys(currentStats).length === 0) {
       showTankMessage("❌ Aucune donnée à sauvegarder", true, 'kaisel');
@@ -536,8 +551,9 @@ uploadedUrls.push({
 
     let screenshotUrls = [];
     
+    // 📸 UPLOAD SCREENSHOTS VERS DIGITALOCEAN
     if (formData.screenshots && formData.screenshots.length > 0) {
-      screenshotUrls = await uploadToImgur(formData.screenshots);
+      screenshotUrls = await uploadToDigitalOcean(formData.screenshots);
     }
 
     const hunterData = {
@@ -563,7 +579,7 @@ uploadedUrls.push({
         recommendedSets: memoizedSetAnalysis.recommendedSets,
         detectedSets: Object.entries(memoizedSetAnalysis.equipped).map(([name, count]) => `${name} (${count})`)
       },
-      screenshots: screenshotUrls,
+      screenshots: screenshotUrls, // URLs DigitalOcean seulement
       timestamp: new Date().toISOString(),
       notes: formData.notes,
       isValidated: validationErrors.length === 0,
@@ -617,7 +633,7 @@ uploadedUrls.push({
         }
       }
       
-      // 🆕 TRAITEMENT DE LA RÉPONSE v3.0
+      // 🆕 TRAITEMENT DE LA RÉPONSE v4.0
       if (response && response.ok && result && result.success) {
         setSubmissionResponse(result); // Stocker la réponse
         
@@ -655,6 +671,7 @@ uploadedUrls.push({
           // 📋 CAS NORMAL (pas de doublon)
           showTankMessage(
             `📋 ${result.hunter.pseudo} soumis en attente de validation!\n` +
+            `Screenshots: ${screenshotUrls.length} uploadés sur DigitalOcean\n` +
             `Rang potentiel: #${result.potentialRank} (si approuvé)\n` +
             `Total en attente: ${result.totalHunters - result.checkedHunters}`,
             true,
@@ -662,7 +679,7 @@ uploadedUrls.push({
           );
         }
         
-        console.log('✅ Réponse backend v3.0:', result);
+        console.log('✅ Réponse backend v4.0:', result);
         
         // Effacer le cache local si succès
         try {
@@ -749,7 +766,7 @@ uploadedUrls.push({
      onSave(hunterData);
    }
    
-   // 🆕 Navigation adaptée selon le résultat v3.0
+   // 🆕 Navigation adaptée selon le résultat v4.0
    setTimeout(() => {
      const message = submissionResponse?.isDuplicate ? 
        "⚠️ Soumission en attente de validation (doublon détecté).\nVoulez-vous voir le Hall Of Flame ?" :
@@ -763,7 +780,7 @@ uploadedUrls.push({
    }, 1000);
    
    onClose();
- }, [currentStats, formData, selectedCharacter, characterData, currentArtifacts, currentCores, currentGems, currentWeapon, statsFromArtifacts, memoizedCpTotal, memoizedCpArtifacts, memoizedSetAnalysis, validationErrors, uploadToImgur, showTankMessage, onSave, onNavigateToHallOfFlame, onClose, submissionResponse]);
+ }, [currentStats, formData, selectedCharacter, characterData, currentArtifacts, currentCores, currentGems, currentWeapon, statsFromArtifacts, memoizedCpTotal, memoizedCpArtifacts, memoizedSetAnalysis, validationErrors, uploadToDigitalOcean, showTankMessage, onSave, onNavigateToHallOfFlame, onClose, submissionResponse]);
 
  // 🎨 FORMATER LES STATS POUR AFFICHAGE
  const formatStat = useCallback((value) => {
@@ -916,7 +933,7 @@ uploadedUrls.push({
                <div>
                  <h2 className="text-xl font-bold text-yellow-400">HallOfFlame Advanced</h2>
                  <p className="text-gray-300 text-sm">
-                   Kaisel CP System v3.3 • Fix CORS + Sync
+                   Kaisel CP System v4.0 • DigitalOcean Upload
                    {hasData && (
                      <span className="text-green-400 ml-2">
                        • Total: {memoizedCpTotal.total.toLocaleString()} CP
@@ -1244,10 +1261,10 @@ uploadedUrls.push({
                  </div>
                )}
 
-               {/* Screenshots Upload OBLIGATOIRE */}
+               {/* Screenshots Upload DigitalOcean */}
                <div>
                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                   📸 Screenshots *
+                   📸 Screenshots * (Upload DigitalOcean)
                    <span className={`text-xs ml-2 ${window.location.hostname === 'localhost' ? 'text-yellow-400' : 'text-red-400'}`}>
                      {window.location.hostname === 'localhost' 
                        ? '(Optionnel en local)' 
@@ -1264,13 +1281,13 @@ uploadedUrls.push({
                  />
                  {formData.screenshots.length > 0 ? (
                    <p className="text-green-400 text-sm mt-2">
-                     ✅ {formData.screenshots.length} screenshot(s) sélectionné(s)
+                     ✅ {formData.screenshots.length} screenshot(s) sélectionné(s) - Seront uploadés sur DigitalOcean
                    </p>
                  ) : (
                    <p className={`text-sm mt-2 ${window.location.hostname === 'localhost' ? 'text-yellow-400' : 'text-red-400'}`}>
                      {window.location.hostname === 'localhost' 
                        ? "⚠️ Screenshots optionnels en local" 
-                       : "❌ Screenshots requis pour soumettre"
+                       : "❌ Screenshots requis pour soumettre (max 10MB par image)"
                      }
                    </p>
                  )}
@@ -1292,71 +1309,72 @@ uploadedUrls.push({
              </div>
            )}
 
-           {/* STEP 2: VALIDATION */}
-           {currentStep === 2 && (
-             <div className="flex flex-col h-full">
-               <div className={`flex-1 flex items-center justify-center py-4 ${isValidating ? 'validation-screen' : ''}`}>
-                 {isValidating ? (
-                   <div className="text-center">
-                     <div className="text-4xl mb-4 animate-spin">🔍</div>
-                     <h3 className="text-lg font-bold text-yellow-400 mb-2">Validation avancée en cours...</h3>
-                     <p className="text-gray-400 text-sm">Kaisel analyse le système CP + Sets...</p>
-                     
-                     <div className="mt-4 space-y-1 text-xs">
-                       <div className="text-gray-300">✓ Vérification scaleStat...</div>
-                       <div className="text-gray-300">✓ Validation multiplicateurs CP...</div>
-                       <div className="text-gray-300">✓ Analyse sets d'artefacts...</div>
-                       <div className="text-gray-300">✓ Validation bonus optimal...</div>
-                     </div>
-                   </div>
-                 ) : (
-                   <div className="text-center max-w-md mx-auto">
-                     {validationErrors.length > 0 ? (
-                       <>
-                         <div className="text-4xl mb-4">❌</div>
-                         <h3 className="text-lg font-bold text-red-400 mb-4">Erreurs détectées</h3>
-                         
-                         <div className="space-y-2 text-left mb-6 max-h-48 overflow-y-auto">
-                           {validationErrors.map((error, index) => (
-                             <div key={index} className="error-item text-sm text-red-300">
-                               {error}
-                             </div>
-                           ))}
-                         </div>
-                       </>
-                     ) : (
-                       <>
-                         <div className="text-4xl mb-4">✅</div>
-                         <h3 className="text-lg font-bold text-green-400 mb-4">Validation avancée réussie !</h3>
-                         
-                         <div className="space-y-2 text-left mb-6">
-                           <div className="success-item text-sm text-green-300">
-                             ✅ Système CP avancé validé
-                           </div>
-                           <div className="success-item text-sm text-green-300">
-                             ✅ ScaleStat détecté: {BUILDER_DATA[selectedCharacter]?.scaleStat}
-                           </div>
-                           <div className="success-item text-sm text-green-300">
-                             ✅ Stats totales: {memoizedCpTotal.total.toLocaleString()} CP
-                           </div>
-                           {memoizedSetAnalysis.isOptimal && (
-                             <div className="success-item text-sm text-green-300">
-                               🏆 Set optimal détecté ! Bonus +5% CP appliqué
-                             </div>
-                           )}
-                           <div className="success-item text-sm text-green-300">
-                             ✅ Prêt pour le HallOfFlame
-                           </div>
-                         </div>
-                       </>
-                     )}
-                   </div>
-                 )}
-               </div>
-             </div>
-           )}
+          🔧 Voici la suite complète du STEP 2: VALIDATION :
+jsx{/* STEP 2: VALIDATION */}
+{currentStep === 2 && (
+  <div className="flex flex-col h-full">
+    <div className={`flex-1 flex items-center justify-center py-4 ${isValidating ? 'validation-screen' : ''}`}>
+      {isValidating ? (
+        <div className="text-center">
+          <div className="text-4xl mb-4 animate-spin">🔍</div>
+          <h3 className="text-lg font-bold text-yellow-400 mb-2">Validation avancée en cours...</h3>
+          <p className="text-gray-400 text-sm">Kaisel analyse le système CP + Sets...</p>
+          
+          <div className="mt-4 space-y-1 text-xs">
+            <div className="text-gray-300">✓ Vérification scaleStat...</div>
+            <div className="text-gray-300">✓ Validation multiplicateurs CP...</div>
+            <div className="text-gray-300">✓ Analyse sets d'artefacts...</div>
+            <div className="text-gray-300">✓ Validation bonus optimal...</div>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center max-w-md mx-auto">
+          {validationErrors.length > 0 ? (
+            <>
+              <div className="text-4xl mb-4">❌</div>
+              <h3 className="text-lg font-bold text-red-400 mb-4">Erreurs détectées</h3>
+              
+              <div className="space-y-2 text-left mb-6 max-h-48 overflow-y-auto">
+                {validationErrors.map((error, index) => (
+                  <div key={index} className="error-item text-sm text-red-300">
+                    {error}
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-4xl mb-4">✅</div>
+              <h3 className="text-lg font-bold text-green-400 mb-4">Validation avancée réussie !</h3>
+              
+              <div className="space-y-2 text-left mb-6">
+                <div className="success-item text-sm text-green-300">
+                  ✅ Système CP avancé validé
+                </div>
+                <div className="success-item text-sm text-green-300">
+                  ✅ ScaleStat détecté: {BUILDER_DATA[selectedCharacter]?.scaleStat}
+                </div>
+                <div className="success-item text-sm text-green-300">
+                  ✅ Stats totales: {memoizedCpTotal.total.toLocaleString()} CP
+                </div>
+                {memoizedSetAnalysis.isOptimal && (
+                  <div className="success-item text-sm text-green-300">
+                    🏆 Set optimal détecté ! Bonus +5% CP appliqué
+                  </div>
+                )}
+                <div className="success-item text-sm text-green-300">
+                  ✅ Prêt pour le HallOfFlame
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
-           {/* STEP 3: SUCCESS */}
+{/* STEP 3: SUCCESS */}
            {currentStep === 3 && (
              <div className="text-center py-4">
                <div className="text-4xl mb-4">🏆</div>
@@ -1374,7 +1392,7 @@ uploadedUrls.push({
                    🎨 CP Artifacts: <strong>{memoizedCpArtifacts.total.toLocaleString()}</strong><br/>
                    🎯 ScaleStat: <strong>{BUILDER_DATA[selectedCharacter]?.scaleStat}</strong><br/>
                    🔮 Sets: <strong>{memoizedSetAnalysis.isOptimal ? '✅ OPTIMAL' : '⚠️ Non optimal'}</strong><br/>
-                   📸 Screenshots: <strong>{formData.screenshots.length} fichier(s)</strong><br/>
+                   📸 Screenshots: <strong>{formData.screenshots.length} fichier(s) → DigitalOcean</strong><br/>
                    <span className="text-orange-400 font-bold">
                      ⏳ Status: En attente de validation admin
                    </span>
