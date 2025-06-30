@@ -1,0 +1,26 @@
+{
+  "A1": {
+    "tileId": "shadow_01",
+    "type": "ShadowLand",
+    "controlledBy": "ShadowLand",
+    "explored": true
+  },
+  "A2": {
+    "tileId": "shadow_02",
+    "type": "ShadowLand",
+    "controlledBy": "ShadowLand",
+    "explored": true
+  },
+  "B1": {
+    "tileId": "shadow_03",
+    "type": "ShadowLand",
+    "controlledBy": "ShadowLand",
+    "explored": true
+  },
+  "B2": {
+    "tileId": null,
+    "type": "Unknown",
+    "controlledBy": null,
+    "explored": false
+  }
+}
