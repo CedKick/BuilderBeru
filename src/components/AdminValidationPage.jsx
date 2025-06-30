@@ -138,28 +138,41 @@ const AdminValidationPage = ({
       const result = await response.json();
       
       if (response.ok && result.success) {
-        setDuplicateGroups(result.duplicateGroups);
+        // 🛡️ FILTRER LES VRAIS DOUBLONS (exclure multi_character_normal)
+        const realDuplicateGroups = result.duplicateGroups.filter(group => {
+          const hasRealDuplicates = group.duplicates.some(dup => 
+            dup.type !== 'multi_character_normal'
+          );
+          return hasRealDuplicates;
+        }).map(group => ({
+          ...group,
+          duplicates: group.duplicates.filter(dup => dup.type !== 'multi_character_normal')
+        }));
+        
+        setDuplicateGroups(realDuplicateGroups);
+        console.log(`🛡️ Doublons filtrés: ${realDuplicateGroups.length} groupes suspects (multi-char exclus)`);
       }
     } catch (error) {
       console.error('❌ Erreur doublons (non-critique):', error);
     }
   };
 
-  // ✅ APPROUVER UN HUNTER - 🚨 NOUVELLE LOGIQUE ANTI-DOUBLON AUTOMATIQUE
+  // ✅ APPROUVER UN HUNTER - 🚨 NOUVELLE LOGIQUE ANTI-DOUBLON AUTOMATIQUE (FILTRÉE)
   const handleApprove = async (hunterId, confidenceLevel, issues = [], adminNotes = '') => {
     try {
       const hunter = pendingHunters.find(h => h.id === hunterId);
       
-      // 🚨 VÉRIFICATION DOUBLONS CRITIQUE
+      // 🚨 VÉRIFICATION DOUBLONS CRITIQUE (EXCLURE MULTI-CHARACTER)
       const hasCriticalDuplicates = hunter?.autoAnalysis?.potentialDuplicates?.some(dup => 
         dup.type === 'exact_duplicate' || 
         dup.type === 'same_pseudo_diff_account_same_char' ||
         dup.type === 'same_account_diff_pseudo_same_char'
+        // ✅ multi_character_normal EXCLU - c'est normal !
       );
 
       if (hasCriticalDuplicates) {
         const duplicatesList = hunter.autoAnalysis.potentialDuplicates
-          .filter(dup => dup.type !== 'multi_character_normal')
+          .filter(dup => dup.type !== 'multi_character_normal') // ✅ FILTRAGE
           .map(dup => `${dup.hunter.pseudo} (${dup.hunter.accountId}) - ${dup.hunter.character}`)
           .join('\n');
 
@@ -308,7 +321,7 @@ const AdminValidationPage = ({
     </div>
   );
 
-  // 🆕 COMPOSANT DUPLICATE BADGE INTELLIGENT MISE À JOUR
+  // 🆕 COMPOSANT DUPLICATE BADGE INTELLIGENT CORRIGÉ v3.2
   const DuplicateBadge = ({ duplicates }) => {
     if (!duplicates || duplicates.length === 0) return null;
     
@@ -318,6 +331,7 @@ const AdminValidationPage = ({
       d.type === 'same_account_diff_pseudo_same_char'
     );
     const hasMultiChar = duplicates.some(d => d.type === 'multi_character_normal');
+    const hasOnlyMultiChar = duplicates.every(d => d.type === 'multi_character_normal');
     
     if (hasExactDuplicate || hasSuspiciousDuplicate) {
       return (
@@ -325,10 +339,11 @@ const AdminValidationPage = ({
           🚨 VALIDATION MANUELLE REQUISE
         </div>
       );
-    } else if (hasMultiChar) {
+    } else if (hasOnlyMultiChar) {
+      // ✅ NOUVEAU : Si c'est QUE du multi-character, c'est normal !
       return (
         <div className="duplicate-badge-normal">
-          ✅ MULTI-CHARACTER
+          👥 MULTI-CHARACTER NORMAL
         </div>
       );
     } else {
@@ -1044,10 +1059,12 @@ const AdminValidationPage = ({
                                           </div>
                                         )}
                                         
-                                        {hunter.autoAnalysis.potentialDuplicates && hunter.autoAnalysis.potentialDuplicates.length > 0 && 
-                                         hunter.autoAnalysis.potentialDuplicates.some(d => d.type === 'multi_character_normal') && (
-                                          <div className="mt-2 text-xs text-green-400">
-                                            ✅ Multi-character normal détecté
+                                        {/* ✅ NOUVEAU MESSAGE POUR MULTI-CHARACTER NORMAL */}
+                                        {hunter.autoAnalysis.potentialDuplicates && 
+                                         hunter.autoAnalysis.potentialDuplicates.length > 0 && 
+                                         hunter.autoAnalysis.potentialDuplicates.every(d => d.type === 'multi_character_normal') && (
+                                          <div className="mt-2 text-xs text-green-400 bg-green-900/20 p-2 rounded border border-green-500/30">
+                                            👥 Multi-character normal détecté - Aucune action requise
                                           </div>
                                         )}
                                       </div>
