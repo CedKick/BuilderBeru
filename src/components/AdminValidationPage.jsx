@@ -434,18 +434,42 @@ const AdminValidationPage = ({
           }
         }
 
-        .screenshot-item {
-          border: 1px solid rgba(255, 215, 0, 0.3);
-          border-radius: 8px;
-          overflow: hidden;
-          transition: all 0.3s ease;
-        }
+       .screenshot-item {
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background: rgba(0, 0, 0, 0.4);
+}
 
         .screenshot-item:hover {
-          border-color: #ffd700;
-          transform: scale(1.05);
-        }
+  border-color: #ffd700;
+  transform: scale(1.02);
+  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3);
+}
 
+.screenshot-item img {
+  width: 100%;
+  height: 200px; /* Plus grand ! */
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.screenshot-item:hover img {
+  transform: scale(1.05);
+}
+
+@media (min-width: 768px) {
+  .screenshot-item img {
+    height: 250px; /* Encore plus grand sur desktop */
+  }
+}
+
+@media (min-width: 1024px) {
+  .screenshot-item img {
+    height: 300px; /* Maximum sur grand écran */
+  }
+}
         .optimal-set-badge {
           background: linear-gradient(135deg, #10b981, #059669);
           color: white;
@@ -1573,31 +1597,31 @@ const AdminValidationPage = ({
              )}
 
              {/* SCREENSHOTS GALERIE */}
-             {selectedHunter.screenshots && selectedHunter.screenshots.length > 0 && (
-               <div className="bg-black/30 rounded-lg p-4 border border-cyan-500/20 mb-6">
-                 <h3 className="text-cyan-400 font-bold mb-4">📸 Screenshots ({selectedHunter.screenshots.length})</h3>
-                 <div className={`grid gap-3 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-2 md:grid-cols-3'}`}>
-                   {selectedHunter.screenshots.map((screenshot, index) => (
-                     <div key={index} className="screenshot-item border border-cyan-500/30 rounded overflow-hidden">
-                       <img 
-                         src={screenshot.url || screenshot} 
-                         alt={`Screenshot ${index + 1}`}
-                         className="w-full h-auto cursor-pointer hover:scale-105 transition-transform"
-                         onClick={() => window.open(screenshot.url || screenshot, '_blank')}
-                         onError={(e) => {
-                           e.target.style.display = 'none';
-                         }}
-                       />
-                       {screenshot.type && (
-                         <div className="p-2 bg-black/60">
-                           <p className="text-cyan-400 text-xs">{screenshot.type}</p>
-                         </div>
-                       )}
-                     </div>
-                   ))}
-                 </div>
-               </div>
-             )}
+{selectedHunter.screenshots && selectedHunter.screenshots.length > 0 && (
+  <div className="bg-black/30 rounded-lg p-4 border border-cyan-500/20 mb-6">
+    <h3 className="text-cyan-400 font-bold mb-4">📸 Screenshots ({selectedHunter.screenshots.length})</h3>
+    <div className={`grid gap-3 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-2 md:grid-cols-3'}`}>
+      {selectedHunter.screenshots.map((screenshot, index) => (
+        <div key={index} className="screenshot-item border border-cyan-500/30 rounded overflow-hidden">
+          <img 
+            src={screenshot.url || screenshot} 
+            alt={`Screenshot ${index + 1}`}
+            className="w-full h-48 md:h-64 object-cover cursor-pointer hover:scale-105 transition-transform"
+            onClick={() => window.open(screenshot.url || screenshot, '_blank')}
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+          {screenshot.type && (
+            <div className="p-2 bg-black/60">
+              <p className="text-cyan-400 text-xs">{screenshot.type}</p>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
              {/* ANALYSE AUTO DÉTAILLÉE */}
              {selectedHunter.autoAnalysis && (
