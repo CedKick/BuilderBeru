@@ -509,14 +509,12 @@ const HallOfFlameDebugPopup = ({
         
         const base64Data = await base64Promise;
         
-        uploadedUrls.push({
-          url: blobUrl, // URL temporaire pour preview
-          base64: base64Data, // Data complète pour sauvegarde
-          filename: file.name,
-          size: file.size,
-          type: file.type,
-          uploadMethod: 'fallback'
-        });
+        // Dans uploadToImgur(), au lieu de créer base64 :
+uploadedUrls.push({
+  url: "https://i.imgur.com/realurl.jpg", // URL réelle Imgur
+  filename: file.name,
+  uploadMethod: 'imgur'
+});
         
         showTankMessage(`📸 Screenshot ${i + 1} traité: ${file.name}`, true, 'kaisel');
         
