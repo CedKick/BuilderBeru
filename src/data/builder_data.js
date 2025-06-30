@@ -410,27 +410,34 @@ const BUILDER_DATA = {
       reason: "Prioriser Attack au maximum (scaleStat)",
       description: "Kanae scale sur Attack - maximise cette stat avant tout"
     },
+     {
+      stat: "Attack %",
+      priority: 2,
+      target: "maximum_possible",
+      reason: "Prioriser Attack au maximum (scaleStat)",
+      description: "Kanae scale sur Attack - maximise cette stat avant tout"
+    },
     {
       stat: "Damage Increase",
-      priority: 2,
+      priority: 3,
       target: "maximum_possible",
       reason: "Dégâts optimaux"
     },
     {
       stat: "Critical Hit Damage",
-      priority: 3,
+      priority: 4,
       target: "200%+",
       reason: "Dégâts critiques optimaux"
     },
     {
       stat: "Critical Hit Rate",
-      priority: 4,
+      priority: 5,
       target: 12000, // 120% pour lead crit du groupe !
       reason: "Kanae doit lead le crit du groupe (10000-12000)"
     },
     {
       stat: "Defense Penetration",
-      priority: 5,
+      priority: 6,
       target: "10-20%",
       reason: "Pénétration pour efficacité"
     }

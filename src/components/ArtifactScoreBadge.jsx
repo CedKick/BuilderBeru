@@ -79,23 +79,39 @@ const ArtifactScoreBadge = ({
     // 🆕 NOUVELLE FONCTION : Calcul réel des flat stats depuis l'artefact - VERSION DEBUG
     const calculateRealFlatStatsFromArtifact = (scaleStat) => {
         let totalFlatStats = 0;
-        
+        let patterns;
+
         
         // 🎯 PATTERNS EXACTS POUR DEFENSE
         const defensePatterns = [
-            'Défense supplémentaire', 
             'Additional Defense', 
-            'Défense (%)', 
-            'Defense %',     // ← Pattern exact de ton mainStat
-            'Defense (%)',
-            'Défense %'
+            'Defense %'
         ];
+
+        const attackPatterns = [
+            'Attack %', 
+            'Additional Attack'
+        ];
+
+        const hpPatterns = [
+            'HP %', 
+            'Additional HP'
+        ];
+
+         if (scaleStat === "Attack") {
+            patterns = attackPatterns;
+        } else if(scaleStat === "Defense") {
+            patterns = defensePatterns;
+        } else if(scaleStat === "HP"){
+        patterns = hpPatterns;
+    }
+        
         
         // 📊 TEST MAINSTAT
         if (artifact.mainStat) {
             
             // Test chaque pattern un par un
-            defensePatterns.forEach(pattern => {
+            patterns.forEach(pattern => {
                 const contains = artifact.mainStat.includes(pattern);
                 
                 if (contains) {
@@ -126,7 +142,7 @@ const ArtifactScoreBadge = ({
                 
                 
                 // Test chaque pattern un par un
-                defensePatterns.forEach(pattern => {
+                patterns.forEach(pattern => {
                     const contains = stat.includes(pattern);
                     
                     if (contains) {
