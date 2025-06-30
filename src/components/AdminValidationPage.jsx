@@ -25,8 +25,6 @@ const AdminValidationPage = ({
   const [possibleIssues, setPossibleIssues] = useState({});
   const [duplicateGroups, setDuplicateGroups] = useState([]);
   const [showDuplicates, setShowDuplicates] = useState(false);
-  const [selectedDuplicateGroup, setSelectedDuplicateGroup] = useState(null);
-  const [showDuplicateComparison, setShowDuplicateComparison] = useState(false);
   
   // 🆕 STATES POUR TOOLTIPS CP
   const [showCpTooltipTotal, setShowCpTooltipTotal] = useState(null);
@@ -138,41 +136,28 @@ const AdminValidationPage = ({
       const result = await response.json();
       
       if (response.ok && result.success) {
-        // 🛡️ FILTRER LES VRAIS DOUBLONS (exclure multi_character_normal)
-        const realDuplicateGroups = result.duplicateGroups.filter(group => {
-          const hasRealDuplicates = group.duplicates.some(dup => 
-            dup.type !== 'multi_character_normal'
-          );
-          return hasRealDuplicates;
-        }).map(group => ({
-          ...group,
-          duplicates: group.duplicates.filter(dup => dup.type !== 'multi_character_normal')
-        }));
-        
-        setDuplicateGroups(realDuplicateGroups);
-        console.log(`🛡️ Doublons filtrés: ${realDuplicateGroups.length} groupes suspects (multi-char exclus)`);
+        setDuplicateGroups(result.duplicateGroups);
       }
     } catch (error) {
       console.error('❌ Erreur doublons (non-critique):', error);
     }
   };
 
-  // ✅ APPROUVER UN HUNTER - 🚨 NOUVELLE LOGIQUE ANTI-DOUBLON AUTOMATIQUE (FILTRÉE)
+  // ✅ APPROUVER UN HUNTER - 🚨 NOUVELLE LOGIQUE ANTI-DOUBLON AUTOMATIQUE
   const handleApprove = async (hunterId, confidenceLevel, issues = [], adminNotes = '') => {
     try {
       const hunter = pendingHunters.find(h => h.id === hunterId);
       
-      // 🚨 VÉRIFICATION DOUBLONS CRITIQUE (EXCLURE MULTI-CHARACTER)
+      // 🚨 VÉRIFICATION DOUBLONS CRITIQUE
       const hasCriticalDuplicates = hunter?.autoAnalysis?.potentialDuplicates?.some(dup => 
         dup.type === 'exact_duplicate' || 
         dup.type === 'same_pseudo_diff_account_same_char' ||
         dup.type === 'same_account_diff_pseudo_same_char'
-        // ✅ multi_character_normal EXCLU - c'est normal !
       );
 
       if (hasCriticalDuplicates) {
         const duplicatesList = hunter.autoAnalysis.potentialDuplicates
-          .filter(dup => dup.type !== 'multi_character_normal') // ✅ FILTRAGE
+          .filter(dup => dup.type !== 'multi_character_normal')
           .map(dup => `${dup.hunter.pseudo} (${dup.hunter.accountId}) - ${dup.hunter.character}`)
           .join('\n');
 
@@ -217,7 +202,6 @@ const AdminValidationPage = ({
         loadPendingHunters();
         loadDuplicates();
         setShowDetails(false);
-        setShowDuplicateComparison(false);
       } else {
         throw new Error(result.error || 'Erreur approbation');
       }
@@ -253,7 +237,6 @@ const AdminValidationPage = ({
         loadPendingHunters();
         loadDuplicates();
         setShowDetails(false);
-        setShowDuplicateComparison(false);
       } else {
         throw new Error(result.error || 'Erreur suppression');
       }
@@ -321,7 +304,7 @@ const AdminValidationPage = ({
     </div>
   );
 
-  // 🆕 COMPOSANT DUPLICATE BADGE INTELLIGENT CORRIGÉ v3.2
+  // 🆕 COMPOSANT DUPLICATE BADGE INTELLIGENT MISE À JOUR
   const DuplicateBadge = ({ duplicates }) => {
     if (!duplicates || duplicates.length === 0) return null;
     
@@ -331,7 +314,6 @@ const AdminValidationPage = ({
       d.type === 'same_account_diff_pseudo_same_char'
     );
     const hasMultiChar = duplicates.some(d => d.type === 'multi_character_normal');
-    const hasOnlyMultiChar = duplicates.every(d => d.type === 'multi_character_normal');
     
     if (hasExactDuplicate || hasSuspiciousDuplicate) {
       return (
@@ -339,11 +321,10 @@ const AdminValidationPage = ({
           🚨 VALIDATION MANUELLE REQUISE
         </div>
       );
-    } else if (hasOnlyMultiChar) {
-      // ✅ NOUVEAU : Si c'est QUE du multi-character, c'est normal !
+    } else if (hasMultiChar) {
       return (
         <div className="duplicate-badge-normal">
-          👥 MULTI-CHARACTER NORMAL
+          ✅ MULTI-CHARACTER
         </div>
       );
     } else {
@@ -365,6 +346,8 @@ const AdminValidationPage = ({
             rgba(25, 15, 35, 0.98) 50%, 
             rgba(15, 5, 15, 0.95) 100%);
         }
+            document.body.style.overflow = 'hidden';
+document.body.style.overflow = '';
 
         .admin-card {
           background: linear-gradient(135deg, 
@@ -497,6 +480,7 @@ const AdminValidationPage = ({
           color: white;
         }
 
+        /* 🆕 TOOLTIPS CP STYLES */
         .cp-score-hover {
           position: relative;
           cursor: help;
@@ -531,6 +515,7 @@ const AdminValidationPage = ({
           }
         }
 
+        /* 🆕 DUPLICATE BADGES MISE À JOUR */
         .duplicate-badge-critical {
           background: linear-gradient(135deg, #dc2626, #991b1b);
           color: white;
@@ -560,6 +545,7 @@ const AdminValidationPage = ({
           font-weight: bold;
         }
 
+        /* 🆕 MOBILE OPTIMIZATIONS */
         @media (max-width: 768px) {
           .admin-card {
             padding: 16px;
@@ -580,6 +566,7 @@ const AdminValidationPage = ({
           }
         }
 
+        /* 🚨 DUPLICATE WARNING OVERLAY */
         .duplicate-warning-overlay {
           position: absolute;
           top: 0;
@@ -592,564 +579,653 @@ const AdminValidationPage = ({
           pointer-events: none;
         }
       `}</style>
-
-      <div className="fixed inset-0 z-50 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <div className="max-w-4xl mx-auto bg-zinc-900 border border-purple-700 rounded-xl p-4 shadow-md">
-            <div className="fixed inset-0 z-[9999]">
-              <div className="admin-page absolute inset-0">
-                
-                {/* Header Admin */}
-                <div className="relative z-10 p-4 md:p-6 border-b border-red-500/30">
-                  <div className="flex items-center justify-between max-w-7xl mx-auto">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex items-center justify-center">
-                        <span className="text-2xl">🛡️</span>
-                      </div>
-                      <div>
-                        <h1 className={`font-bold text-red-400 ${isMobileDevice ? 'text-lg' : 'text-2xl md:text-3xl'}`}>
-                          Admin Validation Ultimate v3.1
-                        </h1>
-                        <p className={`text-gray-300 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
-                          Manual Duplicate Control + CP Tooltips + Mobile • {pendingHunters.length} en attente
-                          {duplicateGroups.length > 0 && (
-                            <span className="text-yellow-400 ml-2">• {duplicateGroups.length} doublons</span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className={`flex items-center gap-3 ${isMobileDevice ? 'mobile-stack' : ''}`}>
-                      {duplicateGroups.length > 0 && (
-                        <button
-                          onClick={() => setShowDuplicates(!showDuplicates)}
-                          className={`px-4 py-2 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-400 rounded-lg transition-colors text-sm ${isMobileDevice ? 'mobile-full-width' : ''}`}
-                        >
-                          🔍 Doublons ({duplicateGroups.length})
-                        </button>
-                      )}
-                      
-                      <button
-                        onClick={() => onShowHallOfFlame && onShowHallOfFlame()}
-                        className={`px-4 py-2 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-400 rounded-lg transition-colors text-sm ${isMobileDevice ? 'mobile-full-width' : ''}`}
-                      >
-                        🏆 Hall Of Flame
-                      </button>
-                      
-                      <button
-                        onClick={onClose}
-                        className="w-10 h-10 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-400 flex items-center justify-center transition-colors"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
+<div
+  className="fixed inset-0 z-50 overflow-y-auto"
+  style={{ WebkitOverflowScrolling: 'touch' }}
+>
+  <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+    <div className="max-w-4xl mx-auto bg-zinc-900 border border-purple-700 rounded-xl p-4 shadow-md">
+      {/* 🖼️ OVERLAY FULLSCREEN */}
+      <div className="fixed inset-0 z-[9999]">
+        <div className="admin-page absolute inset-0">
+          
+          {/* Header Admin */}
+          <div className="relative z-10 p-4 md:p-6 border-b border-red-500/30">
+            <div className="flex items-center justify-between max-w-7xl mx-auto">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">🛡️</span>
                 </div>
+                <div>
+                  <h1 className={`font-bold text-red-400 ${isMobileDevice ? 'text-lg' : 'text-2xl md:text-3xl'}`}>
+                    Admin Validation Ultimate v3.1
+                  </h1>
+                  <p className={`text-gray-300 ${isMobileDevice ? 'text-xs' : 'text-sm'}`}>
+                    Manual Duplicate Control + CP Tooltips + Mobile • {pendingHunters.length} en attente
+                    {duplicateGroups.length > 0 && (
+                      <span className="text-yellow-400 ml-2">• {duplicateGroups.length} doublons</span>
+                    )}
+                  </p>
+                </div>
+              </div>
 
-                {/* Stats Admin v3.1 */}
-                {adminStats.total > 0 && (
-                  <div className="relative z-10 p-4 md:p-6 border-b border-gray-700/50">
-                    <div className="max-w-7xl mx-auto">
-                      <div className={`grid gap-4 ${isMobileDevice ? 'admin-stats-grid' : 'grid-cols-2 md:grid-cols-6'}`}>
-                        <div className="bg-black/30 rounded-lg p-4 border border-blue-500/20">
-                          <p className="text-gray-400 text-sm">Total</p>
-                          <p className={`font-bold text-blue-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>{adminStats.total}</p>
-                        </div>
-                        <div className="bg-black/30 rounded-lg p-4 border border-green-500/20">
-                          <p className="text-gray-400 text-sm">Validés</p>
-                          <p className={`font-bold text-green-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>{adminStats.validated}</p>
-                        </div>
-                        <div className="bg-black/30 rounded-lg p-4 border border-orange-500/20">
-                          <p className="text-gray-400 text-sm">En attente</p>
-                          <p className={`font-bold text-orange-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>{adminStats.pending}</p>
-                        </div>
-                        <div className="bg-black/30 rounded-lg p-4 border border-purple-500/20">
-                          <p className="text-gray-400 text-sm">Sets optimaux</p>
-                          <p className={`font-bold text-purple-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>{adminStats.withOptimalSets || 0}</p>
-                        </div>
-                        <div className="bg-black/30 rounded-lg p-4 border border-cyan-500/20">
-                          <p className="text-gray-400 text-sm">Screenshots</p>
-                          <p className={`font-bold text-cyan-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>{adminStats.screenshotRate || 0}%</p>
-                        </div>
-                        <div className="bg-black/30 rounded-lg p-4 border border-yellow-500/20">
-                          <p className="text-gray-400 text-sm">Validation</p>
-                          <p className={`font-bold text-yellow-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>{adminStats.validationRate}%</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+              <div className={`flex items-center gap-3 ${isMobileDevice ? 'mobile-stack' : ''}`}>
+                {duplicateGroups.length > 0 && (
+                  <button
+                    onClick={() => setShowDuplicates(!showDuplicates)}
+                    className={`px-4 py-2 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-400 rounded-lg transition-colors text-sm ${isMobileDevice ? 'mobile-full-width' : ''}`}
+                  >
+                    🔍 Doublons ({duplicateGroups.length})
+                  </button>
                 )}
+                
+                <button
+                  onClick={() => onShowHallOfFlame && onShowHallOfFlame()}
+                  className={`px-4 py-2 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-400 rounded-lg transition-colors text-sm ${isMobileDevice ? 'mobile-full-width' : ''}`}
+                >
+                  🏆 Hall Of Flame
+                </button>
+                
+                <button
+                  onClick={onClose}
+                  className="w-10 h-10 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-400 flex items-center justify-center transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
 
-                {/* Contenu principal */}
-                <div className="relative z-10 flex-1 overflow-y-auto p-4 md:p-6">
-                  <div className="max-w-7xl mx-auto">
-
-                    {/* Onglets Validation / Doublons */}
-                    <div className={`flex gap-4 mb-6 ${isMobileDevice ? 'mobile-stack' : ''}`}>
-                      <button
-                        onClick={() => setShowDuplicates(false)}
-                        className={`px-4 py-2 rounded-lg transition-colors ${isMobileDevice ? 'mobile-full-width' : ''} ${
-                          !showDuplicates 
-                            ? 'bg-red-600 text-white' 
-                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        }`}
-                      >
-                        🛡️ Validation ({pendingHunters.length})
-                      </button>
-                      
-                      {duplicateGroups.length > 0 && (
-                        <button
-                          onClick={() => setShowDuplicates(true)}
-                          className={`px-4 py-2 rounded-lg transition-colors ${isMobileDevice ? 'mobile-full-width' : ''} ${
-                            showDuplicates 
-                              ? 'bg-yellow-600 text-white' 
-                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                          }`}
-                        >
-                          🔍 Doublons ({duplicateGroups.length})
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Section Doublons */}
-                    {showDuplicates && (
-                      <div>
-                        <h2 className={`font-bold text-yellow-400 mb-6 ${isMobileDevice ? 'text-lg' : 'text-xl'}`}>
-                          🔍 Doublons Intelligents v3.1 ({duplicateGroups.length})
-                        </h2>
-                        
-                        {duplicateGroups.length === 0 ? (
-                          <div className="text-center py-10">
-                            <div className="text-4xl mb-4">✅</div>
-                            <h3 className="text-lg text-green-400 mb-2">Aucun doublon détecté</h3>
-                            <p className="text-gray-400">Le système est propre !</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-4">
-                            {duplicateGroups.map((group, index) => (
-                              <div key={index} className="duplicate-alert rounded-lg p-4">
-                                <div className="flex items-center justify-between mb-3">
-                                  <h3 className="text-red-400 font-bold">⚠️ Groupe #{index + 1}</h3>
-                                  <div className="flex flex-col items-end gap-1">
-                                    <div className="text-xs text-gray-400">
-                                      🚨 Validation manuelle OBLIGATOIRE par l'admin
-                                    </div>
-                                    {group.duplicates.some(dup => dup.hunter.totalScore > group.original.totalScore) ? (
-                                      <div className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">
-                                        🔄 MISE À JOUR POTENTIELLE
-                                      </div>
-                                    ) : (
-                                      <div className="bg-red-600 text-white px-2 py-1 rounded text-xs font-bold">
-                                        🚨 DOUBLON SUSPECT
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                
-                                <div className={`grid gap-4 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
-                                  {/* Original */}
-                                  <div className="bg-black/30 rounded-lg p-3">
-                                    <h4 className="text-yellow-400 font-bold mb-2">📋 Original (Base de données)</h4>
-                                    <p className="text-white"><strong>Pseudo:</strong> {group.original.pseudo}</p>
-                                    <p className="text-white"><strong>Account ID:</strong> {group.original.accountId}</p>
-                                    <p className="text-gray-300"><strong>Character:</strong> {group.original.character}</p>
-                                    <p className="text-cyan-400"><strong>CP:</strong> {group.original.totalScore?.toLocaleString()}</p>
-                                    <p className="text-gray-400"><strong>Validé:</strong> {group.original.validated ? '✅ Oui' : '❌ Non'}</p>
-                                  </div>
-                                  
-                                  {/* Doublons */}
-                                  <div className="space-y-2">
-                                    <h4 className="text-red-400 font-bold mb-2">🔄 Nouvelle Soumission ({group.duplicates.length})</h4>
-                                    {group.duplicates.map((dup, dupIndex) => (
-                                      <div key={dupIndex} className="bg-red-900/20 rounded p-3 text-sm border border-red-500/30">
-                                        <div className="flex justify-between items-start mb-3">
-                                          <div className="flex-1">
-                                            <p className="text-white"><strong>{dup.hunter.pseudo}</strong> ({dup.hunter.accountId})</p>
-                                            <p className="text-gray-300">{dup.hunter.character}</p>
-                                            <p className="text-cyan-400 text-xs">CP: {dup.hunter.totalScore?.toLocaleString()}</p>
-                                          </div>
-                                          <div className="text-right">
-                                            <span className="bg-red-600 text-white px-2 py-1 rounded text-xs font-bold">
-                                              {dup.type === 'exact_duplicate' ? '🚨 DOUBLON EXACT' :
-                                               dup.type === 'same_pseudo_diff_account_same_char' ? '⚠️ MÊME PSEUDO, ACCOUNT DIFFÉRENT' :
-                                               dup.type === 'same_account_diff_pseudo_same_char' ? '⚠️ MÊME ACCOUNT, PSEUDO DIFFÉRENT' :
-                                               dup.type === 'multi_character_normal' ? '✅ MULTI-CHARACTER' : '❓ SUSPECT'}
-                                            </span>
-                                          </div>
-                                        </div>
-                                        
-                                        {/* Actions directes */}
-                                        <div className={`flex gap-2 mt-3 ${isMobileDevice ? 'flex-col' : ''}`}>
-                                          <button
-                                            onClick={() => {
-                                              const isUpdate = dup.hunter.totalScore > group.original.totalScore;
-                                              const actionText = isUpdate ? 'MISE À JOUR' : 'NOUVEAU DOUBLON';
-                                              const confirmText = `🔄 ${actionText} CONFIRMÉ\n\n` +
-                                                `Remplacer: ${group.original.pseudo} (${group.original.accountId}) - CP: ${group.original.totalScore?.toLocaleString()}\n` +
-                                                `Par: ${dup.hunter.pseudo} (${dup.hunter.accountId}) - CP: ${dup.hunter.totalScore?.toLocaleString()}\n\n` +
-                                                `L'ancien sera écrasé. Continuer ?`;
-                                              
-                                              if (window.confirm(confirmText)) {
-                                                handleApprove(dup.hunter.id, 85, [], `DOUBLON VALIDÉ MANUELLEMENT - ${actionText} confirmé par admin`);
-                                              }
-                                            }}
-                                            className="approval-button flex-1 px-3 py-2 rounded text-white text-xs font-bold"
-                                          >
-                                            ✅ Valider comme {dup.hunter.totalScore > group.original.totalScore ? 'Mise à jour' : 'Nouveau'}
-                                          </button>
-                                          
-                                          <button
-                                            onClick={() => {
-                                              const confirmText = `🗑️ SUPPRIMER DOUBLON\n\n` +
-                                                `Hunter: ${dup.hunter.pseudo} (${dup.hunter.accountId})\n` +
-                                                `Raison: Doublon non autorisé\n\n` +
-                                                `Supprimer définitivement ?`;
-                                              
-                                              if (window.confirm(confirmText)) {
-                                                handleReject(dup.hunter.id, `Doublon de ${group.original.pseudo} (${group.original.accountId}) - Non autorisé`);
-                                              }
-                                            }}
-                                            className="reject-button flex-1 px-3 py-2 rounded text-white text-xs font-bold"
-                                          >
-                                            ❌ Supprimer
-                                          </button>
-                                          
-                                          <button
-                                            onClick={() => {
-                                              setSelectedDuplicateGroup({ ...group, selectedDuplicate: dup });
-                                              setShowDuplicateComparison(true);
-                                            }}
-                                            className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 px-3 py-2 rounded text-xs font-bold transition-colors"
-                                          >
-                                            🔍 Comparer Détails
-                                          </button>
-                                        </div>
-                                        
-                                        <div className="mt-2 text-xs text-yellow-400 bg-yellow-900/20 p-2 rounded border border-yellow-500/30">
-                                          💡 Conseil: Si c'est une mise à jour légitime → Valider. Si c'est un vrai doublon → Supprimer.
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Section Validation */}
-                    {!showDuplicates && (
-                      <>
-                        {loading ? (
-                          <div className="flex flex-col items-center justify-center py-20">
-                            <div className="text-6xl mb-4 animate-spin">🛡️</div>
-                            <h3 className="text-xl text-red-400 mb-2">Chargement des validations v3.1...</h3>
-                            <p className="text-gray-400">Kaisel analyse les CP avec contrôle doublons...</p>
-                          </div>
-                        ) : pendingHunters.length === 0 ? (
-                          <div className="text-center py-20">
-                            <div className="text-6xl mb-4">✅</div>
-                            <h3 className="text-xl text-green-400 mb-2">Aucune validation en attente</h3>
-                            <p className="text-gray-400">Tous les hunters ont été traités !</p>
-                          </div>
-                        ) : (
-                          <>
-                            <h2 className={`font-bold text-red-400 mb-6 ${isMobileDevice ? 'text-lg' : 'text-xl'}`}>
-                              🛡️ Hunters en attente de validation ({pendingHunters.length})
-                            </h2>
-
-                            <div className={`grid gap-6 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
-                              {pendingHunters.map((hunter) => {
-                                const character = characters[hunter.character];
-                                const elementColor = getElementColor(character?.element);
-                                const riskColor = getRiskColor(hunter.autoAnalysis?.riskLevel);
-                                
-                                const hasCriticalDuplicates = hunter.autoAnalysis?.potentialDuplicates?.some(dup => 
-                                  dup.type === 'exact_duplicate' || 
-                                  dup.type === 'same_pseudo_diff_account_same_char' ||
-                                  dup.type === 'same_account_diff_pseudo_same_char'
-                                );
-                                
-                                return (
-                                  <div
-                                    key={hunter.id}
-                                    className={`admin-card rounded-xl p-6 cursor-pointer relative ${
-                                      hunter.autoAnalysis?.riskLevel === 'high' ? 'high-risk' : ''
-                                    }`}
-                                    onClick={() => handleViewDetails(hunter)}
-                                  >
-                                    {hasCriticalDuplicates && (
-                                      <div className="duplicate-warning-overlay">
-                                        <div className="text-center text-red-400 font-bold text-xs">
-                                          🚨 VALIDATION MANUELLE OBLIGATOIRE
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    <div className="flex items-start justify-between mb-4">
-                                      <div className="flex flex-col gap-1">
-                                        <div className="pending-badge px-3 py-1 rounded-full text-sm font-bold">
-                                          ⏳ EN ATTENTE
-                                        </div>
-                                        
-                                        {hunter.autoAnalysis?.riskLevel && (
-                                          <div
-                                            className="risk-badge px-2 py-1 rounded text-xs font-bold"
-                                            style={{
-                                              '--risk-color': riskColor,
-                                              '--risk-rgb': riskColor.slice(1).match(/.{2}/g).map(hex => parseInt(hex, 16)).join(',')
-                                            }}
-                                          >
-                                            {hunter.autoAnalysis.riskLevel === 'high' ? '🚨 HAUT RISQUE' :
-                                             hunter.autoAnalysis.riskLevel === 'medium' ? '⚠️ RISQUE MOYEN' : '✅ FAIBLE RISQUE'}
-                                          </div>
-                                        )}
-
-                                        <DuplicateBadge duplicates={hunter.autoAnalysis?.potentialDuplicates} />
-                                      </div>
-                                      
-                                      <div className="flex flex-col items-end gap-1">
-                                        {character?.element && (
-                                          <div
-                                            className="element-badge-admin px-2 py-1 rounded text-xs font-bold"
-                                            style={{
-                                              '--element-color': elementColor,
-                                              '--element-rgb': elementColor.slice(1).match(/.{2}/g).map(hex => parseInt(hex, 16)).join(',')
-                                            }}
-                                          >
-                                            {character.element}
-                                          </div>
-                                        )}
-                                        
-                                        {hunter.setValidation?.isOptimal && (
-                                          <div className="optimal-set-badge px-2 py-1 rounded text-xs font-bold">
-                                            🏆 SET OPTIMAL
-                                          </div>
-                                        )}
-                                        
-                                        <div className="text-right">
-                                          <p className="text-xs text-gray-400">
-                                            {new Date(hunter.timestamp).toLocaleDateString()}
-                                          </p>
-                                          {hunter.screenshots && hunter.screenshots.length > 0 && (
-                                            <p className="text-xs text-green-400">
-                                              📸 {hunter.screenshots.length} screenshot{hunter.screenshots.length > 1 ? 's' : ''}
-                                            </p>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div className="mb-4">
-                                      <h3 className="text-xl font-bold text-white mb-1">{hunter.pseudo}</h3>
-                                      <p className="text-gray-400 text-sm">
-                                        {hunter.accountId} • {hunter.characterName}
-                                      </p>
-                                      <p className="text-gray-500 text-xs">
-                                        {hunter.guildName || 'Sans guilde'}
-                                      </p>
-                                      {hunter.builderInfo?.scaleStat && (
-                                        <p className="text-blue-400 text-xs mt-1">
-                                          🎯 Scale Stat: {hunter.builderInfo.scaleStat}
-                                        </p>
-                                      )}
-                                    </div>
-
-                                    <div className="mb-4 space-y-2">
-                                      <div className="flex justify-between">
-                                        <span className="text-gray-400 text-sm">CP Total:</span>
-                                        <div 
-                                          className="cp-score-hover relative"
-                                          onMouseEnter={() => setShowCpTooltipTotal(hunter.id)}
-                                          onMouseLeave={() => setShowCpTooltipTotal(null)}
-                                        >
-                                          <span className="text-yellow-400 font-bold">{hunter.totalScore?.toLocaleString()}</span>
-                                          
-                                          {showCpTooltipTotal === hunter.id && hunter.cpDetailsTotal?.details && (
-                                            <CpTooltip 
-                                              details={hunter.cpDetailsTotal.details} 
-                                              title="📊 CP Total"
-                                              color="#ffd700"
-                                            />
-                                          )}
-                                        </div>
-                                      </div>
-                                      
-                                      <div className="flex justify-between">
-                                        <span className="text-gray-400 text-sm">CP Artifacts:</span>
-                                        <div 
-                                          className="cp-score-hover relative"
-                                          onMouseEnter={() => setShowCpTooltipArtifacts(hunter.id)}
-                                          onMouseLeave={() => setShowCpTooltipArtifacts(null)}
-                                        >
-                                          <span className="text-purple-400 font-bold">{hunter.artifactsScore?.toLocaleString() || 0}</span>
-                                          
-                                          {showCpTooltipArtifacts === hunter.id && hunter.cpDetailsArtifacts?.details && (
-                                            <CpTooltip 
-                                              details={hunter.cpDetailsArtifacts.details} 
-                                              title="🎨 CP Artifacts"
-                                              color="#a855f7"
-                                            />
-                                          )}
-                                        </div>
-                                      </div>
-                                      
-                                      {hunter.totalScore && hunter.artifactsScore && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-400 text-sm">Ratio Artifacts:</span>
-                                          <span className="text-cyan-400 text-sm">
-                                            {Math.round((hunter.artifactsScore / hunter.totalScore) * 100)}%
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    <div className="mb-4 space-y-1">
-                                      <div className="flex justify-between text-xs">
-                                        <span className="text-gray-500">Attack:</span>
-                                        <span className="text-red-400">{formatStat(hunter.currentStats?.Attack || 0)}</span>
-                                      </div>
-                                      <div className="flex justify-between text-xs">
-                                        <span className="text-gray-500">Defense:</span>
-                                        <span className="text-blue-400">{formatStat(hunter.currentStats?.Defense || 0)}</span>
-                                      </div>
-                                      <div className="flex justify-between text-xs">
-                                        <span className="text-gray-500">HP:</span>
-                                        <span className="text-green-400">{formatStat(hunter.currentStats?.HP || 0)}</span>
-                                      </div>
-                                    </div>
-
-                                    {hunter.autoAnalysis && (
-                                      <div className="mb-4">
-                                        <div className="flex items-center justify-between mb-2">
-                                          <span className="text-gray-400 text-sm">Analyse Auto v3.1:</span>
-                                          <span
-                                            className="confidence-badge px-2 py-1 rounded text-xs font-bold"
-                                            style={{
-                                              '--confidence-color': hunter.autoAnalysis.suggestedScore >= 80 ? '#22c55e' : 
-                                                                   hunter.autoAnalysis.suggestedScore >= 60 ? '#eab308' : '#ef4444',
-                                              '--confidence-rgb': hunter.autoAnalysis.suggestedScore >= 80 ? '34, 197, 94' : 
-                                                                 hunter.autoAnalysis.suggestedScore >= 60 ? '234, 179, 8' : '239, 68, 68'
-                                            }}
-                                          >
-                                            {hunter.autoAnalysis.suggestedScore}%
-                                          </span>
-                                        </div>
-                                        
-                                        {hunter.autoAnalysis.issues.length > 0 && (
-                                          <div className="flex flex-wrap gap-1">
-                                            {hunter.autoAnalysis.issues.slice(0, 2).map((issue, idx) => (
-                                              <span key={idx} className="issue-tag px-2 py-1 rounded text-xs">
-                                                {possibleIssues[issue] || issue}
-                                              </span>
-                                            ))}
-                                            {hunter.autoAnalysis.issues.length > 2 && (
-                                              <span className="issue-tag px-2 py-1 rounded text-xs">
-                                                +{hunter.autoAnalysis.issues.length - 2}
-                                              </span>
-                                            )}
-                                          </div>
-                                        )}
-
-                                        {hasCriticalDuplicates && (
-                                          <div className="mt-2 text-xs text-red-400 bg-red-900/20 p-2 rounded border border-red-500/30">
-                                            🚨 Validation manuelle obligatoire - Doublon critique détecté
-                                          </div>
-                                        )}
-                                        
-                                        {/* ✅ NOUVEAU MESSAGE POUR MULTI-CHARACTER NORMAL */}
-                                        {hunter.autoAnalysis.potentialDuplicates && 
-                                         hunter.autoAnalysis.potentialDuplicates.length > 0 && 
-                                         hunter.autoAnalysis.potentialDuplicates.every(d => d.type === 'multi_character_normal') && (
-                                          <div className="mt-2 text-xs text-green-400 bg-green-900/20 p-2 rounded border border-green-500/30">
-                                            👥 Multi-character normal détecté - Aucune action requise
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-
-                                    <div className="flex gap-2 mt-4">
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleApprove(hunter.id, hunter.autoAnalysis?.suggestedScore || 70);
-                                        }}
-                                        disabled={hasCriticalDuplicates}
-                                        className={`approval-button flex-1 px-3 py-2 rounded text-white text-sm font-bold ${
-                                          hasCriticalDuplicates ? 'opacity-50 cursor-not-allowed' : ''
-                                        }`}
-                                        title={hasCriticalDuplicates ? 'Validation manuelle requise - Utilisez le bouton détails' : 'Approuver rapidement'}
-                                      >
-                                        {hasCriticalDuplicates ? '🚨 Voir Détails' : '✅ Approuver'}
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleReject(hunter.id, 'Non conforme v3.1');
-                                        }}
-                                        className="reject-button flex-1 px-3 py-2 rounded text-white text-sm font-bold"
-                                      >
-                                        ❌ Rejeter
-                                      </button>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </>
-                        )}
-                      </>
-                    )}
+          {/* Stats Admin v3.1 */}
+          {adminStats.total > 0 && (
+            <div className="relative z-10 p-4 md:p-6 border-b border-gray-700/50">
+              <div className="max-w-7xl mx-auto">
+                <div className={`grid gap-4 ${isMobileDevice ? 'admin-stats-grid' : 'grid-cols-2 md:grid-cols-6'}`}>
+                  <div className="bg-black/30 rounded-lg p-4 border border-blue-500/20">
+                    <p className="text-gray-400 text-sm">Total</p>
+                    <p className={`font-bold text-blue-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>{adminStats.total}</p>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-4 border border-green-500/20">
+                    <p className="text-gray-400 text-sm">Validés</p>
+                    <p className={`font-bold text-green-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>{adminStats.validated}</p>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-4 border border-orange-500/20">
+                    <p className="text-gray-400 text-sm">En attente</p>
+                    <p className={`font-bold text-orange-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>{adminStats.pending}</p>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-4 border border-purple-500/20">
+                    <p className="text-gray-400 text-sm">Sets optimaux</p>
+                    <p className={`font-bold text-purple-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>{adminStats.withOptimalSets || 0}</p>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-4 border border-cyan-500/20">
+                    <p className="text-gray-400 text-sm">Screenshots</p>
+                    <p className={`font-bold text-cyan-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>{adminStats.screenshotRate || 0}%</p>
+                  </div>
+                  <div className="bg-black/30 rounded-lg p-4 border border-yellow-500/20">
+                    <p className="text-gray-400 text-sm">Validation</p>
+                    <p className={`font-bold text-yellow-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>{adminStats.validationRate}%</p>
                   </div>
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Contenu principal */}
+          <div className="relative z-10 flex-1 overflow-y-auto p-4 md:p-6">
+            <div className="max-w-7xl mx-auto">
+
+              {/* Onglets Validation / Doublons */}
+              <div className={`flex gap-4 mb-6 ${isMobileDevice ? 'mobile-stack' : ''}`}>
+                <button
+                  onClick={() => setShowDuplicates(false)}
+                  className={`px-4 py-2 rounded-lg transition-colors ${isMobileDevice ? 'mobile-full-width' : ''} ${
+                    !showDuplicates 
+                      ? 'bg-red-600 text-white' 
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  🛡️ Validation ({pendingHunters.length})
+                </button>
+                
+                {duplicateGroups.length > 0 && (
+                  <button
+                    onClick={() => setShowDuplicates(true)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${isMobileDevice ? 'mobile-full-width' : ''} ${
+                      showDuplicates 
+                        ? 'bg-yellow-600 text-white' 
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    🔍 Doublons ({duplicateGroups.length})
+                  </button>
+                )}
+              </div>
+
+              {/* Section Doublons */}
+              {showDuplicates && (
+                <div>
+                  <h2 className={`font-bold text-yellow-400 mb-6 ${isMobileDevice ? 'text-lg' : 'text-xl'}`}>
+                    🔍 Doublons Intelligents v3.1 ({duplicateGroups.length})
+                  </h2>
+                  
+                  {duplicateGroups.length === 0 ? (
+                    <div className="text-center py-10">
+                      <div className="text-4xl mb-4">✅</div>
+                      <h3 className="text-lg text-green-400 mb-2">Aucun doublon détecté</h3>
+                      <p className="text-gray-400">Le système est propre !</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {duplicateGroups.map((group, index) => (
+                        <div key={index} className="duplicate-alert rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-red-400 font-bold">⚠️ Groupe #{index + 1}</h3>
+                            <div className="text-xs text-gray-400">
+                              🚨 Validation manuelle OBLIGATOIRE par l'admin
+                            </div>
+                          </div>
+                          
+                          <div className={`grid gap-4 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
+                            {/* Original */}
+                            <div className="bg-black/30 rounded-lg p-3">
+                              <h4 className="text-yellow-400 font-bold mb-2">📋 Original (Base de données)</h4>
+                              <p className="text-white"><strong>Pseudo:</strong> {group.original.pseudo}</p>
+                              <p className="text-white"><strong>Account ID:</strong> {group.original.accountId}</p>
+                              <p className="text-gray-300"><strong>Character:</strong> {group.original.character}</p>
+                              <p className="text-cyan-400"><strong>CP:</strong> {group.original.totalScore?.toLocaleString()}</p>
+                              <p className="text-gray-400"><strong>Validé:</strong> {group.original.validated ? '✅ Oui' : '❌ Non'}</p>
+                            </div>
+                            
+                            {/* Doublons */}
+                            <div className="space-y-2">
+                              <h4 className="text-red-400 font-bold mb-2">🔄 Nouvelle Soumission ({group.duplicates.length})</h4>
+                              {group.duplicates.map((dup, dupIndex) => (
+                                <div key={dupIndex} className="bg-red-900/20 rounded p-2 text-sm border border-red-500/30">
+                                  <p className="text-white"><strong>{dup.hunter.pseudo}</strong> ({dup.hunter.accountId})</p>
+                                  <p className="text-gray-300">{dup.hunter.character}</p>
+                                  <div className="mt-2">
+                                    <span className="bg-red-600 text-white px-2 py-1 rounded text-xs font-bold">
+                                      {dup.type === 'exact_duplicate' ? '🚨 DOUBLON EXACT' :
+                                       dup.type === 'same_pseudo_diff_account_same_char' ? '⚠️ MÊME PSEUDO, ACCOUNT DIFFÉRENT' :
+                                       dup.type === 'same_account_diff_pseudo_same_char' ? '⚠️ MÊME ACCOUNT, PSEUDO DIFFÉRENT' :
+                                       dup.type === 'multi_character_normal' ? '✅ MULTI-CHARACTER' : '❓ SUSPECT'}
+                                    </span>
+                                  </div>
+                                  <p className="text-red-400 text-xs mt-1">
+                                    🛡️ Validation = Confirmation manuelle admin requise
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Section Validation */}
+              {!showDuplicates && (
+                <>
+                  {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                      <div className="text-6xl mb-4 animate-spin">🛡️</div>
+                      <h3 className="text-xl text-red-400 mb-2">Chargement des validations v3.1...</h3>
+                      <p className="text-gray-400">Kaisel analyse les CP avec contrôle doublons...</p>
+                    </div>
+                  ) : pendingHunters.length === 0 ? (
+                    <div className="text-center py-20">
+                      <div className="text-6xl mb-4">✅</div>
+                      <h3 className="text-xl text-green-400 mb-2">Aucune validation en attente</h3>
+                      <p className="text-gray-400">Tous les hunters ont été traités !</p>
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className={`font-bold text-red-400 mb-6 ${isMobileDevice ? 'text-lg' : 'text-xl'}`}>
+                        🛡️ Hunters en attente de validation ({pendingHunters.length})
+                      </h2>
+
+                      <div className={`grid gap-6 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
+                        {pendingHunters.map((hunter) => {
+                          const character = characters[hunter.character];
+                          const elementColor = getElementColor(character?.element);
+                          const riskColor = getRiskColor(hunter.autoAnalysis?.riskLevel);
+                          
+                          // 🚨 VÉRIFIER SI CE HUNTER A DES DOUBLONS CRITIQUES
+                          const hasCriticalDuplicates = hunter.autoAnalysis?.potentialDuplicates?.some(dup => 
+                            dup.type === 'exact_duplicate' || 
+                            dup.type === 'same_pseudo_diff_account_same_char' ||
+                            dup.type === 'same_account_diff_pseudo_same_char'
+                          );
+                          
+                          return (
+                            <div
+                              key={hunter.id}
+                              className={`admin-card rounded-xl p-6 cursor-pointer relative ${
+                                hunter.autoAnalysis?.riskLevel === 'high' ? 'high-risk' : ''
+                              }`}
+                              onClick={() => handleViewDetails(hunter)}
+                            >
+                              {/* 🚨 OVERLAY DOUBLON CRITIQUE */}
+                              {hasCriticalDuplicates && (
+                                <div className="duplicate-warning-overlay">
+                                  <div className="text-center text-red-400 font-bold text-xs">
+                                    🚨 VALIDATION MANUELLE OBLIGATOIRE
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Header avec status */}
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="flex flex-col gap-1">
+                                  <div className="pending-badge px-3 py-1 rounded-full text-sm font-bold">
+                                    ⏳ EN ATTENTE
+                                  </div>
+                                  
+                                  {/* Badge de risque */}
+                                  {hunter.autoAnalysis?.riskLevel && (
+                                    <div
+                                      className="risk-badge px-2 py-1 rounded text-xs font-bold"
+                                      style={{
+                                        '--risk-color': riskColor,
+                                        '--risk-rgb': riskColor.slice(1).match(/.{2}/g).map(hex => parseInt(hex, 16)).join(',')
+                                      }}
+                                    >
+                                      {hunter.autoAnalysis.riskLevel === 'high' ? '🚨 HAUT RISQUE' :
+                                       hunter.autoAnalysis.riskLevel === 'medium' ? '⚠️ RISQUE MOYEN' : '✅ FAIBLE RISQUE'}
+                                    </div>
+                                  )}
+
+                                  {/* 🆕 Badge doublons intelligents */}
+                                  <DuplicateBadge duplicates={hunter.autoAnalysis?.potentialDuplicates} />
+                                </div>
+                                
+                                <div className="flex flex-col items-end gap-1">
+                                  {character?.element && (
+                                    <div
+                                      className="element-badge-admin px-2 py-1 rounded text-xs font-bold"
+                                      style={{
+                                        '--element-color': elementColor,
+                                        '--element-rgb': elementColor.slice(1).match(/.{2}/g).map(hex => parseInt(hex, 16)).join(',')
+                                      }}
+                                    >
+                                      {character.element}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Badge Set Optimal */}
+                                  {hunter.setValidation?.isOptimal && (
+                                    <div className="optimal-set-badge px-2 py-1 rounded text-xs font-bold">
+                                      🏆 SET OPTIMAL
+                                    </div>
+                                  )}
+                                  
+                                  <div className="text-right">
+                                    <p className="text-xs text-gray-400">
+                                      {new Date(hunter.timestamp).toLocaleDateString()}
+                                    </p>
+                                    {hunter.screenshots && hunter.screenshots.length > 0 && (
+                                      <p className="text-xs text-green-400">
+                                        📸 {hunter.screenshots.length} screenshot{hunter.screenshots.length > 1 ? 's' : ''}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Info Hunter v3.1 */}
+                              <div className="mb-4">
+                                <h3 className="text-xl font-bold text-white mb-1">{hunter.pseudo}</h3>
+                                <p className="text-gray-400 text-sm">
+                                  {hunter.accountId} • {hunter.characterName}
+                                </p>
+                                <p className="text-gray-500 text-xs">
+                                  {hunter.guildName || 'Sans guilde'}
+                                </p>
+                                {hunter.builderInfo?.scaleStat && (
+                                  <p className="text-blue-400 text-xs mt-1">
+                                    🎯 Scale Stat: {hunter.builderInfo.scaleStat}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* 🆕 Scores détaillés AVEC TOOLTIPS */}
+                              <div className="mb-4 space-y-2">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-400 text-sm">CP Total:</span>
+                                  <div 
+                                    className="cp-score-hover relative"
+                                    onMouseEnter={() => setShowCpTooltipTotal(hunter.id)}
+                                    onMouseLeave={() => setShowCpTooltipTotal(null)}
+                                  >
+                                    <span className="text-yellow-400 font-bold">{hunter.totalScore?.toLocaleString()}</span>
+                                    
+                                    {/* TOOLTIP CP TOTAL */}
+                                    {showCpTooltipTotal === hunter.id && hunter.cpDetailsTotal?.details && (
+                                      <CpTooltip 
+                                        details={hunter.cpDetailsTotal.details} 
+                                        title="📊 CP Total"
+                                        color="#ffd700"
+                                      />
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                <div className="flex justify-between">
+                                  <span className="text-gray-400 text-sm">CP Artifacts:</span>
+                                  <div 
+                                    className="cp-score-hover relative"
+                                    onMouseEnter={() => setShowCpTooltipArtifacts(hunter.id)}
+                                    onMouseLeave={() => setShowCpTooltipArtifacts(null)}
+                                  >
+                                    <span className="text-purple-400 font-bold">{hunter.artifactsScore?.toLocaleString() || 0}</span>
+                                    
+                                    {/* TOOLTIP CP ARTIFACTS */}
+                                    {showCpTooltipArtifacts === hunter.id && hunter.cpDetailsArtifacts?.details && (
+                                      <CpTooltip 
+                                        details={hunter.cpDetailsArtifacts.details} 
+                                        title="🎨 CP Artifacts"
+                                        color="#a855f7"
+                                      />
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                {/* Ratio CP */}
+                                {hunter.totalScore && hunter.artifactsScore && (
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-400 text-sm">Ratio Artifacts:</span>
+                                    <span className="text-cyan-400 text-sm">
+                                      {Math.round((hunter.artifactsScore / hunter.totalScore) * 100)}%
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Stats principales */}
+                              <div className="mb-4 space-y-1">
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-gray-500">Attack:</span>
+                                  <span className="text-red-400">{formatStat(hunter.currentStats?.Attack || 0)}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-gray-500">Defense:</span>
+                                  <span className="text-blue-400">{formatStat(hunter.currentStats?.Defense || 0)}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-gray-500">HP:</span>
+                                  <span className="text-green-400">{formatStat(hunter.currentStats?.HP || 0)}</span>
+                                </div>
+                              </div>
+
+                              {/* Analyse auto v3.1 */}
+                              {hunter.autoAnalysis && (
+                                <div className="mb-4">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-gray-400 text-sm">Analyse Auto v3.1:</span>
+                                    <span
+                                      className="confidence-badge px-2 py-1 rounded text-xs font-bold"
+                                      style={{
+                                        '--confidence-color': hunter.autoAnalysis.suggestedScore >= 80 ? '#22c55e' : 
+                                                             hunter.autoAnalysis.suggestedScore >= 60 ? '#eab308' : '#ef4444',
+                                        '--confidence-rgb': hunter.autoAnalysis.suggestedScore >= 80 ? '34, 197, 94' : 
+                                                           hunter.autoAnalysis.suggestedScore >= 60 ? '234, 179, 8' : '239, 68, 68'
+                                      }}
+                                    >
+                                      {hunter.autoAnalysis.suggestedScore}%
+                                    </span>
+                                  </div>
+                                  
+                                  {/* Issues détectées */}
+                                  {hunter.autoAnalysis.issues.length > 0 && (
+                                    <div className="flex flex-wrap gap-1">
+                                      {hunter.autoAnalysis.issues.slice(0, 2).map((issue, idx) => (
+                                        <span key={idx} className="issue-tag px-2 py-1 rounded text-xs">
+                                          {possibleIssues[issue] || issue}
+                                        </span>
+                                      ))}
+                                      {hunter.autoAnalysis.issues.length > 2 && (
+                                        <span className="issue-tag px-2 py-1 rounded text-xs">
+                                          +{hunter.autoAnalysis.issues.length - 2}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Message pour doublons MISE À JOUR */}
+                                  {hasCriticalDuplicates && (
+                                    <div className="mt-2 text-xs text-red-400 bg-red-900/20 p-2 rounded border border-red-500/30">
+                                      🚨 Validation manuelle obligatoire - Doublon critique détecté
+                                    </div>
+                                  )}
+                                  
+                                  {hunter.autoAnalysis.potentialDuplicates && hunter.autoAnalysis.potentialDuplicates.length > 0 && 
+                                   hunter.autoAnalysis.potentialDuplicates.some(d => d.type === 'multi_character_normal') && (
+                                    <div className="mt-2 text-xs text-green-400">
+                                      ✅ Multi-character normal détecté
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Actions rapides MISE À JOUR */}
+                              <div className="flex gap-2 mt-4">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleApprove(hunter.id, hunter.autoAnalysis?.suggestedScore || 70);
+                                  }}
+                                  disabled={hasCriticalDuplicates}
+                                  className={`approval-button flex-1 px-3 py-2 rounded text-white text-sm font-bold ${
+                                    hasCriticalDuplicates ? 'opacity-50 cursor-not-allowed' : ''
+                                  }`}
+                                  title={hasCriticalDuplicates ? 'Validation manuelle requise - Utilisez le bouton détails' : 'Approuver rapidement'}
+                                >
+                                  {hasCriticalDuplicates ? '🚨 Voir Détails' : '✅ Approuver'}
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleReject(hunter.id, 'Non conforme v3.1');
+                                  }}
+                                  className="reject-button flex-1 px-3 py-2 rounded text-white text-sm font-bold"
+                                >
+                                  ❌ Rejeter
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
-
-        {/* Modal Détails Validation */}
-        {showDetails && selectedHunter && (
-          <div className="fixed inset-0 z-[10000] bg-black/90 flex items-center justify-center p-4">
-            <div className={`bg-gray-900 rounded-2xl shadow-2xl w-full max-h-[90vh] overflow-y-auto border-2 border-red-500 ${isMobileDevice ? 'max-w-sm' : 'max-w-6xl'}`}>
-              
-              <div className="p-6 border-b border-red-500/30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className={`font-bold text-red-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>🛡️ Validation Détaillée v3.1</h2>
-                    <div className={`flex items-center gap-4 mt-2 ${isMobileDevice ? 'flex-col items-start gap-2' : ''}`}>
-                      <div>
-                        <p className="text-white font-bold">{selectedHunter.pseudo}</p>
-                        <p className="text-gray-300 text-sm">{selectedHunter.accountId}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-300">{selectedHunter.characterName}</p>
-                        <p className="text-gray-400 text-sm">{selectedHunter.guildName || 'Sans guilde'}</p>
-                      </div>
+      </div>
+</div>
+</div>
+</div>
+      {/* 🔍 MODAL DÉTAILS VALIDATION ULTIMATE v3.1 */}
+      {showDetails && selectedHunter && (
+        <div className="fixed inset-0 z-[10000] bg-black/90 flex items-center justify-center p-4">
+          <div className={`bg-gray-900 rounded-2xl shadow-2xl w-full max-h-[90vh] overflow-y-auto border-2 border-red-500 ${isMobileDevice ? 'max-w-sm' : 'max-w-6xl'}`}>
+            
+            {/* Header Modal v3.1 */}
+            <div className="p-6 border-b border-red-500/30">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className={`font-bold text-red-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>🛡️ Validation Détaillée v3.1</h2>
+                  <div className={`flex items-center gap-4 mt-2 ${isMobileDevice ? 'flex-col items-start gap-2' : ''}`}>
+                    <div>
+                      <p className="text-white font-bold">{selectedHunter.pseudo}</p>
+                      <p className="text-gray-300 text-sm">{selectedHunter.accountId}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-300">{selectedHunter.characterName}</p>
+                      <p className="text-gray-400 text-sm">{selectedHunter.guildName || 'Sans guilde'}</p>
                     </div>
                   </div>
+                  <p className="text-gray-400 text-sm mt-1">
+                    Soumis le {new Date(selectedHunter.timestamp).toLocaleDateString()} • 
+                    {selectedHunter.builderInfo?.scaleStat && ` Scale: ${selectedHunter.builderInfo.scaleStat}`}
+                    {selectedHunter.setValidation?.isOptimal && ' • 🏆 Set Optimal'}
+                  </p>
                   
-                  <button
-                    onClick={() => setShowDetails(false)}
-                    className="w-10 h-10 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-400 flex items-center justify-center transition-colors"
+                  {/* 🚨 ALERTE DOUBLON DANS LE HEADER */}
+                  {selectedHunter.autoAnalysis?.potentialDuplicates?.some(dup => 
+                    dup.type === 'exact_duplicate' || 
+                    dup.type === 'same_pseudo_diff_account_same_char' ||
+                    dup.type === 'same_account_diff_pseudo_same_char'
+                  ) && (
+                    <div className="mt-3 p-3 bg-red-900/30 rounded-lg border border-red-500/50">
+                      <p className="text-red-400 font-bold text-sm">
+                        🚨 DOUBLON CRITIQUE DÉTECTÉ - Validation manuelle obligatoire
+                      </p>
+                      <p className="text-red-300 text-xs mt-1">
+                        Ce hunter a des doublons suspects. Vérifiez attentivement avant validation.
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                <button
+                  onClick={() => setShowDetails(false)}
+                  className="w-10 h-10 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-400 flex items-center justify-center transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Contenu Modal v3.1 avec responsive */}
+            <div className="p-6">
+              
+              {/* 🆕 Scores & Analyse v3.1 AVEC TOOLTIPS MOBILES */}
+              <div className={`grid gap-4 mb-6 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-4'}`}>
+                <div className="bg-black/30 rounded-lg p-4">
+                  <h3 className="text-yellow-400 font-bold mb-2">🏆 CP Total</h3>
+                  <div 
+                    className="cp-score-hover relative"
+                    onMouseEnter={() => setShowCpTooltipTotal('modal-total')}
+                    onMouseLeave={() => setShowCpTooltipTotal(null)}
+                    onClick={() => isMobileDevice && setShowCpTooltipTotal(showCpTooltipTotal === 'modal-total' ? null : 'modal-total')}
                   >
-                    ✕
-                  </button>
+                    <p className={`font-bold text-yellow-400 ${isMobileDevice ? 'text-lg cursor-pointer' : 'text-2xl'}`}>
+                      {selectedHunter.totalScore?.toLocaleString()}
+                    </p>
+                    
+                    {/* TOOLTIP CP TOTAL MODAL */}
+                    {showCpTooltipTotal === 'modal-total' && selectedHunter.cpDetailsTotal?.details && (
+                      <CpTooltip 
+                        details={selectedHunter.cpDetailsTotal.details} 
+                        title="📊 CP Total Détaillé"
+                        color="#ffd700"
+                      />
+                    )}
+                  </div>
+                  
+                  {selectedHunter.setValidation?.isOptimal && (
+                    <p className="text-green-400 text-xs mt-1">🏆 +5% bonus set appliqué</p>
+                  )}
+                </div>
+                
+                <div className="bg-black/30 rounded-lg p-4">
+                  <h3 className="text-purple-400 font-bold mb-2">🎨 CP Artefacts</h3>
+                  <div 
+                    className="cp-score-hover relative"
+                    onMouseEnter={() => setShowCpTooltipArtifacts('modal-artifacts')}
+                    onMouseLeave={() => setShowCpTooltipArtifacts(null)}
+                    onClick={() => isMobileDevice && setShowCpTooltipArtifacts(showCpTooltipArtifacts === 'modal-artifacts' ? null : 'modal-artifacts')}
+                  >
+                    <p className={`font-bold text-purple-400 ${isMobileDevice ? 'text-lg cursor-pointer' : 'text-2xl'}`}>
+                      {selectedHunter.artifactsScore?.toLocaleString() || 0}
+                    </p>
+                    
+                    {/* TOOLTIP CP ARTIFACTS MODAL */}
+                    {showCpTooltipArtifacts === 'modal-artifacts' && selectedHunter.cpDetailsArtifacts?.details && (
+                      <CpTooltip 
+                        details={selectedHunter.cpDetailsArtifacts.details} 
+                        title="🎨 CP Artefacts Détaillé"
+                        color="#a855f7"
+                      />
+                    )}
+                  </div>
+                </div>
+                
+                <div className="bg-black/30 rounded-lg p-4">
+                  <h3 className="text-blue-400 font-bold mb-2">🤖 Score Auto v3.1</h3>
+                  <p className={`font-bold text-blue-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>
+                    {selectedHunter.autoAnalysis?.suggestedScore || 0}%
+                  </p>
+                  <div className="mt-2 text-xs">
+                    <p className="text-gray-400">Issues: {selectedHunter.autoAnalysis?.issues.length || 0}</p>
+                    <p className="text-gray-400">Risque: {selectedHunter.autoAnalysis?.riskLevel || 'unknown'}</p>
+                  </div>
+                </div>
+                
+                <div className="bg-black/30 rounded-lg p-4">
+                  <h3 className="text-cyan-400 font-bold mb-2">📊 Ratio & Stats</h3>
+                  <p className={`font-bold text-cyan-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>
+                    {selectedHunter.totalScore && selectedHunter.artifactsScore 
+                      ? Math.round((selectedHunter.artifactsScore / selectedHunter.totalScore) * 100) 
+                      : 0}%
+                  </p>
+                  <div className="mt-2 text-xs">
+                    <p className="text-gray-400">Screenshots: {selectedHunter.screenshots?.length || 0}</p>
+                    <p className="text-gray-400">Sets: {Object.keys(selectedHunter.setAnalysis?.equipped || {}).length}</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="p-6">
-                <div className="border-t border-gray-700 pt-6">
-                  <h3 className="text-white font-bold mb-4">🎯 Actions de Validation v3.1</h3>
-                  
-                  <div className={`grid gap-4 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
-                    <div className="bg-green-900/20 rounded-lg p-4 border border-green-500/30">
-                      <h4 className="text-green-400 font-bold mb-3">✅ Approuver</h4>
+              {/* Actions de validation v3.1 - MOBILE OPTIMIZED + DOUBLON CONTROL */}
+              <div className="border-t border-gray-700 pt-6">
+                <h3 className="text-white font-bold mb-4">🎯 Actions de Validation v3.1</h3>
+                
+                <div className={`grid gap-4 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
+                  {/* Approbation */}
+                  <div className="bg-green-900/20 rounded-lg p-4 border border-green-500/30">
+                    <h4 className="text-green-400 font-bold mb-3">
+                      ✅ Approuver 
+                      {selectedHunter.autoAnalysis?.potentialDuplicates?.length > 0 && (
+                        <span className="text-yellow-400 text-sm"> (Attention Doublons)</span>
+                      )}
+                    </h4>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm text-gray-300 mb-2">Niveau de confiance :</label>
+                        <select 
+                          className="w-full bg-black/50 border border-green-500/30 rounded px-3 py-2 text-white"
+                          defaultValue={selectedHunter.autoAnalysis?.suggestedScore || 70}
+                          id="confidenceSelect"
+                        >
+                          <option value={100}>💎 100% - Parfait</option>
+                          <option value={90}>✅ 90% - Excellent</option>
+                          <option value={80}>🟢 80% - Très bon</option>
+                          <option value={70}>🟡 70% - Bon</option>
+                          <option value={60}>🟠 60% - Acceptable</option>
+                          <option value={50}>🔶 50% - Suspect</option>
+                        </select>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm text-gray-300 mb-2">Notes admin v3.1 :</label>
+                        <textarea 
+                          className="w-full bg-black/50 border border-green-500/30 rounded px-3 py-2 text-white text-sm"
+                          rows="3"
+                          placeholder="Notes optionnelles sur la validation..."
+                          id="adminNotes"
+                        />
+                      </div>
+                      
                       <button
                         onClick={() => {
-                          const confidence = 90;
-                          const notes = 'Validation détaillée effectuée';
+                          const confidence = parseInt(document.getElementById('confidenceSelect').value);
+                          const notes = document.getElementById('adminNotes').value;
                           handleApprove(selectedHunter.id, confidence, selectedHunter.autoAnalysis?.issues || [], notes);
                         }}
                         className="approval-button w-full px-4 py-3 rounded font-bold text-white"
@@ -1157,14 +1233,45 @@ const AdminValidationPage = ({
                         ✅ Approuver ce Hunter
                       </button>
                     </div>
+                  </div>
 
-                    <div className="bg-red-900/20 rounded-lg p-4 border border-red-500/30">
-                      <h4 className="text-red-400 font-bold mb-3">❌ Rejeter</h4>
+                  {/* Rejet */}
+                  <div className="bg-red-900/20 rounded-lg p-4 border border-red-500/30">
+                    <h4 className="text-red-400 font-bold mb-3">❌ Rejeter</h4>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm text-gray-300 mb-2">Raison du rejet v3.1 :</label>
+                        <select 
+                          className="w-full bg-black/50 border border-red-500/30 rounded px-3 py-2 text-white"
+                          id="rejectReason"
+                        >
+                          <option value="Non conforme v3.1">Non conforme aux standards v3.1</option>
+                          <option value="Pseudo/AccountID invalide">Pseudo ou Account ID invalide</option>
+                          <option value="Screenshots manquants">Screenshots obligatoires manquants</option>
+                          <option value="Stats impossibles">Stats impossibles/trichées</option>
+                          <option value="Screenshots suspects">Screenshots suspects</option>
+                          <option value="Doublon malveillant">Doublon malveillant détecté</option>
+                          <option value="CP incohérent">CP incohérent avec les stats</option>
+                          <option value="Sets invalides">Sets d'artefacts invalides</option>
+                          <option value="Set bonus manquant">Bonus set manquant</option>
+                          <option value="Autre">Autre raison</option>
+                        </select>
+                      </div>
+                      
+                      <div className="bg-red-900/30 rounded p-3">
+                        <p className="text-red-300 text-sm">
+                          ⚠️ <strong>Action irréversible v3.1</strong><br/>
+                          Ce hunter ({selectedHunter.pseudo} - {selectedHunter.accountId}) sera définitivement supprimé.
+                        </p>
+                      </div>
+                      
                       <button
                         onClick={() => {
-                          handleReject(selectedHunter.id, 'Non conforme après validation détaillée');
+                          const reason = document.getElementById('rejectReason').value;
+                          handleReject(selectedHunter.id, reason);
                         }}
-                        className="reject-button w-full px-4 py-2 rounded font-bold text-white"
+                        className="reject-button w-full px-4 py-3 rounded font-bold text-white"
                       >
                         🗑️ Supprimer Définitivement
                       </button>
@@ -1174,182 +1281,8 @@ const AdminValidationPage = ({
               </div>
             </div>
           </div>
-        )}
-
-        {/* Modal Comparaison Doublons */}
-        {showDuplicateComparison && selectedDuplicateGroup && (
-          <div className="fixed inset-0 z-[10001] bg-black/95 flex items-center justify-center p-4">
-            <div className={`bg-gray-900 rounded-2xl shadow-2xl w-full max-h-[95vh] overflow-y-auto border-2 border-yellow-500 ${isMobileDevice ? 'max-w-sm' : 'max-w-7xl'}`}>
-              
-              <div className="p-6 border-b border-yellow-500/30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className={`font-bold text-yellow-400 ${isMobileDevice ? 'text-lg' : 'text-2xl'}`}>
-                      🔍 Comparaison Doublon Détaillée v3.1
-                    </h2>
-                    <p className="text-gray-300 text-sm mt-1">
-                      Analyse complète : Original vs Nouveau hunter
-                    </p>
-                  </div>
-                  
-                  <button
-                    onClick={() => setShowDuplicateComparison(false)}
-                    className="w-10 h-10 rounded-full bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-400 flex items-center justify-center transition-colors"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-6">
-                <div className={`grid gap-6 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
-                  
-                  {/* Original */}
-                  <div className="bg-green-900/20 rounded-xl p-6 border border-green-500/30">
-                    <h3 className="text-green-400 font-bold text-xl mb-4">📋 ORIGINAL (Base de données)</h3>
-                    
-                    <div className="mb-4 space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Pseudo:</span>
-                        <span className="text-white font-bold">{selectedDuplicateGroup.original.pseudo}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Account ID:</span>
-                        <span className="text-white">{selectedDuplicateGroup.original.accountId}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Character:</span>
-                        <span className="text-white">{selectedDuplicateGroup.original.character}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">CP Total:</span>
-                        <span className="text-yellow-400 font-bold">{selectedDuplicateGroup.original.totalScore?.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Nouveau */}
-                  <div className="bg-red-900/20 rounded-xl p-6 border border-red-500/30">
-                    <h3 className="text-red-400 font-bold text-xl mb-4">🔄 NOUVEAU (En attente)</h3>
-                    
-                    {(() => {
-                      const newHunter = pendingHunters.find(h => h.id === selectedDuplicateGroup.selectedDuplicate.hunter.id);
-                      if (!newHunter) {
-                        return <p className="text-red-400">❌ Hunter non trouvé dans pending</p>;
-                      }
-
-                      return (
-                        <div className="mb-4 space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Pseudo:</span>
-                            <span className="text-white font-bold">{newHunter.pseudo}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Account ID:</span>
-                            <span className="text-white">{newHunter.accountId}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Character:</span>
-                            <span className="text-white">{newHunter.characterName}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-400">CP Total:</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-yellow-400 font-bold">{newHunter.totalScore?.toLocaleString()}</span>
-                              {newHunter.totalScore > selectedDuplicateGroup.original.totalScore ? (
-                                <span className="text-green-400 text-xs">⬆️ +{(newHunter.totalScore - selectedDuplicateGroup.original.totalScore).toLocaleString()}</span>
-                              ) : newHunter.totalScore < selectedDuplicateGroup.original.totalScore ? (
-                                <span className="text-red-400 text-xs">⬇️ -{(selectedDuplicateGroup.original.totalScore - newHunter.totalScore).toLocaleString()}</span>
-                              ) : (
-                                <span className="text-gray-400 text-xs">= Identique</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </div>
-
-                {/* Actions finales */}
-                <div className="mt-6 border-t border-gray-700 pt-6">
-                  <h3 className="text-white font-bold mb-4">🎯 Décision Admin</h3>
-                  
-                  <div className={`grid gap-4 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'}`}>
-                    {/* Approuver comme mise à jour */}
-                    <div className="bg-green-900/20 rounded-lg p-4 border border-green-500/30">
-                      <h4 className="text-green-400 font-bold mb-2">✅ Approuver Mise à Jour</h4>
-                      <p className="text-sm text-gray-300 mb-3">
-                        Le nouveau hunter remplace l'ancien (écrasement)
-                      </p>
-                      <button
-                        onClick={() => {
-                          const newHunter = pendingHunters.find(h => h.id === selectedDuplicateGroup.selectedDuplicate.hunter.id);
-                          if (newHunter) {
-                            const confirmText = `🔄 CONFIRMATION MISE À JOUR\n\n` +
-                              `Remplacer: ${selectedDuplicateGroup.original.pseudo} (CP: ${selectedDuplicateGroup.original.totalScore?.toLocaleString()})\n` +
-                              `Par: ${newHunter.pseudo} (CP: ${newHunter.totalScore?.toLocaleString()})\n\n` +
-                              `L'ancien sera définitivement écrasé. Continuer ?`;
-                            
-                            if (window.confirm(confirmText)) {
-                              handleApprove(newHunter.id, 90, [], 'MISE À JOUR VALIDÉE - Comparaison détaillée effectuée par admin');
-                              setShowDuplicateComparison(false);
-                            }
-                          }
-                        }}
-                        className="approval-button w-full px-4 py-2 rounded font-bold text-white"
-                      >
-                        ✅ Valider Mise à Jour
-                      </button>
-                    </div>
-
-                    {/* Rejeter comme doublon */}
-                    <div className="bg-red-900/20 rounded-lg p-4 border border-red-500/30">
-                      <h4 className="text-red-400 font-bold mb-2">❌ Rejeter Doublon</h4>
-                      <p className="text-sm text-gray-300 mb-3">
-                        Supprimer la nouvelle soumission (doublon illégitime)
-                      </p>
-                      <button
-                        onClick={() => {
-                          const newHunter = pendingHunters.find(h => h.id === selectedDuplicateGroup.selectedDuplicate.hunter.id);
-                          if (newHunter) {
-                            const confirmText = `🗑️ CONFIRMATION SUPPRESSION\n\n` +
-                              `Supprimer: ${newHunter.pseudo} (${newHunter.accountId})\n` +
-                              `Garder: ${selectedDuplicateGroup.original.pseudo} (${selectedDuplicateGroup.original.accountId})\n\n` +
-                              `Le nouveau sera définitivement supprimé. Continuer ?`;
-                            
-                            if (window.confirm(confirmText)) {
-                              handleReject(newHunter.id, `Doublon de ${selectedDuplicateGroup.original.pseudo} - Comparaison détaillée effectuée`);
-                              setShowDuplicateComparison(false);
-                            }
-                          }
-                        }}
-                        className="reject-button w-full px-4 py-2 rounded font-bold text-white"
-                      >
-                        🗑️ Supprimer Doublon
-                      </button>
-                    </div>
-
-                    {/* Annuler */}
-                    <div className="bg-gray-900/20 rounded-lg p-4 border border-gray-500/30">
-                      <h4 className="text-gray-400 font-bold mb-2">🔍 Analyser Plus</h4>
-                      <p className="text-sm text-gray-300 mb-3">
-                        Besoin de plus d'infos avant de décider
-                      </p>
-                      <button
-                        onClick={() => setShowDuplicateComparison(false)}
-                        className="bg-gray-600 hover:bg-gray-500 w-full px-4 py-2 rounded font-bold text-white transition-colors"
-                      >
-                        🔙 Retour
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </>
   );
 };
