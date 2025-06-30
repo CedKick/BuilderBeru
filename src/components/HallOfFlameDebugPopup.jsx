@@ -1,4 +1,4 @@
-// HallOfFlameDebugPopup.jsx - 🔧 FIX IMGUR + useEffect par Kaisel
+// HallOfFlameDebugPopup.jsx - 🔧 FIX IMGUR + useEffect + CORS par Kaisel
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BUILDER_DATA } from '../data/builder_data.js';
@@ -202,6 +202,92 @@ const analyzeArtifactSets = (artifacts, selectedCharacter) => {
     isOptimal: isOptimal,
     recommendedSets: recommendedSets
   };
+};
+
+// 🔄 FONCTION DE SYNCHRONISATION DU CACHE LOCAL
+export const syncLocalCache = async (showTankMessage) => {
+  try {
+    const localData = JSON.parse(localStorage.getItem('hallofflame_cache') || '[]');
+    
+    if (localData.length === 0) {
+      console.log('✅ Aucune donnée à synchroniser');
+      return { success: true, synced: 0, remaining: 0 };
+    }
+    
+    console.log(`🔄 Synchronisation de ${localData.length} hunter(s)...`);
+    if (showTankMessage) {
+      showTankMessage(`🔄 Synchronisation de ${localData.length} hunter(s) en cours...`, true, 'kaisel');
+    }
+    
+    const results = await Promise.allSettled(
+      localData.map(async (hunterData) => {
+        try {
+          const response = await fetch('https://api.builderberu.com/api/hallofflame/submit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify(hunterData)
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          
+          const result = await response.json();
+          return {
+            ...result,
+            uniqueKey: hunterData.uniqueKey
+          };
+        } catch (error) {
+          console.error(`❌ Erreur sync ${hunterData.pseudo}:`, error);
+          throw error;
+        }
+      })
+    );
+    
+    // Filtrer les succès
+    const successful = results
+      .filter(r => r.status === 'fulfilled')
+      .map(r => r.value.uniqueKey);
+    
+    // Mettre à jour le cache local
+    const remainingData = localData.filter(h => !successful.includes(h.uniqueKey));
+    localStorage.setItem('hallofflame_cache', JSON.stringify(remainingData));
+    
+    const syncResult = {
+      success: true,
+      synced: successful.length,
+      remaining: remainingData.length,
+      total: localData.length
+    };
+    
+    console.log(`✅ Synchronisation: ${successful.length} succès, ${remainingData.length} en attente`);
+    
+    if (showTankMessage) {
+      if (successful.length > 0) {
+        showTankMessage(
+          `✅ Synchronisation réussie: ${successful.length}/${localData.length} hunters envoyés !`,
+          true,
+          'kaisel'
+        );
+      }
+      if (remainingData.length > 0) {
+        showTankMessage(
+          `⚠️ ${remainingData.length} hunter(s) en attente (erreur réseau/CORS)`,
+          true,
+          'kaisel'
+        );
+      }
+    }
+    
+    return syncResult;
+    
+  } catch (error) {
+    console.error('❌ Erreur synchronisation globale:', error);
+    return { success: false, error: error.message };
+  }
 };
 
 const HallOfFlameDebugPopup = ({
@@ -439,7 +525,7 @@ const HallOfFlameDebugPopup = ({
     return uploadedUrls;
   }, [showTankMessage]);
 
- // 💾 SAUVEGARDE FINALE - OPTIMISÉE
+  // 💾 SAUVEGARDE FINALE - VERSION AVEC GESTION CORS AMÉLIORÉE
   const handleFinalSave = useCallback(async () => {
     if (!currentStats || Object.keys(currentStats).length === 0) {
       showTankMessage("❌ Aucune donnée à sauvegarder", true, 'kaisel');
@@ -453,107 +539,182 @@ const HallOfFlameDebugPopup = ({
     }
 
     const hunterData = {
-      // 🆕 CLÉ COMPOSITE UNIQUE - Évite les doublons
       uniqueKey: `${selectedCharacter}-${formData.pseudo.trim()}-${formData.accountId.trim()}`,
-      
-      // 🆕 NOUVELLES DONNÉES IDENTIFICATRICES
       pseudo: formData.pseudo.trim(),
       accountId: formData.accountId.trim(),
       guildName: formData.guildName.trim(),
-      
-      // Données du personnage
       character: selectedCharacter,
       characterName: characterData?.name || selectedCharacter,
-      
-      // Données complètes depuis les props
       currentStats: currentStats,
       currentArtifacts: currentArtifacts,
       currentCores: currentCores,
       currentGems: currentGems,
       currentWeapon: currentWeapon,
       statsFromArtifacts: statsFromArtifacts,
-      
-      // Stats calculées avancées
       totalScore: memoizedCpTotal.total,
       artifactsScore: memoizedCpArtifacts.total,
       cpDetailsTotal: memoizedCpTotal,
       cpDetailsArtifacts: memoizedCpArtifacts,
       setAnalysis: memoizedSetAnalysis,
-      
-      // 🆕 VALIDATION SETS
       setValidation: {
         isOptimal: memoizedSetAnalysis.isOptimal,
         recommendedSets: memoizedSetAnalysis.recommendedSets,
         detectedSets: Object.entries(memoizedSetAnalysis.equipped).map(([name, count]) => `${name} (${count})`)
       },
-      
-      // Screenshots (version fallback)
       screenshots: screenshotUrls,
-      
-      // Metadata
       timestamp: new Date().toISOString(),
       notes: formData.notes,
-      
-      // Validation
       isValidated: validationErrors.length === 0,
       validationErrors: validationErrors,
-      
-      // BUILDER_DATA info
       builderInfo: BUILDER_DATA[selectedCharacter] || {}
     };
     
-    // 🚀 ENVOI VERS LE BACKEND KAISEL - VERSION ROBUSTE
+    // 🚀 STRATÉGIE MULTI-MÉTHODES POUR GÉRER CORS
     try {
       showTankMessage("🌐 Envoi vers le backend BuilderBeru...", true, 'kaisel');
       
-      const response = await fetch('https://api.builderberu.com/api/hallofflame/submit', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(hunterData)
-      });
+      // Méthode 1: Essai direct (marche si CORS configuré côté serveur)
+      let response;
+      let result;
+      let methodUsed = 'direct';
       
-      const result = await response.json();
+      try {
+        response = await fetch('https://api.builderberu.com/api/hallofflame/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(hunterData)
+        });
+        
+        result = await response.json();
+        
+      } catch (corsError) {
+        console.warn('⚠️ Erreur CORS avec méthode directe, essai méthode alternative...');
+        
+        // Méthode 2: Utilisation d'un proxy local (si configuré dans Vite/Webpack)
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          try {
+            response = await fetch('/api/hallofflame/submit', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: JSON.stringify(hunterData)
+            });
+            
+            result = await response.json();
+            methodUsed = 'proxy';
+            
+          } catch (proxyError) {
+            console.warn('⚠️ Proxy local non configuré');
+            throw corsError; // Relancer l'erreur originale
+          }
+        } else {
+          throw corsError;
+        }
+      }
       
-      if (response.ok && result.success) {
+      // Traitement de la réponse
+      if (response && response.ok && result && result.success) {
         showTankMessage(
-          `🏆 ${result.hunter.pseudo} sauvegardé ! Rang #${result.rank} • Total hunters: ${result.totalHunters}`,
+          `🏆 ${result.hunter.pseudo} sauvegardé ! Rang #${result.rank} • Total hunters: ${result.totalHunters} (via ${methodUsed})`,
           true,
           'kaisel'
         );
         
         console.log('✅ Réponse backend:', result);
+        
+        // Effacer le cache local si succès
+        try {
+          const localCache = JSON.parse(localStorage.getItem('hallofflame_cache') || '[]');
+          const filteredCache = localCache.filter(h => h.uniqueKey !== hunterData.uniqueKey);
+          localStorage.setItem('hallofflame_cache', JSON.stringify(filteredCache));
+        } catch (e) {
+          console.warn('Impossible de nettoyer le cache local');
+        }
+        
       } else {
-        throw new Error(result.error || 'Erreur backend inconnue');
+        throw new Error(result?.error || 'Erreur backend inconnue');
       }
       
     } catch (error) {
       console.error('❌ Erreur API:', error);
-      showTankMessage(
-        `❌ Erreur sauvegarde: ${error.message}. Données conservées localement.`,
-        true,
-        'kaisel'
-      );
       
-      // Fallback - stocker en localStorage
-      try {
-        const localData = JSON.parse(localStorage.getItem('hallofflame_cache') || '[]');
-        localData.push(hunterData);
-        localStorage.setItem('hallofflame_cache', JSON.stringify(localData));
-        showTankMessage("💾 Sauvegarde locale effectuée", true, 'kaisel');
-      } catch (localError) {
-        console.log('🏆 Données complètes:', hunterData);
+      // Message d'erreur détaillé selon le type
+      let errorMessage = '❌ Erreur sauvegarde: ';
+      
+      if (error.message.includes('CORS') || error.message.includes('fetch')) {
+        errorMessage += 'Problème CORS - Le serveur doit autoriser les requêtes cross-origin. ';
+        errorMessage += 'Contactez l\'admin ou utilisez l\'extension CORS Unblock.';
+        
+        // Proposition de solutions
+        showTankMessage(errorMessage, true, 'kaisel');
+        
+        // Afficher des instructions détaillées
+        setTimeout(() => {
+          if (window.confirm(
+            '🔧 Erreur CORS détectée!\n\n' +
+            'Solutions possibles:\n' +
+            '1. Installer l\'extension "CORS Unblock" sur Chrome\n' +
+            '2. Demander à l\'admin d\'activer CORS sur api.builderberu.com\n' +
+            '3. Utiliser un proxy de développement\n\n' +
+            'Voulez-vous sauvegarder en local en attendant?'
+          )) {
+            // Sauvegarder en local
+            saveToLocalStorage();
+          }
+        }, 500);
+        
+      } else {
+        errorMessage += error.message;
+        showTankMessage(errorMessage + ' Données conservées localement.', true, 'kaisel');
+        
+        // Sauvegarder automatiquement en local
+        saveToLocalStorage();
       }
     }
     
+    // Fonction helper pour sauvegarder en local
+    function saveToLocalStorage() {
+      try {
+        const localData = JSON.parse(localStorage.getItem('hallofflame_cache') || '[]');
+        
+        // Éviter les doublons
+        const existingIndex = localData.findIndex(h => h.uniqueKey === hunterData.uniqueKey);
+        if (existingIndex !== -1) {
+          localData[existingIndex] = hunterData;
+        } else {
+          localData.push(hunterData);
+        }
+        
+        localStorage.setItem('hallofflame_cache', JSON.stringify(localData));
+        showTankMessage("💾 Sauvegarde locale effectuée ! Les données seront synchronisées plus tard.", true, 'kaisel');
+        
+        // Log pour debug
+        console.log('📦 Données sauvegardées localement:', hunterData);
+        console.log('📊 Total en cache local:', localData.length);
+        
+      } catch (localError) {
+        console.error('❌ Erreur sauvegarde locale:', localError);
+        
+        // Fallback: afficher les données dans la console
+        console.log('🏆 Données complètes (copiez pour sauvegarder):', JSON.stringify(hunterData, null, 2));
+        
+        showTankMessage("❌ Impossible de sauvegarder. Vérifiez la console pour récupérer les données.", true, 'kaisel');
+      }
+    }
+    
+    // Callback onSave
     if (onSave && typeof onSave === 'function') {
       onSave(hunterData);
     }
     
+    // Navigation vers Hall of Flame
     setTimeout(() => {
-      if (window.confirm("🏆 Hunter sauvegardé ! Voulez-vous voir le classement Hall Of Flame ?")) {
+      if (window.confirm("🏆 Traitement terminé ! Voulez-vous voir le classement Hall Of Flame ?")) {
         if (onNavigateToHallOfFlame) {
           onNavigateToHallOfFlame();
         }
@@ -680,6 +841,17 @@ const HallOfFlameDebugPopup = ({
           z-index: 1000;
           font-size: 12px;
         }
+
+        .sync-banner {
+          background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 140, 0, 0.1));
+          border: 1px solid rgba(255, 215, 0, 0.5);
+          padding: 12px;
+          border-radius: 8px;
+          margin-bottom: 16px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
       `}</style>
 
       {/* 🌫️ OVERLAY */}
@@ -703,7 +875,7 @@ const HallOfFlameDebugPopup = ({
                 <div>
                   <h2 className="text-xl font-bold text-yellow-400">HallOfFlame Advanced</h2>
                   <p className="text-gray-300 text-sm">
-                    Kaisel CP System v3.2 • Fix CORS + useEffect
+                    Kaisel CP System v3.3 • Fix CORS + Sync
                     {hasData && (
                       <span className="text-green-400 ml-2">
                         • Total: {memoizedCpTotal.total.toLocaleString()} CP
@@ -740,6 +912,34 @@ const HallOfFlameDebugPopup = ({
 
           {/* 📋 CONTENU PRINCIPAL */}
           <div className="flex-1 p-6 overflow-y-auto min-h-0">
+            
+            {/* BANNIÈRE SYNCHRONISATION */}
+            {currentStep === 1 && (() => {
+              const cacheCount = JSON.parse(localStorage.getItem('hallofflame_cache') || '[]').length;
+              return cacheCount > 0 ? (
+                <div className="sync-banner">
+                  <div>
+                    <p className="text-yellow-300 font-bold">
+                      🔄 {cacheCount} hunter(s) en attente de synchronisation
+                    </p>
+                    <p className="text-gray-300 text-xs">
+                      Données sauvegardées localement suite à des erreurs réseau/CORS
+                    </p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const result = await syncLocalCache(showTankMessage);
+                      if (result.success && result.synced > 0) {
+                        setFormData({...formData}); // Force re-render
+                      }
+                    }}
+                    className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg font-bold text-sm transition-colors"
+                  >
+                    Synchroniser
+                  </button>
+                </div>
+              ) : null;
+            })()}
             
             {/* STEP 1: CONFIGURATION & DONNÉES AVANCÉES */}
             {currentStep === 1 && (
