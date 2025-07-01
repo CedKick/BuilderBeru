@@ -325,14 +325,17 @@ const ArtifactScoreBadge = ({
         return { score: 0, status: 'missing', message: '❌ Aucun set défini' };
     }
 
-    // Récupérer tous les sets recommandés pour ce hunter
-    const recommendedSets = Object.values(hunterData.artifactSets).map(mode => mode.setComposition);
+      // Récupérer tous les sets recommandés pour ce hunter
+    const recommendedSets = Object.values(hunterData.artifactSets)
+        .map(mode => mode.setComposition)
+        .filter(set => set !== undefined && set !== null); // ← KAISEL FIX: Filtrer les undefined
     
     // Vérifier si le set actuel est dans les recommandations
-    const isRecommended = recommendedSets.some(recSet => 
-        artifact.set.toLowerCase().includes(recSet.toLowerCase()) ||
-        recSet.toLowerCase().includes(artifact.set.toLowerCase())
-    );
+    const isRecommended = recommendedSets.some(recSet => {
+        if (!recSet || !artifact.set) return false; // ← KAISEL FIX: Protection supplémentaire
+        return artifact.set.toLowerCase().includes(recSet.toLowerCase()) ||
+               recSet.toLowerCase().includes(artifact.set.toLowerCase());
+    });
 
     if (isRecommended) {
         return { 

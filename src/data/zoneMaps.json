@@ -1,26 +1,209 @@
 {
   "A1": {
-    "tileId": "shadow_01",
-    "type": "ShadowLand",
-    "controlledBy": "ShadowLand",
-    "explored": true
+    "tileId": "ice_01",
+    "type": "Glacier",
+    "controlledBy": null,
+    "explored": false,
+    "name": "Glacier Éternel A1",
+    "special": "PvE Zone",
+    "dangerLevel": 3
   },
   "A2": {
-    "tileId": "shadow_02",
-    "type": "ShadowLand",
-    "controlledBy": "ShadowLand",
-    "explored": true
+    "tileId": "snow_01",
+    "type": "Neutral",
+    "controlledBy": null,
+    "explored": false,
+    "name": "Plaines Gelées A2",
+    "dangerLevel": 4
+  },
+  "A3": {
+    "tileId": "grass_01",
+    "type": "Neutral",
+    "controlledBy": null,
+    "explored": false,
+    "name": "Frontière Nord A3",
+    "dangerLevel": 4
+  },
+  "A4": {
+    "tileId": "light_01",
+    "type": "Lightborne",
+    "controlledBy": "Lightborne",
+    "explored": true,
+    "name": "Avant-poste Lumineux A4",
+    "dangerLevel": 3
+  },
+  "A5": {
+    "tileId": "desert_01",
+    "type": "Neutral",
+    "controlledBy": null,
+    "explored": false,
+    "name": "Désert Oriental A5",
+    "dangerLevel": 5
   },
   "B1": {
     "tileId": "shadow_03",
     "type": "ShadowLand",
     "controlledBy": "ShadowLand",
-    "explored": true
+    "explored": true,
+    "name": "Marais des Âmes B1",
+    "dangerLevel": 2
   },
   "B2": {
-    "tileId": null,
-    "type": "Unknown",
+    "tileId": "shadow_01",
+    "type": "ShadowLand",
+    "controlledBy": "ShadowLand",
+    "explored": true,
+    "name": "Capitale des Ombres B2",
+    "special": "Capital",
+    "dangerLevel": 1
+  },
+  "B3": {
+    "tileId": "shadow_02",
+    "type": "ShadowLand",
+    "controlledBy": "ShadowLand",
+    "explored": true,
+    "name": "Forêt Sombre B3",
+    "dangerLevel": 2
+  },
+  "B4": {
+    "tileId": "light_02",
+    "type": "Lightborne",
+    "controlledBy": "Lightborne",
+    "explored": true,
+    "name": "Capitale de Lumière B4",
+    "special": "Capital",
+    "dangerLevel": 1
+  },
+  "B5": {
+    "tileId": "light_01",
+    "type": "Lightborne",
+    "controlledBy": "Lightborne",
+    "explored": true,
+    "name": "Jardins Radieux B5",
+    "dangerLevel": 2
+  },
+  "C1": {
+    "tileId": "grass_01",
+    "type": "Neutral",
     "controlledBy": null,
-    "explored": false
+    "explored": false,
+    "name": "Plaines Disputées C1",
+    "dangerLevel": 4
+  },
+  "C2": {
+    "tileId": "shadow_02",
+    "type": "ShadowLand",
+    "controlledBy": "ShadowLand",
+    "explored": true,
+    "name": "Crypte Ancienne C2",
+    "dangerLevel": 3
+  },
+  "C3": {
+    "tileId": "grass_01",
+    "type": "Neutral",
+    "controlledBy": null,
+    "explored": false,
+    "name": "Carrefour Central C3",
+    "special": "Trade Hub",
+    "dangerLevel": 5
+  },
+  "C4": {
+    "tileId": "light_01",
+    "type": "Lightborne",
+    "controlledBy": "Lightborne",
+    "explored": true,
+    "name": "Tour de Garde C4",
+    "dangerLevel": 3
+  },
+  "C5": {
+    "tileId": "desert_01",
+    "type": "Neutral",
+    "controlledBy": null,
+    "explored": false,
+    "name": "Terres Arides C5",
+    "dangerLevel": 6
+  },
+  "D1": {
+    "tileId": "earth_01",
+    "type": "Earthcore",
+    "controlledBy": "Earthcore",
+    "explored": true,
+    "name": "Bosquet Sacré D1",
+    "dangerLevel": 2
+  },
+  "D2": {
+    "tileId": "earth_02",
+    "type": "Earthcore",
+    "controlledBy": "Earthcore",
+    "explored": true,
+    "name": "Sources Vitales D2",
+    "dangerLevel": 2
+  },
+  "D3": {
+    "tileId": "earth_01",
+    "type": "Earthcore",
+    "controlledBy": "Earthcore",
+    "explored": true,
+    "name": "Capitale Terrestre D3",
+    "special": "Capital",
+    "dangerLevel": 1
+  },
+  "D4": {
+    "tileId": "earth_02",
+    "type": "Earthcore",
+    "controlledBy": "Earthcore",
+    "explored": true,
+    "name": "Vallée Fertile D4",
+    "dangerLevel": 2
+  },
+  "D5": {
+    "tileId": "grass_01",
+    "type": "Neutral",
+    "controlledBy": null,
+    "explored": false,
+    "name": "Frontière Sud D5",
+    "dangerLevel": 6
+  },
+  "E1": {
+    "tileId": "desert_01",
+    "type": "Neutral",
+    "controlledBy": null,
+    "explored": false,
+    "name": "Dunes Perdues E1",
+    "dangerLevel": 7
+  },
+  "E2": {
+    "tileId": "grass_01",
+    "type": "Neutral",
+    "controlledBy": null,
+    "explored": false,
+    "name": "No Man's Land E2",
+    "dangerLevel": 7
+  },
+  "E3": {
+    "tileId": "earth_01",
+    "type": "Earthcore",
+    "controlledBy": "Earthcore",
+    "explored": true,
+    "name": "Avant-poste Nature E3",
+    "dangerLevel": 4
+  },
+  "E4": {
+    "tileId": "desert_01",
+    "type": "Neutral",
+    "controlledBy": null,
+    "explored": false,
+    "name": "Ruines Antiques E4",
+    "special": "Dungeon",
+    "dangerLevel": 8
+  },
+  "E5": {
+    "tileId": "lava_01",
+    "type": "Volcano",
+    "controlledBy": null,
+    "explored": false,
+    "name": "Mont Infernal E5",
+    "special": "Boss Zone",
+    "dangerLevel": 10
   }
 }

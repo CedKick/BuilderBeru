@@ -311,78 +311,76 @@ const KaiselInteractionMenu = ({
         onClose();
         break;
 
-   // 🔥 MODIFICATION POUR MULTI-STREAMERS
-// Remplace la partie case 'show_twitch_streams': par ceci :
+      case 'show_twitch_streams':
+        setIsScanning(true);
+        showTankMessage("🔍 Kaisel scanne Twitch pour Solo Leveling Arise...", true, 'kaisel');
+        
+        // 🎯 LISTE DES STREAMERS À SCANNER
+        const streamersToCheck = [
+          'Souties67',
+          'ArcadeHecarim',
+          'GamingFanatic',
+          'SoloLevelingPro',
+          'AriseHunter',
+          // Ajoute d'autres streamers ici
+        ];
+        
+        // 🔥 SCANNER TOUS LES STREAMERS EN PARALLÈLE
+        const scanPromises = streamersToCheck.map(streamer => checkTwitchStreamer(streamer));
+        const results = await Promise.all(scanPromises);
+        
+        // 🎯 SÉPARER LES LIVES ET OFFLINE
+        const liveStreamers = results.filter(r => r.isLive && !r.error);
+        const offlineStreamers = results.filter(r => !r.isLive && !r.error);
+        const twitchErrors = results.filter(r => r.error); // 🔥 RENOMMÉ ICI
+        
+        // 🏆 TRIER PAR VIEWERS (PLUS GROS EN PREMIER)
+        liveStreamers.sort((a, b) => {
+          const viewersA = typeof a.viewers === 'number' ? a.viewers : 0;
+          const viewersB = typeof b.viewers === 'number' ? b.viewers : 0;
+          return viewersB - viewersA;
+        });
+        
+        // 🎨 CONSTRUIRE LE MESSAGE - VERSION ÉPURÉE
+        let message = "";
+        
+        if (liveStreamers.length > 0) {
+          message = `🔴 **STREAMS LIVE DÉTECTÉS : ${liveStreamers.length}**\n\n`;
+          
+          liveStreamers.forEach((stream, index) => {
+            const emoji = stream.isSoloLeveling ? "🎯" : "⚠️";
+            const rank = index === 0 ? "👑" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
+            
+            message += `${rank} ${emoji} **${stream.streamer}** ${stream.isSoloLeveling ? "🟢" : "🔴"}\n`;
+            message += `├─ 🎮 ${stream.game}\n`;
+            message += `├─ 📺 "${stream.title}"\n`;
+            message += `├─ 👥 **${stream.viewers}** viewers\n`;
+            message += `└─ 🔗 ${stream.streamUrl}\n\n`;
+          });
+          
+          // 🎯 COMPTAGE SOLO LEVELING
+          const soloLevelingCount = liveStreamers.filter(s => s.isSoloLeveling).length;
+          if (soloLevelingCount > 0) {
+            message += `✅ **${soloLevelingCount} streams Solo Leveling Arise actifs !**\n\n`;
+          }
+          
+          // 📈 MINI STATS
+          message += `📊 Total viewers : ${liveStreamers.reduce((sum, s) => sum + (typeof s.viewers === 'number' ? s.viewers : 0), 0)}\n\n`;
+          
+        } else {
+          message = `💤 **AUCUN STREAM LIVE ACTUELLEMENT**\n\n`;
+          message += `🔍 ${streamersToCheck.length} streamers scannés\n`;
+          message += `⏰ Prochaine vérification dans quelques heures...\n\n`;
+        }
+        
+        message += `🤖 Scan Kaisel terminé ⚡`;
+        
+        showTankMessage(message, true, 'kaisel');
+        
+        setIsScanning(false);
+        onClose();
+        break;
 
-case 'show_twitch_streams':
-  setIsScanning(true);
-  showTankMessage("🔍 Kaisel scanne Twitch pour Solo Leveling Arise...", true, 'kaisel');
-  
-  // 🎯 LISTE DES STREAMERS À SCANNER
-  const streamersToCheck = [
-    'Souties67',
-    'ArcadeHecarim',
-    'GamingFanatic',
-    'SoloLevelingPro',
-    'AriseHunter',
-    // Ajoute d'autres streamers ici
-  ];
-  
-  // 🔥 SCANNER TOUS LES STREAMERS EN PARALLÈLE
-  const scanPromises = streamersToCheck.map(streamer => checkTwitchStreamer(streamer));
-  const results = await Promise.all(scanPromises);
-  
-  // 🎯 SÉPARER LES LIVES ET OFFLINE
-  const liveStreamers = results.filter(r => r.isLive && !r.error);
-  const offlineStreamers = results.filter(r => !r.isLive && !r.error);
-  const errors = results.filter(r => r.error);
-  
-  // 🏆 TRIER PAR VIEWERS (PLUS GROS EN PREMIER)
-  liveStreamers.sort((a, b) => {
-    const viewersA = typeof a.viewers === 'number' ? a.viewers : 0;
-    const viewersB = typeof b.viewers === 'number' ? b.viewers : 0;
-    return viewersB - viewersA;
-  });
-  
-  // 🎨 CONSTRUIRE LE MESSAGE - VERSION ÉPURÉE
-  let message = "";
-  
-  if (liveStreamers.length > 0) {
-    message = `🔴 **STREAMS LIVE DÉTECTÉS : ${liveStreamers.length}**\n\n`;
-    
-    liveStreamers.forEach((stream, index) => {
-      const emoji = stream.isSoloLeveling ? "🎯" : "⚠️";
-      const rank = index === 0 ? "👑" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
-      
-      message += `${rank} ${emoji} **${stream.streamer}** ${stream.isSoloLeveling ? "🟢" : "🔴"}\n`;
-      message += `├─ 🎮 ${stream.game}\n`;
-      message += `├─ 📺 "${stream.title}"\n`;
-      message += `├─ 👥 **${stream.viewers}** viewers\n`;
-      message += `└─ 🔗 ${stream.streamUrl}\n\n`;
-    });
-    
-    // 🎯 COMPTAGE SOLO LEVELING
-    const soloLevelingCount = liveStreamers.filter(s => s.isSoloLeveling).length;
-    if (soloLevelingCount > 0) {
-      message += `✅ **${soloLevelingCount} streams Solo Leveling Arise actifs !**\n\n`;
-    }
-    
-    // 📈 MINI STATS
-    message += `📊 Total viewers : ${liveStreamers.reduce((sum, s) => sum + (typeof s.viewers === 'number' ? s.viewers : 0), 0)}\n\n`;
-    
-  } else {
-    message = `💤 **AUCUN STREAM LIVE ACTUELLEMENT**\n\n`;
-    message += `🔍 ${streamersToCheck.length} streamers scannés\n`;
-    message += `⏰ Prochaine vérification dans quelques heures...\n\n`;
-  }
-  
-  message += `🤖 Scan Kaisel terminé ⚡`;
-  
-  showTankMessage(message, true, 'kaisel');
-  
-  setIsScanning(false);
-  onClose();
-  break;
       case 'toggle_hitbox_debug':
         // 🔐 PROTECTION ADMIN
         if (!isAdmin) {
@@ -400,8 +398,111 @@ case 'show_twitch_streams':
         break;
 
       case 'show_youtube_videos':
-        const youtubeData = await scanYouTubeVideos();
-        showTankMessage(youtubeData, true, 'kaisel');
+        setIsScanning(true);
+        showTankMessage("🎬 Kaisel scanne YouTube pour les dernières vidéos...", true, 'kaisel');
+        
+        // Configuration des channels avec leurs VRAIS IDs
+        const youtubeChannels = [
+          {
+            name: "Zaffplays",
+            channelId: "UChQ74OK6FGrn69TOtVAnUbw", // Son vrai ID
+            category: "FR"
+          },
+          // Ajoute d'autres channels ici avec leurs IDs
+        ];
+        
+        let allVideos = [];
+        let errors = [];
+        
+        // Scanner chaque channel
+        for (const channel of youtubeChannels) {
+          try {
+            // Construire l'URL du flux RSS YouTube
+            const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channel.channelId}`;
+            
+            // Utiliser RSS2JSON (API gratuite, pas de clé requise)
+            const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=5`;
+            
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            
+            if (data.status === 'ok' && data.items) {
+              // Parser les vidéos
+              const videos = data.items.map(item => {
+                const publishDate = new Date(item.pubDate);
+                const now = new Date();
+                const hoursAgo = Math.floor((now - publishDate) / (1000 * 60 * 60));
+                const daysAgo = Math.floor(hoursAgo / 24);
+                
+                return {
+                  title: item.title,
+                  url: item.link,
+                  author: channel.name,
+                  category: channel.category,
+                  thumbnail: item.thumbnail,
+                  publishDate: publishDate,
+                  timeAgo: daysAgo === 0 ? `${hoursAgo}h` : `${daysAgo}j`,
+                  isNew: hoursAgo < 48 // Nouveau si moins de 48h
+                };
+              });
+              
+              allVideos.push(...videos);
+            } else {
+              throw new Error('Pas de vidéos trouvées');
+            }
+            
+          } catch (error) {
+            console.error(`Erreur pour ${channel.name}:`, error);
+            errors.push(channel.name);
+          }
+        }
+        
+        // Trier par date (plus récent en premier)
+        allVideos.sort((a, b) => b.publishDate - a.publishDate);
+        
+        // Construire le message
+        let youtubeMsg = "";
+        
+        if (allVideos.length > 0) {
+          youtubeMsg = `🎬 **VIDÉOS YOUTUBE RÉCENTES : ${allVideos.length}**\n\n`;
+          
+          // Grouper par catégorie
+          const categories = {};
+          allVideos.forEach(video => {
+            if (!categories[video.category]) {
+              categories[video.category] = [];
+            }
+            categories[video.category].push(video);
+          });
+          
+          // Afficher par catégorie
+          Object.entries(categories).forEach(([cat, videos]) => {
+            youtubeMsg += `📁 **${cat}**\n`;
+            
+            videos.slice(0, 3).forEach(video => { // Max 3 par catégorie
+              const icon = video.isNew ? "🆕" : "📹";
+              
+              youtubeMsg += `${icon} **${video.title}**\n`;
+              youtubeMsg += `├─ 👤 ${video.author}\n`;
+              youtubeMsg += `├─ ⏰ Il y a ${video.timeAgo}\n`;
+              youtubeMsg += `└─ 🔗 ${video.url}\n\n`;
+            });
+          });
+          
+        } else {
+          youtubeMsg = `💤 **AUCUNE VIDÉO TROUVÉE**\n\n`;
+          
+          if (errors.length > 0) {
+            youtubeMsg += `❌ Erreurs pour : ${errors.join(', ')}\n\n`;
+          }
+          
+          youtubeMsg += `💡 Vérifie les Channel IDs des YouTubeurs\n`;
+        }
+        
+        youtubeMsg += `🤖 Scan YouTube Kaisel terminé ⚡`;
+        
+        showTankMessage(youtubeMsg, true, 'kaisel');
+        setIsScanning(false);
         onClose();
         break;
 
@@ -453,25 +554,7 @@ case 'show_twitch_streams':
     }
   };
 
-  // 🌐 FONCTIONS API YOUTUBE ET NETMARBLE (inchangées)
-  const scanYouTubeVideos = async () => {
-    setIsScanning(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const mockVideos = [
-      "🎬 'Best Artifacts Guide 2025' - YouTuberSLA (2h ago)",
-      "🎬 'New Meta Hunters Analysis' - SLArise_News (5h ago)",
-      "🎬 'F2P Guild War Strategy' - ProHunter (1d ago)"
-    ];
-    
-    const message = `🎬 **DERNIÈRES VIDÉOS YOUTUBE - SOLO LEVELING ARISE**\n\n` +
-      `${mockVideos.join('\n')}\n\n` +
-      `🎯 Scan terminé par Kaisel ⚡`;
-    
-    setIsScanning(false);
-    return message;
-  };
-
+  // 🌐 FONCTIONS API YOUTUBE ET NETMARBLE
   const scanNetmarbleNews = async () => {
     setIsScanning(true);
     await new Promise(resolve => setTimeout(resolve, 2000));
