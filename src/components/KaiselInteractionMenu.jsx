@@ -5,6 +5,64 @@ import { scanTwitchStreams } from '../utils/TwitchIntelligence';
 import '../i18n/i18n';
 import HallOfFlameDebugPopup from "./HallOfFlameDebugPopup";
 
+// 🟣 TWITCH CHECKER FUNCTION V2 - AVEC VIEWERS ET LINK
+const checkTwitchStreamer = async (streamerName) => {
+  try {
+    // Essayer une autre méthode pour les viewers
+    const response = await fetch('https://gql.twitch.tv/gql', {
+      method: 'POST',
+      headers: {
+        'Client-Id': 'kimne78kx3ncx6brgo4mv6wki5h1ko',
+      },
+      body: JSON.stringify({
+        query: `
+          query {
+            user(login: "${streamerName.toLowerCase()}") {
+              displayName
+              stream {
+                title
+                viewersCount
+                game {
+                  name
+                }
+              }
+            }
+          }
+        `
+      })
+    });
+    
+    const data = await response.json();
+    const user = data?.data?.user;
+    const stream = user?.stream;
+    
+    if (stream) {
+      return {
+        isLive: true,
+        streamer: user.displayName || streamerName,
+        game: stream.game?.name || 'Jeu inconnu',
+        title: stream.title || 'Sans titre',
+        viewers: stream.viewersCount || 'N/A', // Peut-être que l'API publique cache ça
+        streamUrl: `https://www.twitch.tv/${streamerName.toLowerCase()}`,
+        isSoloLeveling: /solo\s*leveling/i.test(stream.game?.name || '')
+      };
+    } else {
+      return {
+        isLive: false,
+        streamer: streamerName,
+        streamUrl: `https://www.twitch.tv/${streamerName.toLowerCase()}`
+      };
+    }
+  } catch (error) {
+    console.error('Erreur Twitch check:', error);
+    return {
+      isLive: false,
+      streamer: streamerName,
+      error: true
+    };
+  }
+};
+
 const KaiselInteractionMenu = ({
   position,
   onClose,
@@ -253,18 +311,78 @@ const KaiselInteractionMenu = ({
         onClose();
         break;
 
-      case 'show_twitch_streams':
-        try {
-          const response = await fetch('/api/kaisel/get-streams');
-          const data = await response.json();
-          showTankMessage(data.message, true, 'kaisel');
-        } catch (error) {
-          console.error('Kaisel Debug test:', error);
-          showTankMessage('Erreur API Kaisel - Retry plus tard', true, 'kaisel');
-        }
-        onClose();
-        break;
+   // 🔥 MODIFICATION POUR MULTI-STREAMERS
+// Remplace la partie case 'show_twitch_streams': par ceci :
 
+case 'show_twitch_streams':
+  setIsScanning(true);
+  showTankMessage("🔍 Kaisel scanne Twitch pour Solo Leveling Arise...", true, 'kaisel');
+  
+  // 🎯 LISTE DES STREAMERS À SCANNER
+  const streamersToCheck = [
+    'Souties67',
+    'ArcadeHecarim',
+    'GamingFanatic',
+    'SoloLevelingPro',
+    'AriseHunter',
+    // Ajoute d'autres streamers ici
+  ];
+  
+  // 🔥 SCANNER TOUS LES STREAMERS EN PARALLÈLE
+  const scanPromises = streamersToCheck.map(streamer => checkTwitchStreamer(streamer));
+  const results = await Promise.all(scanPromises);
+  
+  // 🎯 SÉPARER LES LIVES ET OFFLINE
+  const liveStreamers = results.filter(r => r.isLive && !r.error);
+  const offlineStreamers = results.filter(r => !r.isLive && !r.error);
+  const errors = results.filter(r => r.error);
+  
+  // 🏆 TRIER PAR VIEWERS (PLUS GROS EN PREMIER)
+  liveStreamers.sort((a, b) => {
+    const viewersA = typeof a.viewers === 'number' ? a.viewers : 0;
+    const viewersB = typeof b.viewers === 'number' ? b.viewers : 0;
+    return viewersB - viewersA;
+  });
+  
+  // 🎨 CONSTRUIRE LE MESSAGE - VERSION ÉPURÉE
+  let message = "";
+  
+  if (liveStreamers.length > 0) {
+    message = `🔴 **STREAMS LIVE DÉTECTÉS : ${liveStreamers.length}**\n\n`;
+    
+    liveStreamers.forEach((stream, index) => {
+      const emoji = stream.isSoloLeveling ? "🎯" : "⚠️";
+      const rank = index === 0 ? "👑" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
+      
+      message += `${rank} ${emoji} **${stream.streamer}** ${stream.isSoloLeveling ? "🟢" : "🔴"}\n`;
+      message += `├─ 🎮 ${stream.game}\n`;
+      message += `├─ 📺 "${stream.title}"\n`;
+      message += `├─ 👥 **${stream.viewers}** viewers\n`;
+      message += `└─ 🔗 ${stream.streamUrl}\n\n`;
+    });
+    
+    // 🎯 COMPTAGE SOLO LEVELING
+    const soloLevelingCount = liveStreamers.filter(s => s.isSoloLeveling).length;
+    if (soloLevelingCount > 0) {
+      message += `✅ **${soloLevelingCount} streams Solo Leveling Arise actifs !**\n\n`;
+    }
+    
+    // 📈 MINI STATS
+    message += `📊 Total viewers : ${liveStreamers.reduce((sum, s) => sum + (typeof s.viewers === 'number' ? s.viewers : 0), 0)}\n\n`;
+    
+  } else {
+    message = `💤 **AUCUN STREAM LIVE ACTUELLEMENT**\n\n`;
+    message += `🔍 ${streamersToCheck.length} streamers scannés\n`;
+    message += `⏰ Prochaine vérification dans quelques heures...\n\n`;
+  }
+  
+  message += `🤖 Scan Kaisel terminé ⚡`;
+  
+  showTankMessage(message, true, 'kaisel');
+  
+  setIsScanning(false);
+  onClose();
+  break;
       case 'toggle_hitbox_debug':
         // 🔐 PROTECTION ADMIN
         if (!isAdmin) {

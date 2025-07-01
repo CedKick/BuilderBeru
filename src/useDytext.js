@@ -8,7 +8,7 @@ export function dytextAnimate(ref, text = "", delay = 30, options = {}) {
 
   const el = ref.current;
   let i = 0;
-  el.textContent = "";
+  el.innerHTML = ""; // 🔥 innerHTML au lieu de textContent pour supporter les liens
 
   // 🎯 FONCTION AUTOSCROLL INTELLIGENTE
   const autoScrollToBottom = () => {
@@ -27,6 +27,17 @@ export function dytextAnimate(ref, text = "", delay = 30, options = {}) {
     }
   };
 
+  // 🔗 FONCTION POUR PARSER LES LIENS
+  const parseTextWithLinks = (fullText) => {
+    // Regex pour détecter les URLs
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    
+    // Remplace les URLs par des balises <a>
+    return fullText.replace(urlRegex, (url) => {
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline transition-colors">${url}</a>`;
+    });
+  };
+
   const writeNext = () => {
     const char = text.charAt(i);
 
@@ -43,12 +54,22 @@ export function dytextAnimate(ref, text = "", delay = 30, options = {}) {
     }
 
     if (char === "§") {
-      let current = el.textContent;
+      let current = el.innerHTML;
       const delInterval = setInterval(() => {
-        current = current.slice(0, -1);
-        el.textContent = current;
-        autoScrollToBottom(); // 🔥 SCROLL pendant la suppression
-        if (current.length === 0) {
+        // Supprime le dernier caractère visible (pas les balises HTML)
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = current;
+        const textContent = tempDiv.textContent || tempDiv.innerText || '';
+        
+        if (textContent.length > 0) {
+          // Reconstruit le HTML avec un caractère de moins
+          const shorterText = textContent.slice(0, -1);
+          el.innerHTML = parseTextWithLinks(shorterText);
+          current = el.innerHTML;
+          autoScrollToBottom();
+        }
+        
+        if (textContent.length === 0) {
           clearInterval(delInterval);
           i++;
           setTimeout(writeNext, 200);
@@ -57,12 +78,16 @@ export function dytextAnimate(ref, text = "", delay = 30, options = {}) {
       return;
     }
 
-    // 🎨 ÉCRITURE AVEC SUPPORT HTML + AUTOSCROLL
-    if (options.useHTML) {
-      el.innerHTML = text.substring(0, i + 1).replace(/\n/g, '<br>');
-    } else {
-      el.textContent = text.substring(0, i + 1);
-    }
+    // 🎨 ÉCRITURE AVEC SUPPORT HTML + LIENS
+    const currentText = text.substring(0, i + 1);
+    const parsedText = parseTextWithLinks(currentText);
+    
+    // Gestion du markdown basique (gras)
+    const finalText = parsedText
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-yellow-400">$1</strong>')
+      .replace(/\n/g, '<br>');
+    
+    el.innerHTML = finalText;
     
     i++;
 
@@ -93,7 +118,7 @@ export function dytextAnimateSERN(ref, text = "", delay = 30, options = {}) {
 
   const el = ref.current;
   let i = 0;
-  el.textContent = "";
+  el.innerHTML = "";
 
   // 🎯 AUTOSCROLL OPTIMISÉ POUR SERN
   const autoScrollSERN = () => {
@@ -104,6 +129,14 @@ export function dytextAnimateSERN(ref, text = "", delay = 30, options = {}) {
         behavior: 'smooth'
       });
     }
+  };
+
+  // 🔗 PARSEUR DE LIENS POUR SERN
+  const parseTextWithLinks = (fullText) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return fullText.replace(urlRegex, (url) => {
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-red-400 hover:text-red-300 underline animate-pulse">${url}</a>`;
+    });
   };
 
   // 🔥 EFFETS SPÉCIAUX SERN
@@ -135,12 +168,21 @@ export function dytextAnimateSERN(ref, text = "", delay = 30, options = {}) {
     }
 
     if (char === "§") {
-      let current = el.textContent;
+      let current = el.innerHTML;
       const delInterval = setInterval(() => {
-        current = current.slice(0, -1);
-        el.textContent = current;
-        autoScrollSERN();
-        if (current.length === 0) {
+        // Supprime proprement le dernier caractère
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = current;
+        const textContent = tempDiv.textContent || tempDiv.innerText || '';
+        
+        if (textContent.length > 0) {
+          const shorterText = textContent.slice(0, -1);
+          el.innerHTML = parseTextWithLinks(shorterText);
+          current = el.innerHTML;
+          autoScrollSERN();
+        }
+        
+        if (textContent.length === 0) {
           clearInterval(delInterval);
           i++;
           setTimeout(writeNext, 200);
@@ -149,7 +191,16 @@ export function dytextAnimateSERN(ref, text = "", delay = 30, options = {}) {
       return;
     }
 
-    el.textContent = text.substring(0, i + 1);
+    // 🎨 ÉCRITURE AVEC LIENS SERN STYLE
+    const currentText = text.substring(0, i + 1);
+    const parsedText = parseTextWithLinks(currentText);
+    
+    // Support markdown + styles SERN
+    const finalText = parsedText
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-red-500 font-bold">$1</strong>')
+      .replace(/\n/g, '<br>');
+    
+    el.innerHTML = finalText;
     i++;
 
     // 🔥 EFFETS SERN + AUTOSCROLL
@@ -189,25 +240,25 @@ export function parseNarrative(rawText) {
 
     // 🖼️ Image
     else if (line.startsWith('{img:')) {
-  const fullMatch = line.match(/\{img:([^\s]+)((?:\s+\w+=["']?[^\s"'}]+["']?)*)\}/);
+      const fullMatch = line.match(/\{img:([^\s]+)((?:\s+\w+=["']?[^\s"'}]+["']?)*)\}/);
 
-  if (fullMatch) {
-    const src = fullMatch[1];
-    const attrString = fullMatch[2] || '';
+      if (fullMatch) {
+        const src = fullMatch[1];
+        const attrString = fullMatch[2] || '';
 
-    const refMatch = attrString.match(/ref=([^\s"'}]+)/);
-    const sizeMatch = attrString.match(/size=([^\s"'}]+)/);
-    const classMatch = attrString.match(/class=([^\s"'}]+)/);
+        const refMatch = attrString.match(/ref=([^\s"'}]+)/);
+        const sizeMatch = attrString.match(/size=([^\s"'}]+)/);
+        const classMatch = attrString.match(/class=([^\s"'}]+)/);
 
-    steps.push({
-      type: 'img',
-      src: src.trim(),
-      ref: refMatch ? refMatch[1] : 'mainImage',
-      size: sizeMatch ? parseInt(sizeMatch[1], 10) : undefined,
-      class: classMatch ? classMatch[1] : '',
-    });
-  }
-}
+        steps.push({
+          type: 'img',
+          src: src.trim(),
+          ref: refMatch ? refMatch[1] : 'mainImage',
+          size: sizeMatch ? parseInt(sizeMatch[1], 10) : undefined,
+          class: classMatch ? classMatch[1] : '',
+        });
+      }
+    }
 
     // ⏱️ Delay
     else if (line.startsWith('{delay=')) {
@@ -238,11 +289,11 @@ export function runNarrativeSteps(steps, {
   let currentIndex = 0;
 
   const runNext = () => {
-  if (currentIndex >= steps.length) {
-    setShowNarrative(false);         // ✅ ferme la popup
-    triggerFadeOutMusic?.();         // ✅ fade-out audio s’il est défini
-    return;
-  }
+    if (currentIndex >= steps.length) {
+      setShowNarrative(false);         // ✅ ferme la popup
+      triggerFadeOutMusic?.();         // ✅ fade-out audio s'il est défini
+      return;
+    }
 
     const step = steps[currentIndex];
     currentIndex++;
@@ -256,11 +307,11 @@ export function runNarrativeSteps(steps, {
         });
         return; // Important : on attend dytextAnimate
 
-     case 'sound':
- const audio = new Audio(step.src);
-playingAudiosRef.current.push(audio);
-  audio.play();
-  break;
+      case 'sound':
+        const audio = new Audio(step.src);
+        playingAudiosRef.current.push(audio);
+        audio.play();
+        break;
 
       case 'img':
         const imageRef = refs[step.ref];
@@ -278,7 +329,8 @@ playingAudiosRef.current.push(audio);
         break;
 
       default:
-        console.warn('⛔️ Étape inconnue :', step);
+        // Étape inconnue, on continue sans warn
+        break;
     }
 
     // Pour les étapes simples (img, sound, delay), on continue après un délai
