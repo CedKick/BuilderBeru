@@ -73,7 +73,74 @@ const mainStatMaxByIncrements = {
   'Dark Damage %': { 0: 13.82, 1: 13.82, 2: 13.82, 3: 13.82, 4: 13.82 }
 };
 
-// 🔧 FONCTION COMPLÈTE DE CALCUL DES STATS FINALES - KAISEL VERSION
+// 🔧 CALCUL DES STATS FROM ARTIFACTS SEULEMENT
+const calculateStatsFromArtifactsOnly = (artifactsData, flatStats) => {
+  const stats = {
+    Attack: 0,
+    Defense: 0,
+    HP: 0,
+    'Critical Hit Rate': 0,
+    'Critical Hit Damage': 0,
+    'Defense Penetration': 0,
+    'Damage Increase': 0,
+    'Healing Given Increase (%)': 0,
+    'Damage Reduction': 0,
+    'MP Recovery Rate Increase (%)': 0,
+    'MP Consumption Reduction': 0,
+    'Additional MP': 0,
+    MP: 0,
+    Precision: 0
+  };
+  
+  Object.values(artifactsData || {}).forEach(artifact => {
+    if (!artifact) return;
+    
+    // Main stat
+    if (artifact.mainStat && mainStatMaxByIncrements[artifact.mainStat]) {
+      const value = mainStatMaxByIncrements[artifact.mainStat][4] || 0;
+      const stat = artifact.mainStat;
+      
+      if (stat.endsWith('%')) {
+        const baseStat = stat.replace(' %', '');
+        const base = flatStats[baseStat] || 0;
+        stats[baseStat] += (base * value / 100);
+      } else if (stat.startsWith('Additional ')) {
+        const baseStat = stat.replace('Additional ', '');
+        stats[baseStat] += value;
+      } else {
+        stats[stat] = (stats[stat] || 0) + value;
+      }
+    }
+    
+    // Substats
+    if (artifact.subStats && artifact.subStatsLevels) {
+      artifact.subStats.forEach((subStat, i) => {
+        const levelInfo = artifact.subStatsLevels[i];
+        if (!subStat || !levelInfo || typeof levelInfo.value !== 'number') return;
+        
+        if (subStat.endsWith('%')) {
+          const baseStat = subStat.replace(' %', '');
+          const base = flatStats[baseStat] || 0;
+          stats[baseStat] += (base * levelInfo.value / 100);
+        } else if (subStat.startsWith('Additional ')) {
+          const baseStat = subStat.replace('Additional ', '');
+          stats[baseStat] += levelInfo.value;
+        } else {
+          stats[subStat] = (stats[subStat] || 0) + levelInfo.value;
+        }
+      });
+    }
+  });
+  
+  // Arrondir
+  Object.keys(stats).forEach(key => {
+    stats[key] = Math.floor(stats[key]);
+  });
+  
+  return stats;
+};
+
+// 🔧 CALCUL DES STATS FINALES CORRIGÉ
 const calculateFinalStats = (hunterData, character) => {
   if (!hunterData || !character) return {};
   
@@ -90,8 +157,8 @@ const calculateFinalStats = (hunterData, character) => {
     currentWeapon = {}
   } = hunterData;
   
-  // 1️⃣ STATS DE BASE + ARME
-  const baseStats = {
+  // 1️⃣ FLAT STATS = BASE + ARME
+  const flatStats = {
     'Attack': charStats.attack || 0,
     'Defense': charStats.defense || 0,
     'HP': charStats.hp || 0,
@@ -104,67 +171,80 @@ const calculateFinalStats = (hunterData, character) => {
     'Damage Reduction': 0,
     'MP Recovery Rate Increase (%)': 0,
     'MP Consumption Reduction': 0,
-    'Precision': currentWeapon.precision || 0,
-    'Additional Attack': 0,
-    'Additional Defense': 0,
-    'Additional HP': 0,
-    'Additional MP': 0
+    'Precision': currentWeapon.precision || 0
   };
   
-  // Ajout de l'arme
+  // Ajouter l'arme
   const weaponBoost = currentWeapon.mainStat || 0;
-  if (scaleStat === 'Attack') baseStats.Attack += weaponBoost;
-  else if (scaleStat === 'Defense') baseStats.Defense += weaponBoost;
-  else if (scaleStat === 'HP') baseStats.HP += weaponBoost;
+  if (scaleStat === 'Attack') flatStats.Attack += weaponBoost;
+  else if (scaleStat === 'Defense') flatStats.Defense += weaponBoost;
+  else if (scaleStat === 'HP') flatStats.HP += weaponBoost;
   
-  // 2️⃣ CALCUL AVEC GEMMES & CORES
-  let statsWithGemsAndCores = { ...baseStats };
+  // 2️⃣ CALCULER statsWithoutArtefact
+  let statsWithoutArtefact = { ...flatStats };
   
-  // Traitement des gemmes
+  // GEMS - Flat d'abord
   Object.values(currentGems || {}).forEach(gemCategory => {
     Object.entries(gemCategory || {}).forEach(([stat, value]) => {
       if (!stat || !value) return;
       
-      if (stat.endsWith('%')) {
-        const baseStat = stat.replace(' %', '');
-        const base = baseStats[baseStat] || 0;
-        statsWithGemsAndCores[baseStat] = (statsWithGemsAndCores[baseStat] || 0) + (base * value / 100);
-      } else if (stat.startsWith('Additional ')) {
+      if (stat.startsWith('Additional ')) {
         const baseStat = stat.replace('Additional ', '');
-        statsWithGemsAndCores[baseStat] = (statsWithGemsAndCores[baseStat] || 0) + value;
-      } else {
-        statsWithGemsAndCores[stat] = (statsWithGemsAndCores[stat] || 0) + value;
+        statsWithoutArtefact[baseStat] += value;
+      } else if (!stat.endsWith('%')) {
+        statsWithoutArtefact[stat] = (statsWithoutArtefact[stat] || 0) + value;
       }
     });
   });
   
-  // Traitement des cores
+  // CORES - Flat d'abord
   ['Offensif', 'Défensif', 'Endurance'].forEach(type => {
     const core = currentCores[type];
     if (!core) return;
     
-    [
-      { stat: core.primary, value: core.primaryValue },
-      { stat: core.secondary, value: core.secondaryValue }
-    ].forEach(({ stat, value }) => {
+    [core.primary, core.secondary].forEach((stat, idx) => {
+      const value = idx === 0 ? core.primaryValue : core.secondaryValue;
       if (!stat || !value) return;
+      
       const numValue = parseFloat(value);
       
-      if (stat.endsWith('%')) {
-        const baseStat = stat.replace(' %', '');
-        const base = baseStats[baseStat] || 0;
-        statsWithGemsAndCores[baseStat] = (statsWithGemsAndCores[baseStat] || 0) + (base * numValue / 100);
-      } else if (stat.startsWith('Additional ')) {
+      if (stat.startsWith('Additional ')) {
         const baseStat = stat.replace('Additional ', '');
-        statsWithGemsAndCores[baseStat] = (statsWithGemsAndCores[baseStat] || 0) + numValue;
-      } else {
-        statsWithGemsAndCores[stat] = (statsWithGemsAndCores[stat] || 0) + numValue;
+        statsWithoutArtefact[baseStat] += numValue;
+      } else if (!stat.endsWith('%')) {
+        statsWithoutArtefact[stat] = (statsWithoutArtefact[stat] || 0) + numValue;
       }
     });
   });
   
-  // 3️⃣ CALCUL DES STATS DES ARTEFACTS
-  let artifactStats = {};
+  // GEMS - % sur FLATSTATS
+  Object.values(currentGems || {}).forEach(gemCategory => {
+    Object.entries(gemCategory || {}).forEach(([stat, value]) => {
+      if (!stat || !value || !stat.endsWith('%')) return;
+      
+      const baseStat = stat.replace(' %', '');
+      const base = flatStats[baseStat] || 0;
+      statsWithoutArtefact[baseStat] += (base * value / 100);
+    });
+  });
+  
+  // CORES - % sur FLATSTATS
+  ['Offensif', 'Défensif', 'Endurance'].forEach(type => {
+    const core = currentCores[type];
+    if (!core) return;
+    
+    [core.primary, core.secondary].forEach((stat, idx) => {
+      const value = idx === 0 ? core.primaryValue : core.secondaryValue;
+      if (!stat || !value || !stat.endsWith('%')) return;
+      
+      const baseStat = stat.replace(' %', '');
+      const base = flatStats[baseStat] || 0;
+      statsWithoutArtefact[baseStat] += (base * parseFloat(value) / 100);
+    });
+  });
+  
+  // 3️⃣ AJOUTER LES ARTEFACTS
+  let finalStats = { ...statsWithoutArtefact };
   
   Object.values(artifactsData || {}).forEach(artifact => {
     if (!artifact) return;
@@ -176,52 +256,43 @@ const calculateFinalStats = (hunterData, character) => {
       
       if (stat.endsWith('%')) {
         const baseStat = stat.replace(' %', '');
-        const base = statsWithGemsAndCores[baseStat] || 0;
-        artifactStats[baseStat] = (artifactStats[baseStat] || 0) + (base * value / 100);
+        const base = flatStats[baseStat] || 0;
+        finalStats[baseStat] += (base * value / 100);
       } else if (stat.startsWith('Additional ')) {
         const baseStat = stat.replace('Additional ', '');
-        artifactStats[baseStat] = (artifactStats[baseStat] || 0) + value;
+        finalStats[baseStat] += value;
       } else {
-        artifactStats[stat] = (artifactStats[stat] || 0) + value;
+        finalStats[stat] = (finalStats[stat] || 0) + value;
       }
     }
     
     // Substats
     if (artifact.subStats && artifact.subStatsLevels) {
-      artifact.subStats.forEach((stat, i) => {
+      artifact.subStats.forEach((subStat, i) => {
         const levelInfo = artifact.subStatsLevels[i];
-        if (!stat || !levelInfo || typeof levelInfo.value !== 'number') return;
+        if (!subStat || !levelInfo || typeof levelInfo.value !== 'number') return;
         
-        if (stat.endsWith('%')) {
-          const baseStat = stat.replace(' %', '');
-          const base = statsWithGemsAndCores[baseStat] || 0;
-          artifactStats[baseStat] = (artifactStats[baseStat] || 0) + (base * levelInfo.value / 100);
-        } else if (stat.startsWith('Additional ')) {
-          const baseStat = stat.replace('Additional ', '');
-          artifactStats[baseStat] = (artifactStats[baseStat] || 0) + levelInfo.value;
+        if (subStat.endsWith('%')) {
+          const baseStat = subStat.replace(' %', '');
+          const base = flatStats[baseStat] || 0;
+          finalStats[baseStat] += (base * levelInfo.value / 100);
+        } else if (subStat.startsWith('Additional ')) {
+          const baseStat = subStat.replace('Additional ', '');
+          finalStats[baseStat] += levelInfo.value;
         } else {
-          artifactStats[stat] = (artifactStats[stat] || 0) + levelInfo.value;
+          finalStats[subStat] = (finalStats[subStat] || 0) + levelInfo.value;
         }
       });
     }
   });
   
-  // 4️⃣ CALCUL FINAL
-  const finalStats = {};
-  const allStatKeys = [
-    'Attack', 'Defense', 'HP', 'MP', 'Critical Hit Rate',
-    'Critical Hit Damage', 'Defense Penetration', 'Damage Increase',
-    'Healing Given Increase (%)', 'Damage Reduction',
-    'MP Recovery Rate Increase (%)', 'MP Consumption Reduction', 'Precision'
-  ];
-  
-  allStatKeys.forEach(stat => {
-    const base = statsWithGemsAndCores[stat] || 0;
-    const fromArtifacts = artifactStats[stat] || 0;
-    finalStats[stat] = Math.floor(base + fromArtifacts);
+  // 4️⃣ ARRONDIR
+  const result = {};
+  Object.keys(finalStats).forEach(stat => {
+    result[stat] = Math.floor(finalStats[stat] || 0);
   });
   
-  return finalStats;
+  return { finalStats: result, flatStats };
 };
 
 // 🔧 FONCTION D'EXTRACTION INTELLIGENTE DES DONNÉES LOCALSTORAGE
@@ -234,57 +305,50 @@ const extractHunterFromLocalStorage = (hunterName, accountName = null) => {
     }
     
     const targetAccount = accountName || data.user?.activeAccount || 'main';
-    
-    console.log('🔎 Extraction pour:', {
-      hunterName,
-      targetAccount,
-      availableAccounts: Object.keys(data.user?.accounts || {}),
-      availableBuilds: Object.keys(data.user?.accounts?.[targetAccount]?.builds || {})
-    });
-    
     const hunterData = data.user?.accounts?.[targetAccount]?.builds?.[hunterName];
     
     if (!hunterData) {
       console.warn(`Hunter "${hunterName}" not found in account "${targetAccount}"`);
-      console.log('🔍 Builds disponibles:', Object.keys(data.user?.accounts?.[targetAccount]?.builds || {}));
-      
-      const recentBuilds = data.user?.accounts?.[targetAccount]?.recentBuilds || [];
-      if (recentBuilds.length > 0) {
-        console.log('📝 Builds récents:', recentBuilds);
-        console.log('💡 Suggestion: Essayez avec', recentBuilds[0]);
-      }
-      
       return null;
     }
     
-    const accountCores = data.user?.accounts?.[targetAccount]?.hunterCores?.[hunterName] || {};
-    const accountGems = data.user?.accounts?.[targetAccount]?.gems || {};
+    // 🔥 FIX: Récupérer l'arme correctement
     const accountWeapon = data.user?.accounts?.[targetAccount]?.hunterWeapons?.[hunterName] || {};
+    
+    // 🔥 SI PAS D'ARME, CRÉER UNE ARME PAR DÉFAUT
+    let weapon = accountWeapon;
+    if (!weapon.mainStat) {
+      const builderInfo = BUILDER_DATA[hunterName];
+      const scaleStat = builderInfo?.scaleStat || 'Attack';
+      
+      weapon = {
+        mainStat: scaleStat === 'HP' ? 6120 : 3080,
+        precision: 4000
+      };
+      
+      console.log('⚠️ Arme par défaut créée:', weapon);
+    }
     
     const result = {
       statsWithoutArtefact: hunterData.statsWithoutArtefact || {},
       artifactsData: hunterData.artifactsData || {},
       flatStats: hunterData.flatStats || {},
-      currentCores: accountCores,
-      currentGems: accountGems,
-      currentWeapon: accountWeapon,
+      currentCores: data.user?.accounts?.[targetAccount]?.hunterCores?.[hunterName] || {},
+      currentGems: data.user?.accounts?.[targetAccount]?.gems || {},
+      currentWeapon: weapon, // 🔥 ARME GARANTIE
       accountName: targetAccount,
       characterName: hunterName
     };
     
-    console.log('✅ Hunter extrait avec succès:', {
-      hunter: hunterName,
-      account: targetAccount,
-      hasStats: !!result.statsWithoutArtefact,
-      hasArtifacts: !!result.artifactsData,
-      hasCores: Object.keys(result.currentCores).length > 0,
-      hasGems: Object.keys(result.currentGems).length > 0,
-      hasWeapon: Object.keys(result.currentWeapon).length > 0
+    console.log('✅ Hunter extrait avec arme:', {
+      weapon: result.currentWeapon,
+      cores: result.currentCores,
+      gems: result.currentGems
     });
     
     return result;
   } catch (error) {
-    console.error('Error extracting hunter data from localStorage:', error);
+    console.error('Error extracting hunter data:', error);
     return null;
   }
 };
@@ -427,7 +491,13 @@ const ComparisonHunter = ({
   const [glitchEffect, setGlitchEffect] = useState(false);
   const [localHunterData, setLocalHunterData] = useState(null);
   const [currentFinalStats, setCurrentFinalStats] = useState({});
+  const [currentStatsFromArtifacts, setCurrentStatsFromArtifacts] = useState({});
+  const [currentFlatStats, setCurrentFlatStats] = useState({});
   const canvasRef = useRef(null);
+  
+  // 🆕 NOUVEAU STATE POUR LE MODE DE COMPARAISON
+  const [comparisonMode, setComparisonMode] = useState('final'); // 'final' ou 'artifacts'
+  const [hoveredArtifact, setHoveredArtifact] = useState(null);
   
   const isMobileDevice = window.innerWidth < 768;
 
@@ -444,13 +514,19 @@ const ComparisonHunter = ({
       if (extractedData) {
         setLocalHunterData(extractedData);
         
-        // 🔥 CALCUL DES STATS FINALES
-        const finalStats = calculateFinalStats(extractedData, characterToFind);
-        setCurrentFinalStats(finalStats);
+        // 🔥 CALCUL DES STATS FINALES ET STATS FROM ARTIFACTS
+        const calcResult = calculateFinalStats(extractedData, characterToFind);
+        setCurrentFinalStats(calcResult.finalStats);
+        setCurrentFlatStats(calcResult.flatStats);
+        
+        // Calculer les stats from artifacts
+        const artifactStats = calculateStatsFromArtifactsOnly(extractedData.artifactsData, calcResult.flatStats);
+        setCurrentStatsFromArtifacts(artifactStats);
         
         console.log('✅ Hunter extrait avec stats finales:', {
           character: characterToFind,
-          finalStats
+          finalStats: calcResult.finalStats,
+          artifactStats
         });
         
         if (showTankMessage) {
@@ -469,6 +545,7 @@ const ComparisonHunter = ({
           character: characterToFind
         });
         setCurrentFinalStats({});
+        setCurrentStatsFromArtifacts({});
         if (showTankMessage) {
           showTankMessage(`⚠️ ${characterToFind} non trouvé dans votre compte actif`, true, 'kaisel');
         }
@@ -564,19 +641,28 @@ const ComparisonHunter = ({
   const referenceSetAnalysis = analyzeArtifactSets(referenceHunter.currentArtifacts);
   const currentSetAnalysis = analyzeArtifactSets(currentArtifacts);
   
-  const referenceCP = referenceHunter.artifactsScore || 
-    calculateAdvancedCP(referenceHunter.statsFromArtifacts || {}, referenceHunter.character, false, referenceSetAnalysis.isOptimal);
+  // Déterminer quelles stats utiliser selon le mode
+  const referenceStatsToUse = comparisonMode === 'final' 
+    ? referenceHunter.currentStats 
+    : referenceHunter.statsFromArtifacts;
+    
+  const currentStatsToUse = comparisonMode === 'final' 
+    ? currentFinalStats 
+    : currentStatsFromArtifacts;
   
-  const currentCP = calculateAdvancedCP(statsFromArtifacts, localHunterData?.character || referenceHunter.character, false, currentSetAnalysis.isOptimal);
-
-  const referenceTotalCP = calculateAdvancedCP(referenceHunter.currentStats || {}, referenceHunter.character, false, referenceSetAnalysis.isOptimal);
-  const currentTotalCP = calculateAdvancedCP(currentFinalStats, localHunterData?.character || referenceHunter.character, false, currentSetAnalysis.isOptimal);
+  const referenceCP = comparisonMode === 'final'
+    ? calculateAdvancedCP(referenceHunter.currentStats || {}, referenceHunter.character, false, referenceSetAnalysis.isOptimal)
+    : calculateAdvancedCP(referenceHunter.statsFromArtifacts || {}, referenceHunter.character, false, referenceSetAnalysis.isOptimal);
+    
+  const currentCP = comparisonMode === 'final'
+    ? calculateAdvancedCP(currentFinalStats, localHunterData?.character || referenceHunter.character, false, currentSetAnalysis.isOptimal)
+    : calculateAdvancedCP(currentStatsFromArtifacts, localHunterData?.character || referenceHunter.character, false, currentSetAnalysis.isOptimal);
   
   const statsToCompare = ['Attack', 'Defense', 'HP', 'Critical Hit Rate', 'Critical Hit Damage', 'Damage Increase', 'Defense Penetration'];
 
   const determineWinner = () => {
-    const cpDiff = currentTotalCP - referenceTotalCP;
-    const winChance = 50 + (cpDiff / Math.max(referenceTotalCP, 1) * 50);
+    const cpDiff = currentCP - referenceCP;
+    const winChance = 50 + (cpDiff / Math.max(referenceCP, 1) * 50);
     return {
       winner: cpDiff > 0 ? 'current' : 'reference',
       winChance: Math.max(0, Math.min(100, winChance)),
@@ -585,6 +671,57 @@ const ComparisonHunter = ({
   };
 
   const battleResult = determineWinner();
+
+  // 🔧 FONCTION POUR COMPARER LES ARTEFACTS
+  const compareArtifacts = (slot) => {
+    const refArtifact = referenceHunter.currentArtifacts?.[slot];
+    const curArtifact = currentArtifacts[slot];
+    
+    if (!refArtifact || !curArtifact) return null;
+    
+    const comparison = {
+      slot,
+      mainStatMatch: refArtifact.mainStat === curArtifact.mainStat,
+      refMainStat: refArtifact.mainStat,
+      curMainStat: curArtifact.mainStat,
+      refSet: refArtifact.set || 'No Set',
+      curSet: curArtifact.set || 'No Set',
+      subStats: []
+    };
+    
+    // Comparer les substats
+    if (refArtifact.subStats && curArtifact.subStats) {
+      // Créer une map des substats pour comparaison
+      const refSubMap = {};
+      const curSubMap = {};
+      
+      refArtifact.subStats.forEach((stat, i) => {
+        if (stat && refArtifact.subStatsLevels?.[i]) {
+          refSubMap[stat] = refArtifact.subStatsLevels[i].value || 0;
+        }
+      });
+      
+      curArtifact.subStats.forEach((stat, i) => {
+        if (stat && curArtifact.subStatsLevels?.[i]) {
+          curSubMap[stat] = curArtifact.subStatsLevels[i].value || 0;
+        }
+      });
+      
+      // Comparer toutes les substats
+      const allSubStats = new Set([...Object.keys(refSubMap), ...Object.keys(curSubMap)]);
+      
+      allSubStats.forEach(stat => {
+        comparison.subStats.push({
+          stat,
+          refValue: refSubMap[stat] || 0,
+          curValue: curSubMap[stat] || 0,
+          diff: (curSubMap[stat] || 0) - (refSubMap[stat] || 0)
+        });
+      });
+    }
+    
+    return comparison;
+  };
 
   return ReactDOM.createPortal(
     <>
@@ -701,7 +838,13 @@ const ComparisonHunter = ({
           position: relative;
           overflow-y: auto;
           max-height: 85vh;
+          scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
         }
+
+        .hunter-side::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
 
         .hunter-side.reference {
           border-right: 1px solid rgba(168, 85, 247, 0.3);
@@ -776,17 +919,28 @@ const ComparisonHunter = ({
         }
 
         .battle-prediction {
-          position: absolute;
-          bottom: 20px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: rgba(0, 0, 0, 0.9);
-          border: 2px solid rgba(168, 85, 247, 0.8);
-          border-radius: 16px;
-          padding: 1rem 2rem;
-          text-align: center;
-          z-index: 20;
-        }
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.3); /* Plus transparent */
+  border: 2px solid rgba(168, 85, 247, 0.3); /* Bordure plus transparente */
+  border-radius: 16px;
+  padding: 1rem 2rem;
+  text-align: center;
+  z-index: 20;
+  opacity: 0.3; /* Opacité globale réduite */
+  transition: all 0.3s ease; /* Animation smooth */
+  cursor: pointer;
+}
+
+.battle-prediction:hover {
+  opacity: 1; /* Full opacité au hover */
+  background: rgba(0, 0, 0, 0.9); /* Background plus opaque */
+  border-color: rgba(168, 85, 247, 0.8); /* Bordure plus visible */
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.5); /* Effet glow */
+  transform: translateX(-50%) scale(1.05); /* Légère augmentation de taille */
+}
 
         .winner-glow {
           box-shadow: 
@@ -817,13 +971,98 @@ const ComparisonHunter = ({
           color: #a855f7;
         }
 
+        .mode-toggle {
+          position: absolute;
+          top: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 100;
+          background: rgba(0, 0, 0, 0.9);
+          border: 2px solid #a855f7;
+          border-radius: 30px;
+          padding: 4px;
+          display: flex;
+          gap: 4px;
+        }
+
+        .toggle-button {
+          padding: 8px 20px;
+          border: none;
+          background: transparent;
+          color: #a855f7;
+          cursor: pointer;
+          border-radius: 25px;
+          transition: all 0.3s;
+          font-weight: bold;
+          font-size: 0.9rem;
+        }
+
+        .toggle-button.active {
+          background: #a855f7;
+          color: white;
+          box-shadow: 0 0 15px #a855f7;
+        }
+
+        .artifact-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+          margin-top: 20px;
+        }
+
+        .artifact-slot {
+          background: rgba(0, 0, 0, 0.6);
+          border: 1px solid rgba(168, 85, 247, 0.3);
+          border-radius: 8px;
+          padding: 10px;
+          cursor: pointer;
+          transition: all 0.3s;
+          position: relative;
+        }
+
+        .artifact-slot:hover {
+          border-color: #a855f7;
+          background: rgba(168, 85, 247, 0.1);
+          transform: translateY(-2px);
+        }
+
+        .artifact-comparison-tooltip {
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(0, 0, 0, 0.95);
+          border: 2px solid #a855f7;
+          border-radius: 8px;
+          padding: 15px;
+          min-width: 300px;
+          z-index: 1000;
+          margin-bottom: 10px;
+          display: none;
+          scrollbar-width: none;
+  -ms-overflow-style: none;
+        }
+  .artifact-comparison-tooltip::-webkit-scrollbar {
+  display: none;
+}
+
+        .artifact-slot:hover .artifact-comparison-tooltip {
+          display: block;
+        }
+
         @media (max-width: 768px) {
           .comparison-container {
             max-width: 100%;
             margin: 0;
             border-radius: 0;
             height: 100vh;
+            scrollbar-width: none;
+  -ms-overflow-style: none;
           }
+
+  .comparison-container::-webkit-scrollbar {
+  display: none;
+}
           
           .hunter-side {
             padding: 1rem;
@@ -833,6 +1072,20 @@ const ComparisonHunter = ({
             width: 60px;
             height: 60px;
             font-size: 1.5rem;
+          }
+          
+          .mode-toggle {
+            top: 10px;
+            padding: 2px;
+          }
+          
+          .toggle-button {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+          }
+          
+          .artifact-grid {
+            grid-template-columns: 1fr;
           }
         }
       `}</style>
@@ -844,6 +1097,22 @@ const ComparisonHunter = ({
           animationPhase >= 1 ? 'hologram-effect' : ''
         }`}>
           <div className="cyber-grid" />
+          
+          {/* 🆕 TOGGLE SWITCH */}
+          <div className="mode-toggle">
+            <button 
+              className={`toggle-button ${comparisonMode === 'final' ? 'active' : ''}`}
+              onClick={() => setComparisonMode('final')}
+            >
+              Stats Finales
+            </button>
+            <button 
+              className={`toggle-button ${comparisonMode === 'artifacts' ? 'active' : ''}`}
+              onClick={() => setComparisonMode('artifacts')}
+            >
+              Stats Artefacts
+            </button>
+          </div>
           
           {animationPhase >= 2 && (
             <div className="vs-badge">
@@ -885,10 +1154,7 @@ const ComparisonHunter = ({
                       {referenceCP.toLocaleString()} CP
                     </span>
                     <p className="text-sm text-gray-300 mt-1">
-                      CP Artefacts
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Total: {referenceTotalCP.toLocaleString()} CP
+                      {comparisonMode === 'final' ? 'CP Total' : 'CP Artefacts'}
                     </p>
                   </div>
                 </div>
@@ -896,11 +1162,11 @@ const ComparisonHunter = ({
                 {/* STATS RÉFÉRENCE */}
                 <div className="space-y-4">
                   <h4 className="text-lg font-bold text-purple-400 mb-3">
-                    📊 Stats de Combat
+                    📊 Stats de Combat {comparisonMode === 'artifacts' && '(Artefacts)'}
                   </h4>
                   
                   {statsToCompare.map(stat => {
-                    const value = referenceHunter.currentStats?.[stat] || 0;
+                    const value = referenceStatsToUse?.[stat] || 0;
                     const maxValue = stat === 'HP' ? 300000 : 
                                     stat.includes('Rate') ? 20000 : 200000;
                     const percentage = (value / maxValue) * 100;
@@ -928,22 +1194,76 @@ const ComparisonHunter = ({
                   })}
                 </div>
 
-                {/* ÉQUIPEMENT RÉFÉRENCE */}
-                {referenceHunter.setAnalysis && (
-                  <div className="mt-6">
-                    <h4 className="text-lg font-bold text-blue-400 mb-3">
-                      🎨 Sets d'Artefacts
-                    </h4>
-                    <p className="text-sm text-gray-300">
-                      {referenceHunter.setAnalysis.analysis}
-                    </p>
-                    {referenceHunter.setAnalysis.isOptimal && (
-                      <div className="mt-2 text-green-400 text-sm font-bold">
-                        ✅ Set Optimal (+5% CP)
-                      </div>
-                    )}
+                {/* 🆕 GRILLE D'ARTEFACTS */}
+                <div className="mt-6">
+                  <h4 className="text-lg font-bold text-blue-400 mb-3">
+                    🎨 Artefacts Équipés
+                  </h4>
+                  <div className="artifact-grid">
+                    {['Helmet', 'Chest', 'Gloves', 'Boots', 'Necklace', 'Bracelet', 'Ring', 'Earrings'].map(slot => {
+                      const artifact = referenceHunter.currentArtifacts?.[slot];
+                      if (!artifact) return null;
+                      
+                      return (
+                        <div 
+                          key={slot} 
+                          className="artifact-slot"
+                          onMouseEnter={() => !isMobileDevice && setHoveredArtifact(slot)}
+                          onMouseLeave={() => !isMobileDevice && setHoveredArtifact(null)}
+                          onClick={() => isMobileDevice && setHoveredArtifact(hoveredArtifact === slot ? null : slot)}
+                        >
+                          <div className="text-xs font-bold text-purple-300 mb-1">{slot}</div>
+                          <div className="text-xs text-gray-400">{artifact.set || 'No Set'}</div>
+                          <div className="text-xs text-white mt-1">{artifact.mainStat}</div>
+                          
+                          {/* Tooltip de comparaison */}
+                          {hoveredArtifact === slot && (
+                            <div className="artifact-comparison-tooltip">
+                              {(() => {
+                                const comp = compareArtifacts(slot);
+                                if (!comp) return 'Pas de comparaison disponible';
+                                
+                                return (
+                                  <>
+                                    <div className="mb-2">
+                                      <div className="text-sm font-bold text-purple-400 mb-1">Main Stat</div>
+                                      <div className="flex justify-between text-xs">
+                                        <span className="text-red-400">Hall: {comp.refMainStat}</span>
+                                        <span className="text-green-400">Vous: {comp.curMainStat}</span>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="mb-2">
+                                      <div className="text-sm font-bold text-blue-400 mb-1">Sets</div>
+                                      <div className="flex justify-between text-xs">
+                                        <span className="text-red-400">{comp.refSet}</span>
+                                        <span className="text-green-400">{comp.curSet}</span>
+                                      </div>
+                                    </div>
+                                    
+                                    {comp.subStats.length > 0 && (
+                                      <div>
+                                        <div className="text-sm font-bold text-yellow-400 mb-1">Substats</div>
+                                        {comp.subStats.map((sub, idx) => (
+                                          <div key={idx} className="flex justify-between text-xs mb-1">
+                                            <span className="text-gray-300">{sub.stat}</span>
+                                            <span className={sub.diff > 0 ? 'text-green-400' : sub.diff < 0 ? 'text-red-400' : 'text-gray-400'}>
+                                              {sub.refValue} → {sub.curValue} ({sub.diff > 0 ? '+' : ''}{sub.diff})
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* CÔTÉ DROIT - HUNTER ACTUEL */}
@@ -968,13 +1288,10 @@ const ComparisonHunter = ({
                       {currentCP.toLocaleString()} CP
                     </span>
                     <p className="text-sm text-gray-300 mt-1">
-                      CP Artefacts
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Total: {currentTotalCP.toLocaleString()} CP
+                      {comparisonMode === 'final' ? 'CP Total' : 'CP Artefacts'}
                     </p>
                     {(() => {
-                      const cpDiff = currentTotalCP - referenceTotalCP;
+                      const cpDiff = currentCP - referenceCP;
                       return cpDiff !== 0 && (
                         <div className={`text-sm mt-1 ${cpDiff > 0 ? 'text-green-400' : 'text-red-400'}`}>
                           {cpDiff > 0 ? '+' : ''}{cpDiff.toLocaleString()} CP
@@ -987,12 +1304,12 @@ const ComparisonHunter = ({
                 {/* STATS ACTUELLES AVEC COMPARAISON */}
                 <div className="space-y-4">
                   <h4 className="text-lg font-bold text-purple-400 mb-3">
-                    📊 Stats de Combat
+                    📊 Stats de Combat {comparisonMode === 'artifacts' && '(Artefacts)'}
                   </h4>
                   
                   {statsToCompare.map(stat => {
-                    const refValue = referenceHunter.currentStats?.[stat] || 0;
-                    const currentValue = currentFinalStats[stat] || 0;
+                    const refValue = referenceStatsToUse?.[stat] || 0;
+                    const currentValue = currentStatsToUse[stat] || 0;
                     const { diff, percentage } = calculateStatDiff(refValue, currentValue);
                     const maxValue = stat === 'HP' ? 300000 : 
                                     stat.includes('Rate') ? 20000 : 200000;
@@ -1026,152 +1343,185 @@ const ComparisonHunter = ({
                   })}
                 </div>
 
-                {/* ÉQUIPEMENT ACTUEL */}
-                {currentArtifacts && Object.keys(currentArtifacts).length > 0 && (
-                  <div className="mt-6">
-                    <h4 className="text-lg font-bold text-blue-400 mb-3">
-                      🎨 Vos Sets d'Artefacts
-                    </h4>
-                    <div className="text-sm text-gray-300">
-                      {currentSetAnalysis.analysis || 'Aucun set complet'}
-                    </div>
-                    
-                    {/* COMPARAISON ARTEFACTS PAR SLOT */}
-                    <div className="mt-4 space-y-2 max-h-64 overflow-y-auto">
-                      {Object.entries(currentArtifacts).map(([slot, artifact]) => {
-                        const refArtifact = referenceHunter.currentArtifacts?.[slot];
-                        const hasRefArtifact = refArtifact && refArtifact.mainStat;
-                        
-                        return (
-                          <div key={slot} className="bg-black/40 rounded p-2 text-xs">
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-blue-300 font-bold">{slot}</span>
-                              <span className="text-gray-400">{artifact.set || 'No Set'}</span>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-2 text-xs">
-                              <div>
-                                <span className="text-gray-400">Main: </span>
-                                <span className="text-white">{artifact.mainStat}</span>
-                                {artifact.mainStatValue && (
-                                  <span className="text-gray-400"> (+{Math.round(artifact.mainStatValue)})</span>
-                                )}
-                              </div>
-                              
-                              {hasRefArtifact && (
-                                <div className="text-right">
-                                  <span className="text-gray-400">vs </span>
-                                  <span className="text-yellow-300">{refArtifact.mainStat}</span>
-                                </div>
-                              )}
-                            </div>
-                            
-                            {/* Substats count comparison */}
-                            <div className="mt-1 flex justify-between">
-                              <span className="text-gray-400">
-                                Subs: {artifact.subStats?.filter(s => s).length || 0}/4
-                              </span>
-                              {hasRefArtifact && (
-                                <span className="text-yellow-300">
-                                  vs {refArtifact.subStats?.filter(s => s).length || 0}/4
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* INDICATEUR SOURCE DE DONNÉES */}
-                {localHunterData && (
-                  <div className="mt-4 p-2 bg-purple-900/20 rounded border border-purple-500/30">
-                    <p className="text-xs text-purple-300">
-                      📦 Données extraites du localStorage
-                      <br />
-                      🔥 Compte: {localHunterData.accountName}
-                    </p>
-                  </div>
-                )}
-
-                {/* SUGGESTIONS D'AMÉLIORATION */}
-                <div className="mt-6 p-4 bg-black/30 rounded-lg border border-yellow-500/30">
-                  <h4 className="text-yellow-400 font-bold mb-2">
-                    💡 Suggestions Kaisel
+                {/* 🆕 GRILLE D'ARTEFACTS ACTUELLE */}
+                <div className="mt-6">
+                  <h4 className="text-lg font-bold text-blue-400 mb-3">
+                    🎨 Vos Artefacts
                   </h4>
-                  <ul className="text-sm text-gray-300 space-y-1">
-                    {(() => {
-                      const suggestions = [];
+                  <div className="artifact-grid">
+                    {['Helmet', 'Chest', 'Gloves', 'Boots', 'Necklace', 'Bracelet', 'Ring', 'Earrings'].map(slot => {
+                      const artifact = currentArtifacts[slot];
+                      if (!artifact || !artifact.mainStat) return null;
                       
-                      // Analyser les plus grosses différences
-                      statsToCompare.forEach(stat => {
-                        const refValue = referenceHunter.currentStats?.[stat] || 0;
-                        const currentValue = currentFinalStats[stat] || 0;
-                        const { diff, percentage } = calculateStatDiff(refValue, currentValue);
-                        
-                        if (percentage < -20) {
-                          suggestions.push(`Améliorer ${stat} (+${Math.abs(diff).toLocaleString()} pour égaler)`);
-                        }
-                      });
-                      
-                      if (referenceHunter.setAnalysis?.isOptimal && suggestions.length === 0) {
-                        suggestions.push('Optimiser vos sets d\'artefacts pour le bonus +5% CP');
-                      }
-                      
-                      if (suggestions.length === 0) {
-                        suggestions.push('Votre build est déjà excellent ! 🎉');
-                      }
-                      
-                      return suggestions.slice(0, 3).map((sugg, idx) => (
-                        <li key={idx}>• {sugg}</li>
-                      ));
-                    })()}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
+                      return (
+                        <div 
+                          key={slot} 
+                        className="artifact-slot"
+                         onMouseEnter={() => !isMobileDevice && setHoveredArtifact(slot)}
+                         onMouseLeave={() => !isMobileDevice && setHoveredArtifact(null)}
+                         onClick={() => isMobileDevice && setHoveredArtifact(hoveredArtifact === slot ? null : slot)}
+                       >
+                         <div className="text-xs font-bold text-purple-300 mb-1">{slot}</div>
+                         <div className="text-xs text-gray-400">{artifact.set || 'No Set'}</div>
+                         <div className="text-xs text-white mt-1">{artifact.mainStat}</div>
+                         
+                         {/* Tooltip de comparaison */}
+                         {hoveredArtifact === slot && (
+                           <div className="artifact-comparison-tooltip">
+                             {(() => {
+                               const comp = compareArtifacts(slot);
+                               if (!comp) return 'Pas de comparaison disponible';
+                               
+                               return (
+                                 <>
+                                   <div className="mb-2">
+                                     <div className="text-sm font-bold text-purple-400 mb-1">Main Stat</div>
+                                     <div className="flex justify-between text-xs">
+                                       <span className="text-red-400">Hall: {comp.refMainStat}</span>
+                                       <span className="text-green-400">Vous: {comp.curMainStat}</span>
+                                     </div>
+                                     {comp.mainStatMatch ? (
+                                       <div className="text-center text-xs text-green-400 mt-1">✓ Match!</div>
+                                     ) : (
+                                       <div className="text-center text-xs text-red-400 mt-1">✗ Différent</div>
+                                     )}
+                                   </div>
+                                   
+                                   <div className="mb-2">
+                                     <div className="text-sm font-bold text-blue-400 mb-1">Sets</div>
+                                     <div className="flex justify-between text-xs">
+                                       <span className="text-red-400">{comp.refSet}</span>
+                                       <span className="text-green-400">{comp.curSet}</span>
+                                     </div>
+                                   </div>
+                                   
+                                   {comp.subStats.length > 0 && (
+                                     <div>
+                                       <div className="text-sm font-bold text-yellow-400 mb-1">Substats</div>
+                                       {comp.subStats.map((sub, idx) => (
+                                         <div key={idx} className="flex justify-between text-xs mb-1">
+                                           <span className="text-gray-300">{sub.stat}</span>
+                                           <span className={sub.diff > 0 ? 'text-green-400' : sub.diff < 0 ? 'text-red-400' : 'text-gray-400'}>
+                                             {sub.refValue} → {sub.curValue} ({sub.diff > 0 ? '+' : ''}{sub.diff})
+                                           </span>
+                                         </div>
+                                       ))}
+                                     </div>
+                                   )}
+                                 </>
+                               );
+                             })()}
+                           </div>
+                         )}
+                       </div>
+                     );
+                   })}
+                 </div>
+               </div>
 
-          {/* 🎮 PRÉDICTION DE COMBAT BERUVIAN WORLD */}
-          {animationPhase >= 2 && currentCP > 0 && (
-            <div className="battle-prediction">
-              <h3 className="text-lg font-bold text-purple-400 mb-2">
-                🎮 Simulation Beruvian World
-              </h3>
-              <div className="flex items-center justify-center gap-4">
-                <div className={`text-center ${battleResult.winner === 'reference' ? 'text-red-400' : 'text-gray-400'}`}>
-                  <p className="text-sm">{referenceHunter.pseudo}</p>
-                  <p className="text-2xl font-bold">
-                    {battleResult.winner === 'reference' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
-                  </p>
-                </div>
-                <span className="text-purple-400 text-xl">⚔️</span>
-                <div className={`text-center ${battleResult.winner === 'current' ? 'text-green-400' : 'text-gray-400'}`}>
-                  <p className="text-sm">Vous</p>
-                  <p className="text-2xl font-bold">
-                    {battleResult.winner === 'current' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
-                  </p>
-                </div>
-              </div>
-              <p className="text-xs text-gray-400 mt-2">
-                Simulation basée sur le CP total et les stats principales
-              </p>
-            </div>
-          )}
+               {/* INDICATEUR SOURCE DE DONNÉES */}
+               {localHunterData && (
+                 <div className="mt-4 p-2 bg-purple-900/20 rounded border border-purple-500/30">
+                   <p className="text-xs text-purple-300">
+                     📦 Données extraites du localStorage
+                     <br />
+                     🔥 Compte: {localHunterData.accountName}
+                     <br />
+                     🎯 Mode: {comparisonMode === 'final' ? 'Stats Finales Complètes' : 'Stats Artefacts Uniquement'}
+                   </p>
+                 </div>
+               )}
 
-          {/* BOUTON FERMER */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-400 flex items-center justify-center transition-all hover:scale-110 z-30"
-          >
-            ✕
-          </button>
-        </div>
-      </div>
-    </>,
-    document.body
-  );
+               {/* SUGGESTIONS D'AMÉLIORATION */}
+               <div className="mt-6 p-4 bg-black/30 rounded-lg border border-yellow-500/30">
+                 <h4 className="text-yellow-400 font-bold mb-2">
+                   💡 Suggestions Kaisel
+                 </h4>
+                 <ul className="text-sm text-gray-300 space-y-1">
+                   {(() => {
+                     const suggestions = [];
+                     
+                     // Analyser les plus grosses différences
+                     statsToCompare.forEach(stat => {
+                       const refValue = referenceStatsToUse?.[stat] || 0;
+                       const currentValue = currentStatsToUse[stat] || 0;
+                       const { diff, percentage } = calculateStatDiff(refValue, currentValue);
+                       
+                       if (percentage < -20) {
+                         suggestions.push(`Améliorer ${stat} (+${Math.abs(diff).toLocaleString()} pour égaler)`);
+                       }
+                     });
+                     
+                     // Analyser les différences de mainstat
+                     let mainStatMismatches = 0;
+                     ['Helmet', 'Chest', 'Gloves', 'Boots', 'Necklace', 'Bracelet', 'Ring', 'Earrings'].forEach(slot => {
+                       const comp = compareArtifacts(slot);
+                       if (comp && !comp.mainStatMatch) {
+                         mainStatMismatches++;
+                       }
+                     });
+                     
+                     if (mainStatMismatches > 2) {
+                       suggestions.push(`${mainStatMismatches} artefacts ont des main stats différentes du Hall of Flame`);
+                     }
+                     
+                     if (referenceHunter.setAnalysis?.isOptimal && !currentSetAnalysis.isOptimal) {
+                       suggestions.push('Optimiser vos sets d\'artefacts pour le bonus +5% CP');
+                     }
+                     
+                     if (suggestions.length === 0) {
+                       suggestions.push('Votre build est déjà excellent ! 🎉');
+                     }
+                     
+                     return suggestions.slice(0, 3).map((sugg, idx) => (
+                       <li key={idx}>• {sugg}</li>
+                     ));
+                   })()}
+                 </ul>
+               </div>
+             </div>
+           </div>
+         )}
+
+         {/* 🎮 PRÉDICTION DE COMBAT BERUVIAN WORLD */}
+         {animationPhase >= 2 && currentCP > 0 && (
+           <div className="battle-prediction">
+             <h3 className="text-lg font-bold text-purple-400 mb-2">
+               🎮 Simulation Beruvian World ({comparisonMode === 'artifacts' ? 'Artefacts' : 'Total'})
+             </h3>
+             <div className="flex items-center justify-center gap-4">
+               <div className={`text-center ${battleResult.winner === 'reference' ? 'text-red-400' : 'text-gray-400'}`}>
+                 <p className="text-sm">{referenceHunter.pseudo}</p>
+                 <p className="text-2xl font-bold">
+                   {battleResult.winner === 'reference' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
+                 </p>
+               </div>
+               <span className="text-purple-400 text-xl">⚔️</span>
+               <div className={`text-center ${battleResult.winner === 'current' ? 'text-green-400' : 'text-gray-400'}`}>
+                 <p className="text-sm">Vous</p>
+                 <p className="text-2xl font-bold">
+                   {battleResult.winner === 'current' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
+                 </p>
+               </div>
+             </div>
+             <p className="text-xs text-gray-400 mt-2">
+               Simulation basée sur le CP {comparisonMode === 'artifacts' ? 'des artefacts' : 'total'} et les stats principales
+             </p>
+           </div>
+         )}
+
+         {/* BOUTON FERMER */}
+         <button
+           onClick={onClose}
+           className="absolute top-4 right-4 w-10 h-10 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-400 flex items-center justify-center transition-all hover:scale-110 z-30"
+         >
+           ✕
+         </button>
+       </div>
+     </div>
+   </>,
+   document.body
+ );
 };
 
 export default ComparisonHunter;
