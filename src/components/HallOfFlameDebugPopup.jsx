@@ -750,735 +750,903 @@ const HallOfFlameDebugPopup = ({
           console.log('📦 Données sauvegardées localement:', hunterData);
           console.log('📊 Total en cache local:', localData.length);
           
-       } catch (localError) {
-         console.error('❌ Erreur sauvegarde locale:', localError);
-         
-         // Fallback: afficher les données dans la console
-         console.log('🏆 Données complètes (copiez pour sauvegarder):', JSON.stringify(hunterData, null, 2));
-         
-         showTankMessage("❌ Impossible de sauvegarder. Vérifiez la console pour récupérer les données.", true, 'kaisel');
-       }
-     }
-   }
-   
-   // Callback onSave
-   if (onSave && typeof onSave === 'function') {
-     onSave(hunterData);
-   }
-   
-   // 🆕 Navigation adaptée selon le résultat v4.0
-   setTimeout(() => {
-     const message = submissionResponse?.isDuplicate ? 
-       "⚠️ Soumission en attente de validation (doublon détecté).\nVoulez-vous voir le Hall Of Flame ?" :
-       "📋 Soumission en attente de validation.\nVoulez-vous voir le Hall Of Flame ?";
-       
-     if (window.confirm(message)) {
-       if (onNavigateToHallOfFlame) {
-         onNavigateToHallOfFlame();
-       }
-     }
-   }, 1000);
-   
-   onClose();
- }, [currentStats, formData, selectedCharacter, characterData, currentArtifacts, currentCores, currentGems, currentWeapon, statsFromArtifacts, memoizedCpTotal, memoizedCpArtifacts, memoizedSetAnalysis, validationErrors, uploadToDigitalOcean, showTankMessage, onSave, onNavigateToHallOfFlame, onClose, submissionResponse]);
-
- // 🎨 FORMATER LES STATS POUR AFFICHAGE
- const formatStat = useCallback((value) => {
-   if (typeof value !== 'number') return '0';
-   return Math.round(value).toLocaleString();
- }, []);
-
- const hasData = currentStats && Object.keys(currentStats).length > 0;
-
- if (!isOpen) return null;
-
- return (
-   <>
-     {/* 🎨 STYLES CSS AVANCÉS */}
-     <style jsx="true">{`
-       @keyframes flame-appear {
-         0% { opacity: 0; transform: scale(0.8) translateY(50px); }
-         100% { opacity: 1; transform: scale(1) translateY(0); }
-       }
-
-       @keyframes data-pulse {
-         0%, 100% { background: rgba(0, 255, 127, 0.05); }
-         50% { background: rgba(0, 255, 127, 0.15); }
-       }
-
-       .flame-popup {
-         backdrop-filter: blur(12px);
-         background: linear-gradient(135deg, 
-           rgba(26, 26, 46, 0.95) 0%, 
-           rgba(22, 33, 62, 0.98) 50%, 
-           rgba(15, 20, 25, 0.95) 100%);
-         border: 2px solid #ffd700;
-         animation: flame-appear 0.6s ease-out;
-       }
-
-       .flame-input {
-         background: rgba(0, 0, 0, 0.3);
-         border: 1px solid rgba(255, 215, 0, 0.3);
-         transition: all 0.3s ease;
-       }
-
-       .flame-input:focus {
-         border-color: #ffd700;
-         box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
-         background: rgba(0, 0, 0, 0.5);
-       }
-
-       .flame-button {
-         background: linear-gradient(135deg, #ffd700, #ffed4a);
-         color: #1a1a2e;
-         transition: all 0.3s ease;
-         font-weight: bold;
-       }
-
-       .flame-button:hover {
-         background: linear-gradient(135deg, #ffed4a, #fff59d);
-         transform: translateY(-2px);
-         box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
-       }
-
-       .flame-button:disabled {
-         background: linear-gradient(135deg, #666, #888);
-         color: #ccc;
-         cursor: not-allowed;
-         transform: none;
-       }
-
-       .auto-extracted {
-         animation: data-pulse 2s infinite;
-         border: 1px solid rgba(0, 255, 127, 0.3);
-       }
-
-       .artifact-slot {
-         background: rgba(0, 0, 0, 0.4);
-         border: 1px solid rgba(255, 215, 0, 0.2);
-         transition: all 0.3s ease;
-       }
-
-       .artifact-slot:hover {
-         border-color: rgba(255, 215, 0, 0.5);
-         background: rgba(255, 215, 0, 0.05);
-       }
-
-       .stat-comparison {
-         display: grid;
-         grid-template-columns: 1fr 1fr;
-         gap: 1rem;
-       }
-
-       .error-item {
-         background: rgba(239, 68, 68, 0.1);
-         border-left: 4px solid #ef4444;
-         padding: 8px 12px;
-         margin: 4px 0;
-         border-radius: 4px;
-       }
-
-       .success-item {
-         background: rgba(34, 197, 94, 0.1);
-         border-left: 4px solid #22c55e;
-         padding: 8px 12px;
-         margin: 4px 0;
-         border-radius: 4px;
-       }
-
-       .cp-tooltip {
-         position: absolute;
-         top: 100%;
-         left: 0;
-         margin-top: 8px;
-         background: rgba(0, 0, 0, 0.95);
-         border: 1px solid rgba(255, 215, 0, 0.5);
-         border-radius: 8px;
-         padding: 12px;
-         width: 300px;
-         z-index: 1000;
-         font-size: 12px;
-       }
-
-       .sync-banner {
-         background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 140, 0, 0.1));
-         border: 1px solid rgba(255, 215, 0, 0.5);
-         padding: 12px;
-         border-radius: 8px;
-         margin-bottom: 16px;
-         display: flex;
-         justify-content: space-between;
-         align-items: center;
-       }
-     `}</style>
-
-     {/* 🌫️ OVERLAY */}
-     <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[9999] p-4">
-       
-       {/* 🏆 POPUP PRINCIPAL */}
-       <div
-         ref={popupRef}
-         className={`flame-popup rounded-2xl shadow-2xl w-full transition-all duration-300 ${
-           isMobileDevice ? 'max-w-sm max-h-[85vh]' : 'max-w-4xl max-h-[85vh]'
-         } overflow-hidden flex flex-col`}
-       >
-         
-         {/* 🎯 HEADER */}
-         <div className="relative p-6 border-b border-yellow-500/30">
-           <div className="flex items-center justify-between">
-             <div className="flex items-center gap-3">
-               <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center">
-                 <span className="text-xl">🏆</span>
-               </div>
-               <div>
-                 <h2 className="text-xl font-bold text-yellow-400">HallOfFlame Advanced</h2>
-                 <p className="text-gray-300 text-sm">
-                   Kaisel CP System v4.0 • DigitalOcean Upload
-                   {hasData && (
-                     <span className="text-green-400 ml-2">
-                       • Total: {memoizedCpTotal.total.toLocaleString()} CP
-                       • Artifacts: {memoizedCpArtifacts.total.toLocaleString()} CP
-                     </span>
-                   )}
-                 </p>
-               </div>
-             </div>
-             
-             <button
-               onClick={onClose}
-               className="w-8 h-8 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-400 flex items-center justify-center transition-colors"
-             >
-               ✕
-             </button>
-           </div>
-           
-           {/* Progress Bar */}
-           <div className="mt-4">
-             <div className="flex justify-between text-xs text-gray-400 mb-2">
-               <span className={currentStep >= 1 ? 'text-yellow-400' : ''}>Configuration</span>
-               <span className={currentStep >= 2 ? 'text-yellow-400' : ''}>Validation</span>
-               <span className={currentStep >= 3 ? 'text-yellow-400' : ''}>Enregistrement</span>
-             </div>
-             <div className="w-full bg-gray-700 rounded-full h-2">
-               <div 
-                 className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-2 rounded-full transition-all duration-500"
-                 style={{ width: `${(currentStep / 3) * 100}%` }}
-               ></div>
-             </div>
-           </div>
-         </div>
-
-         {/* 📋 CONTENU PRINCIPAL */}
-         <div className="flex-1 p-6 overflow-y-auto min-h-0">
-           
-           {/* BANNIÈRE SYNCHRONISATION */}
-           {currentStep === 1 && (() => {
-             const cacheCount = JSON.parse(localStorage.getItem('hallofflame_cache') || '[]').length;
-             return cacheCount > 0 ? (
-               <div className="sync-banner">
-                 <div>
-                   <p className="text-yellow-300 font-bold">
-                     🔄 {cacheCount} hunter(s) en attente de synchronisation
-                   </p>
-                   <p className="text-gray-300 text-xs">
-                     Données sauvegardées localement suite à des erreurs réseau/CORS
-                   </p>
-                 </div>
-                 <button
-                   onClick={async () => {
-                     const result = await syncLocalCache(showTankMessage);
-                     if (result.success && result.synced > 0) {
-                       setFormData({...formData}); // Force re-render
-                     }
-                   }}
-                   className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg font-bold text-sm transition-colors"
-                 >
-                   Synchroniser
-                 </button>
-               </div>
-             ) : null;
-           })()}
-           
-           {/* STEP 1: CONFIGURATION & DONNÉES AVANCÉES */}
-           {currentStep === 1 && (
-             <div className="space-y-6">
-               
-               {/* 🚀 STATUS DONNÉES PROPS */}
-               {hasData ? (
-                 <div className="auto-extracted rounded-lg p-4">
-                   <h3 className="font-bold text-green-300 mb-3 flex items-center gap-2">
-                     ✅ Données Props Chargées
-                   </h3>
-                   
-                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-4">
-                     <div className="text-center">
-                       <p className="text-gray-400">Character</p>
-                       <p className="font-bold text-green-400">{selectedCharacter}</p>
-                     </div>
-                     <div className="text-center relative">
-                       <p className="text-gray-400">CP Total</p>
-                       <p 
-                         className="font-bold text-yellow-400 cursor-help"
-                         onMouseEnter={() => setShowCpTooltipTotal(true)}
-                         onMouseLeave={() => setShowCpTooltipTotal(false)}
-                       >
-                         {memoizedCpTotal.total.toLocaleString()}
-                       </p>
-                       
-                       {/* TOOLTIP CP TOTAL */}
-                       {showCpTooltipTotal && memoizedCpTotal.details.length > 0 && (
-                         <div className="cp-tooltip">
-                           <p className="text-yellow-400 font-bold mb-2">📊 CP Total:</p>
-                           {memoizedCpTotal.details.map((detail, index) => (
-                             <div key={index} className="flex justify-between items-center mb-1">
-                               <span style={{ color: detail.color }}>{detail.name}:</span>
-                               <span className="text-gray-300">
-                                 {detail.value.toLocaleString()} × {detail.multiplier} = 
-                                 <span className="text-white font-bold ml-1">{detail.points.toLocaleString()}</span>
-                               </span>
-                             </div>
-                           ))}
-                           <hr className="border-gray-600 my-2" />
-                           <div className="flex justify-between font-bold">
-                             <span className="text-yellow-400">Total:</span>
-                             <span className="text-yellow-400">{memoizedCpTotal.total.toLocaleString()}</span>
-                           </div>
-                         </div>
-                       )}
-                     </div>
-                     <div className="text-center relative">
-                       <p className="text-gray-400">CP Artifacts</p>
-                       <p 
-                         className="font-bold text-purple-400 cursor-help"
-                         onMouseEnter={() => setShowCpTooltipArtifacts(true)}
-                         onMouseLeave={() => setShowCpTooltipArtifacts(false)}
-                       >
-                         {memoizedCpArtifacts.total.toLocaleString()}
-                       </p>
-                       
-                       {/* TOOLTIP CP ARTIFACTS */}
-                       {showCpTooltipArtifacts && memoizedCpArtifacts.details.length > 0 && (
-                         <div className="cp-tooltip">
-                           <p className="text-purple-400 font-bold mb-2">🎨 CP Artifacts:</p>
-                           {memoizedCpArtifacts.details.map((detail, index) => (
-                             <div key={index} className="flex justify-between items-center mb-1">
-                               <span style={{ color: detail.color }}>{detail.name}:</span>
-                               <span className="text-gray-300">
-                                 {detail.value.toLocaleString()} × {detail.multiplier} = 
-                                 <span className="text-white font-bold ml-1">{detail.points.toLocaleString()}</span>
-                               </span>
-                             </div>
-                           ))}
-                           <hr className="border-gray-600 my-2" />
-                           <div className="flex justify-between font-bold">
-                             <span className="text-purple-400">Total:</span>
-                             <span className="text-purple-400">{memoizedCpArtifacts.total.toLocaleString()}</span>
-                           </div>
-                         </div>
-                       )}
-                     </div>
-                     <div className="text-center">
-                       <p className="text-gray-400">Scale Stat</p>
-                       <p className="font-bold text-blue-400">
-                         {BUILDER_DATA[selectedCharacter]?.scaleStat || 'N/A'}
-                       </p>
-                     </div>
-                   </div>
-
-                   {/* Sets Analysis Avancée */}
-                   <div className="bg-black/30 rounded p-3 border border-blue-500/20">
-                     <div className="flex items-center justify-between mb-2">
-                       <p className="text-blue-300 text-sm font-bold">🎨 Sets d'Artefacts:</p>
-                       {memoizedSetAnalysis.isOptimal && (
-                         <span className="text-green-400 text-xs font-bold bg-green-900/30 px-2 py-1 rounded">
-                           ✅ OPTIMAL (+5% CP)
-                         </span>
-                       )}
-                       {!memoizedSetAnalysis.isOptimal && memoizedSetAnalysis.recommendedSets.length > 0 && Object.keys(memoizedSetAnalysis.equipped).length > 0 && (
-                         <span className="text-yellow-400 text-xs font-bold bg-yellow-900/30 px-2 py-1 rounded">
-                           ⚠️ NON OPTIMAL
-                         </span>
-                       )}
-                       {Object.keys(memoizedSetAnalysis.equipped).length === 0 && (
-                         <span className="text-red-400 text-xs font-bold bg-red-900/30 px-2 py-1 rounded">
-                           ❌ AUCUN SET
-                         </span>
-                       )}
-                     </div>
-                     
-                     <p className="text-gray-300 text-xs mb-3">
-                       {memoizedSetAnalysis.analysis || "Aucun set détecté"}
-                     </p>
-                     
-                     {/* Afficher les sets recommandés */}
-                     {memoizedSetAnalysis.recommendedSets && memoizedSetAnalysis.recommendedSets.length > 0 && (
-                       <div className="mt-2 space-y-1">
-                         <p className="text-cyan-300 text-xs font-bold">🎯 Sets Recommandés:</p>
-                         {memoizedSetAnalysis.recommendedSets.map((recSet, index) => (
-                           <div key={index} className="text-xs">
-                             <span className="text-cyan-400">{recSet.name}:</span>
-                             <span className="text-gray-300 ml-1">{recSet.composition}</span>
-                             <span className="text-gray-500 ml-1">({recSet.availability})</span>
-                           </div>
-                         ))}
-                       </div>
-                     )}
-                   </div>
-                 </div>
-               ) : (
-                 <div className="bg-red-900/20 rounded-lg p-4 border border-red-500/30">
-                   <div className="text-center">
-                     <div className="text-4xl mb-2">❌</div>
-                     <p className="text-red-300">Aucune donnée props chargée</p>
-                     <p className="text-gray-400 text-sm">Vérifiez que vous avez sélectionné un personnage avec des stats</p>
-                   </div>
-                 </div>
-               )}
-
-               {/* Hunter Info Mis à Jour */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div>
-                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                     🎯 Pseudo *
-                   </label>
-                   <input
-                     type="text"
-                     value={formData.pseudo}
-                     onChange={(e) => setFormData(prev => ({...prev, pseudo: e.target.value}))}
-                     className="flame-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
-                     placeholder="Votre pseudo de jeu..."
-                     maxLength={20}
-                   />
-                 </div>
-                 
-                 <div>
-                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                     🆔 ID Account *
-                   </label>
-                   <input
-                     type="text"
-                     value={formData.accountId}
-                     onChange={(e) => setFormData(prev => ({...prev, accountId: e.target.value}))}
-                     className="flame-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
-                     placeholder="#Kly123"
-                     maxLength={15}
-                   />
-                 </div>
-               </div>
-
-               <div>
-                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                   🏰 Nom Guilde (Optionnel)
-                 </label>
-                 <input
-                   type="text"
-                   value={formData.guildName}
-                   onChange={(e) => setFormData(prev => ({...prev, guildName: e.target.value}))}
-                   className="flame-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
-                   placeholder="Nom de votre guilde..."
-                   maxLength={25}
-                 />
-               </div>
-
-               {/* 📊 COMPARAISON STATS AVANCÉE */}
-               {hasData && (
-                 <div className="bg-black/30 rounded-lg p-4 border border-purple-500/20">
-                   <h3 className="font-bold text-purple-300 mb-4 flex items-center gap-2">
-                     📊 Analyse Statistique Détaillée
-                   </h3>
-                   
-                   <div className="stat-comparison">
-                     {/* Current Stats */}
-                     <div>
-                       <h4 className="text-sm font-bold text-yellow-300 mb-2">⚡ Stats Totales</h4>
-                       <div className="space-y-2 text-xs">
-                         <div className="flex justify-between">
-                           <span className="text-gray-400">HP:</span>
-                           <span className="text-green-400">{formatStat(currentStats.HP)}</span>
-                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-gray-400">Attack:</span>
-                           <span className="text-red-400">{formatStat(currentStats.Attack)}</span>
-                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-gray-400">Defense:</span>
-                           <span className="text-blue-400">{formatStat(currentStats.Defense)}</span>
-                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-gray-400">Crit Rate:</span>
-                           <span className="text-yellow-400">{formatStat(currentStats["Critical Hit Rate"])}</span>
-                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-gray-400">Crit Dmg:</span>
-                           <span className="text-orange-400">{formatStat(currentStats["Critical Hit Damage"])}</span>
-                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-gray-400">Dmg Inc:</span>
-                           <span className="text-purple-400">{formatStat(currentStats["Damage Increase"])}</span>
-                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-gray-400">Def Pen:</span>
-                           <span className="text-pink-400">{formatStat(currentStats["Defense Penetration"])}</span>
-                         </div>
-                       </div>
-                     </div>
-
-                     {/* Stats From Artifacts */}
-                     <div>
-                       <h4 className="text-sm font-bold text-purple-300 mb-2">🎨 Stats des Artefacts</h4>
-                       <div className="space-y-2 text-xs">
-                         <div className="flex justify-between">
-                           <span className="text-gray-400">HP:</span>
-                           <span className="text-green-400">{formatStat(statsFromArtifacts.HP)}</span>
-                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-gray-400">Attack:</span>
-                           <span className="text-red-400">{formatStat(statsFromArtifacts.Attack)}</span>
-                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-gray-400">Defense:</span>
-                           <span className="text-blue-400">{formatStat(statsFromArtifacts.Defense)}</span>
-                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-gray-400">Crit Rate:</span>
-                           <span className="text-yellow-400">{formatStat(statsFromArtifacts["Critical Hit Rate"])}</span>
-                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-gray-400">Crit Dmg:</span>
-                           <span className="text-orange-400">{formatStat(statsFromArtifacts["Critical Hit Damage"])}</span>
-                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-gray-400">Dmg Inc:</span>
-                           <span className="text-purple-400">{formatStat(statsFromArtifacts["Damage Increase"])}</span>
-                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-gray-400">Def Pen:</span>
-                           <span className="text-pink-400">{formatStat(statsFromArtifacts["Defense Penetration"])}</span>
-                         </div>
-                       </div>
-                     </div>
-                   </div>
-                 </div>
-               )}
-
-               {/* Screenshots Upload DigitalOcean */}
-               <div>
-                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                   📸 Screenshots * (Upload DigitalOcean)
-                   <span className={`text-xs ml-2 ${window.location.hostname === 'localhost' ? 'text-yellow-400' : 'text-red-400'}`}>
-                     {window.location.hostname === 'localhost' 
-                       ? '(Optionnel en local)' 
-                       : '(Obligatoire pour validation)'
-                     }
-                   </span>
-                 </label>
-                 <input
-                   type="file"
-                   multiple
-                   accept="image/*"
-                   onChange={(e) => setFormData(prev => ({...prev, screenshots: Array.from(e.target.files)}))}
-                   className="flame-input w-full px-4 py-3 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-yellow-500 file:text-black hover:file:bg-yellow-400"
-                 />
-                 {formData.screenshots.length > 0 ? (
-                   <p className="text-green-400 text-sm mt-2">
-                     ✅ {formData.screenshots.length} screenshot(s) sélectionné(s) - Seront uploadés sur DigitalOcean
-                   </p>
-                 ) : (
-                   <p className={`text-sm mt-2 ${window.location.hostname === 'localhost' ? 'text-yellow-400' : 'text-red-400'}`}>
-                     {window.location.hostname === 'localhost' 
-                       ? "⚠️ Screenshots optionnels en local" 
-                       : "❌ Screenshots requis pour soumettre (max 10MB par image)"
-                     }
-                   </p>
-                 )}
-               </div>
-
-               <div>
-                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                   📝 Notes (optionnel)
-                 </label>
-                 <textarea
-                   value={formData.notes}
-                   onChange={(e) => setFormData(prev => ({...prev, notes: e.target.value}))}
-                   className="flame-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400 resize-none"
-                   placeholder="Commentaires sur ce build..."
-                   rows="3"
-                   maxLength={200}
-                 />
-               </div>
-             </div>
-           )}
-
-          🔧 Voici la suite complète du STEP 2: VALIDATION :
-jsx{/* STEP 2: VALIDATION */}
-{currentStep === 2 && (
-  <div className="flex flex-col h-full">
-    <div className={`flex-1 flex items-center justify-center py-4 ${isValidating ? 'validation-screen' : ''}`}>
-      {isValidating ? (
-        <div className="text-center">
-          <div className="text-4xl mb-4 animate-spin">🔍</div>
-          <h3 className="text-lg font-bold text-yellow-400 mb-2">Validation avancée en cours...</h3>
-          <p className="text-gray-400 text-sm">Kaisel analyse le système CP + Sets...</p>
+        } catch (localError) {
+          console.error('❌ Erreur sauvegarde locale:', localError);
           
-          <div className="mt-4 space-y-1 text-xs">
-            <div className="text-gray-300">✓ Vérification scaleStat...</div>
-            <div className="text-gray-300">✓ Validation multiplicateurs CP...</div>
-            <div className="text-gray-300">✓ Analyse sets d'artefacts...</div>
-            <div className="text-gray-300">✓ Validation bonus optimal...</div>
-          </div>
-        </div>
-      ) : (
-        <div className="text-center max-w-md mx-auto">
-          {validationErrors.length > 0 ? (
-            <>
-              <div className="text-4xl mb-4">❌</div>
-              <h3 className="text-lg font-bold text-red-400 mb-4">Erreurs détectées</h3>
-              
-              <div className="space-y-2 text-left mb-6 max-h-48 overflow-y-auto">
-                {validationErrors.map((error, index) => (
-                  <div key={index} className="error-item text-sm text-red-300">
-                    {error}
-                  </div>
-                ))}
+          // Fallback: afficher les données dans la console
+          console.log('🏆 Données complètes (copiez pour sauvegarder):', JSON.stringify(hunterData, null, 2));
+          
+          showTankMessage("❌ Impossible de sauvegarder. Vérifiez la console pour récupérer les données.", true, 'kaisel');
+        }
+      }
+    }
+    
+    // Callback onSave
+    if (onSave && typeof onSave === 'function') {
+      onSave(hunterData);
+    }
+    
+    // 🆕 Navigation adaptée selon le résultat v4.0
+    setTimeout(() => {
+      const message = submissionResponse?.isDuplicate ? 
+        "⚠️ Soumission en attente de validation (doublon détecté).\nVoulez-vous voir le Hall Of Flame ?" :
+        "📋 Soumission en attente de validation.\nVoulez-vous voir le Hall Of Flame ?";
+        
+      if (window.confirm(message)) {
+        if (onNavigateToHallOfFlame) {
+          onNavigateToHallOfFlame();
+        }
+      }
+    }, 1000);
+    
+    onClose();
+  }, [currentStats, formData, selectedCharacter, characterData, currentArtifacts, currentCores, currentGems, currentWeapon, statsFromArtifacts, memoizedCpTotal, memoizedCpArtifacts, memoizedSetAnalysis, validationErrors, uploadToDigitalOcean, showTankMessage, onSave, onNavigateToHallOfFlame, onClose, submissionResponse]);
+
+  // 🎨 FORMATER LES STATS POUR AFFICHAGE
+  const formatStat = useCallback((value) => {
+    if (typeof value !== 'number') return '0';
+    return Math.round(value).toLocaleString();
+  }, []);
+
+  const hasData = currentStats && Object.keys(currentStats).length > 0;
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* 🎨 STYLES CSS AVANCÉS */}
+      <style jsx="true">{`
+        @keyframes flame-appear {
+          0% { opacity: 0; transform: scale(0.8) translateY(50px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        @keyframes data-pulse {
+          0%, 100% { background: rgba(0, 255, 127, 0.05); }
+          50% { background: rgba(0, 255, 127, 0.15); }
+        }
+
+        .flame-popup {
+          backdrop-filter: blur(12px);
+          background: linear-gradient(135deg, 
+            rgba(26, 26, 46, 0.95) 0%, 
+            rgba(22, 33, 62, 0.98) 50%, 
+            rgba(15, 20, 25, 0.95) 100%);
+          border: 2px solid #ffd700;
+          animation: flame-appear 0.6s ease-out;
+        }
+
+        .flame-input {
+          background: rgba(0, 0, 0, 0.3);
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          transition: all 0.3s ease;
+        }
+
+        .flame-input:focus {
+          border-color: #ffd700;
+          box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+          background: rgba(0, 0, 0, 0.5);
+        }
+
+        .flame-button {
+          background: linear-gradient(135deg, #ffd700, #ffed4a);
+          color: #1a1a2e;
+          transition: all 0.3s ease;
+          font-weight: bold;
+        }
+
+        .flame-button:hover {
+          background: linear-gradient(135deg, #ffed4a, #fff59d);
+          transform: translateY(-2px);
+          box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
+        }
+
+        .flame-button:disabled {
+          background: linear-gradient(135deg, #666, #888);
+          color: #ccc;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        .auto-extracted {
+          animation: data-pulse 2s infinite;
+          border: 1px solid rgba(0, 255, 127, 0.3);
+        }
+
+        .artifact-slot {
+          background: rgba(0, 0, 0, 0.4);
+          border: 1px solid rgba(255, 215, 0, 0.2);
+          transition: all 0.3s ease;
+        }
+
+        .artifact-slot:hover {
+          border-color: rgba(255, 215, 0, 0.5);
+          background: rgba(255, 215, 0, 0.05);
+        }
+
+        .stat-comparison {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+        }
+
+        .error-item {
+          background: rgba(239, 68, 68, 0.1);
+          border-left: 4px solid #ef4444;
+          padding: 8px 12px;
+          margin: 4px 0;
+          border-radius: 4px;
+        }
+
+        .success-item {
+          background: rgba(34, 197, 94, 0.1);
+          border-left: 4px solid #22c55e;
+          padding: 8px 12px;
+          margin: 4px 0;
+          border-radius: 4px;
+        }
+
+        .cp-tooltip {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          margin-top: 8px;
+          background: rgba(0, 0, 0, 0.95);
+          border: 1px solid rgba(255, 215, 0, 0.5);
+          border-radius: 8px;
+          padding: 12px;
+          width: 300px;
+          z-index: 1000;
+          font-size: 12px;
+        }
+
+        .sync-banner {
+          background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 140, 0, 0.1));
+          border: 1px solid rgba(255, 215, 0, 0.5);
+          padding: 12px;
+          border-radius: 8px;
+          margin-bottom: 16px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+      `}</style>
+
+      {/* 🌫️ OVERLAY */}
+      <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[9999] p-4">
+        
+        {/* 🏆 POPUP PRINCIPAL */}
+        <div
+          ref={popupRef}
+          className={`flame-popup rounded-2xl shadow-2xl w-full transition-all duration-300 ${
+            isMobileDevice ? 'max-w-sm max-h-[85vh]' : 'max-w-4xl max-h-[85vh]'
+          } overflow-hidden flex flex-col`}
+        >
+          
+          {/* 🎯 HEADER */}
+          <div className="relative p-6 border-b border-yellow-500/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center">
+                  <span className="text-xl">🏆</span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-yellow-400">HallOfFlame Advanced</h2>
+                  <p className="text-gray-300 text-sm">
+                    Kaisel CP System v4.0 • DigitalOcean Upload
+                    {hasData && (
+                      <span className="text-green-400 ml-2">
+                        • Total: {memoizedCpTotal.total.toLocaleString()} CP
+                        • Artifacts: {memoizedCpArtifacts.total.toLocaleString()} CP
+                      </span>
+                    )}
+                  </p>
+                </div>
               </div>
-            </>
-          ) : (
-            <>
-              <div className="text-4xl mb-4">✅</div>
-              <h3 className="text-lg font-bold text-green-400 mb-4">Validation avancée réussie !</h3>
               
-              <div className="space-y-2 text-left mb-6">
-                <div className="success-item text-sm text-green-300">
-                  ✅ Système CP avancé validé
+              <button
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-400 flex items-center justify-center transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="mt-4">
+              <div className="flex justify-between text-xs text-gray-400 mb-2">
+                <span className={currentStep >= 1 ? 'text-yellow-400' : ''}>Configuration</span>
+                <span className={currentStep >= 2 ? 'text-yellow-400' : ''}>Validation</span>
+                <span className={currentStep >= 3 ? 'text-yellow-400' : ''}>Enregistrement</span>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${(currentStep / 3) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          {/* 📋 CONTENU PRINCIPAL */}
+          <div className="flex-1 p-6 overflow-y-auto min-h-0">
+            
+            {/* BANNIÈRE SYNCHRONISATION */}
+            {currentStep === 1 && (() => {
+              const cacheCount = JSON.parse(localStorage.getItem('hallofflame_cache') || '[]').length;
+              return cacheCount > 0 ? (
+                <div className="sync-banner">
+                  <div>
+                    <p className="text-yellow-300 font-bold">
+                      🔄 {cacheCount} hunter(s) en attente de synchronisation
+                    </p>
+                    <p className="text-gray-300 text-xs">
+                      Données sauvegardées localement suite à des erreurs réseau/CORS
+                    </p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const result = await syncLocalCache(showTankMessage);
+                      if (result.success && result.synced > 0) {
+                        setFormData({...formData}); // Force re-render
+                      }
+                    }}
+                    className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg font-bold text-sm transition-colors"
+                  >
+                    Synchroniser
+                  </button>
                 </div>
-                <div className="success-item text-sm text-green-300">
-                  ✅ ScaleStat détecté: {BUILDER_DATA[selectedCharacter]?.scaleStat}
-                </div>
-                <div className="success-item text-sm text-green-300">
-                  ✅ Stats totales: {memoizedCpTotal.total.toLocaleString()} CP
-                </div>
-                {memoizedSetAnalysis.isOptimal && (
-                  <div className="success-item text-sm text-green-300">
-                    🏆 Set optimal détecté ! Bonus +5% CP appliqué
+              ) : null;
+            })()}
+            
+            {/* STEP 1: CONFIGURATION & DONNÉES AVANCÉES */}
+            {currentStep === 1 && (
+              <div className="space-y-6">
+                
+                {/* 🚀 STATUS DONNÉES PROPS */}
+                {hasData ? (
+                  <div className="auto-extracted rounded-lg p-4">
+                    <h3 className="font-bold text-green-300 mb-3 flex items-center gap-2">
+                      ✅ Données Props Chargées
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-4">
+                      <div className="text-center">
+                        <p className="text-gray-400">Character</p>
+                        <p className="font-bold text-green-400">{selectedCharacter}</p>
+                      </div>
+                      <div className="text-center relative">
+                        <p className="text-gray-400">CP Total</p>
+                        <p 
+                          className="font-bold text-yellow-400 cursor-help"
+                          onMouseEnter={() => setShowCpTooltipTotal(true)}
+                          onMouseLeave={() => setShowCpTooltipTotal(false)}
+                        >
+                          {memoizedCpTotal.total.toLocaleString()}
+                        </p>
+                        
+                        {/* TOOLTIP CP TOTAL */}
+                        {showCpTooltipTotal && memoizedCpTotal.details.length > 0 && (
+                          <div className="cp-tooltip">
+                            <p className="text-yellow-400 font-bold mb-2">📊 CP Total:</p>
+                            {memoizedCpTotal.details.map((detail, index) => (
+                              <div key={index} className="flex justify-between items-center mb-1">
+                                <span style={{ color: detail.color }}>{detail.name}:</span>
+                                <span className="text-gray-300">
+                                  {detail.value.toLocaleString()} × {detail.multiplier} = 
+                                  <span className="text-white font-bold ml-1">{detail.points.toLocaleString()}</span>
+                                </span>
+                              </div>
+                            ))}
+                            <hr className="border-gray-600 my-2" />
+                            <div className="flex justify-between font-bold">
+                              <span className="text-yellow-400">Total:</span>
+                              <span className="text-yellow-400">{memoizedCpTotal.total.toLocaleString()}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-center relative">
+                        <p className="text-gray-400">CP Artifacts</p>
+                        <p 
+                          className="font-bold text-purple-400 cursor-help"
+                          onMouseEnter={() => setShowCpTooltipArtifacts(true)}
+                          onMouseLeave={() => setShowCpTooltipArtifacts(false)}
+                        >
+                          {memoizedCpArtifacts.total.toLocaleString()}
+                        </p>
+                        
+                        {/* TOOLTIP CP ARTIFACTS */}
+                        {showCpTooltipArtifacts && memoizedCpArtifacts.details.length > 0 && (
+                          <div className="cp-tooltip">
+                            <p className="text-purple-400 font-bold mb-2">🎨 CP Artifacts:</p>
+                            {memoizedCpArtifacts.details.map((detail, index) => (
+                              <div key={index} className="flex justify-between items-center mb-1">
+                                <span style={{ color: detail.color }}>{detail.name}:</span>
+                                <span className="text-gray-300">
+                                  {detail.value.toLocaleString()} × {detail.multiplier} = 
+                                  <span className="text-white font-bold ml-1">{detail.points.toLocaleString()}</span>
+                                </span>
+                              </div>
+                            ))}
+                            <hr className="border-gray-600 my-2" />
+                            <div className="flex justify-between font-bold">
+                              <span className="text-purple-400">Total:</span>
+                              <span className="text-purple-400">{memoizedCpArtifacts.total.toLocaleString()}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-center">
+                        <p className="text-gray-400">Scale Stat</p>
+                        <p className="font-bold text-blue-400">
+                          {BUILDER_DATA[selectedCharacter]?.scaleStat || 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Sets Analysis Avancée */}
+                    <div className="bg-black/30 rounded p-3 border border-blue-500/20">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-blue-300 text-sm font-bold">🎨 Sets d'Artefacts:</p>
+                        {memoizedSetAnalysis.isOptimal && (
+                          <span className="text-green-400 text-xs font-bold bg-green-900/30 px-2 py-1 rounded">
+                            ✅ OPTIMAL (+5% CP)
+                          </span>
+                        )}
+                        {!memoizedSetAnalysis.isOptimal && memoizedSetAnalysis.recommendedSets.length > 0 && Object.keys(memoizedSetAnalysis.equipped).length > 0 && (
+                          <span className="text-yellow-400 text-xs font-bold bg-yellow-900/30 px-2 py-1 rounded">
+                            ⚠️ NON OPTIMAL
+                          </span>
+                        )}
+                        {Object.keys(memoizedSetAnalysis.equipped).length === 0 && (
+                          <span className="text-red-400 text-xs font-bold bg-red-900/30 px-2 py-1 rounded">
+                            ❌ AUCUN SET
+                          </span>
+                        )}
+                      </div>
+                      
+                      <p className="text-gray-300 text-xs mb-3">
+                        {memoizedSetAnalysis.analysis || "Aucun set détecté"}
+                      </p>
+                      
+                      {/* Afficher les sets recommandés */}
+                      {memoizedSetAnalysis.recommendedSets && memoizedSetAnalysis.recommendedSets.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          <p className="text-cyan-300 text-xs font-bold">🎯 Sets Recommandés:</p>
+                          {memoizedSetAnalysis.recommendedSets.map((recSet, index) => (
+                            <div key={index} className="text-xs">
+                              <span className="text-cyan-400">{recSet.name}:</span>
+                              <span className="text-gray-300 ml-1">{recSet.composition}</span>
+                              <span className="text-gray-500 ml-1">({recSet.availability})</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-red-900/20 rounded-lg p-4 border border-red-500/30">
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">❌</div>
+                      <p className="text-red-300">Aucune donnée props chargée</p>
+                      <p className="text-gray-400 text-sm">Vérifiez que vous avez sélectionné un personnage avec des stats</p>
+                    </div>
                   </div>
                 )}
-                <div className="success-item text-sm text-green-300">
-                  ✅ Prêt pour le HallOfFlame
+
+                {/* Hunter Info Mis à Jour */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      🎯 Pseudo *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.pseudo}
+                      onChange={(e) => setFormData(prev => ({...prev, pseudo: e.target.value}))}
+                      className="flame-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
+                      placeholder="Votre pseudo de jeu..."
+                      maxLength={20}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      🆔 ID Account *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.accountId}
+                      onChange={(e) => setFormData(prev => ({...prev, accountId: e.target.value}))}
+                      className="flame-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
+                      placeholder="#Kly123"
+                      maxLength={15}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    🏰 Nom Guilde (Optionnel)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.guildName}
+                    onChange={(e) => setFormData(prev => ({...prev, guildName: e.target.value}))}
+                    className="flame-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400"
+                    placeholder="Nom de votre guilde..."
+                    maxLength={25}
+                  />
+                </div>
+
+                {/* 🆕 AFFICHAGE WEAPON, CORES ET GEMS */}
+                {hasData && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    {/* Weapon */}
+                    {currentWeapon && Object.keys(currentWeapon).length > 0 && (
+                      <div className="bg-black/30 rounded-lg p-3 border border-red-500/20">
+                        <h4 className="text-red-400 font-bold text-sm mb-2">⚔️ Arme</h4>
+                        <div className="text-xs space-y-1">
+                          {/* Afficher la stat principale selon le scale stat */}
+                          {(() => {
+                            const scaleStat = BUILDER_DATA[selectedCharacter]?.scaleStat;
+                            const mainStatValue = currentWeapon.mainStat || 0;
+                            
+                            if (scaleStat === "Defense") {
+                              return (
+                                <p className="text-blue-400">
+                                  Defense: <span className="text-white font-bold">{formatStat(mainStatValue)}</span>
+                                </p>
+                              );
+                            } else if (scaleStat === "Attack") {
+                              return (
+                                <p className="text-red-400">
+                                  Attack: <span className="text-white font-bold">{formatStat(mainStatValue)}</span>
+                                </p>
+                              );
+                            } else if (scaleStat === "HP") {
+                              return (
+                                <p className="text-green-400">
+                                  HP: <span className="text-white font-bold">{formatStat(mainStatValue)}</span>
+                                </p>
+                              );
+                            }
+                            return null;
+                          })()}
+                          
+                          {/* Afficher la précision */}
+                          {currentWeapon.precision && (
+                            <p className="text-yellow-400">
+                              Precision: <span className="text-white font-bold">{formatStat(currentWeapon.precision)}</span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Cores */}
+                    {currentCores && Object.keys(currentCores).length > 0 && (
+                      <div className="bg-black/30 rounded-lg p-3 border border-orange-500/20">
+                        <h4 className="text-orange-400 font-bold text-sm mb-2">🔴 Noyaux ({Object.keys(currentCores).length})</h4>
+                        <div className="text-xs space-y-2">
+                          {Object.entries(currentCores).map(([slot, core]) => (
+                            <div key={slot} className="border-b border-gray-700 pb-1 last:border-0">
+                              <p className="font-bold text-orange-300">{slot}:</p>
+                              {core.primary && (
+                                <p className="text-gray-300 ml-2">
+                                  {core.primary}: <span className="text-white font-bold">{formatStat(core.primaryValue || 0)}</span>
+                                </p>
+                              )}
+                              {core.secondary && (
+                                <p className="text-gray-300 ml-2">
+                                  {core.secondary}: <span className="text-white font-bold">{formatStat(core.secondaryValue || 0)}</span>
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Gems */}
+                    {currentGems && Object.keys(currentGems).length > 0 && (
+                      <div className="bg-black/30 rounded-lg p-3 border border-pink-500/20">
+                        <h4 className="text-pink-400 font-bold text-sm mb-2">💎 Gemmes ({Object.keys(currentGems).length})</h4>
+                        <div className="text-xs space-y-2">
+                          {Object.entries(currentGems).map(([color, gemData]) => {
+                            // Déterminer la couleur d'affichage selon le type de gemme
+                            const gemColors = {
+                              'Red': '#ef4444',
+                              'Blue': '#3b82f6',
+                              'Green': '#10b981',
+                              'Purple': '#a855f7',
+                              'Yellow': '#eab308'
+                            };
+                            const displayColor = gemColors[color] || '#ec4899';
+                            
+                            return (
+                              <div key={color} className="border-b border-gray-700 pb-1 last:border-0">
+                                <p style={{ color: displayColor }} className="font-bold">{color}:</p>
+                                {/* Boucler sur toutes les propriétés de la gemme */}
+                                {gemData && typeof gemData === 'object' && Object.entries(gemData).map(([stat, value]) => {
+                                  // Ignorer les propriétés non-stat comme 'name', 'type', etc.
+                                  if (['name', 'type', 'level', 'color'].includes(stat)) return null;
+                                  
+                                  return (
+                                    <p key={stat} className="ml-2 text-gray-300">
+                                      {stat}: <span className="text-white font-bold">+{formatStat(value || 0)}</span>
+                                    </p>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 📊 COMPARAISON STATS AVANCÉE */}
+                {hasData && (
+                  <div className="bg-black/30 rounded-lg p-4 border border-purple-500/20">
+                    <h3 className="font-bold text-purple-300 mb-4 flex items-center gap-2">
+                      📊 Analyse Statistique Détaillée
+                    </h3>
+                    
+                    <div className="stat-comparison">
+                      {/* Current Stats */}
+                      <div>
+                        <h4 className="text-sm font-bold text-yellow-300 mb-2">⚡ Stats Totales</h4>
+                        <div className="space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">HP:</span>
+                            <span className="text-green-400">{formatStat(currentStats.HP)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Attack:</span>
+                            <span className="text-red-400">{formatStat(currentStats.Attack)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Defense:</span>
+                            <span className="text-blue-400">{formatStat(currentStats.Defense)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Crit Rate:</span>
+                            <span className="text-yellow-400">{formatStat(currentStats["Critical Hit Rate"])}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Crit Dmg:</span>
+                            <span className="text-orange-400">{formatStat(currentStats["Critical Hit Damage"])}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Dmg Inc:</span>
+                            <span className="text-purple-400">{formatStat(currentStats["Damage Increase"])}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Def Pen:</span>
+                            <span className="text-pink-400">{formatStat(currentStats["Defense Penetration"])}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Stats From Artifacts */}
+                      <div>
+                        <h4 className="text-sm font-bold text-purple-300 mb-2">🎨 Stats des Artefacts</h4>
+                        <div className="space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">HP:</span>
+                            <span className="text-green-400">{formatStat(statsFromArtifacts.HP)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Attack:</span>
+                            <span className="text-red-400">{formatStat(statsFromArtifacts.Attack)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Defense:</span>
+                            <span className="text-blue-400">{formatStat(statsFromArtifacts.Defense)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Crit Rate:</span>
+                            <span className="text-yellow-400">{formatStat(statsFromArtifacts["Critical Hit Rate"])}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Crit Dmg:</span>
+                            <span className="text-orange-400">{formatStat(statsFromArtifacts["Critical Hit Damage"])}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Dmg Inc:</span>
+                            <span className="text-purple-400">{formatStat(statsFromArtifacts["Damage Increase"])}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Def Pen:</span>
+                            <span className="text-pink-400">{formatStat(statsFromArtifacts["Defense Penetration"])}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 🎨 AFFICHAGE DÉTAILLÉ DES ARTEFACTS */}
+                {hasData && currentArtifacts && Object.keys(currentArtifacts).length > 0 && (
+                  <div className="bg-black/30 rounded-lg p-4 border border-yellow-500/20 mb-4">
+                    <h3 className="font-bold text-yellow-300 mb-3 flex items-center gap-2">
+                      🎨 Artefacts Équipés ({Object.keys(currentArtifacts).length}/8)
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {Object.entries(currentArtifacts).map(([slot, artifact]) => (
+                        <div key={slot} className="artifact-slot rounded p-3">
+                          <h4 className="text-yellow-400 font-bold text-xs mb-1">{slot}</h4>
+                          <p className="text-blue-400 text-xs mb-1">{artifact.set || 'Aucun Set'}</p>
+                          
+                          <div className="space-y-1">
+                            <p className="text-gray-300 text-xs">
+                              Main: <span className="text-white">{artifact.mainStat}</span>
+                              {artifact.mainStatValue && (
+                                <span className="text-gray-400"> (+{Math.round(artifact.mainStatValue)})</span>
+                              )}
+                            </p>
+                            
+                            {artifact.subStats && artifact.subStats.length > 0 && (
+                              <div className="mt-1 border-t border-gray-700 pt-1">
+                                <p className="text-gray-400 text-xs mb-1">Subs:</p>
+                                {artifact.subStats.slice(0, 4).map((sub, idx) => {
+                                  // Récupérer la valeur et les procs pour ce substat
+                                  const subStatLevel = artifact.subStatsLevels?.[idx];
+                                  const value = subStatLevel?.value || 0;
+                                  const procCount = subStatLevel?.procOrders?.length > 1 
+                                    ? subStatLevel.procOrders.length - 1 
+                                    : 0;
+                                  
+                                  // Vérifier si c'est un pourcentage
+                                  const isPercentage = sub && sub.includes('%');
+                                  const displayValue = isPercentage 
+                                    ? value.toFixed(2) 
+                                    : Math.round(value).toLocaleString();
+                                  
+                                  return (
+                                    <p key={idx} className="text-gray-300 text-xs ml-2">
+                                      • {sub || '-'}
+                                      {subStatLevel && (
+                                        <>
+                                          <span className="text-white">: {displayValue}</span>
+                                          {procCount > 0 && (
+                                            <span className="text-yellow-400"> (+{procCount})</span>
+                                          )}
+                                        </>
+                                      )}
+                                    </p>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Screenshots Upload DigitalOcean */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    📸 Screenshots * (Upload DigitalOcean)
+                    <span className={`text-xs ml-2 ${window.location.hostname === 'localhost' ? 'text-yellow-400' : 'text-red-400'}`}>
+                      {window.location.hostname === 'localhost' 
+                        ? '(Optionnel en local)' 
+                        : '(Obligatoire pour validation)'
+                      }
+                    </span>
+                  </label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => setFormData(prev => ({...prev, screenshots: Array.from(e.target.files)}))}
+                    className="flame-input w-full px-4 py-3 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-yellow-500 file:text-black hover:file:bg-yellow-400"
+                  />
+                  {formData.screenshots.length > 0 ? (
+                    <p className="text-green-400 text-sm mt-2">
+                      ✅ {formData.screenshots.length} screenshot(s) sélectionné(s) - Seront uploadés sur DigitalOcean
+                    </p>
+                  ) : (
+                    <p className={`text-sm mt-2 ${window.location.hostname === 'localhost' ? 'text-yellow-400' : 'text-red-400'}`}>
+                      {window.location.hostname === 'localhost' 
+                        ? "⚠️ Screenshots optionnels en local" 
+                        : "❌ Screenshots requis pour soumettre (max 10MB par image)"
+                      }
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    📝 Notes (optionnel)
+                  </label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData(prev => ({...prev, notes: e.target.value}))}
+                    className="flame-input w-full px-4 py-3 rounded-lg text-white placeholder-gray-400 resize-none"
+                    placeholder="Commentaires sur ce build..."
+                    rows="3"
+                    maxLength={200}
+                  />
                 </div>
               </div>
-            </>
-          )}
+            )}
+
+            {/* STEP 2: VALIDATION */}
+            {currentStep === 2 && (
+              <div className="flex flex-col h-full">
+                <div className={`flex-1 flex items-center justify-center py-4 ${isValidating ? 'validation-screen' : ''}`}>
+                  {isValidating ? (
+                    <div className="text-center">
+                      <div className="text-4xl mb-4 animate-spin">🔍</div>
+                      <h3 className="text-lg font-bold text-yellow-400 mb-2">Validation avancée en cours...</h3>
+                      <p className="text-gray-400 text-sm">Kaisel analyse le système CP + Sets...</p>
+                      
+                      <div className="mt-4 space-y-1 text-xs">
+                        <div className="text-gray-300">✓ Vérification scaleStat...</div>
+                        <div className="text-gray-300">✓ Validation multiplicateurs CP...</div>
+                        <div className="text-gray-300">✓ Analyse sets d'artefacts...</div>
+                        <div className="text-gray-300">✓ Validation bonus optimal...</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center max-w-md mx-auto">
+                      {validationErrors.length > 0 ? (
+                        <>
+                          <div className="text-4xl mb-4">❌</div>
+                          <h3 className="text-lg font-bold text-red-400 mb-4">Erreurs détectées</h3>
+                          
+                          <div className="space-y-2 text-left mb-6 max-h-48 overflow-y-auto">
+                            {validationErrors.map((error, index) => (
+                              <div key={index} className="error-item text-sm text-red-300">
+                                {error}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-4xl mb-4">✅</div>
+                          <h3 className="text-lg font-bold text-green-400 mb-4">Validation avancée réussie !</h3>
+                          
+                          <div className="space-y-2 text-left mb-6">
+                            <div className="success-item text-sm text-green-300">
+                              ✅ Système CP avancé validé
+                            </div>
+                            <div className="success-item text-sm text-green-300">
+                              ✅ ScaleStat détecté: {BUILDER_DATA[selectedCharacter]?.scaleStat}
+                            </div>
+                            <div className="success-item text-sm text-green-300">
+                              ✅ Stats totales: {memoizedCpTotal.total.toLocaleString()} CP
+                            </div>
+                            {memoizedSetAnalysis.isOptimal && (
+                              <div className="success-item text-sm text-green-300">
+                                🏆 Set optimal détecté ! Bonus +5% CP appliqué
+                              </div>
+                            )}
+                            <div className="success-item text-sm text-green-300">
+                              ✅ Prêt pour le HallOfFlame
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: SUCCESS */}
+            {currentStep === 3 && (
+              <div className="text-center py-4">
+                <div className="text-4xl mb-4">🏆</div>
+                <h3 className="text-lg font-bold text-yellow-400 mb-2">Prêt pour l'enregistrement !</h3>
+                <p className="text-gray-400 mb-4 text-sm">
+                  {formData.pseudo} sera soumis en attente de validation admin
+                </p>
+                
+                <div className="bg-yellow-900/20 rounded-lg p-3 border border-yellow-500/30">
+                  <p className="text-yellow-300 text-xs">
+                    🔥 Pseudo: <strong>{formData.pseudo}</strong><br/>
+                    🆔 Account ID: <strong>{formData.accountId}</strong><br/>
+                    🏰 Guilde: <strong>{formData.guildName || 'Aucune'}</strong><br/>
+                    ⚡ CP Total: <strong>{memoizedCpTotal.total.toLocaleString()}</strong><br/>
+                    🎨 CP Artifacts: <strong>{memoizedCpArtifacts.total.toLocaleString()}</strong><br/>
+                    🎯 ScaleStat: <strong>{BUILDER_DATA[selectedCharacter]?.scaleStat}</strong><br/>
+                    🔮 Sets: <strong>{memoizedSetAnalysis.isOptimal ? '✅ OPTIMAL' : '⚠️ Non optimal'}</strong><br/>
+                    📸 Screenshots: <strong>{formData.screenshots.length} fichier(s) → DigitalOcean</strong><br/>
+                    <span className="text-orange-400 font-bold">
+                      ⏳ Status: En attente de validation admin
+                    </span>
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 🎯 FOOTER ACTIONS */}
+          <div className="flex-shrink-0 p-4 border-t border-yellow-500/30 bg-black/20">
+            <div className="flex flex-col gap-2 md:flex-row">
+              
+              {/* Bouton Retour */}
+              {currentStep > 1 && (
+                <button
+                  onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}
+                  className="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-center text-sm"
+                >
+                  ← Retour
+                </button>
+              )}
+
+              {/* Bouton Annuler */}
+              <button
+                onClick={onClose}
+                className="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-center text-sm"
+              >
+                Annuler
+              </button>
+
+              {/* Bouton Principal */}
+              {currentStep === 1 && (
+                <button
+                  onClick={() => setCurrentStep(2)}
+                  className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
+                  disabled={!formData.pseudo.trim() || !formData.accountId.trim() || !hasData || 
+                    (window.location.hostname !== 'localhost' && formData.screenshots.length === 0)}
+                >
+                  <span>Validation Avancée →</span>
+                </button>
+              )}
+
+              {currentStep === 2 && !isValidating && (
+                <>
+                  {validationErrors.length > 0 ? (
+                    <button
+                      onClick={validateData}
+                      className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
+                    >
+                      <span>🔄 Réessayer</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setCurrentStep(3)}
+                      className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
+                    >
+                      <span>Continuer →</span>
+                    </button>
+                  )}
+                </>
+              )}
+
+              {currentStep === 2 && isValidating && (
+                <button
+                  className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
+                  disabled
+                >
+                  <span>Validation en cours...</span>
+                </button>
+              )}
+
+              {currentStep === 3 && (
+                <button
+                  onClick={handleFinalSave}
+                  className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
+                >
+                  <span>📋 Soumettre pour Validation</span>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      )}
-    </div>
-  </div>
-)}
-
-{/* STEP 3: SUCCESS */}
-           {currentStep === 3 && (
-             <div className="text-center py-4">
-               <div className="text-4xl mb-4">🏆</div>
-               <h3 className="text-lg font-bold text-yellow-400 mb-2">Prêt pour l'enregistrement !</h3>
-               <p className="text-gray-400 mb-4 text-sm">
-                 {formData.pseudo} sera soumis en attente de validation admin
-               </p>
-               
-               <div className="bg-yellow-900/20 rounded-lg p-3 border border-yellow-500/30">
-                 <p className="text-yellow-300 text-xs">
-                   🔥 Pseudo: <strong>{formData.pseudo}</strong><br/>
-                   🆔 Account ID: <strong>{formData.accountId}</strong><br/>
-                   🏰 Guilde: <strong>{formData.guildName || 'Aucune'}</strong><br/>
-                   ⚡ CP Total: <strong>{memoizedCpTotal.total.toLocaleString()}</strong><br/>
-                   🎨 CP Artifacts: <strong>{memoizedCpArtifacts.total.toLocaleString()}</strong><br/>
-                   🎯 ScaleStat: <strong>{BUILDER_DATA[selectedCharacter]?.scaleStat}</strong><br/>
-                   🔮 Sets: <strong>{memoizedSetAnalysis.isOptimal ? '✅ OPTIMAL' : '⚠️ Non optimal'}</strong><br/>
-                   📸 Screenshots: <strong>{formData.screenshots.length} fichier(s) → DigitalOcean</strong><br/>
-                   <span className="text-orange-400 font-bold">
-                     ⏳ Status: En attente de validation admin
-                   </span>
-                 </p>
-               </div>
-             </div>
-           )}
-         </div>
-
-         {/* 🎯 FOOTER ACTIONS */}
-         <div className="flex-shrink-0 p-4 border-t border-yellow-500/30 bg-black/20">
-           <div className="flex flex-col gap-2 md:flex-row">
-             
-             {/* Bouton Retour */}
-             {currentStep > 1 && (
-               <button
-                 onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}
-                 className="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-center text-sm"
-               >
-                 ← Retour
-               </button>
-             )}
-
-             {/* Bouton Annuler */}
-             <button
-               onClick={onClose}
-               className="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-center text-sm"
-             >
-               Annuler
-             </button>
-
-             {/* Bouton Principal */}
-             {currentStep === 1 && (
-               <button
-                 onClick={() => setCurrentStep(2)}
-                 className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
-                 disabled={!formData.pseudo.trim() || !formData.accountId.trim() || !hasData || 
-                   (window.location.hostname !== 'localhost' && formData.screenshots.length === 0)}
-               >
-                 <span>Validation Avancée →</span>
-               </button>
-             )}
-
-             {currentStep === 2 && !isValidating && (
-               <>
-                 {validationErrors.length > 0 ? (
-                   <button
-                     onClick={validateData}
-                     className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
-                   >
-                     <span>🔄 Réessayer</span>
-                   </button>
-                 ) : (
-                   <button
-                     onClick={() => setCurrentStep(3)}
-                     className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
-                   >
-                     <span>Continuer →</span>
-                   </button>
-                 )}
-               </>
-             )}
-
-             {currentStep === 2 && isValidating && (
-               <button
-                 className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
-                 disabled
-               >
-                 <span>Validation en cours...</span>
-               </button>
-             )}
-
-             {currentStep === 3 && (
-               <button
-                 onClick={handleFinalSave}
-                 className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
-               >
-                 <span>📋 Soumettre pour Validation</span>
-               </button>
-             )}
-           </div>
-         </div>
-       </div>
-     </div>
-   </>
- );
+      </div>
+    </>
+  );
 };
 
 export default HallOfFlameDebugPopup;

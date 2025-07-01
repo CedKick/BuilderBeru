@@ -1,7 +1,9 @@
+// HallOfFlamePage.jsx - 🏆 HALL OF FLAME v5.0 - AFFICHAGE CORRIGÉ WEAPON/CORES/GEMS BY KAISEL
 import React, { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { data_chars } from '../data/data_char.js';
+import { BUILDER_DATA } from '../data/builder_data.js';
 
 const HallOfFlamePage = ({ 
   onClose, 
@@ -1484,6 +1486,39 @@ html, body, #root {
                          </div>
                        </div>
 
+                       {/* 🆕 MINI AFFICHAGE WEAPON/CORES/GEMS DANS LA CARD */}
+                       <div className={`mt-2 pt-2 border-t border-gray-700/50 grid grid-cols-3 gap-1 text-xs`}>
+                         {/* Weapon */}
+                         {hunter.currentWeapon && Object.keys(hunter.currentWeapon).length > 0 && (
+                           <div className="text-center">
+                             <span className="text-red-400">⚔️</span>
+                             <span className="text-gray-400 ml-1">
+                               {(() => {
+                                 const scaleStat = hunter.builderInfo?.scaleStat || BUILDER_DATA[hunter.character]?.scaleStat;
+                                 const mainStatValue = hunter.currentWeapon.mainStat || 0;
+                                 return formatStat(mainStatValue);
+                               })()}
+                             </span>
+                           </div>
+                         )}
+                         
+                         {/* Cores */}
+                         {hunter.currentCores && Object.keys(hunter.currentCores).length > 0 && (
+                           <div className="text-center">
+                             <span className="text-orange-400">🔴</span>
+                             <span className="text-gray-400 ml-1">{Object.keys(hunter.currentCores).length}</span>
+                           </div>
+                         )}
+                         
+                         {/* Gems */}
+                         {hunter.currentGems && Object.keys(hunter.currentGems).length > 0 && (
+                           <div className="text-center">
+                             <span className="text-pink-400">💎</span>
+                             <span className="text-gray-400 ml-1">{Object.keys(hunter.currentGems).length}</span>
+                           </div>
+                         )}
+                       </div>
+
                        {/* Footer avec date */}
                        <div className={`mt-3 pt-3 border-t border-gray-700/50 ${isMobileDevice ? 'text-xs' : ''}`}>
                          <div className="flex justify-between items-center">
@@ -1694,6 +1729,117 @@ html, body, #root {
                    ))}
                  </div>
                </div>
+             </div>
+
+             {/* 🆕 WEAPON, CORES ET GEMS - VERSION CORRIGÉE KAISEL v5.0 */}
+             <div className={`grid gap-4 mb-2 ${isMobileDevice ? 'grid-cols-1 mb-4' : 'grid-cols-1 md:grid-cols-3 gap-6 mb-8'}`}>
+               
+               {/* Weapon */}
+               {selectedHunter.currentWeapon && Object.keys(selectedHunter.currentWeapon).length > 0 && (
+                 <div className="bg-black/30 rounded-lg p-4 border border-red-500/20">
+                   <h3 className={`text-red-400 font-bold mb-3 ${isMobileDevice ? 'text-sm' : ''}`}>
+                     ⚔️ Arme Équipée
+                   </h3>
+                   <div className="space-y-2">
+                     {(() => {
+                       const scaleStat = selectedHunter.builderInfo?.scaleStat || BUILDER_DATA[selectedHunter.character]?.scaleStat;
+                       const mainStatValue = selectedHunter.currentWeapon.mainStat || 0;
+                       const precision = selectedHunter.currentWeapon.precision || 0;
+                       
+                       return (
+                         <>
+                           {scaleStat === "Defense" && (
+                             <div className="flex justify-between">
+                               <span className="text-gray-400 text-sm">Defense:</span>
+                               <span className="text-blue-400 font-bold">{formatStat(mainStatValue)}</span>
+                             </div>
+                           )}
+                           {scaleStat === "Attack" && (
+                             <div className="flex justify-between">
+                               <span className="text-gray-400 text-sm">Attack:</span>
+                               <span className="text-red-400 font-bold">{formatStat(mainStatValue)}</span>
+                             </div>
+                           )}
+                           {scaleStat === "HP" && (
+                             <div className="flex justify-between">
+                               <span className="text-gray-400 text-sm">HP:</span>
+                               <span className="text-green-400 font-bold">{formatStat(mainStatValue)}</span>
+                             </div>
+                           )}
+                           {precision > 0 && (
+                             <div className="flex justify-between">
+                               <span className="text-gray-400 text-sm">Precision:</span>
+                               <span className="text-yellow-400 font-bold">{formatStat(precision)}</span>
+                             </div>
+                           )}
+                         </>
+                       );
+                     })()}
+                   </div>
+                 </div>
+               )}
+               
+               {/* Cores */}
+               {selectedHunter.currentCores && Object.keys(selectedHunter.currentCores).length > 0 && (
+                 <div className="bg-black/30 rounded-lg p-4 border border-orange-500/20">
+                   <h3 className={`text-orange-400 font-bold mb-3 ${isMobileDevice ? 'text-sm' : ''}`}>
+                     🔴 Noyaux ({Object.keys(selectedHunter.currentCores).length})
+                   </h3>
+                   <div className="space-y-3 max-h-48 overflow-y-auto">
+                     {Object.entries(selectedHunter.currentCores).map(([slot, core]) => (
+                       <div key={slot} className="bg-black/40 rounded p-2">
+                         <p className="text-orange-300 font-bold text-xs mb-1">{slot}:</p>
+                         {core.primary && (
+                           <p className="text-gray-300 text-xs ml-2">
+                             {core.primary}: <span className="text-white font-bold">{formatStat(core.primaryValue || 0)}</span>
+                           </p>
+                         )}
+                         {core.secondary && (
+                           <p className="text-gray-300 text-xs ml-2">
+                             {core.secondary}: <span className="text-white font-bold">{formatStat(core.secondaryValue || 0)}</span>
+                           </p>
+                         )}
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+               )}
+               
+               {/* Gems */}
+               {selectedHunter.currentGems && Object.keys(selectedHunter.currentGems).length > 0 && (
+                 <div className="bg-black/30 rounded-lg p-4 border border-pink-500/20">
+                   <h3 className={`text-pink-400 font-bold mb-3 ${isMobileDevice ? 'text-sm' : ''}`}>
+                     💎 Gemmes ({Object.keys(selectedHunter.currentGems).length})
+                   </h3>
+                   <div className="space-y-3 max-h-48 overflow-y-auto">
+                     {Object.entries(selectedHunter.currentGems).map(([color, gemData]) => {
+                       const gemColors = {
+                         'Red': '#ef4444',
+                         'Blue': '#3b82f6',
+                         'Green': '#10b981',
+                         'Purple': '#a855f7',
+                         'Yellow': '#eab308'
+                       };
+                       const displayColor = gemColors[color] || '#ec4899';
+                       
+                       return (
+                         <div key={color} className="bg-black/40 rounded p-2">
+                           <p style={{ color: displayColor }} className="font-bold text-xs mb-1">{color}:</p>
+                           {gemData && typeof gemData === 'object' && Object.entries(gemData).map(([stat, value]) => {
+                             if (['name', 'type', 'level', 'color'].includes(stat)) return null;
+                             
+                             return (
+                               <p key={stat} className="ml-2 text-gray-300 text-xs">
+                                 {stat}: <span className="text-white font-bold">+{formatStat(value || 0)}</span>
+                               </p>
+                             );
+                           })}
+                         </div>
+                       );
+                     })}
+                   </div>
+                 </div>
+               )}
              </div>
 
              {/* Sets d'Artefacts */}
