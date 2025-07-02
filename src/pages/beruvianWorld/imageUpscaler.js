@@ -47,7 +47,7 @@ export async function getUpscaledImage(imageSrc, targetSize = 1024) {
     imageCache.set(cacheKey, upscaledUrl);
     return upscaledUrl;
   } catch (error) {
-    console.error("Erreur upscaling:", error);
+    console.error("Erreur upscaliing:", error);
     return imageSrc; // Fallback sur l'image originale
   }
 }
