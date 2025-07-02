@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { getUpscaledImage } from "./ImageUpscaler";
+import { getUpscaledImage } from "./imageUpscaler";
 
 const TILE_SIZE = 1024; // Chaque tuile = exactement 1024x1024 pixels
 
