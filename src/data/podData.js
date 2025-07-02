@@ -1974,7 +1974,7 @@ export const podData = [
         "where": [
           "BoT"
         ],
-        "src": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730805/blessingstones_offensive_reawakening_zo5hpm.png"
+        "src": "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730804/blessingstones_offensive_pulverize_xj91j2.png"
       },
       {
         "class": "bessingstone",
