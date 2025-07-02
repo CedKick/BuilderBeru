@@ -736,7 +736,7 @@ export const blessingStonesData = [
         name: "pulverize",
         used: 20,
         where: ["BoT"],
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730805/blessingstones_offensive_reawakening_zo5hpm.png",
+        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730804/blessingstones_offensive_pulverize_xj91j2.png",
     },
     {
 
@@ -763,7 +763,7 @@ export const blessingStonesData = [
         name: "sharp perception",
         used: 20,
         where: ["BoT"],
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730807/blessingstones_offensive_speed_mznzso.png",
+        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730806/blessingstones_offensive_sharpperception_ublxx7.png",
     },
     {
 

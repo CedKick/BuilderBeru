@@ -419,7 +419,7 @@ const BUILDER_DATA = {
       "name": "Hybrid Iron Will/Outstanding",
       "frenchName": "Hybride Volonté/Remarquable",
       "availability": "LR",
-      "setComposition": "4x Iron Will + 4x Outstanding Ability",
+      "setComposition": " Iron Will (4), Outstanding Ability (Obsidian Set) (4)",
       "pieces": {
         "helmet": "Casque de la volonté de fer",        // Iron Will
         "chest": "Armure de la volonté de fer",         // Iron Will
@@ -445,7 +445,7 @@ const BUILDER_DATA = {
       "name": "Full Chaotic Infamy",
       "frenchName": "Infamie chaotique complète",
       "availability": "LR",
-      "setComposition": "8x Chaotic Infamy",
+      "setComposition": "Chaotic Infamy (8)",
       "pieces": {
         "helmet": "Casque d'infamie chaotique",
         "chest": "Armure d'infamie chaotique",
