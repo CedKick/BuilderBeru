@@ -490,7 +490,7 @@ const HallOfFlameDebugPopup = ({
   const uploadToDigitalOcean = useCallback(async (files) => {
     if (!files || files.length === 0) return [];
     
-    showTankMessage("📸 Upload vers DigitalOcean en cours...", true, 'kaisel');
+    showTankMessage("📸 Upload vere le serveur SERN en cours...", true, 'kaisel');
     
     try {
       // Créer FormData pour upload multipart
@@ -515,7 +515,7 @@ const HallOfFlameDebugPopup = ({
       
       if (result.success && result.screenshots) {
         showTankMessage(
-          `✅ ${result.screenshots.length} screenshot(s) uploadé(s) sur DigitalOcean !`,
+          `✅ ${result.screenshots.length} screenshot(s) uploadé(s) sur SERN SERVEUR !`,
           true,
           'kaisel'
         );
@@ -528,7 +528,7 @@ const HallOfFlameDebugPopup = ({
       }
       
     } catch (error) {
-      console.error('❌ Erreur upload DigitalOcean:', error);
+      console.error('❌ Erreur upload, SERN ALERTE :', error);
       
       // Fallback en cas d'erreur - ne pas créer de base64
       showTankMessage(
@@ -671,7 +671,7 @@ const HallOfFlameDebugPopup = ({
           // 📋 CAS NORMAL (pas de doublon)
           showTankMessage(
             `📋 ${result.hunter.pseudo} soumis en attente de validation!\n` +
-            `Screenshots: ${screenshotUrls.length} uploadés sur DigitalOcean\n` +
+            `Screenshots: ${screenshotUrls.length} uploadés sur SERN SERVEUR\n` +
             `Rang potentiel: #${result.potentialRank} (si approuvé)\n` +
             `Total en attente: ${result.totalHunters - result.checkedHunters}`,
             true,
@@ -933,7 +933,7 @@ const HallOfFlameDebugPopup = ({
                 <div>
                   <h2 className="text-xl font-bold text-yellow-400">HallOfFlame Advanced</h2>
                   <p className="text-gray-300 text-sm">
-                    Kaisel CP System v4.0 • DigitalOcean Upload
+                    Kaisel CP System v4.0 • S.E.R.N. Upload
                     {hasData && (
                       <span className="text-green-400 ml-2">
                         • Total: {memoizedCpTotal.total.toLocaleString()} CP
@@ -1433,7 +1433,7 @@ const HallOfFlameDebugPopup = ({
                 {/* Screenshots Upload DigitalOcean */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    📸 Screenshots * (Upload DigitalOcean)
+                    📸 Screenshots * (Upload SERN)
                     <span className={`text-xs ml-2 ${window.location.hostname === 'localhost' ? 'text-yellow-400' : 'text-red-400'}`}>
                       {window.location.hostname === 'localhost' 
                         ? '(Optionnel en local)' 
@@ -1450,7 +1450,7 @@ const HallOfFlameDebugPopup = ({
                   />
                   {formData.screenshots.length > 0 ? (
                     <p className="text-green-400 text-sm mt-2">
-                      ✅ {formData.screenshots.length} screenshot(s) sélectionné(s) - Seront uploadés sur DigitalOcean
+                      ✅ {formData.screenshots.length} screenshot(s) sélectionné(s) - Seront uploadés sur SERN SERVEUR
                     </p>
                   ) : (
                     <p className={`text-sm mt-2 ${window.location.hostname === 'localhost' ? 'text-yellow-400' : 'text-red-400'}`}>
@@ -1560,7 +1560,7 @@ const HallOfFlameDebugPopup = ({
                     🎨 CP Artifacts: <strong>{memoizedCpArtifacts.total.toLocaleString()}</strong><br/>
                     🎯 ScaleStat: <strong>{BUILDER_DATA[selectedCharacter]?.scaleStat}</strong><br/>
                     🔮 Sets: <strong>{memoizedSetAnalysis.isOptimal ? '✅ OPTIMAL' : '⚠️ Non optimal'}</strong><br/>
-                    📸 Screenshots: <strong>{formData.screenshots.length} fichier(s) → DigitalOcean</strong><br/>
+                    📸 Screenshots: <strong>{formData.screenshots.length} fichier(s) → SERN SERVEUR</strong><br/>
                     <span className="text-orange-400 font-bold">
                       ⏳ Status: En attente de validation admin
                     </span>

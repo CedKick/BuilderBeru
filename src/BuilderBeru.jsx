@@ -162,7 +162,6 @@ const tankPhrases = [
   "Imagine Kly sees this gear. 😬",
   "Don't let Tank down. Enhance your boots!",
   "Did someone say... legendary artifact?",
-  "This isn’t slagate, this is Kly's domain.",
   "No BDG? No mercy from Bobby.",
   "This ring is older than Kaisel.",
   "Missing Critical Hit Rate again, huh?",
@@ -197,7 +196,6 @@ const tankPhrases = [
   "Every time you reroll, a shadow cries.",
   "I auto-attack harder than this weapon does.",
   "You call this optimization? I call it disappointment.",
-  "I heard SLAGATE finally finished their site... 😭😭😭😝😌",
   "This build was handcrafted in mediocrity."
 ];
 
