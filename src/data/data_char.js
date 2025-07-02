@@ -1,4 +1,21 @@
 const data_chars = {
+  'shuhua': {
+      name: 'Shuhua',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/shuhua_t3ek5j.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/shuhua_t3ek5j.png',
+      class: 'Fighter',
+      grade: 'SSR',
+      element: 'Wind',
+      scaleStat: 'Defense'
+    },'miyeon': {
+      name: 'Miyeon',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/miyeon_ijwudx.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/miyeon_ijwudx.png',
+      class: 'Support',
+      grade: 'SSR',
+      element: 'Water',
+      scaleStat: 'Defense'
+    },
      'niermann': {
       name: 'Lennart Niermann',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749114179/niermann_arxjer.png',

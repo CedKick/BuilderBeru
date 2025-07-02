@@ -45,9 +45,21 @@ const HallOfFlameStandalone = () => {
 
   // Characters data complet pour éviter les erreurs
   const characters = {
+    shuhua: { 
+      name: "Shuhua", 
+      element: "Wind", 
+      class: "Fighter",
+      portrait: "🌊"
+    },
+    miyeon: { 
+      name: "Miyeon", 
+      element: "Water", 
+      class: "Support",
+      portrait: "🌊"
+    },
     niermann: { 
       name: "Lennart Niermann", 
-      element: "Water", 
+      element: "Wind", 
       class: "Fighter",
       portrait: "🌊"
     },

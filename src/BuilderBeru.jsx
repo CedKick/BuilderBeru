@@ -1779,6 +1779,8 @@ const BuilderBeru = () => {
   };
 
   const characterStats = {
+    'shuhua': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
+    'miyeon': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
     'niermann': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
     'chae': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
     'kanae': { attack: 5634, defense: 5028, hp: 11628, critRate: 0, mp: 1000 },
@@ -2582,13 +2584,29 @@ BobbyJones : "Allez l'Inter !"
       grade: '',
       element: '',
       scaleStat: ''
+    },'shuhua': {
+      name: 'Shuhua',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/shuhua_t3ek5j.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/shuhua_t3ek5j.png',
+      class: 'Fighter',
+      grade: 'SSR',
+      element: 'Wind',
+      scaleStat: 'Defense'
+    },'miyeon': {
+      name: 'Miyeon',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/miyeon_ijwudx.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/miyeon_ijwudx.png',
+      class: 'Support',
+      grade: 'SSR',
+      element: 'Water',
+      scaleStat: 'Defense'
     }, 'niermann': {
       name: 'Lennart Niermann',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749114179/niermann_arxjer.png',
       icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749114267/build-niermann_phfwmu.png',
       class: 'Fighter',
       grade: 'SSR',
-      element: 'Water',
+      element: 'Wind',
       scaleStat: 'Defense'
     },
 
@@ -3122,7 +3140,7 @@ BobbyJones : "Allez l'Inter !"
           defaultCharacter = mainRecent[0];
         } else {
           // En dernier recours, Niermann
-          defaultCharacter = 'niermann';
+          defaultCharacter = 'shuhua';
         }
       }
 
@@ -3147,8 +3165,8 @@ BobbyJones : "Allez l'Inter !"
           ...prev,
           [defaultCharacter]: build.hunterWeapons || {}
         }));
-      } else if (defaultCharacter === 'niermann') {
-        // Si c'est Niermann par défaut, pas de build à charger
+      } else if (defaultCharacter === 'shuhua') {
+        // Si c'est shuhua par défaut, pas de build à charger
       }
       // 🔥 AJOUTE ICI, JUSTE APRÈS setSelectedCharacter :
       if (defaultCharacter && !currentAccount.builds?.[defaultCharacter]) {
@@ -3182,7 +3200,7 @@ BobbyJones : "Allez l'Inter !"
       setAccounts(defaultUserData.accounts);
       setActiveAccount("main");
       setRecentBuilds([]);
-      setSelectedCharacter('niermann'); // Fallback en cas d'erreur
+      setSelectedCharacter('shuhua'); // Fallback en cas d'erreur
       setGemData({});
     }
   }, []);
@@ -6268,42 +6286,112 @@ const handleSubmitToHallOfFame = () => {
                       </div>
 
                       {/* Select Personnage */}
-                      <select
-                        value={selectedCharacter}
-                        onChange={(e) => {
-                          const selected = e.target.value;
-                          setSelectedCharacter(selected);
-
-                          const saved = localStorage.getItem(`${selected}`);
-                          if (saved) {
-                            const build = JSON.parse(saved);
-                            setFlatStats(build.flatStats);
-                            setStatsWithoutArtefact(build.statsWithoutArtefact);
-                            setArtifactsData(build.artifactsData);
-                            setHunterCores(build.hunterCores);
-                            showTankMessage(`Loaded saved build for ${selected} 😏`);
-                          } else {
-                            handleResetStats();
-                          }
-                        }}
-                        className="p-1 rounded bg-[#1c1c3c] text-white text-sm tank-target"
-                      >
-                        <option value="">Sélectionner un personnage</option>
-                        {Object.entries(characters)
-                          .filter(([key, char]) => {
-                            if (key === '') return false;
-                            if (selectedElement && char.element !== selectedElement) return false;
-                            if (selectedClass) {
-                              const classType = char.class === 'Tank' ? 'Tank'
-                                : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
-                              if (classType !== selectedClass) return false;
-                            }
-                            return true;
-                          })
-                          .map(([key, char]) => (
-                            <option key={key} value={key}>{char.name}</option>
-                          ))}
-                      </select>
+      <select
+  value={selectedCharacter}
+  onChange={(e) => {
+    const selected = e.target.value;
+    
+    // 🛡️ Protection si aucun personnage
+    if (!selected) {
+      setSelectedCharacter('');
+      return;
+    }
+    
+    // 📦 Vérifier si un build existe dans le nouveau système
+    const storedData = JSON.parse(localStorage.getItem("builderberu_users"));
+    const build = storedData?.user?.accounts?.[activeAccount]?.builds?.[selected];
+    
+    if (build && build.artifactsData) {
+      // ✅ BUILD EXISTANT : Charger tout
+      setSelectedCharacter(selected);
+      setFlatStats(build.flatStats || {});
+      setStatsWithoutArtefact(build.statsWithoutArtefact || {});
+      setArtifactsData(build.artifactsData || {});
+      setHunterCores(prev => ({
+        ...prev,
+        [selected]: build.hunterCores || {}
+      }));
+      setHunterWeapons(prev => ({
+        ...prev,
+        [selected]: build.hunterWeapons || {}
+      }));
+      
+      // 💎 Gemmes du compte (pas dans le build)
+      const accountGems = storedData?.user?.accounts?.[activeAccount]?.gems || {};
+      setGemData(accountGems);
+      
+      showTankMessage(`✅ Build chargé pour ${characters[selected]?.name} !`, true);
+      
+    } else {
+      // 🆕 NOUVEAU PERSONNAGE : Reset avec les stats de base
+      setSelectedCharacter(selected);
+      
+      // Reset complet avec stats du personnage
+      const charStats = characterStats[selected];
+      if (charStats) {
+        // Simuler une arme si elle n'existe pas
+        simulateWeaponSaveIfMissing(selected);
+        
+        // Récupérer l'arme (existante ou simulée)
+        const weapon = hunterWeapons[selected] || {
+          mainStat: characters[selected]?.scaleStat === 'Defense' ? 3080 :
+                    characters[selected]?.scaleStat === 'HP' ? 6120 : 3080,
+          precision: 4000
+        };
+        
+        // Stats de base avec arme
+        const newFlatStats = getFlatStatsWithWeapon(charStats, weapon);
+        setFlatStats(completeStats(newFlatStats));
+        
+        // Reset les autres états
+        setStatsWithoutArtefact(completeStats(newFlatStats));
+        setStatsFromArtifacts(completeStats({}));
+        
+        // Artefacts vides
+        const emptyArtifacts = {};
+        Object.keys(artifactsData).forEach(slot => {
+          emptyArtifacts[slot] = {
+            mainStat: '',
+            subStats: ['', '', '', ''],
+            subStatsLevels: [
+              { value: 0, level: 0, procOrders: [], procValues: [] },
+              { value: 0, level: 0, procOrders: [], procValues: [] },
+              { value: 0, level: 0, procOrders: [], procValues: [] },
+              { value: 0, level: 0, procOrders: [], procValues: [] }
+            ],
+            set: ''
+          };
+        });
+        setArtifactsData(emptyArtifacts);
+        
+        // Reset cores pour ce personnage
+        setHunterCores(prev => ({
+          ...prev,
+          [selected]: {}
+        }));
+        
+        showTankMessage(`🆕 Nouveau build créé pour ${characters[selected]?.name} !`, true);
+      }
+    }
+  }}
+  className="p-2 rounded bg-[#1c1c3c] text-white text-sm tank-target flex-1 max-w-[200px]"
+>
+  <option value="">Sélectionner un personnage</option>
+  {Object.entries(characters)
+    .filter(([key, char]) => {
+      if (key === '') return false;
+      if (selectedElement && char.element !== selectedElement) return false;
+      if (selectedClass) {
+        const classType = char.class === 'Tank' ? 'Tank'
+          : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
+        if (classType !== selectedClass) return false;
+      }
+      return true;
+    })
+    .map(([key, char]) => (
+      <option key={key} value={key}>{char.name}</option>
+    ))}
+</select>
 
                       {/* Icônes classes */}
                       <div className="flex flex-row items-center gap-1 ml-2">

@@ -6,6 +6,8 @@ import { BUILDER_DATA } from '../data/builder_data.js';
 
 // 🔧 STATS DE BASE DES PERSONNAGES - COPIÉ DEPUIS BuilderBeru.jsx
 const characterStats = {
+  'shuhua': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
+  'miyeon': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
   'niermann': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
   'chae': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
   'kanae': { attack: 5634, defense: 5028, hp: 11628, critRate: 0, mp: 1000 },
@@ -91,15 +93,15 @@ const calculateStatsFromArtifactsOnly = (artifactsData, flatStats) => {
     MP: 0,
     Precision: 0
   };
-  
+
   Object.values(artifactsData || {}).forEach(artifact => {
     if (!artifact) return;
-    
+
     // Main stat
     if (artifact.mainStat && mainStatMaxByIncrements[artifact.mainStat]) {
       const value = mainStatMaxByIncrements[artifact.mainStat][4] || 0;
       const stat = artifact.mainStat;
-      
+
       if (stat.endsWith('%')) {
         const baseStat = stat.replace(' %', '');
         const base = flatStats[baseStat] || 0;
@@ -111,13 +113,13 @@ const calculateStatsFromArtifactsOnly = (artifactsData, flatStats) => {
         stats[stat] = (stats[stat] || 0) + value;
       }
     }
-    
+
     // Substats
     if (artifact.subStats && artifact.subStatsLevels) {
       artifact.subStats.forEach((subStat, i) => {
         const levelInfo = artifact.subStatsLevels[i];
         if (!subStat || !levelInfo || typeof levelInfo.value !== 'number') return;
-        
+
         if (subStat.endsWith('%')) {
           const baseStat = subStat.replace(' %', '');
           const base = flatStats[baseStat] || 0;
@@ -131,32 +133,32 @@ const calculateStatsFromArtifactsOnly = (artifactsData, flatStats) => {
       });
     }
   });
-  
+
   // Arrondir
   Object.keys(stats).forEach(key => {
     stats[key] = Math.floor(stats[key]);
   });
-  
+
   return stats;
 };
 
 // 🔧 CALCUL DES STATS FINALES CORRIGÉ
 const calculateFinalStats = (hunterData, character) => {
   if (!hunterData || !character) return {};
-  
+
   const charStats = characterStats[character];
   if (!charStats) return {};
-  
+
   const builderInfo = BUILDER_DATA[character];
   const scaleStat = builderInfo?.scaleStat || 'Attack';
-  
+
   const {
     artifactsData = {},
     currentCores = {},
     currentGems = {},
     currentWeapon = {}
   } = hunterData;
-  
+
   // 1️⃣ FLAT STATS = BASE + ARME
   const flatStats = {
     'Attack': charStats.attack || 0,
@@ -173,21 +175,21 @@ const calculateFinalStats = (hunterData, character) => {
     'MP Consumption Reduction': 0,
     'Precision': currentWeapon.precision || 0
   };
-  
+
   // Ajouter l'arme
   const weaponBoost = currentWeapon.mainStat || 0;
   if (scaleStat === 'Attack') flatStats.Attack += weaponBoost;
   else if (scaleStat === 'Defense') flatStats.Defense += weaponBoost;
   else if (scaleStat === 'HP') flatStats.HP += weaponBoost;
-  
+
   // 2️⃣ CALCULER statsWithoutArtefact
   let statsWithoutArtefact = { ...flatStats };
-  
+
   // GEMS - Flat d'abord
   Object.values(currentGems || {}).forEach(gemCategory => {
     Object.entries(gemCategory || {}).forEach(([stat, value]) => {
       if (!stat || !value) return;
-      
+
       if (stat.startsWith('Additional ')) {
         const baseStat = stat.replace('Additional ', '');
         statsWithoutArtefact[baseStat] += value;
@@ -196,18 +198,18 @@ const calculateFinalStats = (hunterData, character) => {
       }
     });
   });
-  
+
   // CORES - Flat d'abord
   ['Offensif', 'Défensif', 'Endurance'].forEach(type => {
     const core = currentCores[type];
     if (!core) return;
-    
+
     [core.primary, core.secondary].forEach((stat, idx) => {
       const value = idx === 0 ? core.primaryValue : core.secondaryValue;
       if (!stat || !value) return;
-      
+
       const numValue = parseFloat(value);
-      
+
       if (stat.startsWith('Additional ')) {
         const baseStat = stat.replace('Additional ', '');
         statsWithoutArtefact[baseStat] += numValue;
@@ -216,44 +218,44 @@ const calculateFinalStats = (hunterData, character) => {
       }
     });
   });
-  
+
   // GEMS - % sur FLATSTATS
   Object.values(currentGems || {}).forEach(gemCategory => {
     Object.entries(gemCategory || {}).forEach(([stat, value]) => {
       if (!stat || !value || !stat.endsWith('%')) return;
-      
+
       const baseStat = stat.replace(' %', '');
       const base = flatStats[baseStat] || 0;
       statsWithoutArtefact[baseStat] += (base * value / 100);
     });
   });
-  
+
   // CORES - % sur FLATSTATS
   ['Offensif', 'Défensif', 'Endurance'].forEach(type => {
     const core = currentCores[type];
     if (!core) return;
-    
+
     [core.primary, core.secondary].forEach((stat, idx) => {
       const value = idx === 0 ? core.primaryValue : core.secondaryValue;
       if (!stat || !value || !stat.endsWith('%')) return;
-      
+
       const baseStat = stat.replace(' %', '');
       const base = flatStats[baseStat] || 0;
       statsWithoutArtefact[baseStat] += (base * parseFloat(value) / 100);
     });
   });
-  
+
   // 3️⃣ AJOUTER LES ARTEFACTS
   let finalStats = { ...statsWithoutArtefact };
-  
+
   Object.values(artifactsData || {}).forEach(artifact => {
     if (!artifact) return;
-    
+
     // Main stat
     if (artifact.mainStat && mainStatMaxByIncrements[artifact.mainStat]) {
       const value = mainStatMaxByIncrements[artifact.mainStat][4] || 0;
       const stat = artifact.mainStat;
-      
+
       if (stat.endsWith('%')) {
         const baseStat = stat.replace(' %', '');
         const base = flatStats[baseStat] || 0;
@@ -265,13 +267,13 @@ const calculateFinalStats = (hunterData, character) => {
         finalStats[stat] = (finalStats[stat] || 0) + value;
       }
     }
-    
+
     // Substats
     if (artifact.subStats && artifact.subStatsLevels) {
       artifact.subStats.forEach((subStat, i) => {
         const levelInfo = artifact.subStatsLevels[i];
         if (!subStat || !levelInfo || typeof levelInfo.value !== 'number') return;
-        
+
         if (subStat.endsWith('%')) {
           const baseStat = subStat.replace(' %', '');
           const base = flatStats[baseStat] || 0;
@@ -285,13 +287,13 @@ const calculateFinalStats = (hunterData, character) => {
       });
     }
   });
-  
+
   // 4️⃣ ARRONDIR
   const result = {};
   Object.keys(finalStats).forEach(stat => {
     result[stat] = Math.floor(finalStats[stat] || 0);
   });
-  
+
   return { finalStats: result, flatStats };
 };
 
@@ -303,32 +305,32 @@ const extractHunterFromLocalStorage = (hunterName, accountName = null) => {
       console.error('❌ Pas de données builderberu_users dans localStorage');
       return null;
     }
-    
+
     const targetAccount = accountName || data.user?.activeAccount || 'main';
     const hunterData = data.user?.accounts?.[targetAccount]?.builds?.[hunterName];
-    
+
     if (!hunterData) {
       console.warn(`Hunter "${hunterName}" not found in account "${targetAccount}"`);
       return null;
     }
-    
+
     // 🔥 FIX: Récupérer l'arme correctement
     const accountWeapon = data.user?.accounts?.[targetAccount]?.hunterWeapons?.[hunterName] || {};
-    
+
     // 🔥 SI PAS D'ARME, CRÉER UNE ARME PAR DÉFAUT
     let weapon = accountWeapon;
     if (!weapon.mainStat) {
       const builderInfo = BUILDER_DATA[hunterName];
       const scaleStat = builderInfo?.scaleStat || 'Attack';
-      
+
       weapon = {
         mainStat: scaleStat === 'HP' ? 6120 : 3080,
         precision: 4000
       };
-      
+
       console.log('⚠️ Arme par défaut créée:', weapon);
     }
-    
+
     const result = {
       statsWithoutArtefact: hunterData.statsWithoutArtefact || {},
       artifactsData: hunterData.artifactsData || {},
@@ -339,13 +341,13 @@ const extractHunterFromLocalStorage = (hunterName, accountName = null) => {
       accountName: targetAccount,
       characterName: hunterName
     };
-    
+
     console.log('✅ Hunter extrait avec arme:', {
       weapon: result.currentWeapon,
       cores: result.currentCores,
       gems: result.currentGems
     });
-    
+
     return result;
   } catch (error) {
     console.error('Error extracting hunter data:', error);
@@ -361,17 +363,17 @@ const getCharacterFromHunter = (referenceHunter) => {
 // 🧮 CALCUL CP AVANCÉ KAISEL
 const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false, setBonus = false) => {
   if (!stats || !selectedCharacter) return returnDetails ? { total: 0, details: [] } : 0;
-  
+
   const builderInfo = BUILDER_DATA[selectedCharacter];
   if (!builderInfo) return returnDetails ? { total: 0, details: [] } : 0;
-  
+
   const scaleStat = builderInfo.scaleStat;
   let totalCP = 0;
   const details = [];
-  
-  const mainStatValue = scaleStat === "Attack" ? (stats.Attack || 0) : 
-                       scaleStat === "Defense" ? (stats.Defense || 0) : 
-                       scaleStat === "HP" ? (stats.HP || 0) : 0;
+
+  const mainStatValue = scaleStat === "Attack" ? (stats.Attack || 0) :
+    scaleStat === "Defense" ? (stats.Defense || 0) :
+      scaleStat === "HP" ? (stats.HP || 0) : 0;
   const mainStatCP = mainStatValue * 2.5;
   totalCP += mainStatCP;
   details.push({
@@ -381,7 +383,7 @@ const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false, se
     points: Math.round(mainStatCP),
     color: scaleStat === "Attack" ? "#ef4444" : scaleStat === "Defense" ? "#3b82f6" : "#22c55e"
   });
-  
+
   const damageIncrease = stats["Damage Increase"] || 0;
   const damageIncreaseCP = damageIncrease * 1.5;
   totalCP += damageIncreaseCP;
@@ -392,7 +394,7 @@ const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false, se
     points: Math.round(damageIncreaseCP),
     color: "#a855f7"
   });
-  
+
   const critDamage = stats["Critical Hit Damage"] || 0;
   const critDamageCP = critDamage * 1.3;
   totalCP += critDamageCP;
@@ -403,7 +405,7 @@ const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false, se
     points: Math.round(critDamageCP),
     color: "#f97316"
   });
-  
+
   const defPen = stats["Defense Penetration"] || 0;
   const defPenCP = defPen * 1.2;
   totalCP += defPenCP;
@@ -414,11 +416,11 @@ const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false, se
     points: Math.round(defPenCP),
     color: "#ec4899"
   });
-  
+
   const critRate = stats["Critical Hit Rate"] || 0;
   let critRateCP = 0;
   let critRateMultiplier = "Complex";
-  
+
   if (critRate <= 8000) {
     critRateCP = critRate * 1.0;
     critRateMultiplier = "1.0 (≤8k)";
@@ -429,7 +431,7 @@ const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false, se
     critRateCP = 8000 * 1.0 + 4000 * 0.8;
     critRateMultiplier = "Capped at 12k";
   }
-  
+
   totalCP += critRateCP;
   details.push({
     name: "Critical Hit Rate",
@@ -438,7 +440,7 @@ const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false, se
     points: Math.round(critRateCP),
     color: "#eab308"
   });
-  
+
   if (setBonus) {
     const bonus = totalCP * 0.05;
     totalCP += bonus;
@@ -450,31 +452,31 @@ const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false, se
       color: "#10b981"
     });
   }
-  
+
   if (returnDetails) {
     return {
       total: Math.round(totalCP),
       details: details
     };
   }
-  
+
   return Math.round(totalCP);
 };
 
 // 🎯 ANALYSER SETS D'ARTEFACTS
 const analyzeArtifactSets = (artifacts) => {
   if (!artifacts) return { equipped: {}, analysis: "", isOptimal: false };
-  
+
   const equippedSets = {};
-  
+
   Object.values(artifacts).forEach(artifact => {
     if (artifact.set && artifact.set !== "") {
       equippedSets[artifact.set] = (equippedSets[artifact.set] || 0) + 1;
     }
   });
-  
-  return { 
-    equipped: equippedSets, 
+
+  return {
+    equipped: equippedSets,
     analysis: Object.entries(equippedSets).map(([name, count]) => `${name} (${count})`).join(', ') || "Aucun set",
     isOptimal: false
   };
@@ -494,41 +496,41 @@ const ComparisonHunter = ({
   const [currentStatsFromArtifacts, setCurrentStatsFromArtifacts] = useState({});
   const [currentFlatStats, setCurrentFlatStats] = useState({});
   const canvasRef = useRef(null);
-  
+
   // 🆕 NOUVEAU STATE POUR LE MODE DE COMPARAISON
   const [comparisonMode, setComparisonMode] = useState('final'); // 'final' ou 'artifacts'
   const [hoveredArtifact, setHoveredArtifact] = useState(null);
-  
+
   const isMobileDevice = window.innerWidth < 768;
 
   useEffect(() => {
     if (isOpen) {
       console.log('🔍 Extraction automatique du hunter actif...');
       console.log('🎯 Hunter référence (Hall of Flame):', referenceHunter.character);
-      
+
       const characterToFind = getCharacterFromHunter(referenceHunter);
       console.log('🔎 Recherche du character:', characterToFind);
-      
+
       const extractedData = extractHunterFromLocalStorage(characterToFind);
-      
+
       if (extractedData) {
         setLocalHunterData(extractedData);
-        
+
         // 🔥 CALCUL DES STATS FINALES ET STATS FROM ARTIFACTS
         const calcResult = calculateFinalStats(extractedData, characterToFind);
         setCurrentFinalStats(calcResult.finalStats);
         setCurrentFlatStats(calcResult.flatStats);
-        
+
         // Calculer les stats from artifacts
         const artifactStats = calculateStatsFromArtifactsOnly(extractedData.artifactsData, calcResult.flatStats);
         setCurrentStatsFromArtifacts(artifactStats);
-        
+
         console.log('✅ Hunter extrait avec stats finales:', {
           character: characterToFind,
           finalStats: calcResult.finalStats,
           artifactStats
         });
-        
+
         if (showTankMessage) {
           showTankMessage(`✅ ${characterToFind} chargé pour comparaison`, true, 'kaisel');
         }
@@ -564,35 +566,35 @@ const ComparisonHunter = ({
     if (isOpen) {
       setAnimationPhase(0);
       const timers = [];
-      
+
       timers.push(setTimeout(() => {
         setGlitchEffect(true);
       }, 100));
-      
+
       timers.push(setTimeout(() => {
         setGlitchEffect(false);
         setAnimationPhase(1);
       }, 300));
-      
+
       timers.push(setTimeout(() => {
         setAnimationPhase(2);
       }, 600));
-      
+
       return () => timers.forEach(timer => clearTimeout(timer));
     }
   }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen || !canvasRef.current) return;
-    
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    
+
     let particles = [];
     const particleCount = 50;
-    
+
     for (let i = 0; i < particleCount; i++) {
       particles.push({
         x: Math.random() * canvas.width,
@@ -603,30 +605,30 @@ const ComparisonHunter = ({
         opacity: Math.random() * 0.5 + 0.2
       });
     }
-    
+
     let animationId;
     const animate = () => {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
+
       particles.forEach(particle => {
         particle.x += particle.speedX;
         particle.y += particle.speedY;
-        
+
         if (particle.x < 0 || particle.x > canvas.width) particle.speedX *= -1;
         if (particle.y < 0 || particle.y > canvas.height) particle.speedY *= -1;
-        
+
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(168, 85, 247, ${particle.opacity})`;
         ctx.fill();
       });
-      
+
       animationId = requestAnimationFrame(animate);
     };
-    
+
     animate();
-    
+
     return () => cancelAnimationFrame(animationId);
   }, [isOpen]);
 
@@ -640,24 +642,24 @@ const ComparisonHunter = ({
 
   const referenceSetAnalysis = analyzeArtifactSets(referenceHunter.currentArtifacts);
   const currentSetAnalysis = analyzeArtifactSets(currentArtifacts);
-  
+
   // Déterminer quelles stats utiliser selon le mode
-  const referenceStatsToUse = comparisonMode === 'final' 
-    ? referenceHunter.currentStats 
+  const referenceStatsToUse = comparisonMode === 'final'
+    ? referenceHunter.currentStats
     : referenceHunter.statsFromArtifacts;
-    
-  const currentStatsToUse = comparisonMode === 'final' 
-    ? currentFinalStats 
+
+  const currentStatsToUse = comparisonMode === 'final'
+    ? currentFinalStats
     : currentStatsFromArtifacts;
-  
+
   const referenceCP = comparisonMode === 'final'
     ? calculateAdvancedCP(referenceHunter.currentStats || {}, referenceHunter.character, false, referenceSetAnalysis.isOptimal)
     : calculateAdvancedCP(referenceHunter.statsFromArtifacts || {}, referenceHunter.character, false, referenceSetAnalysis.isOptimal);
-    
+
   const currentCP = comparisonMode === 'final'
     ? calculateAdvancedCP(currentFinalStats, localHunterData?.character || referenceHunter.character, false, currentSetAnalysis.isOptimal)
     : calculateAdvancedCP(currentStatsFromArtifacts, localHunterData?.character || referenceHunter.character, false, currentSetAnalysis.isOptimal);
-  
+
   const statsToCompare = ['Attack', 'Defense', 'HP', 'Critical Hit Rate', 'Critical Hit Damage', 'Damage Increase', 'Defense Penetration'];
 
   const determineWinner = () => {
@@ -676,9 +678,9 @@ const ComparisonHunter = ({
   const compareArtifacts = (slot) => {
     const refArtifact = referenceHunter.currentArtifacts?.[slot];
     const curArtifact = currentArtifacts[slot];
-    
+
     if (!refArtifact || !curArtifact) return null;
-    
+
     const comparison = {
       slot,
       mainStatMatch: refArtifact.mainStat === curArtifact.mainStat,
@@ -688,28 +690,28 @@ const ComparisonHunter = ({
       curSet: curArtifact.set || 'No Set',
       subStats: []
     };
-    
+
     // Comparer les substats
     if (refArtifact.subStats && curArtifact.subStats) {
       // Créer une map des substats pour comparaison
       const refSubMap = {};
       const curSubMap = {};
-      
+
       refArtifact.subStats.forEach((stat, i) => {
         if (stat && refArtifact.subStatsLevels?.[i]) {
           refSubMap[stat] = refArtifact.subStatsLevels[i].value || 0;
         }
       });
-      
+
       curArtifact.subStats.forEach((stat, i) => {
         if (stat && curArtifact.subStatsLevels?.[i]) {
           curSubMap[stat] = curArtifact.subStatsLevels[i].value || 0;
         }
       });
-      
+
       // Comparer toutes les substats
       const allSubStats = new Set([...Object.keys(refSubMap), ...Object.keys(curSubMap)]);
-      
+
       allSubStats.forEach(stat => {
         comparison.subStats.push({
           stat,
@@ -719,7 +721,7 @@ const ComparisonHunter = ({
         });
       });
     }
-    
+
     return comparison;
   };
 
@@ -1092,28 +1094,27 @@ const ComparisonHunter = ({
 
       <div className="comparison-overlay">
         <canvas ref={canvasRef} className="comparison-canvas" />
-        
-        <div className={`comparison-container ${glitchEffect ? 'glitch-effect' : ''} ${
-          animationPhase >= 1 ? 'hologram-effect' : ''
-        }`}>
+
+        <div className={`comparison-container ${glitchEffect ? 'glitch-effect' : ''} ${animationPhase >= 1 ? 'hologram-effect' : ''
+          }`}>
           <div className="cyber-grid" />
-          
+
           {/* 🆕 TOGGLE SWITCH */}
           <div className="mode-toggle">
-            <button 
+            <button
               className={`toggle-button ${comparisonMode === 'final' ? 'active' : ''}`}
               onClick={() => setComparisonMode('final')}
             >
               Stats Finales
             </button>
-            <button 
+            <button
               className={`toggle-button ${comparisonMode === 'artifacts' ? 'active' : ''}`}
               onClick={() => setComparisonMode('artifacts')}
             >
               Stats Artefacts
             </button>
           </div>
-          
+
           {animationPhase >= 2 && (
             <div className="vs-badge">
               VS
@@ -1133,12 +1134,11 @@ const ComparisonHunter = ({
           ) : (
             <div className="flex flex-col md:flex-row h-full relative">
               {/* CÔTÉ GAUCHE - RÉFÉRENCE (HALL OF FLAME) */}
-              <div className={`hunter-side reference ${
-                battleResult.winner === 'reference' ? 'winner-glow' : ''
-              }`} style={{
-                '--winner-color': '#ef4444',
-                '--winner-rgb': '239, 68, 68'
-              }}>
+              <div className={`hunter-side reference ${battleResult.winner === 'reference' ? 'winner-glow' : ''
+                }`} style={{
+                  '--winner-color': '#ef4444',
+                  '--winner-rgb': '239, 68, 68'
+                }}>
                 <div className="text-center mb-6">
                   <h2 className="text-2xl font-bold text-red-400 mb-2">
                     🏆 Hall of Flame
@@ -1164,13 +1164,13 @@ const ComparisonHunter = ({
                   <h4 className="text-lg font-bold text-purple-400 mb-3">
                     📊 Stats de Combat {comparisonMode === 'artifacts' && '(Artefacts)'}
                   </h4>
-                  
+
                   {statsToCompare.map(stat => {
                     const value = referenceStatsToUse?.[stat] || 0;
-                    const maxValue = stat === 'HP' ? 300000 : 
-                                    stat.includes('Rate') ? 20000 : 200000;
+                    const maxValue = stat === 'HP' ? 300000 :
+                      stat.includes('Rate') ? 20000 : 200000;
                     const percentage = (value / maxValue) * 100;
-                    
+
                     return (
                       <div key={stat} className="mb-3">
                         <div className="flex justify-between text-sm mb-1">
@@ -1180,7 +1180,7 @@ const ComparisonHunter = ({
                           </span>
                         </div>
                         <div className="stat-bar">
-                          <div 
+                          <div
                             className="stat-bar-fill"
                             style={{
                               width: `${Math.min(percentage, 100)}%`,
@@ -1203,10 +1203,10 @@ const ComparisonHunter = ({
                     {['Helmet', 'Chest', 'Gloves', 'Boots', 'Necklace', 'Bracelet', 'Ring', 'Earrings'].map(slot => {
                       const artifact = referenceHunter.currentArtifacts?.[slot];
                       if (!artifact) return null;
-                      
+
                       return (
-                        <div 
-                          key={slot} 
+                        <div
+                          key={slot}
                           className="artifact-slot"
                           onMouseEnter={() => !isMobileDevice && setHoveredArtifact(slot)}
                           onMouseLeave={() => !isMobileDevice && setHoveredArtifact(null)}
@@ -1215,14 +1215,14 @@ const ComparisonHunter = ({
                           <div className="text-xs font-bold text-purple-300 mb-1">{slot}</div>
                           <div className="text-xs text-gray-400">{artifact.set || 'No Set'}</div>
                           <div className="text-xs text-white mt-1">{artifact.mainStat}</div>
-                          
+
                           {/* Tooltip de comparaison */}
                           {hoveredArtifact === slot && (
                             <div className="artifact-comparison-tooltip">
                               {(() => {
                                 const comp = compareArtifacts(slot);
                                 if (!comp) return 'Pas de comparaison disponible';
-                                
+
                                 return (
                                   <>
                                     <div className="mb-2">
@@ -1232,7 +1232,7 @@ const ComparisonHunter = ({
                                         <span className="text-green-400">Vous: {comp.curMainStat}</span>
                                       </div>
                                     </div>
-                                    
+
                                     <div className="mb-2">
                                       <div className="text-sm font-bold text-blue-400 mb-1">Sets</div>
                                       <div className="flex justify-between text-xs">
@@ -1240,7 +1240,7 @@ const ComparisonHunter = ({
                                         <span className="text-green-400">{comp.curSet}</span>
                                       </div>
                                     </div>
-                                    
+
                                     {comp.subStats.length > 0 && (
                                       <div>
                                         <div className="text-sm font-bold text-yellow-400 mb-1">Substats</div>
@@ -1267,12 +1267,11 @@ const ComparisonHunter = ({
               </div>
 
               {/* CÔTÉ DROIT - HUNTER ACTUEL */}
-              <div className={`hunter-side current ${
-                battleResult.winner === 'current' ? 'winner-glow' : ''
-              }`} style={{
-                '--winner-color': '#22c55e',
-                '--winner-rgb': '34, 197, 94'
-              }}>
+              <div className={`hunter-side current ${battleResult.winner === 'current' ? 'winner-glow' : ''
+                }`} style={{
+                  '--winner-color': '#22c55e',
+                  '--winner-rgb': '34, 197, 94'
+                }}>
                 <div className="text-center mb-6">
                   <h2 className="text-2xl font-bold text-green-400 mb-2">
                     ⚔️ Votre Hunter
@@ -1306,15 +1305,15 @@ const ComparisonHunter = ({
                   <h4 className="text-lg font-bold text-purple-400 mb-3">
                     📊 Stats de Combat {comparisonMode === 'artifacts' && '(Artefacts)'}
                   </h4>
-                  
+
                   {statsToCompare.map(stat => {
                     const refValue = referenceStatsToUse?.[stat] || 0;
                     const currentValue = currentStatsToUse[stat] || 0;
                     const { diff, percentage } = calculateStatDiff(refValue, currentValue);
-                    const maxValue = stat === 'HP' ? 300000 : 
-                                    stat.includes('Rate') ? 20000 : 200000;
+                    const maxValue = stat === 'HP' ? 300000 :
+                      stat.includes('Rate') ? 20000 : 200000;
                     const fillPercentage = (currentValue / maxValue) * 100;
-                    
+
                     return (
                       <div key={stat} className="mb-3">
                         <div className="flex justify-between text-sm mb-1">
@@ -1324,7 +1323,7 @@ const ComparisonHunter = ({
                           </span>
                         </div>
                         <div className="stat-bar">
-                          <div 
+                          <div
                             className="stat-bar-fill"
                             style={{
                               width: `${Math.min(fillPercentage, 100)}%`,
@@ -1352,176 +1351,176 @@ const ComparisonHunter = ({
                     {['Helmet', 'Chest', 'Gloves', 'Boots', 'Necklace', 'Bracelet', 'Ring', 'Earrings'].map(slot => {
                       const artifact = currentArtifacts[slot];
                       if (!artifact || !artifact.mainStat) return null;
-                      
+
                       return (
-                        <div 
-                          key={slot} 
-                        className="artifact-slot"
-                         onMouseEnter={() => !isMobileDevice && setHoveredArtifact(slot)}
-                         onMouseLeave={() => !isMobileDevice && setHoveredArtifact(null)}
-                         onClick={() => isMobileDevice && setHoveredArtifact(hoveredArtifact === slot ? null : slot)}
-                       >
-                         <div className="text-xs font-bold text-purple-300 mb-1">{slot}</div>
-                         <div className="text-xs text-gray-400">{artifact.set || 'No Set'}</div>
-                         <div className="text-xs text-white mt-1">{artifact.mainStat}</div>
-                         
-                         {/* Tooltip de comparaison */}
-                         {hoveredArtifact === slot && (
-                           <div className="artifact-comparison-tooltip">
-                             {(() => {
-                               const comp = compareArtifacts(slot);
-                               if (!comp) return 'Pas de comparaison disponible';
-                               
-                               return (
-                                 <>
-                                   <div className="mb-2">
-                                     <div className="text-sm font-bold text-purple-400 mb-1">Main Stat</div>
-                                     <div className="flex justify-between text-xs">
-                                       <span className="text-red-400">Hall: {comp.refMainStat}</span>
-                                       <span className="text-green-400">Vous: {comp.curMainStat}</span>
-                                     </div>
-                                     {comp.mainStatMatch ? (
-                                       <div className="text-center text-xs text-green-400 mt-1">✓ Match!</div>
-                                     ) : (
-                                       <div className="text-center text-xs text-red-400 mt-1">✗ Différent</div>
-                                     )}
-                                   </div>
-                                   
-                                   <div className="mb-2">
-                                     <div className="text-sm font-bold text-blue-400 mb-1">Sets</div>
-                                     <div className="flex justify-between text-xs">
-                                       <span className="text-red-400">{comp.refSet}</span>
-                                       <span className="text-green-400">{comp.curSet}</span>
-                                     </div>
-                                   </div>
-                                   
-                                   {comp.subStats.length > 0 && (
-                                     <div>
-                                       <div className="text-sm font-bold text-yellow-400 mb-1">Substats</div>
-                                       {comp.subStats.map((sub, idx) => (
-                                         <div key={idx} className="flex justify-between text-xs mb-1">
-                                           <span className="text-gray-300">{sub.stat}</span>
-                                           <span className={sub.diff > 0 ? 'text-green-400' : sub.diff < 0 ? 'text-red-400' : 'text-gray-400'}>
-                                             {sub.refValue} → {sub.curValue} ({sub.diff > 0 ? '+' : ''}{sub.diff})
-                                           </span>
-                                         </div>
-                                       ))}
-                                     </div>
-                                   )}
-                                 </>
-                               );
-                             })()}
-                           </div>
-                         )}
-                       </div>
-                     );
-                   })}
-                 </div>
-               </div>
+                        <div
+                          key={slot}
+                          className="artifact-slot"
+                          onMouseEnter={() => !isMobileDevice && setHoveredArtifact(slot)}
+                          onMouseLeave={() => !isMobileDevice && setHoveredArtifact(null)}
+                          onClick={() => isMobileDevice && setHoveredArtifact(hoveredArtifact === slot ? null : slot)}
+                        >
+                          <div className="text-xs font-bold text-purple-300 mb-1">{slot}</div>
+                          <div className="text-xs text-gray-400">{artifact.set || 'No Set'}</div>
+                          <div className="text-xs text-white mt-1">{artifact.mainStat}</div>
 
-               {/* INDICATEUR SOURCE DE DONNÉES */}
-               {localHunterData && (
-                 <div className="mt-4 p-2 bg-purple-900/20 rounded border border-purple-500/30">
-                   <p className="text-xs text-purple-300">
-                     📦 Données extraites du localStorage
-                     <br />
-                     🔥 Compte: {localHunterData.accountName}
-                     <br />
-                     🎯 Mode: {comparisonMode === 'final' ? 'Stats Finales Complètes' : 'Stats Artefacts Uniquement'}
-                   </p>
-                 </div>
-               )}
+                          {/* Tooltip de comparaison */}
+                          {hoveredArtifact === slot && (
+                            <div className="artifact-comparison-tooltip">
+                              {(() => {
+                                const comp = compareArtifacts(slot);
+                                if (!comp) return 'Pas de comparaison disponible';
 
-               {/* SUGGESTIONS D'AMÉLIORATION */}
-               <div className="mt-6 p-4 bg-black/30 rounded-lg border border-yellow-500/30">
-                 <h4 className="text-yellow-400 font-bold mb-2">
-                   💡 Suggestions Kaisel
-                 </h4>
-                 <ul className="text-sm text-gray-300 space-y-1">
-                   {(() => {
-                     const suggestions = [];
-                     
-                     // Analyser les plus grosses différences
-                     statsToCompare.forEach(stat => {
-                       const refValue = referenceStatsToUse?.[stat] || 0;
-                       const currentValue = currentStatsToUse[stat] || 0;
-                       const { diff, percentage } = calculateStatDiff(refValue, currentValue);
-                       
-                       if (percentage < -20) {
-                         suggestions.push(`Améliorer ${stat} (+${Math.abs(diff).toLocaleString()} pour égaler)`);
-                       }
-                     });
-                     
-                     // Analyser les différences de mainstat
-                     let mainStatMismatches = 0;
-                     ['Helmet', 'Chest', 'Gloves', 'Boots', 'Necklace', 'Bracelet', 'Ring', 'Earrings'].forEach(slot => {
-                       const comp = compareArtifacts(slot);
-                       if (comp && !comp.mainStatMatch) {
-                         mainStatMismatches++;
-                       }
-                     });
-                     
-                     if (mainStatMismatches > 2) {
-                       suggestions.push(`${mainStatMismatches} artefacts ont des main stats différentes du Hall of Flame`);
-                     }
-                     
-                     if (referenceHunter.setAnalysis?.isOptimal && !currentSetAnalysis.isOptimal) {
-                       suggestions.push('Optimiser vos sets d\'artefacts pour le bonus +5% CP');
-                     }
-                     
-                     if (suggestions.length === 0) {
-                       suggestions.push('Votre build est déjà excellent ! 🎉');
-                     }
-                     
-                     return suggestions.slice(0, 3).map((sugg, idx) => (
-                       <li key={idx}>• {sugg}</li>
-                     ));
-                   })()}
-                 </ul>
-               </div>
-             </div>
-           </div>
-         )}
+                                return (
+                                  <>
+                                    <div className="mb-2">
+                                      <div className="text-sm font-bold text-purple-400 mb-1">Main Stat</div>
+                                      <div className="flex justify-between text-xs">
+                                        <span className="text-red-400">Hall: {comp.refMainStat}</span>
+                                        <span className="text-green-400">Vous: {comp.curMainStat}</span>
+                                      </div>
+                                      {comp.mainStatMatch ? (
+                                        <div className="text-center text-xs text-green-400 mt-1">✓ Match!</div>
+                                      ) : (
+                                        <div className="text-center text-xs text-red-400 mt-1">✗ Différent</div>
+                                      )}
+                                    </div>
 
-         {/* 🎮 PRÉDICTION DE COMBAT BERUVIAN WORLD */}
-         {animationPhase >= 2 && currentCP > 0 && (
-           <div className="battle-prediction">
-             <h3 className="text-lg font-bold text-purple-400 mb-2">
-               🎮 Simulation Beruvian World ({comparisonMode === 'artifacts' ? 'Artefacts' : 'Total'})
-             </h3>
-             <div className="flex items-center justify-center gap-4">
-               <div className={`text-center ${battleResult.winner === 'reference' ? 'text-red-400' : 'text-gray-400'}`}>
-                 <p className="text-sm">{referenceHunter.pseudo}</p>
-                 <p className="text-2xl font-bold">
-                   {battleResult.winner === 'reference' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
-                 </p>
-               </div>
-               <span className="text-purple-400 text-xl">⚔️</span>
-               <div className={`text-center ${battleResult.winner === 'current' ? 'text-green-400' : 'text-gray-400'}`}>
-                 <p className="text-sm">Vous</p>
-                 <p className="text-2xl font-bold">
-                   {battleResult.winner === 'current' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
-                 </p>
-               </div>
-             </div>
-             <p className="text-xs text-gray-400 mt-2">
-               Simulation basée sur le CP {comparisonMode === 'artifacts' ? 'des artefacts' : 'total'} et les stats principales
-             </p>
-           </div>
-         )}
+                                    <div className="mb-2">
+                                      <div className="text-sm font-bold text-blue-400 mb-1">Sets</div>
+                                      <div className="flex justify-between text-xs">
+                                        <span className="text-red-400">{comp.refSet}</span>
+                                        <span className="text-green-400">{comp.curSet}</span>
+                                      </div>
+                                    </div>
 
-         {/* BOUTON FERMER */}
-         <button
-           onClick={onClose}
-           className="absolute top-4 right-4 w-10 h-10 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-400 flex items-center justify-center transition-all hover:scale-110 z-30"
-         >
-           ✕
-         </button>
-       </div>
-     </div>
-   </>,
-   document.body
- );
+                                    {comp.subStats.length > 0 && (
+                                      <div>
+                                        <div className="text-sm font-bold text-yellow-400 mb-1">Substats</div>
+                                        {comp.subStats.map((sub, idx) => (
+                                          <div key={idx} className="flex justify-between text-xs mb-1">
+                                            <span className="text-gray-300">{sub.stat}</span>
+                                            <span className={sub.diff > 0 ? 'text-green-400' : sub.diff < 0 ? 'text-red-400' : 'text-gray-400'}>
+                                              {sub.refValue} → {sub.curValue} ({sub.diff > 0 ? '+' : ''}{sub.diff})
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* INDICATEUR SOURCE DE DONNÉES */}
+                {localHunterData && (
+                  <div className="mt-4 p-2 bg-purple-900/20 rounded border border-purple-500/30">
+                    <p className="text-xs text-purple-300">
+                      📦 Données extraites du localStorage
+                      <br />
+                      🔥 Compte: {localHunterData.accountName}
+                      <br />
+                      🎯 Mode: {comparisonMode === 'final' ? 'Stats Finales Complètes' : 'Stats Artefacts Uniquement'}
+                    </p>
+                  </div>
+                )}
+
+                {/* SUGGESTIONS D'AMÉLIORATION */}
+                <div className="mt-6 p-4 bg-black/30 rounded-lg border border-yellow-500/30">
+                  <h4 className="text-yellow-400 font-bold mb-2">
+                    💡 Suggestions Kaisel
+                  </h4>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    {(() => {
+                      const suggestions = [];
+
+                      // Analyser les plus grosses différences
+                      statsToCompare.forEach(stat => {
+                        const refValue = referenceStatsToUse?.[stat] || 0;
+                        const currentValue = currentStatsToUse[stat] || 0;
+                        const { diff, percentage } = calculateStatDiff(refValue, currentValue);
+
+                        if (percentage < -20) {
+                          suggestions.push(`Améliorer ${stat} (+${Math.abs(diff).toLocaleString()} pour égaler)`);
+                        }
+                      });
+
+                      // Analyser les différences de mainstat
+                      let mainStatMismatches = 0;
+                      ['Helmet', 'Chest', 'Gloves', 'Boots', 'Necklace', 'Bracelet', 'Ring', 'Earrings'].forEach(slot => {
+                        const comp = compareArtifacts(slot);
+                        if (comp && !comp.mainStatMatch) {
+                          mainStatMismatches++;
+                        }
+                      });
+
+                      if (mainStatMismatches > 2) {
+                        suggestions.push(`${mainStatMismatches} artefacts ont des main stats différentes du Hall of Flame`);
+                      }
+
+                      if (referenceHunter.setAnalysis?.isOptimal && !currentSetAnalysis.isOptimal) {
+                        suggestions.push('Optimiser vos sets d\'artefacts pour le bonus +5% CP');
+                      }
+
+                      if (suggestions.length === 0) {
+                        suggestions.push('Votre build est déjà excellent ! 🎉');
+                      }
+
+                      return suggestions.slice(0, 3).map((sugg, idx) => (
+                        <li key={idx}>• {sugg}</li>
+                      ));
+                    })()}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 🎮 PRÉDICTION DE COMBAT BERUVIAN WORLD */}
+          {animationPhase >= 2 && currentCP > 0 && (
+            <div className="battle-prediction">
+              <h3 className="text-lg font-bold text-purple-400 mb-2">
+                🎮 Simulation Beruvian World ({comparisonMode === 'artifacts' ? 'Artefacts' : 'Total'})
+              </h3>
+              <div className="flex items-center justify-center gap-4">
+                <div className={`text-center ${battleResult.winner === 'reference' ? 'text-red-400' : 'text-gray-400'}`}>
+                  <p className="text-sm">{referenceHunter.pseudo}</p>
+                  <p className="text-2xl font-bold">
+                    {battleResult.winner === 'reference' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
+                  </p>
+                </div>
+                <span className="text-purple-400 text-xl">⚔️</span>
+                <div className={`text-center ${battleResult.winner === 'current' ? 'text-green-400' : 'text-gray-400'}`}>
+                  <p className="text-sm">Vous</p>
+                  <p className="text-2xl font-bold">
+                    {battleResult.winner === 'current' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                Simulation basée sur le CP {comparisonMode === 'artifacts' ? 'des artefacts' : 'total'} et les stats principales
+              </p>
+            </div>
+          )}
+
+          {/* BOUTON FERMER */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-400 flex items-center justify-center transition-all hover:scale-110 z-30"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    </>,
+    document.body
+  );
 };
 
 export default ComparisonHunter;
