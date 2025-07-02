@@ -12,6 +12,7 @@ const coords = [
   "E1", "E2", "E3", "E4", "E5"
 ];
 
+
 const columns = 5; // Grille 5x5
 
 // 🖼️ DICTIONNAIRE DES IMAGES TEMPORAIRES
@@ -30,7 +31,7 @@ const zoneImages = {
   "desert_01": "https://via.placeholder.com/1024/F4A460/000000?text=Desert",
   "snow_01": "https://via.placeholder.com/1024/F0F8FF/000000?text=Neige",
   "ice_01": "https://via.placeholder.com/1024/00FFFF/000000?text=Glacier",
-  "lava_01": "https://via.placeholder.com/1024/FF4500/FFFF00?text=Volcan"
+  "lava_01": "https://via.placeholder.com/1024/FF4500/FFFF00?text=Volcan2"
 };
 
 export default function MapCanvas({ zoneMap, currentZone, hunterPosition }) {

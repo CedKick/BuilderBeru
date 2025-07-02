@@ -32,7 +32,7 @@ export function upscaleImage(imageSrc, targetSize = 1024) {
   });
 }
 
-// Cache pour éviter de recalculer les images
+// Cache pour éviter de recalculer les imageszu
 const imageCache = new Map();
 
 export async function getUpscaledImage(imageSrc, targetSize = 1024) {
