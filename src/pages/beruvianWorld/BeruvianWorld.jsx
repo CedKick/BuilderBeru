@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
+import ShadowResonance from "./ShadowResonance";
+import ResonanceManager from "./ResonanceManager";
+import playerProgression from "./PlayerProgressionSystem";
 
 // 🌍 CONSTANTES DU JEU
 const TILE_SIZE = 1024;
-const HUNTER_SIZE = 32;
+const HUNTER_SIZE = 16; // Réduit de 32 à 16 (2x plus petit)
 const HUNTER_SPEED = 5;
-const VISION_RANGE = 100;
-const DEFAULT_ZOOM = 2; // Zoom par défaut encore plus fort !
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 10; // ZOOM MAXIMUM ÉNORME ! 🔍
+const VISION_RANGE = 50; // Réduit aussi pour matcher
+const DEFAULT_ZOOM = 5; // Le 500% devient le zoom par défaut !
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 20; // On augmente le max pour pouvoir zoomer encore plus
 
 // 📍 POSITIONS DE TOUTES LES ZONES 5x5
 const ZONE_POSITIONS = {
@@ -54,22 +57,37 @@ export default function BeruvianWorld() {
   const [faction] = useState("ShadowLand");
   const [isMoving, setIsMoving] = useState(false);
   const [zoneMap] = useState(zoneMapData);
-  const [actionsRemaining, setActionsRemaining] = useState(3);
+  const [actionsRemaining, setActionsRemaining] = useState(100); // 100 actions au lieu de 3 !
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const [mapOffset, setMapOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   
-  const [hunterStats] = useState({
-    name: "Shadow Hunter #1",
-    level: 1,
-    vision: 20,
-    hp: 100,
-    maxHp: 100,
-    role: "DPS",
-    xp: 0,
-    nextLevelXp: 100
+  // 🌀 États pour le système de résonance
+  const [showResonance, setShowResonance] = useState(false);
+  const [shadowEncountered, setShadowEncountered] = useState(null);
+  const [activeResonance, setActiveResonance] = useState(null);
+  const [isCorrupted, setIsCorrupted] = useState(false);
+  
+  // 📊 Charger les stats du joueur depuis localStorage
+  const [hunterStats, setHunterStats] = useState(() => {
+    const stats = playerProgression.getCurrentStats();
+    return {
+      name: playerProgression.playerData.name,
+      level: stats.level,
+      vision: stats.vision,
+      hp: stats.hp,
+      maxHp: stats.maxHp,
+      attack: stats.attack,
+      defense: stats.defense,
+      role: playerProgression.playerData.class,
+      xp: stats.xp,
+      nextLevelXp: stats.xpRequired
+    };
   });
+  
+  // 🎯 Système de notifications pour level up et achievements
+  const [notifications, setNotifications] = useState([]);
 
   // 🕹️ Gestion du déplacement
   useEffect(() => {
@@ -138,8 +156,18 @@ export default function BeruvianWorld() {
 
     adjacentCoords.forEach(coord => {
       if (zoneMap[coord] && !zoneMap[coord].explored) {
-        // Dans un vrai jeu, ça mettrait à jour le backend
-        console.log(`🔍 Zone découverte: ${coord}`);
+        // Explorer la zone et gagner de l'XP
+        const xpResult = playerProgression.exploreZone(coord);
+        if (xpResult) {
+          showNotification(`Zone découverte! +${xpResult.xpGained} XP`, 'success');
+          updateHunterStats();
+          
+          // Vérifier les achievements
+          const achievements = playerProgression.checkAchievements();
+          achievements.forEach(ach => {
+            showNotification(`🏆 ${ach.name}: ${ach.description}`, 'achievement');
+          });
+        }
       }
     });
   };
@@ -202,6 +230,21 @@ export default function BeruvianWorld() {
     });
   };
 
+  // 🎯 Centrer sur une zone spécifique
+  const centerOnZone = (zoneId) => {
+    const rect = document.querySelector('.map-container')?.getBoundingClientRect();
+    if (!rect || !ZONE_POSITIONS[zoneId]) return;
+    
+    const zonePos = ZONE_POSITIONS[zoneId];
+    const targetX = zonePos.gridX * TILE_SIZE + TILE_SIZE/2;
+    const targetY = zonePos.gridY * TILE_SIZE + TILE_SIZE/2;
+    
+    setMapOffset({
+      x: rect.width / 2 - targetX * zoom,
+      y: rect.height / 2 - targetY * zoom
+    });
+  };
+
   // 🎮 Actions disponibles
   const actions = [
     { id: "move", icon: "🚶", name: "Se déplacer", description: "Cliquez sur la map (1 action)" },
@@ -221,18 +264,61 @@ export default function BeruvianWorld() {
       case "patrol":
         console.log("🔍 Patrouille en cours...");
         setActionsRemaining(prev => prev - 1);
-        // Simuler une rencontre
-        if (Math.random() > 0.5) {
-          alert("⚔️ Un ennemi apparaît !");
+        // Chance de rencontrer une ombre ou un ennemi
+        const encounterRoll = Math.random();
+        
+        if (encounterRoll > 0.7) {
+          // Rencontre avec une ombre (30% de chance)
+          const shadows = ['bigrock', 'beste', 'kaiser'];
+          const randomShadow = shadows[Math.floor(Math.random() * shadows.length)];
+          setShadowEncountered(randomShadow);
+          setShowResonance(true);
+        } else if (encounterRoll > 0.3) {
+          // Combat normal (40% de chance)
+          const enemyLevel = currentZone ? (zoneMap[currentZone].dangerLevel || 1) : 1;
+          const combatSuccess = Math.random() > 0.3; // 70% de chance de victoire
+          
+          if (combatSuccess) {
+            const xpResult = playerProgression.winCombat(enemyLevel);
+            showNotification(`⚔️ Victoire! +${xpResult.xpGained} XP`, 'success');
+            
+            // Chance de drop
+            if (Math.random() > 0.5) {
+              const resources = ['shadowCrystals', 'lightEssence', 'earthFragments'];
+              const resource = resources[Math.floor(Math.random() * resources.length)];
+              const collected = playerProgression.collectResource(resource, Math.floor(Math.random() * 3) + 1);
+              showNotification(`💎 +${collected.amount} ${resource}`, 'info');
+            }
+          } else {
+            // Défaite : perte de HP
+            const damage = Math.floor(Math.random() * 20) + 10;
+            setHunterStats(prev => ({
+              ...prev,
+              hp: Math.max(0, prev.hp - damage)
+            }));
+            showNotification(`❌ Défaite! -${damage} HP`, 'error');
+          }
+          
+          updateHunterStats();
         } else {
-          alert("🌲 Zone calme, rien à signaler.");
+          // Zone calme (30% de chance)
+          showNotification("🌲 Zone calme, rien à signaler.", 'info');
+          // Petit bonus d'XP pour la patrouille
+          playerProgression.gainXP(5);
+          updateHunterStats();
         }
         break;
         
       case "rest":
         console.log("💤 Repos...");
         setActionsRemaining(prev => prev - 1);
-        alert("❤️ +20 HP récupérés !");
+        // Restaurer des HP
+        const healAmount = Math.floor(hunterStats.maxHp * 0.2);
+        setHunterStats(prev => ({
+          ...prev,
+          hp: Math.min(prev.hp + healAmount, prev.maxHp)
+        }));
+        showNotification(`❤️ +${healAmount} HP récupérés!`, 'heal');
         break;
         
       case "explore":
@@ -253,10 +339,105 @@ export default function BeruvianWorld() {
     };
   };
 
+  // 🔄 Mettre à jour les stats du hunter
+  const updateHunterStats = () => {
+    const stats = playerProgression.getCurrentStats();
+    setHunterStats({
+      name: playerProgression.playerData.name,
+      level: stats.level,
+      vision: stats.vision,
+      hp: stats.hp,
+      maxHp: stats.maxHp,
+      attack: stats.attack,
+      defense: stats.defense,
+      role: playerProgression.playerData.class,
+      xp: stats.xp,
+      nextLevelXp: stats.xpRequired
+    });
+  };
+
+  // 📢 Système de notifications
+  const showNotification = (message, type = 'info') => {
+    const id = Date.now();
+    setNotifications(prev => [...prev, { id, message, type }]);
+    
+    // Supprimer après 3 secondes
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 3000);
+  };
+
+  // 🌀 Gestion de la résonance
+  const handleResonanceComplete = (resonanceData) => {
+    setActiveResonance(resonanceData);
+    setShowResonance(false);
+    
+    // Sauvegarder la résonance et gagner de l'XP
+    const xpResult = playerProgression.addResonance(resonanceData);
+    showNotification(`🌀 Résonance établie! +${xpResult.xpGained} XP`, 'resonance');
+    updateHunterStats();
+    
+    console.log("🌀 Résonance activée:", resonanceData);
+  };
+
+  const handleCorruptionMax = () => {
+    setIsCorrupted(true);
+    console.log("⚠️ Corruption maximale atteinte!");
+    // En mode corrompu, le joueur devient hostile
+    setTimeout(() => {
+      setIsCorrupted(false);
+      alert("La corruption s'estompe... Vous reprenez le contrôle.");
+    }, 30000); // 30 secondes de mode berserk
+  };
+
+  const handleResonanceEnd = () => {
+    setActiveResonance(null);
+    console.log("🌀 Résonance terminée");
+  };
+
   const territoryStats = getTerritorialStats();
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4">
+      {/* 📢 Système de Notifications */}
+      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 space-y-2">
+        {notifications.map(notif => (
+          <div
+            key={notif.id}
+            className={`px-6 py-3 rounded-lg shadow-lg animate-slideIn ${
+              notif.type === 'success' ? 'bg-green-600' :
+              notif.type === 'achievement' ? 'bg-purple-600' :
+              notif.type === 'heal' ? 'bg-pink-600' :
+              notif.type === 'resonance' ? 'bg-indigo-600' :
+              notif.type === 'levelup' ? 'bg-yellow-600' :
+              'bg-blue-600'
+            }`}
+          >
+            {notif.message}
+          </div>
+        ))}
+      </div>
+
+      {/* 🌀 Système de Résonance */}
+      {showResonance && (
+        <ShadowResonance
+          shadowEncountered={shadowEncountered}
+          playerStats={hunterStats}
+          onResonanceComplete={handleResonanceComplete}
+          onClose={() => setShowResonance(false)}
+        />
+      )}
+
+      {/* 🌀 Gestionnaire de Résonance Active */}
+      {activeResonance && (
+        <ResonanceManager
+          activeResonance={activeResonance}
+          playerStats={hunterStats}
+          onCorruptionMax={handleCorruptionMax}
+          onResonanceEnd={handleResonanceEnd}
+        />
+      )}
+
       {/* 🎯 HEADER */}
       <div className="max-w-7xl mx-auto mb-6">
         <h1 className="text-4xl font-bold text-purple-400 mb-2">
@@ -264,7 +445,7 @@ export default function BeruvianWorld() {
         </h1>
         <div className="flex gap-4 text-sm">
           <span>📍 Zone: <span className="text-yellow-400">{zoneMap[currentZone]?.name}</span></span>
-          <span>⚡ Actions: <span className="text-green-400">{actionsRemaining}/3</span></span>
+          <span>⚡ Actions: <span className="text-green-400">{actionsRemaining}/100</span></span>
           <span>📅 Jour 1</span>
         </div>
       </div>
@@ -461,26 +642,55 @@ export default function BeruvianWorld() {
             <h3 className="text-lg font-bold mb-3 text-green-400">🗡️ Hunter Info</h3>
             <div className="space-y-2 text-sm">
               <div>📛 {hunterStats.name}</div>
-              <div>⭐ Niveau {hunterStats.level}</div>
+              <div className="flex items-center gap-2">
+                <span>⭐ Niveau {hunterStats.level}</span>
+                {hunterStats.level > 1 && (
+                  <span className="text-xs text-yellow-400">(+{hunterStats.level - 1})</span>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <span>📊 XP:</span>
                 <div className="flex-1 bg-gray-700 rounded-full h-2">
                   <div 
-                    className="bg-green-500 h-2 rounded-full"
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all"
                     style={{ width: `${(hunterStats.xp / hunterStats.nextLevelXp) * 100}%` }}
                   />
                 </div>
                 <span className="text-xs">{hunterStats.xp}/{hunterStats.nextLevelXp}</span>
               </div>
-              <div>👁️ Vision: {hunterStats.vision}m</div>
-              <div>❤️ HP: {hunterStats.hp}/{hunterStats.maxHp}</div>
-              <div>⚔️ Rôle: {hunterStats.role}</div>
+              
+              {/* Stats détaillées */}
               <div className="pt-2 border-t border-gray-700">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>⚔️ ATK: <span className="text-red-400">{hunterStats.attack}</span></div>
+                  <div>🛡️ DEF: <span className="text-blue-400">{hunterStats.defense}</span></div>
+                  <div>👁️ Vision: <span className="text-green-400">{hunterStats.vision}m</span></div>
+                  <div>❤️ HP: <span className="text-pink-400">{hunterStats.hp}/{hunterStats.maxHp}</span></div>
+                </div>
+              </div>
+              
+              <div className="pt-2 border-t border-gray-700">
+                <div>⚔️ Rôle: {hunterStats.role}</div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-purple-600 rounded-full"></div>
                   <span>Faction: {faction}</span>
                 </div>
               </div>
+              {/* Indicateur de résonance active */}
+              {activeResonance && (
+                <div className="pt-2 border-t border-gray-700">
+                  <div className="flex items-center gap-2">
+                    <span>🌀</span>
+                    <span className="text-purple-400">Résonance: {activeResonance.shadow.name}</span>
+                  </div>
+                </div>
+              )}
+              {/* Indicateur de corruption */}
+              {isCorrupted && (
+                <div className="text-red-500 font-bold animate-pulse">
+                  ⚠️ MODE BERSERK ACTIF
+                </div>
+              )}
             </div>
           </div>
 
@@ -506,8 +716,9 @@ export default function BeruvianWorld() {
                       zone.explored 
                         ? (zone.controlledBy ? factionColors[zone.controlledBy] : "bg-gray-700")
                         : "bg-black"
-                    } flex items-center justify-center text-xs cursor-pointer hover:opacity-80`}
+                    } flex items-center justify-center text-xs cursor-pointer hover:opacity-80 transition-all hover:scale-110`}
                     title={zone.explored ? zone.name : "Zone inconnue"}
+                    onClick={() => centerOnZone(zoneId)}
                   >
                     {zone.explored ? (
                       <>
@@ -591,6 +802,23 @@ export default function BeruvianWorld() {
           )}
         </div>
       </div>
+      
+      <style jsx>{`
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+        }
+        
+        .animate-slideIn {
+          animation: slideIn 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }

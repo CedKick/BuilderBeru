@@ -318,10 +318,7 @@ const KaiselInteractionMenu = ({
         // 🎯 LISTE DES STREAMERS À SCANNER
         const streamersToCheck = [
           'Souties67',
-          'ArcadeHecarim',
-          'GamingFanatic',
-          'SoloLevelingPro',
-          'AriseHunter',
+          'Sohoven',
           // Ajoute d'autres streamers ici
         ];
         

@@ -1,0 +1,305 @@
+/* 🌀 SYSTÈME DE RÉSONANCE DES OMBRES */
+.shadow-resonance-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.resonance-container {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2px solid #7b2cbf;
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 0 50px rgba(123, 44, 191, 0.5);
+  animation: slideIn 0.4s ease;
+}
+
+@keyframes slideIn {
+  from { 
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to { 
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Phase de rencontre */
+.encounter-phase {
+  text-align: center;
+}
+
+.resonance-title {
+  font-size: 2.5rem;
+  color: #e94560;
+  margin-bottom: 30px;
+  text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.shadow-display {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin: 30px 0;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 15px;
+}
+
+.shadow-sprite {
+  width: 120px;
+  height: 120px;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 20px rgba(123, 44, 191, 0.8));
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.shadow-info h3 {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+}
+
+.shadow-skills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+.skill-tag {
+  background: rgba(123, 44, 191, 0.3);
+  border: 1px solid #7b2cbf;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: #e0aaff;
+}
+
+.resonance-warning {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 10px;
+  padding: 15px;
+  margin: 20px 0;
+  color: #ffccd5;
+}
+
+/* Phase rythmique */
+.rhythm-phase {
+  text-align: center;
+}
+
+.pattern-display {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin: 40px 0;
+}
+
+.beat-indicator {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(123, 44, 191, 0.2);
+  border: 2px solid #7b2cbf;
+  transition: all 0.2s;
+}
+
+.beat-indicator.active {
+  background: #e94560;
+  transform: scale(1.3);
+  box-shadow: 0 0 30px #e94560;
+}
+
+.rhythm-input-zone {
+  width: 300px;
+  height: 300px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(123, 44, 191, 0.3) 0%, rgba(123, 44, 191, 0.1) 100%);
+  border: 3px solid #7b2cbf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #e0aaff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rhythm-input-zone:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 40px rgba(123, 44, 191, 0.6);
+}
+
+.rhythm-input-zone.pulse {
+  animation: rhythmPulse 0.2s ease;
+}
+
+@keyframes rhythmPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+.rhythm-result {
+  font-size: 2rem;
+  margin-top: 20px;
+  color: #e94560;
+  animation: scoreReveal 0.5s ease;
+}
+
+@keyframes scoreReveal {
+  from { 
+    transform: scale(0);
+    opacity: 0;
+  }
+  to { 
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Phase de succès */
+.success-phase {
+  text-align: center;
+}
+
+.success-title {
+  font-size: 2.5rem;
+  color: #06ffa5;
+  margin-bottom: 30px;
+  text-shadow: 0 0 20px rgba(6, 255, 165, 0.5);
+}
+
+.resonance-level {
+  font-size: 1.5rem;
+  color: #ffd700;
+  margin: 20px 0;
+}
+
+.bonuses-preview,
+.skills-unlocked {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.bonus-stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 1.1rem;
+}
+
+.bonus-stat .positive {
+  color: #06ffa5;
+}
+
+.bonus-stat .negative {
+  color: #ff6b6b;
+}
+
+.skill-unlock {
+  padding: 8px 0;
+  color: #e0aaff;
+  font-size: 1.1rem;
+}
+
+/* Phase d'échec */
+.failed-phase {
+  text-align: center;
+}
+
+.failed-title {
+  font-size: 2.5rem;
+  color: #ff6b6b;
+  margin-bottom: 20px;
+}
+
+/* Boutons */
+.action-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.btn-resonance,
+.btn-flee,
+.btn-activate,
+.btn-retry {
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: bold;
+}
+
+.btn-resonance {
+  background: linear-gradient(135deg, #7b2cbf 0%, #c77dff 100%);
+  color: white;
+}
+
+.btn-resonance:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(123, 44, 191, 0.5);
+}
+
+.btn-flee {
+  background: rgba(255, 107, 107, 0.2);
+  border: 2px solid #ff6b6b;
+  color: #ff6b6b;
+}
+
+.btn-flee:hover {
+  background: rgba(255, 107, 107, 0.3);
+}
+
+.btn-activate {
+  background: linear-gradient(135deg, #06ffa5 0%, #00d084 100%);
+  color: #1a1a2e;
+  padding: 20px 40px;
+  font-size: 1.4rem;
+}
+
+.btn-activate:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 40px rgba(6, 255, 165, 0.5);
+}
+
+.btn-retry {
+  background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%);
+  color: #1a1a2e;
+}

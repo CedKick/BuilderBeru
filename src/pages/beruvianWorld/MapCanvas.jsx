@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { getUpscaledImage } from "./ImageUpscaler";
 
 const TILE_SIZE = 1024; // Chaque tuile = exactement 1024x1024 pixels
 
@@ -54,10 +55,16 @@ export default function MapCanvas({ zoneMap, currentZone, hunterPosition }) {
       // Si la zone est explorée et a une image
       if (zone.explored && zone.tileId && zoneImages[zone.tileId]) {
         const img = new Image();
-        img.src = zoneImages[zone.tileId];
+        
+        // D'abord essayer d'obtenir l'image upscalée
+        getUpscaledImage(zoneImages[zone.tileId], TILE_SIZE).then(upscaledSrc => {
+          img.src = upscaledSrc;
+        }).catch(() => {
+          img.src = zoneImages[zone.tileId];
+        });
         
         img.onload = () => {
-          // Dessiner l'image
+          // Si la zone est explorée et a une image
           ctx.drawImage(img, x, y, TILE_SIZE, TILE_SIZE);
           
           // 🏷️ AJOUTER LE NOM DE LA ZONE (plus petit)
