@@ -88,10 +88,10 @@ export default function HomePage() {
         Builder Béru
       </h1>
 
-      {/* 🎵 NOUVELLE SECTION SHUHUA & MIYEON */}
+      {/* 🎵 NOUVELLE SECTION SHUHUA & MIYEONN */}
       <div className="character-announcement">
         <img 
-          src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751497415/songgaga_isjqs4.png"
+          src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751537418/songtogether_lrdu7o.png"
           alt="Shuhua & Miyeon"
           className="character-image w-full rounded-lg hover:scale-105 transition-all duration-300"
         />
