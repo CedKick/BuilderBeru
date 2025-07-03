@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { BUILDER_DATA } from '../data/builder_data.js';
 
 const API_BASE = window.location.hostname === 'localhost' 
-  ? '' // Utilise le proxy en dev
-  : 'https://api.builderberu.com'; // URL complète en prod
+  ? '' // Utilise le proxy en deve
+  : 'https://api.builderberu.com'; // URL complète en prod2
 
 // 🧮 CALCUL CP AVANCÉ KAISEL - VERSION PROPS + SET BONUS
 const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false, setBonus = false) => {
