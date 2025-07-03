@@ -1294,7 +1294,7 @@ export const characters = [
         icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/miyeon_ijwudx.png',
         class: 'Fighter',
         grade: 'SSR',
-        element: 'Wind',
+        element: 'Light',
         scaleStat: 'Defense',
         presets: {
             PoD: {
@@ -1332,10 +1332,10 @@ export const characters = [
         name: 'Shuhua',
         img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751535917/Shuhua1_difnjb.png',
         icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751536775/IconShuhua_njc2f2.png',
-        class: 'Fighter',
+        class: 'Assassin',
         grade: 'SSR',
         element: 'Water',
-        scaleStat: 'Defense',
+        scaleStat: 'Attack',
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],

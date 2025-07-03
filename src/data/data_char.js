@@ -3,17 +3,17 @@ const data_chars = {
       name: 'Shuhua',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751535917/Shuhua1_difnjb.png',
       icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751536775/IconShuhua_njc2f2.png',
-      class: 'Fighter',
+      class: 'Assassin',
       grade: 'SSR',
       element: 'Water',
-      scaleStat: 'Defense'
+      scaleStat: 'Attack'
     },'miyeon': {
       name: 'Miyeon',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/miyeon_ijwudx.png',
       icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/miyeon_ijwudx.png',
-      class: 'Support',
+      class: 'Fighter',
       grade: 'SSR',
-      element: 'Water',
+      element: 'Light',
       scaleStat: 'Defense'
     },
      'niermann': {

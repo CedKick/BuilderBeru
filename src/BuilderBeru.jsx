@@ -1779,8 +1779,8 @@ const BuilderBeru = () => {
   };
 
   const characterStats = {
-    'shuhua': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
-    'miyeon': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
+    'shuhua': { attack: 5909.5, defense: 5100, hp: 10890.5, critRate: 0, mp: 1000 },
+    'miyeon': { attack: 5176.5, defense: 5810.5, hp: 10932.5, critRate: 0, mp: 1000 },
     'niermann': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
     'chae': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
     'kanae': { attack: 5634, defense: 5028, hp: 11628, critRate: 0, mp: 1000 },
@@ -2584,21 +2584,21 @@ BobbyJones : "Allez l'Inter !"
       grade: '',
       element: '',
       scaleStat: ''
-    },'shuhua': {
+    }, 'shuhua': {
       name: 'Shuhua',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751535917/Shuhua1_difnjb.png',
       icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751536775/IconShuhua_njc2f2.png',
       class: 'Fighter',
       grade: 'SSR',
-      element: 'Wind',
-      scaleStat: 'Defense'
-    },'miyeon': {
+      element: 'Water',
+      scaleStat: 'Attack'
+    }, 'miyeon': {
       name: 'Miyeon',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/miyeon_ijwudx.png',
       icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/miyeon_ijwudx.png',
-      class: 'Support',
+      class: 'Fighter',
       grade: 'SSR',
-      element: 'Water',
+      element: 'Light',
       scaleStat: 'Defense'
     }, 'niermann': {
       name: 'Lennart Niermann',
@@ -3206,113 +3206,113 @@ BobbyJones : "Allez l'Inter !"
   }, []);
 
 
-// 🏆 AJOUTE CES FONCTIONS AU DÉBUT DE TON COMPOSANT BuilderBeru (après les autres fonctions)
+  // 🏆 AJOUTE CES FONCTIONS AU DÉBUT DE TON COMPOSANT BuilderBeru (après les autres fonctions)
 
-// 🔍 FONCTION DE VALIDATION COMPLÈTE DU HUNTER
-const validateHunterForHallOfFame = (currentArtifacts, currentCores, currentGems) => {
-  const validation = {
-    isValid: true,
-    missing: [],
-    details: {}
+  // 🔍 FONCTION DE VALIDATION COMPLÈTE DU HUNTER
+  const validateHunterForHallOfFame = (currentArtifacts, currentCores, currentGems) => {
+    const validation = {
+      isValid: true,
+      missing: [],
+      details: {}
+    };
+
+    // 🎨 VÉRIFICATION DES 8 ARTEFACTS
+    const requiredArtifactSlots = ['Helmet', 'Chest', 'Gloves', 'Boots', 'Necklace', 'Bracelet', 'Ring', 'Earrings'];
+    const artifactCount = requiredArtifactSlots.filter(slot => {
+      const artifact = currentArtifacts[slot];
+      return artifact && (artifact.mainStat || artifact.set); // Au minimum un mainStat ou set défini
+    }).length;
+
+    validation.details.artifacts = {
+      current: artifactCount,
+      required: 8,
+      isComplete: artifactCount === 8
+    };
+
+    if (artifactCount < 8) {
+      validation.isValid = false;
+      validation.missing.push(`Artefacts manquants (${artifactCount}/8)`);
+    }
+
+    // 🔮 VÉRIFICATION DES CORES
+    const requiredCoreSlots = ['Offensif', 'Défensif', 'Endurance'];
+    const coreCount = requiredCoreSlots.filter(slot => {
+      const core = currentCores[slot];
+      return core && core.primary; // Au minimum un primary défini
+    }).length;
+
+    validation.details.cores = {
+      current: coreCount,
+      required: 3,
+      isComplete: coreCount === 3
+    };
+
+    if (coreCount < 3) {
+      validation.isValid = false;
+      validation.missing.push(`Cores manquants (${coreCount}/3)`);
+    }
+
+    // 💎 VÉRIFICATION DES GEMMES (optionnel mais recommandé)
+    const gemCount = Object.keys(currentGems || {}).filter(slot => {
+      const gem = currentGems[slot];
+      return gem && Object.values(gem).some(value => value > 0); // Au moins une valeur > 0
+    }).length;
+
+    validation.details.gems = {
+      current: gemCount,
+      recommended: 5,
+      isComplete: gemCount >= 3 // Au moins 3 types de gemmes
+    };
+
+    if (gemCount < 3) {
+      validation.missing.push(`Gemmes recommandées (${gemCount}/5)`);
+      // Pas bloquant mais warning
+    }
+
+    return validation;
   };
 
-  // 🎨 VÉRIFICATION DES 8 ARTEFACTS
-  const requiredArtifactSlots = ['Helmet', 'Chest', 'Gloves', 'Boots', 'Necklace', 'Bracelet', 'Ring', 'Earrings'];
-  const artifactCount = requiredArtifactSlots.filter(slot => {
-    const artifact = currentArtifacts[slot];
-    return artifact && (artifact.mainStat || artifact.set); // Au minimum un mainStat ou set défini
-  }).length;
+  // 🏆 FONCTION POUR LE BOUTON SUBMIT HALL OF FAME
+  const handleSubmitToHallOfFame = () => {
+    const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
 
-  validation.details.artifacts = {
-    current: artifactCount,
-    required: 8,
-    isComplete: artifactCount === 8
-  };
+    if (!validation.isValid) {
+      // 🚫 HUNTER INCOMPLET - MESSAGE KAISEL
+      const missingItems = validation.missing.join(', ');
+      showTankMessage(
+        `🏆 **SUBMISSION HALL OF FAME REFUSÉE**\n\n` +
+        `❌ Hunter incomplet détecté par Kaisel !\n\n` +
+        `**Éléments manquants :**\n${missingItems}\n\n` +
+        `📋 **Détails :**\n` +
+        `🎨 Artefacts: ${validation.details.artifacts.current}/8\n` +
+        `🔮 Cores: ${validation.details.cores.current}/3\n` +
+        `💎 Gemmes: ${validation.details.gems.current}/5\n\n` +
+        `⚡ Complète ton build avant de le soumettre !`,
+        true,
+        'kaisel'
+      );
+      return;
+    }
 
-  if (artifactCount < 8) {
-    validation.isValid = false;
-    validation.missing.push(`Artefacts manquants (${artifactCount}/8)`);
-  }
-
-  // 🔮 VÉRIFICATION DES CORES
-  const requiredCoreSlots = ['Offensif', 'Défensif', 'Endurance'];
-  const coreCount = requiredCoreSlots.filter(slot => {
-    const core = currentCores[slot];
-    return core && core.primary; // Au minimum un primary défini
-  }).length;
-
-  validation.details.cores = {
-    current: coreCount,
-    required: 3,
-    isComplete: coreCount === 3
-  };
-
-  if (coreCount < 3) {
-    validation.isValid = false;
-    validation.missing.push(`Cores manquants (${coreCount}/3)`);
-  }
-
-  // 💎 VÉRIFICATION DES GEMMES (optionnel mais recommandé)
-  const gemCount = Object.keys(currentGems || {}).filter(slot => {
-    const gem = currentGems[slot];
-    return gem && Object.values(gem).some(value => value > 0); // Au moins une valeur > 0
-  }).length;
-
-  validation.details.gems = {
-    current: gemCount,
-    recommended: 5,
-    isComplete: gemCount >= 3 // Au moins 3 types de gemmes
-  };
-
-  if (gemCount < 3) {
-    validation.missing.push(`Gemmes recommandées (${gemCount}/5)`);
-    // Pas bloquant mais warning
-  }
-
-  return validation;
-};
-
-// 🏆 FONCTION POUR LE BOUTON SUBMIT HALL OF FAME
-const handleSubmitToHallOfFame = () => {
-  const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
-  
-  if (!validation.isValid) {
-    // 🚫 HUNTER INCOMPLET - MESSAGE KAISEL
-    const missingItems = validation.missing.join(', ');
+    // ✅ HUNTER COMPLET - OUVRIR LA POPUP
     showTankMessage(
-      `🏆 **SUBMISSION HALL OF FAME REFUSÉE**\n\n` +
-      `❌ Hunter incomplet détecté par Kaisel !\n\n` +
-      `**Éléments manquants :**\n${missingItems}\n\n` +
-      `📋 **Détails :**\n` +
-      `🎨 Artefacts: ${validation.details.artifacts.current}/8\n` +
-      `🔮 Cores: ${validation.details.cores.current}/3\n` +
-      `💎 Gemmes: ${validation.details.gems.current}/5\n\n` +
-      `⚡ Complète ton build avant de le soumettre !`,
+      `🏆 **HUNTER VALIDÉ PAR KAISEL !**\n\n` +
+      `✅ Build complet détecté :\n` +
+      `🎨 ${validation.details.artifacts.current}/8 Artefacts\n` +
+      `🔮 ${validation.details.cores.current}/3 Cores\n` +
+      `💎 ${validation.details.gems.current}/5 Gemmes\n\n` +
+      `🚀 Ouverture du système de soumission...`,
       true,
       'kaisel'
     );
-    return;
-  }
 
-  // ✅ HUNTER COMPLET - OUVRIR LA POPUP
-  showTankMessage(
-    `🏆 **HUNTER VALIDÉ PAR KAISEL !**\n\n` +
-    `✅ Build complet détecté :\n` +
-    `🎨 ${validation.details.artifacts.current}/8 Artefacts\n` +
-    `🔮 ${validation.details.cores.current}/3 Cores\n` +
-    `💎 ${validation.details.gems.current}/5 Gemmes\n\n` +
-    `🚀 Ouverture du système de soumission...`,
-    true,
-    'kaisel'
-  );
-
-  // Ouvrir la popup HallOfFlameDebug
-  if (typeof setShowHallOfFlameDebug === 'function') {
-    setShowHallOfFlameDebug(true);
-  } else {
-    showTankMessage("🤖 Erreur : système HallOfFlame non trouvé", true, 'kaisel');
-  }
-};
+    // Ouvrir la popup HallOfFlameDebug
+    if (typeof setShowHallOfFlameDebug === 'function') {
+      setShowHallOfFlameDebug(true);
+    } else {
+      showTankMessage("🤖 Erreur : système HallOfFlame non trouvé", true, 'kaisel');
+    }
+  };
 
 
 
@@ -5188,38 +5188,38 @@ const handleSubmitToHallOfFame = () => {
                             Save
                           </button>
 
-    <button
-  onClick={() => {
-    const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
-    
-    if (validation.isValid) {
-      handleSubmitToHallOfFame();
-    } else {
-      showTankMessage(
-        `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
-        true,
-        'kaisel'
-      );
-    }
-  }}
-  className={`
+                          <button
+                            onClick={() => {
+                              const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
+
+                              if (validation.isValid) {
+                                handleSubmitToHallOfFame();
+                              } else {
+                                showTankMessage(
+                                  `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
+                                  true,
+                                  'kaisel'
+                                );
+                              }
+                            }}
+                            className={`
     ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-      ? 'bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white' 
-      : 'bg-gray-500 text-gray-300 cursor-not-allowed'
-    } 
+                                ? 'bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white'
+                                : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                              } 
     font-semibold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0
   `}
-  disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
-  title={validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid 
-    ? 'Soumettre au Hall of Fame' 
-    : `Manque: ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).missing.join(', ')}`
-  }
->
-  {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid 
-    ? 'Submit' 
-    : 'Incomplet'
-  }
-</button>
+                            disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
+                            title={validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+                              ? 'Soumettre au Hall of Fame'
+                              : `Manque: ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).missing.join(', ')}`
+                            }
+                          >
+                            {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+                              ? 'Submit'
+                              : 'Incomplet'
+                            }
+                          </button>
 
                           <button
                             onClick={handleImportBuild}
@@ -5585,33 +5585,33 @@ const handleSubmitToHallOfFame = () => {
                     <div className="space-y-4">
                       {rightArtifacts.map((item, idx) => (
                         <ArtifactCard
-                    key={`${activeAccount}-${item.title}-${JSON.stringify(artifactsData[item.title])}`} // ← NOUVELLE KEY !
-                    title={item.title}
-                    mainStats={item.mainStats}
-                    showTankMessage={showTankMessage}
-                    recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
-                    artifactData={artifactsData[item.title]}
-                    statsWithoutArtefact={statsWithoutArtefact}  // ← AJOUT ICI
-                    flatStats={flatStats}
-                    onSetIconClick={openSetSelector}                       // ← UTILE SI BESOIN
-                    handleLoadSavedSet={handleLoadSavedSet}
-                    onArtifactSave={handleSaveArtifactToLibrary}
-                    hunter={characters[selectedCharacter]}                        // ← UTILE SI BESOIN
-                    substatsMinMaxByIncrements={substatsMinMaxByIncrements}  // ✅ C’EST ICI
-                    disableComparisonButton={false} // 👈 AJOUT
-                    openComparisonPopup={openComparisonPopup}
-                    artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
-                    onArtifactChange={(updaterFn) =>
-                      setArtifactsData(prev => ({
-                        ...prev,
-                        [item.title]: typeof updaterFn === 'function'
-                          ? updaterFn(prev[item.title])
-                          : { ...prev[item.title], ...updaterFn }
-                      }))
-                    }
-                    onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
-                    onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
-                  />
+                          key={`${activeAccount}-${item.title}-${JSON.stringify(artifactsData[item.title])}`} // ← NOUVELLE KEY !
+                          title={item.title}
+                          mainStats={item.mainStats}
+                          showTankMessage={showTankMessage}
+                          recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
+                          artifactData={artifactsData[item.title]}
+                          statsWithoutArtefact={statsWithoutArtefact}  // ← AJOUT ICI
+                          flatStats={flatStats}
+                          onSetIconClick={openSetSelector}                       // ← UTILE SI BESOIN
+                          handleLoadSavedSet={handleLoadSavedSet}
+                          onArtifactSave={handleSaveArtifactToLibrary}
+                          hunter={characters[selectedCharacter]}                        // ← UTILE SI BESOIN
+                          substatsMinMaxByIncrements={substatsMinMaxByIncrements}  // ✅ C’EST ICI
+                          disableComparisonButton={false} // 👈 AJOUT
+                          openComparisonPopup={openComparisonPopup}
+                          artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
+                          onArtifactChange={(updaterFn) =>
+                            setArtifactsData(prev => ({
+                              ...prev,
+                              [item.title]: typeof updaterFn === 'function'
+                                ? updaterFn(prev[item.title])
+                                : { ...prev[item.title], ...updaterFn }
+                            }))
+                          }
+                          onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
+                          onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
+                        />
                       ))}
                     </div>
                   </div>
@@ -5722,28 +5722,28 @@ const handleSubmitToHallOfFame = () => {
                 )}
 
                 {showAdminPage && (
-  <div
-    className="fixed inset-0 z-50 bg-black/80 flex justify-center items-center"
-    style={{ overflowY: "auto", WebkitOverflowScrolling: "touch" }}
-  >
-    <div className="relative w-full max-w-4xl mx-auto my-8 max-h-[90vh] overflow-y-auto rounded-lg bg-black p-4">
-      <AdminValidationPage
-        onClose={() => setShowAdminPage(false)}
-        showTankMessage={showTankMessage}
-        selectedCharacter={selectedCharacter}
-        characterData={characters[selectedCharacter]}
-        currentStats={finalStats}
-        currentArtifacts={artifactsData}
-        statsFromArtifacts={statsFromArtifacts}
-        currentCores={hunterCores[selectedCharacter] || {}}
-        currentGems={gemData}
-        currentWeapon={hunterWeapons[selectedCharacter] || {}}
-        characters={characters}
-        onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
-      />
-    </div>
-  </div>
-)}
+                  <div
+                    className="fixed inset-0 z-50 bg-black/80 flex justify-center items-center"
+                    style={{ overflowY: "auto", WebkitOverflowScrolling: "touch" }}
+                  >
+                    <div className="relative w-full max-w-4xl mx-auto my-8 max-h-[90vh] overflow-y-auto rounded-lg bg-black p-4">
+                      <AdminValidationPage
+                        onClose={() => setShowAdminPage(false)}
+                        showTankMessage={showTankMessage}
+                        selectedCharacter={selectedCharacter}
+                        characterData={characters[selectedCharacter]}
+                        currentStats={finalStats}
+                        currentArtifacts={artifactsData}
+                        statsFromArtifacts={statsFromArtifacts}
+                        currentCores={hunterCores[selectedCharacter] || {}}
+                        currentGems={gemData}
+                        currentWeapon={hunterWeapons[selectedCharacter] || {}}
+                        characters={characters}
+                        onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
+                      />
+                    </div>
+                  </div>
+                )}
 
 
                 {showBeruInteractionMenu && (
@@ -6072,16 +6072,16 @@ const handleSubmitToHallOfFame = () => {
                   </>
                 )}
 
-                  {isSetSelectorOpen && setSelectorSlot && (
-                    <SetSelectorPopup
-                      slot={setSelectorSlot}
-                      onSelect={handleSelectSet}
-                      onClose={() => {
-                        setIsSetSelectorOpen(false);
-                        setSetSelectorSlot(null);
-                      }}
-                    />
-                  )}
+                {isSetSelectorOpen && setSelectorSlot && (
+                  <SetSelectorPopup
+                    slot={setSelectorSlot}
+                    onSelect={handleSelectSet}
+                    onClose={() => {
+                      setIsSetSelectorOpen(false);
+                      setSetSelectorSlot(null);
+                    }}
+                  />
+                )}
 
                 <OCRPasteListener
                   onParsed={(parsed) => {
@@ -6203,33 +6203,33 @@ const handleSubmitToHallOfFame = () => {
          2xl:max-w-[733px]">
                   {[...leftArtifacts].map((item, idx) => (
                     <ArtifactCard
-                    key={`${activeAccount}-${item.title}-${JSON.stringify(artifactsData[item.title])}`} // ← NOUVELLE KEY !
-                    title={item.title}
-                    mainStats={item.mainStats}
-                    showTankMessage={showTankMessage}
-                    recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
-                    artifactData={artifactsData[item.title]}
-                    statsWithoutArtefact={statsWithoutArtefact}  // ← AJOUT ICI
-                    flatStats={flatStats}
-                    onSetIconClick={openSetSelector}                       // ← UTILE SI BESOIN
-                    handleLoadSavedSet={handleLoadSavedSet}
-                    onArtifactSave={handleSaveArtifactToLibrary}
-                    hunter={characters[selectedCharacter]}                        // ← UTILE SI BESOIN
-                    substatsMinMaxByIncrements={substatsMinMaxByIncrements}  // ✅ C’EST ICI
-                    disableComparisonButton={false} // 👈 AJOUT
-                    openComparisonPopup={openComparisonPopup}
-                    artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
-                    onArtifactChange={(updaterFn) =>
-                      setArtifactsData(prev => ({
-                        ...prev,
-                        [item.title]: typeof updaterFn === 'function'
-                          ? updaterFn(prev[item.title])
-                          : { ...prev[item.title], ...updaterFn }
-                      }))
-                    }
-                    onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
-                    onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
-                  />
+                      key={`${activeAccount}-${item.title}-${JSON.stringify(artifactsData[item.title])}`} // ← NOUVELLE KEY !
+                      title={item.title}
+                      mainStats={item.mainStats}
+                      showTankMessage={showTankMessage}
+                      recalculateStatsFromArtifacts={recalculateStatsFromArtifacts}
+                      artifactData={artifactsData[item.title]}
+                      statsWithoutArtefact={statsWithoutArtefact}  // ← AJOUT ICI
+                      flatStats={flatStats}
+                      onSetIconClick={openSetSelector}                       // ← UTILE SI BESOIN
+                      handleLoadSavedSet={handleLoadSavedSet}
+                      onArtifactSave={handleSaveArtifactToLibrary}
+                      hunter={characters[selectedCharacter]}                        // ← UTILE SI BESOIN
+                      substatsMinMaxByIncrements={substatsMinMaxByIncrements}  // ✅ C’EST ICI
+                      disableComparisonButton={false} // 👈 AJOUT
+                      openComparisonPopup={openComparisonPopup}
+                      artifactLibrary={accounts[activeAccount]?.artifactLibrary || {}}
+                      onArtifactChange={(updaterFn) =>
+                        setArtifactsData(prev => ({
+                          ...prev,
+                          [item.title]: typeof updaterFn === 'function'
+                            ? updaterFn(prev[item.title])
+                            : { ...prev[item.title], ...updaterFn }
+                        }))
+                      }
+                      onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
+                      onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
+                    />
                   ))}
                 </div>
 
@@ -6286,112 +6286,112 @@ const handleSubmitToHallOfFame = () => {
                       </div>
 
                       {/* Select Personnage */}
-      <select
-  value={selectedCharacter}
-  onChange={(e) => {
-    const selected = e.target.value;
-    
-    // 🛡️ Protection si aucun personnage
-    if (!selected) {
-      setSelectedCharacter('');
-      return;
-    }
-    
-    // 📦 Vérifier si un build existe dans le nouveau système
-    const storedData = JSON.parse(localStorage.getItem("builderberu_users"));
-    const build = storedData?.user?.accounts?.[activeAccount]?.builds?.[selected];
-    
-    if (build && build.artifactsData) {
-      // ✅ BUILD EXISTANT : Charger tout
-      setSelectedCharacter(selected);
-      setFlatStats(build.flatStats || {});
-      setStatsWithoutArtefact(build.statsWithoutArtefact || {});
-      setArtifactsData(build.artifactsData || {});
-      setHunterCores(prev => ({
-        ...prev,
-        [selected]: build.hunterCores || {}
-      }));
-      setHunterWeapons(prev => ({
-        ...prev,
-        [selected]: build.hunterWeapons || {}
-      }));
-      
-      // 💎 Gemmes du compte (pas dans le build)
-      const accountGems = storedData?.user?.accounts?.[activeAccount]?.gems || {};
-      setGemData(accountGems);
-      
-      showTankMessage(`✅ Build chargé pour ${characters[selected]?.name} !`, true);
-      
-    } else {
-      // 🆕 NOUVEAU PERSONNAGE : Reset avec les stats de base
-      setSelectedCharacter(selected);
-      
-      // Reset complet avec stats du personnage
-      const charStats = characterStats[selected];
-      if (charStats) {
-        // Simuler une arme si elle n'existe pas
-        simulateWeaponSaveIfMissing(selected);
-        
-        // Récupérer l'arme (existante ou simulée)
-        const weapon = hunterWeapons[selected] || {
-          mainStat: characters[selected]?.scaleStat === 'Defense' ? 3080 :
-                    characters[selected]?.scaleStat === 'HP' ? 6120 : 3080,
-          precision: 4000
-        };
-        
-        // Stats de base avec arme
-        const newFlatStats = getFlatStatsWithWeapon(charStats, weapon);
-        setFlatStats(completeStats(newFlatStats));
-        
-        // Reset les autres états
-        setStatsWithoutArtefact(completeStats(newFlatStats));
-        setStatsFromArtifacts(completeStats({}));
-        
-        // Artefacts vides
-        const emptyArtifacts = {};
-        Object.keys(artifactsData).forEach(slot => {
-          emptyArtifacts[slot] = {
-            mainStat: '',
-            subStats: ['', '', '', ''],
-            subStatsLevels: [
-              { value: 0, level: 0, procOrders: [], procValues: [] },
-              { value: 0, level: 0, procOrders: [], procValues: [] },
-              { value: 0, level: 0, procOrders: [], procValues: [] },
-              { value: 0, level: 0, procOrders: [], procValues: [] }
-            ],
-            set: ''
-          };
-        });
-        setArtifactsData(emptyArtifacts);
-        
-        // Reset cores pour ce personnage
-        setHunterCores(prev => ({
-          ...prev,
-          [selected]: {}
-        }));
-        
-        showTankMessage(`🆕 Nouveau build créé pour ${characters[selected]?.name} !`, true);
-      }
-    }
-  }}
-  className="p-2 rounded bg-[#1c1c3c] text-white text-sm tank-target flex-1 max-w-[200px]"
->
-  <option value="">Sélectionner un personnage</option>
-  {Object.entries(characters)
-    .filter(([key, char]) => {
-      if (key === '') return false;
-      if (selectedElement && char.element !== selectedElement) return false;
-      if (selectedClass) {
-        const classType = char.class === 'Tank' ? 'Tank'
-          : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
-        if (classType !== selectedClass) return false;
-      }
-      return true;
-    })
-    .map(([key, char]) => (
-      <option key={key} value={key}>{char.name}</option>
-    ))}
-</select>
+                      <select
+                        value={selectedCharacter}
+                        onChange={(e) => {
+                          const selected = e.target.value;
+
+                          // 🛡️ Protection si aucun personnage
+                          if (!selected) {
+                            setSelectedCharacter('');
+                            return;
+                          }
+
+                          // 📦 Vérifier si un build existe dans le nouveau système
+                          const storedData = JSON.parse(localStorage.getItem("builderberu_users"));
+                          const build = storedData?.user?.accounts?.[activeAccount]?.builds?.[selected];
+
+                          if (build && build.artifactsData) {
+                            // ✅ BUILD EXISTANT : Charger tout
+                            setSelectedCharacter(selected);
+                            setFlatStats(build.flatStats || {});
+                            setStatsWithoutArtefact(build.statsWithoutArtefact || {});
+                            setArtifactsData(build.artifactsData || {});
+                            setHunterCores(prev => ({
+                              ...prev,
+                              [selected]: build.hunterCores || {}
+                            }));
+                            setHunterWeapons(prev => ({
+                              ...prev,
+                              [selected]: build.hunterWeapons || {}
+                            }));
+
+                            // 💎 Gemmes du compte (pas dans le build)
+                            const accountGems = storedData?.user?.accounts?.[activeAccount]?.gems || {};
+                            setGemData(accountGems);
+
+                            showTankMessage(`✅ Build chargé pour ${characters[selected]?.name} !`, true);
+
+                          } else {
+                            // 🆕 NOUVEAU PERSONNAGE : Reset avec les stats de base
+                            setSelectedCharacter(selected);
+
+                            // Reset complet avec stats du personnage
+                            const charStats = characterStats[selected];
+                            if (charStats) {
+                              // Simuler une arme si elle n'existe pas
+                              simulateWeaponSaveIfMissing(selected);
+
+                              // Récupérer l'arme (existante ou simulée)
+                              const weapon = hunterWeapons[selected] || {
+                                mainStat: characters[selected]?.scaleStat === 'Defense' ? 3080 :
+                                  characters[selected]?.scaleStat === 'HP' ? 6120 : 3080,
+                                precision: 4000
+                              };
+
+                              // Stats de base avec arme
+                              const newFlatStats = getFlatStatsWithWeapon(charStats, weapon);
+                              setFlatStats(completeStats(newFlatStats));
+
+                              // Reset les autres états
+                              setStatsWithoutArtefact(completeStats(newFlatStats));
+                              setStatsFromArtifacts(completeStats({}));
+
+                              // Artefacts vides
+                              const emptyArtifacts = {};
+                              Object.keys(artifactsData).forEach(slot => {
+                                emptyArtifacts[slot] = {
+                                  mainStat: '',
+                                  subStats: ['', '', '', ''],
+                                  subStatsLevels: [
+                                    { value: 0, level: 0, procOrders: [], procValues: [] },
+                                    { value: 0, level: 0, procOrders: [], procValues: [] },
+                                    { value: 0, level: 0, procOrders: [], procValues: [] },
+                                    { value: 0, level: 0, procOrders: [], procValues: [] }
+                                  ],
+                                  set: ''
+                                };
+                              });
+                              setArtifactsData(emptyArtifacts);
+
+                              // Reset cores pour ce personnage
+                              setHunterCores(prev => ({
+                                ...prev,
+                                [selected]: {}
+                              }));
+
+                              showTankMessage(`🆕 Nouveau build créé pour ${characters[selected]?.name} !`, true);
+                            }
+                          }
+                        }}
+                        className="p-2 rounded bg-[#1c1c3c] text-white text-sm tank-target flex-1 max-w-[200px]"
+                      >
+                        <option value="">Sélectionner un personnage</option>
+                        {Object.entries(characters)
+                          .filter(([key, char]) => {
+                            if (key === '') return false;
+                            if (selectedElement && char.element !== selectedElement) return false;
+                            if (selectedClass) {
+                              const classType = char.class === 'Tank' ? 'Tank'
+                                : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
+                              if (classType !== selectedClass) return false;
+                            }
+                            return true;
+                          })
+                          .map(([key, char]) => (
+                            <option key={key} value={key}>{char.name}</option>
+                          ))}
+                      </select>
 
                       {/* Icônes classes */}
                       <div className="flex flex-row items-center gap-1 ml-2">
@@ -6465,38 +6465,38 @@ const handleSubmitToHallOfFame = () => {
                       </div>
                       <div className="w-full flex justify-between tank-targe items-center mt-0 text-sm">
                         <div className="flex items-center space-x-2">
-  <button
-  onClick={() => {
-    const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
-    
-    if (validation.isValid) {
-      handleSubmitToHallOfFame();
-    } else {
-      showTankMessage(
-        `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
-        true,
-        'kaisel'
-      );
-    }
-  }}
-  className={`
+                          <button
+                            onClick={() => {
+                              const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
+
+                              if (validation.isValid) {
+                                handleSubmitToHallOfFame();
+                              } else {
+                                showTankMessage(
+                                  `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
+                                  true,
+                                  'kaisel'
+                                );
+                              }
+                            }}
+                            className={`
     ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-      ? 'bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white' 
-      : 'bg-gray-500 text-gray-300 cursor-not-allowed'
-    } 
+                                ? 'bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white'
+                                : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                              } 
     text-xs font-semibold py-1 px-3 rounded-lg shadow-md transition-colors
   `}
-  disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
-  title={validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid 
-    ? 'Soumettre au Hall of Fame' 
-    : `Manque: ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).missing.join(', ')}`
-  }
->
-  {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid 
-    ? 'Submit' 
-    : 'Incomplet'
-  }
-</button>
+                            disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
+                            title={validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+                              ? 'Soumettre au Hall of Fame'
+                              : `Manque: ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).missing.join(', ')}`
+                            }
+                          >
+                            {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+                              ? 'Submit'
+                              : 'Incomplet'
+                            }
+                          </button>
 
                           <button
                             onClick={handleImportBuild}
@@ -6596,29 +6596,29 @@ const handleSubmitToHallOfFame = () => {
                     />
                   )}
 
-                 {showAdminPage && (
-  <div
-    className="fixed inset-0 z-50 bg-black/80 flex justify-center items-center"
-    style={{ overflowY: "auto", WebkitOverflowScrolling: "touch" }}
-  >
-    <div className="relative w-full max-w-4xl mx-auto my-8 max-h-[90vh] overflow-y-auto rounded-lg bg-black p-4">
-      <AdminValidationPage
-        onClose={() => setShowAdminPage(false)}
-        showTankMessage={showTankMessage}
-        selectedCharacter={selectedCharacter}
-        characterData={characters[selectedCharacter]}
-        currentStats={finalStats}
-        currentArtifacts={artifactsData}
-        statsFromArtifacts={statsFromArtifacts}
-        currentCores={hunterCores[selectedCharacter] || {}}
-        currentGems={gemData}
-        currentWeapon={hunterWeapons[selectedCharacter] || {}}
-        characters={characters}
-        onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
-      />
-    </div>
-  </div>
-)}
+                  {showAdminPage && (
+                    <div
+                      className="fixed inset-0 z-50 bg-black/80 flex justify-center items-center"
+                      style={{ overflowY: "auto", WebkitOverflowScrolling: "touch" }}
+                    >
+                      <div className="relative w-full max-w-4xl mx-auto my-8 max-h-[90vh] overflow-y-auto rounded-lg bg-black p-4">
+                        <AdminValidationPage
+                          onClose={() => setShowAdminPage(false)}
+                          showTankMessage={showTankMessage}
+                          selectedCharacter={selectedCharacter}
+                          characterData={characters[selectedCharacter]}
+                          currentStats={finalStats}
+                          currentArtifacts={artifactsData}
+                          statsFromArtifacts={statsFromArtifacts}
+                          currentCores={hunterCores[selectedCharacter] || {}}
+                          currentGems={gemData}
+                          currentWeapon={hunterWeapons[selectedCharacter] || {}}
+                          characters={characters}
+                          onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   {showBeruInteractionMenu && (() => {
                     return null;

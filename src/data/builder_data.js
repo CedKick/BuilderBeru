@@ -5,10 +5,10 @@
 const BUILDER_DATA = {
     "shuhua": {
   "name": "Shuhua",
-  "element": "Wind",
-  "class": "Fighter", 
+  "element": "Water",
+  "class": "Assassin", 
   "grade": "SSR",
-  "scaleStat": "Defense",
+  "scaleStat": "Attack",
 
   "optimizationPriority": [
   {
@@ -169,7 +169,7 @@ const BUILDER_DATA = {
 },
   "miyeon": {
   "name": "Miyeon",
-  "element": "Water",
+  "element": "Light",
   "class": "Fighter", 
   "grade": "SSR",
   "scaleStat": "Defense",

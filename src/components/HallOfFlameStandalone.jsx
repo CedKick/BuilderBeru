@@ -47,14 +47,14 @@ const HallOfFlameStandalone = () => {
   const characters = {
     shuhua: { 
       name: "Shuhua", 
-      element: "Wind", 
-      class: "Fighter",
+      element: "Water", 
+      class: "Assassib",
       portrait: "🌊"
     },
     miyeon: { 
       name: "Miyeon", 
-      element: "Water", 
-      class: "Support",
+      element: "Light", 
+      class: "Fighter",
       portrait: "🌊"
     },
     niermann: { 
