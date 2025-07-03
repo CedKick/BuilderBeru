@@ -1,4 +1,4 @@
-// HallOfFlameDebugPopup.jsx - 🔧 DIGITALOCEAN UPLOAD + useEffect + CORS par Kaisel - v4.0
+// HallOfFlameDebugPopup.jsx - 🔧 DIGITALOCEAN UPLOAD + 3 SCREENSHOTS MAX - v5.0
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BUILDER_DATA } from '../data/builder_data.js';
@@ -406,7 +406,7 @@ const HallOfFlameDebugPopup = ({
       });
       setCurrentStep(1);
       setValidationErrors([]);
-      setSubmissionResponse(null); // 🆕 Reset response
+      setSubmissionResponse(null);
     }
   }, [isOpen]);
 
@@ -486,117 +486,132 @@ const HallOfFlameDebugPopup = ({
     }
   }, [formData, currentStats, selectedCharacter, memoizedCpTotal.total, memoizedSetAnalysis]);
 
-  // 📸 UPLOAD SCREENSHOTS DIGITALOCEAN - VERSION KAISEL v4.0
-  // Dans HallOfFlameDebugPopup.jsx - Améliorer uploadToDigitalOcean
-
-const uploadToDigitalOcean = useCallback(async (files) => {
-  if (!files || files.length === 0) return [];
-  
-  // Vérifier la taille totale des fichiers
-  const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
-  const maxTotalSize = 50 * 1024 * 1024; // 50MB total
-  
-  if (totalSize > maxTotalSize) {
-    showTankMessage(
-      `❌ Taille totale trop grande: ${(totalSize/1024/1024).toFixed(2)}MB (max 50MB)`,
-      true,
-      'kaisel'
-    );
-    return [];
-  }
-  
-  showTankMessage(`📸 Upload de ${files.length} fichiers vers le serveur SERN...`, true, 'kaisel');
-  
-  try {
-    const uploadFormData = new FormData();
+  // 📸 UPLOAD SCREENSHOTS DIGITALOCEAN - VERSION v5.0 MAX 3 FILES
+  const uploadToDigitalOcean = useCallback(async (files) => {
+    if (!files || files.length === 0) return [];
     
-    // Vérifier et ajouter chaque fichier
-    for (let i = 0; i < Math.min(files.length, 5); i++) { // Max 5 fichiers
-      const file = files[i];
+    // Limiter à 3 fichiers max
+    const filesToUpload = Array.from(files).slice(0, 3);
+    
+    if (files.length > 3) {
+      showTankMessage(
+        `⚠️ ${files.length} fichiers sélectionnés, seulement les 3 premiers seront uploadés`,
+        true,
+        'kaisel'
+      );
+    }
+    
+    // Vérifier la taille totale
+    const totalSize = filesToUpload.reduce((sum, file) => sum + file.size, 0);
+    const maxTotalSize = 30 * 1024 * 1024; // 30MB total (3x10MB)
+    
+    if (totalSize > maxTotalSize) {
+      showTankMessage(
+        `❌ Taille totale trop grande: ${(totalSize/1024/1024).toFixed(2)}MB (max 30MB)`,
+        true,
+        'kaisel'
+      );
+      return [];
+    }
+    
+    showTankMessage(`📸 Upload de ${filesToUpload.length} fichiers vers le serveur SERN...`, true, 'kaisel');
+    
+    try {
+      const uploadFormData = new FormData();
       
-      // Vérifier le type MIME
-      if (!file.type.startsWith('image/')) {
-        console.warn(`⚠️ Fichier ignoré (pas une image): ${file.name}`);
-        continue;
+      // Ajouter les fichiers (max 3)
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const file = filesToUpload[i];
+        
+        // Vérifications de sécurité
+        if (!file.type.startsWith('image/')) {
+          console.warn(`⚠️ Fichier ignoré (pas une image): ${file.name}`);
+          showTankMessage(`⚠️ ${file.name} n'est pas une image, ignoré`, true, 'kaisel');
+          continue;
+        }
+        
+        // Vérifier la taille individuelle
+        if (file.size > 10 * 1024 * 1024) { // 10MB par fichier
+          showTankMessage(
+            `⚠️ ${file.name} trop gros (${(file.size/1024/1024).toFixed(2)}MB), max 10MB`,
+            true,
+            'kaisel'
+          );
+          continue;
+        }
+        
+        console.log(`📸 Ajout fichier ${i+1}: ${file.name} (${(file.size/1024/1024).toFixed(2)}MB)`);
+        uploadFormData.append('screenshots', file);
       }
       
-      // Vérifier la taille individuelle
-      if (file.size > 10 * 1024 * 1024) { // 10MB par fichier
+      // Vérifier qu'on a au moins un fichier valide
+      const entriesCount = Array.from(uploadFormData.entries()).length;
+      if (entriesCount === 0) {
+        showTankMessage("❌ Aucun fichier valide à uploader", true, 'kaisel');
+        return [];
+      }
+      
+      console.log(`📦 FormData prêt avec ${entriesCount} fichier(s)`);
+      
+      // Upload avec timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondes timeout
+      
+      const response = await fetch('https://api.builderberu.com/api/upload-screenshots', {
+        method: 'POST',
+        body: uploadFormData,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      // Log de la réponse
+      console.log('📡 Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Erreur serveur:', errorText);
+        throw new Error(`Upload failed: HTTP ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && result.screenshots) {
         showTankMessage(
-          `⚠️ ${file.name} trop gros (${(file.size/1024/1024).toFixed(2)}MB), ignoré`,
+          `✅ ${result.screenshots.length} screenshot(s) uploadé(s) sur SERN SERVEUR !`,
           true,
           'kaisel'
         );
-        continue;
+        
+        console.log('📸 Screenshots uploadés:', result.screenshots);
+        return result.screenshots;
+        
+      } else {
+        throw new Error(result.error || 'Upload échoué');
       }
       
-      console.log(`📸 Ajout fichier ${i+1}: ${file.name} (${(file.size/1024/1024).toFixed(2)}MB)`);
-      uploadFormData.append('screenshots', file);
-    }
-    
-    // Log du FormData pour debug
-    console.log('📦 FormData prêt avec', Array.from(uploadFormData.entries()).length, 'entrées');
-    
-    // Upload avec timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondes timeout
-    
-    const response = await fetch('https://api.builderberu.com/api/upload-screenshots', {
-      method: 'POST',
-      body: uploadFormData,
-      signal: controller.signal
-    });
-    
-    clearTimeout(timeoutId);
-    
-    // Log de la réponse
-    console.log('📡 Response status:', response.status);
-    console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Erreur serveur:', errorText);
-      throw new Error(`Upload failed: HTTP ${response.status} - ${errorText}`);
-    }
-    
-    const result = await response.json();
-    
-    if (result.success && result.screenshots) {
-      showTankMessage(
-        `✅ ${result.screenshots.length} screenshot(s) uploadé(s) sur SERN SERVEUR !`,
-        true,
-        'kaisel'
-      );
+    } catch (error) {
+      console.error('❌ Erreur upload SERN:', error);
       
-      console.log('📸 Screenshots uploadés:', result.screenshots);
-      return result.screenshots;
+      if (error.name === 'AbortError') {
+        showTankMessage(
+          `❌ Upload timeout (30s). Vérifiez votre connexion.`,
+          true,
+          'kaisel'
+        );
+      } else {
+        showTankMessage(
+          `❌ Upload échoué: ${error.message}. Screenshots non inclus.`,
+          true,
+          'kaisel'
+        );
+      }
       
-    } else {
-      throw new Error(result.error || 'Upload échoué');
+      return [];
     }
-    
-  } catch (error) {
-    console.error('❌ Erreur upload SERN:', error);
-    
-    if (error.name === 'AbortError') {
-      showTankMessage(
-        `❌ Upload timeout (30s). Vérifiez votre connexion.`,
-        true,
-        'kaisel'
-      );
-    } else {
-      showTankMessage(
-        `❌ Upload échoué: ${error.message}`,
-        true,
-        'kaisel'
-      );
-    }
-    
-    return [];
-  }
-}, [showTankMessage]);
+  }, [showTankMessage]);
 
-  // 💾 SAUVEGARDE FINALE - VERSION DIGITALOCEAN v4.0
+  // 💾 SAUVEGARDE FINALE - VERSION DIGITALOCEAN v5.0
   const handleFinalSave = useCallback(async () => {
     if (!currentStats || Object.keys(currentStats).length === 0) {
       showTankMessage("❌ Aucune donnée à sauvegarder", true, 'kaisel');
@@ -605,7 +620,7 @@ const uploadToDigitalOcean = useCallback(async (files) => {
 
     let screenshotUrls = [];
     
-    // 📸 UPLOAD SCREENSHOTS VERS DIGITALOCEAN
+    // 📸 UPLOAD SCREENSHOTS VERS DIGITALOCEAN (MAX 3)
     if (formData.screenshots && formData.screenshots.length > 0) {
       screenshotUrls = await uploadToDigitalOcean(formData.screenshots);
     }
@@ -633,7 +648,7 @@ const uploadToDigitalOcean = useCallback(async (files) => {
         recommendedSets: memoizedSetAnalysis.recommendedSets,
         detectedSets: Object.entries(memoizedSetAnalysis.equipped).map(([name, count]) => `${name} (${count})`)
       },
-      screenshots: screenshotUrls, // URLs DigitalOcean seulement
+      screenshots: screenshotUrls, // URLs DigitalOcean seulement (max 3)
       timestamp: new Date().toISOString(),
       notes: formData.notes,
       isValidated: validationErrors.length === 0,
@@ -641,99 +656,75 @@ const uploadToDigitalOcean = useCallback(async (files) => {
       builderInfo: BUILDER_DATA[selectedCharacter] || {}
     };
     
-    // 🚀 STRATÉGIE MULTI-MÉTHODES POUR GÉRER CORS
+    // 🚀 ENVOI VERS LE BACKEND
     try {
       showTankMessage("🌐 Envoi vers le backend BuilderBeru...", true, 'kaisel');
       
-      let response;
-      let result;
-      let methodUsed = 'direct';
+      const response = await fetch('https://api.builderberu.com/api/hallofflame/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(hunterData)
+      });
       
-      try {
-        response = await fetch('https://api.builderberu.com/api/hallofflame/submit', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify(hunterData)
-        });
-        
-        result = await response.json();
-        
-      } catch (corsError) {
-        console.warn('⚠️ Erreur CORS avec méthode directe, essai méthode alternative...');
-        
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-          try {
-            response = await fetch('/api/hallofflame/submit', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-              },
-              body: JSON.stringify(hunterData)
-            });
-            
-            result = await response.json();
-            methodUsed = 'proxy';
-            
-          } catch (proxyError) {
-            console.warn('⚠️ Proxy local non configuré');
-            throw corsError;
-          }
-        } else {
-          throw corsError;
-        }
-      }
+      const result = await response.json();
       
-      // 🆕 TRAITEMENT DE LA RÉPONSE v4.0
-      if (response && response.ok && result && result.success) {
-        setSubmissionResponse(result); // Stocker la réponse
+      // 🆕 TRAITEMENT DE LA RÉPONSE v5.0
+      if (response.ok && result && result.success) {
+        setSubmissionResponse(result);
         
-        // 🔄 CAS D'UN DOUBLON DÉTECTÉ
-        if (result.isDuplicate) {
-          const message = result.suspiciousPseudoChange ? 
-            `🚨 DOUBLON SUSPECT: ${result.hunter.pseudo} en attente de validation\n` +
-            `⚠️ Changement de pseudo détecté!\n` +
-            `Ancien: ${result.existingHunter.pseudo}\n` +
-            `Nouveau: ${result.hunter.pseudo}` :
-            `🔄 DOUBLON: ${result.hunter.pseudo} en attente de validation\n` +
-            `Un hunter existe déjà avec ce compte et personnage`;
-          
-          showTankMessage(message, true, 'kaisel');
-          
-          // Afficher une alerte spéciale pour les doublons suspects
-          if (result.suspiciousPseudoChange) {
-            setTimeout(() => {
-              if (window.confirm(
-                `🚨 ATTENTION - CHANGEMENT DE PSEUDO DÉTECTÉ!\n\n` +
-                `Compte: ${result.hunter.accountId}\n` +
-                `Personnage: ${result.hunter.character}\n` +
-                `Ancien pseudo: ${result.existingHunter.pseudo}\n` +
-                `Nouveau pseudo: ${result.hunter.pseudo}\n\n` +
-                `Cette soumission est en attente de validation admin.\n` +
-                `Voulez-vous voir le Hall Of Flame ?`
-              )) {
-                if (onNavigateToHallOfFlame) {
-                  onNavigateToHallOfFlame();
-                }
-              }
-            }, 500);
-          }
-        } else {
-          // 📋 CAS NORMAL (pas de doublon)
+        // 🔄 CAS D'UN REMPLACEMENT DE PENDING
+        if (result.isReplacingPending) {
           showTankMessage(
-            `📋 ${result.hunter.pseudo} soumis en attente de validation!\n` +
-            `Screenshots: ${screenshotUrls.length} uploadés sur SERN SERVEUR\n` +
-            `Rang potentiel: #${result.potentialRank} (si approuvé)\n` +
+            `🔄 ${result.hunter.pseudo} mis à jour (ancien pending remplacé)\n` +
+            `Screenshots: ${screenshotUrls.length} uploadés\n` +
+            `Ancien: ${result.replacedPending.pseudo} (${result.replacedPending.totalScore} CP)`,
+            true,
+            'kaisel'
+          );
+        } 
+        // 🚨 CAS D'UN DOUBLON AVEC CHANGEMENT DE PSEUDO
+        else if (result.suspiciousPseudoChange) {
+          showTankMessage(
+            `🚨 DOUBLON SUSPECT: ${result.hunter.pseudo} en attente\n` +
+            `⚠️ Changement de pseudo détecté!\n` +
+            `Ancien: ${result.existingChecked.pseudo}\n` +
+            `Nouveau: ${result.hunter.pseudo}`,
+            true,
+            'kaisel'
+          );
+          
+          setTimeout(() => {
+            if (window.confirm(
+              `🚨 ATTENTION - CHANGEMENT DE PSEUDO DÉTECTÉ!\n\n` +
+              `Compte: ${result.hunter.accountId}\n` +
+              `Personnage: ${result.hunter.character}\n` +
+              `Ancien pseudo: ${result.existingChecked.pseudo}\n` +
+              `Nouveau pseudo: ${result.hunter.pseudo}\n\n` +
+              `Cette soumission est en attente de validation admin.\n` +
+              `Voulez-vous voir le Hall Of Flame ?`
+            )) {
+              if (onNavigateToHallOfFlame) {
+                onNavigateToHallOfFlame();
+              }
+            }
+          }, 500);
+        }
+        // 📋 CAS NORMAL
+        else {
+          showTankMessage(
+            `📋 ${result.hunter.pseudo} soumis en attente!\n` +
+            `Screenshots: ${screenshotUrls.length}/3 uploadés\n` +
+            `Rang potentiel: #${result.potentialRank}\n` +
             `Total en attente: ${result.totalHunters - result.checkedHunters}`,
             true,
             'kaisel'
           );
         }
         
-        console.log('✅ Réponse backend v4.0:', result);
+        console.log('✅ Réponse backend v5.0:', result);
         
         // Effacer le cache local si succès
         try {
@@ -751,31 +742,15 @@ const uploadToDigitalOcean = useCallback(async (files) => {
     } catch (error) {
       console.error('❌ Erreur API:', error);
       
-      // Message d'erreur détaillé selon le type
+      // Message d'erreur détaillé
       let errorMessage = '❌ Erreur sauvegarde: ';
       
       if (error.message.includes('CORS') || error.message.includes('fetch')) {
-        errorMessage += 'Problème CORS - Le serveur doit autoriser les requêtes cross-origin. ';
-        errorMessage += 'Contactez l\'admin ou utilisez l\'extension CORS Unblock.';
-        
-        // Proposition de solutions
+        errorMessage += 'Problème de connexion au serveur.';
         showTankMessage(errorMessage, true, 'kaisel');
         
-        // Afficher des instructions détaillées
-        setTimeout(() => {
-          if (window.confirm(
-            '🔧 Erreur CORS détectée!\n\n' +
-            'Solutions possibles:\n' +
-            '1. Installer l\'extension "CORS Unblock" sur Chrome\n' +
-            '2. Demander à l\'admin d\'activer CORS sur api.builderberu.com\n' +
-            '3. Utiliser un proxy de développement\n\n' +
-            'Voulez-vous sauvegarder en local en attendant?'
-          )) {
-            // Sauvegarder en local
-            saveToLocalStorage();
-          }
-        }, 500);
-        
+        // Sauvegarder en local
+        saveToLocalStorage();
       } else {
         errorMessage += error.message;
         showTankMessage(errorMessage + ' Données conservées localement.', true, 'kaisel');
@@ -798,19 +773,15 @@ const uploadToDigitalOcean = useCallback(async (files) => {
           }
           
           localStorage.setItem('hallofflame_cache', JSON.stringify(localData));
-          showTankMessage("💾 Sauvegarde locale effectuée ! Les données seront synchronisées plus tard.", true, 'kaisel');
+          showTankMessage("💾 Sauvegarde locale effectuée ! Synchronisation plus tard.", true, 'kaisel');
           
-          // Log pour debug
           console.log('📦 Données sauvegardées localement:', hunterData);
           console.log('📊 Total en cache local:', localData.length);
           
         } catch (localError) {
           console.error('❌ Erreur sauvegarde locale:', localError);
-          
-          // Fallback: afficher les données dans la console
-          console.log('🏆 Données complètes (copiez pour sauvegarder):', JSON.stringify(hunterData, null, 2));
-          
-          showTankMessage("❌ Impossible de sauvegarder. Vérifiez la console pour récupérer les données.", true, 'kaisel');
+          console.log('🏆 Données complètes:', JSON.stringify(hunterData, null, 2));
+          showTankMessage("❌ Impossible de sauvegarder. Vérifiez la console.", true, 'kaisel');
         }
       }
     }
@@ -820,11 +791,13 @@ const uploadToDigitalOcean = useCallback(async (files) => {
       onSave(hunterData);
     }
     
-    // 🆕 Navigation adaptée selon le résultat v4.0
+    // 🆕 Navigation adaptée
     setTimeout(() => {
-      const message = submissionResponse?.isDuplicate ? 
-        "⚠️ Soumission en attente de validation (doublon détecté).\nVoulez-vous voir le Hall Of Flame ?" :
-        "📋 Soumission en attente de validation.\nVoulez-vous voir le Hall Of Flame ?";
+      const message = submissionResponse?.isReplacingPending ? 
+        "🔄 Hunter mis à jour. Voir le Hall Of Flame ?" :
+        submissionResponse?.suspiciousPseudoChange ?
+        "⚠️ Doublon détecté. Voir le Hall Of Flame ?" :
+        "📋 Soumission en attente. Voir le Hall Of Flame ?";
         
       if (window.confirm(message)) {
         if (onNavigateToHallOfFlame) {
@@ -964,6 +937,21 @@ const uploadToDigitalOcean = useCallback(async (files) => {
           justify-content: space-between;
           align-items: center;
         }
+
+        .screenshot-preview {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          margin-top: 8px;
+        }
+
+        .screenshot-thumb {
+          width: 60px;
+          height: 60px;
+          border-radius: 4px;
+          object-fit: cover;
+          border: 2px solid rgba(255, 215, 0, 0.5);
+        }
       `}</style>
 
       {/* 🌫️ OVERLAY */}
@@ -987,7 +975,7 @@ const uploadToDigitalOcean = useCallback(async (files) => {
                 <div>
                   <h2 className="text-xl font-bold text-yellow-400">HallOfFlame Advanced</h2>
                   <p className="text-gray-300 text-sm">
-                    Kaisel CP System v4.0 • S.E.R.N. Upload
+                    Kaisel CP System v5.0 • Max 3 Screenshots
                     {hasData && (
                       <span className="text-green-400 ml-2">
                         • Total: {memoizedCpTotal.total.toLocaleString()} CP
@@ -1035,7 +1023,7 @@ const uploadToDigitalOcean = useCallback(async (files) => {
                       🔄 {cacheCount} hunter(s) en attente de synchronisation
                     </p>
                     <p className="text-gray-300 text-xs">
-                      Données sauvegardées localement suite à des erreurs réseau/CORS
+                      Données sauvegardées localement suite à des erreurs réseau
                     </p>
                   </div>
                   <button
@@ -1484,14 +1472,14 @@ const uploadToDigitalOcean = useCallback(async (files) => {
                   </div>
                 )}
 
-                {/* Screenshots Upload DigitalOcean */}
+                {/* Screenshots Upload DigitalOcean - MAX 3 */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    📸 Screenshots * (Upload SERN)
+                    📸 Screenshots * (Upload SERN - Max 3)
                     <span className={`text-xs ml-2 ${window.location.hostname === 'localhost' ? 'text-yellow-400' : 'text-red-400'}`}>
                       {window.location.hostname === 'localhost' 
                         ? '(Optionnel en local)' 
-                        : '(Obligatoire pour validation)'
+                        : '(Obligatoire pour validation - Max 3)'
                       }
                     </span>
                   </label>
@@ -1499,20 +1487,49 @@ const uploadToDigitalOcean = useCallback(async (files) => {
                     type="file"
                     multiple
                     accept="image/*"
-                    onChange={(e) => setFormData(prev => ({...prev, screenshots: Array.from(e.target.files)}))}
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files);
+                      if (files.length > 3) {
+                        showTankMessage("⚠️ Maximum 3 screenshots ! Les autres seront ignorés.", true, 'kaisel');
+                        setFormData(prev => ({...prev, screenshots: files.slice(0, 3)}));
+                      } else {
+                        setFormData(prev => ({...prev, screenshots: files}));
+                      }
+                    }}
                     className="flame-input w-full px-4 py-3 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-yellow-500 file:text-black hover:file:bg-yellow-400"
                   />
                   {formData.screenshots.length > 0 ? (
-                    <p className="text-green-400 text-sm mt-2">
-                      ✅ {formData.screenshots.length} screenshot(s) sélectionné(s) - Seront uploadés sur SERN SERVEUR
-                    </p>
+                    <>
+                      <p className="text-green-400 text-sm mt-2">
+                        ✅ {formData.screenshots.length} screenshot(s) sélectionné(s) - Upload vers SERN
+                      </p>
+                      <div className="screenshot-preview">
+                        {formData.screenshots.map((file, index) => (
+                          <div key={index} className="relative">
+                            <img 
+                              src={URL.createObjectURL(file)} 
+                              alt={`Screenshot ${index + 1}`}
+                              className="screenshot-thumb"
+                            />
+                            <span className="absolute -top-2 -right-2 bg-yellow-500 text-black text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                              {index + 1}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
                   ) : (
-                    <p className={`text-sm mt-2 ${window.location.hostname === 'localhost' ? 'text-yellow-400' : 'text-red-400'}`}>
-                      {window.location.hostname === 'localhost' 
-                        ? "⚠️ Screenshots optionnels en local" 
-                        : "❌ Screenshots requis pour soumettre (max 10MB par image)"
-                      }
-                    </p>
+                    <div>
+                      <p className={`text-sm mt-2 ${window.location.hostname === 'localhost' ? 'text-yellow-400' : 'text-red-400'}`}>
+                        {window.location.hostname === 'localhost' 
+                          ? "⚠️ Screenshots optionnels en local (max 3)" 
+                          : "❌ Screenshots requis (max 3 fichiers, 10MB chacun)"
+                        }
+                      </p>
+                      <p className="text-gray-400 text-xs mt-1">
+                        Formats acceptés : JPG, PNG, GIF, WEBP, BMP (attention BMP très lourd)
+                      </p>
+                    </div>
                   )}
                 </div>
 
@@ -1614,7 +1631,7 @@ const uploadToDigitalOcean = useCallback(async (files) => {
                     🎨 CP Artifacts: <strong>{memoizedCpArtifacts.total.toLocaleString()}</strong><br/>
                     🎯 ScaleStat: <strong>{BUILDER_DATA[selectedCharacter]?.scaleStat}</strong><br/>
                     🔮 Sets: <strong>{memoizedSetAnalysis.isOptimal ? '✅ OPTIMAL' : '⚠️ Non optimal'}</strong><br/>
-                    📸 Screenshots: <strong>{formData.screenshots.length} fichier(s) → SERN SERVEUR</strong><br/>
+                    📸 Screenshots: <strong>{formData.screenshots.length}/3 fichiers → SERN</strong><br/>
                     <span className="text-orange-400 font-bold">
                       ⏳ Status: En attente de validation admin
                     </span>
