@@ -3,6 +3,10 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next';
 import { BUILDER_DATA } from '../data/builder_data.js';
 
+const API_BASE = window.location.hostname === 'localhost' 
+  ? '' // Utilise le proxy en dev
+  : 'https://api.builderberu.com'; // URL complète en prod
+
 // 🧮 CALCUL CP AVANCÉ KAISEL - VERSION PROPS + SET BONUS
 const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false, setBonus = false) => {
   if (!stats || !selectedCharacter) return returnDetails ? { total: 0, details: [] } : 0;
@@ -222,7 +226,7 @@ export const syncLocalCache = async (showTankMessage) => {
     const results = await Promise.allSettled(
       localData.map(async (hunterData) => {
         try {
-          const response = await fetch('https://api.builderberu.com/api/hallofflame/submit', {
+          const response = await fetch(`${API_BASE}/api/hallofflame/submit`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -557,7 +561,7 @@ const HallOfFlameDebugPopup = ({
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondes timeout
       
-      const response = await fetch('https://api.builderberu.com/api/upload-screenshots', {
+      const response = await fetch(`${API_BASE}/api/upload-screenshots`, {
         method: 'POST',
         body: uploadFormData,
         signal: controller.signal
@@ -660,7 +664,7 @@ const HallOfFlameDebugPopup = ({
     try {
       showTankMessage("🌐 Envoi vers le backend BuilderBeru...", true, 'kaisel');
       
-      const response = await fetch('https://api.builderberu.com/api/hallofflame/submit', {
+      const response = await fetch(`${API_BASE}/api/hallofflame/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
