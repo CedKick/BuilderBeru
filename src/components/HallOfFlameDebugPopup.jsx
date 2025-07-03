@@ -487,60 +487,114 @@ const HallOfFlameDebugPopup = ({
   }, [formData, currentStats, selectedCharacter, memoizedCpTotal.total, memoizedSetAnalysis]);
 
   // 📸 UPLOAD SCREENSHOTS DIGITALOCEAN - VERSION KAISEL v4.0
-  const uploadToDigitalOcean = useCallback(async (files) => {
-    if (!files || files.length === 0) return [];
+  // Dans HallOfFlameDebugPopup.jsx - Améliorer uploadToDigitalOcean
+
+const uploadToDigitalOcean = useCallback(async (files) => {
+  if (!files || files.length === 0) return [];
+  
+  // Vérifier la taille totale des fichiers
+  const totalSize = Array.from(files).reduce((sum, file) => sum + file.size, 0);
+  const maxTotalSize = 50 * 1024 * 1024; // 50MB total
+  
+  if (totalSize > maxTotalSize) {
+    showTankMessage(
+      `❌ Taille totale trop grande: ${(totalSize/1024/1024).toFixed(2)}MB (max 50MB)`,
+      true,
+      'kaisel'
+    );
+    return [];
+  }
+  
+  showTankMessage(`📸 Upload de ${files.length} fichiers vers le serveur SERN...`, true, 'kaisel');
+  
+  try {
+    const uploadFormData = new FormData();
     
-    showTankMessage("📸 Upload vere le serveur SERN en cours...", true, 'kaisel');
-    
-    try {
-      // Créer FormData pour upload multipart
-      const uploadFormData = new FormData();
+    // Vérifier et ajouter chaque fichier
+    for (let i = 0; i < Math.min(files.length, 5); i++) { // Max 5 fichiers
+      const file = files[i];
       
-      // Ajouter tous les fichiers
-      for (let i = 0; i < files.length; i++) {
-        uploadFormData.append('screenshots', files[i]);
+      // Vérifier le type MIME
+      if (!file.type.startsWith('image/')) {
+        console.warn(`⚠️ Fichier ignoré (pas une image): ${file.name}`);
+        continue;
       }
       
-      // Upload vers votre backend DigitalOcean
-      const response = await fetch('https://api.builderberu.com/api/upload-screenshots', {
-        method: 'POST',
-        body: uploadFormData // Pas de Content-Type header avec FormData
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Upload failed: HTTP ${response.status}`);
-      }
-      
-      const result = await response.json();
-      
-      if (result.success && result.screenshots) {
+      // Vérifier la taille individuelle
+      if (file.size > 10 * 1024 * 1024) { // 10MB par fichier
         showTankMessage(
-          `✅ ${result.screenshots.length} screenshot(s) uploadé(s) sur SERN SERVEUR !`,
+          `⚠️ ${file.name} trop gros (${(file.size/1024/1024).toFixed(2)}MB), ignoré`,
           true,
           'kaisel'
         );
-        
-        console.log('📸 Screenshots uploadés:', result.screenshots);
-        return result.screenshots;
-        
-      } else {
-        throw new Error(result.error || 'Upload échoué');
+        continue;
       }
       
-    } catch (error) {
-      console.error('❌ Erreur upload, SERN ALERTE :', error);
-      
-      // Fallback en cas d'erreur - ne pas créer de base64
+      console.log(`📸 Ajout fichier ${i+1}: ${file.name} (${(file.size/1024/1024).toFixed(2)}MB)`);
+      uploadFormData.append('screenshots', file);
+    }
+    
+    // Log du FormData pour debug
+    console.log('📦 FormData prêt avec', Array.from(uploadFormData.entries()).length, 'entrées');
+    
+    // Upload avec timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondes timeout
+    
+    const response = await fetch('https://api.builderberu.com/api/upload-screenshots', {
+      method: 'POST',
+      body: uploadFormData,
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    // Log de la réponse
+    console.log('📡 Response status:', response.status);
+    console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Erreur serveur:', errorText);
+      throw new Error(`Upload failed: HTTP ${response.status} - ${errorText}`);
+    }
+    
+    const result = await response.json();
+    
+    if (result.success && result.screenshots) {
       showTankMessage(
-        `❌ Upload échoué: ${error.message}. Screenshots non inclus.`,
+        `✅ ${result.screenshots.length} screenshot(s) uploadé(s) sur SERN SERVEUR !`,
         true,
         'kaisel'
       );
       
-      // Retourner tableau vide plutôt que base64
-      return [];
+      console.log('📸 Screenshots uploadés:', result.screenshots);
+      return result.screenshots;
+      
+    } else {
+      throw new Error(result.error || 'Upload échoué');
     }
-  }, [showTankMessage]);
+    
+  } catch (error) {
+    console.error('❌ Erreur upload SERN:', error);
+    
+    if (error.name === 'AbortError') {
+      showTankMessage(
+        `❌ Upload timeout (30s). Vérifiez votre connexion.`,
+        true,
+        'kaisel'
+      );
+    } else {
+      showTankMessage(
+        `❌ Upload échoué: ${error.message}`,
+        true,
+        'kaisel'
+      );
+    }
+    
+    return [];
+  }
+}, [showTankMessage]);
 
   // 💾 SAUVEGARDE FINALE - VERSION DIGITALOCEAN v4.0
   const handleFinalSave = useCallback(async () => {
