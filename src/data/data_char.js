@@ -1,11 +1,11 @@
 const data_chars = {
   'shuhua': {
       name: 'Shuhua',
-      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/shuhua_t3ek5j.png',
-      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/shuhua_t3ek5j.png',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751535917/Shuhua1_difnjb.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751536775/IconShuhua_njc2f2.png',
       class: 'Fighter',
       grade: 'SSR',
-      element: 'Wind',
+      element: 'Water',
       scaleStat: 'Defense'
     },'miyeon': {
       name: 'Miyeon',
