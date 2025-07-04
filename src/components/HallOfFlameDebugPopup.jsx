@@ -648,7 +648,7 @@ const HallOfFlameDebugPopup = ({
       
       return [];
     }
-  }, [showTankMessage, API_BASE]);
+  }, [showTankMessage]);
 
   // 💾 SAUVEGARDE FINALE - VERSION v5.1 avec LOADING
   const handleFinalSave = useCallback(async () => {
@@ -797,7 +797,7 @@ const HallOfFlameDebugPopup = ({
         onClose();
       }, 3000);
     }
-  }, [currentStats, formData, selectedCharacter, characterData, currentArtifacts, currentCores, currentGems, currentWeapon, statsFromArtifacts, memoizedCpTotal, memoizedCpArtifacts, memoizedSetAnalysis, validationErrors, uploadToDigitalOcean, showTankMessage, onSave, onNavigateToHallOfFlame, onClose, API_BASE]);
+  }, [currentStats, formData, selectedCharacter, characterData, currentArtifacts, currentCores, currentGems, currentWeapon, statsFromArtifacts, memoizedCpTotal, memoizedCpArtifacts, memoizedSetAnalysis, validationErrors, uploadToDigitalOcean, showTankMessage, onSave, onNavigateToHallOfFlame, onClose]);
 
   // 🎨 FORMATER LES STATS POUR AFFICHAGE
   const formatStat = useCallback((value) => {
