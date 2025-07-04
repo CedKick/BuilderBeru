@@ -318,6 +318,10 @@ const HallOfFlameDebugPopup = ({
   showTankMessage,
   onNavigateToHallOfFlame
 }) => {
+  // Validation des props
+  if (onSave && typeof onSave !== 'function') {
+    console.warn('⚠️ HallOfFlameDebugPopup: onSave doit être une fonction');
+  }
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
     pseudo: '',
@@ -345,6 +349,7 @@ const HallOfFlameDebugPopup = ({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [hasShownMessage, setHasShownMessage] = useState(false); // Flag pour éviter spam
 
   const isMobileDevice = window.innerWidth < 768;
 
@@ -400,14 +405,15 @@ const HallOfFlameDebugPopup = ({
     });
 
     // Message Tank SEULEMENT au premier chargement
-    if (selectedCharacter && memoizedCpTotal.total > 0 && showTankMessage) {
+    if (selectedCharacter && memoizedCpTotal.total > 0 && showTankMessage && !hasShownMessage) {
       let message = `✅ ${selectedCharacter} chargé: ${memoizedCpTotal.total.toLocaleString()} CP total`;
       if (memoizedSetAnalysis.isOptimal) {
         message += " 🏆 SET OPTIMAL!";
       }
       showTankMessage(message, true, 'kaisel');
+      setHasShownMessage(true);
     }
-  }, [isOpen, selectedCharacter, memoizedSetAnalysis, memoizedCpTotal, memoizedCpArtifacts]);
+  }, [isOpen, selectedCharacter]); // Retirer les dépendances qui changent
 
   // Reset form when popup opens - OPTIMISÉ
   useEffect(() => {
@@ -424,6 +430,7 @@ const HallOfFlameDebugPopup = ({
       setIsUploading(false);
       setUploadProgress('');
       setIsSaving(false);
+      setHasShownMessage(false); // Reset le flag
     }
   }, [isOpen]);
 
@@ -748,8 +755,14 @@ const HallOfFlameDebugPopup = ({
           );
         }
         
-        // Callback
-        if (onSave) onSave(hunterData);
+        // Callback sécurisé
+        if (onSave && typeof onSave === 'function') {
+          try {
+            await onSave(hunterData);
+          } catch (callbackError) {
+            console.error('❌ Erreur callback onSave:', callbackError);
+          }
+        }
         
         // Attendre avant de fermer
         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -789,7 +802,13 @@ const HallOfFlameDebugPopup = ({
         console.error('❌ Erreur sauvegarde locale:', localError);
       }
       
-      if (onSave) onSave(hunterData);
+      if (onSave && typeof onSave === 'function') {
+        try {
+          await onSave(hunterData);
+        } catch (callbackError) {
+          console.error('❌ Erreur callback onSave:', callbackError);
+        }
+      }
       
       // Attendre avant de fermer
       setTimeout(() => {

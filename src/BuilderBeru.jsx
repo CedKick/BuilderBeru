@@ -5798,12 +5798,15 @@ BobbyJones : "Allez l'Inter !"
                     currentGems={gemData}
                     currentWeapon={hunterWeapons[selectedCharacter] || {}}
                     showTankMessage={showTankMessage}
-                    onSave={{
-                      // 🎯 Fonction avec callback pour la page classement
-                      showRankings: () => setShowHallOfFlamePage(true)
+                    onSave={(hunterData) => {
+                      console.log('Hunter sauvegardé:', hunterData);
+                      // Si tu veux naviguer après sauvegarde :
+                      // setShowHallOfFlamePage(true);
                     }}
                   />
                 )}
+
+
 
                 {showHallOfFlamePage && (
                   <HallOfFlamePage
@@ -6676,12 +6679,14 @@ BobbyJones : "Allez l'Inter !"
                       currentGems={gemData}
                       currentWeapon={hunterWeapons[selectedCharacter] || {}}
                       showTankMessage={showTankMessage}
-                      onSave={{
-                        // 🎯 Fonction avec callback pour la page classement
-                        showRankings: () => setShowHallOfFlamePage(true)
+                      onSave={(hunterData) => {
+                        console.log('Hunter sauvegardé:', hunterData);
+                        // Si tu veux naviguer après sauvegarde :
+                        // setShowHallOfFlamePage(true);
                       }}
                     />
                   )}
+
 
                   {showHallOfFlamePage && (
                     <HallOfFlamePage
