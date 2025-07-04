@@ -2903,6 +2903,10 @@ export const weaponData = [
         src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748875804/fanofthefiredemon_j4obuj.png"
     },
     {
+        name: "goldtailedfox",
+        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751618897/goldtailedfox_qqi0bt.png"
+    },
+    {
         name: "knightkiller",
         src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748875804/knightkiller_fhuiqp.png"
     },
