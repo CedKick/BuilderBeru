@@ -7,6 +7,15 @@ const API_BASE = window.location.hostname === 'localhost'
   ? '' // Utilise le proxy en dev
   : 'https://api.builderberu.com'; // URL complète en prod
 
+// Fix pour les URLs de base quand on n'est pas en localhost
+const getApiUrl = (endpoint) => {
+  if (window.location.hostname === 'localhost') {
+    return endpoint; // Proxy gère tout
+  }
+  // En prod, toujours utiliser l'URL complète de l'API
+  return `${API_BASE}${endpoint}`;
+};
+
 // 🧮 CALCUL CP AVANCÉ KAISEL - VERSION PROPS + SET BONUS
 const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false, setBonus = false) => {
   if (!stats || !selectedCharacter) return returnDetails ? { total: 0, details: [] } : 0;
@@ -226,7 +235,7 @@ export const syncLocalCache = async (showTankMessage) => {
     const results = await Promise.allSettled(
       localData.map(async (hunterData) => {
         try {
-          const response = await fetch(`${API_BASE}/api/hallofflame/submit`, {
+          const response = await fetch(getApiUrl('/api/hallofflame/submit'), {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -551,7 +560,7 @@ const HallOfFlameDebugPopup = ({
       const startTime = Date.now();
       
       // 🔥 FIX KAISEL: XMLHttpRequest pour gérer les gros uploads
-      const uploadUrl = `${API_BASE}/api/upload-screenshots`;
+      const uploadUrl = getApiUrl('/api/upload-screenshots');
       
       const uploadPromise = new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -709,7 +718,7 @@ const HallOfFlameDebugPopup = ({
     try {
       showTankMessage("🌐 Envoi vers le backend...", true, 'kaisel');
       
-      const response = await fetch(`${API_BASE}/api/hallofflame/submit`, {
+      const response = await fetch(getApiUrl('/api/hallofflame/submit'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
