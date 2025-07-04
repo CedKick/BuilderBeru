@@ -1,11 +1,11 @@
-// HallOfFlameDebugPopup.jsx - 🔧 DIGITALOCEAN UPLOAD + 3 SCREENSHOTS MAX - v5.0
+// HallOfFlameDebugPopup.jsx - 🔧 DIGITALOCEAN UPLOAD + 3 SCREENSHOTS MAX + LOADING - v5.1
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BUILDER_DATA } from '../data/builder_data.js';
 
 const API_BASE = window.location.hostname === 'localhost' 
-  ? '' // Utilise le proxy en deve
-  : 'https://api.builderberu.com'; // URL complète en prod2
+  ? '' // Utilise le proxy en dev
+  : 'https://api.builderberu.com'; // URL complète en prod
 
 // 🧮 CALCUL CP AVANCÉ KAISEL - VERSION PROPS + SET BONUS
 const calculateAdvancedCP = (stats, selectedCharacter, returnDetails = false, setBonus = false) => {
@@ -332,8 +332,10 @@ const HallOfFlameDebugPopup = ({
   });
   const popupRef = useRef(null);
   
-  // 🆕 State pour gérer la réponse de soumission
-  const [submissionResponse, setSubmissionResponse] = useState(null);
+  // 🆕 States pour loading
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const isMobileDevice = window.innerWidth < 768;
 
@@ -410,21 +412,23 @@ const HallOfFlameDebugPopup = ({
       });
       setCurrentStep(1);
       setValidationErrors([]);
-      setSubmissionResponse(null);
+      setIsUploading(false);
+      setUploadProgress('');
+      setIsSaving(false);
     }
   }, [isOpen]);
 
   // Close on escape key
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && !isUploading && !isSaving) onClose();
     };
     
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
       return () => document.removeEventListener('keydown', handleKeyDown);
     }
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isUploading, isSaving]);
 
   // 🔍 VALIDATION DES DONNÉES
   const validateData = useCallback(async () => {
@@ -490,9 +494,13 @@ const HallOfFlameDebugPopup = ({
     }
   }, [formData, currentStats, selectedCharacter, memoizedCpTotal.total, memoizedSetAnalysis]);
 
-  // 📸 UPLOAD SCREENSHOTS DIGITALOCEAN - VERSION v5.0 MAX 3 FILES
+  // 📸 UPLOAD SCREENSHOTS DIGITALOCEAN - VERSION v5.1 avec LOADING et FIX CHUNKING
   const uploadToDigitalOcean = useCallback(async (files) => {
     if (!files || files.length === 0) return [];
+    
+    // Activer l'état de loading
+    setIsUploading(true);
+    setUploadProgress('Préparation...');
     
     // Limiter à 3 fichiers max
     const filesToUpload = Array.from(files).slice(0, 3);
@@ -507,126 +515,163 @@ const HallOfFlameDebugPopup = ({
     
     // Vérifier la taille totale
     const totalSize = filesToUpload.reduce((sum, file) => sum + file.size, 0);
-    const maxTotalSize = 30 * 1024 * 1024; // 30MB total (3x10MB)
+    console.log(`📊 Taille totale: ${(totalSize/1024/1024).toFixed(2)}MB`);
     
-    if (totalSize > maxTotalSize) {
-      showTankMessage(
-        `❌ Taille totale trop grande: ${(totalSize/1024/1024).toFixed(2)}MB (max 30MB)`,
-        true,
-        'kaisel'
-      );
-      return [];
-    }
-    
-    showTankMessage(`📸 Upload de ${filesToUpload.length} fichiers vers le serveur SERN...`, true, 'kaisel');
+    setUploadProgress(`Upload de ${(totalSize/1024/1024).toFixed(2)}MB...`);
+    showTankMessage(`📸 Upload de ${filesToUpload.length} fichiers...`, true, 'kaisel');
     
     try {
       const uploadFormData = new FormData();
       
-      // Ajouter les fichiers (max 3)
+      // Ajouter les fichiers
       for (let i = 0; i < filesToUpload.length; i++) {
         const file = filesToUpload[i];
         
-        // Vérifications de sécurité
         if (!file.type.startsWith('image/')) {
-          console.warn(`⚠️ Fichier ignoré (pas une image): ${file.name}`);
-          showTankMessage(`⚠️ ${file.name} n'est pas une image, ignoré`, true, 'kaisel');
+          console.warn(`⚠️ ${file.name} n'est pas une image`);
           continue;
         }
         
-        // Vérifier la taille individuelle
-        if (file.size > 10 * 1024 * 1024) { // 10MB par fichier
-          showTankMessage(
-            `⚠️ ${file.name} trop gros (${(file.size/1024/1024).toFixed(2)}MB), max 10MB`,
-            true,
-            'kaisel'
-          );
-          continue;
-        }
-        
-        console.log(`📸 Ajout fichier ${i+1}: ${file.name} (${(file.size/1024/1024).toFixed(2)}MB)`);
+        setUploadProgress(`Ajout ${i+1}/${filesToUpload.length}: ${file.name}`);
+        console.log(`📸 Fichier ${i+1}: ${file.name} (${(file.size/1024/1024).toFixed(2)}MB)`);
         uploadFormData.append('screenshots', file);
       }
       
-      // Vérifier qu'on a au moins un fichier valide
       const entriesCount = Array.from(uploadFormData.entries()).length;
       if (entriesCount === 0) {
-        showTankMessage("❌ Aucun fichier valide à uploader", true, 'kaisel');
+        setIsUploading(false);
+        showTankMessage("❌ Aucun fichier valide", true, 'kaisel');
         return [];
       }
       
-      console.log(`📦 FormData prêt avec ${entriesCount} fichier(s)`);
+      // Upload avec timeout plus long et configuration spéciale pour gros fichiers
+      setUploadProgress('Envoi vers le serveur SERN...');
       
-      // Upload avec timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondes timeout
+      console.log('🚀 Début upload...');
+      const startTime = Date.now();
       
-      const response = await fetch(`${API_BASE}/api/upload-screenshots`, {
-        method: 'POST',
-        body: uploadFormData,
-        signal: controller.signal
+      // 🔥 FIX KAISEL: XMLHttpRequest pour gérer les gros uploads
+      const uploadUrl = `${API_BASE}/api/upload-screenshots`;
+      
+      const uploadPromise = new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        // Progress tracking
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = (e.loaded / e.total) * 100;
+            setUploadProgress(`Upload: ${percentComplete.toFixed(1)}%`);
+            console.log(`📊 Progress: ${percentComplete.toFixed(1)}%`);
+          }
+        });
+        
+        // Completion
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const result = JSON.parse(xhr.responseText);
+              resolve(result);
+            } catch (error) {
+              reject(new Error('Invalid JSON response'));
+            }
+          } else {
+            reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+          }
+        });
+        
+        // Error
+        xhr.addEventListener('error', () => {
+          reject(new Error('Network error'));
+        });
+        
+        // Timeout
+        xhr.addEventListener('timeout', () => {
+          reject(new Error('Upload timeout'));
+        });
+        
+        // Configure
+        xhr.open('POST', uploadUrl);
+        xhr.timeout = 300000; // 5 minutes
+        
+        // Send
+        xhr.send(uploadFormData);
       });
       
-      clearTimeout(timeoutId);
-      
-      // Log de la réponse
-      console.log('📡 Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Erreur serveur:', errorText);
-        throw new Error(`Upload failed: HTTP ${response.status}`);
-      }
-      
-      const result = await response.json();
+      const result = await uploadPromise;
+      const uploadTime = Date.now() - startTime;
+      console.log(`📡 Upload terminé en ${uploadTime}ms`);
       
       if (result.success && result.screenshots) {
+        setUploadProgress('✅ Upload terminé !');
         showTankMessage(
-          `✅ ${result.screenshots.length} screenshot(s) uploadé(s) sur SERN SERVEUR !`,
+          `✅ ${result.screenshots.length} screenshot(s) uploadé(s) !`,
           true,
           'kaisel'
         );
         
-        console.log('📸 Screenshots uploadés:', result.screenshots);
-        return result.screenshots;
+        // Petit délai avant de masquer le loading
+        setTimeout(() => {
+          setIsUploading(false);
+          setUploadProgress('');
+        }, 1000);
         
+        return result.screenshots;
       } else {
         throw new Error(result.error || 'Upload échoué');
       }
       
     } catch (error) {
-      console.error('❌ Erreur upload SERN:', error);
+      console.error('❌ Erreur upload:', error);
       
-      if (error.name === 'AbortError') {
-        showTankMessage(
-          `❌ Upload timeout (30s). Vérifiez votre connexion.`,
-          true,
-          'kaisel'
-        );
+      setUploadProgress(`❌ Erreur: ${error.message}`);
+      
+      if (error.message.includes('timeout')) {
+        showTankMessage(`❌ Upload timeout (5 min)`, true, 'kaisel');
       } else {
-        showTankMessage(
-          `❌ Upload échoué: ${error.message}. Screenshots non inclus.`,
-          true,
-          'kaisel'
-        );
+        showTankMessage(`❌ Upload échoué: ${error.message}`, true, 'kaisel');
       }
+      
+      // Garder l'erreur affichée un moment
+      setTimeout(() => {
+        setIsUploading(false);
+        setUploadProgress('');
+      }, 3000);
       
       return [];
     }
-  }, [showTankMessage]);
+  }, [showTankMessage, API_BASE]);
 
-  // 💾 SAUVEGARDE FINALE - VERSION DIGITALOCEAN v5.0
+  // 💾 SAUVEGARDE FINALE - VERSION v5.1 avec LOADING
   const handleFinalSave = useCallback(async () => {
     if (!currentStats || Object.keys(currentStats).length === 0) {
       showTankMessage("❌ Aucune donnée à sauvegarder", true, 'kaisel');
       return;
     }
 
+    // Activer l'état de sauvegarde
+    setIsSaving(true);
+    
     let screenshotUrls = [];
     
-    // 📸 UPLOAD SCREENSHOTS VERS DIGITALOCEAN (MAX 3)
+    // 📸 UPLOAD SCREENSHOTS
     if (formData.screenshots && formData.screenshots.length > 0) {
-      screenshotUrls = await uploadToDigitalOcean(formData.screenshots);
+      try {
+        screenshotUrls = await uploadToDigitalOcean(formData.screenshots);
+        
+        // Attendre que l'upload soit vraiment fini
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+      } catch (error) {
+        console.error('Erreur upload:', error);
+        showTankMessage("⚠️ Upload échoué, soumission sans screenshots", true, 'kaisel');
+      }
+    }
+
+    // Vérifier si on a des screenshots (obligatoires en prod)
+    if (screenshotUrls.length === 0 && window.location.hostname !== 'localhost') {
+      showTankMessage("❌ Screenshots obligatoires ! Upload échoué.", true, 'kaisel');
+      setIsSaving(false);
+      return;
     }
 
     const hunterData = {
@@ -652,7 +697,7 @@ const HallOfFlameDebugPopup = ({
         recommendedSets: memoizedSetAnalysis.recommendedSets,
         detectedSets: Object.entries(memoizedSetAnalysis.equipped).map(([name, count]) => `${name} (${count})`)
       },
-      screenshots: screenshotUrls, // URLs DigitalOcean seulement (max 3)
+      screenshots: screenshotUrls,
       timestamp: new Date().toISOString(),
       notes: formData.notes,
       isValidated: validationErrors.length === 0,
@@ -662,7 +707,7 @@ const HallOfFlameDebugPopup = ({
     
     // 🚀 ENVOI VERS LE BACKEND
     try {
-      showTankMessage("🌐 Envoi vers le backend BuilderBeru...", true, 'kaisel');
+      showTankMessage("🌐 Envoi vers le backend...", true, 'kaisel');
       
       const response = await fetch(`${API_BASE}/api/hallofflame/submit`, {
         method: 'POST',
@@ -675,143 +720,75 @@ const HallOfFlameDebugPopup = ({
       
       const result = await response.json();
       
-      // 🆕 TRAITEMENT DE LA RÉPONSE v5.0
       if (response.ok && result && result.success) {
-        setSubmissionResponse(result);
-        
-        // 🔄 CAS D'UN REMPLACEMENT DE PENDING
+        // Messages de succès
         if (result.isReplacingPending) {
           showTankMessage(
-            `🔄 ${result.hunter.pseudo} mis à jour (ancien pending remplacé)\n` +
+            `🔄 ${result.hunter.pseudo} mis à jour\n` +
+            `Screenshots: ${screenshotUrls.length} uploadés`,
+            true,
+            'kaisel'
+          );
+        } else {
+          showTankMessage(
+            `📋 ${result.hunter.pseudo} soumis !\n` +
             `Screenshots: ${screenshotUrls.length} uploadés\n` +
-            `Ancien: ${result.replacedPending.pseudo} (${result.replacedPending.totalScore} CP)`,
-            true,
-            'kaisel'
-          );
-        } 
-        // 🚨 CAS D'UN DOUBLON AVEC CHANGEMENT DE PSEUDO
-        else if (result.suspiciousPseudoChange) {
-          showTankMessage(
-            `🚨 DOUBLON SUSPECT: ${result.hunter.pseudo} en attente\n` +
-            `⚠️ Changement de pseudo détecté!\n` +
-            `Ancien: ${result.existingChecked.pseudo}\n` +
-            `Nouveau: ${result.hunter.pseudo}`,
-            true,
-            'kaisel'
-          );
-          
-          setTimeout(() => {
-            if (window.confirm(
-              `🚨 ATTENTION - CHANGEMENT DE PSEUDO DÉTECTÉ!\n\n` +
-              `Compte: ${result.hunter.accountId}\n` +
-              `Personnage: ${result.hunter.character}\n` +
-              `Ancien pseudo: ${result.existingChecked.pseudo}\n` +
-              `Nouveau pseudo: ${result.hunter.pseudo}\n\n` +
-              `Cette soumission est en attente de validation admin.\n` +
-              `Voulez-vous voir le Hall Of Flame ?`
-            )) {
-              if (onNavigateToHallOfFlame) {
-                onNavigateToHallOfFlame();
-              }
-            }
-          }, 500);
-        }
-        // 📋 CAS NORMAL
-        else {
-          showTankMessage(
-            `📋 ${result.hunter.pseudo} soumis en attente!\n` +
-            `Screenshots: ${screenshotUrls.length}/3 uploadés\n` +
-            `Rang potentiel: #${result.potentialRank}\n` +
-            `Total en attente: ${result.totalHunters - result.checkedHunters}`,
+            `Rang potentiel: #${result.potentialRank}`,
             true,
             'kaisel'
           );
         }
         
-        console.log('✅ Réponse backend v5.0:', result);
+        // Callback
+        if (onSave) onSave(hunterData);
         
-        // Effacer le cache local si succès
-        try {
-          const localCache = JSON.parse(localStorage.getItem('hallofflame_cache') || '[]');
-          const filteredCache = localCache.filter(h => h.uniqueKey !== hunterData.uniqueKey);
-          localStorage.setItem('hallofflame_cache', JSON.stringify(filteredCache));
-        } catch (e) {
-          console.warn('Impossible de nettoyer le cache local');
+        // Attendre avant de fermer
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Demander navigation
+        if (window.confirm("✅ Hunter soumis ! Voir le Hall Of Flame ?")) {
+          if (onNavigateToHallOfFlame) {
+            onNavigateToHallOfFlame();
+          }
         }
+        
+        // Fermer
+        setIsSaving(false);
+        onClose();
         
       } else {
-        throw new Error(result?.error || 'Erreur backend inconnue');
+        throw new Error(result?.error || 'Erreur backend');
       }
       
     } catch (error) {
-      console.error('❌ Erreur API:', error);
+      console.error('❌ Erreur:', error);
       
-      // Message d'erreur détaillé
-      let errorMessage = '❌ Erreur sauvegarde: ';
+      showTankMessage(`❌ Erreur: ${error.message}`, true, 'kaisel');
       
-      if (error.message.includes('CORS') || error.message.includes('fetch')) {
-        errorMessage += 'Problème de connexion au serveur.';
-        showTankMessage(errorMessage, true, 'kaisel');
-        
-        // Sauvegarder en local
-        saveToLocalStorage();
-      } else {
-        errorMessage += error.message;
-        showTankMessage(errorMessage + ' Données conservées localement.', true, 'kaisel');
-        
-        // Sauvegarder automatiquement en local
-        saveToLocalStorage();
-      }
-      
-      // Fonction helper pour sauvegarder en local
-      function saveToLocalStorage() {
-        try {
-          const localData = JSON.parse(localStorage.getItem('hallofflame_cache') || '[]');
-          
-          // Éviter les doublons
-          const existingIndex = localData.findIndex(h => h.uniqueKey === hunterData.uniqueKey);
-          if (existingIndex !== -1) {
-            localData[existingIndex] = hunterData;
-          } else {
-            localData.push(hunterData);
-          }
-          
-          localStorage.setItem('hallofflame_cache', JSON.stringify(localData));
-          showTankMessage("💾 Sauvegarde locale effectuée ! Synchronisation plus tard.", true, 'kaisel');
-          
-          console.log('📦 Données sauvegardées localement:', hunterData);
-          console.log('📊 Total en cache local:', localData.length);
-          
-        } catch (localError) {
-          console.error('❌ Erreur sauvegarde locale:', localError);
-          console.log('🏆 Données complètes:', JSON.stringify(hunterData, null, 2));
-          showTankMessage("❌ Impossible de sauvegarder. Vérifiez la console.", true, 'kaisel');
+      // Sauvegarde locale
+      try {
+        const localData = JSON.parse(localStorage.getItem('hallofflame_cache') || '[]');
+        const existingIndex = localData.findIndex(h => h.uniqueKey === hunterData.uniqueKey);
+        if (existingIndex !== -1) {
+          localData[existingIndex] = hunterData;
+        } else {
+          localData.push(hunterData);
         }
+        localStorage.setItem('hallofflame_cache', JSON.stringify(localData));
+        showTankMessage("💾 Sauvegarde locale effectuée !", true, 'kaisel');
+      } catch (localError) {
+        console.error('❌ Erreur sauvegarde locale:', localError);
       }
+      
+      if (onSave) onSave(hunterData);
+      
+      // Attendre avant de fermer
+      setTimeout(() => {
+        setIsSaving(false);
+        onClose();
+      }, 3000);
     }
-    
-    // Callback onSave
-    if (onSave && typeof onSave === 'function') {
-      onSave(hunterData);
-    }
-    
-    // 🆕 Navigation adaptée
-    setTimeout(() => {
-      const message = submissionResponse?.isReplacingPending ? 
-        "🔄 Hunter mis à jour. Voir le Hall Of Flame ?" :
-        submissionResponse?.suspiciousPseudoChange ?
-        "⚠️ Doublon détecté. Voir le Hall Of Flame ?" :
-        "📋 Soumission en attente. Voir le Hall Of Flame ?";
-        
-      if (window.confirm(message)) {
-        if (onNavigateToHallOfFlame) {
-          onNavigateToHallOfFlame();
-        }
-      }
-    }, 1000);
-    
-    onClose();
-  }, [currentStats, formData, selectedCharacter, characterData, currentArtifacts, currentCores, currentGems, currentWeapon, statsFromArtifacts, memoizedCpTotal, memoizedCpArtifacts, memoizedSetAnalysis, validationErrors, uploadToDigitalOcean, showTankMessage, onSave, onNavigateToHallOfFlame, onClose, submissionResponse]);
+  }, [currentStats, formData, selectedCharacter, characterData, currentArtifacts, currentCores, currentGems, currentWeapon, statsFromArtifacts, memoizedCpTotal, memoizedCpArtifacts, memoizedSetAnalysis, validationErrors, uploadToDigitalOcean, showTankMessage, onSave, onNavigateToHallOfFlame, onClose, API_BASE]);
 
   // 🎨 FORMATER LES STATS POUR AFFICHAGE
   const formatStat = useCallback((value) => {
@@ -835,6 +812,11 @@ const HallOfFlameDebugPopup = ({
         @keyframes data-pulse {
           0%, 100% { background: rgba(0, 255, 127, 0.05); }
           50% { background: rgba(0, 255, 127, 0.15); }
+        }
+
+        @keyframes loading-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
         }
 
         .flame-popup {
@@ -956,6 +938,47 @@ const HallOfFlameDebugPopup = ({
           object-fit: cover;
           border: 2px solid rgba(255, 215, 0, 0.5);
         }
+        
+        .upload-progress {
+          background: rgba(255, 215, 0, 0.1);
+          border: 1px solid rgba(255, 215, 0, 0.3);
+          border-radius: 8px;
+          padding: 12px;
+          margin-top: 8px;
+          text-align: center;
+          animation: loading-pulse 2s ease-in-out infinite;
+        }
+        
+        .upload-progress-text {
+          color: #ffd700;
+          font-weight: bold;
+          font-size: 14px;
+        }
+        
+        .loading-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.8);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          z-index: 100;
+          border-radius: inherit;
+        }
+        
+        .loading-spinner {
+          width: 50px;
+          height: 50px;
+          border: 3px solid rgba(255, 215, 0, 0.3);
+          border-top-color: #ffd700;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
       `}</style>
 
       {/* 🌫️ OVERLAY */}
@@ -966,8 +989,18 @@ const HallOfFlameDebugPopup = ({
           ref={popupRef}
           className={`flame-popup rounded-2xl shadow-2xl w-full transition-all duration-300 ${
             isMobileDevice ? 'max-w-sm max-h-[85vh]' : 'max-w-4xl max-h-[85vh]'
-          } overflow-hidden flex flex-col`}
+          } overflow-hidden flex flex-col relative`}
         >
+          
+          {/* 🔄 LOADING OVERLAY */}
+          {(isUploading || isSaving) && (
+            <div className="loading-overlay">
+              <div className="loading-spinner"></div>
+              <p className="text-yellow-400 font-bold mt-4">
+                {uploadProgress || (isSaving ? 'Sauvegarde en cours...' : 'Chargement...')}
+              </p>
+            </div>
+          )}
           
           {/* 🎯 HEADER */}
           <div className="relative p-6 border-b border-yellow-500/30">
@@ -979,7 +1012,7 @@ const HallOfFlameDebugPopup = ({
                 <div>
                   <h2 className="text-xl font-bold text-yellow-400">HallOfFlame Advanced</h2>
                   <p className="text-gray-300 text-sm">
-                    Kaisel CP System v5.0 • Max 3 Screenshots
+                    Kaisel CP System v5.1 • Max 3 Screenshots
                     {hasData && (
                       <span className="text-green-400 ml-2">
                         • Total: {memoizedCpTotal.total.toLocaleString()} CP
@@ -992,7 +1025,8 @@ const HallOfFlameDebugPopup = ({
               
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-400 flex items-center justify-center transition-colors"
+                disabled={isUploading || isSaving}
+                className="w-8 h-8 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-400 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ✕
               </button>
@@ -1502,7 +1536,15 @@ const HallOfFlameDebugPopup = ({
                     }}
                     className="flame-input w-full px-4 py-3 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-yellow-500 file:text-black hover:file:bg-yellow-400"
                   />
-                  {formData.screenshots.length > 0 ? (
+                  
+                  {/* Upload Progress */}
+                  {uploadProgress && (
+                    <div className="upload-progress">
+                      <p className="upload-progress-text">{uploadProgress}</p>
+                    </div>
+                  )}
+                  
+                  {formData.screenshots.length > 0 && !uploadProgress ? (
                     <>
                       <p className="text-green-400 text-sm mt-2">
                         ✅ {formData.screenshots.length} screenshot(s) sélectionné(s) - Upload vers SERN
@@ -1522,7 +1564,7 @@ const HallOfFlameDebugPopup = ({
                         ))}
                       </div>
                     </>
-                  ) : (
+                  ) : !uploadProgress && (
                     <div>
                       <p className={`text-sm mt-2 ${window.location.hostname === 'localhost' ? 'text-yellow-400' : 'text-red-400'}`}>
                         {window.location.hostname === 'localhost' 
@@ -1653,7 +1695,8 @@ const HallOfFlameDebugPopup = ({
               {currentStep > 1 && (
                 <button
                   onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}
-                  className="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-center text-sm"
+                  disabled={isUploading || isSaving}
+                  className="px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ← Retour
                 </button>
@@ -1662,7 +1705,8 @@ const HallOfFlameDebugPopup = ({
               {/* Bouton Annuler */}
               <button
                 onClick={onClose}
-                className="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-center text-sm"
+                disabled={isUploading || isSaving}
+                className="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Annuler
               </button>
@@ -1673,7 +1717,7 @@ const HallOfFlameDebugPopup = ({
                   onClick={() => setCurrentStep(2)}
                   className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
                   disabled={!formData.pseudo.trim() || !formData.accountId.trim() || !hasData || 
-                    (window.location.hostname !== 'localhost' && formData.screenshots.length === 0)}
+                    (window.location.hostname !== 'localhost' && formData.screenshots.length === 0) || isUploading}
                 >
                   <span>Validation Avancée →</span>
                 </button>
@@ -1711,9 +1755,10 @@ const HallOfFlameDebugPopup = ({
               {currentStep === 3 && (
                 <button
                   onClick={handleFinalSave}
-                  className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm"
+                  disabled={isUploading || isSaving}
+                  className="flex-1 flame-button px-3 py-2 rounded-lg transition-all text-center min-h-[40px] flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span>📋 Soumettre pour Validation</span>
+                  <span>{isSaving ? '⏳ Sauvegarde...' : '📋 Soumettre pour Validation'}</span>
                 </button>
               )}
             </div>
