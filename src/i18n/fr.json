@@ -87,7 +87,7 @@
   [
     { "speaker": 1, "text": "Cette ATK ferait pleurer OhReung." },
     { "speaker": 2, "text": "{{value}}% ? C’est au-dessus de son reroll top 1 !" },
-    { "speaker": 1, "text": "Et sans aucune gemme violette 😎" }
+    { "speaker": 1, "text": "Et sans aucune gemme violette 😱" }
   ],
   [
           { "speaker": 1, "text": "{{value}}% ATK ? C'est pas une stat, c'est une déclaration de guerre." },
@@ -143,7 +143,7 @@
         ],
         [
     { "speaker": 1, "text": "{{value}}% d'attaque ?! Mais t'as sacrifié ton âme ou quoi ?" },
-    { "speaker": 2, "text": "Le pacte avec Kaisel commence à porter ses fruits 😏" }
+    { "speaker": 2, "text": "Le pacte avec Kaisel commence à porter ses fruits 😱" }
   ],
   [
     { "speaker": 1, "text": "Beru ? Non merci." },
@@ -174,7 +174,7 @@
   ],
   [
     { "speaker": 1, "text": "Attends attends... tu viens de loot {{value}}% ATK ??" },
-    { "speaker": 2, "text": "Et sans wallet... 😏" },
+    { "speaker": 2, "text": "Et sans wallet... 😱" },
     { "speaker": 1, "text": "On appelle ça l’élite des Free-to-Win." }
   ],
   [
@@ -183,7 +183,7 @@
   ],
   [
     { "speaker": 1, "text": "Tu veux one-shot Beru ou la planète entière ?" },
-    { "speaker": 2, "text": "Avec {{value}}% d'attaque, les deux 😎" }
+    { "speaker": 2, "text": "Avec {{value}}% d'attaque, les deux 😱" }
   ],
   [
     { "speaker": 1, "text": "Même en dream build j’osais pas imaginer ça..." },
@@ -303,7 +303,7 @@
         [
     { "speaker": 1, "text": "{{value}}% HP ?! T’es devenu une forteresse vivante !" },
     { "speaker": 2, "text": "On te soigne jamais, tu perds rien !" },
-    { "speaker": 1, "text": "Même Tank est jaloux 😏" }
+    { "speaker": 1, "text": "Même Tank est jaloux 😱" }
   ],
   [
     { "speaker": 1, "text": "Ton HP est plus haut que les rêves de Kaisel." },
@@ -328,7 +328,7 @@
   [
     { "speaker": 1, "text": "L’équipe ennemie tape... rien ne bouge." },
     { "speaker": 2, "text": "{{value}}% HP, t’es le pilier de la guilde." },
-    { "speaker": 1, "text": "T’as même pas mis ton bouclier actif 😎" }
+    { "speaker": 1, "text": "T’as même pas mis ton bouclier actif 😱" }
   ],
   [
     { "speaker": 1, "text": "Tank veut t’adopter." },
