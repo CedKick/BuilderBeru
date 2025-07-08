@@ -87,54 +87,52 @@ const BUILDER_DATA = {
   // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS - KAISEL FIX 2 BUILDS
   "artifactSets": {
     "hybridIronWillOutstanding": {
-      "name": "Hybrid Iron Will/Outstanding",
-      "frenchName": "Hybride Volonté/Remarquable",
+      "name": "Burning Curse/ Expert",
+      "frenchName": "Malédiction/Expert",
       "availability": "LR",
-      "setComposition": "4x Iron Will + 4x Outstanding Ability",
+      "setComposition": "Burning Curse (4), Expert (Beast Set) (4)",
       "pieces": {
-        "helmet": "Casque de la volonté de fer",        // Iron Will
-        "chest": "Armure de la volonté de fer",         // Iron Will
-        "gloves": "Gants de la volonté de fer",         // Iron Will
-        "boots": "Bottes de la volonté de fer",         // Iron Will
+        "helmet": "Casque de malédiction ardente",       
+        "chest": "Armure de malédiction ardente",         
+        "gloves": "Gants de malédiction ardente",        
+        "boots": "Bottes de malédiction ardente",         
+        "bracelet": "Bracelet d'expert",           
+        "ring": "Bague d'expert",                  
+        "earrings": "Boucles d'oreilles d'expert" 
+      },
+      "mainStats": {
+        "helmet": "Additional Attack",
+        "chest": "Additional Defense",  
+        "gloves": "Additional Attack",
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional HP",
+        "bracelet": "Water Damage %",
+        "ring": "Additional Attack",
+        "earrings": "Additional MP"
+      }
+    },
+    "burningCurseObsidian": {
+      "name": "Burning Curse/Obsidian",
+      "frenchName": "Malédiction/Obsidian",
+      "availability": "LR",
+      "setComposition": "Burning Curse (4), Outstanding Ability (Obsidian Set)",
+      "pieces": {
+        "helmet": "Casque de malédiction ardente",       
+        "chest": "Armure de malédiction ardente",        
+        "gloves": "Gants de malédiction ardente",         
         "necklace": "Collier en obsidienne",            // Outstanding Ability
         "bracelet": "Bracelet en obsidienne",           // Outstanding Ability
         "ring": "Bague en obsidienne",                  // Outstanding Ability
         "earrings": "Boucles d'oreilles en obsidienne" // Outstanding Ability
       },
       "mainStats": {
-        "helmet": "Additional Defense",
+        "helmet": "Additional Attack",
         "chest": "Additional Defense",  
         "gloves": "Additional Attack",
         "boots": "Critical Hit Damage",
-        "necklace": "Additional Defense",
-        "bracelet": "Wind Damage %",
-        "ring": "Additional Defense",
-        "earrings": "Additional MP"
-      }
-    },
-    "fullChaoticInfamy": {
-      "name": "Full Chaotic Infamy",
-      "frenchName": "Infamie chaotique complète",
-      "availability": "LR",
-      "setComposition": "8x Chaotic Infamy",
-      "pieces": {
-        "helmet": "Casque d'infamie chaotique",
-        "chest": "Armure d'infamie chaotique",
-        "gloves": "Gants d'infamie chaotique",
-        "boots": "Bottes d'infamie chaotique",
-        "necklace": "Collier d'infamie chaotique",
-        "bracelet": "Bracelet d'infamie chaotique",
-        "ring": "Bague d'infamie chaotique",
-        "earrings": "Boucles d'oreilles d'infamie chaotique"
-      },
-      "mainStats": {
-        "helmet": "Additional Defense",
-        "chest": "Additional Defense",
-        "gloves": "Additional Attack",
-        "boots": "Critical Hit Damage",
-        "necklace": "Additional Defense",
-        "bracelet": "Wind Damage %",
-        "ring": "Additional Defense",
+        "necklace": "Additional HP",
+        "bracelet": "Water Damage %",
+        "ring": "Additional Attack",
         "earrings": "Additional MP"
       }
     }
@@ -161,10 +159,10 @@ const BUILDER_DATA = {
 
   // 💡 CONSEILS BÉRU - KAISEL UPDATE
   "beruAdvice": {
-    "newbie": "Niermann est un tank défensif avec 2 builds ! Commence par Iron Will/Outstanding.",
-    "intermediate": "Scale sur Defense = focus Additional Defense. Général vs PvP/BdG !",
-    "advanced": "2 builds : Hybride (Général), Full Chaotic (PvP/BdG).",
-    "expert": "Iron Will/Outstanding pour le général, Chaotic Infamy pour tryhard !"
+    "newbie": "Shuhua est beast sans poil.",
+    "intermediate": "Elle scale sur l'attaque!",
+    "advanced": "Elle se joue avec burning curse/obsidian.",
+    "expert": "Elle peut se jouer avec expert à droite !"
   }
 },
   "miyeon": {

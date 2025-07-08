@@ -11,6 +11,667 @@
   "noGems": "Aucune gemme définie",
   "weapon" : "⚔️ Arme",
   "statFinals" : "Stats finales",
+  "tv_dialogue": {
+    "attack": {
+      "sequences": [
+        [
+          { "speaker": 1, "text": "WAOUH ! {{value}}% d'attaque !" },
+          { "speaker": 2, "text": "C'est une stat de MALADE !" },
+          { "speaker": 1, "text": "Le Monarque est béni des RNG !" },
+          { "speaker": 2, "text": "Même BobbyJones serait jaloux !" }
+        ],
+        [
+          { "speaker": 1, "text": "{{value}}% ATK ? ÉPIQUE !" },
+          { "speaker": 2, "text": "GG Monarque !" },
+          { "speaker": 1, "text": "On peut one-shot Beru maintenant ?" },
+          { "speaker": 2, "text": "Hé ! Pas touche à Béru !" },
+          { "speaker": 1, "text": "Ok ok, je rigole ! 😅" }
+        ],
+        [
+          { "speaker": 1, "text": "OMG ! {{value}}% d'attaque !" },
+          { "speaker": 2, "text": "Le SERN va trembler !" },
+          { "speaker": 1, "text": "Cette stat est illégale !" },
+          { "speaker": 2, "text": "Tank approuve à 100% !" },
+          { "speaker": 1, "text": "Kaisel va debugger ça... ou pas 😈" }
+        ],
+         [
+    { "speaker": 1, "text": "{{value}}% d'attaque ! C’est pas une stat, c’est une déclaration de guerre !" },
+    { "speaker": 2, "text": "Même Igris a tourné la tête !" },
+    { "speaker": 1, "text": "L’arène va exploser !" }
+  ],
+  [
+    { "speaker": 1, "text": "{{value}}% ATK détecté." },
+    { "speaker": 2, "text": "Initiation du protocole EXTERMINATION..." },
+    { "speaker": 1, "text": "Solo Leveling: TRUE END débloqué." }
+  ],
+  [
+    { "speaker": 1, "text": "Avec {{value}}% d'attaque..." },
+    { "speaker": 2, "text": "Même Beru il panique 🐜" },
+    { "speaker": 1, "text": "Faut appeler Kaisel pour nerfer ça." }
+  ],
+  [
+    { "speaker": 1, "text": "{{value}}% ATK ?!" },
+    { "speaker": 2, "text": "On dirait un reroll de BobbyJones..." },
+    { "speaker": 1, "text": "RNGesus t’a donné sa bénédiction." }
+  ],
+  [
+    { "speaker": 1, "text": "Le Monarque vient de débloquer un crit à {{value}}% !" },
+    { "speaker": 2, "text": "Il a OS le boss d’un clin d’œil." },
+    { "speaker": 1, "text": "Et le boss s’appelait Béru 😈" }
+  ],
+  [
+    { "speaker": 1, "text": "{{value}}% ATK ?! C’est plus une stat, c’est un bug !" },
+    { "speaker": 2, "text": "Kaisel va devoir patcher ça en urgence 🥲" },
+    { "speaker": 1, "text": "Encore un truc qu’il a pas vu venir !" }
+  ],
+  [
+    { "speaker": 1, "text": "WAAAH ! {{value}}% d'attaque !" },
+    { "speaker": 2, "text": "GoHack, c’est toi ?!" },
+    { "speaker": 1, "text": "Nan c’est pire... c’est le Monarque 😈" }
+  ],
+  [
+    { "speaker": 1, "text": "{{value}}% ATK, tu rivalises avec X LSA maintenant !" },
+    { "speaker": 2, "text": "Ou même... non j’ose pas le dire..." },
+    { "speaker": 1, "text": "Dis-le... BobbyJones 😳" }
+  ],
+  [
+    { "speaker": 1, "text": "{{value}}% ? C’est ce que Mousu sort en daily." },
+    { "speaker": 2, "text": "Toi t’as eu ça sans transpirer !" },
+    { "speaker": 1, "text": "Le karma du Monarque est trop haut !" }
+  ],
+  [
+    { "speaker": 1, "text": "{{value}}% d’attaque directe au cœur du SERN." },
+    { "speaker": 2, "text": "Même Zaff a réagi." },
+    { "speaker": 1, "text": "Il a dit : 'ouais c’est ok' 😐" }
+  ],
+  [
+    { "speaker": 1, "text": "Cette ATK ferait pleurer OhReung." },
+    { "speaker": 2, "text": "{{value}}% ? C’est au-dessus de son reroll top 1 !" },
+    { "speaker": 1, "text": "Et sans aucune gemme violette 😎" }
+  ],
+  [
+          { "speaker": 1, "text": "{{value}}% ATK ? C'est pas une stat, c'est une déclaration de guerre." },
+          { "speaker": 2, "text": "Même GoHack en bave !" },
+          { "speaker": 1, "text": "On va devoir appeler le Conseil des Ombres..." },
+          { "speaker": 2, "text": "Trop tard. Le monde est déjà en feu." }
+        ],
+        [
+          { "speaker": 1, "text": "T'as vu cette ATK ? {{value}}%... c'est illégal." },
+          { "speaker": 2, "text": "Même Zaff a levé un sourcil !" },
+          { "speaker": 1, "text": "On a plus besoin de Tank. T’as tout rasé." }
+        ],
+        [
+          { "speaker": 1, "text": "C’est quoi cette dinguerie ? {{value}}% d’attaque ?!" },
+          { "speaker": 2, "text": "On peut pas imprimer ça, le papier brûle." },
+          { "speaker": 1, "text": "Faut appeler X LSA. Lui seul peut rivaliser." }
+        ],
+        [
+          { "speaker": 1, "text": "Le boss est mort avant l’intro de combat." },
+          { "speaker": 2, "text": "{{value}}% ATK. C’est une exécution publique." },
+          { "speaker": 1, "text": "Même Kaisel te regarde de loin maintenant." }
+        ],
+        [
+          { "speaker": 1, "text": "Ton ATK est une prophétie du chaos." },
+          { "speaker": 2, "text": "{{value}}% c’est plus qu’une stat. C’est une sentence." },
+          { "speaker": 1, "text": "Shuhua a applaudi. Et elle tape fort en plus." },
+          { "speaker": 2, "text": "BobbyJones va devoir t'intégrer dans les plans du raid, à toi seul." }
+        ],
+        [
+          { "speaker": 1, "text": "T’as checké ? {{value}}% ATK. T’as signé avec le Diable ?" },
+          { "speaker": 2, "text": "Non. Pire. Avec Béru." },
+          { "speaker": 1, "text": "Aaaah. Ça explique tout." }
+        ],
+        [
+          { "speaker": 1, "text": "Tu viens de pull cette stat ?" },
+          { "speaker": 2, "text": "{{value}}% ATK. La chance du Monarque..." },
+          { "speaker": 1, "text": "Je ragequit IRL là." }
+        ],
+        [
+          { "speaker": 1, "text": "T’as mis combien dans l’autel pour drop ça ?" },
+          { "speaker": 2, "text": "Je crois qu’il a sacrifié sa RNG à Kaisel lui-même." },
+          { "speaker": 1, "text": "{{value}}% ATK, ça mérite une enquête du SERN." }
+        ],
+        [
+          { "speaker": 1, "text": "T’as testé sur boss ?" },
+          { "speaker": 2, "text": "Testé ? Le boss n’existe plus !" },
+          { "speaker": 1, "text": "Ah ouais. {{value}}%... RIP le raid log." }
+        ],
+        [
+          { "speaker": 1, "text": "Je crois que ton build vient de casser le jeu." },
+          { "speaker": 2, "text": "Tu m’étonnes. {{value}}% d’attaque. C’est une anomalie méta." },
+          { "speaker": 1, "text": "Meta ? Non. Apocalypse." }
+        ],
+        [
+    { "speaker": 1, "text": "{{value}}% d'attaque ?! Mais t'as sacrifié ton âme ou quoi ?" },
+    { "speaker": 2, "text": "Le pacte avec Kaisel commence à porter ses fruits 😏" }
+  ],
+  [
+    { "speaker": 1, "text": "Beru ? Non merci." },
+    { "speaker": 2, "text": "Avec {{value}}% ATK, je le mange au p'tit déj." }
+  ],
+  [
+    { "speaker": 1, "text": "Hmpf... {{value}}% ATK..." },
+    { "speaker": 2, "text": "Encore un reroll raté ?" },
+    { "speaker": 1, "text": "Non, un reroll parfait... pour casser le jeu." }
+  ],
+  [
+    { "speaker": 1, "text": "{{value}}% d'attaque ?! C’est un bug ou t’as prié GoHack ?" },
+    { "speaker": 2, "text": "Même Kaisel code pas d’aussi gros chiffres !" },
+    { "speaker": 1, "text": "On appelle ça… une anomalie cosmique." }
+  ],
+  [
+    { "speaker": 1, "text": "Il a stack {{value}}% ATK en une substat..." },
+    { "speaker": 2, "text": "Zaff vient de delete son compte." }
+  ],
+  [
+    { "speaker": 1, "text": "WAAAH ! Tu l’as eue en combien de pulls ?" },
+    { "speaker": 2, "text": "{{value}}% ATK direct au premier try..." },
+    { "speaker": 1, "text": "Sung Jin-Woo est fier de toi." }
+  ],
+  [
+    { "speaker": 1, "text": "{{value}}% d’attaque, et toujours pas dans le top 10..." },
+    { "speaker": 2, "text": "LSA t’attend pour un duel." }
+  ],
+  [
+    { "speaker": 1, "text": "Attends attends... tu viens de loot {{value}}% ATK ??" },
+    { "speaker": 2, "text": "Et sans wallet... 😏" },
+    { "speaker": 1, "text": "On appelle ça l’élite des Free-to-Win." }
+  ],
+  [
+    { "speaker": 1, "text": "C’est plus une stat là, c’est une déclaration de guerre." },
+    { "speaker": 2, "text": "{{value}}% ATK et Mousu pleure dans un coin." }
+  ],
+  [
+    { "speaker": 1, "text": "Tu veux one-shot Beru ou la planète entière ?" },
+    { "speaker": 2, "text": "Avec {{value}}% d'attaque, les deux 😎" }
+  ],
+  [
+    { "speaker": 1, "text": "Même en dream build j’osais pas imaginer ça..." },
+    { "speaker": 2, "text": "{{value}}% ATK, réaliste." },
+    { "speaker": 1, "text": "Ingame : 🐉🔥" }
+  ],
+  [
+    { "speaker": 1, "text": "C’est un build PVE ?" },
+    { "speaker": 2, "text": "Avec {{value}}% ATK, c’est PVE, PVP, PVBeru." }
+  ],
+  [
+    { "speaker": 1, "text": "On est sur BuilderBéru ici, pas dans un cheat code !" },
+    { "speaker": 2, "text": "{{value}}% ATK c’est... plus que BobbyJones n’en a jamais rêvé." }
+  ],
+  [
+    { "speaker": 1, "text": "Ton build est plus violent qu’un donjon SSS+..." },
+    { "speaker": 2, "text": "{{value}}% ATK... osef des critiques, t’as la force brute." }
+  ],
+  [
+    { "speaker": 1, "text": "Encore une victoire pour le RNG-sama." },
+    { "speaker": 2, "text": "{{value}}% ATK en une substat, t’as pactisé avec Tank ?" }
+  ],
+  [
+    { "speaker": 1, "text": "BOOM !" },
+    { "speaker": 2, "text": "{{value}}% ATK affiché, serveur redémarre." }
+  ],
+  [
+    { "speaker": 1, "text": "Le prochain patch va nerfer ça direct..." },
+    { "speaker": 2, "text": "Avec {{value}}% ATK, t’as 48h avant l’effondrement du meta." }
+  ],
+  [
+    { "speaker": 1, "text": "Bon... qui a laissé Dyphen toucher aux artefacts ?" },
+    { "speaker": 2, "text": "{{value}}% ATK en bonus ? J’appelle ça une 'Dyphenisation'." }
+  ],
+  [
+    { "speaker": 1, "text": "Tu te rends compte que t’es passé devant OhReung ?" },
+    { "speaker": 2, "text": "Je suis la menace maintenant 😈" },
+    { "speaker": 1, "text": "Faut te mettre en donjon secret." }
+  ],
+  [
+    { "speaker": 1, "text": "Ton build respire la peur." },
+    { "speaker": 2, "text": "{{value}}% d’ATK... les ombres fuient avant même le fight." }
+  ],
+  [
+    { "speaker": 1, "text": "T’as même pas mis de gemmes encore ?" },
+    { "speaker": 2, "text": "Non. Juste du talent et du RNG 🙃" }
+  ],
+  [
+    { "speaker": 1, "text": "J’ai vu des valeurs hautes..." },
+    { "speaker": 2, "text": "Mais là c’est stratosphérique !" },
+    { "speaker": 1, "text": "{{value}}% ATK… stop les maths, c’est un miracle." }
+  ],
+  [
+    { "speaker": 1, "text": "Et là tu rajoutes 30% en boost de guilde..." },
+    { "speaker": 2, "text": "Mais t’as pas besoin, t’es déjà une guilde à toi seul 😤" }
+  ],
+  [
+    { "speaker": 1, "text": "{{value}}% ATK ? Tu viens de craquer le jeu là." },
+    { "speaker": 2, "text": "Le bouton 'désinstaller' vient d’apparaître chez tes ennemis." }
+  ],
+  [
+    { "speaker": 1, "text": "T’as vu la tête de ton artefact ?" },
+    { "speaker": 2, "text": "On dirait qu’il a mangé Beru." },
+    { "speaker": 1, "text": "Et Sung. Et Tank. Et... tout le monde." }
+  ],
+  [
+    { "speaker": 1, "text": "Un artefact {{value}}% ATK et en plus joli..." },
+    { "speaker": 2, "text": "On appelle ça : la double claque esthétique." }
+  ],
+  [
+    { "speaker": 1, "text": "J’espère que t’as prévu un prétexte pour le GvG..." },
+    { "speaker": 2, "text": "Parce que là, tu vas accidentellement raser une guilde entière." }
+  ],
+  [
+    { "speaker": 1, "text": "Kaisel voulait te tester. Il a crashé." },
+    { "speaker": 2, "text": "Erreur 404 : défense ennemie introuvable." }
+  ],
+  [
+    { "speaker": 1, "text": "GoHack t’a soufflé cette stat ou quoi ?" },
+    { "speaker": 2, "text": "Non, c’est juste le pouvoir du Monarque des Artefacts 😎" }
+  ],
+  [
+    { "speaker":1, "text": "Quand BobbyJones a vu {{value}}% ATK, il a quitté le Discord." },
+    { "speaker": 2, "text": "Il a dit 'c’est pas humain'." }
+  ],
+  [
+    { "speaker": 1, "text": "T’as mis cette stat en manuel ?" },
+    { "speaker": 2, "text": "Même pas. Juste la volonté de Jin-Woo." }
+  ],
+  [
+    { "speaker": 1, "text": "OhReung vient de dire que c’est une stat 'correcte'." },
+    { "speaker": 2, "text": "Trad : il est jaloux 😏" }
+  ],
+  [
+    { "speaker": 1, "text": "{{value}}% d'attaque ?!" },
+    { "speaker": 2, "text": "Shuhua a cligné des yeux en le voyant." },
+    { "speaker": 1, "text": "Et elle a failli s’étouffer avec son Mug Béru." }
+  ],
+  [
+    { "speaker": 1, "text": "Cette stat est tellement haute que même Tank s’est réveillé." },
+    { "speaker": 2, "text": "Et il veut te suivre maintenant." }
+  ],
+  [
+    { "speaker": 1, "text": "Fais gaffe, à ce niveau-là, t’invoques un boss secret..." },
+    { "speaker": 2, "text": "...appelé Kaisel.exe 😈" }
+  ]
+
+      ]
+    },
+    "hp": {
+      "sequences": [
+        [
+          { "speaker": 1, "text": "IMMORTEL ! {{value}}% HP !" },
+          { "speaker": 2, "text": "Tu vas tanker l'univers !" },
+          { "speaker": 1, "text": "Même le Roi Fourmi peut pas te tuer !" }
+        ],
+        [
+    { "speaker": 1, "text": "{{value}}% HP ?! T’es devenu une forteresse vivante !" },
+    { "speaker": 2, "text": "On te soigne jamais, tu perds rien !" },
+    { "speaker": 1, "text": "Même Tank est jaloux 😏" }
+  ],
+  [
+    { "speaker": 1, "text": "Ton HP est plus haut que les rêves de Kaisel." },
+    { "speaker": 2, "text": "{{value}}%... même les boss skip ton tour." },
+    { "speaker": 1, "text": "Ils ont peur du contre 😈" }
+  ],
+  [
+    { "speaker": 1, "text": "Laisse-moi deviner... tu viens de solo un donjon S10 ?" },
+    { "speaker": 2, "text": "Avec {{value}}% HP, tu pouvais AFK jusqu’au boss." },
+    { "speaker": 1, "text": "Et encore, t’es pas descendu sous 90% 😭" }
+  ],
+  [
+    { "speaker": 1, "text": "{{value}}% HP détecté !" },
+    { "speaker": 2, "text": "Nouveau titre débloqué : 'Insubmersible'" },
+    { "speaker": 1, "text": "Tu tankes même les lags serveur." }
+  ],
+  [
+    { "speaker": 1, "text": "OhReung vient de valider ton build tank !" },
+    { "speaker": 2, "text": "{{value}}% HP, tu peux tanker l’amitié entre Dyphen et Kaisel." },
+    { "speaker": 1, "text": "Et ça, c’est solide 😬" }
+  ],
+  [
+    { "speaker": 1, "text": "L’équipe ennemie tape... rien ne bouge." },
+    { "speaker": 2, "text": "{{value}}% HP, t’es le pilier de la guilde." },
+    { "speaker": 1, "text": "T’as même pas mis ton bouclier actif 😎" }
+  ],
+  [
+    { "speaker": 1, "text": "Tank veut t’adopter." },
+    { "speaker": 2, "text": "{{value}}% HP ? Tu fais un 1v50 et tu gagnes." },
+    { "speaker": 1, "text": "Sans potion. En marchant. En buvant un mug Béru." }
+  ],
+  [
+    { "speaker": 1, "text": "On t'appelle plus Monarque... on t'appelle MUR DE BERLIN." },
+    { "speaker": 2, "text": "{{value}}% HP ? Tu viens de ruiner les dégâts de Mousu !" },
+    { "speaker": 1, "text": "Même Zaff peut plus DPS assez !" }
+  ],
+  [
+    { "speaker": 1, "text": "Regarde ! Le boss tape..." },
+    { "speaker": 2, "text": "...et tu régénères plus que tu perds 😭" },
+    { "speaker": 1, "text": "{{value}}% HP = mode cheat activé." }
+  ],
+  [
+    { "speaker": 1, "text": "Tu prends plus de dégâts IRL que IG à ce stade." },
+    { "speaker": 2, "text": "{{value}}% HP... c'est du trolling en PvE." },
+    { "speaker": 1, "text": "GoHack valide ce build pour AFK farming." }
+  ],
+  [
+    { "speaker": 1, "text": "{{value}}% HP détecté..." },
+    { "speaker": 2, "text": "Urgence ! Kaisel déclenche une maintenance !" },
+    { "speaker": 1, "text": "“Too much sustain” dans le patchnote." }
+  ],
+  [
+    { "speaker": 1, "text": "On a testé ton perso en donjon infini..." },
+    { "speaker": 2, "text": "...le serveur a crashé au round 300." },
+    { "speaker": 1, "text": "{{value}}% HP, c'est trop." }
+  ],
+  [
+    { "speaker": 1, "text": "Même les boss en mode cauchemar tapent 0." },
+    { "speaker": 2, "text": "{{value}}% HP... j'appelle ça une provocation." },
+    { "speaker": 1, "text": "X LSA rage dans le chat 😆" }
+  ],
+  [
+    { "speaker": 1, "text": "Tank t’a envoyé une demande d’amitié." },
+    { "speaker": 2, "text": "{{value}}% HP ? Il veut des conseils !" },
+    { "speaker": 1, "text": "Faut dire... t’es le nouveau modèle d’ours." }
+  ],
+  [
+    { "speaker": 1, "text": "Tes PV sont montés si haut..." },
+    { "speaker": 2, "text": "...que le compteur affiche ∞ maintenant." },
+    { "speaker": 1, "text": "Merci {{value}}% HP 😈" }
+  ],
+  [
+    { "speaker": 1, "text": "Statut : IN-CI-BLÉ." },
+    { "speaker": 2, "text": "{{value}}% HP, et encore t’as pas activé ton passif." },
+    { "speaker": 1, "text": "Le jeu pleure, Béru danse." }
+  ]
+      ]
+    },
+    "defense": {
+      "sequences": [
+        [
+          { "speaker": 1, "text": "{{value}}% DEF ? Béton armé !" },
+          { "speaker": 2, "text": "Tank serait fier !" },
+          { "speaker": 1, "text": "Non mais sérieux, c'est légal ça ?" },
+          { "speaker": 2, "text": "Le SERN va enquêter ! 😱" }
+        ],
+        [
+    { "speaker": 1, "text": "{{value}}% DEF ? C’est plus un perso, c’est un bunker nucléaire." },
+    { "speaker": 2, "text": "Même Kaisel a pris 0 en te tapant." },
+    { "speaker": 1, "text": "Et ça, c’est sans le buff Tank." }
+  ],
+  [
+    { "speaker": 1, "text": "Les mobs se cassent les griffes en te tapant..." },
+    { "speaker": 2, "text": "{{value}}% DEF, c’est du sadisme passif !" },
+    { "speaker": 1, "text": "GoHack a abandonné son DPS." }
+  ],
+  [
+    { "speaker": 1, "text": "Zaff a lancé 5 skills..." },
+    { "speaker": 2, "text": "...tu as perdu 2 PV." },
+    { "speaker": 1, "text": "{{value}}% DEF validé par Tank Industries." }
+  ],
+  [
+    { "speaker": 1, "text": "Ton build est plus solide que les serveurs du SERN." },
+    { "speaker": 2, "text": "{{value}}% DEF, un mur de l’ombre." },
+    { "speaker": 1, "text": "Béru s’en sert comme bouclier." }
+  ],
+  [
+    { "speaker": 1, "text": "Le boss tape... il rebondit !" },
+    { "speaker": 2, "text": "{{value}}% DEF, c’est un trampoline de souffrance !" },
+    { "speaker": 1, "text": "Mousu a désinstallé." }
+  ],
+  [
+    { "speaker": 1, "text": "C’est plus un tank, c’est une forteresse magique." },
+    { "speaker": 2, "text": "{{value}}% DEF... le boss t’a mis sur sa blacklist." },
+    { "speaker": 1, "text": "X LSA va demander un nerf officiel." }
+  ],
+  [
+    { "speaker": 1, "text": "Tu peux tanker un météore." },
+    { "speaker": 2, "text": "{{value}}% DEF ? Et tu veux quand même un heal ?" },
+    { "speaker": 1, "text": "Le soin, c’est pour les faibles !" }
+  ],
+  [
+    { "speaker": 1, "text": "Béru t’a proposé une fusion." },
+    { "speaker": 2, "text": "{{value}}% DEF... il veut apprendre ton secret." },
+    { "speaker": 1, "text": "Mais toi seul as le manuel." }
+  ],
+  [
+    { "speaker": 1, "text": "Tu pourrais tanker toute la guilde Gagold réunie." },
+    { "speaker": 2, "text": "{{value}}% DEF ? BobbyJones est choqué." },
+    { "speaker": 1, "text": "Il t’a nommé tank en chef." }
+  ],
+  [
+    { "speaker": 1, "text": "{{value}}% DEF ? C’est plus un perso, c’est un bunker nucléaire." },
+    { "speaker": 2, "text": "Même Kaisel a pris 0 en te tapant." },
+    { "speaker": 1, "text": "Et ça, c’est sans le buff Tank." }
+  ],
+  [
+    { "speaker": 1, "text": "Les mobs se cassent les griffes en te tapant..." },
+    { "speaker": 2, "text": "{{value}}% DEF, c’est du sadisme passif !" },
+    { "speaker": 1, "text": "GoHack a abandonné son DPS." }
+  ],
+  [
+    { "speaker": 1, "text": "Zaff a lancé 5 skills..." },
+    { "speaker": 2, "text": "...tu as perdu 2 PV." },
+    { "speaker": 1, "text": "{{value}}% DEF validé par Tank Industries." }
+  ],
+  [
+    { "speaker": 1, "text": "Ton build est plus solide que les serveurs du SERN." },
+    { "speaker": 2, "text": "{{value}}% DEF, un mur de l’ombre." },
+    { "speaker": 1, "text": "Béru s’en sert comme bouclier." }
+  ],
+  [
+    { "speaker": 1, "text": "Le boss tape... il rebondit !" },
+    { "speaker": 2, "text": "{{value}}% DEF, c’est un trampoline de souffrance !" },
+    { "speaker": 1, "text": "Mousu a désinstallé." }
+  ],
+  [
+    { "speaker": 1, "text": "C’est plus un tank, c’est une forteresse magique." },
+    { "speaker": 2, "text": "{{value}}% DEF... le boss t’a mis sur sa blacklist." },
+    { "speaker": 1, "text": "X LSA va demander un nerf officiel." }
+  ],
+  [
+    { "speaker": 1, "text": "Tu peux tanker un météore." },
+    { "speaker": 2, "text": "{{value}}% DEF ? Et tu veux quand même un heal ?" },
+    { "speaker": 1, "text": "Le soin, c’est pour les faibles !" }
+  ],
+  [
+    { "speaker": 1, "text": "Béru t’a proposé une fusion." },
+    { "speaker": 2, "text": "{{value}}% DEF... il veut apprendre ton secret." },
+    { "speaker": 1, "text": "Mais toi seul as le manuel." }
+  ],
+  [
+    { "speaker": 1, "text": "Tu pourrais tanker toute la guilde Gagold réunie." },
+    { "speaker": 2, "text": "{{value}}% DEF ? BobbyJones est choqué." },
+    { "speaker": 1, "text": "Il t’a nommé tank en chef." }
+  ]
+,
+  [
+    { "speaker": 1, "text": "{{value}}% DEF ? C’est plus du build, c’est une trahison des lois de la physique." },
+    { "speaker": 2, "text": "Même Kaisel a besoin d’un raid pour te toucher." }
+  ],
+  [
+    { "speaker": 1, "text": "Le boss a cliqué sur ‘Fuir’." },
+    { "speaker": 2, "text": "{{value}}% DEF, c’est légendaire." }
+  ],
+  [
+    { "speaker": 1, "text": "T’es un bouclier vivant 😳" },
+    { "speaker": 2, "text": "Même Tank t’appelle ‘Sensei’." }
+  ],
+  [
+    { "speaker": 1, "text": "Le combat a duré 18 minutes…" },
+    { "speaker": 2, "text": "{{value}}% DEF. Et toujours 100% HP." }
+  ],
+  [
+    { "speaker": 1, "text": "Même OhReung a raté ses critiques." },
+    { "speaker": 2, "text": "C’est une aura de refus, pas une stat." }
+  ],
+  [
+    { "speaker": 1, "text": "{{value}}% DEF ? Le DPS a rage quit." },
+    { "speaker": 2, "text": "Y’a plus de respect dans l’arène." }
+  ],
+  [
+    { "speaker": 1, "text": "Le SERN veut te scanner pour comprendre comment t’as tanké ça." },
+    { "speaker": 2, "text": "{{value}}% DEF. Protégé même contre l'analyse." }
+  ],
+  [
+    { "speaker": 1, "text": "Un mur ? Non. Toi." },
+    { "speaker": 2, "text": "{{value}}% DEF. Même Tank a pleuré." }
+  ],
+  [
+    { "speaker": 1, "text": "Là où les autres prennent 8 000, tu prends 3." },
+    { "speaker": 2, "text": "3... d’honneur." }
+  ],
+  [
+    { "speaker": 1, "text": "Le skill du boss a ricoché sur ton front." },
+    { "speaker": 2, "text": "{{value}}% DEF... Et aucune ride." }
+  ],
+  [
+    { "speaker": 1, "text": "T’as installé un firewall sur ton torse ?" },
+    { "speaker": 2, "text": "{{value}}% DEF. Même les sorts repartent chez eux." }
+  ],
+  [
+    { "speaker": 1, "text": "Mousu a tapé 12 fois. Tu t’es gratté." },
+    { "speaker": 2, "text": "{{value}}% DEF, confort ultime." }
+  ],
+  [
+    { "speaker": 1, "text": "C’est plus un build, c’est une prison pour les dégâts." },
+    { "speaker": 2, "text": "{{value}}% DEF validé par BobbyJones." }
+  ],
+  [
+    { "speaker": 1, "text": "Tu bloques plus que le pare-feu de la NASA." },
+    { "speaker": 2, "text": "{{value}}% DEF. Autorisé dans aucun PVP." }
+  ],
+  [
+    { "speaker": 1, "text": "Même Béru s’est blessé en te regardant." },
+    { "speaker": 2, "text": "Le respect est absolu. Et les dégâts, inexistants." }
+  ],
+  [
+    { "speaker": 1, "text": "On a mesuré ton DEF en tonne de béton." },
+    { "speaker": 2, "text": "{{value}}%. Record mondial battu." }
+  ],
+  [
+    { "speaker": 1, "text": "Zaff a demandé à reroll tank." },
+    { "speaker": 2, "text": "Ton build l’a convaincu." }
+  ],
+  [
+    { "speaker": 1, "text": "Le DPS t’a frappé." },
+    { "speaker": 2, "text": "Tu as répondu par un regard vide. Et une claque." }
+  ],
+  [
+    { "speaker": 1, "text": "Ton bouclier est jaloux de ta DEF." },
+    { "speaker": 2, "text": "{{value}}% DEF, le rêve de tout tank." }
+  ],
+  [
+    { "speaker": 1, "text": "Ton build vient directement du royaume des Ombres." },
+    { "speaker": 2, "text": "{{value}}% DEF. L’esprit de Igris t’habite." }
+  ],
+  [
+    { "speaker": 1, "text": "Même la gravité abandonne contre toi." },
+    { "speaker": 2, "text": "Solide au point de repousser la physique." }
+  ],
+  [
+    { "speaker": 1, "text": "On dirait que tu es fait en adamantium d’ombre." },
+    { "speaker": 2, "text": "{{value}}% DEF. Respect éternel." }
+  ],
+  [
+    { "speaker": 1, "text": "Même Kaisel a tapé et a perdu son aile." },
+    { "speaker": 2, "text": "C’est dire le niveau." }
+  ],
+  [
+    { "speaker": 1, "text": "Le jeu a affiché ‘erreur de dégâts’." },
+    { "speaker": 2, "text": "{{value}}% DEF. Rien ne passe." }
+  ],
+  [
+    { "speaker": 1, "text": "Ton armure ? Une illusion. Ton corps, l’arme." },
+    { "speaker": 2, "text": "{{value}}% DEF. Le mythe prend vie." }
+  ],
+  [
+    { "speaker": 1, "text": "Les healers t’ignorent, t’as jamais besoin d’eux." },
+    { "speaker": 2, "text": "Et pourtant, tu restes au top." }
+  ],
+  [
+    { "speaker": 1, "text": "La DEF est une religion, et tu es le prophète." },
+    { "speaker": 2, "text": "{{value}}%. Amen Béton." }
+  ],
+  [
+    { "speaker": 1, "text": "Béru lui-même t’a salué." },
+    { "speaker": 2, "text": "{{value}}% DEF. L’élite de l’élite." }
+  ],
+  [
+    { "speaker": 1, "text": "Ta DEF est plus haute que le plafond de la méta." },
+    { "speaker": 2, "text": "Et pourtant, tu montes encore." }
+  ],
+  [
+    { "speaker": 1, "text": "Ton armure a été forgée dans la honte des boss battus." },
+    { "speaker": 2, "text": "{{value}}% DEF, héritage des vainqueurs." }
+  ],
+  [
+    { "speaker": 1, "text": "Même en AFK, t’es plus solide que Mousu en tryhard." },
+    { "speaker": 2, "text": "GG DEF master." }
+  ],
+  [
+    { "speaker": 1, "text": "On peut imprimer ta DEF et renforcer des bunkers IRL." },
+    { "speaker": 2, "text": "Merci pour ta contribution à l'architecture." }
+  ],
+  [
+    { "speaker": 1, "text": "Tu bloques plus que les droits d’auteur de Netmarble." },
+    { "speaker": 2, "text": "{{value}}% DEF. Béton juridique." }
+  ],
+  [
+    { "speaker": 1, "text": "Même ta stat DEF a peur de son propre reflet." },
+    { "speaker": 2, "text": "Une muraille consciente." }
+  ],
+  [
+    { "speaker": 1, "text": "On t'a confondu avec un boss raid." },
+    { "speaker": 2, "text": "{{value}}% DEF. La confusion est justifiée." }
+  ],
+  [
+    { "speaker": 1, "text": "Le prochain patch te nerfe personnellement." },
+    { "speaker": 2, "text": "Même le code source veut ta mort." }
+  ],
+  [
+    { "speaker": 1, "text": "Quand tu tankes, le monde ralentit." },
+    { "speaker": 2, "text": "{{value}}% DEF. Matrix approuve." }
+  ],
+  [
+    { "speaker": 1, "text": "T’es une anomalie, et on adore ça." },
+    { "speaker": 2, "text": "Le solo défensif devient mode de vie." }
+  ],
+  [
+    { "speaker": 1, "text": "Ton build a brisé le simulateur de combat." },
+    { "speaker": 2, "text": "{{value}}% DEF. Le code a crashé." }
+  ],
+  [
+    { "speaker": 1, "text": "Même BobbyJones a avoué : il a peur." },
+    { "speaker": 2, "text": "Mais il te garde. Il est pas fou." }
+  ],
+  [
+    { "speaker": 1, "text": "T’es un tank dans un monde de chasseurs." },
+    { "speaker": 2, "text": "Et t’as survécu. {{value}}% DEF. 👑" }
+  ],
+  [
+    { "speaker": 1, "text": "Ton build ? Légende urbaine." },
+    { "speaker": 2, "text": "Même les rookies en parlent à l’école des hunters." }
+  ],
+  [
+    { "speaker": 1, "text": "La DEF, c’est un art. Tu es Picasso." },
+    { "speaker": 2, "text": "{{value}}% DEF. Une œuvre impénétrable." }
+  ],
+  [
+    { "speaker": 1, "text": "Même Tank t’a demandé un autographe." },
+    { "speaker": 2, "text": "Son bouclier est jaloux." }
+  ],
+  [
+    { "speaker": 1, "text": "Les skills ricochent et partent en orbite." },
+    { "speaker": 2, "text": "{{value}}% DEF. NASA t’étudie." }
+  ],
+  [
+    { "speaker": 1, "text": "GoHack a dit ‘je veux pas le croiser en duel’." },
+    { "speaker": 2, "text": "Et personne ne l’a contredit." }
+  ],
+  [
+    { "speaker": 1, "text": "On va devoir ajouter une stat : ‘Indestructibilité’." },
+    { "speaker": 2, "text": "Spoiler : tu l’as déjà à 100%." }
+  ]
+      ]
+    }
+  },
   "left" : "Gauche",
   "right" : "Droite",
   "stats": {

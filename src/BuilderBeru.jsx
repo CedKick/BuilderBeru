@@ -25,6 +25,7 @@ import { BeruReportSystem, GoldenPapyrusIcon } from './components/BeruReportSyst
 import HallOfFlameDebugPopup from './components/HallOfFlameDebugPopup';
 import HallOfFlamePage from './components/HallOfFlamePage';
 import AdminValidationPage from './components/AdminValidationPage';
+import TVDialogueSystem from './components/TVDialogueSystem';
 
 
 
@@ -633,6 +634,8 @@ const BuilderBeru = () => {
   const [kaiselMenuPosition, setKaiselMenuPosition] = useState({ x: 0, y: 0 });
   const [kaiselMenuCharacter, setKaiselMenuCharacter] = useState('');
   const [beruMenuPosition, setBeruMenuPosition] = useState({ x: 0, y: 0 });
+  const [showTvSystem, setShowTvSystem] = useState(false);
+  const [tvData, setTvData] = useState(null);
   const [beruMenuCharacter, setBeruMenuCharacter] = useState('');
   const [showHitboxes, setShowHitboxes] = useState(false);
   const [hitboxPositions, setHitboxPositions] = useState({});
@@ -641,6 +644,12 @@ const BuilderBeru = () => {
   const [showAdminPage, setShowAdminPage] = useState(false);
   const [hallOfFlameData, setHallOfFlameData] = useState({ name: '', guild: '' });
   const [showHallOfFlamePage, setShowHallOfFlamePage] = useState(false);
+  const [tvDialogue, setTvDialogue] = useState(null);
+
+  const showTvDialogue = (statType, statValue) => {
+  setTvData({ statType, statValue });
+  setShowTvSystem(true);
+};
 
   const SHADOW_ENTITIES = {
     tank: {
@@ -5090,7 +5099,15 @@ BobbyJones : "Allez l'Inter !"
 
   return (
     <>
-
+ {tvDialogue && (
+      <TVDialogueSystem 
+        key={`tv-${tvDialogue.statType}-${tvDialogue.statValue}`}
+        show={!!tvDialogue}
+        statType={tvDialogue.statType}
+        statValue={tvDialogue.statValue}
+        onClose={() => setTvDialogue(null)}
+      />
+    )}
       {((isMobile.isPhone || isMobile.isTablet) && !isMobile.isDesktop) ? (
         <>
           {/* 🔥 CONTAINER PRINCIPAL - HAUTEUR DYNAMIQUE */}
@@ -5573,8 +5590,10 @@ BobbyJones : "Allez l'Inter !"
                           }
                           onScoreCalculated={handleArtifactScoreUpdate}
                           onReportGenerated={handleReportGenerated}
+                          onTvTrigger={setTvDialogue} // 🔥 NOUVELLE PROP !
                         />
                       ))}
+
                     </div>
                   </div>
                 )}
@@ -5611,8 +5630,10 @@ BobbyJones : "Allez l'Inter !"
                           }
                           onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
                           onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
+                          onTvTrigger={setTvDialogue} // 🔥 NOUVELLE PROP !
                         />
                       ))}
+
                     </div>
                   </div>
                 )}
@@ -6232,8 +6253,10 @@ BobbyJones : "Allez l'Inter !"
                       }
                       onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
                       onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
+                      onTvTrigger={setTvDialogue} // 🔥 NOUVELLE PROP !
                     />
                   ))}
+
                 </div>
 
               </div>
@@ -7319,8 +7342,10 @@ BobbyJones : "Allez l'Inter !"
                     }
                     onScoreCalculated={handleArtifactScoreUpdate} // ← AJOUTER CETTE LIGNE !
                     onReportGenerated={handleReportGenerated} // ← AJOUTER CETTE LIGNE !
+                    onTvTrigger={setTvDialogue} // 🔥 NOUVELLE PROP !
                   />
                 ))}
+
               </div>
 
             </div>

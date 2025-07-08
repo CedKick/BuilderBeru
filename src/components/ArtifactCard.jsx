@@ -110,7 +110,8 @@ const ArtifactCard = ({
   artifactLibrary,
   activeAccount,
   onScoreCalculated, // ← NOUVEAU PROP CALLBACK
-  onReportGenerated // ← NOUVELLE PROP
+  onReportGenerated, // ← NOUVELLE PROP
+  onTvTrigger
 }) => {
   const { t } = useTranslation();
 
@@ -118,8 +119,7 @@ const ArtifactCard = ({
   
   // 🔥 NOUVELLE GESTION DES INPUTS - État local séparé
   const [inputStates, setInputStates] = useState({});
-  const [isFocused, setIsFocused] = useState({});
-  
+  const [isFocused, setIsFocused] = useState({});  
   const [showLibrary, setShowLibrary] = useState(false);
   const [librarySlot, setLibrarySlot] = useState(null);
   const [showSavePopup, setShowSavePopup] = useState(false);
@@ -534,64 +534,80 @@ const ArtifactCard = ({
     return null;
   };
 
-  const handleIncreaseSubStat = (idx) => {
-    setArtifactsData(prev => {
-      const totalProcs = (prev.subStatsLevels || []).reduce(
-        (sum, stat) => sum + (stat?.level || 0), 0
-      );
-      if (totalProcs >= 4 || prev.subStatsLevels[idx].level >= 4) return prev;
+ const handleIncreaseSubStat = (idx) => {
+  setArtifactsData(prev => {
+    const totalProcs = (prev.subStatsLevels || []).reduce(
+      (sum, stat) => sum + (stat?.level || 0), 0
+    );
+    if (totalProcs >= 4 || prev.subStatsLevels[idx].level >= 4) return prev;
 
-      const stat = prev.subStats[idx];
-      const ranges = substatsMinMaxByIncrements[stat];
-      if (!ranges) return prev;
+    const stat = prev.subStats[idx];
+    const ranges = substatsMinMaxByIncrements[stat];
+    if (!ranges) return prev;
 
-      const newSubStatsLevels = [...prev.subStatsLevels];
-      let current = newSubStatsLevels[idx] || {
-        level: 0,
-        value: 0,
-        procOrders: [],
-        procValues: [],
-      };
+    const newSubStatsLevels = [...prev.subStatsLevels];
+    let current = newSubStatsLevels[idx] || {
+      level: 0,
+      value: 0,
+      procOrders: [],
+      procValues: [],
+    };
 
-      if (current.manual) {
-        current.manual = false;
-      }
+    if (current.manual) {
+      current.manual = false;
+    }
 
-      const allUsedProcOrders = newSubStatsLevels.flatMap(s => s.procOrders || []);
-      const procOrder = getNextProcOrder(allUsedProcOrders);
-      if (procOrder === null) return prev;
+    const allUsedProcOrders = newSubStatsLevels.flatMap(s => s.procOrders || []);
+    const procOrder = getNextProcOrder(allUsedProcOrders);
+    if (procOrder === null) return prev;
 
-      const rawProc = Math.random() * (ranges[procOrder].max - ranges[procOrder].min) + ranges[procOrder].min;
-      const procValue = stat.includes('%') ? +rawProc.toFixed(2) : Math.round(rawProc);
-      const newValue = stat.includes('%')
-        ? +(current.value + procValue).toFixed(2)
-        : Math.round(current.value + procValue);
+    const rawProc = Math.random() * (ranges[procOrder].max - ranges[procOrder].min) + ranges[procOrder].min;
+    const procValue = stat.includes('%') ? +rawProc.toFixed(2) : Math.round(rawProc);
+    const newValue = stat.includes('%')
+      ? +(current.value + procValue).toFixed(2)
+      : Math.round(current.value + procValue);
 
-      const newProcOrders = [...current.procOrders, procOrder];
-      const newProcValues = [...(current.procValues || []), procValue];
+    const newProcOrders = [...current.procOrders, procOrder];
+    const newProcValues = [...(current.procValues || []), procValue];
 
-      newSubStatsLevels[idx] = {
-        level: current.level + 1,
-        value: newValue,
-        procOrders: newProcOrders,
-        procValues: newProcValues,
-        manual: false,
-      };
+    newSubStatsLevels[idx] = {
+      level: current.level + 1,
+      value: newValue,
+      procOrders: newProcOrders,
+      procValues: newProcValues,
+      manual: false,
+    };
 
-      const newState = {
-        ...prev,
-        subStatsLevels: newSubStatsLevels,
-      };
+    const newState = {
+      ...prev,
+      subStatsLevels: newSubStatsLevels,
+    };
+    
+    const thisSubstatLevel = newSubStatsLevels[idx].level;
+    
+    if (thisSubstatLevel === 4 && ['Attack %', 'HP %', 'Defense %'].includes(stat)) {
+      console.log('🚀 SUBSTAT +4 ATTEINT !', {
+        stat,
+        value: newValue
+      });
+      
+      setTimeout(() => {
+        onTvTrigger?.({
+          statType: stat,
+          statValue: newValue
+        });
+      }, 100);
+    }
 
-      recalculateStatsFromArtifacts(newState);
+    recalculateStatsFromArtifacts(newState);
 
-      if (procValue > 7) showTankMessage('🔥 OP roll!');
-      else if (procValue < 5) showTankMessage('💩 Weak roll...');
-      else showTankMessage('😎 Decent!');
+    if (procValue > 7) showTankMessage('🔥 OP roll!');
+    else if (procValue < 5) showTankMessage('💩 Weak roll...');
+    else showTankMessage('😎 Decent!');
 
-      return newState;
-    });
-  };
+    return newState;
+  });
+};
 
   const renderCustomHint = (stat, subStatData) => {
     if (!stat || !subStatData) return null;

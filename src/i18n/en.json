@@ -11,6 +11,18 @@
   "noGems": "No gems selected",
   "weapon" : "⚔️ Weapon",
   "statFinals" : "Final Stats with Artefacts",
+  "tv_dialogue": {
+    "attack": {
+      "sequences": [
+        [
+          { "speaker": 1, "text": "WOW! {{value}}% attack!" },
+          { "speaker": 2, "text": "That's an INSANE stat!" },
+          { "speaker": 1, "text": "The Monarch is blessed by RNG!" },
+          { "speaker": 2, "text": "Even BobbyJones would be jealous!" }
+        ]
+      ]
+    }
+  },
   "left" : "Left",
   "right" : "Right",
   "stats": {
