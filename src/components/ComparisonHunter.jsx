@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { BUILDER_DATA } from '../data/builder_data.js';
+import CombatArena from './CombatArena.jsx';
 
 // 🔧 STATS DE BASE DES PERSONNAGES - COPIÉ DEPUIS BuilderBeru.jsx
 const characterStats = {
@@ -492,6 +493,7 @@ const ComparisonHunter = ({
   const [animationPhase, setAnimationPhase] = useState(0);
   const [glitchEffect, setGlitchEffect] = useState(false);
   const [localHunterData, setLocalHunterData] = useState(null);
+  const [showCombat, setShowCombat] = useState(false);
   const [currentFinalStats, setCurrentFinalStats] = useState({});
   const [currentStatsFromArtifacts, setCurrentStatsFromArtifacts] = useState({});
   const [currentFlatStats, setCurrentFlatStats] = useState({});
@@ -502,6 +504,18 @@ const ComparisonHunter = ({
   const [hoveredArtifact, setHoveredArtifact] = useState(null);
 
   const isMobileDevice = window.innerWidth < 768;
+  
+  const handleStartCombat = () => {
+  console.log('⚔️ COMBAT DÉCLENCHÉ !');
+  console.log('Hunter 1 (Hall):', referenceHunter.character, referenceHunter.pseudo);
+  console.log('Hunter 2 (Vous):', localHunterData?.characterName);
+  
+  setShowCombat(true);
+  
+  if (showTankMessage) {
+    showTankMessage(`⚔️ COMBAT: ${referenceHunter.pseudo} VS ${localHunterData?.characterName} !`, true, 'kaisel');
+  }
+};
 
   useEffect(() => {
     if (isOpen) {
@@ -1089,6 +1103,31 @@ const ComparisonHunter = ({
           .artifact-grid {
             grid-template-columns: 1fr;
           }
+
+          @keyframes combat-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+
+.battle-prediction:hover {
+  animation: combat-pulse 1s infinite;
+}
+
+.battle-prediction::after {
+  content: '⚔️ DOUBLE-CLICK TO FIGHT ⚔️';
+  position: absolute;
+  bottom: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: #ffd700;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.battle-prediction:hover::after {
+  opacity: 1;
+}
         }
       `}</style>
 
@@ -1483,31 +1522,39 @@ const ComparisonHunter = ({
           )}
 
           {/* 🎮 PRÉDICTION DE COMBAT BERUVIAN WORLD */}
-          {animationPhase >= 2 && currentCP > 0 && (
-            <div className="battle-prediction">
-              <h3 className="text-lg font-bold text-purple-400 mb-2">
-                🎮 Simulation Beruvian World ({comparisonMode === 'artifacts' ? 'Artefacts' : 'Total'})
-              </h3>
-              <div className="flex items-center justify-center gap-4">
-                <div className={`text-center ${battleResult.winner === 'reference' ? 'text-red-400' : 'text-gray-400'}`}>
-                  <p className="text-sm">{referenceHunter.pseudo}</p>
-                  <p className="text-2xl font-bold">
-                    {battleResult.winner === 'reference' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
-                  </p>
-                </div>
-                <span className="text-purple-400 text-xl">⚔️</span>
-                <div className={`text-center ${battleResult.winner === 'current' ? 'text-green-400' : 'text-gray-400'}`}>
-                  <p className="text-sm">Vous</p>
-                  <p className="text-2xl font-bold">
-                    {battleResult.winner === 'current' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
-                  </p>
-                </div>
-              </div>
-              <p className="text-xs text-gray-400 mt-2">
-                Simulation basée sur le CP {comparisonMode === 'artifacts' ? 'des artefacts' : 'total'} et les stats principales
-              </p>
-            </div>
-          )}
+         {animationPhase >= 2 && currentCP > 0 && (
+  <div 
+    className="battle-prediction"
+    onDoubleClick={handleStartCombat}
+    style={{ cursor: 'pointer' }}
+    title="Double-cliquez pour lancer le combat !"
+  >
+    <h3 className="text-lg font-bold text-purple-400 mb-2">
+      🎮 Simulation Beruvian World ({comparisonMode === 'artifacts' ? 'Artefacts' : 'Total'})
+    </h3>
+    <div className="flex items-center justify-center gap-4">
+      <div className={`text-center ${battleResult.winner === 'reference' ? 'text-red-400' : 'text-gray-400'}`}>
+        <p className="text-sm">{referenceHunter.pseudo}</p>
+        <p className="text-2xl font-bold">
+          {battleResult.winner === 'reference' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
+        </p>
+      </div>
+      <span className="text-purple-400 text-xl">⚔️</span>
+      <div className={`text-center ${battleResult.winner === 'current' ? 'text-green-400' : 'text-gray-400'}`}>
+        <p className="text-sm">Vous ({localHunterData?.characterName})</p>
+        <p className="text-2xl font-bold">
+          {battleResult.winner === 'current' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
+        </p>
+      </div>
+    </div>
+    <p className="text-xs text-gray-400 mt-2">
+      Simulation basée sur le CP {comparisonMode === 'artifacts' ? 'des artefacts' : 'total'} et les stats principales
+    </p>
+    <p className="text-xs text-yellow-400 mt-1 animate-pulse">
+      📱 Double-cliquez pour déclencher le combat !
+    </p>
+  </div>
+)}
 
           {/* BOUTON FERMER */}
           <button
@@ -1517,6 +1564,26 @@ const ComparisonHunter = ({
             ✕
           </button>
         </div>
+        {showCombat && (
+  <CombatArena
+    hunter1={{
+      name: referenceHunter.pseudo,
+      character: referenceHunter.character,
+      stats: comparisonMode === 'final' ? referenceHunter.currentStats : referenceHunter.statsFromArtifacts,
+      cp: referenceCP,
+      side: 'left'
+    }}
+    hunter2={{
+      name: localHunterData?.characterName || 'Vous',
+      character: localHunterData?.characterName,
+      stats: comparisonMode === 'final' ? currentFinalStats : currentStatsFromArtifacts,
+      cp: currentCP,
+      side: 'right'
+    }}
+    onClose={() => setShowCombat(false)}
+    showTankMessage={showTankMessage}
+  />
+)}
       </div>
     </>,
     document.body
