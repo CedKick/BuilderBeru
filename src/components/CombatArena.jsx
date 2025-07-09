@@ -1,97 +1,167 @@
-// CombatArena.jsx - ⚔️ SYSTÈME DE COMBAT BUILDERBERU
+// CombatArena.jsx - ⚔️ SYSTÈME DE COMBAT BUILDERBERU v2.0 MOBILE
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 
-// 🎮 SPRITES DE COMBAT (TEMPORAIRES - À REMPLACER PAR LES VRAIS)
-const COMBAT_SPRITES = {
-  'shuhua': {
-    left: '/sprites/shuhua-left.png',
-    right: '/sprites/shuhua-right.png'
-  },
-  // Sprites par défaut si pas trouvé
-  'default': {
-    left: '/sprites/default-left.png',
-    right: '/sprites/default-right.png'
-  }
-};
-
 const CombatArena = ({ hunter1, hunter2, onClose, showTankMessage }) => {
+  // 🎮 ÉTATS DE COMBAT AMÉLIORÉS
+  const [hunter1HP, setHunter1HP] = useState(110); // Un peu plus de vie
+  const [hunter1MaxHP] = useState(110);
+  const [hunter2HP, setHunter2HP] = useState(100); // Vie normale
+  const [hunter2MaxHP] = useState(100);
+  
   const [combatLog, setCombatLog] = useState([]);
-  const [hunter1HP, setHunter1HP] = useState(100);
-  const [hunter2HP, setHunter2HP] = useState(100);
   const [currentTurn, setCurrentTurn] = useState(1);
   const [combatEnded, setCombatEnded] = useState(false);
   const [winner, setWinner] = useState(null);
   const [tvComment, setTvComment] = useState("Le combat va commencer !");
   
-  const arenaRef = useRef(null);
+  // 🎯 SYSTÈME DE SKILLS
+  const [skill1Cooldown, setSkill1Cooldown] = useState(0);
+  const [skill2Cooldown, setSkill2Cooldown] = useState(0);
+  const [skill3Cooldown, setSkill3Cooldown] = useState(0);
+  const [healCount, setHealCount] = useState(0); // Compteur de soins
+  const [damageBoost, setDamageBoost] = useState(1); // Multiplicateur de dégâts
+  
+  const [isAttacking, setIsAttacking] = useState(null);
+  const [isPaused, setIsPaused] = useState(false);
+  
+  const isMobile = window.innerWidth < 768;
 
-  // 📺 COMMENTAIRES TV ALÉATOIRES
+  // 📺 COMMENTAIRES TV AMÉLIORÉS
   const TV_COMMENTS = {
     start: [
-      "Mesdames et messieurs, préparez-vous pour un combat ÉPIQUE !",
-      "Les deux hunters se font face... La tension est palpable !",
-      "C'est parti pour un duel au sommet !"
+      "Le combat commence ! Qui l'emportera ?",
+      "Face à face légendaire dans l'arène !",
+      "La tension est à son comble !"
     ],
     hit: [
-      "Quel coup dévastateur !",
-      "Aïe ! Ça doit faire mal !",
-      "INCROYABLE ! Quelle attaque !",
-      "Il encaisse difficilement ce coup !"
+      "Coup solide !",
+      "Ça fait mal !",
+      "Belle attaque !",
+      "Il encaisse !"
     ],
     critical: [
-      "COUP CRITIQUE ! C'EST ÉNORME !",
-      "OH MON DIEU ! UN CRITICAL HIT !",
-      "DÉGÂTS CRITIQUES ! La foule est en délire !"
+      "COUP CRITIQUE !!!",
+      "DÉGÂTS MASSIFS !",
+      "INCROYABLE !"
     ],
-    end: [
-      "ET C'EST TERMINÉ ! Quelle victoire écrasante !",
-      "Le vainqueur est déclaré ! Quel combat !",
-      "C'était un combat mémorable !"
+    skill: [
+      "SKILL ACTIVÉ ! Puissance décuplée !",
+      "Technique spéciale déclenchée !",
+      "Le combat change de tournure !"
+    ],
+    low_hp: [
+      "La fin est proche !",
+      "Plus que quelques coups !",
+      "Qui va craquer ?"
     ]
   };
 
-  // 🎯 CALCUL DES DÉGÂTS
-  const calculateDamage = (attacker, defender) => {
+  // 🎯 CALCUL DES DÉGÂTS ÉQUILIBRÉS
+  const calculateDamage = (attacker, defender, isHunter1) => {
     const attack = attacker.stats?.Attack || 5000;
     const defense = defender.stats?.Defense || 5000;
-    const critRate = attacker.stats?.['Critical Hit Rate'] || 0;
-    const critDamage = attacker.stats?.['Critical Hit Damage'] || 0;
     
-    // Formule de base
-    let damage = (attack * 1.5) - (defense * 0.5);
-    damage = Math.max(damage, attack * 0.1); // Minimum 10% de l'attaque
+    // Base damage réduite pour un combat plus long
+    let damage = (attack * 1.2) - (defense * 0.4);
+    damage = Math.max(damage * 0.08, attack * 0.05); // 5-8% des HP max
     
-    // Critical hit ?
-    const isCritical = Math.random() * 20000 < critRate;
+    // Avantage pour hunter1 (gauche)
+    if (isHunter1) {
+      damage *= 1.3; // +30% de dégâts
+    } else {
+      damage *= damageBoost; // Boost des skills pour hunter2
+    }
+    
+    // Critical hit avec chance réduite
+    const critChance = isHunter1 ? 0.15 : 0.1;
+    const isCritical = Math.random() < critChance;
     if (isCritical) {
-      damage *= (1 + critDamage / 10000);
+      damage *= 1.8;
     }
     
     // Variation aléatoire
     damage *= (0.9 + Math.random() * 0.2);
     
+    // Convert to HP percentage
+    const maxHP = isHunter1 ? hunter2MaxHP : hunter1MaxHP;
+    const damagePercent = (damage / (defender.stats?.HP || 10000)) * 100;
+    
     return {
       damage: Math.round(damage),
+      damagePercent: Math.min(damagePercent, 20), // Max 20% par coup
       isCritical
     };
   };
 
-  // 🎮 LOGIQUE DE COMBAT
+  // 🎮 SYSTÈME DE SKILLS
+  const useSkill = (skillNumber) => {
+    if (combatEnded || isPaused) return;
+    
+    // Vérifier cooldown
+    if (skillNumber === 1 && skill1Cooldown > 0) return;
+    if (skillNumber === 2 && skill2Cooldown > 0) return;
+    if (skillNumber === 3 && skill3Cooldown > 0) return;
+    
+    // Appliquer l'effet
+    setIsPaused(true);
+    
+    switch(skillNumber) {
+      case 1: // Boost d'attaque
+        setDamageBoost(2);
+        setSkill1Cooldown(5);
+        setTvComment("💥 BOOST D'ATTAQUE ACTIVÉ ! Dégâts x2 !");
+        setTimeout(() => setDamageBoost(1), 3000); // 3 secondes
+        break;
+        
+      case 2: // Coup critique garanti
+        setDamageBoost(3);
+        setSkill2Cooldown(8);
+        setTvComment("⚡ FRAPPE DÉVASTATRICE ! Prochain coup critique !");
+        setTimeout(() => setDamageBoost(1), 1500); // 1 coup
+        break;
+        
+      case 3: // Récupération (limité à 4 fois)
+        if (healCount >= 4) {
+          setTvComment("⚠️ LIMITE DE SOINS ATTEINTE !");
+          return;
+        }
+        const healAmount = 15;
+        setHunter2HP(prev => Math.min(prev + healAmount, 100));
+        setSkill3Cooldown(10);
+        setHealCount(prev => prev + 1);
+        setTvComment(`💚 RÉGÉNÉRATION ! +15% HP (${4 - healCount - 1} restants)`);
+        break;
+    }
+    
+    setCombatLog(prev => [...prev.slice(-3), `🎯 ${hunter2.name} utilise une compétence !`]);
+    
+    setTimeout(() => setIsPaused(false), 1000);
+  };
+
+  // ⏱️ GESTION DES COOLDOWNS
   useEffect(() => {
-    if (combatEnded) return;
+    const cooldownInterval = setInterval(() => {
+      setSkill1Cooldown(prev => Math.max(0, prev - 1));
+      setSkill2Cooldown(prev => Math.max(0, prev - 1));
+      setSkill3Cooldown(prev => Math.max(0, prev - 1));
+    }, 1000);
+
+    return () => clearInterval(cooldownInterval);
+  }, []);
+
+  // 🎮 BOUCLE DE COMBAT
+  useEffect(() => {
+    if (combatEnded || isPaused) return;
 
     const combatInterval = setInterval(() => {
-      // Déterminer qui attaque
       const isHunter1Turn = currentTurn % 2 === 1;
       const attacker = isHunter1Turn ? hunter1 : hunter2;
       const defender = isHunter1Turn ? hunter2 : hunter1;
       
-      // Calculer les dégâts
-      const { damage, isCritical } = calculateDamage(attacker, defender);
+      setIsAttacking(isHunter1Turn ? 'left' : 'right');
       
-      // Appliquer les dégâts
-      const damagePercent = (damage / (defender.stats?.HP || 10000)) * 100;
+      const { damage, damagePercent, isCritical } = calculateDamage(attacker, defender, isHunter1Turn);
       
       if (isHunter1Turn) {
         const newHP = Math.max(0, hunter2HP - damagePercent);
@@ -100,7 +170,9 @@ const CombatArena = ({ hunter1, hunter2, onClose, showTankMessage }) => {
         if (newHP <= 0) {
           setCombatEnded(true);
           setWinner(hunter1);
-          setTvComment(TV_COMMENTS.end[Math.floor(Math.random() * TV_COMMENTS.end.length)]);
+          setTvComment("🏆 VICTOIRE ÉCRASANTE DU CHAMPION !");
+        } else if (newHP < 30) {
+          setTvComment(TV_COMMENTS.low_hp[Math.floor(Math.random() * TV_COMMENTS.low_hp.length)]);
         }
       } else {
         const newHP = Math.max(0, hunter1HP - damagePercent);
@@ -109,250 +181,254 @@ const CombatArena = ({ hunter1, hunter2, onClose, showTankMessage }) => {
         if (newHP <= 0) {
           setCombatEnded(true);
           setWinner(hunter2);
-          setTvComment(TV_COMMENTS.end[Math.floor(Math.random() * TV_COMMENTS.end.length)]);
+          setTvComment("🎉 INCROYABLE RETOURNEMENT ! VICTOIRE !");
         }
       }
       
-      // Mettre à jour le log
-      const logEntry = `Tour ${currentTurn}: ${attacker.name} attaque pour ${damage.toLocaleString()} dégâts${isCritical ? ' (CRITIQUE!)' : ''}`;
-      setCombatLog(prev => [...prev.slice(-4), logEntry]);
+      const logEntry = `${attacker.name} → ${damage.toLocaleString()} dégâts${isCritical ? ' ⚡CRIT!' : ''}`;
+      setCombatLog(prev => [...prev.slice(-3), logEntry]);
       
-      // Commentaire TV
-      if (isCritical) {
-        setTvComment(TV_COMMENTS.critical[Math.floor(Math.random() * TV_COMMENTS.critical.length)]);
-      } else {
-        setTvComment(TV_COMMENTS.hit[Math.floor(Math.random() * TV_COMMENTS.hit.length)]);
+      if (!combatEnded) {
+        if (isCritical) {
+          setTvComment(TV_COMMENTS.critical[Math.floor(Math.random() * TV_COMMENTS.critical.length)]);
+        } else if (damageBoost > 1) {
+          setTvComment(TV_COMMENTS.skill[Math.floor(Math.random() * TV_COMMENTS.skill.length)]);
+        } else {
+          setTvComment(TV_COMMENTS.hit[Math.floor(Math.random() * TV_COMMENTS.hit.length)]);
+        }
       }
       
+      setTimeout(() => setIsAttacking(null), 300);
       setCurrentTurn(prev => prev + 1);
-    }, 1500); // Une attaque toutes les 1.5 secondes
+      
+    }, 1500); // Combat plus rapide
 
     return () => clearInterval(combatInterval);
-  }, [currentTurn, hunter1HP, hunter2HP, combatEnded]);
-
-  // 🎨 OBTENIR LES SPRITES
-  const getSprite = (character, side) => {
-    const sprites = COMBAT_SPRITES[character] || COMBAT_SPRITES.default;
-    return sprites[side];
-  };
+  }, [currentTurn, hunter1HP, hunter2HP, combatEnded, isPaused, damageBoost]);
 
   return ReactDOM.createPortal(
     <>
       <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-
-        @keyframes attack-left {
-          0% { transform: translateX(0); }
-          50% { transform: translateX(50px); }
-          100% { transform: translateX(0); }
-        }
-
-        @keyframes attack-right {
-          0% { transform: translateX(0); }
-          50% { transform: translateX(-50px); }
-          100% { transform: translateX(0); }
-        }
-
-        @keyframes damage-shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-5px); }
-          75% { transform: translateX(5px); }
-        }
-
         .combat-overlay {
           position: fixed;
           inset: 0;
           z-index: 999999;
-          background: rgba(0, 0, 0, 0.95);
+          background: #0a0a0f;
           display: flex;
           flex-direction: column;
-        }
-
-        .combat-arena {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          background: linear-gradient(to bottom, #1a1a2e, #0f0f1e);
-          border-bottom: 2px solid #ffd700;
-        }
-
-        .arena-floor {
-          position: absolute;
-          bottom: 0;
-          width: 100%;
-          height: 100px;
-          background: linear-gradient(to top, #2a2a3e, transparent);
-          border-top: 2px solid #444;
-        }
-
-        .fighter {
-          position: absolute;
-          bottom: 100px;
-          width: 100px;
-          height: 100px;
-          animation: float 2s ease-in-out infinite;
-        }
-
-        .fighter.left {
-          left: 20%;
-        }
-
-        .fighter.right {
-          right: 20%;
-        }
-
-        .fighter.attacking-left {
-          animation: attack-left 0.5s ease-out;
-        }
-
-        .fighter.attacking-right {
-          animation: attack-right 0.5s ease-out;
-        }
-
-        .fighter.damaged {
-          animation: damage-shake 0.3s ease-out;
-        }
-
-        .fighter-sprite {
-          width: 100%;
-          height: 100%;
-          background: #a855f7;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 2rem;
-          color: white;
-          box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
-        }
-
-        .hp-bar-container {
-          position: absolute;
-          top: -30px;
-          width: 120px;
-          left: 50%;
-          transform: translateX(-50%);
-        }
-
-        .hp-bar {
-          width: 100%;
-          height: 8px;
-          background: rgba(0, 0, 0, 0.7);
-          border: 1px solid #333;
-          border-radius: 4px;
           overflow: hidden;
         }
 
-        .hp-fill {
-          height: 100%;
-          background: linear-gradient(to right, #22c55e, #16a34a);
-          transition: width 0.5s ease-out;
+        /* MOBILE FIRST DESIGN */
+        .combat-arena {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          background: linear-gradient(to bottom, #1a1a2e, #0f0f1e);
         }
 
-        .hp-fill.low {
-          background: linear-gradient(to right, #ef4444, #dc2626);
+        .arena-battleground {
+          flex: 1;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 200px;
         }
 
-        .hp-fill.medium {
-          background: linear-gradient(to right, #f59e0b, #d97706);
+        .fighters-container {
+          width: 100%;
+          max-width: 500px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0 20px;
+        }
+
+        .fighter {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .fighter-sprite {
+          width: 60px;
+          height: 60px;
+          background: rgba(168, 85, 247, 0.2);
+          border: 2px solid #a855f7;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.8rem;
+          transition: all 0.3s;
+        }
+
+        .fighter.attacking .fighter-sprite {
+          transform: scale(1.2);
+          background: rgba(255, 100, 100, 0.4);
+          box-shadow: 0 0 20px rgba(255, 100, 100, 0.8);
+        }
+
+        .fighter-info {
+          text-align: center;
+          width: 120px;
         }
 
         .fighter-name {
-          position: absolute;
-          top: -50px;
-          left: 50%;
-          transform: translateX(-50%);
-          color: white;
           font-weight: bold;
-          text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-          white-space: nowrap;
+          color: white;
+          font-size: 0.9rem;
+          margin-bottom: 5px;
         }
 
-        .tv-commentary {
-          position: absolute;
-          bottom: 20px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: rgba(0, 0, 0, 0.9);
-          border: 2px solid #ffd700;
+        .hp-bar-container {
+          width: 100%;
+          background: rgba(0, 0, 0, 0.7);
+          border: 1px solid #333;
           border-radius: 10px;
-          padding: 15px 30px;
-          max-width: 600px;
-          text-align: center;
+          overflow: hidden;
+          height: 12px;
+          position: relative;
         }
 
-        .tv-icon {
-          display: inline-block;
-          margin-right: 10px;
-          font-size: 1.5rem;
+        .hp-bar-fill {
+          height: 100%;
+          background: linear-gradient(to right, #22c55e, #16a34a);
+          transition: width 0.5s ease-out;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .hp-bar-fill.low {
+          background: linear-gradient(to right, #ef4444, #dc2626);
+        }
+
+        .hp-bar-fill.medium {
+          background: linear-gradient(to right, #f59e0b, #d97706);
+        }
+
+        .hp-text {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          font-size: 0.7rem;
+          font-weight: bold;
+          color: white;
+          text-shadow: 0 0 2px black;
+        }
+
+        /* TV COMMENTARY */
+        .tv-section {
+          background: rgba(0, 0, 0, 0.9);
+          border-top: 2px solid #ffd700;
+          padding: 15px;
+          text-align: center;
         }
 
         .tv-text {
           color: #ffd700;
           font-weight: bold;
-          font-size: 1.1rem;
-          text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
-        }
-
-        .combat-ui {
-          height: 200px;
-          background: rgba(0, 0, 0, 0.9);
-          border-top: 2px solid #a855f7;
-          display: flex;
-          padding: 20px;
-          gap: 20px;
-        }
-
-        .combat-stats {
-          flex: 1;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .hunter-info {
-          background: rgba(168, 85, 247, 0.1);
-          border: 1px solid #a855f7;
-          border-radius: 10px;
-          padding: 15px;
-          width: 35%;
-        }
-
-        .hunter-info h3 {
-          margin: 0 0 10px 0;
-          color: #a855f7;
-          font-size: 1.2rem;
-        }
-
-        .stat-line {
-          display: flex;
-          justify-content: space-between;
-          margin: 5px 0;
-          color: #ccc;
           font-size: 0.9rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
         }
 
-        .combat-log {
-          flex: 1;
-          max-width: 400px;
-          background: rgba(0, 0, 0, 0.5);
-          border: 1px solid #333;
-          border-radius: 10px;
+        /* SKILLS SECTION - MOBILE */
+        .skills-section {
+          background: rgba(0, 0, 0, 0.95);
+          border-top: 2px solid #a855f7;
           padding: 15px;
+        }
+
+        .skills-header {
+          text-align: center;
+          color: #a855f7;
+          font-size: 0.9rem;
+          margin-bottom: 10px;
+          font-weight: bold;
+        }
+
+        .skills-container {
+          display: flex;
+          justify-content: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .skill-button {
+          width: 80px;
+          height: 80px;
+          background: rgba(168, 85, 247, 0.1);
+          border: 2px solid #a855f7;
+          border-radius: 12px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 5px;
+          cursor: pointer;
+          transition: all 0.3s;
+          position: relative;
+        }
+
+        .skill-button:active {
+          transform: scale(0.95);
+        }
+
+        .skill-button.on-cooldown {
+          opacity: 0.5;
+          cursor: not-allowed;
+          background: rgba(50, 50, 50, 0.5);
+        }
+
+        .skill-icon {
+          font-size: 1.8rem;
+        }
+
+        .skill-name {
+          font-size: 0.7rem;
+          color: white;
+          font-weight: bold;
+        }
+
+        .skill-cooldown {
+          position: absolute;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 10px;
+          font-size: 1.5rem;
+          color: #ef4444;
+          font-weight: bold;
+        }
+
+        /* COMBAT LOG - MOBILE */
+        .combat-log-section {
+          background: rgba(0, 0, 0, 0.8);
+          padding: 10px;
+          max-height: 100px;
           overflow-y: auto;
         }
 
         .log-entry {
           color: #ffd700;
-          margin: 5px 0;
-          font-size: 0.9rem;
+          font-size: 0.75rem;
+          margin: 3px 0;
+          padding: 3px 8px;
+          background: rgba(255, 215, 0, 0.1);
+          border-radius: 4px;
         }
 
+        /* WINNER BANNER */
         .winner-banner {
           position: absolute;
           top: 50%;
@@ -361,180 +437,229 @@ const CombatArena = ({ hunter1, hunter2, onClose, showTankMessage }) => {
           background: rgba(0, 0, 0, 0.95);
           border: 3px solid #ffd700;
           border-radius: 20px;
-          padding: 30px 60px;
+          padding: 30px;
           text-align: center;
-          animation: power-up 0.5s ease-out;
+          animation: victoryPop 0.5s ease-out;
+        }
+
+        @keyframes victoryPop {
+          0% { transform: translate(-50%, -50%) scale(0); }
+          50% { transform: translate(-50%, -50%) scale(1.1); }
+          100% { transform: translate(-50%, -50%) scale(1); }
         }
 
         .winner-text {
-          font-size: 2.5rem;
+          font-size: 1.8rem;
           color: #ffd700;
           margin-bottom: 10px;
-          text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
         }
 
         .winner-name {
-          font-size: 1.8rem;
+          font-size: 1.4rem;
           color: #a855f7;
           font-weight: bold;
         }
 
+        /* CLOSE BUTTON */
         .close-button {
           position: absolute;
-          top: 20px;
-          right: 20px;
-          width: 50px;
-          height: 50px;
-          background: rgba(239, 68, 68, 0.2);
+          top: 10px;
+          right: 10px;
+          width: 40px;
+          height: 40px;
+          background: rgba(239, 68, 68, 0.3);
           border: 2px solid #ef4444;
           border-radius: 50%;
           color: #ef4444;
-          font-size: 1.5rem;
+          font-size: 1.2rem;
           cursor: pointer;
-          transition: all 0.3s;
           display: flex;
           align-items: center;
           justify-content: center;
+          z-index: 100;
         }
 
-        .close-button:hover {
-          background: rgba(239, 68, 68, 0.4);
-          transform: scale(1.1);
+        /* DESKTOP ADJUSTMENTS */
+        @media (min-width: 768px) {
+          .fighters-container {
+            max-width: 700px;
+          }
+          
+          .fighter-sprite {
+            width: 80px;
+            height: 80px;
+            font-size: 2.5rem;
+          }
+          
+          .fighter-info {
+            width: 150px;
+          }
+          
+          .fighter-name {
+            font-size: 1.1rem;
+          }
+          
+          .hp-bar-container {
+            height: 16px;
+          }
+          
+          .tv-text {
+            font-size: 1.1rem;
+          }
+          
+          .skill-button {
+            width: 100px;
+            height: 100px;
+          }
+          
+          .skill-icon {
+            font-size: 2.2rem;
+          }
+          
+          .skill-name {
+            font-size: 0.8rem;
+          }
+          
+          .combat-log-section {
+            max-height: 120px;
+          }
+          
+          .log-entry {
+            font-size: 0.85rem;
+          }
         }
 
-        @media (max-width: 768px) {
-          .fighter {
-            width: 60px;
-            height: 60px;
-          }
-          
-          .fighter.left {
-            left: 10%;
-          }
-          
-          .fighter.right {
-            right: 10%;
-          }
-          
-          .combat-ui {
-            flex-direction: column;
-            height: auto;
-          }
-          
-          .hunter-info {
-            width: 100%;
-          }
-          
-          .tv-commentary {
-            font-size: 0.9rem;
-            padding: 10px 20px;
-          }
+        /* ANIMATIONS */
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+
+        .fighter.damaged .fighter-sprite {
+          animation: shake 0.3s;
+        }
+
+        /* DISABLE SCROLLING */
+        body {
+          overflow: hidden !important;
         }
       `}</style>
 
       <div className="combat-overlay">
-        {/* ARÈNE DE COMBAT */}
-        <div className="combat-arena" ref={arenaRef}>
-          <div className="arena-floor" />
-          
-          {/* FIGHTER 1 (GAUCHE) */}
-          <div className={`fighter left ${currentTurn % 2 === 1 && !combatEnded ? 'attacking-left' : ''} ${currentTurn % 2 === 0 && hunter1HP < 100 ? 'damaged' : ''}`}>
-            <div className="fighter-name">{hunter1.name}</div>
-            <div className="hp-bar-container">
-              <div className="hp-bar">
-                <div 
-                  className={`hp-fill ${hunter1HP < 30 ? 'low' : hunter1HP < 60 ? 'medium' : ''}`}
-                  style={{ width: `${hunter1HP}%` }}
-                />
-              </div>
-            </div>
-            <div className="fighter-sprite">
-              {/* TODO: Remplacer par <img src={getSprite(hunter1.character, 'left')} /> */}
-              ⚔️
-            </div>
-          </div>
-          
-          {/* FIGHTER 2 (DROITE) */}
-          <div className={`fighter right ${currentTurn % 2 === 0 && !combatEnded ? 'attacking-right' : ''} ${currentTurn % 2 === 1 && hunter2HP < 100 ? 'damaged' : ''}`}>
-            <div className="fighter-name">{hunter2.name}</div>
-            <div className="hp-bar-container">
-              <div className="hp-bar">
-                <div 
-                  className={`hp-fill ${hunter2HP < 30 ? 'low' : hunter2HP < 60 ? 'medium' : ''}`}
-                  style={{ width: `${hunter2HP}%` }}
-                />
-              </div>
-            </div>
-            <div className="fighter-sprite">
-              {/* TODO: Remplacer par <img src={getSprite(hunter2.character, 'right')} /> */}
-              🛡️
-            </div>
-          </div>
-          
-          {/* COMMENTAIRE TV */}
-          <div className="tv-commentary">
-            <span className="tv-icon">📺</span>
-            <span className="tv-text">{tvComment}</span>
-          </div>
-          
-          {/* BANNIÈRE DE VICTOIRE */}
-          {combatEnded && winner && (
-            <div className="winner-banner">
-              <div className="winner-text">🏆 VICTOIRE ! 🏆</div>
-              <div className="winner-name">{winner.name}</div>
-            </div>
-          )}
-        </div>
-        
-        {/* UI DE COMBAT */}
-        <div className="combat-ui">
-          <div className="combat-stats">
-            {/* INFO HUNTER 1 */}
-            <div className="hunter-info">
-              <h3>{hunter1.name}</h3>
-              <div className="stat-line">
-                <span>HP:</span>
-                <span>{Math.round(hunter1HP)}%</span>
-              </div>
-              <div className="stat-line">
-                <span>Attack:</span>
-                <span>{hunter1.stats?.Attack?.toLocaleString() || 'N/A'}</span>
-              </div>
-              <div className="stat-line">
-                <span>CP:</span>
-                <span>{hunter1.cp?.toLocaleString() || 'N/A'}</span>
-              </div>
-            </div>
-            
-            {/* LOG DE COMBAT */}
-            <div className="combat-log">
-              <h4 style={{ margin: 0, color: '#ffd700', marginBottom: '10px' }}>Journal de Combat</h4>
-              {combatLog.map((log, index) => (
-                <div key={index} className="log-entry">{log}</div>
-              ))}
-            </div>
-            
-            {/* INFO HUNTER 2 */}
-            <div className="hunter-info">
-              <h3>{hunter2.name}</h3>
-              <div className="stat-line">
-                <span>HP:</span>
-                <span>{Math.round(hunter2HP)}%</span>
-              </div>
-              <div className="stat-line">
-                <span>Attack:</span>
-                <span>{hunter2.stats?.Attack?.toLocaleString() || 'N/A'}</span>
-              </div>
-              <div className="stat-line">
-                <span>CP:</span>
-                <span>{hunter2.cp?.toLocaleString() || 'N/A'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
         {/* BOUTON FERMER */}
         <button className="close-button" onClick={onClose}>✕</button>
+
+        {/* ARÈNE PRINCIPALE */}
+        <div className="combat-arena">
+          {/* ZONE DE COMBAT */}
+          <div className="arena-battleground">
+            <div className="fighters-container">
+              {/* FIGHTER 1 (GAUCHE) */}
+              <div className={`fighter ${isAttacking === 'left' ? 'attacking' : ''} ${isAttacking === 'right' ? 'damaged' : ''}`}>
+                <div className="fighter-info">
+                  <div className="fighter-name">{hunter1.name}</div>
+                  <div className="hp-bar-container">
+                    <div 
+                      className={`hp-bar-fill ${hunter1HP < 30 ? 'low' : hunter1HP < 60 ? 'medium' : ''}`}
+                      style={{ width: `${(hunter1HP / hunter1MaxHP) * 100}%` }}
+                    />
+                    <div className="hp-text">{Math.round(hunter1HP)}/{hunter1MaxHP}</div>
+                  </div>
+                </div>
+                <div className="fighter-sprite">⚔️</div>
+              </div>
+
+              {/* FIGHTER 2 (DROITE) */}
+              <div className={`fighter ${isAttacking === 'right' ? 'attacking' : ''} ${isAttacking === 'left' ? 'damaged' : ''}`}>
+                <div className="fighter-info">
+                  <div className="fighter-name">{hunter2.name}</div>
+                  <div className="hp-bar-container">
+                    <div 
+                      className={`hp-bar-fill ${hunter2HP < 30 ? 'low' : hunter2HP < 60 ? 'medium' : ''}`}
+                      style={{ width: `${(hunter2HP / hunter2MaxHP) * 100}%` }}
+                    />
+                    <div className="hp-text">{Math.round(hunter2HP)}/{hunter2MaxHP}</div>
+                  </div>
+                </div>
+                <div className="fighter-sprite">🛡️</div>
+              </div>
+            </div>
+
+            {/* BANNIÈRE DE VICTOIRE */}
+            {combatEnded && winner && (
+              <div className="winner-banner">
+                <div className="winner-text">🏆 VICTOIRE ! 🏆</div>
+                <div className="winner-name">{winner.name}</div>
+              </div>
+            )}
+          </div>
+
+          {/* COMMENTAIRE TV */}
+          <div className="tv-section">
+            <div className="tv-text">
+              <span>📺</span>
+              <span>{tvComment}</span>
+            </div>
+          </div>
+
+          {/* SECTION SKILLS */}
+          <div className="skills-section">
+            <div className="skills-header">
+              🎮 Compétences de {hunter2.name} (Touchez pour activer)
+            </div>
+            <div className="skills-container">
+              {/* SKILL 1 - BOOST */}
+              <button 
+                className={`skill-button ${skill1Cooldown > 0 ? 'on-cooldown' : ''}`}
+                onClick={() => useSkill(1)}
+                disabled={skill1Cooldown > 0 || combatEnded}
+              >
+                <div className="skill-icon">💥</div>
+                <div className="skill-name">Boost</div>
+                {skill1Cooldown > 0 && (
+                  <div className="skill-cooldown">{skill1Cooldown}</div>
+                )}
+              </button>
+
+              {/* SKILL 2 - CRITICAL */}
+              <button 
+                className={`skill-button ${skill2Cooldown > 0 ? 'on-cooldown' : ''}`}
+                onClick={() => useSkill(2)}
+                disabled={skill2Cooldown > 0 || combatEnded}
+              >
+                <div className="skill-icon">⚡</div>
+                <div className="skill-name">Critique</div>
+                {skill2Cooldown > 0 && (
+                  <div className="skill-cooldown">{skill2Cooldown}</div>
+                )}
+              </button>
+
+              {/* SKILL 3 - HEAL */}
+              <button 
+                className={`skill-button ${skill3Cooldown > 0 || healCount >= 4 ? 'on-cooldown' : ''}`}
+                onClick={() => useSkill(3)}
+                disabled={skill3Cooldown > 0 || combatEnded || healCount >= 4}
+              >
+                <div className="skill-icon">💚</div>
+                <div className="skill-name">Soin ({4 - healCount})</div>
+                {skill3Cooldown > 0 && (
+                  <div className="skill-cooldown">{skill3Cooldown}</div>
+                )}
+                {healCount >= 4 && (
+                  <div className="skill-cooldown">MAX</div>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* LOG DE COMBAT */}
+          <div className="combat-log-section">
+            {combatLog.map((log, index) => (
+              <div key={index} className="log-entry">{log}</div>
+            ))}
+          </div>
+        </div>
       </div>
     </>,
     document.body
