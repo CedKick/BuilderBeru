@@ -16,7 +16,8 @@ const AdminValidationPage = ({
   currentWeapon = {},
   characters = {},
   onNavigateToBuilder,
-  onShowHallOfFlame
+  onShowHallOfFlame,
+  adminToken
 }) => {
   const [pendingHunters, setPendingHunters] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,59 +54,84 @@ const AdminValidationPage = ({
     loadAdminStats();
   }, []);
 
-  const loadPendingHunters = async () => {
-    try {
-      setLoading(true);
-      showTankMessage("🛡️ Chargement des hunters v5.0...", true, 'kaisel');
-      
-      const apiUrl = 'https://api.builderberu.com/api/admin/pending';
-      
-      const response = await fetch(apiUrl);
-      const contentType = response.headers.get('content-type');
-      
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Réponse non-JSON: ${contentType}`);
-      }
-      
-      const result = await response.json();
-      
-      if (response.ok && result.success) {
-        setPendingHunters(result.hunters);
-        setConfidenceLevels(result.confidenceLevels);
-        setPossibleIssues(result.possibleIssues);
-        showTankMessage(`🛡️ ${result.hunters.length} hunters en attente`, true, 'kaisel');
-      } else {
-        throw new Error(result.error || `Erreur API: ${response.status}`);
-      }
-      
-    } catch (error) {
-      console.error('❌ Erreur chargement pending:', error);
-      showTankMessage(`❌ Erreur: ${error.message}`, true, 'kaisel');
-      setPendingHunters([]);
-    } finally {
-      setLoading(false);
+ const loadPendingHunters = async () => {
+  try {
+    setLoading(true);
+    showTankMessage("🛡️ Chargement des hunters v5.0...", true, 'kaisel');
+    
+    // 🔐 VÉRIFICATION TOKEN
+    if (!adminToken) {
+      throw new Error("Token admin manquant ! Reconnectez-vous.");
     }
-  };
+    
+    const apiUrl = 'https://api.builderberu.com/api/admin/pending';
+    
+    const response = await fetch(apiUrl, {
+      // 🔥 AJOUT DES HEADERS AVEC TOKEN
+      headers: {
+        'Authorization': `Bearer ${adminToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const contentType = response.headers.get('content-type');
+    
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error(`Réponse non-JSON: ${contentType}`);
+    }
+    
+    const result = await response.json();
+    
+    if (response.ok && result.success) {
+      setPendingHunters(result.hunters);
+      setConfidenceLevels(result.confidenceLevels);
+      setPossibleIssues(result.possibleIssues);
+      showTankMessage(`🛡️ ${result.hunters.length} hunters en attente`, true, 'kaisel');
+    } else {
+      throw new Error(result.error || `Erreur API: ${response.status}`);
+    }
+    
+  } catch (error) {
+    console.error('❌ Erreur chargement pending:', error);
+    showTankMessage(`❌ Erreur: ${error.message}`, true, 'kaisel');
+    setPendingHunters([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const loadAdminStats = async () => {
-    try {
-      const response = await fetch('https://api.builderberu.com/api/admin/stats');
-      const contentType = response.headers.get('content-type');
-      
-      if (!contentType || !contentType.includes('application/json')) {
-        console.warn('⚠️ Stats admin: Réponse non-JSON, skip');
-        return;
-      }
-      
-      const result = await response.json();
-      
-      if (response.ok && result.success) {
-        setAdminStats(result.stats);
-      }
-    } catch (error) {
-      console.error('❌ Erreur stats admin (non-critique):', error);
+const loadAdminStats = async () => {
+  try {
+    // 🔐 VÉRIFICATION TOKEN (optionnelle pour les stats)
+    if (!adminToken) {
+      console.warn('⚠️ Stats admin: Pas de token, skip');
+      return;
     }
-  };
+    
+    const response = await fetch('https://api.builderberu.com/api/admin/stats', {
+      // 🔥 AJOUT DES HEADERS AVEC TOKEN
+      headers: {
+        'Authorization': `Bearer ${adminToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const contentType = response.headers.get('content-type');
+    
+    if (!contentType || !contentType.includes('application/json')) {
+      console.warn('⚠️ Stats admin: Réponse non-JSON, skip');
+      return;
+    }
+    
+    const result = await response.json();
+    
+    if (response.ok && result.success) {
+      setAdminStats(result.stats);
+    }
+  } catch (error) {
+    console.error('❌ Erreur stats admin (non-critique):', error);
+  }
+};
 
   // 🆕 OUVRIR MODAL COMPARAISON v5.0 - CORRIGÉ
   const handleOpenComparison = (hunter, duplicate) => {
@@ -147,15 +173,18 @@ const AdminValidationPage = ({
       showTankMessage(`✅ Approbation de ${hunter?.pseudo} en cours...`, true, 'kaisel');
       
       const response = await fetch(`https://api.builderberu.com/api/admin/approve/${hunterId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          notationData,
-          adminNotes: notes,
-          isUpdate,
-          oldHunterId
-        })
-      });
+  method: 'POST',
+  headers: { 
+    'Authorization': `Bearer ${adminToken}`, // 👈 AJOUT
+    'Content-Type': 'application/json' 
+  },
+  body: JSON.stringify({ 
+    notationData,
+    adminNotes: notes,
+    isUpdate,
+    oldHunterId
+  })
+});
       
       const result = await response.json();
       
@@ -193,10 +222,13 @@ const AdminValidationPage = ({
       showTankMessage("🗑️ Suppression en cours...", true, 'kaisel');
       
       const response = await fetch(`https://api.builderberu.com/api/admin/reject/${hunterId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason })
-      });
+  method: 'POST',
+  headers: { 
+    'Authorization': `Bearer ${adminToken}`, // 👈 AJOUT
+    'Content-Type': 'application/json' 
+  },
+  body: JSON.stringify({ reason })
+});
       
       const result = await response.json();
       

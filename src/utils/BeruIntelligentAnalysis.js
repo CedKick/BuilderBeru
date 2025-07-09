@@ -1,8 +1,23 @@
 // 📁 /utils/BeruIntelligentAnalysis.js - SYSTÈME IA COMPLET KAISEL 🧠
-// VERSION FINALE - INTÉGRATION PARFAITE AVEC ArtifactScoreBadge
+// VERSION FINALE - INTÉGRATION PARFAITE AVEC ArtifactScoreBadge + ANALYSE SUBSTATS INTELLIGENTE
 
 import { BUILDER_DATA } from '../data/builder_data';
 import { getTheoreticalScore } from './statPriority';
+
+// 🚫 RESTRICTIONS PAR SLOT
+const SLOT_RESTRICTIONS = {
+    // Armor pieces - PAS de Critical Hit Damage
+    "helmet": { forbidden: ["criticalHitDamage"] },
+    "chest": { forbidden: ["criticalHitDamage"] },
+    "gloves": { forbidden: ["criticalHitDamage"] },
+    "boots": { forbidden: ["criticalHitDamage"] },
+    
+    // Jewelry - PAS de Critical Hit Rate  
+    "necklace": { forbidden: ["criticalHitRate"] },
+    "bracelet": { forbidden: ["criticalHitRate"] },
+    "ring": { forbidden: ["criticalHitRate"] },
+    "earrings": { forbidden: ["criticalHitRate"] }
+};
 
 // 🧠 ANALYSE SPÉCIFIQUE D'ARTEFACT DÉCLENCHÉE DEPUIS LE BADGE
 export const performSpecificArtifactAnalysis = (
@@ -131,6 +146,133 @@ export const performIntelligentAnalysis = (
     }, 10500);
 };
 
+// 🎯 ANALYSE SUBSTATS SELON SLOT ET HUNTER - NOUVELLE FONCTION INTELLIGENTE
+const analyzeSubstatsForSlot = (artifactData, hunterData) => {
+    // 1️⃣ Identifier le slot
+    const slot = identifyArtifactSlot(artifactData.title);
+    if (!slot) {
+        return { criticalMissing: [], wastedStats: [], slot: 'unknown' };
+    }
+
+    // 2️⃣ Récupérer les stats recommandées (≠ null)
+    const recommendedStats = Object.entries(hunterData.recommendedStats)
+        .filter(([stat, value]) => value !== null)
+        .map(([stat, value]) => stat);
+
+    console.log('🔍 Kaisel Debug - Stats recommandées:', recommendedStats);
+    console.log('🔍 Kaisel Debug - Slot détecté:', slot);
+
+    // 3️⃣ Filtrer selon les restrictions du slot
+    const restrictions = SLOT_RESTRICTIONS[slot] || { forbidden: [] };
+    const allowedStats = recommendedStats.filter(stat => 
+        !restrictions.forbidden.includes(stat)
+    );
+
+    console.log('🔍 Kaisel Debug - Stats autorisées pour ce slot:', allowedStats);
+    console.log('🔍 Kaisel Debug - Stats interdites:', restrictions.forbidden);
+
+    // 4️⃣ Vérifier les substats existants
+    const existingSubstats = artifactData.subStats || [];
+    const existingMainStat = artifactData.mainStat || '';
+    
+    console.log('🔍 Kaisel Debug - Substats existants:', existingSubstats);
+    console.log('🔍 Kaisel Debug - MainStat existante:', existingMainStat);
+
+    // 5️⃣ Mapping des noms pour comparaison
+    const statMapping = {
+        'criticalHitRate': ['Critical Hit Rate', 'Taux de coup critique'],
+        'criticalHitDamage': ['Critical Hit Damage', 'Dégâts de coup critique'],
+        'DamageIncrease': ['Damage Increase', 'Augmentation des dégâts'],
+        'defensePenetration': ['Defense Penetration', 'Pénétration de défense'],
+        'additionalDefense': ['Additional Defense', 'Défense supplémentaire'],
+        'additionalAttack': ['Additional Attack', 'Attaque supplémentaire'],
+        'additionalHP': ['Additional HP', 'PV supplémentaires']
+    };
+
+    // 6️⃣ Chercher les stats manquantes
+    const criticalMissing = allowedStats.filter(recommendedStat => {
+        const aliases = statMapping[recommendedStat] || [recommendedStat];
+        
+        // Vérifier dans les substats ET mainStat
+        const foundInSubstats = existingSubstats.some(substat => 
+            aliases.some(alias => 
+                substat.toLowerCase().includes(alias.toLowerCase()) ||
+                alias.toLowerCase().includes(substat.toLowerCase())
+            )
+        );
+
+        const foundInMainStat = aliases.some(alias =>
+            existingMainStat.toLowerCase().includes(alias.toLowerCase()) ||
+            alias.toLowerCase().includes(existingMainStat.toLowerCase())
+        );
+
+        const found = foundInSubstats || foundInMainStat;
+        
+        if (!found) {
+            console.log(`❌ MANQUANT: ${recommendedStat} (aliases: ${aliases.join(', ')})`);
+        } else {
+            console.log(`✅ TROUVÉ: ${recommendedStat}`);
+        }
+
+        return !found;
+    });
+
+    // 7️⃣ Identifier les stats inutiles
+    const wastedStats = existingSubstats.filter(substat => {
+        // Stats toujours inutiles
+        if (substat.includes('MP') && !recommendedStats.includes('mpRecoveryRate') && !recommendedStats.includes('mpCostReduction')) {
+            return true;
+        }
+
+        // Vérifier si cette substat correspond à une stat recommandée
+        const isUseful = recommendedStats.some(recommendedStat => {
+            const aliases = statMapping[recommendedStat] || [recommendedStat];
+            return aliases.some(alias => 
+                substat.toLowerCase().includes(alias.toLowerCase()) ||
+                alias.toLowerCase().includes(substat.toLowerCase())
+            );
+        });
+
+        if (!isUseful) {
+            console.log(`🗑️ INUTILE: ${substat}`);
+        }
+
+        return !isUseful;
+    });
+
+    return {
+        criticalMissing: criticalMissing.slice(0, 3), // Max 3 pour l'affichage
+        wastedStats: wastedStats.slice(0, 3),
+        slot,
+        allowedStats,
+        restrictedStats: restrictions.forbidden
+    };
+};
+
+// 🔍 IDENTIFIER LE SLOT DEPUIS LE TITRE
+const identifyArtifactSlot = (title) => {
+    const slotMapping = {
+        'helmet': ['helmet', 'casque'],
+        'chest': ['chest', 'armure', 'armor'],
+        'gloves': ['gloves', 'gants'],
+        'boots': ['boots', 'bottes'],
+        'necklace': ['necklace', 'collier'],
+        'bracelet': ['bracelet'],
+        'ring': ['ring', 'bague'],
+        'earrings': ['earrings', 'boucles']
+    };
+
+    const titleLower = title.toLowerCase();
+    
+    for (const [slot, keywords] of Object.entries(slotMapping)) {
+        if (keywords.some(keyword => titleLower.includes(keyword))) {
+            return slot;
+        }
+    }
+    
+    return null;
+};
+
 // 🔍 RECHERCHE ALTERNATIVES DANS LOCALSTORAGE - VERSION CORRIGÉE
 const findBetterAlternativesInStorage = (currentArtifact, hunter, substatsMinMaxByIncrements) => {
     try {
@@ -187,7 +329,6 @@ const generateCompleteReport = (characterKey, artifacts, substatsMinMax, existin
     const hunterData = BUILDER_DATA[characterKey];
     if (!hunterData) return;
 
-
     // 🎯 ANALYSER TOUS LES ARTEFACTS AVEC SCORES EXISTANTS
     const allSlots = ['Helmet', 'Chest', 'Gloves', 'Boots', 'Necklace', 'Bracelet', 'Ring', 'Earrings'];
     const artifactAnalyses = [];
@@ -232,6 +373,9 @@ const generateCompleteReport = (characterKey, artifacts, substatsMinMax, existin
     // Analyser les sets
     const setAnalysis = analyzeOverallSets(artifacts);
 
+    // 🧠 NOUVELLE ANALYSE SUBSTATS INTELLIGENTE POUR RAPPORT GLOBAL
+    const overallSubstatAnalysis = analyzeOverallSubstatsForReport(artifacts, hunterData);
+
     // Créer le rapport final
     const report = {
         id: Date.now(),
@@ -257,7 +401,7 @@ const generateCompleteReport = (characterKey, artifacts, substatsMinMax, existin
             score: 0
         } : (weakArtifacts.length > 0 ? weakArtifacts[0] : null),
 
-        substatAnalysis: analyzeOverallSubstats(artifacts, hunterData),
+        substatAnalysis: overallSubstatAnalysis,
         actionPlan: generateActionPlan(artifacts, weakArtifacts, emptySlots, hunterData, globalScore),
 
         // Données supplémentaires
@@ -268,13 +412,80 @@ const generateCompleteReport = (characterKey, artifacts, substatsMinMax, existin
         triggeredFrom: 'beru_menu'
     };
 
-
     if (onReportGenerated) {
         onReportGenerated(report);
     }
 };
 
-// 🎁 ANALYSE SET DÉTAILLÉE - VERSION CORRIGÉE KAISEL
+// 🧠 ANALYSE SUBSTATS POUR RAPPORT GLOBAL - NOUVELLE FONCTION
+const analyzeOverallSubstatsForReport = (artifacts, hunterData) => {
+    const allSubstats = [];
+    Object.values(artifacts).forEach(artifact => {
+        if (artifact?.subStats) {
+            allSubstats.push(...artifact.subStats.filter(s => s));
+        }
+    });
+
+    // Récupérer les stats recommandées (≠ null) depuis recommendedStats
+    const recommendedStats = Object.entries(hunterData.recommendedStats)
+        .filter(([stat, value]) => value !== null)
+        .map(([stat, value]) => stat);
+
+    console.log('🔍 Kaisel Debug Global - Stats recommandées:', recommendedStats);
+    console.log('🔍 Kaisel Debug Global - Substats trouvées:', allSubstats);
+
+    // Mapping des noms pour comparaison
+    const statMapping = {
+        'criticalHitRate': ['Critical Hit Rate'],
+        'criticalHitDamage': ['Critical Hit Damage'],
+        'DamageIncrease': ['Damage Increase'],
+        'defensePenetration': ['Defense Penetration'],
+        'additionalDefense': ['Additional Defense'],
+        'additionalAttack': ['Additional Attack'],
+        'additionalHP': ['Additional HP']
+    };
+
+    // Chercher les stats manquantes
+    const criticalMissing = recommendedStats.slice(0, 5).filter(recommendedStat => {
+        const aliases = statMapping[recommendedStat] || [recommendedStat];
+        
+        const found = allSubstats.some(substat => 
+            aliases.some(alias => 
+                substat.toLowerCase().includes(alias.toLowerCase()) ||
+                alias.toLowerCase().includes(substat.toLowerCase())
+            )
+        );
+
+        if (!found) {
+            console.log(`❌ GLOBAL MANQUANT: ${recommendedStat}`);
+        }
+
+        return !found;
+    });
+
+    // Stats inutiles
+    const wastedStats = allSubstats.filter(substat => {
+        if (substat.includes('MP') && !recommendedStats.includes('mpRecoveryRate') && !recommendedStats.includes('mpCostReduction')) {
+            return true;
+        }
+
+        const isUseful = recommendedStats.some(recommendedStat => {
+            const aliases = statMapping[recommendedStat] || [recommendedStat];
+            return aliases.some(alias => 
+                substat.toLowerCase().includes(alias.toLowerCase()) ||
+                alias.toLowerCase().includes(substat.toLowerCase())
+            );
+        });
+
+        return !isUseful;
+    });
+
+    return { 
+        criticalMissing: criticalMissing.slice(0, 3),
+        wastedStats: wastedStats.slice(0, 3) 
+    };
+};
+
 // 🎁 ANALYSE SET DÉTAILLÉE - VERSION RAPPORT INTÉGRÉE KAISEL
 const analyzeArtifactSet = (artifactData, hunter, onReportGenerated = null) => {
     const hunterKey = getHunterKey(hunter);
@@ -366,8 +577,10 @@ const analyzeArtifactSet = (artifactData, hunter, onReportGenerated = null) => {
                 setName = 'Limit Break';
             } else if (pieceForSlot.includes('Seven Deadly Sins')) {
                 setName = 'Seven Deadly Sins';
-            } else if (pieceForSlot.includes('malédiction ardente')) {
+            } else if (pieceForSlot.includes('malédiction ardente') || pieceForSlot.includes('Burning Curse')) {
                 setName = 'Burning Curse';
+            } else if (pieceForSlot.includes('expert') || pieceForSlot.includes('Expert')) {
+                setName = 'Expert';
             }
 
             if (setName && !allowedSets.includes(setName)) {
@@ -439,7 +652,6 @@ const analyzeArtifactSet = (artifactData, hunter, onReportGenerated = null) => {
     const pieceNames = Object.values(hunterData.artifactSets)
         .map(setData => setData.pieces[mappedSlot])
         .filter(piece => piece); // Enlever les undefined
-
 
     const analysis = {
         score: 20,
@@ -603,7 +815,6 @@ const analyzeMainStatDetailed = (artifactData, hunter) => {
     // Récupérer les mainStats recommandées pour ce slot
     const firstSet = Object.keys(hunterData.artifactSets)[0];
     const recommendedMainStats = hunterData.artifactSets[firstSet]?.mainStats;
-    // const slotKey = artifactData.title.toLowerCase();
     const expectedMainStat = recommendedMainStats?.[mappedSlot];
 
     const currentMainStat = artifactData.mainStat;
@@ -734,7 +945,7 @@ const analyzeSubStatsDetailed = (artifactData, hunter, substatsMinMaxByIncrement
     };
 };
 
-// 3️⃣ CORRIGER generateDetailedReport pour retourner le rapport
+// 🔧 GENERATE DETAILED REPORT - VERSION CORRIGÉE AVEC ANALYSE INTELLIGENTE
 const generateDetailedReport = (artifactData, hunter, substatsMinMaxByIncrements, showTankMessage) => {
     const setAnalysis = analyzeArtifactSet(artifactData, hunter);
     const mainStatAnalysis = analyzeMainStatDetailed(artifactData, hunter);
@@ -764,6 +975,9 @@ const generateDetailedReport = (artifactData, hunter, substatsMinMaxByIncrements
     if (globalScore >= 85) {
         actionPlan += `✅ CET ARTEFACT EST DÉJÀ EXCELLENT ! Garde-le précieusement.`;
     }
+
+    // 🧠 UTILISER LA NOUVELLE ANALYSE INTELLIGENTE DES SUBSTATS
+    const smartSubstatAnalysis = analyzeSubstatsForSlot(artifactData, BUILDER_DATA[getHunterKey(hunter)]);
 
     // 📊 CRÉER LE RAPPORT COMPATIBLE AVEC BeruReportSystem
     const report = {
@@ -798,10 +1012,10 @@ const generateDetailedReport = (artifactData, hunter, substatsMinMaxByIncrements
             score: globalScore,
             issues: ['Artefact critique à remplacer']
         } : null,
-
-        // Analyse substats
+        
+        // 🧠 ANALYSE SUBSTATS INTELLIGENTE SELON SLOT
         substatAnalysis: {
-            criticalMissing: subStatsAnalysis.wastedStats || [],
+            criticalMissing: smartSubstatAnalysis.criticalMissing || [],
             wastedStats: subStatsAnalysis.wastedStats || []
         },
 
@@ -820,7 +1034,6 @@ const generateDetailedReport = (artifactData, hunter, substatsMinMaxByIncrements
 
         emptySlots: [] // Pas de slots vides pour un seul artefact
     };
-
 
     setTimeout(() => {
         showTankMessage(`📊 Rapport d'analyse généré ! Consulte le papyrus doré pour les détails.`, true, 'beru');
@@ -842,6 +1055,7 @@ const calculateRollQualityPercent = (stat, levelInfo, substatsMinMaxByIncrements
     if (maxPossible === 0) return 50;
     return Math.min((actualValue / maxPossible) * 100, 100);
 };
+
 // 🔍 HELPER: Clé hunter pour builder_data
 const getHunterKey = (hunter) => {
     const nameMapping = {
@@ -904,26 +1118,6 @@ const analyzeOverallSets = (artifacts) => {
         dominantSet,
         optimalSetCount: Math.max(...Object.values(sets), 0)
     };
-};
-
-const analyzeOverallSubstats = (artifacts, hunterData) => {
-    const allSubstats = [];
-    Object.values(artifacts).forEach(artifact => {
-        if (artifact?.subStats) {
-            allSubstats.push(...artifact.subStats.filter(s => s));
-        }
-    });
-
-    const priorities = hunterData.optimizationPriority.slice(0, 3).map(p => p.stat);
-    const criticalMissing = priorities.filter(stat =>
-        !allSubstats.some(s => s.includes(stat.replace('Additional ', '')))
-    );
-
-    const wastedStats = allSubstats.filter(stat =>
-        stat.includes('MP') && !priorities.some(p => p.includes('MP'))
-    );
-
-    return { criticalMissing, wastedStats };
 };
 
 const generateActionPlan = (artifacts, weakArtifacts, emptySlots, hunterData, globalScore) => {

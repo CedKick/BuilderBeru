@@ -636,6 +636,7 @@ const BuilderBeru = () => {
   const [beruMenuPosition, setBeruMenuPosition] = useState({ x: 0, y: 0 });
   const [showTvSystem, setShowTvSystem] = useState(false);
   const [tvData, setTvData] = useState(null);
+  const [adminToken, setAdminToken] = useState(null);
   const [beruMenuCharacter, setBeruMenuCharacter] = useState('');
   const [showHitboxes, setShowHitboxes] = useState(false);
   const [hitboxPositions, setHitboxPositions] = useState({});
@@ -651,6 +652,10 @@ const BuilderBeru = () => {
   setShowTvSystem(true);
 };
 
+const handleShowAdminValidation = (token) => {
+  setAdminToken(token); // Stocker le token
+  setShowAdminPage(true);
+};
   const SHADOW_ENTITIES = {
     tank: {
       id: 'tank',
@@ -5761,6 +5766,7 @@ BobbyJones : "Allez l'Inter !"
                         currentWeapon={hunterWeapons[selectedCharacter] || {}}
                         characters={characters}
                         onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
+                        adminToken={adminToken}
                       />
                     </div>
                   </div>
@@ -5795,7 +5801,7 @@ BobbyJones : "Allez l'Inter !"
                     currentArtifacts={artifactsData}
                     currentStats={finalStats}
                     currentCores={hunterCores[selectedCharacter] || {}}
-                    onShowAdminValidation={() => setShowAdminPage(true)} // ← AJOUTER CETTE LIGNE
+                    onShowAdminValidation={handleShowAdminValidation} 
                     multiAccountsData={accounts}
                     substatsMinMaxByIncrements={substatsMinMaxByIncrements}
                     existingScores={artifactScores}
@@ -6641,6 +6647,7 @@ BobbyJones : "Allez l'Inter !"
                           currentWeapon={hunterWeapons[selectedCharacter] || {}}
                           characters={characters}
                           onNavigateToHallOfFlame={() => setShowHallOfFlamePage(true)}
+                          adminToken={adminToken}
                         />
                       </div>
                     </div>
@@ -6677,7 +6684,7 @@ BobbyJones : "Allez l'Inter !"
                       currentArtifacts={artifactsData}
                       currentStats={finalStats}
                       currentCores={hunterCores[selectedCharacter] || {}}
-                      onShowAdminValidation={() => setShowAdminPage(true)} // ← AJOUTER CETTE LIGNE
+                      onShowAdminValidation={handleShowAdminValidation}
                       multiAccountsData={accounts}
                       substatsMinMaxByIncrements={substatsMinMaxByIncrements}
                       existingScores={artifactScores}

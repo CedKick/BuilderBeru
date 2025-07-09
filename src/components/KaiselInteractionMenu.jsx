@@ -1,4 +1,4 @@
-// KaiselInteractionMenu.jsx - TECHNICAL INTELLIGENCE SYSTEM BY KAISEL
+// KaiselInteractionMenu.jsx - TECHNICAL INTELLIGENCE SYSTEM BY KAISEL - VERSION SÉCURISÉE
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { scanTwitchStreams } from '../utils/TwitchIntelligence';
@@ -84,7 +84,7 @@ const KaiselInteractionMenu = ({
   const [animationClass, setAnimationClass] = useState('');
   const [currentSubMenu, setCurrentSubMenu] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false); // ← NOUVEAU STATE
+  const [adminToken, setAdminToken] = useState(null); // ← TOKEN SÉCURISÉ AU LIEU DE BOOLEAN
   const [adminChecked, setAdminChecked] = useState(false); // ← POUR ÉVITER SPAM
   const { t } = useTranslation();
 
@@ -97,7 +97,30 @@ const KaiselInteractionMenu = ({
     checkAdminStatus();
   }, []);
 
-  // 🔐 VÉRIFICATION ADMIN SILENCIEUSE
+  // 🛡️ FONCTION DE VÉRIFICATION TOKEN CÔTÉ CLIENT
+  const isValidAdmin = () => {
+    if (!adminToken) return false;
+    
+    try {
+      // Décoder le JWT pour vérifier l'expiration (sans la signature, juste la date)
+      const payload = JSON.parse(atob(adminToken.split('.')[1]));
+      const now = Math.floor(Date.now() / 1000);
+      
+      if (payload.exp && payload.exp < now) {
+        console.log('🔒 Token admin expiré');
+        setAdminToken(null);
+        return false;
+      }
+      
+      return payload.isAdmin === true;
+    } catch (error) {
+      console.error('Token invalide:', error);
+      setAdminToken(null);
+      return false;
+    }
+  };
+
+  // 🔐 VÉRIFICATION ADMIN SÉCURISÉE - JWT TOKEN
   const checkAdminStatus = async () => {
     if (adminChecked) return; // Éviter les appels multiples
     
@@ -115,22 +138,53 @@ const KaiselInteractionMenu = ({
 
       const result = await response.json();
       
-      if (result.success && result.isAdmin) {
-        setIsAdmin(true);
-        console.log('🔓 Mode Admin Kaisel activé pour', result.verificationDetails.accountFound);
+      // 🔥 SAUVEGARDER LE TOKEN SIGNÉ, PAS UN BOOLEAN
+      if (result.success && result.adminToken) {
+        setAdminToken(result.adminToken); // ← TOKEN SÉCURISÉ INVIOLABLE
+        console.log('🔓 Token Admin Kaisel reçu et validé pour', result.verificationDetails?.accountFound);
       } else {
-        setIsAdmin(false);
-        console.log('🔒 Kaisel mode standard - pas de droits admin');
+        setAdminToken(null);
+        console.log('🔒 Kaisel mode standard - pas de token admin');
       }
     } catch (error) {
       console.error('❌ Erreur vérification admin Kaisel:', error);
-      setIsAdmin(false);
+      setAdminToken(null);
     } finally {
       setAdminChecked(true);
     }
   };
 
-  // 🔧 OPTIONS PRINCIPALES KAISEL - CONDITIONNELLES
+  // 🛡️ VALIDATION SERVEUR AVEC TOKEN POUR ACTIONS CRITIQUES
+  const validateAdminAction = async (action) => {
+    if (!adminToken) return false;
+    
+    try {
+      const serverCheck = await fetch('https://api.builderberu.com/api/admin/validate-action', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}` // ← TOKEN DANS HEADER
+        },
+        body: JSON.stringify({ action })
+      });
+      
+      const validation = await serverCheck.json();
+      
+      if (!validation.authorized) {
+        console.log('🔒 Action refusée par le serveur');
+        setAdminToken(null); // Reset token si rejeté
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Erreur validation serveur:', error);
+      setAdminToken(null);
+      return false;
+    }
+  };
+
+  // 🔧 OPTIONS PRINCIPALES KAISEL - SÉCURISÉES
   const getMainOptions = () => {
     const baseOptions = {
       live_streams: {
@@ -155,8 +209,8 @@ const KaiselInteractionMenu = ({
       }
     };
 
-    // 🔐 AJOUTER DEBUG MODE SEULEMENT SI ADMIN
-    if (isAdmin) {
+    // 🔐 AJOUTER DEBUG MODE SEULEMENT SI TOKEN ADMIN VALIDE
+    if (isValidAdmin()) {
       baseOptions.debug_mode = {
         icon: "🐛",
         label: "Mode Debug Pro",
@@ -167,10 +221,10 @@ const KaiselInteractionMenu = ({
     return baseOptions;
   };
 
-  // 🤖 SOUS-MENU DEBUG - ADMIN SEULEMENT
+  // 🤖 SOUS-MENU DEBUG - ADMIN TOKEN REQUIS
   const getDebugSubMenu = () => {
-    // 🔒 PROTECTION : Si pas admin, retourner menu vide
-    if (!isAdmin) {
+    // 🔒 PROTECTION : Si pas de token admin valide, retourner menu d'accès refusé
+    if (!isValidAdmin()) {
       return {
         access_denied: {
           icon: "🔒",
@@ -223,8 +277,8 @@ const KaiselInteractionMenu = ({
       }
     };
 
-    // 🏆 AJOUTER HALLOFFLAME SI DEBUG BUTTON ET ADMIN
-    if (showDebugButton && isAdmin) {
+    // 🏆 AJOUTER HALLOFFLAME SI DEBUG BUTTON ET TOKEN ADMIN
+    if (showDebugButton && isValidAdmin()) {
       baseMenu.hall_of_flame_debug = {
         icon: "🏆",
         label: "HallOfFlame Debug",
@@ -247,18 +301,18 @@ const KaiselInteractionMenu = ({
     return baseMenu;
   };
 
-  // 🧠 ACTIONS KAISEL - AVEC PROTECTION ADMIN
+  // 🧠 ACTIONS KAISEL - AVEC PROTECTION TOKEN + VALIDATION SERVEUR
   const handleOption = async (action) => {
     switch (action) {
       case 'access_denied':
-        showTankMessage("🔒 Kaisel : Accès refusé ! Seuls les admins peuvent accéder au mode Debug Pro.", true, 'kaisel');
+        showTankMessage("🔒 Kaisel : Accès refusé ! Seuls les admins avec token valide peuvent accéder au mode Debug Pro.", true, 'kaisel');
         onClose();
         break;
 
       case 'show_debug_submenu':
-        // 🔐 DOUBLE VÉRIFICATION ADMIN
-        if (!isAdmin) {
-          showTankMessage("🔒 Kaisel : Tu n'as pas les permissions pour accéder au Debug Pro !", true, 'kaisel');
+        // 🔐 VÉRIFICATION TOKEN
+        if (!isValidAdmin()) {
+          showTankMessage("🔒 Kaisel : Token admin requis pour accéder au Debug Pro !", true, 'kaisel');
           onClose();
           return;
         }
@@ -266,14 +320,24 @@ const KaiselInteractionMenu = ({
         break;
 
       case 'show_admin_validation':
-        // 🔐 PROTECTION ADMIN
-        if (!isAdmin) {
-          showTankMessage("🔒 Kaisel : Fonction réservée aux administrateurs !", true, 'kaisel');
+        // 🔐 PROTECTION TOKEN + VALIDATION SERVEUR
+        if (!isValidAdmin()) {
+          onShowAdminValidation();
+          showTankMessage("🔒 Kaisel : Token admin requis !", true, 'kaisel');
           onClose();
           return;
         }
+        
+        // 🛡️ VALIDATION SERVEUR FINALE
+        const isValidated = await validateAdminAction('admin_validation');
+        if (!isValidated) {
+          showTankMessage("🔒 Kaisel : Action non autorisée par le serveur !", true, 'kaisel');
+          onClose();
+          return;
+        }
+        
         if (onShowAdminValidation) {
-          onShowAdminValidation();
+          onShowAdminValidation(adminToken);
           showTankMessage("🛡️ Kaisel ouvre le système de validation admin !", true, 'kaisel');
         } else {
           showTankMessage("🤖 Admin validation callback non trouvé...", true, 'kaisel');
@@ -296,12 +360,20 @@ const KaiselInteractionMenu = ({
         break;
 
       case 'show_hall_debug':
-        // 🔐 PROTECTION ADMIN
-        if (!isAdmin) {
-          showTankMessage("🔒 Kaisel : HallOfFlame Debug réservé aux admins !", true, 'kaisel');
+        // 🔐 PROTECTION TOKEN + VALIDATION SERVEUR
+        if (!isValidAdmin()) {
+          showTankMessage("🔒 Kaisel : HallOfFlame Debug réservé aux admins avec token !", true, 'kaisel');
           onClose();
           return;
         }
+        
+        const hallValidated = await validateAdminAction('hall_debug');
+        if (!hallValidated) {
+          showTankMessage("🔒 Kaisel : HallOfFlame Debug non autorisé par le serveur !", true, 'kaisel');
+          onClose();
+          return;
+        }
+        
         if (onShowHallOfFlameDebug) {
           onShowHallOfFlameDebug();
           showTankMessage("🏆 Kaisel lance le système HallOfFlame ! Interface de niveau légendaire activée ⚡", true, 'kaisel');
@@ -379,12 +451,20 @@ const KaiselInteractionMenu = ({
         break;
 
       case 'toggle_hitbox_debug':
-        // 🔐 PROTECTION ADMIN
-        if (!isAdmin) {
-          showTankMessage("🔒 Kaisel : Debug mode réservé aux admins !", true, 'kaisel');
+        // 🔐 PROTECTION TOKEN + VALIDATION SERVEUR
+        if (!isValidAdmin()) {
+          showTankMessage("🔒 Kaisel : Debug mode réservé aux admins avec token !", true, 'kaisel');
           onClose();
           return;
         }
+        
+        const debugValidated = await validateAdminAction('toggle_debug');
+        if (!debugValidated) {
+          showTankMessage("🔒 Kaisel : Debug toggle non autorisé par le serveur !", true, 'kaisel');
+          onClose();
+          return;
+        }
+        
         if (window.toggleDebug) {
           window.toggleDebug();
           showTankMessage("🐛 Kaisel a activé le debug mode ! Regarde en haut à droite...", true, 'kaisel');
@@ -520,15 +600,23 @@ const KaiselInteractionMenu = ({
         onClose();
         break;
 
-      // 🤖 ACTIONS DEBUG - ADMIN SEULEMENT
+      // 🤖 ACTIONS DEBUG - TOKEN ADMIN + VALIDATION SERVEUR REQUIS
       case 'advanced_artifact_calc':
       case 'build_simulation':
       case 'meta_analysis':
       case 'dps_calculator':
       case 'ai_optimization':
-        // 🔐 PROTECTION ADMIN
-        if (!isAdmin) {
-          showTankMessage("🔒 Kaisel : Fonctionnalités avancées réservées aux admins !", true, 'kaisel');
+        // 🔐 PROTECTION TOKEN
+        if (!isValidAdmin()) {
+          showTankMessage("🔒 Kaisel : Fonctionnalités avancées réservées aux admins avec token !", true, 'kaisel');
+          onClose();
+          return;
+        }
+        
+        // 🛡️ VALIDATION SERVEUR
+        const advancedValidated = await validateAdminAction(action);
+        if (!advancedValidated) {
+          showTankMessage("🔒 Kaisel : Fonctionnalité avancée non autorisée par le serveur !", true, 'kaisel');
           onClose();
           return;
         }
@@ -659,9 +747,18 @@ const KaiselInteractionMenu = ({
           padding: 8px;
         }
 
-        /* 🔐 ADMIN INDICATOR */
+        /* 🔐 ADMIN INDICATOR SÉCURISÉ */
         .admin-indicator {
           background: linear-gradient(45deg, #ffd700, #ff6b35);
+          color: #000;
+          padding: 2px 6px;
+          border-radius: 8px;
+          font-size: 10px;
+          font-weight: bold;
+        }
+
+        .admin-verified {
+          background: linear-gradient(45deg, #00ff41, #00ccff);
           color: #000;
           padding: 2px 6px;
           border-radius: 8px;
@@ -671,7 +768,7 @@ const KaiselInteractionMenu = ({
       `}</style>
 
       {isMobileDevice ? (
-        // 📱 VERSION MOBILE AVEC INDICATEUR ADMIN
+        // 📱 VERSION MOBILE AVEC INDICATEUR ADMIN SÉCURISÉ
         <div
           className="kaisel-interaction-menu fixed z-[9999] kaisel-mobile-container"
           style={{
@@ -715,8 +812,8 @@ const KaiselInteractionMenu = ({
                 }}>
                   Kaisel {currentSubMenu === 'debug' ? 'Debug' : 'Tech'}
                 </span>
-                {isAdmin && (
-                  <span className="admin-indicator">👑 ADMIN</span>
+                {isValidAdmin() && (
+                  <span className="admin-verified">🔐 TOKEN VERIFIED</span>
                 )}
               </div>
             </div>
@@ -782,16 +879,16 @@ const KaiselInteractionMenu = ({
             top: position.y
           }}
         >
-          {/* Centre de Kaisel avec indicateur admin */}
+          {/* Centre de Kaisel avec indicateur admin sécurisé */}
           <div
-            className={`absolute w-6 h-6 rounded-full border-2 ${isAdmin ? 'border-yellow-400' : 'border-white'} ${currentSubMenu === 'debug' ? 'bg-cyan-400/80' : isScanning ? 'bg-cyan-300/90 kaisel-scanning' : 'bg-cyan-500/80'}`}
+            className={`absolute w-6 h-6 rounded-full border-2 ${isValidAdmin() ? 'border-green-400' : 'border-white'} ${currentSubMenu === 'debug' ? 'bg-cyan-400/80' : isScanning ? 'bg-cyan-300/90 kaisel-scanning' : 'bg-cyan-500/80'}`}
             style={{ 
               left: '-3px', 
               top: '-3px',
-              boxShadow: isAdmin ? '0 0 15px rgba(255, 215, 0, 0.5)' : '0 0 15px rgba(0, 255, 65, 0.5)'
+              boxShadow: isValidAdmin() ? '0 0 15px rgba(0, 255, 65, 0.8)' : '0 0 15px rgba(0, 255, 65, 0.5)'
             }}
           >
-            {isAdmin && (
+            {isValidAdmin() && (
               <div style={{
                 position: 'absolute',
                 top: '-8px',
@@ -799,7 +896,7 @@ const KaiselInteractionMenu = ({
                 transform: 'translateX(-50%)',
                 fontSize: '8px'
               }}>
-                👑
+                🔐
               </div>
             )}
           </div>
