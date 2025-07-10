@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Monde BaseJump - Edition Minecraft Coop</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Canvas principal -->
+  <canvas id="gameCanvas" width="900" height="500"></canvas>
+  
+  <!-- Bouton retour -->
+  <a href=".."><button id="retour">Retour à l'accueil</button></a>
+  
+  <!-- HUD -->
+  <div id="hud">
+    <span id="lives">❤️❤️❤️</span>
+  </div>
+  <div id="score">Score: <span id="scoreValue">0</span></div>
+  <div id="powerup">Power-up J1: <span id="powerupValue">Aucun</span></div>
+  <div id="timer">⏱️ <span id="timerValue">00:00</span></div>
+  
+  <!-- Mode construction -->
+  <div id="buildMode">
+    🔨 Mode Construction (J1)<br>
+    <span id="selectedBlock">Pierre</span><br>
+    <small>1-9: Changer bloc | Clic: Placer bloc</small>
+  </div>
+  
+  <!-- Info caméra -->
+  <div id="cameraInfo">Appuyez sur M pour recentrer la caméra</div>
+  
+  <!-- Bouton éditeur -->
+  <button id="editorButton" onclick="toggleEditor()">🛠️ Mode Éditeur</button>
+  
+  <!-- Panel éditeur -->
+  <div id="editorPanel">
+    <h2>ÉDITEUR DE MAP</h2>
+    
+    <div class="editorSection">
+      <h3>🧱 Blocs</h3>
+      <div class="editorItem" data-type="block" data-value="stone">⬛ Pierre</div>
+      <div class="editorItem" data-type="block" data-value="ice">🧊 Glace</div>
+      <div class="editorItem" data-type="block" data-value="elastic">🎀 Élastique</div>
+      <div class="editorItem" data-type="block" data-value="lava">🔥 Lave</div>
+      <div class="editorItem" data-type="block" data-value="tnt">💣 TNT</div>
+      <div class="editorItem" data-type="block" data-value="cloud">☁️ Nuage</div>
+      <div class="editorItem" data-type="block" data-value="teleport">🌀 Téléporteur</div>
+      <div class="editorItem" data-type="block" data-value="fan">💨 Ventilateur</div>
+      <div class="editorItem" data-type="block" data-value="sponge">🧽 Éponge</div>
+    </div>
+    
+    <div class="editorSection">
+      <h3>👾 Ennemis</h3>
+      <div class="editorItem" data-type="enemy" data-value="normal">🔴 Normal</div>
+      <div class="editorItem" data-type="enemy" data-value="shooter">🔥 Tireur</div>
+      <div class="editorItem" data-type="enemy" data-value="jumper">🦘 Sauteur</div>
+    </div>
+    
+    <div class="editorSection">
+      <h3>💎 Items</h3>
+      <div class="editorItem" data-type="item" data-value="collectible">⭐ Étoile</div>
+      <div class="editorItem" data-type="item" data-value="heart">❤️ Cœur</div>
+      <div class="editorItem" data-type="item" data-value="powerup">❓ Bloc Bonus</div>
+    </div>
+    
+    <div class="editorSection">
+      <h3>🎯 Zones</h3>
+      <div class="editorItem" data-type="zone" data-value="start">🟢 Départ</div>
+      <div class="editorItem" data-type="zone" data-value="finish">🏁 Arrivée</div>
+    </div>
+    
+    <div class="editorSection">
+      <h3>🗑️ Outils</h3>
+      <div class="editorItem" data-type="tool" data-value="eraser">Gomme</div>
+      <div class="editorItem" data-type="tool" data-value="clear">Tout effacer</div>
+    </div>
+  </div>
+
+  <!-- Contrôles de map -->
+  <div id="mapControls">
+    <button onclick="saveMap()">💾 Sauvegarder</button>
+    <button onclick="loadMapMenu()">📁 Charger</button>
+    <button onclick="testMap()">▶️ Tester</button>
+    <button onclick="resetMap()">🔄 Réinitialiser</button>
+    <button onclick="exportMap()">📤 Exporter</button>
+    <button onclick="importMap()">📥 Importer</button>
+  </div>
+
+  <!-- Liste des maps -->
+  <div id="mapList">
+    <h3>Maps Sauvegardées</h3>
+    <div id="mapListContent"></div>
+    <button onclick="closeMapList()" style="margin-top: 20px; width: 100%;">Fermer</button>
+  </div>
+
+  <!-- Grille overlay -->
+  <canvas id="gridOverlay"></canvas>
+  
+  <!-- Inventaire -->
+  <div id="inventory">
+    <div class="resource">⬛ Pierre: <span id="stoneCount">0</span></div>
+    <div class="resource">🧊 Glace: <span id="iceCount">0</span></div>
+    <div class="resource">🎀 Élastique: <span id="elasticCount">0</span></div>
+    <div class="resource">🔥 Lave: <span id="lavaCount">0</span></div>
+    <div class="resource">💣 TNT: <span id="tntCount">0</span></div>
+    <div class="resource">☁️ Nuage: <span id="cloudCount">0</span></div>
+    <div class="resource">🌀 Téléporteur: <span id="teleportCount">0</span></div>
+    <div class="resource">💨 Ventilateur: <span id="fanCount">0</span></div>
+    <div class="resource">🧽 Éponge: <span id="spongeCount">0</span></div>
+  </div>
+  
+  <!-- Info joueurs -->
+  <div id="playersInfo">
+    <div class="playerStatus">
+      <span>J1 (ZQSD) 🟪</span>
+      <span id="p1Lives">❤️❤️❤️</span>
+    </div>
+    <div class="playerStatus">
+      <span>J2 (IJKL) 🟦</span>
+      <span id="p2Lives">❤️❤️❤️</span>
+    </div>
+    <div class="playerStatus">
+      <span>J3 (↑↓←→) 🟩</span>
+      <span id="p3Lives">❤️❤️❤️</span>
+    </div>
+  </div>
+  
+  <!-- Message victoire -->
+  <div id="victoire">🏆 VICTOIRE ! 🏆</div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/blocks.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/enemy.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

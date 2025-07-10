@@ -1,0 +1,271 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  background: linear-gradient(to bottom, #2a003f, #000000);
+  font-family: Arial;
+}
+
+canvas {
+  display: block;
+  background-color: black;
+  cursor: crosshair;
+}
+
+#retour {
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  padding: 12px 24px;
+  font-size: 16px;
+  background-color: purple;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 0 12px violet;
+  z-index: 10;
+}
+
+#hud {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  font-size: 28px;
+  color: white;
+  z-index: 10;
+  user-select: none;
+  text-shadow: 2px 2px 4px black;
+}
+
+#score {
+  position: absolute;
+  left: 20px;
+  top: 60px;
+  font-size: 24px;
+  color: gold;
+  z-index: 10;
+  text-shadow: 2px 2px 4px black;
+}
+
+#powerup {
+  position: absolute;
+  left: 20px;
+  top: 100px;
+  font-size: 20px;
+  color: cyan;
+  z-index: 10;
+  text-shadow: 2px 2px 4px black;
+}
+
+#timer {
+  position: absolute;
+  left: 20px;
+  top: 140px;
+  font-size: 24px;
+  color: lime;
+  z-index: 10;
+  text-shadow: 2px 2px 4px black;
+}
+
+#buildMode {
+  position: absolute;
+  left: 20px;
+  top: 180px;
+  font-size: 18px;
+  color: white;
+  z-index: 10;
+  text-shadow: 2px 2px 4px black;
+  background: rgba(0,0,0,0.7);
+  padding: 10px;
+  border-radius: 10px;
+  display: none;
+}
+
+#cameraInfo {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  transform: translateX(-50%);
+  font-size: 14px;
+  color: white;
+  background: rgba(0,0,0,0.5);
+  padding: 5px 10px;
+  border-radius: 5px;
+  z-index: 10;
+}
+
+#editorButton {
+  position: absolute;
+  right: 20px;
+  top: 70px;
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #8B4513;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(139, 69, 19, 0.5);
+  z-index: 10;
+}
+
+#editorButton:hover {
+  background-color: #A0522D;
+}
+
+#editorPanel {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 200px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 20px;
+  display: none;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+#editorPanel h3 {
+  margin: 10px 0;
+  color: gold;
+}
+
+.editorSection {
+  margin-bottom: 20px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+}
+
+.editorItem {
+  padding: 5px;
+  margin: 5px 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.editorItem:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.editorItem.selected {
+  background: rgba(255, 215, 0, 0.3);
+  border: 2px solid gold;
+}
+
+#mapControls {
+  position: absolute;
+  bottom: 20px;
+  left: 220px;
+  display: none;
+  z-index: 100;
+}
+
+#mapControls button {
+  margin: 0 5px;
+  padding: 8px 16px;
+  background: #4B0082;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#mapList {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 200px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 20px;
+  display: none;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+.mapItem {
+  padding: 10px;
+  margin: 10px 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.mapItem:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#gridOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 50;
+  display: none;
+}
+
+#inventory {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  font-size: 16px;
+  color: white;
+  z-index: 10;
+  background: rgba(0,0,0,0.7);
+  padding: 10px;
+  border-radius: 10px;
+  display: flex;
+  gap: 15px;
+}
+
+.resource {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#playersInfo {
+  position: absolute;
+  right: 20px;
+  top: 120px;
+  font-size: 18px;
+  color: white;
+  z-index: 10;
+  background: rgba(0,0,0,0.7);
+  padding: 15px;
+  border-radius: 10px;
+  text-align: right;
+}
+
+.playerStatus {
+  margin: 5px 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+#victoire {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+  color: gold;
+  text-shadow: 4px 4px 8px purple;
+  display: none;
+  z-index: 20;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.1); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}

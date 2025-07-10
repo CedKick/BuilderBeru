@@ -637,6 +637,7 @@ const BuilderBeru = () => {
   const [showTvSystem, setShowTvSystem] = useState(false);
   const [tvData, setTvData] = useState(null);
   const [adminToken, setAdminToken] = useState(null);
+  const [portalClickCount, setPortalClickCount] = useState(0);
   const [beruMenuCharacter, setBeruMenuCharacter] = useState('');
   const [showHitboxes, setShowHitboxes] = useState(false);
   const [hitboxPositions, setHitboxPositions] = useState({});
@@ -650,6 +651,77 @@ const BuilderBeru = () => {
   const showTvDialogue = (statType, statValue) => {
   setTvData({ statType, statValue });
   setShowTvSystem(true);
+};
+
+const handlePortalClick = () => {
+  const newCount = portalClickCount + 1;
+  setPortalClickCount(newCount);
+
+  // 🎯 Messages progressifs selon le nombre de clics
+  switch (newCount) {
+    case 1:
+      showTankMessage("🚪 Vivement Séville et ses 40°! Qu'on se cache d'ici", true);
+      break;
+    
+    case 3:
+      showTankMessage("🤔 Tu insistes sur ce portail... Il cache quelque chose ?", true);
+      break;
+    
+    case 5:
+      showTankMessage("🔍 Oh oh... ils sont en train de découvrir un secret...", true, 'tank');
+      break;
+    
+    case 8:
+      showTankMessage("👀 Le portail réagit à tes clics... Continue...", true, 'beru');
+      break;
+    
+    case 12:
+      showTankMessage("⚡ L'énergie du portail augmente ! Encore quelques clics...", true, 'kaisel');
+      break;
+    
+    case 15:
+      showTankMessage("🌀 Le portail commence à vibrer... Tu sens quelque chose ?", true, 'tank');
+      break;
+    
+    case 20:
+      showTankMessage("🔥 ATTENTION ! Le portail se charge d'une énergie inconnue !", true, 'beru');
+      break;
+    
+    case 25:
+      showTankMessage("⚠️ DANGER ! Le portail est presque activé... 5 clics encore !", true, 'kaisel');
+      break;
+    
+    case 28:
+      showTankMessage("🚨 ALERTE DIMENSIONNELLE ! 2 clics pour l'activation !", true, 'tank');
+      break;
+    
+    case 29:
+      showTankMessage("💥 UN DERNIER CLIC... ET LE PORTAIL S'OUVRIRA !", true, 'beru');
+      break;
+    
+    case 30:
+      // 🎮 OUVERTURE DU JEU !
+      showTankMessage("🌟 PORTAIL ACTIVÉ ! BIENVENUE DANS L'AUTRE DIMENSION !", true, 'kaisel');
+      setTimeout(() => {
+        // Ouvre le jeu canvas dans un nouvel onglet
+        window.open('/canvas-game/index.html', '_blank');
+        // Reset le compteur pour rejouer l'easter egg
+        setPortalClickCount(0);
+      }, 2000);
+      break;
+    
+    default:
+      // Messages aléatoires pour maintenir l'immersion
+      const randomMessages = [
+        "🚪 Le portail reste fermé...",
+        "🔒 Rien ne se passe... encore...",
+        "⭐ Continue de cliquer, quelque chose va arriver...",
+        "🌀 Le portail attend ton signal..."
+      ];
+      const randomMessage = randomMessages[Math.floor(Math.random() * randomMessages.length)];
+      showTankMessage(randomMessage, true);
+      break;
+  }
 };
 
 const handleShowAdminValidation = (token) => {
@@ -5528,22 +5600,30 @@ BobbyJones : "Allez l'Inter !"
                             className="rounded-lg shadow-lg bg-black w-full h-auto border border-purple-500/30"
                           />
 
-                          {/* Portail cliquable */}
-                          <div
-                            className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
-                            style={{
-                              top: '35%',
-                              left: '50%',
-                              transform: 'translateX(-50%)',
-                              width: '25%',
-                              height: '30%'
-                            }}
-                            onClick={() => {
-                              showTankMessage("🚪 Vivement Séville et ses 40! Qu'on se cache d'ici", true);
-                            }}
-                          >
-                            {/* Zone cliquable invisible */}
-                          </div>
+                        {/* Portail cliquable */}
+<div
+  className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
+  style={{
+    top: '35%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '25%',
+    height: '30%'
+  }}
+  onClick={handlePortalClick}
+>
+  {/* Zone cliquable invisible */}
+  {/* 🔥 Effet visuel progressif selon les clics */}
+  {portalClickCount > 10 && (
+    <div className="absolute inset-0 animate-pulse bg-blue-500 opacity-20 rounded-full"></div>
+  )}
+  {portalClickCount > 20 && (
+    <div className="absolute inset-0 animate-bounce bg-purple-500 opacity-30 rounded-full"></div>
+  )}
+  {portalClickCount > 25 && (
+    <div className="absolute inset-0 animate-ping bg-red-500 opacity-40 rounded-full"></div>
+  )}
+</div>
 
                           <p className="text-center text-xs text-purple-300 mt-1">🏛️ Sanctuaire Central</p>
                         </div>
@@ -7449,19 +7529,30 @@ BobbyJones : "Allez l'Inter !"
                       className="shadow-md bg-black w-[30vw] max-w-[400px] h-auto"
                     />
 
-                    {/* Portail Desktop */}
-                    <div
-                      className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
-                      style={{
-                        top: '45%',
-                        left: '43.2%',
-                        width: '5%',
-                        height: '25%'
-                      }}
-                      onClick={() => {
-                        showTankMessage("🚪 Vivement Séville et ses 45° 👀😈🐍", true);
-                      }}
-                    />
+       {/* Portail cliquable */}
+<div
+  className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
+  style={{
+    top: '35%',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '25%',
+    height: '30%'
+  }}
+  onClick={handlePortalClick}
+>
+  {/* Zone cliquable invisible */}
+  {/* 🔥 Effet visuel progressif selon les clics */}
+  {portalClickCount > 10 && (
+    <div className="absolute inset-0 animate-pulse bg-blue-500 opacity-20 rounded-full"></div>
+  )}
+  {portalClickCount > 20 && (
+    <div className="absolute inset-0 animate-bounce bg-purple-500 opacity-30 rounded-full"></div>
+  )}
+  {portalClickCount > 25 && (
+    <div className="absolute inset-0 animate-ping bg-red-500 opacity-40 rounded-full"></div>
+  )}
+</div>
 
                     <canvas
                       id="canvas-right"
