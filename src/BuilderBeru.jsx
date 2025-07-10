@@ -5604,11 +5604,12 @@ BobbyJones : "Allez l'Inter !"
 <div
   className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
   style={{
-    top: '35%',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: '25%',
-    height: '30%'
+    top: '40%',
+    left: '46.7%',
+    transform: 'translate(-50%, 50%)',
+    width: '30px',
+    height: '30px',
+    zIndex: 10 // ← BEAUCOUP plus bas que z-50
   }}
   onClick={handlePortalClick}
 >
@@ -7533,11 +7534,12 @@ BobbyJones : "Allez l'Inter !"
 <div
   className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
   style={{
-    top: '35%',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: '25%',
-    height: '30%'
+    top: '40%',
+    left: '46.7%',
+    transform: 'translate(-50%, 50%)',
+    width: '30px',
+    height: '30px',
+    zIndex: 10 // ← BEAUCOUP plus bas que z-50
   }}
   onClick={handlePortalClick}
 >
