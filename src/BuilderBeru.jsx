@@ -1865,6 +1865,7 @@ const handleShowAdminValidation = (token) => {
   };
 
   const characterStats = {
+    'Jinah': { attack: 5909.5, defense: 5100, hp: 10890.5, critRate: 0, mp: 1000 },
     'shuhua': { attack: 5909.5, defense: 5100, hp: 10890.5, critRate: 0, mp: 1000 },
     'miyeon': { attack: 5176.5, defense: 5810.5, hp: 10932.5, critRate: 0, mp: 1000 },
     'niermann': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },
@@ -2670,6 +2671,14 @@ BobbyJones : "Allez l'Inter !"
       grade: '',
       element: '',
       scaleStat: ''
+    }, 'jinah': {
+      name: 'Jinah',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869840/jinah_vrbddm.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869067/jinah_icon_pfdee6.png',
+      class: 'Fighter',
+      grade: 'SSR',
+      element: 'Dark',
+      scaleStat: 'Attack'
     }, 'shuhua': {
       name: 'Shuhua',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751535917/Shuhua1_difnjb.png',
@@ -3251,8 +3260,8 @@ BobbyJones : "Allez l'Inter !"
           ...prev,
           [defaultCharacter]: build.hunterWeapons || {}
         }));
-      } else if (defaultCharacter === 'shuhua') {
-        // Si c'est shuhua par défaut, pas de build à charger
+      } else if (defaultCharacter === 'jinah') {
+        // Si c'est jinah par défaut, pas de build à charger
       }
       // 🔥 AJOUTE ICI, JUSTE APRÈS setSelectedCharacter :
       if (defaultCharacter && !currentAccount.builds?.[defaultCharacter]) {
@@ -3286,7 +3295,7 @@ BobbyJones : "Allez l'Inter !"
       setAccounts(defaultUserData.accounts);
       setActiveAccount("main");
       setRecentBuilds([]);
-      setSelectedCharacter('shuhua'); // Fallback en cas d'erreur
+      setSelectedCharacter('jinah'); // Fallback en cas d'erreur
       setGemData({});
     }
   }, []);

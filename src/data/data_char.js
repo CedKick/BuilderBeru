@@ -1,4 +1,13 @@
 const data_chars = {
+  'jinah': {
+      name: 'Jinah',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869840/jinah_vrbddm.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869067/jinah_icon_pfdee6.png',
+      class: 'Assassin',
+      grade: 'SSR',
+      element: 'Water',
+      scaleStat: 'Attack'
+    },
   'shuhua': {
       name: 'Shuhua',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751535917/Shuhua1_difnjb.png',

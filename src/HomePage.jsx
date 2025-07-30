@@ -88,11 +88,11 @@ export default function HomePage() {
         Builder Béru
       </h1>
 
-      {/* 🎵 NOUVELLE SECTION SHUHUA & MIYEONN */}
+      {/* 🎵 NOUVELLE SECTION IN COMING CHARACTERS */}
       <div className="character-announcement">
         <img 
-          src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751537418/songtogether_lrdu7o.png"
-          alt="Shuhua & Miyeon"
+          src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869120/JinhoJinah_ln6p3n.png"
+          alt="Jinah is the new coming Hunter"
           className="character-image w-full rounded-lg hover:scale-105 transition-all duration-300"
         />
         
@@ -101,10 +101,10 @@ export default function HomePage() {
             Build your new characters
           </p>
           <p className="new-character-text text-2xl font-extrabold mt-2 text-white">
-            Shuhua & Miyeon
+            Build your new Jinah
           </p>
           <p className="theorycraft-text text-sm mt-3 font-medium">
-            Theorycraft in progress
+            New theorycrafting in coming in combat ! 
           </p>
         </div>
       </div>
