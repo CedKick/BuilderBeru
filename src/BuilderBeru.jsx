@@ -6,6 +6,7 @@ import { MYST_EGGS, mystSernMsg } from './mystEggs';
 import { dytextAnimate, parseNarrative, runNarrativeSteps } from "./useDytext";
 import ChibiBubble from "./components/ChibiBubble";
 import { getMainStatPriorities, getTheoreticalScore } from './utils/statPriority';
+import DamageCalculator from './DamageCalculator';
 // import ArtifactScoreBadge from './components/ArtifactScoreBadge';
 import ComparisonPopup from './components/ComparisonPopup';
 import ArtifactCard from "./components/ArtifactCard";
@@ -643,6 +644,7 @@ const BuilderBeru = () => {
   const [hitboxPositions, setHitboxPositions] = useState({});
   const [showDebugButton, setShowDebugButton] = useState(false);
   const [showHallOfFlameDebug, setShowHallOfFlameDebug] = useState(false);
+  const [showDamageCalculator, setShowDamageCalculator] = useState(false);
   const [showAdminPage, setShowAdminPage] = useState(false);
   const [hallOfFlameData, setHallOfFlameData] = useState({ name: '', guild: '' });
   const [showHallOfFlamePage, setShowHallOfFlamePage] = useState(false);
@@ -5496,26 +5498,42 @@ BobbyJones : "Allez l'Inter !"
                       {/* SECTION ARME + STATS */}
                       <div className="w-full space-y-4">
 
-                        {/* Bouton Arme */}
-                        <div className="flex items-center justify-center space-x-4">
-                          <button
-                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                            onClick={() => setShowWeaponPopup(true)}
-                          >
-                            {t("weapon")}
-                          </button>
-                          <p className="text-white text-sm">
-                            {hunterWeapons[selectedCharacter]
-                              ? `+${hunterWeapons[selectedCharacter].mainStat || 0} ${characters[selectedCharacter]?.scaleStat || ''}`
-                              : 'Aucune arme définie'}
-                          </p>
-                          <button
-                            onClick={() => setEditStatsMode(!editStatsMode)}
-                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                          >
-                            {getEditLabel()}
-                          </button>
-                        </div>
+                       {/* Bouton Arme */}
+<div className="flex items-center justify-center space-x-4">
+  <button
+    className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+    onClick={() => setShowWeaponPopup(true)}
+  >
+    {t("weapon")}
+  </button>
+  
+  <p className="text-white text-sm">
+    {hunterWeapons[selectedCharacter]
+      ? `+${hunterWeapons[selectedCharacter].mainStat || 0} ${characters[selectedCharacter]?.scaleStat || ''}`
+      : 'Aucune arme définie'}
+  </p>
+  
+  {/* NOUVEAU BOUTON CALCULATEUR */}
+  <button
+    onClick={() => setShowDamageCalculator(true)}
+    className="relative bg-gradient-to-r from-[#8b3b3b] to-[#ff6363] hover:from-[#a34a4a] hover:to-[#ff7272] text-white font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105 flex items-center gap-2"
+  >
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+    </svg>
+    <span>Calc</span>
+    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[10px] px-1 py-0.5 rounded-full font-bold animate-pulse">
+      NEW
+    </span>
+  </button>
+  
+  <button
+    onClick={() => setEditStatsMode(!editStatsMode)}
+    className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+  >
+    {getEditLabel()}
+  </button>
+</div>
 
                         {/* STATS FINALES OU ÉDITION */}
                         {!editStatsMode ? (
@@ -6191,6 +6209,16 @@ BobbyJones : "Allez l'Inter !"
     `}</style>
                   </>
                 )}
+
+                {/* Damage Calculator Modal */}
+{showDamageCalculator && (
+  <DamageCalculator
+    selectedCharacter={selectedCharacter}
+    finalStats={flatStats} // ou statsWithoutArtefact selon ce qui est le plus approprié
+    onClose={() => setShowDamageCalculator(false)}
+    t={t}
+  />
+)}
 
                 {isSetSelectorOpen && setSelectorSlot && (
                   <SetSelectorPopup
@@ -7076,6 +7104,16 @@ BobbyJones : "Allez l'Inter !"
                     </>
                   )}
 
+                  {/* Damage Calculator Modal */}
+{showDamageCalculator && (
+  <DamageCalculator
+    selectedCharacter={selectedCharacter}
+    finalStats={flatStats} // ou statsWithoutArtefact selon ce qui est le plus approprié
+    onClose={() => setShowDamageCalculator(false)}
+    t={t}
+  />
+)}
+
                   {isSetSelectorOpen && setSelectorSlot && (
                     <SetSelectorPopup
                       slot={setSelectorSlot}
@@ -7294,28 +7332,42 @@ BobbyJones : "Allez l'Inter !"
                           <div className="flex flex-col items-center w-full gap-1">
 
                             <div className="flex justify-between items-center w-full -mb-1 pr-2 tank-target">
-                              <div className="flex items-center space-x-4">
-                                <button
-                                  className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                                  onClick={() => setShowWeaponPopup(true)}
-                                >
-                                  {t("weapon")}
-                                </button>
-                                <p className="text-white">
-                                  {hunterWeapons[selectedCharacter]
-                                    ? `+${hunterWeapons[selectedCharacter].mainStat || 0} ${characters[selectedCharacter]?.scaleStat || ''}`
-                                    : 'Aucune arme définie'}
-                                </p>
+  <div className="flex items-center space-x-4">
+    <button
+      className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+      onClick={() => setShowWeaponPopup(true)}
+    >
+      {t("weapon")}
+    </button>
+    
+    {/* NOUVEAU BOUTON CALCULATEUR - Version compacte */}
+    <button
+      onClick={() => setShowDamageCalculator(true)}
+      className="relative bg-gradient-to-r from-[#8b3b3b] to-[#ff6363] hover:from-[#a34a4a] hover:to-[#ff7272] text-white font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+      title="Calculateur de dégâts"
+    >
+      <svg className="w-4 h-4 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+      </svg>
+      <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] px-0.5 rounded-full font-bold animate-pulse">
+        !
+      </span>
+    </button>
+    
+    <p className="text-white">
+      {hunterWeapons[selectedCharacter]
+        ? `+${hunterWeapons[selectedCharacter].mainStat || 0} ${characters[selectedCharacter]?.scaleStat || ''}`
+        : 'Aucune arme définie'}
+    </p>
+  </div>
 
-                              </div>
-
-                              <button
-                                onClick={() => setEditStatsMode(!editStatsMode)}
-                                className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                              >
-                                {getEditLabel()}
-                              </button>
-                            </div>
+  <button
+    onClick={() => setEditStatsMode(!editStatsMode)}
+    className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+  >
+    {getEditLabel()}
+  </button>
+</div>
 
 
 
