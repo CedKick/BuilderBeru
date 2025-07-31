@@ -57,8 +57,8 @@ const DamageCalculator = ({
   // Boss presets
   const bossPresets = {
     fatchna: { name: 'Fatchna', level: 80, defense: 248000, cp: 2300000, img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753876142/fatchna_npzzlj.png' },
-    antQueen: { name: 'Ant Queen', level: 80, defense: 150000, cp: 50000, img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753968545/antQueen_jzt22r.png' },
-    ennio: { name: 'Ennio Immortal', level: 82, defense: 150000, cp: 50000, img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753968454/ennioimmortal_t86t1w.png' },
+    antQueen: { name: 'Ant Queen', level: 82, defense: 150000, cp: 50000, img: null },
+    ennio: { name: 'Ennio Immortal', level: 82, defense: 1500000, cp: 50000, img: null },
     custom: { name: 'Custom Boss', level: 80, defense: 100000, cp: 100000, img: null }
   };
 
@@ -174,9 +174,21 @@ const DamageCalculator = ({
     }));
   };
 
+  // Détection mobile
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-2">
-      <div className="bg-gradient-to-br from-blue-950/90 via-black/95 to-purple-950/90 rounded-lg border border-blue-500/30 shadow-2xl shadow-blue-500/20 w-full max-w-6xl">
+      <div className={`bg-gradient-to-br from-blue-950/90 via-black/95 to-purple-950/90 rounded-lg border border-blue-500/30 shadow-2xl shadow-blue-500/20 w-full ${isMobile ? 'max-w-md' : 'max-w-6xl'}`}>
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-b border-blue-500/30 px-3 py-2">
           <div className="flex items-center justify-between">
@@ -197,13 +209,13 @@ const DamageCalculator = ({
           </div>
         </div>
 
-        {/* Content - 3 colonnes compactes */}
-        <div className="grid grid-cols-3 gap-2 p-2">
+        {/* Content - Responsive */}
+        <div className={`${isMobile ? 'space-y-2 p-2 max-h-[80vh] overflow-y-auto' : 'grid grid-cols-3 gap-2 p-2'}`}>
           {/* Colonne 1: Stats & Multiplicateurs */}
           <div className="space-y-2">
             {/* Stats de base */}
-            <div className="bg-black/40 rounded border border-blue-900/30 p-2">
-              <h3 className="text-cyan-400 text-[10px] font-bold mb-1">BASE STATS</h3>
+            <div className={`bg-black/40 rounded border border-blue-900/30 ${isMobile ? 'p-3' : 'p-2'}`}>
+              <h3 className={`text-cyan-400 ${isMobile ? 'text-xs' : 'text-[10px]'} font-bold mb-1`}>BASE STATS</h3>
               <div className="space-y-0.5 text-[10px]">
                 <div className="flex justify-between items-center">
                   <label className="text-gray-400">Base</label>
@@ -211,7 +223,7 @@ const DamageCalculator = ({
                     type="number"
                     value={customStats.baseStat}
                     onChange={(e) => handleStatChange('baseStat', e.target.value)}
-                    className="bg-gray-800/50 text-cyan-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-blue-900/20"
+                    className={`bg-gray-800/50 text-cyan-400 px-1 py-0.5 rounded ${isMobile ? 'w-20 text-xs' : 'w-16 text-[10px]'} text-center border border-blue-900/20`}
                   />
                 </div>
                 <div className="flex justify-between items-center">
@@ -500,11 +512,27 @@ const DamageCalculator = ({
 
         {/* Footer */}
         <div className="bg-black/60 border-t border-blue-900/30 px-3 py-1">
-          <p className="text-center text-[9px] text-gray-600">
+          <p className={`text-center ${isMobile ? 'text-[10px]' : 'text-[9px]'} text-gray-600`}>
             BUILDERBERU V3 • SHADOW MONARCH EDITION • {selectedCharacter || 'HUNTER'}
           </p>
         </div>
       </div>
+
+      {/* Style pour le scrollbar mobile */}
+      {isMobile && (
+        <style jsx>{`
+          .max-h-\\[80vh\\]::-webkit-scrollbar {
+            width: 4px;
+          }
+          .max-h-\\[80vh\\]::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.4);
+          }
+          .max-h-\\[80vh\\]::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.5);
+            border-radius: 2px;
+          }
+        `}</style>
+      )}
     </div>
   );
 };
