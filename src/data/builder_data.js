@@ -3,8 +3,8 @@
 // 🔥 REFACTOR KAISEL - LOGIQUE UNIFIÉE
 
 const BUILDER_DATA = {
-  "jinah": {
-  "name": "Jinah",
+  "jinha": {
+  "name": "Jinha",
   "element": "Dark",
   "class": "Assassin", 
   "grade": "SSR",
@@ -159,7 +159,7 @@ const BUILDER_DATA = {
 
   // 💡 CONSEILS BÉRU - KAISEL UPDATE
   "beruAdvice": {
-    "newbie": "Jinah est la soeur de Sung.",
+    "newbie": "Jinha est la soeur de Sung.",
     "intermediate": "Elle scale sur l'attaque!",
     "advanced": "Elle se joue avec burning curse/obsidian.",
     "expert": "Elle peut se jouer avec expert à droite !"

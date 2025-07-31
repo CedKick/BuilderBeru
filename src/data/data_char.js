@@ -1,6 +1,6 @@
 const data_chars = {
-  'jinah': {
-      name: 'Jinah',
+  'jinha': {
+      name: 'Jinha',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869840/jinah_vrbddm.png',
       icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869067/jinah_icon_pfdee6.png',
       class: 'Assassin',

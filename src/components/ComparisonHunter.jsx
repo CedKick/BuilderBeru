@@ -7,7 +7,7 @@ import CombatArena from './CombatArena.jsx';
 
 // 🔧 STATS DE BASE DES PERSONNAGES - COPIÉ DEPUIS BuilderBeru.jsx
 const characterStats = {
-  'Jinah': { attack: 5909.5, defense: 5100, hp: 10890.5, critRate: 0, mp: 1000 },
+  'Jinha': { attack: 5909.5, defense: 5100, hp: 10890.5, critRate: 0, mp: 1000 },
   'shuhua': { attack: 5909.5, defense: 5100, hp: 10890.5, critRate: 0, mp: 1000 },
   'miyeon': { attack: 5176.5, defense: 5810.5, hp: 10932.5, critRate: 0, mp: 1000 },
   'niermann': { attack: 5495, defense: 5544, hp: 10825, critRate: 0, mp: 1000 },

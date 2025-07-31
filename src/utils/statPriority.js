@@ -304,7 +304,7 @@ function getHunterKey(hunter) {
   
   // Mappings hunter name → builder_data key
   const nameMapping = {
-    'Jinah': 'jinah',
+    'Jinha': 'jinha',
     'Miyeon': 'miyeon',
     'Shuhua': 'shuhua',
     'Lennart Niermann': 'niermann',

@@ -10,20 +10,20 @@ const DamageCalculator = ({
   const [customStats, setCustomStats] = useState({
     // Stats de base
     baseStat: finalStats.attack || finalStats.defense || 8624,
-    stars: 15, // 6-10 étoiles
+    stars: 15,
     finalStat: finalStats.attack || finalStats.defense || 43835,
     
     // Multiplicateurs par skill
     skillMultipliers: {
-      core1: 525,
-      core2: 702,
-      skill1: 1890,
-      skill2: 2520,
-      ultimate: 4200
+      core1: 5.25,
+      core2: 7.02,
+      skill1: 18.90,
+      skill2: 25.20,
+      ultimate: 42.00
     },
     
     elementalDamage: finalStats.elementalDamage || 13.82,
-    setMultiplier: 1.4, // Infamie par défaut
+    setMultiplier: 1.4,
     elementalAdvantage: 1.5,
     
     // Stats avancées
@@ -37,7 +37,10 @@ const DamageCalculator = ({
     bossLevel: 80,
     bossDefense: 248000,
     teamCP: 2300000,
-    recommendedCP: 2300000
+    recommendedCP: 2300000,
+    
+    // Buffs
+    buffs: 0
   });
 
   const [results, setResults] = useState({
@@ -49,42 +52,59 @@ const DamageCalculator = ({
     calculatedStats: {}
   });
 
-  // Formules de calcul
+  const [selectedBoss, setSelectedBoss] = useState('fatchna');
+
+  // Boss presets
+  const bossPresets = {
+    fatchna: { name: 'Fatchna', level: 80, defense: 248000, cp: 2300000, img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753876142/fatchna_npzzlj.png' },
+    antQueen: { name: 'Ant Queen', level: 82, defense: 150000, cp: 50000, img: null },
+    ennio: { name: 'Ennio Immortal', level: 82, defense: 1500000, cp: 50000, img: null },
+    custom: { name: 'Custom Boss', level: 80, defense: 100000, cp: 100000, img: null }
+  };
+
+  // Formules
   const calculateDI = (diStat) => diStat / (diStat + 50000);
   const calculatePEN = (penStat) => penStat / (penStat + 50000);
   const calculateCR = (crStat) => 0.05 + crStat / (crStat + 5000);
   const calculateCD = (cdStat) => (cdStat + 1000) / (0.4 * cdStat + 2000);
+  
   const calculatePrecision = (precStat, cpRatio) => {
     const basePrecision = Math.min(0.5 + precStat / (precStat + 1000), 0.99);
-    return cpRatio >= 1 ? basePrecision : basePrecision * cpRatio;
+    if (cpRatio <= 1) {
+      return basePrecision * cpRatio;
+    } else {
+      const bonus = Math.min(cpRatio - 1, 0.56);
+      return basePrecision * (1 + bonus);
+    }
   };
 
-  // Calcul principal pour un skill
   const calculateSkillDamage = (skillMultiplier) => {
     const stats = customStats;
-    const cpRatio = stats.recommendedCP > 0 ? stats.teamCP / stats.recommendedCP : 1;
+    const safeValue = (val) => val === '' ? 0 : parseFloat(val) || 0;
     
-    const diPct = calculateDI(stats.damageIncrease);
-    const penPct = calculatePEN(stats.penetration);
-    const crPct = calculateCR(stats.critRate);
-    const cdPct = calculateCD(stats.critDamage);
-    const precPct = calculatePrecision(stats.precision, cpRatio);
+    const cpRatio = safeValue(stats.recommendedCP) > 0 ? safeValue(stats.teamCP) / safeValue(stats.recommendedCP) : 1;
     
-    const defEff = stats.bossDefense * (1 - penPct);
-    const defRed = defEff / (defEff + 50000);
-    const defMult = 1 - defRed;
+    const diPct = calculateDI(safeValue(stats.damageIncrease));
+    const penPct = calculatePEN(safeValue(stats.penetration));
+    const crPct = calculateCR(safeValue(stats.critRate));
+    const cdPct = calculateCD(safeValue(stats.critDamage));
+    const precPct = calculatePrecision(safeValue(stats.precision), cpRatio);
     
-    const starsBonus = stats.baseStat * (stats.stars / 100);
-    const finalStatWithStars = stats.finalStat + starsBonus;
+    const defEff = safeValue(stats.bossDefense) * (1 - penPct);
+    const G = 1 - defEff / (defEff + 50000);
+    
+    const starsBonus = safeValue(stats.baseStat) * (safeValue(stats.stars) / 100);
+    const finalStatWithStars = safeValue(stats.finalStat) + starsBonus;
     
     const baseDmg = finalStatWithStars * 
-      (skillMultiplier / 100) * 
+      safeValue(skillMultiplier) * 
+      precPct * 
+      G * 
       (1 + diPct) * 
-      (1 + stats.elementalDamage / 100) * 
-      stats.setMultiplier * 
-      stats.elementalAdvantage * 
-      defMult * 
-      precPct;
+      (1 + safeValue(stats.buffs) / 100) * 
+      (1 + safeValue(stats.elementalDamage) / 100) * 
+      safeValue(stats.setMultiplier) * 
+      safeValue(stats.elementalAdvantage);
     
     const critDmg = baseDmg * (1 + cdPct);
     
@@ -98,19 +118,21 @@ const DamageCalculator = ({
         cdPct: (cdPct * 100).toFixed(2),
         precPct: (precPct * 100).toFixed(2),
         defEff: Math.round(defEff),
-        cpRatio: (cpRatio * 100).toFixed(0)
+        cpRatio: (cpRatio * 100).toFixed(0),
+        G: (G * 100).toFixed(2)
       }
     };
   };
 
-  // Calculer tous les skills
   const calculateAllDamage = () => {
+    const safeMultiplier = (mult) => mult === '' ? 0 : parseFloat(mult) || 0;
+    
     const newResults = {
-      core1: calculateSkillDamage(customStats.skillMultipliers.core1),
-      core2: calculateSkillDamage(customStats.skillMultipliers.core2),
-      skill1: calculateSkillDamage(customStats.skillMultipliers.skill1),
-      skill2: calculateSkillDamage(customStats.skillMultipliers.skill2),
-      ultimate: calculateSkillDamage(customStats.skillMultipliers.ultimate),
+      core1: calculateSkillDamage(safeMultiplier(customStats.skillMultipliers.core1)),
+      core2: calculateSkillDamage(safeMultiplier(customStats.skillMultipliers.core2)),
+      skill1: calculateSkillDamage(safeMultiplier(customStats.skillMultipliers.skill1)),
+      skill2: calculateSkillDamage(safeMultiplier(customStats.skillMultipliers.skill2)),
+      ultimate: calculateSkillDamage(safeMultiplier(customStats.skillMultipliers.ultimate)),
     };
     
     newResults.calculatedStats = newResults.core1.stats;
@@ -121,10 +143,24 @@ const DamageCalculator = ({
     calculateAllDamage();
   }, [customStats]);
 
+  // Gestion du changement de boss
+  const handleBossChange = (bossType) => {
+    setSelectedBoss(bossType);
+    if (bossType !== 'custom') {
+      const boss = bossPresets[bossType];
+      setCustomStats(prev => ({
+        ...prev,
+        bossLevel: boss.level,
+        bossDefense: boss.defense,
+        recommendedCP: boss.cp
+      }));
+    }
+  };
+
   const handleStatChange = (stat, value) => {
     setCustomStats(prev => ({
       ...prev,
-      [stat]: parseFloat(value) || 0
+      [stat]: value === '' ? '' : value
     }));
   };
 
@@ -133,124 +169,124 @@ const DamageCalculator = ({
       ...prev,
       skillMultipliers: {
         ...prev.skillMultipliers,
-        [skill]: parseFloat(value) || 0
+        [skill]: value === '' ? '' : value
       }
     }));
   };
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[#1a1a2e] rounded-xl shadow-2xl w-full max-w-7xl border border-purple-500/30">
-        {/* Header avec gradient violet */}
-        <div className="bg-gradient-to-r from-purple-600 to-purple-800 p-3 rounded-t-xl relative">
-          <button
-            onClick={onClose}
-            className="absolute top-2 right-2 text-white/80 hover:text-white transition-colors bg-black/30 rounded-lg p-1"
-          >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">⚔️</span>
-            <div>
-              <h2 className="text-xl font-bold text-white">Calculateur de Dégâts - {selectedCharacter || 'Hunter'}</h2>
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-2">
+      <div className="bg-gradient-to-br from-blue-950/90 via-black/95 to-purple-950/90 rounded-lg border border-blue-500/30 shadow-2xl shadow-blue-500/20 w-full max-w-6xl">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-b border-blue-500/30 px-3 py-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded bg-blue-500/20 border border-blue-400/50 flex items-center justify-center">
+                <span className="text-blue-400 text-sm">!</span>
+              </div>
+              <h2 className="text-blue-400 font-bold text-sm tracking-wider">DAMAGE CALCULATOR</h2>
             </div>
+            <button
+              onClick={onClose}
+              className="w-6 h-6 rounded bg-red-500/20 border border-red-400/50 flex items-center justify-center hover:bg-red-500/30 transition-colors"
+            >
+              <svg className="w-3 h-3 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
 
-        {/* Contenu principal en 3 colonnes */}
-        <div className="p-4 grid grid-cols-3 gap-4">
-          {/* Colonne 1: Stats de base et multiplicateurs */}
-          <div className="space-y-3">
+        {/* Content - 3 colonnes compactes */}
+        <div className="grid grid-cols-3 gap-2 p-2">
+          {/* Colonne 1: Stats & Multiplicateurs */}
+          <div className="space-y-2">
             {/* Stats de base */}
-            <div className="bg-[#0a0a1a] rounded-lg p-3 border border-purple-500/20">
-              <h3 className="text-sm font-bold text-yellow-400 mb-2 flex items-center gap-1">
-                <span>🛡️</span> Stats de Base
-              </h3>
-              
-              <div className="space-y-2 text-xs">
+            <div className="bg-black/40 rounded border border-blue-900/30 p-2">
+              <h3 className="text-cyan-400 text-[10px] font-bold mb-1">BASE STATS</h3>
+              <div className="space-y-0.5 text-[10px]">
                 <div className="flex justify-between items-center">
-                  <label className="text-gray-400">DEF/ATK Base</label>
+                  <label className="text-gray-400">Base</label>
                   <input
                     type="number"
                     value={customStats.baseStat}
                     onChange={(e) => handleStatChange('baseStat', e.target.value)}
-                    className="bg-gray-800 text-yellow-400 px-2 py-1 rounded w-20 text-center"
+                    className="bg-gray-800/50 text-cyan-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-blue-900/20"
                   />
                 </div>
-                
                 <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Étoiles 6-10 (%)</label>
+                  <label className="text-gray-400">Stars%</label>
                   <input
                     type="number"
                     value={customStats.stars}
                     onChange={(e) => handleStatChange('stars', e.target.value)}
-                    className="bg-gray-800 text-yellow-400 px-2 py-1 rounded w-20 text-center"
+                    className="bg-gray-800/50 text-cyan-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-blue-900/20"
                   />
                 </div>
-                
                 <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Stat Finale</label>
+                  <label className="text-gray-400">Final</label>
                   <input
                     type="number"
                     value={customStats.finalStat}
                     onChange={(e) => handleStatChange('finalStat', e.target.value)}
-                    className="bg-gray-800 text-yellow-400 px-2 py-1 rounded w-20 text-center"
+                    className="bg-gray-800/50 text-cyan-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-blue-900/20"
                   />
                 </div>
-                
                 <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Dégâts Élém. (%)</label>
+                  <label className="text-gray-400">Elem%</label>
                   <input
                     type="number"
                     step="0.01"
                     value={customStats.elementalDamage}
                     onChange={(e) => handleStatChange('elementalDamage', e.target.value)}
-                    className="bg-gray-800 text-yellow-400 px-2 py-1 rounded w-20 text-center"
+                    className="bg-gray-800/50 text-cyan-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-blue-900/20"
                   />
                 </div>
-                
                 <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Set Multiplicateur</label>
+                  <label className="text-gray-400">Set</label>
                   <input
                     type="number"
                     step="0.1"
                     value={customStats.setMultiplier}
                     onChange={(e) => handleStatChange('setMultiplier', e.target.value)}
-                    className="bg-gray-800 text-yellow-400 px-2 py-1 rounded w-20 text-center"
+                    className="bg-gray-800/50 text-cyan-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-blue-900/20"
                   />
                 </div>
-                
                 <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Avantage Élém.</label>
+                  <label className="text-gray-400">Advantage</label>
                   <input
                     type="number"
                     step="0.1"
                     value={customStats.elementalAdvantage}
                     onChange={(e) => handleStatChange('elementalAdvantage', e.target.value)}
-                    className="bg-gray-800 text-yellow-400 px-2 py-1 rounded w-20 text-center"
+                    className="bg-gray-800/50 text-cyan-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-blue-900/20"
+                  />
+                </div>
+                <div className="flex justify-between items-center">
+                  <label className="text-gray-400">Buffs%</label>
+                  <input
+                    type="number"
+                    value={customStats.buffs}
+                    onChange={(e) => handleStatChange('buffs', e.target.value)}
+                    className="bg-gray-800/50 text-green-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-blue-900/20"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Multiplicateurs de skills */}
-            <div className="bg-[#0a0a1a] rounded-lg p-3 border border-purple-500/20">
-              <h3 className="text-sm font-bold text-orange-400 mb-2 flex items-center gap-1">
-                <span>📊</span> Multiplicateurs (%)
-              </h3>
-              
-              <div className="space-y-2 text-xs">
+            {/* Multiplicateurs */}
+            <div className="bg-black/40 rounded border border-purple-900/30 p-2">
+              <h3 className="text-purple-400 text-[10px] font-bold mb-1">MULTIPLIERS</h3>
+              <div className="space-y-0.5 text-[10px]">
                 {Object.entries(customStats.skillMultipliers).map(([skill, value]) => (
                   <div key={skill} className="flex justify-between items-center">
                     <label className="text-gray-400 capitalize">{skill.replace(/(\d)/, ' $1')}</label>
                     <input
                       type="number"
+                      step="0.01"
                       value={value}
                       onChange={(e) => handleSkillMultiplierChange(skill, e.target.value)}
-                      className="bg-gray-800 text-orange-400 px-2 py-1 rounded w-20 text-center"
+                      className="bg-gray-800/50 text-purple-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-purple-900/20"
                     />
                   </div>
                 ))}
@@ -258,217 +294,215 @@ const DamageCalculator = ({
             </div>
           </div>
 
-          {/* Colonne 2: Stats avancées et Boss */}
-          <div className="space-y-3">
+          {/* Colonne 2: Stats avancées & Boss */}
+          <div className="space-y-2">
             {/* Stats avancées */}
-            <div className="bg-[#0a0a1a] rounded-lg p-3 border border-purple-500/20">
-              <h3 className="text-sm font-bold text-yellow-400 mb-2 flex items-center gap-1">
-                <span>📈</span> Stats Avancées
-              </h3>
-              
-              <div className="space-y-2 text-xs">
+            <div className="bg-black/40 rounded border border-blue-900/30 p-2">
+              <h3 className="text-yellow-400 text-[10px] font-bold mb-1">ADVANCED</h3>
+              <div className="space-y-0.5 text-[10px]">
                 <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Hausse dégâts</label>
+                  <label className="text-gray-400">DMG↑</label>
                   <div className="flex items-center gap-1">
                     <input
                       type="number"
                       value={customStats.damageIncrease}
                       onChange={(e) => handleStatChange('damageIncrease', e.target.value)}
-                      className="bg-gray-800 text-yellow-400 px-2 py-1 rounded w-16 text-center"
+                      className="bg-gray-800/50 text-yellow-400 px-1 py-0.5 rounded w-14 text-[10px] text-center border border-blue-900/20"
                     />
-                    <span className="text-green-400 text-[10px] w-12 text-right">
-                      {results.calculatedStats.diPct}%
-                    </span>
+                    <span className="text-green-400 text-[9px] w-10 text-right">{results.calculatedStats.diPct}%</span>
                   </div>
                 </div>
-                
                 <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Pénétration</label>
+                  <label className="text-gray-400">PEN</label>
                   <div className="flex items-center gap-1">
                     <input
                       type="number"
                       value={customStats.penetration}
                       onChange={(e) => handleStatChange('penetration', e.target.value)}
-                      className="bg-gray-800 text-yellow-400 px-2 py-1 rounded w-16 text-center"
+                      className="bg-gray-800/50 text-yellow-400 px-1 py-0.5 rounded w-14 text-[10px] text-center border border-blue-900/20"
                     />
-                    <span className="text-green-400 text-[10px] w-12 text-right">
-                      {results.calculatedStats.penPct}%
-                    </span>
+                    <span className="text-green-400 text-[9px] w-10 text-right">{results.calculatedStats.penPct}%</span>
                   </div>
                 </div>
-                
                 <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Taux critique</label>
+                  <label className="text-gray-400">CRIT%</label>
                   <div className="flex items-center gap-1">
                     <input
                       type="number"
                       value={customStats.critRate}
                       onChange={(e) => handleStatChange('critRate', e.target.value)}
-                      className="bg-gray-800 text-yellow-400 px-2 py-1 rounded w-16 text-center"
+                      className="bg-gray-800/50 text-yellow-400 px-1 py-0.5 rounded w-14 text-[10px] text-center border border-blue-900/20"
                     />
-                    <span className="text-green-400 text-[10px] w-12 text-right">
-                      {results.calculatedStats.crPct}%
-                    </span>
+                    <span className="text-green-400 text-[9px] w-10 text-right">{results.calculatedStats.crPct}%</span>
                   </div>
                 </div>
-                
                 <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Dégâts crit.</label>
+                  <label className="text-gray-400">CDMG</label>
                   <div className="flex items-center gap-1">
                     <input
                       type="number"
                       value={customStats.critDamage}
                       onChange={(e) => handleStatChange('critDamage', e.target.value)}
-                      className="bg-gray-800 text-yellow-400 px-2 py-1 rounded w-16 text-center"
+                      className="bg-gray-800/50 text-yellow-400 px-1 py-0.5 rounded w-14 text-[10px] text-center border border-blue-900/20"
                     />
-                    <span className="text-green-400 text-[10px] w-12 text-right">
-                      {results.calculatedStats.cdPct}%
-                    </span>
+                    <span className="text-green-400 text-[9px] w-10 text-right">{results.calculatedStats.cdPct}%</span>
                   </div>
                 </div>
-                
                 <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Précision</label>
+                  <label className="text-gray-400">PREC</label>
                   <div className="flex items-center gap-1">
                     <input
                       type="number"
                       value={customStats.precision}
                       onChange={(e) => handleStatChange('precision', e.target.value)}
-                      className="bg-gray-800 text-yellow-400 px-2 py-1 rounded w-16 text-center"
+                      className="bg-gray-800/50 text-yellow-400 px-1 py-0.5 rounded w-14 text-[10px] text-center border border-blue-900/20"
                     />
-                    <span className="text-green-400 text-[10px] w-12 text-right">
-                      {results.calculatedStats.precPct}%
-                    </span>
+                    <span className="text-green-400 text-[9px] w-10 text-right">{results.calculatedStats.precPct}%</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Configuration Boss avec CP */}
-            <div className="bg-[#0a0a1a] rounded-lg p-3 border border-red-500/20">
-              <h3 className="text-sm font-bold text-red-400 mb-2 flex items-center gap-1">
-                <span>🎯</span> Boss Config
-              </h3>
+            {/* Boss Selection */}
+            <div className="bg-black/40 rounded border border-red-900/30 p-2">
+              <h3 className="text-red-400 text-[10px] font-bold mb-1">BOSS CONFIG</h3>
               
-              <div className="space-y-2 text-xs">
+              {/* Boss selector */}
+              <div className="grid grid-cols-2 gap-1 mb-2">
+                {Object.entries(bossPresets).map(([key, boss]) => (
+                  <button
+                    key={key}
+                    onClick={() => handleBossChange(key)}
+                    className={`px-1 py-0.5 rounded text-[9px] transition-all ${
+                      selectedBoss === key 
+                        ? 'bg-red-500/30 text-red-400 border border-red-400/50' 
+                        : 'bg-black/30 text-gray-500 border border-gray-700/30 hover:border-red-500/30'
+                    }`}
+                  >
+                    {boss.name}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-0.5 text-[10px]">
                 <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Niveau Boss</label>
+                  <label className="text-gray-400">Level</label>
                   <input
                     type="number"
                     value={customStats.bossLevel}
                     onChange={(e) => handleStatChange('bossLevel', e.target.value)}
-                    className="bg-gray-800 text-red-400 px-2 py-1 rounded w-20 text-center"
+                    className="bg-gray-800/50 text-red-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-red-900/20"
+                    disabled={selectedBoss !== 'custom'}
                   />
                 </div>
-                
                 <div className="flex justify-between items-center">
-                  <label className="text-gray-400">DEF Boss</label>
+                  <label className="text-gray-400">DEF</label>
                   <input
                     type="number"
                     value={customStats.bossDefense}
                     onChange={(e) => handleStatChange('bossDefense', e.target.value)}
-                    className="bg-gray-800 text-red-400 px-2 py-1 rounded w-20 text-center"
+                    className="bg-gray-800/50 text-red-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-red-900/20"
+                    disabled={selectedBoss !== 'custom'}
                   />
                 </div>
-                
                 <div className="flex justify-between items-center">
-                  <label className="text-gray-400">CP Équipe</label>
+                  <label className="text-gray-400">Team CP</label>
                   <input
                     type="number"
                     value={customStats.teamCP}
                     onChange={(e) => handleStatChange('teamCP', e.target.value)}
-                    className="bg-gray-800 text-red-400 px-2 py-1 rounded w-20 text-center"
+                    className="bg-gray-800/50 text-orange-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-red-900/20"
                   />
                 </div>
-                
                 <div className="flex justify-between items-center">
-                  <label className="text-gray-400">CP Recommandé</label>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      value={customStats.recommendedCP}
-                      onChange={(e) => handleStatChange('recommendedCP', e.target.value)}
-                      className="bg-gray-800 text-red-400 px-2 py-1 rounded w-16 text-center"
-                    />
-                    <span className="text-green-400 text-[10px] w-12 text-right">
+                  <label className="text-gray-400">Rec CP</label>
+                  <input
+                    type="number"
+                    value={customStats.recommendedCP}
+                    onChange={(e) => handleStatChange('recommendedCP', e.target.value)}
+                    className="bg-gray-800/50 text-orange-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-red-900/20"
+                    disabled={selectedBoss !== 'custom'}
+                  />
+                </div>
+                <div className="mt-1 pt-1 border-t border-red-900/30">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500 text-[9px]">DEF Eff</span>
+                    <span className="text-red-400 text-[9px] font-mono">{results.calculatedStats.defEff?.toLocaleString() || '0'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500 text-[9px]">CP Ratio</span>
+                    <span className={`text-[9px] font-mono ${parseInt(results.calculatedStats.cpRatio) >= 100 ? 'text-green-400' : 'text-red-400'}`}>
                       {results.calculatedStats.cpRatio}%
                     </span>
                   </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">DEF Effective</label>
-                  <span className="text-green-400 text-xs font-mono">
-                    {results.calculatedStats.defEff ? results.calculatedStats.defEff.toLocaleString() : '0'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Boss Fatchna avec image */}
-            <div className="bg-gradient-to-br from-red-900/20 to-purple-900/20 rounded-lg p-3 border border-red-500/30">
-              <div className="flex items-center gap-3">
-                <div className="flex-shrink-0">
-                  <img 
-                    src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753876142/fatchna_npzzlj.png" 
-                    alt="Fatchna"
-                    className="w-32 h-20 object-cover rounded-lg border border-red-500/50"
-                  />
-                </div>
-                <div className="flex-1">
-                  <p className="text-white font-semibold text-sm">Fatchna</p>
-                  <p className="text-gray-400 text-xs">Niveau 80 • DEF: 248,000</p>
-                  <p className="text-purple-300 text-[10px] mt-1">Boss Infamie recommandé</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500 text-[9px]">G Factor</span>
+                    <span className="text-green-400 text-[9px] font-mono">{results.calculatedStats.G}%</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Colonne 3: Résultats */}
-          <div className="bg-gradient-to-br from-purple-900/20 to-purple-900/10 rounded-lg p-3 border border-purple-500/30">
-            <h3 className="text-sm font-bold text-orange-400 mb-3 flex items-center gap-1">
-              <span>⚡</span> Résultats des Dégâts
-            </h3>
+          <div className="bg-gradient-to-br from-purple-900/20 to-black/30 rounded border border-purple-900/30 p-2">
+            <h3 className="text-orange-400 text-[10px] font-bold mb-2">DAMAGE OUTPUT</h3>
             
-            <div className="space-y-2">
+            <div className="space-y-1">
               {Object.entries(results).filter(([key]) => key !== 'calculatedStats').map(([skill, damage]) => (
-                <div key={skill} className="bg-gray-900/50 rounded p-2 border border-purple-500/10">
-                  <div className="text-xs text-gray-400 mb-1 capitalize font-semibold">
-                    {skill === 'core1' ? '⚔️ Noyau 1' :
-                     skill === 'core2' ? '🗡️ Noyau 2' :
-                     skill === 'skill1' ? '💫 Skill 1' :
-                     skill === 'skill2' ? '✨ Skill 2' :
-                     '🔥 Ultimate'}
+                <div key={skill} className="bg-black/30 rounded p-1.5 border border-purple-900/10">
+                  <div className="text-[9px] text-gray-500 mb-0.5">
+                    {skill === 'core1' ? '⚔️ CORE 1' :
+                     skill === 'core2' ? '🗡️ CORE 2' :
+                     skill === 'skill1' ? '💫 SKILL 1' :
+                     skill === 'skill2' ? '✨ SKILL 2' :
+                     '🔥 ULTIMATE'}
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="text-center">
-                      <div className="text-gray-500 text-[10px]">Sans crit</div>
-                      <div className="text-yellow-400 font-bold">{damage.noCrit.toLocaleString()}</div>
+                  <div className="grid grid-cols-2 gap-2 text-[10px]">
+                    <div>
+                      <span className="text-gray-600 text-[8px]">Normal: </span>
+                      <span className="text-cyan-400 font-bold">{damage.noCrit.toLocaleString()}</span>
                     </div>
-                    <div className="text-center">
-                      <div className="text-gray-500 text-[10px]">Avec crit</div>
-                      <div className="text-red-400 font-bold">{damage.withCrit.toLocaleString()}</div>
+                    <div>
+                      <span className="text-gray-600 text-[8px]">Crit: </span>
+                      <span className="text-orange-400 font-bold">{damage.withCrit.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Infos formules */}
-            <div className="mt-3 p-2 bg-purple-900/20 rounded text-[10px] text-purple-300 border border-purple-500/20">
-              <p className="font-semibold mb-1">📐 Formules utilisées:</p>
-              <p>• DI%: stat/(stat+50000)</p>
-              <p>• PEN%: stat/(stat+50000)</p>
-              <p>• CR%: 5% + stat/(stat+5000)</p>
-              <p>• CD%: (stat+1000)/(0.4*stat+2000)</p>
-              <p>• Précision affectée par ratio CP</p>
+            {/* Summary */}
+            <div className="mt-2 p-1.5 bg-purple-900/20 rounded border border-purple-500/20">
+              <div className="grid grid-cols-2 gap-1 text-[9px]">
+                <div className="text-center">
+                  <div className="text-gray-500">AVG DMG</div>
+                  <div className="text-cyan-400 font-bold text-xs">
+                    {Math.round((results.skill1.noCrit + results.skill2.noCrit) / 2).toLocaleString()}
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-gray-500">MAX CRIT</div>
+                  <div className="text-orange-400 font-bold text-xs">
+                    {results.ultimate.withCrit.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-1 pt-1 border-t border-purple-900/30">
+                <p className="text-[8px] text-purple-300 text-center">
+                  DMG = STAT × MULT × PREC × G × (1+DI%) × (1+BUFFS%) × ELEM × SET
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="bg-black/50 px-4 py-2 rounded-b-xl text-center text-gray-500 text-xs">
-          ⚔️ BuilderBeru Calculator Version Beta 0.1 - Formules Solo Leveling Arise - En construction ⚔️
+        <div className="bg-black/60 border-t border-blue-900/30 px-3 py-1">
+          <p className="text-center text-[9px] text-gray-600">
+            BUILDERBERU V3 • SHADOW MONARCH EDITION • {selectedCharacter || 'HUNTER'}
+          </p>
         </div>
       </div>
     </div>
