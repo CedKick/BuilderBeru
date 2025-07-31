@@ -57,8 +57,8 @@ const DamageCalculator = ({
   // Boss presets
   const bossPresets = {
     fatchna: { name: 'Fatchna', level: 80, defense: 248000, cp: 2300000, img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753876142/fatchna_npzzlj.png' },
-    antQueen: { name: 'Ant Queen', level: 82, defense: 150000, cp: 50000, img: null },
-    ennio: { name: 'Ennio Immortal', level: 82, defense: 1500000, cp: 50000, img: null },
+    antQueen: { name: 'Ant Queen', level: 80, defense: 150000, cp: 50000, img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753968545/antQueen_jzt22r.png' },
+    ennio: { name: 'Ennio Immortal', level: 82, defense: 150000, cp: 50000, img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753968454/ennioimmortal_t86t1w.png' },
     custom: { name: 'Custom Boss', level: 80, defense: 100000, cp: 100000, img: null }
   };
 
