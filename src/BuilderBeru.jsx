@@ -5209,179 +5209,207 @@ BobbyJones : "Allez l'Inter !"
                     {/* ← pb-32 pour navigation + canvas */}
 
                     {/* SECTION FILTRES + SELECT */}
-                    <div className="flex flex-col w-full gap-4">
-                      {/* Langues + Select */}
-                      <div className="flex items-center gap-2 justify-between">
-                        <div className="flex gap-2 items-center">
-                          <img
-                            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png"
-                            alt="Français"
-                            onClick={() => i18n.changeLanguage('fr')}
-                            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
-                          />
-                          <img
-                            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png"
-                            alt="English"
-                            onClick={() => i18n.changeLanguage('en')}
-                            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
-                          />
-                        </div>
+                   <div className="flex flex-col w-full gap-4">
+  {/* Langues + Select */}
+  <div className="flex items-center gap-2 justify-between">
+    <div className="flex gap-2 items-center">
+      <img
+        src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png"
+        alt="Français"
+        onClick={() => i18n.changeLanguage('fr')}
+        className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-purple-500"
+      />
+      <img
+        src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png"
+        alt="English"
+        onClick={() => i18n.changeLanguage('en')}
+        className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-purple-500"
+      />
+    </div>
 
-                        {/* Select Personnage */}
-                        <select
-                          value={selectedCharacter}
-                          onChange={(e) => {
-                            const selected = e.target.value;
-                            setSelectedCharacter(selected);
-                            const saved = localStorage.getItem(`${selected}`);
-                            if (saved) {
-                              const build = JSON.parse(saved);
-                              setFlatStats(build.flatStats);
-                              setStatsWithoutArtefact(build.statsWithoutArtefact);
-                              setArtifactsData(build.artifactsData);
-                              setHunterCores(build.hunterCores);
-                              showTankMessage(`Loaded saved build for ${selected} 😏`);
-                            } else {
-                              handleResetStats();
-                            }
-                          }}
-                          className="p-2 rounded bg-[#1c1c3c] text-white text-sm tank-target flex-1 max-w-[200px]"
-                        >
-                          <option value="">Sélectionner un personnage</option>
-                          {Object.entries(characters)
-                            .filter(([key, char]) => {
-                              if (key === '') return false;
-                              if (selectedElement && char.element !== selectedElement) return false;
-                              if (selectedClass) {
-                                const classType = char.class === 'Tank' ? 'Tank'
-                                  : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
-                                if (classType !== selectedClass) return false;
-                              }
-                              return true;
-                            })
-                            .map(([key, char]) => (
-                              <option key={key} value={key}>{char.name}</option>
-                            ))}
-                        </select>
-                      </div>
-                      {/* 🔥 BOUTONS D'ACTION - VERSION COMPACTE */}
+    {/* Select Personnage */}
+    <select
+  value={selectedCharacter}
+  onChange={(e) => {
+    const selected = e.target.value;
+    setSelectedCharacter(selected);
+    const saved = localStorage.getItem(`${selected}`);
+    if (saved) {
+      const build = JSON.parse(saved);
+      setFlatStats(build.flatStats);
+      setStatsWithoutArtefact(build.statsWithoutArtefact);
+      setArtifactsData(build.artifactsData);
+      setHunterCores(build.hunterCores);
+      showTankMessage(`Loaded saved build for ${selected} 😏`);
+    } else {
+      handleResetStats();
+    }
+  }}
+  className="p-2 rounded-lg bg-purple-900/30 text-purple-300 text-sm
+            border border-purple-600/50 hover:border-purple-500
+            focus:outline-none focus:border-purple-400
+            flex-1 max-w-[200px]"
+  style={{
+    backgroundColor: 'rgba(30, 30, 50, 0.95)',
+    color: '#e9d5ff'
+  }}
+>
+  <option value="" style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}>
+    Sélectionner un personnage
+  </option>
+  {Object.entries(characters)
+    .filter(([key, char]) => {
+      if (key === '') return false;
+      if (selectedElement && char.element !== selectedElement) return false;
+      if (selectedClass) {
+        const classType = char.class === 'Tank' ? 'Tank'
+          : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
+        if (classType !== selectedClass) return false;
+      }
+      return true;
+    })
+    .map(([key, char]) => (
+      <option 
+        key={key} 
+        value={key}
+        style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}
+      >
+        {char.name}
+      </option>
+    ))}
+</select>
+  </div>
 
-                      {/* 🔥 BOUTONS D'ACTION - LAYOUT FINAL PERFECTIONNÉ */}
-                      <div className="flex flex-col gap-2 w-full max-w-[95vw] mx-auto">
+  {/* BOUTONS D'ACTION - VERSION MOBILE SOBRE */}
+  <div className="flex flex-col gap-3 w-full">
+    {/* Ligne 1 - Actions principales */}
+    <div className="flex gap-2 w-full">
+      <button
+        onClick={handleResetStats}
+        className="flex-1 bg-purple-800/30 text-purple-300
+                  border border-purple-600/50
+                  font-semibold px-3 py-2 text-xs rounded-lg
+                  transition-all duration-200 active:scale-95"
+      >
+        BobbyKick
+      </button>
 
-                        {/* LIGNE 1 - BOUTONS VRAIMENT RÉTRÉCIS */}
-                        <div className="flex items-center justify-center gap-1 w-full">
-                          <button
-                            onClick={handleResetStats}
-                            className="bg-gradient-to-r from-red-800 to-red-600 hover:from-red-700 hover:to-red-500 text-white font-bold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
-                          >
-                            Reset
-                          </button>
-                          {showDebugButton && (
-                            <button
-                              onClick={() => setShowHitboxes(!showHitboxes)}
-                              className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs z-[10001]"
-                            >
-                              🐛 {showHitboxes ? 'HIDE' : 'SHOW'} HITBOX
-                            </button>
-                          )}
+      <button
+        onClick={handleSaveBuild}
+        className="flex-1 bg-purple-800/30 text-purple-300
+                  border border-purple-600/50
+                  font-bold px-3 py-2 text-xs rounded-lg
+                  transition-all duration-200 active:scale-95"
+      >
+        Save
+      </button>
 
-                          <button
-                            onClick={handleSaveBuild}
-                            className="bg-gradient-to-r from-emerald-800 to-green-600 hover:from-green-600 hover:to-green-400 text-white font-bold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
-                          >
-                            Save
-                          </button>
+      <button
+        onClick={() => {
+          const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
+          if (validation.isValid) {
+            handleSubmitToHallOfFame();
+          } else {
+            showTankMessage(
+              `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
+              true,
+              'kaisel'
+            );
+          }
+        }}
+        className={`
+          flex-1
+          ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+            ? 'bg-purple-800/30 text-purple-300 border-purple-600/50'
+            : 'bg-gray-800/30 text-gray-500 border-gray-700/50'
+          } 
+          font-semibold px-3 py-2 text-xs rounded-lg border
+          transition-all duration-200 active:scale-95
+        `}
+        disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
+      >
+        {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+          ? 'Submit'
+          : 'Incomplet'
+        }
+      </button>
+    </div>
 
-                          <button
-                            onClick={() => {
-                              const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
+    {/* Ligne 2 - Import et New */}
+    <div className="flex gap-2 w-full">
+      <button
+        onClick={handleImportBuild}
+        className="flex-1 bg-purple-800/30 text-purple-300
+                  border border-purple-600/50
+                  font-semibold px-3 py-2 text-xs rounded-lg
+                  transition-all duration-200 active:scale-95"
+      >
+        Import
+      </button>
 
-                              if (validation.isValid) {
-                                handleSubmitToHallOfFame();
-                              } else {
-                                showTankMessage(
-                                  `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
-                                  true,
-                                  'kaisel'
-                                );
-                              }
-                            }}
-                            className={`
-    ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                                ? 'bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white'
-                                : 'bg-gray-500 text-gray-300 cursor-not-allowed'
-                              } 
-    font-semibold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0
-  `}
-                            disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
-                            title={validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                              ? 'Soumettre au Hall of Fame'
-                              : `Manque: ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).missing.join(', ')}`
-                            }
-                          >
-                            {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                              ? 'Submit'
-                              : 'Incomplet'
-                            }
-                          </button>
+      <button
+        onClick={() => setShowNewAccountPopup(true)}
+        className="flex-1 bg-purple-800/30 text-purple-300
+                  border border-purple-600/50
+                  font-semibold px-3 py-2 text-xs rounded-lg
+                  transition-all duration-200 active:scale-95"
+      >
+        New
+      </button>
+    </div>
 
-                          <button
-                            onClick={handleImportBuild}
-                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white font-semibold px-1 py-0.5 text-[7px] rounded shadow-md transition-colors flex-shrink-0"
-                          >
-                            Import
-                          </button>
-                        </div>
+    {/* Ligne 3 - Builds récents et Account */}
+    <div className="flex items-center justify-between gap-3">
+      {/* Builds récents */}
+      {isBuildsReady && recentBuilds.length > 0 && (
+        <div className="flex gap-1.5 overflow-x-auto">
+          {recentBuilds
+            .filter((charKey) => characters[charKey])
+            .slice(0, 5)
+            .map((charKey) => (
+              <img
+                key={charKey}
+                src={characters[charKey]?.icon || '/default.png'}
+                alt={characters[charKey]?.name || charKey}
+                onClick={() => handleClickBuildIcon(charKey)}
+                className="w-8 h-8 rounded-full cursor-pointer 
+                          border-2 border-purple-600/50
+                          transition-all duration-200 active:scale-40
+                          opacity-80 flex-shrink-0"
+              />
+            ))}
+        </div>
+      )}
 
-                        {/* LIGNE 2 - ICÔNES VERTICALES À GAUCHE + COMPTES CENTRÉS À DROITE */}
-                        <div className="flex items-start justify-between w-full">
+      {/* Account selector */}
+      {Object.keys(accounts).length > 1 && (
+        <select
+          value={activeAccount}
+          onChange={(e) => handleAccountSwitch(e.target.value)}
+          className="bg-purple-900/30 text-purple-300 border border-purple-600/50
+                    px-2 py-1.5 rounded-lg text-xs
+                    focus:outline-none focus:border-purple-400"
+        >
+          {Object.keys(accounts).map(acc => (
+            <option key={acc} value={acc} className="bg-gray-900">
+              {acc.length > 8 ? acc.slice(0, 8) + '...' : acc}
+            </option>
+          ))}
+        </select>
+      )}
+    </div>
+  </div>
 
-                          {/* ICÔNES BUILDS - GRILLE 3x2 FINALE */}
-                          {isBuildsReady && recentBuilds.length > 0 && (
-                            <div className="grid grid-cols-3 grid-rows-2 gap-1 items-start max-h-16">
-                              {recentBuilds
-                                .filter((charKey) => characters[charKey])
-                                .slice(0, 6) // ← 6 icônes max en grille 3x2
-                                .map((charKey) => (
-                                  <img
-                                    key={charKey}
-                                    src={characters[charKey]?.icon || '/default.png'}
-                                    alt={characters[charKey]?.name || charKey}
-                                    onClick={() => handleClickBuildIcon(charKey)}
-                                    className="w-7 h-7 rounded-full cursor-pointer border-2 border-purple-700 hover:scale-110 transition flex-shrink-0"
-                                  />
-                                ))}
-                            </div>
-                          )}
-
-                          {/* COMPTES SUR LA MÊME LIGNE CENTRÉS À DROITE */}
-                          <div className="flex items-center gap-1 justify-end">
-                            <button
-                              onClick={() => setShowNewAccountPopup(true)}
-                              className="bg-green-700 hover:bg-green-600 px-2 py-1 rounded text-white text-[8px] transition-colors flex-shrink-0"
-                            >
-                              ➕ Nouveau
-                            </button>
-
-                            {Object.keys(accounts).length > 1 && (
-                              <select
-                                value={activeAccount}
-                                onChange={(e) => handleAccountSwitch(e.target.value)}
-                                className="bg-gray-800 text-white px-1 py-1 rounded text-[8px] max-w-[60px] flex-shrink-0"
-                              >
-                                {Object.keys(accounts).map(acc => (
-                                  <option key={acc} value={acc}>
-                                    {acc.length > 5 ? acc.slice(0, 5) + '...' : acc}
-                                  </option>
-                                ))}
-                              </select>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                    </div>
+  {/* Debug Button */}
+  {showDebugButton && (
+    <button
+      onClick={() => setShowHitboxes(!showHitboxes)}
+      className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs z-[10001]"
+    >
+      🐛 {showHitboxes ? 'HIDE' : 'SHOW'} HITBOX
+    </button>
+  )}
+</div>
 
                     {/* SECTION PRINCIPALE - NOYAUX + PERSONNAGE + GEMMES */}
                     <div className="flex flex-col items-center space-y-6">
@@ -6577,9 +6605,9 @@ BobbyJones : "Allez l'Inter !"
 
 
 
- <div className="w-full mt-4 space-y-3">
-  {/* Ligne principale des boutons */}
-  <div className="flex flex-wrap items-center gap-3">
+<div className="w-full mt-4 space-y-3">
+  {/* VERSION DESKTOP - hidden on mobile */}
+  <div className="hidden md:flex flex-wrap items-center gap-3">
     {/* BobbyKick */}
     <button
       onClick={handleResetStats}
@@ -6622,7 +6650,7 @@ BobbyJones : "Allez l'Inter !"
           : 'bg-gray-800/30 text-gray-500 border-gray-700/50 cursor-not-allowed'
         } 
         font-semibold px-4 py-2 text-sm rounded-lg border
-        transition-all duration-200
+        transition-all duration-200 hover:scale-105
       `}
       disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
       title={validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
@@ -6652,7 +6680,7 @@ BobbyJones : "Allez l'Inter !"
       onClick={() => setShowNewAccountPopup(true)}
       className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
                 border border-purple-600/50 hover:border-purple-500
-                font-semibold px-4 py-2 text-sm rounded-lg
+                font-semibold px-2 py-2 text-sm rounded-lg
                 transition-all duration-200 hover:scale-105"
     >
       New
@@ -6678,13 +6706,13 @@ BobbyJones : "Allez l'Inter !"
     )}
 
     {/* Separator */}
-    <div className="hidden md:block h-8 w-px bg-purple-600/30 mx-2" />
+    <div className="h-4 w-px bg-purple-600/30 mx-2" />
 
     {/* Builds récents */}
     {isBuildsReady && recentBuilds.length > 0 && (
-      <div className="flex items-center gap-2">
-        <span className="text-purple-400/70 text-sm hidden md:inline">Récents:</span>
-        <div className="flex gap-2">
+      <div className="flex items-center gap-1">
+        <span className="text-purple-400/70 text-sm"></span>
+        <div className="flex gap-1">
           {recentBuilds
             .filter((charKey) => characters[charKey])
             .map((charKey) => (
@@ -6693,7 +6721,7 @@ BobbyJones : "Allez l'Inter !"
                 src={characters[charKey]?.icon || '/default.png'}
                 alt={characters[charKey]?.name || charKey}
                 onClick={() => handleClickBuildIcon(charKey)}
-                className="w-8 h-8 rounded-full cursor-pointer 
+                className="w-6 h-6 rounded-full cursor-pointer 
                           border-2 border-purple-600/50 hover:border-purple-400
                           transition-all duration-200 hover:scale-110
                           opacity-80 hover:opacity-100"
@@ -6704,7 +6732,120 @@ BobbyJones : "Allez l'Inter !"
     )}
   </div>
 
-  {/* Debug Button */}
+  {/* VERSION MOBILE - visible only on mobile */}
+  <div className="md:hidden space-y-2">
+    {/* Ligne 1: Actions principales */}
+    <div className="flex gap-1">
+      <button
+        onClick={handleResetStats}
+        className="flex-1 bg-purple-800/30 text-purple-300
+                  border border-purple-600/50
+                  font-semibold px-2 py-2 text-xs rounded-lg
+                  transition-all duration-200 active:scale-95"
+      >
+        BobbyKick
+      </button>
+
+      <button
+        onClick={handleSaveBuild}
+        className="flex-1 bg-purple-800/30 text-purple-300
+                  border border-purple-600/50
+                  font-bold px-3 py-2 text-xs rounded-lg
+                  transition-all duration-200 active:scale-95"
+      >
+        Save
+      </button>
+
+      <button
+        onClick={() => {
+          const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
+          if (validation.isValid) {
+            handleSubmitToHallOfFame();
+          } else {
+            showTankMessage(`BUILD INCOMPLET`, true, 'kaisel');
+          }
+        }}
+        className={`
+          flex-1
+          ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+            ? 'bg-purple-800/30 text-purple-300 border-purple-600/50'
+            : 'bg-gray-800/30 text-gray-500 border-gray-700/50'
+          } 
+          font-semibold px-3 py-2 text-xs rounded-lg border
+          transition-all duration-200 active:scale-95
+        `}
+        disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
+      >
+        {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+          ? 'Submit'
+          : 'Incomplet'
+        }
+      </button>
+    </div>
+
+    {/* Ligne 2: Import, New et Account */}
+    <div className="flex gap-1">
+      <button
+        onClick={handleImportBuild}
+        className="flex-1 bg-purple-800/30 text-purple-300
+                  border border-purple-600/50
+                  font-semibold px-3 py-2 text-xs rounded-lg
+                  transition-all duration-200 active:scale-95"
+      >
+        Import
+      </button>
+
+      <button
+        onClick={() => setShowNewAccountPopup(true)}
+        className="flex-1 bg-purple-800/30 text-purple-300
+                  border border-purple-600/50
+                  font-semibold px-3 py-2 text-xs rounded-lg
+                  transition-all duration-200 active:scale-95"
+      >
+        New
+      </button>
+
+      {Object.keys(accounts).length > 1 && (
+        <select
+          value={activeAccount}
+          onChange={(e) => {
+            const newAcc = e.target.value;
+            handleAccountSwitch(newAcc);
+          }}
+          className="flex-1 bg-purple-900/30 text-purple-300 border border-purple-600/50
+                    px-2 py-2 rounded-lg text-xs
+                    focus:outline-none focus:border-purple-400"
+        >
+          {Object.keys(accounts).map(acc => (
+            <option key={acc} value={acc} className="bg-gray-900">{acc}</option>
+          ))}
+        </select>
+      )}
+    </div>
+
+    {/* Ligne 3: Builds récents */}
+    {isBuildsReady && recentBuilds.length > 0 && (
+      <div className="flex justify-center gap-2">
+        {recentBuilds
+          .filter((charKey) => characters[charKey])
+          .slice(0, 5)
+          .map((charKey) => (
+            <img
+              key={charKey}
+              src={characters[charKey]?.icon || '/default.png'}
+              alt={characters[charKey]?.name || charKey}
+              onClick={() => handleClickBuildIcon(charKey)}
+              className="w-7 h-7 rounded-full cursor-pointer 
+                        border-2 border-purple-600/50
+                        transition-all duration-200 active:scale-110
+                        opacity-80"
+            />
+          ))}
+      </div>
+    )}
+  </div>
+
+  {/* Debug Button - visible sur les deux versions */}
   {showDebugButton && (
     <button
       onClick={() => setShowHitboxes(!showHitboxes)}
@@ -7375,39 +7516,55 @@ BobbyJones : "Allez l'Inter !"
                         <div className="flex justify-center mt-4 w-full">
                           <div className="flex flex-col items-center w-full gap-1">
 
-                            <div className="flex justify-between items-center w-full -mb-1 pr-2 tank-target">
-  <div className="flex items-center space-x-4">
+                            <div className="flex justify-between items-center w-full -mb-1 pr-2">
+  <div className="flex items-center gap-3">
+    {/* Bouton Arme */}
     <button
-      className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+      className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+                border border-purple-600/50 hover:border-purple-500
+                font-semibold px-4 py-2 text-sm rounded-lg
+                transition-all duration-200 hover:scale-105
+                flex items-center gap-2"
       onClick={() => setShowWeaponPopup(true)}
     >
+      <span></span>
       {t("weapon")}
     </button>
     
-    {/* NOUVEAU BOUTON CALCULATEUR - Version compacte */}
+    {/* Bouton Calculateur */}
     <button
       onClick={() => setShowDamageCalculator(true)}
-      className="relative bg-gradient-to-r from-[#8b3b3b] to-[#ff6363] hover:from-[#a34a4a] hover:to-[#ff7272] text-white font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+      className="relative bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+                border border-purple-600/50 hover:border-purple-500
+                font-semibold px-4 py-2 text-sm rounded-lg
+                transition-all duration-200 hover:scale-105
+                flex items-center gap-2"
       title="Calculateur de dégâts"
     >
-      <svg className="w-4 h-4 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
       </svg>
-      <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] px-0.5 rounded-full font-bold animate-pulse">
-        !
+      <span>DPS Calculator</span>
+      <span className="absolute -top-1 -right-1 bg-purple-400 text-black text-[9px] px-1 py-0.5 rounded-full font-bold animate-pulse">
+        NEW
       </span>
     </button>
     
-    <p className="text-white">
+    {/* Stats de l'arme */}
+    <p className="text-purple-400 text-sm">
       {hunterWeapons[selectedCharacter]
         ? `+${hunterWeapons[selectedCharacter].mainStat || 0} ${characters[selectedCharacter]?.scaleStat || ''}`
         : 'Aucune arme définie'}
     </p>
   </div>
 
+  {/* Bouton Modifier */}
   <button
     onClick={() => setEditStatsMode(!editStatsMode)}
-    className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+    className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+              border border-purple-600/50 hover:border-purple-500
+              font-semibold px-4 py-2 text-sm rounded-lg
+              transition-all duration-200 hover:scale-105"
   >
     {getEditLabel()}
   </button>
