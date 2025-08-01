@@ -105,7 +105,7 @@ export default function HomePage() {
             Build your new Jinha
           </p>
           <p className="theorycraft-text text-sm mt-3 font-medium">
-            New theorycrafting in coming in combat ! 
+            DPS Calculator is finally here! (80% acc. - still testing)
           </p>
         </div>
       </div>
