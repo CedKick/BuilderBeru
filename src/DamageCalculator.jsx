@@ -56,10 +56,10 @@ const DamageCalculator = ({
 
   // Boss presets
   const bossPresets = {
-    fatchna: { name: 'Fatchna', level: 80, defense: 248000, cp: 2300000, img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753876142/fatchna_npzzlj.png' },
-    antQueen: { name: 'Ant Queen', level: 82, defense: 150000, cp: 50000, img: null },
-    ennio: { name: 'Ennio Immortal', level: 82, defense: 1500000, cp: 50000, img: null },
-    custom: { name: 'Custom Boss', level: 80, defense: 100000, cp: 100000, img: null }
+    fatchna: { name: 'Fatchna', level: 80, defense: 248000, cp: 50000, img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753876142/fatchna_npzzlj.png' },
+    antQueen: { name: 'Ant Queen', level: 82, defense: 150000, cp: 50000, img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753968545/antQueen_jzt22r.png' },
+    ennioImmortal: { name: 'Ennio Immortal', level: 82, defense: 1500000, cp: 50000, img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753968454/ennioimmortal_t86t1w.png' },
+    custom: { name: 'Custom', level: 80, defense: 100000, cp: 100000,img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754056910/jinahcustom_id8cwq.png' }
   };
 
   // Formules
@@ -187,118 +187,72 @@ const DamageCalculator = ({
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-2">
-      <div className={`bg-gradient-to-br from-blue-950/90 via-black/95 to-purple-950/90 rounded-lg border border-blue-500/30 shadow-2xl shadow-blue-500/20 w-full ${isMobile ? 'max-w-md' : 'max-w-6xl'}`}>
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-b border-blue-500/30 px-3 py-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded bg-blue-500/20 border border-blue-400/50 flex items-center justify-center">
-                <span className="text-blue-400 text-sm">!</span>
-              </div>
-              <h2 className="text-blue-400 font-bold text-sm tracking-wider">DAMAGE CALCULATOR</h2>
-            </div>
-            <button
-              onClick={onClose}
-              className="w-6 h-6 rounded bg-red-500/20 border border-red-400/50 flex items-center justify-center hover:bg-red-500/30 transition-colors"
-            >
-              <svg className="w-3 h-3 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
+    <div className="fixed inset-0 bg-black/10 backdrop-blur-lg z-50 flex items-center justify-center p-4">
+      <div className={`bg-indigo-950/90 backdrop-blur-md rounded-lg shadow-2xl shadow-indigo-900/50 w-full ${isMobile ? 'max-w-md max-h-[90vh] overflow-y-auto' : 'max-w-5xl'}`}>
+        {/* Header ultra compact */}
+        <div className="bg-purple-900/30 px-4 py-2 flex justify-between items-center">
+  <div className="flex-1 text-center">
+    <h2 className="text-white text-sm font-medium tracking-wide">DAMAGE CALCULATOR</h2>
+    <p className="text-white/60 text-xs">PRECISION 80%</p>
+  </div>
+  <button
+    onClick={onClose}
+    className="text-white/60 hover:text-white transition-colors text-xl leading-none absolute right-4"
+  >
+    ×
+  </button>
+</div>
 
-        {/* Content - Responsive */}
-        <div className={`${isMobile ? 'space-y-2 p-2 max-h-[80vh] overflow-y-auto' : 'grid grid-cols-3 gap-2 p-2'}`}>
-          {/* Colonne 1: Stats & Multiplicateurs */}
+        {/* Content - Ultra compact */}
+        <div className={`${isMobile ? 'p-3 space-y-3' : 'grid grid-cols-3 gap-3 p-3'}`}>
+          {/* Section 1: Base & Multipliers */}
           <div className="space-y-2">
-            {/* Stats de base */}
-            <div className={`bg-black/40 rounded border border-blue-900/30 ${isMobile ? 'p-3' : 'p-2'}`}>
-              <h3 className={`text-cyan-400 ${isMobile ? 'text-xs' : 'text-[10px]'} font-bold mb-1`}>BASE STATS</h3>
-              <div className="space-y-0.5 text-[10px]">
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Base</label>
-                  <input
-                    type="number"
-                    value={customStats.baseStat}
-                    onChange={(e) => handleStatChange('baseStat', e.target.value)}
-                    className={`bg-gray-800/50 text-cyan-400 px-1 py-0.5 rounded ${isMobile ? 'w-20 text-xs' : 'w-16 text-[10px]'} text-center border border-blue-900/20`}
-                  />
-                </div>
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Stars%</label>
-                  <input
-                    type="number"
-                    value={customStats.stars}
-                    onChange={(e) => handleStatChange('stars', e.target.value)}
-                    className="bg-gray-800/50 text-cyan-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-blue-900/20"
-                  />
-                </div>
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Final</label>
-                  <input
-                    type="number"
-                    value={customStats.finalStat}
-                    onChange={(e) => handleStatChange('finalStat', e.target.value)}
-                    className="bg-gray-800/50 text-cyan-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-blue-900/20"
-                  />
-                </div>
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Elem%</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={customStats.elementalDamage}
-                    onChange={(e) => handleStatChange('elementalDamage', e.target.value)}
-                    className="bg-gray-800/50 text-cyan-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-blue-900/20"
-                  />
-                </div>
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Set</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={customStats.setMultiplier}
-                    onChange={(e) => handleStatChange('setMultiplier', e.target.value)}
-                    className="bg-gray-800/50 text-cyan-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-blue-900/20"
-                  />
-                </div>
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Advantage</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={customStats.elementalAdvantage}
-                    onChange={(e) => handleStatChange('elementalAdvantage', e.target.value)}
-                    className="bg-gray-800/50 text-cyan-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-blue-900/20"
-                  />
-                </div>
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Buffs%</label>
-                  <input
-                    type="number"
-                    value={customStats.buffs}
-                    onChange={(e) => handleStatChange('buffs', e.target.value)}
-                    className="bg-gray-800/50 text-green-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-blue-900/20"
-                  />
-                </div>
+            {/* Base Stats */}
+            <div className="bg-indigo-900/20 rounded p-2">
+              <div className="flex items-center gap-2 mb-1.5">
+  <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055045/sungicon_bfndrc.png" alt="icon" className="w-4 h-4 rounded" />
+  <h3 className="text-white/90 text-xs font-medium">BASE STATS</h3>
+</div>
+              <div className="space-y-1">
+                {[
+                  { label: 'Base', key: 'baseStat', value: customStats.baseStat },
+                  { label: 'Stars%', key: 'stars', value: customStats.stars },
+                  { label: 'Final', key: 'finalStat', value: customStats.finalStat },
+                  { label: 'Elem%', key: 'elementalDamage', value: customStats.elementalDamage, step: 0.01 },
+                  { label: 'Set', key: 'setMultiplier', value: customStats.setMultiplier, step: 0.1 },
+                  { label: 'Advantage', key: 'elementalAdvantage', value: customStats.elementalAdvantage, step: 0.1 },
+                  { label: 'Buffs%', key: 'buffs', value: customStats.buffs }
+                ].map((item) => (
+                  <div key={item.key} className="flex justify-between items-center">
+                    <label className="text-white/60 text-xs">{item.label}</label>
+                    <input
+                      type="number"
+                      step={item.step}
+                      value={item.value}
+                      onChange={(e) => handleStatChange(item.key, e.target.value)}
+                      className="bg-indigo-900/30 text-white/90 px-2 py-0.5 rounded w-20 text-xs text-right focus:outline-none focus:bg-indigo-900/50"
+                    />
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Multiplicateurs */}
-            <div className="bg-black/40 rounded border border-purple-900/30 p-2">
-              <h3 className="text-purple-400 text-[10px] font-bold mb-1">MULTIPLIERS</h3>
-              <div className="space-y-0.5 text-[10px]">
+            {/* Multipliers */}
+            <div className="bg-indigo-900/20 rounded p-2">
+               <div className="flex items-center gap-2 mb-1.5">
+  <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055721/jinahlogo_lllt2d.png" alt="icon" className="w-4 h-4 rounded" />
+  <h3 className="text-white/90 text-xs font-medium">SKILL MULTIPLIERS</h3>
+</div>
+              <div className="space-y-1">
                 {Object.entries(customStats.skillMultipliers).map(([skill, value]) => (
                   <div key={skill} className="flex justify-between items-center">
-                    <label className="text-gray-400 capitalize">{skill.replace(/(\d)/, ' $1')}</label>
+                    <label className="text-white/60 text-xs uppercase">{skill.replace(/(\d)/, ' $1')}</label>
                     <input
                       type="number"
                       step="0.01"
                       value={value}
                       onChange={(e) => handleSkillMultiplierChange(skill, e.target.value)}
-                      className="bg-gray-800/50 text-purple-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-purple-900/20"
+                      className="bg-indigo-900/30 text-white/90 px-2 py-0.5 rounded w-20 text-xs text-right focus:outline-none focus:bg-indigo-900/50"
                     />
                   </div>
                 ))}
@@ -306,233 +260,168 @@ const DamageCalculator = ({
             </div>
           </div>
 
-          {/* Colonne 2: Stats avancées & Boss */}
+          {/* Section 2: Advanced & Boss */}
           <div className="space-y-2">
-            {/* Stats avancées */}
-            <div className="bg-black/40 rounded border border-blue-900/30 p-2">
-              <h3 className="text-yellow-400 text-[10px] font-bold mb-1">ADVANCED</h3>
-              <div className="space-y-0.5 text-[10px]">
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">DMG↑</label>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      value={customStats.damageIncrease}
-                      onChange={(e) => handleStatChange('damageIncrease', e.target.value)}
-                      className="bg-gray-800/50 text-yellow-400 px-1 py-0.5 rounded w-14 text-[10px] text-center border border-blue-900/20"
-                    />
-                    <span className="text-green-400 text-[9px] w-10 text-right">{results.calculatedStats.diPct}%</span>
+            {/* Advanced Stats */}
+            <div className="bg-indigo-900/20 rounded p-2">
+                   <div className="flex items-center gap-2 mb-1.5">
+  <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png" alt="icon" className="w-4 h-4 rounded" />
+  <h3 className="text-white/90 text-xs font-medium">ADVANCED STATS</h3>
+</div>
+              <div className="space-y-1">
+                {[
+                  { label: 'DMG↑', key: 'damageIncrease', calc: 'diPct' },
+                  { label: 'PEN', key: 'penetration', calc: 'penPct' },
+                  { label: 'CRIT%', key: 'critRate', calc: 'crPct' },
+                  { label: 'CDMG', key: 'critDamage', calc: 'cdPct' },
+                  { label: 'PREC', key: 'precision', calc: 'precPct' }
+                ].map((item) => (
+                  <div key={item.key} className="flex justify-between items-center">
+                    <label className="text-white/60 text-xs">{item.label}</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={customStats[item.key]}
+                        onChange={(e) => handleStatChange(item.key, e.target.value)}
+                        className="bg-indigo-900/30 text-white/90 px-2 py-0.5 rounded w-16 text-xs text-right focus:outline-none focus:bg-indigo-900/50"
+                      />
+                      <span className="text-white/40 text-xs w-12 text-right">
+                        {results.calculatedStats[item.calc]}%
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">PEN</label>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      value={customStats.penetration}
-                      onChange={(e) => handleStatChange('penetration', e.target.value)}
-                      className="bg-gray-800/50 text-yellow-400 px-1 py-0.5 rounded w-14 text-[10px] text-center border border-blue-900/20"
-                    />
-                    <span className="text-green-400 text-[9px] w-10 text-right">{results.calculatedStats.penPct}%</span>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">CRIT%</label>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      value={customStats.critRate}
-                      onChange={(e) => handleStatChange('critRate', e.target.value)}
-                      className="bg-gray-800/50 text-yellow-400 px-1 py-0.5 rounded w-14 text-[10px] text-center border border-blue-900/20"
-                    />
-                    <span className="text-green-400 text-[9px] w-10 text-right">{results.calculatedStats.crPct}%</span>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">CDMG</label>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      value={customStats.critDamage}
-                      onChange={(e) => handleStatChange('critDamage', e.target.value)}
-                      className="bg-gray-800/50 text-yellow-400 px-1 py-0.5 rounded w-14 text-[10px] text-center border border-blue-900/20"
-                    />
-                    <span className="text-green-400 text-[9px] w-10 text-right">{results.calculatedStats.cdPct}%</span>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">PREC</label>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      value={customStats.precision}
-                      onChange={(e) => handleStatChange('precision', e.target.value)}
-                      className="bg-gray-800/50 text-yellow-400 px-1 py-0.5 rounded w-14 text-[10px] text-center border border-blue-900/20"
-                    />
-                    <span className="text-green-400 text-[9px] w-10 text-right">{results.calculatedStats.precPct}%</span>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
 
-            {/* Boss Selection */}
-            <div className="bg-black/40 rounded border border-red-900/30 p-2">
-              <h3 className="text-red-400 text-[10px] font-bold mb-1">BOSS CONFIG</h3>
+            {/* Boss Config */}
+            <div className="bg-indigo-900/20 rounded p-2">
+                   <div className="flex items-center gap-2 mb-1.5">
+  <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055802/bossConfig_ftvd3z.png" alt="icon" className="w-4 h-4 rounded" />
+  <h3 className="text-white/90 text-xs font-medium">BOSS CONFIG</h3>
+</div>
               
-              {/* Boss selector */}
               <div className="grid grid-cols-2 gap-1 mb-2">
-                {Object.entries(bossPresets).map(([key, boss]) => (
-                  <button
-                    key={key}
-                    onClick={() => handleBossChange(key)}
-                    className={`px-1 py-0.5 rounded text-[9px] transition-all ${
-                      selectedBoss === key 
-                        ? 'bg-red-500/30 text-red-400 border border-red-400/50' 
-                        : 'bg-black/30 text-gray-500 border border-gray-700/30 hover:border-red-500/30'
-                    }`}
-                  >
-                    {boss.name}
-                  </button>
+            {Object.entries(bossPresets).map(([key, boss]) => (
+  <button
+    key={key}
+    onClick={() => handleBossChange(key)}
+    className={`relative overflow-hidden px-2 py-1 rounded text-xs transition-all ${
+      selectedBoss === key 
+        ? 'ring-2 ring-purple-400 text-white' 
+        : 'text-white/70 hover:text-white'
+    }`}
+    style={{
+      backgroundImage: boss.img ? `url(${boss.img})` : 'none',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center'
+    }}
+  >
+    {/* Overlay sombre pour la lisibilité */}
+    <div className={`absolute inset-0 ${
+      selectedBoss === key 
+        ? 'bg-purple-900/60' 
+        : 'bg-purple-900/80 hover:bg-purple-900/70'
+    } transition-colors`} />
+    
+    {/* Texte au-dessus de l'overlay */}
+    <span className="relative z-10">{boss.name}</span>
+  </button>
+))}
+              </div>
+
+              <div className="space-y-1">
+                {[
+                  { label: 'Level', key: 'bossLevel' },
+                  { label: 'DEF', key: 'bossDefense' },
+                  { label: 'Team CP', key: 'teamCP' },
+                  { label: 'Rec CP', key: 'recommendedCP' }
+                ].map((item) => (
+                  <div key={item.key} className="flex justify-between items-center">
+                    <label className="text-white/60 text-xs">{item.label}</label>
+                    <input
+                      type="number"
+                      value={customStats[item.key]}
+                      onChange={(e) => handleStatChange(item.key, e.target.value)}
+                      className="bg-indigo-900/30 text-white/90 px-2 py-0.5 rounded w-20 text-xs text-right focus:outline-none focus:bg-indigo-900/50"
+                      disabled={selectedBoss !== 'custom' && item.key !== 'teamCP'}
+                    />
+                  </div>
                 ))}
               </div>
 
-              <div className="space-y-0.5 text-[10px]">
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Level</label>
-                  <input
-                    type="number"
-                    value={customStats.bossLevel}
-                    onChange={(e) => handleStatChange('bossLevel', e.target.value)}
-                    className="bg-gray-800/50 text-red-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-red-900/20"
-                    disabled={selectedBoss !== 'custom'}
-                  />
-                </div>
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">DEF</label>
-                  <input
-                    type="number"
-                    value={customStats.bossDefense}
-                    onChange={(e) => handleStatChange('bossDefense', e.target.value)}
-                    className="bg-gray-800/50 text-red-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-red-900/20"
-                    disabled={selectedBoss !== 'custom'}
-                  />
-                </div>
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Team CP</label>
-                  <input
-                    type="number"
-                    value={customStats.teamCP}
-                    onChange={(e) => handleStatChange('teamCP', e.target.value)}
-                    className="bg-gray-800/50 text-orange-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-red-900/20"
-                  />
-                </div>
-                <div className="flex justify-between items-center">
-                  <label className="text-gray-400">Rec CP</label>
-                  <input
-                    type="number"
-                    value={customStats.recommendedCP}
-                    onChange={(e) => handleStatChange('recommendedCP', e.target.value)}
-                    className="bg-gray-800/50 text-orange-400 px-1 py-0.5 rounded w-16 text-[10px] text-center border border-red-900/20"
-                    disabled={selectedBoss !== 'custom'}
-                  />
-                </div>
-                <div className="mt-1 pt-1 border-t border-red-900/30">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500 text-[9px]">DEF Eff</span>
-                    <span className="text-red-400 text-[9px] font-mono">{results.calculatedStats.defEff?.toLocaleString() || '0'}</span>
+              <div className="mt-2 pt-2 border-t border-indigo-800/30">
+                <div className="space-y-0.5">
+                  <div className="flex justify-between">
+                    <span className="text-white/40 text-xs">DEF Eff</span>
+                    <span className="text-white/70 text-xs">{results.calculatedStats.defEff?.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500 text-[9px]">CP Ratio</span>
-                    <span className={`text-[9px] font-mono ${parseInt(results.calculatedStats.cpRatio) >= 100 ? 'text-green-400' : 'text-red-400'}`}>
-                      {results.calculatedStats.cpRatio}%
-                    </span>
+                  <div className="flex justify-between">
+                    <span className="text-white/40 text-xs">CP Ratio</span>
+                    <span className="text-white/70 text-xs">{results.calculatedStats.cpRatio}%</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500 text-[9px]">G Factor</span>
-                    <span className="text-green-400 text-[9px] font-mono">{results.calculatedStats.G}%</span>
+                  <div className="flex justify-between">
+                    <span className="text-white/40 text-xs">G Factor</span>
+                    <span className="text-white/70 text-xs">{results.calculatedStats.G}%</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Colonne 3: Résultats */}
-          <div className="bg-gradient-to-br from-purple-900/20 to-black/30 rounded border border-purple-900/30 p-2">
-            <h3 className="text-orange-400 text-[10px] font-bold mb-2">DAMAGE OUTPUT</h3>
-            
+          {/* Section 3: Results */}
+          <div className="bg-indigo-900/20 rounded p-2">
+                      <div className="flex items-center gap-2 mb-1.5">
+  <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055837/beruProst_ymvwos.png" alt="icon" className="w-4 h-4 rounded" />
+  <h3 className="text-white/90 text-xs font-medium">DAMAGE OUTPUT</h3>
+</div>        
             <div className="space-y-1">
               {Object.entries(results).filter(([key]) => key !== 'calculatedStats').map(([skill, damage]) => (
-                <div key={skill} className="bg-black/30 rounded p-1.5 border border-purple-900/10">
-                  <div className="text-[9px] text-gray-500 mb-0.5">
-                    {skill === 'core1' ? '⚔️ CORE 1' :
-                     skill === 'core2' ? '🗡️ CORE 2' :
-                     skill === 'skill1' ? '💫 SKILL 1' :
-                     skill === 'skill2' ? '✨ SKILL 2' :
-                     '🔥 ULTIMATE'}
+                <div key={skill} className="bg-indigo-900/30 rounded p-1.5">
+                  <div className="text-white/50 text-xs uppercase mb-0.5">
+                    {skill.replace(/(\d)/, ' $1')}
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-[10px]">
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-gray-600 text-[8px]">Normal: </span>
-                      <span className="text-cyan-400 font-bold">{damage.noCrit.toLocaleString()}</span>
+                      <span className="text-white/40 text-xs">Normal: </span>
+                      <span className="text-white/90 text-xs font-medium">{damage.noCrit.toLocaleString()}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600 text-[8px]">Crit: </span>
-                      <span className="text-orange-400 font-bold">{damage.withCrit.toLocaleString()}</span>
+                      <span className="text-white/40 text-xs">Crit: </span>
+                      <span className="text-white text-xs font-medium">{damage.withCrit.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Summary */}
-            <div className="mt-2 p-1.5 bg-purple-900/20 rounded border border-purple-500/20">
-              <div className="grid grid-cols-2 gap-1 text-[9px]">
+            {/* Summary compact */}
+            <div className="mt-2 p-1.5 bg-indigo-800/20 rounded">
+              <div className="grid grid-cols-2 gap-2">
                 <div className="text-center">
-                  <div className="text-gray-500">AVG DMG</div>
-                  <div className="text-cyan-400 font-bold text-xs">
+                  <div className="text-white/50 text-xs">AVG DMG</div>
+                  <div className="text-white/90 text-sm font-medium">
                     {Math.round((results.skill1.noCrit + results.skill2.noCrit) / 2).toLocaleString()}
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-gray-500">MAX CRIT</div>
-                  <div className="text-orange-400 font-bold text-xs">
+                  <div className="text-white/50 text-xs">MAX CRIT</div>
+                  <div className="text-white text-sm font-medium">
                     {results.ultimate.withCrit.toLocaleString()}
                   </div>
                 </div>
-              </div>
-              
-              <div className="mt-1 pt-1 border-t border-purple-900/30">
-                <p className="text-[8px] text-purple-300 text-center">
-                  DMG = STAT × MULT × PREC × G × (1+DI%) × (1+BUFFS%) × ELEM × SET
-                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="bg-black/60 border-t border-blue-900/30 px-3 py-1">
-          <p className={`text-center ${isMobile ? 'text-[10px]' : 'text-[9px]'} text-gray-600`}>
-            BUILDERBERU V3 • SHADOW MONARCH EDITION • {selectedCharacter || 'HUNTER'}
+        {/* Footer ultra minimal */}
+        <div className="bg-indigo-900/20 px-4 py-1.5">
+          <p className="text-center text-white/30 text-xs">
+            BUILDERBERU V3 • {selectedCharacter || 'HUNTER'}
           </p>
         </div>
       </div>
-
-      {/* Style pour le scrollbar mobile */}
-      {isMobile && (
-        <style jsx>{`
-          .max-h-\\[80vh\\]::-webkit-scrollbar {
-            width: 4px;
-          }
-          .max-h-\\[80vh\\]::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.4);
-          }
-          .max-h-\\[80vh\\]::-webkit-scrollbar-thumb {
-            background: rgba(59, 130, 246, 0.5);
-            border-radius: 2px;
-          }
-        `}</style>
-      )}
     </div>
   );
 };
