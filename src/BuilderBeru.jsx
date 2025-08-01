@@ -6577,123 +6577,143 @@ BobbyJones : "Allez l'Inter !"
 
 
 
-                  <div className="w-full flex justify-between tank-target mt-0 gap-2 text-sm">
-                    {/* Bouton BobbyKick - Reset */}
-                    <div className="flex items-center space-x-2 tank-target">
+ <div className="w-full mt-4 space-y-3">
+  {/* Ligne principale des boutons */}
+  <div className="flex flex-wrap items-center gap-3">
+    {/* BobbyKick */}
+    <button
+      onClick={handleResetStats}
+      className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+                border border-purple-600/50 hover:border-purple-500
+                font-semibold px-4 py-2 text-sm rounded-lg
+                transition-all duration-200 hover:scale-105"
+    >
+      BobbyKick
+    </button>
 
-                      <button
-                        onClick={handleResetStats}
-                        className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold px-4 py-2 max-sm:px-2 max-sm:py-1 text-sm max-sm:text-xs rounded-lg shadow-md transition-transform duration-200 hover:scale-105">
+    {/* Save */}
+    <button
+      onClick={handleSaveBuild}
+      className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+                border border-purple-600/50 hover:border-purple-500
+                font-bold px-4 py-2 text-sm rounded-lg
+                transition-all duration-200 hover:scale-105"
+    >
+      Save
+    </button>
 
+    {/* Submit/Incomplet */}
+    <button
+      onClick={() => {
+        const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
+        if (validation.isValid) {
+          handleSubmitToHallOfFame();
+        } else {
+          showTankMessage(
+            `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
+            true,
+            'kaisel'
+          );
+        }
+      }}
+      className={`
+        ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+          ? 'bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white border-purple-600/50 hover:border-purple-500'
+          : 'bg-gray-800/30 text-gray-500 border-gray-700/50 cursor-not-allowed'
+        } 
+        font-semibold px-4 py-2 text-sm rounded-lg border
+        transition-all duration-200
+      `}
+      disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
+      title={validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+        ? 'Soumettre au Hall of Fame'
+        : `Manque: ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).missing.join(', ')}`
+      }
+    >
+      {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+        ? 'Submit'
+        : 'Incomplet'
+      }
+    </button>
 
-                        BobbyKick
-                      </button>
-                      {showDebugButton && (
-                        <button
-                          onClick={() => setShowHitboxes(!showHitboxes)}
-                          className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs z-[10001]"
-                        >
-                          🐛 {showHitboxes ? 'HIDE' : 'SHOW'} HITBOX
-                        </button>
-                      )}
+    {/* Import */}
+    <button
+      onClick={handleImportBuild}
+      className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+                border border-purple-600/50 hover:border-purple-500
+                font-semibold px-4 py-2 text-sm rounded-lg
+                transition-all duration-200 hover:scale-105"
+    >
+      Import
+    </button>
 
-                      {/* Bouton Save */}
-                      <button
-                        onClick={handleSaveBuild}
-                        className="bg-gradient-to-r tank-target from-emerald-800 to-green-600 hover:from-green-600 hover:to-green-400 text-white font-bold py-1 px-4 rounded-xl shadow-md transform transition-transform duration-200 hover:scale-105 hover:shadow-green-400/40"
-                      >
-                        Save
-                      </button>
+    {/* New */}
+    <button
+      onClick={() => setShowNewAccountPopup(true)}
+      className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+                border border-purple-600/50 hover:border-purple-500
+                font-semibold px-4 py-2 text-sm rounded-lg
+                transition-all duration-200 hover:scale-105"
+    >
+      New
+    </button>
 
+    {/* Account Selector */}
+    {Object.keys(accounts).length > 1 && (
+      <select
+        value={activeAccount}
+        onChange={(e) => {
+          const newAcc = e.target.value;
+          handleAccountSwitch(newAcc);
+        }}
+        className="bg-purple-900/30 text-purple-300 border border-purple-600/50
+                  px-3 py-2 rounded-lg text-sm
+                  hover:border-purple-500 focus:outline-none focus:border-purple-400
+                  transition-colors"
+      >
+        {Object.keys(accounts).map(acc => (
+          <option key={acc} value={acc} className="bg-gray-900">{acc}</option>
+        ))}
+      </select>
+    )}
 
-                      <div className="w-full tank-target flex justify-between items-center mt-0 text-sm">
-                        {/* Espace à droite (ex : icône future) */}
+    {/* Separator */}
+    <div className="hidden md:block h-8 w-px bg-purple-600/30 mx-2" />
 
-                        <div id="buildIcons" className="flex tank-target gap-2 items-center">
-                          {isBuildsReady && recentBuilds.length > 0 && (
-                            recentBuilds
-                              .filter((charKey) => characters[charKey]) // <-- Sécurité
-                              .map((charKey) => (
-                                <img
-                                  key={charKey}
-                                  src={characters[charKey]?.icon || '/default.png'}
-                                  alt={characters[charKey]?.name || charKey}
-                                  onClick={() => handleClickBuildIcon(charKey)}
-                                  className="w-8 h-8 rounded-full cursor-pointer border-2 border-purple-700 hover:scale-110 transition"
-                                />
-                              ))
-                          )}
-                        </div>
-                      </div>
-                      <div className="w-full flex justify-between tank-targe items-center mt-0 text-sm">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => {
-                              const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
+    {/* Builds récents */}
+    {isBuildsReady && recentBuilds.length > 0 && (
+      <div className="flex items-center gap-2">
+        <span className="text-purple-400/70 text-sm hidden md:inline">Récents:</span>
+        <div className="flex gap-2">
+          {recentBuilds
+            .filter((charKey) => characters[charKey])
+            .map((charKey) => (
+              <img
+                key={charKey}
+                src={characters[charKey]?.icon || '/default.png'}
+                alt={characters[charKey]?.name || charKey}
+                onClick={() => handleClickBuildIcon(charKey)}
+                className="w-8 h-8 rounded-full cursor-pointer 
+                          border-2 border-purple-600/50 hover:border-purple-400
+                          transition-all duration-200 hover:scale-110
+                          opacity-80 hover:opacity-100"
+              />
+            ))}
+        </div>
+      </div>
+    )}
+  </div>
 
-                              if (validation.isValid) {
-                                handleSubmitToHallOfFame();
-                              } else {
-                                showTankMessage(
-                                  `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
-                                  true,
-                                  'kaisel'
-                                );
-                              }
-                            }}
-                            className={`
-    ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                                ? 'bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white'
-                                : 'bg-gray-500 text-gray-300 cursor-not-allowed'
-                              } 
-    text-xs font-semibold py-1 px-3 rounded-lg shadow-md transition-colors
-  `}
-                            disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
-                            title={validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                              ? 'Soumettre au Hall of Fame'
-                              : `Manque: ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).missing.join(', ')}`
-                            }
-                          >
-                            {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                              ? 'Submit'
-                              : 'Incomplet'
-                            }
-                          </button>
-
-                          <button
-                            onClick={handleImportBuild}
-                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white text-xs font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                          >
-                            Import
-                          </button>
-
-                          <button
-                            onClick={() => setShowNewAccountPopup(true)}
-                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white text-xs font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-                          >
-                            New
-                          </button>
-
-                          {Object.keys(accounts).length > 1 && (
-                            <select
-                              value={activeAccount}
-                              onChange={(e) => {
-                                const newAcc = e.target.value;
-
-                                // 🎯 Utiliser la nouvelle fonction d'auto-load
-                                handleAccountSwitch(newAcc);
-                              }}
-                              className="bg-gray-800 text-white px-3 py-2 rounded ml-2"
-                            >
-                              {Object.keys(accounts).map(acc => (
-                                <option key={acc} value={acc}>{acc}</option>
-                              ))}
-                            </select>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+  {/* Debug Button */}
+  {showDebugButton && (
+    <button
+      onClick={() => setShowHitboxes(!showHitboxes)}
+      className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs z-[10001]"
+    >
+      🐛 {showHitboxes ? 'HIDE' : 'SHOW'} HITBOX
+    </button>
+  )}
+</div>
 
 
                   {showImportSaveWarning && (

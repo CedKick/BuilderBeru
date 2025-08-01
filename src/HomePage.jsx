@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 export default function HomePage() {
   const activeItems = [
     { label: "BUILD", path: "/build" },
+    { label: "DPS Calculator", path: "/damage-calculator", special: true, new: true },
     { label: "🏆 Hall Of Flame", path: "/hall-of-flame", special: true }, // 🆕 AJOUTÉ
     { label: "PoD", path: "/pod" },
     { label: "GuideEditor", path: "/guide-editor" },

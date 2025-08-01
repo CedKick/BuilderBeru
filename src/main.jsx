@@ -11,6 +11,7 @@ import HomePage from './HomePage.jsx';
 import AppLayout from './AppLayout.jsx';
 import HallOfFlameStandalone from './components/HallOfFlameStandalone.jsx';
 import BeruvianWorld from "./pages/beruvianWorld/BeruvianWorld.jsx";
+import DamageCalculatorStandalone from './DamageCalculatorStandalone.jsx';
 
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -23,6 +24,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/guide-editor" element={<GuideEditor />} />
           <Route path="/pod" element={<POD />} />
           <Route path="/hall-of-flame" element={<HallOfFlameStandalone />} />
+          <Route path="/damage-calculator" element={<DamageCalculatorStandalone />} />
           <Route path="/beruvian-world" element={<BeruvianWorld />} />
         </Routes>
       </AppLayout>
