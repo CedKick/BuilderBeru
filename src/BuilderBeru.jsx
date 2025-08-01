@@ -6214,12 +6214,24 @@ BobbyJones : "Allez l'Inter !"
 {showDamageCalculator && (
   <DamageCalculator
     selectedCharacter={selectedCharacter}
-    finalStats={flatStats} // ou statsWithoutArtefact selon ce qui est le plus approprié
+    finalStats={(() => {
+      const scaleStat = characters[selectedCharacter]?.scaleStat;
+      return {
+        [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
+        'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
+        'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
+        'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
+        'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
+        [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
+      };
+    })()}
+    flatStats={flatStats}
+    characters={characters}
+    hunterWeapons={hunterWeapons}
     onClose={() => setShowDamageCalculator(false)}
     t={t}
   />
 )}
-
                 {isSetSelectorOpen && setSelectorSlot && (
                   <SetSelectorPopup
                     slot={setSelectorSlot}
@@ -7108,12 +7120,24 @@ BobbyJones : "Allez l'Inter !"
 {showDamageCalculator && (
   <DamageCalculator
     selectedCharacter={selectedCharacter}
-    finalStats={flatStats} // ou statsWithoutArtefact selon ce qui est le plus approprié
+    finalStats={(() => {
+      const scaleStat = characters[selectedCharacter]?.scaleStat;
+      return {
+        [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
+        'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
+        'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
+        'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
+        'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
+        [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
+      };
+    })()}
+    flatStats={flatStats}
+    characters={characters}
+    hunterWeapons={hunterWeapons}
     onClose={() => setShowDamageCalculator(false)}
     t={t}
   />
 )}
-
                   {isSetSelectorOpen && setSelectorSlot && (
                     <SetSelectorPopup
                       slot={setSelectorSlot}

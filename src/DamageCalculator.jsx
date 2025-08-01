@@ -3,45 +3,50 @@ import React, { useState, useEffect } from 'react';
 const DamageCalculator = ({ 
   selectedCharacter, 
   finalStats = {}, 
+   statsWithoutArtefact = {},  // Ajouter
+  flatStats = {},             // Ajouter
+  characters = {},            // Ajouter
+  hunterWeapons = {},        // Ajouter
+  BUILDER_DATA = {},         // Ajouter
   onClose,
   t = (key) => key 
 }) => {
   // États pour les calculs
-  const [customStats, setCustomStats] = useState({
-    // Stats de base
-    baseStat: finalStats.attack || finalStats.defense || 8624,
-    stars: 15,
-    finalStat: finalStats.attack || finalStats.defense || 43835,
-    
-    // Multiplicateurs par skill
-    skillMultipliers: {
-      core1: 5.25,
-      core2: 7.02,
-      skill1: 18.90,
-      skill2: 25.20,
-      ultimate: 42.00
-    },
-    
-    elementalDamage: finalStats.elementalDamage || 13.82,
-    setMultiplier: 1.4,
-    elementalAdvantage: 1.5,
-    
-    // Stats avancées
-    damageIncrease: finalStats.damageIncrease || 9922,
-    penetration: finalStats.defPenetration || 23444,
-    critRate: finalStats.criticalHitRate || 25000,
-    critDamage: finalStats.criticalHitDamage || 18200,
-    precision: finalStats.precision || 4630,
-    
-    // Boss
-    bossLevel: 80,
-    bossDefense: 248000,
-    teamCP: 2300000,
-    recommendedCP: 2300000,
-    
-    // Buffs
-    buffs: 0
-  });
+ const [customStats, setCustomStats] = useState({
+  // Stats de base
+  baseStat: flatStats[characters[selectedCharacter]?.scaleStat] || 8624,
+  stars: 15,
+  finalStat: finalStats[characters[selectedCharacter]?.scaleStat] || 43835, // Maintenant c'est la vraie stat finale !
+  
+  // Multiplicateurs par skill (on les garde en pourcentage)
+  skillMultipliers: {
+    core1: 5.25,
+    core2: 7.02,
+    skill1: 18.90,
+    skill2: 25.20,
+    ultimate: 42.00
+  },
+  
+  elementalDamage: finalStats[`${characters[selectedCharacter]?.element} Damage %`] || 13.82,
+  setMultiplier: 1.4,
+  elementalAdvantage: 1.5,
+  
+  // Stats avancées (déjà les totaux)
+  damageIncrease: finalStats['Damage Increase'] || 9922,
+  penetration: finalStats['Defense Penetration'] || 23444,
+  critRate: finalStats['Critical Hit Rate'] || 25000,
+  critDamage: finalStats['Critical Hit Damage'] || 18200,
+  precision: flatStats.Precision || hunterWeapons[selectedCharacter]?.precision || 4630,
+  
+  // Boss
+  bossLevel: 80,
+  bossDefense: 248000,
+  teamCP: 2300000,
+  recommendedCP: 2300000,
+  
+  // Buffs
+  buffs: 0
+});
 
   const [results, setResults] = useState({
     core1: { noCrit: 0, withCrit: 0 },
