@@ -3,12 +3,12 @@
 // 🔥 REFACTOR KAISEL - LOGIQUE UNIFIÉE
 
 const BUILDER_DATA = {
-  "jinha": {
-  "name": "Jinha",
-  "element": "Dark",
-  "class": "Assassin", 
+  "jinah": {
+  "name": "Jinah",
+  "element": "Wind",
+  "class": "Support", 
   "grade": "SSR",
-  "scaleStat": "Attack",
+  "scaleStat": "Defense",
 
   "optimizationPriority": [
   {
@@ -159,10 +159,10 @@ const BUILDER_DATA = {
 
   // 💡 CONSEILS BÉRU - KAISEL UPDATE
   "beruAdvice": {
-    "newbie": "Jinha est la soeur de Sung.",
-    "intermediate": "Elle scale sur l'attaque!",
-    "advanced": "Elle se joue avec burning curse/obsidian.",
-    "expert": "Elle peut se jouer avec expert à droite !"
+    "newbie": "Jinah est la soeur de Sung.",
+    "intermediate": "Elle scale sur la defense!",
+    "advanced": "Elle peut se jouer full infamy en BDG ou guardian/obsidian.",
+    "expert": "Elle outdps comme une reine !"
   }
 },
     "shuhua": {

@@ -1059,7 +1059,7 @@ const calculateRollQualityPercent = (stat, levelInfo, substatsMinMaxByIncrements
 // 🔍 HELPER: Clé hunter pour builder_data
 const getHunterKey = (hunter) => {
     const nameMapping = {
-        'Jinha': 'jinha',
+        'Jinah': 'jinah',
         'Miyeon': 'miyeon',
         'Shuhua': 'shuhua',
         'Lennart Niermann': 'niermann',

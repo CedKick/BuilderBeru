@@ -45,10 +45,10 @@ const HallOfFlameStandalone = () => {
 
   // Characters data complet pour éviter les erreurs
   const characters = {
-    jinha: { 
-      name: "Jinha", 
-      element: "Dark", 
-      class: "Fighter",
+    jinah: { 
+      name: "Jinah", 
+      element: "Wind", 
+      class: "Support",
       portrait: "🌊"
     },
     shuhua: { 

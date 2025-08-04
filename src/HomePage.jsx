@@ -93,7 +93,7 @@ export default function HomePage() {
       <div className="character-announcement">
         <img 
           src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869120/JinhoJinah_ln6p3n.png"
-          alt="Jinha is the new coming Hunter"
+          alt="Jinah is the new coming Hunter"
           className="character-image w-full rounded-lg hover:scale-105 transition-all duration-300"
         />
         
@@ -102,7 +102,7 @@ export default function HomePage() {
             Build your new characters
           </p>
           <p className="new-character-text text-2xl font-extrabold mt-2 text-white">
-            Build your new Jinha
+            Build your new Jinah
           </p>
           <p className="theorycraft-text text-sm mt-3 font-medium">
             DPS Calculator is finally here! (80% acc. - still testing)

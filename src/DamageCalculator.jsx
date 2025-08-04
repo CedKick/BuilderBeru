@@ -1,52 +1,242 @@
 import React, { useState, useEffect } from 'react';
+import CharacterBuffs from './CharacterBuffs';
+import TeamBuffs from './TeamBuffs';
+import SetBuffs from './SetBuffs';
 
-const DamageCalculator = ({ 
-  selectedCharacter, 
-  finalStats = {}, 
-   statsWithoutArtefact = {},  // Ajouter
-  flatStats = {},             // Ajouter
-  characters = {},            // Ajouter
-  hunterWeapons = {},        // Ajouter
-  BUILDER_DATA = {},         // Ajouter
+const DamageCalculator = ({
+  selectedCharacter,
+  finalStats = {},
+  statsWithoutArtefact = {},
+  flatStats = {},
+  characters = {},
+  hunterWeapons = {},
+  BUILDER_DATA = {},
   onClose,
-  t = (key) => key 
+  t = (key) => key
 }) => {
+
   // États pour les calculs
- const [customStats, setCustomStats] = useState({
-  // Stats de base
-  baseStat: flatStats[characters[selectedCharacter]?.scaleStat] || 8624,
-  stars: 15,
-  finalStat: finalStats[characters[selectedCharacter]?.scaleStat] || 43835, // Maintenant c'est la vraie stat finale !
-  
-  // Multiplicateurs par skill (on les garde en pourcentage)
-  skillMultipliers: {
-    core1: 5.25,
-    core2: 7.02,
-    skill1: 18.90,
-    skill2: 25.20,
-    ultimate: 42.00
-  },
-  
-  elementalDamage: finalStats[`${characters[selectedCharacter]?.element} Damage %`] || 13.82,
-  setMultiplier: 1.4,
-  elementalAdvantage: 1.5,
-  
-  // Stats avancées (déjà les totaux)
-  damageIncrease: finalStats['Damage Increase'] || 9922,
-  penetration: finalStats['Defense Penetration'] || 23444,
-  critRate: finalStats['Critical Hit Rate'] || 25000,
-  critDamage: finalStats['Critical Hit Damage'] || 18200,
-  precision: flatStats.Precision || hunterWeapons[selectedCharacter]?.precision || 4630,
-  
-  // Boss
-  bossLevel: 80,
-  bossDefense: 248000,
-  teamCP: 2300000,
-  recommendedCP: 2300000,
-  
-  // Buffs
-  buffs: 0
-});
+  const [customStats, setCustomStats] = useState({
+    // Stats de base
+    level: 115,
+    baseStat: flatStats[characters[selectedCharacter]?.scaleStat] || 8624,
+    stars: 30,
+    finalStat: finalStats[characters[selectedCharacter]?.scaleStat] || 43835,
+
+    // Multiplicateurs par skill
+    skillMultipliers: {
+      core1: 5.25,
+      core2: 7.02,
+      skill1: 18.90,
+      skill2: 25.20,
+      ultimate: 42.00
+    },
+
+    calculatorMode: 'normal',
+    expertSettings: {
+      damageIncrease: false,
+      defensePenetration: false,
+      precision: false,
+      criticalDamage: false
+    },
+
+    elementalDamage: finalStats[`${characters[selectedCharacter]?.element} Damage %`] || 13.82,
+    setMultiplier: 1,
+    activeStatMultiplier: 1,
+    elementalAdvantage: 1.5,
+
+    // Stats avancées
+    damageIncrease: finalStats['Damage Increase'] || 9922,
+    penetration: finalStats['Defense Penetration'] || 23444,
+    critRate: finalStats['Critical Hit Rate'] || 25000,
+    critDamage: finalStats['Critical Hit Damage'] || 18200,
+    precision: flatStats.Precision || hunterWeapons[selectedCharacter]?.precision || 4630,
+
+    // Boss
+    bossLevel: 80,
+    bossDefense: 248000,
+    teamCP: 2300000,
+    recommendedCP: 2300000,
+
+    // Buffs manuels
+    damageBuffsManual: 0,
+    coreBuffsManual: 0,
+    skillBuffsManual: 0,
+    ultimateBuffsManual: 0,
+
+    // Buffs automatiques
+    damageBuffsAuto: 0,
+    coreBuffsAuto: 0,
+    skillBuffsAuto: 0,
+    ultimateBuffsAuto: 0,
+  });
+
+  const [showBuffsPopup, setShowBuffsPopup] = useState({
+    character: false,
+    team: false,
+    set: false
+  });
+
+  const [activeBuffsCount, setActiveBuffsCount] = useState({
+    character: 0,
+    team: 0,
+    set: 0
+  });
+
+  const getTotalBuff = (manual, auto) => {
+    const manualVal = parseFloat(manual) || 0;
+    const autoVal = parseFloat(auto) || 0;
+    return manualVal + autoVal;
+  };
+
+  // Liste des sets disponibles
+  const availableSets = [
+    { 
+      label: 'None',
+      multiplier: 1,
+      damageBuff: 0,
+      coreBuff: 0,
+      skillBuff: 0,
+      ultimateBuff: 0,
+      statMultipliers: {
+        atk: 1,
+        def: 1,
+        hp: 1
+      }
+    },
+    { 
+      label: 'Infamy x8',
+      multiplier: 1,
+      damageBuff: 40,
+      coreBuff: 0,
+      skillBuff: 100,
+      ultimateBuff: 100,
+      statMultipliers: {
+        atk: 1,
+        def: 1,
+        hp: 1
+      }
+    },
+    { 
+      label: 'Cursed/Expert',
+      multiplier: 1,
+      damageBuff: 30,
+      coreBuff: 0,
+      skillBuff: 0,
+      ultimateBuff: 0,
+      statMultipliers: {
+        atk: 1.6,
+        def: 1,
+        hp: 1
+      }
+    },
+    { 
+      label: '2Curs/2Inf/4Exp.',
+      multiplier: 1,
+      damageBuff: 20,
+      coreBuff: 0,
+      skillBuff: 30,
+      ultimateBuff: 0,
+      statMultipliers: {
+        atk: 1.6,
+        def: 1,
+        hp: 1
+      }
+    },
+    { 
+      label: 'Cursed/Obsi',
+      multiplier: 1,
+      damageBuff: 90,
+      coreBuff: 0,
+      skillBuff: 0,
+      ultimateBuff: 0,
+      statMultipliers: {
+        atk: 1,
+        def: 1,
+        hp: 1
+      }
+    },
+    { 
+      label: 'Infamy/Obsidian',
+      multiplier: 1,
+      damageBuff: 60,
+      coreBuff: 0,
+      skillBuff: 50,
+      ultimateBuff: 0,
+      statMultipliers: {
+        atk: 1,
+        def: 1,
+        hp: 1
+      }
+    },
+    { 
+      label: 'IronWill/Obsi',
+      multiplier: 1,
+      damageBuff: 60,
+      coreBuff: 0,
+      skillBuff: 0,
+      ultimateBuff: 50,
+      statMultipliers: {
+        atk: 1,
+        def: 1.33,
+        hp: 1
+      }
+    },
+    { 
+      label: 'IronWill/Infamy',
+      multiplier: 1,
+      damageBuff: 0,
+      coreBuff: 0,
+      skillBuff: 50,
+      ultimateBuff: 50,
+      statMultipliers: {
+        atk: 1,
+        def: 1.33,
+        hp: 1
+      }
+    },
+    { 
+      label: 'Champion',
+      multiplier: 1,
+      damageBuff: 0,
+      coreBuff: 0,
+      skillBuff: 0,
+      ultimateBuff: 0,
+      statMultipliers: {
+        atk: 1,
+        def: 1,
+        hp: 1
+      }
+    },
+    { 
+      label: 'Burning',
+      multiplier: 1,
+      damageBuff: 0,
+      coreBuff: 0,
+      skillBuff: 0,
+      ultimateBuff: 0,
+      statMultipliers: {
+        atk: 1,
+        def: 1,
+        hp: 1
+      }
+    },
+    { 
+      label: 'Chaos',
+      multiplier: 1,
+      damageBuff: 0,
+      coreBuff: 0,
+      skillBuff: 0,
+      ultimateBuff: 0,
+      statMultipliers: {
+        atk: 1,
+        def: 1,
+        hp: 1
+      }
+    }
+  ];
+
+  const [selectedSetIndex, setSelectedSetIndex] = useState(0);
 
   const [results, setResults] = useState({
     core1: { noCrit: 0, withCrit: 0 },
@@ -64,7 +254,7 @@ const DamageCalculator = ({
     fatchna: { name: 'Fatchna', level: 80, defense: 248000, cp: 50000, img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753876142/fatchna_npzzlj.png' },
     antQueen: { name: 'Ant Queen', level: 82, defense: 150000, cp: 50000, img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753968545/antQueen_jzt22r.png' },
     ennioImmortal: { name: 'Ennio Immortal', level: 82, defense: 1500000, cp: 50000, img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753968454/ennioimmortal_t86t1w.png' },
-    custom: { name: 'Custom', level: 80, defense: 100000, cp: 100000,img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754056910/jinahcustom_id8cwq.png' }
+    custom: { name: 'Custom', level: 80, defense: 100000, cp: 100000, img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754056910/jinahcustom_id8cwq.png' }
   };
 
   // Formules
@@ -72,7 +262,7 @@ const DamageCalculator = ({
   const calculatePEN = (penStat) => penStat / (penStat + 50000);
   const calculateCR = (crStat) => 0.05 + crStat / (crStat + 5000);
   const calculateCD = (cdStat) => (cdStat + 1000) / (0.4 * cdStat + 2000);
-  
+
   const calculatePrecision = (precStat, cpRatio) => {
     const basePrecision = Math.min(0.5 + precStat / (precStat + 1000), 0.99);
     if (cpRatio <= 1) {
@@ -82,8 +272,45 @@ const DamageCalculator = ({
       return basePrecision * (1 + bonus);
     }
   };
+  
+  // Fonction helper pour déterminer quel multiplicateur appliquer
+  const getActiveStatMultiplier = (set, character) => {
+    if (!character || !characters[character]) return 1;
+    
+    const scaleStat = characters[character].scaleStat;
+    const statMultipliers = set.statMultipliers || { atk: 1, def: 1, hp: 1 };
+    
+    // Mapper les noms de stats du jeu vers les clés du multiplicateur
+    const statMapping = {
+      'Attack': 'atk',
+      'Defense': 'def',
+      'HP': 'hp'
+    };
+    
+    const statKey = statMapping[scaleStat] || 'atk';
+    return statMultipliers[statKey] || 1;
+  };
 
-  const calculateSkillDamage = (skillMultiplier) => {
+  // Fonction handleSetChange mise à jour
+  const handleSetChange = (setIndex) => {
+    const selectedSet = availableSets[setIndex];
+    const activeMultiplier = getActiveStatMultiplier(selectedSet, selectedCharacter);
+    
+    setSelectedSetIndex(setIndex);
+    
+    setCustomStats(prev => ({
+      ...prev,
+      setMultiplier: selectedSet.multiplier,
+      damageBuffsAuto: selectedSet.damageBuff,
+      coreBuffsAuto: selectedSet.coreBuff,
+      skillBuffsAuto: selectedSet.skillBuff,
+      ultimateBuffsAuto: selectedSet.ultimateBuff,
+      activeStatMultiplier: activeMultiplier
+    }));
+  };
+
+  // Dans calculateSkillDamage, modifier le calcul :
+  const calculateSkillDamage = (skillMultiplier, skillType) => {
     const stats = customStats;
     const safeValue = (val) => val === '' ? 0 : parseFloat(val) || 0;
     
@@ -98,15 +325,32 @@ const DamageCalculator = ({
     const defEff = safeValue(stats.bossDefense) * (1 - penPct);
     const G = 1 - defEff / (defEff + 50000);
     
+    // Calcul normal des stars sur la base stat (sans multiplicateur)
     const starsBonus = safeValue(stats.baseStat) * (safeValue(stats.stars) / 100);
-    const finalStatWithStars = safeValue(stats.finalStat) + starsBonus;
     
-    const baseDmg = finalStatWithStars * 
+    // Appliquer le multiplicateur de stat sur la STAT FINALE
+    const finalStatBase = safeValue(stats.finalStat) + starsBonus;
+    const finalStatWithMultiplier = finalStatBase * safeValue(stats.activeStatMultiplier);
+    
+    // Calculer les totaux des buffs
+    const totalDamageBuffs = safeValue(stats.damageBuffsManual) + safeValue(stats.damageBuffsAuto);
+    
+    let specificBuff = 0;
+    if (skillType === 'core') {
+      specificBuff = safeValue(stats.coreBuffsManual) + safeValue(stats.coreBuffsAuto);
+    } else if (skillType === 'skill') {
+      specificBuff = safeValue(stats.skillBuffsManual) + safeValue(stats.skillBuffsAuto);
+    } else if (skillType === 'ultimate') {
+      specificBuff = safeValue(stats.ultimateBuffsManual) + safeValue(stats.ultimateBuffsAuto);
+    }
+    
+    const baseDmg = finalStatWithMultiplier *  // Utiliser la stat finale avec multiplicateur
       safeValue(skillMultiplier) * 
       precPct * 
       G * 
       (1 + diPct) * 
-      (1 + safeValue(stats.buffs) / 100) * 
+      (1 + totalDamageBuffs / 100) *
+      (1 + specificBuff / 100) *
       (1 + safeValue(stats.elementalDamage) / 100) * 
       safeValue(stats.setMultiplier) * 
       safeValue(stats.elementalAdvantage);
@@ -124,22 +368,25 @@ const DamageCalculator = ({
         precPct: (precPct * 100).toFixed(2),
         defEff: Math.round(defEff),
         cpRatio: (cpRatio * 100).toFixed(0),
-        G: (G * 100).toFixed(2)
+        G: (G * 100).toFixed(2),
+        // Ajouter la stat finale modifiée pour info
+        finalStatModified: Math.round(finalStatWithMultiplier)
       }
     };
   };
 
+  // Remplacer la fonction calculateAllDamage par celle-ci :
   const calculateAllDamage = () => {
     const safeMultiplier = (mult) => mult === '' ? 0 : parseFloat(mult) || 0;
-    
+
     const newResults = {
-      core1: calculateSkillDamage(safeMultiplier(customStats.skillMultipliers.core1)),
-      core2: calculateSkillDamage(safeMultiplier(customStats.skillMultipliers.core2)),
-      skill1: calculateSkillDamage(safeMultiplier(customStats.skillMultipliers.skill1)),
-      skill2: calculateSkillDamage(safeMultiplier(customStats.skillMultipliers.skill2)),
-      ultimate: calculateSkillDamage(safeMultiplier(customStats.skillMultipliers.ultimate)),
+      core1: calculateSkillDamage(safeMultiplier(customStats.skillMultipliers.core1), 'core'),
+      core2: calculateSkillDamage(safeMultiplier(customStats.skillMultipliers.core2), 'core'),
+      skill1: calculateSkillDamage(safeMultiplier(customStats.skillMultipliers.skill1), 'skill'),
+      skill2: calculateSkillDamage(safeMultiplier(customStats.skillMultipliers.skill2), 'skill'),
+      ultimate: calculateSkillDamage(safeMultiplier(customStats.skillMultipliers.ultimate), 'ultimate'),
     };
-    
+
     newResults.calculatedStats = newResults.core1.stats;
     setResults(newResults);
   };
@@ -181,7 +428,7 @@ const DamageCalculator = ({
 
   // Détection mobile
   const [isMobile, setIsMobile] = useState(false);
-  
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
@@ -191,22 +438,41 @@ const DamageCalculator = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Fonction pour appliquer les buffs depuis les popups
+  const handleApplyBuffs = (buffType, buffs) => {
+    // Mettre à jour les buffs auto
+    setCustomStats(prev => ({
+      ...prev,
+      damageBuffsAuto: prev.damageBuffsAuto + (buffs.damageBuffs || 0),
+      coreBuffsAuto: prev.coreBuffsAuto + (buffs.coreBuffs || 0),
+      skillBuffsAuto: prev.skillBuffsAuto + (buffs.skillBuffs || 0),
+      ultimateBuffsAuto: prev.ultimateBuffsAuto + (buffs.ultimateBuffs || 0)
+    }));
+
+    // Compter les buffs actifs
+    const buffCount = Object.values(buffs).filter(v => v > 0).length;
+    setActiveBuffsCount(prev => ({
+      ...prev,
+      [buffType]: buffCount
+    }));
+  };
+
   return (
     <div className="fixed inset-0 bg-black/10 backdrop-blur-lg z-50 flex items-center justify-center p-4">
       <div className={`bg-indigo-950/90 backdrop-blur-md rounded-lg shadow-2xl shadow-indigo-900/50 w-full ${isMobile ? 'max-w-md max-h-[90vh] overflow-y-auto' : 'max-w-5xl'}`}>
         {/* Header ultra compact */}
         <div className="bg-purple-900/30 px-4 py-2 flex justify-between items-center">
-  <div className="flex-1 text-center">
-    <h2 className="text-white text-sm font-medium tracking-wide">DAMAGE CALCULATOR</h2>
-    <p className="text-white/60 text-xs">PRECISION 80%</p>
-  </div>
-  <button
-    onClick={onClose}
-    className="text-white/60 hover:text-white transition-colors text-xl leading-none absolute right-4"
-  >
-    ×
-  </button>
-</div>
+          <div className="flex-1 text-center">
+            <h2 className="text-white text-sm font-medium tracking-wide">DAMAGE CALCULATOR</h2>
+            <p className="text-white/60 text-xs">PRECISION 80%</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-white/60 hover:text-white transition-colors text-xl leading-none absolute right-4"
+          >
+            ×
+          </button>
+        </div>
 
         {/* Content - Ultra compact */}
         <div className={`${isMobile ? 'p-3 space-y-3' : 'grid grid-cols-3 gap-3 p-3'}`}>
@@ -215,39 +481,205 @@ const DamageCalculator = ({
             {/* Base Stats */}
             <div className="bg-indigo-900/20 rounded p-2">
               <div className="flex items-center gap-2 mb-1.5">
-  <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055045/sungicon_bfndrc.png" alt="icon" className="w-4 h-4 rounded" />
-  <h3 className="text-white/90 text-xs font-medium">BASE STATS</h3>
-</div>
-              <div className="space-y-1">
-                {[
-                  { label: 'Base', key: 'baseStat', value: customStats.baseStat },
-                  { label: 'Stars%', key: 'stars', value: customStats.stars },
-                  { label: 'Final', key: 'finalStat', value: customStats.finalStat },
-                  { label: 'Elem%', key: 'elementalDamage', value: customStats.elementalDamage, step: 0.01 },
-                  { label: 'Set', key: 'setMultiplier', value: customStats.setMultiplier, step: 0.1 },
-                  { label: 'Advantage', key: 'elementalAdvantage', value: customStats.elementalAdvantage, step: 0.1 },
-                  { label: 'Buffs%', key: 'buffs', value: customStats.buffs }
-                ].map((item) => (
-                  <div key={item.key} className="flex justify-between items-center">
-                    <label className="text-white/60 text-xs">{item.label}</label>
+                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055045/sungicon_bfndrc.png" alt="icon" className="w-4 h-4 rounded" />
+                <h3 className="text-white/90 text-xs font-medium">BASE STATS</h3>
+              </div>
+              
+              {/* Stats principales en 2 colonnes */}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 mb-2">
+                {/* Colonne gauche */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <label className="text-white/60 text-[10px]">Level</label>
                     <input
                       type="number"
-                      step={item.step}
-                      value={item.value}
-                      onChange={(e) => handleStatChange(item.key, e.target.value)}
-                      className="bg-indigo-900/30 text-white/90 px-2 py-0.5 rounded w-20 text-xs text-right focus:outline-none focus:bg-indigo-900/50"
+                      value={customStats.level}
+                      onChange={(e) => handleStatChange('level', e.target.value)}
+                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-14 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
                     />
                   </div>
-                ))}
+                  
+                  <div className="flex justify-between items-center">
+                    <label className="text-white/60 text-[10px]">Base</label>
+                    <input
+                      type="number"
+                      value={customStats.baseStat}
+                      onChange={(e) => handleStatChange('baseStat', e.target.value)}
+                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-14 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
+                    />
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <label className="text-white/60 text-[10px]">Stars%</label>
+                    <input
+                      type="number"
+                      value={customStats.stars}
+                      onChange={(e) => handleStatChange('stars', e.target.value)}
+                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-14 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
+                    />
+                  </div>
+                </div>
+                
+                {/* Colonne droite */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <label className="text-white/60 text-[10px]">Final Stats</label>
+                    <input
+                      type="number"
+                      value={customStats.finalStat}
+                      onChange={(e) => handleStatChange('finalStat', e.target.value)}
+                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-14 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
+                    />
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <label className="text-white/60 text-[10px]">Elem% (bracelet)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={customStats.elementalDamage}
+                      onChange={(e) => handleStatChange('elementalDamage', e.target.value)}
+                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-14 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
+                    />
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <label className="text-white/60 text-[10px]">Set</label>
+                    <select
+                      value={selectedSetIndex}
+                      onChange={(e) => handleSetChange(parseInt(e.target.value))}
+                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-14 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50 appearance-none cursor-pointer"
+                    >
+                      {availableSets.map((set, index) => (
+                        <option key={index} value={index} className="bg-indigo-950">
+                          {set.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <label className="text-white/60 text-[10px]">Advantage</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={customStats.elementalAdvantage}
+                      onChange={(e) => handleStatChange('elementalAdvantage', e.target.value)}
+                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-14 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Séparateur */}
+              <div className="border-t border-indigo-800/30 my-2"></div>
+              
+              {/* Section Buffs avec double inputs */}
+              <div className="space-y-1">
+                {/* DMG Buff */}
+                <div className="flex items-center gap-2">
+                  <label className="text-white/60 text-[10px] w-16">DMG Buff%</label>
+                  <div className="flex items-center gap-1 flex-1">
+                    <input
+                      type="number"
+                      value={customStats.damageBuffsManual}
+                      onChange={(e) => handleStatChange('damageBuffsManual', e.target.value)}
+                      placeholder="0"
+                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-12 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
+                    />
+                    <span className="text-white/40 text-[10px]">+</span>
+                    <input
+                      type="number"
+                      value={customStats.damageBuffsAuto}
+                      disabled
+                      className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-12 text-[10px] text-right cursor-not-allowed"
+                    />
+                    <span className="text-white/60 text-[10px] ml-1">
+                      = {getTotalBuff(customStats.damageBuffsManual, customStats.damageBuffsAuto)}%
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Core Buff */}
+                <div className="flex items-center gap-2">
+                  <label className="text-white/60 text-[10px] w-16">Core Buff%</label>
+                  <div className="flex items-center gap-1 flex-1">
+                    <input
+                      type="number"
+                      value={customStats.coreBuffsManual}
+                      onChange={(e) => handleStatChange('coreBuffsManual', e.target.value)}
+                      placeholder="0"
+                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-12 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
+                    />
+                    <span className="text-white/40 text-[10px]">+</span>
+                    <input
+                      type="number"
+                      value={customStats.coreBuffsAuto}
+                      disabled
+                      className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-12 text-[10px] text-right cursor-not-allowed"
+                    />
+                    <span className="text-white/60 text-[10px] ml-1">
+                      = {getTotalBuff(customStats.coreBuffsManual, customStats.coreBuffsAuto)}%
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Skill Buff */}
+                <div className="flex items-center gap-2">
+                  <label className="text-white/60 text-[10px] w-16">Skill Buff%</label>
+                  <div className="flex items-center gap-1 flex-1">
+                    <input
+                      type="number"
+                      value={customStats.skillBuffsManual}
+                      onChange={(e) => handleStatChange('skillBuffsManual', e.target.value)}
+                      placeholder="0"
+                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-12 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
+                    />
+                    <span className="text-white/40 text-[10px]">+</span>
+                    <input
+                      type="number"
+                      value={customStats.skillBuffsAuto}
+                      disabled
+                      className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-12 text-[10px] text-right cursor-not-allowed"
+                    />
+                    <span className="text-white/60 text-[10px] ml-1">
+                      = {getTotalBuff(customStats.skillBuffsManual, customStats.skillBuffsAuto)}%
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Ultimate Buff */}
+                <div className="flex items-center gap-2">
+                  <label className="text-white/60 text-[10px] w-16">Ult Buff%</label>
+                  <div className="flex items-center gap-1 flex-1">
+                    <input
+                      type="number"
+                      value={customStats.ultimateBuffsManual}
+                      onChange={(e) => handleStatChange('ultimateBuffsManual', e.target.value)}
+                      placeholder="0"
+                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-12 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
+                    />
+                    <span className="text-white/40 text-[10px]">+</span>
+                    <input
+                      type="number"
+                      value={customStats.ultimateBuffsAuto}
+                      disabled
+                      className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-12 text-[10px] text-right cursor-not-allowed"
+                    />
+                    <span className="text-white/60 text-[10px] ml-1">
+                      = {getTotalBuff(customStats.ultimateBuffsManual, customStats.ultimateBuffsAuto)}%
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Multipliers */}
             <div className="bg-indigo-900/20 rounded p-2">
-               <div className="flex items-center gap-2 mb-1.5">
-  <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055721/jinahlogo_lllt2d.png" alt="icon" className="w-4 h-4 rounded" />
-  <h3 className="text-white/90 text-xs font-medium">SKILL MULTIPLIERS</h3>
-</div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055721/jinahlogo_lllt2d.png" alt="icon" className="w-4 h-4 rounded" />
+                <h3 className="text-white/90 text-xs font-medium">SKILL MULTIPLIERS</h3>
+              </div>
               <div className="space-y-1">
                 {Object.entries(customStats.skillMultipliers).map(([skill, value]) => (
                   <div key={skill} className="flex justify-between items-center">
@@ -263,16 +695,47 @@ const DamageCalculator = ({
                 ))}
               </div>
             </div>
+
+            {/* OTHER BUFFS - NOUVELLE SECTION */}
+            <div className="bg-indigo-900/20 rounded p-2">
+              <div className="flex items-center gap-2 mb-1.5">
+                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png" alt="icon" className="w-4 h-4 rounded" />
+                <h3 className="text-white/90 text-xs font-medium">OTHER BUFFS</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-1">
+                <button
+                  onClick={() => setShowBuffsPopup(prev => ({ ...prev, character: true }))}
+                  className="bg-indigo-900/30 hover:bg-indigo-900/50 text-white/70 hover:text-white px-2 py-1 rounded text-[10px] transition-all text-left"
+                >
+                  Character Buffs <span className="text-purple-400">({activeBuffsCount.character})</span>
+                </button>
+                
+                <button
+                  onClick={() => setShowBuffsPopup(prev => ({ ...prev, team: true }))}
+                  className="bg-indigo-900/30 hover:bg-indigo-900/50 text-white/70 hover:text-white px-2 py-1 rounded text-[10px] transition-all text-left"
+                >
+                  Team Buffs <span className="text-purple-400">({activeBuffsCount.team})</span>
+                </button>
+                
+                <button
+                  onClick={() => setShowBuffsPopup(prev => ({ ...prev, set: true }))}
+                  className="bg-indigo-900/30 hover:bg-indigo-900/50 text-white/70 hover:text-white px-2 py-1 rounded text-[10px] transition-all text-left"
+                >
+                  Set Buffs <span className="text-purple-400">({activeBuffsCount.set})</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Section 2: Advanced & Boss */}
           <div className="space-y-2">
             {/* Advanced Stats */}
             <div className="bg-indigo-900/20 rounded p-2">
-                   <div className="flex items-center gap-2 mb-1.5">
-  <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png" alt="icon" className="w-4 h-4 rounded" />
-  <h3 className="text-white/90 text-xs font-medium">ADVANCED STATS</h3>
-</div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png" alt="icon" className="w-4 h-4 rounded" />
+                <h3 className="text-white/90 text-xs font-medium">ADVANCED STATS</h3>
+              </div>
               <div className="space-y-1">
                 {[
                   { label: 'DMG↑', key: 'damageIncrease', calc: 'diPct' },
@@ -301,38 +764,33 @@ const DamageCalculator = ({
 
             {/* Boss Config */}
             <div className="bg-indigo-900/20 rounded p-2">
-                   <div className="flex items-center gap-2 mb-1.5">
-  <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055802/bossConfig_ftvd3z.png" alt="icon" className="w-4 h-4 rounded" />
-  <h3 className="text-white/90 text-xs font-medium">BOSS CONFIG</h3>
-</div>
-              
+              <div className="flex items-center gap-2 mb-1.5">
+                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055802/bossConfig_ftvd3z.png" alt="icon" className="w-4 h-4 rounded" />
+                <h3 className="text-white/90 text-xs font-medium">BOSS CONFIG</h3>
+              </div>
+
               <div className="grid grid-cols-2 gap-1 mb-2">
-            {Object.entries(bossPresets).map(([key, boss]) => (
-  <button
-    key={key}
-    onClick={() => handleBossChange(key)}
-    className={`relative overflow-hidden px-2 py-1 rounded text-xs transition-all ${
-      selectedBoss === key 
-        ? 'ring-2 ring-purple-400 text-white' 
-        : 'text-white/70 hover:text-white'
-    }`}
-    style={{
-      backgroundImage: boss.img ? `url(${boss.img})` : 'none',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center'
-    }}
-  >
-    {/* Overlay sombre pour la lisibilité */}
-    <div className={`absolute inset-0 ${
-      selectedBoss === key 
-        ? 'bg-purple-900/60' 
-        : 'bg-purple-900/80 hover:bg-purple-900/70'
-    } transition-colors`} />
-    
-    {/* Texte au-dessus de l'overlay */}
-    <span className="relative z-10">{boss.name}</span>
-  </button>
-))}
+                {Object.entries(bossPresets).map(([key, boss]) => (
+                  <button
+                    key={key}
+                    onClick={() => handleBossChange(key)}
+                    className={`relative overflow-hidden px-2 py-1 rounded text-xs transition-all ${selectedBoss === key
+                        ? 'ring-2 ring-purple-400 text-white'
+                        : 'text-white/70 hover:text-white'
+                      }`}
+                    style={{
+                      backgroundImage: boss.img ? `url(${boss.img})` : 'none',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
+                  >
+                    <div className={`absolute inset-0 ${selectedBoss === key
+                        ? 'bg-purple-900/60'
+                        : 'bg-purple-900/80 hover:bg-purple-900/70'
+                      } transition-colors`} />
+                    <span className="relative z-10">{boss.name}</span>
+                  </button>
+                ))}
               </div>
 
               <div className="space-y-1">
@@ -375,47 +833,110 @@ const DamageCalculator = ({
           </div>
 
           {/* Section 3: Results */}
-          <div className="bg-indigo-900/20 rounded p-2">
-                      <div className="flex items-center gap-2 mb-1.5">
-  <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055837/beruProst_ymvwos.png" alt="icon" className="w-4 h-4 rounded" />
-  <h3 className="text-white/90 text-xs font-medium">DAMAGE OUTPUT</h3>
-</div>        
-            <div className="space-y-1">
-              {Object.entries(results).filter(([key]) => key !== 'calculatedStats').map(([skill, damage]) => (
-                <div key={skill} className="bg-indigo-900/30 rounded p-1.5">
-                  <div className="text-white/50 text-xs uppercase mb-0.5">
-                    {skill.replace(/(\d)/, ' $1')}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <span className="text-white/40 text-xs">Normal: </span>
-                      <span className="text-white/90 text-xs font-medium">{damage.noCrit.toLocaleString()}</span>
+          <div className="space-y-2">
+            {/* Damage Output */}
+            <div className="bg-indigo-900/20 rounded p-2">
+              <div className="flex items-center gap-2 mb-1.5">
+                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055837/beruProst_ymvwos.png" alt="icon" className="w-4 h-4 rounded" />
+                <h3 className="text-white/90 text-xs font-medium">DAMAGE OUTPUT</h3>
+              </div>
+              <div className="space-y-1">
+                {Object.entries(results).filter(([key]) => key !== 'calculatedStats').map(([skill, damage]) => (
+                  <div key={skill} className="bg-indigo-900/30 rounded p-1.5">
+                    <div className="text-white/50 text-xs uppercase mb-0.5">
+                      {skill.replace(/(\d)/, ' $1')}
                     </div>
-                    <div>
-                      <span className="text-white/40 text-xs">Crit: </span>
-                      <span className="text-white text-xs font-medium">{damage.withCrit.toLocaleString()}</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="text-white/40 text-xs">Normal: </span>
+                        <span className="text-white/90 text-xs font-medium">{damage.noCrit.toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-white/40 text-xs">Crit: </span>
+                        <span className="text-white text-xs font-medium">{damage.withCrit.toLocaleString()}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            {/* Summary compact */}
-            <div className="mt-2 p-1.5 bg-indigo-800/20 rounded">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-center">
-                  <div className="text-white/50 text-xs">AVG DMG</div>
-                  <div className="text-white/90 text-sm font-medium">
-                    {Math.round((results.skill1.noCrit + results.skill2.noCrit) / 2).toLocaleString()}
+              {/* Summary compact */}
+              <div className="mt-2 p-1.5 bg-indigo-800/20 rounded">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="text-center">
+                    <div className="text-white/50 text-xs">AVG DMG</div>
+                    <div className="text-white/90 text-sm font-medium">
+                      {Math.round((results.skill1.noCrit + results.skill2.noCrit) / 2).toLocaleString()}
+                    </div>
                   </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-white/50 text-xs">MAX CRIT</div>
-                  <div className="text-white text-sm font-medium">
-                    {results.ultimate.withCrit.toLocaleString()}
+                  <div className="text-center">
+                    <div className="text-white/50 text-xs">MAX CRIT</div>
+                    <div className="text-white text-sm font-medium">
+                      {results.ultimate.withCrit.toLocaleString()}
+                    </div>
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* SETTINGS - NOUVELLE SECTION */}
+            <div className="bg-indigo-900/20 rounded p-2">
+              <div className="flex items-center gap-2 mb-1.5">
+                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055837/beruProst_ymvwos.png" alt="icon" className="w-4 h-4 rounded" />
+                <h3 className="text-white/90 text-xs font-medium">SETTINGS</h3>
+              </div>
+              
+              {/* Mode Toggle */}
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-white/70 text-[10px]">Calculator Mode</span>
+                <button
+                  onClick={() => handleStatChange('calculatorMode', customStats.calculatorMode === 'normal' ? 'expert' : 'normal')}
+                  className={`relative w-14 h-6 rounded-full transition-colors ${
+                    customStats.calculatorMode === 'expert' ? 'bg-purple-600' : 'bg-indigo-900/50'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                      customStats.calculatorMode === 'expert' ? 'translate-x-8' : 'translate-x-0'
+                    }`}
+                  />
+                  <span className={`absolute inset-0 flex items-center ${
+                    customStats.calculatorMode === 'expert' ? 'justify-start pl-1' : 'justify-end pr-1'
+                  }`}>
+                    <span className="text-[8px] text-white font-medium">
+                      {customStats.calculatorMode === 'expert' ? 'EXP' : 'NOR'}
+                    </span>
+                  </span>
+                </button>
+              </div>
+              
+              {/* Expert Options */}
+              {customStats.calculatorMode === 'expert' && (
+                <div className="space-y-1 pl-2 border-l-2 border-purple-600/30">
+                  {[
+                    { key: 'damageIncrease', label: 'DMG Increase' },
+                    { key: 'defensePenetration', label: 'DEF Penetration' },
+                    { key: 'precision', label: 'Precision' },
+                    { key: 'criticalDamage', label: 'Critical Damage' }
+                  ].map(setting => (
+                    <div key={setting.key} className="flex items-center justify-between">
+                      <span className="text-white/60 text-[9px]">{setting.label}</span>
+                      <button
+                        onClick={() => handleStatChange(`expertSettings.${setting.key}`, !customStats.expertSettings[setting.key])}
+                        className={`relative w-8 h-4 rounded-full transition-colors ${
+                          customStats.expertSettings[setting.key] ? 'bg-purple-600/70' : 'bg-indigo-900/30'
+                        }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white/90 rounded-full transition-transform ${
+                            customStats.expertSettings[setting.key] ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -427,6 +948,31 @@ const DamageCalculator = ({
           </p>
         </div>
       </div>
+      
+      {/* Popups */}
+      {showBuffsPopup.character && (
+        <CharacterBuffs
+          selectedCharacter={selectedCharacter}
+          onClose={() => setShowBuffsPopup(prev => ({ ...prev, character: false }))}
+          onApplyBuffs={(buffs) => handleApplyBuffs('character', buffs)}
+        />
+      )}
+
+      {showBuffsPopup.team && (
+        <TeamBuffs
+          teamMembers={[]}
+          onClose={() => setShowBuffsPopup(prev => ({ ...prev, team: false }))}
+          onApplyBuffs={(buffs) => handleApplyBuffs('team', buffs)}
+        />
+      )}
+
+      {showBuffsPopup.set && (
+        <SetBuffs
+          equippedSets={[]}
+          onClose={() => setShowBuffsPopup(prev => ({ ...prev, set: false }))}
+          onApplyBuffs={(buffs) => handleApplyBuffs('set', buffs)}
+        />
+      )}
     </div>
   );
 };

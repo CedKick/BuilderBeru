@@ -1289,12 +1289,12 @@ export const sungData = [
 export const characters = [
     {
 
-        name: 'Jinha',
+        name: 'Jinah',
         img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869840/jinah_vrbddm.png',
         icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869067/jinah_icon_pfdee6.png',
-        class: 'Fighter',
+        class: 'Support',
         grade: 'SSR',
-        element: 'Dark',
+        element: 'Wind',
         scaleStat: 'Defense',
         presets: {
             PoD: {
