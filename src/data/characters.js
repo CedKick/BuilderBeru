@@ -25,22 +25,53 @@ export  const characters = {
       element: 'Wind',
       scaleStat: 'Defense',
       skillMultipliers: {
-        core1: 3.5,
-        core2: 4.8,
-        skill1: 12.0,
-        skill2: 16.5,
-        ultimate: 35.0
+        core1: 2.76,
+        core2: 14.82,
+        skill1: 27.27,
+        skill2: 26.61,
+        ultimate: 68.69
       },
-      buffs: [
+      buffs: [{
+          name: 'Shield',
+          values: [10, 20, 30], // Accumulative: 
+          cooldown: 0,
+          duration: 30,
+          target: 'self', // 'self' ou 'shared'
+          type: 'scaleStat', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage, scaleStat
+          element: 'None',
+          img : 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754383923/defense_jinah_bzd7tr.png'
+        },
         {
-          name: 'Wind Shield',
-          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
-          cooldown: 12,
-          duration: 8,
+          name: 'Wind Damage Taken Increase',
+          values: [1, 2, 3, 4, 5], // Accumulative: 5%, 10%, 15%
+          cooldown: 0,
+          duration: 20,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'elementalDamage', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind',
+          img :'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754383924/wind_damage_taken_jinah_brirej.png'
+        },
+        {
+          name: 'Sudden Showers',
+          values: [10], // Accumulative: 5%, 10%, 15%
+          cooldown: 0,
+          duration: 25,
           target: 'shared', // 'self' ou 'shared'
           type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
-          element: 'Wind'
-        } ]
+          element: 'None',
+          img :'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754383915/rain_jinah_uufuxy.png'
+        },
+        {
+          name: 'Aero',
+          values: [2, 4, 6, 8, 10], // Accumulative: 5%, 10%, 15%
+          cooldown: 0,
+          duration: 25,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'elementalDamage', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind',
+          img :'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754384587/Aero_jinah_hjuchd.png'
+        }
+       ]
     }, 'shuhua': {
       name: 'Shuhua',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751535917/Shuhua1_difnjb.png',

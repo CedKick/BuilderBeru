@@ -480,21 +480,68 @@ const DamageCalculator = ({
 
   // Fonction pour appliquer les buffs depuis les popups
   const handleApplyBuffs = (buffType, buffs) => {
-    // Mettre à jour les buffs auto
-    setCustomStats(prev => ({
-      ...prev,
-      damageBuffsAuto: prev.damageBuffsAuto + (buffs.damageBuffs || 0),
-      coreBuffsAuto: prev.coreBuffsAuto + (buffs.coreBuffs || 0),
-      skillBuffsAuto: prev.skillBuffsAuto + (buffs.skillBuffs || 0),
-      ultimateBuffsAuto: prev.ultimateBuffsAuto + (buffs.ultimateBuffs || 0)
-    }));
+    if (buffType === 'character') {
+      // Reset les buffs character avant d'appliquer les nouveaux
+      setCustomStats(prev => {
+        let newStats = { ...prev };
+        
+        // Si c'est une valeur négative, on soustrait
+        if (buffs.damageBuffs) {
+          newStats.damageBuffsAuto = Math.max(0, prev.damageBuffsAuto + buffs.damageBuffs);
+        }
+        if (buffs.coreBuffs) {
+          newStats.coreBuffsAuto = Math.max(0, prev.coreBuffsAuto + buffs.coreBuffs);
+        }
+        if (buffs.skillBuffs) {
+          newStats.skillBuffsAuto = Math.max(0, prev.skillBuffsAuto + buffs.skillBuffs);
+        }
+        if (buffs.ultimateBuffs) {
+          newStats.ultimateBuffsAuto = Math.max(0, prev.ultimateBuffsAuto + buffs.ultimateBuffs);
+        }
+        
+        // Gestion des buffs élémentaires
+        if (buffs.elementalDamage) {
+          Object.entries(buffs.elementalDamage).forEach(([element, value]) => {
+            if (element === characters[selectedCharacter]?.element) {
+              newStats.elementalDamage = Math.max(0, (prev.elementalDamage || 0) + value);
+            }
+          });
+        }
+        
+        // Gestion du scaleStat buff
+        if (buffs.scaleStatBuff) {
+          // On pourrait ajouter un multiplicateur sur la stat de base
+          // Pour l'instant on l'ajoute comme un damage buff
+          newStats.damageBuffsAuto = Math.max(0, prev.damageBuffsAuto + buffs.scaleStatBuff);
+        }
+        
+        return newStats;
+      });
+      
+      // Compter les buffs actifs
+      if (buffs.damageBuffs > 0 || buffs.coreBuffs > 0 || buffs.skillBuffs > 0 || buffs.ultimateBuffs > 0) {
+        const buffCount = Object.values(buffs).filter(v => v > 0).length;
+        setActiveBuffsCount(prev => ({
+          ...prev,
+          [buffType]: buffCount
+        }));
+      }
+    } else {
+      // Pour les autres types de buffs (team, set)
+      setCustomStats(prev => ({
+        ...prev,
+        damageBuffsAuto: prev.damageBuffsAuto + (buffs.damageBuffs || 0),
+        coreBuffsAuto: prev.coreBuffsAuto + (buffs.coreBuffs || 0),
+        skillBuffsAuto: prev.skillBuffsAuto + (buffs.skillBuffs || 0),
+        ultimateBuffsAuto: prev.ultimateBuffsAuto + (buffs.ultimateBuffs || 0)
+      }));
 
-    // Compter les buffs actifs
-    const buffCount = Object.values(buffs).filter(v => v > 0).length;
-    setActiveBuffsCount(prev => ({
-      ...prev,
-      [buffType]: buffCount
-    }));
+      const buffCount = Object.values(buffs).filter(v => v > 0).length;
+      setActiveBuffsCount(prev => ({
+        ...prev,
+        [buffType]: buffCount
+      }));
+    }
   };
 
   return (
@@ -527,7 +574,7 @@ const DamageCalculator = ({
                 </div>
                 
                 {/* Character Selector */}
-               <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <select
                     value={selectedCharacter}
                     onChange={(e) => handleCharacterChange(e.target.value)}
@@ -1020,7 +1067,15 @@ const DamageCalculator = ({
           selectedCharacter={selectedCharacter}
           characters={characters}
           onClose={() => setShowBuffsPopup(prev => ({ ...prev, character: false }))}
-          onApplyBuffs={(buffs) => handleApplyBuffs('character', buffs)}
+          onApplyBuffs={(buffs) => {
+            handleApplyBuffs('character', buffs);
+            // Mettre à jour le compteur
+            const activeCount = Object.values(buffs).filter(v => v && v > 0).length;
+            setActiveBuffsCount(prev => ({
+              ...prev,
+              character: activeCount
+            }));
+          }}
         />
       )}
 
