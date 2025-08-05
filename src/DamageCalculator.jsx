@@ -4,7 +4,7 @@ import TeamBuffs from './TeamBuffs';
 import SetBuffs from './SetBuffs';
 
 const DamageCalculator = ({
-  selectedCharacter,
+  selectedCharacter: initialCharacter,
   finalStats = {},
   statsWithoutArtefact = {},
   flatStats = {},
@@ -15,6 +15,9 @@ const DamageCalculator = ({
   t = (key) => key
 }) => {
 
+  // État pour le personnage sélectionné
+  const [selectedCharacter, setSelectedCharacter] = useState(initialCharacter || '');
+
   // États pour les calculs
   const [customStats, setCustomStats] = useState({
     // Stats de base
@@ -23,13 +26,13 @@ const DamageCalculator = ({
     stars: 30,
     finalStat: finalStats[characters[selectedCharacter]?.scaleStat] || 43835,
 
-    // Multiplicateurs par skill
+    // Multiplicateurs par skill (initialisés depuis le personnage)
     skillMultipliers: {
-      core1: 5.25,
-      core2: 7.02,
-      skill1: 18.90,
-      skill2: 25.20,
-      ultimate: 42.00
+      core1: characters[selectedCharacter]?.skillMultipliers?.core1 || 5.25,
+      core2: characters[selectedCharacter]?.skillMultipliers?.core2 || 7.02,
+      skill1: characters[selectedCharacter]?.skillMultipliers?.skill1 || 18.90,
+      skill2: characters[selectedCharacter]?.skillMultipliers?.skill2 || 25.20,
+      ultimate: characters[selectedCharacter]?.skillMultipliers?.ultimate || 42.00
     },
 
     calculatorMode: 'normal',
@@ -272,6 +275,31 @@ const DamageCalculator = ({
       return basePrecision * (1 + bonus);
     }
   };
+
+  // Fonction pour gérer le changement de personnage
+  const handleCharacterChange = (characterKey) => {
+    setSelectedCharacter(characterKey);
+    
+    if (characterKey && characters[characterKey]) {
+      const character = characters[characterKey];
+      
+      // Mettre à jour les multiplicateurs
+      setCustomStats(prev => ({
+        ...prev,
+        skillMultipliers: {
+          core1: character.skillMultipliers?.core1 || 0,
+          core2: character.skillMultipliers?.core2 || 0,
+          skill1: character.skillMultipliers?.skill1 || 0,
+          skill2: character.skillMultipliers?.skill2 || 0,
+          ultimate: character.skillMultipliers?.ultimate || 0
+        },
+        // Mettre à jour les stats de base selon le nouveau personnage
+        baseStat: flatStats[character.scaleStat] || 8624,
+        finalStat: finalStats[character.scaleStat] || 43835,
+        elementalDamage: finalStats[`${character.element} Damage %`] || 13.82,
+      }));
+    }
+  };
   
   // Fonction helper pour déterminer quel multiplicateur appliquer
   const getActiveStatMultiplier = (set, character) => {
@@ -410,10 +438,22 @@ const DamageCalculator = ({
   };
 
   const handleStatChange = (stat, value) => {
-    setCustomStats(prev => ({
-      ...prev,
-      [stat]: value === '' ? '' : value
-    }));
+    if (stat.includes('.')) {
+      // Pour les nested properties comme expertSettings.damageIncrease
+      const [parent, child] = stat.split('.');
+      setCustomStats(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value
+        }
+      }));
+    } else {
+      setCustomStats(prev => ({
+        ...prev,
+        [stat]: value === '' ? '' : value
+      }));
+    }
   };
 
   const handleSkillMultiplierChange = (skill, value) => {
@@ -478,11 +518,36 @@ const DamageCalculator = ({
         <div className={`${isMobile ? 'p-3 space-y-3' : 'grid grid-cols-3 gap-3 p-3'}`}>
           {/* Section 1: Base & Multipliers */}
           <div className="space-y-2">
-            {/* Base Stats */}
+            {/* Base Stats avec Character Selector */}
             <div className="bg-indigo-900/20 rounded p-2">
-              <div className="flex items-center gap-2 mb-1.5">
-                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055045/sungicon_bfndrc.png" alt="icon" className="w-4 h-4 rounded" />
-                <h3 className="text-white/90 text-xs font-medium">BASE STATS</h3>
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-2">
+                  <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055045/sungicon_bfndrc.png" alt="icon" className="w-4 h-4 rounded" />
+                  <h3 className="text-white/90 text-xs font-medium">BASE STATS</h3>
+                </div>
+                
+                {/* Character Selector */}
+               <div className="flex items-center gap-2">
+                  <select
+                    value={selectedCharacter}
+                    onChange={(e) => handleCharacterChange(e.target.value)}
+                    className="bg-indigo-900/30 text-white px-2 py-0.5 rounded text-[10px] focus:outline-none focus:bg-indigo-900/50"
+                  >
+                    <option value="">Select character</option>
+                    {Object.entries(characters)
+                      .filter(([key]) => key !== '') // Juste exclure l'entrée vide
+                      .map(([key, char]) => (
+                        <option key={key} value={key}>{char.name}</option>
+                      ))}
+                  </select>
+                  {selectedCharacter && characters[selectedCharacter] && (
+                    <img 
+                      src={characters[selectedCharacter].icon} 
+                      alt={characters[selectedCharacter].name}
+                      className="w-4 h-4 rounded"
+                    />
+                  )}
+                </div>
               </div>
               
               {/* Stats principales en 2 colonnes */}
@@ -533,7 +598,7 @@ const DamageCalculator = ({
                   </div>
                   
                   <div className="flex justify-between items-center">
-                    <label className="text-white/60 text-[10px]">Elem% (bracelet)</label>
+                    <label className="text-white/60 text-[10px]">Elem%</label>
                     <input
                       type="number"
                       step="0.01"
@@ -944,7 +1009,7 @@ const DamageCalculator = ({
         {/* Footer ultra minimal */}
         <div className="bg-indigo-900/20 px-4 py-1.5">
           <p className="text-center text-white/30 text-xs">
-            BUILDERBERU V3 • {selectedCharacter || 'HUNTER'}
+            BUILDERBERU V3 • {selectedCharacter ? characters[selectedCharacter]?.name : 'NO HUNTER SELECTED'}
           </p>
         </div>
       </div>
@@ -953,6 +1018,7 @@ const DamageCalculator = ({
       {showBuffsPopup.character && (
         <CharacterBuffs
           selectedCharacter={selectedCharacter}
+          characters={characters}
           onClose={() => setShowBuffsPopup(prev => ({ ...prev, character: false }))}
           onApplyBuffs={(buffs) => handleApplyBuffs('character', buffs)}
         />

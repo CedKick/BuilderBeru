@@ -2672,7 +2672,16 @@ BobbyJones : "Allez l'Inter !"
       class: '',
       grade: '',
       element: '',
-      scaleStat: ''
+      scaleStat: '',
+      skillMultipliers: {
+        core1: 0,
+        core2: 0,
+        skill1: 0,
+        skill2: 0,
+        ultimate: 0
+      },
+      buffs: []
+      
     }, 'jinah': {
       name: 'Jinah',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869840/jinah_vrbddm.png',
@@ -2680,7 +2689,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Support',
       grade: 'SSR',
       element: 'Wind',
-      scaleStat: 'Defense'
+      scaleStat: 'Defense',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     }, 'shuhua': {
       name: 'Shuhua',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751535917/Shuhua1_difnjb.png',
@@ -2688,7 +2714,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Fighter',
       grade: 'SSR',
       element: 'Water',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     }, 'miyeon': {
       name: 'Miyeon',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751496034/miyeon_ijwudx.png',
@@ -2696,7 +2739,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Fighter',
       grade: 'SSR',
       element: 'Light',
-      scaleStat: 'Defense'
+      scaleStat: 'Defense',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     }, 'niermann': {
       name: 'Lennart Niermann',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749114179/niermann_arxjer.png',
@@ -2704,7 +2764,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Fighter',
       grade: 'SSR',
       element: 'Wind',
-      scaleStat: 'Defense'
+      scaleStat: 'Defense',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
 
     'chae': {
@@ -2714,7 +2791,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Fighter',
       grade: 'SSR',
       element: 'Water',
-      scaleStat: 'Defense'
+      scaleStat: 'Defense',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'kanae': {
       name: 'Tawata Kanae',
@@ -2723,7 +2817,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Assassin',
       grade: 'SSR',
       element: 'Fire',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'alicia': {
       name: 'Alicia Blanche',
@@ -2732,7 +2843,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Mage',
       grade: 'SSR',
       element: 'Water',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'mirei': {
       name: 'Amamiya Mirei',
@@ -2741,7 +2869,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Assassin',
       grade: 'SSR',
       element: 'Wind',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'baek': {
       name: 'Baek Yoonho',
@@ -2750,7 +2895,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Tank',
       grade: 'SSR',
       element: 'Light',
-      scaleStat: 'Defense'
+      scaleStat: 'Defense',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'chae-in': {
       name: 'Cha Hae In',
@@ -2759,7 +2921,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Fighter',
       grade: 'SSR',
       element: 'Light',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'charlotte': {
       name: 'Charlotte',
@@ -2768,7 +2947,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Mage',
       grade: 'SSR',
       element: 'Dark',
-      scaleStat: 'Defense'
+      scaleStat: 'Defense',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'choi': {
       name: 'Choi Jong-In',
@@ -2777,7 +2973,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Mage',
       grade: 'SSR',
       element: 'Fire',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'emma': {
       name: 'Emma Laurent',
@@ -2786,7 +2999,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Tank',
       grade: 'SSR',
       element: 'Fire',
-      scaleStat: 'HP'
+      scaleStat: 'HP',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'esil': {
       name: 'Esil Radiru',
@@ -2795,7 +3025,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Ranger',
       grade: 'SSR',
       element: 'Fire',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'gina': {
       name: 'Gina',
@@ -2804,7 +3051,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Support',
       grade: 'SSR',
       element: 'Fire',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'go': {
       name: 'Go Gunhee',
@@ -2813,7 +3077,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Tank',
       grade: 'SSR',
       element: 'Light',
-      scaleStat: 'Defense'
+      scaleStat: 'Defense',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'goto': {
       name: 'Goto Ryuji',
@@ -2822,7 +3103,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Tank',
       grade: 'SSR',
       element: 'Wind',
-      scaleStat: 'HP'
+      scaleStat: 'HP',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'han': {
       name: 'Han Se-Mi',
@@ -2831,7 +3129,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Healer',
       grade: 'SSR',
       element: 'Wind',
-      scaleStat: 'HP'
+      scaleStat: 'HP',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'harper': {
       name: 'Harper',
@@ -2840,7 +3155,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Tank',
       grade: 'SSR',
       element: 'Dark',
-      scaleStat: 'HP'
+      scaleStat: 'HP',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'hwang': {
       name: 'Hwang Dongsoo',
@@ -2849,7 +3181,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Fighter',
       grade: 'SSR',
       element: 'Wind',
-      scaleStat: 'Defense'
+      scaleStat: 'Defense',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'isla': {
       name: 'Isla Wright',
@@ -2858,7 +3207,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Healer',
       grade: 'SSR',
       element: 'Dark',
-      scaleStat: 'Defense'
+      scaleStat: 'Defense',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'lee': {
       name: 'Lee Bora',
@@ -2867,7 +3233,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Mage',
       grade: 'SSR',
       element: 'Dark',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'lim': {
       name: 'Lim Tae-Gyu',
@@ -2876,7 +3259,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Ranger',
       grade: 'SSR',
       element: 'Dark',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'meilin': {
       name: 'Meilin Fisher',
@@ -2885,7 +3285,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Healer',
       grade: 'SSR',
       element: 'Water',
-      scaleStat: 'HP'
+      scaleStat: 'HP',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'min': {
       name: 'Min Byung-Gu',
@@ -2894,7 +3311,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Healer',
       grade: 'SSR',
       element: 'Light',
-      scaleStat: 'HP'
+      scaleStat: 'HP',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'seo': {
       name: 'Seo Jiwoo',
@@ -2903,7 +3337,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Tank',
       grade: 'SSR',
       element: 'Water',
-      scaleStat: 'HP'
+      scaleStat: 'HP',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'seorin': {
       name: 'Seorin',
@@ -2912,7 +3363,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Ranger',
       grade: 'SSR',
       element: 'Water',
-      scaleStat: 'HP'
+      scaleStat: 'HP',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'shimizu': {
       name: 'Shimizu Akari',
@@ -2921,7 +3389,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Healer',
       grade: 'SSR',
       element: 'Light',
-      scaleStat: 'HP'
+      scaleStat: 'HP',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'silverbaek': {
       name: 'Silver Mane Baek Yoonho',
@@ -2930,7 +3415,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Fighter',
       grade: 'SSR',
       element: 'Dark',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'thomas': {
       name: 'Thomas Andre',
@@ -2939,7 +3441,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Fighter',
       grade: 'SSR',
       element: 'Light',
-      scaleStat: 'Defense'
+      scaleStat: 'Defense',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'woo': {
       name: 'Woo Jinchul',
@@ -2948,7 +3467,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Tank',
       grade: 'SSR',
       element: 'Wind',
-      scaleStat: 'Defense'
+      scaleStat: 'Defense',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'yoo': {
       name: 'Yoo Soohyun',
@@ -2957,7 +3493,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Mage',
       grade: 'SSR',
       element: 'Fire',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'anna': {
       name: 'Anna Ruiz',
@@ -2966,7 +3519,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Ranger',
       grade: 'SR',
       element: 'Water',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'han-song': {
       name: 'Han Song-Yi',
@@ -2975,7 +3545,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Assassin',
       grade: 'SR',
       element: 'Water',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'hwang-dongsuk': {
       name: 'Hwang Dongsuk',
@@ -2984,7 +3571,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Tank',
       grade: 'SR',
       element: 'Dark',
-      scaleStat: 'HP'
+      scaleStat: 'HP',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'jo': {
       name: 'Jo Kyuhwan',
@@ -2993,7 +3597,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Mage',
       grade: 'SR',
       element: 'Light',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'kang': {
       name: 'Kang Taeshik',
@@ -3002,7 +3623,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Assassin',
       grade: 'SR',
       element: 'Dark',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'kim-chul': {
       name: 'Kim Chul',
@@ -3011,7 +3649,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Tank',
       grade: 'SR',
       element: 'Light',
-      scaleStat: 'Defense'
+      scaleStat: 'Defense',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'kim-sangshik': {
       name: 'Kim Sangshik',
@@ -3020,7 +3675,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Tank',
       grade: 'SR',
       element: 'Wind',
-      scaleStat: 'Defense'
+      scaleStat: 'Defense',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'lee-johee': {
       name: 'Lee Johee',
@@ -3029,7 +3701,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Healer',
       grade: 'SR',
       element: 'Water',
-      scaleStat: 'HP'
+      scaleStat: 'HP',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'nam': {
       name: 'Nam Chae-Young',
@@ -3038,7 +3727,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Ranger',
       grade: 'SR',
       element: 'Water',
-      scaleStat: 'HP'
+      scaleStat: 'HP',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'park-beom': {
       name: 'Park Beom-Shik',
@@ -3047,7 +3753,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Fighter',
       grade: 'SR',
       element: 'Wind',
-      scaleStat: 'Defense'
+      scaleStat: 'Defense',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'park-heejin': {
       name: 'Park Heejin',
@@ -3056,7 +3779,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Mage',
       grade: 'SR',
       element: 'Wind',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'song': {
       name: 'Song Chiyul',
@@ -3065,7 +3805,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Mage',
       grade: 'SR',
       element: 'Fire',
-      scaleStat: 'Attack'
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     },
     'yoo-jinho': {
       name: 'Yoo Jinho',
@@ -3074,7 +3831,24 @@ BobbyJones : "Allez l'Inter !"
       class: 'Tank',
       grade: 'SR',
       element: 'Light',
-      scaleStat: 'Defense'
+      scaleStat: 'Defense',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
     }
   };
   const [bubbleId, setBubbleId] = useState(Date.now());
