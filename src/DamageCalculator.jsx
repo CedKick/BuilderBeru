@@ -86,6 +86,9 @@ const DamageCalculator = ({
     set: 0
   });
 
+  // 🗡️ KAISEL FIX: Stocker les indices des buffs actifs
+  const [activeCharacterBuffsIndices, setActiveCharacterBuffsIndices] = useState([]);
+
   const getTotalBuff = (manual, auto) => {
     const manualVal = parseFloat(manual) || 0;
     const autoVal = parseFloat(auto) || 0;
@@ -94,7 +97,7 @@ const DamageCalculator = ({
 
   // Liste des sets disponibles
   const availableSets = [
-    { 
+    {
       label: 'None',
       multiplier: 1,
       damageBuff: 0,
@@ -107,7 +110,7 @@ const DamageCalculator = ({
         hp: 1
       }
     },
-    { 
+    {
       label: 'Infamy x8',
       multiplier: 1,
       damageBuff: 40,
@@ -120,7 +123,7 @@ const DamageCalculator = ({
         hp: 1
       }
     },
-    { 
+    {
       label: 'Cursed/Expert',
       multiplier: 1,
       damageBuff: 30,
@@ -133,7 +136,7 @@ const DamageCalculator = ({
         hp: 1
       }
     },
-    { 
+    {
       label: '2Curs/2Inf/4Exp.',
       multiplier: 1,
       damageBuff: 20,
@@ -146,7 +149,7 @@ const DamageCalculator = ({
         hp: 1
       }
     },
-    { 
+    {
       label: 'Cursed/Obsi',
       multiplier: 1,
       damageBuff: 90,
@@ -159,7 +162,7 @@ const DamageCalculator = ({
         hp: 1
       }
     },
-    { 
+    {
       label: 'Infamy/Obsidian',
       multiplier: 1,
       damageBuff: 60,
@@ -172,7 +175,7 @@ const DamageCalculator = ({
         hp: 1
       }
     },
-    { 
+    {
       label: 'IronWill/Obsi',
       multiplier: 1,
       damageBuff: 60,
@@ -185,7 +188,7 @@ const DamageCalculator = ({
         hp: 1
       }
     },
-    { 
+    {
       label: 'IronWill/Infamy',
       multiplier: 1,
       damageBuff: 0,
@@ -198,7 +201,7 @@ const DamageCalculator = ({
         hp: 1
       }
     },
-    { 
+    {
       label: 'Champion',
       multiplier: 1,
       damageBuff: 0,
@@ -211,7 +214,7 @@ const DamageCalculator = ({
         hp: 1
       }
     },
-    { 
+    {
       label: 'Burning',
       multiplier: 1,
       damageBuff: 0,
@@ -224,7 +227,7 @@ const DamageCalculator = ({
         hp: 1
       }
     },
-    { 
+    {
       label: 'Chaos',
       multiplier: 1,
       damageBuff: 0,
@@ -279,10 +282,10 @@ const DamageCalculator = ({
   // Fonction pour gérer le changement de personnage
   const handleCharacterChange = (characterKey) => {
     setSelectedCharacter(characterKey);
-    
+
     if (characterKey && characters[characterKey]) {
       const character = characters[characterKey];
-      
+
       // Mettre à jour les multiplicateurs
       setCustomStats(prev => ({
         ...prev,
@@ -300,21 +303,21 @@ const DamageCalculator = ({
       }));
     }
   };
-  
+
   // Fonction helper pour déterminer quel multiplicateur appliquer
   const getActiveStatMultiplier = (set, character) => {
     if (!character || !characters[character]) return 1;
-    
+
     const scaleStat = characters[character].scaleStat;
     const statMultipliers = set.statMultipliers || { atk: 1, def: 1, hp: 1 };
-    
+
     // Mapper les noms de stats du jeu vers les clés du multiplicateur
     const statMapping = {
       'Attack': 'atk',
       'Defense': 'def',
       'HP': 'hp'
     };
-    
+
     const statKey = statMapping[scaleStat] || 'atk';
     return statMultipliers[statKey] || 1;
   };
@@ -323,9 +326,9 @@ const DamageCalculator = ({
   const handleSetChange = (setIndex) => {
     const selectedSet = availableSets[setIndex];
     const activeMultiplier = getActiveStatMultiplier(selectedSet, selectedCharacter);
-    
+
     setSelectedSetIndex(setIndex);
-    
+
     setCustomStats(prev => ({
       ...prev,
       setMultiplier: selectedSet.multiplier,
@@ -341,28 +344,28 @@ const DamageCalculator = ({
   const calculateSkillDamage = (skillMultiplier, skillType) => {
     const stats = customStats;
     const safeValue = (val) => val === '' ? 0 : parseFloat(val) || 0;
-    
+
     const cpRatio = safeValue(stats.recommendedCP) > 0 ? safeValue(stats.teamCP) / safeValue(stats.recommendedCP) : 1;
-    
+
     const diPct = calculateDI(safeValue(stats.damageIncrease));
     const penPct = calculatePEN(safeValue(stats.penetration));
     const crPct = calculateCR(safeValue(stats.critRate));
     const cdPct = calculateCD(safeValue(stats.critDamage));
     const precPct = calculatePrecision(safeValue(stats.precision), cpRatio);
-    
+
     const defEff = safeValue(stats.bossDefense) * (1 - penPct);
     const G = 1 - defEff / (defEff + 50000);
-    
+
     // Calcul normal des stars sur la base stat (sans multiplicateur)
     const starsBonus = safeValue(stats.baseStat) * (safeValue(stats.stars) / 100);
-    
+
     // Appliquer le multiplicateur de stat sur la STAT FINALE
     const finalStatBase = safeValue(stats.finalStat) + starsBonus;
     const finalStatWithMultiplier = finalStatBase * safeValue(stats.activeStatMultiplier);
-    
+
     // Calculer les totaux des buffs
     const totalDamageBuffs = safeValue(stats.damageBuffsManual) + safeValue(stats.damageBuffsAuto);
-    
+
     let specificBuff = 0;
     if (skillType === 'core') {
       specificBuff = safeValue(stats.coreBuffsManual) + safeValue(stats.coreBuffsAuto);
@@ -371,20 +374,20 @@ const DamageCalculator = ({
     } else if (skillType === 'ultimate') {
       specificBuff = safeValue(stats.ultimateBuffsManual) + safeValue(stats.ultimateBuffsAuto);
     }
-    
+
     const baseDmg = finalStatWithMultiplier *  // Utiliser la stat finale avec multiplicateur
-      safeValue(skillMultiplier) * 
-      precPct * 
-      G * 
-      (1 + diPct) * 
+      safeValue(skillMultiplier) *
+      precPct *
+      G *
+      (1 + diPct) *
       (1 + totalDamageBuffs / 100) *
       (1 + specificBuff / 100) *
-      (1 + safeValue(stats.elementalDamage) / 100) * 
-      safeValue(stats.setMultiplier) * 
+      (1 + safeValue(stats.elementalDamage) / 100) *
+      safeValue(stats.setMultiplier) *
       safeValue(stats.elementalAdvantage);
-    
+
     const critDmg = baseDmg * (1 + cdPct);
-    
+
     return {
       noCrit: Math.round(baseDmg),
       withCrit: Math.round(critDmg),
@@ -484,7 +487,7 @@ const DamageCalculator = ({
       // Reset les buffs character avant d'appliquer les nouveaux
       setCustomStats(prev => {
         let newStats = { ...prev };
-        
+
         // Si c'est une valeur négative, on soustrait
         if (buffs.damageBuffs) {
           newStats.damageBuffsAuto = Math.max(0, prev.damageBuffsAuto + buffs.damageBuffs);
@@ -498,7 +501,7 @@ const DamageCalculator = ({
         if (buffs.ultimateBuffs) {
           newStats.ultimateBuffsAuto = Math.max(0, prev.ultimateBuffsAuto + buffs.ultimateBuffs);
         }
-        
+
         // Gestion des buffs élémentaires
         if (buffs.elementalDamage) {
           Object.entries(buffs.elementalDamage).forEach(([element, value]) => {
@@ -507,25 +510,16 @@ const DamageCalculator = ({
             }
           });
         }
-        
+
         // Gestion du scaleStat buff
         if (buffs.scaleStatBuff) {
           // On pourrait ajouter un multiplicateur sur la stat de base
           // Pour l'instant on l'ajoute comme un damage buff
           newStats.damageBuffsAuto = Math.max(0, prev.damageBuffsAuto + buffs.scaleStatBuff);
         }
-        
+
         return newStats;
       });
-      
-      // Compter les buffs actifs
-      if (buffs.damageBuffs > 0 || buffs.coreBuffs > 0 || buffs.skillBuffs > 0 || buffs.ultimateBuffs > 0) {
-        const buffCount = Object.values(buffs).filter(v => v > 0).length;
-        setActiveBuffsCount(prev => ({
-          ...prev,
-          [buffType]: buffCount
-        }));
-      }
     } else {
       // Pour les autres types de buffs (team, set)
       setCustomStats(prev => ({
@@ -572,7 +566,7 @@ const DamageCalculator = ({
                   <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055045/sungicon_bfndrc.png" alt="icon" className="w-4 h-4 rounded" />
                   <h3 className="text-white/90 text-xs font-medium">BASE STATS</h3>
                 </div>
-                
+
                 {/* Character Selector */}
                 <div className="flex items-center gap-2">
                   <select
@@ -588,15 +582,15 @@ const DamageCalculator = ({
                       ))}
                   </select>
                   {selectedCharacter && characters[selectedCharacter] && (
-                    <img 
-                      src={characters[selectedCharacter].icon} 
+                    <img
+                      src={characters[selectedCharacter].icon}
                       alt={characters[selectedCharacter].name}
                       className="w-4 h-4 rounded"
                     />
                   )}
                 </div>
               </div>
-              
+
               {/* Stats principales en 2 colonnes */}
               <div className="grid grid-cols-2 gap-x-3 gap-y-1 mb-2">
                 {/* Colonne gauche */}
@@ -610,7 +604,7 @@ const DamageCalculator = ({
                       className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-14 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
                     />
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <label className="text-white/60 text-[10px]">Base</label>
                     <input
@@ -620,7 +614,7 @@ const DamageCalculator = ({
                       className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-14 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
                     />
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <label className="text-white/60 text-[10px]">Stars%</label>
                     <input
@@ -631,7 +625,7 @@ const DamageCalculator = ({
                     />
                   </div>
                 </div>
-                
+
                 {/* Colonne droite */}
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
@@ -643,7 +637,7 @@ const DamageCalculator = ({
                       className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-14 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
                     />
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <label className="text-white/60 text-[10px]">Elem%</label>
                     <input
@@ -654,7 +648,7 @@ const DamageCalculator = ({
                       className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-14 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
                     />
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <label className="text-white/60 text-[10px]">Set</label>
                     <select
@@ -669,7 +663,7 @@ const DamageCalculator = ({
                       ))}
                     </select>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <label className="text-white/60 text-[10px]">Advantage</label>
                     <input
@@ -682,10 +676,10 @@ const DamageCalculator = ({
                   </div>
                 </div>
               </div>
-              
+
               {/* Séparateur */}
               <div className="border-t border-indigo-800/30 my-2"></div>
-              
+
               {/* Section Buffs avec double inputs */}
               <div className="space-y-1">
                 {/* DMG Buff */}
@@ -711,7 +705,7 @@ const DamageCalculator = ({
                     </span>
                   </div>
                 </div>
-                
+
                 {/* Core Buff */}
                 <div className="flex items-center gap-2">
                   <label className="text-white/60 text-[10px] w-16">Core Buff%</label>
@@ -735,7 +729,7 @@ const DamageCalculator = ({
                     </span>
                   </div>
                 </div>
-                
+
                 {/* Skill Buff */}
                 <div className="flex items-center gap-2">
                   <label className="text-white/60 text-[10px] w-16">Skill Buff%</label>
@@ -759,7 +753,7 @@ const DamageCalculator = ({
                     </span>
                   </div>
                 </div>
-                
+
                 {/* Ultimate Buff */}
                 <div className="flex items-center gap-2">
                   <label className="text-white/60 text-[10px] w-16">Ult Buff%</label>
@@ -814,7 +808,7 @@ const DamageCalculator = ({
                 <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png" alt="icon" className="w-4 h-4 rounded" />
                 <h3 className="text-white/90 text-xs font-medium">OTHER BUFFS</h3>
               </div>
-              
+
               <div className="grid grid-cols-1 gap-1">
                 <button
                   onClick={() => setShowBuffsPopup(prev => ({ ...prev, character: true }))}
@@ -822,14 +816,14 @@ const DamageCalculator = ({
                 >
                   Character Buffs <span className="text-purple-400">({activeBuffsCount.character})</span>
                 </button>
-                
+
                 <button
                   onClick={() => setShowBuffsPopup(prev => ({ ...prev, team: true }))}
                   className="bg-indigo-900/30 hover:bg-indigo-900/50 text-white/70 hover:text-white px-2 py-1 rounded text-[10px] transition-all text-left"
                 >
                   Team Buffs <span className="text-purple-400">({activeBuffsCount.team})</span>
                 </button>
-                
+
                 <button
                   onClick={() => setShowBuffsPopup(prev => ({ ...prev, set: true }))}
                   className="bg-indigo-900/30 hover:bg-indigo-900/50 text-white/70 hover:text-white px-2 py-1 rounded text-[10px] transition-all text-left"
@@ -887,8 +881,8 @@ const DamageCalculator = ({
                     key={key}
                     onClick={() => handleBossChange(key)}
                     className={`relative overflow-hidden px-2 py-1 rounded text-xs transition-all ${selectedBoss === key
-                        ? 'ring-2 ring-purple-400 text-white'
-                        : 'text-white/70 hover:text-white'
+                      ? 'ring-2 ring-purple-400 text-white'
+                      : 'text-white/70 hover:text-white'
                       }`}
                     style={{
                       backgroundImage: boss.img ? `url(${boss.img})` : 'none',
@@ -897,8 +891,8 @@ const DamageCalculator = ({
                     }}
                   >
                     <div className={`absolute inset-0 ${selectedBoss === key
-                        ? 'bg-purple-900/60'
-                        : 'bg-purple-900/80 hover:bg-purple-900/70'
+                      ? 'bg-purple-900/60'
+                      : 'bg-purple-900/80 hover:bg-purple-900/70'
                       } transition-colors`} />
                     <span className="relative z-10">{boss.name}</span>
                   </button>
@@ -997,31 +991,28 @@ const DamageCalculator = ({
                 <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055837/beruProst_ymvwos.png" alt="icon" className="w-4 h-4 rounded" />
                 <h3 className="text-white/90 text-xs font-medium">SETTINGS</h3>
               </div>
-              
+
               {/* Mode Toggle */}
               <div className="flex items-center justify-between mb-2">
                 <span className="text-white/70 text-[10px]">Calculator Mode</span>
                 <button
                   onClick={() => handleStatChange('calculatorMode', customStats.calculatorMode === 'normal' ? 'expert' : 'normal')}
-                  className={`relative w-14 h-6 rounded-full transition-colors ${
-                    customStats.calculatorMode === 'expert' ? 'bg-purple-600' : 'bg-indigo-900/50'
-                  }`}
+                  className={`relative w-14 h-6 rounded-full transition-colors ${customStats.calculatorMode === 'expert' ? 'bg-purple-600' : 'bg-indigo-900/50'
+                    }`}
                 >
                   <span
-                    className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                      customStats.calculatorMode === 'expert' ? 'translate-x-8' : 'translate-x-0'
-                    }`}
+                    className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${customStats.calculatorMode === 'expert' ? 'translate-x-8' : 'translate-x-0'
+                      }`}
                   />
-                  <span className={`absolute inset-0 flex items-center ${
-                    customStats.calculatorMode === 'expert' ? 'justify-start pl-1' : 'justify-end pr-1'
-                  }`}>
+                  <span className={`absolute inset-0 flex items-center ${customStats.calculatorMode === 'expert' ? 'justify-start pl-1' : 'justify-end pr-1'
+                    }`}>
                     <span className="text-[8px] text-white font-medium">
                       {customStats.calculatorMode === 'expert' ? 'EXP' : 'NOR'}
                     </span>
                   </span>
                 </button>
               </div>
-              
+
               {/* Expert Options */}
               {customStats.calculatorMode === 'expert' && (
                 <div className="space-y-1 pl-2 border-l-2 border-purple-600/30">
@@ -1035,14 +1026,12 @@ const DamageCalculator = ({
                       <span className="text-white/60 text-[9px]">{setting.label}</span>
                       <button
                         onClick={() => handleStatChange(`expertSettings.${setting.key}`, !customStats.expertSettings[setting.key])}
-                        className={`relative w-8 h-4 rounded-full transition-colors ${
-                          customStats.expertSettings[setting.key] ? 'bg-purple-600/70' : 'bg-indigo-900/30'
-                        }`}
+                        className={`relative w-8 h-4 rounded-full transition-colors ${customStats.expertSettings[setting.key] ? 'bg-purple-600/70' : 'bg-indigo-900/30'
+                          }`}
                       >
                         <span
-                          className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white/90 rounded-full transition-transform ${
-                            customStats.expertSettings[setting.key] ? 'translate-x-4' : 'translate-x-0'
-                          }`}
+                          className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white/90 rounded-full transition-transform ${customStats.expertSettings[setting.key] ? 'translate-x-4' : 'translate-x-0'
+                            }`}
                         />
                       </button>
                     </div>
@@ -1060,21 +1049,25 @@ const DamageCalculator = ({
           </p>
         </div>
       </div>
-      
+
       {/* Popups */}
       {showBuffsPopup.character && (
         <CharacterBuffs
           selectedCharacter={selectedCharacter}
           characters={characters}
-          onClose={() => setShowBuffsPopup(prev => ({ ...prev, character: false }))}
+          activeBuffs={activeCharacterBuffsIndices} // ← IMPORTANT
+          onClose={(selectedIndices) => {
+            setShowBuffsPopup(prev => ({ ...prev, character: false }));
+            if (selectedIndices) {
+              setActiveCharacterBuffsIndices(selectedIndices);
+              setActiveBuffsCount(prev => ({
+                ...prev,
+                character: selectedIndices.length
+              }));
+            }
+          }}
           onApplyBuffs={(buffs) => {
             handleApplyBuffs('character', buffs);
-            // Mettre à jour le compteur
-            const activeCount = Object.values(buffs).filter(v => v && v > 0).length;
-            setActiveBuffsCount(prev => ({
-              ...prev,
-              character: activeCount
-            }));
           }}
         />
       )}

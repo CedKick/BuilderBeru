@@ -1,8 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const CharacterBuffs = ({ selectedCharacter, characters = {}, onClose, onApplyBuffs }) => {
-  const [selectedBuffs, setSelectedBuffs] = useState([]);
-  const [appliedBuffs, setAppliedBuffs] = useState({}); // Pour tracker les buffs déjà appliqués
+const CharacterBuffs = ({ 
+  selectedCharacter, 
+  characters = {}, 
+  onClose, 
+  onApplyBuffs,
+  activeBuffs = [] // 🗡️ KAISEL FIX: Recevoir les buffs actifs depuis le parent
+}) => {
+  // 🗡️ KAISEL FIX: Initialiser avec les buffs déjà actifs
+  const [selectedBuffs, setSelectedBuffs] = useState(activeBuffs);
+  const [appliedBuffs, setAppliedBuffs] = useState({});
+
+  // 🗡️ KAISEL FIX: Initialiser appliedBuffs avec les buffs actifs au montage
+  useEffect(() => {
+    const initialAppliedBuffs = {};
+    const characterBuffs = characters[selectedCharacter]?.buffs || [];
+    
+    activeBuffs.forEach(buffIndex => {
+      const buff = characterBuffs[buffIndex];
+      if (buff) {
+        const maxValue = Math.max(...buff.values);
+        const buffsToApply = {};
+        
+        if (buff.type === 'elementalDamage') {
+          buffsToApply.elementalDamage = { [buff.element]: maxValue };
+        } else if (buff.type === 'scaleStat') {
+          buffsToApply.scaleStatBuff = maxValue;
+        } else {
+          buffsToApply[buff.type] = maxValue;
+        }
+        
+        initialAppliedBuffs[buffIndex] = buffsToApply;
+      }
+    });
+    
+    setAppliedBuffs(initialAppliedBuffs);
+  }, [activeBuffs, selectedCharacter, characters]);
 
   // Récupérer les buffs du personnage sélectionné
   const characterBuffs = characters[selectedCharacter]?.buffs || [];
@@ -22,8 +55,13 @@ const CharacterBuffs = ({ selectedCharacter, characters = {}, onClose, onApplyBu
         // Calculer les nouveaux totaux en retirant les buffs
         const updatedBuffs = {};
         Object.keys(buffsToRemove).forEach(key => {
-          if (buffsToRemove[key] !== 0) {
-            updatedBuffs[key] = -buffsToRemove[key]; // Valeur négative pour retirer
+          if (key === 'elementalDamage') {
+            updatedBuffs.elementalDamage = {};
+            Object.entries(buffsToRemove[key]).forEach(([element, value]) => {
+              updatedBuffs.elementalDamage[element] = -value;
+            });
+          } else {
+            updatedBuffs[key] = -buffsToRemove[key];
           }
         });
         
@@ -66,18 +104,58 @@ const CharacterBuffs = ({ selectedCharacter, characters = {}, onClose, onApplyBu
   };
 
   const handleClose = () => {
-    // Si on ferme sans Apply, on retire tous les buffs non confirmés
-    Object.values(appliedBuffs).forEach(buffs => {
-      const buffsToRemove = {};
-      Object.keys(buffs).forEach(key => {
-        if (buffs[key] !== 0) {
-          buffsToRemove[key] = -buffs[key];
-        }
-      });
-      onApplyBuffs(buffsToRemove);
+    // 🗡️ KAISEL FIX: Si on ferme avec Cancel, on doit retirer les buffs nouvellement ajoutés
+    // et remettre ceux qui ont été retirés
+    const buffsToRevert = {};
+    
+    // Retirer les nouveaux buffs ajoutés
+    selectedBuffs.forEach(buffIndex => {
+      if (!activeBuffs.includes(buffIndex) && appliedBuffs[buffIndex]) {
+        Object.entries(appliedBuffs[buffIndex]).forEach(([key, value]) => {
+          if (key === 'elementalDamage' && typeof value === 'object') {
+            // Pour elementalDamage
+            Object.entries(value).forEach(([element, val]) => {
+              if (!buffsToRevert.elementalDamage) buffsToRevert.elementalDamage = {};
+              buffsToRevert.elementalDamage[element] = -(val || 0);
+            });
+          } else if (key === 'scaleStatBuff') {
+            buffsToRevert.scaleStatBuff = -(value || 0);
+          } else {
+            buffsToRevert[key] = -(value || 0);
+          }
+        });
+      }
     });
     
+    // Remettre les buffs qui ont été retirés
+    activeBuffs.forEach(buffIndex => {
+      if (!selectedBuffs.includes(buffIndex)) {
+        const buff = characterBuffs[buffIndex];
+        if (buff) {
+          const maxValue = Math.max(...buff.values);
+          
+          if (buff.type === 'elementalDamage') {
+            if (!buffsToRevert.elementalDamage) buffsToRevert.elementalDamage = {};
+            buffsToRevert.elementalDamage[buff.element] = maxValue;
+          } else if (buff.type === 'scaleStat') {
+            buffsToRevert.scaleStatBuff = maxValue;
+          } else {
+            buffsToRevert[buff.type] = maxValue;
+          }
+        }
+      }
+    });
+    
+    if (Object.keys(buffsToRevert).length > 0) {
+      onApplyBuffs(buffsToRevert);
+    }
+    
     onClose();
+  };
+
+  const handleConfirm = () => {
+    // 🗡️ KAISEL FIX: Passer les indices des buffs sélectionnés au parent
+    onClose(selectedBuffs);
   };
 
   const getBuffTypeLabel = (type) => {
@@ -243,7 +321,7 @@ const CharacterBuffs = ({ selectedCharacter, characters = {}, onClose, onApplyBu
               Cancel
             </button>
             <button
-              onClick={onClose}
+              onClick={handleConfirm}
               className="px-4 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded transition-colors"
             >
               Confirm
