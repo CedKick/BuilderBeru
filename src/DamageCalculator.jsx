@@ -17,6 +17,9 @@ const DamageCalculator = ({
 
   // État pour le personnage sélectionné
   const [selectedCharacter, setSelectedCharacter] = useState(initialCharacter || '');
+  const [teamBuffSelection, setTeamBuffSelection] = useState(['', '']);
+  const [raidBuffSelection, setRaidBuffSelection] = useState(['', '', '']);
+
 
   // États pour les calculs
   const [customStats, setCustomStats] = useState({
@@ -72,6 +75,9 @@ const DamageCalculator = ({
     coreBuffsAuto: 0,
     skillBuffsAuto: 0,
     ultimateBuffsAuto: 0,
+
+    // 🗡️ KAISEL FIX: Tracker le buff de stat appliqué
+    scaleStatBuffPercent: 0,
   });
 
   const [showBuffsPopup, setShowBuffsPopup] = useState({
@@ -359,9 +365,10 @@ const DamageCalculator = ({
     // Calcul normal des stars sur la base stat (sans multiplicateur)
     const starsBonus = safeValue(stats.baseStat) * (safeValue(stats.stars) / 100);
 
-    // Appliquer le multiplicateur de stat sur la STAT FINALE
+    // Appliquer le multiplicateur de stat ET le buff % sur la STAT FINALE
     const finalStatBase = safeValue(stats.finalStat) + starsBonus;
-    const finalStatWithMultiplier = finalStatBase * safeValue(stats.activeStatMultiplier);
+    const statBuffMultiplier = 1 + (safeValue(stats.scaleStatBuffPercent) / 100);
+    const finalStatWithMultiplier = finalStatBase * safeValue(stats.activeStatMultiplier) * statBuffMultiplier;
 
     // Calculer les totaux des buffs
     const totalDamageBuffs = safeValue(stats.damageBuffsManual) + safeValue(stats.damageBuffsAuto);
@@ -488,18 +495,30 @@ const DamageCalculator = ({
       setCustomStats(prev => {
         let newStats = { ...prev };
 
+        // 🗡️ KAISEL FIX: Gérer tous les types de buffs
         // Si c'est une valeur négative, on soustrait
-        if (buffs.damageBuffs) {
+        if (buffs.damageBuffs !== undefined) {
           newStats.damageBuffsAuto = Math.max(0, prev.damageBuffsAuto + buffs.damageBuffs);
         }
-        if (buffs.coreBuffs) {
+        if (buffs.coreBuffs !== undefined) {
           newStats.coreBuffsAuto = Math.max(0, prev.coreBuffsAuto + buffs.coreBuffs);
         }
-        if (buffs.skillBuffs) {
+        if (buffs.skillBuffs !== undefined) {
           newStats.skillBuffsAuto = Math.max(0, prev.skillBuffsAuto + buffs.skillBuffs);
         }
-        if (buffs.ultimateBuffs) {
+        if (buffs.ultimateBuffs !== undefined) {
           newStats.ultimateBuffsAuto = Math.max(0, prev.ultimateBuffsAuto + buffs.ultimateBuffs);
+        }
+
+        // 🗡️ KAISEL FIX: NE PAS appliquer scaleStatBuff aux damage buffs!
+        // scaleStatBuff affecte la stat finale, pas les dégâts
+        if (buffs.scaleStatBuff !== undefined) {
+          // Le scaleStatBuff affecte la stat finale selon le scaleStat du personnage
+          const scaleStat = characters[selectedCharacter]?.scaleStat;
+          const buffValue = buffs.scaleStatBuff;
+
+          // Tracker le pourcentage de buff mais NE PAS l'ajouter aux damage buffs
+          newStats.scaleStatBuffPercent = (prev.scaleStatBuffPercent || 0) + buffValue;
         }
 
         // Gestion des buffs élémentaires
@@ -509,13 +528,6 @@ const DamageCalculator = ({
               newStats.elementalDamage = Math.max(0, (prev.elementalDamage || 0) + value);
             }
           });
-        }
-
-        // Gestion du scaleStat buff
-        if (buffs.scaleStatBuff) {
-          // On pourrait ajouter un multiplicateur sur la stat de base
-          // Pour l'instant on l'ajoute comme un damage buff
-          newStats.damageBuffsAuto = Math.max(0, prev.damageBuffsAuto + buffs.scaleStatBuff);
         }
 
         return newStats;
@@ -630,12 +642,19 @@ const DamageCalculator = ({
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
                     <label className="text-white/60 text-[10px]">Final Stats</label>
-                    <input
-                      type="number"
-                      value={customStats.finalStat}
-                      onChange={(e) => handleStatChange('finalStat', e.target.value)}
-                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-14 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
-                    />
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        value={customStats.finalStat}
+                        onChange={(e) => handleStatChange('finalStat', e.target.value)}
+                        className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-14 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
+                      />
+                      {customStats.scaleStatBuffPercent > 0 && (
+                        <span className="text-green-400 text-[8px]">
+                          +{customStats.scaleStatBuffPercent.toFixed(1)}%
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex justify-between items-center">
@@ -1055,9 +1074,10 @@ const DamageCalculator = ({
         <CharacterBuffs
           selectedCharacter={selectedCharacter}
           characters={characters}
-          activeBuffs={activeCharacterBuffsIndices} // ← IMPORTANT
+          activeBuffs={activeCharacterBuffsIndices} // 🗡️ KAISEL FIX: Passer les buffs actifs
           onClose={(selectedIndices) => {
             setShowBuffsPopup(prev => ({ ...prev, character: false }));
+            // 🗡️ KAISEL FIX: Mettre à jour les indices si fournis
             if (selectedIndices) {
               setActiveCharacterBuffsIndices(selectedIndices);
               setActiveBuffsCount(prev => ({
@@ -1075,6 +1095,13 @@ const DamageCalculator = ({
       {showBuffsPopup.team && (
         <TeamBuffs
           teamMembers={[]}
+          characters={characters}
+          previousTeamSelection={teamBuffSelection}  // 🗡️ Passer les sélections sauvegardées
+          previousRaidSelection={raidBuffSelection}  // 🗡️ Passer les sélections sauvegardées
+          onTeamSelectionChange={(team, raid) => {  // 🗡️ Callback pour sauvegarder
+            setTeamBuffSelection(team);
+            setRaidBuffSelection(raid);
+          }}
           onClose={() => setShowBuffsPopup(prev => ({ ...prev, team: false }))}
           onApplyBuffs={(buffs) => handleApplyBuffs('team', buffs)}
         />

@@ -16,63 +16,96 @@ export  const characters = {
       },
       buffs: []
       
-    }, 'jinah': {
-      name: 'Jinah',
-      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869840/jinah_vrbddm.png',
-      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869067/jinah_icon_pfdee6.png',
-      class: 'Support',
-      grade: 'SSR',
-      element: 'Wind',
-      scaleStat: 'Defense',
-      skillMultipliers: {
-        core1: 2.76,
-        core2: 14.82,
-        skill1: 27.27,
-        skill2: 26.61,
-        ultimate: 68.69
-      },
-      buffs: [{
-          name: 'Shield',
-          values: [10, 20, 30], // Accumulative: 
-          cooldown: 0,
-          duration: 30,
-          target: 'self', // 'self' ou 'shared'
-          type: 'scaleStat', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage, scaleStat
-          element: 'None',
-          img : 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754383923/defense_jinah_bzd7tr.png'
-        },
-        {
-          name: 'Wind Damage Taken Increase',
-          values: [1, 2, 3, 4, 5], // Accumulative: 5%, 10%, 15%
-          cooldown: 0,
-          duration: 20,
-          target: 'shared', // 'self' ou 'shared'
-          type: 'elementalDamage', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
-          element: 'Wind',
-          img :'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754383924/wind_damage_taken_jinah_brirej.png'
-        },
-        {
-          name: 'Sudden Showers',
-          values: [10], // Accumulative: 5%, 10%, 15%
-          cooldown: 0,
-          duration: 25,
-          target: 'shared', // 'self' ou 'shared'
-          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
-          element: 'None',
-          img :'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754383915/rain_jinah_uufuxy.png'
-        },
-        {
-          name: 'Aero',
-          values: [2, 4, 6, 8, 10], // Accumulative: 5%, 10%, 15%
-          cooldown: 0,
-          duration: 25,
-          target: 'shared', // 'self' ou 'shared'
-          type: 'elementalDamage', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
-          element: 'Wind',
-          img :'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754384587/Aero_jinah_hjuchd.png'
-        }
-       ]
-    }, 'shuhua': {
+    },'jinah': {
+  name: 'Jinah',
+  img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869840/jinah_vrbddm.png',
+  icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869067/jinah_icon_pfdee6.png',
+  class: 'Support',
+  grade: 'SSR',
+  element: 'Wind',
+  scaleStat: 'Defense',
+  skillMultipliers: {
+    core1: 2.76,
+    core2: 14.82,
+    skill1: 27.27,
+    skill2: 26.61,
+    ultimate: 68.69
+  },
+  buffs: [
+    {
+      name: 'Shield',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754383923/defense_jinah_bzd7tr.png',
+      duration: 30,
+      target: 'self',
+      effects: [
+        { type: 'scaleStat', values: [10, 20, 30] }
+      ]
+    },
+    {
+      name: 'Wind Damage Taken Increase',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754383924/wind_damage_taken_jinah_brirej.png',
+      duration: 20,
+      target: 'shared',
+      effects: [
+        { type: 'elementalDamage', element: 'Wind', values: [1, 2, 3, 4, 5] }
+      ]
+    },
+    {
+      name: 'Sudden Showers',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754383915/rain_jinah_uufuxy.png',
+      duration: 25,
+      target: 'shared',
+      effects: [
+        { type: 'damageBuffs', values: [10] }
+      ]
+    },
+    {
+      name: 'Aero',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754384587/Aero_jinah_hjuchd.png',
+      duration: 25,
+      target: 'shared',
+      effects: [
+        { type: 'elementalDamage', element: 'Wind', values: [2, 4, 6, 8, 10] }
+      ]
+    },
+    {
+      name: "Wind's Touch",
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754391315/windtTouch_jinah_w7hmrx.png',
+      duration: -1, // Infini
+      target: 'shared',
+      stacks: 10,
+      effects: [
+        { type: 'attack', values: [10] },           // +1% Attack
+        { type: 'defense', values: [10] },          // +1% Defense
+        { type: 'skillBuffs', values: [5] },     // +0.5% Basic Skill
+        // Bonus Wind (optionnel, on peut gérer ça plus tard)
+        { type: 'attack', condition: 'wind', values: [10] },     // +1% Attack si Wind
+        { type: 'defense', condition: 'wind', values: [10] },    // +1% Defense si Wind
+        { type: 'skillBuffs', condition: 'wind', values: [5] } // +0.5% Skill si Wind
+      ]
+    },
+    {
+  name: "Wings of Freedom",
+  img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754394834/wingOfFreedom_jinah_tavng0.png', // Tu devras uploader l'image
+  duration: 5,
+  target: 'self', // Ou 'shared' si c'est pour toute l'équipe
+  stacks: 1,
+  effects: [
+    { type: 'skillBuffs', values: [10] },      // +10% Basic Skill damage
+    { type: 'ultimateBuffs', values: [10] }    // +10% Ultimate Skill damage
+  ]
+},
+{
+  name: "4 Star Jinah",
+  img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754395402/fourStar_jinah_izutbk.png', // Tu devras uploader l'image
+  duration: -1, // Infini (passif)
+  target: 'shared', // Pour tous les membres Wind de l'équipe
+  effects: [
+    { type: 'elementalDamage', element: 'Wind', values: [15] } // +15% Wind damage (5% x 3 alliés Wind)
+  ]
+} 
+  ]
+}, 'shuhua': {
       name: 'Shuhua',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751535917/Shuhua1_difnjb.png',
       icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751536775/IconShuhua_njc2f2.png',
@@ -131,22 +164,13 @@ export  const characters = {
       element: 'Wind',
       scaleStat: 'Defense',
       skillMultipliers: {
-        core1: 3.5,
-        core2: 4.8,
-        skill1: 12.0,
-        skill2: 16.5,
-        ultimate: 35.0
+        core1: 2.595,
+        core2: 16.995,
+        skill1: 84.195,
+        skill2: 73.695,
+        ultimate: 85.305
       },
-      buffs: [
-        {
-          name: 'Wind Shield',
-          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
-          cooldown: 12,
-          duration: 8,
-          target: 'shared', // 'self' ou 'shared'
-          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
-          element: 'Wind'
-        } ]
+      buffs: []
     },
 
     'chae': {
@@ -470,20 +494,20 @@ export  const characters = {
       element: 'Wind',
       scaleStat: 'HP',
       skillMultipliers: {
-        core1: 3.5,
-        core2: 4.8,
-        skill1: 12.0,
-        skill2: 16.5,
-        ultimate: 35.0
+        core1: 2.58,
+        core2: 8.82,
+        skill1: 6.99,
+        skill2: 12.75,
+        ultimate: 27.84
       },
       buffs: [
         {
-          name: 'Wind Shield',
-          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          name: 'Exorcise',
+          values: [3, 6, 9, 12, 15], // Accumulative: 5%, 10%, 15%
           cooldown: 12,
           duration: 8,
-          target: 'shared', // 'self' ou 'shared'
-          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          target: 'self', // 'self' ou 'shared'
+          type: 'CritDamageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
           element: 'Wind'
         } ]
     },
