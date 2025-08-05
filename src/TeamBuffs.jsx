@@ -16,31 +16,44 @@ const TeamBuffs = ({
   const [selectedRaid, setSelectedRaid] = useState(previousRaidSelection);
   const [appliedBuffs, setAppliedBuffs] = useState({});
 
+  // 🔧 KAISEL FIX: Helper pour obtenir l'élément du personnage principal
+  const getMainCharacterElement = () => {
+    const mainCharacter = teamMembers && teamMembers[0] ? characters[teamMembers[0]] : null;
+    return mainCharacter?.element?.toLowerCase() || '';
+  };
+
   // Formater la description du buff
   const formatBuffDescription = (buff) => {
     if (!buff.effects || buff.effects.length === 0) return '';
     
     const descriptions = [];
+    const characterElement = getMainCharacterElement();
+    
     buff.effects.forEach(effect => {
       const values = effect.values || [0];
       const maxValue = values.length > 0 ? Math.max(...values) : 0;
       
+      // 🔧 KAISEL FIX: Indiquer si l'effet est conditionnel
+      const isConditionMet = !effect.condition || effect.condition === characterElement;
+      const conditionPrefix = effect.condition ? 
+        (isConditionMet ? '✓ ' : '✗ ') : '';
+      
       if (effect.type === 'elementalDamage') {
-        descriptions.push(`+${maxValue}% ${effect.element} Damage`);
+        descriptions.push(`${conditionPrefix}+${maxValue}% ${effect.element} Damage`);
       } else if (effect.type === 'attack') {
-        descriptions.push(`+${maxValue}% ATK`);
+        descriptions.push(`${conditionPrefix}+${maxValue}% ATK${effect.condition ? ` (${effect.condition} only)` : ''}`);
       } else if (effect.type === 'defense') {
-        descriptions.push(`+${maxValue}% DEF`);
+        descriptions.push(`${conditionPrefix}+${maxValue}% DEF${effect.condition ? ` (${effect.condition} only)` : ''}`);
       } else if (effect.type === 'HP') {
-        descriptions.push(`+${maxValue}% HP`);
+        descriptions.push(`${conditionPrefix}+${maxValue}% HP${effect.condition ? ` (${effect.condition} only)` : ''}`);
       } else if (effect.type === 'skillBuffs') {
-        descriptions.push(`+${maxValue}% Skill Damage`);
+        descriptions.push(`${conditionPrefix}+${maxValue}% Skill Damage${effect.condition ? ` (${effect.condition} only)` : ''}`);
       } else if (effect.type === 'ultimateBuffs') {
-        descriptions.push(`+${maxValue}% Ultimate Damage`);
+        descriptions.push(`${conditionPrefix}+${maxValue}% Ultimate Damage`);
       } else if (effect.type === 'damageBuffs') {
-        descriptions.push(`+${maxValue}% All Damage`);
+        descriptions.push(`${conditionPrefix}+${maxValue}% All Damage`);
       } else if (effect.type === 'coreBuffs') {
-        descriptions.push(`+${maxValue}% Core Skills`);
+        descriptions.push(`${conditionPrefix}+${maxValue}% Core Skills`);
       }
     });
     
@@ -100,6 +113,7 @@ const TeamBuffs = ({
   // 🗡️ KAISEL: Initialiser appliedBuffs avec les buffs actifs au montage (comme CharacterBuffs)
   useEffect(() => {
     const initialAppliedBuffs = {};
+    const characterElement = getMainCharacterElement();
     
     activeTeamBuffs.forEach(buffId => {
       const buff = availableBuffs.find(b => b.id === buffId);
@@ -107,6 +121,11 @@ const TeamBuffs = ({
         const buffsToApply = {};
         
         buff.effects.forEach(effect => {
+          // 🔧 KAISEL FIX: Vérifier la condition
+          if (effect.condition && effect.condition !== characterElement) {
+            return; // Skip cet effet
+          }
+          
           const values = effect.values || [0];
           const maxValue = values.length > 0 ? Math.max(...values) : 0;
           
@@ -132,6 +151,7 @@ const TeamBuffs = ({
 
   const toggleBuff = (buffId) => {
     const isSelected = selectedBuffs.includes(buffId);
+    const characterElement = getMainCharacterElement();
     
     if (isSelected) {
       // Retirer le buff
@@ -173,6 +193,11 @@ const TeamBuffs = ({
         const buffsToApply = {};
         
         buff.effects.forEach(effect => {
+          // 🔧 KAISEL FIX: Ne pas appliquer l'effet si condition non remplie
+          if (effect.condition && effect.condition !== characterElement) {
+            return; // Skip cet effet
+          }
+          
           const values = effect.values || [0];
           const maxValue = values.length > 0 ? Math.max(...values) : 0;
           
@@ -204,6 +229,7 @@ const TeamBuffs = ({
     // 🗡️ KAISEL: Si on ferme avec Cancel, on doit retirer les buffs nouvellement ajoutés
     // et remettre ceux qui ont été retirés (comme dans CharacterBuffs)
     const buffsToRevert = {};
+    const characterElement = getMainCharacterElement();
     
     // Retirer les nouveaux buffs ajoutés
     selectedBuffs.forEach(buffId => {
@@ -227,6 +253,11 @@ const TeamBuffs = ({
         const buff = availableBuffs.find(b => b.id === buffId);
         if (buff && buff.effects) {
           buff.effects.forEach(effect => {
+            // 🔧 KAISEL FIX: Vérifier la condition
+            if (effect.condition && effect.condition !== characterElement) {
+              return; // Skip cet effet
+            }
+            
             const values = effect.values || [0];
             const maxValue = values.length > 0 ? Math.max(...values) : 0;
             
@@ -239,7 +270,7 @@ const TeamBuffs = ({
               buffsToRevert.scaleStatBuff = (buffsToRevert.scaleStatBuff || 0) + maxValue;
             }
             else {
-              buffsToRevert[key] = (buffsToRevert[key] || 0) + maxValue;
+              buffsToRevert[effect.type] = (buffsToRevert[effect.type] || 0) + maxValue;
             }
           });
         }
@@ -314,9 +345,16 @@ const TeamBuffs = ({
                   
                   // Appliquer tous les buffs
                   const allBuffsToApply = {};
+                  const characterElement = getMainCharacterElement();
+                  
                   availableBuffs.forEach(buff => {
                     if (!selectedBuffs.includes(buff.id) && buff.effects) {
                       buff.effects.forEach(effect => {
+                        // 🔧 KAISEL FIX: Vérifier la condition
+                        if (effect.condition && effect.condition !== characterElement) {
+                          return; // Skip cet effet
+                        }
+                        
                         const values = effect.values || [0];
                         const maxValue = values.length > 0 ? Math.max(...values) : 0;
                         
@@ -336,6 +374,11 @@ const TeamBuffs = ({
                       setAppliedBuffs(prev => ({
                         ...prev,
                         [buff.id]: buff.effects.reduce((acc, effect) => {
+                          // 🔧 KAISEL FIX: Vérifier la condition ici aussi
+                          if (effect.condition && effect.condition !== characterElement) {
+                            return acc;
+                          }
+                          
                           const values = effect.values || [0];
                           const maxValue = values.length > 0 ? Math.max(...values) : 0;
                           if (effect.type === 'elementalDamage') {
