@@ -331,23 +331,34 @@ const DamageCalculator = ({
     return statMultipliers[statKey] || 1;
   };
 
-  // Fonction handleSetChange mise à jour
-  const handleSetChange = (setIndex) => {
-    const selectedSet = availableSets[setIndex];
-    const activeMultiplier = getActiveStatMultiplier(selectedSet, selectedCharacter);
+  // 2. Dans handleSetChange (ligne ~330), modifier pour ne pas écraser les buffs :
 
-    setSelectedSetIndex(setIndex);
+const handleSetChange = (setIndex) => {
+  const selectedSet = availableSets[setIndex];
+  const activeMultiplier = getActiveStatMultiplier(selectedSet, selectedCharacter);
 
-    setCustomStats(prev => ({
+  setSelectedSetIndex(setIndex);
+
+  // 🔧 KAISEL FIX: Calculer la différence au lieu d'écraser
+  setCustomStats(prev => {
+    // Retirer les anciens buffs du set
+    const oldSet = availableSets[selectedSetIndex];
+    const newDamageBuff = selectedSet.damageBuff - (oldSet?.damageBuff || 0);
+    const newCoreBuff = selectedSet.coreBuff - (oldSet?.coreBuff || 0);
+    const newSkillBuff = selectedSet.skillBuff - (oldSet?.skillBuff || 0);
+    const newUltimateBuff = selectedSet.ultimateBuff - (oldSet?.ultimateBuff || 0);
+    
+    return {
       ...prev,
       setMultiplier: selectedSet.multiplier,
-      damageBuffsAuto: selectedSet.damageBuff,
-      coreBuffsAuto: selectedSet.coreBuff,
-      skillBuffsAuto: selectedSet.skillBuff,
-      ultimateBuffsAuto: selectedSet.ultimateBuff,
+      damageBuffsAuto: prev.damageBuffsAuto + newDamageBuff,
+      coreBuffsAuto: prev.coreBuffsAuto + newCoreBuff,
+      skillBuffsAuto: prev.skillBuffsAuto + newSkillBuff,
+      ultimateBuffsAuto: prev.ultimateBuffsAuto + newUltimateBuff,
       activeStatMultiplier: activeMultiplier
-    }));
-  };
+    };
+  });
+};
 
   // Dans calculateSkillDamage, modifier le calcul :
   const calculateSkillDamage = (skillMultiplier, skillType) => {
@@ -1079,27 +1090,28 @@ const DamageCalculator = ({
         />
       )}
 
-      {showBuffsPopup.team && (
-        <TeamBuffs
-          teamMembers={[]}
-          characters={characters}
-          activeTeamBuffs={activeTeamBuffs}  // 🗡️ KAISEL: Ajouter cette ligne
-          previousTeamSelection={teamBuffSelection}
-          previousRaidSelection={raidBuffSelection}
-          onTeamSelectionChange={(team, raid) => {
-            setTeamBuffSelection(team);
-            setRaidBuffSelection(raid);
-          }}
-          onClose={(selectedBuffs) => {
-            setShowBuffsPopup(prev => ({ ...prev, team: false }));
-            if (selectedBuffs) {
-              setActiveTeamBuffs(selectedBuffs);
-              setActiveTeamBuffsCount(selectedBuffs.length); // 🗡️ Le vrai nombre de buffs
-            }
-          }}
-          onApplyBuffs={(buffs) => handleApplyBuffs('team', buffs)}
-        />
-      )}
+    {showBuffsPopup.team && (
+  <TeamBuffs
+    teamMembers={[selectedCharacter]} // 🔧 FIX: Passer le personnage sélectionné
+    characters={characters}
+    activeTeamBuffs={activeTeamBuffs}
+    previousTeamSelection={teamBuffSelection}
+    previousRaidSelection={raidBuffSelection}
+    selectedCharacter={selectedCharacter} // 🔧 FIX: Ajouter cette prop
+    onTeamSelectionChange={(team, raid) => {
+      setTeamBuffSelection(team);
+      setRaidBuffSelection(raid);
+    }}
+    onClose={(selectedBuffs) => {
+      setShowBuffsPopup(prev => ({ ...prev, team: false }));
+      if (selectedBuffs) {
+        setActiveTeamBuffs(selectedBuffs);
+        setActiveTeamBuffsCount(selectedBuffs.length);
+      }
+    }}
+    onApplyBuffs={(buffs) => handleApplyBuffs('team', buffs)}
+  />
+)}
 
       {showBuffsPopup.set && (
         <SetBuffs

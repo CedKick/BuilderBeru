@@ -5,21 +5,24 @@ const TeamBuffs = ({
   characters = {}, 
   onClose, 
   onApplyBuffs,
-  activeTeamBuffs = [], // 🗡️ KAISEL: Buffs d'équipe déjà actifs
+  activeTeamBuffs = [],
   previousTeamSelection = ['', ''],
   previousRaidSelection = ['', '', ''],
-  onTeamSelectionChange
+  onTeamSelectionChange,
+  selectedCharacter // 🔧 KAISEL: Le personnage actuellement sélectionné
 }) => {
-  // 🗡️ KAISEL: Initialiser avec les buffs déjà actifs comme dans CharacterBuffs
   const [selectedBuffs, setSelectedBuffs] = useState(activeTeamBuffs);
   const [selectedTeam, setSelectedTeam] = useState(previousTeamSelection);
   const [selectedRaid, setSelectedRaid] = useState(previousRaidSelection);
   const [appliedBuffs, setAppliedBuffs] = useState({});
 
-  // 🔧 KAISEL FIX: Helper pour obtenir l'élément du personnage principal
-  const getMainCharacterElement = () => {
-    const mainCharacter = teamMembers && teamMembers[0] ? characters[teamMembers[0]] : null;
-    return mainCharacter?.element?.toLowerCase() || '';
+  // 🔧 KAISEL: Obtenir l'élément et le scaleStat du personnage principal
+  const getMainCharacterInfo = () => {
+    const mainCharacter = selectedCharacter ? characters[selectedCharacter] : null;
+    return {
+      element: mainCharacter?.element?.toLowerCase() || '',
+      scaleStat: mainCharacter?.scaleStat || ''
+    };
   };
 
   // Formater la description du buff
@@ -27,13 +30,12 @@ const TeamBuffs = ({
     if (!buff.effects || buff.effects.length === 0) return '';
     
     const descriptions = [];
-    const characterElement = getMainCharacterElement();
+    const { element: characterElement } = getMainCharacterInfo();
     
     buff.effects.forEach(effect => {
       const values = effect.values || [0];
       const maxValue = values.length > 0 ? Math.max(...values) : 0;
       
-      // 🔧 KAISEL FIX: Indiquer si l'effet est conditionnel
       const isConditionMet = !effect.condition || effect.condition === characterElement;
       const conditionPrefix = effect.condition ? 
         (isConditionMet ? '✓ ' : '✗ ') : '';
@@ -68,7 +70,6 @@ const TeamBuffs = ({
     selectedTeam.forEach((charId, index) => {
       if (charId && characters[charId]?.buffs) {
         characters[charId].buffs.forEach((buff, buffIndex) => {
-          // On ne prend que les buffs qui sont partagés (target !== 'self')
           if (buff.target && buff.target !== 'self') {
             buffs.push({
               id: `team_${charId}_${buffIndex}`,
@@ -110,10 +111,10 @@ const TeamBuffs = ({
     return buffs;
   }, [selectedTeam, selectedRaid, characters]);
 
-  // 🗡️ KAISEL: Initialiser appliedBuffs avec les buffs actifs au montage (comme CharacterBuffs)
+  // Initialiser appliedBuffs avec les buffs actifs au montage
   useEffect(() => {
     const initialAppliedBuffs = {};
-    const characterElement = getMainCharacterElement();
+    const { element: characterElement, scaleStat } = getMainCharacterInfo();
     
     activeTeamBuffs.forEach(buffId => {
       const buff = availableBuffs.find(b => b.id === buffId);
@@ -121,7 +122,7 @@ const TeamBuffs = ({
         const buffsToApply = {};
         
         buff.effects.forEach(effect => {
-          // 🔧 KAISEL FIX: Vérifier la condition
+          // Vérifier la condition
           if (effect.condition && effect.condition !== characterElement) {
             return; // Skip cet effet
           }
@@ -133,11 +134,18 @@ const TeamBuffs = ({
             if (!buffsToApply.elementalDamage) buffsToApply.elementalDamage = {};
             buffsToApply.elementalDamage[effect.element] = maxValue;
           } 
-          // 🗡️ KAISEL FIX: Traiter attack/defense/HP comme scaleStatBuff
-          else if (effect.type === 'attack' || effect.type === 'defense' || effect.type === 'HP') {
+          // 🔧 KAISEL FIX PRINCIPAL: Ne traiter que le buff qui correspond au scaleStat
+          else if (effect.type === 'attack' && scaleStat === 'Attack') {
             buffsToApply.scaleStatBuff = (buffsToApply.scaleStatBuff || 0) + maxValue;
           }
-          else {
+          else if (effect.type === 'defense' && scaleStat === 'Defense') {
+            buffsToApply.scaleStatBuff = (buffsToApply.scaleStatBuff || 0) + maxValue;
+          }
+          else if (effect.type === 'HP' && scaleStat === 'HP') {
+            buffsToApply.scaleStatBuff = (buffsToApply.scaleStatBuff || 0) + maxValue;
+          }
+          else if (effect.type !== 'attack' && effect.type !== 'defense' && effect.type !== 'HP') {
+            // Autres buffs (skill, damage, etc.)
             buffsToApply[effect.type] = (buffsToApply[effect.type] || 0) + maxValue;
           }
         });
@@ -151,7 +159,7 @@ const TeamBuffs = ({
 
   const toggleBuff = (buffId) => {
     const isSelected = selectedBuffs.includes(buffId);
-    const characterElement = getMainCharacterElement();
+    const { element: characterElement, scaleStat } = getMainCharacterInfo();
     
     if (isSelected) {
       // Retirer le buff
@@ -193,7 +201,7 @@ const TeamBuffs = ({
         const buffsToApply = {};
         
         buff.effects.forEach(effect => {
-          // 🔧 KAISEL FIX: Ne pas appliquer l'effet si condition non remplie
+          // Ne pas appliquer l'effet si condition non remplie
           if (effect.condition && effect.condition !== characterElement) {
             return; // Skip cet effet
           }
@@ -205,11 +213,18 @@ const TeamBuffs = ({
             if (!buffsToApply.elementalDamage) buffsToApply.elementalDamage = {};
             buffsToApply.elementalDamage[effect.element] = maxValue;
           } 
-          // 🗡️ KAISEL FIX: Traiter attack/defense/HP comme scaleStatBuff
-          else if (effect.type === 'attack' || effect.type === 'defense' || effect.type === 'HP') {
+          // 🔧 KAISEL FIX PRINCIPAL: Ne traiter que le buff qui correspond au scaleStat
+          else if (effect.type === 'attack' && scaleStat === 'Attack') {
             buffsToApply.scaleStatBuff = (buffsToApply.scaleStatBuff || 0) + maxValue;
           }
-          else {
+          else if (effect.type === 'defense' && scaleStat === 'Defense') {
+            buffsToApply.scaleStatBuff = (buffsToApply.scaleStatBuff || 0) + maxValue;
+          }
+          else if (effect.type === 'HP' && scaleStat === 'HP') {
+            buffsToApply.scaleStatBuff = (buffsToApply.scaleStatBuff || 0) + maxValue;
+          }
+          else if (effect.type !== 'attack' && effect.type !== 'defense' && effect.type !== 'HP') {
+            // Autres buffs (skill, damage, etc.)
             buffsToApply[effect.type] = (buffsToApply[effect.type] || 0) + maxValue;
           }
         });
@@ -226,10 +241,8 @@ const TeamBuffs = ({
   };
 
   const handleClose = () => {
-    // 🗡️ KAISEL: Si on ferme avec Cancel, on doit retirer les buffs nouvellement ajoutés
-    // et remettre ceux qui ont été retirés (comme dans CharacterBuffs)
     const buffsToRevert = {};
-    const characterElement = getMainCharacterElement();
+    const { element: characterElement, scaleStat } = getMainCharacterInfo();
     
     // Retirer les nouveaux buffs ajoutés
     selectedBuffs.forEach(buffId => {
@@ -253,7 +266,7 @@ const TeamBuffs = ({
         const buff = availableBuffs.find(b => b.id === buffId);
         if (buff && buff.effects) {
           buff.effects.forEach(effect => {
-            // 🔧 KAISEL FIX: Vérifier la condition
+            // Vérifier la condition
             if (effect.condition && effect.condition !== characterElement) {
               return; // Skip cet effet
             }
@@ -265,11 +278,17 @@ const TeamBuffs = ({
               if (!buffsToRevert.elementalDamage) buffsToRevert.elementalDamage = {};
               buffsToRevert.elementalDamage[effect.element] = maxValue;
             } 
-            // 🗡️ KAISEL FIX: Traiter attack/defense/HP comme scaleStatBuff
-            else if (effect.type === 'attack' || effect.type === 'defense' || effect.type === 'HP') {
+            // 🔧 KAISEL FIX: Seulement le bon stat
+            else if (effect.type === 'attack' && scaleStat === 'Attack') {
               buffsToRevert.scaleStatBuff = (buffsToRevert.scaleStatBuff || 0) + maxValue;
             }
-            else {
+            else if (effect.type === 'defense' && scaleStat === 'Defense') {
+              buffsToRevert.scaleStatBuff = (buffsToRevert.scaleStatBuff || 0) + maxValue;
+            }
+            else if (effect.type === 'HP' && scaleStat === 'HP') {
+              buffsToRevert.scaleStatBuff = (buffsToRevert.scaleStatBuff || 0) + maxValue;
+            }
+            else if (effect.type !== 'attack' && effect.type !== 'defense' && effect.type !== 'HP') {
               buffsToRevert[effect.type] = (buffsToRevert[effect.type] || 0) + maxValue;
             }
           });
@@ -290,7 +309,7 @@ const TeamBuffs = ({
   };
 
   const handleConfirm = () => {
-    // 🗡️ KAISEL: Passer les buffs sélectionnés au parent
+    // Passer les buffs sélectionnés au parent
     if (onTeamSelectionChange) {
       onTeamSelectionChange(selectedTeam, selectedRaid);
     }
@@ -328,14 +347,12 @@ const TeamBuffs = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-      {/* 🗡️ KAISEL RESPONSIVE: max-w-md sur mobile, max-w-5xl sur desktop */}
       <div className="bg-indigo-950/95 backdrop-blur-md rounded-lg shadow-2xl shadow-purple-900/50 w-full max-w-md lg:max-w-5xl">
         {/* Header */}
         <div className="bg-purple-900/30 px-4 py-3 flex justify-between items-center">
           <h3 className="text-white text-sm font-medium">TEAM BUFFS</h3>
           
           <div className="flex items-center gap-3">
-            {/* 🗡️ KAISEL: Boutons Select All / Unselect All */}
             <div className="flex gap-2">
               <button
                 onClick={() => {
@@ -345,12 +362,12 @@ const TeamBuffs = ({
                   
                   // Appliquer tous les buffs
                   const allBuffsToApply = {};
-                  const characterElement = getMainCharacterElement();
+                  const { element: characterElement, scaleStat } = getMainCharacterInfo();
                   
                   availableBuffs.forEach(buff => {
                     if (!selectedBuffs.includes(buff.id) && buff.effects) {
                       buff.effects.forEach(effect => {
-                        // 🔧 KAISEL FIX: Vérifier la condition
+                        // Vérifier la condition
                         if (effect.condition && effect.condition !== characterElement) {
                           return; // Skip cet effet
                         }
@@ -362,11 +379,17 @@ const TeamBuffs = ({
                           if (!allBuffsToApply.elementalDamage) allBuffsToApply.elementalDamage = {};
                           allBuffsToApply.elementalDamage[effect.element] = (allBuffsToApply.elementalDamage[effect.element] || 0) + maxValue;
                         } 
-                        // 🗡️ KAISEL FIX: Traiter attack/defense/HP comme scaleStatBuff
-                        else if (effect.type === 'attack' || effect.type === 'defense' || effect.type === 'HP') {
+                        // 🔧 KAISEL FIX: Seulement le bon stat
+                        else if (effect.type === 'attack' && scaleStat === 'Attack') {
                           allBuffsToApply.scaleStatBuff = (allBuffsToApply.scaleStatBuff || 0) + maxValue;
                         }
-                        else {
+                        else if (effect.type === 'defense' && scaleStat === 'Defense') {
+                          allBuffsToApply.scaleStatBuff = (allBuffsToApply.scaleStatBuff || 0) + maxValue;
+                        }
+                        else if (effect.type === 'HP' && scaleStat === 'HP') {
+                          allBuffsToApply.scaleStatBuff = (allBuffsToApply.scaleStatBuff || 0) + maxValue;
+                        }
+                        else if (effect.type !== 'attack' && effect.type !== 'defense' && effect.type !== 'HP') {
                           allBuffsToApply[effect.type] = (allBuffsToApply[effect.type] || 0) + maxValue;
                         }
                       });
@@ -374,22 +397,28 @@ const TeamBuffs = ({
                       setAppliedBuffs(prev => ({
                         ...prev,
                         [buff.id]: buff.effects.reduce((acc, effect) => {
-                          // 🔧 KAISEL FIX: Vérifier la condition ici aussi
+                          // Vérifier la condition ici aussi
                           if (effect.condition && effect.condition !== characterElement) {
                             return acc;
                           }
                           
                           const values = effect.values || [0];
                           const maxValue = values.length > 0 ? Math.max(...values) : 0;
+                          
                           if (effect.type === 'elementalDamage') {
                             if (!acc.elementalDamage) acc.elementalDamage = {};
                             acc.elementalDamage[effect.element] = maxValue;
                           } 
-                          // 🗡️ KAISEL FIX: Traiter attack/defense/HP comme scaleStatBuff
-                          else if (effect.type === 'attack' || effect.type === 'defense' || effect.type === 'HP') {
+                          else if (effect.type === 'attack' && scaleStat === 'Attack') {
                             acc.scaleStatBuff = (acc.scaleStatBuff || 0) + maxValue;
                           }
-                          else {
+                          else if (effect.type === 'defense' && scaleStat === 'Defense') {
+                            acc.scaleStatBuff = (acc.scaleStatBuff || 0) + maxValue;
+                          }
+                          else if (effect.type === 'HP' && scaleStat === 'HP') {
+                            acc.scaleStatBuff = (acc.scaleStatBuff || 0) + maxValue;
+                          }
+                          else if (effect.type !== 'attack' && effect.type !== 'defense' && effect.type !== 'HP') {
                             acc[effect.type] = maxValue;
                           }
                           return acc;
