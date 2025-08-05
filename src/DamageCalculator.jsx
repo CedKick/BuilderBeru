@@ -249,6 +249,9 @@ const DamageCalculator = ({
   ];
 
   const [selectedSetIndex, setSelectedSetIndex] = useState(0);
+  // Pour le compteur, ajouter cet état :
+  const [activeTeamBuffsCount, setActiveTeamBuffsCount] = useState(0);
+  const [activeTeamBuffs, setActiveTeamBuffs] = useState([]);
 
   const [results, setResults] = useState({
     core1: { noCrit: 0, withCrit: 0 },
@@ -488,66 +491,49 @@ const DamageCalculator = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Fonction pour appliquer les buffs depuis les popups
-  const handleApplyBuffs = (buffType, buffs) => {
-    if (buffType === 'character') {
-      // Reset les buffs character avant d'appliquer les nouveaux
-      setCustomStats(prev => {
-        let newStats = { ...prev };
+  // Remplacer handleApplyBuffs par ceci :
+  const handleApplyBuffs = (source, buffs) => {
+    console.log(`🗡️ KAISEL: Applying ${source} buffs:`, buffs);
 
-        // 🗡️ KAISEL FIX: Gérer tous les types de buffs
-        // Si c'est une valeur négative, on soustrait
-        if (buffs.damageBuffs !== undefined) {
-          newStats.damageBuffsAuto = Math.max(0, prev.damageBuffsAuto + buffs.damageBuffs);
-        }
-        if (buffs.coreBuffs !== undefined) {
-          newStats.coreBuffsAuto = Math.max(0, prev.coreBuffsAuto + buffs.coreBuffs);
-        }
-        if (buffs.skillBuffs !== undefined) {
-          newStats.skillBuffsAuto = Math.max(0, prev.skillBuffsAuto + buffs.skillBuffs);
-        }
-        if (buffs.ultimateBuffs !== undefined) {
-          newStats.ultimateBuffsAuto = Math.max(0, prev.ultimateBuffsAuto + buffs.ultimateBuffs);
-        }
+    // Appliquer directement aux customStats
+    setCustomStats(prev => {
+      let newStats = { ...prev };
 
-        // 🗡️ KAISEL FIX: NE PAS appliquer scaleStatBuff aux damage buffs!
-        // scaleStatBuff affecte la stat finale, pas les dégâts
-        if (buffs.scaleStatBuff !== undefined) {
-          // Le scaleStatBuff affecte la stat finale selon le scaleStat du personnage
-          const scaleStat = characters[selectedCharacter]?.scaleStat;
-          const buffValue = buffs.scaleStatBuff;
+      // Gérer les buffs de dégâts
+      if (buffs.damageBuffs !== undefined) {
+        newStats.damageBuffsAuto = (newStats.damageBuffsAuto || 0) + buffs.damageBuffs;
+      }
 
-          // Tracker le pourcentage de buff mais NE PAS l'ajouter aux damage buffs
-          newStats.scaleStatBuffPercent = (prev.scaleStatBuffPercent || 0) + buffValue;
+      // Gérer les buffs de skills
+      if (buffs.skillBuffs !== undefined) {
+        newStats.skillBuffsAuto = (newStats.skillBuffsAuto || 0) + buffs.skillBuffs;
+      }
+
+      // Gérer les buffs ultimate
+      if (buffs.ultimateBuffs !== undefined) {
+        newStats.ultimateBuffsAuto = (newStats.ultimateBuffsAuto || 0) + buffs.ultimateBuffs;
+      }
+
+      // Gérer les buffs core
+      if (buffs.coreBuffs !== undefined) {
+        newStats.coreBuffsAuto = (newStats.coreBuffsAuto || 0) + buffs.coreBuffs;
+      }
+
+      // 🗡️ KAISEL: Gérer scaleStatBuff
+      if (buffs.scaleStatBuff !== undefined) {
+        newStats.scaleStatBuffPercent = (newStats.scaleStatBuffPercent || 0) + buffs.scaleStatBuff;
+      }
+
+      // 🗡️ KAISEL: Gérer elementalDamage
+      if (buffs.elementalDamage && typeof buffs.elementalDamage === 'object') {
+        const characterElement = characters[selectedCharacter]?.element;
+        if (characterElement && buffs.elementalDamage[characterElement]) {
+          newStats.elementalDamage = (newStats.elementalDamage || 0) + buffs.elementalDamage[characterElement];
         }
+      }
 
-        // Gestion des buffs élémentaires
-        if (buffs.elementalDamage) {
-          Object.entries(buffs.elementalDamage).forEach(([element, value]) => {
-            if (element === characters[selectedCharacter]?.element) {
-              newStats.elementalDamage = Math.max(0, (prev.elementalDamage || 0) + value);
-            }
-          });
-        }
-
-        return newStats;
-      });
-    } else {
-      // Pour les autres types de buffs (team, set)
-      setCustomStats(prev => ({
-        ...prev,
-        damageBuffsAuto: prev.damageBuffsAuto + (buffs.damageBuffs || 0),
-        coreBuffsAuto: prev.coreBuffsAuto + (buffs.coreBuffs || 0),
-        skillBuffsAuto: prev.skillBuffsAuto + (buffs.skillBuffs || 0),
-        ultimateBuffsAuto: prev.ultimateBuffsAuto + (buffs.ultimateBuffs || 0)
-      }));
-
-      const buffCount = Object.values(buffs).filter(v => v > 0).length;
-      setActiveBuffsCount(prev => ({
-        ...prev,
-        [buffType]: buffCount
-      }));
-    }
+      return newStats;
+    });
   };
 
   return (
@@ -693,6 +679,7 @@ const DamageCalculator = ({
                       className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-14 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
                     />
                   </div>
+                  
                 </div>
               </div>
 
@@ -840,7 +827,7 @@ const DamageCalculator = ({
                   onClick={() => setShowBuffsPopup(prev => ({ ...prev, team: true }))}
                   className="bg-indigo-900/30 hover:bg-indigo-900/50 text-white/70 hover:text-white px-2 py-1 rounded text-[10px] transition-all text-left"
                 >
-                  Team Buffs <span className="text-purple-400">({activeBuffsCount.team})</span>
+                  Team Buffs <span className="text-purple-400">({activeTeamBuffsCount})</span>
                 </button>
 
                 <button
@@ -1096,13 +1083,20 @@ const DamageCalculator = ({
         <TeamBuffs
           teamMembers={[]}
           characters={characters}
-          previousTeamSelection={teamBuffSelection}  // 🗡️ Passer les sélections sauvegardées
-          previousRaidSelection={raidBuffSelection}  // 🗡️ Passer les sélections sauvegardées
-          onTeamSelectionChange={(team, raid) => {  // 🗡️ Callback pour sauvegarder
+          activeTeamBuffs={activeTeamBuffs}  // 🗡️ KAISEL: Ajouter cette ligne
+          previousTeamSelection={teamBuffSelection}
+          previousRaidSelection={raidBuffSelection}
+          onTeamSelectionChange={(team, raid) => {
             setTeamBuffSelection(team);
             setRaidBuffSelection(raid);
           }}
-          onClose={() => setShowBuffsPopup(prev => ({ ...prev, team: false }))}
+          onClose={(selectedBuffs) => {
+            setShowBuffsPopup(prev => ({ ...prev, team: false }));
+            if (selectedBuffs) {
+              setActiveTeamBuffs(selectedBuffs);
+              setActiveTeamBuffsCount(selectedBuffs.length); // 🗡️ Le vrai nombre de buffs
+            }
+          }}
           onApplyBuffs={(buffs) => handleApplyBuffs('team', buffs)}
         />
       )}
