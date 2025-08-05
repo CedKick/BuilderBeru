@@ -62,7 +62,7 @@ const DamageCalculator = ({
     bossLevel: 80,
     bossDefense: 248000,
     teamCP: 2300000,
-    recommendedCP: 2300000,
+    recommendedCP: 50000,
 
     // Buffs manuels
     damageBuffsManual: 0,
