@@ -103,6 +103,15 @@ export  const characters = {
   effects: [
     { type: 'elementalDamage', element: 'Wind', values: [15] } // +15% Wind damage (5% x 3 alliés Wind)
   ]
+},
+{
+  name: "Jinah's Weapon Buff",
+  img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754506761/buffWeapon_jinah_xdosfy.png',
+  duration: -1, // Infini
+  target: 'shared', // Pour toute l'équipe
+  effects: [
+    { type: 'skillBuffs', values: [10] } // +10% Basic Skill (déjà calculé pour 5 stacks)
+  ]
 } 
   ]
 }, 'shuhua': {
@@ -170,7 +179,18 @@ export  const characters = {
         skill2: 73.695,
         ultimate: 85.305
       },
-      buffs: []
+      buffs: [
+        {
+  name: "Defensive Divination Circle",
+  img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754508325/DefensiveDivinationCircle_lennart_ln8nxu.png',
+  duration: 20, // 20 secondes
+  target: 'self',
+  effects: [
+    { type: 'critDamageBuffs', values: [30] },
+    { type: 'defense', values: [30] }          
+  ]
+}
+]
     },
 
     'chae': {

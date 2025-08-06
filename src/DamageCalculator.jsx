@@ -69,12 +69,16 @@ const DamageCalculator = ({
     coreBuffsManual: 0,
     skillBuffsManual: 0,
     ultimateBuffsManual: 0,
+    critRateBuffsManual: 0,
+    critDamageBuffsManual: 0,
 
     // Buffs automatiques
     damageBuffsAuto: 0,
     coreBuffsAuto: 0,
     skillBuffsAuto: 0,
     ultimateBuffsAuto: 0,
+    critRateBuffsAuto: 0,
+    critDamageBuffsAuto: 0,
 
     // 🗡️ KAISEL FIX: Tracker le buff de stat appliqué
     scaleStatBuffPercent: 0,
@@ -333,44 +337,50 @@ const DamageCalculator = ({
 
   // 2. Dans handleSetChange (ligne ~330), modifier pour ne pas écraser les buffs :
 
-const handleSetChange = (setIndex) => {
-  const selectedSet = availableSets[setIndex];
-  const activeMultiplier = getActiveStatMultiplier(selectedSet, selectedCharacter);
+  const handleSetChange = (setIndex) => {
+    const selectedSet = availableSets[setIndex];
+    const activeMultiplier = getActiveStatMultiplier(selectedSet, selectedCharacter);
 
-  setSelectedSetIndex(setIndex);
+    setSelectedSetIndex(setIndex);
 
-  // 🔧 KAISEL FIX: Calculer la différence au lieu d'écraser
-  setCustomStats(prev => {
-    // Retirer les anciens buffs du set
-    const oldSet = availableSets[selectedSetIndex];
-    const newDamageBuff = selectedSet.damageBuff - (oldSet?.damageBuff || 0);
-    const newCoreBuff = selectedSet.coreBuff - (oldSet?.coreBuff || 0);
-    const newSkillBuff = selectedSet.skillBuff - (oldSet?.skillBuff || 0);
-    const newUltimateBuff = selectedSet.ultimateBuff - (oldSet?.ultimateBuff || 0);
-    
-    return {
-      ...prev,
-      setMultiplier: selectedSet.multiplier,
-      damageBuffsAuto: prev.damageBuffsAuto + newDamageBuff,
-      coreBuffsAuto: prev.coreBuffsAuto + newCoreBuff,
-      skillBuffsAuto: prev.skillBuffsAuto + newSkillBuff,
-      ultimateBuffsAuto: prev.ultimateBuffsAuto + newUltimateBuff,
-      activeStatMultiplier: activeMultiplier
-    };
-  });
-};
+    // 🔧 KAISEL FIX: Calculer la différence au lieu d'écraser
+    setCustomStats(prev => {
+      // Retirer les anciens buffs du set
+      const oldSet = availableSets[selectedSetIndex];
+      const newDamageBuff = selectedSet.damageBuff - (oldSet?.damageBuff || 0);
+      const newCoreBuff = selectedSet.coreBuff - (oldSet?.coreBuff || 0);
+      const newSkillBuff = selectedSet.skillBuff - (oldSet?.skillBuff || 0);
+      const newUltimateBuff = selectedSet.ultimateBuff - (oldSet?.ultimateBuff || 0);
+
+      return {
+        ...prev,
+        setMultiplier: selectedSet.multiplier,
+        damageBuffsAuto: prev.damageBuffsAuto + newDamageBuff,
+        coreBuffsAuto: prev.coreBuffsAuto + newCoreBuff,
+        skillBuffsAuto: prev.skillBuffsAuto + newSkillBuff,
+        ultimateBuffsAuto: prev.ultimateBuffsAuto + newUltimateBuff,
+        activeStatMultiplier: activeMultiplier
+      };
+    });
+  };
 
   // Dans calculateSkillDamage, modifier le calcul :
   const calculateSkillDamage = (skillMultiplier, skillType) => {
     const stats = customStats;
     const safeValue = (val) => val === '' ? 0 : parseFloat(val) || 0;
 
+    // 🔧 KAISEL: Ajouter les buffs aux calculs
+    const totalCritRateBuffs = safeValue(stats.critRateBuffsManual) + safeValue(stats.critRateBuffsAuto);
+    const totalCritDamageBuffs = safeValue(stats.critDamageBuffsManual) + safeValue(stats.critDamageBuffsAuto);
+
     const cpRatio = safeValue(stats.recommendedCP) > 0 ? safeValue(stats.teamCP) / safeValue(stats.recommendedCP) : 1;
 
     const diPct = calculateDI(safeValue(stats.damageIncrease));
     const penPct = calculatePEN(safeValue(stats.penetration));
-    const crPct = calculateCR(safeValue(stats.critRate));
-    const cdPct = calculateCD(safeValue(stats.critDamage));
+    const baseCrPct = calculateCR(safeValue(stats.critRate));
+    const crPct = baseCrPct * (1 + totalCritRateBuffs / 100); // Appliquer le buff
+    const baseCdPct = calculateCD(safeValue(stats.critDamage));
+    const cdPct = baseCdPct * (1 + totalCritDamageBuffs / 100); // Appliquer le buff
     const precPct = calculatePrecision(safeValue(stats.precision), cpRatio);
 
     const defEff = safeValue(stats.bossDefense) * (1 - penPct);
@@ -543,6 +553,15 @@ const handleSetChange = (setIndex) => {
         }
       }
 
+
+    if (buffs.critRateBuffs !== undefined) {
+      newStats.critRateBuffsAuto = (newStats.critRateBuffsAuto || 0) + buffs.critRateBuffs;
+    }
+    
+    if (buffs.critDamageBuffs !== undefined) {
+      newStats.critDamageBuffsAuto = (newStats.critDamageBuffsAuto || 0) + buffs.critDamageBuffs;
+    }
+
       return newStats;
     });
   };
@@ -690,7 +709,7 @@ const handleSetChange = (setIndex) => {
                       className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-14 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
                     />
                   </div>
-                  
+
                 </div>
               </div>
 
@@ -794,6 +813,54 @@ const handleSetChange = (setIndex) => {
                     </span>
                   </div>
                 </div>
+
+                {/* Crit Rate Buff */}
+<div className="flex items-center gap-2">
+  <label className="text-white/60 text-[10px] w-16">CR Buff%</label>
+  <div className="flex items-center gap-1 flex-1">
+    <input
+      type="number"
+      value={customStats.critRateBuffsManual}
+      onChange={(e) => handleStatChange('critRateBuffsManual', e.target.value)}
+      placeholder="0"
+      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-12 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
+    />
+    <span className="text-white/40 text-[10px]">+</span>
+    <input
+      type="number"
+      value={customStats.critRateBuffsAuto}
+      disabled
+      className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-12 text-[10px] text-right cursor-not-allowed"
+    />
+    <span className="text-white/60 text-[10px] ml-1">
+      = {getTotalBuff(customStats.critRateBuffsManual, customStats.critRateBuffsAuto)}%
+    </span>
+  </div>
+</div>
+
+{/* Crit Damage Buff */}
+<div className="flex items-center gap-2">
+  <label className="text-white/60 text-[10px] w-16">CD Buff%</label>
+  <div className="flex items-center gap-1 flex-1">
+    <input
+      type="number"
+      value={customStats.critDamageBuffsManual}
+      onChange={(e) => handleStatChange('critDamageBuffsManual', e.target.value)}
+      placeholder="0"
+      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-12 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
+    />
+    <span className="text-white/40 text-[10px]">+</span>
+    <input
+      type="number"
+      value={customStats.critDamageBuffsAuto}
+      disabled
+      className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-12 text-[10px] text-right cursor-not-allowed"
+    />
+    <span className="text-white/60 text-[10px] ml-1">
+      = {getTotalBuff(customStats.critDamageBuffsManual, customStats.critDamageBuffsAuto)}%
+    </span>
+  </div>
+</div>
               </div>
             </div>
 
@@ -1090,28 +1157,28 @@ const handleSetChange = (setIndex) => {
         />
       )}
 
-    {showBuffsPopup.team && (
-  <TeamBuffs
-    teamMembers={[selectedCharacter]} // 🔧 FIX: Passer le personnage sélectionné
-    characters={characters}
-    activeTeamBuffs={activeTeamBuffs}
-    previousTeamSelection={teamBuffSelection}
-    previousRaidSelection={raidBuffSelection}
-    selectedCharacter={selectedCharacter} // 🔧 FIX: Ajouter cette prop
-    onTeamSelectionChange={(team, raid) => {
-      setTeamBuffSelection(team);
-      setRaidBuffSelection(raid);
-    }}
-    onClose={(selectedBuffs) => {
-      setShowBuffsPopup(prev => ({ ...prev, team: false }));
-      if (selectedBuffs) {
-        setActiveTeamBuffs(selectedBuffs);
-        setActiveTeamBuffsCount(selectedBuffs.length);
-      }
-    }}
-    onApplyBuffs={(buffs) => handleApplyBuffs('team', buffs)}
-  />
-)}
+      {showBuffsPopup.team && (
+        <TeamBuffs
+          teamMembers={[selectedCharacter]} // 🔧 FIX: Passer le personnage sélectionné
+          characters={characters}
+          activeTeamBuffs={activeTeamBuffs}
+          previousTeamSelection={teamBuffSelection}
+          previousRaidSelection={raidBuffSelection}
+          selectedCharacter={selectedCharacter} // 🔧 FIX: Ajouter cette prop
+          onTeamSelectionChange={(team, raid) => {
+            setTeamBuffSelection(team);
+            setRaidBuffSelection(raid);
+          }}
+          onClose={(selectedBuffs) => {
+            setShowBuffsPopup(prev => ({ ...prev, team: false }));
+            if (selectedBuffs) {
+              setActiveTeamBuffs(selectedBuffs);
+              setActiveTeamBuffsCount(selectedBuffs.length);
+            }
+          }}
+          onApplyBuffs={(buffs) => handleApplyBuffs('team', buffs)}
+        />
+      )}
 
       {showBuffsPopup.set && (
         <SetBuffs

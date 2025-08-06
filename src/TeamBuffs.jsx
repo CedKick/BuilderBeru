@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 
-const TeamBuffs = ({ 
-  teamMembers = [], 
-  characters = {}, 
-  onClose, 
+const TeamBuffs = ({
+  teamMembers = [],
+  characters = {},
+  onClose,
   onApplyBuffs,
   activeTeamBuffs = [],
   previousTeamSelection = ['', ''],
@@ -28,18 +28,18 @@ const TeamBuffs = ({
   // Formater la description du buff
   const formatBuffDescription = (buff) => {
     if (!buff.effects || buff.effects.length === 0) return '';
-    
+
     const descriptions = [];
     const { element: characterElement } = getMainCharacterInfo();
-    
+
     buff.effects.forEach(effect => {
       const values = effect.values || [0];
       const maxValue = values.length > 0 ? Math.max(...values) : 0;
-      
+
       const isConditionMet = !effect.condition || effect.condition === characterElement;
-      const conditionPrefix = effect.condition ? 
+      const conditionPrefix = effect.condition ?
         (isConditionMet ? '✓ ' : '✗ ') : '';
-      
+
       if (effect.type === 'elementalDamage') {
         descriptions.push(`${conditionPrefix}+${maxValue}% ${effect.element} Damage`);
       } else if (effect.type === 'attack') {
@@ -56,16 +56,20 @@ const TeamBuffs = ({
         descriptions.push(`${conditionPrefix}+${maxValue}% All Damage`);
       } else if (effect.type === 'coreBuffs') {
         descriptions.push(`${conditionPrefix}+${maxValue}% Core Skills`);
+      } else if (effect.type === 'critRateBuffs') {
+        descriptions.push(`${conditionPrefix}+${maxValue}% Crit Rate`);
+      } else if (effect.type === 'critDamageBuffs') {
+        descriptions.push(`${conditionPrefix}+${maxValue}% Crit Damage`);
       }
     });
-    
+
     return descriptions.join(', ');
   };
 
   // Récupérer tous les buffs partagés des personnages sélectionnés
   const availableBuffs = useMemo(() => {
     const buffs = [];
-    
+
     // Buffs de la team principale
     selectedTeam.forEach((charId, index) => {
       if (charId && characters[charId]?.buffs) {
@@ -86,7 +90,7 @@ const TeamBuffs = ({
         });
       }
     });
-    
+
     // Buffs du raid
     selectedRaid.forEach((charId, index) => {
       if (charId && characters[charId]?.buffs) {
@@ -107,7 +111,7 @@ const TeamBuffs = ({
         });
       }
     });
-    
+
     return buffs;
   }, [selectedTeam, selectedRaid, characters]);
 
@@ -115,25 +119,25 @@ const TeamBuffs = ({
   useEffect(() => {
     const initialAppliedBuffs = {};
     const { element: characterElement, scaleStat } = getMainCharacterInfo();
-    
+
     activeTeamBuffs.forEach(buffId => {
       const buff = availableBuffs.find(b => b.id === buffId);
       if (buff && buff.effects) {
         const buffsToApply = {};
-        
+
         buff.effects.forEach(effect => {
           // Vérifier la condition
           if (effect.condition && effect.condition !== characterElement) {
             return; // Skip cet effet
           }
-          
+
           const values = effect.values || [0];
           const maxValue = values.length > 0 ? Math.max(...values) : 0;
-          
+
           if (effect.type === 'elementalDamage') {
             if (!buffsToApply.elementalDamage) buffsToApply.elementalDamage = {};
             buffsToApply.elementalDamage[effect.element] = maxValue;
-          } 
+          }
           // 🔧 KAISEL FIX PRINCIPAL: Ne traiter que le buff qui correspond au scaleStat
           else if (effect.type === 'attack' && scaleStat === 'Attack') {
             buffsToApply.scaleStatBuff = (buffsToApply.scaleStatBuff || 0) + maxValue;
@@ -149,26 +153,26 @@ const TeamBuffs = ({
             buffsToApply[effect.type] = (buffsToApply[effect.type] || 0) + maxValue;
           }
         });
-        
+
         initialAppliedBuffs[buffId] = buffsToApply;
       }
     });
-    
+
     setAppliedBuffs(initialAppliedBuffs);
   }, [activeTeamBuffs, availableBuffs]);
 
   const toggleBuff = (buffId) => {
     const isSelected = selectedBuffs.includes(buffId);
     const { element: characterElement, scaleStat } = getMainCharacterInfo();
-    
+
     if (isSelected) {
       // Retirer le buff
       setSelectedBuffs(prev => prev.filter(id => id !== buffId));
-      
+
       // Retirer immédiatement les buffs appliqués
       if (appliedBuffs[buffId]) {
         const buffsToRemove = appliedBuffs[buffId];
-        
+
         // Calculer les nouveaux totaux en retirant les buffs
         const updatedBuffs = {};
         Object.keys(buffsToRemove).forEach(key => {
@@ -181,9 +185,9 @@ const TeamBuffs = ({
             updatedBuffs[key] = -buffsToRemove[key];
           }
         });
-        
+
         onApplyBuffs(updatedBuffs);
-        
+
         // Retirer de appliedBuffs
         setAppliedBuffs(prev => {
           const newApplied = { ...prev };
@@ -194,25 +198,25 @@ const TeamBuffs = ({
     } else {
       // Ajouter le buff
       setSelectedBuffs(prev => [...prev, buffId]);
-      
+
       // Appliquer immédiatement les buffs
       const buff = availableBuffs.find(b => b.id === buffId);
       if (buff && buff.effects) {
         const buffsToApply = {};
-        
+
         buff.effects.forEach(effect => {
           // Ne pas appliquer l'effet si condition non remplie
           if (effect.condition && effect.condition !== characterElement) {
             return; // Skip cet effet
           }
-          
+
           const values = effect.values || [0];
           const maxValue = values.length > 0 ? Math.max(...values) : 0;
-          
+
           if (effect.type === 'elementalDamage') {
             if (!buffsToApply.elementalDamage) buffsToApply.elementalDamage = {};
             buffsToApply.elementalDamage[effect.element] = maxValue;
-          } 
+          }
           // 🔧 KAISEL FIX PRINCIPAL: Ne traiter que le buff qui correspond au scaleStat
           else if (effect.type === 'attack' && scaleStat === 'Attack') {
             buffsToApply.scaleStatBuff = (buffsToApply.scaleStatBuff || 0) + maxValue;
@@ -226,15 +230,20 @@ const TeamBuffs = ({
           else if (effect.type !== 'attack' && effect.type !== 'defense' && effect.type !== 'HP') {
             // Autres buffs (skill, damage, etc.)
             buffsToApply[effect.type] = (buffsToApply[effect.type] || 0) + maxValue;
+          } else if (effect.type === 'critRateBuffs') {
+            buffsToApply.critRateBuffs = (buffsToApply.critRateBuffs || 0) + maxValue;
+          }
+          else if (effect.type === 'critDamageBuffs') {
+            buffsToApply.critDamageBuffs = (buffsToApply.critDamageBuffs || 0) + maxValue;
           }
         });
-        
+
         // Sauvegarder les buffs appliqués
         setAppliedBuffs(prev => ({
           ...prev,
           [buffId]: buffsToApply
         }));
-        
+
         onApplyBuffs(buffsToApply);
       }
     }
@@ -243,7 +252,7 @@ const TeamBuffs = ({
   const handleClose = () => {
     const buffsToRevert = {};
     const { element: characterElement, scaleStat } = getMainCharacterInfo();
-    
+
     // Retirer les nouveaux buffs ajoutés
     selectedBuffs.forEach(buffId => {
       if (!activeTeamBuffs.includes(buffId) && appliedBuffs[buffId]) {
@@ -259,7 +268,7 @@ const TeamBuffs = ({
         });
       }
     });
-    
+
     // Remettre les buffs qui ont été retirés
     activeTeamBuffs.forEach(buffId => {
       if (!selectedBuffs.includes(buffId)) {
@@ -270,14 +279,14 @@ const TeamBuffs = ({
             if (effect.condition && effect.condition !== characterElement) {
               return; // Skip cet effet
             }
-            
+
             const values = effect.values || [0];
             const maxValue = values.length > 0 ? Math.max(...values) : 0;
-            
+
             if (effect.type === 'elementalDamage') {
               if (!buffsToRevert.elementalDamage) buffsToRevert.elementalDamage = {};
               buffsToRevert.elementalDamage[effect.element] = maxValue;
-            } 
+            }
             // 🔧 KAISEL FIX: Seulement le bon stat
             else if (effect.type === 'attack' && scaleStat === 'Attack') {
               buffsToRevert.scaleStatBuff = (buffsToRevert.scaleStatBuff || 0) + maxValue;
@@ -295,16 +304,16 @@ const TeamBuffs = ({
         }
       }
     });
-    
+
     if (Object.keys(buffsToRevert).length > 0) {
       onApplyBuffs(buffsToRevert);
     }
-    
+
     // Sauvegarder les sélections même en cas d'annulation
     if (onTeamSelectionChange) {
       onTeamSelectionChange(selectedTeam, selectedRaid);
     }
-    
+
     onClose();
   };
 
@@ -351,7 +360,7 @@ const TeamBuffs = ({
         {/* Header */}
         <div className="bg-purple-900/30 px-4 py-3 flex justify-between items-center">
           <h3 className="text-white text-sm font-medium">TEAM BUFFS</h3>
-          
+
           <div className="flex items-center gap-3">
             <div className="flex gap-2">
               <button
@@ -359,11 +368,11 @@ const TeamBuffs = ({
                   // Select All
                   const allBuffIds = availableBuffs.map(buff => buff.id);
                   setSelectedBuffs(allBuffIds);
-                  
+
                   // Appliquer tous les buffs
                   const allBuffsToApply = {};
                   const { element: characterElement, scaleStat } = getMainCharacterInfo();
-                  
+
                   availableBuffs.forEach(buff => {
                     if (!selectedBuffs.includes(buff.id) && buff.effects) {
                       buff.effects.forEach(effect => {
@@ -371,14 +380,14 @@ const TeamBuffs = ({
                         if (effect.condition && effect.condition !== characterElement) {
                           return; // Skip cet effet
                         }
-                        
+
                         const values = effect.values || [0];
                         const maxValue = values.length > 0 ? Math.max(...values) : 0;
-                        
+
                         if (effect.type === 'elementalDamage') {
                           if (!allBuffsToApply.elementalDamage) allBuffsToApply.elementalDamage = {};
                           allBuffsToApply.elementalDamage[effect.element] = (allBuffsToApply.elementalDamage[effect.element] || 0) + maxValue;
-                        } 
+                        }
                         // 🔧 KAISEL FIX: Seulement le bon stat
                         else if (effect.type === 'attack' && scaleStat === 'Attack') {
                           allBuffsToApply.scaleStatBuff = (allBuffsToApply.scaleStatBuff || 0) + maxValue;
@@ -393,7 +402,7 @@ const TeamBuffs = ({
                           allBuffsToApply[effect.type] = (allBuffsToApply[effect.type] || 0) + maxValue;
                         }
                       });
-                      
+
                       setAppliedBuffs(prev => ({
                         ...prev,
                         [buff.id]: buff.effects.reduce((acc, effect) => {
@@ -401,14 +410,14 @@ const TeamBuffs = ({
                           if (effect.condition && effect.condition !== characterElement) {
                             return acc;
                           }
-                          
+
                           const values = effect.values || [0];
                           const maxValue = values.length > 0 ? Math.max(...values) : 0;
-                          
+
                           if (effect.type === 'elementalDamage') {
                             if (!acc.elementalDamage) acc.elementalDamage = {};
                             acc.elementalDamage[effect.element] = maxValue;
-                          } 
+                          }
                           else if (effect.type === 'attack' && scaleStat === 'Attack') {
                             acc.scaleStatBuff = (acc.scaleStatBuff || 0) + maxValue;
                           }
@@ -426,7 +435,7 @@ const TeamBuffs = ({
                       }));
                     }
                   });
-                  
+
                   if (Object.keys(allBuffsToApply).length > 0) {
                     onApplyBuffs(allBuffsToApply);
                   }
@@ -435,14 +444,14 @@ const TeamBuffs = ({
               >
                 Select All
               </button>
-              
+
               <span className="text-white/30">|</span>
-              
+
               <button
                 onClick={() => {
                   // Unselect All
                   const buffsToRemove = {};
-                  
+
                   selectedBuffs.forEach(buffId => {
                     if (appliedBuffs[buffId]) {
                       Object.entries(appliedBuffs[buffId]).forEach(([key, value]) => {
@@ -457,10 +466,10 @@ const TeamBuffs = ({
                       });
                     }
                   });
-                  
+
                   setSelectedBuffs([]);
                   setAppliedBuffs({});
-                  
+
                   if (Object.keys(buffsToRemove).length > 0) {
                     onApplyBuffs(buffsToRemove);
                   }
@@ -470,7 +479,7 @@ const TeamBuffs = ({
                 Unselect All
               </button>
             </div>
-            
+
             <button
               onClick={handleClose}
               className="text-white/60 hover:text-white transition-colors text-xl ml-2"
@@ -501,8 +510,8 @@ const TeamBuffs = ({
                       ))}
                     </select>
                     {charId && characters[charId] && (
-                      <img 
-                        src={characters[charId].icon} 
+                      <img
+                        src={characters[charId].icon}
                         alt={characters[charId].name}
                         className="absolute right-1 top-1 w-8 h-8 rounded pointer-events-none"
                       />
@@ -529,8 +538,8 @@ const TeamBuffs = ({
                       ))}
                     </select>
                     {charId && characters[charId] && (
-                      <img 
-                        src={characters[charId].icon} 
+                      <img
+                        src={characters[charId].icon}
                         alt={characters[charId].name}
                         className="absolute right-1 top-1 w-8 h-8 rounded pointer-events-none opacity-80"
                       />
@@ -557,22 +566,21 @@ const TeamBuffs = ({
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                   {availableBuffs.map(buff => {
                     const isSelected = selectedBuffs.includes(buff.id);
-                    
+
                     return (
                       <div
                         key={buff.id}
                         onClick={() => toggleBuff(buff.id)}
-                        className={`bg-indigo-900/30 rounded-lg p-3 cursor-pointer transition-all ${
-                          isSelected 
-                            ? 'ring-2 ring-purple-400 bg-indigo-900/50' 
-                            : 'hover:bg-indigo-900/40'
-                        }`}
+                        className={`bg-indigo-900/30 rounded-lg p-3 cursor-pointer transition-all ${isSelected
+                          ? 'ring-2 ring-purple-400 bg-indigo-900/50'
+                          : 'hover:bg-indigo-900/40'
+                          }`}
                       >
                         <div className="flex items-start gap-3">
                           <div className="relative flex-shrink-0">
-                            <img 
-                              src={buff.icon} 
-                              alt={buff.character} 
+                            <img
+                              src={buff.icon}
+                              alt={buff.character}
                               className="w-10 h-10 rounded"
                             />
                             {buff.source === 'team' && (
@@ -586,7 +594,7 @@ const TeamBuffs = ({
                             <h4 className="text-white text-xs font-medium">{buff.name}</h4>
                             <p className="text-purple-400 text-[9px]">from {buff.character}</p>
                             <p className="text-white/60 text-[10px] mt-1">{buff.description}</p>
-                            
+
                             {/* Badges d'effets */}
                             {buff.effects && buff.effects.length > 1 && (
                               <div className="flex flex-wrap gap-1 mt-1">
@@ -600,12 +608,13 @@ const TeamBuffs = ({
                                   else if (effect.type === 'coreBuffs') typeLabel = '🔷 Core';
                                   else if (effect.type === 'ultimateBuffs') typeLabel = '🔥 Ult';
                                   else if (effect.type === 'elementalDamage') typeLabel = `🌟 ${effect.element || 'Elem'}`;
+                                  else if (effect.type === 'critRateBuffs') typeLabel = '🎯 CritRate';
+                                  else if (effect.type === 'critDamageBuffs') typeLabel = '💥 CritDMG';
                                   else typeLabel = effect.type;
-                                  
+
                                   return (
-                                    <span key={idx} className={`text-[8px] bg-indigo-900/50 px-1 py-0.5 rounded ${
-                                      effect.element ? getElementColor(effect.element) : 'text-white/70'
-                                    }`}>
+                                    <span key={idx} className={`text-[8px] bg-indigo-900/50 px-1 py-0.5 rounded ${effect.element ? getElementColor(effect.element) : 'text-white/70'
+                                      }`}>
                                       {typeLabel}
                                     </span>
                                   );
@@ -613,11 +622,10 @@ const TeamBuffs = ({
                               </div>
                             )}
                           </div>
-                          <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${
-                            isSelected 
-                              ? 'bg-purple-400 border-purple-400' 
-                              : 'border-white/30'
-                          }`}>
+                          <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${isSelected
+                            ? 'bg-purple-400 border-purple-400'
+                            : 'border-white/30'
+                            }`}>
                             {isSelected && (
                               <svg className="w-full h-full text-white" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
