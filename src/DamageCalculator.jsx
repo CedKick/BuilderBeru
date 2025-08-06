@@ -716,152 +716,152 @@ const DamageCalculator = ({
               {/* Séparateur */}
               <div className="border-t border-indigo-800/30 my-2"></div>
 
-              {/* Section Buffs avec double inputs */}
-              <div className="space-y-1">
-                {/* DMG Buff */}
-                <div className="flex items-center gap-2">
-                  <label className="text-white/60 text-[10px] w-16">DMG Buff%</label>
-                  <div className="flex items-center gap-1 flex-1">
-                    <input
-                      type="number"
-                      value={customStats.damageBuffsManual}
-                      onChange={(e) => handleStatChange('damageBuffsManual', e.target.value)}
-                      placeholder="0"
-                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-12 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
-                    />
-                    <span className="text-white/40 text-[10px]">+</span>
-                    <input
-                      type="number"
-                      value={customStats.damageBuffsAuto}
-                      disabled
-                      className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-12 text-[10px] text-right cursor-not-allowed"
-                    />
-                    <span className="text-white/60 text-[10px] ml-1">
-                      = {getTotalBuff(customStats.damageBuffsManual, customStats.damageBuffsAuto)}%
-                    </span>
-                  </div>
-                </div>
+{/* Section Buffs avec double inputs - GRILLE 2 COLONNES */}
+<div className="grid grid-cols-2 gap-x-3 gap-y-2">
+  {/* DMG% - Colonne 1 */}
+  <div>
+    <label className="text-white/60 text-[10px] block mb-1">DMG%</label>
+    <div className="flex items-center gap-1">
+      <input
+        type="number"
+        value={customStats.damageBuffsManual}
+        onChange={(e) => handleStatChange('damageBuffsManual', e.target.value)}
+        placeholder="0"
+        className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-10 text-[10px] text-center focus:outline-none focus:bg-indigo-900/50"
+      />
+      <span className="text-white/40 text-[10px]">+</span>
+      <input
+        type="number"
+        value={customStats.damageBuffsAuto}
+        disabled
+        className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-10 text-[10px] text-center cursor-not-allowed"
+      />
+      <span className="text-white/60 text-[10px]">
+        = {getTotalBuff(customStats.damageBuffsManual, customStats.damageBuffsAuto)}%
+      </span>
+    </div>
+  </div>
 
-                {/* Core Buff */}
-                <div className="flex items-center gap-2">
-                  <label className="text-white/60 text-[10px] w-16">Core Buff%</label>
-                  <div className="flex items-center gap-1 flex-1">
-                    <input
-                      type="number"
-                      value={customStats.coreBuffsManual}
-                      onChange={(e) => handleStatChange('coreBuffsManual', e.target.value)}
-                      placeholder="0"
-                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-12 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
-                    />
-                    <span className="text-white/40 text-[10px]">+</span>
-                    <input
-                      type="number"
-                      value={customStats.coreBuffsAuto}
-                      disabled
-                      className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-12 text-[10px] text-right cursor-not-allowed"
-                    />
-                    <span className="text-white/60 text-[10px] ml-1">
-                      = {getTotalBuff(customStats.coreBuffsManual, customStats.coreBuffsAuto)}%
-                    </span>
-                  </div>
-                </div>
+  {/* Ult% - Colonne 2 */}
+  <div>
+    <label className="text-white/60 text-[10px] block mb-1">Ult%</label>
+    <div className="flex items-center gap-1">
+      <input
+        type="number"
+        value={customStats.ultimateBuffsManual}
+        onChange={(e) => handleStatChange('ultimateBuffsManual', e.target.value)}
+        placeholder="0"
+        className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-10 text-[10px] text-center focus:outline-none focus:bg-indigo-900/50"
+      />
+      <span className="text-white/40 text-[10px]">+</span>
+      <input
+        type="number"
+        value={customStats.ultimateBuffsAuto}
+        disabled
+        className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-10 text-[10px] text-center cursor-not-allowed"
+      />
+      <span className="text-white/60 text-[10px]">
+        = {getTotalBuff(customStats.ultimateBuffsManual, customStats.ultimateBuffsAuto)}%
+      </span>
+    </div>
+  </div>
 
-                {/* Skill Buff */}
-                <div className="flex items-center gap-2">
-                  <label className="text-white/60 text-[10px] w-16">Skill Buff%</label>
-                  <div className="flex items-center gap-1 flex-1">
-                    <input
-                      type="number"
-                      value={customStats.skillBuffsManual}
-                      onChange={(e) => handleStatChange('skillBuffsManual', e.target.value)}
-                      placeholder="0"
-                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-12 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
-                    />
-                    <span className="text-white/40 text-[10px]">+</span>
-                    <input
-                      type="number"
-                      value={customStats.skillBuffsAuto}
-                      disabled
-                      className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-12 text-[10px] text-right cursor-not-allowed"
-                    />
-                    <span className="text-white/60 text-[10px] ml-1">
-                      = {getTotalBuff(customStats.skillBuffsManual, customStats.skillBuffsAuto)}%
-                    </span>
-                  </div>
-                </div>
+  {/* Core% - Colonne 1 */}
+  <div>
+    <label className="text-white/60 text-[10px] block mb-1">Core%</label>
+    <div className="flex items-center gap-1">
+      <input
+        type="number"
+        value={customStats.coreBuffsManual}
+        onChange={(e) => handleStatChange('coreBuffsManual', e.target.value)}
+        placeholder="0"
+        className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-10 text-[10px] text-center focus:outline-none focus:bg-indigo-900/50"
+      />
+      <span className="text-white/40 text-[10px]">+</span>
+      <input
+        type="number"
+        value={customStats.coreBuffsAuto}
+        disabled
+        className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-10 text-[10px] text-center cursor-not-allowed"
+      />
+      <span className="text-white/60 text-[10px]">
+        = {getTotalBuff(customStats.coreBuffsManual, customStats.coreBuffsAuto)}%
+      </span>
+    </div>
+  </div>
 
-                {/* Ultimate Buff */}
-                <div className="flex items-center gap-2">
-                  <label className="text-white/60 text-[10px] w-16">Ult Buff%</label>
-                  <div className="flex items-center gap-1 flex-1">
-                    <input
-                      type="number"
-                      value={customStats.ultimateBuffsManual}
-                      onChange={(e) => handleStatChange('ultimateBuffsManual', e.target.value)}
-                      placeholder="0"
-                      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-12 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
-                    />
-                    <span className="text-white/40 text-[10px]">+</span>
-                    <input
-                      type="number"
-                      value={customStats.ultimateBuffsAuto}
-                      disabled
-                      className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-12 text-[10px] text-right cursor-not-allowed"
-                    />
-                    <span className="text-white/60 text-[10px] ml-1">
-                      = {getTotalBuff(customStats.ultimateBuffsManual, customStats.ultimateBuffsAuto)}%
-                    </span>
-                  </div>
-                </div>
+  {/* CR% - Colonne 2 */}
+  <div>
+    <label className="text-white/60 text-[10px] block mb-1">CR%</label>
+    <div className="flex items-center gap-1">
+      <input
+        type="number"
+        value={customStats.critRateBuffsManual}
+        onChange={(e) => handleStatChange('critRateBuffsManual', e.target.value)}
+        placeholder="0"
+        className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-10 text-[10px] text-center focus:outline-none focus:bg-indigo-900/50"
+      />
+      <span className="text-white/40 text-[10px]">+</span>
+      <input
+        type="number"
+        value={customStats.critRateBuffsAuto}
+        disabled
+        className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-10 text-[10px] text-center cursor-not-allowed"
+      />
+      <span className="text-white/60 text-[10px]">
+        = {getTotalBuff(customStats.critRateBuffsManual, customStats.critRateBuffsAuto)}%
+      </span>
+    </div>
+  </div>
 
-                {/* Crit Rate Buff */}
-<div className="flex items-center gap-2">
-  <label className="text-white/60 text-[10px] w-16">CR Buff%</label>
-  <div className="flex items-center gap-1 flex-1">
-    <input
-      type="number"
-      value={customStats.critRateBuffsManual}
-      onChange={(e) => handleStatChange('critRateBuffsManual', e.target.value)}
-      placeholder="0"
-      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-12 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
-    />
-    <span className="text-white/40 text-[10px]">+</span>
-    <input
-      type="number"
-      value={customStats.critRateBuffsAuto}
-      disabled
-      className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-12 text-[10px] text-right cursor-not-allowed"
-    />
-    <span className="text-white/60 text-[10px] ml-1">
-      = {getTotalBuff(customStats.critRateBuffsManual, customStats.critRateBuffsAuto)}%
-    </span>
+  {/* Skill% - Colonne 1 */}
+  <div>
+    <label className="text-white/60 text-[10px] block mb-1">Skill%</label>
+    <div className="flex items-center gap-1">
+      <input
+        type="number"
+        value={customStats.skillBuffsManual}
+        onChange={(e) => handleStatChange('skillBuffsManual', e.target.value)}
+        placeholder="0"
+        className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-10 text-[10px] text-center focus:outline-none focus:bg-indigo-900/50"
+      />
+      <span className="text-white/40 text-[10px]">+</span>
+      <input
+        type="number"
+        value={customStats.skillBuffsAuto}
+        disabled
+        className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-10 text-[10px] text-center cursor-not-allowed"
+      />
+      <span className="text-white/60 text-[10px]">
+        = {getTotalBuff(customStats.skillBuffsManual, customStats.skillBuffsAuto)}%
+      </span>
+    </div>
+  </div>
+
+  {/* CD% - Colonne 2 */}
+  <div>
+    <label className="text-white/60 text-[10px] block mb-1">CD%</label>
+    <div className="flex items-center gap-1">
+      <input
+        type="number"
+        value={customStats.critDamageBuffsManual}
+        onChange={(e) => handleStatChange('critDamageBuffsManual', e.target.value)}
+        placeholder="0"
+        className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-10 text-[10px] text-center focus:outline-none focus:bg-indigo-900/50"
+      />
+      <span className="text-white/40 text-[10px]">+</span>
+      <input
+        type="number"
+        value={customStats.critDamageBuffsAuto}
+        disabled
+        className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-10 text-[10px] text-center cursor-not-allowed"
+      />
+      <span className="text-white/60 text-[10px]">
+        = {getTotalBuff(customStats.critDamageBuffsManual, customStats.critDamageBuffsAuto)}%
+      </span>
+    </div>
   </div>
 </div>
-
-{/* Crit Damage Buff */}
-<div className="flex items-center gap-2">
-  <label className="text-white/60 text-[10px] w-16">CD Buff%</label>
-  <div className="flex items-center gap-1 flex-1">
-    <input
-      type="number"
-      value={customStats.critDamageBuffsManual}
-      onChange={(e) => handleStatChange('critDamageBuffsManual', e.target.value)}
-      placeholder="0"
-      className="bg-indigo-900/30 text-white/90 px-1 py-0.5 rounded w-12 text-[10px] text-right focus:outline-none focus:bg-indigo-900/50"
-    />
-    <span className="text-white/40 text-[10px]">+</span>
-    <input
-      type="number"
-      value={customStats.critDamageBuffsAuto}
-      disabled
-      className="bg-purple-900/20 text-purple-300/70 px-1 py-0.5 rounded w-12 text-[10px] text-right cursor-not-allowed"
-    />
-    <span className="text-white/60 text-[10px] ml-1">
-      = {getTotalBuff(customStats.critDamageBuffsManual, customStats.critDamageBuffsAuto)}%
-    </span>
-  </div>
-</div>
-              </div>
             </div>
 
             {/* Multipliers */}
@@ -887,35 +887,38 @@ const DamageCalculator = ({
             </div>
 
             {/* OTHER BUFFS - NOUVELLE SECTION */}
-            <div className="bg-indigo-900/20 rounded p-2">
-              <div className="flex items-center gap-2 mb-1.5">
-                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png" alt="icon" className="w-4 h-4 rounded" />
-                <h3 className="text-white/90 text-xs font-medium">OTHER BUFFS</h3>
-              </div>
+           <div className="bg-indigo-900/20 rounded p-2">
+  <div className="flex items-center gap-2 mb-1.5">
+    <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png" alt="icon" className="w-4 h-4 rounded" />
+    <h3 className="text-white/90 text-xs font-medium">OTHER BUFFS</h3>
+  </div>
 
-              <div className="grid grid-cols-1 gap-1">
-                <button
-                  onClick={() => setShowBuffsPopup(prev => ({ ...prev, character: true }))}
-                  className="bg-indigo-900/30 hover:bg-indigo-900/50 text-white/70 hover:text-white px-2 py-1 rounded text-[10px] transition-all text-left"
-                >
-                  Character Buffs <span className="text-purple-400">({activeBuffsCount.character})</span>
-                </button>
+  <div className="grid grid-cols-3 gap-1">
+    <button
+      onClick={() => setShowBuffsPopup(prev => ({ ...prev, character: true }))}
+      className="bg-indigo-900/30 hover:bg-indigo-900/50 text-white/70 hover:text-white px-1 py-1 rounded text-[9px] transition-all text-center"
+    >
+      Character Buffs
+      <span className="text-purple-400 block text-[8px]">({activeBuffsCount.character})</span>
+    </button>
 
-                <button
-                  onClick={() => setShowBuffsPopup(prev => ({ ...prev, team: true }))}
-                  className="bg-indigo-900/30 hover:bg-indigo-900/50 text-white/70 hover:text-white px-2 py-1 rounded text-[10px] transition-all text-left"
-                >
-                  Team Buffs <span className="text-purple-400">({activeTeamBuffsCount})</span>
-                </button>
+    <button
+      onClick={() => setShowBuffsPopup(prev => ({ ...prev, team: true }))}
+      className="bg-indigo-900/30 hover:bg-indigo-900/50 text-white/70 hover:text-white px-1 py-1 rounded text-[9px] transition-all text-center"
+    >
+      Team Buffs
+      <span className="text-purple-400 block text-[8px]">({activeTeamBuffsCount})</span>
+    </button>
 
-                <button
-                  onClick={() => setShowBuffsPopup(prev => ({ ...prev, set: true }))}
-                  className="bg-indigo-900/30 hover:bg-indigo-900/50 text-white/70 hover:text-white px-2 py-1 rounded text-[10px] transition-all text-left"
-                >
-                  Set Buffs <span className="text-purple-400">({activeBuffsCount.set})</span>
-                </button>
-              </div>
-            </div>
+    <button
+      onClick={() => setShowBuffsPopup(prev => ({ ...prev, set: true }))}
+      className="bg-indigo-900/30 hover:bg-indigo-900/50 text-white/70 hover:text-white px-1 py-1 rounded text-[9px] transition-all text-center"
+    >
+      Set Buffs
+      <span className="text-purple-400 block text-[8px]">({activeBuffsCount.set})</span>
+    </button>
+  </div>
+</div>
           </div>
 
           {/* Section 2: Advanced & Boss */}

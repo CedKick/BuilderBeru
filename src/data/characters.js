@@ -189,6 +189,25 @@ export  const characters = {
     { type: 'critDamageBuffs', values: [30] },
     { type: 'defense', values: [30] }          
   ]
+},
+      {
+  name: "Defense Reduction Mark",
+  img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754512224/DefenseReductionMark_Lennart_rmaard.png',
+  duration: 40,
+  target: 'self', 
+  effects: [
+    { type: 'damageBuffs', values: [30] } 
+  ]
+},
+{
+  name: "Wind Synergy",
+  img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754514229/fourStarLennart_y59gsr.png', 
+  duration: 0, 
+  target: 'shared',
+  effects: [
+    { type: 'defense', condition: 'wind', values: [42] }, 
+    { type: 'hp', values: [8] } 
+  ]
 }
 ]
     },
@@ -522,14 +541,24 @@ export  const characters = {
       },
       buffs: [
         {
-          name: 'Exorcise',
-          values: [3, 6, 9, 12, 15], // Accumulative: 5%, 10%, 15%
-          cooldown: 12,
-          duration: 8,
-          target: 'self', // 'self' ou 'shared'
-          type: 'CritDamageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
-          element: 'Wind'
-        } ]
+  name: "Arrogance",
+  img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754515830/arrogance_goto_fnicil.png', 
+  duration: 20, // 20 secondes
+  target: 'self',
+  effects: [
+    { type: 'critDamageBuffs', values: [20] }, 
+    { type: 'skillBuffs', values: [20] } 
+  ]
+},
+{
+  name: "Third Hunter Boost",
+  img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754516654/fourStarGoto_qgsvgp.png', // À remplacer
+  duration: 0, // Passif permanent
+  target: 'shared', // Cible spécifique : 3ème membre de l'équipe
+  effects: [
+    { type: 'damageBuffs', values: [24] } // +24% de dégâts
+  ]
+} ]
     },
     'han': {
       name: 'Han Se-Mi',
