@@ -289,21 +289,16 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
       </div>
 
       {/* Bulle de dialogue avec fade in/out */}
-      {tutorialSteps[currentStep] && showMessage && (
-        <ChibiBubble
-          message={tutorialSteps[currentStep].message}
-          position={{
-            x: bubblePosition.x,
-            y: bubblePosition.y,
-            currentCanvasId: 'tutorial-overlay'
-          }}
-          entityType={tutorialSteps[currentStep].speaker || 'igris'}
-          onClose={() => {}}
-          autoClose={false}
-          showCloseButton={false}
-          isMobile={window.innerWidth < 768}
-        />
-      )}
+      {/* Bulle de dialogue avec fade in/out */}
+{tutorialSteps[currentStep] && showMessage && (
+  <ChibiBubble
+    key={`igris-bubble-${currentStep}`}
+    entityType={tutorialSteps[currentStep].speaker || 'igris'}
+    message={tutorialSteps[currentStep].message}
+    isMobile={window.innerWidth < 768}
+    position={bubblePosition}
+  />
+)}
 
       {/* Contrôles de navigation */}
       <div className="tutorial-controls">

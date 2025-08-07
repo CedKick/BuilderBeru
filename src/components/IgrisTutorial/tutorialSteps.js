@@ -48,67 +48,112 @@ export const tutorialSteps = [
     skipBubble: true
   },
   {
-    id: 'character_selector_zone',
-    message: "D'abord, regarde ici en haut. C'est le sélecteur de personnage.",
-    speaker: 'igris',
-    selector: 'select[value][onChange]', // Le select avec value et onChange
-    highlight: true,
-    duration: 4500,
-    autoNext: true
-  },
-  {
-    id: 'open_character_list',
-    message: "Je vais sélectionner un Hunter pour cette démonstration...",
-    speaker: 'igris',
-    selector: 'select[value][onChange]',
-    highlight: true,
-    duration: 3500,
-    autoNext: true,
-    action: () => {
-      setTimeout(() => {
-        const selectElem = document.querySelector('select[value][onChange]');
-        if (selectElem) {
-          // Focus et click pour montrer visuellement
-          selectElem.focus();
-          selectElem.click();
-        }
-      }, 500);
-    }
-  },
-  {
-    id: 'select_random_hunter',
-    message: "Voyons voir... Ah ! Ce Hunter sera parfait pour la démonstration !",
-    speaker: 'igris',
-    duration: 3000,
-    autoNext: true,
-    action: () => {
-      setTimeout(() => {
-        const selectElem = document.querySelector('select[value][onChange]');
+  id: 'character_selector_zone',
+  message: "D'abord, regarde ici en haut. C'est le sélecteur de personnage.",
+  speaker: 'igris',
+  selector: 'select[value][onChange]', // N'importe quel select avec value et onChange
+  highlight: true,
+  duration: 4500,
+  autoNext: true
+},
+{
+  id: 'open_character_list',
+  message: "Je vais changer de Hunter pour cette démonstration...",
+  speaker: 'igris',
+  selector: 'select[value][onChange]',
+  highlight: true,
+  duration: 3500,
+  autoNext: true,
+  action: () => {
+    setTimeout(() => {
+      // Chercher le select qui contient les personnages
+      const selects = document.querySelectorAll('select');
+      let targetSelect = null;
+      
+      for (const select of selects) {
+        // Vérifier si c'est le bon select en cherchant des options de personnages connus
+        const hasCharacterOptions = Array.from(select.options).some(opt => 
+          opt.text.includes('Sung Jinwoo') || 
+          opt.text.includes('Cha Hae-in') ||
+          opt.text.includes('Choi Jong-in') ||
+          opt.text === 'Sélectionner un personnage'
+        );
         
-        if (selectElem) {
-          // Récupérer toutes les options sauf la première (vide)
-          const options = Array.from(selectElem.options).filter(opt => opt.value !== '');
-          
-          if (options.length > 0) {
-            // Choisir une option au hasard
-            const randomOption = options[Math.floor(Math.random() * options.length)];
-            
-            // Changer la valeur
-            selectElem.value = randomOption.value;
-            
-            // Déclencher l'événement onChange pour que React réagisse
-            const event = new Event('change', { bubbles: true });
-            selectElem.dispatchEvent(event);
-            
-            // Stocker le nom pour les dialogues suivants
-            window.selectedHunterForTutorial = randomOption.text;
-            
-            console.log('Hunter sélectionné:', randomOption.text);
-          }
+        if (hasCharacterOptions) {
+          targetSelect = select;
+          console.log('✅ Select des personnages trouvé !', select);
+          break;
         }
-      }, 1000);
-    }
-  },
+      }
+      
+      if (targetSelect) {
+        targetSelect.focus();
+        // Simuler l'ouverture du dropdown
+        targetSelect.click();
+        const mouseEvent = new MouseEvent('mousedown', { bubbles: true });
+        targetSelect.dispatchEvent(mouseEvent);
+      } else {
+        console.log('❌ Select des personnages non trouvé');
+      }
+    }, 500);
+  }
+},
+{
+  id: 'select_random_hunter',
+  message: "Changeons pour un autre Hunter... Celui-ci fera l'affaire !",
+  speaker: 'igris',
+  duration: 3000,
+  autoNext: true,
+  action: () => {
+    setTimeout(() => {
+      const selects = document.querySelectorAll('select');
+      let targetSelect = null;
+      
+      for (const select of selects) {
+        const hasCharacterOptions = Array.from(select.options).some(opt => 
+          opt.text.includes('Sung Jinwoo') || 
+          opt.text.includes('Cha Hae-in') ||
+          opt.text.includes('Choi Jong-in') ||
+          opt.text === 'Sélectionner un personnage'
+        );
+        
+        if (hasCharacterOptions) {
+          targetSelect = select;
+          break;
+        }
+      }
+      
+      if (targetSelect) {
+        const currentValue = targetSelect.value;
+        console.log('🔍 Hunter actuel:', currentValue);
+        
+        // Récupérer toutes les options SAUF celle actuellement sélectionnée
+        const options = Array.from(targetSelect.options).filter(opt => 
+          opt.value !== '' && opt.value !== currentValue
+        );
+        
+        if (options.length > 0) {
+          const randomOption = options[Math.floor(Math.random() * options.length)];
+          
+          console.log('🎯 Nouveau Hunter:', randomOption.text, '(', randomOption.value, ')');
+          
+          // Méthode pour forcer React à voir le changement
+          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+            window.HTMLSelectElement.prototype,
+            'value'
+          ).set;
+          
+          nativeInputValueSetter.call(targetSelect, randomOption.value);
+          
+          const event = new Event('change', { bubbles: true });
+          targetSelect.dispatchEvent(event);
+          
+          window.selectedHunterForTutorial = randomOption.text;
+        }
+      }
+    }, 1000);
+  }
+},
   {
     id: 'cerbere_reaction',
     message: (() => {
