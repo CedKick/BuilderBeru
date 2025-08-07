@@ -635,6 +635,7 @@ const BuilderBeru = () => {
   const [showBeruInteractionMenu, setShowBeruInteractionMenu] = useState(false);
   const [showKaiselInteractionMenu, setShowKaiselInteractionMenu] = useState(false);
   const [kaiselMenuPosition, setKaiselMenuPosition] = useState({ x: 0, y: 0 });
+  const [showGuideButton, setShowGuideButton] = useState(true);
   const [kaiselMenuCharacter, setKaiselMenuCharacter] = useState('');
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [beruMenuPosition, setBeruMenuPosition] = useState({ x: 0, y: 0 });
@@ -7464,69 +7465,114 @@ BobbyJones : "Allez l'Inter !"
         </div>
       )}
 
-<button
-  onClick={() => setShowTutorial(true)}
-  className="igris-guide-button"
-  style={{
-    position: 'fixed',
-    bottom: '30px',
-    right: '30px',
-    background: 'rgba(76, 29, 149, 0.6)', // Plus transparent, moins agressif
-    border: '2px solid rgba(139, 92, 246, 0.3)', // Bordure plus subtile
-    borderRadius: '50%',
-    width: '85px', // Plus grand
-    height: '85px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    boxShadow: '0 4px 20px rgba(139, 92, 246, 0.2)', // Ombre plus douce
-    backdropFilter: 'blur(10px)', // Effet glassmorphism
-    transition: 'all 0.3s ease',
-    zIndex: 1000,
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.transform = 'scale(1.05)';
-    e.currentTarget.style.background = 'rgba(76, 29, 149, 0.7)';
-    e.currentTarget.style.boxShadow = '0 6px 25px rgba(139, 92, 246, 0.3)';
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.transform = 'scale(1)';
-    e.currentTarget.style.background = 'rgba(76, 29, 149, 0.6)';
-    e.currentTarget.style.boxShadow = '0 4px 20px rgba(139, 92, 246, 0.2)';
-  }}
->
-  <img
-    src={IGRIS_ICON_URL}
-    alt="Guide Igris"
-    style={{
-      width: '65px', // Image plus grande
-      height: '65px',
-      filter: 'brightness(1.1) contrast(1.1)', // Plus lumineux et contrasté
-      objectFit: 'contain'
-    }}
-  />
-  
-  {/* Texte GUIDE en dessous, plus lisible */}
-  <span style={{
-    position: 'absolute',
-    bottom: '-8px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    background: 'rgba(0, 0, 0, 0.8)', // Fond noir pour contraste
-    color: 'white',
-    padding: '3px 10px',
-    borderRadius: '12px',
-    fontSize: '11px',
-    fontWeight: 'bold',
-    letterSpacing: '1px',
-    textTransform: 'uppercase',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
-    border: '1px solid rgba(139, 92, 246, 0.5)'
-  }}>
-    GUIDE
-  </span>
-</button>
+{showGuideButton && (
+  <div style={{ position: 'relative' }}>
+    {/* Croix de fermeture */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        setShowGuideButton(false);
+      }}
+      style={{
+        position: 'fixed',
+        bottom: '105px', // Au-dessus du bouton guide
+        right: '25px',
+        width: '28px',
+        height: '28px',
+        borderRadius: '50%',
+        backgroundColor: '#dc2626',
+        border: '2px solid #7f1d1d',
+        color: 'white',
+        fontSize: '16px',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 2px 8px rgba(220, 38, 38, 0.4)',
+        zIndex: 1001,
+        transition: 'all 0.2s ease'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = '#b91c1c';
+        e.currentTarget.style.transform = 'scale(1.1)';
+        e.currentTarget.style.boxShadow = '0 3px 12px rgba(220, 38, 38, 0.6)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = '#dc2626';
+        e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.boxShadow = '0 2px 8px rgba(220, 38, 38, 0.4)';
+      }}
+      title="Fermer le guide"
+    >
+      ✕
+    </button>
+
+    {/* Bouton guide original */}
+    <button
+      onClick={() => setShowTutorial(true)}
+      className="igris-guide-button"
+      style={{
+        position: 'fixed',
+        bottom: '30px',
+        right: '30px',
+        background: 'rgba(76, 29, 149, 0.6)',
+        border: '2px solid rgba(139, 92, 246, 0.3)',
+        borderRadius: '50%',
+        width: '85px',
+        height: '85px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        boxShadow: '0 4px 20px rgba(139, 92, 246, 0.2)',
+        backdropFilter: 'blur(10px)',
+        transition: 'all 0.3s ease',
+        zIndex: 1000,
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'scale(1.05)';
+        e.currentTarget.style.background = 'rgba(76, 29, 149, 0.7)';
+        e.currentTarget.style.boxShadow = '0 6px 25px rgba(139, 92, 246, 0.3)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.background = 'rgba(76, 29, 149, 0.6)';
+        e.currentTarget.style.boxShadow = '0 4px 20px rgba(139, 92, 246, 0.2)';
+      }}
+    >
+      <img
+        src={IGRIS_ICON_URL}
+        alt="Guide Igris"
+        style={{
+          width: '65px',
+          height: '65px',
+          filter: 'brightness(1.1) contrast(1.1)',
+          objectFit: 'contain'
+        }}
+      />
+      
+      <span style={{
+        position: 'absolute',
+        bottom: '-8px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: 'rgba(0, 0, 0, 0.8)',
+        color: 'white',
+        padding: '3px 10px',
+        borderRadius: '12px',
+        fontSize: '11px',
+        fontWeight: 'bold',
+        letterSpacing: '1px',
+        textTransform: 'uppercase',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
+        border: '1px solid rgba(139, 92, 246, 0.5)'
+      }}>
+        GUIDE
+      </span>
+    </button>
+  </div>
+)}
       <div
         id="tank-laser"
         className="hidden fixed z-[9999] pointer-events-none transition-all duration-200 tank-target">

@@ -34,7 +34,8 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
         beru: '#8A2BE2',
         kaisel: '#00FF41',
         igris: '#980808ff',
-        cerbere: '#e334baff'
+        cerbere: '#e334baff',
+        cerbère: '#e334baff'   // Avec accent (au cas où)
     };
 
     // 🔍 DÉTECTION MOBILE

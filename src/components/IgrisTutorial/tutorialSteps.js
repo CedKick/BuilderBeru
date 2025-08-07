@@ -365,7 +365,7 @@ export const tutorialSteps = [
             return null;
         },
         highlight: true,
-        duration: 5000,
+        duration: 5400,
         autoNext: true
     },
     {
@@ -398,7 +398,7 @@ export const tutorialSteps = [
         id: 'igris_explain_more',
         message: "Excellent travail ! Tu peux faire la même chose pour chaque pièce d'équipement. Plus tard, tu découvriras les synergies entre les sets !",
         speaker: 'igris',
-        duration: 5500,
+        duration: 6000,
         autoNext: true
     },
     {
@@ -423,7 +423,7 @@ export const tutorialSteps = [
             });
         },
         highlight: true,
-        duration: 4800,
+        duration: 5200,
         autoNext: true
     },
     {
@@ -441,7 +441,7 @@ export const tutorialSteps = [
             });
         },
         highlight: true,
-        duration: 4500,
+        duration: 5000,
         autoNext: true
     },
     {
@@ -450,7 +450,7 @@ export const tutorialSteps = [
         speaker: 'igris',
         selector: '.stats-display, .final-stats, .character-stats',
         highlight: true,
-        duration: 5500,
+        duration: 6500,
         autoNext: true
     },
     {
@@ -482,7 +482,7 @@ export const tutorialSteps = [
             return button;
         },
         highlight: true,
-        duration: 5500,
+        duration: 5800,
         autoNext: true
     },
     {
