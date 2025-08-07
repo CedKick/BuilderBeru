@@ -1,19 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { dytextAnimate } from "../useDytext";
 
-const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose }) => {
+const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose, onComplete }) => {
     const bubbleRef = useRef();
     const [isVisible, setIsVisible] = useState(true);
     const [isClosing, setIsClosing] = useState(false);
     const [adjustedPosition, setAdjustedPosition] = useState(position);
+
+    const animationStartedRef = useRef(false);
+    const currentMessageRef = useRef('');
 
     // 🎭 ICÔNES DES ENTITÉS
     const entityIcons = {
         tank: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png',
         beru: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png',
         kaisel: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
-        igris: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png', // Ajoute ton URL
-        cerbere: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png' // Ajoute ton URL
+        igris: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png',
+        cerbere: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png'
     };
 
     // 🏷️ NOMS DES ENTITÉS
@@ -30,8 +33,8 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
         tank: '#4CAF50',
         beru: '#8A2BE2',
         kaisel: '#00FF41',
-        igris: '#980808ff', // Violet royal pour Igris
-    cerbere: '#e334baff' // Marron pour Cerbère
+        igris: '#980808ff',
+        cerbere: '#e334baff'
     };
 
     // 🔍 DÉTECTION MOBILE
@@ -57,6 +60,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
         }
     }, [isVisible, onClose, isClosing]);
 
+    // 📍 AJUSTEMENT DE LA POSITION
     useEffect(() => {
         if (isMobileDevice) {
             setAdjustedPosition({
@@ -74,13 +78,58 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
         }
     }, [position, isMobileDevice]);
 
+    // 🎯 UN SEUL useEffect pour l'animation du texte
     useEffect(() => {
-        if (bubbleRef.current && message) {
-            setTimeout(() => {
-                dytextAnimate(bubbleRef, message, 35);
-            }, 200);
+        // Vérifier si le message a changé
+        if (message !== currentMessageRef.current) {
+            animationStartedRef.current = false;
+            currentMessageRef.current = message;
+            
+            // Nettoyer le contenu précédent
+            if (bubbleRef.current) {
+                bubbleRef.current.innerHTML = '';
+            }
         }
-    }, [message]);
+
+        // Éviter les multiples appels de dytextAnimate
+        if (bubbleRef.current && message && !animationStartedRef.current) {
+            animationStartedRef.current = true;
+            
+            // 🔧 S'assurer que le ref est bien attaché et visible
+            const timer = setTimeout(() => {
+                if (bubbleRef.current && bubbleRef.current.offsetParent !== null) {
+                    // Vérifier que l'élément est dans le DOM et visible
+                    console.log(`🎯 Animation démarrée pour: ${entityNames[entityType]}`);
+                    
+                    dytextAnimate(bubbleRef, message, 35, {
+                        onComplete: () => {
+                            console.log(`✅ ${entityNames[entityType]} a fini de parler`);
+                            if (onComplete) {
+                                onComplete();
+                            }
+                        }
+                    });
+                } else {
+                    // Si l'élément n'est pas visible, réessayer
+                    console.warn(`⚠️ Bubble ref pas prêt, retry...`);
+                    animationStartedRef.current = false;
+                }
+            }, 300); // Délai augmenté pour laisser le DOM se stabiliser
+            
+            return () => clearTimeout(timer);
+        }
+    }, [message, onComplete, entityType]);
+
+    // 🧹 Cleanup au démontage
+    useEffect(() => {
+        return () => {
+            animationStartedRef.current = false;
+            currentMessageRef.current = '';
+            if (bubbleRef.current) {
+                bubbleRef.current.innerHTML = '';
+            }
+        };
+    }, []);
 
     if (!message || !isVisible) return null;
 
@@ -102,7 +151,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                     <div
                         onClick={handleBubbleClick}
                         style={{
-                            backgroundColor: 'rgba(20, 20, 40, 0.5)',
+                            backgroundColor: 'rgba(20, 20, 40, 0.95)', // Plus opaque
                             backdropFilter: 'blur(4px)',
                             border: `2px solid ${entityColors[entityType]}60`,
                             borderRadius: '16px',
@@ -153,9 +202,14 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                                 whiteSpace: 'pre-line',
                                 minHeight: '20px',
                                 textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
-                                backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                                padding: '4px',
-                                borderRadius: '6px'
+                                backgroundColor: 'rgba(0, 0, 0, 0.4)', // Plus opaque
+                                padding: '6px',
+                                borderRadius: '6px',
+                                // Forcer la visibilité
+                                visibility: 'visible',
+                                opacity: 1,
+                                position: 'relative',
+                                zIndex: 1
                             }}
                         />
 
@@ -169,7 +223,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                             height: 0,
                             borderLeft: '12px solid transparent',
                             borderRight: '12px solid transparent',
-                            borderTop: `12px solid rgba(20, 20, 40, 0.5)`
+                            borderTop: `12px solid rgba(20, 20, 40, 0.95)`
                         }} />
                     </div>
                 </div>
@@ -180,12 +234,12 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                         position: 'fixed',
                         top: adjustedPosition.y,
                         left: adjustedPosition.x - 120,
-                        zIndex: 100,
+                        zIndex: 10100, // Augmenté pour être sûr d'être au-dessus
                         maxWidth: '280px'
                     }}
                 >
                     <div style={{
-                        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.95)', // Plus opaque
                         border: `1px solid ${entityColors[entityType]}60`,
                         borderRadius: '12px',
                         padding: '10px',
@@ -227,7 +281,13 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                                 fontSize: '12px',
                                 lineHeight: '1.3',
                                 whiteSpace: 'pre-line',
-                                minHeight: '16px'
+                                minHeight: '16px',
+                                // Forcer la visibilité
+                                visibility: 'visible',
+                                opacity: 1,
+                                position: 'relative',
+                                zIndex: 1,
+                                textShadow: '1px 1px 2px rgba(0,0,0,0.8)'
                             }}
                         />
                     </div>

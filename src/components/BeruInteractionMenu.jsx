@@ -124,6 +124,7 @@ const BeruInteractionMenu = ({
   // 🧠 ACTIONS INTELLIGENTES (RESTAURE TOUTE LA LOGIQUE EXISTANTE)
   const handleOption = (action) => {
     switch (action) {
+      
       case 'show_advice_submenu':
         setCurrentSubMenu('advice');
         break;
@@ -218,12 +219,14 @@ const BeruInteractionMenu = ({
 
       // 🔥 ACTIONS ORIGINALES RESTAURÉES
       case 'tutorial':
-        const tutorialMessages = t('beruTutorial', { returnObjects: true });
-        const randomTutorial = tutorialMessages[Math.floor(Math.random() * tutorialMessages.length)];
-        showTankMessage(randomTutorial, true, 'beru');
-        onClose();
-        break;
-
+  // Lancer le tutoriel directement
+  // Tu dois avoir une fonction qui lance IgrisTutorial
+  // Par exemple :
+  if (window.startIgrisTutorial) {
+    window.startIgrisTutorial();
+  }
+  onClose();
+  break;
       case 'show_lore':
         const loreMessages = t('beruLore', { returnObjects: true });
         const randomLore = loreMessages[Math.floor(Math.random() * loreMessages.length)];

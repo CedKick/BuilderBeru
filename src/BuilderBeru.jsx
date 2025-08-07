@@ -636,6 +636,7 @@ const BuilderBeru = () => {
   const [showKaiselInteractionMenu, setShowKaiselInteractionMenu] = useState(false);
   const [kaiselMenuPosition, setKaiselMenuPosition] = useState({ x: 0, y: 0 });
   const [kaiselMenuCharacter, setKaiselMenuCharacter] = useState('');
+  const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [beruMenuPosition, setBeruMenuPosition] = useState({ x: 0, y: 0 });
   const [showTvSystem, setShowTvSystem] = useState(false);
   const [tvData, setTvData] = useState(null);
@@ -1124,18 +1125,22 @@ const BuilderBeru = () => {
     }
 
     // ⏰ Start entity messages
-    startEntityMessages(entity) {
-      if (this.messageIntervals.has(entity.id)) return;
+  startEntityMessages(entity) {
+    if (this.messageIntervals.has(entity.id)) return;
 
-      const interval = setInterval(() => {
-        if (Math.random() < 0.33) {
-          const msg = entity.phrases[Math.floor(Math.random() * entity.phrases.length)];
-          this.showEntityMessage(entity.id, msg);
-        }
-      }, entity.messageInterval);
+    const interval = setInterval(() => {
+      // 🛡️ Ne pas parler si le tutoriel est actif
+      if (this.isTutorialActive) return;
+      
+      if (Math.random() < 0.33) {
+        const msg = entity.phrases[Math.floor(Math.random() * entity.phrases.length)];
+        this.showEntityMessage(entity.id, msg);
+      }
+    }, entity.messageInterval);
 
-      this.messageIntervals.set(entity.id, interval);
-    }
+    this.messageIntervals.set(entity.id, interval);
+  }
+
 
     // 🎮 Keyboard controls
     setupKeyboardControls() {
@@ -2896,6 +2901,20 @@ BobbyJones : "Allez l'Inter !"
     }
   }, []);
 
+  useEffect(() => {
+  // Exposer la fonction globalement pour BeruInteractionMenu
+  window.setIsTutorialActive = setIsTutorialActive;
+  window.startTutorial = () => {
+    setIsTutorialActive(true);
+    // Lancer IgrisTutorial
+  };
+  
+  return () => {
+    window.setIsTutorialActive = null;
+    window.startTutorial = null;
+  };
+}, []);
+
 
   // 🏆 AJOUTE CES FONCTIONS AU DÉBUT DE TON COMPOSANT BuilderBeru (après les autres fonctions)
 
@@ -4597,22 +4616,16 @@ BobbyJones : "Allez l'Inter !"
   };
 
 
-  useEffect(() => {
-    if (tankIntervalRef.current) return; // déjà lancé ? on stoppe
-
-    tankIntervalRef.current = setInterval(() => {
-      const shouldSpeak = Math.random() < 0.33;
-      if (shouldSpeak) {
-        const msg = tankPhrases[Math.floor(Math.random() * tankPhrases.length)];
-        showTankMessage(msg);
-      }
-    }, 30000); // toutes les 30 secondes
-
-    return () => {
-      clearInterval(tankIntervalRef.current);
-      tankIntervalRef.current = null;
-    };
-  }, []);
+ useEffect(() => {
+  // Rendre ces fonctions accessibles globalement
+  window.setIsTutorialActive = setIsTutorialActive;
+  window.isTutorialActive = () => isTutorialActive;
+  
+  return () => {
+    window.setIsTutorialActive = null;
+    window.isTutorialActive = null;
+  };
+}, [isTutorialActive]);
 
   useEffect(() => {
     const wanderInterval = setInterval(() => {
@@ -4665,6 +4678,10 @@ BobbyJones : "Allez l'Inter !"
         console.warn("🐉 Kaisel: Message invalide ignoré");
         return;
       }
+      if (isTutorialActive && !priority) {
+      console.log("🛡️ Message bloqué pendant le tutoriel:", message);
+      return;
+    }
 
       if (isTankSpeaking.current && !priority) {
         messageQueue.current.push({ message, entityType });

@@ -26,7 +26,7 @@
 
 /* 🐺 Sprite d'Igris sur Cerbère */
 .igris-sprite {
-  position: absolute;
+  position: fixed;
   pointer-events: all;
   z-index: 10002;
   transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
@@ -51,32 +51,36 @@
 .tutorial-highlight {
   position: relative !important;
   z-index: 10001 !important;
+  outline: 3px solid #8b00ff !important;
+  outline-offset: 5px !important;
   box-shadow: 
-    0 0 0 6px #8b00ff,
-    0 0 60px #8b00ff,
-    0 0 100px rgba(139, 0, 255, 0.5),
-    inset 0 0 30px rgba(139, 0, 255, 0.3) !important;
+    0 0 0 5px rgba(139, 0, 255, 0.3),
+    0 0 30px rgba(139, 0, 255, 0.8),
+    inset 0 0 20px rgba(139, 0, 255, 0.2) !important;
   animation: pulseHighlight 1.5s infinite !important;
-  border-radius: 8px;
-  filter: brightness(1.2) contrast(1.1);
+  filter: brightness(1.1) !important;
+}
+
+/* Forcer la visibilité des éléments highlight */
+.tutorial-highlight * {
+  position: relative !important;
+  z-index: inherit !important;
 }
 
 @keyframes pulseHighlight {
   0%, 100% { 
+    outline-offset: 5px;
     box-shadow: 
-      0 0 0 6px #8b00ff,
-      0 0 60px #8b00ff,
-      0 0 100px rgba(139, 0, 255, 0.5),
-      inset 0 0 30px rgba(139, 0, 255, 0.3);
-    transform: scale(1);
+      0 0 0 5px rgba(139, 0, 255, 0.3),
+      0 0 30px rgba(139, 0, 255, 0.8),
+      inset 0 0 20px rgba(139, 0, 255, 0.2);
   }
   50% { 
+    outline-offset: 8px;
     box-shadow: 
-      0 0 0 8px #8b00ff,
-      0 0 80px #8b00ff,
-      0 0 120px rgba(139, 0, 255, 0.7),
-      inset 0 0 40px rgba(139, 0, 255, 0.4);
-    transform: scale(1.02);
+      0 0 0 8px rgba(139, 0, 255, 0.5),
+      0 0 50px rgba(139, 0, 255, 1),
+      inset 0 0 30px rgba(139, 0, 255, 0.3);
   }
 }
 
@@ -116,6 +120,7 @@
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
 .control-prev {
@@ -166,6 +171,7 @@
   background: rgba(0, 0, 0, 0.3);
   padding: 5px 15px;
   border-radius: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
 .current-step {
@@ -225,5 +231,10 @@
   .igris-image {
     width: 80px;
     height: 80px;
+  }
+  
+  /* Position fixe d'Igris sur mobile */
+  .igris-sprite {
+    position: fixed !important;
   }
 }

@@ -16,13 +16,13 @@ export const tutorialSteps = [
     id: 'welcome',
     message: "Salutations, Monarque ! Je suis Igris, ton ombre fidèle. Laisse-moi te guider dans la création de ton Hunter parfait... 🗡️",
     speaker: 'igris',
-    duration: 6000, // Plus de temps pour lire
+    duration: 6000,
     autoNext: true,
   },
   {
     id: 'pause_1',
-    message: "", // Pause silencieuse
-    duration: 500, // Plus courte
+    message: "",
+    duration: 500,
     autoNext: true,
     skipBubble: true
   },
@@ -48,67 +48,43 @@ export const tutorialSteps = [
     skipBubble: true
   },
   {
-  id: 'character_selector_zone',
-  message: "D'abord, regarde ici en haut. C'est le sélecteur de personnage.",
-  speaker: 'igris',
-  selector: 'select[value][onChange]', // N'importe quel select avec value et onChange
-  highlight: true,
-  duration: 4500,
-  autoNext: true
-},
-{
-  id: 'open_character_list',
-  message: "Je vais changer de Hunter pour cette démonstration...",
-  speaker: 'igris',
-  selector: 'select[value][onChange]',
-  highlight: true,
-  duration: 3500,
-  autoNext: true,
-  action: () => {
-    setTimeout(() => {
-      // Chercher le select qui contient les personnages
+    id: 'character_selector_zone',
+    message: "D'abord, regarde ici en haut. C'est le sélecteur de personnage.",
+    speaker: 'igris',
+    selector: () => {
+      // Recherche plus robuste du select
       const selects = document.querySelectorAll('select');
-      let targetSelect = null;
       
+      // Chercher le select qui contient des options de personnages
       for (const select of selects) {
-        // Vérifier si c'est le bon select en cherchant des options de personnages connus
         const hasCharacterOptions = Array.from(select.options).some(opt => 
           opt.text.includes('Sung Jinwoo') || 
           opt.text.includes('Cha Hae-in') ||
           opt.text.includes('Choi Jong-in') ||
-          opt.text === 'Sélectionner un personnage'
+          opt.text.includes('Hunter') ||
+          opt.value.includes('hunter_') ||
+          select.id?.includes('character') ||
+          select.className?.includes('character')
         );
         
         if (hasCharacterOptions) {
-          targetSelect = select;
-          console.log('✅ Select des personnages trouvé !', select);
-          break;
+          return select;
         }
       }
       
-      if (targetSelect) {
-        targetSelect.focus();
-        // Simuler l'ouverture du dropdown
-        targetSelect.click();
-        const mouseEvent = new MouseEvent('mousedown', { bubbles: true });
-        targetSelect.dispatchEvent(mouseEvent);
-      } else {
-        console.log('❌ Select des personnages non trouvé');
-      }
-    }, 500);
-  }
-},
-{
-  id: 'select_random_hunter',
-  message: "Changeons pour un autre Hunter... Celui-ci fera l'affaire !",
-  speaker: 'igris',
-  duration: 3000,
-  autoNext: true,
-  action: () => {
-    setTimeout(() => {
+      // Fallback : premier select trouvé
+      return selects[0];
+    },
+    highlight: true,
+    duration: 4500,
+    autoNext: true
+  },
+  {
+    id: 'open_character_list',
+    message: "Je vais changer de Hunter pour cette démonstration...",
+    speaker: 'igris',
+    selector: () => {
       const selects = document.querySelectorAll('select');
-      let targetSelect = null;
-      
       for (const select of selects) {
         const hasCharacterOptions = Array.from(select.options).some(opt => 
           opt.text.includes('Sung Jinwoo') || 
@@ -116,44 +92,101 @@ export const tutorialSteps = [
           opt.text.includes('Choi Jong-in') ||
           opt.text === 'Sélectionner un personnage'
         );
-        
-        if (hasCharacterOptions) {
-          targetSelect = select;
-          break;
-        }
+        if (hasCharacterOptions) return select;
       }
-      
-      if (targetSelect) {
-        const currentValue = targetSelect.value;
-        console.log('🔍 Hunter actuel:', currentValue);
+      return selects[0];
+    },
+    highlight: true,
+    duration: 3500,
+    autoNext: true,
+    action: () => {
+      setTimeout(() => {
+        const selects = document.querySelectorAll('select');
+        let targetSelect = null;
         
-        // Récupérer toutes les options SAUF celle actuellement sélectionnée
-        const options = Array.from(targetSelect.options).filter(opt => 
-          opt.value !== '' && opt.value !== currentValue
-        );
-        
-        if (options.length > 0) {
-          const randomOption = options[Math.floor(Math.random() * options.length)];
+        for (const select of selects) {
+          const hasCharacterOptions = Array.from(select.options).some(opt => 
+            opt.text.includes('Sung Jinwoo') || 
+            opt.text.includes('Cha Hae-in') ||
+            opt.text.includes('Choi Jong-in') ||
+            opt.text === 'Sélectionner un personnage'
+          );
           
-          console.log('🎯 Nouveau Hunter:', randomOption.text, '(', randomOption.value, ')');
-          
-          // Méthode pour forcer React à voir le changement
-          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-            window.HTMLSelectElement.prototype,
-            'value'
-          ).set;
-          
-          nativeInputValueSetter.call(targetSelect, randomOption.value);
-          
-          const event = new Event('change', { bubbles: true });
-          targetSelect.dispatchEvent(event);
-          
-          window.selectedHunterForTutorial = randomOption.text;
+          if (hasCharacterOptions) {
+            targetSelect = select;
+            console.log('✅ Select des personnages trouvé !', select);
+            break;
+          }
         }
-      }
-    }, 1000);
-  }
-},
+        
+        if (targetSelect) {
+          targetSelect.focus();
+          // Simuler l'ouverture du dropdown
+          targetSelect.click();
+          const mouseEvent = new MouseEvent('mousedown', { bubbles: true });
+          targetSelect.dispatchEvent(mouseEvent);
+        } else {
+          console.log('❌ Select des personnages non trouvé');
+        }
+      }, 500);
+    }
+  },
+  {
+    id: 'select_random_hunter',
+    message: "Changeons pour un autre Hunter... Celui-ci fera l'affaire !",
+    speaker: 'igris',
+    duration: 3000,
+    autoNext: true,
+    action: () => {
+      setTimeout(() => {
+        const selects = document.querySelectorAll('select');
+        let targetSelect = null;
+        
+        for (const select of selects) {
+          const hasCharacterOptions = Array.from(select.options).some(opt => 
+            opt.text.includes('Sung Jinwoo') || 
+            opt.text.includes('Cha Hae-in') ||
+            opt.text.includes('Choi Jong-in') ||
+            opt.text === 'Sélectionner un personnage'
+          );
+          
+          if (hasCharacterOptions) {
+            targetSelect = select;
+            break;
+          }
+        }
+        
+        if (targetSelect) {
+          const currentValue = targetSelect.value;
+          console.log('🔍 Hunter actuel:', currentValue);
+          
+          // Récupérer toutes les options SAUF celle actuellement sélectionnée
+          const options = Array.from(targetSelect.options).filter(opt => 
+            opt.value !== '' && opt.value !== currentValue
+          );
+          
+          if (options.length > 0) {
+            const randomOption = options[Math.floor(Math.random() * options.length)];
+            
+            console.log('🎯 Nouveau Hunter:', randomOption.text, '(', randomOption.value, ')');
+            
+            // Méthode pour forcer React à voir le changement
+            const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+              window.HTMLSelectElement.prototype,
+              'value'
+            ).set;
+            
+            nativeInputValueSetter.call(targetSelect, randomOption.value);
+            
+            const event = new Event('change', { bubbles: true });
+            targetSelect.dispatchEvent(event);
+            
+            window.selectedHunterForTutorial = randomOption.text;
+          }
+        }
+      }, 1000);
+    }
+  },
   {
     id: 'cerbere_reaction',
     message: (() => {
@@ -170,20 +203,6 @@ export const tutorialSteps = [
       const hunterName = window.selectedHunterForTutorial || 'Ce Hunter';
       return `${hunterName} est effectivement un excellent choix. Passons maintenant à l'équipement !`;
     })(),
-    speaker: 'igris',
-    duration: 4000,
-    autoNext: true
-  },
-  {
-    id: 'cerbere_reaction',
-    message: `WOUF WOUF ! *Cerbère approuve* ${window.selectedHunterForTutorial || 'ce Hunter'} ! Bon choix ! 🎉`,
-    speaker: 'cerbere',
-    duration: 3500,
-    autoNext: true
-  },
-  {
-    id: 'igris_confirms',
-    message: `${window.selectedHunterForTutorial || 'Ce Hunter'} est effectivement un excellent choix. Maintenant, équipons-le !`,
     speaker: 'igris',
     duration: 4000,
     autoNext: true
@@ -208,7 +227,28 @@ export const tutorialSteps = [
     id: 'helmet_slot',
     message: "Commençons par le Casque. C'est l'une des pièces les plus importantes !",
     speaker: 'igris',
-    selector: '[data-slot="helmet"], .helmet-slot, .artifact-slot:first-child',
+    selector: () => {
+      // Recherche multi-critères pour le casque
+      const possibleSelectors = [
+        '[data-slot="helmet"]',
+        '[data-artifact="Helmet"]',
+        '.helmet-slot',
+        '.artifact-slot:first-child',
+        '.artifact-card:first-child'
+      ];
+      
+      for (const sel of possibleSelectors) {
+        const element = document.querySelector(sel);
+        if (element) return element;
+      }
+      
+      // Recherche par texte
+      const cards = document.querySelectorAll('.artifact-card, .artifact-slot');
+      return Array.from(cards).find(card => {
+        const text = card.textContent.toLowerCase();
+        return text.includes('helmet') || text.includes('casque');
+      });
+    },
     highlight: true,
     duration: 4000,
     autoNext: true
@@ -249,7 +289,17 @@ export const tutorialSteps = [
     id: 'save_button',
     message: "⚠️ IMPORTANT : N'oublie jamais de sauvegarder tes artefacts ! Le bouton Save conserve tes modifications.",
     speaker: 'igris',
-    selector: '.save-button, button[type="submit"], button.btn-save', // Sélecteurs CSS valides
+    selector: () => {
+      // Recherche intelligente du bouton Save
+      const buttons = document.querySelectorAll('button');
+      return Array.from(buttons).find(btn => {
+        const text = btn.textContent.toLowerCase();
+        return text.includes('save') || 
+               text.includes('sauvegarder') ||
+               btn.classList.contains('save-button') ||
+               btn.getAttribute('data-action') === 'save';
+      });
+    },
     highlight: true,
     duration: 5000,
     autoNext: true
@@ -272,7 +322,16 @@ export const tutorialSteps = [
     id: 'gems_section',
     message: "Les Gemmes offrent des bonus massifs ! Red Gem pour l'attaque, Blue pour l'HP, Green pour la défense...",
     speaker: 'igris',
-    selector: '.gems-button, button.btn-gems, [data-action="gems"]', // CSS valides
+    selector: () => {
+      const buttons = document.querySelectorAll('button');
+      return Array.from(buttons).find(btn => {
+        const text = btn.textContent.toLowerCase();
+        return text.includes('gem') || 
+               text.includes('gemme') ||
+               btn.classList.contains('gems-button') ||
+               btn.getAttribute('data-action') === 'gems';
+      });
+    },
     highlight: true,
     duration: 4500,
     autoNext: true
@@ -281,7 +340,16 @@ export const tutorialSteps = [
     id: 'cores_mention',
     message: "Les Noyaux (Cores) sont une autre source de puissance. Explore-les quand tu seras plus familier !",
     speaker: 'igris',
-    selector: '.cores-button, button.btn-cores, [data-action="cores"]', // CSS valides
+    selector: () => {
+      const buttons = document.querySelectorAll('button');
+      return Array.from(buttons).find(btn => {
+        const text = btn.textContent.toLowerCase();
+        return text.includes('core') || 
+               text.includes('noyau') ||
+               btn.classList.contains('cores-button') ||
+               btn.getAttribute('data-action') === 'cores';
+      });
+    },
     highlight: true,
     duration: 4500,
     autoNext: true
@@ -299,7 +367,31 @@ export const tutorialSteps = [
     id: 'dps_calculator',
     message: "Le DPS Calculator est l'outil ultime ! Il révèle ta vraie puissance en combat. N'hésite pas à l'utiliser !",
     speaker: 'igris',
-    selector: '.dps-calculator-button, button.btn-calculator, [data-action="calculator"]', // CSS valides
+    selector: () => {
+      const buttons = document.querySelectorAll('button');
+      const button = Array.from(buttons).find(btn => {
+        const text = btn.textContent.toLowerCase();
+        return text.includes('calculator') || 
+               text.includes('damage') ||
+               text.includes('dps') ||
+               btn.classList.contains('calculator-button');
+      });
+      
+      // Si pas trouvé dans les boutons, chercher un toggle ou switch
+      if (!button) {
+        const toggles = document.querySelectorAll('[role="switch"], input[type="checkbox"]');
+        return Array.from(toggles).find(toggle => {
+          const label = toggle.closest('label');
+          if (label) {
+            const text = label.textContent.toLowerCase();
+            return text.includes('calculator') || text.includes('damage');
+          }
+          return false;
+        });
+      }
+      
+      return button;
+    },
     highlight: true,
     duration: 5000,
     autoNext: true
