@@ -11,21 +11,27 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
     const entityIcons = {
         tank: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png',
         beru: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png',
-        kaisel: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png'
+        kaisel: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
+        igris: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png', // Ajoute ton URL
+        cerbere: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png' // Ajoute ton URL
     };
 
     // 🏷️ NOMS DES ENTITÉS
     const entityNames = {
         tank: 'Tank',
         beru: 'Béru',
-        kaisel: 'Kaisel'
+        kaisel: 'Kaisel',
+        igris: 'Igris',
+        cerbere: 'Cerbère'
     };
 
     // 🎨 COULEURS DES ENTITÉS
     const entityColors = {
         tank: '#4CAF50',
         beru: '#8A2BE2',
-        kaisel: '#00FF41'
+        kaisel: '#00FF41',
+        igris: '#980808ff', // Violet royal pour Igris
+    cerbere: '#e334baff' // Marron pour Cerbère
     };
 
     // 🔍 DÉTECTION MOBILE
@@ -59,13 +65,13 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                 currentCanvasId: position?.currentCanvasId
             });
         } else {
-    const safePosition = {
-        x: Math.max(150, Math.min(window.innerWidth - 250, position?.x || window.innerWidth / 2)),
-        y: Math.max(100, Math.min(window.innerHeight - 150, position?.y - 50)),
-        currentCanvasId: position?.currentCanvasId
-    };
-    setAdjustedPosition(safePosition);
-}
+            const safePosition = {
+                x: Math.max(150, Math.min(window.innerWidth - 250, position?.x || window.innerWidth / 2)),
+                y: Math.max(100, Math.min(window.innerHeight - 150, position?.y - 50)),
+                currentCanvasId: position?.currentCanvasId
+            };
+            setAdjustedPosition(safePosition);
+        }
     }, [position, isMobileDevice]);
 
     useEffect(() => {
@@ -93,7 +99,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                         maxWidth: '350px'
                     }}
                 >
-                    <div 
+                    <div
                         onClick={handleBubbleClick}
                         style={{
                             backgroundColor: 'rgba(20, 20, 40, 0.5)',
@@ -115,8 +121,8 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                             borderBottom: `1px solid ${entityColors[entityType]}60`,
                             backgroundColor: 'rgba(0, 0, 0, 0.3)'
                         }}>
-                            <img 
-                                src={entityIcons[entityType]} 
+                            <img
+                                src={entityIcons[entityType]}
                                 alt={entityNames[entityType]}
                                 style={{
                                     width: '24px',
@@ -191,8 +197,8 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                             alignItems: 'center',
                             marginBottom: '6px'
                         }}>
-                            <img 
-                                src={entityIcons[entityType]} 
+                            <img
+                                src={entityIcons[entityType]}
                                 alt={entityNames[entityType]}
                                 style={{
                                     width: '20px',

@@ -9,6 +9,7 @@ import { getMainStatPriorities, getTheoreticalScore } from './utils/statPriority
 import DamageCalculator from './DamageCalculator';
 // import ArtifactScoreBadge from './components/ArtifactScoreBadge';
 import ComparisonPopup from './components/ComparisonPopup';
+import IgrisTutorial from './components/IgrisTutorial/IgrisTutorial';
 import { characters } from './data/characters';
 import ArtifactCard from "./components/ArtifactCard";
 import NoyauxPopup from './components/NoyauxPopup';
@@ -29,7 +30,7 @@ import HallOfFlamePage from './components/HallOfFlamePage';
 import AdminValidationPage from './components/AdminValidationPage';
 import TVDialogueSystem from './components/TVDialogueSystem';
 
-
+const IGRIS_ICON_URL = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754571314/icon_guide_qee4rz.png';
 
 let tank = {
   x: 0,
@@ -644,6 +645,7 @@ const BuilderBeru = () => {
   const [showHitboxes, setShowHitboxes] = useState(false);
   const [hitboxPositions, setHitboxPositions] = useState({});
   const [showDebugButton, setShowDebugButton] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
   const [showHallOfFlameDebug, setShowHallOfFlameDebug] = useState(false);
   const [showDamageCalculator, setShowDamageCalculator] = useState(false);
   const [showAdminPage, setShowAdminPage] = useState(false);
@@ -652,85 +654,85 @@ const BuilderBeru = () => {
   const [tvDialogue, setTvDialogue] = useState(null);
 
   const showTvDialogue = (statType, statValue) => {
-  setTvData({ statType, statValue });
-  setShowTvSystem(true);
-};
+    setTvData({ statType, statValue });
+    setShowTvSystem(true);
+  };
 
-const handlePortalClick = () => {
-  const newCount = portalClickCount + 1;
-  setPortalClickCount(newCount);
+  const handlePortalClick = () => {
+    const newCount = portalClickCount + 1;
+    setPortalClickCount(newCount);
 
-  // 🎯 Messages progressifs selon le nombre de clics
-  switch (newCount) {
-    case 1:
-      showTankMessage("🚪 Vivement Séville et ses 40°! Qu'on se cache d'ici", true);
-      break;
-    
-    case 3:
-      showTankMessage("🤔 Tu insistes sur ce portail... Il cache quelque chose ?", true);
-      break;
-    
-    case 5:
-      showTankMessage("🔍 Oh oh... ils sont en train de découvrir un secret...", true, 'tank');
-      break;
-    
-    case 8:
-      showTankMessage("👀 Le portail réagit à tes clics... Continue...", true, 'beru');
-      break;
-    
-    case 12:
-      showTankMessage("⚡ L'énergie du portail augmente ! Encore quelques clics...", true, 'kaisel');
-      break;
-    
-    case 15:
-      showTankMessage("🌀 Le portail commence à vibrer... Tu sens quelque chose ?", true, 'tank');
-      break;
-    
-    case 20:
-      showTankMessage("🔥 ATTENTION ! Le portail se charge d'une énergie inconnue !", true, 'beru');
-      break;
-    
-    case 25:
-      showTankMessage("⚠️ DANGER ! Le portail est presque activé... 5 clics encore !", true, 'kaisel');
-      break;
-    
-    case 28:
-      showTankMessage("🚨 ALERTE DIMENSIONNELLE ! 2 clics pour l'activation !", true, 'tank');
-      break;
-    
-    case 29:
-      showTankMessage("💥 UN DERNIER CLIC... ET LE PORTAIL S'OUVRIRA !", true, 'beru');
-      break;
-    
-    case 30:
-      // 🎮 OUVERTURE DU JEU !
-      showTankMessage("🌟 PORTAIL ACTIVÉ ! BIENVENUE DANS L'AUTRE DIMENSION !", true, 'kaisel');
-      setTimeout(() => {
-        // Ouvre le jeu canvas dans un nouvel onglet
-        window.open('/canvas-game/index.html', '_blank');
-        // Reset le compteur pour rejouer l'easter egg
-        setPortalClickCount(0);
-      }, 2000);
-      break;
-    
-    default:
-      // Messages aléatoires pour maintenir l'immersion
-      const randomMessages = [
-        "🚪 Le portail reste fermé...",
-        "🔒 Rien ne se passe... encore...",
-        "⭐ Continue de cliquer, quelque chose va arriver...",
-        "🌀 Le portail attend ton signal..."
-      ];
-      const randomMessage = randomMessages[Math.floor(Math.random() * randomMessages.length)];
-      showTankMessage(randomMessage, true);
-      break;
-  }
-};
+    // 🎯 Messages progressifs selon le nombre de clics
+    switch (newCount) {
+      case 1:
+        showTankMessage("🚪 Vivement Séville et ses 40°! Qu'on se cache d'ici", true);
+        break;
 
-const handleShowAdminValidation = (token) => {
-  setAdminToken(token); // Stocker le token
-  setShowAdminPage(true);
-};
+      case 3:
+        showTankMessage("🤔 Tu insistes sur ce portail... Il cache quelque chose ?", true);
+        break;
+
+      case 5:
+        showTankMessage("🔍 Oh oh... ils sont en train de découvrir un secret...", true, 'tank');
+        break;
+
+      case 8:
+        showTankMessage("👀 Le portail réagit à tes clics... Continue...", true, 'beru');
+        break;
+
+      case 12:
+        showTankMessage("⚡ L'énergie du portail augmente ! Encore quelques clics...", true, 'kaisel');
+        break;
+
+      case 15:
+        showTankMessage("🌀 Le portail commence à vibrer... Tu sens quelque chose ?", true, 'tank');
+        break;
+
+      case 20:
+        showTankMessage("🔥 ATTENTION ! Le portail se charge d'une énergie inconnue !", true, 'beru');
+        break;
+
+      case 25:
+        showTankMessage("⚠️ DANGER ! Le portail est presque activé... 5 clics encore !", true, 'kaisel');
+        break;
+
+      case 28:
+        showTankMessage("🚨 ALERTE DIMENSIONNELLE ! 2 clics pour l'activation !", true, 'tank');
+        break;
+
+      case 29:
+        showTankMessage("💥 UN DERNIER CLIC... ET LE PORTAIL S'OUVRIRA !", true, 'beru');
+        break;
+
+      case 30:
+        // 🎮 OUVERTURE DU JEU !
+        showTankMessage("🌟 PORTAIL ACTIVÉ ! BIENVENUE DANS L'AUTRE DIMENSION !", true, 'kaisel');
+        setTimeout(() => {
+          // Ouvre le jeu canvas dans un nouvel onglet
+          window.open('/canvas-game/index.html', '_blank');
+          // Reset le compteur pour rejouer l'easter egg
+          setPortalClickCount(0);
+        }, 2000);
+        break;
+
+      default:
+        // Messages aléatoires pour maintenir l'immersion
+        const randomMessages = [
+          "🚪 Le portail reste fermé...",
+          "🔒 Rien ne se passe... encore...",
+          "⭐ Continue de cliquer, quelque chose va arriver...",
+          "🌀 Le portail attend ton signal..."
+        ];
+        const randomMessage = randomMessages[Math.floor(Math.random() * randomMessages.length)];
+        showTankMessage(randomMessage, true);
+        break;
+    }
+  };
+
+  const handleShowAdminValidation = (token) => {
+    setAdminToken(token); // Stocker le token
+    setShowAdminPage(true);
+  };
   const SHADOW_ENTITIES = {
     tank: {
       id: 'tank',
@@ -1867,7 +1869,7 @@ const handleShowAdminValidation = (token) => {
     return data[Math.floor(Math.random() * data.length)];
   };
 
- const characterStats = {
+  const characterStats = {
     // SSR Hunters
     'jinah': { attack: 6132, defense: 5292, hp: 11313, critRate: 0, mp: 1000 },
     'alicia': { attack: 6056, defense: 5279, hp: 11503, critRate: 0, mp: 1000 },
@@ -1901,7 +1903,7 @@ const handleShowAdminValidation = (token) => {
     'thomas': { attack: 5384, defense: 6153, hp: 11075, critRate: 0, mp: 1000 },
     'woo': { attack: 5402, defense: 6083, hp: 11184, critRate: 0, mp: 1000 },
     'yoo': { attack: 6102, defense: 5220, hp: 11529, critRate: 0, mp: 1000 },
-    
+
     // SR Hunters
     'anna': { attack: 5372, defense: 4668, hp: 10108, critRate: 0, mp: 1000 },
     'han-song': { attack: 5272, defense: 4751, hp: 10146, critRate: 0, mp: 1000 },
@@ -1916,7 +1918,7 @@ const handleShowAdminValidation = (token) => {
     'park-heejin': { attack: 5228, defense: 4805, hp: 10125, critRate: 0, mp: 1000 },
     'song': { attack: 5463, defense: 4671, hp: 9908, critRate: 0, mp: 1000 },
     'yoo-jinho': { attack: 4776, defense: 5285, hp: 10066, critRate: 0, mp: 1000 }
-};
+  };
 
   const [artifactsData, setArtifactsData] = useState({
     Helmet: {
@@ -2668,7 +2670,7 @@ BobbyJones : "Allez l'Inter !"
   const [activeAccount, setActiveAccount] = useState("main");
 
   const [selectedCharacter, setSelectedCharacter] = useState('niermann');
-  
+
   const [bubbleId, setBubbleId] = useState(Date.now());
   const [showSernPopup, setShowSernPopup] = useState(false);
   const triggerSernIntervention = () => {
@@ -4779,15 +4781,15 @@ BobbyJones : "Allez l'Inter !"
 
   return (
     <>
- {tvDialogue && (
-      <TVDialogueSystem 
-        key={`tv-${tvDialogue.statType}-${tvDialogue.statValue}`}
-        show={!!tvDialogue}
-        statType={tvDialogue.statType}
-        statValue={tvDialogue.statValue}
-        onClose={() => setTvDialogue(null)}
-      />
-    )}
+      {tvDialogue && (
+        <TVDialogueSystem
+          key={`tv-${tvDialogue.statType}-${tvDialogue.statValue}`}
+          show={!!tvDialogue}
+          statType={tvDialogue.statType}
+          statValue={tvDialogue.statValue}
+          onClose={() => setTvDialogue(null)}
+        />
+      )}
       {((isMobile.isPhone || isMobile.isTablet) && !isMobile.isDesktop) ? (
         <>
           {/* 🔥 CONTAINER PRINCIPAL - HAUTEUR DYNAMIQUE */}
@@ -4801,207 +4803,207 @@ BobbyJones : "Allez l'Inter !"
                     {/* ← pb-32 pour navigation + canvas */}
 
                     {/* SECTION FILTRES + SELECT */}
-                   <div className="flex flex-col w-full gap-4">
-  {/* Langues + Select */}
-  <div className="flex items-center gap-2 justify-between">
-    <div className="flex gap-2 items-center">
-      <img
-        src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png"
-        alt="Français"
-        onClick={() => i18n.changeLanguage('fr')}
-        className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-purple-500"
-      />
-      <img
-        src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png"
-        alt="English"
-        onClick={() => i18n.changeLanguage('en')}
-        className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-purple-500"
-      />
-    </div>
+                    <div className="flex flex-col w-full gap-4">
+                      {/* Langues + Select */}
+                      <div className="flex items-center gap-2 justify-between">
+                        <div className="flex gap-2 items-center">
+                          <img
+                            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png"
+                            alt="Français"
+                            onClick={() => i18n.changeLanguage('fr')}
+                            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-purple-500"
+                          />
+                          <img
+                            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png"
+                            alt="English"
+                            onClick={() => i18n.changeLanguage('en')}
+                            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-purple-500"
+                          />
+                        </div>
 
-    {/* Select Personnage */}
-    <select
-  value={selectedCharacter}
-  onChange={(e) => {
-    const selected = e.target.value;
-    setSelectedCharacter(selected);
-    const saved = localStorage.getItem(`${selected}`);
-    if (saved) {
-      const build = JSON.parse(saved);
-      setFlatStats(build.flatStats);
-      setStatsWithoutArtefact(build.statsWithoutArtefact);
-      setArtifactsData(build.artifactsData);
-      setHunterCores(build.hunterCores);
-      showTankMessage(`Loaded saved build for ${selected} 😏`);
-    } else {
-      handleResetStats();
-    }
-  }}
-  className="p-2 rounded-lg bg-purple-900/30 text-purple-300 text-sm
+                        {/* Select Personnage */}
+                        <select
+                          value={selectedCharacter}
+                          onChange={(e) => {
+                            const selected = e.target.value;
+                            setSelectedCharacter(selected);
+                            const saved = localStorage.getItem(`${selected}`);
+                            if (saved) {
+                              const build = JSON.parse(saved);
+                              setFlatStats(build.flatStats);
+                              setStatsWithoutArtefact(build.statsWithoutArtefact);
+                              setArtifactsData(build.artifactsData);
+                              setHunterCores(build.hunterCores);
+                              showTankMessage(`Loaded saved build for ${selected} 😏`);
+                            } else {
+                              handleResetStats();
+                            }
+                          }}
+                          className="p-2 rounded-lg bg-purple-900/30 text-purple-300 text-sm
             border border-purple-600/50 hover:border-purple-500
             focus:outline-none focus:border-purple-400
             flex-1 max-w-[200px]"
-  style={{
-    backgroundColor: 'rgba(30, 30, 50, 0.95)',
-    color: '#e9d5ff'
-  }}
->
-  <option value="" style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}>
-    Sélectionner un personnage
-  </option>
-  {Object.entries(characters)
-    .filter(([key, char]) => {
-      if (key === '') return false;
-      if (selectedElement && char.element !== selectedElement) return false;
-      if (selectedClass) {
-        const classType = char.class === 'Tank' ? 'Tank'
-          : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
-        if (classType !== selectedClass) return false;
-      }
-      return true;
-    })
-    .map(([key, char]) => (
-      <option 
-        key={key} 
-        value={key}
-        style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}
-      >
-        {char.name}
-      </option>
-    ))}
-</select>
-  </div>
+                          style={{
+                            backgroundColor: 'rgba(30, 30, 50, 0.95)',
+                            color: '#e9d5ff'
+                          }}
+                        >
+                          <option value="" style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}>
+                            Sélectionner un personnage
+                          </option>
+                          {Object.entries(characters)
+                            .filter(([key, char]) => {
+                              if (key === '') return false;
+                              if (selectedElement && char.element !== selectedElement) return false;
+                              if (selectedClass) {
+                                const classType = char.class === 'Tank' ? 'Tank'
+                                  : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
+                                if (classType !== selectedClass) return false;
+                              }
+                              return true;
+                            })
+                            .map(([key, char]) => (
+                              <option
+                                key={key}
+                                value={key}
+                                style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}
+                              >
+                                {char.name}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
 
-  {/* BOUTONS D'ACTION - VERSION MOBILE SOBRE */}
-  <div className="flex flex-col gap-3 w-full">
-    {/* Ligne 1 - Actions principales */}
-    <div className="flex gap-2 w-full">
-      <button
-        onClick={handleResetStats}
-        className="flex-1 bg-purple-800/30 text-purple-300
+                      {/* BOUTONS D'ACTION - VERSION MOBILE SOBRE */}
+                      <div className="flex flex-col gap-3 w-full">
+                        {/* Ligne 1 - Actions principales */}
+                        <div className="flex gap-2 w-full">
+                          <button
+                            onClick={handleResetStats}
+                            className="flex-1 bg-purple-800/30 text-purple-300
                   border border-purple-600/50
                   font-semibold px-3 py-2 text-xs rounded-lg
                   transition-all duration-200 active:scale-95"
-      >
-        BobbyKick
-      </button>
+                          >
+                            BobbyKick
+                          </button>
 
-      <button
-        onClick={handleSaveBuild}
-        className="flex-1 bg-purple-800/30 text-purple-300
+                          <button
+                            onClick={handleSaveBuild}
+                            className="flex-1 bg-purple-800/30 text-purple-300
                   border border-purple-600/50
                   font-bold px-3 py-2 text-xs rounded-lg
                   transition-all duration-200 active:scale-95"
-      >
-        Save
-      </button>
+                          >
+                            Save
+                          </button>
 
-      <button
-        onClick={() => {
-          const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
-          if (validation.isValid) {
-            handleSubmitToHallOfFame();
-          } else {
-            showTankMessage(
-              `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
-              true,
-              'kaisel'
-            );
-          }
-        }}
-        className={`
+                          <button
+                            onClick={() => {
+                              const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
+                              if (validation.isValid) {
+                                handleSubmitToHallOfFame();
+                              } else {
+                                showTankMessage(
+                                  `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
+                                  true,
+                                  'kaisel'
+                                );
+                              }
+                            }}
+                            className={`
           flex-1
           ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-            ? 'bg-purple-800/30 text-purple-300 border-purple-600/50'
-            : 'bg-gray-800/30 text-gray-500 border-gray-700/50'
-          } 
+                                ? 'bg-purple-800/30 text-purple-300 border-purple-600/50'
+                                : 'bg-gray-800/30 text-gray-500 border-gray-700/50'
+                              } 
           font-semibold px-3 py-2 text-xs rounded-lg border
           transition-all duration-200 active:scale-95
         `}
-        disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
-      >
-        {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-          ? 'Submit'
-          : 'Incomplet'
-        }
-      </button>
-    </div>
+                            disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
+                          >
+                            {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+                              ? 'Submit'
+                              : 'Incomplet'
+                            }
+                          </button>
+                        </div>
 
-    {/* Ligne 2 - Import et New */}
-    <div className="flex gap-2 w-full">
-      <button
-        onClick={handleImportBuild}
-        className="flex-1 bg-purple-800/30 text-purple-300
+                        {/* Ligne 2 - Import et New */}
+                        <div className="flex gap-2 w-full">
+                          <button
+                            onClick={handleImportBuild}
+                            className="flex-1 bg-purple-800/30 text-purple-300
                   border border-purple-600/50
                   font-semibold px-3 py-2 text-xs rounded-lg
                   transition-all duration-200 active:scale-95"
-      >
-        Import
-      </button>
+                          >
+                            Import
+                          </button>
 
-      <button
-        onClick={() => setShowNewAccountPopup(true)}
-        className="flex-1 bg-purple-800/30 text-purple-300
+                          <button
+                            onClick={() => setShowNewAccountPopup(true)}
+                            className="flex-1 bg-purple-800/30 text-purple-300
                   border border-purple-600/50
                   font-semibold px-3 py-2 text-xs rounded-lg
                   transition-all duration-200 active:scale-95"
-      >
-        New
-      </button>
-    </div>
+                          >
+                            New
+                          </button>
+                        </div>
 
-    {/* Ligne 3 - Builds récents et Account */}
-    <div className="flex items-center justify-between gap-3">
-      {/* Builds récents */}
-      {isBuildsReady && recentBuilds.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto">
-          {recentBuilds
-            .filter((charKey) => characters[charKey])
-            .slice(0, 5)
-            .map((charKey) => (
-              <img
-                key={charKey}
-                src={characters[charKey]?.icon || '/default.png'}
-                alt={characters[charKey]?.name || charKey}
-                onClick={() => handleClickBuildIcon(charKey)}
-                className="w-8 h-8 rounded-full cursor-pointer 
+                        {/* Ligne 3 - Builds récents et Account */}
+                        <div className="flex items-center justify-between gap-3">
+                          {/* Builds récents */}
+                          {isBuildsReady && recentBuilds.length > 0 && (
+                            <div className="flex gap-1.5 overflow-x-auto">
+                              {recentBuilds
+                                .filter((charKey) => characters[charKey])
+                                .slice(0, 5)
+                                .map((charKey) => (
+                                  <img
+                                    key={charKey}
+                                    src={characters[charKey]?.icon || '/default.png'}
+                                    alt={characters[charKey]?.name || charKey}
+                                    onClick={() => handleClickBuildIcon(charKey)}
+                                    className="w-8 h-8 rounded-full cursor-pointer 
                           border-2 border-purple-600/50
                           transition-all duration-200 active:scale-40
                           opacity-80 flex-shrink-0"
-              />
-            ))}
-        </div>
-      )}
+                                  />
+                                ))}
+                            </div>
+                          )}
 
-      {/* Account selector */}
-      {Object.keys(accounts).length > 1 && (
-        <select
-          value={activeAccount}
-          onChange={(e) => handleAccountSwitch(e.target.value)}
-          className="bg-purple-900/30 text-purple-300 border border-purple-600/50
+                          {/* Account selector */}
+                          {Object.keys(accounts).length > 1 && (
+                            <select
+                              value={activeAccount}
+                              onChange={(e) => handleAccountSwitch(e.target.value)}
+                              className="bg-purple-900/30 text-purple-300 border border-purple-600/50
                     px-2 py-1.5 rounded-lg text-xs
                     focus:outline-none focus:border-purple-400"
-        >
-          {Object.keys(accounts).map(acc => (
-            <option key={acc} value={acc} className="bg-gray-900">
-              {acc.length > 8 ? acc.slice(0, 8) + '...' : acc}
-            </option>
-          ))}
-        </select>
-      )}
-    </div>
-  </div>
+                            >
+                              {Object.keys(accounts).map(acc => (
+                                <option key={acc} value={acc} className="bg-gray-900">
+                                  {acc.length > 8 ? acc.slice(0, 8) + '...' : acc}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      </div>
 
-  {/* Debug Button */}
-  {showDebugButton && (
-    <button
-      onClick={() => setShowHitboxes(!showHitboxes)}
-      className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs z-[10001]"
-    >
-      🐛 {showHitboxes ? 'HIDE' : 'SHOW'} HITBOX
-    </button>
-  )}
-</div>
+                      {/* Debug Button */}
+                      {showDebugButton && (
+                        <button
+                          onClick={() => setShowHitboxes(!showHitboxes)}
+                          className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs z-[10001]"
+                        >
+                          🐛 {showHitboxes ? 'HIDE' : 'SHOW'} HITBOX
+                        </button>
+                      )}
+                    </div>
 
                     {/* SECTION PRINCIPALE - NOYAUX + PERSONNAGE + GEMMES */}
                     <div className="flex flex-col items-center space-y-6">
@@ -5118,42 +5120,42 @@ BobbyJones : "Allez l'Inter !"
                       {/* SECTION ARME + STATS */}
                       <div className="w-full space-y-4">
 
-                       {/* Bouton Arme */}
-<div className="flex items-center justify-center space-x-4">
-  <button
-    className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-    onClick={() => setShowWeaponPopup(true)}
-  >
-    {t("weapon")}
-  </button>
-  
-  <p className="text-white text-sm">
-    {hunterWeapons[selectedCharacter]
-      ? `+${hunterWeapons[selectedCharacter].mainStat || 0} ${characters[selectedCharacter]?.scaleStat || ''}`
-      : 'Aucune arme définie'}
-  </p>
-  
-  {/* NOUVEAU BOUTON CALCULATEUR */}
-  <button
-    onClick={() => setShowDamageCalculator(true)}
-    className="relative bg-gradient-to-r from-[#8b3b3b] to-[#ff6363] hover:from-[#a34a4a] hover:to-[#ff7272] text-white font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105 flex items-center gap-2"
-  >
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-    </svg>
-    <span>Calc</span>
-    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[10px] px-1 py-0.5 rounded-full font-bold animate-pulse">
-      NEW
-    </span>
-  </button>
-  
-  <button
-    onClick={() => setEditStatsMode(!editStatsMode)}
-    className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
-  >
-    {getEditLabel()}
-  </button>
-</div>
+                        {/* Bouton Arme */}
+                        <div className="flex items-center justify-center space-x-4">
+                          <button
+                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-red-400 font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                            onClick={() => setShowWeaponPopup(true)}
+                          >
+                            {t("weapon")}
+                          </button>
+
+                          <p className="text-white text-sm">
+                            {hunterWeapons[selectedCharacter]
+                              ? `+${hunterWeapons[selectedCharacter].mainStat || 0} ${characters[selectedCharacter]?.scaleStat || ''}`
+                              : 'Aucune arme définie'}
+                          </p>
+
+                          {/* NOUVEAU BOUTON CALCULATEUR */}
+                          <button
+                            onClick={() => setShowDamageCalculator(true)}
+                            className="relative bg-gradient-to-r from-[#8b3b3b] to-[#ff6363] hover:from-[#a34a4a] hover:to-[#ff7272] text-white font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105 flex items-center gap-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <span>Calc</span>
+                            <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[10px] px-1 py-0.5 rounded-full font-bold animate-pulse">
+                              NEW
+                            </span>
+                          </button>
+
+                          <button
+                            onClick={() => setEditStatsMode(!editStatsMode)}
+                            className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-white-400 font-semibold px-4 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
+                          >
+                            {getEditLabel()}
+                          </button>
+                        </div>
 
                         {/* STATS FINALES OU ÉDITION */}
                         {!editStatsMode ? (
@@ -5247,31 +5249,31 @@ BobbyJones : "Allez l'Inter !"
                             className="rounded-lg shadow-lg bg-black w-full h-auto border border-purple-500/30"
                           />
 
-                        {/* Portail cliquable */}
-<div
-  className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
-  style={{
-    top: '40%',
-    left: '46.7%',
-    transform: 'translate(-50%, 50%)',
-    width: '30px',
-    height: '30px',
-    zIndex: 10 // ← BEAUCOUP plus bas que z-50
-  }}
-  onClick={handlePortalClick}
->
-  {/* Zone cliquable invisible */}
-  {/* 🔥 Effet visuel progressif selon les clics */}
-  {portalClickCount > 10 && (
-    <div className="absolute inset-0 animate-pulse bg-blue-500 opacity-20 rounded-full"></div>
-  )}
-  {portalClickCount > 20 && (
-    <div className="absolute inset-0 animate-bounce bg-purple-500 opacity-30 rounded-full"></div>
-  )}
-  {portalClickCount > 25 && (
-    <div className="absolute inset-0 animate-ping bg-red-500 opacity-40 rounded-full"></div>
-  )}
-</div>
+                          {/* Portail cliquable */}
+                          <div
+                            className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
+                            style={{
+                              top: '40%',
+                              left: '46.7%',
+                              transform: 'translate(-50%, 50%)',
+                              width: '30px',
+                              height: '30px',
+                              zIndex: 10 // ← BEAUCOUP plus bas que z-50
+                            }}
+                            onClick={handlePortalClick}
+                          >
+                            {/* Zone cliquable invisible */}
+                            {/* 🔥 Effet visuel progressif selon les clics */}
+                            {portalClickCount > 10 && (
+                              <div className="absolute inset-0 animate-pulse bg-blue-500 opacity-20 rounded-full"></div>
+                            )}
+                            {portalClickCount > 20 && (
+                              <div className="absolute inset-0 animate-bounce bg-purple-500 opacity-30 rounded-full"></div>
+                            )}
+                            {portalClickCount > 25 && (
+                              <div className="absolute inset-0 animate-ping bg-red-500 opacity-40 rounded-full"></div>
+                            )}
+                          </div>
 
                           <p className="text-center text-xs text-purple-300 mt-1">🏛️ Sanctuaire Central</p>
                         </div>
@@ -5529,7 +5531,7 @@ BobbyJones : "Allez l'Inter !"
                     currentArtifacts={artifactsData}
                     currentStats={finalStats}
                     currentCores={hunterCores[selectedCharacter] || {}}
-                    onShowAdminValidation={handleShowAdminValidation} 
+                    onShowAdminValidation={handleShowAdminValidation}
                     multiAccountsData={accounts}
                     substatsMinMaxByIncrements={substatsMinMaxByIncrements}
                     existingScores={artifactScores}
@@ -5831,27 +5833,27 @@ BobbyJones : "Allez l'Inter !"
                 )}
 
                 {/* Damage Calculator Modal */}
-{showDamageCalculator && (
-  <DamageCalculator
-    selectedCharacter={selectedCharacter}
-    finalStats={(() => {
-      const scaleStat = characters[selectedCharacter]?.scaleStat;
-      return {
-        [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
-        'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
-        'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
-        'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
-        'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
-        [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
-      };
-    })()}
-    flatStats={flatStats}
-    characters={characters}
-    hunterWeapons={hunterWeapons}
-    onClose={() => setShowDamageCalculator(false)}
-    t={t}
-  />
-)}
+                {showDamageCalculator && (
+                  <DamageCalculator
+                    selectedCharacter={selectedCharacter}
+                    finalStats={(() => {
+                      const scaleStat = characters[selectedCharacter]?.scaleStat;
+                      return {
+                        [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
+                        'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
+                        'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
+                        'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
+                        'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
+                        [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
+                      };
+                    })()}
+                    flatStats={flatStats}
+                    characters={characters}
+                    hunterWeapons={hunterWeapons}
+                    onClose={() => setShowDamageCalculator(false)}
+                    t={t}
+                  />
+                )}
                 {isSetSelectorOpen && setSelectorSlot && (
                   <SetSelectorPopup
                     slot={setSelectorSlot}
@@ -6197,256 +6199,256 @@ BobbyJones : "Allez l'Inter !"
 
 
 
-<div className="w-full mt-4 space-y-3">
-  {/* VERSION DESKTOP - hidden on mobile */}
-  <div className="hidden md:flex flex-wrap items-center gap-3">
-    {/* BobbyKick */}
-    <button
-      onClick={handleResetStats}
-      className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+                  <div className="w-full mt-4 space-y-3">
+                    {/* VERSION DESKTOP - hidden on mobile */}
+                    <div className="hidden md:flex flex-wrap items-center gap-3">
+                      {/* BobbyKick */}
+                      <button
+                        onClick={handleResetStats}
+                        className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
                 border border-purple-600/50 hover:border-purple-500
                 font-semibold px-4 py-2 text-sm rounded-lg
                 transition-all duration-200 hover:scale-105"
-    >
-      BobbyKick
-    </button>
+                      >
+                        BobbyKick
+                      </button>
 
-    {/* Save */}
-    <button
-      onClick={handleSaveBuild}
-      className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+                      {/* Save */}
+                      <button
+                        onClick={handleSaveBuild}
+                        className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
                 border border-purple-600/50 hover:border-purple-500
                 font-bold px-4 py-2 text-sm rounded-lg
                 transition-all duration-200 hover:scale-105"
-    >
-      Save
-    </button>
+                      >
+                        Save
+                      </button>
 
-    {/* Submit/Incomplet */}
-    <button
-      onClick={() => {
-        const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
-        if (validation.isValid) {
-          handleSubmitToHallOfFame();
-        } else {
-          showTankMessage(
-            `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
-            true,
-            'kaisel'
-          );
-        }
-      }}
-      className={`
+                      {/* Submit/Incomplet */}
+                      <button
+                        onClick={() => {
+                          const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
+                          if (validation.isValid) {
+                            handleSubmitToHallOfFame();
+                          } else {
+                            showTankMessage(
+                              `🏆 **BUILD INCOMPLET**\n\n${validation.missing.join('\n')}\n\n🔧 Termine ton build avant submission !`,
+                              true,
+                              'kaisel'
+                            );
+                          }
+                        }}
+                        className={`
         ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-          ? 'bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white border-purple-600/50 hover:border-purple-500'
-          : 'bg-gray-800/30 text-gray-500 border-gray-700/50 cursor-not-allowed'
-        } 
+                            ? 'bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white border-purple-600/50 hover:border-purple-500'
+                            : 'bg-gray-800/30 text-gray-500 border-gray-700/50 cursor-not-allowed'
+                          } 
         font-semibold px-4 py-2 text-sm rounded-lg border
         transition-all duration-200 hover:scale-105
       `}
-      disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
-      title={validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-        ? 'Soumettre au Hall of Fame'
-        : `Manque: ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).missing.join(', ')}`
-      }
-    >
-      {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-        ? 'Submit'
-        : 'Incomplet'
-      }
-    </button>
+                        disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
+                        title={validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+                          ? 'Soumettre au Hall of Fame'
+                          : `Manque: ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).missing.join(', ')}`
+                        }
+                      >
+                        {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+                          ? 'Submit'
+                          : 'Incomplet'
+                        }
+                      </button>
 
-    {/* Import */}
-    <button
-      onClick={handleImportBuild}
-      className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+                      {/* Import */}
+                      <button
+                        onClick={handleImportBuild}
+                        className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
                 border border-purple-600/50 hover:border-purple-500
                 font-semibold px-4 py-2 text-sm rounded-lg
                 transition-all duration-200 hover:scale-105"
-    >
-      Import
-    </button>
+                      >
+                        Import
+                      </button>
 
-    {/* New */}
-    <button
-      onClick={() => setShowNewAccountPopup(true)}
-      className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+                      {/* New */}
+                      <button
+                        onClick={() => setShowNewAccountPopup(true)}
+                        className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
                 border border-purple-600/50 hover:border-purple-500
                 font-semibold px-2 py-2 text-sm rounded-lg
                 transition-all duration-200 hover:scale-105"
-    >
-      New
-    </button>
+                      >
+                        New
+                      </button>
 
-    {/* Account Selector */}
-    {Object.keys(accounts).length > 1 && (
-      <select
-        value={activeAccount}
-        onChange={(e) => {
-          const newAcc = e.target.value;
-          handleAccountSwitch(newAcc);
-        }}
-        className="bg-purple-900/30 text-purple-300 border border-purple-600/50
+                      {/* Account Selector */}
+                      {Object.keys(accounts).length > 1 && (
+                        <select
+                          value={activeAccount}
+                          onChange={(e) => {
+                            const newAcc = e.target.value;
+                            handleAccountSwitch(newAcc);
+                          }}
+                          className="bg-purple-900/30 text-purple-300 border border-purple-600/50
                   px-3 py-2 rounded-lg text-sm
                   hover:border-purple-500 focus:outline-none focus:border-purple-400
                   transition-colors"
-      >
-        {Object.keys(accounts).map(acc => (
-          <option key={acc} value={acc} className="bg-gray-900">{acc}</option>
-        ))}
-      </select>
-    )}
+                        >
+                          {Object.keys(accounts).map(acc => (
+                            <option key={acc} value={acc} className="bg-gray-900">{acc}</option>
+                          ))}
+                        </select>
+                      )}
 
-    {/* Separator */}
-    <div className="h-4 w-px bg-purple-600/30 mx-2" />
+                      {/* Separator */}
+                      <div className="h-4 w-px bg-purple-600/30 mx-2" />
 
-    {/* Builds récents */}
-    {isBuildsReady && recentBuilds.length > 0 && (
-      <div className="flex items-center gap-1">
-        <span className="text-purple-400/70 text-sm"></span>
-        <div className="flex gap-1">
-          {recentBuilds
-            .filter((charKey) => characters[charKey])
-            .map((charKey) => (
-              <img
-                key={charKey}
-                src={characters[charKey]?.icon || '/default.png'}
-                alt={characters[charKey]?.name || charKey}
-                onClick={() => handleClickBuildIcon(charKey)}
-                className="w-6 h-6 rounded-full cursor-pointer 
+                      {/* Builds récents */}
+                      {isBuildsReady && recentBuilds.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <span className="text-purple-400/70 text-sm"></span>
+                          <div className="flex gap-1">
+                            {recentBuilds
+                              .filter((charKey) => characters[charKey])
+                              .map((charKey) => (
+                                <img
+                                  key={charKey}
+                                  src={characters[charKey]?.icon || '/default.png'}
+                                  alt={characters[charKey]?.name || charKey}
+                                  onClick={() => handleClickBuildIcon(charKey)}
+                                  className="w-6 h-6 rounded-full cursor-pointer 
                           border-2 border-purple-600/50 hover:border-purple-400
                           transition-all duration-200 hover:scale-110
                           opacity-80 hover:opacity-100"
-              />
-            ))}
-        </div>
-      </div>
-    )}
-  </div>
+                                />
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
-  {/* VERSION MOBILE - visible only on mobile */}
-  <div className="md:hidden space-y-2">
-    {/* Ligne 1: Actions principales */}
-    <div className="flex gap-1">
-      <button
-        onClick={handleResetStats}
-        className="flex-1 bg-purple-800/30 text-purple-300
+                    {/* VERSION MOBILE - visible only on mobile */}
+                    <div className="md:hidden space-y-2">
+                      {/* Ligne 1: Actions principales */}
+                      <div className="flex gap-1">
+                        <button
+                          onClick={handleResetStats}
+                          className="flex-1 bg-purple-800/30 text-purple-300
                   border border-purple-600/50
                   font-semibold px-2 py-2 text-xs rounded-lg
                   transition-all duration-200 active:scale-95"
-      >
-        BobbyKick
-      </button>
+                        >
+                          BobbyKick
+                        </button>
 
-      <button
-        onClick={handleSaveBuild}
-        className="flex-1 bg-purple-800/30 text-purple-300
+                        <button
+                          onClick={handleSaveBuild}
+                          className="flex-1 bg-purple-800/30 text-purple-300
                   border border-purple-600/50
                   font-bold px-3 py-2 text-xs rounded-lg
                   transition-all duration-200 active:scale-95"
-      >
-        Save
-      </button>
+                        >
+                          Save
+                        </button>
 
-      <button
-        onClick={() => {
-          const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
-          if (validation.isValid) {
-            handleSubmitToHallOfFame();
-          } else {
-            showTankMessage(`BUILD INCOMPLET`, true, 'kaisel');
-          }
-        }}
-        className={`
+                        <button
+                          onClick={() => {
+                            const validation = validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData);
+                            if (validation.isValid) {
+                              handleSubmitToHallOfFame();
+                            } else {
+                              showTankMessage(`BUILD INCOMPLET`, true, 'kaisel');
+                            }
+                          }}
+                          className={`
           flex-1
           ${validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-            ? 'bg-purple-800/30 text-purple-300 border-purple-600/50'
-            : 'bg-gray-800/30 text-gray-500 border-gray-700/50'
-          } 
+                              ? 'bg-purple-800/30 text-purple-300 border-purple-600/50'
+                              : 'bg-gray-800/30 text-gray-500 border-gray-700/50'
+                            } 
           font-semibold px-3 py-2 text-xs rounded-lg border
           transition-all duration-200 active:scale-95
         `}
-        disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
-      >
-        {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-          ? 'Submit'
-          : 'Incomplet'
-        }
-      </button>
-    </div>
+                          disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
+                        >
+                          {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
+                            ? 'Submit'
+                            : 'Incomplet'
+                          }
+                        </button>
+                      </div>
 
-    {/* Ligne 2: Import, New et Account */}
-    <div className="flex gap-1">
-      <button
-        onClick={handleImportBuild}
-        className="flex-1 bg-purple-800/30 text-purple-300
+                      {/* Ligne 2: Import, New et Account */}
+                      <div className="flex gap-1">
+                        <button
+                          onClick={handleImportBuild}
+                          className="flex-1 bg-purple-800/30 text-purple-300
                   border border-purple-600/50
                   font-semibold px-3 py-2 text-xs rounded-lg
                   transition-all duration-200 active:scale-95"
-      >
-        Import
-      </button>
+                        >
+                          Import
+                        </button>
 
-      <button
-        onClick={() => setShowNewAccountPopup(true)}
-        className="flex-1 bg-purple-800/30 text-purple-300
+                        <button
+                          onClick={() => setShowNewAccountPopup(true)}
+                          className="flex-1 bg-purple-800/30 text-purple-300
                   border border-purple-600/50
                   font-semibold px-3 py-2 text-xs rounded-lg
                   transition-all duration-200 active:scale-95"
-      >
-        New
-      </button>
+                        >
+                          New
+                        </button>
 
-      {Object.keys(accounts).length > 1 && (
-        <select
-          value={activeAccount}
-          onChange={(e) => {
-            const newAcc = e.target.value;
-            handleAccountSwitch(newAcc);
-          }}
-          className="flex-1 bg-purple-900/30 text-purple-300 border border-purple-600/50
+                        {Object.keys(accounts).length > 1 && (
+                          <select
+                            value={activeAccount}
+                            onChange={(e) => {
+                              const newAcc = e.target.value;
+                              handleAccountSwitch(newAcc);
+                            }}
+                            className="flex-1 bg-purple-900/30 text-purple-300 border border-purple-600/50
                     px-2 py-2 rounded-lg text-xs
                     focus:outline-none focus:border-purple-400"
-        >
-          {Object.keys(accounts).map(acc => (
-            <option key={acc} value={acc} className="bg-gray-900">{acc}</option>
-          ))}
-        </select>
-      )}
-    </div>
+                          >
+                            {Object.keys(accounts).map(acc => (
+                              <option key={acc} value={acc} className="bg-gray-900">{acc}</option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
 
-    {/* Ligne 3: Builds récents */}
-    {isBuildsReady && recentBuilds.length > 0 && (
-      <div className="flex justify-center gap-2">
-        {recentBuilds
-          .filter((charKey) => characters[charKey])
-          .slice(0, 5)
-          .map((charKey) => (
-            <img
-              key={charKey}
-              src={characters[charKey]?.icon || '/default.png'}
-              alt={characters[charKey]?.name || charKey}
-              onClick={() => handleClickBuildIcon(charKey)}
-              className="w-7 h-7 rounded-full cursor-pointer 
+                      {/* Ligne 3: Builds récents */}
+                      {isBuildsReady && recentBuilds.length > 0 && (
+                        <div className="flex justify-center gap-2">
+                          {recentBuilds
+                            .filter((charKey) => characters[charKey])
+                            .slice(0, 5)
+                            .map((charKey) => (
+                              <img
+                                key={charKey}
+                                src={characters[charKey]?.icon || '/default.png'}
+                                alt={characters[charKey]?.name || charKey}
+                                onClick={() => handleClickBuildIcon(charKey)}
+                                className="w-7 h-7 rounded-full cursor-pointer 
                         border-2 border-purple-600/50
                         transition-all duration-200 active:scale-110
                         opacity-80"
-            />
-          ))}
-      </div>
-    )}
-  </div>
+                              />
+                            ))}
+                        </div>
+                      )}
+                    </div>
 
-  {/* Debug Button - visible sur les deux versions */}
-  {showDebugButton && (
-    <button
-      onClick={() => setShowHitboxes(!showHitboxes)}
-      className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs z-[10001]"
-    >
-      🐛 {showHitboxes ? 'HIDE' : 'SHOW'} HITBOX
-    </button>
-  )}
-</div>
+                    {/* Debug Button - visible sur les deux versions */}
+                    {showDebugButton && (
+                      <button
+                        onClick={() => setShowHitboxes(!showHitboxes)}
+                        className="fixed top-4 right-4 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs z-[10001]"
+                      >
+                        🐛 {showHitboxes ? 'HIDE' : 'SHOW'} HITBOX
+                      </button>
+                    )}
+                  </div>
 
 
                   {showImportSaveWarning && (
@@ -6655,7 +6657,15 @@ BobbyJones : "Allez l'Inter !"
                     </div>
                   ))}
 
-
+                  {/* Tutoriel Igris */}
+                  {showTutorial && (
+                    <IgrisTutorial
+                      onClose={() => setShowTutorial(false)}
+                      selectedCharacter={selectedCharacter}
+                      characters={characters}
+                      showTankMessage={showTankMessage}
+                    />
+                  )}
                   {showSernPopup && (
                     <>
                       {/* 🌫️ BLUR OVERLAY - TOUT LE SITE */}
@@ -6870,27 +6880,27 @@ BobbyJones : "Allez l'Inter !"
                   )}
 
                   {/* Damage Calculator Modal */}
-{showDamageCalculator && (
-  <DamageCalculator
-    selectedCharacter={selectedCharacter}
-    finalStats={(() => {
-      const scaleStat = characters[selectedCharacter]?.scaleStat;
-      return {
-        [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
-        'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
-        'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
-        'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
-        'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
-        [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
-      };
-    })()}
-    flatStats={flatStats}
-    characters={characters}
-    hunterWeapons={hunterWeapons}
-    onClose={() => setShowDamageCalculator(false)}
-    t={t}
-  />
-)}
+                  {showDamageCalculator && (
+                    <DamageCalculator
+                      selectedCharacter={selectedCharacter}
+                      finalStats={(() => {
+                        const scaleStat = characters[selectedCharacter]?.scaleStat;
+                        return {
+                          [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
+                          'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
+                          'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
+                          'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
+                          'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
+                          [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
+                        };
+                      })()}
+                      flatStats={flatStats}
+                      characters={characters}
+                      hunterWeapons={hunterWeapons}
+                      onClose={() => setShowDamageCalculator(false)}
+                      t={t}
+                    />
+                  )}
                   {isSetSelectorOpen && setSelectorSlot && (
                     <SetSelectorPopup
                       slot={setSelectorSlot}
@@ -7109,58 +7119,58 @@ BobbyJones : "Allez l'Inter !"
                           <div className="flex flex-col items-center w-full gap-1">
 
                             <div className="flex justify-between items-center w-full -mb-1 pr-2">
-  <div className="flex items-center gap-3">
-    {/* Bouton Arme */}
-    <button
-      className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+                              <div className="flex items-center gap-3">
+                                {/* Bouton Arme */}
+                                <button
+                                  className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
                 border border-purple-600/50 hover:border-purple-500
                 font-semibold px-4 py-2 text-sm rounded-lg
                 transition-all duration-200 hover:scale-105
                 flex items-center gap-2"
-      onClick={() => setShowWeaponPopup(true)}
-    >
-      <span></span>
-      {t("weapon")}
-    </button>
-    
-    {/* Bouton Calculateur */}
-    <button
-      onClick={() => setShowDamageCalculator(true)}
-      className="relative bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
-                border border-purple-600/50 hover:border-purple-500
-                font-semibold px-4 py-2 text-sm rounded-lg
-                transition-all duration-200 hover:scale-105
-                flex items-center gap-2"
-      title="Calculateur de dégâts"
-    >
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-      </svg>
-      <span>DPS Calculator</span>
-      <span className="absolute -top-1 -right-1 bg-purple-400 text-black text-[9px] px-1 py-0.5 rounded-full font-bold animate-pulse">
-        NEW
-      </span>
-    </button>
-    
-    {/* Stats de l'arme */}
-    <p className="text-purple-400 text-sm">
-      {hunterWeapons[selectedCharacter]
-        ? `+${hunterWeapons[selectedCharacter].mainStat || 0} ${characters[selectedCharacter]?.scaleStat || ''}`
-        : 'Aucune arme définie'}
-    </p>
-  </div>
+                                  onClick={() => setShowWeaponPopup(true)}
+                                >
+                                  <span></span>
+                                  {t("weapon")}
+                                </button>
 
-  {/* Bouton Modifier */}
-  <button
-    onClick={() => setEditStatsMode(!editStatsMode)}
-    className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+                                {/* Bouton Calculateur */}
+                                <button
+                                  onClick={() => setShowDamageCalculator(true)}
+                                  className="relative bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+                border border-purple-600/50 hover:border-purple-500
+                font-semibold px-4 py-2 text-sm rounded-lg
+                transition-all duration-200 hover:scale-105
+                flex items-center gap-2"
+                                  title="Calculateur de dégâts"
+                                >
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                  </svg>
+                                  <span>DPS Calculator</span>
+                                  <span className="absolute -top-1 -right-1 bg-purple-400 text-black text-[9px] px-1 py-0.5 rounded-full font-bold animate-pulse">
+                                    NEW
+                                  </span>
+                                </button>
+
+                                {/* Stats de l'arme */}
+                                <p className="text-purple-400 text-sm">
+                                  {hunterWeapons[selectedCharacter]
+                                    ? `+${hunterWeapons[selectedCharacter].mainStat || 0} ${characters[selectedCharacter]?.scaleStat || ''}`
+                                    : 'Aucune arme définie'}
+                                </p>
+                              </div>
+
+                              {/* Bouton Modifier */}
+                              <button
+                                onClick={() => setEditStatsMode(!editStatsMode)}
+                                className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
               border border-purple-600/50 hover:border-purple-500
               font-semibold px-4 py-2 text-sm rounded-lg
               transition-all duration-200 hover:scale-105"
-  >
-    {getEditLabel()}
-  </button>
-</div>
+                              >
+                                {getEditLabel()}
+                              </button>
+                            </div>
 
 
 
@@ -7384,31 +7394,31 @@ BobbyJones : "Allez l'Inter !"
                       className="shadow-md bg-black w-[30vw] max-w-[400px] h-auto"
                     />
 
-       {/* Portail cliquable */}
-<div
-  className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
-  style={{
-    top: '40%',
-    left: '46.7%',
-    transform: 'translate(-50%, 50%)',
-    width: '30px',
-    height: '30px',
-    zIndex: 10 // ← BEAUCOUP plus bas que z-50
-  }}
-  onClick={handlePortalClick}
->
-  {/* Zone cliquable invisible */}
-  {/* 🔥 Effet visuel progressif selon les clics */}
-  {portalClickCount > 10 && (
-    <div className="absolute inset-0 animate-pulse bg-blue-500 opacity-20 rounded-full"></div>
-  )}
-  {portalClickCount > 20 && (
-    <div className="absolute inset-0 animate-bounce bg-purple-500 opacity-30 rounded-full"></div>
-  )}
-  {portalClickCount > 25 && (
-    <div className="absolute inset-0 animate-ping bg-red-500 opacity-40 rounded-full"></div>
-  )}
-</div>
+                    {/* Portail cliquable */}
+                    <div
+                      className="absolute z-50 cursor-pointer hover:scale-105 transition-transform"
+                      style={{
+                        top: '40%',
+                        left: '46.7%',
+                        transform: 'translate(-50%, 50%)',
+                        width: '30px',
+                        height: '30px',
+                        zIndex: 10 // ← BEAUCOUP plus bas que z-50
+                      }}
+                      onClick={handlePortalClick}
+                    >
+                      {/* Zone cliquable invisible */}
+                      {/* 🔥 Effet visuel progressif selon les clics */}
+                      {portalClickCount > 10 && (
+                        <div className="absolute inset-0 animate-pulse bg-blue-500 opacity-20 rounded-full"></div>
+                      )}
+                      {portalClickCount > 20 && (
+                        <div className="absolute inset-0 animate-bounce bg-purple-500 opacity-30 rounded-full"></div>
+                      )}
+                      {portalClickCount > 25 && (
+                        <div className="absolute inset-0 animate-ping bg-red-500 opacity-40 rounded-full"></div>
+                      )}
+                    </div>
 
                     <canvas
                       id="canvas-right"
@@ -7437,10 +7447,73 @@ BobbyJones : "Allez l'Inter !"
         </div>
       )}
 
-
+<button
+  onClick={() => setShowTutorial(true)}
+  className="igris-guide-button"
+  style={{
+    position: 'fixed',
+    bottom: '30px',
+    right: '30px',
+    background: 'rgba(76, 29, 149, 0.6)', // Plus transparent, moins agressif
+    border: '2px solid rgba(139, 92, 246, 0.3)', // Bordure plus subtile
+    borderRadius: '50%',
+    width: '85px', // Plus grand
+    height: '85px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    boxShadow: '0 4px 20px rgba(139, 92, 246, 0.2)', // Ombre plus douce
+    backdropFilter: 'blur(10px)', // Effet glassmorphism
+    transition: 'all 0.3s ease',
+    zIndex: 1000,
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.transform = 'scale(1.05)';
+    e.currentTarget.style.background = 'rgba(76, 29, 149, 0.7)';
+    e.currentTarget.style.boxShadow = '0 6px 25px rgba(139, 92, 246, 0.3)';
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.transform = 'scale(1)';
+    e.currentTarget.style.background = 'rgba(76, 29, 149, 0.6)';
+    e.currentTarget.style.boxShadow = '0 4px 20px rgba(139, 92, 246, 0.2)';
+  }}
+>
+  <img
+    src={IGRIS_ICON_URL}
+    alt="Guide Igris"
+    style={{
+      width: '65px', // Image plus grande
+      height: '65px',
+      filter: 'brightness(1.1) contrast(1.1)', // Plus lumineux et contrasté
+      objectFit: 'contain'
+    }}
+  />
+  
+  {/* Texte GUIDE en dessous, plus lisible */}
+  <span style={{
+    position: 'absolute',
+    bottom: '-8px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'rgba(0, 0, 0, 0.8)', // Fond noir pour contraste
+    color: 'white',
+    padding: '3px 10px',
+    borderRadius: '12px',
+    fontSize: '11px',
+    fontWeight: 'bold',
+    letterSpacing: '1px',
+    textTransform: 'uppercase',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
+    border: '1px solid rgba(139, 92, 246, 0.5)'
+  }}>
+    GUIDE
+  </span>
+</button>
       <div
         id="tank-laser"
-        className="hidden fixed z-[9999] pointer-events-none transition-all duration-200 tank-target"></div>
+        className="hidden fixed z-[9999] pointer-events-none transition-all duration-200 tank-target">
+        </div>
     </>
   )
 };
