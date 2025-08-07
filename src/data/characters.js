@@ -558,6 +558,15 @@ export  const characters = {
   effects: [
     { type: 'damageBuffs', values: [24] } // +24% de dégâts
   ]
+},
+{
+  name: "Exorcise",
+  img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754555890/exorcice_goto_ierpym.png', 
+  duration: 7, 
+  target: 'self',
+  effects: [
+    { type: 'critDamageBuffs', values: [15] }
+  ]
 } ]
     },
     'han': {
