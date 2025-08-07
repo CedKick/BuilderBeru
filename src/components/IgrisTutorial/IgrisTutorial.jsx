@@ -18,26 +18,8 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
   const [igrisPosition, setIgrisPosition] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
   const [igrisDirection, setIgrisDirection] = useState('down');
   const [isMoving, setIsMoving] = useState(false);
-  const [showMessage, setShowMessage] = useState(false);
-  const [isClosing, setIsClosing] = useState(false);
-  const overlayRef = useRef(null);
-  const highlightedElementRef = useRef(null);
-  const [isTextAnimating, setIsTextAnimating] = useState(false);
-const [canProgress, setCanProgress] = useState(true);
-
-useEffect(() => {
-  // Activer le mode tutoriel au montage
-  if (window.setIsTutorialActive) {
-    window.setIsTutorialActive(true);
-  }
   
-  // Désactiver au démontage
-  return () => {
-    if (window.setIsTutorialActive) {
-      window.setIsTutorialActive(false);
-    }
-  };
-}, []);
+  const overlayRef = useRef(null);
 
   // 🎮 Fonction pour bouger Igris vers un élément
   const moveIgrisTo = async (targetElement, customPosition = null) => {
@@ -48,7 +30,6 @@ useEffect(() => {
         newX = customPosition.x;
         newY = customPosition.y;
       } else if (!targetElement) {
-        // Position par défaut au centre
         newX = window.innerWidth / 2;
         newY = window.innerHeight / 2;
       } else {
@@ -56,21 +37,16 @@ useEffect(() => {
         const scrollY = window.scrollY || window.pageYOffset;
         const scrollX = window.scrollX || window.pageXOffset;
         
-        // Calculer la position en tenant compte du scroll
         const elementCenterX = rect.left + scrollX + rect.width / 2;
         const elementCenterY = rect.top + scrollY + rect.height / 2;
         
-        // Position intelligente d'Igris
         if (rect.top < window.innerHeight / 3) {
-          // Élément en haut -> Igris en dessous
-          newX = elementCenterX;
-          newY = rect.bottom + scrollY + 100;
-        } else if (rect.bottom > window.innerHeight * 2/3) {
-          // Élément en bas -> Igris au-dessus
+    newX = elementCenterX;
+    newY = rect.bottom + scrollY + 150; // Augmenté de 100 à 150
+} else if (rect.bottom > window.innerHeight * 2/3) {
           newX = elementCenterX;
           newY = rect.top + scrollY - 100;
         } else {
-          // Élément au milieu -> Igris à côté
           if (rect.left > window.innerWidth / 2) {
             newX = rect.left + scrollX - 150;
           } else {
@@ -79,7 +55,6 @@ useEffect(() => {
           newY = elementCenterY;
         }
         
-        // Contraindre aux limites de l'écran
         const padding = 100;
         newX = Math.max(padding, Math.min(window.innerWidth - padding, newX));
         newY = Math.max(padding, Math.min(
@@ -88,7 +63,6 @@ useEffect(() => {
         ));
       }
       
-      // Calculer la direction d'Igris
       const deltaX = newX - igrisPosition.x;
       const deltaY = newY - igrisPosition.y;
       
@@ -101,7 +75,6 @@ useEffect(() => {
       setIsMoving(true);
       setIgrisPosition({ x: newX, y: newY });
       
-      // Attendre la fin de l'animation
       setTimeout(() => {
         setIsMoving(false);
         setTimeout(resolve, 300);
@@ -114,7 +87,6 @@ useEffect(() => {
     // Nettoyer les anciens highlights
     document.querySelectorAll('.tutorial-highlight').forEach(el => {
       el.classList.remove('tutorial-highlight');
-      // Restaurer les styles originaux
       el.style.position = '';
       el.style.zIndex = '';
     });
@@ -123,22 +95,9 @@ useEffect(() => {
     
     let element = null;
     
-    // Gérer les différents types de sélecteurs
     if (typeof selector === 'function') {
-      // Si c'est une fonction, l'exécuter pour obtenir l'élément
       element = selector();
-    } else if (selector.includes(':contains')) {
-      // Parser le sélecteur :contains personnalisé
-      const match = selector.match(/(.+):contains\("(.+)"\)/);
-      if (match) {
-        const [, baseSelector, text] = match;
-        const elements = document.querySelectorAll(baseSelector || 'button');
-        element = Array.from(elements).find(el => 
-          el.textContent && el.textContent.includes(text)
-        );
-      }
     } else {
-      // Essayer plusieurs variantes du sélecteur
       const selectors = selector.split(',').map(s => s.trim());
       for (const sel of selectors) {
         try {
@@ -151,54 +110,34 @@ useEffect(() => {
     }
     
     if (element) {
-      // Sauvegarder la référence
-      highlightedElementRef.current = element;
-      
-      // Sauvegarder les styles originaux
-      const originalPosition = element.style.position;
-      const originalZIndex = element.style.zIndex;
-      
-      // Appliquer le highlight
       element.classList.add('tutorial-highlight');
       
-      // Forcer la position relative si nécessaire
-      if (!originalPosition || originalPosition === 'static') {
+      if (!element.style.position || element.style.position === 'static') {
         element.style.position = 'relative';
       }
       
-      // S'assurer que l'élément est au-dessus
       element.style.zIndex = '10001';
       
-      // Scroll en vue
       element.scrollIntoView({ 
         behavior: 'smooth', 
         block: 'center',
         inline: 'center' 
       });
       
-      // Déplacer Igris vers l'élément
       moveIgrisTo(element);
     } else {
-      console.warn(`Élément non trouvé: ${selector}`);
       moveIgrisTo(null);
     }
   };
 
-  // 📍 Gestion des étapes avec timing naturel
-  useEffect(() => {
-   // 🔧 FONCTION executeStep COMPLÈTE pour IgrisTutorial.jsx
 
-const executeStep = async () => {
-  const step = tutorialSteps[currentStep];
-  if (!step) return;
-  
-  // Réinitialiser les états
-  setIsClosing(false);
-  setCanProgress(false);
-  let cleanup = null;
-  
-  try {
-    // 1️⃣ D'abord, on bouge Igris
+// Dans le useEffect principal :
+useEffect(() => {
+  const executeStep = async () => {
+    const step = tutorialSteps[currentStep];
+    if (!step) return;
+    
+    // 1️⃣ Bouger Igris si nécessaire
     if (step.highlight && step.selector) {
       const element = typeof step.selector === 'function' 
         ? step.selector()
@@ -206,146 +145,86 @@ const executeStep = async () => {
         
       if (element) {
         await moveIgrisTo(element);
-        // Petite pause après le mouvement
         await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // Puis on highlight
         highlightElement(step.selector);
       }
     } else if (!step.selector) {
-      // Si pas de sélecteur, position personnalisée ou centre
       await moveIgrisTo(null, step.customPosition);
     }
     
-    // 2️⃣ Pause avant de parler
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // 3️⃣ Afficher le message (sauf si c'est une pause)
-    if (!step.skipBubble) {
-      // D'abord cacher l'ancien message proprement si nécessaire
-      if (showMessage) {
-        setIsClosing(true);
-        setShowMessage(false);
-        await new Promise(resolve => setTimeout(resolve, 300));
+    // 2️⃣ Attendre qu'un élément apparaisse (pour les popups)
+    if (step.waitForElement) {
+      console.log('⏳ En attente de:', step.waitForElement);
+      const element = await waitForElement(step.waitForElement);
+      if (element) {
+        console.log('✅ Élément trouvé !');
       }
-      
-      // Puis afficher le nouveau
-      setIsClosing(false);
-      setShowMessage(true);
-      setIsTextAnimating(true);
-      
-      // 🎯 Attendre que le texte soit complètement écrit
-      const messageLength = step.message ? step.message.length : 0;
-      const minAnimationTime = messageLength * 35 + 500; // 35ms par caractère + marge
-      
-      await new Promise(resolve => {
-        let resolved = false;
-        let textCompleteTimeout = null;
-        let checkInterval = null;
-        
-        // Timeout de sécurité basé sur la longueur du message
-        textCompleteTimeout = setTimeout(() => {
-          if (!resolved) {
-            resolved = true;
-            setIsTextAnimating(false);
-            if (checkInterval) clearInterval(checkInterval);
-            resolve();
-          }
-        }, minAnimationTime);
-        
-        // Vérifier périodiquement si l'animation est finie
-        checkInterval = setInterval(() => {
-          if (!isTextAnimating && !resolved) {
-            resolved = true;
-            if (textCompleteTimeout) clearTimeout(textCompleteTimeout);
-            clearInterval(checkInterval);
-            resolve();
-          }
-        }, 100);
-        
-        // Stocker pour cleanup
-        cleanup = () => {
-          if (textCompleteTimeout) clearTimeout(textCompleteTimeout);
-          if (checkInterval) clearInterval(checkInterval);
-        };
-      });
     }
     
-    // 4️⃣ Exécuter l'action si définie (après un délai)
+    // 3️⃣ Exécuter l'action si définie
     if (step.action && typeof step.action === 'function') {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      step.action();
+      setTimeout(() => {
+        step.action();
+      }, 1500);
     }
     
-    // 5️⃣ Débloquer la progression
-    setCanProgress(true);
-    
-    // 6️⃣ Auto-progression avec le bon timing
-    if (step.autoNext) {
-      const waitTime = step.duration || 3000;
-      const autoNextTimer = setTimeout(() => {
-        if (canProgress && !isClosing) {
-          setShowMessage(false);
-          setTimeout(nextStep, 300);
-        }
-      }, waitTime);
-      
-      // Retourner la fonction de cleanup
-      return () => {
-        clearTimeout(autoNextTimer);
-        if (cleanup) cleanup();
-      };
-    }
-    
-    // 7️⃣ Attendre un clic si spécifié
+    // 4️⃣ Gérer l'attente du clic utilisateur
     if (step.waitForClick && step.selector) {
-      let clickCleanup = null;
+      console.log('👆 En attente du clic utilisateur...');
       
-      const handleClick = () => {
-        setShowMessage(false);
-        setTimeout(nextStep, 300);
-      };
-      
-      const checkElement = setInterval(() => {
-        const element = typeof step.selector === 'function' 
-          ? step.selector()
-          : document.querySelector(step.selector);
+      const element = typeof step.selector === 'function' 
+        ? step.selector()
+        : document.querySelector(step.selector);
+        
+      if (element) {
+        const handleClick = () => {
+          console.log('✅ Clic détecté !');
+          element.removeEventListener('click', handleClick);
           
-        if (element) {
-          element.addEventListener('click', handleClick);
-          clearInterval(checkElement);
+          // Callback optionnel
+          if (step.onElementClick) {
+            step.onElementClick();
+          }
           
-          clickCleanup = () => {
-            element.removeEventListener('click', handleClick);
-          };
-        }
-      }, 100);
-      
-      // Retourner la fonction de cleanup
-      return () => {
-        clearInterval(checkElement);
-        if (clickCleanup) clickCleanup();
-        if (cleanup) cleanup();
-      };
+          // Passer à l'étape suivante après un court délai
+          setTimeout(() => nextStep(), 500);
+        };
+        
+        // Ajouter l'écouteur
+        element.addEventListener('click', handleClick);
+        
+        // Retourner la fonction de cleanup
+        return () => {
+          element.removeEventListener('click', handleClick);
+        };
+      }
     }
     
-  } catch (error) {
-    console.error('Erreur dans executeStep:', error);
-    setCanProgress(true);
-    setIsTextAnimating(false);
-  }
+    // 5️⃣ Auto-progression simple (si pas waitForClick)
+    if (step.autoNext && step.duration && !step.waitForClick) {
+      const timer = setTimeout(() => {
+        nextStep();
+      }, step.duration);
+      
+      // Retourner la fonction de cleanup
+      return () => clearTimeout(timer);
+    }
+  };
   
-  // Cleanup par défaut
-  return cleanup;
-};
-    
-    executeStep();
-  }, [currentStep]);
+  // Exécuter et récupérer la fonction de cleanup
+  const cleanup = executeStep();
+  
+  // Retourner le cleanup pour le useEffect
+  return () => {
+    if (typeof cleanup === 'function') {
+      cleanup();
+    }
+  };
+}, [currentStep]); // Dépendance sur currentStep seulement
 
   // 🧹 Nettoyage en sortie
   useEffect(() => {
     return () => {
-      // Nettoyer tous les highlights en sortant
       document.querySelectorAll('.tutorial-highlight').forEach(el => {
         el.classList.remove('tutorial-highlight');
         el.style.position = '';
@@ -354,14 +233,11 @@ const executeStep = async () => {
     };
   }, []);
 
-  
-
   // ⏭️ Navigation
   const nextStep = () => {
     if (currentStep < tutorialSteps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Fin du tutoriel
       showTankMessage && showTankMessage("🎉 Bravo Monarque ! Tu maîtrises les bases !", true);
       onClose();
     }
@@ -373,61 +249,20 @@ const executeStep = async () => {
     }
   };
 
-  // 🎨 Position intelligente de la bulle
+  // 🎨 Position de la bulle
   const getBubblePosition = () => {
-    const step = tutorialSteps[currentStep];
-    if (!step || !step.selector) {
-      // Position par défaut au-dessus d'Igris
-      return {
-        x: igrisPosition.x,
-        y: igrisPosition.y - 100
-      };
-    }
-    
-    const element = typeof step.selector === 'function' 
-      ? step.selector()
-      : document.querySelector(step.selector);
-      
-    if (!element) {
-      return {
-        x: igrisPosition.x,
-        y: igrisPosition.y - 100
-      };
-    }
-    
-    const rect = element.getBoundingClientRect();
-    const igrisX = igrisPosition.x;
-    const igrisY = igrisPosition.y;
-    
-    // Logique de positionnement intelligent
-    let bubbleX, bubbleY;
-    
-    if (rect.top < window.innerHeight / 3) {
-      // Élément en haut -> bulle en dessous d'Igris
-      bubbleX = igrisX;
-      bubbleY = igrisY + 100;
-    } else if (rect.left > window.innerWidth / 2) {
-      // Élément à droite -> bulle à gauche d'Igris
-      bubbleX = igrisX - 200;
-      bubbleY = igrisY - 50;
-    } else {
-      // Par défaut -> bulle à droite d'Igris
-      bubbleX = igrisX + 200;
-      bubbleY = igrisY - 50;
-    }
-    
-    // S'assurer que la bulle reste dans l'écran
-    bubbleX = Math.max(150, Math.min(window.innerWidth - 150, bubbleX));
-    bubbleY = Math.max(50, Math.min(window.innerHeight - 100, bubbleY));
-    
-    return { x: bubbleX, y: bubbleY };
+    return {
+      x: igrisPosition.x,
+      y: igrisPosition.y - 100
+    };
   };
 
+  const currentStepData = tutorialSteps[currentStep];
   const bubblePosition = getBubblePosition();
 
   return (
     <div className="igris-tutorial-overlay" ref={overlayRef}>
-      {/* Fond sombre qui bloque les clics */}
+      {/* Fond sombre */}
       <div className="tutorial-backdrop" />
       
       {/* Igris sur Cerbère */}
@@ -448,33 +283,26 @@ const executeStep = async () => {
         />
       </div>
 
-      {/* Bulle de dialogue avec fade in/out */}
- {tutorialSteps[currentStep] && showMessage && !isClosing && (
-  <div className="tutorial-bubble-container">
-    <ChibiBubble
-      // 🎯 IMPORTANT: Utiliser l'ID de l'étape au lieu de l'index
-      key={`bubble-${tutorialSteps[currentStep].id}`}
-      entityType={tutorialSteps[currentStep].speaker || 'igris'}
-      message={tutorialSteps[currentStep].message}
-      isMobile={window.innerWidth < 768}
-      position={bubblePosition}
-      onComplete={() => {
-        setIsTextAnimating(false);
-        console.log('✅ Animation terminée pour:', tutorialSteps[currentStep].id);
-      }}
-    />
-  </div>
-)}
+      {/* Bulle de dialogue - TOUJOURS VISIBLE si il y a un message */}
+      {currentStepData && currentStepData.message && !currentStepData.skipBubble && (
+        <ChibiBubble
+          key={`step-${currentStep}`}
+          entityType={currentStepData.speaker || 'igris'}
+          message={currentStepData.message}
+          isMobile={window.innerWidth < 768}
+          position={bubblePosition}
+        />
+      )}
 
       {/* Contrôles de navigation */}
       <div className="tutorial-controls">
         <button 
-  onClick={nextStep}
-  disabled={!canProgress || isTextAnimating}
-  className="control-button control-next"
->
-  {currentStep === tutorialSteps.length - 1 ? 'Terminer ✓' : 'Suivant →'}
-</button>
+          onClick={prevStep}
+          disabled={currentStep === 0}
+          className="control-button control-prev"
+        >
+          ← Retour
+        </button>
         
         <div className="step-indicator">
           <span className="current-step">{currentStep + 1}</span>
@@ -498,6 +326,23 @@ const executeStep = async () => {
       </div>
     </div>
   );
+};
+
+const waitForElement = (selector, timeout = 5000) => {
+  return new Promise((resolve) => {
+    const startTime = Date.now();
+    
+    const checkElement = setInterval(() => {
+      const element = document.querySelector(selector);
+      if (element) {
+        clearInterval(checkElement);
+        resolve(element);
+      } else if (Date.now() - startTime > timeout) {
+        clearInterval(checkElement);
+        resolve(null);
+      }
+    }, 100);
+  });
 };
 
 export default IgrisTutorial;

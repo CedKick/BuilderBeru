@@ -562,5 +562,21 @@ const BeruInteractionMenu = ({
     </>
   );
 };
+const waitForElement = (selector, timeout = 5000) => {
+  return new Promise((resolve) => {
+    const startTime = Date.now();
+    
+    const checkElement  = setInterval(() => {
+      const element = document.querySelector(selector);
+      if (element) {
+        clearInterval(checkElement);
+        resolve(element);
+      } else if (Date.now() - startTime > timeout) {
+        clearInterval(checkElement);
+        resolve(null);
+      }
+    }, 100);
+  });
+};
 
 export default BeruInteractionMenu;
