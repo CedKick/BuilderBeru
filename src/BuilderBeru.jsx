@@ -5637,6 +5637,15 @@ BobbyJones : "Allez l'Inter !"
                     {entityId}
                   </div>
                 ))}
+                {/* Tutoriel Igris */}
+                  {showTutorial && (
+                    <IgrisTutorial
+                      onClose={() => setShowTutorial(false)}
+                      selectedCharacter={selectedCharacter}
+                      characters={characters}
+                      showTankMessage={showTankMessage}
+                    />
+                  )}
                 {showSernPopup && (
                   <>
                     {/* 🌫️ BLUR OVERLAY - TOUT LE SITE */}

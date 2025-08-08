@@ -580,3 +580,40 @@
     position: fixed !important;
   }
 }
+
+/* ===== RESPONSIVE - MOBILE SUPPORT (max-width: 768px) ===== */
+@media (max-width: 768px) {
+  .igris-container {
+    width: 95%;
+    margin: 0 auto;
+    padding: 0 10px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .igris-message-box {
+    font-size: 0.85rem !important;
+    max-width: 90%;
+    left: 5% !important;
+    top: auto !important;
+    bottom: 20% !important;
+  }
+
+  .igris-avatar {
+    width: 120px !important;
+    height: auto !important;
+    margin: 0 auto;
+    display: block;
+  }
+
+  .tutorial-step-box {
+    width: 95% !important;
+    margin: 0 auto;
+    font-size: 0.9rem !important;
+  }
+
+  .tutorial-buttons {
+    flex-direction: column !important;
+    gap: 10px;
+  }
+}
