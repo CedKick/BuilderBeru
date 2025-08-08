@@ -116,13 +116,14 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
     });
   };
 
-  // 🔦 Fonction pour highlight un élément
-  const highlightElement = (selector) => {
+  // 🔦 Fonction pour highlight un élément avec des classes spéciales
+  const highlightElement = (selector, specialClass = null) => {
     // Nettoyer les anciens highlights
     document.querySelectorAll('.tutorial-highlight').forEach(el => {
-      el.classList.remove('tutorial-highlight');
+      el.classList.remove('tutorial-highlight', 'diamond-button', 'reset-button', 'save-button');
       el.style.position = '';
       el.style.zIndex = '';
+      el.removeAttribute('data-proc-button');
     });
     
     if (!selector) return;
@@ -145,6 +146,16 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
     
     if (element) {
       element.classList.add('tutorial-highlight');
+      
+      // Ajouter des classes spéciales selon le contexte
+      if (specialClass) {
+        element.classList.add(specialClass);
+      }
+      
+      // Marquer les boutons + pour l'animation spéciale
+      if (element.textContent === '+' && element.tagName === 'BUTTON') {
+        element.setAttribute('data-proc-button', 'true');
+      }
       
       if (!element.style.position || element.style.position === 'static') {
         element.style.position = 'relative';
@@ -203,7 +214,14 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
         if (element) {
           await moveIgrisTo(element);
           await new Promise(resolve => setTimeout(resolve, 300));
-          highlightElement(step.selector);
+          
+          // Déterminer la classe spéciale selon l'étape
+          let specialClass = null;
+          if (step.id.includes('diamond')) specialClass = 'diamond-button';
+          else if (step.id.includes('reset')) specialClass = 'reset-button';
+          else if (step.id.includes('save')) specialClass = 'save-button';
+          
+          highlightElement(step.selector, specialClass);
         }
       } else if (!step.selector) {
         await moveIgrisTo(null, step.customPosition);
@@ -299,11 +317,16 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
   useEffect(() => {
     return () => {
       document.querySelectorAll('.tutorial-highlight').forEach(el => {
-        el.classList.remove('tutorial-highlight');
+        el.classList.remove('tutorial-highlight', 'diamond-button', 'reset-button', 'save-button');
         el.style.position = '';
         el.style.zIndex = '';
+        el.removeAttribute('data-proc-button');
       });
       document.body.style.filter = '';
+      
+      // Nettoyer les variables globales
+      delete window.selectedHunterForTutorial;
+      delete window.tutorialProcsComplete;
     };
   }, []);
 

@@ -5177,7 +5177,7 @@ BobbyJones : "Allez l'Inter !"
 
                         {/* STATS FINALES OU ÉDITION */}
                         {!editStatsMode ? (
-                          <div className="bg-gray-900 p-3 rounded-lg text-xs relative group w-full">
+                          <div className="bg-gray-900 p-3 rounded-lg text-xs relative group w-full FinalStats">
                             <div className="font-bold text-white text-center mb-3">{t("statFinals")}</div>
                             <div className="grid grid-cols-2 gap-x-3 gap-y-2 w-full text-gray-200 text-xs">
                               {allStats.map((key) => {

@@ -67,6 +67,16 @@
   z-index: inherit !important;
 }
 
+/* Animation spéciale pour les boutons + */
+.tutorial-highlight[data-proc-button="true"] {
+  outline-color: #00ff00 !important;
+  box-shadow: 
+    0 0 0 5px rgba(0, 255, 0, 0.3),
+    0 0 30px rgba(0, 255, 0, 0.8),
+    inset 0 0 20px rgba(0, 255, 0, 0.2) !important;
+  animation: procButtonPulse 1s infinite !important;
+}
+
 @keyframes pulseHighlight {
   0%, 100% { 
     outline-offset: 5px;
@@ -81,6 +91,21 @@
       0 0 0 8px rgba(139, 0, 255, 0.5),
       0 0 50px rgba(139, 0, 255, 1),
       inset 0 0 30px rgba(139, 0, 255, 0.3);
+  }
+}
+
+@keyframes procButtonPulse {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 
+      0 0 0 5px rgba(0, 255, 0, 0.3),
+      0 0 30px rgba(0, 255, 0, 0.8);
+  }
+  50% { 
+    transform: scale(1.1);
+    box-shadow: 
+      0 0 0 8px rgba(0, 255, 0, 0.5),
+      0 0 50px rgba(0, 255, 0, 1);
   }
 }
 
@@ -519,6 +544,65 @@
   to { 
     transform: translateX(-50%) translateY(0);
     opacity: 1;
+  }
+}
+
+/* 💎 Styles spéciaux pour les boutons d'artifact */
+.tutorial-highlight.diamond-button {
+  outline-color: #00d4ff !important;
+  box-shadow: 
+    0 0 0 5px rgba(0, 212, 255, 0.3),
+    0 0 30px rgba(0, 212, 255, 0.8),
+    inset 0 0 20px rgba(0, 212, 255, 0.2) !important;
+}
+
+.tutorial-highlight.reset-button {
+  outline-color: #ff4444 !important;
+  box-shadow: 
+    0 0 0 5px rgba(255, 68, 68, 0.3),
+    0 0 30px rgba(255, 68, 68, 0.8),
+    inset 0 0 20px rgba(255, 68, 68, 0.2) !important;
+}
+
+.tutorial-highlight.save-button {
+  outline-color: #00ff00 !important;
+  box-shadow: 
+    0 0 0 5px rgba(0, 255, 0, 0.3),
+    0 0 30px rgba(0, 255, 0, 0.8),
+    inset 0 0 20px rgba(0, 255, 0, 0.2) !important;
+  animation: saveButtonPulse 1s infinite !important;
+}
+
+@keyframes saveButtonPulse {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 
+      0 0 0 5px rgba(0, 255, 0, 0.3),
+      0 0 40px rgba(0, 255, 0, 0.8);
+  }
+  50% { 
+    transform: scale(1.15);
+    box-shadow: 
+      0 0 0 10px rgba(0, 255, 0, 0.5),
+      0 0 60px rgba(0, 255, 0, 1);
+  }
+}
+
+/* 🎨 Effet pour le menu des sets */
+.set-menu-highlight {
+  background: rgba(139, 0, 255, 0.1) !important;
+  border: 2px solid #8b00ff !important;
+  animation: setMenuGlow 1.5s infinite !important;
+}
+
+@keyframes setMenuGlow {
+  0%, 100% { 
+    background: rgba(139, 0, 255, 0.1);
+    box-shadow: inset 0 0 20px rgba(139, 0, 255, 0.3);
+  }
+  50% { 
+    background: rgba(139, 0, 255, 0.2);
+    box-shadow: inset 0 0 30px rgba(139, 0, 255, 0.5);
   }
 }
 
