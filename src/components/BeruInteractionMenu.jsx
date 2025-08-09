@@ -66,28 +66,28 @@ const BeruInteractionMenu = ({
   const getMainOptions = (selectedCharacter) => ({
     newbie: {
       icon: "👋",
-      label: "Nouveau sur le site ?",
+      label: t('beru.menu.newbie'),
       action: "tutorial"
     },
     advice: {
       icon: "🎯",
-      label: `Conseils sur ${characters[selectedCharacter]?.name || 'ce Hunter'}`,
+      label: t('beru.menu.advice', { hunter: characters[selectedCharacter]?.name || t('beru.menu.thisHunter') }),
       action: "show_advice_submenu",
       condition: () => selectedCharacter
     },
     lore: {
       icon: "📖",
-      label: "Du lore sur Béru ?",
+      label: t('beru.menu.lore'),
       action: "show_lore"
     },
     humor: {
       icon: "😈",
-      label: "Fais-moi rire Béru",
+      label: t('beru.menu.humor'),
       action: "beru_joke"
     },
     tank_talk: {
       icon: "💬",
-      label: "Parler à Tank",
+      label: t('beru.menu.tankTalk'),
       action: "tank_interaction"
     }
   });
@@ -96,27 +96,27 @@ const BeruInteractionMenu = ({
   const getAdviceSubMenu = () => ({
     general_analysis: {
       icon: "🔍",
-      label: "Inspection générale",
+      label: t('beru.submenu.generalAnalysis'),
       action: "general_analysis"
     },
     artifact_analysis: {
       icon: "💎",
-      label: "Analyse artefacts/sets",
+      label: t('beru.submenu.artifactAnalysis'),
       action: "artifact_analysis"
     },
     stat_optimization: {
       icon: "📊",
-      label: "Optimisation stats",
+      label: t('beru.submenu.statOptimization'),
       action: "stat_optimization"
     },
     compare_builds: {
       icon: "⚖️",
-      label: "Comparaison builds",
+      label: t('beru.submenu.compareBuilds'),
       action: "compare_builds"
     },
     back: {
       icon: "↩️",
-      label: "Retour",
+      label: t('beru.submenu.back'),
       action: "back_to_main"
     }
   });
@@ -408,7 +408,7 @@ const BeruInteractionMenu = ({
                 fontWeight: 'bold',
                 fontFamily: 'sans-serif'
               }}>
-                Béru {currentSubMenu === 'advice' ? 'Conseils' : 'Intelligence'}
+                {t('beru.header', { mode: currentSubMenu === 'advice' ? t('beru.mode.advice') : t('beru.mode.intelligence') })}
               </span>
             </div>
             

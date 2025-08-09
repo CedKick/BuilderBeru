@@ -1,18 +1,21 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 
 export default function HomePage() {
+  const { t } = useTranslation();
+
   const activeItems = [
-    { label: "BUILD", path: "/build" },
-    { label: "DPS Calculator", path: "/damage-calculator", special: true, new: true },
-    { label: "🏆 Hall Of Flame", path: "/hall-of-flame", special: true }, // 🆕 AJOUTÉ
-    { label: "PoD", path: "/pod" },
-    { label: "GuideEditor", path: "/guide-editor" },
+    { label: t('home.menu.build'), path: "/build" },
+    { label: t('home.menu.dpsCalculator'), path: "/damage-calculator", special: true, new: true },
+    { label: t('home.menu.hallOfFlame'), path: "/hall-of-flame", special: true },
+    { label: t('home.menu.pod'), path: "/pod" },
+    { label: t('home.menu.guideEditor'), path: "/guide-editor" },
   ];
 
   const inactiveItems = [
-    { label: "BoT", disabled: true },
-    { label: "BdG", disabled: true },
+    { label: t('home.menu.bot'), disabled: true },
+    { label: t('home.menu.bdg'), disabled: true },
   ];
 
   return (
@@ -86,26 +89,26 @@ export default function HomePage() {
       `}</style>
 
       <h1 className="text-4xl font-extrabold mb-10 text-purple-400 drop-shadow-md">
-        Builder Béru
+        {t('home.title')}
       </h1>
 
       {/* 🎵 NOUVELLE SECTION IN COMING CHARACTERS */}
       <div className="character-announcement">
-        <img 
+        <img
           src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869120/JinhoJinah_ln6p3n.png"
-          alt="Jinah is the new coming Hunter"
+          alt={t('home.announcement.imageAlt')}
           className="character-image w-full rounded-lg hover:scale-105 transition-all duration-300"
         />
-        
+
         <div className="mt-4 text-center">
           <p className="text-sm font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
-            Build your new characters
+            {t('home.announcement.buildNew')}
           </p>
           <p className="new-character-text text-2xl font-extrabold mt-2 text-white">
-            Build your new Jinah
+            {t('home.announcement.buildJinah')}
           </p>
           <p className="theorycraft-text text-sm mt-3 font-medium">
-            DPS Calculator is finally here! (80% acc. - still testing)
+            {t('home.announcement.dpsInfo')}
           </p>
         </div>
       </div>
@@ -134,9 +137,9 @@ export default function HomePage() {
       </div>
 
       <footer className="mt-12 text-sm text-gray-500 italic text-center max-w-sm">
-        This is a fan-made website for Solo Leveling: Arise.  
+        {t('home.footer.disclaimer')}
         <br />
-        Join our community on{" "}
+        {t('home.footer.community')}{" "}
         <a
           href="https://discord.gg/m8RCuDz5"
           target="_blank"

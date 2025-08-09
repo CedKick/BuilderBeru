@@ -1,8 +1,10 @@
 import { gemTypes } from '../utils/gemOptions';
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const GemmePopup = ({ gemData, onClose, onSave, isMobile }) => {
   const [gemValues, setGemValues] = useState({});
+  const { t } = useTranslation();
   
   // 🔥 KAISEL INPUT SYSTEM - Same as ArtifactCard
   const [inputStates, setInputStates] = useState({});
@@ -213,7 +215,7 @@ const GemmePopup = ({ gemData, onClose, onSave, isMobile }) => {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center overflow-y-auto p-2">
       <div className="bg-[#1c1c2c] p-4 sm:p-6 rounded-xl w-full max-w-5xl text-white max-h-[90vh] overflow-y-auto border border-purple-500/30 shadow-2xl">
-        <h2 className="text-center text-xl font-bold mb-6 text-purple-300">💎 Configuration des Gemmes</h2>
+        <h2 className="text-center text-xl font-bold mb-6 text-purple-300">{t('gems.popup.title')}</h2>
 
         {(isMobile?.isPhone || isMobile?.isTablet) && !isMobile?.isDesktop ? (
           // 📱 VERSION MOBILE
@@ -221,7 +223,7 @@ const GemmePopup = ({ gemData, onClose, onSave, isMobile }) => {
             {Object.entries(gemTypes).map(([category, stats]) => (
               <div key={category} className={`border rounded-lg p-3 bg-[#2a2a3d] ${getColor(category)}`}>
                 <div className={`font-semibold mb-3 ${getColorText(category)} text-center`}>
-                  💎 {category} Gem
+                  {t('gems.popup.gemType', { type: t(`gems.colors.${category}`) })}
                 </div>
                 <div className="flex flex-col gap-3">
                   {Object.keys(stats).map((stat) => (
@@ -281,13 +283,13 @@ const GemmePopup = ({ gemData, onClose, onSave, isMobile }) => {
             onClick={onClose} 
             className="px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 rounded-lg transition-all border border-gray-500 font-medium"
           >
-            ❌ Cancel
+            {t('gems.popup.cancel')}
           </button>
           <button 
             onClick={handleSave} 
             className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 rounded-lg transition-all border border-green-400 font-medium"
           >
-            💾 Save Gems
+            {t('gems.popup.save')}
           </button>
         </div>
       </div>

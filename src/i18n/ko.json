@@ -1,0 +1,503 @@
+{
+  "title": "빌더 베루 – 솔로 레벨링 최적화",
+  "artefacts": "아티팩트",
+  "coress": "🧬 코어",
+  "gemss": "💎 보석",
+  "save": "저장",
+  "modify": "변경",
+  "reset": "초기화",
+  "selectStat": "스탯 선택",
+  "noCores": "코어 없음",
+  "noGems": "보석 없음",
+  "weapon": "⚔️ 무기",
+  "statFinals": "최종 스탯",
+  "left": "왼쪽",
+  "right": "오른쪽",
+  "stats": {
+    "Critical Hit Rate": "치명타 확률",
+    "Critical Hit Damage": "치명타 피해",
+    "Defense Penetration": "방어 관통",
+    "Damage Increase": "피해 증가",
+    "MP Recovery Rate Increase (%)": "MP 회복률 증가 (%)",
+    "Additional MP": "추가 MP",
+    "MP Consumption Reduction": "MP 소모 감소",
+    "Precision": "정확도",
+    "Damage Reduction": "피해 감소",
+    "Healing Given Increase (%)": "치유량 증가 (%)",
+    "Attack %": "공격력 %",
+    "Additional Attack": "추가 공격력",
+    "Additional Defense": "추가 방어력",
+    "Additional HP": "추가 HP",
+    "Fire Damage %": "화염 피해 %",
+    "Water Damage %": "물 피해 %",
+    "Wind Damage %": "바람 피해 %",
+    "Light Damage %": "빛 피해 %",
+    "Dark Damage %": "어둠 피해 %",
+    "HP %": "HP %",
+    "Defense %": "방어력 %",
+    "HP": "HP",
+    "Attack": "공격력",
+    "Defense": "방어력",
+    "MP": "MP"
+  },
+  "coreTypes": {
+    "Offensif": "공격형",
+    "Défensif": "방어형",
+    "Endurance": "지구력형",
+    "noGems": "보석 없음",
+    "gemColors": {
+      "Red": "붉은 보석",
+      "Blue": "푸른 보석",
+      "Green": "초록 보석",
+      "Purple": "보라 보석",
+      "Yellow": "노란 보석"
+    }
+  },
+  "titleArtifact": {
+    "Helmet": "투구",
+    "Chest": "흉갑",
+    "Gloves": "장갑",
+    "Boots": "부츠",
+    "Necklace": "목걸이",
+    "Bracelet": "팔찌",
+    "Ring": "반지",
+    "Earrings": "귀걸이"
+  },
+  "confirmStat": "감지된 스탯 확인",
+  "characters": {
+    "tank": {
+      "name": "탱크",
+      "description": "사과와 함께하는 수호자",
+      "personality": "방어적_유머러스"
+    },
+    "beru": {
+      "name": "베루",
+      "description": "그림자의 전략가이자 분석가",
+      "personality": "지능적_전략적"
+    },
+    "kaisel": {
+      "name": "카이셀",
+      "description": "팀의 기술적 정밀도",
+      "personality": "효율적_정확"
+    }
+  },
+  "tutorial": {
+    "closeGuide": "가이드 닫기",
+    "guide": "가이드",
+    "system": {
+      "notification_title": "알림",
+      "notification_message_line1": "가이드가 종료됩니다",
+      "notification_message_line2": "0.00초 후",
+      "notification_message_line3": "거부하실 경우",
+      "notification_question": "시스템 도움을 받으시겠습니까?",
+      "yes_button": "예",
+      "no_button": "아니오",
+      "punishment_applied": "처벌 적용됨",
+      "system_declined": "❌ 시스템 도움을 거부하셨습니다. 결과가 적용됩니다.",
+      "tutorial_abandoned": "⚠️ 튜토리얼 포기. 시스템이 이 선택을 기억합니다...",
+      "abandon_warning": "⚠️ 경고: 지금 튜토리얼을 포기하면 결과가 있을 수 있습니다. 확실합니까?",
+      "quest_completed": "🎉 튜토리얼 퀘스트 완료! +1000 EXP",
+      "step_label": "단계",
+      "back_button": "← 뒤로",
+      "next_button": "다음 →",
+      "finish_button": "완료 →",
+      "skip_button": "건너뛰기 ✕",
+      "skip_tooltip": "튜토리얼 포기 (권장하지 않음)"
+    }
+  },
+  "kaisel": {
+    "menu": {
+      "labels": {
+        "liveStreams": "트위치 라이브",
+        "youtubeNews": "최신 유튜브 동영상",
+        "netmarbleUpdates": "넷마블 뉴스",
+        "siteNews": "사이트 뉴스",
+        "debugMode": "디버그 모드 프로",
+        "accessDenied": "접근 거부",
+        "back": "뒤로",
+        "artifactCalculator": "아티팩트 계산기",
+        "buildSimulator": "빌드 시뮬레이터",
+        "metaAnalysis": "메타 분석",
+        "damageCalculator": "DPS 계산기",
+        "optimizationAi": "최적화 AI",
+        "toggleHitboxDebug": "히트박스 디버그 토글",
+        "adminValidation": "관리자 검증",
+        "hallOfFlameDebug": "명예의 전당 디버그",
+        "hallOfFlameRankings": "랭킹 보기"
+      },
+      "header": {
+        "techMode": "카이셀 기술",
+        "debugMode": "카이셀 디버그",
+        "tokenVerified": "🔐 토큰 확인됨"
+      }
+    }
+  },
+  "buttons": {
+    "bobbyKick": "BobbyKick",
+    "save": "저장",
+    "submit": "제출",
+    "incomplete": "미완성",
+    "import": "가져오기",
+    "new": "새로 만들기",
+    "export": "내보내기",
+    "reset": "초기화"
+  },
+  "portal": {
+    "messages": {
+      "click1": "🚪 세비야의 40도가 그립다! 여기서 숨자",
+      "click3": "🤔 포털을 계속 클릭하네... 뭔가 숨겨져 있나?",
+      "click5": "🔍 오호... 비밀을 발견하는 중...",
+      "click8": "👀 포털이 반응한다... 계속해...",
+      "click12": "⚡ 포털 에너지 증가! 조금만 더...",
+      "click15": "🌀 포털이 진동하기 시작... 느껴지나?",
+      "click20": "🔥 주의! 포털에 알 수 없는 에너지가!",
+      "click25": "⚠️ 위험! 포털 활성화 임박... 5번만 더!",
+      "click28": "🚨 차원 경보! 활성화까지 2번!",
+      "click29": "💥 마지막 클릭... 포털이 열린다!",
+      "click30": "🌟 포털 활성화! 다른 차원에 오신 것을 환영합니다!"
+    }
+  },
+  "canvas": {
+    "snowKingdom": "🌨️ 눈의 왕국",
+    "centralSanctuary": "🏛️ 중앙 성소",
+    "greenLands": "🌿 초록 대지",
+    "shadowRealms": "🌌 그림자 왕국",
+    "subtitle": "눈 • 성소 • 초록 대지"
+  },
+  "validation": {
+    "hallOfFame": {
+      "rejected": "🏆 **명예의 전당 제출 거부**\n\n❌ 카이셀이 불완전한 헌터를 감지!\n\n**누락된 요소:**\n{{missing}}\n\n⚡ 제출 전에 빌드를 완성하세요!",
+      "accepted": "🏆 **카이셀이 헌터를 검증!**\n\n✅ 완전한 빌드 감지:\n🎨 {{artifacts}}/8 아티팩트\n🔮 {{cores}}/3 코어\n💎 {{gems}}/5 보석\n\n🚀 제출 시스템 시작...",
+      "incomplete": "빌드 미완성",
+      "missingArtifacts": "아티팩트 부족 ({{current}}/{{required}})",
+      "missingCores": "코어 부족 ({{current}}/{{required}})",
+      "missingGems": "보석 권장 ({{current}}/{{recommended}})"
+    }
+  },
+  "messages": {
+    "buildLoaded": "✅ {{character}} 빌드 로드됨!",
+    "newBuildCreated": "🆕 {{character}} 새 빌드 생성!",
+    "buildSaved": "✅ {{character}} 빌드 저장됨!",
+    "accountSwitched": "✅ \"{{account}}\"에서 {{character}} 로드됨!",
+    "accountEmpty": "📁 \"{{account}}\" 계정 비어있음. 캐릭터를 선택하세요!",
+    "accountCleaned": "🧹 \"{{account}}\" 계정 정리됨. 유효한 빌드 없음.",
+    "newAccountCreated": "✅ 새 계정 \"{{name}}\" 생성! 시작할 캐릭터를 선택하세요.",
+    "corruptedImport": "손상된 가져오기 😶‍🌫️",
+    "invalidBuildFormat": "잘못된 빌드 형식 😢",
+    "importTimedOut": "⏱️ 가져오기 시간 초과...",
+    "weaponEquipped": "💎 보석 업데이트 및 저장됨!",
+    "coresApplied": "🧪 시각화를 위한 코어 적용",
+    "artifactSaved": "💾 \"{{name}}\" {{action}} 라이브러리와 {{character}}에!",
+    "noBuildsToExport": "내보낼 빌드 없음 😢",
+    "buildsExported": "📋 모든 빌드가 클립보드에 복사됨!"
+  },
+  "warnings": {
+    "shadowOverride": {
+      "title": "⚠️ 섀도우 오버라이드 감지",
+      "message": "이 데이터를 저장하면<br/>현재 시스템 빌드가 <span class=\"text-red-400\">덮어쓰기</span>됩니다.<br/>정말 이 가져온 섀도우를 저장하시겠습니까?",
+      "yes": "예",
+      "no": "아니오"
+    },
+    "importTimer": "빌드 붙여넣기 5초 남음 (CTRL+V)..."
+  },
+  "navigation": {
+    "main": "🏠 메인",
+    "selectCharacter": "캐릭터 선택",
+    "switchingAccounts": "🐉 계정 전환 중...",
+    "loadingArtifacts": "아티팩트 & 빌드 로딩..."
+  },
+  "popups": {
+    "dpsCalculator": "DPS 계산기",
+    "submitToHallOfFame": "명예의 전당에 제출",
+    "missingElements": "누락: {{elements}}"
+  },
+  "hallOfFlame": {
+    "title": "명예의 전당 어드밴스드",
+    "subtitle": "카이셀 CP 시스템 v5.1 • 최대 3개 스크린샷",
+    "steps": {
+      "configuration": "설정",
+      "validation": "검증",
+      "registration": "등록"
+    },
+    "form": {
+      "pseudo": "🎯 닉네임 *",
+      "pseudoPlaceholder": "게임 닉네임...",
+      "accountId": "🆔 계정 ID *",
+      "accountIdPlaceholder": "#Kly123",
+      "guildName": "🏰 길드명 (선택)",
+      "guildNamePlaceholder": "길드 이름...",
+      "screenshots": "📸 스크린샷 * (SERN 업로드 - 최대 3개)",
+      "screenshotsOptional": "(로컬에서 선택)",
+      "screenshotsRequired": "(검증을 위해 필수 - 최대 3개)",
+      "notes": "📝 메모 (선택)",
+      "notesPlaceholder": "빌드에 대한 코멘트..."
+    },
+    "validation": {
+      "pseudoRequired": "❌ 닉네임 필수",
+      "pseudoTooShort": "❌ 닉네임 너무 짧음 (최소 2자)",
+      "accountIdRequired": "❌ 계정 ID 필수",
+      "accountIdTooShort": "❌ 계정 ID 너무 짧음 (최소 4자, 예: #Kly123)",
+      "accountIdFormat": "❌ 계정 ID는 #로 시작해야 함 (예: #Kly123)",
+      "screenshotRequired": "❌ 검증을 위한 스크린샷 필수 (프로덕션)",
+      "statsNotLoaded": "❌ 스탯 로드되지 않음",
+      "cpTooLow": "⚠️ CP가 너무 낮음 (< 10k), 확실합니까?",
+      "noArtifactSet": "⚠️ 아티팩트 세트 감지되지 않음",
+      "setNotOptimal": "⚠️ 최적이 아닌 아티팩트 세트 - CP 보너스 놓침",
+      "ocrFailed": "🔍 OCR 검증 실패 - 일치하지 않는 스탯",
+      "inProgress": "고급 검증 진행 중...",
+      "analyzing": "카이셀이 CP 시스템 + 세트 분석 중...",
+      "checkingScaleStat": "✓ scaleStat 확인 중...",
+      "checkingMultipliers": "✓ CP 배수 검증 중...",
+      "analyzingSets": "✓ 아티팩트 세트 분석 중...",
+      "checkingBonus": "✓ 최적 보너스 검증 중...",
+      "errorsDetected": "오류 감지됨",
+      "validationSuccess": "고급 검증 성공!",
+      "cpValidated": "✅ 고급 CP 시스템 검증됨",
+      "scaleStatDetected": "✅ ScaleStat 감지: {{scaleStat}}",
+      "totalStats": "✅ 총 스탯: {{total}} CP",
+      "optimalSetDetected": "🏆 최적 세트 감지! +5% CP 보너스 적용",
+      "readyForHallOfFlame": "✅ 명예의 전당 준비 완료"
+    },
+    "upload": {
+      "preparing": "준비 중...",
+      "uploading": "📸 {{count}}개 파일 업로드 중...",
+      "uploadingSize": "{{size}}MB 업로드 중...",
+      "addingFile": "추가 {{current}}/{{total}}: {{filename}}",
+      "sendingToServer": "SERN 서버로 전송 중...",
+      "progress": "업로드: {{percent}}%",
+      "completed": "✅ 업로드 완료!",
+      "success": "✅ {{count}}개 스크린샷 업로드됨!",
+      "failed": "❌ 업로드 실패: {{error}}",
+      "timeout": "❌ 업로드 시간 초과 (5분)",
+      "noValidFile": "❌ 유효한 파일 없음",
+      "maxFilesWarning": "⚠️ {{count}}개 파일 선택됨, 처음 3개만 업로드됩니다",
+      "requiredMessage": "❌ 스크린샷 필수 (최대 3개 파일, 각 10MB)",
+      "optionalMessage": "⚠️ 로컬에서는 스크린샷 선택 (최대 3개)",
+      "acceptedFormats": "허용 형식: JPG, PNG, GIF, WEBP, BMP (BMP는 매우 큼)"
+    },
+    "sync": {
+      "pending": "🔄 {{count}}명의 헌터 동기화 대기 중",
+      "description": "네트워크 오류로 인해 로컬에 저장된 데이터",
+      "button": "동기화",
+      "syncing": "🔄 {{count}}명의 헌터 동기화 중...",
+      "success": "✅ 동기화 성공: {{synced}}/{{total}} 헌터 전송됨!",
+      "remaining": "⚠️ {{count}}명의 헌터 대기 중 (네트워크/CORS 오류)",
+      "noData": "✅ 동기화할 데이터 없음"
+    },
+    "status": {
+      "dataLoaded": "✅ Props 데이터 로드됨",
+      "noData": "Props 데이터 로드되지 않음",
+      "checkCharacter": "스탯이 있는 캐릭터를 선택했는지 확인하세요",
+      "character": "캐릭터",
+      "cpTotal": "총 CP",
+      "cpArtifacts": "아티팩트 CP",
+      "scaleStat": "스케일 스탯",
+      "artifactSets": "🎨 아티팩트 세트:",
+      "optimal": "✅ 최적 (+5% CP)",
+      "notOptimal": "⚠️ 최적 아님",
+      "noSet": "❌ 세트 없음",
+      "noSetDetected": "감지된 세트 없음",
+      "recommendedSets": "🎯 추천 세트:",
+      "equippedArtifacts": "🎨 장착된 아티팩트 ({{count}}/8)",
+      "weapon": "⚔️ 무기",
+      "cores": "🔴 코어 ({{count}})",
+      "gems": "💎 보석 ({{count}})"
+    },
+    "finalSave": {
+      "noData": "❌ 저장할 데이터 없음",
+      "uploadFailed": "⚠️ 업로드 실패, 스크린샷 없이 제출",
+      "screenshotsRequired": "❌ 스크린샷 필수! 업로드 실패.",
+      "sendingToBackend": "🌐 백엔드로 전송 중...",
+      "updated": "🔄 {{pseudo}} 업데이트됨\n스크린샷: {{screenshots}} 업로드됨",
+      "submitted": "📋 {{pseudo}} 제출됨!\n스크린샷: {{screenshots}} 업로드됨\n잠재 순위: #{{rank}}",
+      "localSaveSuccess": "💾 로컬 저장 성공!",
+      "confirmNavigation": "✅ 헌터 제출됨! 명예의 전당 보기?",
+      "readyForRegistration": "등록 준비 완료!",
+      "pendingValidation": "{{pseudo}}가 관리자 검증 대기 중으로 제출됩니다",
+      "summary": {
+        "pseudo": "🔥 닉네임: {{value}}",
+        "accountId": "🆔 계정 ID: {{value}}",
+        "guild": "🏰 길드: {{value}}",
+        "cpTotal": "⚡ 총 CP: {{value}}",
+        "cpArtifacts": "🎨 아티팩트 CP: {{value}}",
+        "scaleStat": "🎯 ScaleStat: {{value}}",
+        "sets": "🔮 세트: {{value}}",
+        "screenshots": "📸 스크린샷: {{count}}/3 파일 → SERN",
+        "status": "⏳ 상태: 관리자 검증 대기 중",
+        "none": "없음"
+      }
+    },
+    "buttons": {
+      "back": "← 뒤로",
+      "cancel": "취소",
+      "advancedValidation": "고급 검증 →",
+      "retry": "🔄 재시도",
+      "continue": "계속 →",
+      "validating": "검증 중...",
+      "submit": "📋 검증을 위해 제출",
+      "saving": "⏳ 저장 중..."
+    },
+    "stats": {
+      "totalStats": "⚡ 총 스탯",
+      "artifactStats": "🎨 아티팩트 스탯",
+      "detailedAnalysis": "📊 상세 통계 분석",
+      "main": "메인:",
+      "subs": "서브:",
+      "yourFlatStats": "기본 스탯",
+      "statsWithoutArtifacts": "아티팩트 없는 스탯",
+      "statBreakdown": "스탯 분석:",
+      "noWeaponDefined": "무기 없음",
+      "noCoresDefined": "코어 없음",
+      "noGemsDefined": "보석 없음"
+    }
+  },
+  "beru": {
+    "menu": {
+      "newbie": "사이트 처음이신가요?",
+      "advice": "{{hunter}}에 대한 조언",
+      "thisHunter": "이 헌터",
+      "lore": "베루에 대한 이야기?",
+      "humor": "베루, 웃겨줘",
+      "tankTalk": "탱크와 대화"
+    },
+    "submenu": {
+      "generalAnalysis": "일반 검사",
+      "artifactAnalysis": "아티팩트/세트 분석",
+      "statOptimization": "스탯 최적화",
+      "compareBuilds": "빌드 비교",
+      "back": "뒤로"
+    },
+    "header": "베루 {{mode}}",
+    "mode": {
+      "advice": "조언",
+      "intelligence": "인텔리전스"
+    },
+    "messages": {
+      "tankCall": "야 탱크 뭐해??!",
+      "analyzing": "🧠 베루 분석 중...",
+      "unknownHunter": "🤔 이 헌터를 아직 모르겠어... 배우는 걸 도와줘!",
+      "missingData": "❌ 이 헌터의 데이터 누락",
+      "noOtherBuilds": "🔍 당신 계정에서 다른 빌드를 찾을 수 없음.",
+      "compareHint": "💡 비교하려면 다른 계정에서 이 헌터를 빌드하세요!"
+    },
+    "analysis": {
+      "generalTitle": "🔍 **{{hunter}} 분석**",
+      "globalScore": "📈 전체 점수: {{score}}/100",
+      "strengths": "💪 **강점:**",
+      "improvements": "⚠️ **개선 필요:**",
+      "suggestions": "🎯 **제안:**",
+      "artifactTitle": "💎 **아티팩트 분석 - {{hunter}}**",
+      "recommendedSets": "🎯 **추천 세트:**",
+      "optimalMainStats": "📋 **최적 메인 스탯:**",
+      "comparisonTitle": "⚖️ **빌드 비교 - {{hunter}}**",
+      "foundBuilds": "📊 **당신 계정에서 찾은 빌드:**",
+      "similarity": "{{percent}}% 유사"
+    }
+  },
+  "artifact": {
+    "messages": {
+      "reset": "🔄 {{slot}} 초기화됨!",
+      "loaded": "📦 \"{{name}}\" 로드됨!",
+      "incomplete": "❌ 불완전한 아티팩트!",
+      "saved": "💾 \"{{name}}\" 저장됨!"
+    },
+    "rolls": {
+      "op": "🔥 OP 롤!",
+      "weak": "💩 약한 롤...",
+      "decent": "😎 괜찮네!"
+    },
+    "labels": {
+      "selectMainStat": "메인 스탯 선택",
+      "subStatLabel": "서브스탯 {{number}}",
+      "loadExisting": "기존 세트 로드",
+      "chooseSet": "세트 선택",
+      "resetArtifact": "아티팩트 초기화",
+      "saveSet": "세트 저장",
+      "compare": "비교"
+    }
+  },
+  "selectMainStat": "메인 스탯 선택",
+  "subStatLabel": "서브스탯",
+  "gems": {
+    "popup": {
+      "title": "💎 보석 설정",
+      "gemType": "💎 {{type}} 보석",
+      "cancel": "❌ 취소",
+      "save": "💾 보석 저장"
+    },
+    "colors": {
+      "Red": "빨강",
+      "Blue": "파랑",
+      "Green": "초록",
+      "Purple": "보라",
+      "Yellow": "노랑"
+    }
+  },
+  "cores": {
+    "popup": {
+      "title": "⚙️ 코어 설정",
+      "titleMobile": "⚙️ 코어",
+      "primaryStat": "주 스탯",
+      "secondaryStat": "부 스탯",
+      "selectPrimary": "주 스탯 선택",
+      "selectSecondary": "부 스탯 선택",
+      "value": "값",
+      "cancel": "❌ 취소",
+      "save": "💾 저장"
+    },
+    "types": {
+      "Offensif": "공격형",
+      "Défensif": "방어형",
+      "Endurance": "지구력형"
+    }
+  },
+  "home": {
+    "title": "빌더 베루",
+    "menu": {
+      "build": "빌드",
+      "dpsCalculator": "DPS 계산기",
+      "hallOfFlame": "🏆 명예의 전당",
+      "pod": "PoD",
+      "guideEditor": "가이드 편집기",
+      "bot": "BoT",
+      "bdg": "BdG"
+    },
+    "announcement": {
+      "imageAlt": "진아가 새로운 헌터입니다",
+      "buildNew": "새로운 캐릭터를 빌드하세요",
+      "buildJinah": "새로운 진아를 빌드하세요",
+      "dpsInfo": "DPS 계산기가 드디어 출시! (80% 정확도 - 아직 테스트 중)"
+    },
+    "footer": {
+      "disclaimer": "이것은 솔로 레벨링: 어라이즈의 팬 사이트입니다.",
+      "community": "우리 커뮤니티에 참여하세요"
+    }
+  },
+  "damageCalculator": {
+    "title": "DAMAGE CALCULATOR",
+    "precision": "PRECISION 80%",
+    "selectCharacter": "캐릭터 선택",
+    "noHunterSelected": "선택된 헌터 없음",
+    "sections": {
+      "baseStats": "BASE STATS",
+      "skillMultipliers": "SKILL MULTIPLIERS",
+      "otherBuffs": "OTHER BUFFS",
+      "advancedStats": "ADVANCED STATS",
+      "bossConfig": "BOSS CONFIG",
+      "damageOutput": "DAMAGE OUTPUT",
+      "settings": "SETTINGS"
+    },
+    "buffs": {
+      "character": "Character Buffs",
+      "team": "Team Buffs",
+      "set": "Set Buffs"
+    },
+    "damage": {
+      "normal": "Normal",
+      "crit": "Crit"
+    },
+    "settings": {
+      "calculatorMode": "Calculator Mode"
+    }
+  }
+}

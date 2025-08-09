@@ -454,7 +454,7 @@ const HallOfFlameDebugPopup = ({
     const errors = [];
     
     if (!formData.pseudo.trim()) {
-      errors.push("❌ Pseudo requis");
+      errors.push(t('hallOfFlame.validation.pseudoRequired'));
     }
     
     if (formData.pseudo.trim().length < 2) {
@@ -534,7 +534,7 @@ const HallOfFlameDebugPopup = ({
     console.log(`📊 Taille totale: ${(totalSize/1024/1024).toFixed(2)}MB`);
     
     setUploadProgress(`Upload de ${(totalSize/1024/1024).toFixed(2)}MB...`);
-    showTankMessage(`📸 Upload de ${filesToUpload.length} fichiers...`, true, 'kaisel');
+    showTankMessage(t('hallOfFlame.upload.uploading', { count: filesToUpload.length }), true, 'kaisel');
     
     try {
       const uploadFormData = new FormData();
@@ -1038,7 +1038,7 @@ const HallOfFlameDebugPopup = ({
                   <span className="text-xl">🏆</span>
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-yellow-400">HallOfFlame Advanced</h2>
+                  <h2 className="text-xl font-bold text-yellow-400">{t('hallOfFlame.title')}</h2>
                   <p className="text-gray-300 text-sm">
                     Kaisel CP System v5.1 • Max 3 Screenshots
                     {hasData && (
@@ -1247,7 +1247,7 @@ const HallOfFlameDebugPopup = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      🎯 Pseudo *
+                      t('hallOfFlame.form.pseudo')
                     </label>
                     <input
                       type="text"
@@ -1261,7 +1261,7 @@ const HallOfFlameDebugPopup = ({
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      🆔 ID Account *
+                      t('hallOfFlame.form.accountId')
                     </label>
                     <input
                       type="text"
@@ -1276,7 +1276,7 @@ const HallOfFlameDebugPopup = ({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    🏰 Nom Guilde (Optionnel)
+                    t('hallOfFlame.form.guildName')
                   </label>
                   <input
                     type="text"

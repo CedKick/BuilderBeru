@@ -70,41 +70,6 @@ function decodeUTF8(encoded) {
 }
 
 
-const getBeruInteractionOptions = (selectedCharacter) => ({
-  newbie: {
-    icon: "👋",
-    label: "Nouveau sur le site ?",
-    action: "tutorial",
-    priority: 1
-  },
-  advice: {
-    icon: "🎯",
-    label: `Conseils sur ${characters[selectedCharacter]?.name || 'ce Hunter'}`, // ← DYNAMIQUE !
-    action: "analyze_build",
-    priority: 2,
-    condition: () => selectedCharacter // Seulement si hunter sélectionné
-  },
-  lore: {
-    icon: "📖",
-    label: "Du lore sur Béru ?",
-    action: "show_lore",
-    priority: 3
-  },
-  humor: {
-    icon: "😈",
-    label: "Fais-moi rire Béru",
-    action: "beru_joke",
-    priority: 4
-  },
-  tank_talk: {
-    icon: "💬",
-    label: "Parler à Tank",
-    action: "tank_interaction",
-    priority: 5
-  }
-});
-
-
 const tankPhrases = [
   "Bob m’a dit : 'Si tu veux tanker, commence par shut up'. J’ai obéi.",
   "Je suis qu’un Tank. Bob, lui, c’est une mécanique légendaire.",
@@ -636,6 +601,9 @@ const BuilderBeru = () => {
   const [showKaiselInteractionMenu, setShowKaiselInteractionMenu] = useState(false);
   const [kaiselMenuPosition, setKaiselMenuPosition] = useState({ x: 0, y: 0 });
   const [showGuideButton, setShowGuideButton] = useState(true);
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+  const { i18n } = useTranslation();
   const [kaiselMenuCharacter, setKaiselMenuCharacter] = useState('');
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [beruMenuPosition, setBeruMenuPosition] = useState({ x: 0, y: 0 });
@@ -666,49 +634,45 @@ const BuilderBeru = () => {
 
     // 🎯 Messages progressifs selon le nombre de clics
     switch (newCount) {
-      case 1:
-        showTankMessage("🚪 Vivement Séville et ses 40°! Qu'on se cache d'ici", true);
-        break;
-
       case 3:
-        showTankMessage("🤔 Tu insistes sur ce portail... Il cache quelque chose ?", true);
+        showTankMessage(t('portal.messages.click3'), true);
         break;
 
       case 5:
-        showTankMessage("🔍 Oh oh... ils sont en train de découvrir un secret...", true, 'tank');
+        showTankMessage(t('portal.messages.click5'), true, 'tank');
         break;
 
       case 8:
-        showTankMessage("👀 Le portail réagit à tes clics... Continue...", true, 'beru');
+        showTankMessage(t('portal.messages.click8'), true, 'tank');
         break;
 
       case 12:
-        showTankMessage("⚡ L'énergie du portail augmente ! Encore quelques clics...", true, 'kaisel');
+        showTankMessage(t('portal.messages.click12'), true, 'kaisel');
         break;
 
       case 15:
-        showTankMessage("🌀 Le portail commence à vibrer... Tu sens quelque chose ?", true, 'tank');
+        showTankMessage(t('portal.messages.click15'), true, 'tank');
         break;
 
       case 20:
-        showTankMessage("🔥 ATTENTION ! Le portail se charge d'une énergie inconnue !", true, 'beru');
+        showTankMessage(t('portal.messages.click20'), true, 'beru');
         break;
 
       case 25:
-        showTankMessage("⚠️ DANGER ! Le portail est presque activé... 5 clics encore !", true, 'kaisel');
+        showTankMessage(t('portal.messages.click25'), true, 'kaisel');
         break;
 
       case 28:
-        showTankMessage("🚨 ALERTE DIMENSIONNELLE ! 2 clics pour l'activation !", true, 'tank');
+        showTankMessage(t('portal.messages.click28'), true, 'tank');
         break;
 
       case 29:
-        showTankMessage("💥 UN DERNIER CLIC... ET LE PORTAIL S'OUVRIRA !", true, 'beru');
+        showTankMessage(t('portal.messages.click29'), true, 'beru');
         break;
 
       case 30:
         // 🎮 OUVERTURE DU JEU !
-        showTankMessage("🌟 PORTAIL ACTIVÉ ! BIENVENUE DANS L'AUTRE DIMENSION !", true, 'kaisel');
+        showTankMessage(t('portal.messages.click30'), true, 'kaisel');
         setTimeout(() => {
           // Ouvre le jeu canvas dans un nouvel onglet
           window.open('/canvas-game/index.html', '_blank');
@@ -1126,21 +1090,21 @@ const BuilderBeru = () => {
     }
 
     // ⏰ Start entity messages
-  startEntityMessages(entity) {
-    if (this.messageIntervals.has(entity.id)) return;
+    startEntityMessages(entity) {
+      if (this.messageIntervals.has(entity.id)) return;
 
-    const interval = setInterval(() => {
-      // 🛡️ Ne pas parler si le tutoriel est actif
-      if (this.isTutorialActive) return;
-      
-      if (Math.random() < 0.33) {
-        const msg = entity.phrases[Math.floor(Math.random() * entity.phrases.length)];
-        this.showEntityMessage(entity.id, msg);
-      }
-    }, entity.messageInterval);
+      const interval = setInterval(() => {
+        // 🛡️ Ne pas parler si le tutoriel est actif
+        if (this.isTutorialActive) return;
 
-    this.messageIntervals.set(entity.id, interval);
-  }
+        if (Math.random() < 0.33) {
+          const msg = entity.phrases[Math.floor(Math.random() * entity.phrases.length)];
+          this.showEntityMessage(entity.id, msg);
+        }
+      }, entity.messageInterval);
+
+      this.messageIntervals.set(entity.id, interval);
+    }
 
 
     // 🎮 Keyboard controls
@@ -2785,8 +2749,18 @@ BobbyJones : "Allez l'Inter !"
   };
 
 
-  // 🐉 Kaisel Correction 1/2 - 18/01/2025
-  // Fix du personnage par défaut au chargement de la page
+
+    // Fermer le dropdown si on clique ailleurs
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      setShowLanguageDropdown(false);
+    }
+  };
+  
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => document.removeEventListener('mousedown', handleClickOutside);
+}, []);
 
   useEffect(() => {
 
@@ -2903,21 +2877,29 @@ BobbyJones : "Allez l'Inter !"
   }, []);
 
   useEffect(() => {
-  // Exposer la fonction globalement pour BeruInteractionMenu
-  window.setIsTutorialActive = setIsTutorialActive;
-  window.startTutorial = () => {
-    setIsTutorialActive(true);
-    // Lancer IgrisTutorial
-  };
-  
-  return () => {
-    window.setIsTutorialActive = null;
-    window.startTutorial = null;
-  };
-}, []);
+    // Exposer la fonction globalement pour BeruInteractionMenu
+    window.setIsTutorialActive = setIsTutorialActive;
+    window.startTutorial = () => {
+      setIsTutorialActive(true);
+      // Lancer IgrisTutorial
+    };
 
+    return () => {
+      window.setIsTutorialActive = null;
+      window.startTutorial = null;
+    };
+  }, []);
 
-  // 🏆 AJOUTE CES FONCTIONS AU DÉBUT DE TON COMPOSANT BuilderBeru (après les autres fonctions)
+  const languages = [
+  { code: 'fr', name: 'Français', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png' },
+  { code: 'en', name: 'English', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png' },
+  // Langues additionnelles (prêtes pour plus tard)
+  { code: 'ko', name: '한국어', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754778825/ko_flag_zdbhiz.png'},
+  { code: 'ja', name: '日本語', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754XXX/japan_flag.png', hidden: true },
+  { code: 'zh', name: '中文', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754XXX/china_flag.png', hidden: true },
+];
+
+const currentLang = languages.find(lang => lang.code === i18n.language) || languages[0];
 
   // 🔍 FONCTION DE VALIDATION COMPLÈTE DU HUNTER
   const validateHunterForHallOfFame = (currentArtifacts, currentCores, currentGems) => {
@@ -2991,7 +2973,7 @@ BobbyJones : "Allez l'Inter !"
       // 🚫 HUNTER INCOMPLET - MESSAGE KAISEL
       const missingItems = validation.missing.join(', ');
       showTankMessage(
-        `🏆 **SUBMISSION HALL OF FAME REFUSÉE**\n\n` +
+        `🏆 t('validation.hallOfFame.rejected', { missing: missingItems })` +
         `❌ Hunter incomplet détecté par Kaisel !\n\n` +
         `**Éléments manquants :**\n${missingItems}\n\n` +
         `📋 **Détails :**\n` +
@@ -4617,16 +4599,16 @@ BobbyJones : "Allez l'Inter !"
   };
 
 
- useEffect(() => {
-  // Rendre ces fonctions accessibles globalement
-  window.setIsTutorialActive = setIsTutorialActive;
-  window.isTutorialActive = () => isTutorialActive;
-  
-  return () => {
-    window.setIsTutorialActive = null;
-    window.isTutorialActive = null;
-  };
-}, [isTutorialActive]);
+  useEffect(() => {
+    // Rendre ces fonctions accessibles globalement
+    window.setIsTutorialActive = setIsTutorialActive;
+    window.isTutorialActive = () => isTutorialActive;
+
+    return () => {
+      window.setIsTutorialActive = null;
+      window.isTutorialActive = null;
+    };
+  }, [isTutorialActive]);
 
   useEffect(() => {
     const wanderInterval = setInterval(() => {
@@ -4680,9 +4662,9 @@ BobbyJones : "Allez l'Inter !"
         return;
       }
       if (isTutorialActive && !priority) {
-      console.log("🛡️ Message bloqué pendant le tutoriel:", message);
-      return;
-    }
+        console.log("🛡️ Message bloqué pendant le tutoriel:", message);
+        return;
+      }
 
       if (isTankSpeaking.current && !priority) {
         messageQueue.current.push({ message, entityType });
@@ -4824,73 +4806,126 @@ BobbyJones : "Allez l'Inter !"
                     <div className="flex flex-col w-full gap-4">
                       {/* Langues + Select */}
                       <div className="flex items-center gap-2 justify-between">
-                        <div className="flex gap-2 items-center">
-                          <img
-                            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png"
-                            alt="Français"
-                            onClick={() => i18n.changeLanguage('fr')}
-                            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-purple-500"
-                          />
-                          <img
-                            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png"
-                            alt="English"
-                            onClick={() => i18n.changeLanguage('en')}
-                            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-purple-500"
-                          />
-                        </div>
+  {/* Language Selector avec Dropdown */}
+  <div className="relative" ref={dropdownRef}>
+    <button
+      onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+      className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-purple-900/30 hover:bg-purple-900/50 transition-all border border-purple-600/50 hover:border-purple-500"
+    >
+      <img
+        src={currentLang.flag}
+        alt={currentLang.name}
+        className="w-6 h-4 rounded"
+      />
+      <span className="text-purple-300 text-xs hidden sm:block">
+        {currentLang.name}
+      </span>
+      <svg
+        className={`w-3 h-3 text-purple-400 transition-transform ${showLanguageDropdown ? 'rotate-180' : ''}`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
 
-                        {/* Select Personnage */}
-                        <select
-                          value={selectedCharacter}
-                          onChange={(e) => {
-                            const selected = e.target.value;
-                            setSelectedCharacter(selected);
-                            const saved = localStorage.getItem(`${selected}`);
-                            if (saved) {
-                              const build = JSON.parse(saved);
-                              setFlatStats(build.flatStats);
-                              setStatsWithoutArtefact(build.statsWithoutArtefact);
-                              setArtifactsData(build.artifactsData);
-                              setHunterCores(build.hunterCores);
-                              showTankMessage(`Loaded saved build for ${selected} 😏`);
-                            } else {
-                              handleResetStats();
-                            }
-                          }}
-                          className="p-2 rounded-lg bg-purple-900/30 text-purple-300 text-sm
-            border border-purple-600/50 hover:border-purple-500
-            focus:outline-none focus:border-purple-400
-            flex-1 max-w-[200px]"
-                          style={{
-                            backgroundColor: 'rgba(30, 30, 50, 0.95)',
-                            color: '#e9d5ff'
-                          }}
-                        >
-                          <option value="" style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}>
-                            Sélectionner un personnage
-                          </option>
-                          {Object.entries(characters)
-                            .filter(([key, char]) => {
-                              if (key === '') return false;
-                              if (selectedElement && char.element !== selectedElement) return false;
-                              if (selectedClass) {
-                                const classType = char.class === 'Tank' ? 'Tank'
-                                  : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
-                                if (classType !== selectedClass) return false;
-                              }
-                              return true;
-                            })
-                            .map(([key, char]) => (
-                              <option
-                                key={key}
-                                value={key}
-                                style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}
-                              >
-                                {char.name}
-                              </option>
-                            ))}
-                        </select>
-                      </div>
+    {/* Dropdown Menu */}
+    {showLanguageDropdown && (
+      <div className="absolute left-0 mt-1 bg-[#1a1a2e] border border-purple-600/50 rounded-lg shadow-xl z-50 min-w-[140px] overflow-hidden">
+        {/* Langues principales (toujours visibles) */}
+        <div className="py-1">
+          {languages
+            .filter(lang => !lang.hidden)
+            .map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => {
+                  i18n.changeLanguage(lang.code);
+                  setShowLanguageDropdown(false);
+                }}
+                className={`w-full flex items-center gap-2 px-3 py-2 hover:bg-purple-900/30 transition-colors ${
+                  lang.code === i18n.language ? 'bg-purple-900/20' : ''
+                }`}
+              >
+                <img
+                  src={lang.flag}
+                  alt={lang.name}
+                  className="w-6 h-4 rounded"
+                />
+                <span className="text-purple-300 text-sm">{lang.name}</span>
+                {lang.code === i18n.language && (
+                  <span className="ml-auto text-purple-400">✓</span>
+                )}
+              </button>
+            ))}
+        </div>
+
+        {/* Séparateur et "Plus de langues" (pour le futur) */}
+        {languages.some(lang => lang.hidden) && (
+          <>
+            <div className="border-t border-purple-600/30"></div>
+            <div className="px-3 py-2 text-purple-400/60 text-xs text-center">
+              Plus de langues bientôt...
+            </div>
+          </>
+        )}
+      </div>
+    )}
+  </div>
+
+  {/* Select Personnage (reste identique) */}
+  <select
+    value={selectedCharacter}
+    onChange={(e) => {
+      const selected = e.target.value;
+      setSelectedCharacter(selected);
+      const saved = localStorage.getItem(`${selected}`);
+      if (saved) {
+        const build = JSON.parse(saved);
+        setFlatStats(build.flatStats);
+        setStatsWithoutArtefact(build.statsWithoutArtefact);
+        setArtifactsData(build.artifactsData);
+        setHunterCores(build.hunterCores);
+        showTankMessage(`Loaded saved build for ${selected} 😏`);
+      } else {
+        handleResetStats();
+      }
+    }}
+    className="p-2 rounded-lg bg-purple-900/30 text-purple-300 text-sm
+      border border-purple-600/50 hover:border-purple-500
+      focus:outline-none focus:border-purple-400
+      flex-1 max-w-[200px]"
+    style={{
+      backgroundColor: 'rgba(30, 30, 50, 0.95)',
+      color: '#e9d5ff'
+    }}
+  >
+    <option value="" style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}>
+      {t('selectCharacter')}
+    </option>
+    {Object.entries(characters)
+      .filter(([key, char]) => {
+        if (key === '') return false;
+        if (selectedElement && char.element !== selectedElement) return false;
+        if (selectedClass) {
+          const classType = char.class === 'Tank' ? 'Tank'
+            : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
+          if (classType !== selectedClass) return false;
+        }
+        return true;
+      })
+      .map(([key, char]) => (
+        <option
+          key={key}
+          value={key}
+          style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}
+        >
+          {char.name}
+        </option>
+      ))}
+  </select>
+</div>
 
                       {/* BOUTONS D'ACTION - VERSION MOBILE SOBRE */}
                       <div className="flex flex-col gap-3 w-full">
@@ -4903,7 +4938,7 @@ BobbyJones : "Allez l'Inter !"
                   font-semibold px-3 py-2 text-xs rounded-lg
                   transition-all duration-200 active:scale-95"
                           >
-                            BobbyKick
+                            {t('buttons.bobbyKick')}
                           </button>
 
                           <button
@@ -4913,7 +4948,7 @@ BobbyJones : "Allez l'Inter !"
                   font-bold px-3 py-2 text-xs rounded-lg
                   transition-all duration-200 active:scale-95"
                           >
-                            Save
+                            {t('buttons.save')}
                           </button>
 
                           <button
@@ -4941,8 +4976,8 @@ BobbyJones : "Allez l'Inter !"
                             disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
                           >
                             {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                              ? 'Submit'
-                              : 'Incomplet'
+                              ? t('buttons.submit')
+                              : t('buttons.incomplete')
                             }
                           </button>
                         </div>
@@ -4956,7 +4991,7 @@ BobbyJones : "Allez l'Inter !"
                   font-semibold px-3 py-2 text-xs rounded-lg
                   transition-all duration-200 active:scale-95"
                           >
-                            Import
+                            {t('buttons.import')}
                           </button>
 
                           <button
@@ -5036,7 +5071,7 @@ BobbyJones : "Allez l'Inter !"
                               className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-pink-200 font-semibold px-3 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
                               onClick={() => setShowNoyauxPopup(true)}
                             >
-                              {t("cores")}
+                              {t("coress")}
                             </button>
                           </div>
 
@@ -5108,7 +5143,7 @@ BobbyJones : "Allez l'Inter !"
                               className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-blue-100 font-semibold px-3 py-2 text-sm rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
                               onClick={() => setShowGemPopup(true)}
                             >
-                              {t("gems")}
+                              {t("gemss")}
                             </button>
                           </div>
 
@@ -5255,7 +5290,7 @@ BobbyJones : "Allez l'Inter !"
                             height="140"
                             className="rounded-lg shadow-lg bg-black w-full h-auto border border-blue-500/30"
                           />
-                          <p className="text-center text-xs text-blue-300 mt-1">🌨️ Royaume de Neige</p>
+                          <p className="text-center text-xs text-blue-300 mt-1">t('canvas.snowKingdom')</p>
                         </div>
 
                         {/* Canvas 2 - Sanctuaire avec Portail */}
@@ -5638,14 +5673,14 @@ BobbyJones : "Allez l'Inter !"
                   </div>
                 ))}
                 {/* Tutoriel Igris */}
-                  {showTutorial && (
-                    <IgrisTutorial
-                      onClose={() => setShowTutorial(false)}
-                      selectedCharacter={selectedCharacter}
-                      characters={characters}
-                      showTankMessage={showTankMessage}
-                    />
-                  )}
+                {showTutorial && (
+                  <IgrisTutorial
+                    onClose={() => setShowTutorial(false)}
+                    selectedCharacter={selectedCharacter}
+                    characters={characters}
+                    showTankMessage={showTankMessage}
+                  />
+                )}
                 {showSernPopup && (
                   <>
                     {/* 🌫️ BLUR OVERLAY - TOUT LE SITE */}
@@ -6060,23 +6095,73 @@ BobbyJones : "Allez l'Inter !"
                   {/* Filtres + select personnage EN HAUT */}
                   <div className="flex items-center justify-start w-full px-1 mb-1 tank-target">
                     {/* Colonne Gauche – Langues */}
-                    <div className="flex gap-1 items-center ml-0 mr-4">
-                      <div className="flex gap-2 items-center">
-                        <img
-                          src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png"
-                          alt="Français"
-                          onClick={() => i18n.changeLanguage('fr')}
-                          className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
-                        />
-                        <img
-                          src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png"
-                          alt="English"
-                          onClick={() => i18n.changeLanguage('en')}
-                          className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
-                        />
-                      </div>
-                    </div>
+                   <div className="flex gap-1 items-center ml-0 mr-4">
+  <div className="relative" ref={dropdownRef}>
+    <button
+      onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+      className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-yellow-900/20 hover:bg-yellow-900/30 transition-all border border-yellow-600/30 hover:border-yellow-500"
+    >
+      <img
+        src={currentLang.flag}
+        alt={currentLang.name}
+        className="w-7 h-5 rounded"
+      />
+      <span className="text-yellow-300 text-xs">
+        {currentLang.name}
+      </span>
+      <svg
+        className={`w-3 h-3 text-yellow-400 transition-transform ${showLanguageDropdown ? 'rotate-180' : ''}`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
 
+    {/* Dropdown Menu Desktop */}
+    {showLanguageDropdown && (
+      <div className="absolute right-0 mt-1 bg-[#1a1a2e] border border-yellow-600/50 rounded-lg shadow-xl z-50 min-w-[140px] overflow-hidden">
+        <div className="py-1">
+          {languages
+            .filter(lang => !lang.hidden)
+            .map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => {
+                  i18n.changeLanguage(lang.code);
+                  setShowLanguageDropdown(false);
+                }}
+                className={`w-full flex items-center gap-2 px-3 py-2 hover:bg-yellow-900/30 transition-colors ${
+                  lang.code === i18n.language ? 'bg-yellow-900/20' : ''
+                }`}
+              >
+                <img
+                  src={lang.flag}
+                  alt={lang.name}
+                  className="w-7 h-5 rounded"
+                />
+                <span className="text-yellow-300 text-sm">{lang.name}</span>
+                {lang.code === i18n.language && (
+                  <span className="ml-auto text-yellow-400">✓</span>
+                )}
+              </button>
+            ))}
+        </div>
+
+        {/* Séparateur pour futures langues */}
+        {languages.some(lang => lang.hidden) && (
+          <>
+            <div className="border-t border-yellow-600/30"></div>
+            <div className="px-3 py-2 text-yellow-400/60 text-xs text-center">
+              Plus de langues bientôt...
+            </div>
+          </>
+        )}
+      </div>
+    )}
+  </div>
+</div>
                     {/* Colonne Centre – Éléments + Select + Classes */}
                     <div className="flex items-center gap-3 mr-auto">
                       {/* Icônes éléments */}
@@ -6237,7 +6322,7 @@ BobbyJones : "Allez l'Inter !"
                 font-semibold px-4 py-2 text-sm rounded-lg
                 transition-all duration-200 hover:scale-105"
                       >
-                        BobbyKick
+                        {t('buttons.bobbyKick')}
                       </button>
 
                       {/* Save */}
@@ -6248,7 +6333,7 @@ BobbyJones : "Allez l'Inter !"
                 font-bold px-4 py-2 text-sm rounded-lg
                 transition-all duration-200 hover:scale-105"
                       >
-                        Save
+                        {t('buttons.save')}
                       </button>
 
                       {/* Submit/Incomplet */}
@@ -6280,8 +6365,8 @@ BobbyJones : "Allez l'Inter !"
                         }
                       >
                         {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                          ? 'Submit'
-                          : 'Incomplet'
+                          ? t('buttons.submit')
+                          : t('buttons.incomplete')
                         }
                       </button>
 
@@ -6293,7 +6378,7 @@ BobbyJones : "Allez l'Inter !"
                 font-semibold px-4 py-2 text-sm rounded-lg
                 transition-all duration-200 hover:scale-105"
                       >
-                        Import
+                        {t('buttons.import')}
                       </button>
 
                       {/* New */}
@@ -6304,7 +6389,7 @@ BobbyJones : "Allez l'Inter !"
                 font-semibold px-2 py-2 text-sm rounded-lg
                 transition-all duration-200 hover:scale-105"
                       >
-                        New
+                        {t('buttons.new')}
                       </button>
 
                       {/* Account Selector */}
@@ -6364,7 +6449,7 @@ BobbyJones : "Allez l'Inter !"
                   font-semibold px-2 py-2 text-xs rounded-lg
                   transition-all duration-200 active:scale-95"
                         >
-                          BobbyKick
+                          {t('buttons.bobbyKick')}
                         </button>
 
                         <button
@@ -6374,7 +6459,7 @@ BobbyJones : "Allez l'Inter !"
                   font-bold px-3 py-2 text-xs rounded-lg
                   transition-all duration-200 active:scale-95"
                         >
-                          Save
+                          {t('buttons.save')}
                         </button>
 
                         <button
@@ -6398,8 +6483,8 @@ BobbyJones : "Allez l'Inter !"
                           disabled={!validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid}
                         >
                           {validateHunterForHallOfFame(artifactsData, hunterCores[selectedCharacter] || {}, gemData).isValid
-                            ? 'Submit'
-                            : 'Incomplet'
+                            ? t('buttons.submit')
+                            : t('buttons.incomplete')
                           }
                         </button>
                       </div>
@@ -6413,7 +6498,7 @@ BobbyJones : "Allez l'Inter !"
                   font-semibold px-3 py-2 text-xs rounded-lg
                   transition-all duration-200 active:scale-95"
                         >
-                          Import
+                          {t('buttons.import')}
                         </button>
 
                         <button
@@ -7038,7 +7123,7 @@ BobbyJones : "Allez l'Inter !"
                               className="bg-gradient-to-r from-[#3b3b9c] to-[#6c63ff] hover:from-[#4a4ab3] hover:to-[#7c72ff] text-pink-200 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
                               onClick={() => setShowNoyauxPopup(true)}
                             >
-                              {t("cores")}
+                              {t("coress")}
                             </button></h2>
                             {hunterCores[selectedCharacter] ? (
                               <div className="text-xs space-y-2">
@@ -7109,7 +7194,7 @@ BobbyJones : "Allez l'Inter !"
                                 className="bg-gradient-to-r font-bold from-blue-500 text-[20px] to-purple-500 hover:from-blue-600 hover:to-purple-600 text-blue-300 font-semibold py-1 px-3 rounded-lg shadow-md transition-transform duration-200 hover:scale-105"
                                 onClick={() => setShowGemPopup(true)}
                               >
-                                {t("gems")}
+                                {t("gemss")}
                               </button>
                             </h2>
                             {
@@ -7474,118 +7559,118 @@ BobbyJones : "Allez l'Inter !"
         </div>
       )}
 
-{showGuideButton && (
-  <div style={{ position: 'relative' }}>
-    {/* Croix de fermeture */}
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        setShowGuideButton(false);
-      }}
-      style={{
-        position: 'fixed',
-        bottom: '105px', // Au-dessus du bouton guide
-        right: '25px',
-        width: '28px',
-        height: '28px',
-        borderRadius: '50%',
-        backgroundColor: '#dc2626',
-        border: '2px solid #7f1d1d',
-        color: 'white',
-        fontSize: '16px',
-        fontWeight: 'bold',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxShadow: '0 2px 8px rgba(220, 38, 38, 0.4)',
-        zIndex: 1001,
-        transition: 'all 0.2s ease'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = '#b91c1c';
-        e.currentTarget.style.transform = 'scale(1.1)';
-        e.currentTarget.style.boxShadow = '0 3px 12px rgba(220, 38, 38, 0.6)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = '#dc2626';
-        e.currentTarget.style.transform = 'scale(1)';
-        e.currentTarget.style.boxShadow = '0 2px 8px rgba(220, 38, 38, 0.4)';
-      }}
-      title="Fermer le guide"
-    >
-      ✕
-    </button>
+      {showGuideButton && (
+        <div style={{ position: 'relative' }}>
+          {/* Croix de fermeture */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowGuideButton(false);
+            }}
+            style={{
+              position: 'fixed',
+              bottom: '105px', // Au-dessus du bouton guide
+              right: '25px',
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              backgroundColor: '#dc2626',
+              border: '2px solid #7f1d1d',
+              color: 'white',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(220, 38, 38, 0.4)',
+              zIndex: 1001,
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#b91c1c';
+              e.currentTarget.style.transform = 'scale(1.1)';
+              e.currentTarget.style.boxShadow = '0 3px 12px rgba(220, 38, 38, 0.6)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#dc2626';
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(220, 38, 38, 0.4)';
+            }}
+            title="Fermer le guide"
+          >
+            ✕
+          </button>
 
-    {/* Bouton guide original */}
-    <button
-      onClick={() => setShowTutorial(true)}
-      className="igris-guide-button"
-      style={{
-        position: 'fixed',
-        bottom: '30px',
-        right: '30px',
-        background: 'rgba(76, 29, 149, 0.6)',
-        border: '2px solid rgba(139, 92, 246, 0.3)',
-        borderRadius: '50%',
-        width: '85px',
-        height: '85px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        boxShadow: '0 4px 20px rgba(139, 92, 246, 0.2)',
-        backdropFilter: 'blur(10px)',
-        transition: 'all 0.3s ease',
-        zIndex: 1000,
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'scale(1.05)';
-        e.currentTarget.style.background = 'rgba(76, 29, 149, 0.7)';
-        e.currentTarget.style.boxShadow = '0 6px 25px rgba(139, 92, 246, 0.3)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'scale(1)';
-        e.currentTarget.style.background = 'rgba(76, 29, 149, 0.6)';
-        e.currentTarget.style.boxShadow = '0 4px 20px rgba(139, 92, 246, 0.2)';
-      }}
-    >
-      <img
-        src={IGRIS_ICON_URL}
-        alt="Guide Igris"
-        style={{
-          width: '65px',
-          height: '65px',
-          filter: 'brightness(1.1) contrast(1.1)',
-          objectFit: 'contain'
-        }}
-      />
-      
-      <span style={{
-        position: 'absolute',
-        bottom: '-8px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: 'rgba(0, 0, 0, 0.8)',
-        color: 'white',
-        padding: '3px 10px',
-        borderRadius: '12px',
-        fontSize: '11px',
-        fontWeight: 'bold',
-        letterSpacing: '1px',
-        textTransform: 'uppercase',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
-        border: '1px solid rgba(139, 92, 246, 0.5)'
-      }}>
-        GUIDE
-      </span>
-    </button>
-  </div>
-)}
+          {/* Bouton guide original */}
+          <button
+            onClick={() => setShowTutorial(true)}
+            className="igris-guide-button"
+            style={{
+              position: 'fixed',
+              bottom: '30px',
+              right: '30px',
+              background: 'rgba(76, 29, 149, 0.6)',
+              border: '2px solid rgba(139, 92, 246, 0.3)',
+              borderRadius: '50%',
+              width: '85px',
+              height: '85px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 20px rgba(139, 92, 246, 0.2)',
+              backdropFilter: 'blur(10px)',
+              transition: 'all 0.3s ease',
+              zIndex: 1000,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.background = 'rgba(76, 29, 149, 0.7)';
+              e.currentTarget.style.boxShadow = '0 6px 25px rgba(139, 92, 246, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.background = 'rgba(76, 29, 149, 0.6)';
+              e.currentTarget.style.boxShadow = '0 4px 20px rgba(139, 92, 246, 0.2)';
+            }}
+          >
+            <img
+              src={IGRIS_ICON_URL}
+              alt="Guide Igris"
+              style={{
+                width: '65px',
+                height: '65px',
+                filter: 'brightness(1.1) contrast(1.1)',
+                objectFit: 'contain'
+              }}
+            />
+
+            <span style={{
+              position: 'absolute',
+              bottom: '-8px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(0, 0, 0, 0.8)',
+              color: 'white',
+              padding: '3px 10px',
+              borderRadius: '12px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              letterSpacing: '1px',
+              textTransform: 'uppercase',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
+              border: '1px solid rgba(139, 92, 246, 0.5)'
+            }}>
+              GUIDE
+            </span>
+          </button>
+        </div>
+      )}
       <div
         id="tank-laser"
         className="hidden fixed z-[9999] pointer-events-none transition-all duration-200 tank-target">
-        </div>
+      </div>
     </>
   )
 };

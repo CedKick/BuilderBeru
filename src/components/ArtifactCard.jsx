@@ -264,7 +264,7 @@ const ArtifactCard = ({
     }));
     
     setCurrentSetIcon("https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750333738/set_a6k4yh.png");
-    showTankMessage && showTankMessage(`🔄 ${slot} remis à zéro !`, true);
+    showTankMessage && showTankMessage(t('artifact.messages.reset', { slot }), true);
     recalculateStatsFromArtifacts && recalculateStatsFromArtifacts();
   };
 
@@ -286,7 +286,7 @@ const ArtifactCard = ({
     );
     
     recalculateStatsFromArtifacts && recalculateStatsFromArtifacts();
-    showTankMessage && showTankMessage(`📦 "${selectedArtifact.name}" chargé !`, true);
+    showTankMessage && showTankMessage(t('artifact.messages.loaded', { name: selectedArtifact.name }), true);
     
     setShowLibrary(false);
     setLibrarySlot(null);
@@ -322,7 +322,7 @@ const ArtifactCard = ({
 
   const handleSaveSet = (slot) => {
     if (!shouldShowSave(artifactData)) {
-      showTankMessage && showTankMessage("❌ Artefact incomplet !");
+      showTankMessage && showTankMessage(t('artifact.messages.incomplete'));
       return;
     }
     setShowSavePopup(true);
@@ -332,7 +332,7 @@ const ArtifactCard = ({
     if (onArtifactSave) {
       onArtifactSave(saveData);
     }
-    showTankMessage && showTankMessage(`💾 "${saveData.name}" sauvé !`);
+    showTankMessage && showTankMessage(t('artifact.messages.saved', { name: saveData.name }));
   };
 
   const updateArtifactMainStat = (newValue) => {
@@ -601,8 +601,8 @@ const ArtifactCard = ({
 
     recalculateStatsFromArtifacts(newState);
 
-    if (procValue > 7) showTankMessage('🔥 OP roll!');
-    else if (procValue < 5) showTankMessage('💩 Weak roll...');
+    if (procValue > 7) showTankMessage(t('artifact.rolls.op'));
+    else if (procValue < 5) showTankMessage(t('artifact.rolls.weak'));
     else showTankMessage('😎 Decent!');
 
     return newState;
