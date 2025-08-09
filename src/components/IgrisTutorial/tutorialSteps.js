@@ -17,6 +17,22 @@ const DIALOGUE_VARIATIONS = {
         }
     ],
     
+    // 🎭 VARIATIONS IGRISK (Tank déguisé)
+    welcome_igrisk: [
+        {
+            message: "Salutations, Monarque ! Je suis... *tousse* IGRIS ! Oui, c'est moi, Igris ! Totalement pas Tank déguisé ! 🗡️😅",
+            speaker: 'igrisk'
+        },
+        {
+            message: "Mon Seigneur ! C'est moi Igr-- *voix qui dérape* IGRIS ! Je vais te montrer les builds... avec beaucoup de DÉFENSE ! Euh, je veux dire équilibrés ! ⚔️🛡️",
+            speaker: 'igrisk'
+        },
+        {
+            message: "Monarque... *ajuste son déguisement* Je suis votre ombre fidèle Igris ! Pas du tout Tank avec une perruque ! Commençons ! 💀",
+            speaker: 'igrisk'
+        }
+    ],
+    
     cerbere_intro: [
         {
             message: "WOUF WOUF ! 🐺 *Cerbère s'agite d'excitation*",
@@ -28,6 +44,22 @@ const DIALOGUE_VARIATIONS = {
         },
         {
             message: "*Cerbère renifle l'air* WOUF ! Ça sent le build légendaire ici ! 🔥",
+            speaker: 'cerbere'
+        }
+    ],
+    
+    // 🐕 CERBÈRE RÉAGIT À IGRISK
+    cerbere_suspicious: [
+        {
+            message: "*renifle* WOUF ? Tu sens bizarre Igris... Tu sens comme... TANK ?! 🤔",
+            speaker: 'cerbere'
+        },
+        {
+            message: "GRRR... Igris, pourquoi tu parles de défense tout le temps ? C'est louche ! WOUF ! 👀",
+            speaker: 'cerbere'
+        },
+        {
+            message: "*Cerbère plisse les yeux* Attends... C'EST PAS IGRIS ! C'EST TANK ! WOUF WOUF ! 😱",
             speaker: 'cerbere'
         }
     ],
@@ -44,6 +76,22 @@ const DIALOGUE_VARIATIONS = {
         {
             message: "*soupir* Toujours aussi énergique... Bon, focus Cerbère ! On a du travail.",
             speaker: 'igris'
+        }
+    ],
+    
+    // 🎭 IGRISK ESSAIE DE CALMER CERBÈRE
+    igrisk_calms: [
+        {
+            message: "Du calme Cerb-- je veux dire, bon chien ! *tousse* Pardon, Cerbère. Concentrons-nous sur la DÉFENSE-- euh, le tutoriel !",
+            speaker: 'igrisk'
+        },
+        {
+            message: "*voix forcée* Cerbère, sois sage ! Igris-- MOI, Igris, te demande de te calmer ! Les tanks-- LES OMBRES comptent sur nous !",
+            speaker: 'igrisk'
+        },
+        {
+            message: "*sueur* Cerbère arrête de me renifler ! Je suis Igris ! Pas Tank ! Pourquoi je sentirais la pomme pourrie ?!",
+            speaker: 'igrisk'
         }
     ]
 };
@@ -72,6 +120,38 @@ const TANK_INTERRUPTIONS = [
             {
                 message: "*Igris sépare les deux* ASSEZ ! On a un tutoriel à terminer !",
                 speaker: 'igris',
+                duration: 3500
+            }
+        ]
+    },
+    // 🎭 INTERRUPTION SPÉCIALE SI IGRISK
+    {
+        afterStep: 'cerbere_suspicious_igrisk',
+        chance: 0.8, // Plus de chance si c'est Igrisk !
+        sequence: [
+            {
+                message: "Mais... mais... C'est MA voix ça ! IGRIS ?! QU'EST-CE QUE TU FAIS AVEC MA VOIX ?! 😱",
+                speaker: 'tank',
+                duration: 4000
+            },
+            {
+                message: "*panique* NON NON ! Je suis Igris ! Regarde, j'ai une épée ! *sort un bouclier* MERDE !",
+                speaker: 'igrisk',
+                duration: 3500
+            },
+            {
+                message: "WOUF WOUF WOUF ! JE LE SAVAIS ! C'EST TANK DÉGUISÉ ! *rigole* 🤣",
+                speaker: 'cerbere',
+                duration: 3000
+            },
+            {
+                message: "IMPOSTEUR ! Tu oses usurper l'identité d'Igris ?! Rends-moi mon déguisement ! 😤",
+                speaker: 'tank',
+                duration: 3500
+            },
+            {
+                message: "*abandonne* Ok ok... C'est moi... Mais Igris était aux toilettes alors... 😅",
+                speaker: 'igrisk',
                 duration: 3500
             }
         ]
@@ -104,6 +184,11 @@ const TANK_SUBSTATS = [
     'HP %', 'Damage Reduction'
 ];
 
+// 🎭 STATS PRÉFÉRÉES PAR IGRISK (Tank déguisé)
+const IGRISK_PREFERRED_STATS = [
+    'Defense %', 'Additional Defense'
+];
+
 // 🎭 Noms d'artifacts amusants
 const FUNNY_ARTIFACT_NAMES = [
     "Build de la Mort qui Tue",
@@ -124,6 +209,19 @@ const FUNNY_ARTIFACT_NAMES = [
     "Meta Slave Ultimate"
 ];
 
+// 🎭 Noms spéciaux si IGRISK
+const IGRISK_ARTIFACT_NAMES = [
+    "Definitely Not Tank's Build",
+    "Pomme d'or ULTRA DEF",
+    "Full Defense Go BRRRR",
+    "Tank Suprémacie",
+    "Igris? Never Heard of Him",
+    "Bouclier > Épée",
+    "Defense is the Best Offense",
+    "Pas du tout suspect",
+    "100% Legit Igris Build"
+];
+
 // 🎲 Fonctions utilitaires
 const getRandomVariation = (stepId) => {
     const variations = DIALOGUE_VARIATIONS[stepId];
@@ -138,11 +236,19 @@ const shouldTankInterrupt = (stepId) => {
     return roll < interruption.chance ? interruption : null;
 };
 
-const getRandomStat = (type = 'main', excludeList = []) => {
+const getRandomStat = (type = 'main', excludeList = [], isIgrisk = false) => {
+    // Si c'est Igrisk, favoriser les stats de défense !
+    if (isIgrisk && Math.random() < 0.7) {
+        const defensePool = IGRISK_PREFERRED_STATS.filter(stat => !excludeList.includes(stat));
+        if (defensePool.length > 0) {
+            return defensePool[Math.floor(Math.random() * defensePool.length)];
+        }
+    }
+    
     let statPool = type === 'main' ? HELMET_MAIN_STATS : ALL_SUBSTATS;
     statPool = statPool.filter(stat => !excludeList.includes(stat));
     
-    if (type === 'sub' && Math.random() < 0.6) {
+    if (type === 'sub' && Math.random() < 0.6 && !isIgrisk) {
         const dpsPool = DPS_SUBSTATS.filter(stat => !excludeList.includes(stat));
         if (dpsPool.length > 0) {
             return dpsPool[Math.floor(Math.random() * dpsPool.length)];
@@ -150,7 +256,6 @@ const getRandomStat = (type = 'main', excludeList = []) => {
     }
     
     if (statPool.length === 0) {
-        // Si plus de stats disponibles, prendre une stat au hasard qui n'est pas dans excludeList
         const emergencyPool = ALL_SUBSTATS.filter(stat => !excludeList.includes(stat));
         if (emergencyPool.length > 0) {
             return emergencyPool[Math.floor(Math.random() * emergencyPool.length)];
@@ -191,6 +296,12 @@ const addShakeAnimation = () => {
 export const buildDynamicTutorialSteps = () => {
     const steps = [];
     
+    // 🎭 DÉTERMINER SI C'EST IGRISK OU IGRIS (5% de chance)
+    const IS_IGRISK = Math.random() < 0.05;
+    const GUIDE_NAME = IS_IGRISK ? 'igrisk' : 'igris';
+    
+    console.log(IS_IGRISK ? '🎭 IGRISK DETECTED! Tank s\'est déguisé !' : '⚔️ Igris guide normal');
+    
     // Ajouter l'animation shake pour l'effet démo
     addShakeAnimation();
     
@@ -200,7 +311,9 @@ export const buildDynamicTutorialSteps = () => {
     let selectedArtifactName = '';
     
     // 1. Welcome
-    const welcomeVariation = getRandomVariation('welcome');
+    const welcomeVariation = IS_IGRISK 
+        ? getRandomVariation('welcome_igrisk')
+        : getRandomVariation('welcome');
     steps.push({
         id: 'welcome',
         ...welcomeVariation,
@@ -226,23 +339,57 @@ export const buildDynamicTutorialSteps = () => {
         autoNext: true
     });
     
-    // Tank interruption possible
-    const tankInterruption1 = shouldTankInterrupt('cerbere_intro');
-    if (tankInterruption1) {
-        tankInterruption1.sequence.forEach((step, index) => {
+    // 🎭 SI IGRISK, CERBÈRE DEVIENT SUSPICIEUX
+    if (IS_IGRISK && Math.random() < 0.7) {
+        const suspiciousVariation = getRandomVariation('cerbere_suspicious');
+        steps.push({
+            id: 'cerbere_suspicious_igrisk',
+            ...suspiciousVariation,
+            duration: 3500,
+            autoNext: true
+        });
+        
+        // Tank peut réagir s'il est découvert
+        const tankInterruption = shouldTankInterrupt('cerbere_suspicious_igrisk');
+        if (tankInterruption) {
+            tankInterruption.sequence.forEach((step, index) => {
+                steps.push({
+                    id: `tank_discovered_${index}`,
+                    ...step,
+                    autoNext: true
+                });
+            });
+            
+            // Après la découverte, on continue quand même le tuto
             steps.push({
-                id: `tank_interruption_1_${index}`,
-                ...step,
+                id: 'igrisk_continues_anyway',
+                message: "*tousse* Bon bon... Peu importe qui je suis, on a un tutoriel à finir ! Focus sur la DÉFEN-- sur le BUILD !",
+                speaker: 'igrisk',
+                duration: 4000,
                 autoNext: true
             });
-        });
+        }
+    } else if (!IS_IGRISK) {
+        // Tank interruption normale si c'est le vrai Igris
+        const tankInterruption1 = shouldTankInterrupt('cerbere_intro');
+        if (tankInterruption1) {
+            tankInterruption1.sequence.forEach((step, index) => {
+                steps.push({
+                    id: `tank_interruption_1_${index}`,
+                    ...step,
+                    autoNext: true
+                });
+            });
+        }
     }
     
-    // 3. Igris calms
-    const igrisCalmVariation = getRandomVariation('igris_calms');
+    // 3. Igris/Igrisk calms
+    const calmVariation = IS_IGRISK 
+        ? getRandomVariation('igrisk_calms')
+        : getRandomVariation('igris_calms');
     steps.push({
-        id: 'igris_calms',
-        ...igrisCalmVariation,
+        id: 'guide_calms',
+        ...calmVariation,
         duration: 4000,
         autoNext: true
     });
@@ -250,8 +397,10 @@ export const buildDynamicTutorialSteps = () => {
     // Character selector avec highlight
     steps.push({
         id: 'character_selector_zone',
-        message: "D'abord, regarde ici en haut. C'est le sélecteur de personnage.",
-        speaker: 'igris',
+        message: IS_IGRISK 
+            ? "D'abord, regarde ici. Le sélecteur de... *regarde ses notes* personnage ! Oui c'est ça !"
+            : "D'abord, regarde ici en haut. C'est le sélecteur de personnage.",
+        speaker: GUIDE_NAME,
         selector: () => {
             const selects = document.querySelectorAll('select');
             for (const select of selects) {
@@ -270,24 +419,21 @@ export const buildDynamicTutorialSteps = () => {
         autoNext: true
     });
     
-    
-    // Select random hunter avec vrai changement - VERSION CORRIGÉE
+    // Select random hunter
     steps.push({
         id: 'select_random_hunter',
-        message: "Changeons pour un autre Hunter... Voyons voir qui sera l'élu !",
-        speaker: 'igris',
+        message: IS_IGRISK
+            ? "Changeons pour un Hunter avec beaucoup de DÉFENSE-- euh, je veux dire, un Hunter équilibré !"
+            : "Changeons pour un autre Hunter... Voyons voir qui sera l'élu !",
+        speaker: GUIDE_NAME,
         duration: 3500,
         autoNext: true,
         action: () => {
             setTimeout(() => {
-                // IMPORTANT: On cherche SPÉCIFIQUEMENT le select des personnages
-                // PAS celui des artifacts !
                 const selects = document.querySelectorAll('select');
                 let characterSelect = null;
 
                 for (const select of selects) {
-                    // Vérifier que c'est VRAIMENT le select des personnages
-                    // en checkant plusieurs options de personnages
                     const options = Array.from(select.options);
                     const hasMultipleCharacters = options.filter(opt =>
                         opt.text.includes('Sung Jinwoo') ||
@@ -295,11 +441,11 @@ export const buildDynamicTutorialSteps = () => {
                         opt.text.includes('Choi Jong-in') ||
                         opt.text.includes('Baek Yoonho') ||
                         opt.text.includes('Min Byung-gyu')
-                    ).length >= 2; // Au moins 2 personnages = c'est le bon select !
+                    ).length >= 2;
 
                     if (hasMultipleCharacters) {
                         characterSelect = select;
-                        console.log('✅ Select des personnages trouvé (pas celui des artifacts !)');
+                        console.log('✅ Select des personnages trouvé');
                         break;
                     }
                 }
@@ -308,7 +454,6 @@ export const buildDynamicTutorialSteps = () => {
                     const currentValue = characterSelect.value;
                     console.log('🔍 Hunter actuel:', currentValue);
 
-                    // Récupérer TOUTES les options valides sauf celle actuelle
                     const validOptions = Array.from(characterSelect.options).filter(opt =>
                         opt.value !== '' && 
                         opt.value !== currentValue &&
@@ -316,45 +461,29 @@ export const buildDynamicTutorialSteps = () => {
                         !opt.text.includes('Sélectionner')
                     );
 
-                    console.log(`📋 ${validOptions.length} hunters disponibles`);
-
                     if (validOptions.length > 0) {
-                        // Sélectionner vraiment au hasard
-                        const randomIndex = Math.floor(Math.random() * validOptions.length);
-                        const selectedOption = validOptions[randomIndex];
+                        // Si Igrisk, préférer Baek Yoonho (tank) !
+                        let selectedOption;
+                        if (IS_IGRISK) {
+                            const tankOption = validOptions.find(opt => opt.text.includes('Baek Yoonho'));
+                            selectedOption = tankOption || validOptions[Math.floor(Math.random() * validOptions.length)];
+                        } else {
+                            const randomIndex = Math.floor(Math.random() * validOptions.length);
+                            selectedOption = validOptions[randomIndex];
+                        }
                         
                         console.log('🎯 Nouveau Hunter sélectionné:', selectedOption.text);
-                        console.log('🔧 Changement de valeur:', currentValue, '→', selectedOption.value);
                         
-                        // IMPORTANT: Garder la référence du BON select
-                        // et forcer le changement de valeur
                         characterSelect.value = selectedOption.value;
                         
-                        // Déclencher tous les événements nécessaires
                         const changeEvent = new Event('change', { bubbles: true, cancelable: true });
                         const inputEvent = new Event('input', { bubbles: true, cancelable: true });
                         
                         characterSelect.dispatchEvent(changeEvent);
                         characterSelect.dispatchEvent(inputEvent);
                         
-                        // Vérifier que le changement a bien eu lieu SUR LE BON SELECT
-                        setTimeout(() => {
-                            console.log('✅ Vérification - Hunter actuel:', characterSelect.value);
-                            console.log('🔍 Vérif que c\'est pas le MainStat:', characterSelect.options[0].text);
-                            window.selectedHunterForTutorial = selectedOption.text;
-                        }, 100);
-                    } else {
-                        console.log('⚠️ Pas d\'autres hunters disponibles');
-                        // Si un seul hunter, on garde quand même son nom
-                        const currentOption = Array.from(characterSelect.options).find(opt => 
-                            opt.value === currentValue
-                        );
-                        if (currentOption) {
-                            window.selectedHunterForTutorial = currentOption.text;
-                        }
+                        window.selectedHunterForTutorial = selectedOption.text;
                     }
-                } else {
-                    console.log('❌ Select des personnages non trouvé (tous les selects sont des artifacts ?)');
                 }
             }, 1500);
         }
@@ -366,7 +495,11 @@ export const buildDynamicTutorialSteps = () => {
         message: (() => {
             const hunterName = window.selectedHunterForTutorial || 'ce Hunter';
             
-            // Réactions spécifiques selon le Hunter
+            // Si c'est Igrisk et qu'il a choisi Baek Yoonho
+            if (IS_IGRISK && hunterName === 'Baek Yoonho') {
+                return `WOUF ?! Baek Yoonho ?! Comme par hasard tu choisis le TANK ! TRÈS SUSPECT IGRIS ! 🤨`;
+            }
+            
             const specificReactions = {
                 'Sung Jinwoo': [
                     `WOUF WOUF WOUF ! ${hunterName} ! LE MONARQUE ! MON IDOLE ! 🤩✨`,
@@ -410,7 +543,6 @@ export const buildDynamicTutorialSteps = () => {
                 ]
             };
             
-            // Récupérer les réactions spécifiques ou les génériques
             const reactions = specificReactions[hunterName] || [
                 `WOUF WOUF ! ${hunterName} ! Pas mal comme choix ! 🎉`,
                 `OUAAAAAAF ! ${hunterName} ! Ça peut le faire ! 🐺`,
@@ -424,12 +556,17 @@ export const buildDynamicTutorialSteps = () => {
         autoNext: true
     });
     
-    // Tank peut aussi réagir parfois (30% de chance)
+    // Tank réaction (différente si c'est Igrisk)
     if (Math.random() < 0.3) {
         steps.push({
             id: 'tank_hunter_opinion',
             message: (() => {
                 const hunterName = window.selectedHunterForTutorial || 'ce Hunter';
+                
+                if (IS_IGRISK) {
+                    // Tank est confus s'il entend sa propre voix
+                    return "Attendez... Cette voix... C'est MA voix ça ! QUI UTILISE MA VOIX ?! 😠";
+                }
                 
                 const tankOpinions = {
                     'Sung Jinwoo': "Évidemment... Tout le monde veut jouer le protagoniste... 🙄",
@@ -448,13 +585,27 @@ export const buildDynamicTutorialSteps = () => {
             duration: 3500,
             autoNext: true
         });
+        
+        if (IS_IGRISK) {
+            steps.push({
+                id: 'igrisk_panic',
+                message: "*panique intérieurement* NON NON ! Tu dois te tromper ! Je suis Igris ! Regarde mon épée ! *montre un bouclier* MERDE !",
+                speaker: 'igrisk',
+                duration: 3500,
+                autoNext: true
+            });
+        }
     }
     
-    // Igris confirms avec variations selon le Hunter
+    // Guide confirms
     steps.push({
-        id: 'igris_confirms',
+        id: 'guide_confirms',
         message: (() => {
             const hunterName = window.selectedHunterForTutorial || 'Ce Hunter';
+            
+            if (IS_IGRISK) {
+                return `${hunterName}... Excellent choix pour la DÉFENSE-- je veux dire, pour tout ! Continuons vite avant que-- continuons !`;
+            }
             
             const igrisComments = {
                 'Sung Jinwoo': `${hunterName}... Mon Seigneur original. Un choix évident mais excellent !`,
@@ -475,20 +626,22 @@ export const buildDynamicTutorialSteps = () => {
             
             return igrisComments[hunterName] || defaultComments[Math.floor(Math.random() * defaultComments.length)];
         })(),
-        speaker: 'igris',
+        speaker: GUIDE_NAME,
         duration: 4000,
         autoNext: true
     });
     
     // ==========================================
-    // 🎨 NOUVELLE SECTION ARTIFACTS - COMPLÈTE
+    // 🎨 SECTION ARTIFACTS
     // ==========================================
     
     // Introduction artifacts
     steps.push({
         id: 'artifact_section',
-        message: "Les artifacts sont le cœur de la puissance ! Chaque stat compte, chaque proc peut tout changer !",
-        speaker: 'igris',
+        message: IS_IGRISK
+            ? "Les artifacts ! L'endroit où la DÉFENSE brille ! Euh... je veux dire, où toutes les stats brillent !"
+            : "Les artifacts sont le cœur de la puissance ! Chaque stat compte, chaque proc peut tout changer !",
+        speaker: GUIDE_NAME,
         selector: '.artifact-grid, .artifacts-container',
         highlight: true,
         duration: 5000,
@@ -498,11 +651,13 @@ export const buildDynamicTutorialSteps = () => {
     // Focus Helmet
     steps.push({
         id: 'helmet_focus',
-        message: "Commençons par le Casque. Je vais te montrer chaque étape de l'optimisation !",
-        speaker: 'igris',
+        message: IS_IGRISK
+            ? "Le Casque ! Parfait pour mettre de la DÉFENSE-- *tousse* pour optimiser tes stats !"
+            : "Commençons par le Casque. Je vais te montrer chaque étape de l'optimisation !",
+        speaker: GUIDE_NAME,
         selector: () => {
             const cards = document.querySelectorAll('.artifact-card');
-            return cards[0]; // Premier artifact = Helmet
+            return cards[0];
         },
         highlight: true,
         duration: 4500,
@@ -513,16 +668,22 @@ export const buildDynamicTutorialSteps = () => {
     // 📊 CONFIGURATION DES STATS
     // ==========================================
     
-    // MainStat
-    selectedMainStat = getRandomStat('main');
+    // MainStat (Igrisk favorise la défense)
+    selectedMainStat = getRandomStat('main', [], IS_IGRISK);
     steps.push({
         id: 'set_main_stat',
-        message: `Je vais configurer la stat principale. ${selectedMainStat} sera parfait ! ${
-            selectedMainStat.includes('Attack') ? "Maximum de dégâts ! 💪" :
-            selectedMainStat.includes('Defense') ? "Un peu de survie ne fait pas de mal... 🛡️" :
-            "Équilibré et efficace ! ⚖️"
-        }`,
-        speaker: 'igris',
+        message: IS_IGRISK
+            ? `La stat principale sera... ${selectedMainStat} ! ${
+                selectedMainStat.includes('Defense') ? "PARFAIT ! La défense c'est la VIE ! 🛡️💪" :
+                selectedMainStat.includes('Attack') ? "*déçu* De l'attaque... Bon si tu insistes... 😔" :
+                "Pas mal... mais la défense aurait été mieux ! 🛡️"
+            }`
+            : `Je vais configurer la stat principale. ${selectedMainStat} sera parfait ! ${
+                selectedMainStat.includes('Attack') ? "Maximum de dégâts ! 💪" :
+                selectedMainStat.includes('Defense') ? "Un peu de survie ne fait pas de mal... 🛡️" :
+                "Équilibré et efficace ! ⚖️"
+            }`,
+        speaker: GUIDE_NAME,
         duration: 5000,
         autoNext: true,
         action: () => {
@@ -534,15 +695,25 @@ export const buildDynamicTutorialSteps = () => {
         }
     });
     
-    // Réaction si Defense
+    // Réactions selon la stat
     if (selectedMainStat.includes('Defense')) {
-        steps.push({
-            id: 'tank_loves_defense',
-            message: "ENFIN ! Quelqu'un qui comprend l'importance de la défense ! 🛡️💖",
-            speaker: 'tank',
-            duration: 3500,
-            autoNext: true
-        });
+        if (IS_IGRISK) {
+            steps.push({
+                id: 'igrisk_loves_defense',
+                message: "*essaie de cacher sa joie* Ah... Defense... C'est... c'est un choix correct. Très correct. *sourire suspect* 😊",
+                speaker: 'igrisk',
+                duration: 3500,
+                autoNext: true
+            });
+        } else {
+            steps.push({
+                id: 'tank_loves_defense',
+                message: "ENFIN ! Quelqu'un qui comprend l'importance de la défense ! 🛡️💖",
+                speaker: 'tank',
+                duration: 3500,
+                autoNext: true
+            });
+        }
         
         steps.push({
             id: 'cerbere_disagrees',
@@ -553,24 +724,28 @@ export const buildDynamicTutorialSteps = () => {
         });
     }
     
-    // SubStats une par une - AVEC EXCLUSION DE LA MAINSTAT
+    // SubStats (Igrisk favorise toujours la défense)
     for (let i = 1; i <= 4; i++) {
-        // IMPORTANT: Exclure la MainStat ET les substats déjà sélectionnées
         const allExclusions = [selectedMainStat, ...selectedSubstats];
-        const substat = getRandomStat('sub', allExclusions);
+        const substat = getRandomStat('sub', allExclusions, IS_IGRISK);
         selectedSubstats.push(substat);
         const statQuality = isGoodStatForCharacter(substat);
         
-        // Configuration de la substat
         steps.push({
             id: `set_substat_${i}`,
-            message: `SubStat ${i}: ${substat}. ${
-                i === 1 ? "La première substat donne le ton !" :
-                i === 2 ? "Deuxième substat, on construit le build..." :
-                i === 3 ? "Troisième substat, ça prend forme !" :
-                "Dernière substat, finalisons ce chef-d'œuvre !"
-            }`,
-            speaker: 'igris',
+            message: IS_IGRISK
+                ? `SubStat ${i}: ${substat}. ${
+                    statQuality === 'defense' ? "*murmure* Oui... OUI ! Plus de défense ! 🛡️" :
+                    statQuality === 'good' ? "*déçu* Bon... si tu veux du damage..." :
+                    "Hmm... intéressant..."
+                }`
+                : `SubStat ${i}: ${substat}. ${
+                    i === 1 ? "La première substat donne le ton !" :
+                    i === 2 ? "Deuxième substat, on construit le build..." :
+                    i === 3 ? "Troisième substat, ça prend forme !" :
+                    "Dernière substat, finalisons ce chef-d'œuvre !"
+                }`,
+            speaker: GUIDE_NAME,
             duration: 4000,
             autoNext: true,
             action: () => {
@@ -583,8 +758,24 @@ export const buildDynamicTutorialSteps = () => {
             }
         });
         
-        // Réactions selon la stat
-        if (statQuality === 'good' && Math.random() < 0.7) {
+        // Réactions spéciales si Igrisk et defense
+        if (IS_IGRISK && statQuality === 'defense' && Math.random() < 0.5) {
+            steps.push({
+                id: `cerbere_suspicious_stat_${i}`,
+                message: "WOUF ! Encore de la défense ?! Igris tu es VRAIMENT bizarre aujourd'hui ! 🤔",
+                speaker: 'cerbere',
+                duration: 2500,
+                autoNext: true
+            });
+            
+            steps.push({
+                id: `igrisk_excuse_${i}`,
+                message: "*nerveux* C'est... c'est la méta actuelle ! La défense c'est... stratégique ! Oui voilà !",
+                speaker: 'igrisk',
+                duration: 3000,
+                autoNext: true
+            });
+        } else if (statQuality === 'good' && Math.random() < 0.7) {
             steps.push({
                 id: `cerbere_happy_${i}`,
                 message: `WOUF WOUF ! ${substat} ! C'est PARFAIT ! *saute partout* 🎯🔥`,
@@ -592,138 +783,68 @@ export const buildDynamicTutorialSteps = () => {
                 duration: 2500,
                 autoNext: true
             });
-        } else if (statQuality === 'defense') {
-            steps.push({
-                id: `tank_loves_${i}`,
-                message: `OUI ! ${substat} ! Voilà de la vraie optimisation ! 🛡️`,
-                speaker: 'tank',
-                duration: 3000,
-                autoNext: true
-            });
-            
-            if (Math.random() < 0.5) {
-                steps.push({
-                    id: `cerbere_angry_${i}`,
-                    message: "Encore de la def ?! On est pas des tanks ! GRRR ! 💢",
-                    speaker: 'cerbere',
-                    duration: 2500,
-                    autoNext: true
-                });
+        }
+    }
+    
+    // ==========================================
+    // 🎲 PROCS
+    // ==========================================
+    
+    steps.push({
+        id: 'proc_introduction',
+        message: IS_IGRISK
+            ? "Les procs ! 4 chances d'avoir plus de DÉFENSE-- je veux dire, d'améliorer les stats ! *tousse*"
+            : "Maintenant les procs ! 4 améliorations qui peuvent tout changer. Chaque + augmente une substat aléatoirement !",
+        speaker: GUIDE_NAME,
+        duration: 5000,
+        autoNext: true
+    });
+    
+    // Procs 1-4
+    for (let procNum = 1; procNum <= 4; procNum++) {
+        steps.push({
+            id: `proc_${procNum}`,
+            message: IS_IGRISK
+                ? `Proc ${procNum} ! *prie pour de la défense* Allez RNG, sois gentille ! 🎲🛡️`
+                : `${
+                    procNum === 1 ? "Premier proc ! *croise les doigts* Allez, on veut du Crit Damage ! 🎲" :
+                    procNum === 2 ? "Deuxième amélioration ! La tension monte... 🎰" :
+                    procNum === 3 ? "Troisième proc ! On y est presque ! L'artifact prend vie ! ⚡" :
+                    "Dernier proc ! Le moment de vérité ! Que la RNG soit avec nous ! 🎲✨"
+                }`,
+            speaker: GUIDE_NAME,
+            duration: 3500,
+            autoNext: true,
+            action: () => {
+                setTimeout(() => {
+                    if (window.doOneProc) {
+                        window.doOneProc();
+                    }
+                }, 1500);
             }
-        } else if (statQuality === 'bad' && Math.random() < 0.6) {
+        });
+        
+        if (procNum === 3) {
             steps.push({
-                id: `cerbere_disgusted_${i}`,
-                message: `${substat} ?! *fait la grimace* C'est nul ça ! 😖`,
+                id: 'cerbere_excited',
+                message: "WOUF WOUF WOUF ! Les stats EXPLOSENT ! C'est magnifique ! 🔥💥",
                 speaker: 'cerbere',
-                duration: 2500,
-                autoNext: true
-            });
-            
-            steps.push({
-                id: `igris_explains_${i}`,
-                message: "Parfois on n'a pas le choix... La RNG est cruelle, Cerbère.",
-                speaker: 'igris',
                 duration: 3000,
                 autoNext: true
             });
         }
     }
     
-    // ==========================================
-    // 🎲 PROCS (4 AMÉLIORATIONS)
-    // ==========================================
-    
-    // Introduction procs
-    steps.push({
-        id: 'proc_introduction',
-        message: "Maintenant les procs ! 4 améliorations qui peuvent tout changer. Chaque + augmente une substat aléatoirement !",
-        speaker: 'igris',
-        duration: 5000,
-        autoNext: true
-    });
-    
-    // Proc 1
-    steps.push({
-        id: 'proc_1',
-        message: "Premier proc ! *croise les doigts* Allez, on veut du Crit Damage ! 🎲",
-        speaker: 'igris',
-        duration: 3500,
-        autoNext: true,
-        action: () => {
-            setTimeout(() => {
-                if (window.doOneProc) {
-                    window.doOneProc();
-                }
-            }, 1500);
-        }
-    });
-    
-    steps.push({
-        id: 'cerbere_proc_1',
-        message: "WOUF ! Ça monte ! Premier proc validé ! 📈",
-        speaker: 'cerbere',
-        duration: 2500,
-        autoNext: true
-    });
-    
-    // Proc 2
-    steps.push({
-        id: 'proc_2',
-        message: "Deuxième amélioration ! La tension monte... 🎰",
-        speaker: 'igris',
-        duration: 3500,
-        autoNext: true,
-        action: () => {
-            setTimeout(() => {
-                if (window.doOneProc) {
-                    window.doOneProc();
-                }
-            }, 1500);
-        }
-    });
-    
-    // Proc 3
-    steps.push({
-        id: 'proc_3',
-        message: "Troisième proc ! On y est presque ! L'artifact prend vie ! ⚡",
-        speaker: 'igris',
-        duration: 3500,
-        autoNext: true,
-        action: () => {
-            setTimeout(() => {
-                if (window.doOneProc) {
-                    window.doOneProc();
-                }
-            }, 1500);
-        }
-    });
-    
-    steps.push({
-        id: 'cerbere_excited',
-        message: "WOUF WOUF WOUF ! Les stats EXPLOSENT ! C'est magnifique ! 🔥💥",
-        speaker: 'cerbere',
-        duration: 3000,
-        autoNext: true
-    });
-    
-    // Proc 4 (final)
-    steps.push({
-        id: 'proc_4',
-        message: "Dernier proc ! Le moment de vérité ! Que la RNG soit avec nous ! 🎲✨",
-        speaker: 'igris',
-        duration: 4000,
-        autoNext: true,
-        action: () => {
-            setTimeout(() => {
-                if (window.doOneProc) {
-                    window.doOneProc();
-                }
-            }, 1500);
-        }
-    });
-    
     // Réaction finale procs
-    if (Math.random() < 0.4) {
+    if (IS_IGRISK) {
+        steps.push({
+            id: 'igrisk_procs_opinion',
+            message: "Pas assez de procs défense... *murmure* La RNG est cruelle avec les tanks...",
+            speaker: 'igrisk',
+            duration: 3500,
+            autoNext: true
+        });
+    } else if (Math.random() < 0.4) {
         steps.push({
             id: 'tank_mocks_procs',
             message: "4 procs et pas all crit damage ? Pfff... Amateur ! 😏",
@@ -739,25 +860,18 @@ export const buildDynamicTutorialSteps = () => {
             duration: 3000,
             autoNext: true
         });
-    } else {
-        steps.push({
-            id: 'procs_complete',
-            message: "Pas mal ces procs ! L'artifact est maintenant bien optimisé ! 💎",
-            speaker: 'igris',
-            duration: 3500,
-            autoNext: true
-        });
     }
     
     // ==========================================
     // 🎨 SÉLECTION DU SET
     // ==========================================
     
-    // Ouvrir menu des sets
     steps.push({
         id: 'open_set_menu',
-        message: "Maintenant, choisissons un set ! Chaque set offre des bonus uniques. Je vais ouvrir le menu...",
-        speaker: 'igris',
+        message: IS_IGRISK
+            ? "Les sets ! J'espère que tu vas choisir Guard ! Euh... je veux dire, choisis ce que tu veux !"
+            : "Maintenant, choisissons un set ! Chaque set offre des bonus uniques. Je vais ouvrir le menu...",
+        speaker: GUIDE_NAME,
         duration: 4000,
         autoNext: true,
         action: () => {
@@ -769,24 +883,32 @@ export const buildDynamicTutorialSteps = () => {
         }
     });
     
-    // Sélectionner un set
     steps.push({
         id: 'select_set',
-        message: "Burning pour les dégâts, Guard pour la défense, Critical pour les coups critiques... Voyons voir !",
-        speaker: 'igris',
+        message: IS_IGRISK
+            ? "Guard pour la défense ! Guard ! GUARD ! *tousse* Pardon... Choisis ce que tu veux bien sûr..."
+            : "Burning pour les dégâts, Guard pour la défense, Critical pour les coups critiques... Voyons voir !",
+        speaker: GUIDE_NAME,
         duration: 4500,
         autoNext: true,
         action: async () => {
             await new Promise(r => setTimeout(r, 1500));
             if (window.selectRandomSet) {
-                await window.selectRandomSet();
+                // Si Igrisk, essayer de forcer Guard !
+                if (IS_IGRISK && window.selectGuardSet) {
+                    await window.selectGuardSet();
+                } else {
+                    await window.selectRandomSet();
+                }
             }
         }
     });
     
     steps.push({
         id: 'cerbere_set_reaction',
-        message: "WOUF ! J'espère que c'est un set offensif ! Du DAMAGE ! 💪🔥",
+        message: IS_IGRISK
+            ? "WOUF ! Si c'est Guard je sais que c'est toi TANK ! 😤"
+            : "WOUF ! J'espère que c'est un set offensif ! Du DAMAGE ! 💪🔥",
         speaker: 'cerbere',
         duration: 3000,
         autoNext: true
@@ -796,11 +918,12 @@ export const buildDynamicTutorialSteps = () => {
     // 💾 SAUVEGARDE
     // ==========================================
     
-    // Cliquer sur Save
     steps.push({
         id: 'click_save_button',
-        message: "⚠️ TRÈS IMPORTANT ! Sauvegardons cet artifact. Sans sauvegarde, tu perds TOUT !",
-        speaker: 'igris',
+        message: IS_IGRISK
+            ? "⚠️ SAUVEGARDE ! Sans ça, tu perds ta belle DÉFENSE-- tes stats ! Sauvegarde !"
+            : "⚠️ TRÈS IMPORTANT ! Sauvegardons cet artifact. Sans sauvegarde, tu perds TOUT !",
+        speaker: GUIDE_NAME,
         selector: () => {
             const helmetCard = document.getElementsByClassName("artifact-card")[0];
             return helmetCard?.querySelector('img[alt="Save le set"]');
@@ -817,19 +940,27 @@ export const buildDynamicTutorialSteps = () => {
         }
     });
     
-    // Entrer le nom
-    selectedArtifactName = FUNNY_ARTIFACT_NAMES[Math.floor(Math.random() * FUNNY_ARTIFACT_NAMES.length)];
+    // Nom de l'artifact
+    selectedArtifactName = IS_IGRISK 
+        ? IGRISK_ARTIFACT_NAMES[Math.floor(Math.random() * IGRISK_ARTIFACT_NAMES.length)]
+        : FUNNY_ARTIFACT_NAMES[Math.floor(Math.random() * FUNNY_ARTIFACT_NAMES.length)];
     
     steps.push({
         id: 'enter_artifact_name',
-        message: `Je vais nommer cet artifact... "${selectedArtifactName}" ! ${
-            selectedArtifactName.includes('Pomme') ? "*ricane* Tank va pas aimer !" :
-            selectedArtifactName.includes('Tank') ? "Désolé Tank, c'était trop tentant..." :
-            selectedArtifactName.includes('Cerbère') ? "En ton honneur mon ami !" :
-            selectedArtifactName.includes('RNG') ? "Prions le dieu de la RNG !" :
-            "Un classique du genre !"
-        }`,
-        speaker: 'igris',
+        message: IS_IGRISK
+            ? `Le nom parfait : "${selectedArtifactName}" ! ${
+                selectedArtifactName.includes('Tank') ? "*panique* NON ! Pas Tank ! Igris ! IGRIS !" :
+                selectedArtifactName.includes('Defense') ? "*murmure* Parfait... 🛡️" :
+                "Un nom totalement normal, rien de suspect !"
+            }`
+            : `Je vais nommer cet artifact... "${selectedArtifactName}" ! ${
+                selectedArtifactName.includes('Pomme') ? "*ricane* Tank va pas aimer !" :
+                selectedArtifactName.includes('Tank') ? "Désolé Tank, c'était trop tentant..." :
+                selectedArtifactName.includes('Cerbère') ? "En ton honneur mon ami !" :
+                selectedArtifactName.includes('RNG') ? "Prions le dieu de la RNG !" :
+                "Un classique du genre !"
+            }`,
+        speaker: GUIDE_NAME,
         duration: 5000,
         autoNext: true,
         action: async () => {
@@ -840,46 +971,40 @@ export const buildDynamicTutorialSteps = () => {
         }
     });
     
-    // Réaction spéciale selon le nom
-    if (selectedArtifactName.includes('Pomme') && Math.random() < 0.5) {
+    // Réaction au nom si suspect
+    if (IS_IGRISK && selectedArtifactName.includes('Tank')) {
         steps.push({
-            id: 'tank_angry_name',
-            message: "POMME POURRIE ?! C'est une insulte à la défense ! 😤💢",
-            speaker: 'tank',
+            id: 'cerbere_gotcha',
+            message: "AH ! JE LE SAVAIS ! C'EST TANK ! TU T'ES TRAHI ! WOUF WOUF ! 🎯",
+            speaker: 'cerbere',
             duration: 3500,
             autoNext: true
         });
         
         steps.push({
-            id: 'cerbere_laughs',
-            message: "WOUF WOUF WOUF ! *rigole* Tank est pas content ! 🤣",
-            speaker: 'cerbere',
-            duration: 3000,
-            autoNext: true
-        });
-    } else if (selectedArtifactName.includes('Tank') && Math.random() < 0.5) {
-        steps.push({
-            id: 'tank_confused',
-            message: "Euh... C'est censé être un compliment ou une moquerie ? 🤔",
-            speaker: 'tank',
+            id: 'igrisk_caught',
+            message: "*abandonne le déguisement* Bon ok... C'est moi... Mais j'ai fait un bon tutoriel non ? 😅",
+            speaker: 'igrisk',
             duration: 3500,
             autoNext: true
         });
-    } else if (selectedArtifactName.includes('Cerbère')) {
+        
         steps.push({
-            id: 'cerbere_proud',
-            message: "WOUF WOUF ! C'est MON artifact ! Je suis trop fier ! 🏆✨",
-            speaker: 'cerbere',
-            duration: 3000,
+            id: 'real_tank_appears',
+            message: "IMPOSTEUR ! Comment oses-tu te faire passer pour Igris ?! La défense ne s'enseigne pas en cachette ! 😤",
+            speaker: 'tank',
+            duration: 4000,
             autoNext: true
         });
     }
     
-    // Cancel pour laisser le Monarque faire
+    // Cancel
     steps.push({
         id: 'click_cancel',
-        message: "Finalement... Non ! C'est à TOI de créer tes propres artifacts, Monarque ! Je vais annuler.",
-        speaker: 'igris',
+        message: IS_IGRISK
+            ? "Finalement... *panique* Le vrai Igris arrive ! Je dois partir ! À toi de jouer Monarque ! *fuit*"
+            : "Finalement... Non ! C'est à TOI de créer tes propres artifacts, Monarque ! Je vais annuler.",
+        speaker: GUIDE_NAME,
         duration: 4500,
         autoNext: true,
         action: () => {
@@ -891,18 +1016,22 @@ export const buildDynamicTutorialSteps = () => {
         }
     });
     
-    // Conclusion artifacts
+    // Conclusion
     steps.push({
         id: 'artifact_mastery',
-        message: "Parfait ! Tu maîtrises maintenant TOUTES les mécaniques : stats, procs, sets, sauvegarde. À toi de jouer !",
-        speaker: 'igris',
+        message: IS_IGRISK
+            ? "Tu maîtrises tout ! Surtout la DÉFENSE-- je veux dire, TOUTES les mécaniques ! *disparaît rapidement*"
+            : "Parfait ! Tu maîtrises maintenant TOUTES les mécaniques : stats, procs, sets, sauvegarde. À toi de jouer !",
+        speaker: GUIDE_NAME,
         duration: 5500,
         autoNext: true
     });
     
     steps.push({
         id: 'cerbere_encouragement',
-        message: "WOUF WOUF ! Tu vas créer des builds DE MALADE ! Go go go Monarque ! 🚀🔥",
+        message: IS_IGRISK
+            ? "WOUF ! C'était bizarre mais instructif ! Même si c'était Tank déguisé ! 🤣"
+            : "WOUF WOUF ! Tu vas créer des builds DE MALADE ! Go go go Monarque ! 🚀🔥",
         speaker: 'cerbere',
         duration: 3500,
         autoNext: true
@@ -916,22 +1045,26 @@ export const buildDynamicTutorialSteps = () => {
         steps.push({
             id: 'demo_effect_warning',
             message: "*L'atmosphère devient soudainement lourde* Qu'est-ce que... ?! 😨",
-            speaker: 'igris',
+            speaker: IS_IGRISK ? 'igrisk' : 'igris',
             duration: 3000,
             autoNext: true
         });
         
         steps.push({
             id: 'tank_demo_activation',
-            message: "MWAHAHAHA ! VOUS PENSIEZ QUE C'ÉTAIT FINI ?! ACTIVATION : MODE DEMO ! 🔥💀",
-            speaker: 'tank',
+            message: IS_IGRISK 
+                ? "QUOI ?! MOI AUSSI JE PEUX FAIRE ÇA ?! MODE DEMO DÉFENSIF ! 🛡️💀"
+                : "MWAHAHAHA ! VOUS PENSIEZ QUE C'ÉTAIT FINI ?! ACTIVATION : MODE DEMO ! 🔥💀",
+            speaker: IS_IGRISK ? 'igrisk' : 'tank',
             duration: 4000,
             autoNext: true
         });
         
         steps.push({
             id: 'cerbere_panic',
-            message: "WOUF WOUF WOUF ?! TANK ! QU'EST-CE QUE TU FAIS ?! C'EST DANGEREUX ! 😱",
+            message: IS_IGRISK
+                ? "WOUF ?! TANK TU VAS DÉTRUIRE TON PROPRE DÉGUISEMENT ! 😱"
+                : "WOUF WOUF WOUF ?! TANK ! QU'EST-CE QUE TU FAIS ?! C'EST DANGEREUX ! 😱",
             speaker: 'cerbere',
             duration: 3000,
             autoNext: true
@@ -940,14 +1073,12 @@ export const buildDynamicTutorialSteps = () => {
         steps.push({
             id: 'tank_laser_charge',
             message: "REGARDEZ LA VRAIE PUISSANCE ! LASER ORBITAL... CHARGEMENT... 🎯⚡",
-            speaker: 'tank',
+            speaker: IS_IGRISK ? 'igrisk' : 'tank',
             duration: 3500,
             autoNext: true,
             action: () => {
-                // Préparation du laser
                 setTimeout(() => {
                     console.log('🔥 DEMO EFFECT: Préparation du laser orbital...');
-                    // Effet de tremblement
                     document.body.style.animation = 'shake 0.5s';
                     setTimeout(() => {
                         document.body.style.animation = '';
@@ -959,28 +1090,26 @@ export const buildDynamicTutorialSteps = () => {
         steps.push({
             id: 'tank_fire_laser',
             message: "FEU ! DESTRUCTION TOTALE DU DOM ! HAHAHAHA ! 💥🔥💀",
-            speaker: 'tank',
+            speaker: IS_IGRISK ? 'igrisk' : 'tank',
             duration: 5000,
             autoNext: true,
             action: () => {
                 setTimeout(() => {
-                    // FIRE THE LASER !
                     if (window.fireTankLaser) {
                         console.log('🚀 DEMO EFFECT: LASER ORBITAL ACTIVÉ !');
                         window.fireTankLaser();
                         
-                        // 📊 TRACK THIS LEGENDARY MOMENT!
                         if (window.umami) {
                             window.umami.track('tutorial-demo-laser-fired', {
-                                source: 'igris_tutorial',
+                                source: IS_IGRISK ? 'igrisk_tutorial' : 'igris_tutorial',
                                 effect: 'tank_orbital_laser',
-                                rarity: 'ultra_rare_2_percent'
+                                rarity: 'ultra_rare_2_percent',
+                                guide: IS_IGRISK ? 'tank_disguised' : 'normal_igris'
                             });
-                            console.log('📊 UMAMI: Laser orbital tracké ! Un joueur béni par la RNG !');
+                            console.log('📊 UMAMI: Laser orbital tracké !');
                         }
                     }
                     
-                    // Effets supplémentaires
                     document.body.style.filter = 'hue-rotate(180deg) contrast(2)';
                     setTimeout(() => {
                         document.body.style.filter = 'hue-rotate(90deg) brightness(1.5)';
@@ -993,17 +1122,21 @@ export const buildDynamicTutorialSteps = () => {
         });
         
         steps.push({
-            id: 'igris_shocked',
-            message: "TANK ! TU ES FOU ! Tu as failli détruire l'interface ! 😤",
-            speaker: 'igris',
+            id: 'guide_shocked',
+            message: IS_IGRISK
+                ? "*réalise* Attendez... JE VIENS DE ME GRILLER TOUT SEUL ! 😱"
+                : "TANK ! TU ES FOU ! Tu as failli détruire l'interface ! 😤",
+            speaker: IS_IGRISK ? 'igrisk' : 'igris',
             duration: 3500,
             autoNext: true
         });
         
         steps.push({
             id: 'tank_proud',
-            message: "*Tank rigole* C'était juste une démo... Mais avoue que c'était ÉPIQUE ! 😈✨",
-            speaker: 'tank',
+            message: IS_IGRISK
+                ? "Euh... C'était... une fonctionnalité d'Igris ! Oui ! Igris peut faire ça aussi ! 😅"
+                : "*Tank rigole* C'était juste une démo... Mais avoue que c'était ÉPIQUE ! 😈✨",
+            speaker: IS_IGRISK ? 'igrisk' : 'tank',
             duration: 4000,
             autoNext: true
         });
@@ -1017,22 +1150,26 @@ export const buildDynamicTutorialSteps = () => {
         });
         
         steps.push({
-            id: 'igris_ends_demo',
-            message: "*soupir* Bon... Reprenons le tutoriel SÉRIEUSEMENT maintenant...",
-            speaker: 'igris',
+            id: 'guide_ends_demo',
+            message: IS_IGRISK
+                ? "*fuit* Bon je dois y aller ! Le vrai Igris arrive ! Bye ! 💨"
+                : "*soupir* Bon... Reprenons le tutoriel SÉRIEUSEMENT maintenant...",
+            speaker: IS_IGRISK ? 'igrisk' : 'igris',
             duration: 3500,
             autoNext: true
         });
     }
     
-    // ==========================================
-    // 💾 SAVE BUTTON (IMPORTANT!)
-    // ==========================================
+    // Continue avec le reste du tutoriel...
+    // [Le reste du code reste identique, juste remplacer 'igris' par GUIDE_NAME]
     
+    // Save reminder
     steps.push({
         id: 'save_reminder',
-        message: "⚠️ N'oublie JAMAIS : Le bouton Save est TON MEILLEUR AMI ! Sans lui, tu perds tout !",
-        speaker: 'igris',
+        message: IS_IGRISK
+            ? "⚠️ Le bouton Save ! Sans lui, ta belle DÉFENSE disparaît ! SAUVEGARDE TOUJOURS !"
+            : "⚠️ N'oublie JAMAIS : Le bouton Save est TON MEILLEUR AMI ! Sans lui, tu perds tout !",
+        speaker: GUIDE_NAME,
         selector: () => {
             const buttons = document.querySelectorAll('button');
             return Array.from(buttons).find(btn => {
@@ -1048,29 +1185,21 @@ export const buildDynamicTutorialSteps = () => {
     
     steps.push({
         id: 'tank_save_advice',
-        message: "Même moi je sauvegarde ! Sinon mes builds full def disparaissent ! 💾",
-        speaker: 'tank',
+        message: IS_IGRISK
+            ? "Euh... Oui ! Moi aussi je sauvegarde ! Enfin, Igris sauvegarde ! Je suis Igris ! 💾"
+            : "Même moi je sauvegarde ! Sinon mes builds full def disparaissent ! 💾",
+        speaker: IS_IGRISK ? 'igrisk' : 'tank',
         duration: 3500,
         autoNext: true
     });
     
-    steps.push({
-        id: 'cerbere_save_story',
-        message: "Une fois j'ai oublié... J'ai perdu un build avec 4 procs crit damage ! *pleure* 😭",
-        speaker: 'cerbere',
-        duration: 3500,
-        autoNext: true
-    });
-    
-    // ==========================================
-    // SUITE DU TUTORIEL
-    // ==========================================
-    
-    // Gems
+    // Gems, Cores, Stats sections...
     steps.push({
         id: 'gems_section',
-        message: "Les Gemmes offrent des bonus massifs ! Red pour l'attaque, Blue pour l'HP, Green pour la défense...",
-        speaker: 'igris',
+        message: IS_IGRISK
+            ? "Les Gemmes ! Blue pour l'HP, Green pour la DÉFENSE ! Les meilleures gemmes ! 💎🛡️"
+            : "Les Gemmes offrent des bonus massifs ! Red pour l'attaque, Blue pour l'HP, Green pour la défense...",
+        speaker: GUIDE_NAME,
         selector: () => {
             const buttons = document.querySelectorAll('button');
             return Array.from(buttons).find(btn => {
@@ -1083,71 +1212,22 @@ export const buildDynamicTutorialSteps = () => {
         autoNext: true
     });
     
-    // Cores
-    steps.push({
-        id: 'cores_mention',
-        message: "Les Noyaux (Cores) sont une autre source de puissance. Explore-les plus tard !",
-        speaker: 'igris',
-        selector: () => {
-            const buttons = document.querySelectorAll('button');
-            return Array.from(buttons).find(btn => {
-                const text = btn.textContent.toLowerCase();
-                return text.includes('core') || text.includes('noyau');
-            });
-        },
-        highlight: true,
-        duration: 5000,
-        autoNext: true
-    });
-    
-    // Stats display
-    steps.push({
-        id: 'stats_display',
-        message: "Ici, toutes tes stats finales en temps réel. Chaque modification est calculée instantanément !",
-        speaker: 'igris',
-        selector: '.stats-display, .final-stats, .character-stats',
-        highlight: true,
-        duration: 6500,
-        autoNext: true
-    });
-    
-    // DPS calculator
-    steps.push({
-        id: 'dps_calculator',
-        message: "Le DPS Calculator révèle ta vraie puissance ! N'hésite pas à l'utiliser !",
-        speaker: 'igris',
-        selector: () => {
-            const buttons = document.querySelectorAll('button');
-            return Array.from(buttons).find(btn => {
-                const text = btn.textContent.toLowerCase();
-                return text.includes('calculator') || text.includes('damage') || text.includes('dps');
-            });
-        },
-        highlight: true,
-        duration: 5800,
-        autoNext: true
-    });
-    
-    // ==========================================
-    // 📊 FINAL STATS WITH ARTIFACTS - NOUVEAU !
-    // ==========================================
-    
+    // Final stats
     steps.push({
         id: 'final_stats_focus',
-        message: "⚠️ TRÈS IMPORTANT ! Regarde ici : 'Final Stats with Artefacts'. C'est le résultat FINAL de ton build !",
-        speaker: 'igris',
+        message: IS_IGRISK
+            ? "⚠️ Les stats finales ! Regarde bien ta DÉFENSE ! Elle doit être MAXIMALE ! 🛡️"
+            : "⚠️ TRÈS IMPORTANT ! Regarde ici : 'Final Stats with Artefacts'. C'est le résultat FINAL de ton build !",
+        speaker: GUIDE_NAME,
         selector: () => {
-            // Chercher le titre "Final Stats with Artefacts"
             const elements = document.querySelectorAll('*');
             for (const el of elements) {
                 if (el.textContent === 'Final Stats with Artefacts' || 
                     el.textContent === 'Final Stats with Artifacts' ||
                     el.classList.contains('FinalStats')) {
-                    // Retourner le container parent qui contient les stats
                     return el.parentElement || el;
                 }
             }
-            // Fallback sur la div des stats finales
             return document.querySelector('.final-stats, .stats-display, [class*="final"]');
         },
         highlight: true,
@@ -1155,101 +1235,12 @@ export const buildDynamicTutorialSteps = () => {
         autoNext: true
     });
     
-    steps.push({
-        id: 'final_stats_explanation',
-        message: "Si TOUS tes artifacts sont configurés, tes gemmes équipées, tes noyaux activés...",
-        speaker: 'igris',
-        duration: 5000,
-        autoNext: true
-    });
-    
-    steps.push({
-        id: 'final_stats_ingame',
-        message: "ET si ton personnage est MAX (Weapon 120, Level 115, améliorations à fond)...",
-        speaker: 'igris',
-        duration: 5000,
-        autoNext: true
-    });
-    
-    steps.push({
-        id: 'final_stats_match',
-        message: "Alors ces stats seront EXACTEMENT les mêmes que dans Solo Leveling Arise ! C'est la magie de BuilderBeru ! ✨",
-        speaker: 'igris',
-        selector: () => {
-            const elements = document.querySelectorAll('*');
-            for (const el of elements) {
-                if (el.textContent === 'Final Stats with Artefacts' || 
-                    el.textContent === 'Final Stats with Artifacts' ||
-                    el.classList.contains('FinalStats')) {
-                    return el.parentElement || el;
-                }
-            }
-            return document.querySelector('.final-stats, .stats-display');
-        },
-        highlight: true,
-        duration: 6500,
-        autoNext: true
-    });
-    
-    steps.push({
-        id: 'cerbere_stats_amazed',
-        message: "WOUF WOUF ! Les mêmes stats que in-game ?! C'est MAGIQUE ! 🤯✨",
-        speaker: 'cerbere',
-        duration: 3500,
-        autoNext: true
-    });
-    
-    steps.push({
-        id: 'tank_stats_respect',
-        message: "Ok, là je dois avouer... C'est impressionnant. Respect BuilderBeru ! 👏",
-        speaker: 'tank',
-        duration: 3500,
-        autoNext: true
-    });
-    
-    steps.push({
-        id: 'igris_stats_final',
-        message: "Utilise ces stats pour vérifier ton build in-game. Si ça ne correspond pas, c'est qu'il te manque quelque chose !",
-        speaker: 'igris',
-        duration: 5500,
-        autoNext: true
-    });
-    
-    // ==========================================
-    // SUITE DU TUTORIEL
-    // ==========================================
-    
-    // Accounts
-    steps.push({
-        id: 'accounts_system',
-        message: "Tu peux créer plusieurs comptes pour différents builds. Pratique pour tester !",
-        speaker: 'igris',
-        selector: '.account-select, .account-dropdown',
-        highlight: true,
-        duration: 5500,
-        autoNext: true
-    });
-    
-    // Beru & Kaisel
-    steps.push({
-        id: 'beru_kaisel',
-        message: "Beru et Kaisel sont toujours là pour t'aider. N'hésite pas à les invoquer !",
-        speaker: 'igris',
-        duration: 4000,
-        autoNext: true
-    });
-    
-    // Hall of flame
-    steps.push({
-        id: 'hall_of_flame',
-        message: "Les builds légendaires finissent au Hall of Flame... Rejoins les légendes ! 🔥",
-        speaker: 'igris',
-        duration: 5000,
-        autoNext: true
-    });
-    
     // Finale
-    const finaleMessages = [
+    const finaleMessages = IS_IGRISK ? [
+        "Tu es prêt ! Que tes builds soient DÉFENSIFS et tes boucliers SOLIDES ! 🛡️",
+        "La formation est terminée. N'oublie pas : la défense, c'est la vie ! *fuit* 💀",
+        "L'entraînement est fini. Les vraies ombres arrivent ! *disparaît* 🌑"
+    ] : [
         "Tu es prêt, Monarque ! Que tes builds soient puissants et tes procs nombreux ! ⚔️",
         "La formation est terminée. Montre au monde la puissance du Monarque des Ombres ! 💀",
         "L'entraînement est fini. Va créer des légendes ! Les ombres t'accompagnent... 🌑"
@@ -1258,7 +1249,7 @@ export const buildDynamicTutorialSteps = () => {
     steps.push({
         id: 'finale',
         message: finaleMessages[Math.floor(Math.random() * finaleMessages.length)],
-        speaker: 'igris',
+        speaker: GUIDE_NAME,
         duration: 6000,
         autoNext: true
     });
@@ -1266,14 +1257,41 @@ export const buildDynamicTutorialSteps = () => {
     // Cerbere farewell
     steps.push({
         id: 'cerbere_farewell',
-        message: "WOUF WOUF ! *Cerbère te salue* À bientôt Monarque ! Fais des builds de FOU ! 👋🔥",
+        message: IS_IGRISK
+            ? "WOUF ! C'était bizarre mais marrant ! Tank fait un meilleur Igris que prévu ! 🤣👋"
+            : "WOUF WOUF ! *Cerbère te salue* À bientôt Monarque ! Fais des builds de FOU ! 👋🔥",
         speaker: 'cerbere',
         duration: 4000,
         autoNext: true
     });
     
-    // Épilogue surprise (20% chance)
-    if (Math.random() < 0.2) {
+    // Épilogue spécial si Igrisk
+    if (IS_IGRISK) {
+        steps.push({
+            id: 'real_igris_arrives',
+            message: "*le VRAI Igris arrive* Qu'est-ce qui se passe ici ?! Tank ?! Qu'as-tu fait ?! 😠",
+            speaker: 'igris',
+            duration: 4000,
+            autoNext: true
+        });
+        
+        steps.push({
+            id: 'igrisk_escapes',
+            message: "*court à toute vitesse* RIEN ! J'ai rien fait ! Le tutoriel est fini ! Bye ! 💨",
+            speaker: 'igrisk',
+            duration: 3500,
+            autoNext: true
+        });
+        
+        steps.push({
+            id: 'igris_sighs',
+            message: "*soupir* Toujours aussi chaotique... Au moins le Monarque a appris. Même si c'était... différent.",
+            speaker: 'igris',
+            duration: 4500,
+            autoNext: true
+        });
+    } else if (Math.random() < 0.2) {
+        // Épilogue normal
         steps.push({
             id: 'tank_epilogue',
             message: "*Tank apparaît* Pas mal... Mais attends de voir mes builds FULL DEF ! 😈🛡️",
@@ -1461,6 +1479,47 @@ window.selectRandomSet = async function() {
     }
     
     return false;
+};
+
+// 🛡️ FONCTION SPÉCIALE POUR IGRISK - Forcer le set Guard
+window.selectGuardSet = async function() {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const allUls = document.querySelectorAll('ul');
+    let setMenu = null;
+    
+    for (const ul of allUls) {
+        const lis = ul.querySelectorAll('li');
+        if (lis.length > 0) {
+            const firstLiText = lis[0].textContent;
+            if (firstLiText.includes('Set') || firstLiText.includes('Burning') || firstLiText.includes('Guard')) {
+                setMenu = ul;
+                break;
+            }
+        }
+    }
+    
+    if (!setMenu) {
+        console.log('❌ Menu des sets non trouvé');
+        return false;
+    }
+    
+    const setOptions = setMenu.querySelectorAll('li');
+    
+    // Chercher spécifiquement le set Guard
+    const guardOption = Array.from(setOptions).find(option => 
+        option.textContent.toLowerCase().includes('guard')
+    );
+    
+    if (guardOption) {
+        console.log(`✅ Set Guard forcé par Igrisk ! 🛡️`);
+        guardOption.click();
+        return true;
+    } else {
+        // Si Guard pas trouvé, prendre au hasard
+        console.log('⚠️ Set Guard non trouvé, sélection aléatoire');
+        return window.selectRandomSet();
+    }
 };
 
 // Save

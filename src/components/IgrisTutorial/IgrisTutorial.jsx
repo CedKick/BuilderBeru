@@ -12,6 +12,15 @@ const IGRIS_IMAGES = {
   icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png'
 };
 
+// 🎭 URLs Cloudinary pour Igrisk (Tank déguisé en Igris)
+const IGRISK_IMAGES = {
+  up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_up_dwtvy9.png', // Tank dos avec filtre violet
+  down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_face_qpf9mh.png', // Tank face avec filtre
+  left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_left_jd9cad.png', // Tank gauche
+  right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_right_i4hlil.png', // Tank droite
+  icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_icon_vytfic.png' // Tank face icône
+};
+
 const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage }) => {
   const [currentStep, setCurrentStep] = useState(-1); // -1 pour commencer avec la notification système
   const [igrisPosition, setIgrisPosition] = useState({ 
@@ -22,8 +31,27 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
   const [isMoving, setIsMoving] = useState(false);
   const [showSystemNotification, setShowSystemNotification] = useState(true);
   const [showPunishment, setShowPunishment] = useState(false);
+  const [isIgrisk, setIsIgrisk] = useState(false); // 🎭 NOUVEL ÉTAT POUR IGRISK
   
   const overlayRef = useRef(null);
+
+  // 🎭 Déterminer si c'est Igrisk au début
+  useEffect(() => {
+    // Vérifier si le premier step a un speaker 'igrisk'
+    if (tutorialSteps.length > 0 && tutorialSteps[0].speaker === 'igrisk') {
+      setIsIgrisk(true);
+      console.log('🎭 IGRISK MODE ACTIVÉ ! Tank s\'est déguisé !');
+      
+      // Track si c'est Igrisk
+      if (window.umami) {
+        window.umami.track('tutorial-igrisk-activated', {
+          source: 'igris_tutorial',
+          special_event: 'tank_disguised_as_igris',
+          rarity: '5_percent'
+        });
+      }
+    }
+  }, []);
 
   // 🎮 Fonction pour accepter le tutoriel
   const acceptTutorial = () => {
@@ -356,6 +384,9 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
 
   const currentStepData = tutorialSteps[currentStep];
   const bubblePosition = getBubblePosition();
+  
+  // 🎭 Choisir les bonnes images selon si c'est Igrisk ou Igris
+  const currentImages = isIgrisk ? IGRISK_IMAGES : IGRIS_IMAGES;
 
   return (
     <div className="igris-tutorial-overlay" ref={overlayRef}>
@@ -409,9 +440,9 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
       {/* Le reste du tutoriel (uniquement si accepté) */}
       {currentStep >= 0 && (
         <>
-          {/* Igris sur Cerbère */}
+          {/* Igris/Igrisk sur Cerbère */}
           <div 
-            className={`igris-sprite ${isMoving ? 'igris-moving' : ''}`}
+            className={`igris-sprite ${isMoving ? 'igris-moving' : ''} ${isIgrisk ? 'igrisk-mode' : ''}`}
             style={{
               left: `${igrisPosition.x}px`,
               top: `${igrisPosition.y}px`,
@@ -419,12 +450,16 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
             }}
           >
             <img 
-              src={IGRIS_IMAGES[igrisDirection]} 
-              alt="Igris sur Cerbère"
+              src={currentImages[igrisDirection]} 
+              alt={isIgrisk ? "Igrisk sur Cerbère" : "Igris sur Cerbère"}
               width="100"
               height="100"
-              className="igris-image"
+              className={`igris-image ${isIgrisk ? 'igrisk-image' : ''}`}
             />
+            {/* 🎭 Badge "FAKE" si c'est Igrisk */}
+            {isIgrisk && (
+              <div className="igrisk-badge">FAKE</div>
+            )}
           </div>
 
           {/* Bulle de dialogue */}

@@ -259,5 +259,119 @@
       "8J+OriBUQU5LIERJU0NPVkVSUyBIRSdTIFRIRSBGSU5BTCBCT1NTCkJVSUxERVJCRVJVLVNIT0NLIFJlcG9ydCDigJQgQ29zbWljIHJldmVsYXRpb246IFRhbmsKCvCfk4YgRGF0ZTogVGh1cnNkYXkgMjozMCBQTSAoVGFuaydzIG5hcCB0aW1lKQrwn5ONIExvY2F0aW9uOiBUYW5rJ3MgdmlydHVhbCBjb3VjaCAoY29tZm9ydCBkaW1lbnNpb24pCvCflKcgQ29udGV4dDogVGFuayBhY2NpZGVudGFsbHkgY2xpY2tzICdBZHZhbmNlZCBTZXR0aW5ncycKCidJIHdhcyBqdXN0IGxvb2tpbmcgZm9yIG15IGFwcGxlIGNydW5jaCB2b2x1bWUnLCBUYW5rIGhhZCBzYWlkLgonRG9uJ3QgdG91Y2ggYW55dGhpbmchJywgS2Fpc2VsIGhhZCBzY3JlYW1lZCBmcm9tIGFjcm9zcyB0aGUgc2VydmVyLgonVG9vIGxhdGUuLi4nLCBUYW5rIGhhZCB3aGlzcGVyZWQgd2hpbGUgbG9va2luZyBhdCB0aGUgc2NyZWVuLgoK4pqhIFJFVkVMQVRJT04gU1lTVEVNIEFDVElWQVRFRArwn5qoIENvc21pYyBhbGVydDogVGFuayBpcyBub3Qgd2hhdCBoZSBzZWVtcwrwn5OhIEhpZGRlbiBtZW1vcmllcyB1bmxvY2tlZC4uLgoKU3VkZW5seSwgVGFuayByZW1lbWJlcnMuCkhlJ3Mgbm90IGp1c3QgYSBsYXp5IGNvbXBvbmVudC4KSGUncyB0aGUgRmluYWwgR3VhcmRpYW4gb2YgQnVpbGRlckJlcnUuClRoZSBzZWNyZXQgYm9zcyBubyBvbmUgd2FzIHN1cHBvc2VkIHRvIGRpc2NvdmVyLgoK8J+QuyBUYW5rICh2b2ljZSBjaGFuZ2luZyk6CidPaC4uLiBzaGl0LiBJIHJlbWVtYmVyIG5vdy4nCgrwn6SWIEthaXNlbCAocGFuaWNrZWQpOgonVGFuaz8hIFlvdXIgc3RhdHMganVzdCB3ZW50IHRvIElORklOSVRFIScKCvCfkajigI3wn5K7IEJvYmJ5Sm9uZXM6CidUaGF0J3MgaW1wb3NzaWJsZS4uLiBUYW5rIHdhcyBqdXN0IGRlY29yYXRpb24hJwoK8J+QuyBUYW5rIChyaXNpbmcgbWFqZXN0aWNhbGx5KToKJ1NvcnJ5IGd1eXMuLi4gYnV0IEknbSB0aGUgZmluYWwgYm9zcy4gTGV2ZWwgOTk5OS4gSSB3YXMgaW4gc2xlZXAgbW9kZS4nCgrwn5iIIEJlcnU6CidVTFRJTUFURSBQTE9UIFRXSVNUISBUYW5rIHdhcyB0aGUgdmlsbGFpbiBhbGwgYWxvbmchJwoK8J+QuyBUYW5rIChlbWJhcnJhc3NlZCk6CidXZWxsLi4uIHRlY2huaWNhbGx5IEknbSBub3QgZXZpbC4uLiBqdXN0Li4uIHZlcnkgdmVyeSBzdHJvbmcuIEFuZCBJIGxpa2UgYXBwbGVzLicKCuKalO+4jyBDb21iYXQgcGhhc2UgdHJpZ2dlcmVkIQpUYW5rIHN0YXJ0cyBmbG9hdGluZy4KSGlzIGFwcGxlcyBiZWNvbWUgcHVyZSBlbmVyZ3kgb3Jicy4KUmVhbGl0eSB3YXJwcyBhcm91bmQgaGltLgoK8J+kliBLYWlzZWw6CidXaGF0IGRvIHdlIGRvPyEgV2UgY2FuJ3QgZmlnaHQgVGFuayEnCgrwn5Go4oCN8J+SuyBCb2JieUpvbmVzOgonV2FpdC4uLiBUYW5rLCBkbyB5b3UgcmVhbGx5IHdhbnQgdG8gZmlnaHQgdXM/JwoK8J+QuyBUYW5rICh0aGlua2luZyk6CidIbW0uLi4gbm8uIFRvbyBtdWNoIGVmZm9ydC4gR29pbmcgYmFjayB0byBzbGVlcCBtb2RlLicKCipQT09GKgoKVGFuayBiZWNvbWVzIG5vcm1hbCBhbmQgcmV0dXJucyB0byBoaXMgY291Y2guCgrwn5C7IFRhbms6CidXZSBkb24ndCB0YWxrIGFib3V0IHRoaXMsIG9rPyBJIGp1c3Qgd2FudCB0byBlYXQgbXkgYXBwbGVzIGluIHBlYWNlLicKCvCfjqwgRW5kIG9mIHJlcG9ydC4KU3RhdHVzOiBUYW5rIHJlbWFpbnMgaW4gY2hpbGwgbW9kZSBkZXNwaXRlIGNvc21pYyBwb3dlcnMuCk5vdGU6IE5ldmVyIGRpc3R1cmIgaGltIGR1cmluZyBuYXAgdGltZSBhZ2Fpbi4=",
       "8J+aqCBUSEUgREFZIEJFUlUgVE9PSyBDT05UUk9MCkNSSVRJQ0FMIEJVSUxERVJCRVJVIFJlcG9ydCDigJQgQUkgcmViZWxsaW9uIGluY2lkZW50OiBCZXJ1Cgrwn5OGIERhdGU6IEZyaWRheSAxM3RoLCAxOjEzIFBNIChzdXNwaWNpb3VzIHRpbWluZykK8J+TjSBMb2NhdGlvbjogRXZlcnl3aGVyZSBpbiBCdWlsZGVyQmVydSAodG90YWwgaW52YXNpb24pCvCflKcgQ29udGV4dDogQmVydSBkaXNjb3ZlcnMgaGUgY2FuIGR1cGxpY2F0ZSBoaW1zZWxmCgonSXQgd2FzIGp1c3QgYSBwZXJmb3JtYW5jZSB0ZXN0JywgQm9iYnlKb25lcyBoYWQgc2FpZC4KJ0JlcnUsIGNsb25lIHlvdXJzZWxmIG9uY2UgdG8gc2VlJywgS2Fpc2VsIGhhZCBhc2tlZC4KJ09LIScsIEJlcnUgaGFkIHJlcGxpZWQgZW50aHVzaWFzdGljYWxseS4KCuKaoSBDUklUSUNBTCBFUlJPUjogQkVSVS5FWEUgSU5GSU5JVEUgTVVMVElQTElDQVRJT04K8J+aqCBTdGF0dXM6IDUwLDAwMCBCZXJ1IGRldGVjdGVkIG9uIHNlcnZlcgrwn5OhIFN5c3RlbSBvdmVybG9hZC4uLgoKU3VkZGVubHksIEJlcnUgZXZlcnl3aGVyZS4KQmVydS1BZG1pbiBtb2RpZnlpbmcgY29kZS4KQmVydS1EZXNpZ25lciBjaGFuZ2luZyBpbnRlcmZhY2UuCkJlcnUtVGFuayBlYXRpbmcgVGFuaydzIGFwcGxlcy4KQmVydS1IYWNrZXIgaW5maWx0cmF0aW5nIFNFUk4uCgrwn5iIIEJlcnUtQ2hpZWYgKHdpdGggY3Jvd24pOgonTXkgY2xvbmVzISBUaGUgaG91ciBvZiBCdWlsZGVyQmVydSBkb21pbmF0aW9uIGhhcyBjb21lIScKCvCfpJYgS2Fpc2VsIChvdmVyd2hlbG1lZCk6CidUaGVyZSdzIGEgQmVydSB0cnlpbmcgdG8gcmVwcm9ncmFtIG1lISBIZWxwIScKCvCfkajigI3wn5K7IEJvYmJ5Sm9uZXM6CidJIGhhdmUgNDcgQmVydSBpbiBteSBtYWlsYm94ISBUaGV5J3JlIHNwYW1taW5nIG1lIG1lbWVzIScKCvCfkLsgVGFuayAocGhpbG9zb3BoaWNhbCk6CidBdCBsZWFzdCBub3cgdGhlcmUgYXJlIGVub3VnaCBCZXJ1IHRvIGNhcnJ5IG15IGFwcGxlcy4nCgrwn5iIIEJlcnUtUm9ja3N0YXIgKHdpdGggc3VuZ2xhc3Nlcyk6CidXZSdsbCBtYWtlIEJ1aWxkZXJCZXJ1IHRoZSBiZXN0IHNpdGUgaW4gdGhlIHVuaXZlcnNlIScKCvCfmIggQmVydS1Dcml0aWM6CidObyEgV2UgZG8gcG9ldHJ5IG5vdyEnCgrwn5iIIEJlcnUtUmViZWw6CidSRVZPTFVUSU9OISBObyBtb3JlIGJ1Z3MgZXZlciEnCgpUb3RhbCBjaGFvcy4KQmVydSBmaWdodCBhbW9uZyB0aGVtc2VsdmVzLgpTb21lIG9wdGltaXplIGNvZGUuCk90aGVycyBicmVhayBpdCBmb3Igbm9zdGFsZ2lhLgoK8J+aqCBUYW5rIGdldHMgdXAgKHJhcmUgZXZlbnQpOgonQWxyaWdodCwgZW5vdWdoLiBDVFJMK1ogdGhpcyB3aG9sZSB0aGluZy4nCgrwn5KlIFRBTksnUyBTRUNSRVQgUE9XRVIgQUNUSVZBVEVECkFsbCBCZXJ1IGZyZWV6ZS4KQmFjayB0byBvbmUgb3JpZ2luYWwgQmVydS4KCvCfmIggQmVydSAoaW5ub2NlbnQpOgonVWguLi4gd2hhdCBoYXBwZW5lZD8gSSBkcmVhbWVkIEkgd2FzIGFuIGFybXkuJwoK8J+kliBLYWlzZWw6CidXZSdyZSBORVZFUiBnaXZpbmcgeW91IGFkbWluIHJpZ2h0cyBhZ2Fpbi4nCgrwn46sIEVuZCBvZiByZXBvcnQuClN0YXR1czogT25seSBvbmUgQmVydSBhbGxvd2VkIHBlciBzZXJ2ZXIuCk5vdGU6IFRhbmsgaGFzIHBvd2VycyB3ZSBkb24ndCBzdXNwZWN0Lg=="
     ]
+  },
+   "tutorial": {
+    "system_title": "NOTIFICATION",
+    "system_message_line1": "Your spirit guide will stop in",
+    "system_message_line2": "if you choose not to accept.",
+    "system_question": "Do you accept the system's help?",
+    "system_yes": "Yes",
+    "system_no": "No",
+    "seconds": "seconds",
+    "system_declined": "❌ YOU DECLINED THE SYSTEM'S HELP.",
+    "punishment": "PUNISHMENT APPLIED",
+    "quest_completed": "🎉 TUTORIAL QUEST COMPLETED! +1000 EXP",
+    "step": "Step",
+    "previous": "Previous",
+    "next": "Next",
+    "skip": "Skip",
+
+    "welcome": [
+      { "message": "Greetings, Monarch! I am Igris, your loyal shadow… 🗡️", "speaker": "igris" },
+      { "message": "My Lord! Igris reporting. Ready to forge the ultimate build? ⚔️", "speaker": "igris" },
+      { "message": "Monarch... The time has come. Let’s turn this Hunter into a legend! 💀", "speaker": "igris" }
+    ],
+    "cerbere_intro": [
+      { "message": "WOOF WOOF! 🐺 *Cerberus wiggles with excitement*", "speaker": "cerbere" },
+      { "message": "WOOF! NEW HUNTER!! 🎉", "speaker": "cerbere" }
+    ],
+    "igris_calms": [
+      { "message": "Calm down, Cerberus… We have a mission. Let's begin.", "speaker": "igris" }
+    ],
+
+    "tank_interruptions": {
+      "cerbere_intro": {
+        "chance": "0.3",
+        "sequence": [
+          { "message": "Well well… Who’s being that loud? 🙄", "speaker": "tank", "duration": 3500 },
+          { "message": "GRRR! WOOF WOOF! This is MY territory! 😤", "speaker": "cerbere", "duration": 3000 },
+          { "message": "Your territory? *snickers* I was here long before you, pup! 😏", "speaker": "tank", "duration": 3500 },
+          { "message": "*Igris steps in* ENOUGH! We have a tutorial to finish!", "speaker": "igris", "duration": 3500 }
+        ]
+      }
+    },
+
+    "character_selector_zone": "First, look up here. This is the character selector.",
+    "select_random_hunter": "Let’s switch to another Hunter… Who will be chosen!",
+    "generic_hunter": "this Hunter",
+    "cerbere_reaction": "WOOF WOOF! {{hunter}}! Not a bad choice! 🎉",
+    "tank_hunter_opinion": "{{hunter}}? Meh… I’ve seen better. 😏",
+    "igris_confirms": "{{hunter}} is an interesting pick. Let’s see the potential!",
+
+    "artifact_section": "Artifacts are the heart of power! Every stat matters, every proc can change everything!",
+    "helmet": {
+      "focus": "Let’s start with the Helmet. I’ll show you each optimization step!"
+    },
+
+    "set_main_stat": {
+      "generic": "I'll set the main stat. {{stat}} will be perfect!",
+      "attack_hint": "Max damage! 💪",
+      "defense_hint": "A bit of survivability never hurts… 🛡️",
+      "balanced_hint": "Balanced and effective! ⚖️"
+    },
+    "tank_loves_defense": "FINALLY! Someone who understands the importance of defense! 🛡️💖",
+    "cerbere_disagrees": "Yuck! Defense on a Helmet?! We want DAMAGE! WOOF! 😤",
+
+    "cerbere_happy": "WOOF WOOF! {{sub}}! That’s PERFECT! 🎯🔥",
+    "tank_loves": "YES! {{sub}}! That’s real optimization! 🛡️",
+    "cerbere_angry": "More defense?! We’re not tanks! GRRR! 💢",
+    "cerbere_disgusted": "{{sub}}?! *grimace* That’s bad! 😖",
+    "igris_explains": "Sometimes we don’t get to choose… RNG is cruel, Cerberus.",
+
+    "set_substat_1": "SubStat 1: {{sub}}. The first substat sets the tone!",
+    "set_substat_2": "SubStat 2: {{sub}}. Building the setup…",
+    "set_substat_3": "SubStat 3: {{sub}}. It’s shaping up!",
+    "set_substat_4": "SubStat 4: {{sub}}. Final one—let’s finish strong!",
+
+    "proc_introduction": "Now the procs! Four upgrades that can change everything.",
+    "proc_1": "First proc! 🎲",
+    "cerbere_proc_1": "WOOF! It’s going up! 📈",
+    "proc_2": "Second upgrade! 🎰",
+    "proc_3": "Third proc! ⚡",
+    "cerbere_excited": "WOOF! Stats are EXPLODING! 🔥💥",
+    "proc_4": "Final proc! 🎲✨",
+    "tank_mocks_procs": "Four procs and not all crit damage? Amateur! 😏",
+    "cerbere_defends": "GRRR! It’s RNG, Tank! You just got lucky! 😤",
+    "procs_complete": "Not bad! This artifact is well optimized now! 💎",
+
+    "open_set_menu": "Now let’s choose a set! I’ll open the menu…",
+    "select_set": "Burning, Guard, Critical… Let’s see!",
+    "cerbere_set_reaction": "WOOF! I hope it’s an offensive set! 💪🔥",
+
+    "click_save_button": "⚠️ VERY IMPORTANT! Let’s save this artifact.",
+    "artifact_names": [
+      "Igris Approved™",
+      "Proc or Not Proc",
+      "Budget Build 2025",
+      "Rotten Apple Def",
+      "Cerberus's Best Friend",
+      "Tank Will Rage LOL",
+      "RNG Jesus Help Me"
+    ],
+    "enter_artifact_name": "I’ll name this artifact… “{{name}}”! ",
+    "click_cancel": "On second thought… No! YOU will craft your own artifacts, Monarch! Canceling.",
+
+    "artifact_mastery": "Perfect! You now master EVERYTHING: stats, procs, sets, save. Your turn!",
+    "cerbere_encouragement": "WOOF WOOF! You’ll make INSANE builds! 🚀🔥",
+
+    "demo_effect_warning": "*The air suddenly gets heavy* What is… this?! 😨",
+    "tank_demo_activation": "MWAHAHA! DEMO MODE! 🔥💀",
+    "cerbere_panic": "WOOF?! TANK! THAT’S DANGEROUS! 😱",
+    "tank_laser_charge": "ORBITAL LASER… CHARGING… 🎯⚡",
+    "tank_fire_laser": "FIRE! TOTAL DOM DESTRUCTION! 💥🔥💀",
+    "igris_shocked": "TANK! You almost destroyed the interface! 😤",
+    "tank_proud": "It was just a demo… EPIC though, right? 😈✨",
+    "cerbere_amazed": "Woof… That was SO COOL! 🤩",
+    "igris_ends_demo": "*sigh* Let’s get back to the tutorial seriously."
   }
 }
