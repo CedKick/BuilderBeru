@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import ChibiBubble from '../ChibiBubble';
 import { tutorialSteps } from './tutorialSteps';
 import './IgrisTutorial.css';
@@ -14,14 +15,15 @@ const IGRIS_IMAGES = {
 
 // 🎭 URLs Cloudinary pour Igrisk (Tank déguisé en Igris)
 const IGRISK_IMAGES = {
-  up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_up_dwtvy9.png', // Tank dos avec filtre violet
-  down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_face_qpf9mh.png', // Tank face avec filtre
-  left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_left_jd9cad.png', // Tank gauche
-  right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_right_i4hlil.png', // Tank droite
-  icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_icon_vytfic.png' // Tank face icône
+  up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_up_dwtvy9.png',
+  down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_face_qpf9mh.png',
+  left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_left_jd9cad.png',
+  right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_right_i4hlil.png',
+  icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_icon_vytfic.png'
 };
 
 const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage }) => {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(-1); // -1 pour commencer avec la notification système
   const [igrisPosition, setIgrisPosition] = useState({ 
     x: window.innerWidth / 2, 
@@ -31,18 +33,16 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
   const [isMoving, setIsMoving] = useState(false);
   const [showSystemNotification, setShowSystemNotification] = useState(true);
   const [showPunishment, setShowPunishment] = useState(false);
-  const [isIgrisk, setIsIgrisk] = useState(false); // 🎭 NOUVEL ÉTAT POUR IGRISK
+  const [isIgrisk, setIsIgrisk] = useState(false); // 🎭 ÉTAT POUR IGRISK
   
   const overlayRef = useRef(null);
 
   // 🎭 Déterminer si c'est Igrisk au début
   useEffect(() => {
-    // Vérifier si le premier step a un speaker 'igrisk'
     if (tutorialSteps.length > 0 && tutorialSteps[0].speaker === 'igrisk') {
       setIsIgrisk(true);
       console.log('🎭 IGRISK MODE ACTIVÉ ! Tank s\'est déguisé !');
       
-      // Track si c'est Igrisk
       if (window.umami) {
         window.umami.track('tutorial-igrisk-activated', {
           source: 'igris_tutorial',
@@ -66,11 +66,9 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
     setShowSystemNotification(false);
     setShowPunishment(true);
     
-    // Message de punition
     setTimeout(() => {
-      showTankMessage && showTankMessage("❌ VOUS AVEZ REFUSÉ L'AIDE DU SYSTÈME. CONSÉQUENCES APPLIQUÉES.", true);
+      showTankMessage && showTankMessage(t('tutorial.system.system_declined'), true);
       
-      // Effet de "punition" léger (juste visuel)
       document.body.style.filter = 'hue-rotate(180deg)';
       setTimeout(() => {
         document.body.style.filter = '';
@@ -89,27 +87,20 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
         newX = customPosition.x;
         newY = customPosition.y;
       } else if (!targetElement) {
-        // Retour au centre par défaut
         newX = window.innerWidth / 2;
         newY = window.innerHeight / 2;
       } else {
         const rect = targetElement.getBoundingClientRect();
-        
-        // Position relative à la fenêtre visible (sans scroll)
         const elementCenterX = rect.left + rect.width / 2;
         const elementCenterY = rect.top + rect.height / 2;
         
-        // Logique de placement d'Igris autour de l'élément
         if (rect.top < window.innerHeight / 3) {
-          // Élément en haut -> Igris en dessous
           newX = elementCenterX;
           newY = rect.bottom + 150;
         } else if (rect.bottom > window.innerHeight * 2/3) {
-          // Élément en bas -> Igris au-dessus
           newX = elementCenterX;
           newY = rect.top - 100;
         } else {
-          // Élément au milieu -> Igris sur le côté
           if (rect.left > window.innerWidth / 2) {
             newX = rect.left - 150;
           } else {
@@ -118,13 +109,11 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
           newY = elementCenterY;
         }
         
-        // Limites pour garder Igris visible
         const padding = 100;
         newX = Math.max(padding, Math.min(window.innerWidth - padding, newX));
         newY = Math.max(padding, Math.min(window.innerHeight - padding, newY));
       }
       
-      // Calcul de la direction
       const deltaX = newX - igrisPosition.x;
       const deltaY = newY - igrisPosition.y;
       
@@ -144,9 +133,8 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
     });
   };
 
-  // 🔦 Fonction pour highlight un élément avec des classes spéciales
+  // 🔦 Fonction pour highlight un élément
   const highlightElement = (selector, specialClass = null) => {
-    // Nettoyer les anciens highlights
     document.querySelectorAll('.tutorial-highlight').forEach(el => {
       el.classList.remove('tutorial-highlight', 'diamond-button', 'reset-button', 'save-button');
       el.style.position = '';
@@ -175,12 +163,10 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
     if (element) {
       element.classList.add('tutorial-highlight');
       
-      // Ajouter des classes spéciales selon le contexte
       if (specialClass) {
         element.classList.add(specialClass);
       }
       
-      // Marquer les boutons + pour l'animation spéciale
       if (element.textContent === '+' && element.tagName === 'BUTTON') {
         element.setAttribute('data-proc-button', 'true');
       }
@@ -191,14 +177,12 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
       
       element.style.zIndex = '10001';
       
-      // Scroll pour voir l'élément
       element.scrollIntoView({ 
         behavior: 'smooth', 
         block: 'center',
         inline: 'center' 
       });
       
-      // Attendre un peu que le scroll soit fini avant de bouger Igris
       setTimeout(() => {
         moveIgrisTo(element);
       }, 300);
@@ -227,13 +211,12 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
 
   // 📍 Hook principal pour gérer les étapes
   useEffect(() => {
-    if (currentStep < 0) return; // Pas encore commencé
+    if (currentStep < 0) return;
     
     const executeStep = async () => {
       const step = tutorialSteps[currentStep];
       if (!step) return;
       
-      // 1️⃣ Bouger Igris si nécessaire
       if (step.highlight && step.selector) {
         const element = typeof step.selector === 'function' 
           ? step.selector()
@@ -243,7 +226,6 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
           await moveIgrisTo(element);
           await new Promise(resolve => setTimeout(resolve, 300));
           
-          // Déterminer la classe spéciale selon l'étape
           let specialClass = null;
           if (step.id.includes('diamond')) specialClass = 'diamond-button';
           else if (step.id.includes('reset')) specialClass = 'reset-button';
@@ -255,7 +237,6 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
         await moveIgrisTo(null, step.customPosition);
       }
       
-      // 2️⃣ Attendre qu'un élément apparaisse (pour les popups)
       if (step.waitForElement) {
         console.log('⏳ En attente de:', step.waitForElement);
         const element = await waitForElement(step.waitForElement);
@@ -264,14 +245,12 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
         }
       }
       
-      // 3️⃣ Exécuter l'action si définie
       if (step.action && typeof step.action === 'function') {
         setTimeout(() => {
           step.action();
         }, 1500);
       }
       
-      // 4️⃣ Gérer l'attente du clic utilisateur
       if (step.waitForClick && step.selector) {
         console.log('👆 En attente du clic utilisateur...');
         
@@ -284,51 +263,42 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
             console.log('✅ Clic détecté !');
             element.removeEventListener('click', handleClick);
             
-            // Callback optionnel
             if (step.onElementClick) {
               step.onElementClick();
             }
             
-            // Passer à l'étape suivante après un court délai
             setTimeout(() => nextStep(), 500);
           };
           
-          // Ajouter l'écouteur
           element.addEventListener('click', handleClick);
           
-          // Retourner la fonction de cleanup
           return () => {
             element.removeEventListener('click', handleClick);
           };
         }
       }
       
-      // 5️⃣ Auto-progression simple (si pas waitForClick)
       if (step.autoNext && step.duration && !step.waitForClick) {
         const timer = setTimeout(() => {
           nextStep();
         }, step.duration);
         
-        // Retourner la fonction de cleanup
         return () => clearTimeout(timer);
       }
     };
     
-    // Exécuter et récupérer la fonction de cleanup
     const cleanup = executeStep();
     
-    // Retourner le cleanup pour le useEffect
     return () => {
       if (typeof cleanup === 'function') {
         cleanup();
       }
     };
-  }, [currentStep]); // Dépendance sur currentStep seulement
+  }, [currentStep]);
 
-  // 📍 Hook pour gérer le resize de la fenêtre
+  // 📍 Hook pour gérer le resize
   useEffect(() => {
     const handleResize = () => {
-      // Recalculer la position d'Igris pour rester centré
       if (currentStep < 0) {
         setIgrisPosition({
           x: window.innerWidth / 2,
@@ -352,7 +322,6 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
       });
       document.body.style.filter = '';
       
-      // Nettoyer les variables globales
       delete window.selectedHunterForTutorial;
       delete window.tutorialProcsComplete;
     };
@@ -363,7 +332,7 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
     if (currentStep < tutorialSteps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      showTankMessage && showTankMessage("🎉 QUÊTE TUTORIEL COMPLÉTÉE ! +1000 EXP", true);
+      showTankMessage && showTankMessage(t('tutorial.system.quest_completed'), true);
       onClose();
     }
   };
@@ -374,7 +343,6 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
     }
   };
 
-  // 🎨 Position de la bulle
   const getBubblePosition = () => {
     return {
       x: igrisPosition.x,
@@ -398,15 +366,15 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
         <div className="tutorial-system-notification">
           <div className="notification-header">
             <div className="notification-icon" />
-            <h2 className="notification-title">NOTIFICATION</h2>
+            <h2 className="notification-title">{t('tutorial.system.notification_title')}</h2>
           </div>
           
           <div className="notification-message">
-            Votre guide spirituel s'arrêtera dans <span className="warning-text">0.00 secondes</span>
+            {t('tutorial.system.notification_message_line1')} <span className="warning-text">{t('tutorial.system.notification_message_line2')}</span>
             <br />
-            si vous choisissez de ne pas accepter.
+            {t('tutorial.system.notification_message_line3')}
             <br /><br />
-            <strong>Acceptez-vous l'aide du système ?</strong>
+            <strong>{t('tutorial.system.notification_question')}</strong>
           </div>
           
           <div className="notification-buttons">
@@ -415,14 +383,14 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
               onClick={acceptTutorial}
               type="button"
             >
-              Oui
+              {t('tutorial.system.yes_button')}
             </button>
             <button 
               className="system-button decline-button"
               onClick={declineTutorial}
               type="button"
             >
-              Non
+              {t('tutorial.system.no_button')}
             </button>
           </div>
         </div>
@@ -432,7 +400,7 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
       {showPunishment && (
         <div className="punishment-overlay">
           <div className="punishment-message">
-            PUNITION APPLIQUÉE
+            {t('tutorial.system.punishment_applied')}
           </div>
         </div>
       )}
@@ -476,7 +444,7 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
           {/* Contrôles de navigation SYSTÈME */}
           <div className="tutorial-controls">
             <div className="step-indicator">
-              <span className="step-label">ÉTAPE</span>
+              <span className="step-label">{t('tutorial.system.step_label')}</span>
               <div className="step-numbers">
                 <span className="current-step">{currentStep + 1}</span>
                 <span className="separator">/</span>
@@ -490,7 +458,7 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
               className="control-button control-prev"
               type="button"
             >
-              ← RETOUR
+              {t('tutorial.system.back_button')}
             </button>
             
             <button 
@@ -498,21 +466,22 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
               className="control-button control-next"
               type="button"
             >
-              {currentStep === tutorialSteps.length - 1 ? 'TERMINER →' : 'SUIVANT →'}
+              {currentStep === tutorialSteps.length - 1 
+                ? t('tutorial.system.finish_button') 
+                : t('tutorial.system.next_button')}
             </button>
             
             <button 
               onClick={() => {
-                if (window.confirm("⚠️ ATTENTION: Abandonner le tutoriel maintenant pourrait avoir des conséquences. Êtes-vous sûr ?")) {
-                  showTankMessage && showTankMessage("⚠️ Tutoriel abandonné. Le système se souviendra de ce choix...", true);
+                if (window.confirm(t('tutorial.system.abandon_warning'))) {
+                  showTankMessage && showTankMessage(t('tutorial.system.tutorial_abandoned'), true);
                   onClose();
                 }
               }}
               className="control-button control-skip"
-              title="Abandonner le tutoriel (Déconseillé)"
+              title={t('tutorial.system.skip_tooltip')}
               type="button"
             >
-              PASSER ✕
             </button>
           </div>
         </>

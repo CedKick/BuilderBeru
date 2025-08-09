@@ -1181,118 +1181,414 @@
     ]
   },
    "tutorial": {
-    "system_title": "NOTIFICATION",
-    "system_message_line1": "Votre guide spirituel s'arrêtera dans",
-    "system_message_line2": "si vous choisissez de ne pas accepter.",
-    "system_question": "Acceptez-vous l'aide du système ?",
-    "system_yes": "Oui",
-    "system_no": "Non",
-    "seconds": "secondes",
-    "system_declined": "❌ VOUS AVEZ REFUSÉ L’AIDE DU SYSTÈME.",
-    "punishment": "PUNITION APPLIQUÉE",
-    "quest_completed": "🎉 QUÊTE TUTORIEL COMPLÉTÉE ! +1000 EXP",
-    "step": "Étape",
-    "previous": "Précédent",
-    "next": "Suivant",
-    "skip": "Skip",
-
-    "welcome": [
-      { "message": "Salutations, Monarque ! Je suis Igris, ton ombre fidèle… 🗡️", "speaker": "igris" },
-      { "message": "Mon Seigneur ! Igris à votre service. Prêt à forger le build ultime ? ⚔️", "speaker": "igris" },
-      { "message": "Monarque... Le temps est venu. Transformons ce Hunter en légende ! 💀", "speaker": "igris" }
-    ],
-    "cerbere_intro": [
-      { "message": "WOUF WOUF ! 🐺 *Cerbère s'agite d'excitation*", "speaker": "cerbere" },
-      { "message": "OUAF ! NOUVEAU HUNTER !! 🎉", "speaker": "cerbere" }
-    ],
-    "igris_calms": [
-      { "message": "Du calme Cerbère... Nous avons une mission. Commençons !", "speaker": "igris" }
-    ],
-
-    "tank_interruptions": {
-      "cerbere_intro": {
-        "chance": "0.3",
-        "sequence": [
-          { "message": "Tiens tiens... Qui fait autant de bruit par ici ? 🙄", "speaker": "tank", "duration": 3500 },
-          { "message": "GRRRR ! WOUF WOUF ! C'est MON territoire ici ! 😤", "speaker": "cerbere", "duration": 3000 },
-          { "message": "Ton territoire ? *ricane* J'étais là bien avant toi, le chiot ! 😏", "speaker": "tank", "duration": 3500 },
-          { "message": "*Igris sépare les deux* ASSEZ ! On a un tutoriel à terminer !", "speaker": "igris", "duration": 3500 }
+    "system": {
+      "notification_title": "NOTIFICATION",
+      "notification_message_line1": "Votre guide spirituel s'arrêtera dans",
+      "notification_message_line2": "0.00 secondes",
+      "notification_message_line3": "si vous choisissez de ne pas accepter.",
+      "notification_question": "Acceptez-vous l'aide du système ?",
+      "yes_button": "Oui",
+      "no_button": "Non",
+      "punishment_applied": "PUNITION APPLIQUÉE",
+      "system_declined": "❌ VOUS AVEZ REFUSÉ L'AIDE DU SYSTÈME. CONSÉQUENCES APPLIQUÉES.",
+      "tutorial_abandoned": "⚠️ Tutoriel abandonné. Le système se souviendra de ce choix...",
+      "abandon_warning": "⚠️ ATTENTION: Abandonner le tutoriel maintenant pourrait avoir des conséquences. Êtes-vous sûr ?",
+      "quest_completed": "🎉 QUÊTE TUTORIEL COMPLÉTÉE ! +1000 EXP",
+      "step_label": "ÉTAPE",
+      "back_button": "← RETOUR",
+      "next_button": "SUIVANT →",
+      "finish_button": "TERMINER →",
+      "skip_button": "PASSER ✕",
+      "skip_tooltip": "Abandonner le tutoriel (Déconseillé)"
+    },
+    
+    "dialogue_variations": {
+      "welcome": [
+        "Salutations, Monarque ! Je suis Igris, ton ombre fidèle. Laisse-moi te guider dans la création de ton Hunter parfait... 🗡️",
+        "Mon Seigneur ! Igris à votre service. Prêt à forger le build ultime ? Les ombres attendent vos ordres ! ⚔️",
+        "Monarque... Le temps est venu. Transformons ce Hunter ordinaire en légende vivante ! 💀"
+      ],
+      "welcome_igrisk": [
+        "Salutations, Monarque ! Je suis... *tousse* IGRIS ! Oui, c'est moi, Igris ! Totalement pas Tank déguisé ! 🗡️😅",
+        "Mon Seigneur ! C'est moi Igr-- *voix qui dérape* IGRIS ! Je vais te montrer les builds... avec beaucoup de DÉFENSE ! Euh, je veux dire équilibrés ! ⚔️🛡️",
+        "Monarque... *ajuste son déguisement* Je suis votre ombre fidèle Igris ! Pas du tout Tank avec une perruque ! Commençons ! 💀"
+      ],
+      "cerbere_intro": [
+        "WOUF WOUF ! 🐺 *Cerbère s'agite d'excitation*",
+        "OUAF OUAF OUAF ! *Cerbère bondit partout* NOUVEAUUU HUNTERRRR ! 🎉",
+        "*Cerbère renifle l'air* WOUF ! Ça sent le build légendaire ici ! 🔥"
+      ],
+      "cerbere_suspicious": [
+        "*renifle* WOUF ? Tu sens bizarre Igris... Tu sens comme... TANK ?! 🤔",
+        "GRRR... Igris, pourquoi tu parles de défense tout le temps ? C'est louche ! WOUF ! 👀",
+        "*Cerbère plisse les yeux* Attends... C'EST PAS IGRIS ! C'EST TANK ! WOUF WOUF ! 😱"
+      ],
+      "igris_calms": [
+        "Du calme Cerbère... Nous avons une mission importante. Commençons !",
+        "Cerbère, contrôle ton enthousiasme. Le Monarque a besoin de concentration...",
+        "*soupir* Toujours aussi énergique... Bon, focus Cerbère ! On a du travail."
+      ],
+      "igrisk_calms": [
+        "Du calme Cerb-- je veux dire, bon chien ! *tousse* Pardon, Cerbère. Concentrons-nous sur la DÉFENSE-- euh, le tutoriel !",
+        "*voix forcée* Cerbère, sois sage ! Igris-- MOI, Igris, te demande de te calmer ! Les tanks-- LES OMBRES comptent sur nous !",
+        "*sueur* Cerbère arrête de me renifler ! Je suis Igris ! Pas Tank ! Pourquoi je sentirais la pomme pourrie ?!"
+      ]
+    },
+    
+    "steps": {
+      "character_selector": {
+        "igris": "D'abord, regarde ici en haut. C'est le sélecteur de personnage.",
+        "igrisk": "D'abord, regarde ici. Le sélecteur de... *regarde ses notes* personnage ! Oui c'est ça !"
+      },
+      "select_hunter": {
+        "igris": "Changeons pour un autre Hunter... Voyons voir qui sera l'élu !",
+        "igrisk": "Changeons pour un Hunter avec beaucoup de DÉFENSE-- euh, je veux dire, un Hunter équilibré !"
+      },
+      "artifact_section": {
+        "igris": "Les artifacts sont le cœur de la puissance ! Chaque stat compte, chaque proc peut tout changer !",
+        "igrisk": "Les artifacts ! L'endroit où la DÉFENSE brille ! Euh... je veux dire, où toutes les stats brillent !"
+      },
+      "helmet_focus": {
+        "igris": "Commençons par le Casque. Je vais te montrer chaque étape de l'optimisation !",
+        "igrisk": "Le Casque ! Parfait pour mettre de la DÉFENSE-- *tousse* pour optimiser tes stats !"
+      },
+      "main_stat_config": {
+        "message_igris": "Je vais configurer la stat principale. {{stat}} sera parfait !",
+        "message_igrisk": "La stat principale sera... {{stat}} !",
+        "attack_reaction_igris": "Maximum de dégâts ! 💪",
+        "attack_reaction_igrisk": "*déçu* De l'attaque... Bon si tu insistes... 😔",
+        "defense_reaction_igris": "Un peu de survie ne fait pas de mal... 🛡️",
+        "defense_reaction_igrisk": "PARFAIT ! La défense c'est la VIE ! 🛡️💪",
+        "balanced_reaction_igris": "Équilibré et efficace ! ⚖️",
+        "balanced_reaction_igrisk": "Pas mal... mais la défense aurait été mieux ! 🛡️"
+      },
+      "substat_config": {
+        "substat_1_igris": "SubStat 1: {{stat}}. La première substat donne le ton !",
+        "substat_1_igrisk": "SubStat 1: {{stat}}.",
+        "substat_2_igris": "SubStat 2: {{stat}}. Deuxième substat, on construit le build...",
+        "substat_2_igrisk": "SubStat 2: {{stat}}.",
+        "substat_3_igris": "SubStat 3: {{stat}}. Troisième substat, ça prend forme !",
+        "substat_3_igrisk": "SubStat 3: {{stat}}.",
+        "substat_4_igris": "SubStat 4: {{stat}}. Dernière substat, finalisons ce chef-d'œuvre !",
+        "substat_4_igrisk": "SubStat 4: {{stat}}.",
+        "defense_reaction_igrisk": "*murmure* Oui... OUI ! Plus de défense ! 🛡️",
+        "good_reaction_igrisk": "*déçu* Bon... si tu veux du damage...",
+        "neutral_reaction_igrisk": "Hmm... intéressant..."
+      },
+      "proc_intro": {
+        "igris": "Maintenant les procs ! 4 améliorations qui peuvent tout changer. Chaque + augmente une substat aléatoirement !",
+        "igrisk": "Les procs ! 4 chances d'avoir plus de DÉFENSE-- je veux dire, d'améliorer les stats ! *tousse*"
+      },
+      "procs": {
+        "proc_1_igris": "Premier proc ! *croise les doigts* Allez, on veut du Crit Damage ! 🎲",
+        "proc_1_igrisk": "Proc 1 ! *prie pour de la défense* Allez RNG, sois gentille ! 🎲🛡️",
+        "proc_2_igris": "Deuxième amélioration ! La tension monte... 🎰",
+        "proc_2_igrisk": "Proc 2 ! *prie pour de la défense* Allez RNG, sois gentille ! 🎲🛡️",
+        "proc_3_igris": "Troisième proc ! On y est presque ! L'artifact prend vie ! ⚡",
+        "proc_3_igrisk": "Proc 3 ! *prie pour de la défense* Allez RNG, sois gentille ! 🎲🛡️",
+        "proc_4_igris": "Dernier proc ! Le moment de vérité ! Que la RNG soit avec nous ! 🎲✨",
+        "proc_4_igrisk": "Proc 4 ! *prie pour de la défense* Allez RNG, sois gentille ! 🎲🛡️"
+      },
+      "set_menu": {
+        "open_igris": "Maintenant, choisissons un set ! Chaque set offre des bonus uniques. Je vais ouvrir le menu...",
+        "open_igrisk": "Les sets ! J'espère que tu vas choisir Guard ! Euh... je veux dire, choisis ce que tu veux !",
+        "select_igris": "Burning pour les dégâts, Guard pour la défense, Critical pour les coups critiques... Voyons voir !",
+        "select_igrisk": "Guard pour la défense ! Guard ! GUARD ! *tousse* Pardon... Choisis ce que tu veux bien sûr..."
+      },
+      "save_button": {
+        "igris": "⚠️ TRÈS IMPORTANT ! Sauvegardons cet artifact. Sans sauvegarde, tu perds TOUT !",
+        "igrisk": "⚠️ SAUVEGARDE ! Sans ça, tu perds ta belle DÉFENSE-- tes stats ! Sauvegarde !"
+      },
+      "artifact_naming": {
+        "message_igris": "Je vais nommer cet artifact... \"{{name}}\" !",
+        "message_igrisk": "Le nom parfait : \"{{name}}\" !",
+        "pomme_reaction": "*ricane* Tank va pas aimer !",
+        "tank_reaction": "Désolé Tank, c'était trop tentant...",
+        "cerbere_reaction": "En ton honneur mon ami !",
+        "rng_reaction": "Prions le dieu de la RNG !",
+        "generic_reaction": "Un classique du genre !",
+        "tank_name_panic": "*panique* NON ! Pas Tank ! Igris ! IGRIS !",
+        "defense_name_whisper": "*murmure* Parfait... 🛡️",
+        "normal_name": "Un nom totalement normal, rien de suspect !"
+      },
+      "cancel_action": {
+        "igris": "Finalement... Non ! C'est à TOI de créer tes propres artifacts, Monarque ! Je vais annuler.",
+        "igrisk": "Finalement... *panique* Le vrai Igris arrive ! Je dois partir ! À toi de jouer Monarque ! *fuit*"
+      },
+      "artifact_mastery": {
+        "igris": "Parfait ! Tu maîtrises maintenant TOUTES les mécaniques : stats, procs, sets, sauvegarde. À toi de jouer !",
+        "igrisk": "Tu maîtrises tout ! Surtout la DÉFENSE-- je veux dire, TOUTES les mécaniques ! *disparaît rapidement*"
+      },
+      "save_reminder": {
+        "igris": "⚠️ N'oublie JAMAIS : Le bouton Save est TON MEILLEUR AMI ! Sans lui, tu perds tout !",
+        "igrisk": "⚠️ Le bouton Save ! Sans lui, ta belle DÉFENSE disparaît ! SAUVEGARDE TOUJOURS !"
+      },
+      "gems_section": {
+        "igris": "Les Gemmes offrent des bonus massifs ! Red pour l'attaque, Blue pour l'HP, Green pour la défense...",
+        "igrisk": "Les Gemmes ! Blue pour l'HP, Green pour la DÉFENSE ! Les meilleures gemmes ! 💎🛡️"
+      },
+      "cores_section": {
+        "igris": "Les Noyaux (Cores) sont une autre source de puissance. Explore-les plus tard !",
+        "igrisk": "Les Cores ! Plus de stats ! Plus de DÉFENSE ! Plus de TOUT !"
+      },
+      "stats_display": {
+        "igris": "Ici, toutes tes stats finales en temps réel. Chaque modification est calculée instantanément !",
+        "igrisk": "Les stats ! Regarde bien la défense ! Elle doit être ÉNORME !"
+      },
+      "dps_calculator": {
+        "igris": "Le DPS Calculator révèle ta vraie puissance ! N'hésite pas à l'utiliser !",
+        "igrisk": "Le DPS Calculator... Mais la défense c'est mieux que le DPS !"
+      },
+      "final_stats": {
+        "focus_igris": "⚠️ TRÈS IMPORTANT ! Regarde ici : 'Final Stats with Artefacts'. C'est le résultat FINAL de ton build !",
+        "focus_igrisk": "⚠️ Les stats finales ! Regarde bien ta DÉFENSE ! Elle doit être MAXIMALE ! 🛡️",
+        "explanation": "Si TOUS tes artifacts sont configurés, tes gemmes équipées, tes noyaux activés...",
+        "ingame": "ET si ton personnage est MAX (Weapon 120, Level 115, améliorations à fond)...",
+        "match": "Alors ces stats seront EXACTEMENT les mêmes que dans Solo Leveling Arise ! C'est la magie de BuilderBeru ! ✨",
+        "final_igris": "Utilise ces stats pour vérifier ton build in-game. Si ça ne correspond pas, c'est qu'il te manque quelque chose !",
+        "final_igrisk": "Check tes stats ! Surtout la DÉFENSE ! Elle doit être MAXIMALE !"
+      },
+      "accounts_system": {
+        "igris": "Tu peux créer plusieurs comptes pour différents builds. Pratique pour tester !",
+        "igrisk": "Les comptes multiples ! Un pour chaque build de DÉFENSE !"
+      },
+      "beru_kaisel": {
+        "igris": "Beru et Kaisel sont toujours là pour t'aider. N'hésite pas à les invoquer !",
+        "igrisk": "Beru et Kaisel... Mais Tank est le meilleur guide ! Euh, je veux dire Igris !"
+      },
+      "hall_of_flame": {
+        "igris": "Les builds légendaires finissent au Hall of Flame... Rejoins les légendes ! 🔥",
+        "igrisk": "Le Hall of Flame ! Avec des builds FULL DEF ! *tousse* Je veux dire, équilibrés !"
+      },
+      "finale": {
+        "igris": [
+          "Tu es prêt, Monarque ! Que tes builds soient puissants et tes procs nombreux ! ⚔️",
+          "La formation est terminée. Montre au monde la puissance du Monarque des Ombres ! 💀",
+          "L'entraînement est fini. Va créer des légendes ! Les ombres t'accompagnent... 🌑"
+        ],
+        "igrisk": [
+          "Tu es prêt ! Que tes builds soient DÉFENSIFS et tes boucliers SOLIDES ! 🛡️",
+          "La formation est terminée. N'oublie pas : la défense, c'est la vie ! *fuit* 💀",
+          "L'entraînement est fini. Les vraies ombres arrivent ! *disparaît* 🌑"
         ]
       }
     },
-
-    "character_selector_zone": "D'abord, regarde ici en haut. C'est le sélecteur de personnage.",
-    "select_random_hunter": "Changeons pour un autre Hunter… Voyons qui sera l’élu !",
-    "generic_hunter": "ce Hunter",
-    "cerbere_reaction": "WOUF WOUF ! {{hunter}} ! Pas mal comme choix ! 🎉",
-    "tank_hunter_opinion": "{{hunter}} ? Mouais… J'ai vu mieux ! 😏",
-    "igris_confirms": "{{hunter}} est un choix intéressant. Voyons son potentiel !",
-
-    "artifact_section": "Les artifacts sont le cœur de la puissance ! Chaque stat compte, chaque proc peut tout changer !",
-    "helmet": {
-      "focus": "Commençons par le Casque. Je vais te montrer chaque étape de l’optimisation !"
+    
+    "hunter_reactions": {
+      "default_hunter": "ce Hunter",
+      "sung_jinwoo": {
+        "cerbere": [
+          "WOUF WOUF WOUF ! {{name}} ! LE MONARQUE ! MON IDOLE ! 🤩✨",
+          "*Cerbère devient fou* {{name}} ! LE PLUS FORT ! LE MEILLEUR ! 💪🔥",
+          "OUAAAAAAF ! {{name}} ! Les ombres sont avec nous ! 🌑⚔️"
+        ],
+        "tank": "Évidemment... Tout le monde veut jouer le protagoniste... 🙄",
+        "igris": "{{name}}... Mon Seigneur original. Un choix évident mais excellent !",
+        "igrisk": "{{name}}... Excellent choix pour la DÉFENSE-- je veux dire, pour tout ! Continuons vite avant que-- continuons !"
+      },
+      "cha_haein": {
+        "cerbere": [
+          "WOUF WOUF ! {{name}} ! Elle est trop classe ! J'adore ! 💖⚔️",
+          "*queue qui remue* {{name}} ! La meilleure épéiste ! 🗡️✨",
+          "OUAF ! {{name}} et ses skills de danse mortelle ! 💃💀"
+        ],
+        "tank": "Pas mal ! Au moins elle a du style ! 💅✨",
+        "igris": "{{name}} est redoutable. Ses combos sont dévastateurs bien maîtrisés."
+      },
+      "choi_jongin": {
+        "cerbere": [
+          "Oh... {{name}}... *Cerbère fait la grimace* Le mage de feu... 😕🔥",
+          "Mouais... {{name}}... C'est pas mon préféré mais bon... 😒",
+          "*soupir* {{name}}... J'préfère les épéistes moi ! WOUF ! 🗡️"
+        ],
+        "tank": "Le mage de feu ? Vraiment ? Aucune défense ce type ! 🔥🛡️",
+        "igris": "{{name}} nécessite du timing. Ses sorts de zone sont puissants."
+      },
+      "baek_yoonho": {
+        "cerbere": [
+          "WOUF ! {{name}} ! Un autre animal ! RESPECT ! 🐯🤝🐺",
+          "OUAAAF ! {{name}} le tigre blanc ! On est cousins ! 🐅",
+          "*Cerbère approuve* {{name}} ! La force bestiale ! GRRR ! 💪"
+        ],
+        "tank": "Un vrai tank celui-là ! J'approuve ! 💪🛡️",
+        "igris": "{{name}}, force brute et résistance. Parfait pour les débutants.",
+        "igrisk_suspicious": "WOUF ?! Baek Yoonho ?! Comme par hasard tu choisis le TANK ! TRÈS SUSPECT IGRIS ! 🤨"
+      },
+      "min_byunggyu": {
+        "cerbere": [
+          "Euh... {{name}} ? C'est qui lui déjà ? *confus* 🤔",
+          "{{name}}... Ah oui le healer... *bâille* Ennuyeux... 😴",
+          "WOUF ? {{name}} ? Il fait quoi à part soigner ? 🏥"
+        ],
+        "tank": "Le healer... Au moins il comprend l'importance du support ! 🏥",
+        "igris": "{{name}}... Un choix stratégique. Le support est sous-estimé."
+      },
+      "lim_taegyu": {
+        "cerbere": [
+          "GRRR ! {{name}} ! Je l'aime PAS DU TOUT ! 😤💢",
+          "Beurk ! {{name}} ! Change vite Igris ! WOUF WOUF ! 😡",
+          "*Cerbère grogne* Pas {{name}} ! N'importe qui mais pas lui ! 🚫"
+        ],
+        "tank": "Haha ! Excellent choix pour perdre ! 😈",
+        "igris": "{{name}} ? *soupir* Si tu insistes... Montrons ce qu'on peut en faire."
+      },
+      "woo_jinchul": {
+        "cerbere": [
+          "{{name}} ! Le gars sérieux ! *imite une posture droite* 🕴️",
+          "WOUF ! {{name}} et ses lunettes ! Trop corporate ! 👔",
+          "*Cerbère rigole* {{name}} ! Monsieur je-suis-sérieux ! 😎"
+        ],
+        "tank": "Monsieur propre... Il doit ranger ses artifacts par ordre alphabétique ! 📁",
+        "igris": "{{name}}, méthodique et efficace. Un bon choix technique."
+      },
+      "go_gunhee": {
+        "cerbere": [
+          "*Cerbère s'incline* {{name}}... Le président... Respect ! 🎩",
+          "WOUF ! {{name}} ! Le vieux sage ! J'aime bien ! 👴✨",
+          "{{name}}... *voix solennelle* Un grand homme ! WOUF ! 🏛️"
+        ],
+        "tank": "Respect pour les anciens ! Mais il est pas un peu lent ? 👴",
+        "igris": "{{name}}, l'expérience au service de la puissance. Respectons les anciens."
+      },
+      "default": {
+        "cerbere": [
+          "WOUF WOUF ! {{name}} ! Pas mal comme choix ! 🎉",
+          "OUAAAAAAF ! {{name}} ! Ça peut le faire ! 🐺",
+          "*Cerbère analyse* {{name}}... Intéressant ! WOUF ! 🤔"
+        ],
+        "tank": "{{name}} ? Mouais... J'ai vu mieux ! 😏",
+        "igris": [
+          "{{name}} est un choix intéressant. Voyons son potentiel !",
+          "Bon choix, Monarque. {{name}} a des capacités uniques.",
+          "{{name}}... Je vais te montrer comment l'optimiser !"
+        ]
+      }
     },
-
-    "set_main_stat": {
-      "generic": "Je vais configurer la stat principale. {{stat}} sera parfait !",
-      "attack_hint": "Maximum de dégâts ! 💪",
-      "defense_hint": "Un peu de survie ne fait pas de mal… 🛡️",
-      "balanced_hint": "Équilibré et efficace ! ⚖️"
+    
+    "stat_reactions": {
+      "tank_loves_defense": "ENFIN ! Quelqu'un qui comprend l'importance de la défense ! 🛡️💖",
+      "igrisk_loves_defense": "*essaie de cacher sa joie* Ah... Defense... C'est... c'est un choix correct. Très correct. *sourire suspect* 😊",
+      "cerbere_hates_defense": "Beurk ! Defense sur un Helmet ?! On veut du DAMAGE ! WOUF ! 😤",
+      "cerbere_happy_stat": "WOUF WOUF ! {{stat}} ! C'est PARFAIT ! *saute partout* 🎯🔥",
+      "tank_loves_stat": "OUI ! {{stat}} ! Voilà de la vraie optimisation ! 🛡️",
+      "cerbere_angry_defense": "Encore de la def ?! On est pas des tanks ! GRRR ! 💢",
+      "cerbere_disgusted": "{{stat}} ?! *fait la grimace* C'est nul ça ! 😖",
+      "igris_explains_rng": "Parfois on n'a pas le choix... La RNG est cruelle, Cerbère.",
+      "cerbere_suspicious_defense": "WOUF ! Encore de la défense ?! Igris tu es VRAIMENT bizarre aujourd'hui ! 🤔",
+      "igrisk_defense_excuse": "*nerveux* C'est... c'est la méta actuelle ! La défense c'est... stratégique ! Oui voilà !"
     },
-    "tank_loves_defense": "ENFIN ! Quelqu’un qui comprend l’importance de la défense ! 🛡️💖",
-    "cerbere_disagrees": "Beurk ! Defense sur un Helmet ?! On veut du DAMAGE ! WOUF ! 😤",
-
-    "cerbere_happy": "WOUF WOUF ! {{sub}} ! C’est PARFAIT ! 🎯🔥",
-    "tank_loves": "OUI ! {{sub}} ! Voilà de la vraie optimisation ! 🛡️",
-    "cerbere_angry": "Encore de la def ?! On est pas des tanks ! GRRR ! 💢",
-    "cerbere_disgusted": "{{sub}} ?! *grimace* C’est nul ça ! 😖",
-    "igris_explains": "Parfois on n’a pas le choix… La RNG est cruelle, Cerbère.",
-
-    "set_substat_1": "SubStat 1: {{sub}}. La première substat donne le ton !",
-    "set_substat_2": "SubStat 2: {{sub}}. On construit le build…",
-    "set_substat_3": "SubStat 3: {{sub}}. Ça prend forme !",
-    "set_substat_4": "SubStat 4: {{sub}}. Dernière substat, finalisons !",
-
-    "proc_introduction": "Maintenant les procs ! 4 améliorations qui peuvent tout changer.",
-    "proc_1": "Premier proc ! 🎲",
-    "cerbere_proc_1": "WOUF ! Ça monte ! 📈",
-    "proc_2": "Deuxième amélioration ! 🎰",
-    "proc_3": "Troisième proc ! ⚡",
-    "cerbere_excited": "WOUF ! Les stats EXPLOSENT ! 🔥💥",
-    "proc_4": "Dernier proc ! 🎲✨",
-    "tank_mocks_procs": "4 procs et pas all crit damage ? Amateur ! 😏",
-    "cerbere_defends": "GRRR ! C'est la RNG Tank ! T'as juste eu de la chance toi ! 😤",
-    "procs_complete": "Pas mal ces procs ! L'artifact est maintenant bien optimisé ! 💎",
-
-    "open_set_menu": "Maintenant, choisissons un set ! Je vais ouvrir le menu…",
-    "select_set": "Burning, Guard, Critical… Voyons voir !",
-    "cerbere_set_reaction": "WOUF ! J’espère que c’est un set offensif ! 💪🔥",
-
-    "click_save_button": "⚠️ TRÈS IMPORTANT ! Sauvegardons cet artifact.",
+    
+    "proc_reactions": {
+      "cerbere_proc_1": "WOUF ! Ça monte ! Premier proc validé ! 📈",
+      "cerbere_excited": "WOUF WOUF WOUF ! Les stats EXPLOSENT ! C'est magnifique ! 🔥💥",
+      "igrisk_procs_opinion": "Pas assez de procs défense... *murmure* La RNG est cruelle avec les tanks...",
+      "tank_mocks_procs": "4 procs et pas all crit damage ? Pfff... Amateur ! 😏",
+      "cerbere_defends": "GRRR ! C'est la RNG Tank ! T'as juste eu de la chance toi ! WOUF ! 😤",
+      "procs_complete": "Pas mal ces procs ! L'artifact est maintenant bien optimisé ! 💎"
+    },
+    
+    "set_reactions": {
+      "cerbere_hopes": "WOUF ! J'espère que c'est un set offensif ! Du DAMAGE ! 💪🔥",
+      "cerbere_suspects_guard": "WOUF ! Si c'est Guard je sais que c'est toi TANK ! 😤"
+    },
+    
+    "name_reactions": {
+      "tank_angry_pomme": "POMME POURRIE ?! C'est une insulte à la défense ! 😤💢",
+      "cerbere_laughs": "WOUF WOUF WOUF ! *rigole* Tank est pas content ! 🤣",
+      "tank_confused": "Euh... C'est censé être un compliment ou une moquerie ? 🤔",
+      "cerbere_proud": "WOUF WOUF ! C'est MON artifact ! Je suis trop fier ! 🏆✨",
+      "cerbere_gotcha": "AH ! JE LE SAVAIS ! C'EST TANK ! TU T'ES TRAHI ! WOUF WOUF ! 🎯",
+      "igrisk_caught": "*abandonne le déguisement* Bon ok... C'est moi... Mais j'ai fait un bon tutoriel non ? 😅",
+      "real_tank_appears": "IMPOSTEUR ! Comment oses-tu te faire passer pour Igris ?! La défense ne s'enseigne pas en cachette ! 😤"
+    },
+    
+    "tank_interruptions": {
+      "normal": {
+        "intro": "Tiens tiens... Qui fait autant de bruit par ici ? 🙄",
+        "cerbere_territory": "GRRRRR ! WOUF WOUF ! C'est MON territoire ici ! 😤",
+        "tank_mock": "Ton territoire ? *ricane* J'étais là bien avant toi, le chiot ! 😏",
+        "igris_stops": "*Igris sépare les deux* ASSEZ ! On a un tutoriel à terminer !"
+      },
+      "voice_confusion": "Attendez... Cette voix... C'est MA voix ça ! QUI UTILISE MA VOIX ?! 😠",
+      "igrisk_panic": "*panique intérieurement* NON NON ! Tu dois te tromper ! Je suis Igris ! Regarde mon épée ! *montre un bouclier* MERDE !",
+      "discovered": {
+        "tank_shock": "Mais... mais... C'est MA voix ça ! IGRIS ?! QU'EST-CE QUE TU FAIS AVEC MA VOIX ?! 😱",
+        "igrisk_sword_fail": "*panique* NON NON ! Je suis Igris ! Regarde, j'ai une épée ! *sort un bouclier* MERDE !",
+        "cerbere_knew": "WOUF WOUF WOUF ! JE LE SAVAIS ! C'EST TANK DÉGUISÉ ! *rigole* 🤣",
+        "tank_impostor": "IMPOSTEUR ! Tu oses usurper l'identité d'Igris ?! Rends-moi mon déguisement ! 😤",
+        "igrisk_admits": "*abandonne* Ok ok... C'est moi... Mais Igris était aux toilettes alors... 😅"
+      },
+      "continue_anyway": "*tousse* Bon bon... Peu importe qui je suis, on a un tutoriel à finir ! Focus sur la DÉFEN-- sur le BUILD !"
+    },
+    
+    "companions": {
+      "cerbere_encouragement": "WOUF WOUF ! Tu vas créer des builds DE MALADE ! Go go go Monarque ! 🚀🔥",
+      "cerbere_encouragement_igrisk": "WOUF ! C'était bizarre mais instructif ! Même si c'était Tank déguisé ! 🤣",
+      "cerbere_farewell": "WOUF WOUF ! *Cerbère te salue* À bientôt Monarque ! Fais des builds de FOU ! 👋🔥",
+      "cerbere_farewell_igrisk": "WOUF ! C'était bizarre mais marrant ! Tank fait un meilleur Igris que prévu ! 🤣👋",
+      "tank_save_advice": "Même moi je sauvegarde ! Sinon mes builds full def disparaissent ! 💾",
+      "tank_save_advice_igrisk": "Euh... Oui ! Moi aussi je sauvegarde ! Enfin, Igris sauvegarde ! Je suis Igris ! 💾",
+      "cerbere_save_story": "Une fois j'ai oublié... J'ai perdu un build avec 4 procs crit damage ! *pleure* 😭",
+      "cerbere_stats_amazed": "WOUF WOUF ! Les mêmes stats que in-game ?! C'est MAGIQUE ! 🤯✨",
+      "tank_stats_respect": "Ok, là je dois avouer... C'est impressionnant. Respect BuilderBeru ! 👏"
+    },
+    
+    "demo_effect": {
+      "warning": "*L'atmosphère devient soudainement lourde* Qu'est-ce que... ?! 😨",
+      "tank_activation": "MWAHAHAHA ! VOUS PENSIEZ QUE C'ÉTAIT FINI ?! ACTIVATION : MODE DEMO ! 🔥💀",
+      "igrisk_activation": "QUOI ?! MOI AUSSI JE PEUX FAIRE ÇA ?! MODE DEMO DÉFENSIF ! 🛡️💀",
+      "cerbere_panic": "WOUF WOUF WOUF ?! TANK ! QU'EST-CE QUE TU FAIS ?! C'EST DANGEREUX ! 😱",
+      "cerbere_panic_igrisk": "WOUF ?! TANK TU VAS DÉTRUIRE TON PROPRE DÉGUISEMENT ! 😱",
+      "laser_charge": "REGARDEZ LA VRAIE PUISSANCE ! LASER ORBITAL... CHARGEMENT... 🎯⚡",
+      "laser_fire": "FEU ! DESTRUCTION TOTALE DU DOM ! HAHAHAHA ! 💥🔥💀",
+      "igris_shocked": "TANK ! TU ES FOU ! Tu as failli détruire l'interface ! 😤",
+      "igrisk_shocked": "*réalise* Attendez... JE VIENS DE ME GRILLER TOUT SEUL ! 😱",
+      "tank_proud": "*Tank rigole* C'était juste une démo... Mais avoue que c'était ÉPIQUE ! 😈✨",
+      "igrisk_excuse": "Euh... C'était... une fonctionnalité d'Igris ! Oui ! Igris peut faire ça aussi ! 😅",
+      "cerbere_amazed": "Wouf... C'était... C'ÉTAIT TROP COOL ! ENCORE ! ENCORE ! 🤩",
+      "igris_ends": "*soupir* Bon... Reprenons le tutoriel SÉRIEUSEMENT maintenant...",
+      "igrisk_flees": "*fuit* Bon je dois y aller ! Le vrai Igris arrive ! Bye ! 💨"
+    },
+    
+    "epilogue": {
+      "tank_appears": "*Tank apparaît* Pas mal... Mais attends de voir mes builds FULL DEF ! 😈🛡️",
+      "cerbere_final": "GRRR ! Toujours ta défense Tank ! WOUF ! 😤",
+      "tank_disappears": "*ricane et disparaît* La défense, c'est la vie... 👻",
+      "real_igris_arrives": "*le VRAI Igris arrive* Qu'est-ce qui se passe ici ?! Tank ?! Qu'as-tu fait ?! 😠",
+      "igrisk_escapes": "*court à toute vitesse* RIEN ! J'ai rien fait ! Le tutoriel est fini ! Bye ! 💨",
+      "igris_sighs": "*soupir* Toujours aussi chaotique... Au moins le Monarque a appris. Même si c'était... différent."
+    },
+    
     "artifact_names": [
-      "Igris Approved™",
-      "Proc ou pas Proc",
-      "Budget Build 2025",
+      "Build de la Mort qui Tue",
       "Pomme Pourrie Def",
       "Cerbère's Best Friend",
       "Tank va rager MDR",
-      "RNG Jesus Help Me"
+      "Proc ou pas Proc",
+      "RNG Jesus Help Me",
+      "F2P btw",
+      "Whale Destroyer 3000",
+      "Igris Approved™",
+      "Press F for Respect",
+      "404 Skill Not Found",
+      "Git Gud Scrub",
+      "No Crit No Life",
+      "All Attack Go BRRRR",
+      "Budget Build 2025",
+      "Meta Slave Ultimate"
     ],
-    "enter_artifact_name": "Je vais nommer cet artifact… \"{{name}}\" !",
-    "click_cancel": "Finalement… Non ! C’est à TOI de créer tes propres artifacts, Monarque ! J’annule.",
-
-    "artifact_mastery": "Parfait ! Tu maîtrises TOUT : stats, procs, sets, sauvegarde. À toi de jouer !",
-    "cerbere_encouragement": "WOUF WOUF ! Tu vas créer des builds DE MALADE ! 🚀🔥",
-
-    "demo_effect_warning": "*L’atmosphère devient lourde* Qu’est-ce que… ?! 😨",
-    "tank_demo_activation": "MWAHAHA ! MODE DEMO ! 🔥💀",
-    "cerbere_panic": "WOUF ?! TANK ! C’EST DANGEREUX ! 😱",
-    "tank_laser_charge": "LASER ORBITAL… CHARGEMENT… 🎯⚡",
-    "tank_fire_laser": "FEU ! DESTRUCTION TOTALE DU DOM ! 💥🔥💀",
-    "igris_shocked": "TANK ! Tu as failli détruire l’interface ! 😤",
-    "tank_proud": "C’était juste une démo… ÉPIQUE, non ? 😈✨",
-    "cerbere_amazed": "Wouf… C’était TROP COOL ! 🤩",
-    "igris_ends_demo": "*soupir* Reprenons le tutoriel sérieusement."
+    
+    "artifact_names_igrisk": [
+      "Definitely Not Tank's Build",
+      "Pomme d'or ULTRA DEF",
+      "Full Defense Go BRRRR",
+      "Tank Suprémacie",
+      "Igris? Never Heard of Him",
+      "Bouclier > Épée",
+      "Defense is the Best Offense",
+      "Pas du tout suspect",
+      "100% Legit Igris Build"
+    ]
   }
 
 }
