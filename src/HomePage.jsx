@@ -389,7 +389,6 @@ export default function HomePage() {
             
             <div className="md:order-1">
               <h4 className="text-xl font-bold text-purple-300 mb-6 text-center">
-                🎮 Main Features
               </h4>
               <nav className="grid gap-4" aria-label="Main Navigation">
                 {activeItems.map((item) => (
