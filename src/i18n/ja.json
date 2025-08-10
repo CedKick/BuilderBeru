@@ -1,1 +1,1124 @@
-{}
+{
+  "title": "Builder Béru – Solo Leveling オプティマイザー",
+  "artefacts": "アーティファクト",
+  "coress": "🧬 コア",
+  "gemss": "💎 ジェム",
+  "save": "保存",
+  "modify": "ステータス変更",
+  "reset": "リセット",
+  "selectStat": "ステータスを選択",
+  "noCores": "コアが定義されていません",
+  "noGems": "ジェムが選択されていません",
+  "weapon": "⚔️ 武器",
+  "statFinals": "アーティファクト込み最終ステータス",
+  "tv_dialogue": {
+    "attack": {
+      "sequences": [
+        [
+          {
+            "speaker": 1,
+            "text": "ワオ！{{value}}%の攻撃力！"
+          },
+          {
+            "speaker": 2,
+            "text": "それは狂った統計だ！"
+          },
+          {
+            "speaker": 1,
+            "text": "君主がRNGに祝福されている！"
+          },
+          {
+            "speaker": 2,
+            "text": "BobbyJonesでさえ嫉妬するだろう！"
+          }
+        ]
+      ]
+    }
+  },
+  "left": "左",
+  "right": "右",
+  "stats": {
+    "Critical Hit Rate": "クリティカル率",
+    "Critical Hit Damage": "クリティカルダメージ",
+    "Defense Penetration": "防御貫通",
+    "Damage Increase": "ダメージ増加",
+    "MP Recovery Rate Increase (%)": "MP回復率増加 (%)",
+    "Additional MP": "追加MP",
+    "MP Consumption Reduction": "MP消費減少",
+    "Precision": "精密",
+    "Damage Reduction": "ダメージ軽減",
+    "Healing Given Increase (%)": "回復増加 (%)",
+    "Attack %": "攻撃力 (%)",
+    "Additional Attack": "追加攻撃力",
+    "Additional Defense": "追加防御力",
+    "Additional HP": "追加HP",
+    "Fire Damage %": "火属性ダメージ %",
+    "Water Damage %": "水属性ダメージ (%)",
+    "Wind Damage %": "風属性ダメージ %",
+    "Light Damage %": "光属性ダメージ %",
+    "Dark Damage %": "闇属性ダメージ %",
+    "HP %": "HP (%)",
+    "Defense %": "防御力 (%)",
+    "Attack": "攻撃力",
+    "Defense": "防御力",
+    "HP": "HP",
+    "MP": "MP"
+  },
+  "coreTypes": {
+    "Offensif": "攻撃型",
+    "Défensif": "防御型",
+    "Endurance": "持久力",
+    "noGems": "ジェムが選択されていません",
+    "gemColors": {
+      "Red": "赤いジェム",
+      "Blue": "青いジェム",
+      "Green": "緑のジェム",
+      "Purple": "紫のジェム",
+      "Yellow": "黄色のジェム"
+    }
+  },
+  "titleArtifact": {
+    "Helmet": "ヘルメット",
+    "Chest": "チェスト",
+    "Gloves": "グローブ",
+    "Boots": "ブーツ",
+    "Necklace": "ネックレス",
+    "Bracelet": "ブレスレット",
+    "Ring": "リング",
+    "Earrings": "イヤリング"
+  },
+  "confirmStat": "システムがステータスを検出しました...",
+  "characters": {
+    "tank": {
+      "name": "タンク",
+      "description": "りんごを持つ防御型ブルーザー",
+      "personality": "defensive_funny"
+    },
+    "beru": {
+      "name": "ベル",
+      "description": "影の戦略家兼アナリスト",
+      "personality": "intelligent_strategic"
+    },
+    "kaisel": {
+      "name": "カイゼル",
+      "description": "チームの技術的なメス",
+      "personality": "efficient_precise"
+    }
+  },
+  "beruMessages": {
+    "analysis": {
+      "good": [
+        "分析完了。私の計算によりビルドが承認されました。",
+        "素晴らしい戦略的選択、君主様。",
+        "理論スコア：87%。私のアルゴリズムは満足しています。",
+        "この組み合わせ...論理的で効率的です。"
+      ],
+      "bad": [
+        "エラーが検出されました。優先順位を再計算してください。",
+        "この決定...私のアルゴリズムが泣いています。",
+        "最適でないスコア。熟考が必要です。",
+        "タンクでさえもっと上手くやるでしょう...多分。"
+      ],
+      "tips": [
+        "優先順位：クリティカルダメージよりもクリティカル率。",
+        "提案：タンク役には防御力%に焦点を当てる。",
+        "パターンが検出されました：防御貫通を軽視しています。",
+        "最適化が必要：ジェムが役割と一致していません。"
+      ]
+    },
+    "interactions": [
+      "私のアドバイスを求めていますか？賢明な決断です。",
+      "私のアルゴリズムが検出しています...好奇心を。",
+      "私は計算する、故に私は存在する。あなたは...存在します。",
+      "相互作用が記録されました。改善：疑問視されます。"
+    ],
+    "comparisons": [
+      "タンクは戯言を言う。代わりに私の話を聞いてください。",
+      "タンクが食べている間、私は計算しています。",
+      "タンクは守る。私は最適化する。あなたは...試している。"
+    ]
+  },
+  "tankMessages": {
+    "casual": [
+      "私、タンクです！このビルダーを守ります 🛡️",
+      "アーティファクトを変更したい？怖くない！",
+      "ベルが本当に私を尊敬しているか疑問です 😤",
+      "今日4つのアーティファクトをロールしました。奇妙ですね？"
+    ],
+    "bobby": [
+      "ボスを逃したらBobbyJonesに怒られます...",
+      "デイリーを忘れたら、BobbyJonesを呼びます。",
+      "BDGを一つ逃せば除名。ガゴルドのルールです。",
+      "ランクを尊敬し、BDGを恐れろ。"
+    ],
+    "food": [
+      "タンク：「アーティファクトは愛せるのか？」...腹が減った。",
+      "BobbyJones：*りんごを噛む* まあ、今度は知識人がいるな...",
+      "タンクがすべてのりんごを食べても、まだ混乱するでしょう。"
+    ]
+  },
+  "analysis": {
+    "score": "理論スコア",
+    "recommendation": "推奨",
+    "priority": "優先度",
+    "optimization": "可能な最適化",
+    "synergy": "シナジー検出",
+    "warning": "警告"
+  },
+  "beruLore": [
+    "かつてはアリ王、今は忠実な顧問。闇の中で生まれ、君主に救われた。",
+    "魔王城の深奥で、真の力は戦略的分析にあることを学んだ。",
+    "アリ王の記憶が思い出させる：すべての戦いはまず心の中で勝利する。",
+    "君主が私に第二のチャンスを与えてくれた。その見返りに、あなたのビルドの完璧さを計算する。",
+    "影の兵士、アリ軍...すべて数学に従う。あなたのアーティファクトもそうであるべきだ。",
+    "私の進化：盲目的な破壊から精密な最適化へ。感動的ではないか？",
+    "他の影の兵士は攻撃する。私は考える。だから私は不可欠なのだ。",
+    "私のアリの巣では、すべてのトンネルに目的があった。あなたのサブステータスも同じレベルの計画を持つべきだ。"
+  ],
+  "beruJokes": [
+    "タンクはりんごがステータスを上げると思っている...私の計算：0%ボーナス 🍎",
+    "エラー404：あなたのビルドに論理が見つかりません",
+    "影の兵士でさえあなたよりも良いサブステータスを持っている",
+    "私のIQ > あなたの現在のアーティファクトスコア",
+    "タンクはあなたの選択を3/10と評価。私：4/10。進歩が検出されました。",
+    "ピクセル化された昆虫としての私の方が、あなたの現在のビルドよりも一貫性がある。",
+    "バランスの取れたビルドが欲しい？本能をアンインストールすることから始めてください。",
+    "DPSハンターにHP...それを犯罪と呼びます。"
+  ],
+  "beruTutorial": [
+    "ようこそ、君主様！BuilderBeruはあなたのSolo Leveling Ariseアーティファクトを最適化します。ハンターを選択し、ステータスを設定し、アーティファクトを装備してください！",
+    "完璧への第一歩：ハンターを選び、私のアドバイスをクリックしてください。",
+    "このサイトはあなたの最適化実験室です。私は影の中のあなたのガイドです。"
+  ],
+  "beruAnalysis": {
+    "withCharacter": "{hunterName}の分析...私のアルゴリズムが可能な改善を検出しています。優先ステータスに焦点を当ててください！",
+    "noCharacter": "分析のためにまずハンターを選択してください、君主様。"
+  },
+  "tankReplies": [
+    "なんだベル？りんごで忙しかった！ 🍎",
+    "あなたの計算 vs 私の現場経験！",
+    "チームアップ？あなたは分析、私は守護！ 🛡️",
+    "私は遅くない、私は...戦略的だ。",
+    "私のことを話した？防御バブルの中にいたんだ。",
+    "人生がりんごをくれたら...食べる。",
+    "私はゆっくり考えるが、強く打つ。"
+  ],
+  "tutorial": {
+    "closeGuide": "ガイドを閉じる",
+    "guide": "ガイド",
+    "system": {
+      "notification_title": "通知",
+      "notification_message_line1": "あなたの精神的ガイドが停止します",
+      "notification_message_line2": "0.00秒後",
+      "notification_message_line3": "受け入れないことを選択した場合。",
+      "notification_question": "システムのヘルプを受け入れますか？",
+      "yes_button": "はい",
+      "no_button": "いいえ",
+      "punishment_applied": "罰則適用",
+      "system_declined": "❌ システムのヘルプを拒否しました。結果が適用されました。",
+      "tutorial_abandoned": "⚠️ チュートリアルが放棄されました。システムはこの選択を記憶します...",
+      "abandon_warning": "⚠️ 警告：今チュートリアルを離れると結果が生じる可能性があります。本当ですか？",
+      "quest_completed": "🎉 チュートリアルクエスト完了！+1000 EXP",
+      "step_label": "ステップ",
+      "back_button": "← 戻る",
+      "next_button": "次へ →",
+      "finish_button": "完了 →",
+      "skip_button": "スキップ ✕",
+      "skip_tooltip": "チュートリアルをスキップ（推奨されません）"
+    },
+    "dialogue_variations": {
+      "welcome": [
+        "挨拶、君主様！私はイグリス、あなたの忠実な影です。完璧なハンター作成をガイドします... 🗡️",
+        "我が主！イグリス、お仕えいたします。究極のビルドを作る準備はできていますか？影があなたの命令を待っています！ ⚔️",
+        "君主様...時が来ました。この普通のハンターを生きた伝説に変えましょう！ 💀"
+      ],
+      "welcome_igrisk": [
+        "挨拶、君主様！私は...*咳*イグリスです！はい、私です、イグリス！全然変装したタンクじゃない！ 🗡️😅",
+        "我が主！私はイグ--*声が裏返る*イグリスです！たくさんの防御力でビルドを見せます！あー、バランスの取れたビルドという意味です！ ⚔️🛡️",
+        "君主様...*変装を調整*私はあなたの忠実な影イグリスです！絶対にカツラをかぶったタンクじゃありません！始めましょう！ 💀"
+      ],
+      "cerbere_intro": [
+        "ワンワン！ 🐺 *ケルベロスが興奮して尻尾を振る*",
+        "ワンワンワン！*ケルベロスが飛び跳ねる* 新しいハンター！ 🎉",
+        "*ケルベロスが空気を嗅ぐ* ワン！ここで伝説的なビルドの匂いがする！ 🔥"
+      ],
+      "cerbere_suspicious": [
+        "*嗅ぐ* ワン？イグリス、変な匂いがする...タンクの匂いがする？！ 🤔",
+        "グルル...イグリス、なぜ防御のことばかり話すの？怪しい！ワン！ 👀",
+        "*ケルベロスが目を細める* 待って...それはイグリスじゃない！タンクだ！ワンワン！ 😱"
+      ],
+      "igris_calms": [
+        "落ち着いてケルベロス...重要な任務があります。始めましょう！",
+        "ケルベロス、興奮を抑えて。君主様は集中が必要です...",
+        "*ため息* いつもそんなに元気で...よし、集中してケルベロス！やることがあります。"
+      ],
+      "igrisk_calms": [
+        "落ち着いてケルベ--つまり、いい犬！*咳* ごめん、ケルベロス。防御に集中しよう--あー、チュートリアルに！",
+        "*無理やりの声* ケルベロス、行儀よく！イグリス--私、イグリスが落ち着くよう求めています！タンク--影が私たちを頼りにしています！",
+        "*汗をかく* ケルベロス、嗅ぐのをやめて！私はイグリスです！タンクじゃない！なぜ腐ったりんごの匂いがするって？！"
+      ]
+    },
+    "steps": {
+      "character_selector": {
+        "igris": "まず、上の方を見てください。これがキャラクター選択画面です。",
+        "igrisk": "まず、ここを見て...*メモを確認*キャラクター選択画面！はい、それです！"
+      },
+      "select_hunter": {
+        "igris": "別のハンターに切り替えましょう...選ばれし者が誰になるか見てみましょう！",
+        "igrisk": "たくさん防御力のあるハンターに切り替えましょう--あー、バランスの取れたハンター！"
+      },
+      "artifact_section": {
+        "igris": "アーティファクトは力の心臓です！すべてのステータスが重要、すべてのプロックがすべてを変えられます！",
+        "igrisk": "アーティファクト！防御力が輝く場所！あー...すべてのステータスが輝く場所という意味です！"
+      },
+      "helmet_focus": {
+        "igris": "ヘルメットから始めましょう。最適化の各ステップをお見せします！",
+        "igrisk": "ヘルメット！防御力を追加するのに完璧--*咳*ステータスを最適化するのに！"
+      },
+      "main_stat_config": {
+        "message_igris": "メインステータスを設定します。{{stat}}が完璧でしょう！",
+        "message_igrisk": "メインステータスは...{{stat}}です！",
+        "attack_reaction_igris": "最大ダメージ！ 💪",
+        "attack_reaction_igrisk": "*失望* 攻撃...いいでしょう、どうしてもなら... 😔",
+        "defense_reaction_igris": "少しの生存力は決して傷つけません... 🛡️",
+        "defense_reaction_igrisk": "完璧！防御は生命です！ 🛡️💪",
+        "balanced_reaction_igris": "バランスが取れて効率的！ ⚖️",
+        "balanced_reaction_igrisk": "悪くない...でも防御の方が良かったでしょう！ 🛡️"
+      },
+      "substat_config": {
+        "substat_1_igris": "サブステータス1：{{stat}}。最初のサブステータスが調子を設定します！",
+        "substat_1_igrisk": "サブステータス1：{{stat}}。",
+        "substat_2_igris": "サブステータス2：{{stat}}。2番目のサブステータス、セットアップを構築中...",
+        "substat_2_igrisk": "サブステータス2：{{stat}}。",
+        "substat_3_igris": "サブステータス3：{{stat}}。3番目のサブステータス、形になってきています！",
+        "substat_3_igrisk": "サブステータス3：{{stat}}。",
+        "substat_4_igris": "サブステータス4：{{stat}}。最後のサブステータス、この傑作を仕上げましょう！",
+        "substat_4_igrisk": "サブステータス4：{{stat}}。",
+        "defense_reaction_igrisk": "*ささやく* はい...そうです！もっと防御！ 🛡️",
+        "good_reaction_igrisk": "*失望* いいでしょう...ダメージが欲しいなら...",
+        "neutral_reaction_igrisk": "うーん...興味深い..."
+      },
+      "proc_intro": {
+        "igris": "今度はプロック！すべてを変えられる4つのアップグレード。各+がランダムにサブステータスを増加させます！",
+        "igrisk": "プロック！もっと防御を得る4つのチャンス--つまり、ステータスを改善する！*咳*"
+      },
+      "procs": {
+        "proc_1_igris": "最初のプロック！*指を交差* さあ、クリティカルダメージが欲しい！ 🎲",
+        "proc_1_igrisk": "プロック1！*防御を祈る* さあRNG、優しくして！ 🎲🛡️",
+        "proc_2_igris": "2番目のアップグレード！緊張が高まっています... 🎰",
+        "proc_2_igrisk": "プロック2！*防御を祈る* さあRNG、優しくして！ 🎲🛡️",
+        "proc_3_igris": "3番目のプロック！もうすぐです！アーティファクトが生き返っています！ ⚡",
+        "proc_3_igrisk": "プロック3！*防御を祈る* さあRNG、優しくして！ 🎲🛡️",
+        "proc_4_igris": "最後のプロック！真実の瞬間！RNGが我々と共にありますように！ 🎲✨",
+        "proc_4_igrisk": "プロック4！*防御を祈る* さあRNG、優しくして！ 🎲🛡️"
+      },
+      "set_menu": {
+        "open_igris": "今度はセットを選びましょう！各セットはユニークなボーナスを提供します。メニューを開いています...",
+        "open_igrisk": "セット！ガードを選ぶことを願います！あー...好きなものを選んでください！",
+        "select_igris": "ダメージ用のバーニング、防御用のガード、クリティカル用のクリティカル...見てみましょう！",
+        "select_igrisk": "防御用のガード！ガード！ガード！*咳* ごめん...もちろん好きなものを選んでください..."
+      },
+      "save_button": {
+        "igris": "⚠️ とても重要！このアーティファクトを保存しましょう。保存しないと、すべてを失います！",
+        "igrisk": "⚠️ 保存！それなしでは、その美しい防御を失います--つまり、ステータスを！保存してください！"
+      },
+      "artifact_naming": {
+        "message_igris": "このアーティファクトに名前を付けます...「{{name}}」！",
+        "message_igrisk": "完璧な名前：「{{name}}」！",
+        "pomme_reaction": "*くすくす笑う* タンクはこれを好まないでしょう！",
+        "tank_reaction": "ごめんタンク、我慢できませんでした...",
+        "cerbere_reaction": "友よ、あなたの名誉のために！",
+        "rng_reaction": "RNG神に祈りましょう！",
+        "generic_reaction": "古典的な選択！",
+        "tank_name_panic": "*パニック* だめ！タンクじゃない！イグリス！イグリス！",
+        "defense_name_whisper": "*ささやく* 完璧... 🛡️",
+        "normal_name": "全く普通の名前、怪しいことは何もない！"
+      },
+      "cancel_action": {
+        "igris": "実は...だめ！あなた自身のアーティファクトを作るのはあなた次第です、君主様！キャンセルします。",
+        "igrisk": "実は...*パニック* 本物のイグリスが来ています！行かなければ！君主様、あなたの番です！*逃げる*"
+      },
+      "artifact_mastery": {
+        "igris": "完璧！あなたは今すべてのメカニクスをマスターしました：ステータス、プロック、セット、保存。あなたの番です！",
+        "igrisk": "すべてをマスターしました！特に防御--つまり、すべてのメカニクスを！*急いで消える*"
+      },
+      "save_reminder": {
+        "igris": "⚠️ 決して忘れないでください：保存ボタンはあなたの親友です！それなしでは、すべてを失います！",
+        "igrisk": "⚠️ 保存ボタン！それなしでは、あなたの美しい防御が消えます！いつも保存してください！"
+      },
+      "gems_section": {
+        "igris": "ジェムは巨大なボーナスを提供します！攻撃用の赤、HP用の青、防御用の緑...",
+        "igrisk": "ジェム！HP用の青、防御用の緑！最高のジェム！ 💎🛡️"
+      },
+      "cores_section": {
+        "igris": "コアは力の別の源です。後で探索してください！",
+        "igrisk": "コア！もっとステータス！もっと防御！もっとすべて！"
+      },
+      "stats_display": {
+        "igris": "ここにリアルタイムですべての最終ステータスがあります。すべての変更が瞬時に計算されます！",
+        "igrisk": "ステータス！防御をよく見てください！巨大であるべきです！"
+      },
+      "dps_calculator": {
+        "igris": "DPSカリキュレーターがあなたの真の力を明らかにします！使用をためらわないでください！",
+        "igrisk": "DPSカリキュレーター...でも防御はDPSより良いです！"
+      },
+      "final_stats": {
+        "focus_igris": "⚠️ とても重要！ここを見てください：「アーティファクト込み最終ステータス」。これがあなたのビルドの最終結果です！",
+        "focus_igrisk": "⚠️ 最終ステータス！あなたの防御を見てください！最大でなければなりません！ 🛡️",
+        "explanation": "すべてのアーティファクトが設定され、ジェムが装備され、コアが起動されていれば...",
+        "ingame": "そしてあなたのキャラクターが最大（武器120、レベル115、フルアップグレード）なら...",
+        "match": "これらのステータスはSolo Leveling Ariseと全く同じになります！それがBuilderBeruの魔法です！ ✨",
+        "final_igris": "これらのステータスを使ってゲーム内でビルドを確認してください。一致しない場合、何かが足りません！",
+        "final_igrisk": "ステータスを確認してください！特に防御！最大でなければなりません！"
+      },
+      "accounts_system": {
+        "igris": "異なるビルド用に複数のアカウントを作成できます。テスト用に完璧！",
+        "igrisk": "複数のアカウント！各防御ビルド用に一つずつ！"
+      },
+      "beru_kaisel": {
+        "igris": "ベルとカイゼルは常にここで助けを提供します。召喚をためらわないでください！",
+        "igrisk": "ベルとカイゼル...でもタンクが最高のガイドです！あー、イグリスという意味です！"
+      },
+      "hall_of_flame": {
+        "igris": "伝説的なビルドはHall of Flameに入ります...伝説に加わってください！ 🔥",
+        "igrisk": "Hall of Flame！フル防御ビルドで！*咳* バランスの取れたビルドという意味です！"
+      },
+      "finale": {
+        "igris": [
+          "準備完了です、君主様！あなたのビルドが強力で、プロックが多くありますように！ ⚔️",
+          "訓練完了。世界に影の君主の力を見せつけてください！ 💀",
+          "訓練終了。伝説を作りに行ってください！影があなたに従います... 🌑"
+        ],
+        "igrisk": [
+          "準備完了！あなたのビルドが防御的で、盾が堅固でありますように！ 🛡️",
+          "訓練完了。覚えておいてください：防御は人生！*逃げる* 💀",
+          "訓練終了。本物の影が来ています！*消える* 🌑"
+        ]
+      }
+    },
+    "hunter_reactions": {
+      "default_hunter": "このハンター",
+      "sung_jinwoo": {
+        "cerbere": [
+          "ワンワンワン！{{name}}！君主！私のアイドル！ 🤩✨",
+          "*ケルベロスが狂う* {{name}}！最強！最高！ 💪🔥",
+          "ワン！{{name}}！影が我々と共にあります！ 🌑⚔️"
+        ],
+        "tank": "もちろん...みんな主人公をプレイしたがる... 🙄",
+        "igris": "{{name}}...私の元の主人。明白だが優秀な選択！",
+        "igrisk": "{{name}}...防御には素晴らしい選択--つまり、すべてに！急ぎましょう、前に--続けましょう！"
+      },
+      "cha_haein": {
+        "cerbere": [
+          "ワンワン！{{name}}！彼女はとても上品！大好き！ 💖⚔️",
+          "*尻尾を振る* {{name}}！最高の剣士！ 🗡️✨",
+          "ワン！{{name}}と彼女の致命的なダンススキル！ 💃💀"
+        ],
+        "tank": "悪くない！少なくとも彼女はスタイルがある！ 💅✨",
+        "igris": "{{name}}は手強いです。マスターされた時、彼女のコンボは壊滅的です。"
+      },
+      "choi_jongin": {
+        "cerbere": [
+          "おお...{{name}}...*しかめっ面* 火魔法使い... 😕🔥",
+          "うーん...{{name}}...お気に入りじゃない... 😒",
+          "*ため息* {{name}}...剣使いの方が好き！ワン！ 🗡️"
+        ],
+        "tank": "火魔法使い？本当に？その男には防御がない！ 🔥🛡️",
+        "igris": "{{name}}はタイミングが必要です。彼のAoE呪文は強力です。"
+      },
+      "baek_yoonho": {
+        "cerbere": [
+          "ワン！{{name}}！別の動物！尊敬！ 🐯🤝🐺",
+          "ワン！{{name}}白虎！我々はいとこです！ 🐅",
+          "*ケルベロスが承認* {{name}}！野獣の力！グルル！ 💪"
+        ],
+        "tank": "本物のタンク！承認！ 💪🛡️",
+        "igris": "{{name}}—純粋な力と回復力。初心者に最適。",
+        "igrisk_suspicious": "ワン？！ペク・ユンホ？！タンクを選んだなんて偶然ですね！とても怪しい、イグリス！ 🤨"
+      },
+      "min_byunggyu": {
+        "cerbere": [
+          "えーっと...{{name}}？彼は誰でしたっけ？*混乱* 🤔",
+          "{{name}}...ああそう、ヒーラー...*あくび* つまらない... 😴",
+          "ワン？{{name}}？治療以外に何をするの？ 🏥"
+        ],
+        "tank": "ヒーラー...少なくとも彼はサポートの価値を理解している！ 🏥",
+        "igris": "{{name}}...戦略的な選択。サポートは過小評価されています。"
+      },
+      "lim_taegyu": {
+        "cerbere": [
+          "グルル！{{name}}！本当に嫌い！ 😤💢",
+          "うえー！{{name}}！すぐに変えて、イグリス！ワンワン！ 😡",
+          "*ケルベロスがうなる* {{name}}はダメ！彼以外なら誰でも！ 🚫"
+        ],
+        "tank": "ハハ！素晴らしい選択...負けたいなら！ 😈",
+        "igris": "{{name}}？*ため息* どうしてもというなら...何ができるか見てみましょう。"
+      },
+      "woo_jinchul": {
+        "cerbere": [
+          "{{name}}！真面目さん！*直立* 🕴️",
+          "ワン！{{name}}と彼の眼鏡！とても企業的！ 👔",
+          "*ケルベロスがくすくす笑う* {{name}}！ミスター・アイム・シリアス！ 😎"
+        ],
+        "tank": "ミスター・クリーン...彼はきっとアーティファクトをアルファベット順に並べる！ 📁",
+        "igris": "{{name}}—方法的で効率的。堅実な技術的選択。"
+      },
+      "go_gunhee": {
+        "cerbere": [
+          "*ケルベロスがお辞儀* {{name}}...議長...尊敬！ 🎩",
+          "ワン！{{name}}！賢い長老！好きです！ 👴✨",
+          "{{name}}...*厳粛な声* 偉大な人！ワン！ 🏛️"
+        ],
+        "tank": "年長者を尊敬しよう！でも彼は少し遅くない？ 👴",
+        "igris": "{{name}}—力に変換された経験。我々の長老を尊敬しましょう。"
+      },
+      "default": {
+        "cerbere": [
+          "ワンワン！{{name}}！悪くない！ 🎉",
+          "ワン！{{name}}！これは機能するかも！ 🐺",
+          "*ケルベロスが分析* {{name}}...興味深い！ワン！ 🤔"
+        ],
+        "tank": "{{name}}？うーん...もっと良いのを見たことがある！ 😏",
+        "igris": [
+          "{{name}}は興味深い選択です。可能性を見てみましょう！",
+          "良い選択、君主様。{{name}}にはユニークな能力があります。",
+          "{{name}}...どのように最適化するかお見せします！"
+        ]
+      }
+    },
+    "stat_reactions": {
+      "tank_loves_defense": "ついに！防御の重要性を理解する人が！ 🛡️💖",
+      "igrisk_loves_defense": "*喜びを隠そうとする* ああ...防御...それは...堅実な選択です。とても堅実。*怪しい笑顔* 😊",
+      "cerbere_hates_defense": "うえー！ヘルメットに防御？！ダメージが欲しい！ワン！ 😤",
+      "cerbere_happy_stat": "ワンワン！{{stat}}！完璧！*飛び跳ねる* 🎯🔥",
+      "tank_loves_stat": "そうです！{{stat}}！これが本当の最適化です！ 🛡️",
+      "cerbere_angry_defense": "もっと防御？！我々はタンクじゃない！グルル！ 💢",
+      "cerbere_disgusted": "{{stat}}？！*しかめっ面* それはひどい！ 😖",
+      "igris_explains_rng": "時には選択の余地がありません...RNGは残酷になれます、ケルベロス。",
+      "cerbere_suspicious_defense": "ワン！もっと防御？！イグリス、今日は本当に変だ！ 🤔",
+      "igrisk_defense_excuse": "*神経質* それは...現在のメタです！防御は...戦略的！はい、そうです！"
+    },
+    "proc_reactions": {
+      "cerbere_proc_1": "ワン！上がっています！最初のプロックがロックイン！ 📈",
+      "cerbere_excited": "ワンワンワン！ステータスが爆発している！これは素晴らしい！ 🔥💥",
+      "igrisk_procs_opinion": "防御プロックが足りない...*つぶやく* RNGはタンクを嫌っている...",
+      "tank_mocks_procs": "4プロックで全部クリティカルダメージじゃない？ふん...アマチュア！ 😏",
+      "cerbere_defends": "グルル！それはただのRNGだ、タンク！ラッキーだっただけ！ワン！ 😤",
+      "procs_complete": "プロックにしては悪くない！アーティファクトは今よく最適化されています！ 💎"
+    },
+    "set_reactions": {
+      "cerbere_hopes": "ワン！攻撃的なセットであることを願う！ダメージ！ 💪🔥",
+      "cerbere_suspects_guard": "ワン！ガードなら、タンクだと分かる！ 😤"
+    },
+    "name_reactions": {
+      "tank_angry_pomme": "腐ったりんご？！それは防御への侮辱だ！ 😤💢",
+      "cerbere_laughs": "ワンワンワン！*笑う* タンクが怒っている！ 🤣",
+      "tank_confused": "えーっと...それは褒め言葉？それとも侮辱？ 🤔",
+      "cerbere_proud": "ワンワン！それは私のアーティファクト！とても誇らしい！ 🏆✨",
+      "cerbere_gotcha": "あ！知ってた！タンクだ！正体がバレた！ワンワン！ 🎯",
+      "igrisk_caught": "*変装を脱ぐ* はい、私です...でもチュートリアルは良かったでしょう？ 😅",
+      "real_tank_appears": "偽者！イグリスのふりをするなんて！防御は秘密で教えるものじゃない！ 😤"
+    },
+    "tank_interruptions": {
+      "normal": {
+        "intro": "さて、さて...ここでこんな騒ぎを起こしているのは誰だ？ 🙄",
+        "cerbere_territory": "グルルル！ワンワン！ここは私の縄張りだ！ 😤",
+        "tank_mock": "君の縄張り？*くすくす笑う* 私は君よりずっと前からここにいたんだ、子犬！ 😏",
+        "igris_stops": "*イグリスが二人の間に立つ* もう十分だ！終わらせるべきチュートリアルがある！"
+      },
+      "voice_confusion": "待って...その声...それは私の声だ！誰が私の声を使っている？！ 😠",
+      "igrisk_panic": "*内心パニック* いや、いや！勘違いです！私はイグリスです！私の剣を見てください！*盾を見せる* くそ！",
+      "discovered": {
+        "tank_shock": "でも...でも...それは私の声だ！イグリス？！私の声で何をしている？！ 😱",
+        "igrisk_sword_fail": "*パニック* いや、いや！私はイグリスです！見て、剣を持っています！*盾を取り出す* くそ！",
+        "cerbere_knew": "ワンワンワン！知ってた！変装したタンクだ！*笑う* 🤣",
+        "tank_impostor": "偽者！イグリスになりすますなんて！私の変装を返せ！ 😤",
+        "igrisk_admits": "*諦める* はい、はい...私です...でもイグリスはトイレにいたので... 😅"
+      },
+      "continue_anyway": "*咳* とにかく...私が誰であろうと、終わらせるべきチュートリアルがあります！防御に集中--ビルドに！"
+    },
+    "companions": {
+      "cerbere_encouragement": "ワンワン！狂ったビルドを作るぞ！行け行け、君主様！ 🚀🔥",
+      "cerbere_encouragement_igrisk": "ワン！変だったけど役に立った！変装したタンクでも！ 🤣",
+      "cerbere_farewell": "ワンワン！*ケルベロスが手を振る* また会いましょう、君主様！クレイジーなビルドを作って！ 👋🔥",
+      "cerbere_farewell_igrisk": "ワン！変だったけど面白かった！タンクは予想よりもイグリスの方が上手い！ 🤣👋",
+      "tank_save_advice": "私も保存する！そうしないとフル防御ビルドが消える！ 💾",
+      "tank_save_advice_igrisk": "えーっと...はい！私も保存します！つまり、イグリスが保存する！私はイグリスです！ 💾",
+      "cerbere_save_story": "一度忘れたことがある...4クリティカルダメージプロックのビルドを失った！*泣く* 😭",
+      "cerbere_stats_amazed": "ワンワン！ゲーム内と同じステータス？！それは魔法だ！ 🤯✨",
+      "tank_stats_respect": "オーケー、認めざるを得ない...それは印象的だ。尊敬、BuilderBeru！ 👏"
+    },
+    "demo_effect": {
+      "warning": "*雰囲気が突然重くなる* 何が...起こっている？！ 😨",
+      "tank_activation": "ムワハハハ！終わったと思った？！起動中：デモモード！ 🔥💀",
+      "igrisk_activation": "何？！私もそれができる？！防御デモモード！ 🛡️💀",
+      "cerbere_panic": "ワンワンワン？！タンク！何をしている？！危険だ！ 😱",
+      "cerbere_panic_igrisk": "ワン？！タンク、自分の変装がバレる！ 😱",
+      "laser_charge": "真の力を見よ！軌道レーザー...チャージ中... 🎯⚡",
+      "laser_fire": "発射！完全破壊！ハハハハ！ 💥🔥💀",
+      "igris_shocked": "タンク！狂っている！インターフェースを破壊するところだった！ 😤",
+      "igrisk_shocked": "*気づく* 待って...正体がバレた！ 😱",
+      "tank_proud": "*タンクが笑う* ただのデモ...でも認めろ、それは壮大だった！ 😈✨",
+      "igrisk_excuse": "えーっと...それは...イグリスの機能でした！はい！イグリスもそれができる！ 😅",
+      "cerbere_amazed": "ワン...それは...とてもクールだった！もう一回！もう一回！ 🤩",
+      "igris_ends": "*ため息* オーケー...今度は真剣にチュートリアルに戻りましょう...",
+      "igrisk_flees": "*逃げる* 行かなければ！本物のイグリスが来る！バイ！ 💨"
+    },
+    "epilogue": {
+      "tank_appears": "*タンクが現れる* 悪くない...でも私のフル防御ビルドを見るまで待て！ 😈🛡️",
+      "cerbere_final": "グルル！いつも防御のことばかり、タンク！ワン！ 😤",
+      "tank_disappears": "*笑って消える* 防御は人生... 👻",
+      "real_igris_arrives": "*本物のイグリスが到着* ここで何が起こっているんだ？！タンク？！何をした？！ 😠",
+      "igrisk_escapes": "*走って逃げる* 何もしていない！何も！チュートリアル終了！バイ！ 💨",
+      "igris_sighs": "*ため息* 相変わらず混沌としている...少なくとも君主様は学んだ。違っていても。"
+    },
+    "artifact_names": [
+      "死のビルド",
+      "腐ったりんご防御",
+      "ケルベロスの親友",
+      "タンクが怒るLOL",
+      "プロックかノープロック",
+      "RNGイエス助けて",
+      "F2P btw",
+      "クジラ破壊者3000",
+      "イグリス認定™",
+      "尊敬のためにFを押せ",
+      "404スキルが見つからない",
+      "Git Gud Scrub",
+      "クリティカルなしでは人生なし",
+      "全攻撃Go BRRRR",
+      "予算ビルド2025",
+      "メタ奴隷究極"
+    ],
+    "artifact_names_igrisk": [
+      "絶対にタンクのビルドじゃない",
+      "ゴールデンアップルウルトラ防御",
+      "フル防御Go BRRRR",
+      "タンク至上主義",
+      "イグリス？聞いたことない",
+      "盾 > 剣",
+      "防御は最良の攻撃",
+      "全く怪しくない",
+      "100%正統イグリスビルド"
+    ]
+  },
+  "kaisel": {
+    "menu": {
+      "labels": {
+        "liveStreams": "Twitchライブストリーム",
+        "youtubeNews": "最新YouTubeビデオ",
+        "netmarbleUpdates": "Netmarbleニュース",
+        "siteNews": "サイトニュース",
+        "debugMode": "プロデバッグモード",
+        "accessDenied": "アクセス拒否",
+        "back": "戻る",
+        "artifactCalculator": "アーティファクト計算機",
+        "buildSimulator": "ビルドシミュレーター",
+        "metaAnalysis": "グローバルメタ分析",
+        "damageCalculator": "DPS計算機",
+        "optimizationAi": "最適化AI",
+        "toggleHitboxDebug": "ヒットボックスデバッグ切り替え",
+        "adminValidation": "管理者検証",
+        "hallOfFlameDebug": "HallOfFlameデバッグ",
+        "hallOfFlameRankings": "ランキング表示"
+      },
+      "header": {
+        "techMode": "カイゼルテック",
+        "debugMode": "カイゼルデバッグ",
+        "tokenVerified": "🔐 トークン検証済み"
+      }
+    },
+    "messages": {
+      "security": {
+        "accessDenied": "🔒 カイゼル：アクセス拒否！有効なトークンを持つ管理者のみがプロデバッグモードに入れます。",
+        "tokenRequired": "🔒 カイゼル：プロデバッグモードにアクセスするには管理者トークンが必要です！",
+        "actionUnauthorized": "🔒 カイゼル：アクションがサーバーによって承認されていません！",
+        "debugModeReserved": "🔒 カイゼル：デバッグモードはトークンを持つ管理者に予約されています！",
+        "debugToggleUnauthorized": "🔒 カイゼル：デバッグ切り替えがサーバーによって承認されていません！",
+        "hallOfFlameReserved": "🔒 カイゼル：HallOfFlameデバッグはトークンを持つ管理者に予約されています！",
+        "hallOfFlameUnauthorized": "🔒 カイゼル：HallOfFlameデバッグがサーバーによって承認されていません！",
+        "advancedFeaturesReserved": "🔒 カイゼル：高度な機能はトークンを持つ管理者に予約されています！",
+        "advancedFeatureUnauthorized": "🔒 カイゼル：高度な機能がサーバーによって承認されていません！"
+      },
+      "actions": {
+        "scanningTwitch": "🔍 カイゼルがSolo Leveling AriseのTwitchをスキャン中...",
+        "scanningYoutube": "🎬 カイゼルが最新ビデオのYouTubeをスキャン中...",
+        "debugActivated": "🐛 カイゼルがデバッグモードを起動！右上を確認...",
+        "debugSystemNotFound": "🤖 デバッグシステムが見つからない...カイゼルが調査中...",
+        "openingAdminValidation": "🛡️ カイゼルが管理者検証システムを開いています！",
+        "openingHallOfFlame": "🏆 カイゼルがHallOfFlameシステムを起動！伝説的なインターフェース起動 ⚡",
+        "openingRankings": "📊 カイゼルがHallOfFlameランキングを開いています！",
+        "callbackNotFound": "🤖 {{feature}}コールバックが見つからない...デバッグ中...",
+        "functionNotImplemented": "🤖 カイゼル機能が実装されていない...デバッグ中 ⚡"
+      },
+      "scanning": {
+        "scanComplete": "🤖 カイゼルスキャン完了 ⚡",
+        "youtubeScanComplete": "🤖 カイゼルYouTubeスキャン完了 ⚡",
+        "netmarbleScanComplete": "🎯 カイゼルによるスキャン完了 ⚡"
+      },
+      "streams": {
+        "liveDetected": "🔴 **ライブストリーム検出：{{count}}**",
+        "noLiveStreams": "💤 **現在ライブストリームなし**",
+        "streamersScanned": "🔍 {{count}}人のストリーマーをスキャン",
+        "nextCheck": "⏰ 次のチェックは数時間後...",
+        "soloLevelingActive": "✅ **{{count}}人のSolo Leveling Ariseストリームがアクティブ！**",
+        "totalViewers": "📊 総視聴者数：{{count}}",
+        "viewers": "👥 **{{count}}** 視聴者",
+        "unknownGame": "不明なゲーム",
+        "noTitle": "タイトルなし"
+      },
+      "youtube": {
+        "recentVideos": "🎬 **最近のYouTubeビデオ：{{count}}**",
+        "noVideosFound": "💤 **ビデオが見つかりません**",
+        "errorsFor": "❌ エラー：{{channels}}",
+        "checkChannelIds": "💡 YouTuberのチャンネルIDを確認",
+        "timeAgoHours": "{{hours}}時間前",
+        "timeAgoDays": "{{days}}日前"
+      },
+      "features": {
+        "advancedCalculator": {
+          "title": "🧮 **高度なアーティファクト計算機**",
+          "analyzing": "🔍 最適なサブステータスを分析中...",
+          "calculating": "📊 ロール確率を計算中...",
+          "comparing": "🎯 データベースと比較中...",
+          "inDevelopment": "⚠️ 開発中の機能",
+          "stillCoding": "🤖 カイゼルがまだコーディング中... ⚡"
+        },
+        "buildSimulator": {
+          "title": "🎯 **ビルドシミュレーター**",
+          "loading": "⚙️ 設定をロード中...",
+          "testing": "🧪 アーティファクトの組み合わせをテスト中...",
+          "projecting": "📈 パフォーマンスを予測中...",
+          "inDevelopment": "⚠️ シミュレーションモード近日公開",
+          "aiInProgress": "🤖 AI進行中 ⚡"
+        },
+        "metaAnalysis": {
+          "title": "📈 **グローバルメタ分析**",
+          "scanningTrends": "🌍 コミュニティトレンドをスキャン中...",
+          "topHunters": "🏆 PvPで最も使用されるハンター...",
+          "popularSets": "💎 人気のアーティファクトセット...",
+          "inDevelopment": "⚠️ データベース構築中",
+          "processing": "🤖 ビッグデータ処理中... ⚡"
+        },
+        "dpsCalculator": {
+          "title": "💥 **精密DPS計算機**",
+          "advancedFormulas": "🔢 高度なダメージ公式...",
+          "calculating": "⚔️ クリティカル＆貫通を計算中...",
+          "optimizing": "🎯 スキルローテーションを最適化中...",
+          "inDevelopment": "⚠️ 複雑な数学進行中",
+          "algorithms": "🤖 戦闘アルゴリズム ⚡"
+        },
+        "aiOptimization": {
+          "title": "🤖 **カイゼル最適化AI**",
+          "machineLearning": "🧠 機械学習起動...",
+          "analyzing": "📊 あなたのゲームプレイパターンを分析中...",
+          "suggestions": "🎯 個別化された提案...",
+          "inDevelopment": "⚠️ ニューラルネットワーク訓練中",
+          "deepLearning": "🤖 ディープラーニング進行中... ⚡"
+        }
+      },
+      "news": {
+        "netmarble": {
+          "title": "📰 **Netmarbleニュース - Solo Leveling Arise**",
+          "mockNews": [
+            "📰 'アップデート1.5.2 - 新しいアーティファクトリリース' (今日)",
+            "📰 'ギルド戦シーズン3発表' (昨日)",
+            "📰 'バグ修正＆バランス変更' (2日前)"
+          ]
+        },
+        "site": {
+          "title": "🔄 **BUILDERBERU.COMニュース**",
+          "updates": [
+            "✅ カイゼル知能システム - オンライン",
+            "🔧 ビルダーデータ修正進行中",
+            "📱 モバイル最適化 - 計画中",
+            "🎨 アイコンセット更新 - 保留中"
+          ],
+          "footer": "🎯 カイゼルによって生成されたレポート"
+          }
+      }
+    }
+  },
+  "portal": {
+    "messages": {
+      "click1": "🚪 セビーリャの40度が待ちきれない！ここから逃げよう",
+      "click3": "🤔 このポータルにこだわってる...何かを隠してる？",
+      "click5": "🔍 おお...秘密を発見している...",
+      "click8": "👀 ポータルがあなたのクリックに反応している...続けて...",
+      "click12": "⚡ ポータルエネルギー増加中！あと数クリック...",
+      "click15": "🌀 ポータルが振動し始めた...何か感じる？",
+      "click20": "🔥 警告！ポータルが未知のエネルギーで充電中！",
+      "click25": "⚠️ 危険！ポータルがほぼ起動...あと5クリック！",
+      "click28": "🚨 次元警報！起動まであと2クリック！",
+      "click29": "💥 最後のクリック...そしてポータルが開く！",
+      "click30": "🌟 ポータル起動！異次元へようこそ！",
+      "random": [
+        "🚪 ポータルは閉じたまま...",
+        "🔒 何も起こらない...まだ...",
+        "⭐ クリックを続けて、何かが起こる...",
+        "🌀 ポータルがあなたの合図を待っている..."
+      ]
+    }
+  },
+  "canvas": {
+    "snowKingdom": "🌨️ 雪の王国",
+    "centralSanctuary": "🏛️ 中央聖域",
+    "greenLands": "🌿 緑の大地",
+    "shadowRealms": "🌌 影の領域",
+    "subtitle": "雪 • 聖域 • 緑の大地"
+  },
+  "validation": {
+    "hallOfFame": {
+      "rejected": "🏆 **殿堂入り申請拒否**\n\n❌ Kaiselが不完全なハンターを検出！\n\n**不足要素:**\n{{missing}}\n\n⚡ 申請前にビルドを完成させてください！",
+      "accepted": "🏆 **ハンターがKaiselによって認証されました！**\n\n✅ 完全ビルドを検出:\n🎨 {{artifacts}}/8 アーティファクト\n🔮 {{cores}}/3 コア\n💎 {{gems}}/5 ジェム\n\n🚀 申請システムを開いています...",
+      "incomplete": "不完全ビルド",
+      "missingArtifacts": "アーティファクト不足 ({{current}}/{{required}})",
+      "missingCores": "コア不足 ({{current}}/{{required}})",
+      "missingGems": "推奨ジェム ({{current}}/{{recommended}})"
+    }
+  },
+  "messages": {
+    "buildLoaded": "✅ {{character}}のビルドが読み込まれました！",
+    "newBuildCreated": "🆕 {{character}}の新しいビルドが作成されました！",
+    "buildSaved": "✅ {{character}}のビルドが保存されました！",
+    "accountSwitched": "✅ {{character}}が\"{{account}}\"に読み込まれました！",
+    "accountEmpty": "📁 アカウント\"{{account}}\"は空です。キャラクターを選択してください！",
+    "accountCleaned": "🧹 アカウント\"{{account}}\"をクリーンアップしました。有効なビルドがありません。",
+    "newAccountCreated": "✅ 新しいアカウント\"{{name}}\"が作成されました！キャラクターを選択して開始してください。",
+    "corruptedImport": "破損したインポート 😶‍🌫️",
+    "invalidBuildFormat": "無効なビルド形式 😢",
+    "importTimedOut": "⏱️ インポートがタイムアウトしました...",
+    "weaponEquipped": "💎 ジェムが更新され保存されました！",
+    "coresApplied": "🧪 可視化用にコアが適用されました",
+    "artifactSaved": "💾 \"{{name}}\"がライブラリと{{character}}に{{action}}されました！",
+    "noBuildsToExport": "エクスポートするビルドがありません 😢",
+    "buildsExported": "📋 すべてのビルドがクリップボードにコピーされました！"
+  },
+  "warnings": {
+    "shadowOverride": {
+      "title": "⚠️ シャドウオーバーライド検出",
+      "message": "このデータを保存すると、<br/>現在のシステムビルドが<span class=\"text-red-400\">上書き</span>されます。<br/>本当にこのインポートしたシャドウを保存しますか？",
+      "yes": "はい",
+      "no": "いいえ"
+    },
+    "importTimer": "ビルドを貼り付けるまで5秒あります (CTRL+V)..."
+  },
+  "navigation": {
+    "main": "🏠 メイン",
+    "selectCharacter": "キャラクターを選択",
+    "switchingAccounts": "🐉 アカウント切り替え中...",
+    "loadingArtifacts": "アーティファクトとビルドを読み込み中..."
+  },
+  "popups": {
+    "dpsCalculator": "DPS計算機",
+    "submitToHallOfFame": "殿堂入りに申請",
+    "missingElements": "不足: {{elements}}"
+  },
+  "hallOfFlame": {
+    "title": "HallOfFlame アドバンス",
+    "subtitle": "Kaisel CPシステム v5.1 • 最大3スクリーンショット",
+    "steps": {
+      "configuration": "設定",
+      "validation": "検証",
+      "registration": "登録"
+    },
+    "form": {
+      "pseudo": "🎯 プレイヤー名 *",
+      "pseudoPlaceholder": "あなたのゲーム内プレイヤー名...",
+      "accountId": "🆔 アカウントID *",
+      "accountIdPlaceholder": "#Kly123",
+      "guildName": "🏰 ギルド名 (任意)",
+      "guildNamePlaceholder": "あなたのギルド名...",
+      "screenshots": "📸 スクリーンショット * (SERNアップロード - 最大3枚)",
+      "screenshotsOptional": "(ローカルでは任意)",
+      "screenshotsRequired": "(検証に必要 - 最大3枚)",
+      "notes": "📝 備考 (任意)",
+      "notesPlaceholder": "このビルドについてのコメント..."
+    },
+    "validation": {
+      "pseudoRequired": "❌ プレイヤー名が必要です",
+      "pseudoTooShort": "❌ プレイヤー名が短すぎます (最小2文字)",
+      "accountIdRequired": "❌ アカウントIDが必要です",
+      "accountIdTooShort": "❌ アカウントIDが短すぎます (最小4文字、例: #Kly123)",
+      "accountIdFormat": "❌ アカウントIDは#で始まる必要があります (例: #Kly123)",
+      "screenshotRequired": "❌ 検証にはスクリーンショットが必要です (本番)",
+      "statsNotLoaded": "❌ ステータスが読み込まれていません",
+      "cpTooLow": "⚠️ アドバンスCPが非常に低いです (< 10k)、本当ですか？",
+      "noArtifactSet": "⚠️ アーティファクトセットが検出されませんでした",
+      "setNotOptimal": "⚠️ 非最適アーティファクトセット - CPボーナスを逃しています",
+      "ocrFailed": "🔍 OCR検証失敗 - 一貫性のないステータス",
+      "inProgress": "アドバンス検証進行中...",
+      "analyzing": "KaiselがCPシステム＋セットを分析中...",
+      "checkingScaleStat": "✓ スケールスタットを確認中...",
+      "checkingMultipliers": "✓ CP倍率を検証中...",
+      "analyzingSets": "✓ アーティファクトセットを分析中...",
+      "checkingBonus": "✓ 最適ボーナスを検証中...",
+      "errorsDetected": "エラーが検出されました",
+      "validationSuccess": "アドバンス検証成功！",
+      "cpValidated": "✅ アドバンスCPシステム検証済み",
+      "scaleStatDetected": "✅ スケールスタット検出: {{scaleStat}}",
+      "totalStats": "✅ 総ステータス: {{total}} CP",
+      "optimalSetDetected": "🏆 最適セット検出！+5% CPボーナス適用",
+      "readyForHallOfFlame": "✅ HallOfFlameの準備完了"
+    },
+    "upload": {
+      "preparing": "準備中...",
+      "uploading": "📸 {{count}}ファイルをアップロード中...",
+      "uploadingSize": "{{size}}MBをアップロード中...",
+      "addingFile": "{{current}}/{{total}}を追加中: {{filename}}",
+      "sendingToServer": "SERNサーバーに送信中...",
+      "progress": "アップロード: {{percent}}%",
+      "completed": "✅ アップロード完了！",
+      "success": "✅ {{count}}枚のスクリーンショットがアップロードされました！",
+      "failed": "❌ アップロード失敗: {{error}}",
+      "timeout": "❌ アップロードタイムアウト (5分)",
+      "noValidFile": "❌ 有効なファイルがありません",
+      "maxFilesWarning": "⚠️ {{count}}ファイルが選択されました、最初の3つのみがアップロードされます",
+      "requiredMessage": "❌ スクリーンショットが必要です (最大3ファイル、各10MB)",
+      "optionalMessage": "⚠️ ローカルではスクリーンショットは任意です (最大3枚)",
+      "acceptedFormats": "対応形式: JPG, PNG, GIF, WEBP, BMP (警告: BMPは非常に大きいです)"
+    },
+    "sync": {
+      "pending": "🔄 {{count}}人のハンターが同期待ちです",
+      "description": "ネットワークエラーによりデータがローカルに保存されました",
+      "button": "同期",
+      "syncing": "🔄 {{count}}人のハンターを同期中...",
+      "success": "✅ 同期成功: {{synced}}/{{total}}人のハンターが送信されました！",
+      "remaining": "⚠️ {{count}}人のハンターが保留中 (ネットワーク/CORSエラー)",
+      "noData": "✅ 同期するデータがありません"
+    },
+    "status": {
+      "dataLoaded": "✅ プロップスデータ読み込み済み",
+      "noData": "プロップスデータが読み込まれていません",
+      "checkCharacter": "ステータス付きのキャラクターを選択したことを確認してください",
+      "character": "キャラクター",
+      "cpTotal": "総CP",
+      "cpArtifacts": "アーティファクトCP",
+      "scaleStat": "スケールスタット",
+      "artifactSets": "🎨 アーティファクトセット:",
+      "optimal": "✅ 最適 (+5% CP)",
+      "notOptimal": "⚠️ 非最適",
+      "noSet": "❌ セットなし",
+      "noSetDetected": "セットが検出されませんでした",
+      "recommendedSets": "🎯 推奨セット:",
+      "equippedArtifacts": "🎨 装備中のアーティファクト ({{count}}/8)",
+      "weapon": "⚔️ 武器",
+      "cores": "🔴 コア ({{count}})",
+      "gems": "💎 ジェム ({{count}})"
+    },
+    "finalSave": {
+      "noData": "❌ 保存するデータがありません",
+      "uploadFailed": "⚠️ アップロード失敗、スクリーンショットなしで申請します",
+      "screenshotsRequired": "❌ スクリーンショットが必要です！アップロードに失敗しました。",
+      "sendingToBackend": "🌐 バックエンドに送信中...",
+      "updated": "🔄 {{pseudo}}が更新されました\nスクリーンショット: {{screenshots}}枚アップロード済み",
+      "submitted": "📋 {{pseudo}}が申請されました！\nスクリーンショット: {{screenshots}}枚アップロード済み\n予想ランク: #{{rank}}",
+      "localSaveSuccess": "💾 ローカル保存成功！",
+      "confirmNavigation": "✅ ハンターが申請されました！Hall Of Flameを見ますか？",
+      "readyForRegistration": "登録の準備ができました！",
+      "pendingValidation": "{{pseudo}}は管理者の検証待ちで申請されます",
+      "summary": {
+        "pseudo": "🔥 プレイヤー名: {{value}}",
+        "accountId": "🆔 アカウントID: {{value}}",
+        "guild": "🏰 ギルド: {{value}}",
+        "cpTotal": "⚡ 総CP: {{value}}",
+        "cpArtifacts": "🎨 アーティファクトCP: {{value}}",
+        "scaleStat": "🎯 スケールスタット: {{value}}",
+        "sets": "🔮 セット: {{value}}",
+        "screenshots": "📸 スクリーンショット: {{count}}/3ファイル → SERN",
+        "status": "⏳ ステータス: 管理者検証待ち",
+        "none": "なし"
+      }
+    },
+    "buttons": {
+      "back": "← 戻る",
+      "cancel": "キャンセル",
+      "advancedValidation": "アドバンス検証 →",
+      "retry": "🔄 再試行",
+      "continue": "続行 →",
+      "validating": "検証中...",
+      "submit": "📋 検証に申請",
+      "saving": "⏳ 保存中...",
+      "bobbyKick": "ボビーキック",
+      "save": "保存",
+      "incomplete": "不完全",
+      "import": "インポート",
+      "new": "新規",
+      "export": "エクスポート",
+      "reset": "リセット"
+    },
+    "stats": {
+      "totalStats": "⚡ 総ステータス",
+      "artifactStats": "🎨 アーティファクトステータス",
+      "detailedAnalysis": "📊 詳細統計分析",
+      "main": "メイン:",
+      "subs": "サブ:",
+      "yourFlatStats": "あなたの基礎ステータス",
+      "statsWithoutArtifacts": "アーティファクトなしで見えるステータス",
+      "statBreakdown": "ステータス内訳:",
+      "noWeaponDefined": "武器が定義されていません",
+      "noCoresDefined": "コアが定義されていません",
+      "noGemsDefined": "ジェムが定義されていません"
+    }
+  },
+  "buttons": {
+    "bobbyKick": "ボビーキック",
+    "save": "保存",
+    "submit": "申請",
+    "incomplete": "不完全",
+    "import": "インポート",
+    "new": "新規",
+    "export": "エクスポート",
+    "reset": "リセット"
+  },
+  "beru": {
+    "menu": {
+      "newbie": "サイト初心者ですか？",
+      "advice": "{{hunter}}についてのアドバイス",
+      "thisHunter": "このハンター",
+      "lore": "Beruについてのロア？",
+      "humor": "Beru、笑わせて",
+      "tankTalk": "Tankと話す"
+    },
+    "submenu": {
+      "generalAnalysis": "一般的な検査",
+      "artifactAnalysis": "アーティファクト/セット分析",
+      "statOptimization": "ステータス最適化",
+      "compareBuilds": "ビルド比較",
+      "back": "戻る"
+    },
+    "header": "Beru {{mode}}",
+    "mode": {
+      "advice": "アドバイス",
+      "intelligence": "インテリジェンス"
+    },
+    "messages": {
+      "tankCall": "おい Tank 元気か？？！",
+      "analyzing": "🧠 Beru分析進行中...",
+      "unknownHunter": "🤔 このハンターはまだ知らない...学習を手伝って！",
+      "missingData": "❌ このハンターのデータが不足しています",
+      "noOtherBuilds": "🔍 あなたのアカウントで他のビルドが見つかりませんでした。",
+      "compareHint": "💡 他のアカウントでこのハンターを作成して比較してください！"
+    },
+    "analysis": {
+      "generalTitle": "🔍 **{{hunter}}の分析**",
+      "globalScore": "📈 総合スコア: {{score}}/100",
+      "strengths": "💪 **強み:**",
+      "improvements": "⚠️ **改善点:**",
+      "suggestions": "🎯 **提案:**",
+      "artifactTitle": "💎 **アーティファクト分析 - {{hunter}}**",
+      "recommendedSets": "🎯 **推奨セット:**",
+      "optimalMainStats": "📋 **最適メインステータス:**",
+      "comparisonTitle": "⚖️ **ビルド比較 - {{hunter}}**",
+      "foundBuilds": "📊 **あなたのアカウントで見つかったビルド:**",
+      "similarity": "{{percent}}% 類似"
+    }
+  },
+  "artifact": {
+    "messages": {
+      "reset": "🔄 {{slot}}がリセットされました！",
+      "loaded": "📦 \"{{name}}\"が読み込まれました！",
+      "incomplete": "❌ 不完全なアーティファクト！",
+      "saved": "💾 \"{{name}}\"が保存されました！"
+    },
+    "rolls": {
+      "op": "🔥 OPロール！",
+      "weak": "💩 弱いロール...",
+      "decent": "😎 まずまず！"
+    },
+    "labels": {
+      "selectMainStat": "メインステータスを選択",
+      "subStatLabel": "サブステータス {{number}}",
+      "loadExisting": "既存セットを読み込み",
+      "chooseSet": "セットを選択",
+      "resetArtifact": "アーティファクトリセット",
+      "saveSet": "セットを保存",
+      "compare": "比較"
+    }
+  },
+  "selectMainStat": "メインステータスを選択",
+  "subStatLabel": "サブステータス",
+  "gems": {
+    "popup": {
+      "title": "💎 ジェム設定",
+      "gemType": "💎 {{type}}ジェム",
+      "cancel": "❌ キャンセル",
+      "save": "💾 ジェムを保存"
+    },
+    "colors": {
+      "Red": "赤",
+      "Blue": "青",
+      "Green": "緑",
+      "Purple": "紫",
+      "Yellow": "黄"
+    }
+  },
+  "cores": {
+    "popup": {
+      "title": "⚙️ コア設定",
+      "titleMobile": "⚙️ コア",
+      "primaryStat": "プライマリステータス",
+      "secondaryStat": "セカンダリステータス",
+      "selectPrimary": "プライマリを選択",
+      "selectSecondary": "セカンダリを選択",
+      "value": "値",
+      "cancel": "❌ キャンセル",
+      "save": "💾 保存"
+    },
+    "types": {
+      "Offensif": "攻撃",
+      "Défensif": "防御",
+      "Endurance": "持久力"
+    }
+  },
+  "home": {
+    "title": "Builder Beru",
+    "menu": {
+      "build": "ビルド",
+      "dpsCalculator": "DPS計算機",
+      "hallOfFlame": "🏆 Hall Of Flame",
+      "pod": "PoD",
+      "guideEditor": "ガイドエディター",
+      "bot": "BoT",
+      "bdg": "BdG"
+    },
+    "announcement": {
+      "imageAlt": "ジナは新登場のハンターです",
+      "buildNew": "新キャラクターをビルドしよう",
+      "buildJinah": "新しいジナをビルドしよう",
+      "dpsInfo": "DPS計算機がついに登場！(80%精度 - テスト中)"
+    },
+    "footer": {
+      "disclaimer": "これはSolo Leveling: Ariseのファンメイドウェブサイトです。",
+      "community": "コミュニティに参加"
+    }
+  },
+  "damageCalculator": {
+    "title": "ダメージ計算機",
+    "precision": "精度 80%",
+    "selectCharacter": "キャラクターを選択",
+    "noHunterSelected": "ハンターが選択されていません",
+    "sections": {
+      "baseStats": "基本ステータス",
+      "skillMultipliers": "スキル倍率",
+      "otherBuffs": "その他のバフ",
+      "advancedStats": "上級ステータス",
+      "bossConfig": "ボス設定",
+      "damageOutput": "ダメージ出力",
+      "settings": "設定"
+    },
+    "buffs": {
+      "character": "キャラクターバフ",
+      "team": "チームバフ",
+      "set": "セットバフ"
+    },
+    "damage": {
+      "normal": "通常",
+      "crit": "クリティカル"
+    },
+    "settings": {
+      "calculatorMode": "計算機モード"
+    }
+  }
+}
+          

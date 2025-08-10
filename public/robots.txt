@@ -1,0 +1,41 @@
+# 🤖 BuilderBeru.com - Robots.txt v2.0
+# Solo Leveling Arise Build Optimizer & Calculator
+
+User-agent: *
+Allow: /
+
+# 🚫 BLOQUE LES ASSETS PAS UTILES POUR LE SEO
+Disallow: /assets/
+Disallow: /_vite/
+Disallow: /node_modules/
+Disallow: /.git/
+Disallow: /src/
+
+# 🎯 AUTORISE EXPLICITEMENT LES PAGES IMPORTANTES
+Allow: /build
+Allow: /hall-of-flame
+Allow: /guide-editor
+Allow: /ko/
+Allow: /ja/
+Allow: /zh/
+
+# 📊 DÉLAIS CRAWL POUR PROTÉGER LE SERVEUR
+Crawl-delay: 1
+
+# 🗺️ SITEMAP PRINCIPAL
+Sitemap: https://builderberu.com/sitemap.xml
+
+# 🤖 SPÉCIFIQUE GOOGLE BOT (pas de délai)
+User-agent: Googlebot
+Crawl-delay: 0
+Allow: /
+
+# 🤖 SPÉCIFIQUE BING BOT
+User-agent: bingbot
+Crawl-delay: 1
+Allow: /
+
+# 🔍 YANDEX
+User-agent: YandexBot
+Crawl-delay: 2
+Allow: /

@@ -20,7 +20,6 @@ const DamageCalculator = ({
   const [teamBuffSelection, setTeamBuffSelection] = useState(['', '']);
   const [raidBuffSelection, setRaidBuffSelection] = useState(['', '', '']);
 
-
   // États pour les calculs
   const [customStats, setCustomStats] = useState({
     // Stats de base
@@ -336,7 +335,6 @@ const DamageCalculator = ({
   };
 
   // 2. Dans handleSetChange (ligne ~330), modifier pour ne pas écraser les buffs :
-
   const handleSetChange = (setIndex) => {
     const selectedSet = availableSets[setIndex];
     const activeMultiplier = getActiveStatMultiplier(selectedSet, selectedCharacter);
@@ -553,7 +551,6 @@ const DamageCalculator = ({
         }
       }
 
-
       if (buffs.critRateBuffs !== undefined) {
         newStats.critRateBuffsAuto = (newStats.critRateBuffsAuto || 0) + buffs.critRateBuffs;
       }
@@ -572,8 +569,8 @@ const DamageCalculator = ({
         {/* Header ultra compact */}
         <div className="bg-purple-900/30 px-4 py-2 flex justify-between items-center">
           <div className="flex-1 text-center">
-            <h2 className="text-white text-sm font-medium tracking-wide">DAMAGE CALCULATOR</h2>
-            <p className="text-white/60 text-xs">PRECISION 80%</p>
+            <h2 className="text-white text-sm font-medium tracking-wide">{t('damageCalculator.title')}</h2>
+            <p className="text-white/60 text-xs">{t('damageCalculator.precision')}</p>
           </div>
           <button
             onClick={onClose}
@@ -592,7 +589,7 @@ const DamageCalculator = ({
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2">
                   <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055045/sungicon_bfndrc.png" alt="icon" className="w-4 h-4 rounded" />
-                  <h3 className="text-white/90 text-xs font-medium">BASE STATS</h3>
+                  <h3 className="text-white/90 text-xs font-medium">{t('damageCalculator.sections.baseStats')}</h3>
                 </div>
 
                 {/* Character Selector */}
@@ -602,7 +599,7 @@ const DamageCalculator = ({
                     onChange={(e) => handleCharacterChange(e.target.value)}
                     className="bg-indigo-900/30 text-white px-2 py-0.5 rounded text-[10px] focus:outline-none focus:bg-indigo-900/50"
                   >
-                    <option value="">Select character</option>
+                    <option value="">{t('damageCalculator.selectCharacter')}</option>
                     {Object.entries(characters)
                       .filter(([key]) => key !== '') // Juste exclure l'entrée vide
                       .map(([key, char]) => (
@@ -619,7 +616,7 @@ const DamageCalculator = ({
                 </div>
               </div>
 
-              {/* Stats principales en 2 colonnes */}
+              {/* Stats principales en 2 colonnes - Les labels restent en anglais */}
               <div className="grid grid-cols-2 gap-x-3 gap-y-1 mb-2">
                 {/* Colonne gauche */}
                 <div className="space-y-1">
@@ -716,7 +713,7 @@ const DamageCalculator = ({
               {/* Séparateur */}
               <div className="border-t border-indigo-800/30 my-2"></div>
 
-              {/* Section Buffs avec double inputs - GRILLE 2 COLONNES */}
+              {/* Section Buffs avec double inputs - GRILLE 2 COLONNES - Labels techniques restent en anglais */}
               <div className="grid grid-cols-2 gap-x-3 gap-y-2">
                 {/* DMG% - Colonne 1 */}
                 <div>
@@ -868,7 +865,7 @@ const DamageCalculator = ({
             <div className="bg-indigo-900/20 rounded p-2">
               <div className="flex items-center gap-2 mb-1.5">
                 <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055721/jinahlogo_lllt2d.png" alt="icon" className="w-4 h-4 rounded" />
-                <h3 className="text-white/90 text-xs font-medium">SKILL MULTIPLIERS</h3>
+                <h3 className="text-white/90 text-xs font-medium">{t('damageCalculator.sections.skillMultipliers')}</h3>
               </div>
               <div className="space-y-1">
                 {Object.entries(customStats.skillMultipliers).map(([skill, value]) => (
@@ -890,7 +887,7 @@ const DamageCalculator = ({
             <div className="bg-indigo-900/20 rounded p-2">
               <div className="flex items-center gap-2 mb-1.5">
                 <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png" alt="icon" className="w-4 h-4 rounded" />
-                <h3 className="text-white/90 text-xs font-medium">OTHER BUFFS</h3>
+                <h3 className="text-white/90 text-xs font-medium">{t('damageCalculator.sections.otherBuffs')}</h3>
               </div>
 
               <div className="grid grid-cols-3 gap-1">
@@ -898,7 +895,7 @@ const DamageCalculator = ({
                   onClick={() => setShowBuffsPopup(prev => ({ ...prev, character: true }))}
                   className="bg-indigo-900/30 hover:bg-indigo-900/50 text-white/70 hover:text-white px-1 py-1 rounded text-[9px] transition-all text-center"
                 >
-                  Character Buffs
+                  {t('damageCalculator.buffs.character')}
                   <span className="text-purple-400 block text-[8px]">({activeBuffsCount.character})</span>
                 </button>
 
@@ -906,7 +903,7 @@ const DamageCalculator = ({
                   onClick={() => setShowBuffsPopup(prev => ({ ...prev, team: true }))}
                   className="bg-indigo-900/30 hover:bg-indigo-900/50 text-white/70 hover:text-white px-1 py-1 rounded text-[9px] transition-all text-center"
                 >
-                  Team Buffs
+                  {t('damageCalculator.buffs.team')}
                   <span className="text-purple-400 block text-[8px]">({activeTeamBuffsCount})</span>
                 </button>
 
@@ -914,7 +911,7 @@ const DamageCalculator = ({
                   onClick={() => setShowBuffsPopup(prev => ({ ...prev, set: true }))}
                   className="bg-indigo-900/30 hover:bg-indigo-900/50 text-white/70 hover:text-white px-1 py-1 rounded text-[9px] transition-all text-center"
                 >
-                  Set Buffs
+                  {t('damageCalculator.buffs.set')}
                   <span className="text-purple-400 block text-[8px]">({activeBuffsCount.set})</span>
                 </button>
               </div>
@@ -927,9 +924,10 @@ const DamageCalculator = ({
             <div className="bg-indigo-900/20 rounded p-2">
               <div className="flex items-center gap-2 mb-1.5">
                 <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png" alt="icon" className="w-4 h-4 rounded" />
-                <h3 className="text-white/90 text-xs font-medium">ADVANCED STATS</h3>
+                <h3 className="text-white/90 text-xs font-medium">{t('damageCalculator.sections.advancedStats')}</h3>
               </div>
               <div className="space-y-1">
+                {/* Labels DMG↑, PEN, CRIT%, CDMG, PREC restent en anglais */}
                 {[
                   { label: 'DMG↑', key: 'damageIncrease', calc: 'diPct' },
                   { label: 'PEN', key: 'penetration', calc: 'penPct' },
@@ -959,7 +957,7 @@ const DamageCalculator = ({
             <div className="bg-indigo-900/20 rounded p-2">
               <div className="flex items-center gap-2 mb-1.5">
                 <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055802/bossConfig_ftvd3z.png" alt="icon" className="w-4 h-4 rounded" />
-                <h3 className="text-white/90 text-xs font-medium">BOSS CONFIG</h3>
+                <h3 className="text-white/90 text-xs font-medium">{t('damageCalculator.sections.bossConfig')}</h3>
               </div>
 
               <div className="grid grid-cols-2 gap-1 mb-2">
@@ -1031,8 +1029,10 @@ const DamageCalculator = ({
             <div className="bg-indigo-900/20 rounded p-2">
               <div className="flex items-center gap-2 mb-1.5">
                 <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055837/beruProst_ymvwos.png" alt="icon" className="w-4 h-4 rounded" />
-                <h3 className="text-white/90 text-xs font-medium">DAMAGE OUTPUT</h3>
+                <h3 className="text-white/90 text-xs font-medium">{t('damageCalculator.sections.damageOutput')}</h3>
               </div>
+              
+              {/* Normal et Crit peuvent être traduits */}
               <div className="space-y-1">
                 {Object.entries(results).filter(([key]) => key !== 'calculatedStats').map(([skill, damage]) => (
                   <div key={skill} className="bg-indigo-900/30 rounded p-1.5">
@@ -1041,11 +1041,11 @@ const DamageCalculator = ({
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <span className="text-white/40 text-xs">Normal: </span>
+                        <span className="text-white/40 text-xs">{t('damageCalculator.damage.normal')}: </span>
                         <span className="text-white/90 text-xs font-medium">{damage.noCrit.toLocaleString()}</span>
                       </div>
                       <div>
-                        <span className="text-white/40 text-xs">Crit: </span>
+                        <span className="text-white/40 text-xs">{t('damageCalculator.damage.crit')}: </span>
                         <span className="text-white text-xs font-medium">{damage.withCrit.toLocaleString()}</span>
                       </div>
                     </div>
@@ -1076,12 +1076,12 @@ const DamageCalculator = ({
             <div className="bg-indigo-900/20 rounded p-2">
               <div className="flex items-center gap-2 mb-1.5">
                 <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055837/beruProst_ymvwos.png" alt="icon" className="w-4 h-4 rounded" />
-                <h3 className="text-white/90 text-xs font-medium">SETTINGS</h3>
+                <h3 className="text-white/90 text-xs font-medium">{t('damageCalculator.sections.settings')}</h3>
               </div>
 
               {/* Mode Toggle */}
               <div className="flex items-center justify-between mb-2">
-                <span className="text-white/70 text-[10px]">Calculator Mode</span>
+                <span className="text-white/70 text-[10px]">{t('damageCalculator.settings.calculatorMode')}</span>
                 <button
                   onClick={() => handleStatChange('calculatorMode', customStats.calculatorMode === 'normal' ? 'expert' : 'normal')}
                   className={`relative w-14 h-6 rounded-full transition-colors ${customStats.calculatorMode === 'expert' ? 'bg-purple-600' : 'bg-indigo-900/50'
@@ -1132,7 +1132,7 @@ const DamageCalculator = ({
         {/* Footer ultra minimal */}
         <div className="bg-indigo-900/20 px-4 py-1.5">
           <p className="text-center text-white/30 text-xs">
-            BUILDERBERU V3 • {selectedCharacter ? characters[selectedCharacter]?.name : 'NO HUNTER SELECTED'}
+            BUILDERBERU V3 • {selectedCharacter ? characters[selectedCharacter]?.name : t('damageCalculator.noHunterSelected')}
           </p>
         </div>
       </div>

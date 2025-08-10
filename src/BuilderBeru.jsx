@@ -2895,8 +2895,8 @@ useEffect(() => {
   { code: 'en', name: 'English', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png' },
   // Langues additionnelles (prêtes pour plus tard)
   { code: 'ko', name: '한국어', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754778825/ko_flag_zdbhiz.png'},
-  { code: 'ja', name: '日本語', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754XXX/japan_flag.png', hidden: true },
-  { code: 'zh', name: '中文', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754XXX/china_flag.png', hidden: true },
+  { code: 'ja', name: '日本語', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814859/jap_flag_bet2ob.png' },
+  { code: 'zh', name: '中文', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814970/zh_flag_r9l06y.png' },
 ];
 
 const currentLang = languages.find(lang => lang.code === i18n.language) || languages[0];
@@ -5290,7 +5290,7 @@ const currentLang = languages.find(lang => lang.code === i18n.language) || langu
                             height="140"
                             className="rounded-lg shadow-lg bg-black w-full h-auto border border-blue-500/30"
                           />
-                          <p className="text-center text-xs text-blue-300 mt-1">t('canvas.snowKingdom')</p>
+                          <p className="text-center text-xs text-blue-300 mt-1">{t('canvas.snowKingdom')}</p>
                         </div>
 
                         {/* Canvas 2 - Sanctuaire avec Portail */}

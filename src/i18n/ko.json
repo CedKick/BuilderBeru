@@ -81,30 +81,6 @@
       "personality": "효율적_정확"
     }
   },
-  "tutorial": {
-    "closeGuide": "가이드 닫기",
-    "guide": "가이드",
-    "system": {
-      "notification_title": "알림",
-      "notification_message_line1": "가이드가 종료됩니다",
-      "notification_message_line2": "0.00초 후",
-      "notification_message_line3": "거부하실 경우",
-      "notification_question": "시스템 도움을 받으시겠습니까?",
-      "yes_button": "예",
-      "no_button": "아니오",
-      "punishment_applied": "처벌 적용됨",
-      "system_declined": "❌ 시스템 도움을 거부하셨습니다. 결과가 적용됩니다.",
-      "tutorial_abandoned": "⚠️ 튜토리얼 포기. 시스템이 이 선택을 기억합니다...",
-      "abandon_warning": "⚠️ 경고: 지금 튜토리얼을 포기하면 결과가 있을 수 있습니다. 확실합니까?",
-      "quest_completed": "🎉 튜토리얼 퀘스트 완료! +1000 EXP",
-      "step_label": "단계",
-      "back_button": "← 뒤로",
-      "next_button": "다음 →",
-      "finish_button": "완료 →",
-      "skip_button": "건너뛰기 ✕",
-      "skip_tooltip": "튜토리얼 포기 (권장하지 않음)"
-    }
-  },
   "kaisel": {
     "menu": {
       "labels": {
@@ -473,31 +449,613 @@
       "community": "우리 커뮤니티에 참여하세요"
     }
   },
-  "damageCalculator": {
-    "title": "DAMAGE CALCULATOR",
-    "precision": "PRECISION 80%",
-    "selectCharacter": "캐릭터 선택",
-    "noHunterSelected": "선택된 헌터 없음",
-    "sections": {
-      "baseStats": "BASE STATS",
-      "skillMultipliers": "SKILL MULTIPLIERS",
-      "otherBuffs": "OTHER BUFFS",
-      "advancedStats": "ADVANCED STATS",
-      "bossConfig": "BOSS CONFIG",
-      "damageOutput": "DAMAGE OUTPUT",
-      "settings": "SETTINGS"
+ "damageCalculator": {
+  "title": "데미지 계산기",
+  "precision": "정확도 80%",
+  "selectCharacter": "캐릭터 선택",
+  "noHunterSelected": "선택된 헌터 없음",
+  "sections": {
+    "baseStats": "기본 스탯",
+    "skillMultipliers": "스킬 배수",
+    "otherBuffs": "기타 버프",
+    "advancedStats": "고급 스탯",
+    "bossConfig": "보스 설정",
+    "damageOutput": "데미지 출력",
+    "settings": "설정"
+  },
+  "buffs": {
+    "character": "캐릭터 버프",
+    "team": "팀 버프",
+    "set": "세트 버프"
+  },
+  "damage": {
+    "normal": "일반",
+    "crit": "크리티컬"
+  },
+  "settings": {
+    "calculatorMode": "계산기 모드"
+  }
+},
+  "tv_dialogue": {
+    "attack": {
+      "sequences": [
+        [
+          { "speaker": 1, "text": "와! {{value}}% 공격력!" },
+          { "speaker": 2, "text": "이건 미친 스탯이야!" },
+          { "speaker": 1, "text": "모나크가 RNG의 축복을 받았어!" },
+          { "speaker": 2, "text": "BobbyJones도 질투할 거야!" }
+        ],
+        [
+          { "speaker": 1, "text": "{{value}}% ATK? 전설적이야!" },
+          { "speaker": 2, "text": "GG 모나크!" },
+          { "speaker": 1, "text": "이제 베루를 원샷 킬 할 수 있어?" },
+          { "speaker": 2, "text": "헤이! 베루는 건드리지 마!" },
+          { "speaker": 1, "text": "알았어 농담이야! 😅" }
+        ],
+        [
+          { "speaker": 1, "text": "OMG! {{value}}% 공격력!" },
+          { "speaker": 2, "text": "SERN이 떨 거야!" },
+          { "speaker": 1, "text": "이 스탯은 불법이야!" },
+          { "speaker": 2, "text": "탱크가 100% 승인해!" },
+          { "speaker": 1, "text": "카이셀이 디버그할 거야... 아니면 안 할지도 😈" }
+        ]
+      ]
     },
-    "buffs": {
-      "character": "Character Buffs",
-      "team": "Team Buffs",
-      "set": "Set Buffs"
+    "hp": {
+      "sequences": [
+        [
+          { "speaker": 1, "text": "불멸! {{value}}% HP!" },
+          { "speaker": 2, "text": "우주를 탱킹할 거야!" },
+          { "speaker": 1, "text": "개미왕도 널 죽일 수 없어!" }
+        ],
+        [
+          { "speaker": 1, "text": "{{value}}% HP?! 살아있는 요새가 됐어!" },
+          { "speaker": 2, "text": "아무도 너를 치유할 필요가 없어, 아무것도 잃지 않으니까!" },
+          { "speaker": 1, "text": "탱크도 질투해 😱" }
+        ]
+      ]
     },
-    "damage": {
-      "normal": "Normal",
-      "crit": "Crit"
-    },
-    "settings": {
-      "calculatorMode": "Calculator Mode"
+    "defense": {
+      "sequences": [
+        [
+          { "speaker": 1, "text": "{{value}}% DEF? 철근 콘크리트야!" },
+          { "speaker": 2, "text": "탱크가 자랑스러워할 거야!" },
+          { "speaker": 1, "text": "진짜로, 이게 합법이야?" },
+          { "speaker": 2, "text": "SERN이 조사할 거야! 😱" }
+        ],
+        [
+          { "speaker": 1, "text": "{{value}}% DEF? 이건 더 이상 캐릭터가 아니라 핵 벙커야." },
+          { "speaker": 2, "text": "카이셀도 널 때려봤는데 0데미지가 나왔어." },
+          { "speaker": 1, "text": "그것도 탱크 버프 없이 말이야." }
+        ]
+      ]
     }
+  },
+
+  "beruMessages": {
+    "analysis": {
+      "good": [
+        "분석 완료. 내 계산으로 빌드가 승인됐어.",
+        "훌륭한 전략적 선택이야, 모나크.",
+        "이론적 점수: 87%. 내 알고리즘이 만족해.",
+        "이 조합... 논리적이고 효율적이야."
+      ],
+      "bad": [
+        "오류 감지. 우선순위를 다시 계산해.",
+        "이 결정... 내 알고리즘이 울고 있어.",
+        "최적화되지 않은 점수. 재고가 필요해.",
+        "탱크도 더 잘했을 거야... 아마도."
+      ],
+      "tips": [
+        "우선순위: Critical Hit Damage 전에 Critical Hit Rate.",
+        "제안: 이 탱크 역할을 위해 Defense %에 집중해.",
+        "패턴 감지: Defense Penetration을 무시하고 있어.",
+        "최적화 필요: 네 젬이 역할과 맞지 않아."
+      ]
+    },
+    "interactions": [
+      "내 조언을 찾고 있어? 현명한 결정이야.",
+      "내 알고리즘이 감지했어... 호기심을.",
+      "나는 계산하므로 존재해. 너는... 존재해.",
+      "상호작용 기록됨. 개선: 의문스러워."
+    ],
+    "comparisons": [
+      "탱크는 아무거나 말해. 대신 나 말을 들어.",
+      "탱크가 먹는 동안, 나는 계산해.",
+      "탱크는 보호해. 나는 최적화해. 너는... 노력해."
+    ]
+  },
+
+  "tankMessages": {
+    "casual": [
+      "나야, 탱크! 이 빌더를 보호해 🛡️",
+      "아티팩트를 수정하고 싶어? 무서워하지 마!",
+      "베루가 정말 나를 존경하는지 궁금해 😤",
+      "오늘 4개 아티팩트를 굴렸어. 이상하지 않아?"
+    ],
+    "bobby": [
+      "보스를 놓치면 BobbyJones가 나에게 소리칠 거야...",
+      "데일리를 잊으면, BobbyJones를 부를 거야.",
+      "하나라도 놓치면 아웃이야. Gagold 규칙이야.",
+      "랭크를 존중하고, BDG를 두려워해."
+    ],
+    "food": [
+      "탱크: '아티팩트가 사랑할 수 있을까?'... 좋아 배고파.",
+      "BobbyJones: *사과를 베어물며* 좋아, 이제 지식인이 생겼네...",
+      "탱크가 모든 사과를 먹어도 여전히 혼란스러울 거야."
+    ]
+  },
+
+  "analysis": {
+    "score": "이론적 점수",
+    "recommendation": "추천",
+    "priority": "우선순위",
+    "optimization": "최적화 가능",
+    "synergy": "시너지 감지",
+    "warning": "주의"
+  },
+
+  "beruLore": [
+    "과거 개미왕이었고, 지금은 충성스러운 조언자. 어둠에서 태어나, 모나크에게 구원받았어. 내 알고리즘은 최적화를 위해!",
+    "악마성 깊은 곳에서, 진정한 힘은 전략적 분석에 있다는 걸 배웠어.",
+    "개미왕 시절의 기억이 상기시켜줘: 모든 전투는 먼저 마음속에서 이기는 거야.",
+    "모나크가 나에게 두 번째 기회를 줬어. 그 대가로, 너의 빌드의 완벽함을 계산해.",
+    "그림자 병사들, 개미 군대... 모두 수학에 복종해. 너의 아티팩트도 그래야 해."
+  ],
+
+  "beruJokes": [
+    "탱크는 사과가 스탯을 올려준다고 믿어... 내 계산: 0% 보너스 🍎",
+    "Error 404: 네 빌드에서 논리를 찾을 수 없음",
+    "그림자 병사들도 너보다 나은 서브스탯을 가져",
+    "내 IQ > 너의 현재 아티팩트 점수",
+    "탱크는 네 선택을 3/10점 줘. 나는: 4/10. 진전이 감지됨."
+  ],
+
+  "beruTutorial": [
+    "환영, 모나크! BuilderBeru는 Solo Leveling Arise 아티팩트를 최적화해. 헌터를 선택하고, 스탯을 설정한 다음, 아티팩트를 장착해!",
+    "완벽을 향한 첫 걸음: 헌터를 선택하고, 내 조언을 클릭해.",
+    "이 사이트는 너의 최적화 실험실이야. 나는 그림자 속의 가이드야."
+  ],
+
+  "beruAnalysis": {
+    "withCharacter": "{{hunterName}} 분석... 내 알고리즘이 개선 가능성을 감지해. 우선순위 스탯에 집중해!",
+    "noCharacter": "먼저 분석할 헌터를 선택해, 모나크."
+  },
+
+  "tankReplies": [
+    "뭐 베루? 사과와 함께 바쁘게 지내고 있었어! 🍎",
+    "네 계산 vs 내 현장 경험!",
+    "팀을 만들까? 너는 분석하고, 나는 보호해! 🛡️",
+    "나는 느린 게 아니야, 나는... 전략적이야.",
+    "나에 대해 말했어? 나는 방어 버블 안에 있었어."
+  ],
+
+  "shadowEntities": {
+    "beru": {
+      "automaticPhrases": [
+        "분석 중... 네 서브스탯이 일관성이 부족해.",
+        "우선순위 감지: Critical Hit Damage 전에 Critical Hit Rate.",
+        "이 아티팩트 조합... 최적화되지 않았어, 모나크."
+      ]
+    },
+    "tank": {
+      "automaticPhrases": [
+        "밥이 내게 말했어: '탱킹하려면, 먼저 조용히 해'. 나는 순종했어.",
+        "나는 그냥 탱크야. 밥은 전설적인 메카닉이야.",
+        "나야, 탱크! 내 방패로 이 빌더를 보호해 🛡️"
+      ]
+    }
+  },
+
+  "tutorial": {
+    "closeGuide": "가이드 닫기",
+    "guide": "가이드",
+    "system": {
+      "notification_title": "알림",
+      "notification_message_line1": "가이드가 종료됩니다",
+      "notification_message_line2": "0.00초 후",
+      "notification_message_line3": "거부하실 경우",
+      "notification_question": "시스템 도움을 받으시겠습니까?",
+      "yes_button": "예",
+      "no_button": "아니오",
+      "punishment_applied": "처벌 적용됨",
+      "system_declined": "❌ 시스템 도움을 거부하셨습니다. 결과가 적용됩니다.",
+      "tutorial_abandoned": "⚠️ 튜토리얼 포기. 시스템이 이 선택을 기억합니다...",
+      "abandon_warning": "⚠️ 경고: 지금 튜토리얼을 포기하면 결과가 있을 수 있습니다. 확실합니까?",
+      "quest_completed": "🎉 튜토리얼 퀘스트 완료! +1000 EXP",
+      "step_label": "단계",
+      "back_button": "← 뒤로",
+      "next_button": "다음 →",
+      "finish_button": "완료 →",
+      "skip_button": "건너뛰기 ✕",
+      "skip_tooltip": "튜토리얼 포기 (권장하지 않음)"
+    },
+    "dialogue_variations": {
+      "welcome": [
+        "안녕하세요, 모나크! 저는 이그리스, 당신의 충실한 그림자입니다. 완벽한 헌터 창조를 안내해드리겠습니다... 🗡️",
+        "주인님! 이그리스가 모시겠습니다. 궁극의 빌드를 만들 준비가 되셨나요? 그림자들이 당신의 명령을 기다립니다! ⚔️",
+        "모나크... 때가 왔습니다. 이 평범한 헌터를 살아있는 전설로 변모시켜봅시다! 💀"
+      ],
+      "welcome_igrisk": [
+        "안녕하세요, 모나크! 저는... *기침* 이그리스입니다! 네, 저에요, 이그리스! 전혀 변장한 탱크가 아닙니다! 🗡️😅",
+        "주인님! 저는 이그-- *목소리 갈라짐* 이그리스입니다! 빌드를... 많은 방어력과 함께... 어, 균형 잡힌 빌드를 보여드리겠습니다! ⚔️🛡️",
+        "모나크... *변장 정리* 저는 당신의 충실한 그림자 이그리스입니다! 전혀 가발을 쓴 탱크가 아닙니다! 시작해봅시다! 💀"
+      ],
+      "cerbere_intro": [
+        "멍멍! 🐺 *케르베로스가 흥분해서 뛰어다님*",
+        "왈왈왈! *케르베로스가 이곳저곳 뛰어다님* 새로운 헌터! 🎉",
+        "*케르베로스가 공기를 킁킁거림* 멍! 여기서 전설적인 빌드 냄새가 나! 🔥"
+      ],
+      "cerbere_suspicious": [
+        "*킁킁* 멍? 이그리스 냄새가 이상해... 탱크 냄새 같은데?! 🤔",
+        "그르르... 이그리스, 왜 방어력 얘기만 계속 해? 수상해! 멍! 👀",
+        "*케르베로스가 눈을 가늘게 뜸* 잠깐... 이그리스가 아니야! 탱크야! 왈왈! 😱"
+      ],
+      "igris_calms": [
+        "진정해 케르베로스... 우리에게는 중요한 임무가 있어. 시작하자!",
+        "케르베로스, 열정을 억제해. 모나크에게는 집중이 필요해...",
+        "*한숨* 항상 이렇게 에너지가 넘치네... 좋아, 집중해 케르베로스! 할 일이 있어."
+      ],
+      "igrisk_calms": [
+        "진정해 케르-- 아니, 좋은 개! *기침* 미안, 케르베로스. 방어력-- 어, 튜토리얼에 집중하자!",
+        "*억지로 목소리 만듦* 케르베로스, 얌전히 해! 이그리스-- 나, 이그리스가 진정하라고 한다! 탱크들-- 그림자들이 우리를 믿고 있어!",
+        "*식은땀* 케르베로스 냄새 맡지 마! 나는 이그리스야! 탱크가 아니야! 왜 썩은 사과 냄새가 날까?"
+      ]
+    },
+
+    "steps": {
+      "character_selector": {
+        "igris": "먼저, 여기 위를 봐. 이것이 캐릭터 선택기야.",
+        "igrisk": "먼저, 여기를 봐. 선택기... *메모를 봄* 캐릭터! 맞아 그거야!"
+      },
+      "select_hunter": {
+        "igris": "다른 헌터로 바꿔보자... 누가 선택받을지 보자!",
+        "igrisk": "많은 방어력을 가진-- 어, 균형 잡힌 헌터로 바꿔보자!"
+      },
+      "artifact_section": {
+        "igris": "아티팩트는 힘의 핵심이야! 모든 스탯이 중요하고, 모든 프로세스가 모든 것을 바꿀 수 있어!",
+        "igrisk": "아티팩트! 방어력이 빛나는 곳-- 어, 모든 스탯이 빛나는 곳!"
+      },
+      "helmet_focus": {
+        "igris": "헬멧부터 시작하자. 최적화의 모든 단계를 보여주겠어!",
+        "igrisk": "헬멧! 방어력을 넣기-- *기침* 스탯을 최적화하기 완벽해!"
+      },
+      "main_stat_config": {
+        "message_igris": "메인 스탯을 설정할게. {{stat}}이 완벽할 거야!",
+        "message_igrisk": "메인 스탯은... {{stat}}이야!",
+        "attack_reaction_igris": "최대 데미지! 💪",
+        "attack_reaction_igrisk": "*실망* 공격력... 음, 고집한다면... 😔",
+        "defense_reaction_igris": "약간의 생존력도 나쁘지 않아... 🛡️",
+        "defense_reaction_igrisk": "완벽해! 방어력이 생명이야! 🛡️💪",
+        "balanced_reaction_igris": "균형 잡히고 효율적이야! ⚖️",
+        "balanced_reaction_igrisk": "나쁘지 않아... 하지만 방어력이 더 좋았을 텐데! 🛡️"
+      },
+      "substat_config": {
+        "substat_1_igris": "서브스탯 1: {{stat}}. 첫 번째 서브스탯이 분위기를 만들어!",
+        "substat_1_igrisk": "서브스탯 1: {{stat}}.",
+        "substat_2_igris": "서브스탯 2: {{stat}}. 두 번째 서브스탯, 빌드를 구축하고 있어...",
+        "substat_2_igrisk": "서브스탯 2: {{stat}}.",
+        "substat_3_igris": "서브스탯 3: {{stat}}. 세 번째 서브스탯, 형태를 갖춰가고 있어!",
+        "substat_3_igrisk": "서브스탯 3: {{stat}}.",
+        "substat_4_igris": "서브스탯 4: {{stat}}. 마지막 서브스탯, 이 걸작을 완성하자!",
+        "substat_4_igrisk": "서브스탯 4: {{stat}}.",
+        "defense_reaction_igrisk": "*속삭임* 네... 네! 더 많은 방어력! 🛡️",
+        "good_reaction_igrisk": "*실망* 음... 데미지를 원한다면...",
+        "neutral_reaction_igrisk": "흠... 흥미롭네..."
+      },
+      "proc_intro": {
+        "igris": "이제 프로세스! 모든 것을 바꿀 수 있는 4번의 개선. 각 +는 서브스탯을 무작위로 증가시켜!",
+        "igrisk": "프로세스! 더 많은 방어력을-- 아니, 스탯을 개선할 4번의 기회! *기침*"
+      },
+      "procs": {
+        "proc_1_igris": "첫 번째 프로세스! *손가락 교차* 자, 크리티컬 데미지를 원해! 🎲",
+        "proc_1_igrisk": "프로세스 1! *방어력을 위해 기도* 자 RNG, 착해져! 🎲🛡️",
+        "proc_2_igris": "두 번째 개선! 긴장이 고조되고 있어... 🎰",
+        "proc_2_igrisk": "프로세스 2! *방어력을 위해 기도* 자 RNG, 착해져! 🎲🛡️",
+        "proc_3_igris": "세 번째 프로세스! 거의 다 왔어! 아티팩트가 살아나고 있어! ⚡",
+        "proc_3_igrisk": "프로세스 3! *방어력을 위해 기도* 자 RNG, 착해져! 🎲🛡️",
+        "proc_4_igris": "마지막 프로세스! 진실의 순간! RNG가 우리와 함께하길! 🎲✨",
+        "proc_4_igrisk": "프로세스 4! *방어력을 위해 기도* 자 RNG, 착해져! 🎲🛡️"
+      },
+      "set_menu": {
+        "open_igris": "이제 세트를 선택하자! 각 세트는 고유한 보너스를 제공해. 메뉴를 열어볼게...",
+        "open_igrisk": "세트! Guard를 선택하기를 바라! 어... 원하는 걸 선택해!",
+        "select_igris": "데미지를 위한 Burning, 방어를 위한 Guard, 크리티컬을 위한 Critical... 보자!",
+        "select_igrisk": "방어를 위한 Guard! Guard! GUARD! *기침* 미안... 원하는 걸 선택해 물론..."
+      },
+      "save_button": {
+        "igris": "⚠️ 매우 중요! 이 아티팩트를 저장하자. 저장하지 않으면 모든 것을 잃어!",
+        "igrisk": "⚠️ 저장! 그것 없이는 아름다운 방어력을-- 스탯을 잃어! 저장해!"
+      },
+      "artifact_naming": {
+        "message_igris": "이 아티팩트의 이름을 지을게... \"{{name}}\"!",
+        "message_igrisk": "완벽한 이름: \"{{name}}\"!",
+        "pomme_reaction": "*킥킥* 탱크가 좋아하지 않을 거야!",
+        "tank_reaction": "미안 탱크, 너무 유혹적이었어...",
+        "cerbere_reaction": "내 친구를 기리며!",
+        "rng_reaction": "RNG의 신에게 기도하자!",
+        "generic_reaction": "장르의 고전!",
+        "tank_name_panic": "*패닉* 아니! 탱크가 아니야! 이그리스! 이그리스!",
+        "defense_name_whisper": "*속삭임* 완벽해... 🛡️",
+        "normal_name": "완전히 정상적인 이름, 수상한 것은 없어!"
+      },
+      "cancel_action": {
+        "igris": "결국... 아니야! 네가 자신만의 아티팩트를 만들어야 해, 모나크! 취소할게.",
+        "igrisk": "결국... *패닉* 진짜 이그리스가 온다! 떠나야 해! 네가 해봐 모나크! *도망*"
+      },
+      "artifact_mastery": {
+        "igris": "완벽해! 이제 모든 메카닉을 마스터했어: 스탯, 프로세스, 세트, 저장. 네 차례야!",
+        "igrisk": "모든 걸 마스터했어! 특히 방어력을-- 아니, 모든 메카닉을! *빠르게 사라짐*"
+      },
+      "save_reminder": {
+        "igris": "⚠️ 절대 잊지 마: Save 버튼이 네 가장 좋은 친구야! 그것 없이는 모든 걸 잃어!",
+        "igrisk": "⚠️ Save 버튼! 그것 없이는 아름다운 방어력이 사라져! 항상 저장해!"
+      },
+      "gems_section": {
+        "igris": "젬은 거대한 보너스를 제공해! 공격을 위한 Red, HP를 위한 Blue, 방어를 위한 Green...",
+        "igrisk": "젬! HP를 위한 Blue, 방어력을 위한 Green! 최고의 젬들! 💎🛡️"
+      },
+      "cores_section": {
+        "igris": "코어는 또 다른 힘의 원천이야. 나중에 탐험해봐!",
+        "igrisk": "코어! 더 많은 스탯! 더 많은 방어력! 더 많은 모든 것!"
+      },
+      "stats_display": {
+        "igris": "여기, 실시간 최종 스탯이 모두 있어. 모든 수정사항이 즉시 계산돼!",
+        "igrisk": "스탯! 방어력을 잘 봐! 엄청나야 해!"
+      },
+      "dps_calculator": {
+        "igris": "DPS 계산기가 네 진정한 힘을 보여줘! 주저하지 말고 사용해!",
+        "igrisk": "DPS 계산기... 하지만 방어력이 DPS보다 낫지!"
+      },
+      "final_stats": {
+        "focus_igris": "⚠️ 매우 중요! 여기를 봐: 'Final Stats with Artefacts'. 이것이 네 빌드의 최종 결과야!",
+        "focus_igrisk": "⚠️ 최종 스탯! 방어력을 잘 봐! 최대여야 해! 🛡️",
+        "explanation": "모든 아티팩트가 설정되고, 젬이 장착되고, 코어가 활성화되면...",
+        "ingame": "그리고 네 캐릭터가 MAX면 (무기 120, 레벨 115, 개선 완료)...",
+        "match": "그러면 이 스탯들이 Solo Leveling Arise에서와 정확히 같을 거야! 이것이 BuilderBeru의 마법이야! ✨",
+        "final_igris": "이 스탯을 사용해서 게임 내 빌드를 확인해. 일치하지 않으면 뭔가 빠진 거야!",
+        "final_igrisk": "스탯을 확인해! 특히 방어력! 최대여야 해!"
+      },
+      "accounts_system": {
+        "igris": "다른 빌드를 위해 여러 계정을 만들 수 있어. 테스트에 실용적이야!",
+        "igrisk": "다중 계정! 각각의 방어력 빌드를 위해!"
+      },
+      "beru_kaisel": {
+        "igris": "베루와 카이셀이 항상 도와줄 거야. 주저하지 말고 불러!",
+        "igrisk": "베루와 카이셀... 하지만 탱크가 최고의 가이드야! 어, 이그리스 말이야!"
+      },
+      "hall_of_flame": {
+        "igris": "전설적인 빌드는 Hall of Flame에 올라가... 전설에 합류해! 🔥",
+        "igrisk": "Hall of Flame! 풀 DEF 빌드와 함께! *기침* 아니, 균형 잡힌!"
+      },
+      "finale": {
+        "igris": [
+          "준비됐어, 모나크! 네 빌드가 강력하고 프로세스가 많기를! ⚔️",
+          "훈련이 끝났어. 세상에 그림자 모나크의 힘을 보여줘! 💀",
+          "훈련이 끝났어. 전설을 만들어! 그림자들이 너와 함께해... 🌑"
+        ],
+        "igrisk": [
+          "준비됐어! 네 빌드가 방어적이고 방패가 견고하기를! 🛡️",
+          "훈련이 끝났어. 잊지 마: 방어가 생명이야! *도망* 💀",
+          "훈련이 끝났어. 진짜 그림자들이 온다! *사라짐* 🌑"
+        ]
+      }
+    },
+
+    "hunter_reactions": {
+      "default_hunter": "이 헌터",
+      "sung_jinwoo": {
+        "cerbere": [
+          "왈왈왈! {{name}}! 모나크! 내 아이돌! 🤩✨",
+          "*케르베로스가 미쳐감* {{name}}! 가장 강해! 최고야! 💪🔥",
+          "와아아아아! {{name}}! 그림자들이 우리와 함께해! 🌑⚔️"
+        ],
+        "tank": "당연하지... 모두가 주인공을 플레이하고 싶어해... 🙄",
+        "igris": "{{name}}... 내 원래 주인. 뻔하지만 훌륭한 선택!",
+        "igrisk": "{{name}}... 방어력을 위한-- 아니, 모든 것을 위한 훌륭한 선택! 계속하자 빨리-- 계속하자!"
+      },
+      "cha_haein": {
+        "cerbere": [
+          "왈왈! {{name}}! 너무 멋져! 사랑해! 💖⚔️",
+          "*꼬리 흔들기* {{name}}! 최고의 검사! 🗡️✨",
+          "왈! {{name}}과 그녀의 죽음의 춤 스킬! 💃💀"
+        ],
+        "tank": "나쁘지 않아! 적어도 스타일이 있어! 💅✨",
+        "igris": "{{name}}는 무서워. 그녀의 콤보는 잘 마스터되면 파괴적이야."
+      },
+      "choi_jongin": {
+        "cerbere": [
+          "오... {{name}}... *케르베로스가 찡그림* 불 마법사... 😕🔥",
+          "음... {{name}}... 내가 가장 좋아하는 건 아니지만 음... 😒",
+          "*한숨* {{name}}... 나는 검사들을 더 좋아해! 왈! 🗡️"
+        ],
+        "tank": "불 마법사? 정말? 이 타입은 방어력이 전혀 없어! 🔥🛡️",
+        "igris": "{{name}}는 타이밍이 필요해. 그의 광역 주문은 강력해."
+      },
+      "baek_yoonho": {
+        "cerbere": [
+          "왈! {{name}}! 또 다른 동물! 존경해! 🐯🤝🐺",
+          "와아아! {{name}} 백호! 우리는 사촌이야! 🐅",
+          "*케르베로스 승인* {{name}}! 야수의 힘! 그르르! 💪"
+        ],
+        "tank": "진짜 탱크 저거야! 승인해! 💪🛡️",
+        "igris": "{{name}}, 무차별적인 힘과 저항력. 초보자에게 완벽해.",
+        "igrisk_suspicious": "왈?! 백윤호?! 우연히 탱크를 선택하네! 매우 수상해 이그리스! 🤨"
+      },
+      "min_byunggyu": {
+        "cerbere": [
+          "어... {{name}}? 저 사람이 누구지? *혼란* 🤔",
+          "{{name}}... 아 맞아 힐러... *하품* 지루해... 😴",
+          "왈? {{name}}? 치유 말고 뭘 해? 🏥"
+        ],
+        "tank": "힐러... 적어도 지원의 중요성을 이해해! 🏥",
+        "igris": "{{name}}... 전략적 선택이야. 지원은 과소평가되어."
+      },
+      "lim_taegyu": {
+        "cerbere": [
+          "그르르! {{name}}! 전혀 좋아하지 않아! 😤💢",
+          "으악! {{name}}! 빨리 바꿔 이그리스! 왈왈! 😡",
+          "*케르베로스가 으르렁* {{name}} 말고! 아무나 말고 저 사람만은! 🚫"
+        ],
+        "tank": "하하! 지기 위한 훌륭한 선택! 😈",
+        "igris": "{{name}}? *한숨* 고집한다면... 무엇을 할 수 있는지 보여주자."
+      },
+      "woo_jinchul": {
+        "cerbere": [
+          "{{name}}! 진지한 사람! *똑바른 자세 흉내* 🕴️",
+          "왈! {{name}}과 그의 안경! 너무 기업적이야! 👔",
+          "*케르베로스가 웃음* {{name}}! 미스터 진지해! 😎"
+        ],
+        "tank": "미스터 깔끔... 알파벳 순서로 아티팩트를 정리할 거야! 📁",
+        "igris": "{{name}}, 체계적이고 효율적이야. 좋은 기술적 선택."
+      },
+      "go_gunhee": {
+        "cerbere": [
+          "*케르베로스가 인사* {{name}}... 회장님... 존경해! 🎩",
+          "왈! {{name}}! 현명한 노인! 좋아해! 👴✨",
+          "{{name}}... *엄숙한 목소리* 위대한 사람! 왈! 🏛️"
+        ],
+        "tank": "노인들에 대한 존경! 하지만 좀 느리지 않아? 👴",
+        "igris": "{{name}}, 힘에 봉사하는 경험. 노인들을 존경하자."
+      },
+      "default": {
+        "cerbere": [
+          "왈왈! {{name}}! 나쁘지 않은 선택! 🎉",
+          "와아아아! {{name}}! 할 수 있어! 🐺",
+          "*케르베로스가 분석* {{name}}... 흥미로워! 왈! 🤔"
+        ],
+        "tank": "{{name}}? 음... 더 나은 걸 봤어! 😏",
+        "igris": [
+          "{{name}}는 흥미로운 선택이야. 그의 잠재력을 보자!",
+          "좋은 선택, 모나크. {{name}}는 독특한 능력이 있어.",
+          "{{name}}... 어떻게 최적화하는지 보여줄게!"
+        ]
+      }
+    },
+
+    "stat_reactions": {
+      "tank_loves_defense": "드디어! 방어력의 중요성을 이해하는 사람이! 🛡️💖",
+      "igrisk_loves_defense": "*기쁨을 숨기려 함* 아... Defense... 그것은... 올바른 선택이야. 매우 올바른. *수상한 미소* 😊",
+      "cerbere_hates_defense": "으악! 헬멧에 Defense?! 우리는 데미지를 원해! 왈! 😤",
+      "cerbere_happy_stat": "왈왈! {{stat}}! 완벽해! *여기저기 뛰어다님* 🎯🔥",
+      "tank_loves_stat": "네! {{stat}}! 이것이 진정한 최적화야! 🛡️",
+      "cerbere_angry_defense": "또 def? 우리는 탱크가 아니야! 그르르! 💢",
+      "cerbere_disgusted": "{{stat}}?! *찡그림* 그건 별로야! 😖",
+      "igris_explains_rng": "가끔 선택의 여지가 없어... RNG는 잔인해, 케르베로스.",
+      "cerbere_suspicious_defense": "왈! 또 방어력?! 이그리스 오늘 정말 이상해! 🤔",
+      "igrisk_defense_excuse": "*긴장* 그것은... 현재 메타야! 방어력은... 전략적이야! 맞아 그거야!"
+    },
+
+    "proc_reactions": {
+      "cerbere_proc_1": "왈! 올라가! 첫 번째 프로세스 승인! 📈",
+      "cerbere_excited": "왈왈왈! 스탯이 폭발해! 아름다워! 🔥💥",
+      "igrisk_procs_opinion": "방어 프로세스가 부족해... *속삭임* RNG는 탱크에게 잔인해...",
+      "tank_mocks_procs": "4 프로세스인데 모든 크리티컬 데미지가 아니야? 쯧쯧... 아마추어! 😏",
+      "cerbere_defends": "그르르! 그건 RNG야 탱크! 너만 운이 좋았어! 왈! 😤",
+      "procs_complete": "이 프로세스들 나쁘지 않아! 아티팩트가 이제 잘 최적화됐어! 💎"
+    },
+
+    "set_reactions": {
+      "cerbere_hopes": "왈! 공격적인 세트이기를 바라! 데미지! 💪🔥",
+      "cerbere_suspects_guard": "왈! Guard라면 너가 탱크라는 걸 알겠어! 😤"
+    },
+
+    "name_reactions": {
+      "tank_angry_pomme": "썩은 사과?! 방어력에 대한 모독이야! 😤💢",
+      "cerbere_laughs": "왈왈왈! *웃음* 탱크가 기분 나빠해! 🤣",
+      "tank_confused": "어... 이게 칭찬인가 조롱인가? 🤔",
+      "cerbere_proud": "왈왈! 내 아티팩트야! 너무 자랑스러워! 🏆✨",
+      "cerbere_gotcha": "아! 알았어! 탱크야! 자폭했어! 왈왈! 🎯",
+      "igrisk_caught": "*변장 포기* 좋아 맞아... 나야... 하지만 좋은 튜토리얼 했지 안 그래? 😅",
+      "real_tank_appears": "사기꾼! 감히 이그리스로 가장하다니?! 방어력은 몰래 가르치는 게 아니야! 😤"
+    },
+
+    "tank_interruptions": {
+      "normal": {
+        "intro": "이상하네... 여기서 누가 이렇게 시끄럽게 하지? 🙄",
+        "cerbere_territory": "그르르르! 왈왈! 여기는 내 영역이야! 😤",
+        "tank_mock": "네 영역? *비웃음* 나는 너보다 훨씬 전부터 여기 있었어, 강아지야! 😏",
+        "igris_stops": "*이그리스가 둘을 말림* 충분해! 끝낼 튜토리얼이 있어!"
+      },
+      "voice_confusion": "잠깐... 이 목소리... 내 목소리야! 누가 내 목소리를 쓰는 거야?! 😠",
+      "igrisk_panic": "*내심 패닉* 아니아니! 착각이야! 나는 이그리스야! 내 검을 봐! *방패를 보여줌* 젠장!",
+      "discovered": {
+        "tank_shock": "하지만... 하지만... 그건 내 목소리야! 이그리스?! 내 목소리로 뭘 하는 거야?! 😱",
+        "igrisk_sword_fail": "*패닉* 아니아니! 나는 이그리스야! 봐, 검이 있어! *방패를 꺼냄* 젠장!",
+        "cerbere_knew": "왈왈왈! 알고 있었어! 변장한 탱크야! *웃음* 🤣",
+        "tank_impostor": "사기꾼! 감히 이그리스의 정체성을 도용하다니?! 내 변장을 돌려줘! 😤",
+        "igrisk_admits": "*포기* 좋아 좋아... 나야... 하지만 이그리스가 화장실에 있어서... 😅"
+      },
+      "continue_anyway": "*기침* 좋아 좋아... 내가 누구든 상관없이, 끝낼 튜토리얼이 있어! 방어력-- 빌드에 집중!"
+    },
+
+    "companions": {
+      "cerbere_encouragement": "왈왈! 미친 빌드를 만들 거야! 가자 가자 모나크! 🚀🔥",
+      "cerbere_encouragement_igrisk": "왈! 이상했지만 도움이 됐어! 변장한 탱크였어도! 🤣",
+      "cerbere_farewell": "왈왈! *케르베로스가 인사* 또 봐 모나크! 미친 빌드 만들어! 👋🔥",
+      "cerbere_farewell_igrisk": "왈! 이상했지만 재미있었어! 탱크가 예상보다 나은 이그리스를 했어! 🤣👋",
+      "tank_save_advice": "나도 저장해! 안 그러면 내 풀 def 빌드가 사라져! 💾",
+      "tank_save_advice_igrisk": "어... 맞아! 나도 저장해! 아니, 이그리스가 저장해! 나는 이그리스야! 💾",
+      "cerbere_save_story": "한 번 잊어버렸어... 4 프로세스 크리티컬 데미지 빌드를 잃었어! *울음* 😭",
+      "cerbere_stats_amazed": "왈왈! 게임 내와 같은 스탯?! 마법 같아! 🤯✨",
+      "tank_stats_respect": "좋아, 여기서 인정해야겠어... 인상적이야. BuilderBeru에게 존경을! 👏"
+    },
+
+    "demo_effect": {
+      "warning": "*분위기가 갑자기 무거워짐* 이게 뭐야...?! 😨",
+      "tank_activation": "MWAHAHAHA! 끝났다고 생각했어?! 활성화: 데모 모드! 🔥💀",
+      "igrisk_activation": "뭐?! 나도 이걸 할 수 있어?! 방어적 데모 모드! 🛡️💀",
+      "cerbere_panic": "왈왈왈?! 탱크! 뭐 하는 거야?! 위험해! 😱",
+      "cerbere_panic_igrisk": "왈?! 탱크 네 자신의 변장을 파괴할 거야! 😱",
+      "laser_charge": "진정한 힘을 봐! 궤도 레이저... 충전 중... 🎯⚡",
+      "laser_fire": "발사! DOM의 완전한 파괴! 하하하하! 💥🔥💀",
+      "igris_shocked": "탱크! 미쳤어! 인터페이스를 거의 파괴할 뻔했어! 😤",
+      "igrisk_shocked": "*깨달음* 잠깐... 방금 스스로를 폭로했어! 😱",
+      "tank_proud": "*탱크가 웃음* 그냥 데모였어... 하지만 인정해 장관이었지! 😈✨",
+      "igrisk_excuse": "어... 그건... 이그리스의 기능이었어! 맞아! 이그리스도 이걸 할 수 있어! 😅",
+      "cerbere_amazed": "멍... 그건... 너무 멋있었어! 다시! 다시! 🤩",
+      "igris_ends": "*한숨* 좋아... 이제 진지하게 튜토리얼을 재개하자...",
+      "igrisk_flees": "*도망* 좋아 가야 해! 진짜 이그리스가 온다! 안녕! 💨"
+    },
+
+    "epilogue": {
+      "tank_appears": "*탱크 등장* 나쁘지 않아... 하지만 내 풀 DEF 빌드를 기다려! 😈🛡️",
+      "cerbere_final": "그르르! 또 네 방어력 탱크! 왈! 😤",
+      "tank_disappears": "*비웃으며 사라짐* 방어력이 생명이야... 👻",
+      "real_igris_arrives": "*진짜 이그리스 도착* 여기서 무슨 일이야?! 탱크?! 뭘 했어?! 😠",
+      "igrisk_escapes": "*전속력으로 달림* 아무것도! 아무것도 안 했어! 튜토리얼 끝! 안녕! 💨",
+      "igris_sighs": "*한숨* 항상 이렇게 혼란스러워... 적어도 모나크는 배웠어. 비록... 달랐지만."
+    },
+
+    "artifact_names": [
+      "죽음을 부르는 빌드",
+      "썩은 사과 Def",
+      "케르베로스의 베스트 프렌드",
+      "탱크가 화낼 LOL",
+      "프로세스 or not 프로세스",
+      "RNG 예수님 도와주세요",
+      "F2P btw",
+      "고래 파괴자 3000",
+      "이그리스 승인™",
+      "존경을 위해 F를 누르세요",
+      "404 스킬 찾을 수 없음",
+      "Git Gud Scrub",
+      "크리티컬 없으면 인생 없어",
+      "모든 공격 Go BRRRR",
+      "예산 빌드 2025",
+      "메타 노예 얼티밋"
+    ],
+
+    "artifact_names_igrisk": [
+      "절대 탱크 빌드 아님",
+      "황금 사과 울트라 DEF",
+      "풀 디펜스 Go BRRRR",
+      "탱크 패권",
+      "이그리스? 들어본 적 없는데",
+      "방패 > 검",
+      "방어가 최고의 공격",
+      "전혀 수상하지 않음",
+      "100% 합법 이그리스 빌드"
+    ]
   }
 }

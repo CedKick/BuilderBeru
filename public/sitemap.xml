@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <!-- 🏠 HOMEPAGE - MULTILINGUAL -->
+  <url>
+    <loc>https://builderberu.com/</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://builderberu.com/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://builderberu.com/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://builderberu.com/ko" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://builderberu.com/ja" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://builderberu.com/zh" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://builderberu.com/" />
+  </url>
+
+  <!-- 🏠 HOMEPAGE - VERSIONS TRADUITES -->
+  <url>
+    <loc>https://builderberu.com/ko</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://builderberu.com/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://builderberu.com/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://builderberu.com/ko" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://builderberu.com/ja" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://builderberu.com/zh" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://builderberu.com/" />
+  </url>
+
+  <url>
+    <loc>https://builderberu.com/ja</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://builderberu.com/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://builderberu.com/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://builderberu.com/ko" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://builderberu.com/ja" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://builderberu.com/zh" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://builderberu.com/" />
+  </url>
+
+  <url>
+    <loc>https://builderberu.com/zh</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://builderberu.com/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://builderberu.com/" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://builderberu.com/ko" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://builderberu.com/ja" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://builderberu.com/zh" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://builderberu.com/" />
+  </url>
+
+  <!-- 🔧 BUILD OPTIMIZER - MULTILINGUE -->
+  <url>
+    <loc>https://builderberu.com/build</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://builderberu.com/build" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://builderberu.com/build" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://builderberu.com/ko/build" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://builderberu.com/ja/build" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://builderberu.com/zh/build" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://builderberu.com/build" />
+  </url>
+
+  <url>
+    <loc>https://builderberu.com/ko/build</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://builderberu.com/ja/build</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://builderberu.com/zh/build</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- 🔥 HALL OF FLAME -->
+  <url>
+    <loc>https://builderberu.com/hall-of-flame</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://builderberu.com/hall-of-flame" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://builderberu.com/hall-of-flame" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://builderberu.com/ko/hall-of-flame" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://builderberu.com/ja/hall-of-flame" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://builderberu.com/zh/hall-of-flame" />
+  </url>
+
+  <url>
+    <loc>https://builderberu.com/ko/hall-of-flame</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://builderberu.com/ja/hall-of-flame</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://builderberu.com/zh/hall-of-flame</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- 📖 GUIDE EDITOR -->
+  <url>
+    <loc>https://builderberu.com/guide-editor</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- 🌍 BERUVIAN WORLD -->
+  <url>
+    <loc>https://builderberu.com/beruvian-world</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- 📝 POD -->
+  <url>
+    <loc>https://builderberu.com/pod</loc>
+    <lastmod>2025-01-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+</urlset>

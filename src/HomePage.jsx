@@ -1,9 +1,69 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 
 export default function HomePage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  // 🎯 SEO DYNAMIQUE
+  useEffect(() => {
+    const currentLang = i18n.language || 'fr';
+    
+    // 📝 TITLES ET DESCRIPTIONS PAR LANGUE
+    const seoData = {
+      fr: {
+        title: "BuilderBeru - Calculateur Solo Leveling Arise Gratuit",
+        description: "BuilderBeru.com - Calculateur et optimiseur de builds Solo Leveling Arise gratuit. DPS Calculator, artefacts, guides multilingues. 5 langues disponibles."
+      },
+      en: {
+        title: "BuilderBeru - Free Solo Leveling Arise Calculator",
+        description: "BuilderBeru.com - Free Solo Leveling Arise build optimizer & DPS calculator. Artifact analysis, hunter guides. Available in 5 languages including Korean."
+      },
+      ko: {
+        title: "BuilderBeru - 솔로 레벨링 어라이즈 무료 계산기",
+        description: "BuilderBeru.com - 솔로 레벨링 어라이즈 무료 빌드 최적화 및 DPS 계산기. 아티팩트 분석, 헌터 가이드. 한국어 포함 5개 언어 지원."
+      },
+      ja: {
+        title: "BuilderBeru - 俺だけレベルアップ無料カリキュレーター",
+        description: "BuilderBeru.com - 俺だけレベルアップな件：ARISE 無料ビルド最適化＆DPSカリキュレーター。アーティファクト解析、ハンターガイド。5言語対応。"
+      },
+      zh: {
+        title: "BuilderBeru - 我独自升级免费计算器",
+        description: "BuilderBeru.com - 我独自升级：ARISE 免费构建优化器和DPS计算器。神器分析，猎人指南。支持5种语言包括中文。"
+      }
+    };
+
+    const currentSEO = seoData[currentLang] || seoData.fr;
+
+    // 🎯 UPDATE TITLE
+    document.title = currentSEO.title;
+
+    // 🎯 UPDATE META DESCRIPTION
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.content = currentSEO.description;
+    } else {
+      metaDescription = document.createElement('meta');
+      metaDescription.name = 'description';
+      metaDescription.content = currentSEO.description;
+      document.head.appendChild(metaDescription);
+    }
+
+    // 🎯 UPDATE OG TAGS
+    let ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.content = currentSEO.title;
+
+    let ogDescription = document.querySelector('meta[property="og:description"]');
+    if (ogDescription) ogDescription.content = currentSEO.description;
+
+    // 🎯 UPDATE TWITTER TAGS
+    let twitterTitle = document.querySelector('meta[name="twitter:title"]');
+    if (twitterTitle) twitterTitle.content = currentSEO.title;
+
+    let twitterDescription = document.querySelector('meta[name="twitter:description"]');
+    if (twitterDescription) twitterDescription.content = currentSEO.description;
+
+  }, [i18n.language]);
 
   const activeItems = [
     { label: t('home.menu.build'), path: "/build" },
@@ -20,6 +80,42 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#0f0f1a] text-white flex flex-col items-center justify-center py-10 px-4">
+      {/* 🌐 LANGUAGE SELECTOR - AJOUTER EN HAUT */}
+      <div className="absolute top-4 right-4">
+        <div className="flex gap-2 items-center">
+          <img
+            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png"
+            alt="Français"
+            onClick={() => i18n.changeLanguage('fr')}
+            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
+          />
+          <img
+            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png"
+            alt="English"
+            onClick={() => i18n.changeLanguage('en')}
+            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
+          />
+          <img
+            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754778825/ko_flag_zdbhiz.png"
+            alt="한국어"
+            onClick={() => i18n.changeLanguage('ko')}
+            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
+          />
+          <img
+            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814859/jap_flag_bet2ob.png"
+            alt="日本語"
+            onClick={() => i18n.changeLanguage('ja')}
+            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
+          />
+          <img
+            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814970/zh_flag_r9l06y.png"
+            alt="中文"
+            onClick={() => i18n.changeLanguage('zh')}
+            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
+          />
+        </div>
+      </div>
+
       <style jsx>{`
         @keyframes shimmer {
           0% { background-position: -200% center; }
