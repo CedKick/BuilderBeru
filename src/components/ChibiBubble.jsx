@@ -108,7 +108,6 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                     
                     dytextAnimate(bubbleRef, message, 35, {
                         onComplete: () => {
-                            console.log(`✅ ${entityNames[entityType]} a fini de parler`);
                             if (onComplete) {
                                 onComplete();
                             }

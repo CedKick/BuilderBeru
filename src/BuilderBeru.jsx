@@ -604,7 +604,7 @@ const BuilderBeru = () => {
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const { i18n } = useTranslation();
-  const [jinwooStrength, setJinwooStrength] = useState(749);
+  const [jinwooStrength, setJinwooStrength] = useState(0);
   const [kaiselMenuCharacter, setKaiselMenuCharacter] = useState('');
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [beruMenuPosition, setBeruMenuPosition] = useState({ x: 0, y: 0 });
@@ -2111,90 +2111,98 @@ const BuilderBeru = () => {
   };
 
   // Ajouter cette fonction après getFlatStatsWithWeapon
-const recalculateAllStatsForJinwoo = (newStrength) => {
-  if (!selectedCharacter) return;
-  
-  const char = characterStats[selectedCharacter];
-  if (!char) return;
-  
-  // 1. Récupérer l'arme
-  const weapon = hunterWeapons[selectedCharacter] || { mainStat: 6160, precision: 8000 };
-  
-  // 2. Calculer les nouveaux flatStats avec la nouvelle Force
-  const newFlatStats = getFlatStatsWithWeapon(char, weapon, newStrength);
-  
-  // 3. Récupérer gems et cores
-  const gems = gemData || {};
-  const cores = hunterCores[selectedCharacter] || {};
-  
-  // 4. Calculer les stats sans artefacts (base + gems + cores)
-  const mergedGems = Object.values(gems).reduce((acc, obj) => {
-    for (const [stat, val] of Object.entries(obj || {})) {
-      acc[stat] = (acc[stat] || 0) + val;
+  const recalculateAllStatsForJinwoo = (newStrength, characterName = null) => {
+    const targetCharacter = characterName || selectedCharacter;
+    if (!targetCharacter) return;
+
+    const char = characterStats[targetCharacter];
+    if (!char) return;
+
+    // S'assurer que l'arme existe pour Jinwoo
+    simulateWeaponSaveIfMissing(targetCharacter);
+
+    // Récupérer l'arme
+    const weapon = hunterWeapons[targetCharacter] || { mainStat: 6160, precision: 8000 };
+
+    // Calculer avec le bon nom de personnage ET la bonne force
+    const newFlatStats = getFlatStatsWithWeapon(char, weapon, newStrength, targetCharacter);
+
+    // ... reste du code identique
+
+    // Récupérer gems et cores
+    const gems = gemData || {};
+    const cores = hunterCores[targetCharacter] || {};
+
+    // Calculer les stats sans artefacts (base + gems + cores)
+    const mergedGems = Object.values(gems).reduce((acc, obj) => {
+      for (const [stat, val] of Object.entries(obj || {})) {
+        acc[stat] = (acc[stat] || 0) + val;
+      }
+      return acc;
+    }, {});
+
+    let updatedStats = { ...newFlatStats };
+
+    // Appliquer les Additional stats
+    for (const [stat, value] of Object.entries(mergedGems)) {
+      if (stat.startsWith('Additional ')) {
+        const baseStat = stat.replace('Additional ', '');
+        updatedStats[baseStat] = (updatedStats[baseStat] || 0) + value;
+      }
     }
-    return acc;
-  }, {});
-  
-  let updatedStats = { ...newFlatStats };
-  
-  // Appliquer les Additional stats
-  for (const [stat, value] of Object.entries(mergedGems)) {
-    if (stat.startsWith('Additional ')) {
-      const baseStat = stat.replace('Additional ', '');
-      updatedStats[baseStat] = (updatedStats[baseStat] || 0) + value;
+
+    // Appliquer les cores Additional
+    for (const type of ['Offensif', 'Défensif', 'Endurance']) {
+      const core = cores[type];
+      if (!core) continue;
+
+      if (core.primary?.startsWith('Additional ')) {
+        const baseStat = core.primary.replace('Additional ', '');
+        updatedStats[baseStat] = (updatedStats[baseStat] || 0) + parseFloat(core.primaryValue || 0);
+      }
+      if (core.secondary?.startsWith('Additional ')) {
+        const baseStat = core.secondary.replace('Additional ', '');
+        updatedStats[baseStat] = (updatedStats[baseStat] || 0) + parseFloat(core.secondaryValue || 0);
+      }
     }
-  }
-  
-  // Appliquer les cores
-  for (const type of ['Offensif', 'Défensif', 'Endurance']) {
-    const core = cores[type];
-    if (!core) continue;
-    
-    if (core.primary?.startsWith('Additional ')) {
-      const baseStat = core.primary.replace('Additional ', '');
-      updatedStats[baseStat] = (updatedStats[baseStat] || 0) + parseFloat(core.primaryValue || 0);
+
+    // Appliquer les % sur la base
+    for (const [stat, value] of Object.entries(mergedGems)) {
+      if (stat.endsWith('%')) {
+        const baseStat = stat.replace(' %', '');
+        const base = newFlatStats[baseStat] || 0;
+        updatedStats[baseStat] = (updatedStats[baseStat] || 0) + (base * value / 100);
+      }
     }
-    if (core.secondary?.startsWith('Additional ')) {
-      const baseStat = core.secondary.replace('Additional ', '');
-      updatedStats[baseStat] = (updatedStats[baseStat] || 0) + parseFloat(core.secondaryValue || 0);
+
+    // Appliquer les % des cores
+    for (const type of ['Offensif', 'Défensif', 'Endurance']) {
+      const core = cores[type];
+      if (!core) continue;
+
+      if (core.primary?.endsWith('%')) {
+        const baseStat = core.primary.replace(' %', '');
+        const base = newFlatStats[baseStat] || 0;
+        updatedStats[baseStat] = (updatedStats[baseStat] || 0) + (base * parseFloat(core.primaryValue || 0) / 100);
+      }
+      if (core.secondary?.endsWith('%')) {
+        const baseStat = core.secondary.replace(' %', '');
+        const base = newFlatStats[baseStat] || 0;
+        updatedStats[baseStat] = (updatedStats[baseStat] || 0) + (base * parseFloat(core.secondaryValue || 0) / 100);
+      }
     }
-  }
-  
-  // Appliquer les % sur la base
-  for (const [stat, value] of Object.entries(mergedGems)) {
-    if (stat.endsWith('%')) {
-      const baseStat = stat.replace(' %', '');
-      const base = newFlatStats[baseStat] || 0;
-      updatedStats[baseStat] = (updatedStats[baseStat] || 0) + (base * value / 100);
-    }
-  }
-  
-  // Appliquer les % des cores
-  for (const type of ['Offensif', 'Défensif', 'Endurance']) {
-    const core = cores[type];
-    if (!core) continue;
-    
-    if (core.primary?.endsWith('%')) {
-      const baseStat = core.primary.replace(' %', '');
-      const base = newFlatStats[baseStat] || 0;
-      updatedStats[baseStat] = (updatedStats[baseStat] || 0) + (base * parseFloat(core.primaryValue || 0) / 100);
-    }
-    if (core.secondary?.endsWith('%')) {
-      const baseStat = core.secondary.replace(' %', '');
-      const base = newFlatStats[baseStat] || 0;
-      updatedStats[baseStat] = (updatedStats[baseStat] || 0) + (base * parseFloat(core.secondaryValue || 0) / 100);
-    }
-  }
-  
-  // 5. Mettre à jour tous les states
-  setFlatStats(completeStats(newFlatStats));
-  setStatsWithoutArtefact(completeStats(updatedStats));
-  
-  // 6. Forcer le recalcul des artefacts
-  setTimeout(() => {
-    recalculateStatsFromArtifacts();
-  }, 0);
-};
+
+    // Mettre à jour tous les states
+    setFlatStats(completeStats(newFlatStats));
+    setStatsWithoutArtefact(completeStats(updatedStats));
+
+    // Forcer le recalcul des artefacts
+    setTimeout(() => {
+      recalculateStatsFromArtifacts();
+    }, 0);
+  };
+
+
 
   const tankMessageRef = useRef('');
   const messageOpacityRef = useRef(1);
@@ -2964,6 +2972,24 @@ BobbyJones : "Allez l'Inter !"
     }
   }, []);
 
+  // Ajoute ce useEffect dans ton composant
+  useEffect(() => {
+    // Ne rien faire si pas de personnage
+    if (!selectedCharacter) return;
+
+    // Détection Jinwoo
+    const isJinwoo = selectedCharacter === 'jinwoo' ||
+      selectedCharacter === 'sung-jinwoo' ||
+      selectedCharacter === 'Sung Jinwoo' ||
+      selectedCharacter === 'sung';
+
+    // Si c'est Jinwoo, forcer le recalcul
+    if (isJinwoo) {
+      console.log('🔥 Jinwoo détecté dans useEffect, recalcul...');
+      recalculateAllStatsForJinwoo(jinwooStrength);
+    }
+  }, [selectedCharacter]); // Se déclenche CHAQUE fois que selectedCharacter change
+
   useEffect(() => {
     if (!selectedCharacter || !characters[selectedCharacter]) return;
 
@@ -3258,7 +3284,64 @@ BobbyJones : "Allez l'Inter !"
     }, 5000);
   };
 
+  const setupJinwooStats = (strength = 749) => {
+    // 1. D'abord, créer/récupérer l'arme de Jinwoo
+    const jinwooWeapon = { mainStat: 6160, precision: 8000 };
 
+    // 2. Sauvegarder l'arme
+    handleSaveWeapon(selectedCharacter, jinwooWeapon);
+
+    // 3. Calculer les stats de base de Jinwoo DIRECTEMENT
+    const bonus = 6.0954 * strength
+      - 0.0071901 * strength ** 2
+      + 0.000018907 * strength ** 3
+      - 0.000000027519 * strength ** 4
+      + 0.000000000014916 * strength ** 5;
+
+    const baseATKWithStrength = 3032 + Math.floor(bonus - 115 / 2);
+
+    const jinwooFlatStats = {
+      'Attack': baseATKWithStrength + jinwooWeapon.mainStat,
+      'Defense': 2775,
+      'HP': 5436,
+      'Critical Hit Rate': 0,
+      'Critical Hit Damage': 0,
+      'Defense Penetration': 0,
+      'Additional MP': 0,
+      'Additional Attack': 0,
+      'Healing Given Increase (%)': 0,
+      'Damage Increase': 0,
+      'MP': 1034,
+      'MP Consumption Reduction': 0,
+      'Damage Reduction': 0,
+      'MP Recovery Rate Increase (%)': 0,
+      'Precision': jinwooWeapon.precision,
+    };
+
+    // 4. Reset COMPLET des états
+    setFlatStats(completeStats(jinwooFlatStats));
+    setStatsWithoutArtefact(completeStats(jinwooFlatStats));
+    setStatsFromArtifacts(completeStats({}));
+
+    // 5. Reset les artefacts
+    const emptyArtifacts = {};
+    Object.keys(artifactsData).forEach(slot => {
+      emptyArtifacts[slot] = {
+        mainStat: '',
+        subStats: ['', '', '', ''],
+        subStatsLevels: [
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] }
+        ],
+        set: ''
+      };
+    });
+    setArtifactsData(emptyArtifacts);
+
+    console.log('✅ Jinwoo setup complete - Attack:', baseATKWithStrength + jinwooWeapon.mainStat);
+  };
 
   const handleResetStats = () => {
     if (!selectedCharacter || !characterStats[selectedCharacter]) return;
@@ -3305,9 +3388,68 @@ BobbyJones : "Allez l'Inter !"
     let newFlat = getFlatStatsWithWeapon(char, weapon, jinwooStrength);
 
     // 💠 Step 2 : copie brute
-    let updatedStats = { ...newFlat };
+    let updatedStats = { ...newFlat }; // NE PAS faire completeStats tout de suite
 
-    // ... reste du code pour les gems et cores ...
+    // 💠 Step 3 : Gems
+    for (const [stat, value] of Object.entries(mergedGems)) {
+      if (stat.startsWith('Additional ')) {
+        applyStatToFlat(stat, value, updatedStats); // brut
+      }
+    }
+
+    // 💠 Step 4 : Noyaux
+    for (const type of ['Offensif', 'Défensif', 'Endurance']) {
+      const core = cores[type];
+      if (!core) continue;
+
+      if (core.primary?.startsWith('Additional ')) {
+        applyStatToFlat(core.primary, parseFloat(core.primaryValue), updatedStats);
+      }
+      if (core.secondary?.startsWith('Additional ')) {
+        applyStatToFlat(core.secondary, parseFloat(core.secondaryValue), updatedStats);
+      }
+    }
+
+    // ➤ Phase pourcentages – Gems
+    for (const [stat, value] of Object.entries(mergedGems)) {
+      if (stat.endsWith('%')) {
+        const baseStat = stat.replace(' %', '');
+        const base = newFlat[baseStat] || 0;
+        updatedStats[baseStat] += (base * value) / 100;
+      }
+    }
+
+    // ➤ Pourcentages – Noyaux
+    for (const type of ['Offensif', 'Défensif', 'Endurance']) {
+      const core = cores[type];
+      if (!core) continue;
+
+      if (core.primary?.endsWith('%')) {
+        const baseStat = core.primary.replace(' %', '');
+        const base = newFlat[baseStat] || 0;
+        updatedStats[baseStat] += (base * parseFloat(core.primaryValue)) / 100;
+      }
+      if (core.secondary?.endsWith('%')) {
+        const baseStat = core.secondary.replace(' %', '');
+        const base = newFlat[baseStat] || 0;
+        updatedStats[baseStat] += (base * parseFloat(core.secondaryValue)) / 100;
+      }
+    }
+
+    // 💠 Step 5 : reset artefacts
+    const resetArtifacts = {};
+    for (const slot in artifactsData) {
+      resetArtifacts[slot] = {
+        mainStat: '',
+        subStats: ['', '', '', ''],
+        subStatsLevels: [
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] },
+          { value: 0, level: 0, procOrders: [], procValues: [] }
+        ]
+      };
+    }
 
     // ✅ Finalisation
     setFlatStats(completeStats(newFlat));
@@ -3315,6 +3457,9 @@ BobbyJones : "Allez l'Inter !"
     setStatsFromArtifacts(completeStats({}));
     setArtifactsData(resetArtifacts);
   };
+
+
+  
   const playMusic = () => {
     if (darkAriaAudioRef.current) {
       darkAriaAudioRef.current.play().catch((e) => {
@@ -3563,15 +3708,15 @@ BobbyJones : "Allez l'Inter !"
   const [editStatsMode, setEditStatsMode] = useState(false);
   const getEditLabel = () => t(editStatsMode ? 'save' : 'modify');
 
-  const getFlatStatsWithWeapon = (char, weapon = {}, jinwooStrength = 749) => {
+  const getFlatStatsWithWeapon = (char, weapon = {}, jinwooStrength = null, characterName = null) => {
     if (!char) return {};
 
     const scaleStat = char.scaleStat || '';
     let weaponBoost = weapon.mainStat || 0;
     let weapPrecision = weapon.precision || 0;
 
-    // 🔥 DÉTECTION JINWOO - utiliser le selectedCharacter actuel
-    const charName = selectedCharacter;
+    // 🔥 DÉTECTION JINWOO - utiliser le characterName passé en paramètre OU le selectedCharacter
+    const charName = characterName || selectedCharacter;
     const isJinwoo = charName === 'jinwoo' ||
       charName === 'sung-jinwoo' ||
       charName === 'Sung Jinwoo' ||
@@ -3582,18 +3727,19 @@ BobbyJones : "Allez l'Inter !"
       weaponBoost = 6160;
       weapPrecision = 8000;
 
-
       // Récupérer la force actuelle (depuis le state ou la valeur par défaut)
       const currentStrength = jinwooStrength || 0;
       const level = 115;
-const bonus = 6.0954 * currentStrength 
-            - 0.0071901 * currentStrength * currentStrength
-            + 0.000018907 * currentStrength * currentStrength * currentStrength
-            - 0.000000027519 * Math.pow(currentStrength, 4)
-            + 0.000000000014916 * Math.pow(currentStrength, 5);
+      const bonus = 6.0954 * currentStrength
+        - 0.0071901 * currentStrength * currentStrength
+        + 0.000018907 * currentStrength * currentStrength * currentStrength
+        - 0.000000027519 * Math.pow(currentStrength, 4)
+        + 0.000000000014916 * Math.pow(currentStrength, 5);
 
-const adjustedBonus = Math.floor(bonus - Math.ceil(level / 2));
-const baseATKWithStrength = 3032 + adjustedBonus;
+      const adjustedBonus = Math.floor(bonus - Math.ceil(level / 2));
+      const baseATKWithStrength = 3032 + adjustedBonus;
+
+      console.log('🔥 Jinwoo calc - STR:', currentStrength, 'Bonus:', adjustedBonus, 'Base ATK:', baseATKWithStrength);
 
       return {
         'Attack': baseATKWithStrength + weaponBoost, // Base calculée + arme
@@ -4175,11 +4321,8 @@ const baseATKWithStrength = 3032 + adjustedBonus;
   // Debug COMPLET de handleClickBuildIcon pour voir où ça bloque
 
   const handleClickBuildIcon = (characterName) => {
-
-
     // 🔍 Vérification 2 : localStorage
     const stored = JSON.parse(localStorage.getItem("builderberu_users"));
-
 
     if (stored?.artifactsData) {
       let modified = false;
@@ -4204,11 +4347,8 @@ const baseATKWithStrength = 3032 + adjustedBonus;
 
     // 🔍 Vérification 4 : path complet
     const userAccounts = stored?.user?.accounts;
-
     const targetAccount = userAccounts?.[activeAccount];
-
     const builds = targetAccount?.builds;
-
     const build = builds?.[characterName];
 
     if (!build) {
@@ -4216,6 +4356,11 @@ const baseATKWithStrength = 3032 + adjustedBonus;
       return;
     }
 
+    // 🔥 DÉTECTION JINWOO
+    const isJinwoo = characterName === 'jinwoo' ||
+      characterName === 'sung-jinwoo' ||
+      characterName === 'Sung Jinwoo' ||
+      characterName === 'sung';
 
     // 📦 CHARGEMENT COMPLET de TOUTES les données du build
 
@@ -4224,7 +4369,6 @@ const baseATKWithStrength = 3032 + adjustedBonus;
 
     // 2️⃣ Stats de base
     setFlatStats(build.flatStats || {});
-
     setStatsWithoutArtefact(build.statsWithoutArtefact || {});
 
     // 3️⃣ Artefacts complets
@@ -4247,9 +4391,15 @@ const baseATKWithStrength = 3032 + adjustedBonus;
       setGemData(build.gems);
     }
 
+    // 🔥 SI C'EST JINWOO, FORCER LE RECALCUL AVEC SA FORCE
+    if (isJinwoo) {
+      setTimeout(() => {
+        recalculateAllStatsForJinwoo(jinwooStrength);
+      }, 100);
+    }
+
     // 7️⃣ Message de confirmation
     showTankMessage(`✅ ${characters[characterName]?.name || characterName} chargé !`, true);
-
   };
 
 
@@ -4987,23 +5137,93 @@ const baseATKWithStrength = 3032 + adjustedBonus;
                           value={selectedCharacter}
                           onChange={(e) => {
                             const selected = e.target.value;
-                            setSelectedCharacter(selected);
-                            const saved = localStorage.getItem(`${selected}`);
-                            if (saved) {
-                              const build = JSON.parse(saved);
-                              setFlatStats(build.flatStats);
-                              setStatsWithoutArtefact(build.statsWithoutArtefact);
-                              setArtifactsData(build.artifactsData);
-                              setHunterCores(build.hunterCores);
-                              showTankMessage(`Loaded saved build for ${selected} 😏`);
+
+                            // 🛡️ Protection si aucun personnage
+                            if (!selected) {
+                              setSelectedCharacter('');
+                              return;
+                            }
+
+                            // 📦 Vérifier si un build existe
+                            const storedData = JSON.parse(localStorage.getItem("builderberu_users"));
+                            const build = storedData?.user?.accounts?.[activeAccount]?.builds?.[selected];
+
+                            if (build && build.artifactsData) {
+                              // ✅ BUILD EXISTANT : Charger tout
+                              setSelectedCharacter(selected);
+                              setFlatStats(build.flatStats || {});
+                              setStatsWithoutArtefact(build.statsWithoutArtefact || {});
+                              setArtifactsData(build.artifactsData || {});
+                              setHunterCores(prev => ({
+                                ...prev,
+                                [selected]: build.hunterCores || {}
+                              }));
+                              setHunterWeapons(prev => ({
+                                ...prev,
+                                [selected]: build.hunterWeapons || {}
+                              }));
+
+                              const accountGems = storedData?.user?.accounts?.[activeAccount]?.gems || {};
+                              setGemData(accountGems);
+
+                              showTankMessage(`✅ Build chargé pour ${characters[selected]?.name} !`, true);
+
+                              // PAS DE RECALCUL ICI - le useEffect s'en charge
+
                             } else {
-                              handleResetStats();
+                              // 🆕 NOUVEAU PERSONNAGE
+                              setSelectedCharacter(selected);
+
+                              const charStats = characterStats[selected];
+                              if (charStats) {
+                                simulateWeaponSaveIfMissing(selected);
+
+                                const weapon = hunterWeapons[selected] || {
+                                  mainStat: characters[selected]?.scaleStat === 'HP' ? 6120 :
+                                    (selected === 'jinwoo' || selected === 'sung-jinwoo' ? 6160 : 3080),
+                                  precision: (selected === 'jinwoo' || selected === 'sung-jinwoo' ? 8000 : 4000)
+                                };
+
+                                // Stats normales pour tous (même Jinwoo au début)
+                                const newFlatStats = getFlatStatsWithWeapon(charStats, weapon);
+                                setFlatStats(completeStats(newFlatStats));
+                                setStatsWithoutArtefact(completeStats(newFlatStats));
+                                setStatsFromArtifacts(completeStats({}));
+
+                                // Reset artefacts
+                                const emptyArtifacts = {};
+                                Object.keys(artifactsData).forEach(slot => {
+                                  emptyArtifacts[slot] = {
+                                    mainStat: '',
+                                    subStats: ['', '', '', ''],
+                                    subStatsLevels: [
+                                      { value: 0, level: 0, procOrders: [], procValues: [] },
+                                      { value: 0, level: 0, procOrders: [], procValues: [] },
+                                      { value: 0, level: 0, procOrders: [], procValues: [] },
+                                      { value: 0, level: 0, procOrders: [], procValues: [] }
+                                    ],
+                                    set: ''
+                                  };
+                                });
+                                setArtifactsData(emptyArtifacts);
+
+                                setHunterCores(prev => ({
+                                  ...prev,
+                                  [selected]: {}
+                                }));
+
+                                showTankMessage(`🆕 Nouveau build créé pour ${characters[selected]?.name} !`, true);
+
+                                // PAS DE RECALCUL ICI - le useEffect s'en charge
+                              } else {
+                                handleResetStats();
+                              }
                             }
                           }}
                           className="p-2 rounded-lg bg-purple-900/30 text-purple-300 text-sm
-      border border-purple-600/50 hover:border-purple-500
-      focus:outline-none focus:border-purple-400
-      flex-1 max-w-[200px]"
+    border border-purple-600/50 hover:border-purple-500
+    focus:outline-none focus:border-purple-400
+    flex-1 max-w-[200px]"
                           style={{
                             backgroundColor: 'rgba(30, 30, 50, 0.95)',
                             color: '#e9d5ff'
@@ -5323,18 +5543,8 @@ const baseATKWithStrength = 3032 + adjustedBonus;
                                   const value = parseInt(e.target.value) || 0;
                                   setJinwooStrength(value);
 
-                                  // 🔥 RECALCULER IMMÉDIATEMENT
-                                  const char = characterStats[selectedCharacter];
-                                  const weapon = hunterWeapons[selectedCharacter] || { mainStat: 6160, precision: 8000 };
-
-                                  // Recalculer les flatStats avec la nouvelle force
-                                  const newFlat = getFlatStatsWithWeapon(char, weapon, value);
-                                  setFlatStats(completeStats(newFlat));
-
-                                  // Forcer le recalcul de toute la chaîne
-                                  setTimeout(() => {
-                                    recalculateStatsFromArtifacts();
-                                  }, 0);
+                                  // 🔥 UTILISER LA NOUVELLE FONCTION DE RECALCUL
+                                  recalculateAllStatsForJinwoo(value);
                                 }}
                                 className="w-16 px-2 py-1 bg-gray-800 text-white text-sm rounded border border-purple-500/50 focus:border-purple-400 focus:outline-none text-center"
                               />
@@ -6332,7 +6542,7 @@ const baseATKWithStrength = 3032 + adjustedBonus;
                             return;
                           }
 
-                          // 📦 Vérifier si un build existe dans le nouveau système
+                          // 📦 Vérifier si un build existe
                           const storedData = JSON.parse(localStorage.getItem("builderberu_users"));
                           const build = storedData?.user?.accounts?.[activeAccount]?.builds?.[selected];
 
@@ -6351,57 +6561,34 @@ const baseATKWithStrength = 3032 + adjustedBonus;
                               [selected]: build.hunterWeapons || {}
                             }));
 
-                            // 💎 Gemmes du compte (pas dans le build)
                             const accountGems = storedData?.user?.accounts?.[activeAccount]?.gems || {};
                             setGemData(accountGems);
 
                             showTankMessage(`✅ Build chargé pour ${characters[selected]?.name} !`, true);
 
+                            // PAS DE RECALCUL ICI - le useEffect s'en charge
+
                           } else {
-                            // 🆕 NOUVEAU PERSONNAGE : Reset avec les stats de base
+                            // 🆕 NOUVEAU PERSONNAGE
                             setSelectedCharacter(selected);
 
-                            // Reset complet avec stats du personnage
                             const charStats = characterStats[selected];
                             if (charStats) {
-                              // Simuler une arme si elle n'existe pas
                               simulateWeaponSaveIfMissing(selected);
 
-                              // 🔥 Détection si c'est Sung Jinwoo (défini EN PREMIER)
-                              const isSungJinwoo = selected === 'Sung Jinwoo' || selected === 'sung-jinwoo' || selected === 'jinwoo';
+                              const weapon = hunterWeapons[selected] || {
+                                mainStat: characters[selected]?.scaleStat === 'HP' ? 6120 :
+                                  (selected === 'jinwoo' || selected === 'sung-jinwoo' ? 6160 : 3080),
+                                precision: (selected === 'jinwoo' || selected === 'sung-jinwoo' ? 8000 : 4000)
+                              };
 
-                              // Récupérer l'arme (existante ou simulée)
-                              const weapon = hunterWeapons[selected] || (() => {
-                                const scaleStat = characters[selected]?.scaleStat;
-
-                                // 🗡️ Calcul des valeurs par défaut
-                                let mainStat = 3080; // Valeur par défaut
-
-                                if (scaleStat === 'HP') {
-                                  mainStat = 6120;
-                                } else if (scaleStat === 'Defense') {
-                                  mainStat = 3080;
-                                } else if (scaleStat === 'Attack') {
-                                  // ⚔️ Double arme pour Jinwoo !
-                                  mainStat = isSungJinwoo ? 6160 : 3080;
-                                }
-
-                                return {
-                                  mainStat: mainStat,
-                                  precision: isSungJinwoo ? 8000 : 4000
-                                };
-                              })();
-
-
-                              // Stats de base avec arme
+                              // Stats normales pour tous (même Jinwoo au début)
                               const newFlatStats = getFlatStatsWithWeapon(charStats, weapon);
                               setFlatStats(completeStats(newFlatStats));
-
-                              // Reset les autres états
                               setStatsWithoutArtefact(completeStats(newFlatStats));
                               setStatsFromArtifacts(completeStats({}));
 
-                              // Artefacts vides
+                              // Reset artefacts
                               const emptyArtifacts = {};
                               Object.keys(artifactsData).forEach(slot => {
                                 emptyArtifacts[slot] = {
@@ -6418,19 +6605,31 @@ const baseATKWithStrength = 3032 + adjustedBonus;
                               });
                               setArtifactsData(emptyArtifacts);
 
-                              // Reset cores pour ce personnage
                               setHunterCores(prev => ({
                                 ...prev,
                                 [selected]: {}
                               }));
 
                               showTankMessage(`🆕 Nouveau build créé pour ${characters[selected]?.name} !`, true);
+
+                              // PAS DE RECALCUL ICI - le useEffect s'en charge
+                            } else {
+                              handleResetStats();
                             }
                           }
                         }}
-                        className="p-2 rounded bg-[#1c1c3c] text-white text-sm tank-target flex-1 max-w-[200px]"
+                        className="p-2 rounded-lg bg-purple-900/30 text-purple-300 text-sm
+    border border-purple-600/50 hover:border-purple-500
+    focus:outline-none focus:border-purple-400
+    flex-1 max-w-[200px]"
+                        style={{
+                          backgroundColor: 'rgba(30, 30, 50, 0.95)',
+                          color: '#e9d5ff'
+                        }}
                       >
-                        <option value="">Sélectionner un personnage</option>
+                        <option value="" style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}>
+                          {t('selectCharacter')}
+                        </option>
                         {Object.entries(characters)
                           .filter(([key, char]) => {
                             if (key === '') return false;
@@ -6443,7 +6642,13 @@ const baseATKWithStrength = 3032 + adjustedBonus;
                             return true;
                           })
                           .map(([key, char]) => (
-                            <option key={key} value={key}>{char.name}</option>
+                            <option
+                              key={key}
+                              value={key}
+                              style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}
+                            >
+                              {char.name}
+                            </option>
                           ))}
                       </select>
 
