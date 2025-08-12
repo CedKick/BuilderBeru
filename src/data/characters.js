@@ -114,7 +114,34 @@ export  const characters = {
   ]
 } 
   ]
-}, 'shuhua': {
+},
+'jinwoo': {
+      name: 'Sung Jinwoo',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755010471/sungjiwoo_rfmpth.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755010471/sungjiwoo_rfmpth.png',
+      class: 'Monarch',
+      grade: 'SSR',
+      element: 'none',
+      scaleStat: 'Attack',
+      skillMultipliers: {
+        core1: 3.5,
+        core2: 4.8,
+        skill1: 12.0,
+        skill2: 16.5,
+        ultimate: 35.0
+      },
+      buffs: [
+        {
+          name: 'Wind Shield',
+          values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+          cooldown: 12,
+          duration: 8,
+          target: 'shared', // 'self' ou 'shared'
+          type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+          element: 'Wind'
+        } ]
+    },
+     'shuhua': {
       name: 'Shuhua',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751535917/Shuhua1_difnjb.png',
       icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751536775/IconShuhua_njc2f2.png',

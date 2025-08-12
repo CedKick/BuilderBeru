@@ -604,6 +604,7 @@ const BuilderBeru = () => {
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const { i18n } = useTranslation();
+  const [jinwooStrength, setJinwooStrength] = useState(749);
   const [kaiselMenuCharacter, setKaiselMenuCharacter] = useState('');
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [beruMenuPosition, setBeruMenuPosition] = useState({ x: 0, y: 0 });
@@ -1841,6 +1842,7 @@ const BuilderBeru = () => {
 
   const characterStats = {
     // SSR Hunters
+    'jinwoo': { attack: 3032, defense: 2775, hp: 5436, critRate: 0, mp: 1034 },
     'jinah': { attack: 6132, defense: 5292, hp: 11313, critRate: 0, mp: 1000 },
     'alicia': { attack: 6056, defense: 5279, hp: 11503, critRate: 0, mp: 1000 },
     'mirei': { attack: 6149, defense: 5231, hp: 11407, critRate: 0, mp: 1000 },
@@ -2107,6 +2109,92 @@ const BuilderBeru = () => {
 
     setStatsFromArtifacts(completeStats(updated));
   };
+
+  // Ajouter cette fonction après getFlatStatsWithWeapon
+const recalculateAllStatsForJinwoo = (newStrength) => {
+  if (!selectedCharacter) return;
+  
+  const char = characterStats[selectedCharacter];
+  if (!char) return;
+  
+  // 1. Récupérer l'arme
+  const weapon = hunterWeapons[selectedCharacter] || { mainStat: 6160, precision: 8000 };
+  
+  // 2. Calculer les nouveaux flatStats avec la nouvelle Force
+  const newFlatStats = getFlatStatsWithWeapon(char, weapon, newStrength);
+  
+  // 3. Récupérer gems et cores
+  const gems = gemData || {};
+  const cores = hunterCores[selectedCharacter] || {};
+  
+  // 4. Calculer les stats sans artefacts (base + gems + cores)
+  const mergedGems = Object.values(gems).reduce((acc, obj) => {
+    for (const [stat, val] of Object.entries(obj || {})) {
+      acc[stat] = (acc[stat] || 0) + val;
+    }
+    return acc;
+  }, {});
+  
+  let updatedStats = { ...newFlatStats };
+  
+  // Appliquer les Additional stats
+  for (const [stat, value] of Object.entries(mergedGems)) {
+    if (stat.startsWith('Additional ')) {
+      const baseStat = stat.replace('Additional ', '');
+      updatedStats[baseStat] = (updatedStats[baseStat] || 0) + value;
+    }
+  }
+  
+  // Appliquer les cores
+  for (const type of ['Offensif', 'Défensif', 'Endurance']) {
+    const core = cores[type];
+    if (!core) continue;
+    
+    if (core.primary?.startsWith('Additional ')) {
+      const baseStat = core.primary.replace('Additional ', '');
+      updatedStats[baseStat] = (updatedStats[baseStat] || 0) + parseFloat(core.primaryValue || 0);
+    }
+    if (core.secondary?.startsWith('Additional ')) {
+      const baseStat = core.secondary.replace('Additional ', '');
+      updatedStats[baseStat] = (updatedStats[baseStat] || 0) + parseFloat(core.secondaryValue || 0);
+    }
+  }
+  
+  // Appliquer les % sur la base
+  for (const [stat, value] of Object.entries(mergedGems)) {
+    if (stat.endsWith('%')) {
+      const baseStat = stat.replace(' %', '');
+      const base = newFlatStats[baseStat] || 0;
+      updatedStats[baseStat] = (updatedStats[baseStat] || 0) + (base * value / 100);
+    }
+  }
+  
+  // Appliquer les % des cores
+  for (const type of ['Offensif', 'Défensif', 'Endurance']) {
+    const core = cores[type];
+    if (!core) continue;
+    
+    if (core.primary?.endsWith('%')) {
+      const baseStat = core.primary.replace(' %', '');
+      const base = newFlatStats[baseStat] || 0;
+      updatedStats[baseStat] = (updatedStats[baseStat] || 0) + (base * parseFloat(core.primaryValue || 0) / 100);
+    }
+    if (core.secondary?.endsWith('%')) {
+      const baseStat = core.secondary.replace(' %', '');
+      const base = newFlatStats[baseStat] || 0;
+      updatedStats[baseStat] = (updatedStats[baseStat] || 0) + (base * parseFloat(core.secondaryValue || 0) / 100);
+    }
+  }
+  
+  // 5. Mettre à jour tous les states
+  setFlatStats(completeStats(newFlatStats));
+  setStatsWithoutArtefact(completeStats(updatedStats));
+  
+  // 6. Forcer le recalcul des artefacts
+  setTimeout(() => {
+    recalculateStatsFromArtifacts();
+  }, 0);
+};
 
   const tankMessageRef = useRef('');
   const messageOpacityRef = useRef(1);
@@ -2750,17 +2838,17 @@ BobbyJones : "Allez l'Inter !"
 
 
 
-    // Fermer le dropdown si on clique ailleurs
-useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-      setShowLanguageDropdown(false);
-    }
-  };
-  
-  document.addEventListener('mousedown', handleClickOutside);
-  return () => document.removeEventListener('mousedown', handleClickOutside);
-}, []);
+  // Fermer le dropdown si on clique ailleurs
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowLanguageDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
 
@@ -2877,6 +2965,21 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
+    if (!selectedCharacter || !characters[selectedCharacter]) return;
+
+    const char = characters[selectedCharacter];
+    const charStats = characterStats[selectedCharacter];
+    if (!charStats) return;
+
+    const weapon = hunterWeapons[selectedCharacter] || {};
+
+    // Utiliser getFlatStatsWithWeapon qui gère déjà Jinwoo
+    const newFlat = getFlatStatsWithWeapon(charStats, weapon, jinwooStrength);
+    setFlatStats(completeStats(newFlat));
+
+  }, [selectedCharacter, hunterWeapons, jinwooStrength]);
+
+  useEffect(() => {
     // Exposer la fonction globalement pour BeruInteractionMenu
     window.setIsTutorialActive = setIsTutorialActive;
     window.startTutorial = () => {
@@ -2890,16 +2993,29 @@ useEffect(() => {
     };
   }, []);
 
-  const languages = [
-  { code: 'fr', name: 'Français', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png' },
-  { code: 'en', name: 'English', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png' },
-  // Langues additionnelles (prêtes pour plus tard)
-  { code: 'ko', name: '한국어', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754778825/ko_flag_zdbhiz.png'},
-  { code: 'ja', name: '日本語', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814859/jap_flag_bet2ob.png' },
-  { code: 'zh', name: '中文', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814970/zh_flag_r9l06y.png' },
-];
+  // Ajouter ce useEffect spécifiquement pour Jinwoo
+  useEffect(() => {
+    const isJinwoo = selectedCharacter === 'jinwoo' ||
+      selectedCharacter === 'sung-jinwoo' ||
+      selectedCharacter === 'Sung Jinwoo' ||
+      selectedCharacter === 'sung';
 
-const currentLang = languages.find(lang => lang.code === i18n.language) || languages[0];
+    if (!isJinwoo) return;
+
+    // Recalculer tout quand la Force change
+    recalculateAllStatsForJinwoo(jinwooStrength);
+  }, [jinwooStrength]); // Se déclenche quand jinwooStrength change
+
+  const languages = [
+    { code: 'fr', name: 'Français', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png' },
+    { code: 'en', name: 'English', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png' },
+    // Langues additionnelles (prêtes pour plus tard)
+    { code: 'ko', name: '한국어', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754778825/ko_flag_zdbhiz.png' },
+    { code: 'ja', name: '日本語', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814859/jap_flag_bet2ob.png' },
+    { code: 'zh', name: '中文', flag: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814970/zh_flag_r9l06y.png' },
+  ];
+
+  const currentLang = languages.find(lang => lang.code === i18n.language) || languages[0];
 
   // 🔍 FONCTION DE VALIDATION COMPLÈTE DU HUNTER
   const validateHunterForHallOfFame = (currentArtifacts, currentCores, currentGems) => {
@@ -3150,29 +3266,31 @@ const currentLang = languages.find(lang => lang.code === i18n.language) || langu
     const name = selectedCharacter;
     const char = characterStats[name];
 
-    simulateWeaponSaveIfMissing(name); // si arme absente, on simule un save
+    simulateWeaponSaveIfMissing(name);
 
     let weapon = hunterWeapons[name];
-
 
     const scale = characters[name]?.scaleStat || 'Attack';
     let mainStat = 0;
 
     if (scale === 'Defense' || scale === 'Attack') mainStat = 3080;
-    else if (scale === 'HP') mainStat = 6120;
-    else mainStat = 3080; // Attack ou défaut
+    else if (scale === 'HP') mainStat = 6160;
+    else mainStat = 3080;
+
+    let precision = 4000;
+
+    const isJinwoo = name === 'jinwoo' || name === 'sung-jinwoo' || name === 'Sung Jinwoo' || name === 'sung';
+    if (isJinwoo) {
+      mainStat = 6160;
+      precision = 8000;
+    }
 
     weapon = {
       mainStat,
-      precision: 4000,
+      precision: precision,
     };
 
-    // 💾 Force la sauvegarde dans le state + localStorage
     handleSaveWeapon(name, weapon);
-    // localStorage.setItem('hunterWeapons', JSON.stringify({
-    //   ...hunterWeapons,
-    //   [name]: weapon
-    // }));
 
     const cores = hunterCores[name] || {};
     const gems = gemData || {};
@@ -3183,81 +3301,19 @@ const currentLang = languages.find(lang => lang.code === i18n.language) || langu
       return acc;
     }, {});
 
-    // 💠 Step 1 : base + weapon
-    let newFlat = getFlatStatsWithWeapon(char, weapon);
+    // 💠 Step 1 : base + weapon avec la Force actuelle
+    let newFlat = getFlatStatsWithWeapon(char, weapon, jinwooStrength);
 
     // 💠 Step 2 : copie brute
-    let updatedStats = { ...newFlat }; // NE PAS faire completeStats tout de suite
+    let updatedStats = { ...newFlat };
 
-    // 💠 Step 3 : Gems
-    for (const [stat, value] of Object.entries(mergedGems)) {
-      if (stat.startsWith('Additional ')) {
-        applyStatToFlat(stat, value, updatedStats); // brut
-      }
-    }
-
-    // 💠 Step 4 : Noyaux
-    for (const type of ['Offensif', 'Défensif', 'Endurance']) {
-      const core = cores[type];
-      if (!core) continue;
-
-      if (core.primary?.startsWith('Additional ')) {
-        applyStatToFlat(core.primary, parseFloat(core.primaryValue), updatedStats);
-      }
-      if (core.secondary?.startsWith('Additional ')) {
-        applyStatToFlat(core.secondary, parseFloat(core.secondaryValue), updatedStats);
-      }
-    }
-
-    // ➤ Phase pourcentages – Gems
-    for (const [stat, value] of Object.entries(mergedGems)) {
-      if (stat.endsWith('%')) {
-        const baseStat = stat.replace(' %', '');
-        const base = newFlat[baseStat] || 0;
-        updatedStats[baseStat] += (base * value) / 100;
-      }
-    }
-
-    // ➤ Pourcentages – Noyaux
-    for (const type of ['Offensif', 'Défensif', 'Endurance']) {
-      const core = cores[type];
-      if (!core) continue;
-
-      if (core.primary?.endsWith('%')) {
-        const baseStat = core.primary.replace(' %', '');
-        const base = newFlat[baseStat] || 0;
-        updatedStats[baseStat] += (base * parseFloat(core.primaryValue)) / 100;
-      }
-      if (core.secondary?.endsWith('%')) {
-        const baseStat = core.secondary.replace(' %', '');
-        const base = newFlat[baseStat] || 0;
-        updatedStats[baseStat] += (base * parseFloat(core.secondaryValue)) / 100;
-      }
-    }
-
-    // 💠 Step 5 : reset artefacts
-    const resetArtifacts = {};
-    for (const slot in artifactsData) {
-      resetArtifacts[slot] = {
-        mainStat: '',
-        subStats: ['', '', '', ''],
-        subStatsLevels: [
-          { value: 0, level: 0, procOrders: [], procValues: [] },
-          { value: 0, level: 0, procOrders: [], procValues: [] },
-          { value: 0, level: 0, procOrders: [], procValues: [] },
-          { value: 0, level: 0, procOrders: [], procValues: [] }
-        ]
-      };
-    }
+    // ... reste du code pour les gems et cores ...
 
     // ✅ Finalisation
     setFlatStats(completeStats(newFlat));
     setStatsWithoutArtefact(completeStats(updatedStats));
     setStatsFromArtifacts(completeStats({}));
     setArtifactsData(resetArtifacts);
-
-
-
   };
   const playMusic = () => {
     if (darkAriaAudioRef.current) {
@@ -3483,10 +3539,15 @@ const currentLang = languages.find(lang => lang.code === i18n.language) || langu
       if (scale === 'Defense') mainStat = 3080;
       else if (scale === 'HP') mainStat = 6120;
       else mainStat = 3080;
+      let precision = 4000;
+      if (characters[hunterKey].name === 'Sung Jinwoo') {
+        mainStat = 6160;
+        precision = 8000;
+      }
 
       const defaultWeapon = {
         mainStat,
-        precision: 4000,
+        precision: precision,
       };
 
       handleSaveWeapon(hunterKey, defaultWeapon); // suffit !
@@ -3502,12 +3563,58 @@ const currentLang = languages.find(lang => lang.code === i18n.language) || langu
   const [editStatsMode, setEditStatsMode] = useState(false);
   const getEditLabel = () => t(editStatsMode ? 'save' : 'modify');
 
-  const getFlatStatsWithWeapon = (char, weapon = {}) => {
+  const getFlatStatsWithWeapon = (char, weapon = {}, jinwooStrength = 749) => {
+    if (!char) return {};
 
-    const scaleStat = char?.scaleStat || '';
-    const weaponBoost = weapon.mainStat || 0;
-    const weapPrecision = weapon.precision || 0.
+    const scaleStat = char.scaleStat || '';
+    let weaponBoost = weapon.mainStat || 0;
+    let weapPrecision = weapon.precision || 0;
 
+    // 🔥 DÉTECTION JINWOO - utiliser le selectedCharacter actuel
+    const charName = selectedCharacter;
+    const isJinwoo = charName === 'jinwoo' ||
+      charName === 'sung-jinwoo' ||
+      charName === 'Sung Jinwoo' ||
+      charName === 'sung';
+
+    // 🗡️ CALCUL SPÉCIAL POUR JINWOO
+    if (isJinwoo) {
+      weaponBoost = 6160;
+      weapPrecision = 8000;
+
+
+      // Récupérer la force actuelle (depuis le state ou la valeur par défaut)
+      const currentStrength = jinwooStrength || 0;
+      const level = 115;
+const bonus = 6.0954 * currentStrength 
+            - 0.0071901 * currentStrength * currentStrength
+            + 0.000018907 * currentStrength * currentStrength * currentStrength
+            - 0.000000027519 * Math.pow(currentStrength, 4)
+            + 0.000000000014916 * Math.pow(currentStrength, 5);
+
+const adjustedBonus = Math.floor(bonus - Math.ceil(level / 2));
+const baseATKWithStrength = 3032 + adjustedBonus;
+
+      return {
+        'Attack': baseATKWithStrength + weaponBoost, // Base calculée + arme
+        'Defense': 2775,
+        'HP': 5436,
+        'Critical Hit Rate': 0,
+        'Critical Hit Damage': 0,
+        'Defense Penetration': 0,
+        'Additional MP': 0,
+        'Additional Attack': 0,
+        'Healing Given Increase (%)': 0,
+        'Damage Increase': 0,
+        'MP': 1034,
+        'MP Consumption Reduction': 0,
+        'Damage Reduction': 0,
+        'MP Recovery Rate Increase (%)': 0,
+        'Precision': weapPrecision,
+      };
+    }
+
+    // CALCUL NORMAL pour les autres personnages
     return {
       'Attack': (char?.attack || 0) + (scaleStat === 'Attack' ? weaponBoost : 0),
       'Defense': (char?.defense || 0) + (scaleStat === 'Defense' ? weaponBoost : 0),
@@ -3519,18 +3626,20 @@ const currentLang = languages.find(lang => lang.code === i18n.language) || langu
       'Additional Attack': 0,
       'Healing Given Increase (%)': 0,
       'Damage Increase': 0,
-      'MP': 0,
+      'MP': char?.mp || 1000,
       'MP Consumption Reduction': 0,
       'Damage Reduction': 0,
       'MP Recovery Rate Increase (%)': 0,
-      'Precision': weapPrecision, // ✅ Ajouté ici
+      'Precision': weapPrecision,
     };
   };
   const defaultCharacter = selectedCharacter && characterStats[selectedCharacter];
 
-  const [flatStats, setFlatStats] = useState(() =>
-    completeStats(getFlatStatsWithWeapon(defaultCharacter, hunterWeapons[defaultCharacter?.name] || {}))
-  );
+  const [flatStats, setFlatStats] = useState(() => {
+    const char = selectedCharacter && characterStats[selectedCharacter];
+    const weapon = hunterWeapons[selectedCharacter] || {};
+    return completeStats(getFlatStatsWithWeapon(char, weapon, jinwooStrength));
+  });
 
 
   const [statsWithoutArtefact, setStatsWithoutArtefact] = useState({
@@ -4806,126 +4915,125 @@ const currentLang = languages.find(lang => lang.code === i18n.language) || langu
                     <div className="flex flex-col w-full gap-4">
                       {/* Langues + Select */}
                       <div className="flex items-center gap-2 justify-between">
-  {/* Language Selector avec Dropdown */}
-  <div className="relative" ref={dropdownRef}>
-    <button
-      onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-      className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-purple-900/30 hover:bg-purple-900/50 transition-all border border-purple-600/50 hover:border-purple-500"
-    >
-      <img
-        src={currentLang.flag}
-        alt={currentLang.name}
-        className="w-6 h-4 rounded"
-      />
-      <span className="text-purple-300 text-xs hidden sm:block">
-        {currentLang.name}
-      </span>
-      <svg
-        className={`w-3 h-3 text-purple-400 transition-transform ${showLanguageDropdown ? 'rotate-180' : ''}`}
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-      </svg>
-    </button>
+                        {/* Language Selector avec Dropdown */}
+                        <div className="relative" ref={dropdownRef}>
+                          <button
+                            onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                            className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-purple-900/30 hover:bg-purple-900/50 transition-all border border-purple-600/50 hover:border-purple-500"
+                          >
+                            <img
+                              src={currentLang.flag}
+                              alt={currentLang.name}
+                              className="w-6 h-4 rounded"
+                            />
+                            <span className="text-purple-300 text-xs hidden sm:block">
+                              {currentLang.name}
+                            </span>
+                            <svg
+                              className={`w-3 h-3 text-purple-400 transition-transform ${showLanguageDropdown ? 'rotate-180' : ''}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
 
-    {/* Dropdown Menu */}
-    {showLanguageDropdown && (
-      <div className="absolute left-0 mt-1 bg-[#1a1a2e] border border-purple-600/50 rounded-lg shadow-xl z-50 min-w-[140px] overflow-hidden">
-        {/* Langues principales (toujours visibles) */}
-        <div className="py-1">
-          {languages
-            .filter(lang => !lang.hidden)
-            .map((lang) => (
-              <button
-                key={lang.code}
-                onClick={() => {
-                  i18n.changeLanguage(lang.code);
-                  setShowLanguageDropdown(false);
-                }}
-                className={`w-full flex items-center gap-2 px-3 py-2 hover:bg-purple-900/30 transition-colors ${
-                  lang.code === i18n.language ? 'bg-purple-900/20' : ''
-                }`}
-              >
-                <img
-                  src={lang.flag}
-                  alt={lang.name}
-                  className="w-6 h-4 rounded"
-                />
-                <span className="text-purple-300 text-sm">{lang.name}</span>
-                {lang.code === i18n.language && (
-                  <span className="ml-auto text-purple-400">✓</span>
-                )}
-              </button>
-            ))}
-        </div>
+                          {/* Dropdown Menu */}
+                          {showLanguageDropdown && (
+                            <div className="absolute left-0 mt-1 bg-[#1a1a2e] border border-purple-600/50 rounded-lg shadow-xl z-50 min-w-[140px] overflow-hidden">
+                              {/* Langues principales (toujours visibles) */}
+                              <div className="py-1">
+                                {languages
+                                  .filter(lang => !lang.hidden)
+                                  .map((lang) => (
+                                    <button
+                                      key={lang.code}
+                                      onClick={() => {
+                                        i18n.changeLanguage(lang.code);
+                                        setShowLanguageDropdown(false);
+                                      }}
+                                      className={`w-full flex items-center gap-2 px-3 py-2 hover:bg-purple-900/30 transition-colors ${lang.code === i18n.language ? 'bg-purple-900/20' : ''
+                                        }`}
+                                    >
+                                      <img
+                                        src={lang.flag}
+                                        alt={lang.name}
+                                        className="w-6 h-4 rounded"
+                                      />
+                                      <span className="text-purple-300 text-sm">{lang.name}</span>
+                                      {lang.code === i18n.language && (
+                                        <span className="ml-auto text-purple-400">✓</span>
+                                      )}
+                                    </button>
+                                  ))}
+                              </div>
 
-        {/* Séparateur et "Plus de langues" (pour le futur) */}
-        {languages.some(lang => lang.hidden) && (
-          <>
-            <div className="border-t border-purple-600/30"></div>
-            <div className="px-3 py-2 text-purple-400/60 text-xs text-center">
-              Plus de langues bientôt...
-            </div>
-          </>
-        )}
-      </div>
-    )}
-  </div>
+                              {/* Séparateur et "Plus de langues" (pour le futur) */}
+                              {languages.some(lang => lang.hidden) && (
+                                <>
+                                  <div className="border-t border-purple-600/30"></div>
+                                  <div className="px-3 py-2 text-purple-400/60 text-xs text-center">
+                                    Plus de langues bientôt...
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
 
-  {/* Select Personnage (reste identique) */}
-  <select
-    value={selectedCharacter}
-    onChange={(e) => {
-      const selected = e.target.value;
-      setSelectedCharacter(selected);
-      const saved = localStorage.getItem(`${selected}`);
-      if (saved) {
-        const build = JSON.parse(saved);
-        setFlatStats(build.flatStats);
-        setStatsWithoutArtefact(build.statsWithoutArtefact);
-        setArtifactsData(build.artifactsData);
-        setHunterCores(build.hunterCores);
-        showTankMessage(`Loaded saved build for ${selected} 😏`);
-      } else {
-        handleResetStats();
-      }
-    }}
-    className="p-2 rounded-lg bg-purple-900/30 text-purple-300 text-sm
+                        {/* Select Personnage (reste identique) */}
+                        <select
+                          value={selectedCharacter}
+                          onChange={(e) => {
+                            const selected = e.target.value;
+                            setSelectedCharacter(selected);
+                            const saved = localStorage.getItem(`${selected}`);
+                            if (saved) {
+                              const build = JSON.parse(saved);
+                              setFlatStats(build.flatStats);
+                              setStatsWithoutArtefact(build.statsWithoutArtefact);
+                              setArtifactsData(build.artifactsData);
+                              setHunterCores(build.hunterCores);
+                              showTankMessage(`Loaded saved build for ${selected} 😏`);
+                            } else {
+                              handleResetStats();
+                            }
+                          }}
+                          className="p-2 rounded-lg bg-purple-900/30 text-purple-300 text-sm
       border border-purple-600/50 hover:border-purple-500
       focus:outline-none focus:border-purple-400
       flex-1 max-w-[200px]"
-    style={{
-      backgroundColor: 'rgba(30, 30, 50, 0.95)',
-      color: '#e9d5ff'
-    }}
-  >
-    <option value="" style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}>
-      {t('selectCharacter')}
-    </option>
-    {Object.entries(characters)
-      .filter(([key, char]) => {
-        if (key === '') return false;
-        if (selectedElement && char.element !== selectedElement) return false;
-        if (selectedClass) {
-          const classType = char.class === 'Tank' ? 'Tank'
-            : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
-          if (classType !== selectedClass) return false;
-        }
-        return true;
-      })
-      .map(([key, char]) => (
-        <option
-          key={key}
-          value={key}
-          style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}
-        >
-          {char.name}
-        </option>
-      ))}
-  </select>
-</div>
+                          style={{
+                            backgroundColor: 'rgba(30, 30, 50, 0.95)',
+                            color: '#e9d5ff'
+                          }}
+                        >
+                          <option value="" style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}>
+                            {t('selectCharacter')}
+                          </option>
+                          {Object.entries(characters)
+                            .filter(([key, char]) => {
+                              if (key === '') return false;
+                              if (selectedElement && char.element !== selectedElement) return false;
+                              if (selectedClass) {
+                                const classType = char.class === 'Tank' ? 'Tank'
+                                  : (['Healer', 'Support'].includes(char.class) ? 'Support' : 'DPS');
+                                if (classType !== selectedClass) return false;
+                              }
+                              return true;
+                            })
+                            .map(([key, char]) => (
+                              <option
+                                key={key}
+                                value={key}
+                                style={{ backgroundColor: '#1a1a2e', color: '#e9d5ff' }}
+                              >
+                                {char.name}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
 
                       {/* BOUTONS D'ACTION - VERSION MOBILE SOBRE */}
                       <div className="flex flex-col gap-3 w-full">
@@ -5201,6 +5309,38 @@ const currentLang = languages.find(lang => lang.code === i18n.language) || langu
                               NEW
                             </span>
                           </button>
+
+                          {/* 🔥 SÉLECTEUR DE FORCE POUR SUNG JINWOO */}
+                          {(selectedCharacter === 'Sung Jinwoo' || selectedCharacter === 'sung-jinwoo' || selectedCharacter === 'jinwoo' || selectedCharacter === 'sung') && (
+                            <div className="flex items-center gap-2 bg-purple-900/30 px-3 py-1.5 rounded-lg border border-purple-500/50">
+                              <label className="text-purple-300 text-sm font-medium whitespace-nowrap">STR:</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="999"
+                                value={jinwooStrength}
+                                onChange={(e) => {
+                                  const value = parseInt(e.target.value) || 0;
+                                  setJinwooStrength(value);
+
+                                  // 🔥 RECALCULER IMMÉDIATEMENT
+                                  const char = characterStats[selectedCharacter];
+                                  const weapon = hunterWeapons[selectedCharacter] || { mainStat: 6160, precision: 8000 };
+
+                                  // Recalculer les flatStats avec la nouvelle force
+                                  const newFlat = getFlatStatsWithWeapon(char, weapon, value);
+                                  setFlatStats(completeStats(newFlat));
+
+                                  // Forcer le recalcul de toute la chaîne
+                                  setTimeout(() => {
+                                    recalculateStatsFromArtifacts();
+                                  }, 0);
+                                }}
+                                className="w-16 px-2 py-1 bg-gray-800 text-white text-sm rounded border border-purple-500/50 focus:border-purple-400 focus:outline-none text-center"
+                              />
+                              <span className="text-purple-400 text-xs">⚔️</span>
+                            </div>
+                          )}
 
                           <button
                             onClick={() => setEditStatsMode(!editStatsMode)}
@@ -6095,73 +6235,72 @@ const currentLang = languages.find(lang => lang.code === i18n.language) || langu
                   {/* Filtres + select personnage EN HAUT */}
                   <div className="flex items-center justify-start w-full px-1 mb-1 tank-target">
                     {/* Colonne Gauche – Langues */}
-                   <div className="flex gap-1 items-center ml-0 mr-4">
-  <div className="relative" ref={dropdownRef}>
-    <button
-      onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-      className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-yellow-900/20 hover:bg-yellow-900/30 transition-all border border-yellow-600/30 hover:border-yellow-500"
-    >
-      <img
-        src={currentLang.flag}
-        alt={currentLang.name}
-        className="w-7 h-5 rounded"
-      />
-      <span className="text-yellow-300 text-xs">
-        {currentLang.name}
-      </span>
-      <svg
-        className={`w-3 h-3 text-yellow-400 transition-transform ${showLanguageDropdown ? 'rotate-180' : ''}`}
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-      </svg>
-    </button>
+                    <div className="flex gap-1 items-center ml-0 mr-4">
+                      <div className="relative" ref={dropdownRef}>
+                        <button
+                          onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-yellow-900/20 hover:bg-yellow-900/30 transition-all border border-yellow-600/30 hover:border-yellow-500"
+                        >
+                          <img
+                            src={currentLang.flag}
+                            alt={currentLang.name}
+                            className="w-7 h-5 rounded"
+                          />
+                          <span className="text-yellow-300 text-xs">
+                            {currentLang.name}
+                          </span>
+                          <svg
+                            className={`w-3 h-3 text-yellow-400 transition-transform ${showLanguageDropdown ? 'rotate-180' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
 
-    {/* Dropdown Menu Desktop */}
-    {showLanguageDropdown && (
-      <div className="absolute right-0 mt-1 bg-[#1a1a2e] border border-yellow-600/50 rounded-lg shadow-xl z-50 min-w-[140px] overflow-hidden">
-        <div className="py-1">
-          {languages
-            .filter(lang => !lang.hidden)
-            .map((lang) => (
-              <button
-                key={lang.code}
-                onClick={() => {
-                  i18n.changeLanguage(lang.code);
-                  setShowLanguageDropdown(false);
-                }}
-                className={`w-full flex items-center gap-2 px-3 py-2 hover:bg-yellow-900/30 transition-colors ${
-                  lang.code === i18n.language ? 'bg-yellow-900/20' : ''
-                }`}
-              >
-                <img
-                  src={lang.flag}
-                  alt={lang.name}
-                  className="w-7 h-5 rounded"
-                />
-                <span className="text-yellow-300 text-sm">{lang.name}</span>
-                {lang.code === i18n.language && (
-                  <span className="ml-auto text-yellow-400">✓</span>
-                )}
-              </button>
-            ))}
-        </div>
+                        {/* Dropdown Menu Desktop */}
+                        {showLanguageDropdown && (
+                          <div className="absolute right-0 mt-1 bg-[#1a1a2e] border border-yellow-600/50 rounded-lg shadow-xl z-50 min-w-[140px] overflow-hidden">
+                            <div className="py-1">
+                              {languages
+                                .filter(lang => !lang.hidden)
+                                .map((lang) => (
+                                  <button
+                                    key={lang.code}
+                                    onClick={() => {
+                                      i18n.changeLanguage(lang.code);
+                                      setShowLanguageDropdown(false);
+                                    }}
+                                    className={`w-full flex items-center gap-2 px-3 py-2 hover:bg-yellow-900/30 transition-colors ${lang.code === i18n.language ? 'bg-yellow-900/20' : ''
+                                      }`}
+                                  >
+                                    <img
+                                      src={lang.flag}
+                                      alt={lang.name}
+                                      className="w-7 h-5 rounded"
+                                    />
+                                    <span className="text-yellow-300 text-sm">{lang.name}</span>
+                                    {lang.code === i18n.language && (
+                                      <span className="ml-auto text-yellow-400">✓</span>
+                                    )}
+                                  </button>
+                                ))}
+                            </div>
 
-        {/* Séparateur pour futures langues */}
-        {languages.some(lang => lang.hidden) && (
-          <>
-            <div className="border-t border-yellow-600/30"></div>
-            <div className="px-3 py-2 text-yellow-400/60 text-xs text-center">
-              Plus de langues bientôt...
-            </div>
-          </>
-        )}
-      </div>
-    )}
-  </div>
-</div>
+                            {/* Séparateur pour futures langues */}
+                            {languages.some(lang => lang.hidden) && (
+                              <>
+                                <div className="border-t border-yellow-600/30"></div>
+                                <div className="px-3 py-2 text-yellow-400/60 text-xs text-center">
+                                  Plus de langues bientôt...
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                     {/* Colonne Centre – Éléments + Select + Classes */}
                     <div className="flex items-center gap-3 mr-auto">
                       {/* Icônes éléments */}
@@ -6228,12 +6367,31 @@ const currentLang = languages.find(lang => lang.code === i18n.language) || langu
                               // Simuler une arme si elle n'existe pas
                               simulateWeaponSaveIfMissing(selected);
 
+                              // 🔥 Détection si c'est Sung Jinwoo (défini EN PREMIER)
+                              const isSungJinwoo = selected === 'Sung Jinwoo' || selected === 'sung-jinwoo' || selected === 'jinwoo';
+
                               // Récupérer l'arme (existante ou simulée)
-                              const weapon = hunterWeapons[selected] || {
-                                mainStat: characters[selected]?.scaleStat === 'Defense' ? 3080 :
-                                  characters[selected]?.scaleStat === 'HP' ? 6120 : 3080,
-                                precision: 4000
-                              };
+                              const weapon = hunterWeapons[selected] || (() => {
+                                const scaleStat = characters[selected]?.scaleStat;
+
+                                // 🗡️ Calcul des valeurs par défaut
+                                let mainStat = 3080; // Valeur par défaut
+
+                                if (scaleStat === 'HP') {
+                                  mainStat = 6120;
+                                } else if (scaleStat === 'Defense') {
+                                  mainStat = 3080;
+                                } else if (scaleStat === 'Attack') {
+                                  // ⚔️ Double arme pour Jinwoo !
+                                  mainStat = isSungJinwoo ? 6160 : 3080;
+                                }
+
+                                return {
+                                  mainStat: mainStat,
+                                  precision: isSungJinwoo ? 8000 : 4000
+                                };
+                              })();
+
 
                               // Stats de base avec arme
                               const newFlatStats = getFlatStatsWithWeapon(charStats, weapon);
@@ -7271,6 +7429,26 @@ const currentLang = languages.find(lang => lang.code === i18n.language) || langu
                                     : 'Aucune arme définie'}
                                 </p>
                               </div>
+                              {(selectedCharacter === 'Sung Jinwoo' || selectedCharacter === 'sung-jinwoo' || selectedCharacter === 'jinwoo' || selectedCharacter === 'sung') && (
+                                <div className="flex items-center gap-2 bg-purple-900/30 px-3 py-1.5 rounded-lg border border-purple-500/50">
+                                  <label className="text-purple-300 text-sm font-medium whitespace-nowrap">STR:</label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="999"
+                                    value={jinwooStrength}
+                                    onChange={(e) => {
+                                      const value = parseInt(e.target.value) || 0;
+                                      setJinwooStrength(value);
+
+                                      // 🔥 UTILISER LA NOUVELLE FONCTION DE RECALCUL
+                                      recalculateAllStatsForJinwoo(value);
+                                    }}
+                                    className="w-16 px-2 py-1 bg-gray-800 text-white text-sm rounded border border-purple-500/50 focus:border-purple-400 focus:outline-none text-center"
+                                  />
+                                  <span className="text-purple-400 text-xs">⚔️</span>
+                                </div>
+                              )}
 
                               {/* Bouton Modifier */}
                               <button
