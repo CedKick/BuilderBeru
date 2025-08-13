@@ -149,7 +149,7 @@ export default function HomePage() {
       h3: "진아, 레나르트, 엠마 로랑, 차혜인 등"
     },
     ja: {
-      h1: "俺だけレベルアップ계산기",
+      h1: "俺だけレベルアップ計算機",
       h2: "全ハンター対応無料ビルド最適化ツール", 
       h3: "ジナ、レナート、エマ・ローラン、車海仁など"
     },
@@ -267,6 +267,39 @@ export default function HomePage() {
           animation: glow-pulse 2s ease-in-out infinite;
         }
 
+        /* 🐜 ANIMATIONS CHIBI WORLD */
+        @keyframes gradient {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+
+        .animate-gradient {
+          background-size: 200% 200%;
+          animation: gradient 3s ease infinite;
+        }
+
+        @keyframes float-up {
+          0% {
+            transform: translateY(100vh) translateX(0) scale(0);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.6;
+            transform: scale(1);
+          }
+          90% {
+            opacity: 0.6;
+          }
+          100% {
+            transform: translateY(-100vh) translateX(100px) scale(0);
+            opacity: 0;
+          }
+        }
+
+        .animate-float-up {
+          animation: float-up linear infinite;
+        }
+
         /* 📱 MOBILE SPECIFIC OPTIMIZATIONS */
         @media (max-width: 768px) {
           .mobile-title-container {
@@ -314,6 +347,38 @@ export default function HomePage() {
             border-radius: 12px !important;
             font-size: 11px !important;
             opacity: 0.4 !important;
+          }
+
+          /* Mobile Chibi World */
+          .chibi-world-section {
+            margin-top: 20px !important;
+            padding: 0 10px !important;
+          }
+
+          .chibi-world-card {
+            padding: 20px !important;
+          }
+
+          .chibi-sprites {
+            gap: 8px !important;
+          }
+
+          .chibi-sprite-bubble {
+            width: 40px !important;
+            height: 40px !important;
+          }
+
+          .chibi-world-title {
+            font-size: 24px !important;
+          }
+
+          .chibi-world-description {
+            font-size: 14px !important;
+          }
+
+          .chibi-features {
+            gap: 16px !important;
+            font-size: 12px !important;
           }
         }
       `}</style>
@@ -441,6 +506,119 @@ export default function HomePage() {
             </div>
 
           </div>
+        </div>
+
+        {/* 🌟 SECTION CHIBI WORLD - NOUVEAU ! */}
+        <div className="chibi-world-section mt-12 px-4 w-full max-w-4xl mx-auto">
+          <Link to="/chibi-world">
+            <div className="chibi-world-card relative overflow-hidden rounded-2xl 
+                            bg-gradient-to-br from-purple-900/40 via-indigo-900/40 to-blue-900/40
+                            border-2 border-purple-500/50 hover:border-purple-400 
+                            transition-all duration-500 hover:scale-[1.02] group
+                            backdrop-blur-sm">
+              
+              {/* Background image avec effet parallax */}
+              <div className="absolute inset-0 opacity-30 group-hover:opacity-40 transition-opacity duration-700">
+                <img 
+                  src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755091230/BuilderBeru_enclos_wgtjm5.jpg"
+                  alt="Chibi World Map"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent" />
+              </div>
+              
+              {/* Contenu principal */}
+              <div className="relative p-8 text-center z-10">
+                {/* Sprites animés */}
+                <div className="chibi-sprites flex justify-center mb-6 gap-4">
+                  <div className="animate-bounce" style={{animationDelay: '0s'}}>
+                    <div className="chibi-sprite-bubble w-16 h-16 bg-purple-500/20 rounded-full p-2 backdrop-blur-sm
+                                    border border-purple-400/50 shadow-lg shadow-purple-500/30">
+                      <span className="text-3xl">🐜</span>
+                    </div>
+                  </div>
+                  <div className="animate-bounce" style={{animationDelay: '0.2s'}}>
+                    <div className="chibi-sprite-bubble w-16 h-16 bg-green-500/20 rounded-full p-2 backdrop-blur-sm
+                                    border border-green-400/50 shadow-lg shadow-green-500/30">
+                      <span className="text-3xl">🛡️</span>
+                    </div>
+                  </div>
+                  <div className="animate-bounce" style={{animationDelay: '0.4s'}}>
+                    <div className="chibi-sprite-bubble w-16 h-16 bg-blue-500/20 rounded-full p-2 backdrop-blur-sm
+                                    border border-blue-400/50 shadow-lg shadow-blue-500/30">
+                      <span className="text-3xl">⚔️</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Titre épique */}
+                <h2 className="chibi-world-title text-4xl font-bold mb-3 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 
+                               bg-clip-text text-transparent animate-gradient">
+                  {t('home.chibiWorld.title', "L'Enclos des Ombres Éternelles")}
+                </h2>
+                
+                {/* Badge NEW animé */}
+                <div className="inline-flex items-center gap-2 mb-4">
+                  <span className="text-xs font-bold bg-gradient-to-r from-red-500 to-orange-500 
+                                   text-white px-3 py-1 rounded-full animate-pulse shadow-lg">
+                    NOUVEAU !
+                  </span>
+                  <span className="text-yellow-400 animate-pulse">✨</span>
+                </div>
+                
+                {/* Description */}
+                <p className="chibi-world-description text-lg text-purple-200/90 mb-6 max-w-2xl mx-auto">
+                  {t('homeChibi.chibiWorld.description', 
+                     "Collecte et élève tes chibis dans un monde vivant ! Connexion quotidienne, évolutions, batailles épiques !")}
+                </p>
+                
+                {/* Features */}
+                <div className="chibi-features flex justify-center gap-8 mb-6 flex-wrap">
+                  <div className="flex items-center gap-2 text-purple-300">
+                    <span className="text-2xl">🔥</span>
+                    <span>{t('homeChibi.chibiWorld.streak', 'Streak quotidien')}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-purple-300">
+                    <span className="text-2xl">🎰</span>
+                    <span>{t('homeChibi.chibiWorld.gacha', 'Système Gacha')}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-purple-300">
+                    <span className="text-2xl">📈</span>
+                    <span>{t('homeChibi.chibiWorld.evolution', 'Évolutions')}</span>
+                  </div>
+                </div>
+                
+                {/* Bouton d'entrée */}
+                <button className="relative px-8 py-3 font-bold text-white rounded-full
+                                   bg-gradient-to-r from-purple-600 to-indigo-600
+                                   hover:from-purple-700 hover:to-indigo-700
+                                   transform transition-all duration-300 hover:scale-105
+                                   shadow-xl hover:shadow-purple-500/50
+                                   group/btn">
+                  <span className="relative z-10">
+                    {t('homeChibi.chibiWorld.enter', 'Entrer dans le Monde')}
+                  </span>
+                  <div className="absolute inset-0 rounded-full bg-purple-400 opacity-0 
+                                  group-hover/btn:opacity-30 blur transition-opacity duration-300" />
+                </button>
+              </div>
+              
+              {/* Particules flottantes */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {[...Array(6)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-2 h-2 bg-purple-400 rounded-full opacity-60 animate-float-up"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      animationDelay: `${i * 2}s`,
+                      animationDuration: `${10 + Math.random() * 10}s`
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </Link>
         </div>
       </div>
 

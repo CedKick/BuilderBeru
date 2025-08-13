@@ -2116,6 +2116,17 @@
     "settings": {
       "calculatorMode": "Calculator Mode"
     }
+  },
+
+  "homeChibi": {
+    "chibiWorld": {
+      "title": "L'Enclos des Ombres Éternelles",
+      "description": "Collecte et élève tes chibis dans un monde vivant ! Connexion quotidienne, évolutions, batailles épiques !",
+      "streak": "Streak quotidien",
+      "gacha": "Système Gacha",
+      "evolution": "Évolutions",
+      "enter": "Entrer dans le Monde"
+    }
   }
 }
 

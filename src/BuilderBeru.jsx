@@ -3739,7 +3739,6 @@ BobbyJones : "Allez l'Inter !"
       const adjustedBonus = Math.floor(bonus - Math.ceil(level / 2));
       const baseATKWithStrength = 3032 + adjustedBonus;
 
-      console.log('🔥 Jinwoo calc - STR:', currentStrength, 'Bonus:', adjustedBonus, 'Base ATK:', baseATKWithStrength);
 
       return {
         'Attack': baseATKWithStrength + weaponBoost, // Base calculée + arme
