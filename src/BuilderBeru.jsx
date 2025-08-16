@@ -11,6 +11,7 @@ import DamageCalculator from './DamageCalculator';
 import ComparisonPopup from './components/ComparisonPopup';
 import IgrisTutorial from './components/IgrisTutorial/IgrisTutorial';
 import { characters } from './data/characters';
+import { sungForce } from './data/sungForce';
 import ArtifactCard from "./components/ArtifactCard";
 import NoyauxPopup from './components/NoyauxPopup';
 import GemmesPopup from './components/GemmePopup';
@@ -605,6 +606,8 @@ const BuilderBeru = () => {
   const dropdownRef = useRef(null);
   const { i18n } = useTranslation();
   const [jinwooStrength, setJinwooStrength] = useState(0);
+  const [strengthInputValue, setStrengthInputValue] = useState(jinwooStrength.toString());
+const [isStrengthFocused, setIsStrengthFocused] = useState(false);
   const [kaiselMenuCharacter, setKaiselMenuCharacter] = useState('');
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [beruMenuPosition, setBeruMenuPosition] = useState({ x: 0, y: 0 });
@@ -628,6 +631,10 @@ const BuilderBeru = () => {
     setTvData({ statType, statValue });
     setShowTvSystem(true);
   };
+
+  const cleanStrengthInput = (value) => {
+  return value.replace(/[^0-9]/g, '');
+};
 
   const handlePortalClick = () => {
     const newCount = portalClickCount + 1;
@@ -3298,7 +3305,7 @@ BobbyJones : "Allez l'Inter !"
       - 0.000000027519 * strength ** 4
       + 0.000000000014916 * strength ** 5;
 
-    const baseATKWithStrength = 3032 + Math.floor(bonus - 115 / 2);
+    const baseATKWithStrength = 3033 + sungForce[strength] + 113;
 
     const jinwooFlatStats = {
       'Attack': baseATKWithStrength + jinwooWeapon.mainStat,
@@ -3736,8 +3743,8 @@ BobbyJones : "Allez l'Inter !"
         - 0.000000027519 * Math.pow(currentStrength, 4)
         + 0.000000000014916 * Math.pow(currentStrength, 5);
 
-      const adjustedBonus = Math.floor(bonus - Math.ceil(level / 2));
-      const baseATKWithStrength = 3032 + adjustedBonus;
+      const adjustedBonus = sungForce[currentStrength] + 113;
+      const baseATKWithStrength = 3033 + adjustedBonus;
 
 
       return {
@@ -7635,23 +7642,51 @@ BobbyJones : "Allez l'Inter !"
                               </div>
                               {(selectedCharacter === 'Sung Jinwoo' || selectedCharacter === 'sung-jinwoo' || selectedCharacter === 'jinwoo' || selectedCharacter === 'sung') && (
                                 <div className="flex items-center gap-2 bg-purple-900/30 px-3 py-1.5 rounded-lg border border-purple-500/50">
-                                  <label className="text-purple-300 text-sm font-medium whitespace-nowrap">STR:</label>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    max="999"
-                                    value={jinwooStrength}
-                                    onChange={(e) => {
-                                      const value = parseInt(e.target.value) || 0;
-                                      setJinwooStrength(value);
-
-                                      // 🔥 UTILISER LA NOUVELLE FONCTION DE RECALCUL
-                                      recalculateAllStatsForJinwoo(value);
-                                    }}
-                                    className="w-16 px-2 py-1 bg-gray-800 text-white text-sm rounded border border-purple-500/50 focus:border-purple-400 focus:outline-none text-center"
-                                  />
-                                  <span className="text-purple-400 text-xs">⚔️</span>
-                                </div>
+  <label className="text-purple-300 text-sm font-medium whitespace-nowrap">STR:</label>
+  <input
+    type="text"  // Changé de "number" à "text" pour plus de contrôle
+    value={isStrengthFocused ? strengthInputValue : jinwooStrength}
+    onChange={(e) => {
+      const cleaned = cleanStrengthInput(e.target.value);
+      // Limite à 3 chiffres max pour éviter de taper des valeurs trop grandes
+      if (cleaned.length <= 3) {
+        setStrengthInputValue(cleaned);
+      }
+    }}
+    onFocus={() => {
+      setIsStrengthFocused(true);
+      // Si la valeur est 19 (minimum), on vide l'input pour faciliter la saisie
+      if (jinwooStrength === 19) {
+        setStrengthInputValue('');
+      } else {
+        setStrengthInputValue(jinwooStrength.toString());
+      }
+    }}
+    onBlur={() => {
+      setIsStrengthFocused(false);
+      let value = parseInt(strengthInputValue) || 19;
+      // Clamp entre 19 et 749
+      if (value < 19) value = 19;
+      if (value > 749) value = 749;
+      
+      setJinwooStrength(value);
+      setStrengthInputValue(value.toString());
+      
+      // 🔥 UTILISER LA NOUVELLE FONCTION DE RECALCUL
+      recalculateAllStatsForJinwoo(value);
+    }}
+    onKeyDown={(e) => {
+      // Permettre Enter pour valider
+      if (e.key === 'Enter') {
+        e.target.blur();
+      }
+    }}
+    className="w-16 px-2 py-1 bg-gray-800 text-white text-sm rounded border border-purple-500/50 focus:border-purple-400 focus:outline-none text-center"
+    inputMode="numeric"  // Pour mobile : affiche le clavier numérique
+    pattern="[0-9]*"     // Pour mobile : force le clavier numérique
+  />
+  <span className="text-purple-400 text-xs">⚔️</span>
+</div>
                               )}
 
                               {/* Bouton Modifier */}

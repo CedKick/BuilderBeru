@@ -1,0 +1,643 @@
+/* 🎭 CHIBI DETAIL MODAL STYLES */
+/* Styles pour le modal de détail et interaction avec les Chibis */
+/* Par Kaisel 🐉 pour le Monarque des Ombres */
+
+/* 🎨 OVERLAY ET CONTAINER */
+.chibi-detail-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+.chibi-detail-modal {
+  background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+  border: 2px solid rgba(168, 85, 247, 0.3);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease;
+}
+
+/* 🎯 HEADER */
+.modal-header {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  border-bottom: 2px solid rgba(168, 85, 247, 0.2);
+  position: relative;
+}
+
+.close-button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.close-button:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  transform: rotate(90deg);
+}
+
+/* 🎨 CHIBI PREVIEW */
+.chibi-preview {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.chibi-sprite-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.rarity-glow {
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  filter: blur(20px);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.chibi-sprite {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.5));
+}
+
+.chibi-info {
+  flex: 1;
+}
+
+.chibi-name {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.chibi-rarity {
+  font-size: 18px;
+  margin-top: 5px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.chibi-level {
+  color: #9ca3af;
+  font-size: 16px;
+  margin-top: 5px;
+}
+
+/* 🎭 HUMEUR */
+.current-mood {
+  margin-top: 15px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mood-label {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.mood-value {
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+/* 📊 PROGRESSION */
+.progression-section {
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  gap: 20px;
+}
+
+.progress-item {
+  flex: 1;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #d1d5db;
+}
+
+.progress-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.level-progress {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.affinity-progress {
+  background: linear-gradient(90deg, #ec4899, #f472b6);
+}
+
+/* 🎮 INTERACTIONS */
+.interactions-section {
+  padding: 20px;
+  border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+.interactions-section h3 {
+  margin: 0 0 15px 0;
+  color: #a855f7;
+  font-size: 18px;
+}
+
+.interaction-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.interaction-button {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px 20px;
+  background: rgba(168, 85, 247, 0.1);
+  border: 2px solid rgba(168, 85, 247, 0.3);
+  color: white;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.interaction-button:hover:not(.disabled) {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: #a855f7;
+  transform: translateY(-2px);
+}
+
+.interaction-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.interaction-button .cooldown {
+  display: block;
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 4px;
+}
+
+/* 📑 TABS */
+.modal-tabs {
+  display: flex;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0;
+  border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+.tab {
+  flex: 1;
+  padding: 15px;
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.tab:hover {
+  color: white;
+  background: rgba(168, 85, 247, 0.1);
+}
+
+.tab.active {
+  color: white;
+  background: rgba(168, 85, 247, 0.2);
+}
+
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #a855f7;
+}
+
+/* 📄 TAB CONTENT */
+.tab-content {
+  padding: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* 📊 STATS CONTENT */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.stat-item {
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 12px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-icon {
+  font-size: 24px;
+}
+
+.stat-name {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.stat-value {
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.unlock-info, .personality-info {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+}
+
+.unlock-info h4, .personality-info h4 {
+  color: #a855f7;
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.unlock-method, .personality-desc {
+  color: #d1d5db;
+  line-height: 1.6;
+}
+
+/* 📜 LORE CONTENT */
+.lore-summary {
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.lore-summary h4 {
+  color: #a855f7;
+  margin: 0 0 10px 0;
+}
+
+.lore-summary p {
+  color: #d1d5db;
+  line-height: 1.8;
+}
+
+.chapters-section h4 {
+  color: #a855f7;
+  margin-bottom: 15px;
+}
+
+.chapter-navigation {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.chapter-button {
+  padding: 8px 16px;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.chapter-button:hover:not(.locked) {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: #a855f7;
+}
+
+.chapter-button.active {
+  background: rgba(168, 85, 247, 0.3);
+  border-color: #a855f7;
+}
+
+.chapter-button.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chapter-content {
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+}
+
+.chapter-content h5 {
+  color: #a855f7;
+  margin: 0 0 15px 0;
+  font-size: 18px;
+}
+
+.chapter-text {
+  color: #d1d5db;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.chapter-locked {
+  padding: 40px;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.lock-icon {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 15px;
+}
+
+/* 💬 MESSAGES CONTENT */
+.mood-selector h4 {
+  color: #a855f7;
+  margin-bottom: 15px;
+}
+
+.mood-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.mood-button {
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.mood-button:hover {
+  background: rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
+}
+
+.mood-button.active {
+  background: rgba(168, 85, 247, 0.2);
+}
+
+.mood-icon {
+  font-size: 24px;
+}
+
+.mood-name {
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.messages-list h4 {
+  color: #a855f7;
+  margin-bottom: 15px;
+}
+
+.current-mood-messages h5 {
+  color: white;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.message-item {
+  padding: 12px 16px;
+  background: rgba(168, 85, 247, 0.1);
+  border-left: 3px solid #a855f7;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  color: #d1d5db;
+  font-style: italic;
+}
+
+.no-messages {
+  color: #9ca3af;
+  text-align: center;
+  padding: 20px;
+}
+
+/* 🤝 RELATIONS CONTENT */
+.relations-content h4 {
+  color: #a855f7;
+  margin-bottom: 20px;
+}
+
+.relationships-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.relationship-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.relationship-item .chibi-name {
+  flex: 0 0 150px;
+  color: white;
+  font-weight: bold;
+}
+
+.relationship-bar {
+  flex: 1;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.relationship-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 10px;
+  transition: all 0.5s ease;
+}
+
+.relationship-fill.positive {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.relationship-fill.negative {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.relationship-value {
+  color: white;
+  font-weight: bold;
+  min-width: 50px;
+  text-align: right;
+}
+
+.no-relations {
+  color: #9ca3af;
+  text-align: center;
+  padding: 40px;
+}
+
+.relation-info {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(168, 85, 247, 0.1);
+  border-radius: 12px;
+  text-align: center;
+  color: #d1d5db;
+}
+
+/* 📱 RESPONSIVE */
+@media (max-width: 768px) {
+  .chibi-detail-modal {
+    width: 95%;
+    max-height: 95vh;
+  }
+  
+  .chibi-preview {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .progression-section {
+    flex-direction: column;
+  }
+  
+  .interaction-buttons {
+    flex-direction: column;
+  }
+  
+  .interaction-button {
+    width: 100%;
+  }
+  
+  .modal-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab {
+    font-size: 13px;
+    padding: 12px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .mood-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* 🎨 ANIMATIONS */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* 🎯 SCROLLBAR CUSTOM */
+.tab-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tab-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.tab-content::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.5);
+  border-radius: 4px;
+}
+
+.tab-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.7);
+}
