@@ -41,12 +41,12 @@ export const CHIBI_DATABASE = {
       speed: 25
     },
     sprites: {
-      idle: 'https://res.cloudinary.com/YOUR_CLOUD/beru_papillon_idle.png',
-      left: null,
-      right: null,
-      up: null,
-      down: null,
-      special: null
+      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png',
+      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423128/alecto_left_o1u0jo.png',
+      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422934/alecto_right_ehb5xr.png',
+      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422906/alecto_up_dwahgh.png',
+      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png',
+      special: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png'
     }
   },
 
@@ -450,12 +450,12 @@ export const CHIBI_DATABASE = {
       speed: 35
     },
     sprites: {
-      idle: null,
-      left: null,
-      right: null,
-      up: null,
-      down: null,
-      special: null
+      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422541/Raven_face_xse2x9.png',
+      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422542/Raven_left_npo61o.png',
+      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422543/Raven_right_btxwos.png',
+      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422544/Raven_up_binfar.png',
+      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422541/Raven_face_xse2x9.png',
+      special: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422541/Raven_face_xse2x9.png'
     }
   },
 
@@ -493,12 +493,12 @@ export const CHIBI_DATABASE = {
       speed: 30
     },
     sprites: {
-      idle: null,
-      left: null,
-      right: null,
-      up: null,
-      down: null,
-      special: null
+      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422081/lil_face_vyjvxz.png',
+      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422081/lil_left_otwk5g.png',
+      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422082/lil_right_sgueer.png',
+      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422082/lil_up_ibp5cz.png',
+      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422081/lil_face_vyjvxz.png',
+      special: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422081/lil_face_vyjvxz.png'
     }
   },
 
@@ -703,10 +703,10 @@ export const CHIBI_DATABASE = {
   },
 
   // 🟢 COMMUNS (10)
-  'chibi_mimic': {
-    id: 'chibi_mimic',
-    name: 'Mimic-Chibi',
-    rarity: 'commun',
+  'Okami': {
+    id: 'Okami',
+    name: 'Okami',
+    rarity: 'mythique',
     unlockMethod: UNLOCK_METHODS.PULL,
     unlockCondition: null,
     personality: {
@@ -734,12 +734,12 @@ export const CHIBI_DATABASE = {
       speed: 10
     },
     sprites: {
-      idle: null,
-      left: null,
-      right: null,
-      up: null,
-      down: null,
-      special: null
+      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_face_qfzt4j.png',
+      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422301/Okami_left_rnjuja.png',
+      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_right_jutwqc.png',
+      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422299/Okami_up_a5gewa.png',
+      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_face_qfzt4j.png',
+      special: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_face_qfzt4j.png'
     }
   },
 

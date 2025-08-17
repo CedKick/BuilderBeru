@@ -2,7 +2,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import ChibiEntity from './ChibiEntity';
 
-const ChibiCanvas = ({ worldData, activeChibis, onChibiClick }) => {
+const ChibiCanvas = ({ worldData, activeChibiEntities, onChibiClick }) => {
   const canvasRef = useRef(null);
   const [chibiPositions, setChibiPositions] = useState({});
   const [isInitialized, setIsInitialized] = useState(false);
@@ -28,43 +28,71 @@ const ChibiCanvas = ({ worldData, activeChibis, onChibiClick }) => {
     };
   }, [worldData]);
 
-  // Générer des positions vraiment aléatoires
+  // Générer des positions mieux réparties sur toute la map
   useEffect(() => {
     const positions = {};
     
-    activeChibis.forEach((chibiId, index) => {
-      if (!chibiPositions[chibiId]) {
-        // POSITIONS MIEUX RÉPARTIES SUR LA MAP
+    activeChibiEntities.forEach((chibiEntity, index) => {
+      if (!chibiPositions[chibiEntity.id]) {
+        // GRILLE DE ZONES ÉTENDUE POUR COUVRIR TOUTE LA MAP
         const zones = [
-          { x: 200, y: 350 },  // Zone gauche près du dragon
-          { x: 600, y: 450 },  // Zone centre
-          { x: 900, y: 300 },  // Zone droite
-          { x: 400, y: 200 },  // Zone haute
-          { x: 800, y: 500 }   // Zone basse
+          // Ligne du haut
+          { x: 150, y: 150 },   // Haut gauche
+          { x: 400, y: 120 },   // Haut centre-gauche
+          { x: 600, y: 150 },   // Haut centre
+          { x: 800, y: 120 },   // Haut centre-droit
+          { x: 1050, y: 150 },  // Haut droit
+          
+          // Ligne du milieu-haut
+          { x: 200, y: 250 },   // Milieu-haut gauche
+          { x: 500, y: 280 },   // Milieu-haut centre
+          { x: 700, y: 250 },   // Milieu-haut centre-droit
+          { x: 1000, y: 280 },  // Milieu-haut droit
+          
+          // Ligne centrale
+          { x: 100, y: 350 },   // Centre gauche
+          { x: 350, y: 380 },   // Centre gauche-milieu
+          { x: 600, y: 350 },   // Centre
+          { x: 850, y: 380 },   // Centre droit-milieu
+          { x: 1100, y: 350 },  // Centre droit
+          
+          // Ligne du milieu-bas
+          { x: 250, y: 450 },   // Milieu-bas gauche
+          { x: 450, y: 480 },   // Milieu-bas centre-gauche
+          { x: 750, y: 450 },   // Milieu-bas centre-droit
+          { x: 950, y: 480 },   // Milieu-bas droit
+          
+          // Ligne du bas
+          { x: 150, y: 530 },   // Bas gauche
+          { x: 400, y: 550 },   // Bas centre-gauche
+          { x: 600, y: 530 },   // Bas centre
+          { x: 800, y: 550 },   // Bas centre-droit
+          { x: 1050, y: 530 }   // Bas droit
         ];
         
-        // Prendre une zone de base
-        const baseZone = zones[index % zones.length];
+        // Sélectionner une zone de manière cyclique mais avec variation
+        const zoneIndex = (index * 5 + Math.floor(Math.random() * 3)) % zones.length;
+        const baseZone = zones[zoneIndex];
         
-        // Ajouter un décalage aléatoire
-        positions[chibiId] = {
-          x: baseZone.x + (Math.random() - 0.5) * 200,
-          y: baseZone.y + (Math.random() - 0.5) * 100,
+        // Ajouter une variation aléatoire plus petite pour éviter l'alignement parfait
+        positions[chibiEntity.id] = {
+          x: baseZone.x + (Math.random() - 0.5) * 80,
+          y: baseZone.y + (Math.random() - 0.5) * 60,
           targetX: 0,
           targetY: 0,
           speed: 0.5 + Math.random() * 0.5
         };
       } else {
-        positions[chibiId] = chibiPositions[chibiId];
+        positions[chibiEntity.id] = chibiPositions[chibiEntity.id];
       }
     });
     
     setChibiPositions(positions);
     setIsInitialized(true);
-  }, [activeChibis.length]); // Dépendance sur la longueur seulement
+  }, [activeChibiEntities.length, chibiPositions]);
 
-  const handleChibiClick = (chibiId, realPosition) => {
-    onChibiClick(chibiId, realPosition);
+  const handleChibiClick = (chibiEntity, realPosition) => {
+    onChibiClick(chibiEntity, realPosition);
   };
 
   return (
@@ -77,12 +105,12 @@ const ChibiCanvas = ({ worldData, activeChibis, onChibiClick }) => {
       />
       
       <div className="chibi-entities-layer">
-        {isInitialized && activeChibis.map(chibiId => (
+        {isInitialized && activeChibiEntities.map(chibiEntity => (
           <ChibiEntity
-            key={chibiId}
-            chibiId={chibiId}
-            position={chibiPositions[chibiId]}
-            onClick={(realPos) => handleChibiClick(chibiId, realPos)}
+            key={chibiEntity.id}
+            chibiEntity={chibiEntity}
+            position={chibiPositions[chibiEntity.id]}
+            onClick={handleChibiClick}
           />
         ))}
       </div>

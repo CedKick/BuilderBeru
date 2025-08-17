@@ -7,7 +7,7 @@ export const CHIBI_RARITIES = {
   MYTHIQUE: {
     id: 'mythique',
     name: 'Mythique',
-    color: '#FFD700', // Or
+    color: '#FF0000', // Rouge
     dropRate: 0.01, // 1%
     xpMultiplier: 3,
     affinityBonus: 50
@@ -15,7 +15,7 @@ export const CHIBI_RARITIES = {
   LEGENDAIRE: {
     id: 'legendaire',
     name: 'Légendaire',
-    color: '#A855F7', // Violet
+    color: '#FF8C00', // Orange
     dropRate: 0.09, // 9%
     xpMultiplier: 2,
     affinityBonus: 30

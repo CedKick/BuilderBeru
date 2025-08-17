@@ -1,7 +1,8 @@
 // src/components/ChibiSystem/ChibiGacha.jsx
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CHIBI_DATABASE, RARITY_COLORS } from './ChibiData';
+import { ChibiFactory, CHIBI_RARITIES } from './ChibiDataStructure';
+import { CHIBI_DATABASE } from './ChibiDatabase';
 import ChibiBubble from '../ChibiBubble';
 import './ChibiWorld.css';
 
@@ -11,50 +12,26 @@ const ChibiGacha = ({ shadowCoins, onClose, onPull }) => {
   const [pullResult, setPullResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
   const [animationPhase, setAnimationPhase] = useState('idle'); // idle, pulling, reveal
+  const [chibiFactory, setChibiFactory] = useState(null);
   
-  // Taux de drop
-  const PULL_RATES = {
-    Commun: 0.60,      // 60%
-    Rare: 0.30,        // 30%
-    Légendaire: 0.09,  // 9%
-    Mythique: 0.01     // 1%
-  };
+  // États pour le multi-pull
+  const [multiPullResults, setMultiPullResults] = useState([]);
+  const [currentMultiIndex, setCurrentMultiIndex] = useState(0);
+  const [isMultiPull, setIsMultiPull] = useState(false);
+  
+  // Initialiser la factory
+  useEffect(() => {
+    const factory = new ChibiFactory(CHIBI_DATABASE);
+    setChibiFactory(factory);
+  }, []);
   
   // Coût du pull
   const PULL_COST = 100;
   const MULTI_PULL_COST = 900; // 10 pulls pour le prix de 9
   
-  // Fonction de pull
-  const performPull = () => {
-    const roll = Math.random();
-    let cumulative = 0;
-    let selectedRarity = 'Commun';
-    
-    for (const [rarity, rate] of Object.entries(PULL_RATES)) {
-      cumulative += rate;
-      if (roll <= cumulative) {
-        selectedRarity = rarity;
-        break;
-      }
-    }
-    
-    // Récupérer un chibi aléatoire de cette rareté
-    const chibisOfRarity = Object.values(CHIBI_DATABASE).filter(
-      chibi => chibi.rarity === selectedRarity
-    );
-    
-    if (chibisOfRarity.length > 0) {
-      const randomChibi = chibisOfRarity[Math.floor(Math.random() * chibisOfRarity.length)];
-      return randomChibi;
-    }
-    
-    // Fallback si aucun chibi trouvé
-    return CHIBI_DATABASE['chibi_beru_001'];
-  };
-  
-  // Animation de pull
+  // Animation de pull simple
   const handlePull = async () => {
-    if (shadowCoins < PULL_COST || isPulling) return;
+    if (shadowCoins < PULL_COST || isPulling || !chibiFactory) return;
     
     setIsPulling(true);
     setAnimationPhase('pulling');
@@ -62,9 +39,16 @@ const ChibiGacha = ({ shadowCoins, onClose, onPull }) => {
     // Phase 1: Animation du portail (2s)
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Phase 2: Déterminer le résultat
-    const result = performPull();
-    setPullResult(result);
+    // Phase 2: Déterminer le résultat en utilisant ChibiFactory
+    const newChibi = chibiFactory.getRandomChibiForPull();
+    if (!newChibi) {
+      console.error('Erreur lors du pull');
+      setIsPulling(false);
+      setAnimationPhase('idle');
+      return;
+    }
+    
+    setPullResult(newChibi);
     
     // Phase 3: Révélation (1s)
     setAnimationPhase('reveal');
@@ -74,8 +58,65 @@ const ChibiGacha = ({ shadowCoins, onClose, onPull }) => {
     setShowResult(true);
     setIsPulling(false);
     
-    // Notifier le parent
-    onPull(result);
+    // Notifier le parent avec l'entité Chibi complète
+    onPull(newChibi);
+  };
+  
+  // Animation de pull x10
+  const handleMultiPull = async () => {
+    if (shadowCoins < MULTI_PULL_COST || isPulling || !chibiFactory) return;
+    
+    setIsPulling(true);
+    setIsMultiPull(true);
+    setAnimationPhase('pulling');
+    
+    // Animation plus longue pour multi-pull
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // Tirer 10 chibis
+    const pulledChibis = [];
+    for (let i = 0; i < 10; i++) {
+      const newChibi = chibiFactory.getRandomChibiForPull();
+      if (newChibi) {
+        pulledChibis.push(newChibi);
+      }
+    }
+    
+    if (pulledChibis.length > 0) {
+      setMultiPullResults(pulledChibis);
+      setCurrentMultiIndex(0);
+      setPullResult(pulledChibis[0]);
+      
+      setAnimationPhase('reveal');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setShowResult(true);
+      setIsPulling(false);
+    }
+  };
+  
+  // Passer au chibi suivant dans le multi-pull
+  const showNextMultiPull = () => {
+    if (currentMultiIndex < multiPullResults.length - 1) {
+      setCurrentMultiIndex(prev => prev + 1);
+      setPullResult(multiPullResults[currentMultiIndex + 1]);
+    } else {
+      // Fin du multi-pull, notifier le parent pour tous les chibis
+      multiPullResults.forEach(chibi => onPull(chibi));
+      handleClose();
+    }
+  };
+  
+  // Afficher tous les résultats d'un coup
+  const skipToAllResults = () => {
+    // Notifier le parent pour tous les chibis
+    multiPullResults.forEach(chibi => onPull(chibi));
+    // TODO: Afficher un écran récapitulatif avec les 10 chibis
+    setShowResult(false);
+    setIsMultiPull(false);
+    setMultiPullResults([]);
+    setCurrentMultiIndex(0);
+    // Pour l'instant on ferme, mais on pourrait afficher un récap
+    handleClose();
   };
   
   // Fermer et reset
@@ -83,19 +124,39 @@ const ChibiGacha = ({ shadowCoins, onClose, onPull }) => {
     setShowResult(false);
     setPullResult(null);
     setAnimationPhase('idle');
+    setIsMultiPull(false);
+    setMultiPullResults([]);
+    setCurrentMultiIndex(0);
     onClose();
   };
   
-  // Sprite temporaire
-  const getChibiSprite = (chibiId) => {
+  // Obtenir le sprite du chibi
+  const getChibiSprite = (chibi) => {
+    // Utiliser le sprite idle s'il existe, sinon un emoji de fallback
+    if (chibi.sprites?.idle) {
+      return (
+        <img 
+          src={chibi.sprites.idle} 
+          alt={chibi.name}
+          className="chibi-gacha-sprite"
+          style={{ width: '120px', height: '120px' }}
+        />
+      );
+    }
+    
+    // Fallback emojis
     const spriteMap = {
-      'chibi_beru_001': '🐜',
-      'chibi_tank_001': '🛡️',
-      'chibi_kaisel_001': '⚔️',
-      'chibi_igris_001': '🗡️',
-      'chibi_iron_001': '🤖'
+      'beru': '🐜',
+      'tank': '🛡️',
+      'kaisel': '⚔️',
+      'igris': '🗡️',
+      'iron': '🤖',
+      'raven': '🐦‍⬛',
+      'lil': '🐉'
     };
-    return spriteMap[chibiId] || '👾';
+    
+    const typeKey = chibi.id.split('_')[1];
+    return spriteMap[typeKey] || '👾';
   };
 
   return (
@@ -166,6 +227,21 @@ const ChibiGacha = ({ shadowCoins, onClose, onPull }) => {
                     >
                       {isPulling ? t('gacha.pulling', 'Invocation...') : t('gacha.pull', 'Invoquer x1')}
                     </button>
+                    
+                    <button
+                      onClick={handleMultiPull}
+                      disabled={shadowCoins < MULTI_PULL_COST || isPulling}
+                      className={`px-6 py-3 rounded-full font-bold transition-all ${
+                        shadowCoins >= MULTI_PULL_COST && !isPulling
+                          ? 'bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 transform hover:scale-105'
+                          : 'bg-gray-600 cursor-not-allowed opacity-50'
+                      } text-white shadow-lg relative`}
+                    >
+                      {isPulling ? t('gacha.pulling', 'Invocation...') : t('gacha.multipull', 'Invoquer x10')}
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-xs px-2 py-1 rounded-full">
+                        -10%
+                      </span>
+                    </button>
                   </div>
                   
                   {/* Animation de pull */}
@@ -179,63 +255,127 @@ const ChibiGacha = ({ shadowCoins, onClose, onPull }) => {
             ) : (
               <>
                 {/* Résultat */}
-                <div className="text-center animate-fadeIn">
-                  {/* Rareté */}
-                  <p className="text-sm uppercase tracking-wider mb-2"
-                     style={{ color: RARITY_COLORS[pullResult.rarity] }}>
-                    {pullResult.rarity}
-                  </p>
+                <div className="text-center animate-fadeIn"
+                     style={{
+                       background: `radial-gradient(circle at center, ${CHIBI_RARITIES[pullResult.rarity.toUpperCase()]?.color}20 0%, transparent 70%)`,
+                       padding: '20px',
+                       borderRadius: '20px'
+                     }}>
+                  {/* Rareté avec fond coloré */}
+                  <div className="mb-4">
+                    <p className="text-sm uppercase tracking-wider mb-2 opacity-80">
+                      {pullResult.rarity}
+                    </p>
+                    <div 
+                      className="inline-block px-6 py-2 rounded-full font-bold text-white"
+                      style={{ 
+                        backgroundColor: CHIBI_RARITIES[pullResult.rarity.toUpperCase()]?.color,
+                        boxShadow: `0 4px 20px ${CHIBI_RARITIES[pullResult.rarity.toUpperCase()]?.color}80`
+                      }}
+                    >
+                      {pullResult.rarity === 'commun' && '⭐ COMMUN'}
+                      {pullResult.rarity === 'rare' && '⭐⭐ RARE'}
+                      {pullResult.rarity === 'legendaire' && '⭐⭐⭐ LÉGENDAIRE'}
+                      {pullResult.rarity === 'mythique' && '⭐⭐⭐⭐ MYTHIQUE'}
+                    </div>
+                  </div>
                   
                   {/* Chibi obtenu */}
-                  <div className="text-8xl mb-4 animate-bounce"
+                  <div className="mb-4 flex justify-center items-center"
                        style={{ 
-                         filter: `drop-shadow(0 0 30px ${RARITY_COLORS[pullResult.rarity]})`,
-                         animation: pullResult.rarity === 'Mythique' ? 'rainbowGlow 2s infinite' : undefined
+                         filter: `drop-shadow(0 0 30px ${CHIBI_RARITIES[pullResult.rarity.toUpperCase()]?.color})`,
+                         animation: pullResult.rarity === 'mythique' ? 'rainbowGlow 2s infinite' : undefined
                        }}>
-                    {getChibiSprite(pullResult.id)}
+                    {getChibiSprite(pullResult)}
                   </div>
                   
                   {/* Nom */}
-                  <h3 className="text-2xl font-bold mb-4"
-                      style={{ color: RARITY_COLORS[pullResult.rarity] }}>
+                  <h3 className="text-2xl font-bold mb-2"
+                      style={{ color: CHIBI_RARITIES[pullResult.rarity.toUpperCase()]?.color }}>
                     {pullResult.name}
                   </h3>
                   
-                  {/* Stats */}
+                  {/* Personnalité */}
+                  <p className="text-gray-300 mb-4 italic">
+                    "{pullResult.personality?.description || pullResult.shortLore}"
+                  </p>
+                  
+                  {/* Stats actuelles (avec level 1) */}
                   <div className="grid grid-cols-2 gap-2 text-sm mb-6 max-w-xs mx-auto">
                     <div className="bg-black/30 rounded p-2">
-                      <span className="text-red-400">⚔️ ATK:</span> {pullResult.baseStats.attack}
+                      <span className="text-red-400">⚔️ ATK:</span> {pullResult.getStats().attack}
                     </div>
                     <div className="bg-black/30 rounded p-2">
-                      <span className="text-blue-400">🛡️ DEF:</span> {pullResult.baseStats.defense}
+                      <span className="text-blue-400">🛡️ DEF:</span> {pullResult.getStats().defense}
                     </div>
                     <div className="bg-black/30 rounded p-2">
-                      <span className="text-green-400">❤️ HP:</span> {pullResult.baseStats.hp}
+                      <span className="text-green-400">❤️ HP:</span> {pullResult.getStats().hp}
                     </div>
                     <div className="bg-black/30 rounded p-2">
-                      <span className="text-purple-400">✨ MP:</span> {pullResult.baseStats.mana}
+                      <span className="text-purple-400">✨ MP:</span> {pullResult.getStats().mana}
                     </div>
                   </div>
                   
+                  {/* Message du chibi */}
+                  <div className="mb-6 p-3 bg-black/40 rounded-lg">
+                    <p className="text-sm text-gray-200">
+                      "{pullResult.getMessage()}"
+                    </p>
+                  </div>
+                  
+                  {/* Indicateur de progression pour multi-pull */}
+                  {isMultiPull && (
+                    <div className="multi-pull-progress mb-4">
+                      <p className="text-yellow-400 text-lg font-bold">
+                        Chibi {currentMultiIndex + 1} / 10
+                      </p>
+                    </div>
+                  )}
+                  
                   {/* Boutons */}
                   <div className="flex gap-4 justify-center">
-                    <button
-                      onClick={() => {
-                        setShowResult(false);
-                        setPullResult(null);
-                      }}
-                      className="px-6 py-2 bg-purple-600 hover:bg-purple-700 
-                                 text-white rounded-full transition-colors"
-                    >
-                      {t('gacha.again', 'Encore !')}
-                    </button>
-                    <button
-                      onClick={handleClose}
-                      className="px-6 py-2 bg-gray-600 hover:bg-gray-700 
-                                 text-white rounded-full transition-colors"
-                    >
-                      {t('gacha.close', 'Fermer')}
-                    </button>
+                    {!isMultiPull ? (
+                      <>
+                        <button
+                          onClick={() => {
+                            setShowResult(false);
+                            setPullResult(null);
+                          }}
+                          className="px-6 py-2 bg-purple-600 hover:bg-purple-700 
+                                     text-white rounded-full transition-colors"
+                        >
+                          {t('gacha.again', 'Encore !')}
+                        </button>
+                        <button
+                          onClick={handleClose}
+                          className="px-6 py-2 bg-gray-600 hover:bg-gray-700 
+                                     text-white rounded-full transition-colors"
+                        >
+                          {t('gacha.close', 'Fermer')}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={showNextMultiPull}
+                          className="px-6 py-2 bg-purple-600 hover:bg-purple-700 
+                                     text-white rounded-full transition-colors
+                                     disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={currentMultiIndex >= multiPullResults.length - 1}
+                        >
+                          {currentMultiIndex < multiPullResults.length - 1 
+                            ? t('gacha.next', 'Suivant →') 
+                            : t('gacha.finish', 'Terminer')}
+                        </button>
+                        <button
+                          onClick={skipToAllResults}
+                          className="px-6 py-2 bg-yellow-600 hover:bg-yellow-700 
+                                     text-white rounded-full transition-colors"
+                        >
+                          {t('gacha.skip', 'Skip (Voir tous)')}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </>
@@ -247,9 +387,9 @@ const ChibiGacha = ({ shadowCoins, onClose, onPull }) => {
         <div className="mt-4 text-center text-xs text-gray-400">
           <p>{t('gacha.rates', 'Taux de drop')}:</p>
           <div className="flex justify-center gap-4 mt-1">
-            {Object.entries(PULL_RATES).map(([rarity, rate]) => (
-              <span key={rarity} style={{ color: RARITY_COLORS[rarity] }}>
-                {rarity}: {(rate * 100).toFixed(0)}%
+            {Object.entries(CHIBI_RARITIES).map(([key, rarity]) => (
+              <span key={key} style={{ color: rarity.color }}>
+                {rarity.name}: {(rarity.dropRate * 100).toFixed(0)}%
               </span>
             ))}
           </div>

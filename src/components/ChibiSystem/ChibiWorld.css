@@ -378,3 +378,203 @@
   pointer-events: none;
   overflow: hidden; /* Important ! */
 }
+
+/* 💰 SYSTÈME DE COINS - Additions pour ChibiWorld.css */
+
+/* Animation de gain de coins */
+@keyframes floatUp {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-40px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-60px);
+  }
+}
+
+/* Info de gain passif */
+.passive-gain-info {
+  font-size: 12px;
+  color: #10b981;
+  margin-left: 8px;
+  font-weight: normal;
+  opacity: 0.8;
+}
+
+/* Timer du prochain gain */
+.next-gain-timer {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  border: 1px solid rgba(139, 0, 255, 0.3);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  z-index: 90;
+}
+
+/* Notification bonus quotidien */
+.daily-bonus-notification {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10001;
+  animation: dailyBonusAppear 0.5s ease-out;
+}
+
+.daily-bonus-content {
+  background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+  border: 3px solid #10b981;
+  border-radius: 20px;
+  padding: 30px 50px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 20px 60px rgba(16, 185, 129, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.daily-bonus-content::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: rotate(45deg);
+  animation: shimmer 2s infinite;
+}
+
+.daily-bonus-icon {
+  font-size: 48px;
+  animation: bounce 1s infinite;
+}
+
+.daily-bonus-text {
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes dailyBonusAppear {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Amélioration du header */
+.chibi-header {
+  background: rgba(20, 20, 40, 0.95);
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+
+.currency-display {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.currency-display:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 20px rgba(139, 0, 255, 0.3);
+}
+
+/* Désactiver le bouton gacha si pas assez de coins */
+.gacha-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: scale(1) !important;
+}
+
+.gacha-button:disabled:hover {
+  background: initial;
+}
+
+/* Animation de l'icône de coin */
+.currency-display > span:first-child {
+  animation: rotateCoin 3s linear infinite;
+}
+
+@keyframes rotateCoin {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+/* Effet de brillance sur les coins */
+.coin-gain-animation {
+  pointer-events: none;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .chibi-header {
+    flex-wrap: wrap;
+    padding: 10px;
+    gap: 8px;
+  }
+  
+  .next-gain-timer {
+    position: static;
+    transform: none;
+    margin-top: 5px;
+    font-size: 11px;
+  }
+  
+  .daily-bonus-content {
+    padding: 20px 30px;
+  }
+  
+  .daily-bonus-icon {
+    font-size: 36px;
+  }
+  
+  .daily-bonus-text {
+    font-size: 18px;
+  }
+  
+  .passive-gain-info {
+    display: block;
+    margin-left: 0;
+    margin-top: 2px;
+  }
+}

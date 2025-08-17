@@ -6,6 +6,9 @@ import ChibiCanvas from './ChibiCanvas';
 import ChibiInventory from './ChibiInventory';
 import ChibiGacha from './ChibiGacha';
 import ChibiBubble from '../ChibiBubble';
+import shadowCoinManager from './ShadowCoinManager';
+import { ChibiFactory } from './ChibiDataStructure';
+import { CHIBI_DATABASE } from './ChibiDatabase';
 import './ChibiWorld.css';
 
 const ChibiWorld = () => {
@@ -13,6 +16,9 @@ const ChibiWorld = () => {
 
     // 🎮 États principaux
     const [showGacha, setShowGacha] = useState(false);
+    const [showInventory, setShowInventory] = useState(false);
+    const [chibiFactory] = useState(() => new ChibiFactory(CHIBI_DATABASE));
+    const [ownedChibis, setOwnedChibis] = useState({}); // Pour stocker les entités ChibiEntity
     const [activeChibis, setActiveChibis] = useState(['chibi_beru_001', 'chibi_tank_001']);
     const [shadowCoins, setShadowCoins] = useState(100);
     const [currentStreak, setCurrentStreak] = useState(0);
@@ -20,32 +26,92 @@ const ChibiWorld = () => {
     const [selectedChibi, setSelectedChibi] = useState(null);
     const [activeAccount, setActiveAccount] = useState('Compte1');
 
-    // 🗺️ Configuration de la map offline
+    // États pour le système de coins
+    const [nextTickIn, setNextTickIn] = useState(60);
+    const [showDailyBonus, setShowDailyBonus] = useState(false);
+
+    // Refs
+    const coinAnimationContainer = useRef(null);
+
+    // 🗺️ Configuration de la map
     const worldData = {
         background: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755091230/BuilderBeru_enclos_wgtjm5.jpg',
         name: 'BuilderBeru Sanctuary',
-        maxChibis: 5
+        maxChibis: 20
     };
 
-    // 💾 Charger les données du localStorage
-    useEffect(() => {
-        const storedData = localStorage.getItem('builderberu_users');
-        if (storedData) {
-            const data = JSON.parse(storedData);
-            const accounts = data?.user?.accounts || {};
-
-            // Déterminer le compte actif
-            const firstAccount = Object.keys(accounts)[0] || 'Compte1';
-            setActiveAccount(firstAccount);
-
-            // Charger les données chibi si elles existent
-            const accountData = accounts[firstAccount];
-            if (accountData?.chibis) {
-                setActiveChibis(accountData.chibis.activeEnclos || ['chibi_beru_001']);
-                setShadowCoins(accountData.chibis.currency?.shadowCoins || 100);
-                setCurrentStreak(accountData.chibis.streakData?.currentStreak || 0);
+   // Au chargement, reconstruire les entités depuis localStorage :
+useEffect(() => {
+    const storedData = localStorage.getItem('builderberu_users');
+    if (storedData) {
+        const data = JSON.parse(storedData);
+        const accounts = data?.user?.accounts || {};
+        const firstAccount = Object.keys(accounts)[0] || 'Compte1';
+        setActiveAccount(firstAccount);
+        
+        const accountData = accounts[firstAccount];
+        if (accountData?.chibis) {
+            // Charger les chibis actifs
+            setActiveChibis(accountData.chibis.activeEnclos || []);
+            setCurrentStreak(accountData.chibis.streakData?.currentStreak || 0);
+            
+            // Reconstruire les entités ChibiEntity
+            if (accountData.chibis.ownedChibis && chibiFactory) {
+                const loadedChibis = {};
+                
+                for (const [id, savedState] of Object.entries(accountData.chibis.ownedChibis)) {
+                    const chibi = chibiFactory.createChibi(id, savedState);
+                    if (chibi) {
+                        loadedChibis[id] = chibi;
+                    }
+                }
+                
+                setOwnedChibis(loadedChibis);
             }
         }
+    }
+}, [chibiFactory]);
+
+    // 💰 Initialiser le système de coins
+    useEffect(() => {
+        // Initialiser le manager
+        shadowCoinManager.init();
+
+        // Vérifier si c'est la première connexion du jour
+        const stats = shadowCoinManager.getStats();
+        if (!stats.hasClaimedDaily) {
+            setShowDailyBonus(true);
+            setTimeout(() => setShowDailyBonus(false), 3000);
+        }
+
+        // S'abonner aux mises à jour
+        const unsubscribe = shadowCoinManager.subscribe(({ total, change, source }) => {
+            setShadowCoins(total);
+
+            // Afficher une animation de gain
+            if (change > 0 && source === 'passive') {
+                showCoinAnimation(change, 'passive');
+            } else if (change > 0 && source === 'daily') {
+                showCoinAnimation(change, 'daily');
+            } else if (change > 0 && source === 'offline') {
+                showCoinAnimation(change, 'offline');
+            }
+        });
+
+        // Mettre à jour le solde initial
+        setShadowCoins(shadowCoinManager.getBalance());
+
+        // Timer pour afficher le prochain gain
+        const timer = setInterval(() => {
+            const stats = shadowCoinManager.getStats();
+            const nextTick = Math.ceil(stats.nextTick / 1000);
+            setNextTickIn(nextTick > 0 ? nextTick : 60);
+        }, 1000);
+
+        return () => {
+            unsubscribe();
+            clearInterval(timer);
+        };
     }, []);
 
     // 💾 Sauvegarder les changements
@@ -60,65 +126,116 @@ const ChibiWorld = () => {
 
         data.user.accounts[activeAccount].chibis = {
             ...data.user.accounts[activeAccount].chibis,
-            ...newData
+            ...newData,
+            shadowCoins: shadowCoins // Synchroniser avec le manager
         };
 
         localStorage.setItem('builderberu_users', JSON.stringify(data));
     };
 
-    // Dans ChibiWorld.jsx, modifie la gestion du message
-const handleChibiClick = (chibiId, realPosition) => {
-  setSelectedChibi(chibiId);
-  
-  const messages = {
-    'chibi_beru_001': [
-      "Kiiiek ! Le Monarque est le meilleur !",
-      "Tu veux voir ma collection ?",
-      "Je suis le plus fort des soldats !"
-    ],
-    'chibi_tank_001': [
-      "Je protège cet enclos !",
-      "As-tu fait tes dailies ?",
-      "Bob m'observe... 😰"
-    ],
-    'chibi_kaisel_001': [
-      "Optimisation en cours...",
-      "Performance +++ !",
-      "Ce code peut être amélioré."
-    ]
-  };
-
-  const chibiMessages = messages[chibiId] || ["..."];
-  const randomMessage = chibiMessages[Math.floor(Math.random() * chibiMessages.length)];
-
-  setChibiMessage({
-    text: randomMessage,
-    position: realPosition || { x: window.innerWidth / 2, y: 100 },
-    chibiType: chibiId.split('_')[1]
-  });
-  
-  // AJOUTER CE TIMER POUR FAIRE DISPARAÎTRE LE MESSAGE
-  setTimeout(() => {
-    setChibiMessage(null);
-  }, 5000); // Disparaît après 5 secondes
+    // 🎯 Gestion des clics sur les chibis
+   const handleChibiClick = (chibiId, realPosition) => {
+    const chibi = ownedChibis[chibiId];
+    if (!chibi) return;
+    
+    setSelectedChibi(chibi);
+    
+    // Utiliser la méthode getMessage() du chibi
+    const message = chibi.getMessage();
+    
+    setChibiMessage({
+        text: message,
+        position: realPosition || { x: window.innerWidth / 2, y: 100 },
+        chibiType: chibi.id.split('_')[1]
+    });
+    
+    setTimeout(() => {
+        setChibiMessage(null);
+    }, 5000);
 };
 
     // 🎰 Gestion du pull
     const handlePull = (newChibi) => {
-        if (shadowCoins >= 100) {
-            setShadowCoins(prev => prev - 100);
-            // Ajouter le nouveau chibi si pas déjà présent et si place disponible
-            if (!activeChibis.includes(newChibi.id) && activeChibis.length < worldData.maxChibis) {
-                const newActiveChibis = [...activeChibis, newChibi.id];
-                setActiveChibis(newActiveChibis);
-
-                // Sauvegarder
-                saveToLocalStorage({
-                    activeEnclos: newActiveChibis,
-                    currency: { shadowCoins: shadowCoins - 100 }
-                });
+    if (shadowCoinManager.spendCoins(100)) {
+        // Vérifier si on possède déjà ce chibi
+        if (ownedChibis[newChibi.id]) {
+            // Chibi déjà possédé - donner des fragments ou de l'XP
+            const existingChibi = ownedChibis[newChibi.id];
+            existingChibi.gainExperience(50); // Bonus XP pour duplicate
+            
+            showCoinAnimation(25, 'duplicate'); // Compensation en coins
+            shadowCoinManager.addCoins(25, 'duplicate');
+            
+            // Afficher un message
+            setChibiMessage({
+                text: `${newChibi.name} déjà possédé! +50 XP et +25 🪙`,
+                position: { x: window.innerWidth / 2, y: 200 },
+                chibiType: 'system'
+            });
+        } else {
+            // Nouveau chibi !
+            setOwnedChibis(prev => ({
+                ...prev,
+                [newChibi.id]: newChibi
+            }));
+            
+            // L'ajouter aux chibis actifs si place disponible
+            if (activeChibis.length < worldData.maxChibis) {
+                setActiveChibis(prev => [...prev, newChibi.id]);
             }
+            
+            // Sauvegarder
+            saveToLocalStorage({
+                ownedChibis: {
+                    ...ownedChibis,
+                    [newChibi.id]: newChibi.toJSON()
+                },
+                activeEnclos: activeChibis
+            });
         }
+    }
+};
+
+    // 💫 Animation de gain de coins
+    const showCoinAnimation = (amount, source) => {
+        const animDiv = document.createElement('div');
+        animDiv.className = 'coin-gain-animation';
+
+        let message = `+${amount} 🪙`;
+        let color = '#FFD700';
+
+        if (source === 'daily') {
+            message = `🎁 Bonus quotidien! +${amount} 🪙`;
+            color = '#10B981';
+        } else if (source === 'offline') {
+            message = `💤 Gains hors-ligne! +${amount} 🪙`;
+            color = '#8B5CF6';
+        }
+
+        animDiv.textContent = message;
+        animDiv.style.cssText = `
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: ${color};
+            font-size: ${source === 'passive' ? '20px' : '28px'};
+            font-weight: bold;
+            z-index: 10000;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            animation: floatUp 2.5s ease-out forwards;
+        `;
+
+        document.body.appendChild(animDiv);
+        setTimeout(() => animDiv.remove(), 2500);
+    };
+
+    // 📊 Formater le temps
+    const formatTime = (seconds) => {
+        if (seconds <= 0) return '0s';
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
     };
 
     return (
@@ -136,9 +253,19 @@ const handleChibiClick = (chibiId, realPosition) => {
             {/* 📊 Header avec infos */}
             <div className="chibi-header">
                 <div className="currency-display flex items-center gap-2 
-                        bg-purple-900/30 px-4 py-2 rounded-full">
+                        bg-purple-900/30 px-4 py-2 rounded-full relative">
                     <span className="text-2xl">🪙</span>
-                    <span className="text-purple-300 font-bold">{shadowCoins}</span>
+                    <span className="text-purple-300 font-bold text-xl">{shadowCoins}</span>
+                    <span className="passive-gain-info text-green-400 text-sm ml-2">
+                        (+{shadowCoinManager.PASSIVE_GAIN_RATE}/min)
+                    </span>
+                </div>
+
+                {/* Timer jusqu'au prochain gain */}
+                <div className="next-gain-timer">
+                    <span className="text-sm text-gray-300">
+                        Prochain gain dans: <span className="text-yellow-400 font-bold">{nextTickIn}s</span>
+                    </span>
                 </div>
 
                 <div className="streak-display flex items-center gap-2 
@@ -152,27 +279,58 @@ const handleChibiClick = (chibiId, realPosition) => {
                 <button
                     className="gacha-button px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 
                      text-white font-bold rounded-full hover:from-purple-700 hover:to-pink-700 
-                     transition-all transform hover:scale-105 shadow-lg"
+                     transition-all transform hover:scale-105 shadow-lg relative"
                     onClick={() => setShowGacha(true)}
+                    disabled={shadowCoins < 100}
                 >
                     {t('chibi.summon_button', '🎰 Invocation')}
+                    {shadowCoins < 100 && (
+                        <span className="absolute -bottom-6 left-0 right-0 text-xs text-red-400">
+                            Pas assez de coins!
+                        </span>
+                    )}
+                </button>
+
+                <button
+                    className="inventory-button px-4 py-2 bg-gray-800/50 border border-gray-600
+                     text-white rounded-full hover:bg-gray-700/50 transition-colors"
+                    onClick={() => setShowInventory(true)}
+                >
+                    📦 {t('chibi.inventory', 'Inventaire')}
                 </button>
             </div>
 
+            {/* 🎁 Notification bonus quotidien */}
+            {showDailyBonus && (
+                <div className="daily-bonus-notification">
+                    <div className="daily-bonus-content">
+                        <span className="daily-bonus-icon">🎁</span>
+                        <span className="daily-bonus-text">
+                            Bonus de connexion quotidienne! +100 Shadow Coins!
+                        </span>
+                    </div>
+                </div>
+            )}
+
             {/* 🗺️ Canvas principal avec la map */}
             <ChibiCanvas
-                worldData={worldData}
-                activeChibis={activeChibis}
-                onChibiClick={handleChibiClick} // Maintenant ça passe la position
-            />
+    worldData={worldData}
+    activeChibiEntities={activeChibis.map(id => ownedChibis[id]).filter(Boolean)}
+    onChibiClick={handleChibiClick}
+/>
 
-            {/* 📦 Inventaire (si nécessaire) */}
-            {/* <ChibiInventory
-        activeAccount={activeAccount}
-        onChibiSelect={(chibi) => {
-          // TODO: Gérer la sélection depuis l'inventaire
-        }}
-      /> */}
+            {/* 📦 Inventaire */}
+            {showInventory && (
+                <ChibiInventory
+                    activeAccount={activeAccount}
+                    activeChibis={activeChibis}
+                    onChibiSelect={(chibi) => {
+                        // TODO: Gérer la sélection depuis l'inventaire
+                        setShowInventory(false);
+                    }}
+                    onClose={() => setShowInventory(false)}
+                />
+            )}
 
             {/* 🎰 Système de Gacha */}
             {showGacha && (
@@ -193,6 +351,9 @@ const handleChibiClick = (chibiId, realPosition) => {
                     onClose={() => setChibiMessage(null)}
                 />
             )}
+
+            {/* Container pour les animations de coins */}
+            <div ref={coinAnimationContainer} />
         </div>
     );
 };
