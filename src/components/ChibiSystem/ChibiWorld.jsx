@@ -22,6 +22,7 @@ const ChibiWorld = () => {
     const [activeChibis, setActiveChibis] = useState(['chibi_beru_001', 'chibi_tank_001']);
     const [shadowCoins, setShadowCoins] = useState(100);
     const [currentStreak, setCurrentStreak] = useState(0);
+     const [isLoading, setIsLoading] = useState(true); // NOUVEAU
     const [chibiMessage, setChibiMessage] = useState(null);
     const [selectedChibi, setSelectedChibi] = useState(null);
     const [activeAccount, setActiveAccount] = useState('Compte1');
@@ -40,37 +41,113 @@ const ChibiWorld = () => {
         maxChibis: 20
     };
 
-   // Au chargement, reconstruire les entités depuis localStorage :
-useEffect(() => {
-    const storedData = localStorage.getItem('builderberu_users');
-    if (storedData) {
-        const data = JSON.parse(storedData);
-        const accounts = data?.user?.accounts || {};
-        const firstAccount = Object.keys(accounts)[0] || 'Compte1';
-        setActiveAccount(firstAccount);
-        
-        const accountData = accounts[firstAccount];
-        if (accountData?.chibis) {
-            // Charger les chibis actifs
-            setActiveChibis(accountData.chibis.activeEnclos || []);
-            setCurrentStreak(accountData.chibis.streakData?.currentStreak || 0);
-            
-            // Reconstruire les entités ChibiEntity
-            if (accountData.chibis.ownedChibis && chibiFactory) {
+ // 💾 Charger TOUT d'un coup au montage
+    useEffect(() => {
+        const loadGameData = async () => {
+            try {
+                // Attendre un tick pour s'assurer que tout est prêt
+                await new Promise(resolve => setTimeout(resolve, 10));
+                
+                const storedData = localStorage.getItem('builderberu_users');
+                if (!storedData) {
+                    // Pas de données, charger les chibis par défaut
+                    const defaultChibis = ['chibi_beru_001', 'chibi_tank_001'];
+                    const loadedChibis = {};
+                    
+                    defaultChibis.forEach(id => {
+                        const chibi = chibiFactory.createChibi(id);
+                        if (chibi) {
+                            loadedChibis[id] = chibi;
+                        }
+                    });
+                    
+                    setOwnedChibis(loadedChibis);
+                    setActiveChibis(defaultChibis);
+                    setIsLoading(false);
+                    return;
+                }
+
+                const data = JSON.parse(storedData);
+                const accounts = data?.user?.accounts || {};
+                const firstAccount = Object.keys(accounts)[0] || 'Compte1';
+                setActiveAccount(firstAccount);
+
+                const accountData = accounts[firstAccount];
+                if (accountData?.chibis) {
+                    // Charger les données de base
+                    setCurrentStreak(accountData.chibis.streakData?.currentStreak || 0);
+                    
+                    // IMPORTANT : Charger les chibis possédés AVANT les actifs
+                    const loadedChibis = {};
+                    if (accountData.chibis.ownedChibis) {
+                        for (const [id, savedState] of Object.entries(accountData.chibis.ownedChibis)) {
+                            const chibi = chibiFactory.createChibi(id, savedState);
+                            if (chibi) {
+                                loadedChibis[id] = chibi;
+                            }
+                        }
+                        setOwnedChibis(loadedChibis);
+                    }
+                    
+                    // Puis charger les chibis actifs
+                    const activeIds = accountData.chibis.activeEnclos || [];
+                    // Vérifier que les chibis actifs existent vraiment
+                    const validActiveIds = activeIds.filter(id => loadedChibis[id]);
+                    setActiveChibis(validActiveIds);
+                    
+                    // Si aucun chibi actif valide, en mettre par défaut
+                    if (validActiveIds.length === 0 && Object.keys(loadedChibis).length > 0) {
+                        setActiveChibis([Object.keys(loadedChibis)[0]]);
+                    }
+                } else {
+                    // Pas de données chibi, charger les défauts
+                    const defaultChibis = ['chibi_beru_001', 'chibi_tank_001'];
+                    const loadedChibis = {};
+                    
+                    defaultChibis.forEach(id => {
+                        const chibi = chibiFactory.createChibi(id);
+                        if (chibi) {
+                            loadedChibis[id] = chibi;
+                        }
+                    });
+                    
+                    setOwnedChibis(loadedChibis);
+                    setActiveChibis(defaultChibis);
+                }
+            } catch (error) {
+                console.error('Erreur chargement données:', error);
+                // En cas d'erreur, charger les chibis par défaut
+                const defaultChibis = ['chibi_beru_001', 'chibi_tank_001'];
                 const loadedChibis = {};
                 
-                for (const [id, savedState] of Object.entries(accountData.chibis.ownedChibis)) {
-                    const chibi = chibiFactory.createChibi(id, savedState);
+                defaultChibis.forEach(id => {
+                    const chibi = chibiFactory.createChibi(id);
                     if (chibi) {
                         loadedChibis[id] = chibi;
                     }
-                }
+                });
                 
                 setOwnedChibis(loadedChibis);
+                setActiveChibis(defaultChibis);
+            } finally {
+                setIsLoading(false);
             }
+        };
+
+        loadGameData();
+    }, []); // Pas de dépendance sur chibiFactory car il est créé dans useState
+
+    // Sauvegarder à chaque changement important
+    useEffect(() => {
+        if (!isLoading && (activeChibis.length > 0 || Object.keys(ownedChibis).length > 0)) {
+            saveToLocalStorage({
+                ownedChibis: Object.fromEntries(
+                    Object.entries(ownedChibis).map(([id, chibi]) => [id, chibi.toJSON()])
+                ),
+                activeEnclos: activeChibis
+            });
         }
-    }
-}, [chibiFactory]);
+    }, [activeChibis, ownedChibis, isLoading]);
 
     // 💰 Initialiser le système de coins
     useEffect(() => {
