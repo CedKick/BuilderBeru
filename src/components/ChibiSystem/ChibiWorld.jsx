@@ -210,8 +210,7 @@ const ChibiWorld = () => {
         localStorage.setItem('builderberu_users', JSON.stringify(data));
     };
 
-    // 🎯 Gestion des clics sur les chibis
-   const handleChibiClick = (chibiId, realPosition) => {
+const handleChibiClick = (chibiId, realPosition) => {
     const chibi = ownedChibis[chibiId];
     if (!chibi) return;
     

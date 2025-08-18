@@ -1,15 +1,38 @@
 // src/components/ChibiSystem/ChibiEntity.jsx
 import React, { useEffect, useState, useRef } from 'react';
 import { CHIBI_RARITIES } from './ChibiDataStructure';
+import { PATH_DATA } from './pathData';
 
-const ChibiEntity = ({ chibiEntity, position, onClick }) => {
-  const [currentPos, setCurrentPos] = useState(position || { x: 500, y: 300 });
+const ChibiEntity = ({ chibiEntity, position, onClick, canvasRef }) => {
+  // État initial avec position du spawn
+  const [currentPos, setCurrentPos] = useState(() => {
+    // Utiliser un spawn point aléatoire de pathData
+    if (PATH_DATA.spawnPoints && PATH_DATA.spawnPoints.length > 0) {
+      const randomSpawn = PATH_DATA.spawnPoints[Math.floor(Math.random() * PATH_DATA.spawnPoints.length)];
+      console.log(`🎯 ${chibiEntity.name} spawn at:`, randomSpawn);
+      return { x: randomSpawn.x, y: randomSpawn.y };
+    }
+    return position || { x: 500, y: 300 };
+  });
+  
   const [isMoving, setIsMoving] = useState(false);
-  const [showMessage, setShowMessage] = useState(false);
-  const [currentMessage, setCurrentMessage] = useState('');
-  const [direction, setDirection] = useState('down'); // Direction actuelle
+  const [direction, setDirection] = useState('down');
+  const [currentSprite, setCurrentSprite] = useState('idle'); // État pour le sprite actuel
+  const [currentPathIndex, setCurrentPathIndex] = useState(0);
+  const [currentPath, setCurrentPath] = useState(null);
+  const [targetPoint, setTargetPoint] = useState(null);
+  const [nextMoveTime, setNextMoveTime] = useState(null);
+  const [movementPhase, setMovementPhase] = useState('idle'); // 'idle', 'moving', 'paused'
+  const [pauseAtWaypoint, setPauseAtWaypoint] = useState(false); // Pour les pauses aux waypoints
+  
   const entityRef = useRef(null);
-  const lastPosRef = useRef(currentPos);
+  const animationRef = useRef(null);
+  const lastUpdateRef = useRef(Date.now());
+  const moveTimeoutRef = useRef(null);
+  
+  // Dimensions du canvas
+  const CANVAS_WIDTH = 1800;
+  const CANVAS_HEIGHT = 600;
   
   // Vérifier que c'est bien une entité ChibiEntity
   if (!chibiEntity || !chibiEntity.id) {
@@ -20,75 +43,230 @@ const ChibiEntity = ({ chibiEntity, position, onClick }) => {
   // Obtenir la couleur de rareté
   const rarityColor = CHIBI_RARITIES[chibiEntity.rarity.toUpperCase()]?.color || '#9CA3AF';
 
-  // Mise à jour de la position quand elle change
-  useEffect(() => {
-    if (position && position.x && position.y) {
-      setCurrentPos(position);
-    }
-  }, [position]);
+  // Fonction pour calculer l'échelle selon la position Y (perspective)
+  const calculateScale = (y) => {
+    const minScale = 0.5;  // En haut de la map
+    const maxScale = 1.2;  // En bas de la map
+    return minScale + ((y / CANVAS_HEIGHT) * (maxScale - minScale));
+  };
 
-  // Animation de mouvement aléatoire avec direction
-  useEffect(() => {
-    if (!currentPos) return;
+  // Fonction pour convertir les coordonnées canvas en coordonnées écran
+  const getScreenPosition = () => {
+    if (!canvasRef?.current) return currentPos;
     
-    const moveRandomly = () => {
-      const newX = currentPos.x + (Math.random() - 0.5) * 80;
-      const newY = currentPos.y + (Math.random() - 0.5) * 40;
-      
-      // Calculer la direction du mouvement
-      const deltaX = newX - currentPos.x;
-      const deltaY = newY - currentPos.y;
-      
-      // Déterminer la direction principale
-      if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        // Mouvement horizontal dominant
-        setDirection(deltaX > 0 ? 'right' : 'left');
-      } else {
-        // Mouvement vertical dominant
-        setDirection(deltaY > 0 ? 'down' : 'up');
-      }
-      
-      setIsMoving(true);
-      setCurrentPos({
-        x: Math.max(100, Math.min(1100, newX)),
-        y: Math.max(100, Math.min(500, newY))
-      });
-      
-      setTimeout(() => setIsMoving(false), 800);
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    
+    // Ratio unique pour garder les proportions (on prend le plus petit pour éviter la déformation)
+    const scale = Math.min(rect.width / CANVAS_WIDTH, rect.height / CANVAS_HEIGHT);
+    
+    // Centrer si nécessaire
+    const offsetX = (rect.width - CANVAS_WIDTH * scale) / 2;
+    const offsetY = (rect.height - CANVAS_HEIGHT * scale) / 2;
+    
+    return {
+      x: currentPos.x * scale + offsetX,
+      y: currentPos.y * scale + offsetY,
+      screenScale: scale // On retourne aussi le scale pour l'utiliser ailleurs
     };
-    
-    const interval = setInterval(moveRandomly, 4000 + Math.random() * 4000);
-    return () => clearInterval(interval);
-  }, [currentPos]);
+  };
 
-  // Messages automatiques basés sur l'humeur (RÉDUITS DE 90%)
+  // Fonction pour planifier le prochain mouvement
+  const scheduleNextMovement = () => {
+    // Pause entre 20 secondes et 2 minutes
+    const minPause = 20000;  // 20 secondes
+    const maxPause = 120000; // 2 minutes
+    const pauseDuration = minPause + Math.random() * (maxPause - minPause);
+    
+    console.log(`⏸️ ${chibiEntity.name} va se reposer pendant ${Math.round(pauseDuration/1000)}s`);
+    
+    moveTimeoutRef.current = setTimeout(() => {
+      startMovement();
+    }, pauseDuration);
+    
+    setNextMoveTime(Date.now() + pauseDuration);
+  };
+
+  // Fonction pour démarrer un mouvement
+  const startMovement = () => {
+    if (!currentPath || currentPath.length === 0) return;
+    
+    console.log(`🚶 ${chibiEntity.name} commence à bouger`);
+    setMovementPhase('moving');
+    setIsMoving(true);
+    
+    // Durée du mouvement : entre 10 et 30 secondes
+    const moveDuration = 10000 + Math.random() * 20000;
+    
+    // Arrêter le mouvement après la durée
+    setTimeout(() => {
+      if (isMoving) {
+        stopMovement();
+      }
+    }, moveDuration);
+  };
+
+  // Fonction pour arrêter le mouvement
+  const stopMovement = () => {
+    console.log(`🛑 ${chibiEntity.name} s'arrête`);
+    setIsMoving(false);
+    setMovementPhase('idle');
+    setCurrentSprite('idle'); // Retour au sprite idle
+    scheduleNextMovement();
+  };
+
+  // Initialiser un chemin au démarrage
   useEffect(() => {
-    const showRandomMessage = () => {
-      // 10% de chance seulement de parler
-      if (Math.random() > 0.1) return;
-      
-      if (chibiEntity.canInteract()) {
-        const message = chibiEntity.getMessage();
-        setCurrentMessage(message);
-        setShowMessage(true);
+    console.log(`🚀 Initializing ${chibiEntity.name}`);
+    
+    // Trouver un chemin proche du spawn
+    if (PATH_DATA.paths) {
+      const paths = Object.entries(PATH_DATA.paths);
+      if (paths.length > 0) {
+        // Choisir un chemin aléatoire
+        const [pathName, pathPoints] = paths[Math.floor(Math.random() * paths.length)];
         
-        setTimeout(() => {
-          setShowMessage(false);
-        }, 3000);
+        // Trouver le point le plus proche sur ce chemin
+        let closestIndex = 0;
+        let closestDist = Infinity;
+        
+        pathPoints.forEach((point, index) => {
+          const dist = Math.sqrt(
+            Math.pow(point.x - currentPos.x, 2) + 
+            Math.pow(point.y - currentPos.y, 2)
+          );
+          if (dist < closestDist) {
+            closestDist = dist;
+            closestIndex = index;
+          }
+        });
+        
+        // Simplifier le chemin (prendre 1 point sur 4 pour fluidité)
+        const simplifiedPath = pathPoints.filter((_, index) => index % 4 === 0);
+        if (simplifiedPath.length > 0 && !simplifiedPath.includes(pathPoints[pathPoints.length - 1])) {
+          simplifiedPath.push(pathPoints[pathPoints.length - 1]);
+        }
+        
+        setCurrentPath(simplifiedPath);
+        setCurrentPathIndex(Math.floor(closestIndex / 4));
+        
+        // Définir le premier point cible
+        if (simplifiedPath.length > 0) {
+          const firstTarget = simplifiedPath[Math.floor(closestIndex / 4)];
+          setTargetPoint(firstTarget);
+          
+          // Planifier le premier mouvement
+          // 40% de chance de bouger rapidement au démarrage
+          const isEarlyMover = Math.random() < 0.4;
+          const initialDelay = isEarlyMover ? 
+            1000 + Math.random() * 5000 :   // 1-6 secondes pour les actifs
+            10000 + Math.random() * 30000;  // 10-40 secondes pour les autres
+          
+          moveTimeoutRef.current = setTimeout(() => {
+            console.log(`🏃 ${chibiEntity.name} commence son premier mouvement !`);
+            startMovement();
+          }, initialDelay);
+          
+          console.log(`⏰ ${chibiEntity.name} bougera dans ${Math.round(initialDelay/1000)}s`);
+        }
       }
-    };
-    
-    // Premier message après 10-30 secondes (au lieu de 2-5)
-    const firstTimeout = setTimeout(showRandomMessage, 10000 + Math.random() * 20000);
-    
-    // Messages périodiques toutes les 60-120 secondes (au lieu de 15-30)
-    const interval = setInterval(showRandomMessage, 60000 + Math.random() * 60000);
+    }
     
     return () => {
-      clearTimeout(firstTimeout);
-      clearInterval(interval);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      if (moveTimeoutRef.current) {
+        clearTimeout(moveTimeoutRef.current);
+      }
     };
-  }, [chibiEntity]);
+  }, [chibiEntity.id]);
+
+  // Boucle d'animation pour le mouvement fluide
+  useEffect(() => {
+    if (!isMoving || !currentPath || !targetPoint) {
+      return;
+    }
+
+    const animate = () => {
+      const now = Date.now();
+      const deltaTime = Math.min(now - lastUpdateRef.current, 50);
+      lastUpdateRef.current = now;
+
+      setCurrentPos(prevPos => {
+        if (!targetPoint) return prevPos;
+
+        const dx = targetPoint.x - prevPos.x;
+        const dy = targetPoint.y - prevPos.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Arrivé au point cible ?
+        if (distance < 5) {
+          // 20% de chance de faire une pause à ce waypoint
+          if (!pauseAtWaypoint && Math.random() < 0.2) {
+            console.log(`⏸️ ${chibiEntity.name} fait une pause au waypoint`);
+            setPauseAtWaypoint(true);
+            setIsMoving(false);
+            setCurrentSprite('idle'); // Retour au sprite idle
+            
+            // Reprendre après 2-5 secondes
+            setTimeout(() => {
+              setPauseAtWaypoint(false);
+              setIsMoving(true);
+              // Passer au point suivant
+              const nextIndex = (currentPathIndex + 1) % currentPath.length;
+              setCurrentPathIndex(nextIndex);
+              setTargetPoint(currentPath[nextIndex]);
+            }, 2000 + Math.random() * 3000);
+            
+            return prevPos;
+          }
+          
+          // Passer au point suivant sans pause
+          const nextIndex = (currentPathIndex + 1) % currentPath.length;
+          setCurrentPathIndex(nextIndex);
+          setTargetPoint(currentPath[nextIndex]);
+          
+          return prevPos;
+        }
+
+        // Calculer la vitesse (plus lente pour un effet plus calme)
+        const baseSpeed = 0.8; // Vitesse légèrement augmentée
+        const speed = baseSpeed * (deltaTime / 16);
+        const moveDistance = Math.min(speed, distance);
+        
+        // Calculer la nouvelle position
+        const moveX = (dx / distance) * moveDistance;
+        const moveY = (dy / distance) * moveDistance;
+        
+        // Mettre à jour la direction ET le sprite
+        const newDirection = Math.abs(dx) > Math.abs(dy) ? 
+          (dx > 0 ? 'right' : 'left') : 
+          (dy > 0 ? 'down' : 'up');
+        
+        if (newDirection !== direction) {
+          setDirection(newDirection);
+          setCurrentSprite(newDirection); // IMPORTANT : mettre à jour le sprite !
+          console.log(`🎮 ${chibiEntity.name} change de direction: ${newDirection}`);
+        }
+        
+        return {
+          x: prevPos.x + moveX,
+          y: prevPos.y + moveY
+        };
+      });
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isMoving, currentPath, targetPoint, currentPathIndex, direction, pauseAtWaypoint]);
 
   // Handler de clic
   const handleClick = () => {
@@ -99,26 +277,35 @@ const ChibiEntity = ({ chibiEntity, position, onClick }) => {
         y: rect.top - 50
       };
       
-      // Afficher un message immédiat
-      const message = chibiEntity.getMessage();
-      setCurrentMessage(message);
-      setShowMessage(true);
+      onClick(chibiEntity.id, realPosition);
       
-      setTimeout(() => {
-        setShowMessage(false);
-      }, 3000);
-      
-      onClick(chibiEntity, realPosition);
+      // 50% de chance de commencer à bouger après le clic
+      if (!isMoving && Math.random() < 0.5) {
+        console.log(`🎲 ${chibiEntity.name} se met à bouger après le clic !`);
+        // Annuler le timeout en cours
+        if (moveTimeoutRef.current) {
+          clearTimeout(moveTimeoutRef.current);
+        }
+        // Démarrer le mouvement dans 1-3 secondes
+        setTimeout(() => {
+          startMovement();
+        }, 1000 + Math.random() * 2000);
+      }
     }
   };
   
   // Obtenir le sprite selon la direction
   const getSprite = () => {
-    // Déterminer quel sprite utiliser selon la direction
     let spriteUrl = chibiEntity.sprites?.idle;
     
+    // DEBUG : afficher quel sprite on utilise
+    if (window.location.hash === '#debug') {
+      console.log(`Sprite actuel pour ${chibiEntity.name}: ${currentSprite}, Moving: ${isMoving}`);
+    }
+    
     if (chibiEntity.sprites) {
-      switch(direction) {
+      // Utiliser currentSprite au lieu de direction
+      switch(currentSprite) {
         case 'left':
           spriteUrl = chibiEntity.sprites.left || chibiEntity.sprites.idle;
           break;
@@ -143,14 +330,14 @@ const ChibiEntity = ({ chibiEntity, position, onClick }) => {
           alt={chibiEntity.name}
           className="chibi-sprite"
           style={{
-            width: '60px',
-            height: '60px',
+            width: 'auto',
+            height: 'auto',
+            maxWidth: '80px', // Limite max pour pas que ça devienne trop grand
             filter: `drop-shadow(0 0 10px ${rarityColor})`,
             position: 'relative',
             zIndex: 2,
             cursor: 'pointer',
-            transform: isMoving ? 'scale(1.1)' : 'scale(1)',
-            transition: 'transform 0.3s ease'
+            imageRendering: 'pixelated'
           }}
         />
       );
@@ -161,7 +348,7 @@ const ChibiEntity = ({ chibiEntity, position, onClick }) => {
       'beru': '🐜',
       'tank': '🛡️',
       'kaisel': '⚔️',
-      'raven': '🐦‍⬛',
+      'raven': '🦅',
       'lil': '🐉',
       'okami': '🐺'
     };
@@ -176,13 +363,30 @@ const ChibiEntity = ({ chibiEntity, position, onClick }) => {
         position: 'relative',
         zIndex: 2,
         cursor: 'pointer',
-        transform: `${isMoving ? 'scale(1.1)' : 'scale(1)'} ${direction === 'left' ? 'scaleX(-1)' : ''}`,
-        transition: 'transform 0.3s ease'
+        transform: direction === 'left' ? 'scaleX(-1)' : 'none'
       }}>
         {emoji}
       </div>
     );
   };
+
+  const scale = calculateScale(currentPos.y);
+  const screenData = getScreenPosition();
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Détecter les changements de zoom
+  useEffect(() => {
+    const handleResize = () => {
+      setIsTransitioning(true);
+      // Masquer pendant la transition
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 100);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <div
@@ -190,48 +394,17 @@ const ChibiEntity = ({ chibiEntity, position, onClick }) => {
       className="chibi-entity"
       style={{
         position: 'absolute',
-        left: `${currentPos.x}px`,
-        top: `${currentPos.y}px`,
-        transition: isMoving ? 'all 0.8s ease-in-out' : 'none'
+        left: `${screenData.x}px`,
+        top: `${screenData.y}px`,
+        transform: `translate(-50%, -50%) scale(${scale})`, // Scale FIXE basé uniquement sur Y
+        zIndex: Math.floor(currentPos.y),
+        opacity: isTransitioning ? 0 : (movementPhase === 'idle' ? 0.9 : 1),
+        transformOrigin: 'center center',
+        transition: isTransitioning ? 'opacity 0.1s' : 'none',
+        willChange: 'transform'
       }}
       onClick={handleClick}
     >
-      {/* Message bulle */}
-      {showMessage && (
-        <div 
-          className="chibi-message-bubble"
-          style={{
-            position: 'absolute',
-            bottom: '70px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(20, 20, 40, 0.95)',
-            border: `2px solid ${rarityColor}`,
-            borderRadius: '12px',
-            padding: '8px 12px',
-            whiteSpace: 'nowrap',
-            fontSize: '12px',
-            color: 'white',
-            boxShadow: `0 4px 12px rgba(0,0,0,0.5)`,
-            animation: 'fadeInUp 0.3s ease-out',
-            zIndex: 10
-          }}
-        >
-          {currentMessage}
-          <div style={{
-            position: 'absolute',
-            bottom: '-8px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 0,
-            height: 0,
-            borderLeft: '8px solid transparent',
-            borderRight: '8px solid transparent',
-            borderTop: `8px solid ${rarityColor}`
-          }} />
-        </div>
-      )}
-      
       {/* Aura de rareté */}
       <div 
         className="chibi-aura"
@@ -241,30 +414,39 @@ const ChibiEntity = ({ chibiEntity, position, onClick }) => {
           height: '80px',
           borderRadius: '50%',
           background: `radial-gradient(circle, ${rarityColor}40 0%, transparent 70%)`,
-          top: '-10px',
-          left: '-10px',
-          animation: 'pulse 2s infinite'
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          animation: movementPhase === 'moving' ? 'pulse 2s infinite' : 'pulse 4s infinite'
         }}
       />
       
       {/* Sprite du chibi */}
-      {getSprite()}
+      <div style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)'
+      }}>
+        {getSprite()}
+      </div>
       
       {/* Infos du chibi */}
       <div className="chibi-info" style={{
         position: 'absolute',
-        bottom: '-25px',
+        top: '100%',
         left: '50%',
         transform: 'translateX(-50%)',
+        marginTop: '5px',
         textAlign: 'center',
-        pointerEvents: 'none'
+        pointerEvents: 'none',
+        whiteSpace: 'nowrap'
       }}>
         {/* Nom */}
         <div style={{
-          fontSize: '10px',
+          fontSize: '12px',
           fontWeight: 'bold',
           color: rarityColor,
-          whiteSpace: 'nowrap',
           textShadow: '1px 1px 2px rgba(0,0,0,0.8)'
         }}>
           {chibiEntity.name}
@@ -272,15 +454,52 @@ const ChibiEntity = ({ chibiEntity, position, onClick }) => {
         
         {/* Level et humeur */}
         <div style={{
-          fontSize: '8px',
+          fontSize: '10px',
           color: '#9ca3af',
           marginTop: '2px'
         }}>
           Lv.{chibiEntity.level} • {chibiEntity.currentMood}
         </div>
       </div>
+      
+      {/* Debug info en mode debug */}
+      {window.location.hash === '#debug' && (
+        <div style={{
+          position: 'absolute',
+          top: '-50px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          fontSize: '10px',
+          color: 'yellow',
+          background: 'rgba(0,0,0,0.7)',
+          padding: '2px 4px',
+          borderRadius: '3px',
+          whiteSpace: 'nowrap'
+        }}>
+          {movementPhase} | Pos: {Math.round(currentPos.x)},{Math.round(currentPos.y)} | Scale: {scale.toFixed(2)}
+        </div>
+      )}
     </div>
   );
 };
+
+// CSS pour les animations
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes pulse {
+    0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
+  }
+  
+  .chibi-entity {
+    pointer-events: auto;
+    backface-visibility: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+`;
+if (!document.getElementById('chibi-entity-styles')) {
+  style.id = 'chibi-entity-styles';
+  document.head.appendChild(style);
+}
 
 export default ChibiEntity;

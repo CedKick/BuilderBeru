@@ -331,9 +331,9 @@ export const CHIBI_DATABASE = {
     }
   },
 
-  'chibi_shadow_cthulhu': {
-    id: 'chibi_shadow_cthulhu',
-    name: 'L\'Ombre de Cthulhu',
+  'Nyarthulu': {
+    id: 'Nyarthulu',
+    name: 'Nyarthulu',
     rarity: 'legendaire',
     unlockMethod: UNLOCK_METHODS.PULL,
     unlockCondition: null,
@@ -347,7 +347,7 @@ export const CHIBI_DATABASE = {
     messages: {
       mysterieux: [
         "Ph'nglui mglw'nafh...",
-        "Les étoiles s'alignent..."
+        "Les étoiles de mer s'alignent... J'en ai la pieuvre !"
       ],
       dramatique: [
         "L'ancien monde se réveille.",
@@ -362,12 +362,12 @@ export const CHIBI_DATABASE = {
       speed: 15
     },
     sprites: {
-      idle: null,
-      left: null,
-      right: null,
-      up: null,
-      down: null,
-      special: null
+      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505833/Nyarthulu_face_vawrrz.png',
+      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505829/Nyarthulu_left_ymremf.png',
+      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505834/Nyarthulu_right_hvlgal.png',
+      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505833/Nyarthulu_up_k1tayd.png',
+      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505833/Nyarthulu_face_vawrrz.png',
+      special: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505833/Nyarthulu_face_vawrrz.png'
     }
   },
 
@@ -582,9 +582,9 @@ export const CHIBI_DATABASE = {
     }
   },
 
-  'chibi_shadow_smith': {
-    id: 'chibi_shadow_smith',
-    name: 'Forgeron des Ombres',
+  'Pingsu': {
+    id: 'Pingsu',
+    name: 'Pingsu le forgeron',
     rarity: 'rare',
     unlockMethod: UNLOCK_METHODS.PULL,
     unlockCondition: null,
@@ -598,7 +598,8 @@ export const CHIBI_DATABASE = {
     messages: {
       fier: [
         "Mes créations sont parfaites !",
-        "Ce marteau forge des légendes."
+        "Ce marteau forge des légendes.",
+        "Ping moi et je te forgerai ce que tu voudras."
       ],
       sage: [
         "Le métal a une âme.",
@@ -613,17 +614,17 @@ export const CHIBI_DATABASE = {
       speed: 15
     },
     sprites: {
-      idle: null,
-      left: null,
-      right: null,
-      up: null,
-      down: null,
-      special: null
+      idle: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_face_tnilyr.png',
+      left: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_left_zwrwj9.png',
+      right: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_right_opxwxq.png',
+      up: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505262/Pingsu_up_v64nra.png',
+      down: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_face_tnilyr.png',
+      special: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_face_tnilyr.png'
     }
   },
 
-  'chibi_lil_hades': {
-    id: 'chibi_lil_hades',
+  'chibi_lil_hades_other': {
+    id: 'chibi_lil_hades_other',
     name: 'Lil\' Hades',
     rarity: 'rare',
     unlockMethod: UNLOCK_METHODS.PULL,
