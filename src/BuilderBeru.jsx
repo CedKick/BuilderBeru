@@ -606,15 +606,16 @@ const BuilderBeru = () => {
   const dropdownRef = useRef(null);
   const { i18n } = useTranslation();
   const [isSharing, setIsSharing] = useState(false);
-const [shareModalData, setShareModalData] = useState(null);
-const [showShareModal, setShowShareModal] = useState(false);
-const [isSharedAccount, setIsSharedAccount] = useState(false);
-const [sharedAccountId, setSharedAccountId] = useState(null);
-const [lastSharedId, setLastSharedId] = useState(null);
-const [lastShareTime, setLastShareTime] = useState(0);
+  const [shareModalData, setShareModalData] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isSharedAccount, setIsSharedAccount] = useState(false);
+  const [sharedAccountId, setSharedAccountId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastSharedId, setLastSharedId] = useState(null);
+  const [lastShareTime, setLastShareTime] = useState(0);
   const [jinwooStrength, setJinwooStrength] = useState(0);
   const [strengthInputValue, setStrengthInputValue] = useState(jinwooStrength.toString());
-const [isStrengthFocused, setIsStrengthFocused] = useState(false);
+  const [isStrengthFocused, setIsStrengthFocused] = useState(false);
   const [kaiselMenuCharacter, setKaiselMenuCharacter] = useState('');
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [beruMenuPosition, setBeruMenuPosition] = useState({ x: 0, y: 0 });
@@ -640,8 +641,8 @@ const [isStrengthFocused, setIsStrengthFocused] = useState(false);
   };
 
   const cleanStrengthInput = (value) => {
-  return value.replace(/[^0-9]/g, '');
-};
+    return value.replace(/[^0-9]/g, '');
+  };
 
   const handlePortalClick = () => {
     const newCount = portalClickCount + 1;
@@ -2216,137 +2217,137 @@ const [isStrengthFocused, setIsStrengthFocused] = useState(false);
     }, 0);
   };
 
-// 2️⃣ Fonction shareAccount modifiée avec protection anti-spam
-const shareAccount = async () => {
-  try {
-    setIsSharing(true);
-    
-    // Protection contre le spam - 1 partage toutes les 30 secondes max
-    const now = Date.now();
-    if (now - lastShareTime < 30000) {
-      const remainingTime = Math.ceil((30000 - (now - lastShareTime)) / 1000);
-      showTankMessage(`⏳ Attendez ${remainingTime}s avant de repartager`, true, 'kaisel');
-      
-      // Si on a déjà un ID, réafficher le modal
-      if (lastSharedId && shareModalData) {
-        setShowShareModal(true);
-      }
-      return;
-    }
-    
-    // Récupérer les données du compte
-    const storage = JSON.parse(localStorage.getItem("builderberu_users")) || {};
-    const accountData = storage?.user?.accounts?.[activeAccount];
-    
-    if (!accountData) {
-      showTankMessage("❌ Aucun compte à partager", true, 'kaisel');
-      return;
-    }
-    
-    // Créer un hash des données pour vérifier si ça a changé
-    const dataHash = btoa(JSON.stringify(accountData)).substring(0, 16);
-    
-    // Si les données n'ont pas changé ET qu'on a déjà un ID, réutiliser l'ancien
-    if (lastSharedId && localStorage.getItem(`share_hash_${activeAccount}`) === dataHash) {
-      // Réutiliser l'ancien lien
-      const existingUrl = `https://builderberu.com/build#${lastSharedId}`;
-      await navigator.clipboard.writeText(existingUrl);
-      
-      setShareModalData({
-        url: existingUrl,
-        shortId: lastSharedId,
-        buildsCount: Object.keys(accountData.builds || {}).length,
-        accountName: activeAccount
-      });
-      setShowShareModal(true);
-      
-      showTankMessage("📋 Lien existant copié! (données inchangées)", true, 'kaisel');
-      return;
-    }
-    
-    // Compter les builds valides
-    const validBuilds = Object.keys(accountData.builds || {}).length;
-    if (validBuilds === 0) {
-      showTankMessage("⚠️ Aucun build à partager dans ce compte", true, 'kaisel');
-      return;
-    }
-    
-    // Préparer les données
-    const accountToShare = {
-      meta: {
-        accountName: activeAccount,
-        sharedDate: new Date().toISOString(),
-        version: "2.0",
-        buildsCount: validBuilds,
-        hasGems: Object.keys(accountData.gems || {}).length > 0,
-        hasArtifactLibrary: Object.keys(accountData.artifactLibrary || {}).length > 0
-      },
-      data: {
-        builds: accountData.builds || {},
-        hunterWeapons: accountData.hunterWeapons || {},
-        hunterCores: accountData.hunterCores || {},
-        gems: accountData.gems || {},
-        recentBuilds: accountData.recentBuilds || [],
-        artifactLibrary: accountData.artifactLibrary || {}
-      }
-    };
-    
-    // Envoyer au backend
-    const response = await fetch('https://api.builderberu.com/api/builds/save', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ buildData: accountToShare })
-    });
-    
-    const result = await response.json();
-    
-    if (result.success) {
-      // Sauvegarder l'ID et le hash pour éviter les doublons
-      setLastSharedId(result.id);
-      setLastShareTime(now);
-      localStorage.setItem(`share_hash_${activeAccount}`, dataHash);
-      localStorage.setItem(`share_id_${activeAccount}`, result.id);
-      
-      // Copier le lien
-      await navigator.clipboard.writeText(result.url);
-      
-      // Afficher le modal
-      setShareModalData({
-        url: result.url,
-        shortId: result.id,
-        buildsCount: validBuilds,
-        accountName: activeAccount
-      });
-      setShowShareModal(true);
-      
-      showTankMessage(`🎮 Compte "${activeAccount}" partagé! (${validBuilds} builds)`, true, 'kaisel');
-    }
-    
-  } catch (error) {
-    console.error('Erreur partage:', error);
-    showTankMessage('❌ Erreur lors du partage du compte', true, 'kaisel');
-  } finally {
-    setIsSharing(false);
-  }
-};
+  // 2️⃣ Fonction shareAccount modifiée avec protection anti-spam
+  const shareAccount = async () => {
+    try {
+      setIsSharing(true);
 
-// 3️⃣ FONCTION POUR CHARGER UN COMPTE PARTAGÉ
-const loadSharedAccount = async (accountId) => {
-  try {
-    setIsLoading(true);
-    showTankMessage("⏳ Chargement du compte partagé...", true, 'kaisel');
-    
-    const response = await fetch(`https://api.builderberu.com/api/builds/${accountId}`);
-    const result = await response.json();
-    
-    if (result.success && result.build) {
-      const sharedData = result.build.data;
-      const meta = sharedData.meta;
-      
-      // Demander confirmation avant d'importer
-      const confirmMessage = `
+      // Protection contre le spam - 1 partage toutes les 30 secondes max
+      const now = Date.now();
+      if (now - lastShareTime < 30000) {
+        const remainingTime = Math.ceil((30000 - (now - lastShareTime)) / 1000);
+        showTankMessage(`⏳ Attendez ${remainingTime}s avant de repartager`, true, 'kaisel');
+
+        // Si on a déjà un ID, réafficher le modal
+        if (lastSharedId && shareModalData) {
+          setShowShareModal(true);
+        }
+        return;
+      }
+
+      // Récupérer les données du compte
+      const storage = JSON.parse(localStorage.getItem("builderberu_users")) || {};
+      const accountData = storage?.user?.accounts?.[activeAccount];
+
+      if (!accountData) {
+        showTankMessage("❌ Aucun compte à partager", true, 'kaisel');
+        return;
+      }
+
+      // Créer un hash des données pour vérifier si ça a changé
+      const dataHash = btoa(JSON.stringify(accountData)).substring(0, 16);
+
+      // Si les données n'ont pas changé ET qu'on a déjà un ID, réutiliser l'ancien
+      if (lastSharedId && localStorage.getItem(`share_hash_${activeAccount}`) === dataHash) {
+        // Réutiliser l'ancien lien
+        const existingUrl = `https://builderberu.com/build#${lastSharedId}`;
+        await navigator.clipboard.writeText(existingUrl);
+
+        setShareModalData({
+          url: existingUrl,
+          shortId: lastSharedId,
+          buildsCount: Object.keys(accountData.builds || {}).length,
+          accountName: activeAccount
+        });
+        setShowShareModal(true);
+
+        showTankMessage("📋 Lien existant copié! (données inchangées)", true, 'kaisel');
+        return;
+      }
+
+      // Compter les builds valides
+      const validBuilds = Object.keys(accountData.builds || {}).length;
+      if (validBuilds === 0) {
+        showTankMessage("⚠️ Aucun build à partager dans ce compte", true, 'kaisel');
+        return;
+      }
+
+      // Préparer les données
+      const accountToShare = {
+        meta: {
+          accountName: activeAccount,
+          sharedDate: new Date().toISOString(),
+          version: "2.0",
+          buildsCount: validBuilds,
+          hasGems: Object.keys(accountData.gems || {}).length > 0,
+          hasArtifactLibrary: Object.keys(accountData.artifactLibrary || {}).length > 0
+        },
+        data: {
+          builds: accountData.builds || {},
+          hunterWeapons: accountData.hunterWeapons || {},
+          hunterCores: accountData.hunterCores || {},
+          gems: accountData.gems || {},
+          recentBuilds: accountData.recentBuilds || [],
+          artifactLibrary: accountData.artifactLibrary || {}
+        }
+      };
+
+      // Envoyer au backend
+      const response = await fetch('https://api.builderberu.com/api/builds/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ buildData: accountToShare })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Sauvegarder l'ID et le hash pour éviter les doublons
+        setLastSharedId(result.id);
+        setLastShareTime(now);
+        localStorage.setItem(`share_hash_${activeAccount}`, dataHash);
+        localStorage.setItem(`share_id_${activeAccount}`, result.id);
+
+        // Copier le lien
+        await navigator.clipboard.writeText(result.url);
+
+        // Afficher le modal
+        setShareModalData({
+          url: result.url,
+          shortId: result.id,
+          buildsCount: validBuilds,
+          accountName: activeAccount
+        });
+        setShowShareModal(true);
+
+        showTankMessage(`🎮 Compte "${activeAccount}" partagé! (${validBuilds} builds)`, true, 'kaisel');
+      }
+
+    } catch (error) {
+      console.error('Erreur partage:', error);
+      showTankMessage('❌ Erreur lors du partage du compte', true, 'kaisel');
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  // 3️⃣ FONCTION POUR CHARGER UN COMPTE PARTAGÉ
+  const loadSharedAccount = async (accountId) => {
+    try {
+      setIsLoading(true);
+      showTankMessage("⏳ Chargement du compte partagé...", true, 'kaisel');
+
+      const response = await fetch(`https://api.builderberu.com/api/builds/${accountId}`);
+      const result = await response.json();
+
+      if (result.success && result.build) {
+        const sharedData = result.build.data;
+        const meta = sharedData.meta;
+
+        // Demander confirmation avant d'importer
+        const confirmMessage = `
 🎮 COMPTE PARTAGÉ TROUVÉ!
 ━━━━━━━━━━━━━━━━━━━━
 📦 Nom: ${meta.accountName}
@@ -2358,57 +2359,57 @@ const loadSharedAccount = async (accountId) => {
 ⚠️ ATTENTION: Ceci va créer un nouveau compte "${meta.accountName}_imported"
 
 Continuer?`;
-      
-      if (!window.confirm(confirmMessage)) {
-        showTankMessage("❌ Import annulé", true, 'kaisel');
-        return;
-      }
-      
-      // Créer un nom unique pour le compte importé
-      const importedAccountName = `${meta.accountName}_imported_${Date.now().toString(36)}`;
-      
-      // Charger les données actuelles
-      const storage = JSON.parse(localStorage.getItem("builderberu_users")) || {};
-      storage.user = storage.user || {};
-      storage.user.accounts = storage.user.accounts || {};
-      
-      // Ajouter le nouveau compte
-      storage.user.accounts[importedAccountName] = sharedData.data;
-      
-      // Sauvegarder
-      localStorage.setItem("builderberu_users", JSON.stringify(storage));
-      
-      // Basculer vers le nouveau compte
-      await handleAccountSwitch(importedAccountName);
-      
-      // Marquer comme compte importé
-      setIsSharedAccount(true);
-      setSharedAccountId(accountId);
-      
-      showTankMessage(`✅ Compte importé! ${meta.buildsCount} builds chargés (${result.build.views} vues)`, true, 'kaisel');
-    }
-    
-  } catch (error) {
-    console.error('Erreur chargement compte:', error);
-    showTankMessage('❌ Compte partagé introuvable', true, 'kaisel');
-  } finally {
-    setIsLoading(false);
-  }
-};
 
-// 4️⃣ DÉTECTER UN COMPTE DANS L'URL AU CHARGEMENT
-useEffect(() => {
-  const hash = window.location.hash;
-  if (hash && hash.length > 1) {
-    const accountId = hash.substring(1);
-    if (accountId.length === 8) {
-      // Attendre que l'app soit chargée
-      setTimeout(() => {
-        loadSharedAccount(accountId);
-      }, 1000);
+        if (!window.confirm(confirmMessage)) {
+          showTankMessage("❌ Import annulé", true, 'kaisel');
+          return;
+        }
+
+        // Créer un nom unique pour le compte importé
+        const importedAccountName = `${meta.accountName}_imported_${Date.now().toString(36)}`;
+
+        // Charger les données actuelles
+        const storage = JSON.parse(localStorage.getItem("builderberu_users")) || {};
+        storage.user = storage.user || {};
+        storage.user.accounts = storage.user.accounts || {};
+
+        // Ajouter le nouveau compte
+        storage.user.accounts[importedAccountName] = sharedData.data;
+
+        // Sauvegarder
+        localStorage.setItem("builderberu_users", JSON.stringify(storage));
+
+        // Basculer vers le nouveau compte
+        await handleAccountSwitch(importedAccountName);
+
+        // Marquer comme compte importé
+        setIsSharedAccount(true);
+        setSharedAccountId(accountId);
+
+        showTankMessage(`✅ Compte importé! ${meta.buildsCount} builds chargés (${result.build.views} vues)`, true, 'kaisel');
+      }
+
+    } catch (error) {
+      console.error('Erreur chargement compte:', error);
+      showTankMessage('❌ Compte partagé introuvable', true, 'kaisel');
+    } finally {
+      setIsLoading(false);
     }
-  }
-}, []);
+  };
+
+  // 4️⃣ DÉTECTER UN COMPTE DANS L'URL AU CHARGEMENT
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.length > 1) {
+      const accountId = hash.substring(1);
+      if (accountId.length === 8) {
+        // Attendre que l'app soit chargée
+        setTimeout(() => {
+          loadSharedAccount(accountId);
+        }, 1000);
+      }
+    }
+  }, []);
 
 
 
@@ -3667,7 +3668,7 @@ BobbyJones : "Allez l'Inter !"
   };
 
 
-  
+
   const playMusic = () => {
     if (darkAriaAudioRef.current) {
       darkAriaAudioRef.current.play().catch((e) => {
@@ -5520,127 +5521,127 @@ BobbyJones : "Allez l'Inter !"
                         {/* Ligne 2 - Import et New */}
                         <div className="flex gap-2 w-full">
                           {/* Share/Partager */}
-<button
-  onClick={shareAccount}
-  disabled={isSharing}
-  className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+                          <button
+                            onClick={shareAccount}
+                            disabled={isSharing}
+                            className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
     border border-purple-600/50 hover:border-purple-500
     font-semibold px-4 py-2 text-sm rounded-lg
     transition-all duration-200 hover:scale-105
     disabled:opacity-50 disabled:cursor-not-allowed
     relative overflow-hidden"
->
-  <span className="relative z-10 flex items-center gap-2">
-    {isSharing ? (
-      <>
-        <span className="animate-spin">⏳</span>
-        <span>{t('buttons.sharing') || 'Partage...'}</span>
-      </>
-    ) : (
-      <>
-        <span>🔗</span>
-        <span>{t('buttons.share') || 'Partager'}</span>
-      </>
-    )}
-  </span>
-  {isSharing && (
-    <div className="absolute inset-0 bg-purple-600/20 animate-pulse" />
-  )}
-</button>
-{showShareModal && (
-  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    onClick={() => setShowShareModal(false)}>
-    <div className="bg-gray-900 border border-purple-500/30 rounded-xl p-6 max-w-lg w-full
+                          >
+                            <span className="relative z-10 flex items-center gap-2">
+                              {isSharing ? (
+                                <>
+                                  <span className="animate-spin">⏳</span>
+                                  <span>{t('buttons.sharing') || 'Partage...'}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>🔗</span>
+                                  <span>{t('buttons.share') || 'Partager'}</span>
+                                </>
+                              )}
+                            </span>
+                            {isSharing && (
+                              <div className="absolute inset-0 bg-purple-600/20 animate-pulse" />
+                            )}
+                          </button>
+                          {showShareModal && (
+                            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                              onClick={() => setShowShareModal(false)}>
+                              <div className="bg-gray-900 border border-purple-500/30 rounded-xl p-6 max-w-lg w-full
       shadow-[0_0_50px_rgba(168,85,247,0.15)] transform animate-fadeIn"
-      onClick={(e) => e.stopPropagation()}>
-      
-      {/* Header avec animation */}
-      <div className="text-center mb-6">
-        <div className="text-6xl mb-3 animate-bounce">🎉</div>
-        <h3 className="text-2xl font-bold text-purple-400">
-          Compte Partagé avec Succès!
-        </h3>
-      </div>
-      
-      {/* Info du compte */}
-      <div className="bg-gray-800/50 rounded-lg p-4 mb-4 space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-400">Compte:</span>
-          <span className="text-purple-300 font-semibold">{shareModalData?.accountName}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-400">Builds:</span>
-          <span className="text-green-400 font-semibold">{shareModalData?.buildsCount} personnages</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-400">ID:</span>
-          <span className="text-yellow-400 font-mono">{shareModalData?.shortId}</span>
-        </div>
-      </div>
-      
-      {/* Lien de partage */}
-      <div className="bg-gray-800 rounded-lg p-3 mb-4">
-        <p className="text-xs text-gray-400 mb-2">Lien de partage:</p>
-        <div className="flex items-center gap-2">
-          <input 
-            type="text" 
-            value={shareModalData?.url || ''} 
-            readOnly 
-            className="flex-1 bg-gray-700 text-purple-300 text-sm font-mono px-3 py-2 rounded
-              outline-none select-all border border-gray-600 focus:border-purple-500 transition-colors"
-            onFocus={(e) => e.target.select()}
-          />
-          <button 
-            onClick={() => {
-              navigator.clipboard.writeText(shareModalData?.url || '');
-              showTankMessage('📋 Lien copié!', true, 'kaisel');
-            }}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded
-              transition-all hover:scale-105 font-semibold text-sm"
-          >
-            📋 Copier
-          </button>
-        </div>
-      </div>
-      
-      {/* Instructions */}
-      <div className="text-center text-gray-400 text-sm mb-4">
-        <p>Partagez ce lien pour que d'autres puissent importer votre compte complet!</p>
-        <p className="text-xs mt-1 text-gray-500">
-          Les données incluent tous vos builds, gemmes et artefacts.
-        </p>
-      </div>
-      
-      {/* Bouton fermer */}
-      <button 
-        onClick={() => setShowShareModal(false)}
-        className="w-full bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-lg
-          transition-all font-semibold hover:scale-[1.02]"
-      >
-        ✨ Parfait!
-      </button>
-    </div>
-  </div>
-)}
+                                onClick={(e) => e.stopPropagation()}>
 
-{isSharedAccount && (
-  <div className="fixed top-20 right-4 bg-purple-900/90 text-purple-200 px-4 py-2 rounded-lg
+                                {/* Header avec animation */}
+                                <div className="text-center mb-6">
+                                  <div className="text-6xl mb-3 animate-bounce">🎉</div>
+                                  <h3 className="text-2xl font-bold text-purple-400">
+                                    Compte Partagé avec Succès!
+                                  </h3>
+                                </div>
+
+                                {/* Info du compte */}
+                                <div className="bg-gray-800/50 rounded-lg p-4 mb-4 space-y-2">
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-gray-400">Compte:</span>
+                                    <span className="text-purple-300 font-semibold">{shareModalData?.accountName}</span>
+                                  </div>
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-gray-400">Builds:</span>
+                                    <span className="text-green-400 font-semibold">{shareModalData?.buildsCount} personnages</span>
+                                  </div>
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-gray-400">ID:</span>
+                                    <span className="text-yellow-400 font-mono">{shareModalData?.shortId}</span>
+                                  </div>
+                                </div>
+
+                                {/* Lien de partage */}
+                                <div className="bg-gray-800 rounded-lg p-3 mb-4">
+                                  <p className="text-xs text-gray-400 mb-2">Lien de partage:</p>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="text"
+                                      value={shareModalData?.url || ''}
+                                      readOnly
+                                      className="flex-1 bg-gray-700 text-purple-300 text-sm font-mono px-3 py-2 rounded
+              outline-none select-all border border-gray-600 focus:border-purple-500 transition-colors"
+                                      onFocus={(e) => e.target.select()}
+                                    />
+                                    <button
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(shareModalData?.url || '');
+                                        showTankMessage('📋 Lien copié!', true, 'kaisel');
+                                      }}
+                                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded
+              transition-all hover:scale-105 font-semibold text-sm"
+                                    >
+                                      📋 Copier
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Instructions */}
+                                <div className="text-center text-gray-400 text-sm mb-4">
+                                  <p>Partagez ce lien pour que d'autres puissent importer votre compte complet!</p>
+                                  <p className="text-xs mt-1 text-gray-500">
+                                    Les données incluent tous vos builds, gemmes et artefacts.
+                                  </p>
+                                </div>
+
+                                {/* Bouton fermer */}
+                                <button
+                                  onClick={() => setShowShareModal(false)}
+                                  className="w-full bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-lg
+          transition-all font-semibold hover:scale-[1.02]"
+                                >
+                                  ✨ Parfait!
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {isSharedAccount && (
+                            <div className="fixed top-20 right-4 bg-purple-900/90 text-purple-200 px-4 py-2 rounded-lg
     border border-purple-500/30 shadow-lg backdrop-blur-sm animate-fadeIn z-40">
-    <div className="flex items-center gap-2 text-sm">
-      <span>📥</span>
-      <span>Compte importé</span>
-      <button
-        onClick={() => {
-          setIsSharedAccount(false);
-          window.location.hash = '';
-        }}
-        className="ml-2 text-purple-400 hover:text-white transition-colors"
-      >
-        ✕
-      </button>
-    </div>
-  </div>
-)}
+                              <div className="flex items-center gap-2 text-sm">
+                                <span>📥</span>
+                                <span>Compte importé</span>
+                                <button
+                                  onClick={() => {
+                                    setIsSharedAccount(false);
+                                    window.location.hash = '';
+                                  }}
+                                  className="ml-2 text-purple-400 hover:text-white transition-colors"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </div>
+                          )}
 
                           <button
                             onClick={() => setShowNewAccountPopup(true)}
@@ -6564,6 +6565,16 @@ BobbyJones : "Allez l'Inter !"
                   </>
                 )}
 
+                {isLoading && (
+                  <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
+                    <div className="bg-gray-900 border border-purple-500/30 rounded-lg px-6 py-4">
+                      <span className="text-purple-400">⏳ Chargement du compte partagé...</span>
+                    </div>
+                  </div>
+                )}
+
+
+
                 {/* Damage Calculator Modal */}
                 {showDamageCalculator && (
                   <DamageCalculator
@@ -7055,127 +7066,127 @@ BobbyJones : "Allez l'Inter !"
 
                       {/* Import */}
                       {/* Share/Partager */}
-<button
-  onClick={shareAccount}
-  disabled={isSharing}
-  className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
+                      <button
+                        onClick={shareAccount}
+                        disabled={isSharing}
+                        className="bg-purple-800/30 hover:bg-purple-700/40 text-purple-300 hover:text-white
     border border-purple-600/50 hover:border-purple-500
     font-semibold px-4 py-2 text-sm rounded-lg
     transition-all duration-200 hover:scale-105
     disabled:opacity-50 disabled:cursor-not-allowed
     relative overflow-hidden"
->
-  <span className="relative z-10 flex items-center gap-2">
-    {isSharing ? (
-      <>
-        <span className="animate-spin">⏳</span>
-        <span>{t('buttons.sharing') || 'Partage...'}</span>
-      </>
-    ) : (
-      <>
-        <span>🔗</span>
-        <span>{t('buttons.share') || 'Partager'}</span>
-      </>
-    )}
-  </span>
-  {isSharing && (
-    <div className="absolute inset-0 bg-purple-600/20 animate-pulse" />
-  )}
-</button>
-{showShareModal && (
-  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    onClick={() => setShowShareModal(false)}>
-    <div className="bg-gray-900 border border-purple-500/30 rounded-xl p-6 max-w-lg w-full
+                      >
+                        <span className="relative z-10 flex items-center gap-2">
+                          {isSharing ? (
+                            <>
+                              <span className="animate-spin">⏳</span>
+                              <span>{t('buttons.sharing') || 'Partage...'}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>🔗</span>
+                              <span>{t('buttons.share') || 'Partager'}</span>
+                            </>
+                          )}
+                        </span>
+                        {isSharing && (
+                          <div className="absolute inset-0 bg-purple-600/20 animate-pulse" />
+                        )}
+                      </button>
+                      {showShareModal && (
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                          onClick={() => setShowShareModal(false)}>
+                          <div className="bg-gray-900 border border-purple-500/30 rounded-xl p-6 max-w-lg w-full
       shadow-[0_0_50px_rgba(168,85,247,0.15)] transform animate-fadeIn"
-      onClick={(e) => e.stopPropagation()}>
-      
-      {/* Header avec animation */}
-      <div className="text-center mb-6">
-        <div className="text-6xl mb-3 animate-bounce">🎉</div>
-        <h3 className="text-2xl font-bold text-purple-400">
-          Compte Partagé avec Succès!
-        </h3>
-      </div>
-      
-      {/* Info du compte */}
-      <div className="bg-gray-800/50 rounded-lg p-4 mb-4 space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-400">Compte:</span>
-          <span className="text-purple-300 font-semibold">{shareModalData?.accountName}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-400">Builds:</span>
-          <span className="text-green-400 font-semibold">{shareModalData?.buildsCount} personnages</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-400">ID:</span>
-          <span className="text-yellow-400 font-mono">{shareModalData?.shortId}</span>
-        </div>
-      </div>
-      
-      {/* Lien de partage */}
-      <div className="bg-gray-800 rounded-lg p-3 mb-4">
-        <p className="text-xs text-gray-400 mb-2">Lien de partage:</p>
-        <div className="flex items-center gap-2">
-          <input 
-            type="text" 
-            value={shareModalData?.url || ''} 
-            readOnly 
-            className="flex-1 bg-gray-700 text-purple-300 text-sm font-mono px-3 py-2 rounded
-              outline-none select-all border border-gray-600 focus:border-purple-500 transition-colors"
-            onFocus={(e) => e.target.select()}
-          />
-          <button 
-            onClick={() => {
-              navigator.clipboard.writeText(shareModalData?.url || '');
-              showTankMessage('📋 Lien copié!', true, 'kaisel');
-            }}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded
-              transition-all hover:scale-105 font-semibold text-sm"
-          >
-            📋 Copier
-          </button>
-        </div>
-      </div>
-      
-      {/* Instructions */}
-      <div className="text-center text-gray-400 text-sm mb-4">
-        <p>Partagez ce lien pour que d'autres puissent importer votre compte complet!</p>
-        <p className="text-xs mt-1 text-gray-500">
-          Les données incluent tous vos builds, gemmes et artefacts.
-        </p>
-      </div>
-      
-      {/* Bouton fermer */}
-      <button 
-        onClick={() => setShowShareModal(false)}
-        className="w-full bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-lg
-          transition-all font-semibold hover:scale-[1.02]"
-      >
-        ✨ Parfait!
-      </button>
-    </div>
-  </div>
-)}
+                            onClick={(e) => e.stopPropagation()}>
 
-{isSharedAccount && (
-  <div className="fixed top-20 right-4 bg-purple-900/90 text-purple-200 px-4 py-2 rounded-lg
+                            {/* Header avec animation */}
+                            <div className="text-center mb-6">
+                              <div className="text-6xl mb-3 animate-bounce">🎉</div>
+                              <h3 className="text-2xl font-bold text-purple-400">
+                                Compte Partagé avec Succès!
+                              </h3>
+                            </div>
+
+                            {/* Info du compte */}
+                            <div className="bg-gray-800/50 rounded-lg p-4 mb-4 space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-400">Compte:</span>
+                                <span className="text-purple-300 font-semibold">{shareModalData?.accountName}</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-400">Builds:</span>
+                                <span className="text-green-400 font-semibold">{shareModalData?.buildsCount} personnages</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-400">ID:</span>
+                                <span className="text-yellow-400 font-mono">{shareModalData?.shortId}</span>
+                              </div>
+                            </div>
+
+                            {/* Lien de partage */}
+                            <div className="bg-gray-800 rounded-lg p-3 mb-4">
+                              <p className="text-xs text-gray-400 mb-2">Lien de partage:</p>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={shareModalData?.url || ''}
+                                  readOnly
+                                  className="flex-1 bg-gray-700 text-purple-300 text-sm font-mono px-3 py-2 rounded
+              outline-none select-all border border-gray-600 focus:border-purple-500 transition-colors"
+                                  onFocus={(e) => e.target.select()}
+                                />
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(shareModalData?.url || '');
+                                    showTankMessage('📋 Lien copié!', true, 'kaisel');
+                                  }}
+                                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded
+              transition-all hover:scale-105 font-semibold text-sm"
+                                >
+                                  📋 Copier
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Instructions */}
+                            <div className="text-center text-gray-400 text-sm mb-4">
+                              <p>Partagez ce lien pour que d'autres puissent importer votre compte complet!</p>
+                              <p className="text-xs mt-1 text-gray-500">
+                                Les données incluent tous vos builds, gemmes et artefacts.
+                              </p>
+                            </div>
+
+                            {/* Bouton fermer */}
+                            <button
+                              onClick={() => setShowShareModal(false)}
+                              className="w-full bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-lg
+          transition-all font-semibold hover:scale-[1.02]"
+                            >
+                              ✨ Parfait!
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {isSharedAccount && (
+                        <div className="fixed top-20 right-4 bg-purple-900/90 text-purple-200 px-4 py-2 rounded-lg
     border border-purple-500/30 shadow-lg backdrop-blur-sm animate-fadeIn z-40">
-    <div className="flex items-center gap-2 text-sm">
-      <span>📥</span>
-      <span>Compte importé</span>
-      <button
-        onClick={() => {
-          setIsSharedAccount(false);
-          window.location.hash = '';
-        }}
-        className="ml-2 text-purple-400 hover:text-white transition-colors"
-      >
-        ✕
-      </button>
-    </div>
-  </div>
-)}
+                          <div className="flex items-center gap-2 text-sm">
+                            <span>📥</span>
+                            <span>Compte importé</span>
+                            <button
+                              onClick={() => {
+                                setIsSharedAccount(false);
+                                window.location.hash = '';
+                              }}
+                              className="ml-2 text-purple-400 hover:text-white transition-colors"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {/* New */}
                       <button
@@ -7787,6 +7798,14 @@ BobbyJones : "Allez l'Inter !"
                     </>
                   )}
 
+                  {isLoading && (
+                    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
+                      <div className="bg-gray-900 border border-purple-500/30 rounded-lg px-6 py-4">
+                        <span className="text-purple-400">⏳ Chargement du compte partagé...</span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Damage Calculator Modal */}
                   {showDamageCalculator && (
                     <DamageCalculator
@@ -8069,51 +8088,51 @@ BobbyJones : "Allez l'Inter !"
                               </div>
                               {(selectedCharacter === 'Sung Jinwoo' || selectedCharacter === 'sung-jinwoo' || selectedCharacter === 'jinwoo' || selectedCharacter === 'sung') && (
                                 <div className="flex items-center gap-2 bg-purple-900/30 px-3 py-1.5 rounded-lg border border-purple-500/50">
-  <label className="text-purple-300 text-sm font-medium whitespace-nowrap">STR:</label>
-  <input
-    type="text"  // Changé de "number" à "text" pour plus de contrôle
-    value={isStrengthFocused ? strengthInputValue : jinwooStrength}
-    onChange={(e) => {
-      const cleaned = cleanStrengthInput(e.target.value);
-      // Limite à 3 chiffres max pour éviter de taper des valeurs trop grandes
-      if (cleaned.length <= 3) {
-        setStrengthInputValue(cleaned);
-      }
-    }}
-    onFocus={() => {
-      setIsStrengthFocused(true);
-      // Si la valeur est 19 (minimum), on vide l'input pour faciliter la saisie
-      if (jinwooStrength === 19) {
-        setStrengthInputValue('');
-      } else {
-        setStrengthInputValue(jinwooStrength.toString());
-      }
-    }}
-    onBlur={() => {
-      setIsStrengthFocused(false);
-      let value = parseInt(strengthInputValue) || 19;
-      // Clamp entre 19 et 749
-      if (value < 19) value = 19;
-      if (value > 749) value = 749;
-      
-      setJinwooStrength(value);
-      setStrengthInputValue(value.toString());
-      
-      // 🔥 UTILISER LA NOUVELLE FONCTION DE RECALCUL
-      recalculateAllStatsForJinwoo(value);
-    }}
-    onKeyDown={(e) => {
-      // Permettre Enter pour valider
-      if (e.key === 'Enter') {
-        e.target.blur();
-      }
-    }}
-    className="w-16 px-2 py-1 bg-gray-800 text-white text-sm rounded border border-purple-500/50 focus:border-purple-400 focus:outline-none text-center"
-    inputMode="numeric"  // Pour mobile : affiche le clavier numérique
-    pattern="[0-9]*"     // Pour mobile : force le clavier numérique
-  />
-  <span className="text-purple-400 text-xs">⚔️</span>
-</div>
+                                  <label className="text-purple-300 text-sm font-medium whitespace-nowrap">STR:</label>
+                                  <input
+                                    type="text"  // Changé de "number" à "text" pour plus de contrôle
+                                    value={isStrengthFocused ? strengthInputValue : jinwooStrength}
+                                    onChange={(e) => {
+                                      const cleaned = cleanStrengthInput(e.target.value);
+                                      // Limite à 3 chiffres max pour éviter de taper des valeurs trop grandes
+                                      if (cleaned.length <= 3) {
+                                        setStrengthInputValue(cleaned);
+                                      }
+                                    }}
+                                    onFocus={() => {
+                                      setIsStrengthFocused(true);
+                                      // Si la valeur est 19 (minimum), on vide l'input pour faciliter la saisie
+                                      if (jinwooStrength === 19) {
+                                        setStrengthInputValue('');
+                                      } else {
+                                        setStrengthInputValue(jinwooStrength.toString());
+                                      }
+                                    }}
+                                    onBlur={() => {
+                                      setIsStrengthFocused(false);
+                                      let value = parseInt(strengthInputValue) || 19;
+                                      // Clamp entre 19 et 749
+                                      if (value < 19) value = 19;
+                                      if (value > 749) value = 749;
+
+                                      setJinwooStrength(value);
+                                      setStrengthInputValue(value.toString());
+
+                                      // 🔥 UTILISER LA NOUVELLE FONCTION DE RECALCUL
+                                      recalculateAllStatsForJinwoo(value);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      // Permettre Enter pour valider
+                                      if (e.key === 'Enter') {
+                                        e.target.blur();
+                                      }
+                                    }}
+                                    className="w-16 px-2 py-1 bg-gray-800 text-white text-sm rounded border border-purple-500/50 focus:border-purple-400 focus:outline-none text-center"
+                                    inputMode="numeric"  // Pour mobile : affiche le clavier numérique
+                                    pattern="[0-9]*"     // Pour mobile : force le clavier numérique
+                                  />
+                                  <span className="text-purple-400 text-xs">⚔️</span>
+                                </div>
                               )}
 
                               {/* Bouton Modifier */}
