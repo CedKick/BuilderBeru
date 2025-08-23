@@ -24,6 +24,7 @@ export  const characters = {
   grade: 'SSR',
   element: 'Wind',
   scaleStat: 'Defense',
+  importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
   skillMultipliers: {
     core1: 2.76,
     core2: 14.82,
@@ -123,6 +124,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'none',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -149,6 +151,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Water',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -174,6 +177,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Light',
       scaleStat: 'Defense',
+      importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -199,6 +203,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Wind',
       scaleStat: 'Defense',
+      importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 2.595,
         core2: 16.995,
@@ -247,6 +252,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Water',
       scaleStat: 'Defense',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -273,6 +279,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Fire',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di', 'mpa'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -298,7 +305,7 @@ export  const characters = {
       class: 'Mage',
       grade: 'SSR',
       element: 'Water',
-      scaleStat: 'Attack',
+      scaleStat: 'Attack',importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -325,6 +332,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Wind',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di', 'mpcr', 'mpa'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -351,6 +359,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Light',
       scaleStat: 'Defense',
+      importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -377,6 +386,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Light',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di', 'mpcr', 'mpa'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -403,6 +413,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Dark',
       scaleStat: 'Defense',
+      importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -429,6 +440,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Fire',
       scaleStat: 'Attack',
+      importantStats:['atk', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -455,6 +467,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Fire',
       scaleStat: 'HP',
+      importantStats:['hp', 'tc', 'dcc', 'defPen', 'di', 'mpcr'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -481,6 +494,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Fire',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -507,6 +521,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Fire',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -533,6 +548,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Light',
       scaleStat: 'Defense',
+      importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -559,6 +575,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Wind',
       scaleStat: 'HP',
+      importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 2.58,
         core2: 8.82,
@@ -604,6 +621,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Wind',
       scaleStat: 'HP',
+      importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -630,6 +648,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Dark',
       scaleStat: 'HP',
+      importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -656,6 +675,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Wind',
       scaleStat: 'Defense',
+      importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -682,6 +702,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Dark',
       scaleStat: 'Defense',
+      importantStats:['def', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -708,6 +729,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Dark',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di', 'mpcr'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -734,6 +756,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Dark',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -760,6 +783,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Water',
       scaleStat: 'HP',
+      importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -786,6 +810,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Light',
       scaleStat: 'HP',
+      importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -812,6 +837,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Water',
       scaleStat: 'HP',
+      importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -838,6 +864,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Water',
       scaleStat: 'HP',
+      importantStats:['hp', 'tc', 'dcc', 'defPen', 'di', 'mpcr'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -864,6 +891,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Light',
       scaleStat: 'HP',
+      importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -890,6 +918,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Dark',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -916,6 +945,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Light',
       scaleStat: 'Defense',
+      importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -942,6 +972,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Wind',
       scaleStat: 'Defense',
+      importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -968,6 +999,7 @@ export  const characters = {
       grade: 'SSR',
       element: 'Fire',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -994,6 +1026,7 @@ export  const characters = {
       grade: 'SR',
       element: 'Water',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di', 'mpcr'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -1020,6 +1053,7 @@ export  const characters = {
       grade: 'SR',
       element: 'Water',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -1046,6 +1080,7 @@ export  const characters = {
       grade: 'SR',
       element: 'Dark',
       scaleStat: 'HP',
+      importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -1072,6 +1107,7 @@ export  const characters = {
       grade: 'SR',
       element: 'Light',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -1098,6 +1134,7 @@ export  const characters = {
       grade: 'SR',
       element: 'Dark',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -1124,6 +1161,7 @@ export  const characters = {
       grade: 'SR',
       element: 'Light',
       scaleStat: 'Defense',
+      importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -1176,6 +1214,7 @@ export  const characters = {
       grade: 'SR',
       element: 'Water',
       scaleStat: 'HP',
+      importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -1202,6 +1241,7 @@ export  const characters = {
       grade: 'SR',
       element: 'Water',
       scaleStat: 'HP',
+      importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -1228,6 +1268,7 @@ export  const characters = {
       grade: 'SR',
       element: 'Wind',
       scaleStat: 'Defense',
+      importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -1254,6 +1295,7 @@ export  const characters = {
       grade: 'SR',
       element: 'Wind',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -1280,6 +1322,7 @@ export  const characters = {
       grade: 'SR',
       element: 'Fire',
       scaleStat: 'Attack',
+      importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,
@@ -1306,6 +1349,7 @@ export  const characters = {
       grade: 'SR',
       element: 'Light',
       scaleStat: 'Defense',
+      importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
       skillMultipliers: {
         core1: 3.5,
         core2: 4.8,

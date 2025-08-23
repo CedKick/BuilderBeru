@@ -13,6 +13,7 @@ import IgrisTutorial from './components/IgrisTutorial/IgrisTutorial';
 import { characters } from './data/characters';
 import { sungForce } from './data/sungForce';
 import ArtifactCard from "./components/ArtifactCard";
+import BDGScoreCard from "./components/ScoreCard/BDGScoreCard"
 import NoyauxPopup from './components/NoyauxPopup';
 import GemmesPopup from './components/GemmePopup';
 import WeaponPopup from './components/weaponPopup';
@@ -605,6 +606,7 @@ const BuilderBeru = () => {
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const { i18n } = useTranslation();
+  const [activeSection, setActiveSection] = useState('artifacts');
   const [isSharing, setIsSharing] = useState(false);
   const [shareModalData, setShareModalData] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -6719,13 +6721,13 @@ BobbyJones : "Allez l'Inter !"
 ">
               <div className="{showSernPopup ? 'blur-background' : ''}">
                 <div className="flex flex-col items-center justify-center 
-         mx-auto 
-         w-full px-2 sm:px-4 
-         max-w-[64vw] 
-         md:max-w-[666px] 
-         lg:max-w-[600px] 
-         xl:max-w-[560px] 
-         2xl:max-w-[733px]">
+     mx-auto 
+     w-full px-2 sm:px-4 
+     max-w-[64vw] 
+     md:max-w-[666px] 
+     lg:max-w-[600px] 
+     xl:max-w-[560px] 
+     2xl:max-w-[733px]">
                   {[...leftArtifacts].map((item, idx) => (
                     <ArtifactCard
                       key={`${activeAccount}-${item.title}-${JSON.stringify(artifactsData[item.title])}`} // ← NOUVELLE KEY !
@@ -6757,6 +6759,19 @@ BobbyJones : "Allez l'Inter !"
                       onTvTrigger={setTvDialogue} // 🔥 NOUVELLE PROP !
                     />
                   ))}
+
+                                 {activeSection === 'artifacts' && (
+  <>
+    {/* ... autres composants ... */}
+    
+    {/* Ajouter BDG Score Card */}
+    <div className="w-full mt-6">
+      <BDGScoreCard 
+        showTankMessage={showTankMessage}
+      />
+    </div>
+  </>
+)}
 
                 </div>
 
@@ -8272,6 +8287,8 @@ BobbyJones : "Allez l'Inter !"
                     onTvTrigger={setTvDialogue} // 🔥 NOUVELLE PROP !
                   />
                 ))}
+
+ 
 
               </div>
 

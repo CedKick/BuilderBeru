@@ -79,6 +79,46 @@ export const runesData = [
         src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730973/rune_collapse_wind_thunderstorm_xxbqls.png",
     },
     {
+        class: "Ultimate",
+        className: "ultimate",
+        element: "none",
+        type: "none",
+        used: 20,
+        where: ["BoT"],
+        name: "king's domain",
+        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755947640/kings_domain_lhpagm.jpg",
+    },
+    {
+        class: "Ultimate",
+        className: "ultimate",
+        element: "none",
+        type: "none",
+        used: 20,
+        where: ["BoT"],
+        name: "truth : mutilate",
+        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755947523/truth_mutilate_ix7cn7.jpg",
+    },
+    {
+        class: "Ultimate",
+        className: "ultimate",
+        element: "none",
+        type: "none",
+        used: 20,
+        where: ["BoT"],
+        name: "darkness : obliteration",
+        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755947571/darkness_obliteration_fvhoea.jpg",
+    },
+    {
+        class: "Shadow Step",
+        className: "Shadow Step",
+        element: "none",
+        type: "none",
+        used: 20,
+        where: ["BoT"],
+        name: "shadow step",
+        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755947639/shadow_step_jj581d.jpg",
+    },
+    {
         class: "basicSkills",
         className: "crushing blow",
         element: "dark",
@@ -1253,6 +1293,7 @@ export const sungData = [
         icon: '',
         grade: 'SSR',
         scaleStat: 'Attack',
+        importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Burning Curse', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730690/artifact_burningCurse_8L_l98rff.png', amount: 4 }],
@@ -1296,6 +1337,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Wind',
         scaleStat: 'Defense',
+        importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1336,6 +1378,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Light',
         scaleStat: 'Defense',
+        importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1376,6 +1419,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Water',
         scaleStat: 'Attack',
+        importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1416,6 +1460,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Wind',
         scaleStat: 'Defense',
+        importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1458,6 +1503,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Water',
         scaleStat: 'Defense',
+        importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1497,6 +1543,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Fire',
         scaleStat: 'Attack',
+        importantStats:['atk', 'tc', 'dcc', 'defPen', 'di', 'mpa'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1535,6 +1582,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Water',
         scaleStat: 'Attack',
+        scaleStat: 'Attack',importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1573,6 +1621,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Wind',
         scaleStat: 'Attack',
+        importantStats:['atk', 'tc', 'dcc', 'defPen', 'di', 'mpcr', 'mpa'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1611,6 +1660,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Light',
         scaleStat: 'Defense',
+        importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1649,6 +1699,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Light',
         scaleStat: 'Attack',
+        importantStats:['atk', 'tc', 'dcc', 'defPen', 'di', 'mpcr', 'mpa'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1686,7 +1737,8 @@ export const characters = [
         class: 'Mage',
         grade: 'SSR',
         element: 'Dark',
-        scaleStat: 'Defense'
+        scaleStat: 'Defense',
+        importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
     },
     {
         name: 'Choi Jong-In',
@@ -1696,6 +1748,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Fire',
         scaleStat: 'Attack',
+        importantStats:['atk', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1734,6 +1787,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Fire',
         scaleStat: 'HP',
+        importantStats:['hp', 'tc', 'dcc', 'defPen', 'di', 'mpcr'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1772,6 +1826,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Fire',
         scaleStat: 'Attack',
+        importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1810,6 +1865,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Fire',
         scaleStat: 'Attack',
+        importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1848,6 +1904,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Light',
         scaleStat: 'Defense',
+        importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1886,6 +1943,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Wind',
         scaleStat: 'HP',
+        importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1924,6 +1982,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Wind',
         scaleStat: 'HP',
+        importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -1962,6 +2021,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Dark',
         scaleStat: 'HP',
+        importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -2000,6 +2060,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Wind',
         scaleStat: 'Defense',
+        importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -2038,6 +2099,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Dark',
         scaleStat: 'Defense',
+        importantStats:['def', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -2076,6 +2138,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Dark',
         scaleStat: 'Attack',
+        importantStats:['atk', 'tc', 'dcc', 'defPen', 'di', 'mpcr'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -2114,6 +2177,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Dark',
         scaleStat: 'Attack',
+        importantStats:['atk', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -2152,6 +2216,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Water',
         scaleStat: 'HP',
+        importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -2190,6 +2255,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Light',
         scaleStat: 'HP',
+        importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
@@ -2227,6 +2293,7 @@ export const characters = [
         class: 'Tank',
         grade: 'SSR',
         element: 'Water',
+        importantStats:['hp', 'tc', 'dcc', 'defPen', 'di'],
         scaleStat: 'HP', presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],

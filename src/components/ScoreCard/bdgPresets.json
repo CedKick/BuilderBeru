@@ -1,0 +1,465 @@
+{
+  "weekId": "2025-W05",
+  "startDate": "2025-02-03",
+  "endDate": "2025-02-09",
+  "currentBoss": "ant_queen",
+  "bossName": "Ant Queen",
+  "elements": [
+    "WIND",
+    "WATER",
+    "FIRE"
+  ],
+  "scoringLimits": {
+    "maxTotalScore": 71000000000,
+    "maxSungScore": 2500000000,
+    "maxHunterScore": 68000000000
+  },
+  "presets": {
+    "WIND": {
+      "sung": {
+        "weapons": [
+          "stormbringer",
+          "thetisgrimoire"
+        ],
+        "weaponStars": [
+          10,
+          10
+        ],
+        "leftSet": "Burning Blessing",
+        "rightSet": "Burning Blessing",
+        "skills": [
+          {
+            "name": "vacuum wave",
+            "rarity": "mythic"
+          },
+          {
+            "name": "cold ice",
+            "rarity": "mythic"
+          },
+          {
+            "name": "king's domain",
+            "rarity": "mythic"
+          },
+          {
+            "name": "thunderstorm",
+            "rarity": "mythic"
+          },
+          {
+            "name": "squall",
+            "rarity": "mythic"
+          },
+          {
+            "name": "shadow step",
+            "rarity": "mythic"
+          }
+        ],
+        "blessings": [
+          {
+            "name": "bloodlust",
+            "type": "offensive"
+          },
+          {
+            "name": "sharp perception",
+            "type": "offensive"
+          },
+          {
+            "name": "reawakening",
+            "type": "offensive"
+          },
+          {
+            "name": "we are one",
+            "type": "offensive"
+          },
+          {
+            "name": "aggresive defense",
+            "type": "defensive"
+          },
+          {
+            "name": "natural disaster",
+            "type": "defensive"
+          },
+          {
+            "name": "kasaka's steel scales",
+            "type": "defensive"
+          },
+          {
+            "name": "life",
+            "type": "defensive"
+          }
+        ],
+        "baseStats": {
+          "str": 300,
+          "int": 459,
+          "vit": 0,
+          "per": 0,
+          "agi": 0
+        },
+        "expectedStats": {
+          "atk": "55000-60000",
+          "tc": "10000-14000",
+          "dcc": "21000-23000",
+          "di": "22000-24000",
+          "defPen": "35-2500",
+          "precision": "2500-3000",
+          "mpcr": "94-2500",
+          "mpa": "2500-3100"
+        }
+      },
+      "hunters": [
+        {
+          "id": "Jinah",
+          "position": 1,
+          "stars": 10,
+          "weaponStars": 10,
+          "leftSet": "Chaotic Infamy",
+          "rightSet": "Chaotic Infamy",
+          "scaleStat": "DEF",
+          "expectedStats": {
+            "atk": "45000-50000",
+            "tc": "13000",
+            "dcc": "21000",
+            "defPen": "15000",
+            "di": "22000",
+            "mpcr": "0",
+            "mpa": "0"
+          },
+          "expectedDamage": "300000-500000"
+        },
+        {
+          "id": "Goto",
+          "position": 2,
+          "stars": 10,
+          "weaponStars": 10,
+          "leftSet": "Chaotic Desire",
+          "rightSet": "Chaotic Desire",
+          "scaleStat": "HP",
+          "expectedStats": {
+            "hp": "80000",
+            "tc": "13000",
+            "dcc": "21000",
+            "defPen": "0",
+            "di": "22000",
+            "mpcr": "0",
+            "mpa": "0"
+          },
+          "expectedDamage": "250000-400000"
+        },
+        {
+          "id": "Niermann",
+          "position": 3,
+          "stars": 10,
+          "weaponStars": 10,
+          "leftSet": "Chaotic Infamy",
+          "rightSet": "Chaotic Infamy",
+          "scaleStat": "DEF",
+          "expectedStats": {
+            "def": "0",
+            "tc": "13000",
+            "dcc": "21000",
+            "defPen": "15000",
+            "di": "22000",
+            "mpcr": "0",
+            "mpa": "0"
+          },
+          "expectedDamage": "200000-350000"
+        },
+        {
+          "id": "Lee",
+          "position": 4,
+          "stars": 10,
+          "weaponStars": 10,
+          "leftSet": "Angel White",
+          "rightSet": "Sylph's Blessing",
+          "scaleStat": "ATK",
+          "expectedStats": {
+            "atk": "45000",
+            "tc": "13000",
+            "dcc": "21000",
+            "defPen": "15000",
+            "di": "22000",
+            "mpcr": "6000",
+            "mpa": "0"
+          },
+          "expectedDamage": "150000-250000"
+        },
+        {
+          "id": "Mirei",
+          "position": 5,
+          "stars": 10,
+          "weaponStars": 10,
+          "leftSet": "Chaotic Infamy",
+          "rightSet": "Chaotic Infamy",
+          "scaleStat": "ATK",
+          "expectedStats": {
+            "atk": "45000",
+            "tc": "13000",
+            "dcc": "21000",
+            "defPen": "15000",
+            "di": "22000",
+            "mpcr": "3000",
+            "mpa": "0"
+          },
+          "expectedDamage": "200000-300000"
+        },
+        {
+          "id": "Choi",
+          "position": 6,
+          "stars": 10,
+          "weaponStars": 10,
+          "leftSet": "Chaotic Wish",
+          "rightSet": "Chaotic Wish",
+          "scaleStat": "ATK",
+          "expectedStats": {
+            "atk": "38000",
+            "tc": "0",
+            "dcc": "0",
+            "defPen": "15000",
+            "di": "22000",
+            "mpcr": "0",
+            "mpa": "0"
+          },
+          "expectedDamage": "150000-250000"
+        }
+      ]
+    },
+    "WATER": {
+      "sung": {
+        "weapons": [
+          "stormbringer",
+          "thetisgrimoire"
+        ],
+        "weaponStars": [
+          10,
+          10
+        ],
+        "leftSet": "Burning Blessing",
+        "rightSet": "Burning Blessing",
+        "skills": [
+          {
+            "name": "vacuum wave",
+            "rarity": "mythic"
+          },
+          {
+            "name": "iceberg",
+            "rarity": "mythic"
+          },
+          {
+            "name": "surprise attack",
+            "rarity": "mythic"
+          },
+          {
+            "name": "thunderstorm",
+            "rarity": "mythic"
+          },
+          {
+            "name": "squall",
+            "rarity": "mythic"
+          },
+          {
+            "name": "ice strike",
+            "rarity": "mythic"
+          }
+        ],
+        "blessings": [
+          {
+            "name": "bloodlust",
+            "type": "offensive"
+          },
+          {
+            "name": "sharp perception",
+            "type": "offensive"
+          },
+          {
+            "name": "reawakening",
+            "type": "offensive"
+          },
+          {
+            "name": "we are one",
+            "type": "offensive"
+          },
+          {
+            "name": "aggresive defense",
+            "type": "defensive"
+          },
+          {
+            "name": "natural disaster",
+            "type": "defensive"
+          },
+          {
+            "name": "kasaka's steel scales",
+            "type": "defensive"
+          },
+          {
+            "name": "life",
+            "type": "defensive"
+          }
+        ],
+        "baseStats": {
+          "str": 300,
+          "int": 459,
+          "vit": 0,
+          "per": 0,
+          "agi": 0
+        },
+        "expectedStats": {
+          "atk": "55000-60000",
+          "tc": "10000-14000",
+          "dcc": "21000-23000",
+          "di": "22000-24000",
+          "defPen": "35-2500",
+          "precision": "2500-3000",
+          "mpcr": "94-2500",
+          "mpa": "2500-3100"
+        }
+      },
+      "hunters": [
+        {
+          "id": "Cha Hae-In Valkyrie",
+          "position": 1,
+          "stars": 10,
+          "weaponStars": 10,
+          "leftSet": "Chaotic Infamy",
+          "rightSet": "Chaotic Infamy",
+          "scaleStat": "DEF",
+          "expectedStats": {
+            "def": "45000-50000",
+            "tc": "13000",
+            "dcc": "21000",
+            "defPen": "15000",
+            "di": "22000",
+            "mpcr": "0",
+            "mpa": "0"
+          },
+          "expectedDamage": "20000000000"
+        },
+        {
+          "id": "Isla Wright",
+          "position": 2,
+          "stars": 10,
+          "weaponStars": 10,
+          "leftSet": "Guardian",
+          "rightSet": "Sylph's Blessing",
+          "scaleStat": "DEF",
+          "expectedStats": {
+            "DEF": "45000",
+            "tc": "13000",
+            "dcc": "21000",
+            "defPen": "0",
+            "DI": "50000",
+            "mpcr": "0",
+            "mpa": "0"
+          },
+          "expectedDamage": "50000000"
+        },
+        {
+          "id": "Seorin",
+          "position": 3,
+          "stars": 10,
+          "weaponStars": 10,
+          "leftSet": "Chaotic Desire",
+          "rightSet": "Chaotic Desire",
+          "scaleStat": "HP",
+          "expectedStats": {
+            "hp": "90000",
+            "tc": "13000",
+            "dcc": "21000",
+            "defPen": "15000",
+            "di": "22000",
+            "mpcr": "0",
+            "mpa": "0"
+          },
+          "expectedDamage": "5000000000"
+        },
+        {
+          "id": "Anna",
+          "position": 4,
+          "stars": 10,
+          "weaponStars": 10,
+          "leftSet": "Burning greed",
+          "rightSet": "Concentration of Firepower",
+          "scaleStat": "ATK",
+          "expectedStats": {
+            "atk": "45000",
+            "tc": "13000",
+            "dcc": "21000",
+            "defPen": "15000",
+            "di": "22000",
+            "mpcr": "6000",
+            "mpa": "0"
+          },
+          "expectedDamage": "200000000"
+        },
+        {
+          "id": "Shuhua",
+          "position": 5,
+          "stars": 10,
+          "weaponStars": 10,
+          "leftSet": "Burning Cursed",
+          "rightSet": "Expert",
+          "scaleStat": "ATK",
+          "expectedStats": {
+            "atk": "45000",
+            "tc": "13000",
+            "dcc": "21000",
+            "defPen": "15000",
+            "di": "22000",
+            "mpcr": "3000",
+            "mpa": "0"
+          },
+          "expectedDamage": "7000000000"
+        },
+        {
+          "id": "Meilin Fisher",
+          "position": 6,
+          "stars": 10,
+          "weaponStars": 10,
+          "leftSet": "Chaotic Wish",
+          "rightSet": "Chaotic Wish",
+          "scaleStat": "HP",
+          "expectedStats": {
+            "atk": "90000",
+            "tc": "9000",
+            "dcc": "0",
+            "defPen": "0",
+            "di": "0",
+            "mpcr": "0",
+            "mpa": "0"
+          },
+          "expectedDamage": "100000000"
+        }
+      ]
+    },
+    "FIRE": {
+      "sung": {
+        "weapons": [
+          "Wrath of Kamish",
+          "Evolution"
+        ],
+        "weaponStars": [
+          10,
+          10
+        ],
+        "leftSet": "Fatal Venom",
+        "rightSet": "Swift Assassin",
+        "baseStats": {
+          "str": 474,
+          "int": 250,
+          "vit": 10,
+          "per": 10,
+          "agi": 10
+        },
+        "expectedStats": {
+          "atk": "57000-62000",
+          "tc": "10000-11000",
+          "dcc": "25000-27000",
+          "di": "22000-24000",
+          "defPen": "37-42",
+          "precision": "2700-3200",
+          "mpcr": "1000-1100",
+          "mpa": "2700-3200"
+        }
+      },
+      "hunters": []
+    }
+  }
+}
