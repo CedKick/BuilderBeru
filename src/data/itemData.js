@@ -39,6 +39,46 @@ export const runesData = [
         src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730974/rune_armorbreak_wind_vacuumwave_break_tnstn8.png",
     },
     {
+        class: "basicSkills",
+        className: "piercing thrust",
+        element: "fire",
+        type: "none",
+        used: 20,
+        where: ["BoT"],
+        name: "firestorm kick",
+        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756053917/firestormkick_qrhrd0.jpg",
+    },
+    {
+        class: "basicSkills",
+        className: "piercing thrust",
+        element: "wind",
+        type: "break",
+        used: 20,
+        where: ["BoT"],
+        name: "gale kick",
+        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756053917/galekick_q5tkcy.jpg",
+    },
+    {
+        class: "basicSkills",
+        className: "piercing thrust",
+        element: "water",
+        type: "none",
+        used: 20,
+        where: ["BoT"],
+        name: "flowing water kick",
+        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756053917/flowingwaterkick_crr5d3.jpg",
+    },
+    {
+        class: "basicSkills",
+        className: "piercing thrust",
+        element: "light",
+        type: "break",
+        used: 20,
+        where: ["BoT"],
+        name: "asura kick",
+        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756053918/asurakick_kqcfrs.jpg",
+    },
+    {
         class: "collapse",
         className: "collapse",
         element: "fire",
@@ -3028,6 +3068,10 @@ export const weaponData = [
     {
         name: "stormbringer",
         src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748875806/stormbringer_xy9jpk.png"
+    },
+      {
+        name: "allon's orb",
+        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756054038/allonsorb_ftlnq2.png"
     },
     {
         name: "thetisgrimoire",

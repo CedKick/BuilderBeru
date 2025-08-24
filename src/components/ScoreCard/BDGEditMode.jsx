@@ -2,11 +2,13 @@
 import React, { useState } from 'react';
 import { weaponData, runesData, blessingStonesData, artifactData } from '../../data/itemData';
 import { characters } from '../../data/characters';
+import { calculateRCFromTotal } from '../../utils/rageCount';
 
 const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
   const [showHunterPicker, setShowHunterPicker] = useState(null);
   const [sungLeftSplit, setSungLeftSplit] = useState(false);
-  
+  const [hunterLeftSplits, setHunterLeftSplits] = useState({});
+
   const sungPreset = preset?.sung || {};
   const huntersPreset = preset?.hunters || [];
 
@@ -21,7 +23,8 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
   const basicSkills = runesData.filter(r => r.class === 'basicSkills');
   const collapseSkills = runesData.filter(r => r.class === 'collapse');
   const deathSkills = runesData.filter(r => r.class === 'death');
-  const truthDarknessSkills = ['Truth: Mutilate', 'Darkness: Obliteration', 'King\'s Domain'];
+  const ultimateSkills = runesData.filter(r => r.class === 'Ultimate');
+  const shadowStepSkill = runesData.filter(r => r.class === 'Shadow Step');
 
   // Filtrer les artifacts par side
   const leftArtifacts = artifactData.filter(a => a.side === 'L');
@@ -30,10 +33,68 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
   // Convertir l'objet characters en tableau pour l'affichage
   const charactersArray = Object.values(characters);
 
+  // Initialiser les états de split basés sur les données existantes
+  React.useEffect(() => {
+    // Vérifier Sung
+    if (scoreData.sung?.leftSet1 && scoreData.sung?.leftSet2) {
+      setSungLeftSplit(true);
+    }
+
+    // Vérifier les hunters
+    const newHunterSplits = {};
+    scoreData.hunters?.forEach((hunter, idx) => {
+      if (hunter?.leftSet1 && hunter?.leftSet2) {
+        newHunterSplits[idx] = true;
+      }
+    });
+    setHunterLeftSplits(newHunterSplits);
+  }, []);
+
+
+
   const handleScoreChange = (type, index, value) => {
-    const cleanValue = value.replace(/[^0-9]/g, '');
-    const numValue = cleanValue === '' ? '' : parseInt(cleanValue);
-    
+    // Permettre les lettres M et B pour les multiplicateurs
+    const cleanValue = value.replace(/[^0-9MB]/gi, '');
+
+    let numValue = '';
+    if (cleanValue.match(/[MB]$/i)) {
+      const number = parseFloat(cleanValue.slice(0, -1));
+      const multiplier = cleanValue.slice(-1).toUpperCase();
+      if (!isNaN(number)) {
+        numValue = multiplier === 'M' ? number * 1000000 : number * 1000000000;
+      }
+    } else {
+      numValue = cleanValue === '' ? '' : parseInt(cleanValue);
+    }
+
+    // VALIDATION ICI - Après avoir calculé numValue
+    if (type === 'hunter' && scoreData.hunters[index]?.character) {
+      const character = scoreData.hunters[index].character;
+      const isOnElement = character.element?.toUpperCase() === scoreData.element
+      const maxDamage = isOnElement
+        ? character.bdgLimits?.maxDamageOnElement || Infinity
+        : character.bdgLimits?.maxDamageOffElement || Infinity;
+
+      const maxWithTolerance = maxDamage * 1.2; // Permettre 20% de plus
+
+      if (numValue > maxWithTolerance) {
+        showTankMessage(`Limite dépassée pour ${character.name}: max ${(maxWithTolerance / 1000000000).toFixed(1)}B (120% de la limite)`, true, 'tank');
+        return;
+      }
+    }
+
+    if (type === 'sung') {
+      const maxDamage = getSungMaxDamage();
+      const maxWithTolerance = maxDamage * 1.2;
+
+      if (numValue > maxWithTolerance) {
+        const isExpert = scoreData.sung.rightSet?.toLowerCase().includes('expert');
+        showTankMessage(`Limite dépassée pour Sung (mode ${isExpert ? 'Expert' : 'Support'}): max ${(maxWithTolerance / 1000000000).toFixed(1)}B`, true, 'tank');
+        return;
+      }
+    }
+
+    // Ensuite seulement on met à jour
     if (type === 'sung') {
       onUpdate({
         ...scoreData,
@@ -48,6 +109,27 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
       });
     }
   };
+
+  const getSungMaxDamage = () => {
+    const isExpertMode = scoreData.sung.rightSet?.toLowerCase().includes('expert');
+    const mode = isExpertMode ? 'expert' : 'support';
+    const element = scoreData.element || 'WIND';
+
+    const sungCharacter = characters['jinwoo']; // Accès direct
+    return sungCharacter?.bdgLimits?.[mode]?.[element]?.max || Infinity;
+  };
+
+  const getDamageProgressColor = (current, max) => {
+    const percentage = (current / max) * 100;
+    if (percentage < 25) return 'bg-purple-300';
+    if (percentage < 50) return 'bg-purple-400';
+    if (percentage < 75) return 'bg-purple-500';
+    if (percentage < 90) return 'bg-purple-600';
+    if (percentage < 100) return 'bg-purple-700';
+    if (percentage < 110) return 'bg-purple-800';
+    return 'bg-purple-900'; // Au-delà de 110%
+  };
+
 
   const handleSungUpdate = (field, value) => {
     onUpdate({
@@ -64,11 +146,30 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
 
   const handleHunterChange = (index, newHunter) => {
     const newHunters = [...scoreData.hunters];
-    newHunters[index] = { 
-      ...newHunters[index], 
-      id: newHunter.name,
-      character: newHunter
-    };
+
+    // Vérifier si ce hunter est déjà sélectionné ailleurs
+    const existingIndex = newHunters.findIndex(h => h && h.id === newHunter.name);
+
+    if (existingIndex !== -1 && existingIndex !== index) {
+      // Si le hunter existe déjà, faire un échange
+      const temp = newHunters[index];
+      newHunters[index] = {
+        ...newHunters[existingIndex],
+        id: newHunter.name,
+        character: newHunter
+      };
+      newHunters[existingIndex] = temp;
+
+      showTankMessage(`${newHunter.name} échangé de position !`, true, 'beru');
+    } else {
+      // Sinon, assignation normale
+      newHunters[index] = {
+        ...newHunters[index],
+        id: newHunter.name,
+        character: newHunter
+      };
+    }
+
     onUpdate({ ...scoreData, hunters: newHunters });
     setShowHunterPicker(null);
   };
@@ -79,20 +180,29 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
     onUpdate({ ...scoreData, hunters: newHunters });
   };
 
-  const getExpectedStats = (hunterName) => {
-    const expectations = {
-      'Jinah': { atk: '35k-50k', tc: '7000-9000', dcc: '200-210%' },
-      'Goto Ryuji': { atk: '40k-55k', tc: '8000-10000', dcc: '210-220%' },
-      'default': { atk: '30k-45k', tc: '6000-8000', dcc: '190-200%' }
-    };
-    return expectations[hunterName] || expectations.default;
-  };
-
-  // Fonction pour récupérer le character depuis l'objet characters
+  // Fonction améliorée pour récupérer le character depuis l'objet characters
   const getCharacterData = (hunterId) => {
     if (!hunterId) return null;
-    // Recherche par nom exact ou nom en minuscules
-    return characters[hunterId] || characters[hunterId?.toLowerCase()] || null;
+
+    // Essayer plusieurs variantes de casse
+    let character = characters[hunterId] ||
+      characters[hunterId.toLowerCase()] ||
+      characters[hunterId.replace(/\s+/g, '').toLowerCase()] ||
+      characters[hunterId.replace(/\s+/g, '-').toLowerCase()] ||
+      null;
+
+    // Si toujours pas trouvé, chercher par nom
+    if (!character) {
+      const searchName = hunterId.toLowerCase();
+      for (const [key, char] of Object.entries(characters)) {
+        if (char.name && char.name.toLowerCase() === searchName) {
+          character = char;
+          break;
+        }
+      }
+    }
+
+    return character;
   };
 
   return (
@@ -104,13 +214,30 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
             <span className="text-purple-400 mr-2">⚔️</span>
             Sung Jin-Woo
           </h3>
-          <input
-            type="text"
-            value={scoreData.sung.damage === '' ? '' : scoreData.sung.damage.toLocaleString()}
-            onChange={(e) => handleScoreChange('sung', null, e.target.value)}
-            className="w-32 bg-gray-900/80 text-white text-xl p-2 rounded-lg border border-purple-500/30 focus:border-purple-400 focus:outline-none text-right"
-            placeholder="0"
-          />
+          <div className="flex flex-col items-end">
+            <input
+              type="text"
+              value={scoreData.sung.damage === '' ? '' : scoreData.sung.damage.toLocaleString()}
+              onChange={(e) => handleScoreChange('sung', null, e.target.value)}
+              className="w-32 bg-gray-900/80 text-white text-xl p-2 rounded-lg border border-purple-500/30 focus:border-purple-400 focus:outline-none text-right"
+              placeholder="0"
+            />
+            {/* Barre de progression pour Sung */}
+            {characters['jinwoo']?.bdgLimits && scoreData.sung.damage > 0 && (
+              <div className="relative h-2 bg-gray-700 rounded-full overflow-hidden mt-1 w-32">
+                <div
+                  className={`absolute left-0 top-0 h-full transition-all duration-300 ${getDamageProgressColor(scoreData.sung.damage, getSungMaxDamage())
+                    }`}
+                  style={{
+                    width: `${Math.min((scoreData.sung.damage / getSungMaxDamage()) * 100, 120)}%`
+                  }}
+                />
+                <span className="absolute inset-0 flex items-center justify-center text-[8px] text-white font-medium">
+                  {Math.round((scoreData.sung.damage / getSungMaxDamage()) * 100)}%
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
@@ -137,11 +264,12 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
                       className="w-full bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500"
                       value={scoreData.sung.leftSet1 || ''}
                       onChange={(e) => handleSungUpdate('leftSet1', e.target.value)}
+                      title={scoreData.sung.leftSet1 || 'Set Gauche 1'}
                     >
                       <option value="">Set G1</option>
                       {leftArtifacts.map(artifact => (
-                        <option key={artifact.set} value={artifact.set}>
-                          {artifact.set.substring(0, 10)}...
+                        <option key={artifact.set} value={artifact.set} title={artifact.set}>
+                          {artifact.set}
                         </option>
                       ))}
                     </select>
@@ -149,11 +277,12 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
                       className="w-full bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500"
                       value={scoreData.sung.leftSet2 || ''}
                       onChange={(e) => handleSungUpdate('leftSet2', e.target.value)}
+                      title={scoreData.sung.leftSet2 || 'Set Gauche 2'}
                     >
                       <option value="">Set G2</option>
                       {leftArtifacts.map(artifact => (
-                        <option key={artifact.set} value={artifact.set}>
-                          {artifact.set.substring(0, 10)}...
+                        <option key={artifact.set} value={artifact.set} title={artifact.set}>
+                          {artifact.set}
                         </option>
                       ))}
                     </select>
@@ -164,10 +293,11 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
                   className="w-full bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500"
                   value={scoreData.sung.leftSet || ''}
                   onChange={(e) => handleSungUpdate('leftSet', e.target.value)}
+                  title={scoreData.sung.leftSet || 'Set Gauche'}
                 >
                   <option value="">Set Gauche</option>
                   {leftArtifacts.map(artifact => (
-                    <option key={artifact.set} value={artifact.set}>
+                    <option key={artifact.set} value={artifact.set} title={artifact.set}>
                       {artifact.set}
                     </option>
                   ))}
@@ -177,10 +307,11 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
                 className="w-full bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500 mt-1"
                 value={scoreData.sung.rightSet || ''}
                 onChange={(e) => handleSungUpdate('rightSet', e.target.value)}
+                title={scoreData.sung.rightSet || 'Set Droit'}
               >
                 <option value="">Set Droit</option>
                 {rightArtifacts.map(artifact => (
-                  <option key={artifact.set} value={artifact.set}>
+                  <option key={artifact.set} value={artifact.set} title={artifact.set}>
                     {artifact.set}
                   </option>
                 ))}
@@ -192,7 +323,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
               <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">Armes</h4>
               {[0, 1].map((idx) => (
                 <div key={idx} className="flex items-center gap-1 mb-1">
-                  <select 
+                  <select
                     className="flex-1 bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500"
                     value={scoreData.sung.weapons?.[idx] || ''}
                     onChange={(e) => {
@@ -200,10 +331,11 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
                       newWeapons[idx] = e.target.value;
                       handleSungUpdate('weapons', newWeapons);
                     }}
+                    title={scoreData.sung.weapons?.[idx] || `Arme ${idx + 1}`}
                   >
                     <option value="">Arme {idx + 1}</option>
                     {weaponData.map(weapon => (
-                      <option key={weapon.name} value={weapon.name}>
+                      <option key={weapon.name} value={weapon.name} title={weapon.name}>
                         {weapon.name}
                       </option>
                     ))}
@@ -234,35 +366,31 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
               <div className="grid grid-cols-2 gap-1">
                 {[0, 1, 2, 3, 4, 5].map((idx) => {
                   const skill = scoreData.sung.skills?.[idx];
-                  const skillsList = idx < 2 ? basicSkills : 
-                                   idx === 2 ? truthDarknessSkills :
-                                   idx < 5 ? collapseSkills : 
-                                   ['Shadow Step'];
-                  
+
+                  // Déterminer quelle liste utiliser selon l'index
+                  const skillsList = idx < 2 ? basicSkills :
+                    idx === 2 ? ultimateSkills :
+                      idx === 3 ? deathSkills :
+                        idx === 4 ? collapseSkills :
+                          shadowStepSkill;
+
                   return (
                     <div key={idx} className="flex gap-1">
                       <select
                         className="flex-1 bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500"
                         value={skill?.name || ''}
                         onChange={(e) => {
-                          if (idx === 2 || idx === 5) {
-                            handleSkillSelect(idx, e.target.value, skill?.rarity || 'mythic');
-                          } else {
-                            const selectedSkill = skillsList.find(s => s.name === e.target.value);
-                            handleSkillSelect(idx, selectedSkill?.name, skill?.rarity || 'mythic');
-                          }
+                          const selectedSkill = skillsList.find(s => s.name === e.target.value);
+                          handleSkillSelect(idx, selectedSkill?.name, skill?.rarity || 'mythic');
                         }}
+                        title={skill?.name || `Skill ${idx + 1}`}
                       >
                         <option value="">S{idx + 1}</option>
-                        {idx === 2 || idx === 5 ? (
-                          skillsList.map(skillName => (
-                            <option key={skillName} value={skillName}>{skillName.substring(0, 10)}...</option>
-                          ))
-                        ) : (
-                          skillsList.map(s => (
-                            <option key={s.name} value={s.name}>{s.name.substring(0, 10)}...</option>
-                          ))
-                        )}
+                        {skillsList.map(s => (
+                          <option key={s.name} value={s.name} title={s.name}>
+                            {s.name}
+                          </option>
+                        ))}
                       </select>
                       <select
                         className={`w-12 text-xs p-1 rounded border ${rarityColors[skill?.rarity || 'mythic']}`}
@@ -289,24 +417,41 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
               <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">Bénédictions (8)</h4>
               <div className="grid grid-cols-4 gap-1">
                 {[0, 1, 2, 3, 4, 5, 6, 7].map((idx) => {
+                  const blessing = scoreData.sung.blessings?.[idx];
                   const isDefensive = idx >= 4;
                   const blessings = blessingStonesData.filter(b => b.type === (isDefensive ? 'defensive' : 'offensive'));
-                  
+
+                  // Gérer les deux formats
+                  const blessingName = typeof blessing === 'string' ? blessing : blessing?.name;
+                  const blessingRarity = typeof blessing === 'string' ? 'mythic' : (blessing?.rarity || 'mythic');
+
+                  // Bordure selon la rareté
+                  const getBlessingBorderClass = () => {
+                    if (!blessingName) return 'border-gray-700';
+                    return rarityColors[blessingRarity].split(' ')[0]; // Prend seulement la classe border
+                  };
+
                   return (
                     <select
                       key={idx}
-                      className="bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500"
-                      value={scoreData.sung.blessings?.[idx] || ''}
+                      className={`bg-gray-800/80 text-white text-xs p-1 rounded border ${getBlessingBorderClass()} focus:border-purple-500`}
+                      value={blessingName || ''}
                       onChange={(e) => {
                         const newBlessings = [...(scoreData.sung.blessings || [])];
-                        newBlessings[idx] = e.target.value;
+                        const selectedBlessing = blessingStonesData.find(b => b.name === e.target.value);
+                        newBlessings[idx] = {
+                          name: e.target.value,
+                          type: selectedBlessing?.type || (isDefensive ? 'defensive' : 'offensive'),
+                          rarity: blessingRarity // Conserver la rareté
+                        };
                         handleSungUpdate('blessings', newBlessings);
                       }}
+                      title={blessingName || `${isDefensive ? 'Defensive' : 'Offensive'} ${(idx % 4) + 1}`}
                     >
                       <option value="">{isDefensive ? 'D' : 'O'}{(idx % 4) + 1}</option>
                       {blessings.map(blessing => (
-                        <option key={blessing.name} value={blessing.name}>
-                          {blessing.name.substring(0, 8)}...
+                        <option key={blessing.name} value={blessing.name} title={blessing.name}>
+                          {blessing.name}
                         </option>
                       ))}
                     </select>
@@ -389,23 +534,24 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
             const hunter = scoreData.hunters[idx];
             const character = hunter?.character || getCharacterData(hunter?.id);
             const hunterPreset = preset?.hunters?.[idx];
-            
+
             return (
               <div key={idx} className="bg-black/30 rounded-lg p-3 border border-purple-500/30">
                 {/* Hunter Selection */}
-                <div 
+                <div
                   className="flex items-center mb-2 cursor-pointer hover:bg-purple-900/20 p-1 rounded transition-all"
                   onClick={() => setShowHunterPicker(idx)}
                 >
                   {character ? (
                     <>
-                      <img 
-                        src={character.icon} 
+                      <img
+                        src={character.icon}
                         alt={character.name}
                         className="w-8 h-8 rounded-full mr-2"
                       />
                       <div className="flex-1">
-                        <p className="font-medium text-white text-sm">{character.name}</p>
+                        <p className="font-medium text-white text-sm">{
+                          character.name}</p>
                         <p className="text-xs text-gray-400">{character.class}</p>
                       </div>
                     </>
@@ -417,31 +563,104 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
                   <span className="text-purple-400 text-xs">▼</span>
                 </div>
 
-                {/* Hunter Sets & Stars - Compact */}
+                {/* Hunter Sets & Stars - Avec 2+2 support */}
                 <div className="space-y-1 mb-2">
-                  <div className="grid grid-cols-2 gap-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[9px] text-gray-400 flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={hunterLeftSplits[idx] || false}
+                        onChange={(e) => {
+                          setHunterLeftSplits({ ...hunterLeftSplits, [idx]: e.target.checked });
+                          if (!e.target.checked) {
+                            // Reset les sets split quand on décoche
+                            handleHunterUpdate(idx, 'leftSet1', '');
+                            handleHunterUpdate(idx, 'leftSet2', '');
+                          }
+                        }}
+                        className="mr-1"
+                      />
+                      2+2
+                    </label>
+                  </div>
+
+                  {hunterLeftSplits[idx] ? (
+                    <div className="grid grid-cols-2 gap-1">
+                      <select
+                        className="bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500"
+                        value={hunter?.leftSet1 || ''}
+                        onChange={(e) => handleHunterUpdate(idx, 'leftSet1', e.target.value)}
+                        title={hunter?.leftSet1 || 'Set G1'}
+                      >
+                        <option value="">Set G1</option>
+                        {leftArtifacts.map(a => (
+                          <option key={a.set} value={a.set} title={a.set}>
+                            {a.set}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500"
+                        value={hunter?.leftSet2 || ''}
+                        onChange={(e) => handleHunterUpdate(idx, 'leftSet2', e.target.value)}
+                        title={hunter?.leftSet2 || 'Set G2'}
+                      >
+                        <option value="">Set G2</option>
+                        {leftArtifacts.map(a => (
+                          <option key={a.set} value={a.set} title={a.set}>
+                            {a.set}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-1">
+                      <select
+                        className="bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500"
+                        value={hunter?.leftSet || ''}
+                        onChange={(e) => handleHunterUpdate(idx, 'leftSet', e.target.value)}
+                        title={hunter?.leftSet || 'Set Gauche'}
+                      >
+                        <option value="">Set G</option>
+                        {leftArtifacts.map(a => (
+                          <option key={a.set} value={a.set} title={a.set}>
+                            {a.set}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500"
+                        value={hunter?.rightSet || ''}
+                        onChange={(e) => handleHunterUpdate(idx, 'rightSet', e.target.value)}
+                        title={hunter?.rightSet || 'Set Droit'}
+                      >
+                        <option value="">Set D</option>
+                        {rightArtifacts.map(a => (
+                          <option key={a.set} value={a.set} title={a.set}>
+                            {a.set}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Set Droit séparé quand en mode 2+2 */}
+                  {hunterLeftSplits[idx] && (
                     <select
-                      className="bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500"
-                      value={hunter?.leftSet || ''}
-                      onChange={(e) => handleHunterUpdate(idx, 'leftSet', e.target.value)}
-                    >
-                      <option value="">Set G</option>
-                      {leftArtifacts.map(a => (
-                        <option key={a.set} value={a.set}>{a.set.substring(0, 8)}...</option>
-                      ))}
-                    </select>
-                    <select
-                      className="bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500"
+                      className="w-full bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500 mt-1"
                       value={hunter?.rightSet || ''}
                       onChange={(e) => handleHunterUpdate(idx, 'rightSet', e.target.value)}
+                      title={hunter?.rightSet || 'Set Droit'}
                     >
-                      <option value="">Set D</option>
+                      <option value="">Set Droit</option>
                       {rightArtifacts.map(a => (
-                        <option key={a.set} value={a.set}>{a.set.substring(0, 8)}...</option>
+                        <option key={a.set} value={a.set} title={a.set}>
+                          {a.set}
+                        </option>
                       ))}
                     </select>
-                  </div>
-                  
+                  )}
+
                   <div className="grid grid-cols-2 gap-1">
                     <div className="flex items-center gap-1">
                       <label className="text-[9px] text-gray-400">H:</label>
@@ -470,20 +689,61 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
                   </div>
                 </div>
 
-                {/* Damage */}
-                <input
-                  type="text"
-                  value={hunter?.damage === '' ? '' : (hunter?.damage?.toLocaleString() || '')}
-                  onChange={(e) => handleScoreChange('hunter', idx, e.target.value)}
-                  className="w-full bg-gray-800/80 text-white text-sm p-1 rounded mb-2 border border-gray-700 focus:border-purple-500"
-                  placeholder={hunterPreset?.expectedDamage || '0'}
-                />
+                {/* Damage avec barre de progression */}
+                <div className="space-y-1">
+                  <input
+                    type="text"
+                    value={hunter?.damage === '' ? '' : (hunter?.damage?.toLocaleString() || '')}
+                    onChange={(e) => handleScoreChange('hunter', idx, e.target.value)}
+                    className="w-full bg-gray-800/80 text-white text-sm p-1 rounded mb-1 border border-gray-700 focus:border-purple-500"
+                    placeholder={hunterPreset?.expectedDamage || '0'}
+                  />
+
+                  {/* Barre de progression si on a un character et une limite */}
+                  {character && character.bdgLimits && hunter?.damage > 0 && (
+                    <div className="relative h-2 bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className={`absolute left-0 top-0 h-full transition-all duration-300 ${getDamageProgressColor(
+                          hunter.damage,
+                          character.element?.toUpperCase() === scoreData.element
+                            ? character.bdgLimits.maxDamageOnElement
+                            : character.bdgLimits.maxDamageOffElement
+                        )
+                          }`}
+                        style={{
+                          width: `${Math.min(
+                            (hunter.damage / (character.element?.toUpperCase() === scoreData.element
+                              ? character.bdgLimits.maxDamageOnElement
+                              : character.bdgLimits.maxDamageOffElement)) * 100,
+                            120
+                          )}%`
+                        }}
+                      />
+                      <span className="absolute inset-0 flex items-center justify-center text-[8px] text-white font-medium">
+                        {Math.round((hunter.damage / (character.element?.toUpperCase() === scoreData.element
+                          ? character.bdgLimits.maxDamageOnElement
+                          : character.bdgLimits.maxDamageOffElement)) * 100)}%
+                      </span>
+                    </div>
+                  )}
+                </div>
 
                 {/* Final Stats - Avec gestion des importantStats */}
                 <div className="grid grid-cols-2 gap-1 text-xs">
                   {(() => {
-                    const statsToShow = character?.importantStats || ['atk', 'tc', 'dcc', 'defPen'];
-                    
+                    // IMPORTANT: Si pas de character, utiliser les clés des finalStats existantes
+                    let statsToShow;
+
+                    if (character?.importantStats) {
+                      statsToShow = character.importantStats;
+                    } else if (hunter?.finalStats && Object.keys(hunter.finalStats).length > 0) {
+                      // Garder les stats déjà définies
+                      statsToShow = Object.keys(hunter.finalStats);
+                    } else {
+                      // Fallback par défaut
+                      statsToShow = ['atk', 'tc', 'dcc', 'defPen'];
+                    }
+
                     const labelMap = {
                       'def': 'DEF',
                       'hp': 'HP',
@@ -495,10 +755,10 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
                       'mpcr': 'MPCR',
                       'mpa': 'MPA'
                     };
-                    
+
                     return statsToShow.map((statKey) => {
                       const label = labelMap[statKey] || statKey.toUpperCase();
-                      
+
                       return (
                         <div key={statKey}>
                           <label className="text-[9px] text-gray-500 block">{label}</label>
@@ -507,13 +767,10 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
                             value={hunter?.finalStats?.[statKey] || ''}
                             onChange={(e) => {
                               const newHunters = [...scoreData.hunters];
-                              newHunters[idx] = { 
-                                ...newHunters[idx],
-                                finalStats: {
-                                  ...(newHunters[idx].finalStats || {}),
-                                  [statKey]: e.target.value
-                                }
-                              };
+                              if (!newHunters[idx].finalStats) {
+                                newHunters[idx].finalStats = {};
+                              }
+                              newHunters[idx].finalStats[statKey] = e.target.value;
                               onUpdate({ ...scoreData, hunters: newHunters });
                             }}
                             className="w-full bg-gray-800/80 text-white text-xs p-1 rounded text-center border border-gray-700 focus:border-purple-500"
@@ -531,17 +788,17 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
       </div>
 
       {/* Rage Count - Inline */}
+      {/* Rage Count - Affichage automatique uniquement */}
       <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/80 rounded-xl p-3 border border-gray-700 shadow-xl flex items-center justify-between">
         <h3 className="text-lg font-bold text-white uppercase">Rage Count</h3>
-        <input
-          type="number"
-          value={scoreData.rageCount || 0}
-          onChange={(e) => onUpdate({ ...scoreData, rageCount: parseInt(e.target.value) || 0 })}
-          className="w-24 bg-gray-900/80 text-white p-2 rounded-lg border border-purple-500/30 focus:border-purple-400 focus:outline-none text-center"
-          placeholder="0"
-          min="0"
-          max="200"
-        />
+        <div className="flex items-center gap-4">
+          <div className="text-2xl font-bold text-purple-400">
+            RC {scoreData.rageCount || 0}
+          </div>
+          <span className="text-sm text-gray-400">
+            (Auto-calculé)
+          </span>
+        </div>
       </div>
 
       {/* Hunter Picker Modal */}
@@ -550,21 +807,103 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage }) => {
           <div className="bg-gray-900 rounded-xl p-4 max-w-3xl max-h-[70vh] overflow-y-auto border border-purple-500/50" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-white mb-3 uppercase">Choisir un Hunter</h3>
             <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
-              {charactersArray.filter(c => c.grade === 'SSR' || c.grade === 'SR').map(character => (
-                <div
-                  key={character.name}
-                  onClick={() => handleHunterChange(showHunterPicker, character)}
-                  className="cursor-pointer hover:bg-purple-900/20 p-2 rounded-lg transition-all hover:scale-105 border border-transparent hover:border-purple-500"
-                >
-                  <img 
-                    src={character.icon} 
-                    alt={character.name}
-                    className="w-12 h-12 rounded-full mx-auto mb-1"
-                  />
-                  <p className="text-xs text-center text-white">{character.name}</p>
-                  <p className="text-xs text-center text-gray-400">{character.class}</p>
-                </div>
-              ))}
+              {charactersArray
+                .filter(c => c.grade === 'SSR' || c.grade === 'SR')
+                .sort((a, b) => {
+    // Récupérer les positions
+    const posA = scoreData.hunters.findIndex(h => {
+      if (!h || !h.id) return false;
+      
+      // Cas spéciaux
+      if (h.id === "Lee" && a.name === "Lee Bora") return true;
+      if (h.id === "Mirei" && a.name === "Amamiya Mirei") return true;
+      
+      // Exclure Lee Johee du matching avec "Lee"
+      if (h.id === "Lee" && a.name === "Lee Johee") return false;
+      
+      return h.id === a.name || 
+             h.id === a.name.split(' ')[0] || 
+             h.id.toLowerCase() === a.name.toLowerCase() ||
+             h.id.toLowerCase() === a.name.split(' ')[0].toLowerCase();
+    });
+    
+    const posB = scoreData.hunters.findIndex(h => {
+      if (!h || !h.id) return false;
+      
+      // Cas spéciaux
+      if (h.id === "Lee" && b.name === "Lee Bora") return true;
+      if (h.id === "Mirei" && b.name === "Amamiya Mirei") return true;
+      
+      // Exclure Lee Johee du matching avec "Lee"
+      if (h.id === "Lee" && b.name === "Lee Johee") return false;
+      
+      return h.id === b.name || 
+             h.id === b.name.split(' ')[0] || 
+             h.id.toLowerCase() === b.name.toLowerCase() ||
+             h.id.toLowerCase() === b.name.split(' ')[0].toLowerCase();
+    });
+    
+    // 1. Les hunters avec position en premier (slot 1-6)
+    if (posA !== -1 && posB === -1) return -1;
+    if (posA === -1 && posB !== -1) return 1;
+    if (posA !== -1 && posB !== -1) return posA - posB;
+    
+    // 2. Ensuite les hunters du bon élément
+    const isElementA = a.element?.toUpperCase() === scoreData.element;
+    const isElementB = b.element?.toUpperCase() === scoreData.element;
+    if (isElementA && !isElementB) return -1;
+    if (!isElementA && isElementB) return 1;
+    
+    // 3. Enfin par ordre alphabétique
+    return a.name.localeCompare(b.name);
+  })
+                .map(character => {
+                  const isCurrentElement = character.element?.toUpperCase() === scoreData.element;
+                  const currentPosition = scoreData.hunters.findIndex(h => {
+                    if (!h || !h.id) return false;
+
+                    // Cas spécial pour Lee - on doit matcher "Lee" avec "Lee Bora" spécifiquement
+                    if (h.id === "Lee") {
+                      return character.name === "Lee Bora";
+                    }
+
+                    // Cas spécial pour Mirei - matcher "Mirei" avec "Amamiya Mirei"
+                    if (h.id === "Mirei") {
+                      return character.name === "Amamiya Mirei";
+                    }
+
+                    return h.id === character.name ||
+                      h.id === character.name.split(' ')[0] ||
+                      h.id.toLowerCase() === character.name.toLowerCase() ||
+                      h.id.toLowerCase() === character.name.split(' ')[0].toLowerCase();
+                  });
+
+                  return (
+                    <div
+                      key={character.name}
+                      onClick={() => handleHunterChange(showHunterPicker, character)}
+                      className={`cursor-pointer p-2 rounded-lg transition-all border-2 ${isCurrentElement
+                        ? 'hover:bg-purple-900/20 hover:scale-105 border-purple-500 bg-purple-900/10'
+                        : 'hover:bg-purple-900/20 hover:scale-105 border-transparent hover:border-purple-500'
+                        }`}
+                    >
+                      <img
+                        src={character.icon}
+                        alt={character.name}
+                        className="w-12 h-12 rounded-full mx-auto mb-1"
+                      />
+                      <p className="text-xs text-center text-white">{character.name}</p>
+                      <p className={`text-xs text-center ${isCurrentElement ? 'text-purple-400 font-bold' : 'text-gray-400'}`}>
+                        {character.class}
+                      </p>
+                      {currentPosition !== -1 && (
+                        <p className="text-xs text-center text-yellow-400 mt-1">
+                          Slot {currentPosition + 1}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
           </div>
         </div>

@@ -6760,18 +6760,19 @@ BobbyJones : "Allez l'Inter !"
                     />
                   ))}
 
-                                 {activeSection === 'artifacts' && (
-  <>
-    {/* ... autres composants ... */}
-    
-    {/* Ajouter BDG Score Card */}
-    <div className="w-full mt-6">
-      <BDGScoreCard 
-        showTankMessage={showTankMessage}
-      />
-    </div>
-  </>
-)}
+                  {activeSection === 'artifacts' && (
+                    <>
+                      {/* ... autres composants ... */}
+
+                      {/* Ajouter BDG Score Card */}
+                      <div className="w-full mt-6">
+                        <BDGScoreCard
+                          showTankMessage={showTankMessage}
+                          activeAccount={activeAccount}
+                        />
+                      </div>
+                    </>
+                  )}
 
                 </div>
 
@@ -8288,7 +8289,7 @@ BobbyJones : "Allez l'Inter !"
                   />
                 ))}
 
- 
+
 
               </div>
 

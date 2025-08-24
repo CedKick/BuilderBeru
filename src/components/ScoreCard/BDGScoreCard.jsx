@@ -3,14 +3,22 @@ import React, { useState, useEffect } from 'react';
 import BDGScorePage from './BDGScorePage';
 import bdgPresets from './bdgPresets.json';
 
-const BDGScoreCard = ({ showTankMessage }) => {
+
+
+const BDGScoreCard = ({ showTankMessage, activeAccount }) => {
   const [showBDGModal, setShowBDGModal] = useState(false);
-  const [currentWeekData, setCurrentWeekData] = useState(null);
+  let [currentWeekData, setCurrentWeekData] = useState(null);
+  const [selectedWeek] = useState(bdgPresets.currentWeek);
+currentWeekData = bdgPresets.weeks[selectedWeek];
 
   useEffect(() => {
     // Charger directement les données
     setCurrentWeekData(bdgPresets);
   }, []);
+
+  const handleClose = () => {
+  setShowBDGModal(false);
+};
 
   const handleClick = () => {
     if (currentWeekData) {
@@ -46,7 +54,7 @@ const BDGScoreCard = ({ showTankMessage }) => {
   <div className="relative w-full">
     <img 
       src={bossImages[currentWeekData.currentBoss] || bossImages.fatchna} 
-      alt={currentWeekData.bossName}
+      alt={currentWeekData.bossName}  
       className="w-full h-[120px] object-cover"
     />
     
@@ -85,10 +93,10 @@ const BDGScoreCard = ({ showTankMessage }) => {
 
       {showBDGModal && currentWeekData && (
         <BDGScorePage 
-          onClose={() => setShowBDGModal(false)}
-          weekData={currentWeekData}
-          showTankMessage={showTankMessage}
-        />
+  onClose={handleClose}
+  showTankMessage={showTankMessage}
+  activeAccount={activeAccount}
+/>
       )}
     </>
   );

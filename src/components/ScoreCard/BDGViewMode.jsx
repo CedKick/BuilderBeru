@@ -2,6 +2,7 @@
 import React from 'react';
 import { weaponData, runesData, blessingStonesData } from '../../data/itemData';
 import { characters } from '../../data/characters';
+import { statConversions, normalizeStatValue } from '../../utils/statConversions';
 
 const BDGViewMode = ({ preset, scoreData, showTankMessage }) => {
   // Vérifications de sécurité
@@ -9,44 +10,46 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage }) => {
     return <div className="text-white">Aucune donnée à afficher</div>;
   }
 
-  // Fonction pour récupérer le character depuis l'objet characters
-  const getCharacterData = (hunterId) => {
-    if (!hunterId) return null;
-    return characters[hunterId] || characters[hunterId?.toLowerCase()] || null;
-  };
+  // Fonction améliorée pour récupérer le character depuis l'objet characters
+ const getCharacterData = (hunterId) => {
+  if (!hunterId) return null;
 
-  // Formules de conversion pour l'affichage
-  const calculateTCPercentage = (value) => {
-    const num = parseFloat(value) || 0;
-    return (5 + (num / (num + 5000)) * 100).toFixed(1);
-  };
+  // D'abord essayer de trouver par la clé directe
+  let character = characters[hunterId] || 
+                  characters[hunterId.toLowerCase()] ||
+                  null;
 
-  const calculateDCCPercentage = (value) => {
-    const num = parseFloat(value) || 0;
-    return ((num + 1000) / (0.4 * num + 2000) * 100).toFixed(1);
-  };
+  // Si pas trouvé, chercher dans tous les personnages par nom
+  if (!character) {
+    for (const [key, char] of Object.entries(characters)) {
+      // Vérifier si le hunterId correspond au nom du personnage
+      if (char.name === hunterId || 
+          char.name.toLowerCase() === hunterId.toLowerCase() ||
+          char.name.split(' ')[0] === hunterId || // Premier nom seulement
+          char.name.split(' ')[0].toLowerCase() === hunterId.toLowerCase()) {
+        character = char;
+        break;
+      }
+    }
+  }
 
-  const calculateDIDefPercentage = (value) => {
-    const num = parseFloat(value) || 0;
-    return (num / (num + 50000) * 100).toFixed(1);
-  };
+  return character;
+};
 
   const formatStatWithPercentage = (value, type) => {
     if (!value) return '---';
     
-    const baseValue = value.toString().replace('%', '');
-    
-    switch(type) {
-      case 'tc':
-        return `${baseValue} (${calculateTCPercentage(baseValue)}%)`;
-      case 'dcc':
-        return `${baseValue} (${calculateDCCPercentage(baseValue)}%)`;
-      case 'di':
-      case 'defPen':
-        return `${baseValue} (${calculateDIDefPercentage(baseValue)}%)`;
-      default:
-        return value;
+    // Si c'est un type avec conversion
+    if (statConversions[type]) {
+      // Normaliser la valeur (convertir en stat brute si c'est un %)
+      const statValue = normalizeStatValue(value, type);
+      const percent = statConversions[type].toPercent(statValue);
+      return `${statValue.toLocaleString()} (${percent}%)`;
     }
+    
+    // Sinon retourner la valeur telle quelle
+    const stringValue = value.toString();
+    return stringValue.includes(',') ? value : value.toLocaleString();
   };
 
   const calculateContribution = (damage) => {
@@ -89,7 +92,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage }) => {
                 <div>
                   <span className="text-gray-500">Gauche:</span>
                   <span className="text-white ml-1">
-                    {scoreData.sung?.leftSet1 && scoreData.sung?.leftSet2 
+                    {scoreData.sung?.leftSet1 && scoreData.sung?.leftSet2
                       ? `${scoreData.sung.leftSet1} + ${scoreData.sung.leftSet2}`
                       : scoreData.sung?.leftSet || '---'}
                   </span>
@@ -111,8 +114,8 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage }) => {
                     <div key={idx} className="flex items-center gap-1">
                       <div className="border border-gray-600 rounded overflow-hidden">
                         {weapon ? (
-                          <img 
-                            src={weapon.src} 
+                          <img
+                            src={weapon.src}
                             alt={weapon.name}
                             className="w-10 h-10 object-cover"
                             title={weapon.name}
@@ -142,7 +145,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage }) => {
                   if (!skill) return (
                     <div key={idx} className="w-10 h-10 bg-gray-800 border border-gray-700 rounded" />
                   );
-                  
+
                   const skillData = runesData.find(r => r.name === (skill.name || skill));
                   const rarityBorder = {
                     rare: 'border-blue-500',
@@ -150,12 +153,12 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage }) => {
                     legendary: 'border-yellow-500',
                     mythic: 'border-red-500'
                   };
-                  
+
                   return (
                     <div key={idx} className={`border-2 rounded overflow-hidden ${rarityBorder[skill.rarity || 'mythic']}`}>
                       {skillData ? (
-                        <img 
-                          src={skillData.src} 
+                        <img
+                          src={skillData.src}
                           alt={skillData.name}
                           className="w-10 h-10 object-cover"
                           title={skillData.name}
@@ -183,17 +186,17 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage }) => {
                   if (!blessing) return (
                     <div key={idx} className="w-10 h-10 bg-gray-800 border border-gray-700 rounded" />
                   );
-                  
+
                   // Gérer l'ancien et le nouveau format
                   const blessingName = typeof blessing === 'string' ? blessing : blessing.name;
                   const blessingData = blessingStonesData.find(b => b.name === blessingName);
                   const borderColor = idx < 4 ? 'border-orange-500' : 'border-blue-500'; // Orange pour offensive, bleu pour défensive
-                  
+
                   return (
                     <div key={idx} className={`border-2 ${borderColor} rounded overflow-hidden`}>
                       {blessingData ? (
-                        <img 
-                          src={blessingData.src} 
+                        <img
+                          src={blessingData.src}
                           alt={blessingData.name}
                           className="w-10 h-10 object-cover"
                           title={blessingData.name}
@@ -230,32 +233,65 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage }) => {
                 <div className="flex justify-between">
                   <span className="text-gray-500">ATK:</span>
                   <span className="text-white">
-                    {scoreData.sung?.finalStats?.atk || 
-                     <span className="text-gray-600">{preset?.sung?.expectedStats?.atk || '---'}</span>}
+                    {scoreData.sung?.finalStats?.atk ?
+                      formatStatWithPercentage(scoreData.sung.finalStats.atk, 'atk') :
+                      <span className="text-gray-600">{preset?.sung?.expectedStats?.atk || '---'}</span>}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">TC:</span>
                   <span className="text-white">
-                    {scoreData.sung?.finalStats?.tc ? 
-                      formatStatWithPercentage(scoreData.sung.finalStats.tc, 'tc') : 
+                    {scoreData.sung?.finalStats?.tc ?
+                      formatStatWithPercentage(scoreData.sung.finalStats.tc, 'tc') :
                       <span className="text-gray-600">{preset?.sung?.expectedStats?.tc || '---'}</span>}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">DCC:</span>
                   <span className="text-white">
-                    {scoreData.sung?.finalStats?.dcc ? 
-                      formatStatWithPercentage(scoreData.sung.finalStats.dcc, 'dcc') : 
+                    {scoreData.sung?.finalStats?.dcc ?
+                      formatStatWithPercentage(scoreData.sung.finalStats.dcc, 'dcc') :
                       <span className="text-gray-600">{preset?.sung?.expectedStats?.dcc || '---'}</span>}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">DI:</span>
                   <span className="text-white">
-                    {scoreData.sung?.finalStats?.di ? 
-                      formatStatWithPercentage(scoreData.sung.finalStats.di, 'di') : 
+                    {scoreData.sung?.finalStats?.di ?
+                      formatStatWithPercentage(scoreData.sung.finalStats.di, 'di') :
                       <span className="text-gray-600">{preset?.sung?.expectedStats?.di || '---'}</span>}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">DEF P:</span>
+                  <span className="text-white">
+                    {scoreData.sung?.finalStats?.defPen ?
+                      formatStatWithPercentage(scoreData.sung.finalStats.defPen, 'defPen') :
+                      <span className="text-gray-600">{preset?.sung?.expectedStats?.defPen || '---'}</span>}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">PREC:</span>
+                  <span className="text-white">
+                    {scoreData.sung?.finalStats?.precision ?
+                      formatStatWithPercentage(scoreData.sung.finalStats.precision, 'precision') :
+                      <span className="text-gray-600">{preset?.sung?.expectedStats?.precision || '---'}</span>}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">MPCR:</span>
+                  <span className="text-white">
+                    {scoreData.sung?.finalStats?.mpcr ?
+                      formatStatWithPercentage(scoreData.sung.finalStats.mpcr, 'mpcr') :
+                      <span className="text-gray-600">{preset?.sung?.expectedStats?.mpcr || '---'}</span>}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">MPA:</span>
+                  <span className="text-white">
+                    {scoreData.sung?.finalStats?.mpa ?
+                      formatStatWithPercentage(scoreData.sung.finalStats.mpa, 'mpa') :
+                      <span className="text-gray-600">{preset?.sung?.expectedStats?.mpa || '---'}</span>}
                   </span>
                 </div>
               </div>
@@ -277,17 +313,17 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage }) => {
                 <p className="text-center text-gray-500 text-sm">Hunter {idx + 1}</p>
               </div>
             );
-            
+
             const character = hunter?.character || getCharacterData(hunter?.id);
             const hunterPreset = preset?.hunters?.[idx];
-            
+
             return (
               <div key={idx} className="bg-black/30 rounded-lg p-3 border border-purple-500/30">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
                     {character?.icon && (
-                      <img 
-                        src={character.icon} 
+                      <img
+                        src={character.icon}
                         alt={character.name}
                         className="w-8 h-8 rounded-full mr-2"
                       />
@@ -311,44 +347,59 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage }) => {
                     </p>
                   </div>
                 </div>
-                
+
                 {/* Hunter Sets */}
                 <div className="text-xs text-gray-400 mb-1">
                   Sets: {hunter.leftSet || '---'} / {hunter.rightSet || '---'}
                 </div>
                 
-                {/* Hunter Stats - Avec gestion des importantStats */}
-                <div className="grid grid-cols-2 gap-1 text-xs">
-                  {(() => {
-                    const statsToShow = character?.importantStats || ['atk', 'tc', 'dcc', 'defPen'];
-                    
-                    const labelMap = {
-                      'def': 'DEF',
-                      'hp': 'HP',
-                      'atk': 'ATK',
-                      'tc': 'TC',
-                      'dcc': 'DCC',
-                      'defPen': 'DEF P',
-                      'di': 'DI',
-                      'mpcr': 'MPCR',
-                      'mpa': 'MPA'
-                    };
-                    
-                    return statsToShow.map((statKey) => {
-                      const label = labelMap[statKey] || statKey.toUpperCase();
-                      
-                      return (
-                        <div key={statKey}>
-                          <p className="text-gray-500">{label}</p>
-                          <p className="text-white">
-                            {hunter.finalStats?.[statKey] || 
-                             <span className="text-gray-600">{hunterPreset?.expectedStats?.[statKey] || '---'}</span>}
-                          </p>
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
+                
+{/* Hunter Stats - Avec gestion des importantStats */}
+<div className="grid grid-cols-2 gap-1 text-xs">
+  {(() => {
+    // IMPORTANT: Si pas de character, utiliser les clés des finalStats sauvegardées
+    let statsToShow;
+    
+    if (character?.importantStats) {
+      statsToShow = character.importantStats;
+    } else if (hunter.finalStats && Object.keys(hunter.finalStats).length > 0) {
+      // Utiliser les clés présentes dans finalStats
+      statsToShow = Object.keys(hunter.finalStats);
+    } else {
+      // Fallback par défaut
+      statsToShow = ['atk', 'tc', 'dcc', 'defPen'];
+    }
+
+    const labelMap = {
+      'def': 'DEF',
+      'hp': 'HP',
+      'atk': 'ATK',
+      'tc': 'TC',
+      'dcc': 'DCC',
+      'defPen': 'DEF P',
+      'di': 'DI',
+      'mpcr': 'MPCR',
+      'mpa': 'MPA'
+    };
+
+    return statsToShow.map((statKey) => {
+      const label = labelMap[statKey] || statKey.toUpperCase();
+      const value = hunter.finalStats?.[statKey];
+      const presetValue = hunterPreset?.expectedStats?.[statKey];
+
+      return (
+        <div key={statKey}>
+          <p className="text-gray-500">{label}</p>
+          <p className="text-white">
+            {value ? 
+              formatStatWithPercentage(value, statKey) :
+              <span className="text-gray-600">{presetValue || '---'}</span>}
+          </p>
+        </div>
+      );
+    });
+  })()}
+</div>
               </div>
             );
           })}
