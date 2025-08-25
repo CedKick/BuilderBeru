@@ -216,7 +216,20 @@ const RC_THRESHOLDS_FATCHNA = [
   { rc: 81, damage: 44300000000 }
 ];
 
-const BDGScorePage = ({ onClose, showTankMessage, activeAccount }) => {
+const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildStats }) => {
+  // Détection mobile
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // Au début du composant, récupérer les données de la semaine
   const [selectedWeek, setSelectedWeek] = useState(bdgPresets.currentWeek);
   const weekData = bdgPresets.weeks[selectedWeek];
@@ -924,123 +937,230 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount }) => {
   const elementColors = {
     WIND: 'from-green-500 to-green-700',
     WATER: 'from-blue-500 to-blue-700',
-    FIRE: 'from-red-500 to-red-700'
+    FIRE: 'from-red-500 to-red-700',
+    LIGHT: 'from-yellow-500 to-yellow-700',
+    DARK: 'from-purple-500 to-purple-700'
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 rounded-xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-700 to-purple-800 p-4 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-white">BDG Score - {weekData.bossName}</h2>
-          <div className="flex gap-4 items-center">
-            {/* Sélecteur de semaine */}
-            <select
-              value={selectedWeek}
-              onChange={(e) => {
-                const newWeek = e.target.value;
-                if (bdgPresets.weeks[newWeek]) {
-                  setSelectedWeek(newWeek);
-                  // Reset les états
-                  setSelectedElement(bdgPresets.weeks[newWeek].elements[0]);
-                  setSelectedPreset('preset1');
-                  setEditMode(false);
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-gray-900 rounded-xl max-w-7xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Header - Mobile responsive */}
+        <div className="bg-gradient-to-r from-indigo-700 to-purple-800 p-3 sm:p-4">
+          {/* Desktop Header */}
+          <div className="hidden sm:flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-white">BDG Score - {weekData.bossName}</h2>
+            <div className="flex gap-4 items-center">
+              {/* Sélecteur de semaine */}
+              <select
+                value={selectedWeek}
+                onChange={(e) => {
+                  const newWeek = e.target.value;
+                  if (bdgPresets.weeks[newWeek]) {
+                    setSelectedWeek(newWeek);
+                    // Reset les états
+                    setSelectedElement(bdgPresets.weeks[newWeek].elements[0]);
+                    setSelectedPreset('preset1');
+                    setEditMode(false);
+                    setHasUnsavedChanges(false);
+                  }
+                }}
+                className="bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg text-white font-medium transition-colors border border-white/30"
+              >
+                {Object.keys(bdgPresets.weeks).map(weekId => (
+                  <option key={weekId} value={weekId} className="text-gray-900">
+                    Semaine {weekId.split('-W')[1]} - {bdgPresets.weeks[weekId].bossName}
+                  </option>
+                ))}
+              </select>
+              {/* Sélecteur de preset */}
+              <select
+                value={selectedPreset}
+                onChange={(e) => {
+                  if (hasUnsavedChanges && !confirm('Changer de preset ? Les modifications non sauvegardées seront perdues.')) {
+                    return;
+                  }
+                  // Supprimer le brouillon actuel si on change
+                  const draftKey = `bdg_draft_${weekData.weekId}_${selectedElement}_${selectedPreset}`;
+                  localStorage.removeItem(draftKey);
+
+                  setSelectedPreset(e.target.value);
                   setHasUnsavedChanges(false);
-                }
-              }}
-              className="bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg text-white font-medium transition-colors border border-white/30"
-            >
-              {Object.keys(bdgPresets.weeks).map(weekId => (
-                <option key={weekId} value={weekId} className="text-gray-900">
-                  Semaine {weekId.split('-W')[1]} - {bdgPresets.weeks[weekId].bossName}
-                </option>
-              ))}
-            </select>
-            {/* Sélecteur de preset - maintenant pour tous les éléments */}
-            <select
-              value={selectedPreset}
-              onChange={(e) => {
-                if (hasUnsavedChanges && !confirm('Changer de preset ? Les modifications non sauvegardées seront perdues.')) {
-                  return;
-                }
-                // Supprimer le brouillon actuel si on change
-                const draftKey = `bdg_draft_${weekData.weekId}_${selectedElement}_${selectedPreset}`;
-                localStorage.removeItem(draftKey);
+                }}
+                className="bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg text-white font-medium transition-colors border border-white/30"
+                disabled={editMode}
+              >
+                {/* Presets de base */}
+                {(() => {
+                  const elementData = weekData.presets?.[selectedElement];
+                  if (elementData?.presets) {
+                    return Object.entries(elementData.presets).map(([key, preset]) => (
+                      <option key={key} value={key} className="text-gray-900">
+                        📋 {preset.name || key}
+                      </option>
+                    ));
+                  } else if (elementData) {
+                    return <option value="preset1" className="text-gray-900">📋 Preset par défaut</option>;
+                  }
+                  return null;
+                })()}
 
-                setSelectedPreset(e.target.value);
-                setHasUnsavedChanges(false);
-              }}
-              className="bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg text-white font-medium transition-colors border border-white/30"
-              disabled={editMode}
-            >
-              {/* Presets de base */}
-              {(() => {
-                const elementData = weekData.presets?.[selectedElement];
-                if (elementData?.presets) {
-                  return Object.entries(elementData.presets).map(([key, preset]) => (
-                    <option key={key} value={key} className="text-gray-900">
-                      📋 {preset.name || key}
-                    </option>
-                  ));
-                } else if (elementData) {
-                  return <option value="preset1" className="text-gray-900">📋 Preset par défaut</option>;
-                }
-                return null;
-              })()}
+                {/* Presets personnalisés */}
+                {customPresets[selectedElement] && Object.entries(customPresets[selectedElement]).map(([key, preset]) => (
+                  <option key={key} value={key} className="text-gray-900">
+                    ⭐ {preset.name}
+                  </option>
+                ))}
+              </select>
 
-              {/* Presets personnalisés */}
-              {customPresets[selectedElement] && Object.entries(customPresets[selectedElement]).map(([key, preset]) => (
-                <option key={key} value={key} className="text-gray-900">
-                  ⭐ {preset.name}
-                </option>
-              ))}
-            </select>
+              {/* Boutons d'édition */}
+              {editMode && (
+                <>
+                  <button
+                    onClick={resetToBasePreset}
+                    className="bg-yellow-600/80 hover:bg-yellow-600 px-3 py-2 rounded-lg text-white font-medium transition-colors"
+                    title="Réinitialiser au preset de base"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    onClick={() => setShowSavePresetModal(true)}
+                    className="bg-blue-600/80 hover:bg-blue-600 px-3 py-2 rounded-lg text-white font-medium transition-colors"
+                  >
+                    Ajouter preset
+                  </button>
+                  {selectedPreset.startsWith('custom_') && (
+                    <button
+                      onClick={() => deleteCustomPreset(selectedPreset)}
+                      className="bg-red-600/80 hover:bg-red-600 px-3 py-2 rounded-lg text-white font-medium transition-colors"
+                      title="Supprimer ce preset personnalisé"
+                    >
+                      🗑️
+                    </button>
+                  )}
+                </>
+              )}
 
-            {/* Boutons d'édition */}
+              <button
+                onClick={() => setEditMode(!editMode)}
+                className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-white font-medium transition-colors"
+              >
+                {editMode ? 'Visualiser' : 'Éditer'}
+              </button>
+              <button
+                onClick={onClose}
+                className="text-white hover:text-gray-300 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Header */}
+          <div className="sm:hidden">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-lg font-bold text-white">BDG - {weekData.bossName}</h2>
+              <button
+                onClick={onClose}
+                className="text-white hover:text-gray-300 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* Mobile Controls */}
+            <div className="flex gap-2 flex-wrap">
+              <select
+                value={selectedWeek}
+                onChange={(e) => {
+                  const newWeek = e.target.value;
+                  if (bdgPresets.weeks[newWeek]) {
+                    setSelectedWeek(newWeek);
+                    setSelectedElement(bdgPresets.weeks[newWeek].elements[0]);
+                    setSelectedPreset('preset1');
+                    setEditMode(false);
+                    setHasUnsavedChanges(false);
+                  }
+                }}
+                className="bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-white text-sm flex-1"
+              >
+                {Object.keys(bdgPresets.weeks).map(weekId => (
+                  <option key={weekId} value={weekId} className="text-gray-900">
+                    S{weekId.split('-W')[1]}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={selectedPreset}
+                onChange={(e) => {
+                  if (hasUnsavedChanges && !confirm('Changer de preset ?')) return;
+                  const draftKey = `bdg_draft_${weekData.weekId}_${selectedElement}_${selectedPreset}`;
+                  localStorage.removeItem(draftKey);
+                  setSelectedPreset(e.target.value);
+                  setHasUnsavedChanges(false);
+                }}
+                className="bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-white text-sm flex-1"
+                disabled={editMode}
+              >
+                {(() => {
+                  const elementData = weekData.presets?.[selectedElement];
+                  if (elementData?.presets) {
+                    return Object.entries(elementData.presets).map(([key, preset]) => (
+                      <option key={key} value={key} className="text-gray-900">
+                        {preset.name || key}
+                      </option>
+                    ));
+                  } else if (elementData) {
+                    return <option value="preset1" className="text-gray-900">Défaut</option>;
+                  }
+                  return null;
+                })()}
+                {customPresets[selectedElement] && Object.entries(customPresets[selectedElement]).map(([key, preset]) => (
+                  <option key={key} value={key} className="text-gray-900">
+                    ⭐ {preset.name}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={() => setEditMode(!editMode)}
+                className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-white text-sm"
+              >
+                {editMode ? 'View' : 'Edit'}
+              </button>
+            </div>
+
+            {/* Mobile Edit Actions */}
             {editMode && (
-              <>
+              <div className="flex gap-2 mt-2">
                 <button
                   onClick={resetToBasePreset}
-                  className="bg-yellow-600/80 hover:bg-yellow-600 px-3 py-2 rounded-lg text-white font-medium transition-colors"
-                  title="Réinitialiser au preset de base"
+                  className="bg-yellow-600/80 hover:bg-yellow-600 px-2 py-1 rounded text-white text-sm flex-1"
                 >
                   Reset
                 </button>
                 <button
                   onClick={() => setShowSavePresetModal(true)}
-                  className="bg-blue-600/80 hover:bg-blue-600 px-3 py-2 rounded-lg text-white font-medium transition-colors"
+                  className="bg-blue-600/80 hover:bg-blue-600 px-2 py-1 rounded text-white text-sm flex-1"
                 >
-                  Ajouter preset
+                  + Preset
                 </button>
                 {selectedPreset.startsWith('custom_') && (
                   <button
                     onClick={() => deleteCustomPreset(selectedPreset)}
-                    className="bg-red-600/80 hover:bg-red-600 px-3 py-2 rounded-lg text-white font-medium transition-colors"
-                    title="Supprimer ce preset personnalisé"
+                    className="bg-red-600/80 hover:bg-red-600 px-2 py-1 rounded text-white text-sm"
                   >
                     🗑️
                   </button>
                 )}
-              </>
+              </div>
             )}
-
-            <button
-              onClick={() => setEditMode(!editMode)}
-              className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-white font-medium transition-colors"
-            >
-              {editMode ? 'Visualiser' : 'Éditer'}
-            </button>
-            <button
-              onClick={onClose}
-              className="text-white hover:text-gray-300 text-2xl font-bold"
-            >
-              ×
-            </button>
           </div>
         </div>
 
-        {/* Element Selector */}
-        <div className="bg-gray-800 p-4 flex gap-4 justify-center">
+        {/* Element Selector - Mobile responsive */}
+        <div className="bg-gray-800 p-3 sm:p-4 flex gap-2 sm:gap-4 justify-center overflow-x-auto">
           {weekData.elements.map(element => (
             <button
               key={element}
@@ -1052,18 +1172,19 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount }) => {
                 setHasUnsavedChanges(false);
                 setScoreData(prev => ({ ...prev, element }));
               }}
-              className={`px-6 py-3 rounded-lg font-bold transition-all transform hover:scale-105 ${selectedElement === element
+              className={`px-3 py-2 sm:px-6 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 text-sm sm:text-base whitespace-nowrap ${
+                selectedElement === element
                   ? `bg-gradient-to-r ${elementColors[element]} text-white shadow-lg`
                   : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
-                }`}
+              }`}
             >
               {element}
             </button>
           ))}
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-950">
+        {/* Content - Mobile responsive */}
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-gray-950">
           {(() => {
             // Déterminer le preset actuel à passer aux composants
             let currentPreset = {};
@@ -1091,31 +1212,34 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount }) => {
                 }}
                 showTankMessage={showTankMessage}
                 onValidate={() => handleValidate(currentPreset)}
+                isMobile={isMobile}
+                currentBuildStats={currentBuildStats}
               />
             ) : (
               <BDGViewMode
                 preset={currentPreset}
                 scoreData={scoreData}
                 showTankMessage={showTankMessage}
+                isMobile={isMobile}
               />
             );
           })()}
         </div>
 
-        {/* Footer avec actions */}
-        <div className="bg-gray-800 p-4 flex justify-between items-center">
-          <div className="text-white">
-            <span className="text-sm text-gray-400">Score Total: </span>
-            <span className="text-2xl font-bold text-purple-400">
+        {/* Footer avec actions - Mobile responsive */}
+        <div className="bg-gray-800 p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+          <div className="text-white text-center sm:text-left">
+            <span className="text-xs sm:text-sm text-gray-400">Score Total: </span>
+            <span className="text-xl sm:text-2xl font-bold text-purple-400">
               {(scoreData.totalScore || calculateTotalScore()).toLocaleString()}
             </span>
             {scoreData.rageCount > 0 && (
-              <span className="ml-4 text-sm text-gray-400">
-                Rage: {scoreData.rageCount}
+              <span className="ml-2 sm:ml-4 text-xs sm:text-sm text-gray-400">
+                RC: {scoreData.rageCount}
               </span>
             )}
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-3 w-full sm:w-auto">
             {editMode && (
               <button
                 onClick={() => {
@@ -1135,14 +1259,14 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount }) => {
 
                   handleValidate(currentPreset);
                 }}
-                className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg text-white font-medium transition-colors"
+                className="bg-green-600 hover:bg-green-700 px-4 py-2 sm:px-6 sm:py-2 rounded-lg text-white font-medium transition-colors flex-1 sm:flex-initial"
               >
                 Valider
               </button>
             )}
             <button
               onClick={handleShare}
-              className="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg text-white font-medium transition-colors disabled:opacity-50"
+              className="bg-purple-600 hover:bg-purple-700 px-4 py-2 sm:px-6 sm:py-2 rounded-lg text-white font-medium transition-colors disabled:opacity-50 flex-1 sm:flex-initial"
               disabled={editMode || calculateTotalScore() === 0}
             >
               Partager
@@ -1156,112 +1280,113 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount }) => {
         <SavePresetModal
           onSave={(name) => {
             saveCustomPreset(name);
-            setShowSavePresetModal(false);
-          }}
-          onCancel={() => setShowSavePresetModal(false)}
-        />
-      )}
+           SavePresetModal(false);
+         }}
+         isMobile={isMobile}
+       />
+     )}
 
-      {/* Modal d'avertissement build incomplet */}
-      {showBuildWarning && (
-        <BuildWarningModal
-          warnings={buildWarnings}
-          onProceed={() => {
-            setShowBuildWarning(false);
-            showTankMessage("Tu peux continuer mais les stats seront incomplètes !", true, 'tank');
-          }}
-          onBuildNow={() => {
-            onClose();
-            showTankMessage("Va compléter tes builds d'abord !", true, 'beru');
-          }}
-        />
-      )}
-    </div>
-  );
+     {/* Modal d'avertissement build incomplet */}
+     {showBuildWarning && (
+       <BuildWarningModal
+         warnings={buildWarnings}
+         onProceed={() => {
+           setShowBuildWarning(false);
+           showTankMessage("Tu peux continuer mais les stats seront incomplètes !", true, 'tank');
+         }}
+         onBuildNow={() => {
+           onClose();
+           showTankMessage("Va compléter tes builds d'abord !", true, 'beru');
+         }}
+         isMobile={isMobile}
+       />
+     )}
+   </div>
+ );
 };
 
-const BuildWarningModal = ({ warnings, onProceed, onBuildNow }) => (
-  <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
-    <div className="bg-gray-900 rounded-xl p-6 max-w-md border-2 border-yellow-500">
-      <h3 className="text-xl font-bold text-yellow-400 mb-4">
-        Build Incomplet Détecté
-      </h3>
+const BuildWarningModal = ({ warnings, onProceed, onBuildNow, isMobile }) => (
+ <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
+   <div className={`bg-gray-900 rounded-xl p-4 sm:p-6 max-w-md border-2 border-yellow-500 ${isMobile ? 'w-full' : ''}`}>
+     <h3 className="text-lg sm:text-xl font-bold text-yellow-400 mb-4">
+       Build Incomplet Détecté
+     </h3>
 
-      <div className="space-y-2 mb-6">
-        {warnings.map((warning, idx) => (
-          <div key={idx} className="text-yellow-300 text-sm flex items-start">
-            <span className="mr-2">•</span>
-            <span>{warning.message}</span>
-          </div>
-        ))}
-      </div>
+     <div className="space-y-2 mb-6">
+       {warnings.map((warning, idx) => (
+         <div key={idx} className="text-yellow-300 text-sm flex items-start">
+           <span className="mr-2">•</span>
+           <span>{warning.message}</span>
+         </div>
+       ))}
+     </div>
 
-      <p className="text-gray-300 mb-6">
-        Les stats affichées seront incomplètes. Que veux-tu faire ?
-      </p>
+     <p className="text-gray-300 mb-6 text-sm sm:text-base">
+       Les stats affichées seront incomplètes. Que veux-tu faire ?
+     </p>
 
-      <div className="flex gap-3">
-        <button
-          onClick={onBuildNow}
-          className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded transition-colors"
-        >
-          Compléter le Build
-        </button>
+     <div className="flex gap-3">
+       <button
+         onClick={onBuildNow}
+         className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-3 sm:px-4 rounded transition-colors text-sm sm:text-base"
+       >
+         Compléter le Build
+       </button>
 
-        <button
-          onClick={onProceed}
-          className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded transition-colors"
-        >
-          Continuer quand même
-        </button>
-      </div>
-    </div>
-  </div>
+       <button
+         onClick={onProceed}
+         className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 sm:px-4 rounded transition-colors text-sm sm:text-base"
+       >
+         Continuer quand même
+       </button>
+     </div>
+   </div>
+ </div>
 );
 
-const SavePresetModal = ({ onSave, onCancel }) => {
-  const [presetName, setPresetName] = useState('');
+const SavePresetModal = ({ onSave, onCancel, isMobile }) => {
+ const [presetName, setPresetName] = useState('');
 
-  return (
-    <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
-      <div className="bg-gray-900 rounded-xl p-6 max-w-md border-2 border-purple-500">
-        <h3 className="text-xl font-bold text-white mb-4">
-          Sauvegarder comme nouveau preset
-        </h3>
+ return (
+   <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
+     <div className={`bg-gray-900 rounded-xl p-4 sm:p-6 max-w-md border-2 border-purple-500 ${isMobile ? 'w-full' : ''}`}>
+       <h3 className="text-lg sm:text-xl font-bold text-white mb-4">
+         Sauvegarder comme nouveau preset
+       </h3>
 
-        <input
-          type="text"
-          value={presetName}
-          onChange={(e) => setPresetName(e.target.value)}
-          placeholder="Nom du preset..."
-          className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-purple-500 focus:outline-none mb-4"
-          autoFocus
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && presetName.trim()) {
-              onSave(presetName.trim());
-            }
-          }}
-        />
+       <input
+         type="text"
+         value={presetName}
+         onChange={(e) => setPresetName(e.target.value)}
+         placeholder="Nom du preset..."
+         className="w-full bg-gray-800 text-white px-3 sm:px-4 py-2 rounded-lg border border-gray-700 focus:border-purple-500 focus:outline-none mb-4 text-sm sm:text-base"
+         autoFocus
+         onKeyDown={(e) => {
+           if (e.key === 'Enter' && presetName.trim()) {
+             onSave(presetName.trim());
+           }
+         }}
+       />
 
-        <div className="flex gap-3">
-          <button
-            onClick={() => onSave(presetName.trim())}
-            disabled={!presetName.trim()}
-            className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white py-2 px-4 rounded transition-colors"
-          >
-            Sauvegarder
-          </button>
+       <div className="flex gap-3">
+         <button
+           onClick={() => onSave(presetName.trim())}
+           disabled={!presetName.trim()}
+           className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white py-2 px-3 sm:px-4 rounded transition-colors text-sm sm:text-base"
+         >
+           Sauvegarder
+         </button>
 
-          <button
-            onClick={onCancel}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded transition-colors"
-          >
-            Annuler
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+         <button
+           onClick={onCancel}
+           className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 sm:px-4 rounded transition-colors text-sm sm:text-base"
+         >
+           Annuler
+         </button>
+       </div>
+     </div>
+   </div>
+ );
 };
 
 export default BDGScorePage;

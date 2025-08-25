@@ -1,5 +1,143 @@
 {
   "weeks": {
+  
+"2025-W35": {
+  "weekId": "2025-W35",
+  "startDate": "2025-08-28",
+  "endDate": "2025-09-03",
+  "currentBoss": "statue",
+  "bossName": "Statue",
+  "elements": [
+    "LIGHT",
+    "DARK", 
+    "WATER"
+  ],
+  "scoringLimits": {
+    "maxTotalScore": 75000000000,
+    "maxSungScore": 3000000000,
+    "maxHunterScore": 72000000000
+  },
+  "presets": {
+    "LIGHT": {
+      "sung": {
+        "weapons": [],
+        "weaponStars": [10, 10],
+        "leftSet": "",
+        "rightSet": "",
+        "skills": [
+              {
+                "name": "vacuum wave",
+                "rarity": "mythic"
+              },
+              {
+                "name": "cold ice",
+                "rarity": "mythic"
+              },
+              {
+                "name": "king's domain",
+                "rarity": "mythic"
+              },
+              {
+                "name": "squall",
+                "rarity": "mythic"
+              },
+              {
+                "name": "thunderstorm",
+                "rarity": "mythic"
+              },
+              {
+                "name": "shadow step",
+                "rarity": "mythic"
+              }
+            ],
+        "blessings": [
+              {
+                "name": "bloodlust",
+                "type": "offensive"
+              },
+              {
+                "name": "sharp perception",
+                "type": "offensive"
+              },
+              {
+                "name": "reawakening",
+                "type": "offensive"
+              },
+              {
+                "name": "we are one",
+                "type": "offensive"
+              },
+              {
+                "name": "aggresive defense",
+                "type": "defensive"
+              },
+              {
+                "name": "natural disaster",
+                "type": "defensive"
+              },
+              {
+                "name": "kasaka's steel scales",
+                "type": "defensive"
+              },
+              {
+                "name": "life",
+                "type": "defensive"
+              }
+            ],
+            "baseStats": {
+              "str": 300,
+              "int": 459,
+              "vit": 0,
+              "per": 0,
+              "agi": 0
+            },
+            "expectedStats": {
+              "atk": "55000-60000",
+              "tc": "10000-14000",
+              "dcc": "21000-23000",
+              "di": "22000-24000",
+              "defPen": "35-2500",
+              "precision": "2500-3000",
+              "mpcr": "94-2500",
+              "mpa": "2500-3100"
+            }
+      },
+      "hunters": []
+    },
+    "DARK": {
+      "sung": {
+        "weapons": [],
+        "weaponStars": [10, 10],
+        "leftSet": "",
+        "rightSet": "",
+        "baseStats": {
+          "str": 300,
+          "int": 459,
+          "vit": 0,
+          "per": 0,
+          "agi": 0
+        }
+      },
+      "hunters": []
+    },
+    "WATER": {
+      "sung": {
+        "weapons": [],
+        "weaponStars": [10, 10],
+        "leftSet": "",
+        "rightSet": "",
+        "baseStats": {
+          "str": 300,
+          "int": 459,
+          "vit": 0,
+          "per": 0,
+          "agi": 0
+        }
+      },
+      "hunters": []
+    }
+  }
+},
     "2025-W34": {
       "weekId": "2025-W34",
       "startDate": "2025-08-21",
@@ -109,7 +247,7 @@
           },
           "hunters": [
             {
-              "id": "Jinah",
+              "id": "jinah",
               "position": 0,
               "stars": 10,
               "weaponStars": 10,
@@ -128,7 +266,7 @@
               "expectedDamage": "300000-500000"
             },
             {
-              "id": "Goto",
+              "id": "goto",
               "position": 1,
               "stars": 10,
               "weaponStars": 10,
@@ -147,7 +285,7 @@
               "expectedDamage": "250000-400000"
             },
             {
-              "id": "Niermann",
+              "id": "niermann",
               "position": 2,
               "stars": 10,
               "weaponStars": 10,

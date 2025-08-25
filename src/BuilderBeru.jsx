@@ -126,7 +126,7 @@ const tankPhrases = [
   "Artifacts don't roll themselves, you know.",
   "Another +0 Helmet? Really?",
   "This chest piece looks... cursed.",
-  "I saw Sung Jin-Woo roll better than that.",
+  "I saw Sung Jinwoo roll better than that.",
   "The Gagold guild expects greatness!",
   "Legends say BobbyJones kicked someone for missing 1 BDG.",
   "Is this build Gagold-approved?",
@@ -3730,6 +3730,18 @@ BobbyJones : "Allez l'Inter !"
       artifactsData,
       hunterCores: hunterCores[selectedCharacter] || {},
       hunterWeapons: hunterWeapons[selectedCharacter] || {},
+      calculatedFinalStats: {
+        'Attack': (finalStatsWithoutArtefact['Attack'] || 0) + (statsFromArtifacts['Attack'] || 0),
+        'Defense': (finalStatsWithoutArtefact['Defense'] || 0) + (statsFromArtifacts['Defense'] || 0),
+        'HP': (finalStatsWithoutArtefact['HP'] || 0) + (statsFromArtifacts['HP'] || 0),
+        'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
+        'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
+        'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
+        'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
+        'MP Consumption Reduction': (finalStatsWithoutArtefact['MP Consumption Reduction'] || 0) + (statsFromArtifacts['MP Consumption Reduction'] || 0),
+        'MP': (finalStatsWithoutArtefact['MP'] || 0) + (statsFromArtifacts['MP'] || 0),
+        'Precision': (finalStatsWithoutArtefact['Precision'] || 0) + (statsFromArtifacts['Precision'] || 0)
+      }
     };
 
     if (isImportedBuild) {
@@ -4486,7 +4498,7 @@ BobbyJones : "Allez l'Inter !"
   // 📡 Rapport : "Il a cliqué 7 fois sur 'Save' en moins de 30 secondes."
 
   // Conseil Gagold : Tank s'est roulé par terre. 😐
-  // Sung Jin-Woo : "On perd notre temps. Qu'on l'écrase."
+  // Sung Jinwoo : "On perd notre temps. Qu'on l'écrase."
 
   // Calcul de la sentence... Unités d'ombre : OK. Béru : OK 😈. Tank : mange une pomme 🍎
 
@@ -6055,6 +6067,36 @@ BobbyJones : "Allez l'Inter !"
                         />
                       ))}
 
+                      {activeSection === 'artifacts' && (
+                        <>
+                          {/* ... autres composants ... */}
+
+                          {/* Ajouter BDG Score Card */}
+                          <div className="w-full mt-6">
+                            <BDGScoreCard
+                              showTankMessage={showTankMessage}
+                              activeAccount={activeAccount}
+                              currentBuildStats={{
+                                selectedCharacter: selectedCharacter,
+                                finalStats: (() => {
+                                  const scaleStat = characters[selectedCharacter]?.scaleStat;
+                                  return {
+                                    [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
+                                    'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
+                                    'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
+                                    'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
+                                    'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
+                                    'MP Consumption Reduction': (finalStatsWithoutArtefact['MP Consumption Reduction'] || 0) + (statsFromArtifacts['MP Consumption Reduction'] || 0),
+                                    'MP': (finalStatsWithoutArtefact['MP'] || 0) + (statsFromArtifacts['MP'] || 0),
+                                    [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
+                                  };
+                                })()
+                              }}
+                            />
+                          </div>
+                        </>
+                      )}
+
                     </div>
                   </div>
                 )}
@@ -6769,6 +6811,22 @@ BobbyJones : "Allez l'Inter !"
                         <BDGScoreCard
                           showTankMessage={showTankMessage}
                           activeAccount={activeAccount}
+                          currentBuildStats={{
+                            selectedCharacter: selectedCharacter,
+                            finalStats: (() => {
+                              const scaleStat = characters[selectedCharacter]?.scaleStat;
+                              return {
+                                [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
+                                'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
+                                'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
+                                'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
+                                'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
+                                'MP Consumption Reduction': (finalStatsWithoutArtefact['MP Consumption Reduction'] || 0) + (statsFromArtifacts['MP Consumption Reduction'] || 0),
+                                'MP': (finalStatsWithoutArtefact['MP'] || 0) + (statsFromArtifacts['MP'] || 0),
+                                [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
+                              };
+                            })()
+                          }}
                         />
                       </div>
                     </>
