@@ -148,8 +148,8 @@
     "bobby": [
       "ボスを逃したらBobbyJonesに怒られます...",
       "デイリーを忘れたら、BobbyJonesを呼びます。",
-      "BDGを一つ逃せば除名。ガゴルドのルールです。",
-      "ランクを尊敬し、BDGを恐れろ。"
+      "ギルドボスを一つ逃せば除名。ガゴルドのルールです。",
+      "ランクを尊敬し、ギルドボスを恐れろ。"
     ],
     "food": [
       "タンク：「アーティファクトは愛せるのか？」...腹が減った。",
@@ -1118,6 +1118,134 @@
     },
     "settings": {
       "calculatorMode": "計算機モード"
+    }
+  },
+  "bdg": {
+    "title": "ギルドボススコア",
+    "currentBoss": "現在のボス",
+    "week": "第{{week}}週",
+    "selectWeek": "週を選択",
+    "selectPreset": "プリセット選択",
+    "selectElement": "属性選択",
+    "edit": "編集",
+    "view": "表示",
+    "validate": "確定",
+    "share": "共有",
+    "reset": "リセット",
+    "addPreset": "+ プリセット",
+    "deletePreset": "プリセット削除",
+    "totalScore": "総合スコア",
+    "rageCount": "レイジカウント",
+    "autoCalculated": "(自動計算)",
+    "contribution": "貢献度",
+    "damage": "ダメージ",
+    "sets": {
+      "title": "セット",
+      "left": "左",
+      "leftShort": "左",
+      "right": "右",
+      "rightShort": "右",
+      "set1": "セット左1",
+      "set2": "セット左2",
+      "split": "2+2"
+    },
+    "weapons": {
+      "title": "武器",
+      "weapon": "武器",
+      "stars": "星"
+    },
+    "skills": {
+      "title": "スキル",
+      "skill": "S{{index}}",
+      "rarity": {
+        "rare": "R",
+        "epic": "E",
+        "legendary": "L",
+        "mythic": "M"
+      }
+    },
+    "blessings": {
+      "title": "祝福",
+      "offensive": "攻",
+      "defensive": "防"
+    },
+    "stats": {
+      "base": "基本ステータス",
+      "final": "最終ステータス",
+      "import": "ビルドからステータスをインポート",
+      "str": "STR",
+      "int": "INT",
+      "vit": "VIT",
+      "per": "PER",
+      "agi": "AGI",
+      "atk": "攻撃力",
+      "tc": "クリティカル率",
+      "dcc": "クリティカルダメージ",
+      "di": "ダメージ増加",
+      "defPen": "防御貫通",
+      "precision": "精密度",
+      "mpcr": "MP消費減少",
+      "mpa": "MP",
+      "def": "防御力",
+      "hp": "HP"
+    },
+    "hunters": {
+      "title": "ハンター",
+      "hunter": "ハンター {{index}}",
+      "select": "クリックして選択",
+      "choose": "ハンターを選択",
+      "stars": {
+        "hunter": "H",
+        "weapon": "W"
+      }
+    },
+    "preset": {
+      "default": "デフォルトプリセット",
+      "defaultPreset": "デフォルト",
+      "custom": "カスタムプリセット",
+      "save": "新規プリセットとして保存",
+      "name": "プリセット名",
+      "saveButton": "保存",
+      "cancel": "キャンセル",
+      "deleteConfirm": "このプリセットを削除しますか？"
+    },
+    "messages": {
+      "loadingPreset": "プリセットを読み込み中...",
+      "loadingData": "ビルドデータを読み込み中...",
+      "modificationsSaved": "変更が保存されました！",
+      "modificationsRestored": "未保存の変更が復元されました",
+      "errorSaving": "保存中にエラー",
+      "errorDeleting": "削除中にエラー",
+      "presetAdded": "プリセット「{{name}}」が追加されました！",
+      "presetDeleted": "プリセット削除済み",
+      "resetConfirm": "ベースプリセットにリセットしますか？未保存の変更は失われます。",
+      "resetDone": "ベースプリセットにリセット",
+      "changeElementConfirm": "属性を変更しますか？未保存の変更は失われます。",
+      "changePresetConfirm": "プリセットを変更しますか？未保存の変更は失われます。",
+      "scoreTooHigh": "スコアが高すぎます！データを確認してください。",
+      "limitExceeded": "{{name}}の制限超過：最大{{max}}B（制限の120％）",
+      "limitExceededSung": "水篠旬の制限超過（{{mode}}モード）：最大{{max}}B",
+      "noBuildFound": "ビルドが見つかりません",
+      "noBuildSaved": "{{name}}の保存済みビルドがありません",
+      "statsImported": "ビルドからステータスをインポートしました！",
+      "statsImportedFor": "{{name}}のステータスをインポートしました！",
+      "errorImporting": "インポートエラー",
+      "selectHunterFirst": "最初にハンターを選択してください",
+      "exchangedPosition": "{{name}}の位置が入れ替わりました！",
+      "shareComingSoon": "共有機能は準備中です！",
+      "errorUserData": "エラー：ユーザーデータが見つかりません"
+    },
+    "warnings": {
+      "buildIncomplete": "不完全なビルドを検出",
+      "incompleteStats": "表示されるステータスは不完全です。どうしますか？",
+      "completeBuilds": "ビルドを完成させる",
+      "continueAnyway": "そのまま続行",
+      "goCompleteFirst": "まずビルドを完成させてください！",
+      "canContinueButIncomplete": "続行できますが、ステータスは不完全です！",
+      "sungIncomplete": "水篠旬は{{count}}/8のアーティファクトしか装備していません"
+    },
+    "mobile": {
+      "week": "第{{week}}週"
     }
   }
 }

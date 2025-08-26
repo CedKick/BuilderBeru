@@ -148,8 +148,8 @@
     "bobby": [
       "BobbyJones will yell at me if I miss the boss...",
       "If you forget your dailies, I'm calling BobbyJones.",
-      "Miss one BDG and you're out. Gagold rules.",
-      "Respect the rank, fear the BDG."
+      "Miss one Guild Boss and you're out. Gagold rules.",
+      "Respect the rank, fear the Guild Boss."
     ],
     "food": [
       "Tank: 'Can an artifact love?'... Ok I'm hungry.",
@@ -1119,6 +1119,134 @@
     },
     "settings": {
       "calculatorMode": "Calculator Mode"
+    }
+  },
+  "bdg": {
+    "title": "Guild Boss Score",
+    "currentBoss": "Current Boss",
+    "week": "Week {{week}}",
+    "selectWeek": "Select week",
+    "selectPreset": "Select preset",
+    "selectElement": "Select element",
+    "edit": "Edit",
+    "view": "View",
+    "validate": "Validate",
+    "share": "Share",
+    "reset": "Reset",
+    "addPreset": "+ Preset",
+    "deletePreset": "Delete this preset",
+    "totalScore": "Total Score",
+    "rageCount": "Rage Count",
+    "autoCalculated": "(Auto-calculated)",
+    "contribution": "contribution",
+    "damage": "Damage",
+    "sets": {
+      "title": "Sets",
+      "left": "Left",
+      "leftShort": "L",
+      "right": "Right",
+      "rightShort": "R",
+      "set1": "Set L1",
+      "set2": "Set L2",
+      "split": "2+2"
+    },
+    "weapons": {
+      "title": "Weapons",
+      "weapon": "Weapon",
+      "stars": "stars"
+    },
+    "skills": {
+      "title": "Skills",
+      "skill": "S{{index}}",
+      "rarity": {
+        "rare": "R",
+        "epic": "E",
+        "legendary": "L",
+        "mythic": "M"
+      }
+    },
+    "blessings": {
+      "title": "Blessings",
+      "offensive": "O",
+      "defensive": "D"
+    },
+    "stats": {
+      "base": "Base Stats",
+      "final": "Final Stats",
+      "import": "Import stats from build",
+      "str": "STR",
+      "int": "INT",
+      "vit": "VIT",
+      "per": "PER",
+      "agi": "AGI",
+      "atk": "ATK",
+      "tc": "CRIT",
+      "dcc": "CDMG",
+      "di": "DI",
+      "defPen": "DEF P",
+      "precision": "PREC",
+      "mpcr": "MPCR",
+      "mpa": "MP",
+      "def": "DEF",
+      "hp": "HP"
+    },
+    "hunters": {
+      "title": "Hunters",
+      "hunter": "Hunter {{index}}",
+      "select": "Click to choose",
+      "choose": "Choose a Hunter",
+      "stars": {
+        "hunter": "H",
+        "weapon": "W"
+      }
+    },
+    "preset": {
+      "default": "Default preset",
+      "defaultPreset": "Default",
+      "custom": "Custom preset",
+      "save": "Save as new preset",
+      "name": "Preset name",
+      "saveButton": "Save",
+      "cancel": "Cancel",
+      "deleteConfirm": "Delete this custom preset?"
+    },
+    "messages": {
+      "loadingPreset": "Loading preset...",
+      "loadingData": "Loading data from your builds...",
+      "modificationsSaved": "Modifications saved!",
+      "modificationsRestored": "Unsaved modifications restored",
+      "errorSaving": "Error while saving",
+      "errorDeleting": "Error while deleting",
+      "presetAdded": "Preset \"{{name}}\" added!",
+      "presetDeleted": "Preset deleted",
+      "resetConfirm": "Reset to base preset? Unsaved changes will be lost.",
+      "resetDone": "Reset to base preset",
+      "changeElementConfirm": "Change element? Unsaved changes will be lost.",
+      "changePresetConfirm": "Change preset? Unsaved changes will be lost.",
+      "scoreTooHigh": "Score too high! Check your data.",
+      "limitExceeded": "Limit exceeded for {{name}}: max {{max}}B (120% of limit)",
+      "limitExceededSung": "Limit exceeded for Sung ({{mode}} mode): max {{max}}B",
+      "noBuildFound": "No build found",
+      "noBuildSaved": "No saved build for {{name}}",
+      "statsImported": "Stats imported from build!",
+      "statsImportedFor": "Stats imported for {{name}}!",
+      "errorImporting": "Error importing",
+      "selectHunterFirst": "Select a hunter first",
+      "exchangedPosition": "{{name}} swapped position!",
+      "shareComingSoon": "Share feature coming soon!",
+      "errorUserData": "Error: user data not found"
+    },
+    "warnings": {
+      "buildIncomplete": "Incomplete Build Detected",
+      "incompleteStats": "Displayed stats will be incomplete. What do you want to do?",
+      "completeBuilds": "Complete the Build",
+      "continueAnyway": "Continue anyway",
+      "goCompleteFirst": "Go complete your builds first!",
+      "canContinueButIncomplete": "You can continue but stats will be incomplete!",
+      "sungIncomplete": "Sung Jin-Woo has only {{count}}/8 artifacts equipped"
+    },
+    "mobile": {
+      "week": "W{{week}}"
     }
   }
 }

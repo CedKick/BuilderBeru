@@ -1,10 +1,14 @@
+{/* Stats de base compact */}
 // src/components/ScoreCard/BDGEditMode.jsx
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { weaponData, runesData, blessingStonesData, artifactData } from '../../data/itemData';
 import { characters } from '../../data/characters';
+import '../../i18n/i18n';
 import { calculateRCFromTotal } from '../../utils/rageCount';
 
 const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, currentBuildStats }) => {
+  const { t } = useTranslation();
   const [showHunterPicker, setShowHunterPicker] = useState(null);
   const [sungLeftSplit, setSungLeftSplit] = useState(false);
   const [hunterLeftSplits, setHunterLeftSplits] = useState({});
@@ -89,7 +93,14 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
       const maxWithTolerance = maxDamage * 1.2; // Permettre 20% de plus
 
       if (numValue > maxWithTolerance) {
-        showTankMessage(`Limite dépassée pour ${character.name}: max ${(maxWithTolerance / 1000000000).toFixed(1)}B (120% de la limite)`, true, 'tank');
+        showTankMessage(
+          t('bdg.messages.limitExceeded', {
+            name: character.name,
+            max: (maxWithTolerance / 1000000000).toFixed(1)
+          }),
+          true,
+          'tank'
+        );
         return;
       }
     }
@@ -100,7 +111,14 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
 
       if (numValue > maxWithTolerance) {
         const isExpert = scoreData.sung.rightSet?.toLowerCase().includes('expert');
-        showTankMessage(`Limite dépassée pour Sung (mode ${isExpert ? 'Expert' : 'Support'}): max ${(maxWithTolerance / 1000000000).toFixed(1)}B`, true, 'tank');
+        showTankMessage(
+          t('bdg.messages.limitExceededSung', {
+            mode: isExpert ? 'Expert' : 'Support',
+            max: (maxWithTolerance / 1000000000).toFixed(1)
+          }),
+          true,
+          'tank'
+        );
         return;
       }
     }
@@ -170,7 +188,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
       };
       newHunters[existingIndex] = temp;
 
-      showTankMessage(`${newHunter.name} échangé de position !`, true, 'beru');
+      showTankMessage(t('bdg.messages.exchangedPosition', { name: newHunter.name }), true, 'beru');
     } else {
       // Sinon, assignation normale
       newHunters[index] = {
@@ -220,7 +238,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
     try {
       const builderberuUsers = localStorage.getItem('builderberu_users');
       if (!builderberuUsers) {
-        showTankMessage("Aucun build trouvé", true, 'tank');
+        showTankMessage(t('bdg.messages.noBuildFound'), true, 'tank');
         return;
       }
 
@@ -247,7 +265,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
         const sungBuild = builds['jinwoo'] || builds['sung-jin-woo'] || builds['Sung Jin-Woo'];
 
         if (!sungBuild?.calculatedFinalStats) {
-          showTankMessage("Aucun build sauvegardé pour Sung Jin-Woo", true, 'tank');
+          showTankMessage(t('bdg.messages.noBuildSaved', { name: 'Sung Jin-Woo' }), true, 'tank');
           return;
         }
 
@@ -260,12 +278,12 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
         });
 
         handleSungUpdate('finalStats', { ...scoreData.sung.finalStats, ...mappedStats });
-        showTankMessage("Stats importées depuis le build !", true, 'beru');
+        showTankMessage(t('bdg.messages.statsImported'), true, 'beru');
 
       } else if (type === 'hunter' && hunterIndex !== null) {
         const hunter = scoreData.hunters[hunterIndex];
         if (!hunter?.character) {
-          showTankMessage("Sélectionne d'abord un hunter", true, 'tank');
+          showTankMessage(t('bdg.messages.selectHunterFirst'), true, 'tank');
           return;
         }
 
@@ -274,7 +292,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
         const hunterBuild = builds[hunter.id.toLowerCase()] || builds[hunter.id] || builds[hunterKey] || builds[hunterName];
 
         if (!hunterBuild?.calculatedFinalStats) {
-          showTankMessage(`Aucun build sauvegardé pour ${hunterName}`, true, 'tank');
+          showTankMessage(t('bdg.messages.noBuildSaved', { name: hunterName }), true, 'tank');
           return;
         }
 
@@ -292,11 +310,11 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
         newHunters[hunterIndex].finalStats = { ...newHunters[hunterIndex].finalStats, ...mappedStats };
         onUpdate({ ...scoreData, hunters: newHunters });
 
-        showTankMessage(`Stats importées pour ${hunterName} !`, true, 'beru');
+        showTankMessage(t('bdg.messages.statsImportedFor', { name: hunterName }), true, 'beru');
       }
     } catch (e) {
       console.error('Erreur import stats:', e);
-      showTankMessage("Erreur lors de l'import", true, 'tank');
+      showTankMessage(t('bdg.messages.errorImporting'), true, 'tank');
     }
   };
 
@@ -341,7 +359,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
             {/* Sets */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-semibold text-purple-300 uppercase">Sets</h4>
+                <h4 className="text-xs font-semibold text-purple-300 uppercase">{t('bdg.sets.title')}</h4>
                 <label className="text-xs text-gray-400 flex items-center">
                   <input
                     type="checkbox"
@@ -349,7 +367,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                     onChange={(e) => setSungLeftSplit(e.target.checked)}
                     className="mr-1"
                   />
-                  2+2
+                  {t('bdg.sets.split')}
                 </label>
               </div>
               {sungLeftSplit ? (
@@ -359,9 +377,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                       className="w-full bg-gray-800/80 text-white text-xs p-2 rounded border border-gray-700 focus:border-purple-500"
                       value={scoreData.sung.leftSet1 || ''}
                       onChange={(e) => handleSungUpdate('leftSet1', e.target.value)}
-                      title={scoreData.sung.leftSet1 || 'Set Gauche 1'}
+                      title={scoreData.sung.leftSet1 || t('bdg.sets.set1')}
                     >
-                      <option value="">Set G1</option>
+                      <option value="">{t('bdg.sets.set1')}</option>
                       {leftArtifacts.map(artifact => (
                         <option key={artifact.set} value={artifact.set} title={artifact.set}>
                           {artifact.set}
@@ -372,9 +390,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                       className="w-full bg-gray-800/80 text-white text-xs p-2 rounded border border-gray-700 focus:border-purple-500"
                       value={scoreData.sung.leftSet2 || ''}
                       onChange={(e) => handleSungUpdate('leftSet2', e.target.value)}
-                      title={scoreData.sung.leftSet2 || 'Set Gauche 2'}
+                      title={scoreData.sung.leftSet2 || t('bdg.sets.set2')}
                     >
-                      <option value="">Set G2</option>
+                      <option value="">{t('bdg.sets.set2')}</option>
                       {leftArtifacts.map(artifact => (
                         <option key={artifact.set} value={artifact.set} title={artifact.set}>
                           {artifact.set}
@@ -388,9 +406,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                   className="w-full bg-gray-800/80 text-white text-xs p-2 rounded border border-gray-700 focus:border-purple-500"
                   value={scoreData.sung.leftSet || ''}
                   onChange={(e) => handleSungUpdate('leftSet', e.target.value)}
-                  title={scoreData.sung.leftSet || 'Set Gauche'}
+                  title={scoreData.sung.leftSet || t('bdg.sets.left')}
                 >
-                  <option value="">Set Gauche</option>
+                  <option value="">{t('bdg.sets.left')}</option>
                   {leftArtifacts.map(artifact => (
                     <option key={artifact.set} value={artifact.set} title={artifact.set}>
                       {artifact.set}
@@ -402,9 +420,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                 className="w-full bg-gray-800/80 text-white text-xs p-2 rounded border border-gray-700 focus:border-purple-500 mt-2"
                 value={scoreData.sung.rightSet || ''}
                 onChange={(e) => handleSungUpdate('rightSet', e.target.value)}
-                title={scoreData.sung.rightSet || 'Set Droit'}
+                title={scoreData.sung.rightSet || t('bdg.sets.right')}
               >
-                <option value="">Set Droit</option>
+                <option value="">{t('bdg.sets.right')}</option>
                 {rightArtifacts.map(artifact => (
                   <option key={artifact.set} value={artifact.set} title={artifact.set}>
                     {artifact.set}
@@ -415,7 +433,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
 
             {/* Armes */}
             <div>
-              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">Armes</h4>
+              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">{t('bdg.weapons.title')}</h4>
               <div className="space-y-2">
                 {[0, 1].map((idx) => (
                   <div key={idx} className="flex items-center gap-2">
@@ -427,9 +445,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                         newWeapons[idx] = e.target.value;
                         handleSungUpdate('weapons', newWeapons);
                       }}
-                      title={scoreData.sung.weapons?.[idx] || `Arme ${idx + 1}`}
+                      title={scoreData.sung.weapons?.[idx] || `${t('bdg.weapons.weapon')} ${idx + 1}`}
                     >
-                      <option value="">Arme {idx + 1}</option>
+                      <option value="">{t('bdg.weapons.weapon')} {idx + 1}</option>
                       {weaponData.map(weapon => (
                         <option key={weapon.name} value={weapon.name} title={weapon.name}>
                           {weapon.name}
@@ -456,7 +474,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
 
             {/* Compétences */}
             <div>
-              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">Compétences (6)</h4>
+              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">{t('bdg.skills.title')} (6)</h4>
               <div className="grid grid-cols-2 gap-2">
                 {[0, 1, 2, 3, 4, 5].map((idx) => {
                   const skill = scoreData.sung.skills?.[idx];
@@ -477,9 +495,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                           const selectedSkill = skillsList.find(s => s.name === e.target.value);
                           handleSkillSelect(idx, selectedSkill?.name, skill?.rarity || 'mythic');
                         }}
-                        title={skill?.name || `Skill ${idx + 1}`}
+                        title={skill?.name || t('bdg.skills.skill', { index: idx + 1 })}
                       >
-                        <option value="">S{idx + 1}</option>
+                        <option value="">{t('bdg.skills.skill', { index: idx + 1 })}</option>
                         {skillsList.map(s => (
                           <option key={s.name} value={s.name} title={s.name}>
                             {s.name}
@@ -495,10 +513,10 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                           }
                         }}
                       >
-                        <option value="rare">R</option>
-                        <option value="epic">E</option>
-                        <option value="legendary">L</option>
-                        <option value="mythic">M</option>
+                        <option value="rare">{t('bdg.skills.rarity.rare')}</option>
+                        <option value="epic">{t('bdg.skills.rarity.epic')}</option>
+                        <option value="legendary">{t('bdg.skills.rarity.legendary')}</option>
+                        <option value="mythic">{t('bdg.skills.rarity.mythic')}</option>
                       </select>
                     </div>
                   );
@@ -508,7 +526,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
 
             {/* Bénédictions */}
             <div>
-              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">Bénédictions (8)</h4>
+              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">{t('bdg.blessings.title')} (8)</h4>
               <div className="grid grid-cols-4 gap-1">
                 {[0, 1, 2, 3, 4, 5, 6, 7].map((idx) => {
                   const blessing = scoreData.sung.blessings?.[idx];
@@ -540,9 +558,11 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                         };
                         handleSungUpdate('blessings', newBlessings);
                       }}
-                      title={blessingName || `${isDefensive ? 'Defensive' : 'Offensive'} ${(idx % 4) + 1}`}
+                      title={blessingName || `${isDefensive ? t('bdg.blessings.defensive') : t('bdg.blessings.offensive')} ${(idx % 4) + 1}`}
                     >
-                      <option value="">{isDefensive ? 'D' : 'O'}{(idx % 4) + 1}</option>
+                      <option value="">
+                        {isDefensive ? t('bdg.blessings.defensive') : t('bdg.blessings.offensive')}{(idx % 4) + 1}
+                      </option>
                       {blessings.map(blessing => (
                         <option key={blessing.name} value={blessing.name} title={blessing.name}>
                           {blessing.name}
@@ -556,14 +576,14 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
 
             {/* Stats de base */}
             <div>
-              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">Stats de base</h4>
+              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">{t('bdg.stats.base')}</h4>
               <div className="grid grid-cols-5 gap-2">
                 {[
-                  { key: 'str', label: 'STR' },
-                  { key: 'int', label: 'INT' },
-                  { key: 'vit', label: 'VIT' },
-                  { key: 'per', label: 'PER' },
-                  { key: 'agi', label: 'AGI' }
+                  { key: 'str', label: t('bdg.stats.str') },
+                  { key: 'int', label: t('bdg.stats.int') },
+                  { key: 'vit', label: t('bdg.stats.vit') },
+                  { key: 'per', label: t('bdg.stats.per') },
+                  { key: 'agi', label: t('bdg.stats.agi') }
                 ].map(({ key, label }) => (
                   <div key={key}>
                     <label className="text-[9px] text-gray-500 block">{label}</label>
@@ -585,25 +605,25 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
             {/* Stats finales avec bouton import */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-xs font-semibold text-purple-300 uppercase">Stats finales</h4>
+                <h4 className="text-xs font-semibold text-purple-300 uppercase">{t('bdg.stats.final')}</h4>
                 <img
                   src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png"
                   alt="Import"
                   className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => importStatsFromBuild('sung')}
-                  title="Importer les stats depuis le build"
+                  title={t('bdg.stats.import')}
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { key: 'atk', label: 'ATK', placeholder: sungPreset.expectedStats?.atk },
-                  { key: 'tc', label: 'TC', placeholder: sungPreset.expectedStats?.tc },
-                  { key: 'dcc', label: 'DCC', placeholder: sungPreset.expectedStats?.dcc },
-                  { key: 'di', label: 'DI', placeholder: sungPreset.expectedStats?.di },
-                  { key: 'defPen', label: 'DEF P', placeholder: sungPreset.expectedStats?.defPen },
-                  { key: 'precision', label: 'PREC', placeholder: sungPreset.expectedStats?.precision },
-                  { key: 'mpcr', label: 'MPCR', placeholder: sungPreset.expectedStats?.mpcr },
-                  { key: 'mpa', label: 'MPA', placeholder: sungPreset.expectedStats?.mpa }
+                  { key: 'atk', label: t('bdg.stats.atk'), placeholder: sungPreset.expectedStats?.atk },
+                  { key: 'tc', label: t('bdg.stats.tc'), placeholder: sungPreset.expectedStats?.tc },
+                  { key: 'dcc', label: t('bdg.stats.dcc'), placeholder: sungPreset.expectedStats?.dcc },
+                  { key: 'di', label: t('bdg.stats.di'), placeholder: sungPreset.expectedStats?.di },
+                  { key: 'defPen', label: t('bdg.stats.defPen'), placeholder: sungPreset.expectedStats?.defPen },
+                  { key: 'precision', label: t('bdg.stats.precision'), placeholder: sungPreset.expectedStats?.precision },
+                  { key: 'mpcr', label: t('bdg.stats.mpcr'), placeholder: sungPreset.expectedStats?.mpcr },
+                  { key: 'mpa', label: t('bdg.stats.mpa'), placeholder: sungPreset.expectedStats?.mpa }
                 ].map(({ key, label, placeholder }) => (
                   <div key={key}>
                     <label className="text-[9px] text-gray-500 block">{label}</label>
@@ -624,14 +644,14 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
             </div>
           </div>
         ) : (
-          // Desktop: Grid Layout (unchanged)
+          // Desktop: Grid Layout
           <div className="grid grid-cols-3 gap-4">
             {/* Col 1: Sets & Armes */}
             <div className="space-y-3">
               {/* Sets */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <h4 className="text-xs font-semibold text-purple-300 uppercase">Sets</h4>
+                  <h4 className="text-xs font-semibold text-purple-300 uppercase">{t('bdg.sets.title')}</h4>
                   <label className="text-xs text-gray-400 flex items-center">
                     <input
                       type="checkbox"
@@ -639,7 +659,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                       onChange={(e) => setSungLeftSplit(e.target.checked)}
                       className="mr-1"
                     />
-                    2+2
+                    {t('bdg.sets.split')}
                   </label>
                 </div>
                 {sungLeftSplit ? (
@@ -649,9 +669,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                         className="w-full bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500"
                         value={scoreData.sung.leftSet1 || ''}
                         onChange={(e) => handleSungUpdate('leftSet1', e.target.value)}
-                        title={scoreData.sung.leftSet1 || 'Set Gauche 1'}
+                        title={scoreData.sung.leftSet1 || t('bdg.sets.set1')}
                       >
-                        <option value="">Set G1</option>
+                        <option value="">{t('bdg.sets.set1')}</option>
                         {leftArtifacts.map(artifact => (
                           <option key={artifact.set} value={artifact.set} title={artifact.set}>
                             {artifact.set}
@@ -662,9 +682,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                         className="w-full bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500"
                         value={scoreData.sung.leftSet2 || ''}
                         onChange={(e) => handleSungUpdate('leftSet2', e.target.value)}
-                        title={scoreData.sung.leftSet2 || 'Set Gauche 2'}
+                        title={scoreData.sung.leftSet2 || t('bdg.sets.set2')}
                       >
-                        <option value="">Set G2</option>
+                        <option value="">{t('bdg.sets.set2')}</option>
                         {leftArtifacts.map(artifact => (
                           <option key={artifact.set} value={artifact.set} title={artifact.set}>
                             {artifact.set}
@@ -678,9 +698,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                     className="w-full bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500"
                     value={scoreData.sung.leftSet || ''}
                     onChange={(e) => handleSungUpdate('leftSet', e.target.value)}
-                    title={scoreData.sung.leftSet || 'Set Gauche'}
+                    title={scoreData.sung.leftSet || t('bdg.sets.left')}
                   >
-                    <option value="">Set Gauche</option>
+                    <option value="">{t('bdg.sets.left')}</option>
                     {leftArtifacts.map(artifact => (
                       <option key={artifact.set} value={artifact.set} title={artifact.set}>
                         {artifact.set}
@@ -692,9 +712,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                   className="w-full bg-gray-800/80 text-white text-xs p-1 rounded border border-gray-700 focus:border-purple-500 mt-1"
                   value={scoreData.sung.rightSet || ''}
                   onChange={(e) => handleSungUpdate('rightSet', e.target.value)}
-                  title={scoreData.sung.rightSet || 'Set Droit'}
+                  title={scoreData.sung.rightSet || t('bdg.sets.right')}
                 >
-                  <option value="">Set Droit</option>
+                  <option value="">{t('bdg.sets.right')}</option>
                   {rightArtifacts.map(artifact => (
                     <option key={artifact.set} value={artifact.set} title={artifact.set}>
                       {artifact.set}
@@ -705,7 +725,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
 
               {/* Armes */}
               <div>
-                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">Armes</h4>
+                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">{t('bdg.weapons.title')}</h4>
                 {[0, 1].map((idx) => (
                   <div key={idx} className="flex items-center gap-1 mb-1">
                     <select
@@ -716,9 +736,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                         newWeapons[idx] = e.target.value;
                         handleSungUpdate('weapons', newWeapons);
                       }}
-                      title={scoreData.sung.weapons?.[idx] || `Arme ${idx + 1}`}
+                      title={scoreData.sung.weapons?.[idx] || `${t('bdg.weapons.weapon')} ${idx + 1}`}
                     >
-                      <option value="">Arme {idx + 1}</option>
+                      <option value="">{t('bdg.weapons.weapon')} {idx + 1}</option>
                       {weaponData.map(weapon => (
                         <option key={weapon.name} value={weapon.name} title={weapon.name}>
                           {weapon.name}
@@ -747,7 +767,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
             <div className="space-y-3">
               {/* Skills compact */}
               <div>
-                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">Compétences (6)</h4>
+                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">{t('bdg.skills.title')} (6)</h4>
                 <div className="grid grid-cols-2 gap-1">
                   {[0, 1, 2, 3, 4, 5].map((idx) => {
                     const skill = scoreData.sung.skills?.[idx];
@@ -768,9 +788,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                             const selectedSkill = skillsList.find(s => s.name === e.target.value);
                             handleSkillSelect(idx, selectedSkill?.name, skill?.rarity || 'mythic');
                           }}
-                          title={skill?.name || `Skill ${idx + 1}`}
+                          title={skill?.name || t('bdg.skills.skill', { index: idx + 1 })}
                         >
-                          <option value="">S{idx + 1}</option>
+                          <option value="">{t('bdg.skills.skill', { index: idx + 1 })}</option>
                           {skillsList.map(s => (
                             <option key={s.name} value={s.name} title={s.name}>
                               {s.name}
@@ -786,10 +806,10 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                             }
                           }}
                         >
-                          <option value="rare">R</option>
-                          <option value="epic">E</option>
-                          <option value="legendary">L</option>
-                          <option value="mythic">M</option>
+                          <option value="rare">{t('bdg.skills.rarity.rare')}</option>
+                          <option value="epic">{t('bdg.skills.rarity.epic')}</option>
+                          <option value="legendary">{t('bdg.skills.rarity.legendary')}</option>
+                          <option value="mythic">{t('bdg.skills.rarity.mythic')}</option>
                         </select>
                       </div>
                     );
@@ -799,7 +819,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
 
               {/* Blessings compact */}
               <div>
-                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">Bénédictions (8)</h4>
+                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">{t('bdg.blessings.title')} (8)</h4>
                 <div className="grid grid-cols-4 gap-1">
                   {[0, 1, 2, 3, 4, 5, 6, 7].map((idx) => {
                     const blessing = scoreData.sung.blessings?.[idx];
@@ -831,9 +851,11 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                           };
                           handleSungUpdate('blessings', newBlessings);
                         }}
-                        title={blessingName || `${isDefensive ? 'Defensive' : 'Offensive'} ${(idx % 4) + 1}`}
+                        title={blessingName || `${isDefensive ? t('bdg.blessings.defensive') : t('bdg.blessings.offensive')} ${(idx % 4) + 1}`}
                       >
-                        <option value="">{isDefensive ? 'D' : 'O'}{(idx % 4) + 1}</option>
+                        <option value="">
+                          {isDefensive ? t('bdg.blessings.defensive') : t('bdg.blessings.offensive')}{(idx % 4) + 1}
+                        </option>
                         {blessings.map(blessing => (
                           <option key={blessing.name} value={blessing.name} title={blessing.name}>
                             {blessing.name}
@@ -847,14 +869,14 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
 
               {/* Stats de base compact */}
               <div>
-                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">Stats de base</h4>
+                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">{t('bdg.stats.base')}</h4>
                 <div className="grid grid-cols-5 gap-1">
                   {[
-                    { key: 'str', label: 'STR' },
-                    { key: 'int', label: 'INT' },
-                    { key: 'vit', label: 'VIT' },
-                    { key: 'per', label: 'PER' },
-                    { key: 'agi', label: 'AGI' }
+                    { key: 'str', label: t('bdg.stats.str') },
+                    { key: 'int', label: t('bdg.stats.int') },
+                    { key: 'vit', label: t('bdg.stats.vit') },
+                    { key: 'per', label: t('bdg.stats.per') },
+                    { key: 'agi', label: t('bdg.stats.agi') }
                   ].map(({ key, label }) => (
                     <div key={key}>
                       <label className="text-[9px] text-gray-500 block">{label}</label>
@@ -877,25 +899,25 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
             {/* Col 3: Stats finales avec bouton import */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <h4 className="text-xs font-semibold text-purple-300 uppercase">Stats finales</h4>
+                <h4 className="text-xs font-semibold text-purple-300 uppercase">{t('bdg.stats.final')}</h4>
                 <img
                   src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png"
                   alt="Import"
                   className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => importStatsFromBuild('sung')}
-                  title="Importer les stats depuis le build"
+                  title={t('bdg.stats.import')}
                 />
               </div>
               <div className="grid grid-cols-2 gap-x-2 gap-y-1">
                 {[
-                  { key: 'atk', label: 'ATK', placeholder: sungPreset.expectedStats?.atk },
-                  { key: 'tc', label: 'TC', placeholder: sungPreset.expectedStats?.tc },
-                  { key: 'dcc', label: 'DCC', placeholder: sungPreset.expectedStats?.dcc },
-                  { key: 'di', label: 'DI', placeholder: sungPreset.expectedStats?.di },
-                  { key: 'defPen', label: 'DEF P', placeholder: sungPreset.expectedStats?.defPen },
-                  { key: 'precision', label: 'PREC', placeholder: sungPreset.expectedStats?.precision },
-                  { key: 'mpcr', label: 'MPCR', placeholder: sungPreset.expectedStats?.mpcr },
-                  { key: 'mpa', label: 'MPA', placeholder: sungPreset.expectedStats?.mpa }
+                  { key: 'atk', label: t('bdg.stats.atk'), placeholder: sungPreset.expectedStats?.atk },
+                  { key: 'tc', label: t('bdg.stats.tc'), placeholder: sungPreset.expectedStats?.tc },
+                  { key: 'dcc', label: t('bdg.stats.dcc'), placeholder: sungPreset.expectedStats?.dcc },
+                  { key: 'di', label: t('bdg.stats.di'), placeholder: sungPreset.expectedStats?.di },
+                  { key: 'defPen', label: t('bdg.stats.defPen'), placeholder: sungPreset.expectedStats?.defPen },
+                  { key: 'precision', label: t('bdg.stats.precision'), placeholder: sungPreset.expectedStats?.precision },
+                  { key: 'mpcr', label: t('bdg.stats.mpcr'), placeholder: sungPreset.expectedStats?.mpcr },
+                  { key: 'mpa', label: t('bdg.stats.mpa'), placeholder: sungPreset.expectedStats?.mpa }
                 ].map(({ key, label, placeholder }) => (
                   <div key={key}>
                     <label className="text-[9px] text-gray-500 block">{label}</label>
@@ -922,7 +944,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
       <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/80 rounded-xl p-3 sm:p-4 border border-gray-700 shadow-xl">
         <h3 className="text-lg sm:text-xl font-bold text-white mb-3 flex items-center uppercase">
           <span className="text-purple-400 mr-2">👥</span>
-          Hunters
+          {t('bdg.hunters.title')}
         </h3>
         <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-3'}`}>
           {[0, 1, 2, 3, 4, 5].map((idx) => {
@@ -952,7 +974,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                     </>
                   ) : (
                     <div className="flex-1 text-gray-500 text-sm">
-                      Cliquer pour choisir
+                      {t('bdg.hunters.select')}
                     </div>
                   )}
                   <span className="text-purple-400 text-xs">▼</span>
@@ -975,7 +997,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                         }}
                         className="mr-1"
                       />
-                      2+2
+                      {t('bdg.sets.split')}
                     </label>
                   </div>
 
@@ -985,9 +1007,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                         className="bg-gray-800/80 text-white text-xs p-1.5 rounded border border-gray-700 focus:border-purple-500"
                         value={hunter?.leftSet1 || ''}
                         onChange={(e) => handleHunterUpdate(idx, 'leftSet1', e.target.value)}
-                        title={hunter?.leftSet1 || 'Set G1'}
+                        title={hunter?.leftSet1 || t('bdg.sets.set1')}
                       >
-                        <option value="">Set G1</option>
+                        <option value="">{t('bdg.sets.set1')}</option>
                         {leftArtifacts.map(a => (
                           <option key={a.set} value={a.set} title={a.set}>
                             {a.set}
@@ -998,9 +1020,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                         className="bg-gray-800/80 text-white text-xs p-1.5 rounded border border-gray-700 focus:border-purple-500"
                         value={hunter?.leftSet2 || ''}
                         onChange={(e) => handleHunterUpdate(idx, 'leftSet2', e.target.value)}
-                        title={hunter?.leftSet2 || 'Set G2'}
+                        title={hunter?.leftSet2 || t('bdg.sets.set2')}
                       >
-                        <option value="">Set G2</option>
+                        <option value="">{t('bdg.sets.set2')}</option>
                         {leftArtifacts.map(a => (
                           <option key={a.set} value={a.set} title={a.set}>
                             {a.set}
@@ -1014,9 +1036,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                         className="bg-gray-800/80 text-white text-xs p-1.5 rounded border border-gray-700 focus:border-purple-500"
                         value={hunter?.leftSet || ''}
                         onChange={(e) => handleHunterUpdate(idx, 'leftSet', e.target.value)}
-                        title={hunter?.leftSet || 'Set Gauche'}
+                        title={hunter?.leftSet || t('bdg.sets.left')}
                       >
-                        <option value="">Set G</option>
+                        <option value="">{t('bdg.sets.leftShort')}</option>
                         {leftArtifacts.map(a => (
                           <option key={a.set} value={a.set} title={a.set}>
                             {a.set}
@@ -1027,9 +1049,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                         className="bg-gray-800/80 text-white text-xs p-1.5 rounded border border-gray-700 focus:border-purple-500"
                         value={hunter?.rightSet || ''}
                         onChange={(e) => handleHunterUpdate(idx, 'rightSet', e.target.value)}
-                        title={hunter?.rightSet || 'Set Droit'}
+                        title={hunter?.rightSet || t('bdg.sets.right')}
                       >
-                        <option value="">Set D</option>
+                        <option value="">{t('bdg.sets.rightShort')}</option>
                         {rightArtifacts.map(a => (
                           <option key={a.set} value={a.set} title={a.set}>
                             {a.set}
@@ -1045,9 +1067,9 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                       className="w-full bg-gray-800/80 text-white text-xs p-1.5 rounded border border-gray-700 focus:border-purple-500 mt-1"
                       value={hunter?.rightSet || ''}
                       onChange={(e) => handleHunterUpdate(idx, 'rightSet', e.target.value)}
-                      title={hunter?.rightSet || 'Set Droit'}
+                      title={hunter?.rightSet || t('bdg.sets.right')}
                     >
-                      <option value="">Set Droit</option>
+                      <option value="">{t('bdg.sets.right')}</option>
                       {rightArtifacts.map(a => (
                         <option key={a.set} value={a.set} title={a.set}>
                           {a.set}
@@ -1058,7 +1080,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
 
                   <div className="grid grid-cols-2 gap-1">
                     <div className="flex items-center gap-1">
-                      <label className="text-[9px] text-gray-400">H:</label>
+                      <label className="text-[9px] text-gray-400">{t('bdg.hunters.stars.hunter')}:</label>
                       <input
                         type="number"
                         min="0"
@@ -1070,7 +1092,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                       <span className="text-yellow-400 text-xs">⭐</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <label className="text-[9px] text-gray-400">W:</label>
+                      <label className="text-[9px] text-gray-400">{t('bdg.hunters.stars.weapon')}:</label>
                       <input
                         type="number"
                         min="0"
@@ -1127,13 +1149,13 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                 <div className="mt-2">
                   {character && (
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-[9px] text-gray-500">Stats finales</label>
+                      <label className="text-[9px] text-gray-500">{t('bdg.stats.final')}</label>
                       <img
   src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055837/beruProst_ymvwos.png"
   alt="Import"
   className="w-7 h-7 cursor-pointer hover:opacity-80 transition-opacity"
   onClick={() => importStatsFromBuild('hunter', idx)}
-  title="Importer depuis le build"
+  title={t('bdg.stats.import')}
 />
                     </div>
                   )}
@@ -1153,22 +1175,22 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                       }
 
                       const labelMap = {
-                        'def': 'DEF',
-                        'hp': 'HP',
-                        'atk': 'ATK',
-                        'tc': 'TC',
-                        'dcc': 'DCC',
-                        'defPen': 'DEF P',
-                        'di': 'DI',
-                        'mpcr': 'MPCR',
-                        'mpa': 'MPA'
+                        'def': t('bdg.stats.def'),
+                        'hp': t('bdg.stats.hp'),
+                        'atk': t('bdg.stats.atk'),
+                        'tc': t('bdg.stats.tc'),
+                        'dcc': t('bdg.stats.dcc'),
+                        'defPen': t('bdg.stats.defPen'),
+                        'di': t('bdg.stats.di'),
+                        'mpcr': t('bdg.stats.mpcr'),
+                        'mpa': t('bdg.stats.mpa')
                       };
 
                       return statsToShow.map((statKey) => {
                         const label = labelMap[statKey] || statKey.toUpperCase();
 
                         return (
-                          <div key={statKey}>
+                           <div key={statKey}>
                             <label className="text-[9px] text-gray-500 block">{label}</label>
                             <input
                               type="text"
@@ -1198,13 +1220,13 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
 
       {/* Rage Count - Inline */}
       <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/80 rounded-xl p-3 border border-gray-700 shadow-xl flex items-center justify-between">
-        <h3 className="text-base sm:text-lg font-bold text-white uppercase">Rage Count</h3>
+        <h3 className="text-base sm:text-lg font-bold text-white uppercase">{t('bdg.rageCount')}</h3>
         <div className="flex items-center gap-4">
           <div className="text-xl sm:text-2xl font-bold text-purple-400">
             RC {scoreData.rageCount || 0}
           </div>
           <span className="text-xs sm:text-sm text-gray-400">
-            (Auto-calculé)
+            {t('bdg.autoCalculated')}
           </span>
         </div>
       </div>
@@ -1213,7 +1235,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
       {showHunterPicker !== null && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowHunterPicker(null)}>
           <div className={`bg-gray-900 rounded-xl p-4 ${isMobile ? 'w-full max-h-[80vh]' : 'max-w-3xl max-h-[70vh]'} overflow-y-auto border border-purple-500/50`} onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-white mb-3 uppercase">Choisir un Hunter</h3>
+            <h3 className="text-lg font-bold text-white mb-3 uppercase">{t('bdg.hunters.choose')}</h3>
             <div className={`grid gap-3 ${isMobile ? 'grid-cols-3' : 'grid-cols-4 md:grid-cols-6'}`}>
               {charactersArray
                 .filter(c => c.grade === 'SSR' || c.grade === 'SR')
@@ -1306,7 +1328,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                       </p>
                       {currentPosition !== -1 && (
                         <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-center text-yellow-400 mt-1`}>
-                          Slot {currentPosition + 1}
+                          {t('bdg.hunters.slot', { slot: currentPosition + 1 })}
                         </p>
                       )}
                     </div>

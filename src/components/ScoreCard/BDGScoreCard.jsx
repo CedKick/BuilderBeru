@@ -1,9 +1,12 @@
 // src/components/ScoreCard/BDGScoreCard.jsx
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import BDGScorePage from './BDGScorePage';
 import bdgPresets from './bdgPresets.json';
+import '../../i18n/i18n';
 
-const BDGScoreCard = ({ showTankMessage, activeAccount, currentBuildStats  }) => {
+const BDGScoreCard = ({ showTankMessage, activeAccount, currentBuildStats}) => {
+  const { t } = useTranslation();
   const [showBDGModal, setShowBDGModal] = useState(false);
   let [currentWeekData, setCurrentWeekData] = useState(null);
   const [selectedWeek] = useState(bdgPresets.currentWeek);
@@ -21,7 +24,11 @@ const BDGScoreCard = ({ showTankMessage, activeAccount, currentBuildStats  }) =>
   const handleClick = () => {
     if (currentWeekData) {
       setShowBDGModal(true);
-      showTankMessage(`🧠 Chargement des données BDG pour ${currentWeekData.bossName}...`, true, 'beru');
+      showTankMessage(
+        `🧠 ${t('bdg.messages.loadingData')} ${currentWeekData.bossName}...`,
+        true,
+        'beru'
+      );
     }
   };
 
@@ -63,9 +70,9 @@ const BDGScoreCard = ({ showTankMessage, activeAccount, currentBuildStats  }) =>
           <div className="absolute inset-0 p-2 sm:p-3 flex flex-col justify-between">
             {/* Header */}
             <div className="flex items-center justify-between">
-              <h3 className="text-base sm:text-lg font-bold text-white">BDG Score</h3>
+              <h3 className="text-base sm:text-lg font-bold text-white">{t('bdg.title')}</h3>
               <span className="text-xs text-purple-400">
-                Semaine {currentWeekData.weekId}
+                {t('bdg.week', { week: currentWeekData.weekId })}
               </span>
             </div>
             
@@ -95,6 +102,7 @@ const BDGScoreCard = ({ showTankMessage, activeAccount, currentBuildStats  }) =>
           showTankMessage={showTankMessage}
           activeAccount={activeAccount}
           currentBuildStats={currentBuildStats}
+          t={t}
         />
       )}
     </>

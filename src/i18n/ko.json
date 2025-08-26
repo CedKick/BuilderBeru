@@ -577,7 +577,7 @@
       "보스를 놓치면 BobbyJones가 나에게 소리칠 거야...",
       "데일리를 잊으면, BobbyJones를 부를 거야.",
       "하나라도 놓치면 아웃이야. Gagold 규칙이야.",
-      "랭크를 존중하고, BDG를 두려워해."
+      "랭크를 존중하고, 길드 보스를 두려워해."
     ],
     "food": [
       "탱크: '아티팩트가 사랑할 수 있을까?'... 좋아 배고파.",
@@ -1057,5 +1057,133 @@
       "전혀 수상하지 않음",
       "100% 합법 이그리스 빌드"
     ]
+  },
+  "bdg": {
+    "title": "길드 보스 점수",
+    "currentBoss": "현재 보스",
+    "week": "{{week}}주차",
+    "selectWeek": "주 선택",
+    "selectPreset": "프리셋 선택",
+    "selectElement": "속성 선택",
+    "edit": "편집",
+    "view": "보기",
+    "validate": "확인",
+    "share": "공유",
+    "reset": "초기화",
+    "addPreset": "+ 프리셋",
+    "deletePreset": "프리셋 삭제",
+    "totalScore": "총 점수",
+    "rageCount": "레이지 카운트",
+    "autoCalculated": "(자동 계산)",
+    "contribution": "기여도",
+    "damage": "데미지",
+    "sets": {
+      "title": "세트",
+      "left": "왼쪽",
+      "leftShort": "좌",
+      "right": "오른쪽",
+      "rightShort": "우",
+      "set1": "세트 좌1",
+      "set2": "세트 좌2",
+      "split": "2+2"
+    },
+    "weapons": {
+      "title": "무기",
+      "weapon": "무기",
+      "stars": "성"
+    },
+    "skills": {
+      "title": "스킬",
+      "skill": "S{{index}}",
+      "rarity": {
+        "rare": "R",
+        "epic": "E",
+        "legendary": "L",
+        "mythic": "M"
+      }
+    },
+    "blessings": {
+      "title": "축복",
+      "offensive": "공",
+      "defensive": "방"
+    },
+    "stats": {
+      "base": "기본 스탯",
+      "final": "최종 스탯",
+      "import": "빌드에서 스탯 가져오기",
+      "str": "STR",
+      "int": "INT",
+      "vit": "VIT",
+      "per": "PER",
+      "agi": "AGI",
+      "atk": "공격력",
+      "tc": "치명타율",
+      "dcc": "치명타 피해",
+      "di": "피해 증가",
+      "defPen": "방어구 관통",
+      "precision": "정밀도",
+      "mpcr": "마나 소모 감소",
+      "mpa": "마나",
+      "def": "방어력",
+      "hp": "체력"
+    },
+    "hunters": {
+      "title": "헌터",
+      "hunter": "헌터 {{index}}",
+      "select": "클릭하여 선택",
+      "choose": "헌터 선택",
+      "stars": {
+        "hunter": "H",
+        "weapon": "W"
+      }
+    },
+    "preset": {
+      "default": "기본 프리셋",
+      "defaultPreset": "기본",
+      "custom": "사용자 프리셋",
+      "save": "새 프리셋으로 저장",
+      "name": "프리셋 이름",
+      "saveButton": "저장",
+      "cancel": "취소",
+      "deleteConfirm": "이 프리셋을 삭제하시겠습니까?"
+    },
+    "messages": {
+      "loadingPreset": "프리셋 불러오는 중...",
+      "loadingData": "빌드 데이터 불러오는 중...",
+      "modificationsSaved": "수정사항이 저장되었습니다!",
+      "modificationsRestored": "저장되지 않은 수정사항이 복원되었습니다",
+      "errorSaving": "저장 중 오류",
+      "errorDeleting": "삭제 중 오류",
+      "presetAdded": "\"{{name}}\" 프리셋이 추가되었습니다!",
+      "presetDeleted": "프리셋 삭제됨",
+      "resetConfirm": "기본 프리셋으로 초기화하시겠습니까? 저장되지 않은 변경사항이 손실됩니다.",
+      "resetDone": "기본 프리셋으로 초기화됨",
+      "changeElementConfirm": "속성을 변경하시겠습니까? 저장되지 않은 변경사항이 손실됩니다.",
+      "changePresetConfirm": "프리셋을 변경하시겠습니까? 저장되지 않은 변경사항이 손실됩니다.",
+      "scoreTooHigh": "점수가 너무 높습니다! 데이터를 확인하세요.",
+      "limitExceeded": "{{name}} 한계 초과: 최대 {{max}}B (한계의 120%)",
+      "limitExceededSung": "성진우 한계 초과 ({{mode}} 모드): 최대 {{max}}B",
+      "noBuildFound": "빌드를 찾을 수 없음",
+      "noBuildSaved": "{{name}}의 저장된 빌드가 없습니다",
+      "statsImported": "빌드에서 스탯을 가져왔습니다!",
+      "statsImportedFor": "{{name}}의 스탯을 가져왔습니다!",
+      "errorImporting": "가져오기 오류",
+      "selectHunterFirst": "먼저 헌터를 선택하세요",
+      "exchangedPosition": "{{name}} 위치 교환됨!",
+      "shareComingSoon": "공유 기능 준비 중!",
+      "errorUserData": "오류: 사용자 데이터를 찾을 수 없습니다"
+    },
+    "warnings": {
+      "buildIncomplete": "불완전한 빌드 감지",
+      "incompleteStats": "표시된 스탯이 불완전합니다. 어떻게 하시겠습니까?",
+      "completeBuilds": "빌드 완성하기",
+      "continueAnyway": "계속 진행",
+      "goCompleteFirst": "먼저 빌드를 완성하세요!",
+      "canContinueButIncomplete": "계속할 수 있지만 스탯이 불완전합니다!",
+      "sungIncomplete": "성진우가 {{count}}/8 아티팩트만 장착했습니다"
+    },
+    "mobile": {
+      "week": "{{week}}주"
+    }
   }
 }

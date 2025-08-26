@@ -148,8 +148,8 @@
     "bobby": [
       "如果我错过boss，BobbyJones会对我大喊...",
       "如果你忘记日常任务，我就叫BobbyJones。",
-      "错过一次BDG就出局。Gagold规则。",
-      "尊重等级，恐惧BDG。"
+      "错过一次公会Boss就出局。Gagold规则。",
+      "尊重等级，恐惧公会Boss。"
     ],
     "food": [
       "Tank：'神器能爱吗？'...好吧我饿了。",
@@ -1118,6 +1118,134 @@
     },
     "settings": {
       "calculatorMode": "计算器模式"
+    }
+  },
+  "bdg": {
+    "title": "길드 보스分数",
+    "currentBoss": "当前Boss",
+    "week": "第{{week}}周",
+    "selectWeek": "选择周",
+    "selectPreset": "选择预设",
+    "selectElement": "选择属性",
+    "edit": "编辑",
+    "view": "查看",
+    "validate": "确认",
+    "share": "分享",
+    "reset": "重置",
+    "addPreset": "+ 预设",
+    "deletePreset": "删除预设",
+    "totalScore": "总分",
+    "rageCount": "狂暴计数",
+    "autoCalculated": "(自动计算)",
+    "contribution": "贡献",
+    "damage": "伤害",
+    "sets": {
+      "title": "套装",
+      "left": "左",
+      "leftShort": "左",
+      "right": "右",
+      "rightShort": "右",
+      "set1": "套装左1",
+      "set2": "套装左2",
+      "split": "2+2"
+    },
+    "weapons": {
+      "title": "武器",
+      "weapon": "武器",
+      "stars": "星"
+    },
+    "skills": {
+      "title": "技能",
+      "skill": "S{{index}}",
+      "rarity": {
+        "rare": "R",
+        "epic": "E",
+        "legendary": "L",
+        "mythic": "M"
+      }
+    },
+    "blessings": {
+      "title": "祝福",
+      "offensive": "攻",
+      "defensive": "防"
+    },
+    "stats": {
+      "base": "基础属性",
+      "final": "最终属性",
+      "import": "从构建导入属性",
+      "str": "力量",
+      "int": "智力",
+      "vit": "活力",
+      "per": "感知",
+      "agi": "敏捷",
+      "atk": "攻击力",
+      "tc": "暴击率",
+      "dcc": "暴击伤害",
+      "di": "伤害增加",
+      "defPen": "防御穿透",
+      "precision": "精准度",
+      "mpcr": "MP消耗减少",
+      "mpa": "MP",
+      "def": "防御力",
+      "hp": "生命值"
+    },
+    "hunters": {
+      "title": "猎人",
+      "hunter": "猎人 {{index}}",
+      "select": "点击选择",
+      "choose": "选择猎人",
+      "stars": {
+        "hunter": "H",
+        "weapon": "W"
+      }
+    },
+    "preset": {
+      "default": "默认预设",
+      "defaultPreset": "默认",
+      "custom": "自定义预设",
+      "save": "保存为新预设",
+      "name": "预设名称",
+      "saveButton": "保存",
+      "cancel": "取消",
+      "deleteConfirm": "删除此预设？"
+    },
+    "messages": {
+      "loadingPreset": "加载预设中...",
+      "loadingData": "加载构建数据中...",
+      "modificationsSaved": "修改已保存！",
+      "modificationsRestored": "未保存的修改已恢复",
+      "errorSaving": "保存时出错",
+      "errorDeleting": "删除时出错",
+      "presetAdded": "预设\"{{name}}\"已添加！",
+      "presetDeleted": "预设已删除",
+      "resetConfirm": "重置为基础预设？未保存的更改将丢失。",
+      "resetDone": "已重置为基础预设",
+      "changeElementConfirm": "更改属性？未保存的更改将丢失。",
+      "changePresetConfirm": "更改预设？未保存的更改将丢失。",
+      "scoreTooHigh": "分数太高！检查你的数据。",
+      "limitExceeded": "{{name}}超出限制：最大{{max}}B（限制的120%）",
+      "limitExceededSung": "成振宇超出限制（{{mode}}模式）：最大{{max}}B",
+      "noBuildFound": "未找到构建",
+      "noBuildSaved": "{{name}}没有保存的构建",
+      "statsImported": "已从构建导入属性！",
+      "statsImportedFor": "已导入{{name}}的属性！",
+      "errorImporting": "导入错误",
+      "selectHunterFirst": "请先选择猎人",
+      "exchangedPosition": "{{name}}交换了位置！",
+      "shareComingSoon": "分享功能即将推出！",
+      "errorUserData": "错误：未找到用户数据"
+    },
+    "warnings": {
+      "buildIncomplete": "检测到不完整的构建",
+      "incompleteStats": "显示的属性将不完整。你想怎么做？",
+      "completeBuilds": "完成构建",
+      "continueAnyway": "继续",
+      "goCompleteFirst": "先去完成你的构建！",
+      "canContinueButIncomplete": "可以继续，但属性将不完整！",
+      "sungIncomplete": "成振宇只装备了{{count}}/8个神器"
+    },
+    "mobile": {
+      "week": "第{{week}}周"
     }
   }
 }

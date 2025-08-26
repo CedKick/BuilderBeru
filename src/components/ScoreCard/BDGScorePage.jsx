@@ -1,8 +1,10 @@
 // src/components/ScoreCard/BDGScorePage.jsx
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import BDGViewMode from './BDGViewMode';
 import BDGEditMode from './BDGEditMode';
 import { validateBuildCompleteness } from './bdgService';
+import '../../i18n/i18n';
 import { characters } from '../../data/characters';
 import bdgPresets from './bdgPresets.json';
 
@@ -34,7 +36,7 @@ const generateWeeksList = () => {
   for (let i = currentWeek; i > Math.max(0, currentWeek - 10); i--) {
     weeks.push({
       id: `${year}-W${String(i).padStart(2, '0')}`,
-      label: `Semaine ${i} - ${year}`,
+      label: `${t('bdg.week', { week: i })} - ${year}`,
       weekNumber: i
     });
   }
@@ -217,6 +219,7 @@ const RC_THRESHOLDS_FATCHNA = [
 ];
 
 const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildStats }) => {
+  const { t } = useTranslation();
   // Détection mobile
   const [isMobile, setIsMobile] = useState(false);
 
@@ -480,7 +483,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
       // 1. Vérifier d'abord s'il y a un brouillon (modifications non sauvegardées)
       const draftKey = `bdg_draft_${weekData.weekId}_${selectedElement}_${selectedPreset}`;
       const draft = localStorage.getItem(draftKey);
-      console.log("📝 Draft key:", draftKey, "Draft exists:", !!draft);
+      console.log("🔍 Draft key:", draftKey, "Draft exists:", !!draft);
 
       if (draft) {
         try {
@@ -503,7 +506,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
             ...draftData
           });
           setHasUnsavedChanges(true);
-          showTankMessage('Modifications non sauvegardées restaurées', true, 'beru');
+          showTankMessage(t('bdg.messages.modificationsRestored'), true, 'beru');
           return;
         } catch (e) {
           console.error('Erreur chargement brouillon:', e);
@@ -583,12 +586,12 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
   };
 
   const loadBuildsData = () => {
-    showTankMessage("Chargement des données depuis vos builds...", true, 'beru');
+    showTankMessage(t('bdg.messages.loadingData'), true, 'beru');
   };
 
   const loadPresetData = (preset, skipMessage = false) => {
     if (!skipMessage) {
-      showTankMessage(`Chargement du preset...`, true, 'beru');
+      showTankMessage(t('bdg.messages.loadingPreset'), true, 'beru');
     }
 
     // Charger les données Sung
@@ -680,7 +683,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
 
       const totalScore = calculateTotalScore();
       if (weekData.scoringLimits && totalScore > weekData.scoringLimits.maxTotalScore) {
-        showTankMessage("Score trop élevé ! Vérifie tes données.", true, 'tank');
+        showTankMessage(t('bdg.messages.scoreTooHigh'), true, 'tank');
         return;
       }
 
@@ -719,7 +722,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
       try {
         // Récupérer la structure builderberu_users
         const builderberuUsers = localStorage.getItem('builderberu_users');
-        if (!builderberuUsers) throw new Error('Pas de données utilisateur');
+        if (!builderberuUsers) throw new Error(t('bdg.messages.errorUserData'));
 
         const data = JSON.parse(builderberuUsers);
         const username = Object.keys(data)[0]; // "user" 
@@ -767,11 +770,11 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
 
         setHasUnsavedChanges(false);
         setEditMode(false);
-        showTankMessage("Modifications sauvegardées !", true, 'beru');
+        showTankMessage(t('bdg.messages.modificationsSaved'), true, 'beru');
 
       } catch (e) {
         console.error("❌❌❌ ERREUR SAUVEGARDE:", e);
-        showTankMessage("Erreur lors de la sauvegarde", true, 'tank');
+        showTankMessage(t('bdg.messages.errorSaving'), true, 'tank');
       }
     }
   };
@@ -784,7 +787,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
     return sungDamage + huntersDamage;
   };
   const handleShare = () => {
-    showTankMessage("Fonctionnalité de partage à venir !", true, 'beru');
+    showTankMessage(t('bdg.messages.shareComingSoon'), true, 'beru');
   };
 
   // Sauvegarder un preset personnalisé
@@ -793,7 +796,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
       // Récupérer la structure builderberu_users
       const builderberuUsers = localStorage.getItem('builderberu_users');
       if (!builderberuUsers) {
-        showTankMessage('Erreur: données utilisateur non trouvées', true, 'tank');
+        showTankMessage(t('bdg.messages.errorUserData'), true, 'tank');
         return;
       }
 
@@ -843,16 +846,16 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
       const draftKey = `bdg_draft_${weekData.weekId}_${selectedElement}_${selectedPreset}`;
       localStorage.removeItem(draftKey);
 
-      showTankMessage(`Preset "${name}" ajouté !`, true, 'beru');
+      showTankMessage(t('bdg.messages.presetAdded', { name }), true, 'beru');
     } catch (e) {
       console.error('Erreur lors de la sauvegarde du preset:', e);
-      showTankMessage('Erreur lors de la sauvegarde', true, 'tank');
+      showTankMessage(t('bdg.messages.errorSaving'), true, 'tank');
     }
   };
 
   // Supprimer un preset personnalisé
   const deleteCustomPreset = (presetId) => {
-    if (!confirm('Supprimer ce preset personnalisé ?')) return;
+    if (!confirm(t('bdg.preset.deleteConfirm'))) return;
 
     try {
       const builderberuUsers = localStorage.getItem('builderberu_users');
@@ -878,17 +881,17 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
           setSelectedPreset(defaultPreset);
         }
 
-        showTankMessage('Preset supprimé', true, 'beru');
+        showTankMessage(t('bdg.messages.presetDeleted'), true, 'beru');
       }
     } catch (e) {
       console.error('Erreur lors de la suppression du preset:', e);
-      showTankMessage('Erreur lors de la suppression', true, 'tank');
+      showTankMessage(t('bdg.messages.errorDeleting'), true, 'tank');
     }
   };
 
   // Reset vers le preset de base
   const resetToBasePreset = () => {
-    if (hasUnsavedChanges && !confirm('Réinitialiser vers le preset de base ? Les modifications non sauvegardées seront perdues.')) {
+    if (hasUnsavedChanges && !confirm(t('bdg.messages.resetConfirm'))) {
       return;
     }
 
@@ -931,7 +934,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
     }
 
     setHasUnsavedChanges(false);
-    showTankMessage('Réinitialisé au preset de base', true, 'beru');
+    showTankMessage(t('bdg.messages.resetDone'), true, 'beru');
   };
 
   const elementColors = {
@@ -949,7 +952,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
         <div className="bg-gradient-to-r from-indigo-700 to-purple-800 p-3 sm:p-4">
           {/* Desktop Header */}
           <div className="hidden sm:flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-white">BDG Score - {weekData.bossName}</h2>
+            <h2 className="text-2xl font-bold text-white">{t('bdg.title')} - {weekData.bossName}</h2>
             <div className="flex gap-4 items-center">
               {/* Sélecteur de semaine */}
               <select
@@ -969,7 +972,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
               >
                 {Object.keys(bdgPresets.weeks).map(weekId => (
                   <option key={weekId} value={weekId} className="text-gray-900">
-                    Semaine {weekId.split('-W')[1]} - {bdgPresets.weeks[weekId].bossName}
+                    {t('bdg.week', { week: weekId.split('-W')[1] })} - {bdgPresets.weeks[weekId].bossName}
                   </option>
                 ))}
               </select>
@@ -977,7 +980,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
               <select
                 value={selectedPreset}
                 onChange={(e) => {
-                  if (hasUnsavedChanges && !confirm('Changer de preset ? Les modifications non sauvegardées seront perdues.')) {
+                  if (hasUnsavedChanges && !confirm(t('bdg.messages.changePresetConfirm'))) {
                     return;
                   }
                   // Supprimer le brouillon actuel si on change
@@ -1000,7 +1003,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
                       </option>
                     ));
                   } else if (elementData) {
-                    return <option value="preset1" className="text-gray-900">📋 Preset par défaut</option>;
+                    return <option value="preset1" className="text-gray-900">📋 {t('bdg.preset.defaultPreset')}</option>;
                   }
                   return null;
                 })()}
@@ -1019,21 +1022,21 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
                   <button
                     onClick={resetToBasePreset}
                     className="bg-yellow-600/80 hover:bg-yellow-600 px-3 py-2 rounded-lg text-white font-medium transition-colors"
-                    title="Réinitialiser au preset de base"
+                    title={t('bdg.reset')}
                   >
-                    Reset
+                    {t('bdg.reset')}
                   </button>
                   <button
                     onClick={() => setShowSavePresetModal(true)}
                     className="bg-blue-600/80 hover:bg-blue-600 px-3 py-2 rounded-lg text-white font-medium transition-colors"
                   >
-                    Ajouter preset
+                    {t('bdg.addPreset')}
                   </button>
                   {selectedPreset.startsWith('custom_') && (
                     <button
                       onClick={() => deleteCustomPreset(selectedPreset)}
                       className="bg-red-600/80 hover:bg-red-600 px-3 py-2 rounded-lg text-white font-medium transition-colors"
-                      title="Supprimer ce preset personnalisé"
+                      title={t('bdg.deletePreset')}
                     >
                       🗑️
                     </button>
@@ -1045,7 +1048,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
                 onClick={() => setEditMode(!editMode)}
                 className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-white font-medium transition-colors"
               >
-                {editMode ? 'Visualiser' : 'Éditer'}
+                {editMode ? t('bdg.view') : t('bdg.edit')}
               </button>
               <button
                 onClick={onClose}
@@ -1059,7 +1062,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
           {/* Mobile Header */}
           <div className="sm:hidden">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="text-lg font-bold text-white">BDG - {weekData.bossName}</h2>
+              <h2 className="text-lg font-bold text-white">{t('bdg.title')} - {weekData.bossName}</h2>
               <button
                 onClick={onClose}
                 className="text-white hover:text-gray-300 text-2xl font-bold"
@@ -1086,7 +1089,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
               >
                 {Object.keys(bdgPresets.weeks).map(weekId => (
                   <option key={weekId} value={weekId} className="text-gray-900">
-                    S{weekId.split('-W')[1]}
+                    {t('bdg.mobile.week', { week: weekId.split('-W')[1] })}
                   </option>
                 ))}
               </select>
@@ -1094,7 +1097,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
               <select
                 value={selectedPreset}
                 onChange={(e) => {
-                  if (hasUnsavedChanges && !confirm('Changer de preset ?')) return;
+                  if (hasUnsavedChanges && !confirm(t('bdg.messages.changePresetConfirm'))) return;
                   const draftKey = `bdg_draft_${weekData.weekId}_${selectedElement}_${selectedPreset}`;
                   localStorage.removeItem(draftKey);
                   setSelectedPreset(e.target.value);
@@ -1112,7 +1115,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
                       </option>
                     ));
                   } else if (elementData) {
-                    return <option value="preset1" className="text-gray-900">Défaut</option>;
+                    return <option value="preset1" className="text-gray-900">{t('bdg.preset.defaultPreset')}</option>;
                   }
                   return null;
                 })()}
@@ -1127,7 +1130,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
                 onClick={() => setEditMode(!editMode)}
                 className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-white text-sm"
               >
-                {editMode ? 'View' : 'Edit'}
+                {editMode ? t('bdg.view') : t('bdg.edit')}
               </button>
             </div>
 
@@ -1138,13 +1141,13 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
                   onClick={resetToBasePreset}
                   className="bg-yellow-600/80 hover:bg-yellow-600 px-2 py-1 rounded text-white text-sm flex-1"
                 >
-                  Reset
+                  {t('bdg.reset')}
                 </button>
                 <button
                   onClick={() => setShowSavePresetModal(true)}
                   className="bg-blue-600/80 hover:bg-blue-600 px-2 py-1 rounded text-white text-sm flex-1"
                 >
-                  + Preset
+                  {t('bdg.addPreset')}
                 </button>
                 {selectedPreset.startsWith('custom_') && (
                   <button
@@ -1165,7 +1168,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
             <button
               key={element}
               onClick={() => {
-                if (hasUnsavedChanges && !confirm('Changer d\'élément ? Les modifications non sauvegardées seront perdues.')) {
+                if (hasUnsavedChanges && !confirm(t('bdg.messages.changeElementConfirm'))) {
                   return;
                 }
                 setSelectedElement(element);
@@ -1206,6 +1209,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
               <BDGEditMode
                 preset={currentPreset}
                 scoreData={scoreData}
+                t={t}
                 onUpdate={(newData) => {
                   setScoreData(newData);
                   setHasUnsavedChanges(true);
@@ -1219,6 +1223,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
               <BDGViewMode
                 preset={currentPreset}
                 scoreData={scoreData}
+                t={t}
                 showTankMessage={showTankMessage}
                 isMobile={isMobile}
               />
@@ -1229,13 +1234,13 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
         {/* Footer avec actions - Mobile responsive */}
         <div className="bg-gray-800 p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
           <div className="text-white text-center sm:text-left">
-            <span className="text-xs sm:text-sm text-gray-400">Score Total: </span>
+            <span className="text-xs sm:text-sm text-gray-400">{t('bdg.totalScore')}: </span>
             <span className="text-xl sm:text-2xl font-bold text-purple-400">
               {(scoreData.totalScore || calculateTotalScore()).toLocaleString()}
             </span>
             {scoreData.rageCount > 0 && (
               <span className="ml-2 sm:ml-4 text-xs sm:text-sm text-gray-400">
-                RC: {scoreData.rageCount}
+                {t('bdg.rageCount')}: {scoreData.rageCount}
               </span>
             )}
           </div>
@@ -1261,7 +1266,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
                 }}
                 className="bg-green-600 hover:bg-green-700 px-4 py-2 sm:px-6 sm:py-2 rounded-lg text-white font-medium transition-colors flex-1 sm:flex-initial"
               >
-                Valider
+                {t('bdg.validate')}
               </button>
             )}
             <button
@@ -1269,7 +1274,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
               className="bg-purple-600 hover:bg-purple-700 px-4 py-2 sm:px-6 sm:py-2 rounded-lg text-white font-medium transition-colors disabled:opacity-50 flex-1 sm:flex-initial"
               disabled={editMode || calculateTotalScore() === 0}
             >
-              Partager
+              {t('bdg.share')}
             </button>
           </div>
         </div>
@@ -1280,113 +1285,119 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
         <SavePresetModal
           onSave={(name) => {
             saveCustomPreset(name);
-           SavePresetModal(false);
-         }}
-         isMobile={isMobile}
-       />
-     )}
+            setShowSavePresetModal(false);
+          }}
+          onCancel={() => setShowSavePresetModal(false)}
+          isMobile={isMobile}
+        />
+      )}
 
-     {/* Modal d'avertissement build incomplet */}
-     {showBuildWarning && (
-       <BuildWarningModal
-         warnings={buildWarnings}
-         onProceed={() => {
-           setShowBuildWarning(false);
-           showTankMessage("Tu peux continuer mais les stats seront incomplètes !", true, 'tank');
-         }}
-         onBuildNow={() => {
-           onClose();
-           showTankMessage("Va compléter tes builds d'abord !", true, 'beru');
-         }}
-         isMobile={isMobile}
-       />
-     )}
-   </div>
- );
+      {/* Modal d'avertissement build incomplet */}
+      {showBuildWarning && (
+        <BuildWarningModal
+          warnings={buildWarnings}
+          onProceed={() => {
+            setShowBuildWarning(false);
+            showTankMessage(t('bdg.warnings.canContinueButIncomplete'), true, 'tank');
+          }}
+          onBuildNow={() => {
+            onClose();
+            showTankMessage(t('bdg.warnings.goCompleteFirst'), true, 'beru');
+          }}
+          isMobile={isMobile}
+        />
+      )}
+    </div>
+  );
 };
 
-const BuildWarningModal = ({ warnings, onProceed, onBuildNow, isMobile }) => (
- <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
-   <div className={`bg-gray-900 rounded-xl p-4 sm:p-6 max-w-md border-2 border-yellow-500 ${isMobile ? 'w-full' : ''}`}>
-     <h3 className="text-lg sm:text-xl font-bold text-yellow-400 mb-4">
-       Build Incomplet Détecté
-     </h3>
+const BuildWarningModal = ({ warnings, onProceed, onBuildNow, isMobile }) => {
+  const { t } = useTranslation();
+  
+  return (
+    <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
+      <div className={`bg-gray-900 rounded-xl p-4 sm:p-6 max-w-md border-2 border-yellow-500 ${isMobile ? 'w-full' : ''}`}>
+        <h3 className="text-lg sm:text-xl font-bold text-yellow-400 mb-4">
+          {t('bdg.warnings.buildIncomplete')}
+        </h3>
 
-     <div className="space-y-2 mb-6">
-       {warnings.map((warning, idx) => (
-         <div key={idx} className="text-yellow-300 text-sm flex items-start">
-           <span className="mr-2">•</span>
-           <span>{warning.message}</span>
-         </div>
-       ))}
-     </div>
+        <div className="space-y-2 mb-6">
+          {warnings.map((warning, idx) => (
+            <div key={idx} className="text-yellow-300 text-sm flex items-start">
+              <span className="mr-2">•</span>
+              <span>{warning.message}</span>
+            </div>
+          ))}
+        </div>
 
-     <p className="text-gray-300 mb-6 text-sm sm:text-base">
-       Les stats affichées seront incomplètes. Que veux-tu faire ?
-     </p>
+        <p className="text-gray-300 mb-6 text-sm sm:text-base">
+          {t('bdg.warnings.incompleteStats')}
+        </p>
 
-     <div className="flex gap-3">
-       <button
-         onClick={onBuildNow}
-         className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-3 sm:px-4 rounded transition-colors text-sm sm:text-base"
-       >
-         Compléter le Build
-       </button>
+        <div className="flex gap-3">
+          <button
+            onClick={onBuildNow}
+            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-3 sm:px-4 rounded transition-colors text-sm sm:text-base"
+          >
+            {t('bdg.warnings.completeBuilds')}
+          </button>
 
-       <button
-         onClick={onProceed}
-         className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 sm:px-4 rounded transition-colors text-sm sm:text-base"
-       >
-         Continuer quand même
-       </button>
-     </div>
-   </div>
- </div>
-);
+          <button
+            onClick={onProceed}
+            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 sm:px-4 rounded transition-colors text-sm sm:text-base"
+          >
+            {t('bdg.warnings.continueAnyway')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const SavePresetModal = ({ onSave, onCancel, isMobile }) => {
- const [presetName, setPresetName] = useState('');
+  const { t } = useTranslation();
+  const [presetName, setPresetName] = useState('');
 
- return (
-   <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
-     <div className={`bg-gray-900 rounded-xl p-4 sm:p-6 max-w-md border-2 border-purple-500 ${isMobile ? 'w-full' : ''}`}>
-       <h3 className="text-lg sm:text-xl font-bold text-white mb-4">
-         Sauvegarder comme nouveau preset
-       </h3>
+  return (
+    <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
+      <div className={`bg-gray-900 rounded-xl p-4 sm:p-6 max-w-md border-2 border-purple-500 ${isMobile ? 'w-full' : ''}`}>
+        <h3 className="text-lg sm:text-xl font-bold text-white mb-4">
+          {t('bdg.preset.save')}
+        </h3>
 
-       <input
-         type="text"
-         value={presetName}
-         onChange={(e) => setPresetName(e.target.value)}
-         placeholder="Nom du preset..."
-         className="w-full bg-gray-800 text-white px-3 sm:px-4 py-2 rounded-lg border border-gray-700 focus:border-purple-500 focus:outline-none mb-4 text-sm sm:text-base"
-         autoFocus
-         onKeyDown={(e) => {
-           if (e.key === 'Enter' && presetName.trim()) {
-             onSave(presetName.trim());
-           }
-         }}
-       />
+        <input
+          type="text"
+          value={presetName}
+          onChange={(e) => setPresetName(e.target.value)}
+          placeholder={t('bdg.preset.name')}
+          className="w-full bg-gray-800 text-white px-3 sm:px-4 py-2 rounded-lg border border-gray-700 focus:border-purple-500 focus:outline-none mb-4 text-sm sm:text-base"
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && presetName.trim()) {
+              onSave(presetName.trim());
+            }
+          }}
+        />
 
-       <div className="flex gap-3">
-         <button
-           onClick={() => onSave(presetName.trim())}
-           disabled={!presetName.trim()}
-           className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white py-2 px-3 sm:px-4 rounded transition-colors text-sm sm:text-base"
-         >
-           Sauvegarder
-         </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => onSave(presetName.trim())}
+            disabled={!presetName.trim()}
+            className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white py-2 px-3 sm:px-4 rounded transition-colors text-sm sm:text-base"
+          >
+            {t('bdg.preset.saveButton')}
+          </button>
 
-         <button
-           onClick={onCancel}
-           className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 sm:px-4 rounded transition-colors text-sm sm:text-base"
-         >
-           Annuler
-         </button>
-       </div>
-     </div>
-   </div>
- );
+          <button
+            onClick={onCancel}
+            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 px-3 sm:px-4 rounded transition-colors text-sm sm:text-base"
+          >
+            {t('bdg.preset.cancel')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default BDGScorePage;

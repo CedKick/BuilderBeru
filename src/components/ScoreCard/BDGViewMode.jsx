@@ -1,11 +1,13 @@
 // src/components/ScoreCard/BDGViewMode.jsx
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { weaponData, runesData, blessingStonesData } from '../../data/itemData';
 import { characters } from '../../data/characters';
+import '../../i18n/i18n';
 import { statConversions, normalizeStatValue } from '../../utils/statConversions';
 
 const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
-
+  const { t } = useTranslation();
 
   const getSungMaxDamage = () => {
     const isExpertMode = scoreData.sung?.rightSet?.toLowerCase().includes('expert');
@@ -28,7 +30,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
   };
   // Vérifications de sécurité
   if (!scoreData) {
-    return <div className="text-white">Aucune donnée à afficher</div>;
+    return <div className="text-white">{t('bdg.noData')}</div>;
   }
 
   // Fonction améliorée pour récupérer le character depuis l'objet characters
@@ -99,7 +101,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
               {scoreData.sung?.damage ? scoreData.sung.damage.toLocaleString() : '0'}
             </p>
             <p className="text-xs text-gray-400">
-              {calculateContribution(scoreData.sung?.damage || 0)}% contribution
+              {calculateContribution(scoreData.sung?.damage || 0)}% {t('bdg.contribution')}
             </p>
             {characters['jinwoo']?.bdgLimits && scoreData.sung?.damage > 0 && (
               <div className="relative h-2 bg-gray-700 rounded-full overflow-hidden mt-1">
@@ -125,10 +127,10 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
           <div className="space-y-4">
             {/* Sets */}
             <div>
-              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">Sets</h4>
+              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">{t('bdg.sets.title')}</h4>
               <div className="text-xs space-y-1">
                 <div>
-                  <span className="text-gray-500">Gauche:</span>
+                  <span className="text-gray-500">{t('bdg.sets.left')}:</span>
                   <div className="text-white">
                     {scoreData.sung?.leftSet1 && scoreData.sung?.leftSet2
                       ? `${scoreData.sung.leftSet1} + ${scoreData.sung.leftSet2}`
@@ -136,7 +138,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                   </div>
                 </div>
                 <div>
-                  <span className="text-gray-500">Droite:</span>
+                  <span className="text-gray-500">{t('bdg.sets.right')}:</span>
                   <div className="text-white">{scoreData.sung?.rightSet || '---'}</div>
                 </div>
               </div>
@@ -144,7 +146,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
 
             {/* Armes */}
             <div>
-              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">Armes</h4>
+              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">{t('bdg.weapons.title')}</h4>
               <div className="flex gap-2">
                 {[0, 1].map((idx) => {
                   const weaponName = scoreData.sung?.weapons?.[idx];
@@ -176,7 +178,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
 
             {/* Compétences */}
             <div>
-              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">Compétences</h4>
+              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">{t('bdg.skills.title')} (6)</h4>
               <div className="grid grid-cols-6 gap-1">
                 {scoreData.sung?.skills?.map((skill, idx) => {
                   if (!skill) return (
@@ -216,7 +218,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
 
             {/* Bénédictions */}
             <div>
-              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">Bénédictions</h4>
+              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">{t('bdg.blessings.title')} (8)</h4>
               <div className="grid grid-cols-4 gap-1">
                 {[...Array(8)].map((_, idx) => {
                   const blessing = scoreData.sung?.blessings?.[idx];
@@ -250,11 +252,11 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
 
             {/* Stats de base */}
             <div>
-              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">Stats de base</h4>
+              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">{t('bdg.stats.base')}</h4>
               <div className="flex gap-3 text-xs flex-wrap">
                 {Object.entries(scoreData.sung?.baseStats || {}).map(([key, value]) => (
                   <div key={key}>
-                    <span className="text-gray-500 uppercase">{key}:</span>
+                    <span className="text-gray-500 uppercase">{t(`bdg.stats.${key}`)}:</span>
                     <span className="text-white ml-1 font-bold">{value}</span>
                   </div>
                 ))}
@@ -263,85 +265,40 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
 
             {/* Stats finales */}
             <div>
-              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">Stats finales</h4>
+              <h4 className="text-xs font-semibold text-purple-300 mb-2 uppercase">{t('bdg.stats.final')}</h4>
               <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">ATK:</span>
-                  <span className="text-white text-right">
-                    {scoreData.sung?.finalStats?.atk ?
-                      formatStatWithPercentage(scoreData.sung.finalStats.atk, 'atk') :
-                      <span className="text-gray-600">{preset?.sung?.expectedStats?.atk || '---'}</span>}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">TC:</span>
-                  <span className="text-white text-right">
-                    {scoreData.sung?.finalStats?.tc ?
-                      formatStatWithPercentage(scoreData.sung.finalStats.tc, 'tc') :
-                      <span className="text-gray-600">{preset?.sung?.expectedStats?.tc || '---'}</span>}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">DCC:</span>
-                  <span className="text-white text-right">
-                    {scoreData.sung?.finalStats?.dcc ?
-                      formatStatWithPercentage(scoreData.sung.finalStats.dcc, 'dcc') :
-                      <span className="text-gray-600">{preset?.sung?.expectedStats?.dcc || '---'}</span>}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">DI:</span>
-                  <span className="text-white text-right">
-                    {scoreData.sung?.finalStats?.di ?
-                      formatStatWithPercentage(scoreData.sung.finalStats.di, 'di') :
-                      <span className="text-gray-600">{preset?.sung?.expectedStats?.di || '---'}</span>}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">DEF P:</span>
-                  <span className="text-white text-right">
-                    {scoreData.sung?.finalStats?.defPen ?
-                      formatStatWithPercentage(scoreData.sung.finalStats.defPen, 'defPen') :
-                      <span className="text-gray-600">{preset?.sung?.expectedStats?.defPen || '---'}</span>}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">PREC:</span>
-                  <span className="text-white text-right">
-                    {scoreData.sung?.finalStats?.precision ?
-                      formatStatWithPercentage(scoreData.sung.finalStats.precision, 'precision') :
-                      <span className="text-gray-600">{preset?.sung?.expectedStats?.precision || '---'}</span>}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">MPCR:</span>
-                  <span className="text-white text-right">
-                    {scoreData.sung?.finalStats?.mpcr ?
-                      formatStatWithPercentage(scoreData.sung.finalStats.mpcr, 'mpcr') :
-                      <span className="text-gray-600">{preset?.sung?.expectedStats?.mpcr || '---'}</span>}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">MPA:</span>
-                  <span className="text-white text-right">
-                    {scoreData.sung?.finalStats?.mpa ?
-                      formatStatWithPercentage(scoreData.sung.finalStats.mpa, 'mpa') :
-                      <span className="text-gray-600">{preset?.sung?.expectedStats?.mpa || '---'}</span>}
-                  </span>
-                </div>
+                {[
+                  { key: 'atk' },
+                  { key: 'tc' },
+                  { key: 'dcc' },
+                  { key: 'di' },
+                  { key: 'defPen' },
+                  { key: 'precision' },
+                  { key: 'mpcr' },
+                  { key: 'mpa' }
+                ].map(({ key }) => (
+                  <div key={key} className="flex justify-between">
+                    <span className="text-gray-500">{t(`bdg.stats.${key}`)}:</span>
+                    <span className="text-white text-right">
+                      {scoreData.sung?.finalStats?.[key] ?
+                        formatStatWithPercentage(scoreData.sung.finalStats[key], key) :
+                        <span className="text-gray-600">{preset?.sung?.expectedStats?.[key] || '---'}</span>}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         ) : (
-          // Desktop: Grid Layout (unchanged)
+          // Desktop: Grid Layout
           <div className="grid grid-cols-3 gap-4">
             {/* Col 1: Sets & Armes */}
             <div className="space-y-3">
               <div>
-                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">Sets</h4>
+                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">{t('bdg.sets.title')}</h4>
                 <div className="text-xs space-y-1">
                   <div>
-                    <span className="text-gray-500">Gauche:</span>
+                    <span className="text-gray-500">{t('bdg.sets.left')}:</span>
                     <span className="text-white ml-1">
                       {scoreData.sung?.leftSet1 && scoreData.sung?.leftSet2
                         ? `${scoreData.sung.leftSet1} + ${scoreData.sung.leftSet2}`
@@ -349,14 +306,14 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Droite:</span>
+                    <span className="text-gray-500">{t('bdg.sets.right')}:</span>
                     <span className="text-white ml-1">{scoreData.sung?.rightSet || '---'}</span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">Armes</h4>
+                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">{t('bdg.weapons.title')}</h4>
                 <div className="flex gap-1">
                   {[0, 1].map((idx) => {
                     const weaponName = scoreData.sung?.weapons?.[idx];
@@ -390,7 +347,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
             {/* Col 2: Skills & Blessings avec icônes */}
             <div className="space-y-2">
               <div>
-                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">Compétences</h4>
+                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">{t('bdg.skills.title')}</h4>
                 <div className="flex gap-0.5">
                   {scoreData.sung?.skills?.map((skill, idx) => {
                     if (!skill) return (
@@ -430,7 +387,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
               </div>
 
               <div>
-                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">Bénédictions</h4>
+                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">{t('bdg.blessings.title')}</h4>
                 <div className="flex gap-0.5">
                   {[...Array(8)].map((_, idx) => {
                     const blessing = scoreData.sung?.blessings?.[idx];
@@ -467,11 +424,11 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
             {/* Col 3: Stats */}
             <div className="space-y-3">
               <div>
-                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">Stats de base</h4>
+                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">{t('bdg.stats.base')}</h4>
                 <div className="flex gap-2 text-xs">
                   {Object.entries(scoreData.sung?.baseStats || {}).map(([key, value]) => (
                     <div key={key}>
-                      <span className="text-gray-500 uppercase">{key}:</span>
+                      <span className="text-gray-500 uppercase">{t(`bdg.stats.${key}`)}:</span>
                       <span className="text-white ml-1 font-bold">{value}</span>
                     </div>
                   ))}
@@ -479,72 +436,27 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
               </div>
 
               <div>
-                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">Stats finales</h4>
+                <h4 className="text-xs font-semibold text-purple-300 mb-1 uppercase">{t('bdg.stats.final')}</h4>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">ATK:</span>
-                    <span className="text-white">
-                      {scoreData.sung?.finalStats?.atk ?
-                        formatStatWithPercentage(scoreData.sung.finalStats.atk, 'atk') :
-                        <span className="text-gray-600">{preset?.sung?.expectedStats?.atk || '---'}</span>}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">TC:</span>
-                    <span className="text-white">
-                      {scoreData.sung?.finalStats?.tc ?
-                        formatStatWithPercentage(scoreData.sung.finalStats.tc, 'tc') :
-                        <span className="text-gray-600">{preset?.sung?.expectedStats?.tc || '---'}</span>}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">DCC:</span>
-                    <span className="text-white">
-                      {scoreData.sung?.finalStats?.dcc ?
-                        formatStatWithPercentage(scoreData.sung.finalStats.dcc, 'dcc') :
-                        <span className="text-gray-600">{preset?.sung?.expectedStats?.dcc || '---'}</span>}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">DI:</span>
-                    <span className="text-white">
-                      {scoreData.sung?.finalStats?.di ?
-                        formatStatWithPercentage(scoreData.sung.finalStats.di, 'di') :
-                        <span className="text-gray-600">{preset?.sung?.expectedStats?.di || '---'}</span>}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">DEF P:</span>
-                    <span className="text-white">
-                      {scoreData.sung?.finalStats?.defPen ?
-                        formatStatWithPercentage(scoreData.sung.finalStats.defPen, 'defPen') :
-                        <span className="text-gray-600">{preset?.sung?.expectedStats?.defPen || '---'}</span>}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">PREC:</span>
-                    <span className="text-white">
-                      {scoreData.sung?.finalStats?.precision ?
-                        formatStatWithPercentage(scoreData.sung.finalStats.precision, 'precision') :
-                        <span className="text-gray-600">{preset?.sung?.expectedStats?.precision || '---'}</span>}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">MPCR:</span>
-                    <span className="text-white">
-                      {scoreData.sung?.finalStats?.mpcr ?
-                        formatStatWithPercentage(scoreData.sung.finalStats.mpcr, 'mpcr') :
-                        <span className="text-gray-600">{preset?.sung?.expectedStats?.mpcr || '---'}</span>}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">MPA:</span>
-                    <span className="text-white">
-                      {scoreData.sung?.finalStats?.mpa ?
-                        formatStatWithPercentage(scoreData.sung.finalStats.mpa, 'mpa') :
-                        <span className="text-gray-600">{preset?.sung?.expectedStats?.mpa || '---'}</span>}
-                    </span>
-                  </div>
+                  {[
+                    { key: 'atk' },
+                    { key: 'tc' },
+                    { key: 'dcc' },
+                    { key: 'di' },
+                    { key: 'defPen' },
+                    { key: 'precision' },
+                    { key: 'mpcr' },
+                    { key: 'mpa' }
+                  ].map(({ key }) => (
+                    <div key={key} className="flex justify-between">
+                      <span className="text-gray-500">{t(`bdg.stats.${key}`)}:</span>
+                      <span className="text-white">
+                        {scoreData.sung?.finalStats?.[key] ?
+                          formatStatWithPercentage(scoreData.sung.finalStats[key], key) :
+                          <span className="text-gray-600">{preset?.sung?.expectedStats?.[key] || '---'}</span>}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -556,13 +468,13 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
       <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/80 rounded-xl p-3 sm:p-4 border border-gray-700 shadow-xl">
         <h3 className="text-lg sm:text-xl font-bold text-white mb-3 flex items-center uppercase">
           <span className="text-purple-400 mr-2">👥</span>
-          Hunters
+          {t('bdg.hunters.title')}
         </h3>
         <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-3'}`}>
           {scoreData.hunters?.map((hunter, idx) => {
             if (!hunter?.character && !hunter?.id) return (
               <div key={idx} className="bg-black/30 rounded-lg p-3 border border-gray-700/50 opacity-50">
-                <p className="text-center text-gray-500 text-sm">Hunter {idx + 1}</p>
+                <p className="text-center text-gray-500 text-sm">{t('bdg.hunters.hunter', { index: idx + 1 })}</p>
               </div>
             );
 
@@ -585,8 +497,8 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                         {character?.name || hunter.id || `Hunter ${idx + 1}`}
                       </p>
                       <div className="flex items-center text-yellow-400 text-xs">
-                        <span className="mr-2">H: {hunter.stars || 0} ⭐</span>
-                        <span>W: {hunter.weaponStars || 0} ⭐</span>
+                        <span className="mr-2">{t('bdg.hunters.stars.hunter')}: {hunter.stars || 0} ⭐</span>
+                        <span>{t('bdg.hunters.stars.weapon')}: {hunter.weaponStars || 0} ⭐</span>
                       </div>
                     </div>
                   </div>
@@ -627,7 +539,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
 
                 {/* Hunter Sets */}
                 <div className="text-xs text-gray-400 mb-2">
-                  <div>Sets: {isMobile && hunter.leftSet && hunter.rightSet ? (
+                  <div>{t('bdg.sets.title')}: {isMobile && hunter.leftSet && hunter.rightSet ? (
                     <>
                       <div className="text-white">{hunter.leftSet} /</div>
                       <div className="text-white">{hunter.rightSet}</div>
@@ -654,15 +566,15 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                     }
 
                     const labelMap = {
-                      'def': 'DEF',
-                      'hp': 'HP',
-                      'atk': 'ATK',
-                      'tc': 'TC',
-                      'dcc': 'DCC',
-                      'defPen': 'DEF P',
-                      'di': 'DI',
-                      'mpcr': 'MPCR',
-                      'mpa': 'MPA'
+                      'def': t('bdg.stats.def'),
+                      'hp': t('bdg.stats.hp'),
+                      'atk': t('bdg.stats.atk'),
+                      'tc': t('bdg.stats.tc'),
+                      'dcc': t('bdg.stats.dcc'),
+                      'defPen': t('bdg.stats.defPen'),
+                      'di': t('bdg.stats.di'),
+                      'mpcr': t('bdg.stats.mpcr'),
+                      'mpa': t('bdg.stats.mpa')
                     };
 
                     return statsToShow.map((statKey) => {

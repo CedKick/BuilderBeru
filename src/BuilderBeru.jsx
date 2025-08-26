@@ -6076,6 +6076,7 @@ BobbyJones : "Allez l'Inter !"
                             <BDGScoreCard
                               showTankMessage={showTankMessage}
                               activeAccount={activeAccount}
+                              t={t}
                               currentBuildStats={{
                                 selectedCharacter: selectedCharacter,
                                 finalStats: (() => {
@@ -6811,6 +6812,7 @@ BobbyJones : "Allez l'Inter !"
                         <BDGScoreCard
                           showTankMessage={showTankMessage}
                           activeAccount={activeAccount}
+                          t={t}
                           currentBuildStats={{
                             selectedCharacter: selectedCharacter,
                             finalStats: (() => {
