@@ -1248,5 +1248,137 @@
     "mobile": {
       "week": "W{{week}}"
     }
+  },
+    "pod": {
+    "title": "POD Score",
+    "currentBoss": "Boss actuel",
+    "week": "Semaine {{week}}",
+    "selectWeek": "Sélectionner la semaine",
+    "selectPreset": "Sélectionner un preset",
+    "selectElement": "Sélectionner l'élément",
+    "edit": "Éditer",
+    "view": "Visualiser",
+    "validate": "Valider",
+    "share": "Partager",
+    "reset": "Reset",
+    "addPreset": "+ Preset",
+    "deletePreset": "Supprimer ce preset",
+    "totalScore": "Score Total",
+    "rageCount": "Rage Count",
+    "autoCalculated": "(Auto-calculé)",
+    "contribution": "contribution",
+    "damage": "Dégâts",
+    "sets": {
+      "title": "Sets",
+      "left": "Gauche",
+      "leftShort": "G",
+      "right": "Droite", 
+      "rightShort": "D",
+      "set1": "Set G1",
+      "set2": "Set G2",
+      "split": "2+2"
+    },
+    "weapons": {
+      "title": "Armes",
+      "weapon": "Arme",
+      "stars": "étoiles"
+    },
+    "skills": {
+      "title": "Compétences",
+      "skill": "S{{index}}",
+      "rarity": {
+        "rare": "R",
+        "epic": "E",
+        "legendary": "L",
+        "mythic": "M"
+      }
+    },
+    "blessings": {
+      "title": "Bénédictions",
+      "offensive": "O",
+      "defensive": "D"
+    },
+    "stats": {
+      "base": "Stats de base",
+      "final": "Stats finales",
+      "import": "Importer les stats depuis le build",
+      "str": "STR",
+      "int": "INT",
+      "vit": "VIT",
+      "per": "PER",
+      "agi": "AGI",
+      "atk": "ATK",
+      "tc": "TC",
+      "dcc": "DCC",
+      "di": "DI",
+      "defPen": "DEF P",
+      "precision": "PREC",
+      "mpcr": "MPCR",
+      "mpa": "MPA",
+      "def": "DEF",
+      "hp": "HP"
+    },
+    "hunters": {
+      "title": "Hunters",
+      "hunter": "Hunter {{index}}",
+      "select": "Cliquer pour choisir",
+      "choose": "Choisir un Hunter",
+      "stars": {
+        "hunter": "H",
+        "weapon": "W"
+      }
+    },
+    "preset": {
+      "default": "Preset par défaut",
+      "defaultPreset": "Défaut",
+      "custom": "Preset personnalisé",
+      "save": "Sauvegarder comme nouveau preset",
+      "name": "Nom du preset",
+      "saveButton": "Sauvegarder",
+      "cancel": "Annuler",
+      "deleteConfirm": "Supprimer ce preset personnalisé ?"
+    },
+    "messages": {
+      "loadingPreset": "Chargement du preset...",
+      "loadingData": "Chargement des données depuis vos builds...",
+      "modificationsSaved": "Modifications sauvegardées !",
+      "modificationsRestored": "Modifications non sauvegardées restaurées",
+      "errorSaving": "Erreur lors de la sauvegarde",
+      "errorDeleting": "Erreur lors de la suppression",
+      "presetAdded": "Preset \"{{name}}\" ajouté !",
+      "presetDeleted": "Preset supprimé",
+      "resetConfirm": "Réinitialiser vers le preset de base ? Les modifications non sauvegardées seront perdues.",
+      "resetDone": "Réinitialisé au preset de base",
+      "changeElementConfirm": "Changer d'élément ? Les modifications non sauvegardées seront perdues.",
+      "changePresetConfirm": "Changer de preset ? Les modifications non sauvegardées seront perdues.",
+      "scoreTooHigh": "Score trop élevé ! Vérifie tes données.",
+      "limitExceeded": "Limite dépassée pour {{name}}: max {{max}}B (120% de la limite)",
+      "limitExceededSung": "Limite dépassée pour Sung (mode {{mode}}): max {{max}}B",
+      "noBuildFound": "Aucun build trouvé",
+      "noBuildSaved": "Aucun build sauvegardé pour {{name}}",
+      "statsImported": "Stats importées depuis le build !",
+      "statsImportedFor": "Stats importées pour {{name}} !",
+      "errorImporting": "Erreur lors de l'import",
+      "selectHunterFirst": "Sélectionne d'abord un hunter",
+      "exchangedPosition": "{{name}} échangé de position !",
+      "shareComingSoon": "Fonctionnalité de partage à venir !",
+      "errorUserData": "Erreur: données utilisateur non trouvées"
+    },
+    "warnings": {
+      "buildIncomplete": "Build Incomplet Détecté",
+      "incompleteStats": "Les stats affichées seront incomplètes. Que veux-tu faire ?",
+      "completeBuilds": "Compléter le Build",
+      "continueAnyway": "Continuer quand même",
+      "goCompleteFirst": "Va compléter tes builds d'abord !",
+      "canContinueButIncomplete": "Tu peux continuer mais les stats seront incomplètes !",
+      "sungIncomplete": "Sung Jin-Woo n'a que {{count}}/8 artifacts équipés"
+    },
+    "mobile": {
+      "week": "S{{week}}"
+    },
+     "shadows": {
+      "title": "Shadows",
+      "select":  "Select your shadow"
+    }
   }
 }

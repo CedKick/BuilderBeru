@@ -1,0 +1,332 @@
+{
+  "weeks": {
+    "2025-W35": {
+      "weekId": "2025-W34",
+      "startDate": "2025-08-28",
+      "endDate": "2025-09-03",
+      "currentBoss": "Ennio immortal",
+      "bossName": "Ennio immortal",
+      "elements": [
+        "WIND",
+        "DARK"
+      ],
+      "scoringLimits": {
+        "maxTotalScore": 35000000000,
+        "maxSungScore": 5000000000,
+        "maxHunterScore": 30000000000
+      },
+      "presets": {
+        "FIRE": {
+          "sung": {
+            "weapons": [],
+            "weaponStars": [10, 10],
+            "leftSet": "",
+            "rightSet": "",
+            "skills": [
+              {
+                "name": "detonation",
+                "rarity": "mythic"
+              },
+              {
+                "name": "sonic explosion",
+                "rarity": "mythic"
+              },
+              {
+                "name": "king's domain",
+                "rarity": "mythic"
+              },
+              {
+                "name": "overshadow",
+                "rarity": "mythic"
+              },
+              {
+                "name": "surprise attack",
+                "rarity": "mythic"
+              },
+              {
+                "name": "shadow step",
+                "rarity": "mythic"
+              }
+            ],
+            "blessings": [
+              {
+                "name": "bloodlust",
+                "type": "offensive"
+              },
+              {
+                "name": "sharp perception",
+                "type": "offensive"
+              },
+              {
+                "name": "reawakening",
+                "type": "offensive"
+              },
+              {
+                "name": "we are one",
+                "type": "offensive"
+              },
+              {
+                "name": "aggresive defense",
+                "type": "defensive"
+              },
+              {
+                "name": "natural disaster",
+                "type": "defensive"
+              },
+              {
+                "name": "kasaka's steel scales",
+                "type": "defensive"
+              },
+              {
+                "name": "life",
+                "type": "defensive"
+              }
+            ],
+            "baseStats": {
+              "str": 300,
+              "int": 459,
+              "vit": 0,
+              "per": 0,
+              "agi": 0
+            },
+            "expectedStats": {
+              "atk": "55000-60000",
+              "tc": "10000-14000",
+              "dcc": "21000-23000",
+              "di": "22000-24000",
+              "defPen": "35-2500",
+              "precision": "2500-3000",
+              "mpcr": "94-2500",
+              "mpa": "2500-3100"
+            }
+          },
+          "hunters": [
+            {
+              "id": "kanae",
+              "position": 0,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "",
+              "rightSet": "",
+              "expectedStats": {
+                "atk": "45000-50000",
+                "tc": "13000",
+                "dcc": "21000",
+                "defPen": "15000",
+                "di": "22000"
+              },
+              "expectedDamage": "10000000000"
+            },
+            {
+              "id": "gina",
+              "position": 1,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "",
+              "rightSet": "",
+              "expectedStats": {
+                "atk": "45000",
+                "tc": "13000",
+                "dcc": "21000",
+                "defPen": "15000",
+                "di": "22000"
+              },
+              "expectedDamage": "8000000000"
+            },
+            {
+              "id": "esil",
+              "position": 2,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "",
+              "rightSet": "",
+              "expectedStats": {
+                "hp": "80000",
+                "tc": "13000",
+                "dcc": "21000",
+                "di": "22000"
+              },
+              "expectedDamage": "7000000000"
+            }
+          ]
+        },
+        "WATER": {
+          "sung": {
+            "weapons": [],
+            "weaponStars": [10, 10],
+            "leftSet": "",
+            "rightSet": "",
+            "baseStats": {
+              "str": 300,
+              "int": 459,
+              "vit": 0,
+              "per": 0,
+              "agi": 0
+            }
+          },
+          "hunters": []
+        }
+      }
+    },
+    "2025-W34": {
+  "weekId": "2025-W34",
+  "startDate": "2025-08-21",
+  "endDate": "2025-08-27",
+  "currentBoss": "ennio",
+  "bossName": "Ennio",
+  "elements": [
+    "WIND",
+    "DARK"
+  ],
+  "scoringLimits": {
+    "maxTotalScore": 30000000000,
+    "maxSungScore": 3000000000,
+    "maxHunterScore": 27000000000
+  },
+  "presets": {
+    "WIND": {
+      "sung": {
+        "weapons": ["stormbringer", "thetisgrimoire"],
+        "weaponStars": [10, 10],
+        "leftSet": "Burning Curse",
+        "rightSet": "Obsidian",
+        "skills": [
+          {
+            "name": "vacuum wave",
+            "rarity": "mythic"
+          },
+          {
+            "name": "cold ice",
+            "rarity": "mythic"
+          },
+          {
+            "name": "king's domain",
+            "rarity": "mythic"
+          },
+          {
+            "name": "squall",
+            "rarity": "mythic"
+          },
+          {
+            "name": "thunderstorm",
+            "rarity": "mythic"
+          },
+          {
+            "name": "shadow step",
+            "rarity": "mythic"
+          }
+        ],
+        "blessings": [
+          {
+            "name": "bloodlust",
+            "type": "offensive"
+          },
+          {
+            "name": "sharp perception",
+            "type": "offensive"
+          },
+          {
+            "name": "reawakening",
+            "type": "offensive"
+          },
+          {
+            "name": "we are one",
+            "type": "offensive"
+          },
+          {
+            "name": "aggresive defense",
+            "type": "defensive"
+          },
+          {
+            "name": "natural disaster",
+            "type": "defensive"
+          },
+          {
+            "name": "kasaka's steel scales",
+            "type": "defensive"
+          },
+          {
+            "name": "life",
+            "type": "defensive"
+          }
+        ],
+        "baseStats": {
+          "str": 300,
+          "int": 459,
+          "vit": 0,
+          "per": 0,
+          "agi": 0
+        }
+      },
+      "hunters": [
+        {
+          "id": "jinah",
+          "position": 0,
+          "stars": 10,
+          "weaponStars": 10,
+          "leftSet": "Burning Curse",
+          "rightSet": "Obsidian",
+          "expectedStats": {
+            "atk": "45000-50000",
+            "tc": "13000",
+            "dcc": "21000",
+            "defPen": "15000",
+            "di": "22000"
+          },
+          "expectedDamage": "8000000000"
+        },
+        {
+          "id": "goto",
+          "position": 1,
+          "stars": 10,
+          "weaponStars": 10,
+          "leftSet": "Burning Curse",
+          "rightSet": "Obsidian",
+          "expectedStats": {
+            "hp": "80000",
+            "tc": "13000",
+            "dcc": "21000",
+            "di": "22000"
+          },
+          "expectedDamage": "7000000000"
+        },
+        {
+          "id": "lennart",
+          "position": 2,
+          "stars": 10,
+          "weaponStars": 10,
+          "leftSet": "Burning Curse",
+          "rightSet": "Obsidian",
+          "expectedStats": {
+            "atk": "45000",
+            "tc": "13000",
+            "dcc": "21000",
+            "defPen": "15000"
+          },
+          "expectedDamage": "6000000000"
+        }
+      ],
+      "shadows": ["Igris", "Beste", "Cerbie"]
+    },
+    "DARK": {
+      "sung": {
+        "weapons": [],
+        "weaponStars": [10, 10],
+        "leftSet": "Burning Curse",
+        "rightSet": "Obsidian",
+        "baseStats": {
+          "str": 300,
+          "int": 459,
+          "vit": 0,
+          "per": 0,
+          "agi": 0
+        }
+      },
+      "hunters": [],
+      "shadows": []
+    }
+  }
+}
+  },
+  "currentWeek": "2025-W34"
+}
