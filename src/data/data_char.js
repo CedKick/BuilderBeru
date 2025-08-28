@@ -1,4 +1,31 @@
 const data_chars = {
+    'minnie': {
+      name: 'Minnie',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/Minnie_bcfolv.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/Minnie_bcfolv.png',
+      class: 'Assassin',
+      grade: 'SSR',
+      element: 'Dark',
+      scaleStat: 'Defense'
+    },
+      'Soyeon': {
+      name: 'Soyeon',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/soyeon_fstvg4.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/soyeon_fstvg4.png',
+      class: 'Tank',
+      grade: 'SSR',
+      element: 'Wind',
+      scaleStat: 'Attack'
+    },
+      'yuqi': {
+      name: 'yuqi',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403437/yuki_dqefqm.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403437/yuki_dqefqm.png',
+      class: 'Tank',
+      grade: 'SSR',
+      element: 'Fire',
+      scaleStat: 'HP'
+    },
   'jinah': {
       name: 'Jinah',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869840/jinah_vrbddm.png',

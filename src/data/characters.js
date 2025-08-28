@@ -16,7 +16,116 @@ export const characters = {
     },
     buffs: []
 
-  }, 'jinah': {
+  },
+  'yuqi': {
+    name: 'yuqi',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403437/yuki_dqefqm.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403437/yuki_dqefqm.png',
+    class: 'Fighter',
+    grade: 'SSR',
+    element: 'Fire',
+    scaleStat: 'HP',
+    importantStats: ['hp', 'tc', 'dcc', 'defPen', 'di'],
+    skillMultipliers: {
+      core1: 3.5,
+      core2: 4.8,
+      skill1: 12.0,
+      skill2: 16.5,
+      ultimate: 35.0
+    },
+    buffs: [
+      {
+        name: 'Wind Shield',
+        values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+        cooldown: 12,
+        duration: 8,
+        target: 'shared', // 'self' ou 'shared'
+        type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+        element: 'Wind'
+      }]
+  },
+  'soyeon': {
+    name: 'Soyeon',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/soyeon_fstvg4.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/soyeon_fstvg4.png',
+    class: 'Fighter',
+    grade: 'SSR',
+    element: 'Wind',
+    scaleStat: 'Attack',
+    importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di'],
+    skillMultipliers: {
+      core1: 3.5,
+      core2: 4.8,
+      skill1: 12.0,
+      skill2: 16.5,
+      ultimate: 35.0
+    },
+    buffs: [
+      {
+        name: 'Wind Shield',
+        values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+        cooldown: 12,
+        duration: 8,
+        target: 'shared', // 'self' ou 'shared'
+        type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+        element: 'Wind'
+      }]
+  },
+  'minnie': {
+    name: 'Minnie',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/Minnie_bcfolv.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/Minnie_bcfolv.png',
+    class: 'Assasin',
+    grade: 'SSR',
+    element: 'Dark',
+    scaleStat: 'Defense',
+    importantStats: ['def', 'tc', 'dcc', 'defPen', 'di', 'mpcr', 'mpa'],
+    skillMultipliers: {
+      core1: 3.5,
+      core2: 4.8,
+      skill1: 12.0,
+      skill2: 16.5,
+      ultimate: 35.0
+    },
+    buffs: [
+      {
+        name: 'Wind Shield',
+        values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+        cooldown: 12,
+        duration: 8,
+        target: 'shared', // 'self' ou 'shared'
+        type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+        element: 'Wind'
+      }]
+  },
+  'shuhua': {
+    name: 'Shuhua',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751535917/Shuhua1_difnjb.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751536775/IconShuhua_njc2f2.png',
+    class: 'Fighter',
+    grade: 'SSR',
+    element: 'Water',
+    scaleStat: 'Attack',
+    importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di'],
+    skillMultipliers: {
+      core1: 3.5,
+      core2: 4.8,
+      skill1: 12.0,
+      skill2: 16.5,
+      ultimate: 35.0
+    },
+    buffs: [
+      {
+        name: 'Wind Shield',
+        values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+        cooldown: 12,
+        duration: 8,
+        target: 'shared', // 'self' ou 'shared'
+        type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+        element: 'Wind'
+      }]
+  },
+  'jinah': {
     name: 'Jinah',
     img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869840/jinah_vrbddm.png',
     icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753869067/jinah_icon_pfdee6.png',

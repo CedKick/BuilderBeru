@@ -1860,6 +1860,9 @@ const BuilderBeru = () => {
 
   const characterStats = {
     // SSR Hunters
+    'minnie': { attack: 5373, defense: 9111, hp: 11356, critRate: 0, mp: 1000 },
+    'soyeon': { attack: 9138, defense: 5370, hp: 11332, critRate: 0, mp: 1000 },
+    'yuqi': { attack: 5323, defense: 5352, hp: 19060, critRate: 0, mp: 1000 },
     'jinwoo': { attack: 3032, defense: 2775, hp: 5436, critRate: 0, mp: 1034 },
     'jinah': { attack: 6132, defense: 5292, hp: 11313, critRate: 0, mp: 1000 },
     'alicia': { attack: 6056, defense: 5279, hp: 11503, critRate: 0, mp: 1000 },
@@ -3119,7 +3122,7 @@ BobbyJones : "Allez l'Inter !"
           defaultCharacter = mainRecent[0];
         } else {
           // En dernier recours, Niermann
-          defaultCharacter = 'shuhua';
+          defaultCharacter = 'minnie';
         }
       }
 
@@ -6140,28 +6143,28 @@ BobbyJones : "Allez l'Inter !"
                       ))}
 
                       {/* Ajouter POD Score Card */}
-<div className="w-full mt-6">
-  <PODScoreCard
-    showTankMessage={showTankMessage}
-    activeAccount={activeAccount}
-    currentBuildStats={{
-      selectedCharacter: selectedCharacter,
-      finalStats: (() => {
-        const scaleStat = characters[selectedCharacter]?.scaleStat;
-        return {
-          [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
-          'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
-          'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
-          'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
-          'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
-          'MP Consumption Reduction': (finalStatsWithoutArtefact['MP Consumption Reduction'] || 0) + (statsFromArtifacts['MP Consumption Reduction'] || 0),
-          'MP': (finalStatsWithoutArtefact['MP'] || 0) + (statsFromArtifacts['MP'] || 0),
-          [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
-        };
-      })()
-    }}
-  />
-</div>
+                      <div className="w-full mt-6">
+                        <PODScoreCard
+                          showTankMessage={showTankMessage}
+                          activeAccount={activeAccount}
+                          currentBuildStats={{
+                            selectedCharacter: selectedCharacter,
+                            finalStats: (() => {
+                              const scaleStat = characters[selectedCharacter]?.scaleStat;
+                              return {
+                                [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
+                                'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
+                                'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
+                                'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
+                                'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
+                                'MP Consumption Reduction': (finalStatsWithoutArtefact['MP Consumption Reduction'] || 0) + (statsFromArtifacts['MP Consumption Reduction'] || 0),
+                                'MP': (finalStatsWithoutArtefact['MP'] || 0) + (statsFromArtifacts['MP'] || 0),
+                                [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
+                              };
+                            })()
+                          }}
+                        />
+                      </div>
 
                     </div>
                   </div>
@@ -8375,28 +8378,28 @@ BobbyJones : "Allez l'Inter !"
                 ))}
 
                 {/* Ajouter POD Score Card */}
-<div className="w-full mt-6">
-  <PODScoreCard
-    showTankMessage={showTankMessage}
-    activeAccount={activeAccount}
-    currentBuildStats={{
-      selectedCharacter: selectedCharacter,
-      finalStats: (() => {
-        const scaleStat = characters[selectedCharacter]?.scaleStat;
-        return {
-          [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
-          'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
-          'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
-          'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
-          'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
-          'MP Consumption Reduction': (finalStatsWithoutArtefact['MP Consumption Reduction'] || 0) + (statsFromArtifacts['MP Consumption Reduction'] || 0),
-          'MP': (finalStatsWithoutArtefact['MP'] || 0) + (statsFromArtifacts['MP'] || 0),
-          [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
-        };
-      })()
-    }}
-  />
-</div>
+                <div className="w-full mt-6">
+                  <PODScoreCard
+                    showTankMessage={showTankMessage}
+                    activeAccount={activeAccount}
+                    currentBuildStats={{
+                      selectedCharacter: selectedCharacter,
+                      finalStats: (() => {
+                        const scaleStat = characters[selectedCharacter]?.scaleStat;
+                        return {
+                          [scaleStat]: (finalStatsWithoutArtefact[scaleStat] || 0) + (statsFromArtifacts[scaleStat] || 0),
+                          'Critical Hit Rate': (finalStatsWithoutArtefact['Critical Hit Rate'] || 0) + (statsFromArtifacts['Critical Hit Rate'] || 0),
+                          'Critical Hit Damage': (finalStatsWithoutArtefact['Critical Hit Damage'] || 0) + (statsFromArtifacts['Critical Hit Damage'] || 0),
+                          'Defense Penetration': (finalStatsWithoutArtefact['Defense Penetration'] || 0) + (statsFromArtifacts['Defense Penetration'] || 0),
+                          'Damage Increase': (finalStatsWithoutArtefact['Damage Increase'] || 0) + (statsFromArtifacts['Damage Increase'] || 0),
+                          'MP Consumption Reduction': (finalStatsWithoutArtefact['MP Consumption Reduction'] || 0) + (statsFromArtifacts['MP Consumption Reduction'] || 0),
+                          'MP': (finalStatsWithoutArtefact['MP'] || 0) + (statsFromArtifacts['MP'] || 0),
+                          [`${characters[selectedCharacter]?.element} Damage %`]: finalStatsWithoutArtefact[`${characters[selectedCharacter]?.element} Damage %`] || 0
+                        };
+                      })()
+                    }}
+                  />
+                </div>
 
 
 

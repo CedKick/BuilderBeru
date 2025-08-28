@@ -7,6 +7,9 @@ import CombatArena from './CombatArena.jsx';
 
 // 🔧 STATS DE BASE DES PERSONNAGES - COPIÉ DEPUIS BuilderBeru.jsx
 const characterStats = {
+  'minnie': { attack: 5373, defense: 9111, hp: 11356, critRate: 0, mp: 1000 },
+  'soyeon': { attack: 9138, defense: 5370, hp: 11332, critRate: 0, mp: 1000 },
+  'yuqi': { attack: 5323, defense: 5352, hp: 19060, critRate: 0, mp: 1000 },
   'jinwoo': { attack: 3032, defense: 2775, hp: 5436, critRate: 0, mp: 1034 },
   'Jinah': { attack: 6132, defense: 5292, hp: 11313, critRate: 0, mp: 1000 },
   'shuhua': { attack: 5909.5, defense: 5100, hp: 10890.5, critRate: 0, mp: 1000 },
@@ -506,18 +509,18 @@ const ComparisonHunter = ({
   const [hoveredArtifact, setHoveredArtifact] = useState(null);
 
   const isMobileDevice = window.innerWidth < 768;
-  
+
   const handleStartCombat = () => {
-  console.log('⚔️ COMBAT DÉCLENCHÉ !');
-  console.log('Hunter 1 (Hall):', referenceHunter.character, referenceHunter.pseudo);
-  console.log('Hunter 2 (Vous):', localHunterData?.characterName);
-  
-  setShowCombat(true);
-  
-  if (showTankMessage) {
-    showTankMessage(`⚔️ COMBAT: ${referenceHunter.pseudo} VS ${localHunterData?.characterName} !`, true, 'kaisel');
-  }
-};
+    console.log('⚔️ COMBAT DÉCLENCHÉ !');
+    console.log('Hunter 1 (Hall):', referenceHunter.character, referenceHunter.pseudo);
+    console.log('Hunter 2 (Vous):', localHunterData?.characterName);
+
+    setShowCombat(true);
+
+    if (showTankMessage) {
+      showTankMessage(`⚔️ COMBAT: ${referenceHunter.pseudo} VS ${localHunterData?.characterName} !`, true, 'kaisel');
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -1524,39 +1527,39 @@ const ComparisonHunter = ({
           )}
 
           {/* 🎮 PRÉDICTION DE COMBAT BERUVIAN WORLD */}
-         {animationPhase >= 2 && currentCP > 0 && (
-  <div 
-    className="battle-prediction"
-    onDoubleClick={handleStartCombat}
-    style={{ cursor: 'pointer' }}
-    title="Double-cliquez pour lancer le combat !"
-  >
-    <h3 className="text-lg font-bold text-purple-400 mb-2">
-      🎮 Simulation Beruvian World ({comparisonMode === 'artifacts' ? 'Artefacts' : 'Total'})
-    </h3>
-    <div className="flex items-center justify-center gap-4">
-      <div className={`text-center ${battleResult.winner === 'reference' ? 'text-red-400' : 'text-gray-400'}`}>
-        <p className="text-sm">{referenceHunter.pseudo}</p>
-        <p className="text-2xl font-bold">
-          {battleResult.winner === 'reference' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
-        </p>
-      </div>
-      <span className="text-purple-400 text-xl">⚔️</span>
-      <div className={`text-center ${battleResult.winner === 'current' ? 'text-green-400' : 'text-gray-400'}`}>
-        <p className="text-sm">Vous ({localHunterData?.characterName})</p>
-        <p className="text-2xl font-bold">
-          {battleResult.winner === 'current' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
-        </p>
-      </div>
-    </div>
-    <p className="text-xs text-gray-400 mt-2">
-      Simulation basée sur le CP {comparisonMode === 'artifacts' ? 'des artefacts' : 'total'} et les stats principales
-    </p>
-    <p className="text-xs text-yellow-400 mt-1 animate-pulse">
-      📱 Double-cliquez pour déclencher le combat !
-    </p>
-  </div>
-)}
+          {animationPhase >= 2 && currentCP > 0 && (
+            <div
+              className="battle-prediction"
+              onDoubleClick={handleStartCombat}
+              style={{ cursor: 'pointer' }}
+              title="Double-cliquez pour lancer le combat !"
+            >
+              <h3 className="text-lg font-bold text-purple-400 mb-2">
+                🎮 Simulation Beruvian World ({comparisonMode === 'artifacts' ? 'Artefacts' : 'Total'})
+              </h3>
+              <div className="flex items-center justify-center gap-4">
+                <div className={`text-center ${battleResult.winner === 'reference' ? 'text-red-400' : 'text-gray-400'}`}>
+                  <p className="text-sm">{referenceHunter.pseudo}</p>
+                  <p className="text-2xl font-bold">
+                    {battleResult.winner === 'reference' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
+                  </p>
+                </div>
+                <span className="text-purple-400 text-xl">⚔️</span>
+                <div className={`text-center ${battleResult.winner === 'current' ? 'text-green-400' : 'text-gray-400'}`}>
+                  <p className="text-sm">Vous ({localHunterData?.characterName})</p>
+                  <p className="text-2xl font-bold">
+                    {battleResult.winner === 'current' ? Math.round(battleResult.winChance) : Math.round(100 - battleResult.winChance)}%
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                Simulation basée sur le CP {comparisonMode === 'artifacts' ? 'des artefacts' : 'total'} et les stats principales
+              </p>
+              <p className="text-xs text-yellow-400 mt-1 animate-pulse">
+                📱 Double-cliquez pour déclencher le combat !
+              </p>
+            </div>
+          )}
 
           {/* BOUTON FERMER */}
           <button
@@ -1567,25 +1570,25 @@ const ComparisonHunter = ({
           </button>
         </div>
         {showCombat && (
-  <CombatArena
-    hunter1={{
-      name: referenceHunter.pseudo,
-      character: referenceHunter.character,
-      stats: comparisonMode === 'final' ? referenceHunter.currentStats : referenceHunter.statsFromArtifacts,
-      cp: referenceCP,
-      side: 'left'
-    }}
-    hunter2={{
-      name: localHunterData?.characterName || 'Vous',
-      character: localHunterData?.characterName,
-      stats: comparisonMode === 'final' ? currentFinalStats : currentStatsFromArtifacts,
-      cp: currentCP,
-      side: 'right'
-    }}
-    onClose={() => setShowCombat(false)}
-    showTankMessage={showTankMessage}
-  />
-)}
+          <CombatArena
+            hunter1={{
+              name: referenceHunter.pseudo,
+              character: referenceHunter.character,
+              stats: comparisonMode === 'final' ? referenceHunter.currentStats : referenceHunter.statsFromArtifacts,
+              cp: referenceCP,
+              side: 'left'
+            }}
+            hunter2={{
+              name: localHunterData?.characterName || 'Vous',
+              character: localHunterData?.characterName,
+              stats: comparisonMode === 'final' ? currentFinalStats : currentStatsFromArtifacts,
+              cp: currentCP,
+              side: 'right'
+            }}
+            onClose={() => setShowCombat(false)}
+            showTankMessage={showTankMessage}
+          />
+        )}
       </div>
     </>,
     document.body

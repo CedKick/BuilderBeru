@@ -3,6 +3,331 @@
 // 🔥 REFACTOR KAISEL - LOGIQUE UNIFIÉE
 
 const BUILDER_DATA = {
+  "minnie": {
+  "name": "Minnie",
+  "element": "Dark",
+  "class": "Assassin", 
+  "grade": "SSR",
+  "scaleStat": "Defense",
+
+"optimizationPriority": [
+  {
+    stat: "Additional Defense",           
+    priority: 1,
+    target: "maximum_possible",
+    reason: "Prioriser Defense au maximum (scaleStat)",
+    description: "Minnie scale sur Defense - maximise cette stat avant tout"
+  },
+  {
+    stat: "Damage Increase",              
+    priority: 2,
+    target: "maximum_possible",
+    reason: "Dégâts optimaux après défense"
+  },
+  {
+    stat: "Critical Hit Damage",
+    priority: 3,
+    target: "200%+",
+    reason: "Dégâts critiques optimaux"
+  },
+  {
+    stat: "Critical Hit Rate",
+    priority: 4,
+    target: 5000, // 50% minimum pour tank
+    reason: "Taux critique pour contre-attaques"
+  },
+  {
+    stat: "Defense Penetration",
+    priority: 5,
+    target: "10-20%",
+    reason: "Pénétration pour efficacité"
+  }
+],
+
+  // 📊 STATS RECOMMANDÉES (inchangé)
+  "recommendedStats": {
+    "criticalHitRate": "50%",
+    "criticalHitDamage": "200% - 210%",
+    "DamageIncrease": "30% +",
+    "defensePenetration": "10% - 20%",
+    "additionalDefense": "Le plus possible",
+    "additionalAttack": null,
+    "precision": null,
+    "damageReduction": null,
+    "healingReceived": null,
+    "mpRecoveryRate": null,
+    "mpCostReduction": null
+  },
+
+  // 🎮 MODES DE JEU & SETS - KAISEL FIX COMPLET
+  "gameModes": {
+    "general": {
+      "recommendedSet": "Hybrid Iron Will/Outstanding", // ← SET 1
+      "priority": "Balanced tank build",
+      "description": "Build tank équilibré défensif",
+      "availability": "L",
+      "setComposition": "4x Iron Will + 4x Outstanding Ability"
+    },
+    "pod": {
+      "recommendedSet": "Full Chaotic Infamy", // ← SET 2
+      "priority": "PvP maximum survivability",
+      "description": "Build PvP survie maximum",
+      "availability": "LR",
+      "setComposition": "8x Chaotic Infamy"
+    },
+    "bdg": {
+      "recommendedSet": "Full Chaotic Infamy", // ← SET 2 aussi
+      "priority": "Guild boss tanking",
+      "description": "Build boss de guilde tank",
+      "availability": "LR",
+      "setComposition": "8x Chaotic Infamy"
+    }
+  },
+
+  // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS - KAISEL FIX 2 BUILDS
+  "artifactSets": {
+    "hybridIronWillOutstanding": {
+      "name": "Hybrid Iron Will/Outstanding",
+      "frenchName": "Hybride Volonté/Remarquable",
+      "availability": "LR",
+      "setComposition": "4x Iron Will + 4x Outstanding Ability",
+      "pieces": {
+        "helmet": "Casque de la volonté de fer",        // Iron Will
+        "chest": "Armure de la volonté de fer",         // Iron Will
+        "gloves": "Gants de la volonté de fer",         // Iron Will
+        "boots": "Bottes de la volonté de fer",         // Iron Will
+        "necklace": "Collier en obsidienne",            // Outstanding Ability
+        "bracelet": "Bracelet en obsidienne",           // Outstanding Ability
+        "ring": "Bague en obsidienne",                  // Outstanding Ability
+        "earrings": "Boucles d'oreilles en obsidienne" // Outstanding Ability
+      },
+      "mainStats": {
+        "helmet": "Additional Defense",
+        "chest": "Additional Defense",  
+        "gloves": "Additional Attack",
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional Defense",
+        "bracelet": "Wind Damage %",
+        "ring": "Additional Defense",
+        "earrings": "Additional MP"
+      }
+    },
+    "fullChaoticInfamy": {
+      "name": "Full Chaotic Infamy",
+      "frenchName": "Infamie chaotique complète",
+      "availability": "LR",
+      "setComposition": "8x Chaotic Infamy",
+      "pieces": {
+        "helmet": "Casque d'infamie chaotique",
+        "chest": "Armure d'infamie chaotique",
+        "gloves": "Gants d'infamie chaotique",
+        "boots": "Bottes d'infamie chaotique",
+        "necklace": "Collier d'infamie chaotique",
+        "bracelet": "Bracelet d'infamie chaotique",
+        "ring": "Bague d'infamie chaotique",
+        "earrings": "Boucles d'oreilles d'infamie chaotique"
+      },
+      "mainStats": {
+        "helmet": "Additional Defense",
+        "chest": "Additional Defense",
+        "gloves": "Additional Attack",
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional Defense",
+        "bracelet": "Wind Damage %",
+        "ring": "Additional Defense",
+        "earrings": "Additional MP"
+      }
+    }
+  },
+
+  // 🧪 NOYAUX RECOMMANDÉS (inchangé)
+  "recommendedCores": {
+    "offensive": {
+      "name": "Trompette du Démon Anonyme",
+      "type": "Additional Attack",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, les Dégâts de coup critique de l'utilisateur augmentent de 30% pendant 8 secondes"
+    },
+    "defensive": {
+      "name": "Corne du Démon Anonyme", 
+      "type": "Additional Defense",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
+    },
+    "endurance": {
+      "name": "Dents du Veilleur",
+      "type": "Additional MP",
+      "bonus": "Diminue le taux de récupération de PM de 15% et la Consommation de PM de 15% lors de l'utilisation d'une compétence"
+    }
+  },
+
+  // 💡 CONSEILS BÉRU - KAISEL UPDATE
+  "beruAdvice": {
+    "newbie": "Minnie est un dps défensif avec 2 builds ! Commence par Iron Will/Outstanding.",
+    "intermediate": "Scale sur Defense = focus Additional Defense. Général vs PvP/BdG !",
+    "advanced": "2 builds : Hybride (Général), Full Chaotic (PvP/BdG).",
+    "expert": "Iron Will/Outstanding pour le général, Chaotic Infamy pour tryhard !"
+  }
+},
+    "yuqi": {
+  "name": "Yuqi",
+  "element": "fire",
+  "class": "Tank", 
+  "grade": "SSR",
+  "scaleStat": "HP",
+
+  "optimizationPriority": [
+  {
+    stat: "Additional HP",           
+    priority: 1,
+    target: "maximum_possible",
+    reason: "Prioriser Defense au maximum (scaleStat)",
+    description: "Niermann scale sur Defense - maximise cette stat avant tout"
+  },
+  {
+    stat: "Damage Increase",              
+    priority: 2,
+    target: "maximum_possible",
+    reason: "Dégâts optimaux après défense"
+  },
+  {
+    stat: "Critical Hit Damage",
+    priority: 3,
+    target: "200%+",
+    reason: "Dégâts critiques optimaux"
+  },
+  {
+    stat: "Critical Hit Rate",
+    priority: 4,
+    target: 5000, // 50% minimum pour tank
+    reason: "Taux critique pour contre-attaques"
+  },
+  {
+    stat: "Defense Penetration",
+    priority: 5,
+    target: "10-20%",
+    reason: "Pénétration pour efficacité"
+  }
+],
+
+  // 📊 STATS RECOMMANDÉES (inchangé)
+  "recommendedStats": {
+    "criticalHitRate": "50%",
+    "criticalHitDamage": "200% - 210%",
+    "DamageIncrease": "30% +",
+    "defensePenetration": "10% - 20%",
+    "additionalHP": "Le plus possible",
+    "additionalAttack": null,
+    "precision": null,
+    "damageReduction": null,
+    "healingReceived": null,
+    "mpRecoveryRate": null,
+    "mpCostReduction": null
+  },
+
+  // 🎮 MODES DE JEU & SETS - KAISEL FIX COMPLET
+  "gameModes": {
+      "general": {
+        "recommendedSet": "Burning Greed",
+        "priority": "HP tank build",
+        "description": "Build tank HP",
+        "availability": "LR"
+      },
+      "pod": {
+        "recommendedSet": "Burning Greed",
+        "priority": "PvP HP tank", 
+        "description": "Build PvP tank HP",
+        "availability": "LR"
+      },
+      "bdg": {
+        "recommendedSet": "Burning Greed",
+        "priority": "Guild boss HP tank",
+        "description": "Build boss de guilde HP tank",
+        "availability": "LR"
+      }
+    },
+
+    // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS
+    "artifactSets": {
+      "burningGreed": {
+        "name": "x4 Greed/ x4 Obsidian",
+        "frenchName": "Avarice ardente",
+        "availability": "LR",
+        "setComposition": "Burning Greed (4), Outstanding Ability (Obsidian Set) (4)",
+        "pieces": {
+          "helmet": "Casque d'avarice ardente",
+          "chest": "Armure d'avarice ardente",
+          "gloves": "Gants d'avarice ardente",
+          "boots": "Bottes d'avarice ardente",
+          "necklace": "Collier en obsidienne",
+          "bracelet": "Bracelet en obsidienne",
+          "ring": "Bague en obsidienne", 
+          "earrings": "Boucles d'oreilles en obsidienne"
+        },
+        "mainStats": {
+          "helmet": "Additional HP",
+          "chest": "Additional Defense",
+          "gloves": "Additional Attack", 
+          "boots": "Critical Hit Damage",
+          "necklace": "Additional HP",
+          "bracelet": "Wind Damage %",
+          "ring": "Additional HP",
+          "earrings": "Additional MP"
+        }
+      },
+       "DesireGreed": {
+        "name": "x4 Greed/ x4 Desire Chaotic",
+        "frenchName": "Avarice ardente/ Désir Chaotic",
+        "availability": "LR",
+        "setComposition": "Burning Greed (4), Chaotic Desire (4)",
+        "pieces": {
+          "helmet": "Casque d'avarice ardente",
+          "chest": "Armure d'avarice ardente",
+          "gloves": "Gants d'avarice ardente",
+          "boots": "Bottes d'avarice ardente",
+          "necklace": "Collier du désir chaotique",
+          "bracelet": "Bracelet du désir chaotique",
+          "ring": "Bague du désir chaotique", 
+          "earrings": "Boucles d'oreilles du désir chaotique"
+        },
+        "mainStats": {
+          "helmet": "Additional HP",
+          "chest": "Additional Defense",
+          "gloves": "Additional Attack", 
+          "boots": "Critical Hit Damage",
+          "necklace": "Additional HP",
+          "bracelet": "Wind Damage %",
+          "ring": "Additional HP",
+          "earrings": "Additional MP"
+        }
+      }
+    },
+
+    // 🧪 NOYAUX RECOMMANDÉS
+    "recommendedCores": {
+      "offensive": {
+        "name": "Trompette du Démon Anonyme",
+        "type": "Additional Attack",
+        "bonus": "Lors de l'utilisation de la Compétence ultime, les Dégâts de coup critique de l'utilisateur augmentent de 30% pendant 8 secondes"
+      },
+      "defensive": {
+        "name": "Corne du Démon Anonyme", 
+        "type": "Additional Defense",
+        "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
+      },
+      "endurance": {
+        "name": "Dents du Veilleur",
+        "type": "Additional HP",
+        "bonus": "Diminue le Taux de récupération de PM de 10% et la Consommation de PM de 12% lors de l'utilisation d'une compétence"
+      }
+    },
+
+    // 💡 CONSEILS BÉRU
+    "beruAdvice": {
+      "newbie": "yuqi est un Tank HP. Priorise Additional HP au maximum !",
+      "intermediate": "Scale sur HP = focus Additional HP, puis Damage Increase ou Def Pen.",
+      "advanced": "Build simple et efficace - Goto est un mur HP avec du fire.",
+      "expert": "Il buff également les skills grâce à son arme !"
+    }
+  },
   "jinah": {
   "name": "Jinah",
   "element": "Wind",

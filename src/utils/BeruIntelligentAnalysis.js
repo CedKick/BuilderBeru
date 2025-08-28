@@ -1060,6 +1060,9 @@ const calculateRollQualityPercent = (stat, levelInfo, substatsMinMaxByIncrements
 const getHunterKey = (hunter) => {
     const nameMapping = {
         'Jinah': 'jinah',
+        'yuqi': 'yuqi',
+        'Soyeon': 'soyeon',
+        'Minnie': 'minnie',
         'Miyeon': 'miyeon',
         'Shuhua': 'shuhua',
         'Lennart Niermann': 'niermann',
