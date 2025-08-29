@@ -120,14 +120,15 @@ export default function HomePage() {
   const activeItems = [
     { label: t('home.menu.build'), path: "/build" },
     { label: t('home.menu.dpsCalculator'), path: "/damage-calculator", special: true, new: true },
-    { label: t('home.menu.hallOfFlame'), path: "/hall-of-flame", special: true },
+    { label: t('home.menu.bdg'), path: "bdg" },
     { label: t('home.menu.pod'), path: "/pod" },
-    { label: t('home.menu.guideEditor'), path: "/guide-editor" },
+    { label: t('home.menu.hallOfFlame'), path: "/hall-of-flame", special: true },
+    // { label: t('home.menu.guideEditor'), path: "/guide-editor" },
   ];
 
   const inactiveItems = [
-    { label: t('home.menu.bot'), disabled: true },
-    { label: t('home.menu.bdg'), disabled: true },
+    // { label: t('home.menu.bot'), disabled: true },
+    
   ];
 
   // 🎯 SEO DATA POUR AFFICHAGE DYNAMIQUE
