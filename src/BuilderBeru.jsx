@@ -1860,9 +1860,9 @@ const BuilderBeru = () => {
 
   const characterStats = {
     // SSR Hunters
-    'minnie': { attack: 5373, defense: 9111, hp: 11356, critRate: 0, mp: 1000 },
-    'soyeon': { attack: 9138, defense: 5370, hp: 11332, critRate: 0, mp: 1000 },
-    'yuqi': { attack: 5323, defense: 5352, hp: 19060, critRate: 0, mp: 1000 },
+    'minnie': { attack: 5373, defense: 6031, hp: 11356, critRate: 0, mp: 1000 },
+    'soyeon': { attack: 6058, defense: 5370, hp: 11332, critRate: 0, mp: 1000 },
+    'yuqi': { attack: 5323, defense: 5352, hp: 12940, critRate: 0, mp: 1000 },
     'jinwoo': { attack: 3032, defense: 2775, hp: 5436, critRate: 0, mp: 1034 },
     'jinah': { attack: 6132, defense: 5292, hp: 11313, critRate: 0, mp: 1000 },
     'alicia': { attack: 6056, defense: 5279, hp: 11503, critRate: 0, mp: 1000 },

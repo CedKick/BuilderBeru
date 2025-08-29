@@ -7,9 +7,9 @@ import CombatArena from './CombatArena.jsx';
 
 // 🔧 STATS DE BASE DES PERSONNAGES - COPIÉ DEPUIS BuilderBeru.jsx
 const characterStats = {
-  'minnie': { attack: 5373, defense: 9111, hp: 11356, critRate: 0, mp: 1000 },
-  'soyeon': { attack: 9138, defense: 5370, hp: 11332, critRate: 0, mp: 1000 },
-  'yuqi': { attack: 5323, defense: 5352, hp: 19060, critRate: 0, mp: 1000 },
+  'minnie': { attack: 5373, defense: 6031, hp: 11356, critRate: 0, mp: 1000 },
+  'soyeon': { attack: 6058, defense: 5370, hp: 11332, critRate: 0, mp: 1000 },
+  'yuqi': { attack: 5323, defense: 5352, hp: 12940, critRate: 0, mp: 1000 },
   'jinwoo': { attack: 3032, defense: 2775, hp: 5436, critRate: 0, mp: 1034 },
   'Jinah': { attack: 6132, defense: 5292, hp: 11313, critRate: 0, mp: 1000 },
   'shuhua': { attack: 5909.5, defense: 5100, hp: 10890.5, critRate: 0, mp: 1000 },

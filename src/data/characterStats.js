@@ -1,8 +1,8 @@
 // data/characterStats.js
 export const characterStats = {
-  'minnie': { attack: 5373, defense: 9111, hp: 11356, critRate: 0, mp: 1000 },
-  'soyeon': { attack: 9138, defense: 5370, hp: 11332, critRate: 0, mp: 1000 },
-  'yuqi': { attack: 5323, defense: 5352, hp: 19060, critRate: 0, mp: 1000 },
+  'minnie': { attack: 5373, defense: 6031, hp: 11356, critRate: 0, mp: 1000 },
+  'soyeon': { attack: 6058, defense: 5370, hp: 11332, critRate: 0, mp: 1000 },
+  'yuqi': { attack: 5323, defense: 5352, hp: 12940, critRate: 0, mp: 1000 },
   'Jinah': { attack: 5909.5, defense: 5100, hp: 10890.5, critRate: 0, mp: 1000 },
   'shuhua': { attack: 5909.5, defense: 5100, hp: 10890.5, critRate: 0, mp: 1000 },
   'miyeon': { attack: 5176.5, defense: 5810.5, hp: 10932.5, critRate: 0, mp: 1000 },
