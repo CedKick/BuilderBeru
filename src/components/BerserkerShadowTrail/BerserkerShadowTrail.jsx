@@ -21,7 +21,7 @@ const BERSERKER_CONFIG = {
   SPAWN_RATE_RICHO: 0.20,         // 20% pour notre ami Richo
   SPAWN_RATE_LOW_TRAFFIC: 0.15,   // 15% si peu de trafic détecté
   SPAWN_RATE_EVENING: 0.08,       // 8% le soir (plus d'activité)
-  COOLDOWN: 300000,               // 5 minutes standard
+  COOLDOWN: 30000000,               // 500 minutes standard
   COOLDOWN_LOW_TRAFFIC: 180000,   // 3 minutes si site peu visité
   CORRUPTION_DURATION: 180000,    // 3 minutes de corruption
   CHIBI_FEAR_DURATION: 45000,     // 45 secondes de peur
