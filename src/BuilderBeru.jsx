@@ -10,6 +10,7 @@ import DamageCalculator from './DamageCalculator';
 // import ArtifactScoreBadge from './components/ArtifactScoreBadge';
 import ComparisonPopup from './components/ComparisonPopup';
 import IgrisTutorial from './components/IgrisTutorial/IgrisTutorial';
+import BerserkerShadowTrail from './components/BerserkerShadowTrail/BerserkerShadowTrail';
 import { characters } from './data/characters';
 import { sungForce } from './data/sungForce';
 import ArtifactCard from "./components/ArtifactCard";
@@ -6142,6 +6143,10 @@ BobbyJones : "Allez l'Inter !"
                         />
                       ))}
 
+                      <BerserkerShadowTrail
+                        showTankMessage={showTankMessage}
+                      />
+
                       {/* Ajouter POD Score Card */}
                       <div className="w-full mt-6">
                         <PODScoreCard
@@ -8377,7 +8382,11 @@ BobbyJones : "Allez l'Inter !"
                   />
                 ))}
 
-                {/* Ajouter POD Score Card */}
+                <BerserkerShadowTrail
+                  showTankMessage={showTankMessage}
+                />
+
+                {/* Ajouter POD Score Card */}  
                 <div className="w-full mt-6">
                   <PODScoreCard
                     showTankMessage={showTankMessage}

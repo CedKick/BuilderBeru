@@ -18,7 +18,8 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
         igris: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png',
         cerbere: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731189/cerbere_icon_dtwfhu.png',
         // 🎭 IGRISK : Tank avec un masque/filtre violet
-        igrisk: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_icon_vytfic.png'
+        igrisk: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_icon_vytfic.png',
+        berserker: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756592473/berserk_up_rqjt0n.png"
     };
 
     // 🏷️ NOMS DES ENTITÉS
@@ -28,7 +29,8 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
         kaisel: 'Kaisel',
         igris: 'Igris',
         cerbere: 'Cerbère',
-        igrisk: 'Igris(?)'  // 🎭 Nom suspect !
+        igrisk: 'Igris(?)',  // 🎭 Nom suspect !
+        berserker: "Berserker des Ombres"
     };
 
     // 🎨 COULEURS DES ENTITÉS
@@ -39,7 +41,8 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
         igris: '#980808ff',
         cerbere: '#e334baff',
         cerbère: '#e334baff',
-        igrisk: '#FF6B6B'  // 🎭 Rouge suspect !
+        igrisk: '#FF6B6B',  // 🎭 Rouge suspect !
+        berserker: "#8b00ff"
     };
 
     // 🔍 DÉTECTION MOBILE
@@ -89,7 +92,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
         if (message !== currentMessageRef.current) {
             animationStartedRef.current = false;
             currentMessageRef.current = message;
-            
+
             // Nettoyer le contenu précédent
             if (bubbleRef.current) {
                 bubbleRef.current.innerHTML = '';
@@ -99,13 +102,13 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
         // Éviter les multiples appels de dytextAnimate
         if (bubbleRef.current && message && !animationStartedRef.current) {
             animationStartedRef.current = true;
-            
+
             // 🔧 S'assurer que le ref est bien attaché et visible
             const timer = setTimeout(() => {
                 if (bubbleRef.current && bubbleRef.current.offsetParent !== null) {
                     // Vérifier que l'élément est dans le DOM et visible
                     console.log(`🎯 Animation démarrée pour: ${entityNames[entityType]}`);
-                    
+
                     dytextAnimate(bubbleRef, message, 35, {
                         onComplete: () => {
                             if (onComplete) {
@@ -119,7 +122,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                     animationStartedRef.current = false;
                 }
             }, 300); // Délai augmenté pour laisser le DOM se stabiliser
-            
+
             return () => clearTimeout(timer);
         }
     }, [message, onComplete, entityType]);
@@ -171,7 +174,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                     }
                 `}</style>
             )}
-            
+
             {isMobileDevice ? (
                 // 📱 VERSION MOBILE
                 <div
@@ -191,11 +194,11 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                             ...bubbleStyle,
                             borderRadius: '16px',
                             padding: '12px',
-                            boxShadow: isIgrisk 
-                                ? '0 8px 32px rgba(255,0,0,0.3)' 
+                            boxShadow: isIgrisk
+                                ? '0 8px 32px rgba(255,0,0,0.3)'
                                 : '0 8px 32px rgba(0,0,0,0.4)',
-                            animation: isIgrisk 
-                                ? 'bounceGentle 2s ease-in-out infinite, igriskGlitch 5s infinite' 
+                            animation: isIgrisk
+                                ? 'bounceGentle 2s ease-in-out infinite, igriskGlitch 5s infinite'
                                 : 'bounceGentle 2s ease-in-out infinite',
                             cursor: 'pointer'
                         }}
@@ -228,8 +231,8 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                                 fontFamily: 'monospace'
                             }}>
                                 {entityNames[entityType]}
-                                {isIgrisk && <span style={{ 
-                                    fontSize: '10px', 
+                                {isIgrisk && <span style={{
+                                    fontSize: '10px',
                                     color: '#ff6b6b',
                                     marginLeft: '5px',
                                     animation: 'blink 1s infinite'
@@ -247,8 +250,8 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                                 lineHeight: '1.4',
                                 whiteSpace: 'pre-line',
                                 minHeight: '20px',
-                                textShadow: isIgrisk 
-                                    ? '1px 1px 3px rgba(255,0,0,0.5)' 
+                                textShadow: isIgrisk
+                                    ? '1px 1px 3px rgba(255,0,0,0.5)'
                                     : '1px 1px 2px rgba(0,0,0,0.8)',
                                 backgroundColor: 'rgba(0, 0, 0, 0.4)',
                                 padding: '6px',
@@ -270,7 +273,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                             height: 0,
                             borderLeft: '12px solid transparent',
                             borderRight: '12px solid transparent',
-                            borderTop: isIgrisk 
+                            borderTop: isIgrisk
                                 ? '12px solid rgba(40, 20, 20, 0.95)'
                                 : '12px solid rgba(20, 20, 40, 0.95)'
                         }} />
@@ -291,8 +294,8 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                         ...bubbleStyle,
                         borderRadius: '12px',
                         padding: '10px',
-                        boxShadow: isIgrisk 
-                            ? '0 4px 20px rgba(255,0,0,0.3)' 
+                        boxShadow: isIgrisk
+                            ? '0 4px 20px rgba(255,0,0,0.3)'
                             : '0 4px 20px rgba(0,0,0,0.5)'
                     }}>
                         {/* Header Desktop */}
@@ -320,8 +323,8 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                                 fontFamily: 'monospace'
                             }}>
                                 {entityNames[entityType]}
-                                {isIgrisk && <span style={{ 
-                                    fontSize: '8px', 
+                                {isIgrisk && <span style={{
+                                    fontSize: '8px',
                                     color: '#ff6b6b',
                                     marginLeft: '3px'
                                 }}>(?)</span>}
@@ -342,15 +345,15 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                                 opacity: 1,
                                 position: 'relative',
                                 zIndex: 1,
-                                textShadow: isIgrisk 
-                                    ? '1px 1px 3px rgba(255,0,0,0.5)' 
+                                textShadow: isIgrisk
+                                    ? '1px 1px 3px rgba(255,0,0,0.5)'
                                     : '1px 1px 2px rgba(0,0,0,0.8)'
                             }}
                         />
                     </div>
                 </div>
             )}
-            
+
             {/* Animation blink pour le warning d'Igrisk */}
             {isIgrisk && (
                 <style>{`
