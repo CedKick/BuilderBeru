@@ -17,12 +17,12 @@ const BERSERKER_SPRITES = {
 
 // 🎯 CONFIGURATION AVANCÉE - Système adaptatif selon l'engagement
 const BERSERKER_CONFIG = {
-  SPAWN_RATE_NORMAL: 0.06,        // 6% chance normale
-  SPAWN_RATE_RICHO: 0.20,         // 20% pour notre ami Richo
-  SPAWN_RATE_LOW_TRAFFIC: 0.15,   // 15% si peu de trafic détecté
-  SPAWN_RATE_EVENING: 0.08,       // 8% le soir (plus d'activité)
-  COOLDOWN: 30000000,               // 500 minutes standard
-  COOLDOWN_LOW_TRAFFIC: 180000,   // 3 minutes si site peu visité
+  SPAWN_RATE_NORMAL: 0.03,        // 3% chance normale (réduit de 6%)
+  SPAWN_RATE_RICHO: 0.08,         // 8% pour notre ami Richo (réduit de 20%)
+  SPAWN_RATE_LOW_TRAFFIC: 0.06,   // 6% si peu de trafic détecté (réduit de 15%)
+  SPAWN_RATE_EVENING: 0.04,       // 4% le soir (réduit de 8%)
+  COOLDOWN: 1800000,              // 30 minutes standard (au lieu de 500 minutes)
+  COOLDOWN_LOW_TRAFFIC: 1200000,   // 20 minutes si site peu visité (au lieu de 3)
   CORRUPTION_DURATION: 180000,    // 3 minutes de corruption
   CHIBI_FEAR_DURATION: 45000,     // 45 secondes de peur
   ULTRA_RARE_CHANCE: 0.05,        // 5% ultra rare
