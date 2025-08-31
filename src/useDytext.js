@@ -1,25 +1,45 @@
 // useDyText.js
 import { useEffect } from "react";
 
-// 🔥 MODIFIE ta fonction dytextAnimate dans useDytext.js
+// 🔧 Map global pour tracker les animations en cours
+const activeAnimations = new Map();
 
+// 🔥 FONCTION dytextAnimate AMÉLIORÉE avec protection anti-spam
 export function dytextAnimate(ref, text = "", delay = 30, options = {}) {
   if (!ref?.current || !text) return;
 
   const el = ref.current;
+  
+  // 🔧 FIX: Créer un ID unique pour cette animation
+  const animationId = `${el.id || 'el'}-${Date.now()}`;
+  
+  // 🔧 FIX: Vérifier si une animation est déjà en cours sur cet élément
+  const existingAnimation = Array.from(activeAnimations.entries())
+    .find(([id, data]) => data.element === el);
+  
+  if (existingAnimation) {
+    console.log('⚠️ Animation déjà en cours, annulation de la précédente');
+    const [oldId, oldData] = existingAnimation;
+    if (oldData.timeoutId) {
+      clearTimeout(oldData.timeoutId);
+    }
+    activeAnimations.delete(oldId);
+  }
+  
+  // Enregistrer cette nouvelle animation
+  activeAnimations.set(animationId, { element: el, text, timeoutId: null });
+  
   let i = 0;
-  el.innerHTML = ""; // 🔥 innerHTML au lieu de textContent pour supporter les liens
+  el.innerHTML = "";
 
   // 🎯 FONCTION AUTOSCROLL INTELLIGENTE
   const autoScrollToBottom = () => {
-    // Cherche le conteneur scrollable (popup SERN)
     const scrollContainer = document.getElementById('sern-text-container') || 
                            el.closest('.overflow-y-auto') ||
                            el.closest('.max-h-\\[40vh\\]') ||
                            el.parentElement;
     
     if (scrollContainer) {
-      // ✨ SCROLL SMOOTH vers le bas
       scrollContainer.scrollTo({
         top: scrollContainer.scrollHeight,
         behavior: 'smooth'
@@ -29,26 +49,31 @@ export function dytextAnimate(ref, text = "", delay = 30, options = {}) {
 
   // 🔗 FONCTION POUR PARSER LES LIENS
   const parseTextWithLinks = (fullText) => {
-    // Regex pour détecter les URLs
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    
-    // Remplace les URLs par des balises <a>
     return fullText.replace(urlRegex, (url) => {
       return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 underline transition-colors">${url}</a>`;
     });
   };
 
   const writeNext = () => {
+    // 🔧 FIX: Vérifier si l'animation est toujours active
+    if (!activeAnimations.has(animationId)) {
+      console.log('Animation annulée:', animationId);
+      return;
+    }
+
     const char = text.charAt(i);
 
     if (char === ".") {
-      setTimeout(writeNext, 400);
+      const timeoutId = setTimeout(writeNext, 400);
+      activeAnimations.get(animationId).timeoutId = timeoutId;
       i++;
       return;
     }
 
     if (char === ",") {
-      setTimeout(writeNext, 200);
+      const timeoutId = setTimeout(writeNext, 200);
+      activeAnimations.get(animationId).timeoutId = timeoutId;
       i++;
       return;
     }
@@ -56,13 +81,11 @@ export function dytextAnimate(ref, text = "", delay = 30, options = {}) {
     if (char === "§") {
       let current = el.innerHTML;
       const delInterval = setInterval(() => {
-        // Supprime le dernier caractère visible (pas les balises HTML)
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = current;
         const textContent = tempDiv.textContent || tempDiv.innerText || '';
         
         if (textContent.length > 0) {
-          // Reconstruit le HTML avec un caractère de moins
           const shorterText = textContent.slice(0, -1);
           el.innerHTML = parseTextWithLinks(shorterText);
           current = el.innerHTML;
@@ -72,7 +95,10 @@ export function dytextAnimate(ref, text = "", delay = 30, options = {}) {
         if (textContent.length === 0) {
           clearInterval(delInterval);
           i++;
-          setTimeout(writeNext, 200);
+          const timeoutId = setTimeout(writeNext, 200);
+          if (activeAnimations.has(animationId)) {
+            activeAnimations.get(animationId).timeoutId = timeoutId;
+          }
         }
       }, 50);
       return;
@@ -82,7 +108,6 @@ export function dytextAnimate(ref, text = "", delay = 30, options = {}) {
     const currentText = text.substring(0, i + 1);
     const parsedText = parseTextWithLinks(currentText);
     
-    // Gestion du markdown basique (gras)
     const finalText = parsedText
       .replace(/\*\*(.*?)\*\*/g, '<strong class="text-yellow-400">$1</strong>')
       .replace(/\n/g, '<br>');
@@ -92,16 +117,21 @@ export function dytextAnimate(ref, text = "", delay = 30, options = {}) {
     i++;
 
     // 🚀 AUTOSCROLL À CHAQUE CARACTÈRE (mais optimisé)
-    if (i % 5 === 0) { // Scroll tous les 5 caractères pour performance
+    if (i % 5 === 0) {
       autoScrollToBottom();
     }
 
     if (i < text.length) {
-      setTimeout(writeNext, delay);
+      const timeoutId = setTimeout(writeNext, delay);
+      if (activeAnimations.has(animationId)) {
+        activeAnimations.get(animationId).timeoutId = timeoutId;
+      }
     } else {
-      // 🎯 SCROLL FINAL pour être sûr
+      // 🎯 ANIMATION TERMINÉE
       setTimeout(() => {
         autoScrollToBottom();
+        // Nettoyer l'animation de la map
+        activeAnimations.delete(animationId);
         if (options.onComplete) {
           options.onComplete();
         }
@@ -110,6 +140,17 @@ export function dytextAnimate(ref, text = "", delay = 30, options = {}) {
   };
 
   writeNext();
+  
+  // 🔧 FIX: Retourner une fonction de cleanup
+  return () => {
+    if (activeAnimations.has(animationId)) {
+      const data = activeAnimations.get(animationId);
+      if (data.timeoutId) {
+        clearTimeout(data.timeoutId);
+      }
+      activeAnimations.delete(animationId);
+    }
+  };
 }
 
 // 🔥 NOUVELLE FONCTION : DyText spécial SERN avec effets
@@ -117,6 +158,22 @@ export function dytextAnimateSERN(ref, text = "", delay = 30, options = {}) {
   if (!ref?.current || !text) return;
 
   const el = ref.current;
+  const animationId = `sern-${el.id || 'el'}-${Date.now()}`;
+  
+  // Vérifier animation existante
+  const existingAnimation = Array.from(activeAnimations.entries())
+    .find(([id, data]) => data.element === el);
+  
+  if (existingAnimation) {
+    const [oldId, oldData] = existingAnimation;
+    if (oldData.timeoutId) {
+      clearTimeout(oldData.timeoutId);
+    }
+    activeAnimations.delete(oldId);
+  }
+  
+  activeAnimations.set(animationId, { element: el, text, timeoutId: null });
+  
   let i = 0;
   el.innerHTML = "";
 
@@ -141,9 +198,8 @@ export function dytextAnimateSERN(ref, text = "", delay = 30, options = {}) {
 
   // 🔥 EFFETS SPÉCIAUX SERN
   const addSERNEffect = () => {
-    // Petit flash red sur le conteneur
     const container = document.getElementById('sern-text-container');
-    if (container && Math.random() < 0.1) { // 10% de chance
+    if (container && Math.random() < 0.1) {
       container.style.boxShadow = 'inset 0 0 20px rgba(255, 0, 0, 0.3)';
       setTimeout(() => {
         container.style.boxShadow = '';
@@ -152,17 +208,22 @@ export function dytextAnimateSERN(ref, text = "", delay = 30, options = {}) {
   };
 
   const writeNext = () => {
+    if (!activeAnimations.has(animationId)) {
+      return;
+    }
+
     const char = text.charAt(i);
 
-    // 🎵 Pause plus longue sur la ponctuation pour effet dramatique
     if (char === ".") {
-      setTimeout(writeNext, 600); // Plus long pour SERN
+      const timeoutId = setTimeout(writeNext, 600);
+      activeAnimations.get(animationId).timeoutId = timeoutId;
       i++;
       return;
     }
 
     if (char === ",") {
-      setTimeout(writeNext, 300);
+      const timeoutId = setTimeout(writeNext, 300);
+      activeAnimations.get(animationId).timeoutId = timeoutId;
       i++;
       return;
     }
@@ -170,7 +231,6 @@ export function dytextAnimateSERN(ref, text = "", delay = 30, options = {}) {
     if (char === "§") {
       let current = el.innerHTML;
       const delInterval = setInterval(() => {
-        // Supprime proprement le dernier caractère
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = current;
         const textContent = tempDiv.textContent || tempDiv.innerText || '';
@@ -185,17 +245,18 @@ export function dytextAnimateSERN(ref, text = "", delay = 30, options = {}) {
         if (textContent.length === 0) {
           clearInterval(delInterval);
           i++;
-          setTimeout(writeNext, 200);
+          const timeoutId = setTimeout(writeNext, 200);
+          if (activeAnimations.has(animationId)) {
+            activeAnimations.get(animationId).timeoutId = timeoutId;
+          }
         }
       }, 50);
       return;
     }
 
-    // 🎨 ÉCRITURE AVEC LIENS SERN STYLE
     const currentText = text.substring(0, i + 1);
     const parsedText = parseTextWithLinks(currentText);
     
-    // Support markdown + styles SERN
     const finalText = parsedText
       .replace(/\*\*(.*?)\*\*/g, '<strong class="text-red-500 font-bold">$1</strong>')
       .replace(/\n/g, '<br>');
@@ -203,17 +264,20 @@ export function dytextAnimateSERN(ref, text = "", delay = 30, options = {}) {
     el.innerHTML = finalText;
     i++;
 
-    // 🔥 EFFETS SERN + AUTOSCROLL
     if (i % 3 === 0) {
       autoScrollSERN();
       addSERNEffect();
     }
 
     if (i < text.length) {
-      setTimeout(writeNext, delay);
+      const timeoutId = setTimeout(writeNext, delay);
+      if (activeAnimations.has(animationId)) {
+        activeAnimations.get(animationId).timeoutId = timeoutId;
+      }
     } else {
       setTimeout(() => {
         autoScrollSERN();
+        activeAnimations.delete(animationId);
         if (options.onComplete) {
           options.onComplete();
         }
@@ -222,8 +286,27 @@ export function dytextAnimateSERN(ref, text = "", delay = 30, options = {}) {
   };
 
   writeNext();
+  
+  return () => {
+    if (activeAnimations.has(animationId)) {
+      const data = activeAnimations.get(animationId);
+      if (data.timeoutId) {
+        clearTimeout(data.timeoutId);
+      }
+      activeAnimations.delete(animationId);
+    }
+  };
 }
 
+// 🧹 Fonction utilitaire pour nettoyer toutes les animations
+export function cleanupAllAnimations() {
+  activeAnimations.forEach((data, id) => {
+    if (data.timeoutId) {
+      clearTimeout(data.timeoutId);
+    }
+  });
+  activeAnimations.clear();
+}
 
 export function parseNarrative(rawText) {
   const lines = rawText.split('\n').map(line => line.trim()).filter(Boolean);
@@ -260,7 +343,7 @@ export function parseNarrative(rawText) {
       }
     }
 
-    // ⏱️ Delay
+    // ⱕ Delay
     else if (line.startsWith('{delay=')) {
       const match = line.match(/\{delay=(\d+)\}/);
       if (match) {
@@ -277,21 +360,21 @@ export function parseNarrative(rawText) {
   return steps;
 }
 
-
 export function runNarrativeSteps(steps, {
   refs,
   setCurrentImage,
   dytextRef,
   setShowNarrative,
-  triggerFadeOutMusic, // 👈 nouveau paramètre
+  triggerFadeOutMusic,
   playingAudiosRef
 }) {
   let currentIndex = 0;
+  let currentAnimationCleanup = null;
 
   const runNext = () => {
     if (currentIndex >= steps.length) {
-      setShowNarrative(false);         // ✅ ferme la popup
-      triggerFadeOutMusic?.();         // ✅ fade-out audio s'il est défini
+      setShowNarrative(false);
+      triggerFadeOutMusic?.();
       return;
     }
 
@@ -302,10 +385,15 @@ export function runNarrativeSteps(steps, {
 
     switch (step.type) {
       case 'text':
-        dytextAnimate(dytextRef, step.content, 30, {
+        // Nettoyer l'animation précédente si elle existe
+        if (currentAnimationCleanup) {
+          currentAnimationCleanup();
+        }
+        
+        currentAnimationCleanup = dytextAnimate(dytextRef, step.content, 30, {
           onComplete: () => setTimeout(runNext, delayForNext),
         });
-        return; // Important : on attend dytextAnimate
+        return;
 
       case 'sound':
         const audio = new Audio(step.src);
@@ -329,11 +417,9 @@ export function runNarrativeSteps(steps, {
         break;
 
       default:
-        // Étape inconnue, on continue sans warn
         break;
     }
 
-    // Pour les étapes simples (img, sound, delay), on continue après un délai
     setTimeout(runNext, delayForNext);
   };
 

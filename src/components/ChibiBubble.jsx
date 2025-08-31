@@ -6,9 +6,11 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
     const [isVisible, setIsVisible] = useState(true);
     const [isClosing, setIsClosing] = useState(false);
     const [adjustedPosition, setAdjustedPosition] = useState(position);
-
-    const animationStartedRef = useRef(false);
-    const currentMessageRef = useRef('');
+    
+    // 🔧 FIX: Utiliser un ID unique pour chaque message pour éviter les doublons
+    const messageIdRef = useRef(null);
+    const animationInProgressRef = useRef(false);
+    const animationTimeoutRef = useRef(null);
 
     // 🎭 ICÔNES DES ENTITÉS (AVEC IGRISK !)
     const entityIcons = {
@@ -17,7 +19,6 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
         kaisel: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
         igris: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png',
         cerbere: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731189/cerbere_icon_dtwfhu.png',
-        // 🎭 IGRISK : Tank avec un masque/filtre violet
         igrisk: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_icon_vytfic.png',
         berserker: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756592473/berserk_up_rqjt0n.png"
     };
@@ -29,7 +30,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
         kaisel: 'Kaisel',
         igris: 'Igris',
         cerbere: 'Cerbère',
-        igrisk: 'Igris(?)',  // 🎭 Nom suspect !
+        igrisk: 'Igris(?)',
         berserker: "Berserker des Ombres"
     };
 
@@ -41,11 +42,11 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
         igris: '#980808ff',
         cerbere: '#e334baff',
         cerbère: '#e334baff',
-        igrisk: '#FF6B6B',  // 🎭 Rouge suspect !
+        igrisk: '#FF6B6B',
         berserker: "#8b00ff"
     };
 
-    // 🔍 DÉTECTION MOBILE
+    // 📱 DÉTECTION MOBILE
     const isMobileDevice = isMobile?.isPhone || isMobile?.isTablet || window.innerWidth < 768;
 
     // 👆 FONCTION CLICK-TO-DISMISS - MOBILE SEULEMENT
@@ -86,52 +87,68 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
         }
     }, [position, isMobileDevice]);
 
-    // 🎯 UN SEUL useEffect pour l'animation du texte
+    // 🎯 ANIMATION DU TEXTE - CORRIGÉ
     useEffect(() => {
-        // Vérifier si le message a changé
-        if (message !== currentMessageRef.current) {
-            animationStartedRef.current = false;
-            currentMessageRef.current = message;
-
-            // Nettoyer le contenu précédent
-            if (bubbleRef.current) {
-                bubbleRef.current.innerHTML = '';
+        // 🔧 FIX: Générer un ID unique pour ce message
+        const currentMessageId = `${entityType}-${message}-${Date.now()}`;
+        
+        // Si c'est un nouveau message ou si l'animation n'est pas en cours
+        if (message && bubbleRef.current && messageIdRef.current !== currentMessageId && !animationInProgressRef.current) {
+            console.log(`🎯 Nouvelle animation pour: ${entityNames[entityType]}`);
+            
+            // Marquer ce message comme traité
+            messageIdRef.current = currentMessageId;
+            animationInProgressRef.current = true;
+            
+            // Nettoyer l'ancien contenu
+            bubbleRef.current.innerHTML = '';
+            
+            // Annuler l'ancien timeout s'il existe
+            if (animationTimeoutRef.current) {
+                clearTimeout(animationTimeoutRef.current);
             }
-        }
-
-        // Éviter les multiples appels de dytextAnimate
-        if (bubbleRef.current && message && !animationStartedRef.current) {
-            animationStartedRef.current = true;
-
-            // 🔧 S'assurer que le ref est bien attaché et visible
-            const timer = setTimeout(() => {
-                if (bubbleRef.current && bubbleRef.current.offsetParent !== null) {
-                    // Vérifier que l'élément est dans le DOM et visible
-                    console.log(`🎯 Animation démarrée pour: ${entityNames[entityType]}`);
-
-                    dytextAnimate(bubbleRef, message, 35, {
-                        onComplete: () => {
-                            if (onComplete) {
-                                onComplete();
+            
+            // Délai pour s'assurer que le DOM est prêt
+            animationTimeoutRef.current = setTimeout(() => {
+                if (bubbleRef.current && bubbleRef.current.offsetParent !== null && animationInProgressRef.current) {
+                    try {
+                        dytextAnimate(bubbleRef, message, 35, {
+                            onComplete: () => {
+                                console.log(`✅ Animation complétée pour: ${entityNames[entityType]}`);
+                                animationInProgressRef.current = false;
+                                if (onComplete) {
+                                    onComplete();
+                                }
                             }
+                        });
+                    } catch (error) {
+                        console.error('Erreur animation:', error);
+                        animationInProgressRef.current = false;
+                        // Fallback: afficher le texte directement
+                        if (bubbleRef.current) {
+                            bubbleRef.current.textContent = message;
                         }
-                    });
+                    }
                 } else {
-                    // Si l'élément n'est pas visible, réessayer
-                    console.warn(`⚠️ Bubble ref pas prêt, retry...`);
-                    animationStartedRef.current = false;
+                    animationInProgressRef.current = false;
                 }
-            }, 300); // Délai augmenté pour laisser le DOM se stabiliser
-
-            return () => clearTimeout(timer);
+            }, 100); // Délai réduit pour plus de réactivité
         }
-    }, [message, onComplete, entityType]);
+    }, [message, entityType, onComplete]);
 
-    // 🧹 Cleanup au démontage
+    // 🧹 Cleanup complet au démontage
     useEffect(() => {
         return () => {
-            animationStartedRef.current = false;
-            currentMessageRef.current = '';
+            // Nettoyer les timeouts
+            if (animationTimeoutRef.current) {
+                clearTimeout(animationTimeoutRef.current);
+            }
+            
+            // Réinitialiser les refs
+            animationInProgressRef.current = false;
+            messageIdRef.current = null;
+            
+            // Nettoyer le contenu du bubble
             if (bubbleRef.current) {
                 bubbleRef.current.innerHTML = '';
             }
@@ -140,13 +157,20 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
 
     if (!message || !isVisible) return null;
 
-    // 🎭 Styles spéciaux pour Igrisk
+    // 🎭 Styles spéciaux pour Igrisk et Berserker
     const isIgrisk = entityType === 'igrisk';
-    const bubbleStyle = isIgrisk ? {
-        backgroundColor: 'rgba(40, 20, 20, 0.95)', // Plus rouge/sombre
-        backdropFilter: 'blur(4px) hue-rotate(-15deg)', // Effet glitch
+    const isBerserker = entityType === 'berserker';
+    
+    const bubbleStyle = isBerserker ? {
+        backgroundColor: 'rgba(25, 0, 40, 0.95)',
+        backdropFilter: 'blur(6px) saturate(1.5)',
+        border: `2px solid ${entityColors[entityType]}`,
+        boxShadow: '0 0 20px rgba(139, 0, 255, 0.6)',
+    } : isIgrisk ? {
+        backgroundColor: 'rgba(40, 20, 20, 0.95)',
+        backdropFilter: 'blur(4px) hue-rotate(-15deg)',
         border: `2px solid ${entityColors[entityType]}60`,
-        animation: 'igriskGlitch 5s infinite' // Animation glitch
+        animation: 'igriskGlitch 5s infinite'
     } : {
         backgroundColor: 'rgba(20, 20, 40, 0.95)',
         backdropFilter: 'blur(4px)',
@@ -183,7 +207,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                         top: adjustedPosition.y,
                         left: '50%',
                         transform: 'translateX(-50%)',
-                        zIndex: 9999,
+                        zIndex: isBerserker ? 10503 : 9999,
                         width: '90vw',
                         maxWidth: '350px'
                     }}
@@ -194,10 +218,14 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                             ...bubbleStyle,
                             borderRadius: '16px',
                             padding: '12px',
-                            boxShadow: isIgrisk
+                            boxShadow: isBerserker
+                                ? '0 8px 32px rgba(139,0,255,0.5)'
+                                : isIgrisk
                                 ? '0 8px 32px rgba(255,0,0,0.3)'
                                 : '0 8px 32px rgba(0,0,0,0.4)',
-                            animation: isIgrisk
+                            animation: isBerserker
+                                ? 'bounceGentle 2s ease-in-out infinite, berserkerPulse 3s infinite'
+                                : isIgrisk
                                 ? 'bounceGentle 2s ease-in-out infinite, igriskGlitch 5s infinite'
                                 : 'bounceGentle 2s ease-in-out infinite',
                             cursor: 'pointer'
@@ -216,12 +244,13 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                                 src={entityIcons[entityType]}
                                 alt={entityNames[entityType]}
                                 style={{
-                                    width: '24px',
-                                    height: '24px',
+                                    width: isBerserker ? '32px' : '24px',
+                                    height: isBerserker ? '32px' : '24px',
                                     borderRadius: '50%',
                                     marginRight: '8px',
                                     border: `2px solid ${entityColors[entityType]}`,
-                                    filter: isIgrisk ? 'hue-rotate(270deg) saturate(1.5)' : 'none'
+                                    filter: isIgrisk ? 'hue-rotate(270deg) saturate(1.5)' : 
+                                           isBerserker ? 'drop-shadow(0 0 5px rgba(139,0,255,0.8))' : 'none'
                                 }}
                             />
                             <span style={{
@@ -237,6 +266,11 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                                     marginLeft: '5px',
                                     animation: 'blink 1s infinite'
                                 }}>⚠️</span>}
+                                {isBerserker && <span style={{
+                                    fontSize: '10px',
+                                    color: '#ff00ff',
+                                    marginLeft: '5px'
+                                }}>💀</span>}
                             </span>
                         </div>
 
@@ -244,13 +278,15 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                         <div
                             ref={bubbleRef}
                             style={{
-                                color: 'white',
+                                color: isBerserker ? '#ff4444' : 'white',
                                 fontFamily: 'monospace',
                                 fontSize: '13px',
                                 lineHeight: '1.4',
                                 whiteSpace: 'pre-line',
                                 minHeight: '20px',
-                                textShadow: isIgrisk
+                                textShadow: isBerserker
+                                    ? '0 0 10px rgba(255,0,0,0.8)'
+                                    : isIgrisk
                                     ? '1px 1px 3px rgba(255,0,0,0.5)'
                                     : '1px 1px 2px rgba(0,0,0,0.8)',
                                 backgroundColor: 'rgba(0, 0, 0, 0.4)',
@@ -273,7 +309,9 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                             height: 0,
                             borderLeft: '12px solid transparent',
                             borderRight: '12px solid transparent',
-                            borderTop: isIgrisk
+                            borderTop: isBerserker
+                                ? '12px solid rgba(25, 0, 40, 0.95)'
+                                : isIgrisk
                                 ? '12px solid rgba(40, 20, 20, 0.95)'
                                 : '12px solid rgba(20, 20, 40, 0.95)'
                         }} />
@@ -286,7 +324,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                         position: 'fixed',
                         top: adjustedPosition.y,
                         left: adjustedPosition.x - 120,
-                        zIndex: 10100,
+                        zIndex: isBerserker ? 10503 : 10100,
                         maxWidth: '280px'
                     }}
                 >
@@ -294,7 +332,9 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                         ...bubbleStyle,
                         borderRadius: '12px',
                         padding: '10px',
-                        boxShadow: isIgrisk
+                        boxShadow: isBerserker
+                            ? '0 4px 20px rgba(139,0,255,0.5)'
+                            : isIgrisk
                             ? '0 4px 20px rgba(255,0,0,0.3)'
                             : '0 4px 20px rgba(0,0,0,0.5)'
                     }}>
@@ -308,12 +348,13 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                                 src={entityIcons[entityType]}
                                 alt={entityNames[entityType]}
                                 style={{
-                                    width: '20px',
-                                    height: '20px',
+                                    width: isBerserker ? '24px' : '20px',
+                                    height: isBerserker ? '24px' : '20px',
                                     borderRadius: '50%',
                                     marginRight: '6px',
                                     border: `1px solid ${entityColors[entityType]}`,
-                                    filter: isIgrisk ? 'hue-rotate(270deg) saturate(1.5)' : 'none'
+                                    filter: isIgrisk ? 'hue-rotate(270deg) saturate(1.5)' : 
+                                           isBerserker ? 'drop-shadow(0 0 5px rgba(139,0,255,0.8))' : 'none'
                                 }}
                             />
                             <span style={{
@@ -328,6 +369,11 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                                     color: '#ff6b6b',
                                     marginLeft: '3px'
                                 }}>(?)</span>}
+                                {isBerserker && <span style={{
+                                    fontSize: '8px',
+                                    color: '#ff00ff',
+                                    marginLeft: '3px'
+                                }}>💀</span>}
                             </span>
                         </div>
 
@@ -335,7 +381,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                         <div
                             ref={bubbleRef}
                             style={{
-                                color: 'white',
+                                color: isBerserker ? '#ff4444' : 'white',
                                 fontFamily: 'monospace',
                                 fontSize: '12px',
                                 lineHeight: '1.3',
@@ -345,7 +391,9 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                                 opacity: 1,
                                 position: 'relative',
                                 zIndex: 1,
-                                textShadow: isIgrisk
+                                textShadow: isBerserker
+                                    ? '0 0 10px rgba(255,0,0,0.8)'
+                                    : isIgrisk
                                     ? '1px 1px 3px rgba(255,0,0,0.5)'
                                     : '1px 1px 2px rgba(0,0,0,0.8)'
                             }}
@@ -354,12 +402,20 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                 </div>
             )}
 
-            {/* Animation blink pour le warning d'Igrisk */}
-            {isIgrisk && (
+            {/* Animations */}
+            {(isIgrisk || isBerserker) && (
                 <style>{`
                     @keyframes blink {
                         0%, 50%, 100% { opacity: 1; }
                         25%, 75% { opacity: 0.3; }
+                    }
+                    @keyframes berserkerPulse {
+                        0%, 100% { 
+                            box-shadow: 0 8px 32px rgba(139,0,255,0.5);
+                        }
+                        50% { 
+                            box-shadow: 0 8px 40px rgba(255,0,255,0.7);
+                        }
                     }
                 `}</style>
             )}
