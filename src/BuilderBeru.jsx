@@ -18,6 +18,7 @@ import BDGScoreCard from "./components/ScoreCard/BDGScoreCard"
 import PODScoreCard from "./components/ScoreCard/PODScoreCard"
 import NoyauxPopup from './components/NoyauxPopup';
 import GemmesPopup from './components/GemmePopup';
+import SpaceMarineShadowTrail from './components/SpaceMarineShadowTrail/SpaceMarineShadowTrail';
 import WeaponPopup from './components/weaponPopup';
 import OCRPasteListener from './components/OCRPasteListener';
 import './i18n/i18n';
@@ -6146,6 +6147,7 @@ BobbyJones : "Allez l'Inter !"
                       <BerserkerShadowTrail
                         showTankMessage={showTankMessage}
                       />
+                      <SpaceMarineShadowTrail />
 
                       {/* Ajouter POD Score Card */}
                       <div className="w-full mt-6">
@@ -8385,6 +8387,7 @@ BobbyJones : "Allez l'Inter !"
                 <BerserkerShadowTrail
                   showTankMessage={showTankMessage}
                 />
+                <SpaceMarineShadowTrail />
 
                 {/* Ajouter POD Score Card */}  
                 <div className="w-full mt-6">
