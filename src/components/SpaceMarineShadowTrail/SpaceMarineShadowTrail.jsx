@@ -23,10 +23,98 @@ const MARINE_CONFIG = {
   LASER_DAMAGE: 100,
   SHIELD_DURATION: 5000,
   PLASMA_COOLDOWN: 3000,
-  DESTRUCTION_THRESHOLD: 0.3, // 30% du DOM max
+  DESTRUCTION_THRESHOLD: 0.3,
   ALLOWED_REGIONS: ['Île-de-France', 'Auvergne-Rhône-Alpes'],
   SPAWN_DELAY: 3000,
-  INTERACTION_DISTANCE: 50
+  INTERACTION_DISTANCE: 50,
+  INVASION_CHANCE: 0.5,
+  INVASION_CHECK_INTERVAL: 30000,
+  MAX_ENEMIES: 5,
+  ENEMY_SPEED: 1.5
+};
+
+// 👾 TYPES D'ENNEMIS
+const ENEMY_TYPES = [
+  {
+    id: 'chaos_spawn',
+    name: 'Chaos Spawn',
+    emoji: '👹',
+    health: 50,
+    speed: 1,
+    damage: 10,
+    color: '#ff0066',
+    behavior: 'aggressive',
+    deathMessage: 'Chaos spawn éliminé !'
+  },
+  {
+    id: 'tyranid',
+    name: 'Tyranide',
+    emoji: '🦗',
+    health: 30,
+    speed: 2,
+    damage: 5,
+    color: '#00ff00',
+    behavior: 'swarm',
+    deathMessage: 'Xenos purgé !'
+  },
+  {
+    id: 'ork',
+    name: 'Ork',
+    emoji: '👺',
+    health: 80,
+    speed: 0.8,
+    damage: 15,
+    color: '#228b22',
+    behavior: 'chaotic',
+    deathMessage: 'WAAAGH terminé !'
+  },
+  {
+    id: 'necron',
+    name: 'Necron',
+    emoji: '💀',
+    health: 100,
+    speed: 0.5,
+    damage: 20,
+    color: '#c0c0c0',
+    behavior: 'systematic',
+    deathMessage: 'Machine détruite !'
+  },
+  {
+    id: 'daemon',
+    name: 'Démon du Warp',
+    emoji: '😈',
+    health: 60,
+    speed: 1.5,
+    damage: 12,
+    color: '#9400d3',
+    behavior: 'teleport',
+    deathMessage: 'Démon banni !'
+  }
+];
+
+// 💬 MESSAGES D'INVASION
+const INVASION_MESSAGES = {
+  start: [
+    "🚨 ALERTE ! DÉTECTION D'ACTIVITÉ HOSTILE !",
+    "⚠️ BRÈCHE WARP DÉTECTÉE ! INVASION IMMINENTE !",
+    "🛡️ PROTOCOLE DE DÉFENSE ACTIVÉ ! ENNEMIS EN APPROCHE !",
+    "☠️ ILS ARRIVENT ! PRÉPAREZ-VOUS AU COMBAT !",
+    "🔴 CODE ROUGE ! XENOS DÉTECTÉS SUR LE SITE !"
+  ],
+  during: [
+    "Pour l'Empereur ! Aucun ne passera !",
+    "Purifiez les hérétiques !",
+    "Tenez la ligne ! Protégez BuilderBeru !",
+    "La mort plutôt que le déshonneur !",
+    "AUCUNE PITIÉ ! AUCUN RÉPIT !"
+  ],
+  victory: [
+    "✨ Victoire ! Les envahisseurs ont été repoussés !",
+    "🎖️ Site sécurisé ! Gloire au Monarque des Ombres !",
+    "💪 Aucun ennemi n'a survécu ! BuilderBeru est sauvé !",
+    "🏆 Invasion repoussée avec succès !",
+    "⭐ L'Empereur serait fier ! Site défendu !"
+  ]
 };
 
 // 💬 DIALOGUES DU SPACE MARINE
@@ -124,11 +212,15 @@ const SpaceMarineShadowTrail = () => {
   const [destroyedElements, setDestroyedElements] = useState(new Set());
   const [plasmaCooldown, setPlasmaCooldown] = useState(false);
   const [shieldActive, setShieldActive] = useState(false);
+  const [enemies, setEnemies] = useState([]);
+  const [invasionActive, setInvasionActive] = useState(false);
+  const [enemiesDestroyed, setEnemiesDestroyed] = useState(0);
   
   const containerRef = useRef(null);
   const animationFrameRef = useRef(null);
   const patrolPathRef = useRef([]);
   const mousePositionRef = useRef({ x: 0, y: 0 });
+  const invasionCheckRef = useRef(null);
 
   // 🌍 DÉTECTION RÉGIONALE
   useEffect(() => {
@@ -227,7 +319,6 @@ const SpaceMarineShadowTrail = () => {
     setCurrentAction('patrol');
     showDialogue('greeting');
     
-    // Générer un chemin de patrouille
     const points = [];
     const numPoints = 5;
     for (let i = 0; i < numPoints; i++) {
@@ -244,7 +335,6 @@ const SpaceMarineShadowTrail = () => {
     setCurrentAction('scan');
     showDialogue('idle');
     
-    // Effet visuel de scan
     const elements = document.querySelectorAll('div, button, img, p, h1, h2, h3');
     elements.forEach((el, index) => {
       setTimeout(() => {
@@ -269,46 +359,69 @@ const SpaceMarineShadowTrail = () => {
     showDialogue('combat');
     setHudData(prev => ({ ...prev, shield: 100 }));
     
-    // Désactivation après durée
     setTimeout(() => {
       setShieldActive(false);
       setHudData(prev => ({ ...prev, shield: 0 }));
     }, MARINE_CONFIG.SHIELD_DURATION);
   }, [shieldActive, showDialogue]);
 
-  // 🔫 SYSTÈME DE TIR LASER
+  // 🔫 SYSTÈME DE TIR LASER - Déclaré en premier
   const fireLaser = useCallback((targetX, targetY) => {
     setCurrentAction('combat');
     showDialogue('combat');
     
+    // Orienter le marine vers la cible
+    const newDirection = getDirection(position, { x: targetX, y: targetY });
+    setDirection(newDirection);
+    
+    // Position de départ du laser selon la direction
+    let startX = position.x + 75;
+    let startY = position.y + 75;
+    
+    // Ajuster le point de départ selon la direction
+    switch(newDirection) {
+      case 'up':
+        startY = position.y + 30;
+        break;
+      case 'down':
+        startY = position.y + 120;
+        break;
+      case 'left':
+        startX = position.x + 30;
+        break;
+      case 'right':
+        startX = position.x + 120;
+        break;
+    }
+    
     const laserData = {
       id: Date.now(),
-      startX: position.x + 75,
-      startY: position.y + 75,
+      startX,
+      startY,
       endX: targetX,
       endY: targetY,
-      angle: Math.atan2(targetY - position.y, targetX - position.x) * 180 / Math.PI
+      angle: Math.atan2(targetY - startY, targetX - startX) * 180 / Math.PI
     };
     
     setLasers(prev => [...prev, laserData]);
     
-    // Impact
     setTimeout(() => {
       setImpacts(prev => [...prev, { id: Date.now(), x: targetX, y: targetY }]);
       
-      // Détruire l'élément le plus proche
-      const element = document.elementFromPoint(targetX, targetY);
-      if (element && !element.classList.contains('spacemarine-container')) {
-        element.classList.add('element-disintegrating');
-        setDestroyedElements(prev => new Set([...prev, element]));
-        setHudData(prev => ({ ...prev, kills: prev.kills + 1 }));
-        
-        setTimeout(() => {
-          element.style.display = 'none';
-        }, 1000);
+      // Pendant une invasion, ne détruire que les ennemis
+      if (!invasionActive) {
+        const element = document.elementFromPoint(targetX, targetY);
+        if (element && !element.classList.contains('spacemarine-container') && !element.classList.contains('enemy-container')) {
+          element.classList.add('element-disintegrating');
+          setDestroyedElements(prev => new Set([...prev, element]));
+          setHudData(prev => ({ ...prev, kills: prev.kills + 1 }));
+          
+          setTimeout(() => {
+            element.style.display = 'none';
+          }, 1000);
+        }
       }
       
-      // Nettoyage
       setTimeout(() => {
         setLasers(prev => prev.filter(l => l.id !== laserData.id));
         setImpacts(prev => prev.filter(i => i.id !== laserData.id));
@@ -316,7 +429,7 @@ const SpaceMarineShadowTrail = () => {
     }, 200);
     
     setHudData(prev => ({ ...prev, ammo: Math.max(0, prev.ammo - 1) }));
-  }, [position]);
+  }, [position, showDialogue, getDirection, invasionActive]);
 
   // 💥 GRENADE PLASMA
   const throwPlasmaGrenade = useCallback((targetX, targetY) => {
@@ -326,14 +439,12 @@ const SpaceMarineShadowTrail = () => {
     setCurrentAction('combat');
     showDialogue('combat');
     
-    // Créer l'effet plasma
     const plasma = document.createElement('div');
     plasma.className = 'plasma-burn';
     plasma.style.left = `${targetX - 50}px`;
     plasma.style.top = `${targetY - 50}px`;
     document.body.appendChild(plasma);
     
-    // Destruction en zone
     const blastRadius = 150;
     const elements = document.querySelectorAll('*');
     elements.forEach(el => {
@@ -352,7 +463,6 @@ const SpaceMarineShadowTrail = () => {
       }
     });
     
-    // Nettoyage
     setTimeout(() => {
       plasma.remove();
       setPlasmaCooldown(false);
@@ -365,7 +475,6 @@ const SpaceMarineShadowTrail = () => {
     showDialogue('destruction');
     document.body.classList.add('site-under-attack');
     
-    // Sélection aléatoire de 30% des éléments
     const allElements = Array.from(document.querySelectorAll('*'));
     const targetCount = Math.floor(allElements.length * MARINE_CONFIG.DESTRUCTION_THRESHOLD);
     const targets = [];
@@ -379,17 +488,14 @@ const SpaceMarineShadowTrail = () => {
       }
     }
     
-    // Destruction séquentielle épique
     targets.forEach((el, index) => {
       setTimeout(() => {
-        // Tir laser sur l'élément
         const rect = el.getBoundingClientRect();
         const targetX = rect.left + rect.width / 2;
         const targetY = rect.top + rect.height / 2;
         
         fireLaser(targetX, targetY);
         
-        // Effets variés
         const effects = ['disintegrating', 'glitching'];
         const effect = effects[Math.floor(Math.random() * effects.length)];
         el.classList.add(`element-${effect}`);
@@ -402,7 +508,6 @@ const SpaceMarineShadowTrail = () => {
       }, index * 100);
     });
     
-    // Arrêt après 10 secondes
     setTimeout(() => {
       document.body.classList.remove('site-under-attack');
       setCurrentAction('idle');
@@ -410,39 +515,110 @@ const SpaceMarineShadowTrail = () => {
     }, 10000);
   }, [fireLaser, showDialogue]);
 
-  // 🎮 GESTIONNAIRE D'ACTIONS
-  const handleAction = useCallback((actionId) => {
-    setIsMenuOpen(false);
-    
-    switch (actionId) {
-      case 'patrol':
-        startPatrol();
-        break;
-      case 'scan':
-        scanDOM();
-        break;
-      case 'shield':
-        activateShield();
-        break;
-      case 'laser':
-        // Tirer vers une position aléatoire
-        const laserTargetX = Math.random() * window.innerWidth;
-        const laserTargetY = Math.random() * window.innerHeight;
-        fireLaser(laserTargetX, laserTargetY);
-        break;
-      case 'plasma':
-        // Lancer vers la souris
-        throwPlasmaGrenade(mousePositionRef.current.x, mousePositionRef.current.y);
-        break;
-      case 'destruction':
-        if (window.confirm('⚠️ ATTENTION: Cette action va détruire 30% du site! Continuer?')) {
-          totalDestruction();
+  // 👾 SYSTÈME D'INVASION
+  const damageEnemy = useCallback((enemyId, damage) => {
+    setEnemies(prev => prev.map(enemy => {
+      if (enemy.id === enemyId) {
+        const newHealth = enemy.health - damage;
+        if (newHealth <= 0) {
+          setEnemiesDestroyed(count => count + 1);
+          setHudData(prev => ({ ...prev, kills: prev.kills + 1 }));
+          setDialogue(enemy.type.deathMessage);
+          
+          const deathEffect = document.createElement('div');
+          deathEffect.className = 'enemy-death-effect';
+          deathEffect.style.left = `${enemy.x}px`;
+          deathEffect.style.top = `${enemy.y}px`;
+          deathEffect.innerHTML = '💥';
+          document.body.appendChild(deathEffect);
+          
+          setTimeout(() => deathEffect.remove(), 1000);
+          
+          return null;
         }
-        break;
-      default:
-        break;
+        return { ...enemy, health: newHealth };
+      }
+      return enemy;
+    }).filter(Boolean));
+  }, []);
+
+  const spawnEnemy = useCallback(() => {
+    const enemyType = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
+    const side = Math.floor(Math.random() * 4);
+    let x, y;
+    
+    switch(side) {
+      case 0: x = Math.random() * window.innerWidth; y = -50; break;
+      case 1: x = window.innerWidth + 50; y = Math.random() * window.innerHeight; break;
+      case 2: x = Math.random() * window.innerWidth; y = window.innerHeight + 50; break;
+      case 3: x = -50; y = Math.random() * window.innerHeight; break;
     }
-  }, [startPatrol, scanDOM, activateShield, fireLaser, throwPlasmaGrenade, totalDestruction]);
+    
+    const enemy = {
+      id: Date.now() + Math.random(),
+      type: enemyType,
+      x,
+      y,
+      health: enemyType.health,
+      maxHealth: enemyType.health,
+      targetX: window.innerWidth / 2,
+      targetY: window.innerHeight / 2,
+      lastTeleport: 0
+    };
+    
+    setEnemies(prev => [...prev, enemy]);
+  }, []);
+
+  const startInvasion = useCallback(() => {
+    setInvasionActive(true);
+    setCurrentAction('combat');
+    
+    const alertMsg = INVASION_MESSAGES.start[Math.floor(Math.random() * INVASION_MESSAGES.start.length)];
+    showDialogue('destruction');
+    setDialogue(alertMsg);
+    
+    document.body.classList.add('site-under-attack');
+    
+    const enemyCount = Math.floor(Math.random() * 3) + 2;
+    for (let i = 0; i < enemyCount; i++) {
+      setTimeout(() => spawnEnemy(), i * 500);
+    }
+    
+    let spawnInterval = setInterval(() => {
+      if (enemies.length < MARINE_CONFIG.MAX_ENEMIES && Math.random() < 0.3) {
+        spawnEnemy();
+      }
+    }, 3000);
+    
+    // Stocker l'interval dans une variable locale
+    const checkVictory = setInterval(() => {
+      // Vérifier si tous les ennemis sont morts
+      if (enemies.length === 0 && invasionActive) {
+        clearInterval(spawnInterval);
+        clearInterval(checkVictory);
+        setInvasionActive(false);
+        document.body.classList.remove('site-under-attack');
+        
+        const victoryMsg = INVASION_MESSAGES.victory[Math.floor(Math.random() * INVASION_MESSAGES.victory.length)];
+        setDialogue(victoryMsg);
+        setCurrentAction('idle');
+        
+        // Bonus de munitions après victoire
+        setHudData(prev => ({ ...prev, ammo: Math.min(100, prev.ammo + 20) }));
+      }
+    }, 1000);
+    
+    // Durée maximale de l'invasion
+    setTimeout(() => {
+      clearInterval(spawnInterval);
+      clearInterval(checkVictory);
+      if (invasionActive) {
+        setInvasionActive(false);
+        document.body.classList.remove('site-under-attack');
+        setCurrentAction('idle');
+      }
+    }, 60000); // 1 minute max
+  }, [spawnEnemy, showDialogue, enemies.length, invasionActive]);
 
   // 🎯 MOUVEMENT AUTOMATIQUE
   useEffect(() => {
@@ -468,12 +644,10 @@ const SpaceMarineShadowTrail = () => {
           setTargetPosition(null);
         }
       } else if (isPatrolling && patrolPathRef.current.length > 0) {
-        // Patrouille automatique
         const currentTarget = patrolPathRef.current[0];
         const distance = getDistance(position, currentTarget);
         
         if (distance < 10) {
-          // Atteint le point, passer au suivant
           patrolPathRef.current.push(patrolPathRef.current.shift());
         } else {
           setTargetPosition(currentTarget);
@@ -492,18 +666,222 @@ const SpaceMarineShadowTrail = () => {
     };
   }, [isActive, position, targetPosition, isPatrolling, getDistance, getDirection]);
 
-  // 🎯 CLICK TO MOVE
+  // 🎯 DOUBLE CLICK TO MOVE
   useEffect(() => {
-    const handleClick = (e) => {
+    const handleDoubleClick = (e) => {
       if (!isActive || e.target.closest('.spacemarine-container')) return;
       
       setTargetPosition({ x: e.clientX - 75, y: e.clientY - 75 });
       setIsPatrolling(false);
     };
     
-    window.addEventListener('click', handleClick);
-    return () => window.removeEventListener('click', handleClick);
+    window.addEventListener('dblclick', handleDoubleClick);
+    return () => window.removeEventListener('dblclick', handleDoubleClick);
   }, [isActive]);
+
+  // 🎮 CHECK PÉRIODIQUE D'INVASION
+  useEffect(() => {
+    if (!isActive || invasionActive) return;
+    
+    const checkInvasion = () => {
+      if (Math.random() < MARINE_CONFIG.INVASION_CHANCE) {
+        console.log('👾 INVASION TRIGGERED!');
+        startInvasion();
+      }
+    };
+    
+    invasionCheckRef.current = setInterval(checkInvasion, MARINE_CONFIG.INVASION_CHECK_INTERVAL);
+    
+    return () => {
+      if (invasionCheckRef.current) {
+        clearInterval(invasionCheckRef.current);
+      }
+    };
+  }, [isActive, invasionActive, startInvasion]);
+
+  // 🎯 MOUVEMENT DES ENNEMIS
+  useEffect(() => {
+    if (enemies.length === 0) return;
+    
+    const moveEnemies = () => {
+      setEnemies(prev => prev.map(enemy => {
+        if (!enemy) return null;
+        
+        let newX = enemy.x;
+        let newY = enemy.y;
+        
+        switch(enemy.type.behavior) {
+          case 'aggressive':
+            const dxToMarine = position.x + 75 - enemy.x;
+            const dyToMarine = position.y + 75 - enemy.y;
+            const distToMarine = Math.sqrt(dxToMarine * dxToMarine + dyToMarine * dyToMarine);
+            
+            if (distToMarine > 10) {
+              newX += (dxToMarine / distToMarine) * enemy.type.speed * MARINE_CONFIG.ENEMY_SPEED;
+              newY += (dyToMarine / distToMarine) * enemy.type.speed * MARINE_CONFIG.ENEMY_SPEED;
+            }
+            break;
+            
+          case 'swarm':
+            const dxToCenter = window.innerWidth / 2 - enemy.x;
+            const dyToCenter = window.innerHeight / 2 - enemy.y;
+            const distToCenter = Math.sqrt(dxToCenter * dxToCenter + dyToCenter * dyToCenter);
+            
+            if (distToCenter > 100) {
+              newX += (dxToCenter / distToCenter) * enemy.type.speed * MARINE_CONFIG.ENEMY_SPEED;
+              newY += (dyToCenter / distToCenter) * enemy.type.speed * MARINE_CONFIG.ENEMY_SPEED;
+            }
+            break;
+            
+          case 'chaotic':
+            newX += (Math.random() - 0.5) * enemy.type.speed * MARINE_CONFIG.ENEMY_SPEED * 4;
+            newY += (Math.random() - 0.5) * enemy.type.speed * MARINE_CONFIG.ENEMY_SPEED * 4;
+            break;
+            
+          case 'systematic':
+            const gridSize = 50;
+            const targetGridX = Math.round(position.x / gridSize) * gridSize;
+            const targetGridY = Math.round(position.y / gridSize) * gridSize;
+            
+            newX += Math.sign(targetGridX - enemy.x) * enemy.type.speed * MARINE_CONFIG.ENEMY_SPEED;
+            newY += Math.sign(targetGridY - enemy.y) * enemy.type.speed * MARINE_CONFIG.ENEMY_SPEED;
+            break;
+            
+          case 'teleport':
+            if (Date.now() - enemy.lastTeleport > 5000 && Math.random() < 0.02) {
+              newX = Math.random() * window.innerWidth;
+              newY = Math.random() * window.innerHeight;
+              enemy.lastTeleport = Date.now();
+              
+              const teleportEffect = document.createElement('div');
+              teleportEffect.className = 'teleport-effect';
+              teleportEffect.style.left = `${enemy.x}px`;
+              teleportEffect.style.top = `${enemy.y}px`;
+              document.body.appendChild(teleportEffect);
+              setTimeout(() => teleportEffect.remove(), 500);
+            } else {
+              const dx = position.x - enemy.x;
+              const dy = position.y - enemy.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              
+              if (dist > 10) {
+                newX += (dx / dist) * enemy.type.speed * MARINE_CONFIG.ENEMY_SPEED;
+                newY += (dy / dist) * enemy.type.speed * MARINE_CONFIG.ENEMY_SPEED;
+              }
+            }
+            break;
+        }
+        
+        newX = Math.max(0, Math.min(window.innerWidth - 50, newX));
+        newY = Math.max(0, Math.min(window.innerHeight - 50, newY));
+        
+        const distanceToMarine = getDistance({ x: newX, y: newY }, { x: position.x + 75, y: position.y + 75 });
+        if (distanceToMarine < 50 && !shieldActive) {
+          setHudData(prev => ({ 
+            ...prev, 
+            health: Math.max(0, prev.health - enemy.type.damage) 
+          }));
+          
+          const pushbackAngle = Math.atan2(enemy.y - position.y, enemy.x - position.x);
+          newX += Math.cos(pushbackAngle) * 50;
+          newY += Math.sin(pushbackAngle) * 50;
+        }
+        
+        return { ...enemy, x: newX, y: newY };
+      }).filter(Boolean));
+    };
+    
+    const enemyMoveInterval = setInterval(moveEnemies, 50);
+    
+    return () => clearInterval(enemyMoveInterval);
+  }, [enemies, position, shieldActive, getDistance]);
+
+  // 🔫 AUTO-DÉFENSE
+  useEffect(() => {
+    if (!invasionActive || enemies.length === 0 || currentAction === 'destruction') return;
+    
+    const autoDefend = () => {
+      let closestEnemy = null;
+      let closestDistance = Infinity;
+      
+      enemies.forEach(enemy => {
+        const distance = getDistance(
+          { x: enemy.x + 25, y: enemy.y + 25 }, 
+          { x: position.x + 75, y: position.y + 75 }
+        );
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestEnemy = enemy;
+        }
+      });
+      
+      if (closestEnemy && closestDistance < MARINE_CONFIG.LASER_RANGE && hudData.ammo > 0) {
+        fireLaser(closestEnemy.x + 25, closestEnemy.y + 25);
+        damageEnemy(closestEnemy.id, MARINE_CONFIG.LASER_DAMAGE);
+      }
+    };
+    
+    const defendInterval = setInterval(autoDefend, 1000);
+    
+    return () => clearInterval(defendInterval);
+  }, [invasionActive, enemies, currentAction, position, hudData.ammo, getDistance, fireLaser, damageEnemy]);
+
+  // 🎮 GESTIONNAIRE D'ACTIONS
+  const handleAction = useCallback((actionId) => {
+    setIsMenuOpen(false);
+    
+    switch (actionId) {
+      case 'patrol':
+        startPatrol();
+        break;
+      case 'scan':
+        scanDOM();
+        break;
+      case 'shield':
+        activateShield();
+        break;
+      case 'laser':
+        // Pendant une invasion, viser l'ennemi le plus proche
+        if (invasionActive && enemies.length > 0) {
+          let closestEnemy = null;
+          let closestDistance = Infinity;
+          
+          enemies.forEach(enemy => {
+            const distance = getDistance(
+              { x: enemy.x + 25, y: enemy.y + 25 }, 
+              { x: position.x + 75, y: position.y + 75 }
+            );
+            if (distance < closestDistance) {
+              closestDistance = distance;
+              closestEnemy = enemy;
+            }
+          });
+          
+          if (closestEnemy) {
+            fireLaser(closestEnemy.x + 25, closestEnemy.y + 25);
+            damageEnemy(closestEnemy.id, MARINE_CONFIG.LASER_DAMAGE);
+          }
+        } else {
+          // Tirer vers une position aléatoire
+          const laserTargetX = Math.random() * window.innerWidth;
+          const laserTargetY = Math.random() * window.innerHeight;
+          fireLaser(laserTargetX, laserTargetY);
+        }
+        break;
+      case 'plasma':
+        throwPlasmaGrenade(mousePositionRef.current.x, mousePositionRef.current.y);
+        break;
+      case 'destruction':
+        if (invasionActive) {
+          alert('⚠️ IMPOSSIBLE ! Défendez le site contre l\'invasion d\'abord !');
+        } else if (window.confirm('⚠️ ATTENTION: Cette action va détruire 30% du site! Continuer?')) {
+          totalDestruction();
+        }
+        break;
+      default:
+        break;
+    }
+  }, [startPatrol, scanDOM, activateShield, fireLaser, throwPlasmaGrenade, totalDestruction]);
 
   // 🎮 RACCOURCIS CLAVIER
   useEffect(() => {
@@ -521,7 +899,30 @@ const SpaceMarineShadowTrail = () => {
           activateShield();
           break;
         case 'l':
-          fireLaser(mousePositionRef.current.x, mousePositionRef.current.y);
+          // Pendant une invasion, viser l'ennemi le plus proche de la souris
+          if (invasionActive && enemies.length > 0) {
+            let closestEnemy = null;
+            let closestDistance = Infinity;
+            
+            enemies.forEach(enemy => {
+              const distance = getDistance(
+                { x: enemy.x + 25, y: enemy.y + 25 }, 
+                mousePositionRef.current
+              );
+              if (distance < closestDistance) {
+                closestDistance = distance;
+                closestEnemy = enemy;
+              }
+            });
+            
+            if (closestEnemy) {
+              fireLaser(closestEnemy.x + 25, closestEnemy.y + 25);
+              damageEnemy(closestEnemy.id, MARINE_CONFIG.LASER_DAMAGE);
+            }
+          } else {
+            // Tirer vers la souris normalement
+            fireLaser(mousePositionRef.current.x, mousePositionRef.current.y);
+          }
           break;
         case 'g':
           throwPlasmaGrenade(mousePositionRef.current.x, mousePositionRef.current.y);
@@ -598,7 +999,7 @@ const SpaceMarineShadowTrail = () => {
         
         {/* BULLE DE DIALOGUE */}
         {dialogue && (
-          <div className="marine-dialogue" style={{
+          <div style={{
             position: 'absolute',
             bottom: '120%',
             left: '50%',
@@ -611,7 +1012,8 @@ const SpaceMarineShadowTrail = () => {
             whiteSpace: 'nowrap',
             fontSize: '14px',
             fontWeight: 'bold',
-            boxShadow: '0 0 20px rgba(0, 149, 255, 0.6)'
+            boxShadow: '0 0 20px rgba(0, 149, 255, 0.6)',
+            zIndex: 10650
           }}>
             {dialogue}
           </div>
@@ -643,7 +1045,38 @@ const SpaceMarineShadowTrail = () => {
         <div className="hud-line" style={{ marginTop: '10px', fontSize: '12px', opacity: 0.7 }}>
           <span>COMMANDES: P(atrouille) S(can) B(ouclier) L(aser) G(renade)</span>
         </div>
+        <div className="hud-line" style={{ fontSize: '12px', opacity: 0.7 }}>
+          <span>DOUBLE-CLIC pour déplacer</span>
+        </div>
+        {invasionActive && (
+          <div className="hud-line" style={{ marginTop: '10px', color: '#ff0000', fontWeight: 'bold' }}>
+            <span>⚠️ INVASION EN COURS ⚠️</span>
+          </div>
+        )}
       </div>
+      
+      {/* ENNEMIS */}
+      {enemies.map(enemy => (
+        <div
+          key={enemy.id}
+          className="enemy-container"
+          style={{
+            left: `${enemy.x}px`,
+            top: `${enemy.y}px`,
+            '--enemy-color': enemy.type.color
+          }}
+        >
+          <div className="enemy-sprite">
+            {enemy.type.emoji}
+          </div>
+          <div className="enemy-health-bar">
+            <div 
+              className="enemy-health-fill" 
+              style={{ width: `${(enemy.health / enemy.maxHealth) * 100}%` }}
+            />
+          </div>
+        </div>
+      ))}
       
       {/* EFFETS LASER */}
       {lasers.map(laser => (
