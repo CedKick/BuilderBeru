@@ -185,7 +185,12 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                     <div key={idx} className="w-10 h-10 bg-gray-800 border border-gray-700 rounded" />
                   );
 
-                  const skillData = runesData.find(r => r.name === (skill.name || skill));
+                  const skillData = !skill ? null :
+                    typeof skill === 'string' ? runesData.find(r => r.name === skill) :
+                      skill.src ? skill :
+                        skill.name ? runesData.find(r => r.name === skill.name) :
+                          null;
+
                   const rarityBorder = {
                     rare: 'border-blue-500',
                     epic: 'border-purple-500',
@@ -354,7 +359,12 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                       <div key={idx} className="w-10 h-10 bg-gray-800 border border-gray-700 rounded" />
                     );
 
-                    const skillData = runesData.find(r => r.name === (skill.name || skill));
+                    const skillData = !skill ? null :
+                      typeof skill === 'string' ? runesData.find(r => r.name === skill) :
+                        skill.src ? skill :
+                          skill.name ? runesData.find(r => r.name === skill.name) :
+                            null;
+
                     const rarityBorder = {
                       rare: 'border-blue-500',
                       epic: 'border-purple-500',
@@ -550,51 +560,53 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                 </div>
 
                 {/* Hunter Stats - Avec gestion des importantStats */}
-                <div className="grid grid-cols-2 gap-1 text-xs">
-                  {(() => {
-                    // IMPORTANT: Si pas de character, utiliser les clés des finalStats sauvegardées
-                    let statsToShow;
+<div className="grid grid-cols-2 gap-1 text-xs">
+  {(() => {
+    // IMPORTANT: Si pas de character, utiliser les clés des finalStats sauvegardées
+    let statsToShow;
 
-                    if (character?.importantStats) {
-                      statsToShow = character.importantStats;
-                    } else if (hunter.finalStats && Object.keys(hunter.finalStats).length > 0) {
-                      // Utiliser les clés présentes dans finalStats
-                      statsToShow = Object.keys(hunter.finalStats);
-                    } else {
-                      // Fallback par défaut
-                      statsToShow = ['atk', 'tc', 'dcc', 'defPen'];
-                    }
+    if (character?.importantStats) {
+      statsToShow = character.importantStats;
+    } else if (hunter.finalStats && Object.keys(hunter.finalStats).length > 0) {
+      // Utiliser les clés présentes dans finalStats
+      statsToShow = Object.keys(hunter.finalStats);
+    } else {
+      // Fallback par défaut
+      statsToShow = ['atk', 'tc', 'dcc', 'defPen'];
+    }
 
-                    const labelMap = {
-                      'def': t('bdg.stats.def'),
-                      'hp': t('bdg.stats.hp'),
-                      'atk': t('bdg.stats.atk'),
-                      'tc': t('bdg.stats.tc'),
-                      'dcc': t('bdg.stats.dcc'),
-                      'defPen': t('bdg.stats.defPen'),
-                      'di': t('bdg.stats.di'),
-                      'mpcr': t('bdg.stats.mpcr'),
-                      'mpa': t('bdg.stats.mpa')
-                    };
+    const labelMap = {
+      'def': t('bdg.stats.def'),
+      'hp': t('bdg.stats.hp'),
+      'atk': t('bdg.stats.atk'),
+      'tc': t('bdg.stats.tc'),
+      'dcc': t('bdg.stats.dcc'),
+      'defPen': t('bdg.stats.defPen'),
+      'di': t('bdg.stats.di'),
+      'mpcr': t('bdg.stats.mpcr'),
+      'mpa': t('bdg.stats.mpa')
+    };
 
-                    return statsToShow.map((statKey) => {
-                      const label = labelMap[statKey] || statKey.toUpperCase();
-                      const value = hunter.finalStats?.[statKey];
-                      const presetValue = hunterPreset?.expectedStats?.[statKey];
+    return statsToShow.map((statKey) => {
+      const label = labelMap[statKey] || statKey.toUpperCase();
+      const value = hunter.finalStats?.[statKey];
+      const presetValue = hunterPreset?.expectedStats?.[statKey];
 
-                      return (
-                        <div key={statKey}>
-                          <p className="text-gray-500">{label}</p>
-                          <p className="text-white">
-                            {value ?
-                              formatStatWithPercentage(value, statKey) :
-                              <span className="text-gray-600">{presetValue || '---'}</span>}
-                          </p>
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
+      return (
+        <div key={statKey}>
+    <p className="text-gray-500">{label}</p>
+    <p className="text-white">
+      {value ?
+        formatStatWithPercentage(value, statKey) :
+        <span className="text-gray-600">
+          {presetValue ? formatStatWithPercentage(presetValue, statKey) : '---'}
+        </span>}
+    </p>
+  </div>
+      );
+    });
+  })()}
+</div>
               </div>
             );
           })}

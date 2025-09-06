@@ -25,6 +25,10 @@ export const characters = {
     grade: 'SSR',
     element: 'Fire',
     scaleStat: 'HP',
+     bdgLimits: {
+      maxDamageOnElement: 8000000000,  // 8B max si bon élément
+      maxDamageOffElement: 2000000000  // 2B max si mauvais élément
+    },
     importantStats: ['hp', 'tc', 'dcc', 'defPen', 'di'],
     skillMultipliers: {
       core1: 3.5,
@@ -52,6 +56,10 @@ export const characters = {
     grade: 'SSR',
     element: 'Wind',
     scaleStat: 'Attack',
+     bdgLimits: {
+      maxDamageOnElement: 50000000000,  // 
+      maxDamageOffElement: 2000000000  // 
+    },
     importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di'],
     skillMultipliers: {
       core1: 3.5,
@@ -79,34 +87,11 @@ export const characters = {
     grade: 'SSR',
     element: 'Dark',
     scaleStat: 'Defense',
-    importantStats: ['def', 'tc', 'dcc', 'defPen', 'di', 'mpcr', 'mpa'],
-    skillMultipliers: {
-      core1: 3.5,
-      core2: 4.8,
-      skill1: 12.0,
-      skill2: 16.5,
-      ultimate: 35.0
+    bdgLimits: {
+      maxDamageOnElement: 20000000000,  // 20B max si bon élément
+      maxDamageOffElement: 4000000000  // 4B max si mauvais élément
     },
-    buffs: [
-      {
-        name: 'Wind Shield',
-        values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
-        cooldown: 12,
-        duration: 8,
-        target: 'shared', // 'self' ou 'shared'
-        type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
-        element: 'Wind'
-      }]
-  },
-  'shuhua': {
-    name: 'Shuhua',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751535917/Shuhua1_difnjb.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1751536775/IconShuhua_njc2f2.png',
-    class: 'Fighter',
-    grade: 'SSR',
-    element: 'Water',
-    scaleStat: 'Attack',
-    importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di'],
+    importantStats: ['def', 'tc', 'dcc', 'defPen', 'di', 'mpcr', 'mpa'],
     skillMultipliers: {
       core1: 3.5,
       core2: 4.8,
@@ -242,7 +227,7 @@ export const characters = {
     expert: {
       WIND: { max: 5000000000 },    // 5B
       WATER: { max: 20000000000 },   // 20B 
-      FIRE: { max: 25000000000 },    // 25B
+      FIRE: { max: 85000000000 },    // 85B
       LIGHT: { max: 5000000000 },   // 5B
       DARK: { max: 16000000000 }     // 16B
     },
@@ -283,6 +268,10 @@ export const characters = {
     grade: 'SSR',
     element: 'Water',
     scaleStat: 'Attack',
+    bdgLimits: {
+      maxDamageOnElement: 8000000000,  // 8B max si bon élément
+      maxDamageOffElement: 2000000000  // 2B max si mauvais élément
+    },
     importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di'],
     skillMultipliers: {
       core1: 3.5,
@@ -340,7 +329,7 @@ export const characters = {
     element: 'Wind',
     scaleStat: 'Defense',
     bdgLimits: {
-      maxDamageOnElement: 37000000000,  // 73B max si bon élément
+      maxDamageOnElement: 37000000000,  // 37B max si bon élément
       maxDamageOffElement: 9000000000  // 9B max si mauvais élément
     },
     importantStats: ['def', 'tc', 'dcc', 'defPen', 'di'],
@@ -394,8 +383,8 @@ export const characters = {
     scaleStat: 'Defense',
     importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di'],
     bdgLimits: {
-      maxDamageOnElement: 25000000000,  // 73B max si bon élément
-      maxDamageOffElement: 6000000000  // 9B max si mauvais élément
+      maxDamageOnElement: 25000000000,  // 25B max si bon élément
+      maxDamageOffElement: 6000000000  // 6B max si mauvais élément
     },
     skillMultipliers: {
       core1: 3.5,
@@ -423,7 +412,7 @@ export const characters = {
     grade: 'SSR',
     element: 'Fire',
     scaleStat: 'Attack',
-    importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di', 'mpa'],
+    importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di', 'mpcr', 'mpa'],
     bdgLimits: {
       maxDamageOnElement: 14000000000,  // 73B max si bon élément
       maxDamageOffElement: 3000000000  // 9B max si mauvais élément
@@ -462,8 +451,8 @@ export const characters = {
       ultimate: 35.0
     },
     bdgLimits: {
-      maxDamageOnElement: 9000000000,  // 73B max si bon élément
-      maxDamageOffElement: 2000000000  // 9B max si mauvais élément
+      maxDamageOnElement: 9000000000,  // 9B max si bon élément
+      maxDamageOffElement: 2000000000  // 2B max si mauvais élément
     },
     buffs: [
       {
@@ -710,8 +699,8 @@ export const characters = {
       ultimate: 35.0
     },
     bdgLimits: {
-      maxDamageOnElement: 8000000000,  // 73B max si bon élément
-      maxDamageOffElement: 200000000  // 9B max si mauvais élément
+      maxDamageOnElement: 2000000000,  // 73B max si bon élément
+      maxDamageOffElement: 500000000  // 9B max si mauvais élément
     },
     buffs: [
       {
@@ -741,8 +730,8 @@ export const characters = {
       ultimate: 35.0
     },
     bdgLimits: {
-      maxDamageOnElement: 1000000000,  // 73B max si bon élément
-      maxDamageOffElement: 200000000  // 9B max si mauvais élément
+      maxDamageOnElement: 200000000,  // 73B max si bon élément
+      maxDamageOffElement: 500000000  // 9B max si mauvais élément
     },
     buffs: [
       {

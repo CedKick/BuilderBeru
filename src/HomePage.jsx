@@ -119,6 +119,7 @@ export default function HomePage() {
 
   const activeItems = [
     { label: t('home.menu.build'), path: "/build" },
+    { label: t('home.menu.training'), path: "/trainingCenter", special: true, new: true },
     { label: t('home.menu.dpsCalculator'), path: "/damage-calculator", special: true, new: true },
     { label: t('home.menu.bdg'), path: "bdg" },
     { label: t('home.menu.pod'), path: "/pod" },

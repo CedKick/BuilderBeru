@@ -76,9 +76,9 @@ const PODViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
   const calculateContribution = (damage) => {
     const total = scoreData.totalScore || 1;
     // Initialiser les shadows depuis le preset si nécessaire
-  
 
-  return ((damage / total) * 100).toFixed(1);
+
+    return ((damage / total) * 100).toFixed(1);
   };
 
   const rarityColors = {
@@ -186,7 +186,12 @@ const PODViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                     <div key={idx} className="w-10 h-10 bg-gray-800 border border-gray-700 rounded" />
                   );
 
-                  const skillData = runesData.find(r => r.name === (skill.name || skill));
+                  const skillData = !skill ? null :
+                    typeof skill === 'string' ? runesData.find(r => r.name === skill) :
+                      skill.src ? skill :
+                        skill.name ? runesData.find(r => r.name === skill.name) :
+                          null;
+
                   const rarityBorder = {
                     rare: 'border-blue-500',
                     epic: 'border-purple-500',
@@ -355,7 +360,10 @@ const PODViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                       <div key={idx} className="w-10 h-10 bg-gray-800 border border-gray-700 rounded" />
                     );
 
-                    const skillData = runesData.find(r => r.name === (skill.name || skill));
+                    const skillData = typeof skill === 'string'
+                      ? runesData.find(r => r.name === skill)
+                      : skill;  // C'est déjà l'objet complet
+
                     const rarityBorder = {
                       rare: 'border-blue-500',
                       epic: 'border-purple-500',

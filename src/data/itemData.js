@@ -1,374 +1,1720 @@
 export const runesData = [
-    {
-        class: "basicSkills",
-        className: "armor break",
-        element: "fire",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "decimation",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730962/rune_armorbreak_fire_decimation_break_atbtgh.png",
+   {
+    class: "basicSkills",
+    className: "armor break",
+    element: "fire",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "decimation",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730962/rune_armorbreak_fire_decimation_break_atbtgh.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 4504.13, // % of ATK
+        scaling: "atk"
     },
+    cooldown: 20, // seconds
+    mpCost: 236,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                duration: 2, // durée approximative de l'airborne
+                target: "enemy",
+                icon: "🌪️",
+                color: "#ff4444"
+            }
+        ],
+        buffs: [
+            {
+                type: "crit_damage_increase",
+                value: 80, // %
+                duration: 5, // seconds
+                target: "self",
+                icon: "💥",
+                color: "#ff6b6b",
+                description: "Increases Critical Hit Damage"
+            }
+        ]
+    }
+},
     {
-        class: "basicSkills",
-        className: "armor break",
-        element: "light",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "multishadow strike",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730970/rune_armorbreak_light_multishadowstrike_break_nejq27.png",
-    }, {
-        class: "basicSkills",
-        className: "armor break",
-        element: "water",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "iceberg",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730972/rune_armorbreak_water_iceberg_break_pjuvbz.png",
+    class: "basicSkills",
+    className: "armor break",
+    element: "light",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "multishadow strike",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730970/rune_armorbreak_light_multishadowstrike_break_nejq27.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 3629.87, // % of ATK
+        baseDefense: 3629.87, // % of Defense aussi
+        scaling: ["atk", "def"]
     },
+    cooldown: 20, // seconds
+    mpCost: 236,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "knockdown",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "⬇️",
+                color: "#ffff00"
+            }
+        ],
+        buffs: [
+            {
+                type: "invincible",
+                duration: "skill_duration", // pendant l'animation du skill
+                target: "self",
+                icon: "🛡️",
+                color: "#FFD700"
+            },
+            {
+                type: "defense_increase",
+                value: 20, // % par stack
+                duration: 30, // seconds
+                target: "self",
+                icon: "🛡️",
+                color: "#4169E1",
+                stackable: true,
+                maxStacks: 5,
+                description: "Increases Defense (stacks up to 5 times)"
+            }
+        ]
+    }
+}, {
+    class: "basicSkills",
+    className: "armor break",
+    element: "water",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "iceberg",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730972/rune_armorbreak_water_iceberg_break_pjuvbz.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 6756.2, // % of ATK
+        scaling: "atk"
+    },
+    cooldown: 20, // seconds
+    mpCost: 236,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "freeze",
+                duration: 2, // durée typique d'un freeze
+                target: "enemy",
+                icon: "🧊",
+                color: "#00BFFF",
+                description: "Freezes the target"
+            },
+            {
+                type: "knockdown",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "⬇️",
+                color: "#4169E1"
+            }
+        ]
+    }
+},
     {
-        class: "basicSkills",
-        className: "armor break",
-        element: "wind",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "vacuum wave",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730974/rune_armorbreak_wind_vacuumwave_break_tnstn8.png",
-    },
+    class: "basicSkills",
+    className: "armor break",
+    element: "wind",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "vacuum wave",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730974/rune_armorbreak_wind_vacuumwave_break_tnstn8.png",
+    
+    // Nouvelles propriétés
+    cooldown: 20, // seconds
+    mpCost: 236,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "damage_taken_increase",
+                value: 17, // %
+                duration: 12, // seconds
+                target: "enemy",
+                icon: "💔",
+                color: "#ff6b6b",
+                stackable: false,
+                description: "Increases target's damage taken"
+            }
+        ],
+        // On pourrait ajouter les autres effets plus tard si besoin
+        additional: [
+            {
+                type: "knockdown",
+                trigger: "final_hit",
+                target: "enemy"
+            },
+            {
+                type: "skill_damage_increase", 
+                skill: "Vertical Arts",
+                value: 35, // %
+                duration: 10, // seconds
+                target: "self"
+            }
+        ]
+    }
+},
     {
-        class: "basicSkills",
-        className: "piercing thrust",
-        element: "fire",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "firestorm kick",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756053917/firestormkick_qrhrd0.jpg",
+    class: "basicSkills",
+    className: "piercing thrust",
+    element: "fire",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "firestorm kick",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756053917/firestormkick_qrhrd0.jpg",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 4949.57, // % of ATK
+        scaling: "atk"
     },
+    cooldown: 20, // seconds
+    mpCost: 268,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#ff4444"
+            },
+            {
+                type: "burn",
+                value: 600, // % of ATK every 3 seconds
+                duration: 30, // seconds
+                tickInterval: 3, // damage every 3 seconds
+                maxStacks: 1, // can only apply once
+                target: "enemy",
+                icon: "🔥",
+                color: "#ff6600",
+                description: "Deals 600% ATK damage every 3 seconds"
+            }
+        ],
+        synergies: [
+            {
+                condition: "target_has_burn",
+                effect: "damage_increase",
+                value: 200, // % damage increase to Firestorm Kick
+                skill: "firestorm kick",
+                description: "Increases Firestorm Kick damage by 200% on burned enemies"
+            }
+        ]
+    }
+},
     {
-        class: "basicSkills",
-        className: "piercing thrust",
-        element: "wind",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "gale kick",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756053917/galekick_q5tkcy.jpg",
+    class: "basicSkills",
+    className: "piercing thrust",
+    element: "wind",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "gale kick",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756053917/galekick_q5tkcy.jpg",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 4316, // % of ATK
+        scaling: "atk"
     },
+    cooldown: 20, // seconds
+    mpCost: 236,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#00ff00"
+            }
+        ],
+        buffs: [
+            {
+                type: "shield",
+                value: 20, // % of Max HP
+                duration: 5, // seconds
+                target: "self",
+                icon: "🛡️",
+                color: "#00ff99",
+                description: "Creates a shield equal to 20% of Max HP"
+            },
+            {
+                type: "damage_increase",
+                value: 1, // % per stack
+                duration: 8, // seconds
+                target: "self",
+                icon: "⚔️",
+                color: "#90EE90",
+                stackable: true,
+                maxStacks: 20,
+                description: "Increases damage dealt by 1% per hit (stacks up to 20 times)"
+            }
+        ]
+    }
+},
     {
-        class: "basicSkills",
-        className: "piercing thrust",
-        element: "water",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "flowing water kick",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756053917/flowingwaterkick_crr5d3.jpg",
+    class: "basicSkills",
+    className: "piercing thrust",
+    element: "water",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "flowing water kick",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756053917/flowingwaterkick_crr5d3.jpg",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 5976, // % of ATK
+        scaling: "atk"
     },
+    cooldown: 20, // seconds
+    mpCost: 268,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "knockdown",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "⬇️",
+                color: "#4169E1"
+            },
+            {
+                type: "flowing_water",
+                duration: 3, // seconds
+                target: "enemy",
+                icon: "💧",
+                color: "#00BFFF",
+                stackable: true,
+                maxStacks: 3,
+                description: "Increases Flowing Water Kick damage by 100% and Water damage by 25%"
+            }
+        ],
+        synergies: [
+            {
+                condition: "target_has_flowing_water",
+                effect: "skill_damage_increase",
+                value: 100, // % damage increase to Flowing Water Kick itself
+                skill: "flowing water kick"
+            },
+            {
+                condition: "target_has_flowing_water",
+                effect: "element_damage_increase",
+                value: 25, // % increase to all Water damage
+                element: "water"
+            }
+        ]
+    }
+},
+  {
+    class: "basicSkills",
+    className: "piercing thrust",
+    element: "light",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "asura kick",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756053918/asurakick_kqcfrs.jpg",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 1848.13, // % of ATK
+        scaling: "atk"
+    },
+    cooldown: 20, // seconds
+    mpCost: 236,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#FFD700"
+            }
+        ],
+        buffs: [
+            {
+                type: "invincible",
+                duration: "skill_duration", // pendant l'animation
+                target: "self",
+                icon: "🛡️",
+                color: "#FFD700"
+            },
+            {
+                type: "light_damage_increase",
+                value: 22, // %
+                duration: 12, // seconds
+                target: "self",
+                icon: "✨",
+                color: "#FFFF00",
+                description: "Increases Light damage dealt by 22%"
+            }
+        ]
+    }
+},
     {
-        class: "basicSkills",
-        className: "piercing thrust",
-        element: "light",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "asura kick",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756053918/asurakick_kqcfrs.jpg",
+    class: "collapse",
+    className: "collapse",
+    element: "fire",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "surge",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730978/rune_collapse_fire_surge_q6bkvh.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 2689.2, // % of ATK
+        scaling: "atk"
     },
+    cooldown: 25, // seconds
+    mpCost: 0, // Les collapse skills n'ont généralement pas de coût MP
+    
+    conditions: {
+        trigger: "knock_down_success", // Nécessite un knockdown réussi
+    },
+    
+    effects: {
+        debuffs: [
+            {
+                type: "knockdown",
+                trigger: "first_hit",
+                target: "enemy",
+                icon: "⬇️",
+                color: "#ff4444"
+            },
+            {
+                type: "airborne",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#ff6600"
+            }
+        ],
+        buffs: [
+            {
+                type: "surge_damage_increase",
+                value: 17.5, // % per stack
+                duration: "infinite", // Durée infinie
+                target: "self",
+                icon: "🔥",
+                color: "#ff4500",
+                stackable: true,
+                maxStacks: 20,
+                stacksOnCrit: 1, // +1 stack si crit
+                description: "Increases Surge damage by 17.5% (stacks up to 20 times)"
+            }
+        ]
+    }
+},
     {
-        class: "collapse",
-        className: "collapse",
-        element: "fire",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "surge",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730978/rune_collapse_fire_surge_q6bkvh.png",
+    class: "collapse",
+    className: "collapse",
+    element: "none",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "compress",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730968/rune_collapse_none_compress_vmeyw3.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 2357.2, // % of ATK
+        scaling: "atk"
     },
+    cooldown: 25, // seconds
+    mpCost: 0, // Les collapse skills n'ont généralement pas de coût MP
+    
+    conditions: {
+        trigger: "knock_down_success", // Nécessite un knockdown réussi
+    },
+    
+    effects: {
+        debuffs: [
+            {
+                type: "knockdown",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "⬇️",
+                color: "#808080"
+            },
+            {
+                type: "break_gauge_reduction",
+                value: 5, // % de réduction instantanée
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "💔",
+                color: "#999999",
+                description: "Instantly decreases Break Gauge by 5%"
+            }
+        ]
+    }
+},
     {
-        class: "collapse",
-        className: "collapse",
-        element: "fire",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "compress",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730968/rune_collapse_none_compress_vmeyw3.png",
+    class: "collapse",
+    className: "collapse",
+    element: "none",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "surprise attack",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730976/rune_collapse_none_surpriseattack_break_ckqwvl.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 4340.9, // % of ATK
+        scaling: "atk"
     },
+    cooldown: 25, // seconds
+    mpCost: 0,
+    
+    conditions: {
+        trigger: "knock_down_success",
+    },
+    
+    effects: {
+        debuffs: [
+            {
+                type: "knockdown",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "⬇️",
+                color: "#808080"
+            },
+            {
+                type: "resonance",
+                duration: 8, // seconds
+                target: "enemy",
+                icon: "💫",
+                color: "#9370DB",
+                description: "Converts to Damage Increase when target is broken",
+                convertOnBreak: true
+            }
+        ],
+        buffs: [
+            {
+                type: "damage_increase",
+                value: 22, // %
+                duration: 20, // seconds
+                target: "self",
+                icon: "⚔️",
+                color: "#00CED1",
+                triggerCondition: "resonance_on_break_state",
+                description: "Increases damage by 22% when Resonance is removed on broken enemy"
+            }
+        ]
+    }
+},
     {
-        class: "collapse",
-        className: "collapse",
-        element: "none",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "surprise attack",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730976/rune_collapse_none_surpriseattack_break_ckqwvl.png",
+    class: "collapse",
+    className: "collapse",
+    element: "wind",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "thunderstorm",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730973/rune_collapse_wind_thunderstorm_xxbqls.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 4188.73, // % of ATK
+        scaling: "atk"
     },
+    cooldown: 25, // seconds
+    mpCost: 0,
+    
+    conditions: {
+        trigger: "knock_down_success",
+    },
+    
+    effects: {
+        debuffs: [
+            {
+                type: "knockdown",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "⬇️",
+                color: "#00ff00"
+            }
+        ],
+        synergies: [
+            {
+                condition: "enemy_no_break_gauge",
+                effect: "skill_damage_increase",
+                value: 140, // %
+                skill: "thunderstorm",
+                description: "Increases Thunderstorm damage by 140% on enemies without Break Gauge"
+            },
+            {
+                condition: "enemy_in_break_state",
+                effect: "skill_damage_increase",
+                value: 180, // %
+                skill: "thunderstorm",
+                description: "Increases Thunderstorm damage by 180% on broken enemies"
+            }
+        ]
+    }
+},
     {
-        class: "collapse",
-        className: "collapse",
-        element: "wind",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "thunderstorm",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730973/rune_collapse_wind_thunderstorm_xxbqls.png",
+    class: "Ultimate",
+    className: "ultimate",
+    element: "none",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "king's domain",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755947640/kings_domain_lhpagm.jpg",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 7798.41, // % of ATK
+        scaling: "atk"
     },
+    cooldown: 60, // seconds
+    powerGaugeConsumption: 100, // %
+    
+    effects: {
+        // Les ultimates ont généralement des effets impressionnants
+        // mais pas d'infos spécifiques sur les buffs/debuffs pour celui-ci
+        buffs: [
+            {
+                type: "ultimate_power",
+                duration: "instant",
+                target: "self",
+                icon: "👑",
+                color: "#FFD700",
+                description: "No one can invade the King's Domain"
+            }
+        ]
+    }
+},
     {
-        class: "Ultimate",
-        className: "ultimate",
-        element: "none",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "king's domain",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755947640/kings_domain_lhpagm.jpg",
+    class: "Ultimate",
+    className: "ultimate",
+    element: "none",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "truth : mutilate",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755947523/truth_mutilate_ix7cn7.jpg",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 6239.34, // % of ATK (basé sur l'image)
+        scaling: "atk"
     },
+    cooldown: 60, // seconds
+    powerGaugeConsumption: 100, // %
+    
+    effects: {
+        debuffs: [
+            {
+                type: "spatial_slash",
+                duration: "instant",
+                target: "enemy",
+                icon: "⚔️",
+                color: "#8B00FF",
+                description: "Jinwoo hides in darkness then slashes through space"
+            }
+        ],
+        buffs: [
+            {
+                type: "invincible",
+                duration: "skill_animation", // pendant l'animation de disparition
+                target: "self",
+                icon: "👤",
+                color: "#4B0082",
+                description: "Becomes untargetable while hidden in darkness"
+            }
+        ],
+        additional: [
+            {
+                type: "teleport",
+                description: "Disappears into darkness before striking"
+            }
+        ]
+    }
+},
     {
-        class: "Ultimate",
-        className: "ultimate",
-        element: "none",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "truth : mutilate",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755947523/truth_mutilate_ix7cn7.jpg",
+    class: "Ultimate",
+    className: "ultimate",
+    element: "none",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "darkness : obliteration",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755947571/darkness_obliteration_fvhoea.jpg",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 4115.49, // % of ATK (basé sur l'image)
+        scaling: "atk"
     },
+    cooldown: 60, // seconds
+    powerGaugeConsumption: 100, // %
+    
+    effects: {
+        debuffs: [
+            {
+                type: "multi_slash",
+                hits: "multiple",
+                duration: "instant",
+                target: "enemy",
+                icon: "⚔️",
+                color: "#2B0033",
+                description: "Multiple slashes followed by powerful backstab"
+            }
+        ],
+        buffs: [
+            {
+                type: "speed_burst",
+                duration: "skill_animation",
+                target: "self",
+                icon: "💨",
+                color: "#8B00FF",
+                description: "Moves at extreme speed during execution"
+            }
+        ],
+        additional: [
+            {
+                type: "repositioning",
+                position: "behind_enemy",
+                description: "Dashes behind enemy for final stab"
+            },
+            {
+                type: "combo_finisher",
+                description: "Ends with a powerful backstab"
+            }
+        ]
+    }
+},
     {
-        class: "Ultimate",
-        className: "ultimate",
-        element: "none",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "darkness : obliteration",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755947571/darkness_obliteration_fvhoea.jpg",
+    class: "Shadow Step",
+    className: "Shadow Step",
+    element: "none",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "shadow step",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755947639/shadow_step_jj581d.jpg",
+    
+    // NOUVEAUX CHAMPS pour les effets
+    damage: {
+        base: 327.42, // % of ATK
+        scaling: "atk"
     },
+    cooldown: 15, // seconds
+    
+    effects: {
+        debuffs: [
+            {
+                type: "defense_reduction",
+                value: 60, // %
+                duration: 15, // seconds
+                target: "enemy",
+                icon: "🛡️❌",
+                color: "#ff4444"
+            },
+            {
+                type: "slow",
+                value: "extreme",
+                duration: 3, // seconds
+                target: "enemy",
+                icon: "🐌",
+                color: "#4488ff"
+            }
+        ],
+        buffs: [
+            {
+                type: "shadow_step",
+                duration: "instant",
+                target: "self",
+                icon: "👤",
+                color: "#8B00FF"
+            }
+        ],
+        conditions: {
+            trigger: ["extreme_evasion", "break_status", "shadow_skill"],
+            type: "QTE"
+        }
+    }
+},
     {
-        class: "Shadow Step",
-        className: "Shadow Step",
-        element: "none",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "shadow step",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755947639/shadow_step_jj581d.jpg",
+    class: "basicSkills",
+    className: "crushing blow",
+    element: "dark",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "countering break",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730975/rune_crushingblow_dark_counteringbreak_break_c4cvxq.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 6158.49, // % of ATK
+        scaling: "atk",
+        damageType: "dark" // Dark elemental damage
     },
+    breakDamage: "weak", // Weak break damage de base
+    cooldown: 10, // seconds
+    mpCost: 92,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#8B00FF"
+            },
+            {
+                type: "stun",
+                trigger: "successful_counterattack",
+                target: "enemy",
+                icon: "💫",
+                color: "#9932CC",
+                description: "Stuns target on successful counterattack"
+            }
+        ],
+        buffs: [
+            {
+                type: "shield",
+                value: 20, // % of HP
+                duration: 3, // seconds
+                target: "self",
+                icon: "🛡️",
+                color: "#8B00FF",
+                description: "Creates shield equal to 20% of Jinwoo's HP"
+            }
+        ],
+        special: [
+            {
+                type: "counterattack",
+                window: "skill_duration",
+                onSuccess: {
+                    breakDamage: "heavy", // Heavy break damage sur counter réussi
+                    additionalEffect: "stun"
+                },
+                description: "Can counterattack during skill use"
+            }
+        ]
+    }
+},
     {
-        class: "basicSkills",
-        className: "crushing blow",
-        element: "dark",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "countering break",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730975/rune_crushingblow_dark_counteringbreak_break_c4cvxq.png",
+    class: "basicSkills",
+    className: "crushing blow",
+    element: "fire",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "ascension break",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730979/rune_crushingblow_fire_ascensionbreak_break_wdkwi5.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 1425.35, // % of ATK
+        scaling: "atk",
+        damageType: "fire" // Fire elemental damage
     },
+    breakDamage: "medium",
+    cooldown: 10, // seconds
+    mpCost: 92,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "first_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#ff4444"
+            },
+            {
+                type: "knockdown",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "⬇️",
+                color: "#ff6600"
+            }
+        ],
+        buffs: [
+            {
+                type: "power_gauge_charge",
+                value: 30, // %
+                duration: "instant",
+                target: "self",
+                icon: "⚡",
+                color: "#FFD700",
+                description: "Charges Power Gauge by 30%"
+            },
+            {
+                type: "ultimate_cooldown_reduction",
+                value: 30, // seconds
+                duration: "instant",
+                target: "self",
+                icon: "⏱️",
+                color: "#ff6600",
+                cooldown: 30, // seconds (propre cooldown de cet effet)
+                description: "Reduces Ultimate Skill cooldown by 30 seconds"
+            }
+        ]
+    }
+},
     {
-        class: "basicSkills",
-        className: "crushing blow",
-        element: "fire",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "ascension break",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730979/rune_crushingblow_fire_ascensionbreak_break_wdkwi5.png",
-
+    class: "basicSkills",
+    className: "crushing blow",
+    element: "light",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "enlightned_break",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730983/rune_crushingblow_light_enlightenedbreak_break_y6siud.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 2322.34, // % of ATK
+        scaling: "atk",
+        damageType: "light"
     },
+    breakDamage: "medium",
+    cooldown: 10, // seconds
+    mpCost: 92,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "on_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#FFD700"
+            },
+            {
+                type: "light",
+                duration: 30, // seconds
+                target: "enemy",
+                icon: "✨",
+                color: "#FFFF00",
+                dot: {
+                    damage: 60, // % of ATK
+                    interval: 3, // every 3 seconds
+                },
+                statReduction: {
+                    attack: 20 // % reduction
+                },
+                description: "Deals 60% ATK damage every 3s and reduces Attack by 20%"
+            }
+        ]
+    },
+    
+    codexBonus: {
+        type: "skill_level_increase",
+        skill: "crushing blow",
+        value: 1,
+        description: "Increases Crushing Blow skill level by 1 when registered in codex"
+    }
+},
+   {
+    class: "basicSkills",
+    className: "crushing blow",
+    element: "wind",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "chained break",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730981/rune_crushingblow_wind_chainedbreak_break_dzweph.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 3627.27, // % of ATK
+        scaling: "atk",
+        damageType: "wind"
+    },
+    breakDamage: "medium",
+    cooldown: 10, // seconds
+    mpCost: 92,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "knockdown",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "⬇️",
+                color: "#00ff00"
+            }
+        ],
+        buffs: [
+            {
+                type: "attack_increase",
+                value: 5, // % per stack
+                duration: 12, // seconds
+                target: "self",
+                icon: "⚔️",
+                color: "#90EE90",
+                stackable: true,
+                maxStacks: 4,
+                description: "Increases Attack by 5% per hit (stacks up to 4 times)"
+            },
+            {
+                type: "shield",
+                value: 15, // % of Max HP
+                duration: 3, // seconds
+                target: "self",
+                icon: "🛡️",
+                color: "#00ff99",
+                description: "Creates shield equal to 15% of Max HP"
+            }
+        ]
+    },
+    
+    codexBonus: {
+        type: "skill_level_increase",
+        skill: "crushing blow",
+        value: 3, // +3 niveaux !
+        description: "Increases Crushing Blow skill level by 3 when registered in codex"
+    }
+},
     {
-        class: "basicSkills",
-        className: "crushing blow",
-        element: "light",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "enlightned_break",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730983/rune_crushingblow_light_enlightenedbreak_break_y6siud.png",
+    class: "basicSkills",
+    className: "cutting rush",
+    element: "dark",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "sunder",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730983/rune_cuttingrush_dark_sunder_p17nek.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 4498.6, // % of ATK
+        scaling: "atk",
+        damageType: "dark"
     },
+    cooldown: 15, // seconds
+    mpCost: 177,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#8B00FF"
+            }
+        ],
+        buffs: [
+            {
+                type: "invincible",
+                duration: "skill_duration", // pendant l'animation
+                target: "self",
+                icon: "🛡️",
+                color: "#4B0082",
+                description: "Jinwoo becomes invincible while using this skill"
+            },
+            {
+                type: "crit_rate_increase",
+                value: 15, // %
+                duration: 12, // seconds
+                target: "self",
+                icon: "💥",
+                color: "#9932CC",
+                description: "Increases Critical Hit Rate by 15%"
+            }
+        ]
+    }
+},
+   {
+    class: "basicSkills",
+    className: "cutting rush",
+    element: "none",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "effulgence",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730916/rune_cuttingrush_none_effulgence_psdeww.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 2221.63, // % of ATK
+        scaling: "atk"
+    },
+    cooldown: 15, // seconds
+    mpCost: 177,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "knockdown",
+                trigger: "on_hit",
+                target: "enemy",
+                icon: "⬇️",
+                color: "#808080"
+            }
+        ],
+        buffs: [
+            {
+                type: "crit_damage_increase",
+                value: 45, // %
+                duration: 12, // seconds
+                target: "self",
+                icon: "💥",
+                color: "#ff6b6b",
+                description: "Increases Critical Hit Damage by 45%"
+            }
+        ],
+        special: [
+            {
+                type: "cooldown_reset",
+                trigger: "on_hit",
+                cooldown: 15, // seconds (propre cooldown du reset)
+                description: "Resets skill cooldown when it hits (15s cooldown on reset)"
+            }
+        ]
+    }
+},
     {
-        class: "basicSkills",
-        className: "crushing blow",
-        element: "wind",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "chained break",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730981/rune_crushingblow_wind_chainedbreak_break_dzweph.png",
+    class: "basicSkills",
+    className: "cutting rush",
+    element: "none",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "escalate",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730917/rune_cuttingrush_none_escalate_q1ojxy.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 1671.07, // % of ATK
+        scaling: "atk"
     },
+    cooldown: 10, // seconds
+    mpCost: 118,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#808080"
+            }
+        ],
+        special: [
+            {
+                type: "back_attack_crit",
+                chance: 65, // %
+                critBonus: 100, // % Critical Hit Rate
+                duration: "next_attack",
+                description: "65% chance to apply 100% Critical Hit Rate on next attack when landing a back attack"
+            }
+        ]
+    },
+    
+    codexBonus: {
+        type: "skill_level_increase",
+        skill: "cutting rush",
+        value: 3,
+        description: "Increases Cutting Rush skill level by 3 when registered in codex"
+    }
+},
     {
-        class: "basicSkills",
-        className: "cutting rush",
-        element: "dark",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "sunder",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730983/rune_cuttingrush_dark_sunder_p17nek.png",
+    class: "basicSkills",
+    className: "dagger rush",
+    element: "dark",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "dispersion",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730918/rune_daggerrush_dark_dispersion_break_cvribn.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 2678.13, // % of ATK
+        scaling: "atk",
+        damageType: "dark"
     },
+    breakDamage: "almighty", // Le plus haut niveau de break damage
+    cooldown: 20, // seconds
+    mpCost: 236,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "on_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#8B00FF"
+            }
+        ],
+        synergies: [
+            {
+                condition: "enemy_no_break_gauge",
+                effect: "skill_damage_increase",
+                value: 280, // %
+                duration: 7, // seconds
+                skill: "dispersion",
+                description: "Increases Dispersion damage by 280% against enemies without Break Gauge"
+            }
+        ]
+    }
+},
     {
-        class: "basicSkills",
-        className: "cutting rush",
-        element: "none",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "annihilation",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730980/rune_cuttingrush_none_annihilation_kxdtbt.png",
+    class: "basicSkills",
+    className: "dagger rush",
+    element: "fire",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "explosion",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730919/rune_daggerrush_fire_explosion_break_qkcsco.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 1351.9, // % of ATK (base damage)
+        additionalDamage: 125, // % of ATK (dégâts additionnels)
+        scaling: "atk",
+        damageType: "fire"
     },
+    breakDamage: "almighty",
+    cooldown: 20, // seconds
+    mpCost: 236,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#ff4444"
+            }
+        ],
+        buffs: [
+            {
+                type: "shield",
+                value: 60, // % of Max HP
+                duration: 5, // seconds
+                target: "self",
+                icon: "🛡️",
+                color: "#ff6600",
+                description: "Creates shield equal to 60% of Max HP"
+            }
+        ]
+    },
+    
+    codexBonus: {
+        type: "skill_level_increase",
+        skill: "dagger rush",
+        value: 3,
+        description: "Increases Dagger Rush skill level by 3 when registered in codex"
+    }
+},
+   {
+    class: "basicSkills",
+    className: "dagger rush",
+    element: "water",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "cold ice",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730920/rune_daggerrush_water_coldice_break_bhdhcr.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 1383.33, // % of ATK
+        scaling: "atk",
+        damageType: "water"
+    },
+    breakDamage: "almighty",
+    cooldown: 20, // seconds
+    mpCost: 236,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "frostbite",
+                duration: 3, // seconds
+                target: "enemy",
+                icon: "❄️",
+                color: "#00BFFF",
+                dot: {
+                    damage: 400, // % of ATK
+                    interval: 3 // every 3 seconds
+                },
+                description: "Deals 400% ATK damage every 3 seconds"
+            }
+        ],
+        buffs: [
+            {
+                type: "aoe_damage_increase",
+                value: 12, // %
+                range: 5, // meters
+                duration: "permanent",
+                target: "self",
+                icon: "🎯",
+                color: "#4169E1",
+                description: "Increases damage dealt by 12% to targets within 5m range"
+            }
+        ]
+    },
+    
+    codexBonus: {
+        type: "skill_level_increase",
+        skill: "dagger rush",
+        value: 3,
+        description: "Increases Dagger Rush skill level by 3 when registered in codex"
+    }
+},
     {
-        class: "basicSkills",
-        className: "cutting rush",
-        element: "none",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "effulgence",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730916/rune_cuttingrush_none_effulgence_psdeww.png",
+    class: "basicSkills",
+    className: "dagger rush",
+    element: "wind",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "breach",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730921/rune_daggerrush_wind_breach_break_smglsp.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 2185.67, // % of ATK
+        scaling: "atk",
+        damageType: "wind"
     },
+    breakDamage: "heavy",
+    cooldown: 20, // seconds
+    mpCost: 236,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "on_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#00ff00"
+            },
+            {
+                type: "knockdown",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "⬇️",
+                color: "#90EE90"
+            },
+            {
+                type: "crit_damage_vulnerability",
+                value: 2, // % per stack
+                duration: 10, // seconds
+                target: "enemy",
+                icon: "💔",
+                color: "#ff6b6b",
+                stackable: true,
+                maxStacks: 7,
+                description: "Increases Critical Hit damage received by 2% per stack (up to 7 stacks)"
+            }
+        ],
+        synergies: [
+            {
+                condition: "elemental_weakness",
+                effect: "damage_increase",
+                value: 50, // %
+                description: "Damage increases by 50% when attacking enemies with their elemental weakness"
+            }
+        ]
+    }
+},
     {
-        class: "basicSkills",
-        className: "cutting rush",
-        element: "none",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "escalate",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730917/rune_cuttingrush_none_escalate_q1ojxy.png",
+    class: "basicSkills",
+    className: "dagger toss",
+    element: "fire",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "detonation",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730922/rune_daggertoss_fire_detonation_idz3id.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 766.37, // % of ATK per dagger
+        scaling: "atk",
+        damageType: "fire"
     },
+    cooldown: 10, // seconds
+    mpCost: 94,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "burn",
+                value: 175, // % of ATK
+                duration: "permanent", // Burn dure jusqu'à ce qu'il soit cleanse
+                tickInterval: 3, // damage every 3 seconds
+                target: "enemy",
+                icon: "🔥",
+                color: "#ff6600",
+                stackable: true,
+                maxStacks: 3,
+                description: "Deals 175% ATK damage every 3 seconds (stacks up to 3 times)"
+            }
+        ]
+    },
+},
+    
     {
-        class: "basicSkills",
-        className: "dagger rush",
-        element: "dark",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "dispersion",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730918/rune_daggerrush_dark_dispersion_break_cvribn.png",
+    class: "basicSkills",
+    className: "dagger toss",
+    element: "none",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "ascension",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730924/rune_daggertoss_none_ascension_b4ezuo.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 2409.77, // % of ATK
+        scaling: "atk"
     },
+    cooldown: 10, // seconds
+    mpCost: 94,
+    
+    effects: {
+        synergies: [
+            {
+                condition: "target_in_break_state",
+                effect: "damage_increase",
+                value: 250, // %
+                description: "Increases damage dealt to targets in Break state by 250%"
+            }
+        ]
+    }
+},
+   {
+    class: "basicSkills",
+    className: "dagger toss",
+    element: "none",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "bombardment",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730924/rune_daggertoss_none_ascension_b4ezuo.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 2409.77, // % of ATK
+        scaling: "atk"
+    },
+    cooldown: 10, // seconds
+    mpCost: 94,
+    
+    effects: {
+        synergies: [
+            {
+                condition: "target_in_break_state",
+                effect: "damage_increase",
+                value: 250, // %
+                description: "Increases damage dealt to targets in Break state by 250%"
+            }
+        ]
+    }
+},
+   {
+    class: "basicSkills",
+    className: "dagger toss",
+    element: "none",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "electric shock",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730924/rune_daggertoss_none_ascension_b4ezuo.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 2409.77, // % of ATK
+        scaling: "atk"
+    },
+    cooldown: 10, // seconds
+    mpCost: 94,
+    
+    effects: {
+        synergies: [
+            {
+                condition: "target_in_break_state",
+                effect: "damage_increase",
+                value: 250, // %
+                description: "Increases damage dealt to targets in Break state by 250%"
+            }
+        ]
+    }
+},
+    
     {
-        class: "basicSkills",
-        className: "dagger rush",
-        element: "fire",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "explosion",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730919/rune_daggerrush_fire_explosion_break_qkcsco.png",
+    class: "death",
+    className: "death",
+    element: "none",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "extinction",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730926/rune_death_none_extinction_mjrgkb.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 3189.97, // % of ATK
+        scaling: "atk"
     },
+    cooldown: 25, // seconds
+    mpCost: 0, // Les Death skills n'ont généralement pas de coût MP
+    
+    conditions: {
+        trigger: "airborne_success", // Nécessite un airborne réussi
+        description: "Usage Condition: Successfully landing an Airborne attack"
+    },
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "on_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#808080"
+            },
+            {
+                type: "attack_decrease",
+                value: 45, // %
+                duration: 15, // seconds
+                target: "enemy",
+                icon: "⚔️❌",
+                color: "#ff4444",
+                description: "Decreases target's Attack by 45%"
+            }
+        ]
+    }
+},
     {
-        class: "basicSkills",
-        className: "dagger rush",
-        element: "water",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "cold ice",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730920/rune_daggerrush_water_coldice_break_bhdhcr.png",
+    class: "death",
+    className: "death",
+    element: "none",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "overshadow",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730929/rune_death_none_overshadow_qjbrnv.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 2891.17, // % of ATK
+        scaling: "atk"
     },
+    cooldown: 25, // seconds
+    mpCost: 0,
+    
+    conditions: {
+        trigger: "airborne_success",
+        description: "Usage Condition: Successfully landing an Airborne attack"
+    },
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "on_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#808080"
+            }
+        ],
+        buffs: [
+            {
+                type: "skill_damage_increase",
+                value: 230, // %
+                duration: "permanent",
+                target: "self",
+                icon: "⚔️",
+                color: "#8B00FF",
+                cost: {
+                    type: "current_hp",
+                    value: 15 // % of current HP
+                },
+                description: "Consumes 15% of current HP to increase skill damage by 230%"
+            }
+        ]
+    }
+},
     {
-        class: "basicSkills",
-        className: "dagger rush",
-        element: "wind",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "breach",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730921/rune_daggerrush_wind_breach_break_smglsp.png",
+    class: "death",
+    className: "death",
+    element: "none",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "squall",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730928/rune_death_none_squall_break_pk88ku.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 2943.73, // % of ATK
+        scaling: "atk"
     },
+    breakDamage: "medium",
+    cooldown: 25, // seconds
+    mpCost: 0,
+    
+    conditions: {
+        trigger: "airborne_success",
+        description: "Usage Condition: Successfully landing an Airborne attack"
+    },
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "on_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#808080"
+            },
+            {
+                type: "knockdown",
+                trigger: "final_hit_success",
+                target: "enemy",
+                icon: "⬇️",
+                color: "#808080"
+            },
+            {
+                type: "corrosion",
+                value: 14, // % increase to Break effectiveness
+                duration: 8, // seconds
+                target: "enemy",
+                icon: "🧪",
+                color: "#00ff99",
+                description: "Increases Break effectiveness by 14%"
+            }
+        ]
+    }
+},
     {
-        class: "basicSkills",
-        className: "dagger toss",
-        element: "fire",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "detonation",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730922/rune_daggertoss_fire_detonation_idz3id.png",
+    class: "death",
+    className: "death",
+    element: "water",
+    type: "none",
+    used: 20,
+    where: ["BoT"],
+    name: "ice strike",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730930/rune_death_water_icestrike_akqtek.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 3297.87, // % of ATK
+        scaling: "atk",
+        damageType: "water"
     },
+    cooldown: 25, // seconds
+    mpCost: 0,
+    
+    conditions: {
+        trigger: "airborne_success",
+        description: "Usage Condition: Successfully landing an Airborne attack"
+    },
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "on_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#00BFFF"
+            },
+            {
+                type: "freeze",
+                duration: 2, // durée typique d'un freeze
+                target: "enemy",
+                icon: "🧊",
+                color: "#00BFFF",
+                description: "Freezes the target"
+            }
+        ],
+        synergies: [
+            {
+                condition: "target_has_freeze",
+                effect: "damage_increase",
+                value: 150, // %
+                description: "Increases damage dealt to frozen targets by 150%"
+            }
+        ]
+    }
+},
     {
-        class: "basicSkills",
-        className: "dagger toss",
-        element: "light",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "electric shock",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730923/rune_daggertoss_light_electricshock_wypfke.png",
+    class: "basicSkills",
+    className: "death's dance",
+    element: "dark",
+    type: "break",
+    used: 20,
+    where: ["BoT"],
+    name: "eruption",
+    src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730931/rune_deathsdance_dark_eruption_break_jfraez.png",
+    
+    // Nouvelles propriétés
+    damage: {
+        base: 4401.77, // % of ATK
+        scaling: "atk",
+        damageType: "dark"
     },
-    {
-        class: "basicSkills",
-        className: "dagger toss",
-        element: "none",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "ascension",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730924/rune_daggertoss_none_ascension_b4ezuo.png",
-    },
-    {
-        class: "basicSkills",
-        className: "dagger toss",
-        element: "none",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "bombardment",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730925/rune_daggertoss_none_bombardment_nfmpm9.png",
-    },
-    {
-        class: "death",
-        className: "death",
-        element: "none",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "extinction",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730926/rune_death_none_extinction_mjrgkb.png",
-    },
-    {
-        class: "death",
-        className: "death",
-        element: "none",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "overshadow",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730929/rune_death_none_overshadow_qjbrnv.png",
-    },
-    {
-        class: "death",
-        className: "death",
-        element: "none",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "squall",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730928/rune_death_none_squall_break_pk88ku.png",
-    },
-    {
-        class: "death",
-        className: "death",
-        element: "water",
-        type: "none",
-        used: 20,
-        where: ["BoT"],
-        name: "ice strike",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730930/rune_death_water_icestrike_akqtek.png",
-    },
-    {
-        class: "basicSkills",
-        className: "death's dance",
-        element: "dark",
-        type: "break",
-        used: 20,
-        where: ["BoT"],
-        name: "eruption",
-        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730931/rune_deathsdance_dark_eruption_break_jfraez.png",
-    },
+    breakDamage: "heavy",
+    cooldown: 15, // seconds
+    mpCost: 177,
+    
+    effects: {
+        debuffs: [
+            {
+                type: "airborne",
+                trigger: "final_hit",
+                target: "enemy",
+                icon: "🌪️",
+                color: "#8B00FF"
+            }
+        ],
+        synergies: [
+            {
+                condition: "target_is_boss_or_elite",
+                effect: "damage_increase",
+                value: 145, // %
+                description: "Damage dealt to Bosses and Elite Monsters increases by 145%"
+            }
+        ]
+    }
+},
     {
         class: "basicSkills",
         className: "death's dance",
@@ -1206,7 +2552,7 @@ export const artifactData = [{
     src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730692/artifact_chaoticDesire_8L_ghkvum.png"
 },
 {
-    set: "Chaos Wish",
+    set: "Chaotic Wish",
     side: "L",
     src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730691/artifact_chaosWish_8L_wspayx.png"
 },
@@ -1703,7 +3049,7 @@ export const characters = [
         grade: 'SSR',
         element: 'Fire',
         scaleStat: 'Attack',
-        importantStats:['atk', 'tc', 'dcc', 'defPen', 'di', 'mpa'],
+        importantStats:['atk', 'tc', 'dcc', 'defPen', 'di', 'mpcr', 'mpa'],
         presets: {
             PoD: {
                 leftArtifact: [{ name: 'Angel White', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
