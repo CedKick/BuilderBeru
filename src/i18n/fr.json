@@ -1,5 +1,5 @@
 {
-  "title": "Builder Béru – Optimiseur Solo Leveling",
+  "title": "Builder Béru – Build Solo Leveling",
   "artefacts": "Artefacts",
   "coress": "🧬 Noyaux",
   "gemss": "💎 Gemmes",
@@ -2073,6 +2073,7 @@
     "menu": {
       "build": "BUILD",
       "dpsCalculator": "Calculateur DPS",
+      "training": "Simulation d'entraînement (Beta)",
       "hallOfFlame": "🏆 Hall Of Flame",
       "pod": "PoD",
       "guideEditor": "Éditeur de Guide",

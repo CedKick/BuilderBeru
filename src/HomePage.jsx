@@ -118,12 +118,12 @@ export default function HomePage() {
   }, [i18n.language]);
 
   const activeItems = [
-    { label: t('home.menu.build'), path: "/build" },
-    { label: t('home.menu.training'), path: "/trainingCenter", special: true, new: true },
-    { label: t('home.menu.dpsCalculator'), path: "/damage-calculator", special: true, new: true },
-    { label: t('home.menu.bdg'), path: "bdg" },
-    { label: t('home.menu.pod'), path: "/pod" },
-    { label: t('home.menu.hallOfFlame'), path: "/hall-of-flame", special: true },
+    { label: t('home.menu.build'), path: "/build" , alt:"Build your Hunter SLA"},
+    { label: t('home.menu.training'), path: "/trainingCenter", special: true, new: true, alt:"Simulation Training Solo Leveling Arise"},
+    { label: t('home.menu.dpsCalculator'), path: "/damage-calculator", special: true, new: true , alt:"Calculator Damage Solo Leveling Arise"},
+    { label: t('home.menu.bdg'), path: "bdg" , alt:" META Guild War Solo Leveling Arise"},
+    { label: t('home.menu.pod'), path: "/pod" , alt:"META POD Solo Leveling Arise"},
+    { label: t('home.menu.hallOfFlame'), path: "/hall-of-flame", special: true , alt:"Ranking player Solo Leveling Arise"},
     // { label: t('home.menu.guideEditor'), path: "/guide-editor" },
   ];
 
@@ -171,13 +171,13 @@ export default function HomePage() {
         <div className="flex gap-2 items-center">
           <img
             src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png"
-            alt="Français"
+            alt="Français Solo Leveling Arise"
             onClick={() => i18n.changeLanguage('fr')}
             className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
           />
           <img
             src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png"
-            alt="English"
+            alt="English SOLO LEVELING ARISE"
             onClick={() => i18n.changeLanguage('en')}
             className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
           />

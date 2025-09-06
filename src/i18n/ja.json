@@ -1076,6 +1076,7 @@
     "menu": {
       "build": "ビルド",
       "dpsCalculator": "DPS計算機",
+      "training": "トレーニングシミュレーター（ベータ）",
       "hallOfFlame": "🏆 Hall Of Flame",
       "pod": "PoD",
       "guideEditor": "ガイドエディター",

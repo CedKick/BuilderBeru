@@ -1076,6 +1076,7 @@
     "menu": {
       "build": "构建",
       "dpsCalculator": "DPS计算器",
+      "training": "训练模拟器（测试版）",
       "hallOfFlame": "🏆 火焰殿堂",
       "pod": "PoD",
       "guideEditor": "指南编辑器",

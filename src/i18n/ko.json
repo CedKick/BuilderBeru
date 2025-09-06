@@ -432,6 +432,7 @@
     "menu": {
       "build": "빌드",
       "dpsCalculator": "DPS 계산기",
+      "training": "트레이닝 시뮬레이터 (베타)",
       "hallOfFlame": "🏆 명예의 전당",
       "pod": "PoD",
       "guideEditor": "가이드 편집기",
