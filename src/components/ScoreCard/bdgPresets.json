@@ -1045,7 +1045,7 @@
                   "stars": 10,
                   "weaponStars": 10,
                   "leftSet": "Burning greed",
-                  "rightSet": "Burning greed",
+                  "rightSet": "Chaotic Desire",
                   "scaleStat": "ATK",
                   "expectedStats": {
                     "atk": "45000",
