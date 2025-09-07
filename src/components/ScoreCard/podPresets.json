@@ -1,14 +1,14 @@
 {
   "weeks": {
-    "2025-W35": {
-      "weekId": "2025-W34",
+    "2025-W36": {
+      "weekId": "2025-W35",
       "startDate": "2025-08-28",
       "endDate": "2025-09-03",
-      "currentBoss": "Ennio immortal",
-      "bossName": "Ennio immortal",
+      "currentBoss": "ennio",
+      "bossName": "Ennio",
       "elements": [
-        "WIND",
-        "DARK"
+        "FIRE",
+        "WATER"
       ],
       "scoringLimits": {
         "maxTotalScore": 35000000000,
@@ -18,17 +18,17 @@
       "presets": {
         "FIRE": {
           "sung": {
-            "weapons": [],
+            "weapons": ["fanofthefiredemon", "phoenixsoul"],
             "weaponStars": [10, 10],
-            "leftSet": "",
-            "rightSet": "",
+            "leftSet": "Burning Curse + Chaotic Infamy",
+            "rightSet": "Expert",
             "skills": [
               {
                 "name": "detonation",
                 "rarity": "mythic"
               },
               {
-                "name": "sonic explosion",
+                "name": "firestorm kick",
                 "rarity": "mythic"
               },
               {
@@ -41,6 +41,434 @@
               },
               {
                 "name": "surprise attack",
+                "rarity": "mythic"
+              },
+              {
+                "name": "shadow step",
+                "rarity": "mythic"
+              }
+            ],
+            "blessings": [
+              {
+                "name": "bloodlust",
+                "type": "offensive"
+              },
+              {
+                "name": "sharp perception",
+                "type": "offensive"
+              },
+              {
+                "name": "reawakening",
+                "type": "offensive"
+              },
+              {
+                "name": "boss slayer",
+                "type": "offensive"
+              },
+              {
+                "name": "aggresive defense",
+                "type": "defensive"
+              },
+              {
+                "name": "natural disaster",
+                "type": "defensive"
+              },
+              {
+                "name": "kasaka's steel scales",
+                "type": "defensive"
+              },
+              {
+                "name": "life",
+                "type": "defensive"
+              }
+            ],
+            "baseStats": {
+              "str": 559,
+              "int": 200,
+              "vit": 0,
+              "per": 0,
+              "agi": 0
+            },
+            "expectedStats": {
+              "atk": "60000",
+              "tc": "10000",
+              "dcc": "15000",
+              "di": "20000",
+              "defPen": "20000",
+              "precision": "23000",
+              "mpcr": "",
+              "mpa": ""
+            }
+          },
+          "hunters": [
+            {
+              "id": "kanae",
+              "position": 0,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "One Hit-kill + Burning Curse",
+              "rightSet": "Expert",
+              "expectedStats": {
+                "atk": "48000",
+                "tc": "12000",
+                "dcc": "16000",
+                "defPen": "16667",
+                "di": "20000"
+              },
+              "expectedDamage": "10000000000"
+            },
+            {
+              "id": "yuqi",
+              "position": 1,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "Chaotic Desire",
+              "rightSet": "Chaotic Desire",
+              "expectedStats": {
+                "hp": "85000",
+                "tc": "10000",
+                "dcc": "16667",
+                "defPen": "16667",
+                "di": "20000"
+              },
+              "expectedDamage": "8000000000"
+            },
+            {
+              "id": "esil",
+              "position": 2,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "Burning Greed",
+              "rightSet": "Burning Greed",
+              "expectedStats": {
+                "atk": "45000",
+                "tc": "10000",
+                "dcc": "16667",
+                "defPen": "16667",
+                "di": "20000"
+              },
+              "expectedDamage": "7000000000"
+            }
+          ],
+          "shadows": ["Igris", "BesteS", "Skull"]
+        },
+        "WATER": {
+          "sung": {
+            "weapons": ["allon's orb", "winterfang"],
+            "weaponStars": [10, 10],
+            "leftSet": "Burning Curse + Chaotic Infamy",
+            "rightSet": "Expert",
+            "skills": [
+              {
+                "name": "sequent explosion",
+                "rarity": "mythic"
+              },
+              {
+                "name": "flowing water kick",
+                "rarity": "mythic"
+              },
+              {
+                "name": "truth : mutilate",
+                "rarity": "mythic"
+              },
+              {
+                "name": "squall",
+                "rarity": "mythic"
+              },
+              {
+                "name": "thunderstorm",
+                "rarity": "mythic"
+              },
+              {
+                "name": "shadow step",
+                "rarity": "mythic"
+              }
+            ],
+              "blessings": [
+              {
+                "name": "bloodlust",
+                "type": "offensive"
+              },
+              {
+                "name": "sharp perception",
+                "type": "offensive"
+              },
+              {
+                "name": "reawakening",
+                "type": "offensive"
+              },
+              {
+                "name": "title : wolf assassin",
+                "type": "offensive"
+              },
+              {
+                "name": "aggresive defense",
+                "type": "defensive"
+              },
+              {
+                "name": "natural disaster",
+                "type": "defensive"
+              },
+              {
+                "name": "kasaka's steel scales",
+                "type": "defensive"
+              },
+              {
+                "name": "life",
+                "type": "defensive"
+              }
+            ],
+            "baseStats": {
+              "str": 559,
+              "int": 200,
+              "vit": 0,
+              "per": 0,
+              "agi": 0
+            }
+            ,
+            "expectedStats": {
+              "atk": "60000",
+              "tc": "10000",
+              "dcc": "15000",
+              "di": "20000",
+              "defPen": "20000",
+              "precision": "23000",
+              "mpcr": "",
+              "mpa": ""
+            }
+          },
+          "hunters": [
+            {
+              "id": "seorin",
+              "position": 0,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "Burning Greed",
+              "rightSet": "Burning Greed",
+              "expectedStats": {
+                "hp": "90000",
+                "tc": "12000",
+                "dcc": "15000",
+                "defPen": "26000",
+                "di": "16667"
+              },
+              "expectedDamage": "10000000000"
+            },
+            {
+              "id": "meilin",
+              "position": 1,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "Guardian",
+              "rightSet": "Sylph's Blessing",
+              "expectedStats": {
+                "hp": "85000",
+                "tc": "10000",
+                "dcc": "16667",
+                "defPen": "16667",
+                "di": "20000"
+              },
+              "expectedDamage": "8000000000"
+            },
+            {
+              "id": "Cha Hae-In Valkyrie",
+              "position": 2,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "Chaotic Infamy",
+              "rightSet": "Chaotic Infamy",
+              "expectedStats": {
+                "def": "49000",
+                "tc": "10000",
+                "dcc": "16667",
+                "defPen": "20000",
+                "di": "25000"
+              },
+              "expectedDamage": "7000000000"
+            }
+          ],
+      "shadows": ["Beste", "Skull", "Cerbie"]
+        }
+      }
+    },
+    "2025-W35": {
+      "weekId": "2025-W35",
+      "startDate": "2025-08-28",
+      "endDate": "2025-09-03",
+      "currentBoss": "Ennio immortal",
+      "bossName": "Ennio immortal",
+      "elements": [
+        "WATER",
+        "DARK"
+      ],
+      "scoringLimits": {
+        "maxTotalScore": 35000000000,
+        "maxSungScore": 5000000000,
+        "maxHunterScore": 30000000000
+      },
+      "presets": {
+         "WATER": {
+          "sung": {
+            "weapons": ["allon's orb", "winterfang"],
+            "weaponStars": [10, 10],
+            "leftSet": "Burning Curse + Chaotic Infamy",
+            "rightSet": "Expert",
+            "skills": [
+              {
+                "name": "sequent explosion",
+                "rarity": "mythic"
+              },
+              {
+                "name": "flowing water kick",
+                "rarity": "mythic"
+              },
+              {
+                "name": "truth : mutilate",
+                "rarity": "mythic"
+              },
+              {
+                "name": "squall",
+                "rarity": "mythic"
+              },
+              {
+                "name": "thunderstorm",
+                "rarity": "mythic"
+              },
+              {
+                "name": "shadow step",
+                "rarity": "mythic"
+              }
+            ],
+              "blessings": [
+              {
+                "name": "bloodlust",
+                "type": "offensive"
+              },
+              {
+                "name": "sharp perception",
+                "type": "offensive"
+              },
+              {
+                "name": "reawakening",
+                "type": "offensive"
+              },
+              {
+                "name": "title : wolf assassin",
+                "type": "offensive"
+              },
+              {
+                "name": "aggresive defense",
+                "type": "defensive"
+              },
+              {
+                "name": "natural disaster",
+                "type": "defensive"
+              },
+              {
+                "name": "kasaka's steel scales",
+                "type": "defensive"
+              },
+              {
+                "name": "life",
+                "type": "defensive"
+              }
+            ],
+            "baseStats": {
+              "str": 559,
+              "int": 200,
+              "vit": 0,
+              "per": 0,
+              "agi": 0
+            }
+            ,
+            "expectedStats": {
+              "atk": "60000",
+              "tc": "10000",
+              "dcc": "15000",
+              "di": "20000",
+              "defPen": "20000",
+              "precision": "23000",
+              "mpcr": "",
+              "mpa": ""
+            }
+          },
+          "hunters": [
+            {
+              "id": "seorin",
+              "position": 0,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "Burning Greed",
+              "rightSet": "Burning Greed",
+              "expectedStats": {
+                "hp": "90000",
+                "tc": "12000",
+                "dcc": "15000",
+                "defPen": "26000",
+                "di": "16667"
+              },
+              "expectedDamage": "10000000000"
+            },
+            {
+              "id": "meilin",
+              "position": 1,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "Guardian",
+              "rightSet": "Sylph's Blessing",
+              "expectedStats": {
+                "hp": "85000",
+                "tc": "10000",
+                "dcc": "16667",
+                "defPen": "16667",
+                "di": "20000"
+              },
+              "expectedDamage": "8000000000"
+            },
+            {
+              "id": "Cha Hae-In Valkyrie",
+              "position": 2,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "Chaotic Infamy",
+              "rightSet": "Chaotic Infamy",
+              "expectedStats": {
+                "def": "49000",
+                "tc": "10000",
+                "dcc": "16667",
+                "defPen": "20000",
+                "di": "25000"
+              },
+              "expectedDamage": "7000000000"
+            }
+          ],
+      "shadows": ["Beste", "Skull", "Cerbie"]
+        },
+        "DARK": {
+          "sung": {
+            "weapons": ["moonshadow", "demonplumfdlowersword"],
+            "weaponStars": [10, 10],
+            "leftSet": "Burning Curse + Chaotic Infamy",
+            "rightSet": "Expert",
+            "skills": [
+              {
+                "name": "magnifying slashes",
+                "rarity": "mythic"
+              },
+              {
+                "name": "eruption",
+                "rarity": "mythic"
+              },
+              {
+                "name": "king's domain",
+                "rarity": "mythic"
+              },
+              {
+                "name": "thunderstorm",
+                "rarity": "mythic"
+              },
+              {
+                "name": "squall",
                 "rarity": "mythic"
               },
               {
@@ -83,88 +511,64 @@
               }
             ],
             "baseStats": {
-              "str": 300,
-              "int": 459,
+              "str": 609,
+              "int": 150,
               "vit": 0,
               "per": 0,
               "agi": 0
-            },
-            "expectedStats": {
-              "atk": "55000-60000",
-              "tc": "10000-14000",
-              "dcc": "21000-23000",
-              "di": "22000-24000",
-              "defPen": "35-2500",
-              "precision": "2500-3000",
-              "mpcr": "94-2500",
-              "mpa": "2500-3100"
             }
           },
           "hunters": [
             {
-              "id": "kanae",
+              "id": "minnie",
               "position": 0,
               "stars": 10,
               "weaponStars": 10,
-              "leftSet": "",
-              "rightSet": "",
+              "leftSet": "Chaotic Infamy",
+              "rightSet": "Chaotic Infamy",
               "expectedStats": {
-                "atk": "45000-50000",
-                "tc": "13000",
-                "dcc": "21000",
-                "defPen": "15000",
-                "di": "22000"
+                "def": "48000",
+                "tc": "12000",
+                "dcc": "16000",
+                "defPen": "16667",
+                "di": "20000"
               },
               "expectedDamage": "10000000000"
             },
             {
-              "id": "gina",
+              "id": "isla",
               "position": 1,
               "stars": 10,
               "weaponStars": 10,
-              "leftSet": "",
-              "rightSet": "",
+              "leftSet": "Guardian",
+              "rightSet": "Sylph's Blessing",
               "expectedStats": {
-                "atk": "45000",
-                "tc": "13000",
-                "dcc": "21000",
-                "defPen": "15000",
-                "di": "22000"
+                "def": "40000",
+                "tc": "10000",
+                "dcc": "16667",
+                "defPen": "16667",
+                "di": "52000"
               },
               "expectedDamage": "8000000000"
             },
             {
-              "id": "esil",
+              "id": "harper",
               "position": 2,
               "stars": 10,
               "weaponStars": 10,
-              "leftSet": "",
-              "rightSet": "",
+              "leftSet": "Burning Greed",
+              "rightSet": "Burning Greed",
               "expectedStats": {
-                "hp": "80000",
-                "tc": "13000",
-                "dcc": "21000",
-                "di": "22000"
+                "hp": "85000",
+                "tc": "10000",
+                "dcc": "16667",
+                "defPen": "16667",
+                "di": "20000"
               },
               "expectedDamage": "7000000000"
             }
-          ]
-        },
-        "WATER": {
-          "sung": {
-            "weapons": [],
-            "weaponStars": [10, 10],
-            "leftSet": "",
-            "rightSet": "",
-            "baseStats": {
-              "str": 300,
-              "int": 459,
-              "vit": 0,
-              "per": 0,
-              "agi": 0
-            }
-          },
-          "hunters": []
+          ],
+      "shadows": ["Igris", "Beste", "Cerbie"]
         }
       }
     },
@@ -328,5 +732,5 @@
   }
 }
   },
-  "currentWeek": "2025-W34"
+  "currentWeek": "2025-W36"
 }

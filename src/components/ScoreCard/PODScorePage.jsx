@@ -150,6 +150,7 @@ const PODScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
         mpa: ''
       }
     })),
+    shadows: Array(3).fill(null),
     totalScore: 0,
     rageCount: 0
   });

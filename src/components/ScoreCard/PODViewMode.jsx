@@ -66,12 +66,17 @@ const PODViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
     return stringValue.includes(',') ? value : value.toLocaleString();
   };
 
-  useEffect(() => {
-    if (preset?.shadows && preset.shadows.length > 0 && (!scoreData.shadows || scoreData.shadows.every(s => !s))) {
-      // Cette logique est gérée dans le composant parent PODScorePage
-      // via la fonction loadPresetData
-    }
-  }, [preset?.shadows]);
+ // Initialiser les shadows depuis le preset si elles ne sont pas dans scoreData
+const displayShadows = React.useMemo(() => {
+  if (scoreData.shadows && scoreData.shadows.some(s => s)) {
+    return scoreData.shadows;
+  }
+  // Si pas de shadows dans scoreData mais dans le preset, utiliser celles du preset
+  if (preset?.shadows && preset.shadows.length > 0) {
+    return preset.shadows;
+  }
+  return [null, null, null];
+}, [scoreData.shadows, preset?.shadows]);
 
   const calculateContribution = (damage) => {
     const total = scoreData.totalScore || 1;
@@ -360,9 +365,11 @@ const PODViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                       <div key={idx} className="w-10 h-10 bg-gray-800 border border-gray-700 rounded" />
                     );
 
-                    const skillData = typeof skill === 'string'
-                      ? runesData.find(r => r.name === skill)
-                      : skill;  // C'est déjà l'objet complet
+                    const skillData = !skill ? null :
+                                        typeof skill === 'string' ? runesData.find(r => r.name === skill) :
+                                          skill.src ? skill :
+                                            skill.name ? runesData.find(r => r.name === skill.name) :
+                                              null;
 
                     const rarityBorder = {
                       rare: 'border-blue-500',
@@ -582,13 +589,15 @@ const PODViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
 
                       return (
                         <div key={statKey}>
-                          <p className="text-gray-500">{label}</p>
-                          <p className="text-white">
-                            {value ?
-                              formatStatWithPercentage(value, statKey) :
-                              <span className="text-gray-600">{presetValue || '---'}</span>}
-                          </p>
-                        </div>
+  <p className="text-gray-500">{label}</p>
+  <p className="text-white">
+    {value ?
+      formatStatWithPercentage(value, statKey) :
+      <span className="text-gray-600">
+        {presetValue ? formatStatWithPercentage(presetValue, statKey) : '---'}
+      </span>}
+  </p>
+</div>
                       );
                     });
                   })()}
@@ -600,39 +609,40 @@ const PODViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
       </div>
 
       {/* Shadows Section - Version responsive - SEULEMENT 3 SHADOWS */}
-      <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/80 rounded-xl p-3 sm:p-4 border border-red-700 shadow-xl">
-        <h3 className="text-lg sm:text-xl font-bold text-white mb-3 flex items-center uppercase">
-          <span className="text-red-400 mr-2">🌑</span>
-          {t('pod.shadows.title')} <span className="text-sm text-gray-400 ml-2">(3)</span>
-        </h3>
-        <div className={`grid gap-3 ${isMobile ? 'grid-cols-3' : 'grid-cols-3'}`}>
-          {scoreData.shadows?.slice(0, 3).map((shadow, idx) => {
-            const shadowInfo = shadow ? shadowData.find(s => s.name === shadow) : null;
+<div className="bg-gradient-to-br from-gray-900/90 to-gray-800/80 rounded-xl p-3 sm:p-4 border border-red-700 shadow-xl">
+  <h3 className="text-lg sm:text-xl font-bold text-white mb-3 flex items-center uppercase">
+    <span className="text-red-400 mr-2">🌑</span>
+    {t('pod.shadows.title')} <span className="text-sm text-gray-400 ml-2">(3)</span>
+  </h3>
+  <div className="grid grid-cols-3 gap-3">
+    {[0, 1, 2].map((idx) => {
+      const shadow = displayShadows[idx];
+      const shadowInfo = shadow ? shadowData.find(s => s.name === shadow) : null;
 
-            return (
-              <div key={idx} className="bg-black/30 rounded-lg p-3 border border-red-500/30 flex flex-col items-center">
-                {shadowInfo ? (
-                  <>
-                    <img
-                      src={shadowInfo.src}
-                      alt={shadowInfo.name}
-                      className="w-16 h-16 rounded-full mb-2 border-2 border-purple-500"
-                    />
-                    <p className="font-medium text-white text-sm text-center">{shadowInfo.name}</p>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center mb-2">
-                      <span className="text-gray-500 text-2xl">?</span>
-                    </div>
-                    <p className="text-center text-gray-500 text-sm">{t('pod.shadows.shadow', { index: idx + 1 })}</p>
-                  </>
-                )}
+      return (
+        <div key={idx} className="bg-black/30 rounded-lg p-3 border border-red-500/30 flex flex-col items-center">
+          {shadowInfo ? (
+            <>
+              <img
+                src={shadowInfo.src}
+                alt={shadowInfo.name}
+                className="w-16 h-16 rounded-full mb-2 border-2 border-purple-500"
+              />
+              <p className="font-medium text-white text-sm text-center">{shadowInfo.name}</p>
+            </>
+          ) : (
+            <>
+              <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center mb-2">
+                <span className="text-gray-500 text-2xl">?</span>
               </div>
-            );
-          })}
+              <p className="text-center text-gray-500 text-sm">{t('pod.shadows.shadow', { index: idx + 1 })}</p>
+            </>
+          )}
         </div>
-      </div>
+      );
+    })}
+  </div>
+</div>
     </div>
   );
 };

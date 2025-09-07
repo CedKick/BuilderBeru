@@ -2452,6 +2452,10 @@ export const shadowData = [
         name: "Igris",
         src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748731241/shadow_igris_wgtcdl.png",
     },
+    {
+        name: "Skull",
+        src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1757244701/skull_fz8lga.png",
+    }
 
 ]
 

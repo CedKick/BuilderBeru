@@ -1077,6 +1077,7 @@
     "menu": {
       "build": "BUILD",
       "dpsCalculator": "DPS Calculator",
+      "training": "Training simulator (Beta)",
       "hallOfFlame": "🏆 Hall Of Flame",
       "pod": "PoD",
       "guideEditor": "GuideEditor",

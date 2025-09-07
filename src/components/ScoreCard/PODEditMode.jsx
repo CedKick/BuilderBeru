@@ -21,6 +21,17 @@ const PODEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
     mythic: 'border-red-500 bg-red-500/20'
   };
 
+const displayShadows = React.useMemo(() => {
+  if (scoreData.shadows && scoreData.shadows.some(s => s)) {
+    return scoreData.shadows;
+  }
+  // Si pas de shadows dans scoreData mais dans le preset, utiliser celles du preset
+  if (preset?.shadows && preset.shadows.length > 0) {
+    return preset.shadows;
+  }
+  return [null, null, null];
+}, [scoreData.shadows, preset?.shadows]);
+
   // Mapping des stats Build -> POD (identique à BDG)
   const STAT_MAPPING = {
     'attack': 'atk',
@@ -1175,7 +1186,7 @@ const PODEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
         </h3>
         <div className={`grid gap-3 ${isMobile ? 'grid-cols-1' : 'grid-cols-3'}`}>
           {[0, 1, 2].map((idx) => {
-            const shadow = scoreData.shadows?.[idx];
+            const shadow = displayShadows[idx];
             const shadowInfo = shadow ? shadowData.find(s => s.name === shadow) : null;
 
             return (

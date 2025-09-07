@@ -852,10 +852,10 @@
   }
 },
   
-"2025-W35": {
+   "2025-W35": {
   "weekId": "2025-W35",
-  "startDate": "2025-08-28",
-  "endDate": "2025-09-03",
+  "startDate": "2025-09-04",
+  "endDate": "2025-09-10",
   "currentBoss": "statue",
   "bossName": "Statue",
   "elements": [
@@ -864,8 +864,8 @@
     "WIND"
   ],
   "scoringLimits": {
-    "maxTotalScore": 75000000000,
-    "maxSungScore": 3000000000,
+    "maxTotalScore": 95000000000,
+    "maxSungScore": 9000000000,
     "maxHunterScore": 72000000000
   },
   "presets": {
@@ -880,7 +880,7 @@
         "rightSet": "Expert",
         "skills": [
               {
-                "name": "sonic explosion",
+                "name": "firestorm kick",
                 "rarity": "mythic"
               },
               {
@@ -950,10 +950,10 @@
               "tc": "10000",
               "dcc": "21000-23000",
               "di": "22000-24000",
-              "defPen": "29000-33000",
-              "precision": "23000",
-              "mpcr": "94-2500",
-              "mpa": "2500-3100"
+              "defPen": "41600",
+              "precision": "21000",
+              "mpcr": "",
+              "mpa": ""
             }
       },
       "hunters": [
@@ -962,38 +962,38 @@
               "position": 0,
               "stars": 10,
               "weaponStars": 10,
-              "leftSet": "Burning greed",
-              "rightSet": "Burning greed",
+              "leftSet": "Burning Greed",
+              "rightSet": "Burning Greed",
               "scaleStat": "ATK",
               "expectedStats": {
                 "atk": "45000-50000",
-                "tc": "10000",
-                "dcc": "20000",
-                "defPen": "30000",
-                "di": "20000",
-                "mpcr": "0",
-                "mpa": "0"
+                "tc": "12000",
+                "dcc": "15000",
+                "defPen": "29365",
+                "di": "16667",
+                "mpcr": "",
+                "mpa": ""
               },
               "expectedDamage": "300000-500000"
             },
             {
-              "id": "Emma",
-              "position": 1,
+              "id": "Yuqi",
+              "position": 4,
               "stars": 10,
               "weaponStars": 10,
-              "leftSet": "Chaotic Desire",
+              "leftSet": "One Hit-kill",
               "rightSet": "Chaotic Desire",
               "scaleStat": "HP",
               "expectedStats": {
-                "hp": "80000",
-                "tc": "13000",
-                "dcc": "21000",
-                "defPen": "0",
-                "di": "22000",
-                "mpcr": "0",
-                "mpa": "0"
+                "hp": "90000",
+                "tc": "10000",
+                "dcc": "9286",
+                "defPen": "40909",
+                "di": "16667",
+                "mpcr": "",
+                "mpa": ""
               },
-              "expectedDamage": "250000-400000"
+              "expectedDamage": "5000000000-7000000000"
             },
             {
               "id": "Gina",
@@ -1004,13 +1004,13 @@
               "rightSet": "Sylph's Blessing",
               "scaleStat": "ATK",
               "expectedStats": {
-                "def": "0",
-                "tc": "13000",
-                "dcc": "21000",
-                "defPen": "15000",
-                "di": "22000",
-                "mpcr": "0",
-                "mpa": "0"
+                "atk": "40000",
+                "tc": "10000",
+                "dcc": "15000",
+                "defPen": "29365",
+                "di": "16667",
+                "mpcr": "",
+                "mpa": ""
               },
               "expectedDamage": "200000-350000"
             },
@@ -1025,30 +1025,30 @@
               "expectedStats": {
                 "atk": "45000",
                 "tc": "13000",
-                "dcc": "21000",
-                "defPen": "15000",
+                "dcc": "15000",
+                "defPen": "29365",
                 "di": "22000",
-                "mpcr": "6000",
-                "mpa": "0"
+                "mpcr": "5000",
+                "mpa": ""
               },
               "expectedDamage": "150000-250000"
             },
             {
-              "id": "Yuqi",
+              "id": "Kanae",
               "position": 4,
               "stars": 10,
               "weaponStars": 10,
-              "leftSet": "Burning Blessing",
-              "rightSet": "Burning Blessing",
+              "leftSet": "Chaotic Infamy",
+              "rightSet": "Chaotic Infamy",
               "scaleStat": "HP",
               "expectedStats": {
-                "hp": "80000",
-                "tc": "13000",
-                "dcc": "21000",
-                "defPen": "15000",
-                "di": "22000",
-                "mpcr": "3000",
-                "mpa": "0"
+                "atk": "48000",
+                "tc": "10000",
+                "dcc": "15000",
+                "defPen": "29365",
+                "di": "16667",
+                "mpcr": "4000",
+                "mpa": "3500"
               },
               "expectedDamage": "200000-300000"
             },
@@ -1061,50 +1061,646 @@
               "rightSet": "Outstanding Ability",
               "scaleStat": "ATK",
               "expectedStats": {
-                "atk": "38000",
-                "tc": "10000",
-                "dcc": "20000",
-                "defPen": "30000",
-                "di": "20000",
-                "mpcr": "0",
-                "mpa": "0"
+                "atk": "45000",
+                "tc": "12000",
+                "dcc": "15000",
+                "defPen": "39000",
+                "di": "16667",
+                "mpcr": "3000",
+                "mpa": ""
               },
               "expectedDamage": "150000-250000"
             }
           ]
     },
     "DARK": {
-      "sung": {
-        "weapons": [],
-        "weaponStars": [10, 10],
-        "leftSet": "",
-        "rightSet": "",
-        "baseStats": {
-          "str": 300,
-          "int": 459,
-          "vit": 0,
-          "per": 0,
-          "agi": 0
+          "defaultPreset": "preset1",
+          "presets": {
+            "preset1": {
+              "name": "DarkWind",
+              "sung": {
+                "weapons": [
+                  "moonshadow",
+                  "thetisgrimoire"
+                ],
+                "weaponStars": [
+                  10,
+                  10
+                ],
+                "leftSet": "Burning Blessing",
+                "rightSet": "Burning Blessing",
+                "skills": [
+                  {
+                    "name": "vacuum wave",
+                    "rarity": "mythic"
+                  },
+                  {
+                    "name": "cold ice",
+                    "rarity": "mythic"
+                  },
+                  {
+                    "name": "king's domain",
+                    "rarity": "mythic"
+                  },
+                  {
+                    "name": "squall",
+                    "rarity": "mythic"
+                  },
+                  {
+                    "name": "thunderstorm",
+                    "rarity": "mythic"
+                  },
+                  {
+                    "name": "ice strike",
+                    "rarity": "mythic"
+                  }
+                ],
+                "blessings": [
+                  {
+                    "name": "bloodlust",
+                    "type": "offensive"
+                  },
+                  {
+                    "name": "title : demon slayer",
+                    "type": "offensive"
+                  },
+                  {
+                    "name": "reawakening",
+                    "type": "offensive"
+                  },
+                  {
+                    "name": "we are one",
+                    "type": "offensive"
+                  },
+                  {
+                    "name": "aggresive defense",
+                    "type": "defensive"
+                  },
+                  {
+                    "name": "natural disaster",
+                    "type": "defensive"
+                  },
+                  {
+                    "name": "kasaka's steel scales",
+                    "type": "defensive"
+                  },
+                  {
+                    "name": "life",
+                    "type": "defensive"
+                  }
+                ],
+                "baseStats": {
+                  "str": 0,
+                  "int": 759,
+                  "vit": 0,
+                  "per": 0,
+                  "agi": 0
+                },
+                "expectedStats": {
+                  "atk": "50000",
+                  "tc": "10000",
+                  "dcc": "15000",
+                  "di": "16667",
+                  "defPen": "25000",
+                  "precision": "21000",
+                  "mpcr": "6000",
+                  "mpa": "2500-3100"
+                }
+              },
+              "hunters": [
+                {
+                  "id": "Minnie",
+                  "position": 0,
+                  "stars": 10,
+                  "weaponStars": 10,
+                  "leftSet": "Chaotic Infamy",
+                  "rightSet": "Chaotic Infamy",
+                  "scaleStat": "DEF",
+                  "expectedStats": {
+                    "def": "45000-50000",
+                    "tc": "13000",
+                    "dcc": "21000",
+                    "defPen": "15000",
+                    "di": "22000",
+                    "mpcr": "3500",
+                    "mpa": "3200"
+                  },
+                  "expectedDamage": "20000000000"
+                },
+                {
+                  "id": "Isla Wright",
+                  "position": 1,
+                  "stars": 10,
+                  "weaponStars": 10,
+                  "leftSet": "Guardian",
+                  "rightSet": "Sylph's Blessing",
+                  "scaleStat": "DEF",
+                  "expectedStats": {
+                    "def": "45000",
+                    "tc": "13000",
+                    "dcc": "21000",
+                    "defPen": "",
+                    "di": "55000",
+                    "mpcr": "",
+                    "mpa": ""
+                  },
+                  "expectedDamage": "50000000"
+                },
+                {
+                  "id": "Silver Mane Baek Yoonho",
+                  "position": 2,
+                  "stars": 10,
+                  "weaponStars": 10,
+                  "leftSet": "Armed",
+                  "rightSet": "Expert",
+                  "scaleStat": "ATK",
+                  "expectedStats": {
+                    "atk": "48000",
+                    "tc": "13000",
+                    "dcc": "15000",
+                    "defPen": "40909",
+                    "di": "16667",
+                    "mpcr": "",
+                    "mpa": ""
+                  },
+                  "expectedDamage": "5000000000"
+                },
+                {
+                  "id": "niermann",
+                  "position": 3,
+                  "stars": 10,
+                  "weaponStars": 10,
+                  "leftSet": "Chaotic Infamy",
+                  "rightSet": "Chaotic Infamy",
+                  "scaleStat": "DEF",
+                  "expectedStats": {
+                    "def": "48000",
+                    "tc": "12000",
+                    "dcc": "15000",
+                    "defPen": "29365",
+                    "di": "16667",
+                    "mpcr": "",
+                    "mpa": ""
+                  },
+                  "expectedDamage": "200000000"
+                },
+                {
+                  "id": "jinah",
+                  "position": 4,
+                  "stars": 10,
+                  "weaponStars": 10,
+                  "leftSet": "Guardian",
+                  "rightSet": "Outstanding Ability",
+                  "scaleStat": "DEF",
+                  "expectedStats": {
+                    "def": "45000",
+                    "tc": "12000",
+                    "dcc": "15000",
+                    "defPen": "40909",
+                    "di": "14103",
+                    "mpcr": "",
+                    "mpa": "0"
+                  },
+                  "expectedDamage": "7000000000"
+                },
+                {
+                  "id": "Soyeon",
+                  "position": 5,
+                  "stars": 10,
+                  "weaponStars": 10,
+                  "leftSet": "Burning greed",
+                  "rightSet": "Burning greed",
+                  "scaleStat": "ATK",
+                  "expectedStats": {
+                    "atk": "45000",
+                    "tc": "9000",
+                    "dcc": "15000",
+                    "defPen": "29365",
+                    "di": "14103",
+                    "mpcr": "",
+                    "mpa": ""
+                  },
+                  "expectedDamage": "100000000"
+                }
+              ]
+            },
+            "preset2": {
+              "name": "Dark",
+              "sung": {
+                "weapons": [
+                  "moonshadow",
+                  "thetisgrimoire"
+                ],
+                "weaponStars": [
+                  10,
+                  10
+                ],
+                "leftSet": "Burning Blessing",
+                "rightSet": "Burning Blessing",
+                "skills": [
+                  {
+                    "name": "vacuum wave",
+                    "rarity": "mythic"
+                  },
+                  {
+                    "name": "cold ice",
+                    "rarity": "mythic"
+                  },
+                  {
+                    "name": "king's domain",
+                    "rarity": "mythic"
+                  },
+                  {
+                    "name": "squall",
+                    "rarity": "mythic"
+                  },
+                  {
+                    "name": "thunderstorm",
+                    "rarity": "mythic"
+                  },
+                  {
+                    "name": "ice strike",
+                    "rarity": "mythic"
+                  }
+                ],
+                "blessings": [
+                  {
+                    "name": "bloodlust",
+                    "type": "offensive"
+                  },
+                  {
+                    "name": "title : demon slayer",
+                    "type": "offensive"
+                  },
+                  {
+                    "name": "reawakening",
+                    "type": "offensive"
+                  },
+                  {
+                    "name": "we are one",
+                    "type": "offensive"
+                  },
+                  {
+                    "name": "aggresive defense",
+                    "type": "defensive"
+                  },
+                  {
+                    "name": "natural disaster",
+                    "type": "defensive"
+                  },
+                  {
+                    "name": "kasaka's steel scales",
+                    "type": "defensive"
+                  },
+                  {
+                    "name": "life",
+                    "type": "defensive"
+                  }
+                ],
+                "baseStats": {
+                  "str": 0,
+                  "int": 759,
+                  "vit": 0,
+                  "per": 0,
+                  "agi": 0
+                },
+                "expectedStats": {
+                  "atk": "50000",
+                  "tc": "10000",
+                  "dcc": "15000",
+                  "di": "16667",
+                  "defPen": "25000",
+                  "precision": "21000",
+                  "mpcr": "6000",
+                  "mpa": "2500-3100"
+                }
+              },
+              "hunters": [
+                {
+                  "id": "Minnie",
+                  "position": 0,
+                  "stars": 10,
+                  "weaponStars": 10,
+                  "leftSet": "Chaotic Infamy",
+                  "rightSet": "Chaotic Infamy",
+                  "scaleStat": "DEF",
+                  "expectedStats": {
+                    "def": "45000-50000",
+                    "tc": "13000",
+                    "dcc": "21000",
+                    "defPen": "15000",
+                    "di": "22000",
+                    "mpcr": "3200",
+                    "mpa": "3500"
+                  },
+                  "expectedDamage": "20000000000"
+                },
+                {
+                  "id": "Isla Wright",
+                  "position": 1,
+                  "stars": 10,
+                  "weaponStars": 10,
+                  "leftSet": "Guardian",
+                  "rightSet": "Sylph's Blessing",
+                  "scaleStat": "DEF",
+                  "expectedStats": {
+                    "def": "45000",
+                    "tc": "13000",
+                    "dcc": "21000",
+                    "defPen": "",
+                    "di": "55000",
+                    "mpcr": "",
+                    "mpa": ""
+                  },
+                  "expectedDamage": "50000000"
+                },
+                {
+                  "id": "Lim",
+                  "position": 2,
+                  "stars": 10,
+                  "weaponStars": 10,
+                  "leftSet": "Armed",
+                  "rightSet": "Expert",
+                  "scaleStat": "ATK",
+                  "expectedStats": {
+                    "atk": "48000",
+                    "tc": "13000",
+                    "dcc": "15000",
+                    "defPen": "40909",
+                    "di": "16667",
+                    "mpcr": "",
+                    "mpa": ""
+                  },
+                  "expectedDamage": "5000000000"
+                },
+                {
+                  "id": "Silver Mane Baek Yoonho",
+                  "position": 3,
+                  "stars": 10,
+                  "weaponStars": 10,
+                  "leftSet": "Armed",
+                  "rightSet": "Expert",
+                  "scaleStat": "ATK",
+                  "expectedStats": {
+                    "atk": "48000",
+                    "tc": "13000",
+                    "dcc": "15000",
+                    "defPen": "40909",
+                    "di": "16667",
+                    "mpcr": "",
+                    "mpa": ""
+                  },
+                  "expectedDamage": "200000000"
+                },
+                {
+                  "id": "Lee Bora",
+                  "position": 4,
+                  "stars": 10,
+                  "weaponStars": 10,
+                  "leftSet": "Angel White",
+                  "rightSet": "Sylph's Blessing",
+                  "scaleStat": "ATK",
+                  "expectedStats": {
+                    "atk": "45000",
+                    "tc": "12000",
+                    "dcc": "15000",
+                    "defPen": "29635",
+                    "di": "14103",
+                    "mpcr": "6000",
+                    "mpa": ""
+                  },
+                  "expectedDamage": "7000000000"
+                },
+                {
+                  "id": "Harper",
+                  "position": 5,
+                  "stars": 10,
+                  "weaponStars": 10,
+                  "leftSet": "Burning greed",
+                  "rightSet": "Burning greed",
+                  "scaleStat": "DEF",
+                  "expectedStats": {
+                    "def": "45000",
+                    "tc": "10000",
+                    "dcc": "15000",
+                    "defPen": "29365",
+                    "di": "14103",
+                    "mpcr": "",
+                    "mpa": ""
+                  },
+                  "expectedDamage": "100000000"
+                }
+              ]
+            }
+          }
+        },
+    "WIND": {
+          "sung": {
+            "weapons": [
+              "stormbringer",
+              "thetisgrimoire"
+            ],
+            "weaponStars": [
+              10,
+              10
+            ],
+            "leftSet": "Burning Blessing",
+            "rightSet": "Burning Blessing",
+            "skills": [
+              {
+                "name": "vacuum wave",
+                "rarity": "mythic"
+              },
+              {
+                "name": "cold ice",
+                "rarity": "mythic"
+              },
+              {
+                "name": "king's domain",
+                "rarity": "mythic"
+              },
+              {
+                "name": "squall",
+                "rarity": "mythic"
+              },
+              {
+                "name": "thunderstorm",
+                "rarity": "mythic"
+              },
+              {
+                "name": "shadow step",
+                "rarity": "mythic"
+              }
+            ],
+            "blessings": [
+              {
+                "name": "bloodlust",
+                "type": "offensive"
+              },
+              {
+                "name": "sharp perception",
+                "type": "offensive"
+              },
+              {
+                "name": "reawakening",
+                "type": "offensive"
+              },
+              {
+                "name": "we are one",
+                "type": "offensive"
+              },
+              {
+                "name": "aggresive defense",
+                "type": "defensive"
+              },
+              {
+                "name": "natural disaster",
+                "type": "defensive"
+              },
+              {
+                "name": "kasaka's steel scales",
+                "type": "defensive"
+              },
+              {
+                "name": "life",
+                "type": "defensive"
+              }
+            ],
+            "baseStats": {
+              "str": 300,
+              "int": 459,
+              "vit": 0,
+              "per": 0,
+              "agi": 0
+            },
+            "expectedStats": {
+              "atk": "55000-60000",
+              "tc": "10000-14000",
+              "dcc": "21000-23000",
+              "di": "22000-24000",
+              "defPen": "35-2500",
+              "precision": "2500-3000",
+              "mpcr": "94-2500",
+              "mpa": "2500-3100"
+            }
+          },
+          "hunters": [
+            {
+              "id": "jinah",
+              "position": 0,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "Chaotic Infamy",
+              "rightSet": "Chaotic Infamy",
+              "scaleStat": "DEF",
+              "expectedStats": {
+                "def": "45000",
+                "tc": "16000",
+                "dcc": "15000",
+                "defPen": "29365",
+                "di": "16667",
+                "mpcr": "",
+                "mpa": ""
+              },
+              "expectedDamage": "300000-500000"
+            },
+            {
+              "id": "goto",
+              "position": 1,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "Chaotic Desire",
+              "rightSet": "Chaotic Desire",
+              "scaleStat": "HP",
+              "expectedStats": {
+                "hp": "80000",
+                "tc": "12000",
+                "dcc": "15000",
+                "defPen": "29365",
+                "di": "16667",
+                "mpcr": "",
+                "mpa": ""
+              },
+              "expectedDamage": "250000-400000"
+            },
+            {
+              "id": "niermann",
+              "position": 2,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "Chaotic Infamy",
+              "rightSet": "Chaotic Infamy",
+              "scaleStat": "DEF",
+              "expectedStats": {
+                "def": "0",
+                "tc": "15000",
+                "dcc": "15000",
+                "defPen": "29365",
+                "di": "16667",
+                "mpcr": "",
+                "mpa": ""
+              },
+              "expectedDamage": "200000-350000"
+            },
+            {
+              "id": "Soyeon",
+              "position": 3,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "Burning greed",
+              "rightSet": "Burning greed",
+              "scaleStat": "ATK",
+              "expectedStats": {
+                "atk": "45000",
+                "tc": "10000",
+                "dcc": "15000",
+                "defPen": "29365",
+                "di": "16667",
+                "mpcr": "",
+                "mpa": ""
+              },
+              "expectedDamage": "150000-250000"
+            },
+            {
+              "id": "Mirei",
+              "position": 4,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "Armed",
+              "rightSet": "Expert",
+              "scaleStat": "ATK",
+              "expectedStats": {
+                "atk": "48000",
+                "tc": "11000",
+                "dcc": "15000",
+                "defPen": "29365",
+                "di": "2200166670",
+                "mpcr": "3500",
+                "mpa": "2900"
+              },
+              "expectedDamage": "200000-300000"
+            },
+            {
+              "id": "Han Se-Mi",
+              "position": 5,
+              "stars": 10,
+              "weaponStars": 10,
+              "leftSet": "Angel White",
+              "rightSet": "Sylph's Blessing",
+              "scaleStat": "HP",
+              "expectedStats": {
+                "hp": "80000",
+                "tc": "10000",
+                "dcc": "15000",
+                "defPen": "29365",
+                "di": "16667",
+                "mpcr": "",
+                "mpa": ""
+              },
+              "expectedDamage": "150000-250000"
+            }
+          ]
         }
-      },
-      "hunters": []
-    },
-    "WATER": {
-      "sung": {
-        "weapons": [],
-        "weaponStars": [10, 10],
-        "leftSet": "",
-        "rightSet": "",
-        "baseStats": {
-          "str": 300,
-          "int": 459,
-          "vit": 0,
-          "per": 0,
-          "agi": 0
-        }
-      },
-      "hunters": []
-    }
   }
 },
     "2025-W34": {
