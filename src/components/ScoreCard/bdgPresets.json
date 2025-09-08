@@ -949,8 +949,8 @@
                   "position": 0,
                   "stars": 10,
                   "weaponStars": 10,
-                  "leftSet": "Chaotic Infamy",
-                  "rightSet": "Chaotic Infamy",
+                  "leftSet": "Chaotic Desire",
+                  "rightSet": "Chaotic Desire",
                   "scaleStat": "HP",
                   "expectedStats": {
                     "hp": "90000",
