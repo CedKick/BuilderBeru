@@ -954,7 +954,7 @@
                   "scaleStat": "HP",
                   "expectedStats": {
                     "hp": "90000",
-                    "tc": "10000",
+                    "tc": "12000",
                     "dcc": "15000",
                     "defPen": "29365",
                     "di": "16667",
@@ -992,7 +992,7 @@
                   "scaleStat": "DEF",
                   "expectedStats": {
                     "def": "45000-50000",
-                    "tc": "12-15k",
+                    "tc": "14000",
                     "dcc": "15000",
                     "defPen": "29365",
                     "di": "15000",
@@ -1026,7 +1026,7 @@
                   "stars": 10,
                   "weaponStars": 10,
                   "leftSet": "Armed",
-                  "rightSet": "Expert",
+                  "rightSet": "Outstanding Ability",
                   "scaleStat": "ATK",
                   "expectedStats": {
                     "atk": "45000",
