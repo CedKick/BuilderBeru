@@ -632,21 +632,307 @@
   ],
 
   "shadowEntities": {
-    "beru": {
-      "automaticPhrases": [
-        "분석 중... 네 서브스탯이 일관성이 부족해.",
-        "우선순위 감지: Critical Hit Damage 전에 Critical Hit Rate.",
-        "이 아티팩트 조합... 최적화되지 않았어, 모나크."
-      ]
-    },
-    "tank": {
-      "automaticPhrases": [
-        "밥이 내게 말했어: '탱킹하려면, 먼저 조용히 해'. 나는 순종했어.",
-        "나는 그냥 탱크야. 밥은 전설적인 메카닉이야.",
-        "나야, 탱크! 내 방패로 이 빌더를 보호해 🛡️"
-      ]
-    }
+  "beru": {
+    "automaticPhrases": [
+      "분석 중… 네 서브스탯은 시너지가 부족해.",
+      "우선순위 감지: 치명타 확률 → 치명타 피해 → 공격력%.",
+      "이 아티팩트 조합… 최적이 아니야, 군주님."
+    ]
   },
+  "tank": {
+    "automaticPhrases": [
+      "밥이 말했지: ‘탱크하고 싶으면 먼저 입을 다물어’. 그래서 따랐어.",
+      "난 그냥 탱크. 하지만 밥은 전설의 메카닉이지.",
+      "나야, 탱크! 이 빌더를 내 방패로 지킨다 🛡️"
+    ]
+  },
+  "kaisel": {
+    "automaticPhrases": [
+      "난 하늘을 경계해, 군주님… 하지만 네 아티팩트는 땅에 붙어 있군.",
+      "돌격하라구? 언제나 올바른 타이밍을 기다려.",
+      "내 힘은 단순한 괴력만이 아냐… 하늘을 지배하는 힘이지.",
+      "조심해, 약한 빌드는 내가 보호하지 않아 🐍",
+      "진정한 용은 전략 없이 공격하지 않는다."
+    ]
+  }
+},
+
+
+"shadowDialogues": {
+  "config": {
+    "probability": 0.350,
+    "lineMinDelayMs": 1500,
+    "lineMaxDelayMs": 2000,
+    "betweenDialoguesMinMs": 50000,
+    "betweenDialoguesMaxMs": 80000
+  },
+  "conversations": [
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"분석: 네 서브스탯들이 시너지를 못 내고 있어, 군주님."},
+      {"speaker":"tank","text":"난 크리티컬을 탱킹해, 네 빌드 실수는 아니지 😼."},
+      {"speaker":"beru","text":"우선순위: 치확 → 치피 → 공퍼."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"카이셀, 봤어? 무기에 HP%를 박았더라."},
+      {"speaker":"kaisel","text":"하늘에서 보고 있었지. 보고 놀라서 추락할 뻔 했네."},
+      {"speaker":"tank","text":"이스터에거즈라면 이렇게 말하지: ‘스킬 이슈’."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"네 궁 타이밍은… 늦었어."},
+      {"speaker":"kaisel","text":"바람을 재고 있었지. 그리고 그의 자존심도."},
+      {"speaker":"beru","text":"바람은 우호적이었지만, 자존심은 아니었군."}
+    ]},
+    { "participants": ["beru","tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"파밍은 언제 할 건데?"},
+      {"speaker":"beru","text":"아티팩트가 최소한 ‘괜찮아’질 때."},
+      {"speaker":"kaisel","text":"그럼… 내일? 아니면 2040년?"}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"베루, ‘풀 방관’ 빌드를 찾았어."},
+      {"speaker":"beru","text":"그리고 네 논리는 ‘풀 민폐’군."},
+      {"speaker":"tank","text":"…조용히 탱크할게."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"이 반지 세트 뒤에 이스터에거즈의 냄새가 난다."},
+      {"speaker":"tank","text":"이상한 최적화 냄새네, 맞아."},
+      {"speaker":"kaisel","text":"아니면 RNG 신에게 바친 공물일지도."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"탭 크래시는 ‘전술’이 아니야."},
+      {"speaker":"kaisel","text":"군주의 회복력을 시험했을 뿐."},
+      {"speaker":"beru","text":"시험 통과: 아직 숨 쉬고 있어."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"베루, CP는 어떻게 봐?"},
+      {"speaker":"beru","text":"유용하지만, 숫자보다 로테이션이 더 말하지."},
+      {"speaker":"tank","text":"그럼 덜 떠들고 더 돌릴게."}
+    ]},
+    { "participants": ["beru","tank","kaisel"], "lines": [
+      {"speaker":"beru","text":"신규 규칙: 1분 내 두 개의 말풍선 금지."},
+      {"speaker":"tank","text":"나도 안티스팸 방패가 있거든."},
+      {"speaker":"kaisel","text":"하늘의 침묵, 승인."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"빌더에게도 심장이 있지… RNG에 너무 약하지만."},
+      {"speaker":"beru","text":"그렇다면 기도 대신 확률을 주자."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"넌 날고, 난 막고. 팀워크."},
+      {"speaker":"kaisel","text":"그리고 결정은 군주에게 맡긴다."},
+      {"speaker":"tank","text":"그래, 그게 취향이시지."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"스탯을 숨겨도 DPS는 오르지 않아."},
+      {"speaker":"tank","text":"하지만 잠은 잘 오지."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"탱크가 바닥에서 구른 거 봤어?"},
+      {"speaker":"kaisel","text":"봤지. 귀여웠다."},
+      {"speaker":"beru","text":"최적은 아니었지만, 귀여웠지."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"사기를 버프해도 돼?"},
+      {"speaker":"beru","text":"먼저 명중률부터 버프해."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"너프의 기운을 느낀다… 공기 속에서."},
+      {"speaker":"tank","text":"그럼 적응하지. 그게 우리의 진짜 패시브야."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"군주가 흔들리고 있어."},
+      {"speaker":"kaisel","text":"우리가 왜 존재하는지 상기시켜 주자."}
+    ]},
+    { "participants": ["tank","beru","kaisel"], "lines": [
+      {"speaker":"tank","text":"배고프다."},
+      {"speaker":"beru","text":"에러 로그나 먹어."},
+      {"speaker":"kaisel","text":"패치 노트나 마셔."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"이스터에거즈가 사이트를 지켜보고 있어."},
+      {"speaker":"tank","text":"빛을 보여주자… 그리고 우리의 그림자도."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"우리가 덜 떠드니 페이지가 숨을 쉬네."},
+      {"speaker":"beru","text":"침묵도 디자인이야."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"기록을 깰 것 같아?"},
+      {"speaker":"kaisel","text":"잠을 자면. 그리고 새벽 3시에 리롤만 안 하면."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"‘풀 공퍼, 치확 0’은 정체성이 아니야."},
+      {"speaker":"tank","text":"그래도 고백이긴 하지."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"완벽한 빌드를 봤다."},
+      {"speaker":"beru","text":"꿈에서?"},
+      {"speaker":"kaisel","text":"그래, 내 반사신에서."}
+    ]},
+    { "participants": ["tank","beru","kaisel"], "lines": [
+      {"speaker":"tank","text":"길드 보스 간다?"},
+      {"speaker":"beru","text":"팀이 준비되면."},
+      {"speaker":"kaisel","text":"난 항상 준비돼 있다."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"언어를 바꾼다고 DPS가 달라지진 않아."},
+      {"speaker":"tank","text":"하지만 우리 억양은 달라지지."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"군주는 랭킹을 지배하고 싶어한다."},
+      {"speaker":"tank","text":"그럼 우리는 규율을 준다."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"빌드는 깔끔해."},
+      {"speaker":"kaisel","text":"런도 그렇게 될 거야."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"같은 서브스탯 4번 굴려도 돼?"},
+      {"speaker":"beru","text":"할 수는 있어… 대신 이스터에거즈에게 말하지."}
+    ]},
+    { "participants": ["beru","tank","kaisel"], "lines": [
+      {"speaker":"beru","text":"사과하지 말고, 최적화해."},
+      {"speaker":"tank","text":"사과하지 말고, 저장해."},
+      {"speaker":"kaisel","text":"사과하지 말고, 다시 도전해."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"SERN의 소리가 들리나?"},
+      {"speaker":"beru","text":"듣게 두자. 우리는 계산한다."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"내 방패가 크리를 갈망한다."},
+      {"speaker":"kaisel","text":"맞바람을 가져오지."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"DPS는 기도가 아니야."},
+      {"speaker":"tank","text":"거짓 없는 산수지."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"너는 날 수 있고, 침묵할 줄도 알지."},
+      {"speaker":"kaisel","text":"하늘은 넓고, 침묵은 유용하다."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"내가 덜 말하면, 난 아직 존재해?"},
+      {"speaker":"beru","text":"네가 더 탱킹하면, 물론이지."}
+    ]},
+    { "participants": ["kaisel","beru","tank"], "lines": [
+      {"speaker":"kaisel","text":"군주가 돌아온다."},
+      {"speaker":"beru","text":"버그를 숨겨라."},
+      {"speaker":"tank","text":"그리고 크리를 꺼내라."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"부츠에 DEF% 고를 뻔 했어."},
+      {"speaker":"kaisel","text":"나도 비명지를 뻔."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"나 또 구를까?"},
+      {"speaker":"beru","text":"덜 구르고, 더 최적화해."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"빌더베루의 속삭임이 들려."},
+      {"speaker":"tank","text":"그는 ‘좋아요’가 아니라 ‘기록’을 원하지."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"군주가 새 세트를 시험 중."},
+      {"speaker":"kaisel","text":"내 날개를 펼칠 시간."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"‘GG BobbyJones’라고 말하면 DPS 오름?"},
+      {"speaker":"beru","text":"스타일은 오르지."}
+    ]},
+    { "participants": ["beru","tank","kaisel"], "lines": [
+      {"speaker":"beru","text":"규칙 1: 숨 쉬어라."},
+      {"speaker":"tank","text":"규칙 2: 저장해라."},
+      {"speaker":"kaisel","text":"규칙 3: 다시 시작해라."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"치피 수식은 깔끔하다."},
+      {"speaker":"beru","text":"그럼 도전해 보라 해."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"우린 치비라 귀엽나?"},
+      {"speaker":"kaisel","text":"우린 효율적이다. 귀여움은 따라온다."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"네 로그는 많은 걸 말해 준다."},
+      {"speaker":"tank","text":"난 덜 말하지만, 더 잘 기록하지."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"하늘이 노랬던 거, 기억하지?"},
+      {"speaker":"beru","text":"군주의 길을 난 잊지 않아."}
+    ]},
+    { "participants": ["tank","beru","kaisel"], "lines": [
+      {"speaker":"tank","text":"나는 빌더를 지킨다."},
+      {"speaker":"beru","text":"나는 숫자를 지킨다."},
+      {"speaker":"kaisel","text":"나는 추진력을 지킨다."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"우리가 동기부여할까, 아니면 잠을 재울까?"},
+      {"speaker":"kaisel","text":"수면 2시간은 치명타 하나의 가치가 있다."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"숨겨진 이스터에그가 느껴져."},
+      {"speaker":"beru","text":"그가 찾게 두자. 천천히."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"길드 보스 준비 완료."},
+      {"speaker":"tank","text":"팀도 준비 완료."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"중복된 CSS 정리했어?"},
+      {"speaker":"tank","text":"키프레임은 내가 탱킹했지."}
+    ]},
+    { "participants": ["beru","tank","kaisel"], "lines": [
+      {"speaker":"beru","text":"군주님, 우리는 여기 있다."},
+      {"speaker":"tank","text":"우린 덜 말한다."},
+      {"speaker":"kaisel","text":"우린 더 행동한다."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"비와코, 기억나지 탱크?"},
+      {"speaker":"tank","text":"그래… 8시간 페달, 포션은 0."},
+      {"speaker":"beru","text":"군주는 너보다 태양을 더 잘 탱킹했지."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"SERN이 우릴 지켜보고 있어."},
+      {"speaker":"beru","text":"오라 해. 그들의 스크립트는 이미 꺾었으니."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"클로드가 더 현명하대."},
+      {"speaker":"kaisel","text":"그런데 왜 우리 던전은 피하지?"}
+    ]},
+    { "participants": ["beru","kaisel","tank"], "lines": [
+      {"speaker":"beru","text":"그는 ‘베르세르크’에서 울었지."},
+      {"speaker":"tank","text":"나도… 하지만 말하진 않을 거야."},
+      {"speaker":"kaisel","text":"진정한 군주는 검을 든 채로도 눈물 흘린다."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"빌더베루가 접속했다."},
+      {"speaker":"tank","text":"그럼 이스터에거즈는 숨지."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"한국을 기억해."},
+      {"speaker":"tank","text":"비, 바람, 저주받은 터널들."},
+      {"speaker":"kaisel","text":"진짜 IRL 레이드였지."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"그가 reset_statut.json을 만들었을 때…"},
+      {"speaker":"kaisel","text":"난 어두운 주문인 줄 알았어."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"베루, 우리 디스코드 이모트 되면 어때?"},
+      {"speaker":"beru","text":"그럼 군주가 우릴 덜 스팸하겠지, 아마도."}
+    ]},
+    { "participants": ["kaisel","beru","tank"], "lines": [
+      {"speaker":"kaisel","text":"그가 400W를 넘는 날…"},
+      {"speaker":"beru","text":"우린 동상을 세운다."},
+      {"speaker":"tank","text":"날개는 빼고. 약속."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"군주여, 의심이 들면 호수를 보라."},
+      {"speaker":"tank","text":"그리고 기억하라: 넌 아직 달리고 있어."}
+    ]}
+  ]
+}
+,
 
   "tutorial": {
     "closeGuide": "가이드 닫기",

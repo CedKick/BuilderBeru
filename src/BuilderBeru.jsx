@@ -59,120 +59,6 @@ let beru = {
   currentCanvas: 'canvas-left', // Beru préfère la gauche (zone mystérieuse)
 };
 
-let currentBeruCanvasId = 'canvas-left';
-let beruMessageQueue = [];
-let beruIntervalRef = null;
-let isBeruSpeaking = false;
-
-let currentTankCanvasId = 'canvas-center'; // par défaut
-let tankAlreadySpawned = false;
-
-function encodeUTF8(str) {
-  return btoa(unescape(encodeURIComponent(str)));
-}
-function decodeUTF8(encoded) {
-  return decodeURIComponent(escape(atob(encoded)));
-}
-
-
-const tankPhrases = [
-  "Bob m’a dit : 'Si tu veux tanker, commence par shut up'. J’ai obéi.",
-  "Je suis qu’un Tank. Bob, lui, c’est une mécanique légendaire.",
-  "Bob n’oublie jamais… même ta fail d’il y a 3 donjons.",
-  "On a perdu le BDG à 1%. Bob a juste dit : 'Compris'. Le silence a glacé le canal.",
-  "Béru commande les ombres, mais Bob commande les connexions.",
-  "J’ai rêvé que je critiquais Bob. Je me suis réveillé désinstallé.",
-  "Bob n'a pas besoin de logs. Il lit dans ton cooldown.",
-  "Je suis un familier. Bob est un jugement dernier.",
-  "T’as raté une clé ? Bob a déjà changé ta team sans te prévenir.",
-  "J’ai 9000 de def. Mais je suis vulnérable au regard de Bob.",
-  "Une fois j’ai afk en guilde. Bob m’a mis dans la bio : ‘Décédé’ 🪦",
-  "Il paraît que Bob a battu un boss… avec une main… et un fichier CSV.",
-  "Bob m’a regardé. J’ai reset mes stats par réflexe.",
-  "Quand Bob dit : 'On tryhard', même le serveur overclocke.",
-  "Tank parle. Bob agit. Et toi... t'as fait ton pull aujourd’hui ?",
-  "Si BobbyJones arrive, planque tes artefacts nuls.",
-  "Je fais genre je suis courageux… mais j’ai peur de Bob 😰",
-  "Bob m’a déjà kické une fois… j’étais en maintenance pourtant !",
-  "Quand Bob entre dans le salon vocal, tout le monde se met au boulot 😳",
-  "Un pull raté ? Une daily oubliée ? Bob t'observe 👁️",
-  "Bob a dit que si je parlais trop, je redeviens une monture…",
-  "Je suis peut-être Tank, mais face à Bob, je delete mes logs 🫣",
-  "Il paraît que Bob peut relancer le serveur juste en criant.",
-  "Bob lit tes stats. Même celles que t'as pas encore calculées.",
-  "T’as pas fait ton boss de guilde ? Bob t’a déjà noté absent 😈",
-  "Quand Bob sort son aura… même Béru s’incline.",
-  "Je suis un chibi, Bob est un titan.",
-  "Tank : mignon. Bob : divinité du kick.",
-  "Chaque fois que quelqu’un oublie ses daily… Bob cligne des yeux.",
-  "Bob a déjà cassé une équipe full 6★ avec une macro Excel.",
-  "C'est moi, Tank ! Je protège ce builder avec mon bouclier 🛡️",
-  "Tu veux modifier les artefacts ? Même pas peur !",
-  "Je me demande si Béru me respecte vraiment 😤",
-  "BobbyJones va me crier dessus si je rate le boss de guilde...",
-  "J'ai roulé sur 4 artefacts aujourd'hui. Bizarre, non ?",
-  "Je suis mignon mais j'ai 2000 de DEF. Retiens ça.",
-  "Un jour, je parlerai dans l'animé... et ce sera légendaire.",
-  "Kly m'a programmé avec amour... ou fatigue extrême, je sais plus.",
-  "Ce builder est plus solide que mon armure.",
-  "Si t'oublies de faire tes daily, j'appelle BobbyJones.",
-  "Tank : 'Est-ce qu’un artefact peut aimer ?'... Ok j’ai faim.",
-  "Béru dit que je suis une mascotte... mais moi je tank la vérité.",
-  "Pourquoi j’ai pas de sprite animé moi aussi ? 😭",
-  "JO n'a toujours pas d'images... Moi je dis ça moi je dis rien 😶",
-  "Rappel : Critical Hit Rate, c’est pas Crit DMG. N’oublie jamais.",
-  "Quand le serveur bug, c’est moi qui prends tout… #respecteTank",
-  "This build smells like a Gagold masterpiece.",
-  "Kly coded this with coffee and shadows.",
-  "Don’t forget your daily pulls, or BobbyJones will kick you.",
-  "Who's skipping the Guild Boss today? 👀",
-  "Artifacts don't roll themselves, you know.",
-  "Another +0 Helmet? Really?",
-  "This chest piece looks... cursed.",
-  "I saw Sung Jinwoo roll better than that.",
-  "The Gagold guild expects greatness!",
-  "Legends say BobbyJones kicked someone for missing 1 BDG.",
-  "Is this build Gagold-approved?",
-  "Imagine Kly sees this gear. 😬",
-  "Don't let Tank down. Enhance your boots!",
-  "Did someone say... legendary artifact?",
-  "No BDG? No mercy from Bobby.",
-  "This ring is older than Kaisel.",
-  "Missing Critical Hit Rate again, huh?",
-  "Your HP is as low as your chances vs Ant King.",
-  "Even Beru would say 'meh' to this stat.",
-
-  // Solo Leveling / Artifacts
-  "These artifacts are crying for a reforge.",
-  "Did you just roll flat DEF again? 😂",
-  "Shadow Soldiers would laugh at this gear.",
-  "You need a dungeon, not luck.",
-  "That’s not RNG, that’s sabotage.",
-  "Even Baruka had better rolls.",
-  "Cha Hae-In wouldn't wear this... even blindfolded.",
-  "Looks like the System's trolling you today.",
-
-  // Gagold / Lore
-  "BobbyJones is watching... 👁",
-  "Miss one BDG and you're out. Gagold rules.",
-  "You think Gagold tolerates +3 gear?",
-  "Pull your weight or pull the door 🚪",
-  "This is Gagold, not a daycare.",
-  "Kly built this place in the shadow of Solo Leveling itself.",
-  "Respect the rank, fear the BDG.",
-  "Guild motto: no excuses, only crits.",
-
-  // Meta / Fun
-  "Bet you thought that was a good roll. You thought wrong.",
-  "Tank's watching. Tank's judging.",
-  "I've seen better builds in tutorial zones.",
-  "What’s next, flat luck as a main stat?",
-  "Every time you reroll, a shadow cries.",
-  "I auto-attack harder than this weapon does.",
-  "You call this optimization? I call it disappointment.",
-  "This build was handcrafted in mediocrity."
-];
-
 
 let tankIsWandering = false;
 let tankDirection = null;
@@ -789,6 +675,56 @@ const BuilderBeru = () => {
     }
   };
 
+  // ---- MESSAGE CONFIG (anti-spam, rythme "respirable") ----
+  const MESSAGE_CONFIG = {
+    global: {
+      minGapMs: 90_000,                     // cooldown global min entre deux messages (1 min 30)
+      burst: { count: 1, perMs: 60_000 },   // max 1 message par minute (toutes entités confondues)
+      repeatWindowMs: 10 * 60_000,          // pas deux fois le même message avant 10 min
+    },
+    // Fenêtres de tir par entité (≈ 3 à 5 min aléatoires)
+    entities: {
+      tank: { minMs: 180_000, maxMs: 300_000 }, // 3–5 min
+      beru: { minMs: 210_000, maxMs: 330_000 }, // 3.5–5.5 min
+      kaisel: { minMs: 240_000, maxMs: 360_000 }, // 4–6 min
+    }
+  };
+
+  // ---- Gouverneur centralisé ----
+  class MessageGovernor {
+    constructor() {
+      this.lastGlobalSpeakAt = 0;
+      this.lastMessages = [];           // { at, id, text }
+      this.recentByText = new Map();    // text -> lastAt
+    }
+    _now() { return Date.now(); }
+
+    _burstOk() {
+      const now = this._now();
+      const start = now - MESSAGE_CONFIG.global.burst.perMs;
+      const recent = this.lastMessages.filter(m => m.at >= start);
+      return recent.length < MESSAGE_CONFIG.global.burst.count;
+    }
+    _globalCooldownOk() {
+      return (this._now() - this.lastGlobalSpeakAt) >= MESSAGE_CONFIG.global.minGapMs;
+    }
+    _notRecentlyRepeated(text) {
+      const lastAt = this.recentByText.get(text) || 0;
+      return (this._now() - lastAt) >= MESSAGE_CONFIG.global.repeatWindowMs;
+    }
+    canSpeak({ text }) {
+      return this._burstOk() && this._globalCooldownOk() && this._notRecentlyRepeated(text);
+    }
+    record({ entityId, text }) {
+      const now = this._now();
+      this.lastGlobalSpeakAt = now;
+      this.lastMessages.push({ at: now, id: entityId, text });
+      this.recentByText.set(text, now);
+      const cutoff = now - 60 * 60_000; // on garde 60 min d'historique
+      this.lastMessages = this.lastMessages.filter(m => m.at >= cutoff);
+    }
+  }
+
   class ShadowManager {
     constructor() {
       this.entities = new Map();
@@ -798,7 +734,28 @@ const BuilderBeru = () => {
       this.animationId = null;
       this.messageIntervals = new Map();
       this.wanderTimers = new Map();
+      this.messageGovernor = new MessageGovernor();
+      this.dialogue = {
+        active: false,
+        timeout: null,
+        lockUntil: 0 // empêche de relancer un dialogue trop tôt
+      };
 
+      this.speakingEnabled = false;       // 🔕 Par défaut: MUET
+      this.visibilityPaused = false;      // pause si onglet caché
+      this.messageTimeouts = new Map();   // timers par entité
+      document.addEventListener('visibilitychange', () => {
+        const hidden = document.hidden;
+        this.visibilityPaused = hidden;
+        // On annule tout si on cache l’onglet
+        if (hidden) {
+          for (const [id, t] of this.messageTimeouts.entries()) clearTimeout(t);
+          this.messageTimeouts.clear();
+        } else {
+          // On repart calmement: délai complet aléatoire (pas de rattrapage)
+          this.entities?.forEach?.(e => this.scheduleNextMessage(e, /*fresh*/ true));
+        }
+      });
 
 
       // Backgrounds
@@ -808,6 +765,8 @@ const BuilderBeru = () => {
         'canvas-right': 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604092/greenland_cb4caw.png'
       };
     }
+
+
 
     setTranslation(tFunction) {
       this.t = tFunction;
@@ -911,8 +870,8 @@ const BuilderBeru = () => {
 
       this.entities.set(entityType, entity);
       this.setupEntityEvents(entity);
-      this.startEntityMessages(entity);
-
+      // this.startEntityMessages(entity);
+      if (this.speakingEnabled) this.scheduleNextMessage(entity, true);
       return entity;
     }
 
@@ -1111,21 +1070,209 @@ const BuilderBeru = () => {
     }
 
     // ⏰ Start entity messages
-    startEntityMessages(entity) {
-      if (this.messageIntervals.has(entity.id)) return;
+    // startEntityMessages(entity) {
+    //   if (this.messageIntervals.has(entity.id)) return;
 
-      const interval = setInterval(() => {
-        // 🛡️ Ne pas parler si le tutoriel est actif
-        if (this.isTutorialActive) return;
+    //   const interval = setInterval(() => {
+    //     // 🛡️ Ne pas parler si le tutoriel est actif
+    //     if (this.isTutorialActive) return;
 
-        if (Math.random() < 0.33) {
-          const msg = entity.phrases[Math.floor(Math.random() * entity.phrases.length)];
-          this.showEntityMessage(entity.id, msg);
-        }
-      }, entity.messageInterval);
+    //     if (Math.random() < 0.33) {
+    //       const msg = entity.phrases[Math.floor(Math.random() * entity.phrases.length)];
+    //       this.showEntityMessage(entity.id, msg);
+    //     }
+    //   }, entity.messageInterval);
 
-      this.messageIntervals.set(entity.id, interval);
+    //   this.messageIntervals.set(entity.id, interval);
+    // }
+
+    // ——— Gouvernance messages ———
+    setPopupCheck(fn) {
+      this.isAnyPopupOpen = typeof fn === 'function' ? fn : () => false;
     }
+
+    enableSpeaking() {
+      this.speakingEnabled = true;
+      // planifier un premier message “propre” pour chaque entité
+      this.entities?.forEach?.(e => this.scheduleNextMessage(e, true));
+    }
+
+    disableSpeaking() {
+      this.speakingEnabled = false;
+      // annule tous les timers
+      for (const [id, t] of this.messageTimeouts.entries()) clearTimeout(t);
+      this.messageTimeouts.clear();
+    }
+
+    loadDialoguesFromI18n() {
+      if (!this.t) { this.dialogues = []; this.dialogueConfig = null; return; }
+      const cfg = this.t("shadowDialogues.config", { returnObjects: true });
+      const list = this.t("shadowDialogues.conversations", { returnObjects: true }) || [];
+      this.dialogueConfig = cfg || {
+        probability: 0.3,
+        lineMinDelayMs: 1500,
+        lineMaxDelayMs: 3500,
+        betweenDialoguesMinMs: 300000,
+        betweenDialoguesMaxMs: 480000
+      };
+      this.dialogues = Array.isArray(list) ? list.filter(d => Array.isArray(d.lines) && d.lines.length >= 2) : [];
+    }
+
+    _refreshEntityPhrasesFromI18n() {
+      if (!this.t) return;
+      this.entities?.forEach?.((entity, id) => {
+        const p = this.t(`shadowEntities.${id}.automaticPhrases`, { returnObjects: true }) || [];
+        entity.phrases = Array.isArray(p) ? p : [];
+      });
+    }
+
+    _canStartDialogue() {
+    if (!this.speakingEnabled) return false;
+    if (this.visibilityPaused) return false;
+    if (this.isAnyPopupOpen?.()) return false;
+    if (this.dialogue.active) return false;
+    if (!this.dialogues || this.dialogues.length === 0) return false;
+    const now = Date.now();
+    if (now < this.dialogue.lockUntil) return false;
+    const p = (this.dialogueConfig?.probability ?? 0.3);
+    return Math.random() < p;
+  }
+
+  _pickDialogue() {
+    const pool = this.dialogues;
+    if (!pool || pool.length === 0) return null;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  _startDialogue() {
+  const d = this._pickDialogue();
+  if (!d) return false;
+
+  this.dialogue.active = true;
+
+  const lineMin = this.dialogueConfig?.lineMinDelayMs ?? 1500;
+  const lineMax = this.dialogueConfig?.lineMaxDelayMs ?? 3500;
+  const nextDelay = () => Math.floor(lineMin + Math.random() * (lineMax - lineMin));
+
+  const playLine = (index = 0) => {
+    // Dialogue interrompu ailleurs
+    if (!this.dialogue.active) return;
+
+    // Fin du dialogue → lock avant le prochain
+    if (index >= d.lines.length) return this._endDialogue(true);
+
+    const { speaker, text } = d.lines[index] || {};
+    if (!speaker || !text) return this._endDialogue(true);
+
+    // Sécurité contexte (pas de rattrapage)
+    if (!this.speakingEnabled || this.visibilityPaused || this.isAnyPopupOpen?.()) {
+      return this._endDialogue(false);
+    }
+
+    if (index === 0) {
+      // La 1ʳᵉ réplique respecte le gouverneur global (évite chevauchements)
+      if (!this.messageGovernor.canSpeak({ text })) {
+        // petit backoff pour réessayer la 1ʳᵉ réplique sans créer de backlog
+        this.dialogue.timeout = setTimeout(() => playLine(index), 500 + Math.random() * 500);
+        return;
+      }
+      this.showEntityMessage(speaker, text);
+      this.messageGovernor.record({ entityId: speaker, text });
+    } else {
+      // Répliques suivantes: BYPASS du gouverneur global
+      // (sinon elles seraient bloquées par le cooldown/burst)
+      this.showEntityMessage(speaker, text);
+      // pas de record() ici
+    }
+
+    // Prochaine ligne avec pacing dialogue
+    this.dialogue.timeout = setTimeout(() => playLine(index + 1), nextDelay());
+  };
+
+  playLine(0);
+  return true;
+}
+
+
+  _endDialogue(scheduleLock) {
+    this.dialogue.active = false;
+    if (this.dialogue.timeout) { clearTimeout(this.dialogue.timeout); this.dialogue.timeout = null; }
+
+    if (scheduleLock) {
+      const min = this.dialogueConfig?.betweenDialoguesMinMs ?? 300000;
+      const max = this.dialogueConfig?.betweenDialoguesMaxMs ?? 480000;
+      this.dialogue.lockUntil = Date.now() + Math.floor(min + Math.random() * (max - min));
+    }
+  }
+  // 👆👆👆 FIN DU BLOC
+
+
+
+
+    scheduleNextMessage(entity, fresh = false) {
+      if (!this.speakingEnabled) return;
+      if (this.visibilityPaused) return;
+      if (this.isAnyPopupOpen?.()) return;
+
+      // 3–6 minutes par défaut (tu peux affiner par entité plus tard)
+      const cfg = { minMs: 5_000, maxMs: 10_000 };
+      const baseDelay = cfg.minMs + Math.random() * (cfg.maxMs - cfg.minMs);
+
+      const delay = baseDelay; // pas de rattrapage
+
+      const timeoutId = setTimeout(() => this.trySpeak(entity), delay);
+      this.messageTimeouts.set(entity.id, timeoutId);
+    }
+
+  trySpeak(entity) {
+
+  // 1) Conditions de silence globales
+  if (!this.speakingEnabled || this.visibilityPaused || this.isAnyPopupOpen?.()) {
+    return this.scheduleNextMessage(entity, true);
+  }
+
+  // 2) Si un dialogue est en cours, on ne parle pas en solo
+  if (this.dialogue?.active) {
+    return this.scheduleNextMessage(entity, true);
+  }
+
+  // 3) Tenter de lancer un dialogue (une seule "entrée" déclenche; les autres lignes sont jouées par _startDialogue)
+  if (this._canStartDialogue()) {
+    const started = this._startDialogue();
+    // Quoi qu'il arrive, on replanifie ce speaker pour plus tard (pas de rattrapage)
+    this.scheduleNextMessage(entity);
+    if (started) return; // dialogue en cours → on sort
+  }
+
+  // 4) Sinon: message solo classique
+  const pool = Array.isArray(entity.phrases) ? entity.phrases : [];
+  if (!pool.length) {
+    return this.scheduleNextMessage(entity, true);
+  }
+
+  // Anti-répétition simple (jusqu’à 5 essais)
+  let choice = null;
+  for (let i = 0; i < 5; i++) {
+    const c = pool[Math.floor(Math.random() * pool.length)];
+    if (this.messageGovernor._notRecentlyRepeated(c)) { choice = c; break; }
+  }
+  choice = choice || pool[Math.floor(Math.random() * pool.length)];
+
+  // Anti-burst + cooldown global
+  if (!this.messageGovernor.canSpeak({ text: choice })) {
+    const backoff = 30_000 + Math.random() * 30_000; // 30–60s
+    const id = setTimeout(() => this.trySpeak(entity), backoff);
+    this.messageTimeouts.set(entity.id, id);
+    return;
+  }
+
+  // Émettre le message solo
+  this.showEntityMessage(entity.id, choice);
+  this.messageGovernor.record({ entityId: entity.id, text: choice });
+
+  // 5) Planifier la prochaine prise de parole
+  this.scheduleNextMessage(entity);
+}
 
 
     // 🎮 Keyboard controls
@@ -1572,8 +1719,10 @@ const BuilderBeru = () => {
         this.animationId = null;
       }
 
-      this.messageIntervals.forEach(interval => clearInterval(interval));
-      this.messageIntervals.clear();
+      // this.messageIntervals.forEach(interval => clearInterval(interval));
+      // this.messageIntervals.clear();
+      for (const [id, t] of this.messageTimeouts.entries()) clearTimeout(t);
+      + this.messageTimeouts.clear();
 
       this.wanderTimers.forEach(timer => clearTimeout(timer));
       this.wanderTimers.clear();
@@ -4988,6 +5137,19 @@ BobbyJones : "Allez l'Inter !"
     const shadowManager = new ShadowManager();
     window.shadowManager = shadowManager;
     shadowManager.setTranslation(t);
+    shadowManager.loadDialoguesFromI18n();
+
+// brancher le check popup/modal
+shadowManager.setPopupCheck(() => {
+  return !!(
+    showTutorial ||
+    showSernPopup ||
+    showBeruInteractionMenu ||
+    showKaiselInteractionMenu ||
+    showAdminPage ||
+    tvDialogue
+  );
+});
     window.getShadowScreenPosition = getShadowScreenPosition;
 
     // 🔥 CALLBACKS avec références stables
@@ -5062,6 +5224,7 @@ BobbyJones : "Allez l'Inter !"
         shadowManager.spawnEntity('tank');
         shadowManager.spawnEntity('beru');
         shadowManager.spawnEntity('kaisel');
+        window.shadowManager.enableSpeaking();
       } catch (error) {
         console.error("🐉 Kaisel: Shadow init error:", error);
       }
@@ -8389,7 +8552,7 @@ BobbyJones : "Allez l'Inter !"
                 />
                 <SpaceMarineShadowTrail />
 
-                {/* Ajouter POD Score Card */}  
+                {/* Ajouter POD Score Card */}
                 <div className="w-full mt-6">
                   <PODScoreCard
                     showTankMessage={showTankMessage}

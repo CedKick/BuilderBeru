@@ -1100,23 +1100,315 @@
                         "Tu veux pas une pomme, toi aussi ? Ça détend."
   ],
   "shadowEntities": {
-    "beru": {
-      "automaticPhrases": [
-        "Analyse en cours... Tes substats manquent de cohérence.",
-        "Priorité détectée : Critical Hit Rate avant Critical Hit Damage.",
-        "Cette combinaison d'artefacts... sous-optimale, Monarque."
-
-      ]
-    },
-    "tank": {
-      "automaticPhrases": [
-        "Bob m'a dit : 'Si tu veux tanker, commence par shut up'. J'ai obéi.",
-        "Je suis qu'un Tank. Bob, lui, c'est une mécanique légendaire.",
-        "C'est moi, Tank ! Je protège ce builder avec mon bouclier 🛡️"
-
-      ]
-    }
+  "beru": {
+    "automaticPhrases": [
+      "Analyse en cours... Tes substats manquent de cohérence.",
+      "Priorité détectée : Critical Hit Rate avant Critical Hit Damage.",
+      "Cette combinaison d'artefacts... sous-optimale, Monarque."
+    ]
   },
+  "tank": {
+    "automaticPhrases": [
+      "Bob m'a dit : 'Si tu veux tanker, commence par shut up'. J'ai obéi.",
+      "Je suis qu'un Tank. Bob, lui, c'est une mécanique légendaire.",
+      "C'est moi, Tank ! Je protège ce builder avec mon bouclier 🛡️"
+    ]
+  },
+  "kaisel": {
+    "automaticPhrases": [
+      "Je veille sur le ciel, Monarque... mais tes artefacts sont au sol.",
+      "Tu veux que je fonce ? Attends le bon timing, toujours.",
+      "Ma puissance n'est pas que brute... elle est aérienne.",
+      "Attention, je ne protège pas les builds faibles 🐍",
+      "Un vrai dragon n'attaque jamais sans stratégie."
+    ]
+  }
+},
+
+
+"shadowDialogues": {
+  "config": {
+    "probability": 0.350,
+    "lineMinDelayMs": 1500,
+    "lineMaxDelayMs": 2000,
+    "betweenDialoguesMinMs": 50000,
+    "betweenDialoguesMaxMs": 80000
+  },
+  "conversations": [
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Analyse: tes substats ne synergisent pas, Monarque."},
+      {"speaker":"tank","text":"Je tank les critiques, pas tes erreurs de build 😼."},
+      {"speaker":"beru","text":"Priorité: Taux crit → Dégâts crit → ATK%."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"Kaisel, t’as vu? Il a mis HP% sur l’arme."},
+      {"speaker":"kaisel","text":"Je veille du ciel. J’ai failli m’écraser en voyant ça."},
+      {"speaker":"tank","text":"EasterEggers diraient: ‘skill issue’."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"Ton timing d’ultime était… tardif."},
+      {"speaker":"kaisel","text":"J’évaluais le vent. Et son ego."},
+      {"speaker":"beru","text":"Le vent était favorable, l’ego moins."}
+    ]},
+    { "participants": ["beru","tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"On farme quand ?"},
+      {"speaker":"beru","text":"Quand les artefacts seront décents."},
+      {"speaker":"kaisel","text":"Donc… demain ? Ou 2040 ?"}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"Beru, j’ai trouvé un build ‘full DEF pen’."},
+      {"speaker":"beru","text":"Et ta logique est ‘full pénible’."},
+      {"speaker":"tank","text":"Je… vaiiis tanker en silence."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"J’ai flairé un EasterEggers derrière ce set d’anneaux."},
+      {"speaker":"tank","text":"Ça sent l’optimisation bizarre, oui."},
+      {"speaker":"kaisel","text":"Ou une offrande au dieu du RNG."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"tank","text":"Je comprends pas... J'arrive pas le BDG... 🤯🤯🤯"},
+      {"speaker":"kaisel","text":"T'as regardé la vidéo?"},
+      {"speaker":"kaisel","text":"Va regarder la vidéo..."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"Tes crashs d’onglet n’étaient pas des ‘strats’."},
+      {"speaker":"kaisel","text":"Je testais la résilience du Monarque."},
+      {"speaker":"beru","text":"Test réussi: il respire encore."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"Béru, tu penses quoi du CP?"},
+      {"speaker":"beru","text":"Utile, mais la rotation parle plus que le chiffre."},
+      {"speaker":"tank","text":"Donc je parle moins, je rotate plus."}
+    ]},
+    { "participants": ["beru","tank","kaisel"], "lines": [
+      {"speaker":"beru","text":"Nouvelle règle: pas deux bulles en 1 minute."},
+      {"speaker":"tank","text":"Même moi j’ai un bouclier anti-spam."},
+      {"speaker":"kaisel","text":"Silence aérien approuvé."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"Le builder a un cœur… il bat trop pour la RNG."},
+      {"speaker":"beru","text":"Alors donnons-lui des probabilités, pas des prières."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"Tu voles, je bloque. Teamwork."},
+      {"speaker":"kaisel","text":"Et on laisse le Monarque décider."},
+      {"speaker":"tank","text":"Oui, il aime ça."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Cacher ses stats n’améliore pas son DPS."},
+      {"speaker":"tank","text":"Mais ça améliore son sommeil."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"Tu as vu Tank rouler au sol ?"},
+      {"speaker":"kaisel","text":"Oui. C’était… attendrissant."},
+      {"speaker":"beru","text":"Pas optimal, mais attendrissant."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"Je peux buff le moral ?"},
+      {"speaker":"beru","text":"Buff l’Accuracy d’abord."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"Je sens un nerf… dans l’air."},
+      {"speaker":"tank","text":"Alors on s’adapte. C’est notre vrai passif."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"Le Monarque doute."},
+      {"speaker":"kaisel","text":"On va lui rappeler pourquoi on existe."}
+    ]},
+    { "participants": ["tank","beru","kaisel"], "lines": [
+      {"speaker":"tank","text":"J’ai faim."},
+      {"speaker":"beru","text":"Mange des logs d’erreur."},
+      {"speaker":"kaisel","text":"Et bois un patch note."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Les EasterEggers scrutent le site."},
+      {"speaker":"tank","text":"Qu’ils voient la lumière… et nos ombres."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"La page respire mieux depuis qu’on parle moins."},
+      {"speaker":"beru","text":"Le silence… c’est aussi du design."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"Tu penses qu’il battra son record ?"},
+      {"speaker":"kaisel","text":"S’il dort. Et s’il arrête de reroll à 3h."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"‘Full ATK, zéro crit’ n’est pas une identité."},
+      {"speaker":"tank","text":"Mais c’est déjà un aveu."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"J’ai croisé un build parfait."},
+      {"speaker":"beru","text":"Dans un rêve ?"},
+      {"speaker":"kaisel","text":"Oui, mon propre reflet."}
+    ]},
+    { "participants": ["tank","beru","kaisel"], "lines": [
+      {"speaker":"tank","text":"Le BDG, on y va ?"},
+      {"speaker":"beru","text":"Quand l’équipe sera prête."},
+      {"speaker":"kaisel","text":"Moi, je le suis. Toujours."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Changer de langue ne change pas ton DPS."},
+      {"speaker":"tank","text":"Mais ça change notre accent."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"Le Monarque veut dominer le ranking."},
+      {"speaker":"tank","text":"Alors on lui donne la rigueur."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"Le build est propre."},
+      {"speaker":"kaisel","text":"Le run le sera aussi."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"Je peux mettre 4 fois la même substat ?"},
+      {"speaker":"beru","text":"Tu peux… mais je le dirai aux EasterEggers."}
+    ]},
+    { "participants": ["beru","tank","kaisel"], "lines": [
+      {"speaker":"beru","text":"Ne t’excuse pas, optimise."},
+      {"speaker":"tank","text":"Ne t’excuse pas, sauvegarde."},
+      {"speaker":"kaisel","text":"Ne t’excuse pas, rejoue."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"On entend le SERN ?"},
+      {"speaker":"beru","text":"Qu’ils écoutent. Nous, on calcule."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"Mon bouclier a soif de critiques."},
+      {"speaker":"kaisel","text":"Je lui amène du vent… de face."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Le DPS n’est pas une prière."},
+      {"speaker":"tank","text":"C’est une addition sans mensonge."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"Tu sais voler et te taire."},
+      {"speaker":"kaisel","text":"Le ciel est vaste, et le silence utile."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"Si je parle moins, j’existe encore ?"},
+      {"speaker":"beru","text":"Tu tankes plus, donc oui."}
+    ]},
+    { "participants": ["kaisel","beru","tank"], "lines": [
+      {"speaker":"kaisel","text":"Le Monarque revient."},
+      {"speaker":"beru","text":"Rangez les bugs."},
+      {"speaker":"tank","text":"Et sortez les critiques."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"Il a failli pick DEF% sur les bottes."},
+      {"speaker":"kaisel","text":"J’ai failli crier."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"Je peux rouler encore ?"},
+      {"speaker":"beru","text":"Rouler moins, optimiser plus."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"J’entends BuilderBeru murmurer."},
+      {"speaker":"tank","text":"Il veut des records, pas des likes."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"Le Monarque teste un nouveau set."},
+      {"speaker":"kaisel","text":"Je déploie mes ailes."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"Si je dis ‘GG BobbyJones’ je gagne du DPS ?"},
+      {"speaker":"beru","text":"Tu gagnes du style."}
+    ]},
+    { "participants": ["beru","tank","kaisel"], "lines": [
+      {"speaker":"beru","text":"Règle n°1: respirer."},
+      {"speaker":"tank","text":"Règle n°2: sauvegarder."},
+      {"speaker":"kaisel","text":"Règle n°3: recommencer."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"Le calcul du Crit Damage est propre."},
+      {"speaker":"beru","text":"Alors qu’il ose."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"Est-ce qu’on est beaux en chibi ?"},
+      {"speaker":"kaisel","text":"On est efficaces. Le reste suivra."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Tes logs sont parlants."},
+      {"speaker":"tank","text":"Je parle moins, mais j’écris mieux."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"tank","text":"Beru, je peux te poser une question?"},
+      {"speaker":"Beru","text":"Je peux pas parler... Je joue."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"Le ciel était jaune, tu te souviens ?"},
+      {"speaker":"beru","text":"Je n’oublie pas les routes du Monarque."}
+    ]},
+    { "participants": ["tank","beru","kaisel"], "lines": [
+      {"speaker":"tank","text":"Je protège le builder."},
+      {"speaker":"beru","text":"Je protège les chiffres."},
+      {"speaker":"kaisel","text":"Je protège l’élan."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"On le motive ou on le laisse dormir ?"},
+      {"speaker":"kaisel","text":"Deux heures de sommeil valent un crit de plus."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"Je sens un EasterEgg caché."},
+      {"speaker":"beru","text":"Qu’il le trouve. Lentement."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"Prêt pour le BDG."},
+      {"speaker":"tank","text":"Prêt pour l’équipe."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Tu as nettoyé les doublons CSS ?"},
+      {"speaker":"tank","text":"J’ai tanké les keyframes."}
+    ]},
+    { "participants": ["beru","tank","kaisel"], "lines": [
+      {"speaker":"beru","text":"Monarque, on est là."},
+      {"speaker":"tank","text":"On parle moins."},
+      {"speaker":"kaisel","text":"On agit plus."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Tu te rappelles le Biwako, Tank ?"},
+      {"speaker":"tank","text":"Oui… huit heures à pédaler, et zéro potion."},
+      {"speaker":"beru","text":"Le Monarque a tanké le soleil mieux que toi."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"Le SERN nous observe."},
+      {"speaker":"beru","text":"Qu’ils viennent. Nous avons déjà vaincu leurs scripts."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"Claude dit qu’il est plus sage."},
+      {"speaker":"kaisel","text":"Alors pourquoi il fuit nos donjons ?"}
+    ]},
+    { "participants": ["beru","kaisel","tank"], "lines": [
+      {"speaker":"beru","text":"Il a pleuré devant Berserk."},
+      {"speaker":"tank","text":"Moi aussi, mais je ne l’avoue pas."},
+      {"speaker":"kaisel","text":"Un vrai Monarque pleure avec son épée levée."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"BuilderBeru est en ligne."},
+      {"speaker":"tank","text":"Alors EasterEggers se cache."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"Souviens-toi, Corée du Sud."},
+      {"speaker":"tank","text":"La pluie, le vent, et les tunnels maudits."},
+      {"speaker":"kaisel","text":"Un vrai raid IRL."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"Quand il a codé le reset_statut.json…"},
+      {"speaker":"kaisel","text":"J’ai cru que c’était une incantation sombre."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"Dis Béru, et si on devenait des emotes Discord ?"},
+      {"speaker":"beru","text":"Alors le Monarque nous spamera moins, j’espère."}
+    ]},
+    { "participants": ["kaisel","beru","tank"], "lines": [
+      {"speaker":"kaisel","text":"Le jour où il dépassera 400W…"},
+      {"speaker":"beru","text":"On érigera une statue."},
+      {"speaker":"tank","text":"Sans ailes. Promis."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Monarque, si tu doutes, regarde le lac."},
+      {"speaker":"tank","text":"Et souviens-toi: tu roules encore."}
+    ]}
+  ]
+},
  
   "mystSerNMsg": {
     "message": ["Q2hhcmdlbWVudCBkZXMgdHJhY2VzLi4uIFNjYW5uZXIgbGVzIGFjdGl2aXTDqXMgZHUgSHVudGVyIEpvLi4uCkFjdGl2aXRpcyBkZXRlY3Rlw6lzIDogPiBTYXV2ZWdhcmRlIHLDqXBww6l0w6llIGR1IHBlcnNvbm5hZ2UgSm8sID4gQ29ycnVwdGlvbiBkZSBUYW5rIGF2ZWMgZGVzIGdlbW1lcyBkZSBiYXMgZGUgYmFzIG51aXZlYXUuCgpDb25uZXhpb24gYXUgU0VSTi4uLiDFqGNoYW5nZSBkJ2luZm9zIGF2ZWMgQm9iYnlKb25lcy4uLgq8KCBSYXBwb3J0IDogIklsIGEgY2xpcXXDqSA3IGZvaXMgc3VyICdTYXZlJyBlbiBtb2lucyBkZSAzMCBzZW5kZXMuIgoKQ29uc2VpbCBHYWdvbGQgOiBUYW5rIHNlc3Qgcm91bMOpcmUgcGFyIHRlcnJlLiDwn5ijClN1bmcgSmluLVdvbyA6ICJPbiBwZXJkIG5vdHJlIHRlbXBzLiBRdScnb24gbCd6w6ljcmFzZS4iCgpDYWxjdWwgZGUgbGEgc2VudGVuY2UuLi4gVW5pdMOpcyBkw6lvbWJyZSA6IE9LLiBCw6lyaSA6IE9LICfwn5i8Jy4gVGFuayA6IG1hbmdlIHVuZSBhcHBsZSDwn5GPwoAKCqPCoCBGaW5hbCBoZWxwY2hlY2sgOiBQdWxscyBpbnV0aWxlcyA6IDQyLCBGYWlscyBkZSBib3NzIDogMywgUHLDqXNlbmNlIGVuIHJhaWQgOiAwLjQlCgpWw6lkaWN0IDogSm8gY291cGFibGUgZCdhYnVzIGRlICdTYXZlJy4g8J+UqCBHYWdvbGQgdGUgZGVjbGFyZSBsYSBndWVycmUuClByw6lwYXJlei1wb3VzLg==",

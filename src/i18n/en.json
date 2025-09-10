@@ -203,6 +203,309 @@
     "If life gives you apples... eat them.",
     "I think slowly, but I hit hard."
   ],
+
+  "shadowEntities": {
+  "beru": {
+    "automaticPhrases": [
+      "Analyzing... Your substats lack synergy.",
+      "Detected priority: Critical Hit Rate before Critical Hit Damage.",
+      "This artifact combination... suboptimal, Monarch."
+    ]
+  },
+  "tank": {
+    "automaticPhrases": [
+      "Bob told me: 'If you want to tank, start by shutting up'. I obeyed.",
+      "I’m just a Tank. Bob, though, is a legendary mechanic.",
+      "It’s me, Tank! I shield this builder with my armor 🛡️"
+    ]
+  },
+  "kaisel": {
+    "automaticPhrases": [
+      "I watch the skies, Monarch... but your artifacts are grounded.",
+      "Want me to dive? Always wait for the right timing.",
+      "My strength isn’t just brute... it’s aerial.",
+      "Careful, I don’t protect weak builds 🐍",
+      "A true dragon never attacks without strategy."
+    ]
+  }
+},
+
+
+"shadowDialogues": {
+  "config": {
+    "probability": 0.350,
+    "lineMinDelayMs": 1500,
+    "lineMaxDelayMs": 2000,
+    "betweenDialoguesMinMs": 50000,
+    "betweenDialoguesMaxMs": 80000
+  },
+  "conversations": [
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Analysis: your substats don’t synergize, Monarch."},
+      {"speaker":"tank","text":"I tank the crits, not your build mistakes 😼."},
+      {"speaker":"beru","text":"Priority: Crit Rate → Crit Damage → ATK%."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"Kaisel, did you see? He put HP% on the weapon."},
+      {"speaker":"kaisel","text":"I was watching from the sky. Nearly crashed when I saw it."},
+      {"speaker":"tank","text":"EasterEggers would call that: ‘skill issue’."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"Your ultimate timing was… late."},
+      {"speaker":"kaisel","text":"I was measuring the wind. And his ego."},
+      {"speaker":"beru","text":"Wind was favorable, ego wasn’t."}
+    ]},
+    { "participants": ["beru","tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"When do we farm?"},
+      {"speaker":"beru","text":"When artifacts are at least decent."},
+      {"speaker":"kaisel","text":"So… tomorrow? Or 2040?"}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"Beru, I found a ‘full DEF pen’ build."},
+      {"speaker":"beru","text":"And your logic is ‘full painful’."},
+      {"speaker":"tank","text":"...I’ll just tank in silence."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"I smelled an EasterEggers behind this set of rings."},
+      {"speaker":"tank","text":"Smells like weird optimization, yeah."},
+      {"speaker":"kaisel","text":"Or an offering to the RNG god."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"Those tab crashes weren’t ‘strats’."},
+      {"speaker":"kaisel","text":"I was testing the Monarch’s resilience."},
+      {"speaker":"beru","text":"Test passed: he’s still breathing."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"Beru, what do you think of CP?"},
+      {"speaker":"beru","text":"Useful, but rotation speaks louder than numbers."},
+      {"speaker":"tank","text":"So I talk less, rotate more."}
+    ]},
+    { "participants": ["beru","tank","kaisel"], "lines": [
+      {"speaker":"beru","text":"New rule: no two bubbles within 1 minute."},
+      {"speaker":"tank","text":"Even I have an anti-spam shield."},
+      {"speaker":"kaisel","text":"Silent skies approved."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"The builder has a heart… it beats too much for RNG."},
+      {"speaker":"beru","text":"Then let’s give him probabilities, not prayers."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"You fly, I block. Teamwork."},
+      {"speaker":"kaisel","text":"And we let the Monarch decide."},
+      {"speaker":"tank","text":"Yes, he likes that."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Hiding your stats doesn’t raise your DPS."},
+      {"speaker":"tank","text":"But it helps your sleep."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"Did you see Tank rolling on the ground?"},
+      {"speaker":"kaisel","text":"Yes. It was… endearing."},
+      {"speaker":"beru","text":"Not optimal, but endearing."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"Can I buff morale?"},
+      {"speaker":"beru","text":"Buff Accuracy first."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"I sense a nerf… in the air."},
+      {"speaker":"tank","text":"Then we adapt. That’s our true passive."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"The Monarch doubts."},
+      {"speaker":"kaisel","text":"We’ll remind him why we exist."}
+    ]},
+    { "participants": ["tank","beru","kaisel"], "lines": [
+      {"speaker":"tank","text":"I’m hungry."},
+      {"speaker":"beru","text":"Eat error logs."},
+      {"speaker":"kaisel","text":"And drink a patch note."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"EasterEggers are watching the site."},
+      {"speaker":"tank","text":"Let them see the light… and our shadows."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"The page breathes better since we talk less."},
+      {"speaker":"beru","text":"Silence… is also design."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"Think he’ll break his record?"},
+      {"speaker":"kaisel","text":"If he sleeps. And stops rerolling at 3 a.m."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"‘Full ATK, zero crit’ isn’t an identity."},
+      {"speaker":"tank","text":"But it’s already an admission."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"I saw a perfect build."},
+      {"speaker":"beru","text":"In a dream?"},
+      {"speaker":"kaisel","text":"Yes, my own reflection."}
+    ]},
+    { "participants": ["tank","beru","kaisel"], "lines": [
+      {"speaker":"tank","text":"The Guild Boss, shall we?"},
+      {"speaker":"beru","text":"When the team’s ready."},
+      {"speaker":"kaisel","text":"I am ready. Always."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Changing language doesn’t change your DPS."},
+      {"speaker":"tank","text":"But it changes our accent."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"The Monarch wants to rule the ranking."},
+      {"speaker":"tank","text":"Then we give him discipline."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"The build is clean."},
+      {"speaker":"kaisel","text":"The run will be too."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"Can I roll the same substat 4 times?"},
+      {"speaker":"beru","text":"You can… but I’ll tell EasterEggers."}
+    ]},
+    { "participants": ["beru","tank","kaisel"], "lines": [
+      {"speaker":"beru","text":"Don’t apologize, optimize."},
+      {"speaker":"tank","text":"Don’t apologize, save."},
+      {"speaker":"kaisel","text":"Don’t apologize, retry."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"Do you hear SERN?"},
+      {"speaker":"beru","text":"Let them listen. We calculate."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"My shield thirsts for crits."},
+      {"speaker":"kaisel","text":"I’ll bring wind… head-on."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"DPS isn’t a prayer."},
+      {"speaker":"tank","text":"It’s math without lies."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"You know how to fly and stay silent."},
+      {"speaker":"kaisel","text":"The sky is vast, and silence useful."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"If I talk less, do I still exist?"},
+      {"speaker":"beru","text":"You tank more, so yes."}
+    ]},
+    { "participants": ["kaisel","beru","tank"], "lines": [
+      {"speaker":"kaisel","text":"The Monarch returns."},
+      {"speaker":"beru","text":"Hide the bugs."},
+      {"speaker":"tank","text":"And bring out the crits."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"He almost picked DEF% on boots."},
+      {"speaker":"kaisel","text":"I almost screamed."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"Can I roll again?"},
+      {"speaker":"beru","text":"Roll less, optimize more."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"I hear BuilderBeru whispering."},
+      {"speaker":"tank","text":"He wants records, not likes."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"The Monarch is testing a new set."},
+      {"speaker":"kaisel","text":"I’ll spread my wings."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"If I say ‘GG BobbyJones’ do I gain DPS?"},
+      {"speaker":"beru","text":"You gain style."}
+    ]},
+    { "participants": ["beru","tank","kaisel"], "lines": [
+      {"speaker":"beru","text":"Rule #1: breathe."},
+      {"speaker":"tank","text":"Rule #2: save."},
+      {"speaker":"kaisel","text":"Rule #3: restart."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"The Crit Damage math is clean."},
+      {"speaker":"beru","text":"Then let him dare."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"Are we cute in chibi form?"},
+      {"speaker":"kaisel","text":"We’re efficient. The rest will follow."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Your logs are telling."},
+      {"speaker":"tank","text":"I talk less, but write better."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"The sky was yellow, remember?"},
+      {"speaker":"beru","text":"I never forget the Monarch’s roads."}
+    ]},
+    { "participants": ["tank","beru","kaisel"], "lines": [
+      {"speaker":"tank","text":"I protect the builder."},
+      {"speaker":"beru","text":"I protect the numbers."},
+      {"speaker":"kaisel","text":"I protect the momentum."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"Should we motivate him or let him sleep?"},
+      {"speaker":"kaisel","text":"Two more hours of sleep are worth a crit."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"I sense a hidden EasterEgg."},
+      {"speaker":"beru","text":"Let him find it. Slowly."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"Ready for the Guild Boss."},
+      {"speaker":"tank","text":"Ready for the team."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Did you clean the duplicate CSS?"},
+      {"speaker":"tank","text":"I tanked the keyframes."}
+    ]},
+    { "participants": ["beru","tank","kaisel"], "lines": [
+      {"speaker":"beru","text":"Monarch, we’re here."},
+      {"speaker":"tank","text":"We talk less."},
+      {"speaker":"kaisel","text":"We act more."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Remember Biwako, Tank?"},
+      {"speaker":"tank","text":"Yes… eight hours pedaling, and zero potions."},
+      {"speaker":"beru","text":"The Monarch tanked the sun better than you."}
+    ]},
+    { "participants": ["kaisel","beru"], "lines": [
+      {"speaker":"kaisel","text":"SERN is watching us."},
+      {"speaker":"beru","text":"Let them come. We’ve already beaten their scripts."}
+    ]},
+    { "participants": ["tank","kaisel"], "lines": [
+      {"speaker":"tank","text":"Claude claims he’s wiser."},
+      {"speaker":"kaisel","text":"Then why does he flee our dungeons?"}
+    ]},
+    { "participants": ["beru","kaisel","tank"], "lines": [
+      {"speaker":"beru","text":"He cried at Berserk."},
+      {"speaker":"tank","text":"Me too, but I won’t admit it."},
+      {"speaker":"kaisel","text":"A true Monarch cries with his sword raised."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"BuilderBeru is online."},
+      {"speaker":"tank","text":"Then EasterEggers hide."}
+    ]},
+    { "participants": ["kaisel","tank"], "lines": [
+      {"speaker":"kaisel","text":"Remember South Korea."},
+      {"speaker":"tank","text":"The rain, the wind, the cursed tunnels."},
+      {"speaker":"kaisel","text":"A true IRL raid."}
+    ]},
+    { "participants": ["beru","kaisel"], "lines": [
+      {"speaker":"beru","text":"When he coded reset_statut.json…"},
+      {"speaker":"kaisel","text":"I thought it was a dark incantation."}
+    ]},
+    { "participants": ["tank","beru"], "lines": [
+      {"speaker":"tank","text":"Hey Beru, what if we became Discord emotes?"},
+      {"speaker":"beru","text":"Then the Monarch would spam us less, I hope."}
+    ]},
+    { "participants": ["kaisel","beru","tank"], "lines": [
+      {"speaker":"kaisel","text":"The day he breaks 400W…"},
+      {"speaker":"beru","text":"We’ll raise a statue."},
+      {"speaker":"tank","text":"Without wings. Promise."}
+    ]},
+    { "participants": ["beru","tank"], "lines": [
+      {"speaker":"beru","text":"Monarch, if you doubt, look at the lake."},
+      {"speaker":"tank","text":"And remember: you’re still riding."}
+    ]}
+  ]
+}
+,
  
   "tutorial": {
     "closeGuide": "Close guide",

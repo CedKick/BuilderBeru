@@ -134,7 +134,7 @@
               "scaleStat": "HP",
               "expectedStats": {
                 "hp": "90000",
-                "tc": "10000",
+                "tc": "12000",
                 "dcc": "9286",
                 "defPen": "40909",
                 "di": "16667",
@@ -1199,7 +1199,7 @@
               "scaleStat": "HP",
               "expectedStats": {
                 "hp": "90000",
-                "tc": "10000",
+                "tc": "12000",
                 "dcc": "9286",
                 "defPen": "40909",
                 "di": "16667",
