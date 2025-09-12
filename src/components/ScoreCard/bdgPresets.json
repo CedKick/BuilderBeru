@@ -133,11 +133,11 @@
               "rightSet": "Chaotic Desire",
               "scaleStat": "HP",
               "expectedStats": {
-                "hp": "90000",
+                "hp": "95000",
                 "tc": "12000",
-                "dcc": "9286",
-                "defPen": "40909",
-                "di": "16667",
+                "dcc": "15000",
+                "defPen": "41213",
+                "di": "12500",
                 "mpcr": "",
                 "mpa": ""
               },
