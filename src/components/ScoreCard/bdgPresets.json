@@ -1011,12 +1011,12 @@
                   "scaleStat": "DEF",
                   "expectedStats": {
                     "def": "48000",
-                    "tc": "10000",
-                    "dcc": "15000",
+                    "tc": "8000",
+                    "dcc": "11667",
                     "defPen": "29365",
                     "di": "16667",
-                    "mpcr": "4500",
-                    "mpa": "3200"
+                    "mpcr": "3500",
+                    "mpa": "3000"
                   },
                   "expectedDamage": "200000000"
                 },
