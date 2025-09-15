@@ -567,8 +567,8 @@
                   "position": 2,
                   "stars": 10,
                   "weaponStars": 10,
-                  "leftSet": "Armed",
-                  "rightSet": "Expert",
+                  "leftSet": "Chaotic Desire",
+                  "rightSet": "Outstanding Ability",
                   "scaleStat": "ATK",
                   "expectedStats": {
                     "atk": "48000",
@@ -1016,7 +1016,7 @@
                     "defPen": "29365",
                     "di": "16667",
                     "mpcr": "3500",
-                    "mpa": "3000"
+                    "mpa": "3000  "
                   },
                   "expectedDamage": "200000000"
                 },
@@ -1631,8 +1631,8 @@
                   "position": 2,
                   "stars": 10,
                   "weaponStars": 10,
-                  "leftSet": "Armed",
-                  "rightSet": "Expert",
+                  "leftSet": "Chaotic Desire",
+                  "rightSet": "Outstanding Ability",
                   "scaleStat": "ATK",
                   "expectedStats": {
                     "atk": "48000",
@@ -2696,8 +2696,8 @@
                   "position": 2,
                   "stars": 10,
                   "weaponStars": 10,
-                  "leftSet": "Armed",
-                  "rightSet": "Expert",
+                  "leftSet": "Chaotic Desire",
+                  "rightSet": "Outstanding Ability",
                   "scaleStat": "ATK",
                   "expectedStats": {
                     "atk": "48000",
@@ -3327,11 +3327,11 @@
                   "rightSet": "Sylph's Blessing",
                   "scaleStat": "DEF",
                   "expectedStats": {
-                    "DEF": "45000",
+                    "DEF": "16000",
                     "tc": "13000",
                     "dcc": "21000",
                     "defPen": "0",
-                    "DI": "50000",
+                    "DI": "60000",
                     "mpcr": "0",
                     "mpa": "0"
                   },
