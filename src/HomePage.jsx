@@ -8,7 +8,7 @@ export default function HomePage() {
   // 🎯 SEO DYNAMIQUE AMÉLIORÉ
   useEffect(() => {
     const currentLang = i18n.language || 'fr';
-    
+
     // 📝 TITLES ET DESCRIPTIONS PAR LANGUE - OPTIMISÉS SEO
     const seoData = {
       fr: {
@@ -118,18 +118,25 @@ export default function HomePage() {
   }, [i18n.language]);
 
   const activeItems = [
-    { label: t('home.menu.build'), path: "/build" , alt:"Build your Hunter SLA"},
-    { label: t('home.menu.training'), path: "/trainingCenter", special: true, new: true, alt:"Simulation Training Solo Leveling Arise"},
-    { label: t('home.menu.dpsCalculator'), path: "/damage-calculator", special: true, new: true , alt:"Calculator Damage Solo Leveling Arise"},
-    { label: t('home.menu.bdg'), path: "bdg" , alt:" META Guild War Solo Leveling Arise"},
-    { label: t('home.menu.pod'), path: "/pod" , alt:"META POD Solo Leveling Arise"},
-    { label: t('home.menu.hallOfFlame'), path: "/hall-of-flame", special: true , alt:"Ranking player Solo Leveling Arise"},
+    { label: t('home.menu.build'), path: "/build", alt: "Build your Hunter SLA" },
+    // { label: t('home.menu.training'), path: "/trainingCenter", special: true, new: true, alt:"Simulation Training Solo Leveling Arise"},
+    {
+      label: t('home.menu.craftSimulator'),
+      path: "/craft-simulator",
+      special: true,
+      new: true,
+      alt: "Artifact Craft Simulator - Test your RNG before wasting hammers!"
+    },
+    { label: t('home.menu.dpsCalculator'), path: "/damage-calculator", special: true, new: true, alt: "Calculator Damage Solo Leveling Arise" },
+    { label: t('home.menu.bdg'), path: "bdg", alt: " META Guild War Solo Leveling Arise" },
+    { label: t('home.menu.pod'), path: "/pod", alt: "META POD Solo Leveling Arise" },
+    { label: t('home.menu.hallOfFlame'), path: "/hall-of-flame", special: true, alt: "Ranking player Solo Leveling Arise" },
     // { label: t('home.menu.guideEditor'), path: "/guide-editor" },
   ];
 
   const inactiveItems = [
     // { label: t('home.menu.bot'), disabled: true },
-    
+
   ];
 
   // 🎯 SEO DATA POUR AFFICHAGE DYNAMIQUE
@@ -141,7 +148,7 @@ export default function HomePage() {
       h3: "Jinah, Lennart, Emma Laurent, Cha Hae-In et Plus"
     },
     en: {
-      h1: "Solo Leveling Arise Calculator", 
+      h1: "Solo Leveling Arise Calculator",
       h2: "Free Build Optimizer for All Hunters",
       h3: "Jinah, Lennart, Emma Laurent, Cha Hae-In & More"
     },
@@ -152,7 +159,7 @@ export default function HomePage() {
     },
     ja: {
       h1: "俺だけレベルアップ計算機",
-      h2: "全ハンター対応無料ビルド最適化ツール", 
+      h2: "全ハンター対応無料ビルド最適化ツール",
       h3: "ジナ、レナート、エマ・ローラン、車海仁など"
     },
     zh: {
@@ -400,7 +407,7 @@ export default function HomePage() {
 
       {/* 🎮 LAYOUT ADAPTATIF DESKTOP/MOBILE */}
       <div className="w-full max-w-6xl mx-auto flex-1 flex flex-col">
-        
+
         {/* 📱 VERSION MOBILE - ULTRA COMPACT */}
         <div className="block md:hidden flex-1 flex flex-col">
           <section className="character-announcement mx-auto flex-shrink-0" aria-label="New Character Announcement">
@@ -453,7 +460,7 @@ export default function HomePage() {
         {/* 💻 VERSION DESKTOP */}
         <div className="hidden md:block">
           <div className="grid md:grid-cols-2 gap-12 items-center max-w-4xl mx-auto">
-            
+
             <div className="md:order-1">
               <h4 className="text-xl font-bold text-purple-300 mb-6 text-center">
               </h4>
@@ -470,7 +477,7 @@ export default function HomePage() {
                     {item.label}
                   </Link>
                 ))}
-                
+
                 {inactiveItems.map((item) => (
                   <div
                     key={item.label}
@@ -518,47 +525,47 @@ export default function HomePage() {
                             border-2 border-purple-500/50 hover:border-purple-400 
                             transition-all duration-500 hover:scale-[1.02] group
                             backdrop-blur-sm">
-              
+
               {/* Background image avec effet parallax */}
               <div className="absolute inset-0 opacity-30 group-hover:opacity-40 transition-opacity duration-700">
-                <img 
+                <img
                   src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755091230/BuilderBeru_enclos_wgtjm5.jpg"
                   alt="Chibi World Map"
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent" />
               </div>
-              
+
               {/* Contenu principal */}
               <div className="relative p-8 text-center z-10">
                 {/* Sprites animés */}
                 <div className="chibi-sprites flex justify-center mb-6 gap-4">
-                  <div className="animate-bounce" style={{animationDelay: '0s'}}>
+                  <div className="animate-bounce" style={{ animationDelay: '0s' }}>
                     <div className="chibi-sprite-bubble w-16 h-16 bg-purple-500/20 rounded-full p-2 backdrop-blur-sm
                                     border border-purple-400/50 shadow-lg shadow-purple-500/30">
                       <span className="text-3xl">🐜</span>
                     </div>
                   </div>
-                  <div className="animate-bounce" style={{animationDelay: '0.2s'}}>
+                  <div className="animate-bounce" style={{ animationDelay: '0.2s' }}>
                     <div className="chibi-sprite-bubble w-16 h-16 bg-green-500/20 rounded-full p-2 backdrop-blur-sm
                                     border border-green-400/50 shadow-lg shadow-green-500/30">
                       <span className="text-3xl">🛡️</span>
                     </div>
                   </div>
-                  <div className="animate-bounce" style={{animationDelay: '0.4s'}}>
+                  <div className="animate-bounce" style={{ animationDelay: '0.4s' }}>
                     <div className="chibi-sprite-bubble w-16 h-16 bg-blue-500/20 rounded-full p-2 backdrop-blur-sm
                                     border border-blue-400/50 shadow-lg shadow-blue-500/30">
                       <span className="text-3xl">⚔️</span>
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Titre épique */}
                 <h2 className="chibi-world-title text-4xl font-bold mb-3 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 
                                bg-clip-text text-transparent animate-gradient">
                   {t('home.chibiWorld.title', "L'Enclos des Ombres Éternelles")}
                 </h2>
-                
+
                 {/* Badge NEW animé */}
                 <div className="inline-flex items-center gap-2 mb-4">
                   <span className="text-xs font-bold bg-gradient-to-r from-red-500 to-orange-500 
@@ -567,13 +574,13 @@ export default function HomePage() {
                   </span>
                   <span className="text-yellow-400 animate-pulse">✨</span>
                 </div>
-                
+
                 {/* Description */}
                 <p className="chibi-world-description text-lg text-purple-200/90 mb-6 max-w-2xl mx-auto">
-                  {t('homeChibi.chibiWorld.description', 
-                     "Collecte et élève tes chibis dans un monde vivant ! Connexion quotidienne, évolutions, batailles épiques !")}
+                  {t('homeChibi.chibiWorld.description',
+                    "Collecte et élève tes chibis dans un monde vivant ! Connexion quotidienne, évolutions, batailles épiques !")}
                 </p>
-                
+
                 {/* Features */}
                 <div className="chibi-features flex justify-center gap-8 mb-6 flex-wrap">
                   <div className="flex items-center gap-2 text-purple-300">
@@ -589,7 +596,7 @@ export default function HomePage() {
                     <span>{t('homeChibi.chibiWorld.evolution', 'Évolutions')}</span>
                   </div>
                 </div>
-                
+
                 {/* Bouton d'entrée */}
                 <button className="relative px-8 py-3 font-bold text-white rounded-full
                                    bg-gradient-to-r from-purple-600 to-indigo-600
@@ -604,7 +611,7 @@ export default function HomePage() {
                                   group-hover/btn:opacity-30 blur transition-opacity duration-300" />
                 </button>
               </div>
-              
+
               {/* Particules flottantes */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 {[...Array(6)].map((_, i) => (

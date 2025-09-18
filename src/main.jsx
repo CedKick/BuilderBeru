@@ -11,6 +11,7 @@ import AppLayout from './AppLayout.jsx';
 import HallOfFlameStandalone from './components/HallOfFlameStandalone.jsx';
 import TrainingCenter from './components/Training/TrainingCenter.jsx';
 import BeruvianWorld from "./pages/beruvianWorld/BeruvianWorld.jsx";
+import CraftSimulator from './components/CraftSimulator/CraftSimulator.jsx';
 import DamageCalculatorStandalone from './DamageCalculatorStandalone.jsx';
 import ChibiWorld from './components/ChibiSystem/ChibiWorld.jsx';
 
@@ -25,6 +26,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/build" element={<Builder />} />
+          <Route path="/craft-simulator" element={<CraftSimulator />} />
           <Route path="/trainingCenter" element={<TrainingCenter />} />
           <Route path="/guide-editor" element={<GuideEditor />} />
           
