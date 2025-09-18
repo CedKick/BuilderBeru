@@ -330,7 +330,7 @@ export const characters = {
     scaleStat: 'Defense',
     bdgLimits: {
       maxDamageOnElement: 37000000000,  // 37B max si bon élément
-      maxDamageOffElement: 9000000000  // 9B max si mauvais élément
+      maxDamageOffElement: 18000000000  // 9B max si mauvais élément
     },
     importantStats: ['def', 'tc', 'dcc', 'defPen', 'di'],
     skillMultipliers: {
