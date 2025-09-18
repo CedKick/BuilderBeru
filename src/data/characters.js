@@ -1152,8 +1152,8 @@ export const characters = {
       ultimate: 35.0
     },
     bdgLimits: {
-      maxDamageOnElement: 6000000000,  // 73B max si bon élément
-      maxDamageOffElement: 1000000000  // 9B max si mauvais élément
+      maxDamageOnElement: 20000000000,  // 73B max si bon élément
+      maxDamageOffElement: 15000000000  // 9B max si mauvais élément
     },
     buffs: [
       {
