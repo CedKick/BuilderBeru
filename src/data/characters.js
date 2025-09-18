@@ -1143,7 +1143,7 @@ export const characters = {
     grade: 'SSR',
     element: 'Dark',
     scaleStat: 'Attack',
-    importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di'],
+    importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di', 'mpa', 'mpcr'],
     skillMultipliers: {
       core1: 3.5,
       core2: 4.8,
