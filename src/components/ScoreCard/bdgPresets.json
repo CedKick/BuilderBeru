@@ -95,10 +95,10 @@
             },
             "expectedStats": {
               "atk": "55000",
-              "tc": "11500",
+              "tc": "12000",
               "dcc": "13182",
               "di": "16667",
-              "defPen": "41213",
+              "defPen": "49003",
               "precision": "21200",
               "mpcr": "",
               "mpa": ""
@@ -167,8 +167,8 @@
               "position": 3,
               "stars": 10,
               "weaponStars": 10,
-              "leftSet": "Chaotic Wish",
-              "rightSet": "Chaotic Wish",
+              "leftSet": "Angel White",
+              "rightSet": "Expert",
               "scaleStat": "ATK",
               "expectedStats": {
                 "atk": "45000",
@@ -176,18 +176,18 @@
                 "dcc": "15000",
                 "defPen": "29365",
                 "di": "22000",
-                "mpcr": "5000",
+                "mpcr": "5500",
                 "mpa": ""
               },
               "expectedDamage": "150000-250000"
             },
             {
-              "id": "Kanae",
+              "id": "Chae-in",
               "position": 4,
               "stars": 10,
               "weaponStars": 10,
-              "leftSet": "Chaotic Infamy",
-              "rightSet": "Chaotic Infamy",
+              "leftSet": "Chaotic Wish",
+              "rightSet": "Chaotic Wish",
               "scaleStat": "HP",
               "expectedStats": {
                 "atk": "48000",
@@ -212,7 +212,7 @@
                 "atk": "45000",
                 "tc": "12000",
                 "dcc": "15000",
-                "defPen": "39000",
+                "defPen": "41213",
                 "di": "16667",
                 "mpcr": "3000",
                 "mpa": ""
