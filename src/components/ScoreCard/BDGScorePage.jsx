@@ -3,7 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import BDGViewMode from './BDGViewMode';
 import BDGEditMode from './BDGEditMode';
-import { validateBuildCompleteness } from './bdgService';
+import BDGDetailedAnalysisModal from './BDGDetailedAnalysisModal';
+import { 
+  validateBuildCompleteness, 
+  getBdgHistory, 
+  saveBdgAttempt, 
+  findBestComparison,
+  getAllComparableAttempts,  // ← Ajoute cette ligne
+  compareHunters              // ← Et celle-ci
+} from './bdgService';
 import '../../i18n/i18n';
 import { characters } from '../../data/characters';
 import bdgPresets from './bdgPresets.json';
@@ -222,12 +230,123 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
   const { t } = useTranslation();
   // Détection mobile
   const [isMobile, setIsMobile] = useState(false);
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [analysisData, setAnalysisData] = useState(null);
+
+
+  // Modifier handleValidate pour sauvegarder dans l'historique
+  const handleValidate = (currentPreset) => {
+    if (editMode) {
+      const totalScore = calculateTotalScore();
+
+      if (weekData.scoringLimits && totalScore > weekData.scoringLimits.maxTotalScore) {
+        showTankMessage(t('bdg.messages.scoreTooHigh'), true, 'tank');
+        return;
+      }
+
+      const currentScoreData = JSON.parse(JSON.stringify(scoreData));
+      const updatedData = {
+        ...currentScoreData,
+        totalScore: totalScore
+      };
+
+      const huntersWithIds = updatedData.hunters.map((hunter, idx) => {
+        const result = { ...hunter };
+        if (!result.id && currentPreset?.hunters?.[idx]?.id) {
+          result.id = currentPreset.hunters[idx].id;
+        }
+        if (result.id && !result.character) {
+          result.character = getCharacterFromId(result.id);
+        }
+        result.finalStats = hunter.finalStats || {};
+        return result;
+      });
+
+      updatedData.hunters = huntersWithIds;
+      setScoreData(updatedData);
+
+      try {
+        const builderberuUsers = localStorage.getItem('builderberu_users');
+        if (!builderberuUsers) throw new Error(t('bdg.messages.errorUserData'));
+
+        const data = JSON.parse(builderberuUsers);
+        const username = Object.keys(data)[0];
+        const activeAcc = data[username]?.activeAccount || 'main';
+
+        // Sauvegarder dans bdgScores (structure existante)
+        if (!data[username].accounts[activeAcc].bdgScores) {
+          data[username].accounts[activeAcc].bdgScores = {};
+        }
+        if (!data[username].accounts[activeAcc].bdgScores[weekData.weekId]) {
+          data[username].accounts[activeAcc].bdgScores[weekData.weekId] = {};
+        }
+        if (!data[username].accounts[activeAcc].bdgScores[weekData.weekId][selectedElement]) {
+          data[username].accounts[activeAcc].bdgScores[weekData.weekId][selectedElement] = {};
+        }
+
+        data[username].accounts[activeAcc].bdgScores[weekData.weekId][selectedElement][selectedPreset] = {
+          sung: updatedData.sung,
+          hunters: updatedData.hunters.map(h => ({
+            id: h.id,
+            damage: h.damage || '',
+            stars: h.stars || 0,
+            weaponStars: h.weaponStars || 0,
+            leftSet: h.leftSet || '',
+            leftSet1: h.leftSet1 || '',
+            leftSet2: h.leftSet2 || '',
+            rightSet: h.rightSet || '',
+            finalStats: h.finalStats || {}
+          })),
+          totalScore: updatedData.totalScore,
+          rageCount: updatedData.rageCount,
+          lastModified: new Date().toISOString()
+        };
+
+        // NOUVEAU : Sauvegarder aussi dans bdgHistory pour l'analyse
+        const saveResult = saveBdgAttempt(
+          data,
+          username,
+          activeAcc,
+          weekData.weekId,
+          selectedElement,
+          selectedPreset,
+          {
+            totalScore: updatedData.totalScore,
+            rageCount: updatedData.rageCount,
+            sung: updatedData.sung,
+            hunters: updatedData.hunters,
+            boss: weekData.currentBoss,
+            bossName: weekData.bossName,
+            elements: weekData.elements
+          }
+        );
+
+        if (!saveResult.success) {
+          showTankMessage(saveResult.message, true, 'tank');
+          return;
+        }
+
+        localStorage.setItem('builderberu_users', JSON.stringify(data));
+
+        const draftKey = `bdg_draft_${weekData.weekId}_${selectedElement}_${selectedPreset}`;
+        localStorage.removeItem(draftKey);
+
+        setHasUnsavedChanges(false);
+        setEditMode(false);
+        showTankMessage(t('bdg.messages.modificationsSaved'), true, 'beru');
+
+      } catch (e) {
+        console.error("Erreur sauvegarde:", e);
+        showTankMessage(t('bdg.messages.errorSaving'), true, 'tank');
+      }
+    }
+  };
 
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -236,7 +355,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
   // Au début du composant, récupérer les données de la semaine
   const [selectedWeek, setSelectedWeek] = useState(bdgPresets.currentWeek);
   const weekData = bdgPresets.weeks[selectedWeek];
-  
+
   // Vérification de sécurité
   if (!weekData || !weekData.elements) {
     console.error('weekData is missing or invalid:', weekData);
@@ -677,107 +796,6 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
     setHasUnsavedChanges(false);
   };
 
-  const handleValidate = (currentPreset) => {
-    if (editMode) {
-      console.log("✅ Validate clicked - preset:", selectedPreset);
-
-      const totalScore = calculateTotalScore();
-      if (weekData.scoringLimits && totalScore > weekData.scoringLimits.maxTotalScore) {
-        showTankMessage(t('bdg.messages.scoreTooHigh'), true, 'tank');
-        return;
-      }
-
-      // IMPORTANT: Capturer l'état actuel AVANT toute modification
-      const currentScoreData = JSON.parse(JSON.stringify(scoreData));
-
-      // Mettre à jour le score total
-      const updatedData = {
-        ...currentScoreData,
-        totalScore: totalScore
-      };
-
-      // S'assurer que les IDs et characters des hunters sont préservés
-      const huntersWithIds = updatedData.hunters.map((hunter, idx) => {
-        const result = { ...hunter };
-
-        // Si pas d'id, essayer de le récupérer du preset
-        if (!result.id && currentPreset?.hunters?.[idx]?.id) {
-          result.id = currentPreset.hunters[idx].id;
-        }
-
-        // Si on a un id mais pas de character, le récupérer
-        if (result.id && !result.character) {
-          result.character = getCharacterFromId(result.id);
-        }
-
-        // NE PAS écraser les finalStats - garder celles de l'état actuel
-        result.finalStats = hunter.finalStats || {};
-
-        return result;
-      });
-
-      updatedData.hunters = huntersWithIds;
-      setScoreData(updatedData);
-
-      try {
-        // Récupérer la structure builderberu_users
-        const builderberuUsers = localStorage.getItem('builderberu_users');
-        if (!builderberuUsers) throw new Error(t('bdg.messages.errorUserData'));
-
-        const data = JSON.parse(builderberuUsers);
-        const username = Object.keys(data)[0]; // "user" 
-        const activeAcc = data[username]?.activeAccount || 'main';
-
-        console.log("👤 Username:", username, "ActiveAccount:", activeAcc);
-
-        // Initialiser la structure si nécessaire
-        if (!data[username].accounts[activeAcc].bdgScores) {
-          data[username].accounts[activeAcc].bdgScores = {};
-        }
-        if (!data[username].accounts[activeAcc].bdgScores[weekData.weekId]) {
-          data[username].accounts[activeAcc].bdgScores[weekData.weekId] = {};
-        }
-        if (!data[username].accounts[activeAcc].bdgScores[weekData.weekId][selectedElement]) {
-          data[username].accounts[activeAcc].bdgScores[weekData.weekId][selectedElement] = {};
-        }
-
-        // Sauvegarder les données dans la bonne structure
-        data[username].accounts[activeAcc].bdgScores[weekData.weekId][selectedElement][selectedPreset] = {
-          sung: updatedData.sung,
-          hunters: updatedData.hunters.map(h => ({
-            id: h.id,
-            damage: h.damage || '',
-            stars: h.stars || 0,
-            weaponStars: h.weaponStars || 0,
-            leftSet: h.leftSet || '',
-            leftSet1: h.leftSet1 || '',
-            leftSet2: h.leftSet2 || '',
-            rightSet: h.rightSet || '',
-            finalStats: h.finalStats || {}
-          })),
-          totalScore: updatedData.totalScore,
-          rageCount: updatedData.rageCount,
-          lastModified: new Date().toISOString()
-        };
-
-        // Sauvegarder toute la structure
-        localStorage.setItem('builderberu_users', JSON.stringify(data));
-        console.log("✅✅✅ SAUVEGARDÉ DANS BUILDERBERU_USERS !");
-
-        // Supprimer le brouillon
-        const draftKey = `bdg_draft_${weekData.weekId}_${selectedElement}_${selectedPreset}`;
-        localStorage.removeItem(draftKey);
-
-        setHasUnsavedChanges(false);
-        setEditMode(false);
-        showTankMessage(t('bdg.messages.modificationsSaved'), true, 'beru');
-
-      } catch (e) {
-        console.error("❌❌❌ ERREUR SAUVEGARDE:", e);
-        showTankMessage(t('bdg.messages.errorSaving'), true, 'tank');
-      }
-    }
-  };
 
   const calculateTotalScore = () => {
     const sungDamage = parseInt(scoreData.sung.damage) || 0;
@@ -786,6 +804,45 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
     }, 0);
     return sungDamage + huntersDamage;
   };
+
+const handleAnalyze = () => {
+  const currentTotal = calculateTotalScore();
+  
+  if (currentTotal === 0) return;
+
+  console.log('🔍 Analyse - weekData:', weekData); // Debug pour voir la structure
+
+  // Récupérer TOUTES les tentatives comparables
+  const allAttempts = getAllComparableAttempts(
+    weekData.weekId,
+    weekData.boss,  // ← Changé de currentBoss à boss
+    selectedElement,
+    activeAccount
+  );
+
+  console.log('📊 Tentatives trouvées:', allAttempts.length); // Debug
+
+  // Si on a des tentatives passées, comparer les hunters
+  let huntersComparison = null;
+  if (allAttempts.length > 0) {
+    const mostRecentAttempt = allAttempts[allAttempts.length - 1];
+    huntersComparison = compareHunters(scoreData.hunters, mostRecentAttempt);
+  }
+
+  setAnalysisData({
+    currentScore: currentTotal,
+    currentWeek: weekData.weekId,
+    currentBoss: weekData.bossName,
+    currentElement: selectedElement,
+    currentRageCount: scoreData.rageCount,
+    currentHunters: scoreData.hunters,
+    allAttempts: allAttempts,
+    huntersComparison: huntersComparison
+  });
+
+  setShowAnalysisModal(true);
+  showTankMessage('Analyse complète générée', true, 'beru');
+};
   const handleShare = () => {
     showTankMessage(t('bdg.messages.shareComingSoon'), true, 'beru');
   };
@@ -1015,7 +1072,17 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
                   </option>
                 ))}
               </select>
-
+              {/* NOUVEAU : Bouton Analyze (visible seulement en mode View) */}
+              {!editMode && (
+                <button
+                  onClick={handleAnalyze}
+                  disabled={calculateTotalScore() === 0}
+                  className="bg-cyan-600/80 hover:bg-cyan-600 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-2 rounded-lg text-white font-medium transition-colors flex items-center gap-2"
+                  title={t('bdg.analyze.tooltip')}
+                >
+                  📊 {t('bdg.analyze.button')}
+                </button>
+              )}
               {/* Boutons d'édition */}
               {editMode && (
                 <>
@@ -1070,7 +1137,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
                 ×
               </button>
             </div>
-            
+
             {/* Mobile Controls */}
             <div className="flex gap-2 flex-wrap">
               <select
@@ -1134,6 +1201,17 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
               </button>
             </div>
 
+            {/* Mobile Analyze Button */}
+            {!editMode && calculateTotalScore() > 0 && (
+              <button
+                onClick={handleAnalyze}
+                disabled={calculateTotalScore() === 0}
+                className="w-full mt-2 bg-cyan-600/80 hover:bg-cyan-600 disabled:bg-gray-600 disabled:cursor-not-allowed px-3 py-2 rounded text-white text-sm font-medium transition-colors"
+              >
+                📊 {t('bdg.analyze.button')}
+              </button>
+            )}
+
             {/* Mobile Edit Actions */}
             {editMode && (
               <div className="flex gap-2 mt-2">
@@ -1175,11 +1253,10 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
                 setHasUnsavedChanges(false);
                 setScoreData(prev => ({ ...prev, element }));
               }}
-              className={`px-3 py-2 sm:px-6 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 text-sm sm:text-base whitespace-nowrap ${
-                selectedElement === element
+              className={`px-3 py-2 sm:px-6 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 text-sm sm:text-base whitespace-nowrap ${selectedElement === element
                   ? `bg-gradient-to-r ${elementColors[element]} text-white shadow-lg`
                   : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
-              }`}
+                }`}
             >
               {element}
             </button>
@@ -1231,7 +1308,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
           })()}
         </div>
 
-        {/* Footer avec actions - Mobile responsive */}
+        {/* Footer */}
         <div className="bg-gray-800 p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
           <div className="text-white text-center sm:text-left">
             <span className="text-xs sm:text-sm text-gray-400">{t('bdg.totalScore')}: </span>
@@ -1248,9 +1325,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
             {editMode && (
               <button
                 onClick={() => {
-                  // Déterminer le preset actuel
                   let currentPreset = {};
-
                   if (selectedPreset.startsWith('custom_')) {
                     currentPreset = customPresets[selectedElement]?.[selectedPreset] || {};
                   } else if (weekData.presets?.[selectedElement]) {
@@ -1261,7 +1336,6 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
                       currentPreset = elementData;
                     }
                   }
-
                   handleValidate(currentPreset);
                 }}
                 className="bg-green-600 hover:bg-green-700 px-4 py-2 sm:px-6 sm:py-2 rounded-lg text-white font-medium transition-colors flex-1 sm:flex-initial"
@@ -1280,7 +1354,17 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
         </div>
       </div>
 
-      {/* Modal de sauvegarde de preset */}
+      {/* Modal Analysis */}
+      {showAnalysisModal && analysisData && (
+  <BDGDetailedAnalysisModal
+    data={analysisData}
+    onClose={() => setShowAnalysisModal(false)}
+    isMobile={isMobile}
+    t={t}
+  />
+)}
+
+      {/* Modal Save Preset */}
       {showSavePresetModal && (
         <SavePresetModal
           onSave={(name) => {
@@ -1292,7 +1376,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
         />
       )}
 
-      {/* Modal d'avertissement build incomplet */}
+      {/* Modal Build Warning */}
       {showBuildWarning && (
         <BuildWarningModal
           warnings={buildWarnings}
@@ -1313,7 +1397,7 @@ const BDGScorePage = ({ onClose, showTankMessage, activeAccount, currentBuildSta
 
 const BuildWarningModal = ({ warnings, onProceed, onBuildNow, isMobile }) => {
   const { t } = useTranslation();
-  
+
   return (
     <div className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4">
       <div className={`bg-gray-900 rounded-xl p-4 sm:p-6 max-w-md border-2 border-yellow-500 ${isMobile ? 'w-full' : ''}`}>
