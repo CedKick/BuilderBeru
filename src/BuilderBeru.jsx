@@ -497,7 +497,7 @@ const BuilderBeru = () => {
   const dropdownRef = useRef(null);
   const { i18n } = useTranslation();
   const [selectedSkin, setSelectedSkin] = useState('default');
-const [availableSkins, setAvailableSkins] = useState([{ id: 'default', label: 'Default' }]);
+  const [availableSkins, setAvailableSkins] = useState([{ id: 'default', label: 'Default' }]);
   const [activeSection, setActiveSection] = useState('artifacts');
   const [isSharing, setIsSharing] = useState(false);
   const [shareModalData, setShareModalData] = useState(null);
@@ -1130,84 +1130,84 @@ const [availableSkins, setAvailableSkins] = useState([{ id: 'default', label: 'D
     }
 
     _canStartDialogue() {
-    if (!this.speakingEnabled) return false;
-    if (this.visibilityPaused) return false;
-    if (this.isAnyPopupOpen?.()) return false;
-    if (this.dialogue.active) return false;
-    if (!this.dialogues || this.dialogues.length === 0) return false;
-    const now = Date.now();
-    if (now < this.dialogue.lockUntil) return false;
-    const p = (this.dialogueConfig?.probability ?? 0.3);
-    return Math.random() < p;
-  }
-
-  _pickDialogue() {
-    const pool = this.dialogues;
-    if (!pool || pool.length === 0) return null;
-    return pool[Math.floor(Math.random() * pool.length)];
-  }
-
-  _startDialogue() {
-  const d = this._pickDialogue();
-  if (!d) return false;
-
-  this.dialogue.active = true;
-
-  const lineMin = this.dialogueConfig?.lineMinDelayMs ?? 1500;
-  const lineMax = this.dialogueConfig?.lineMaxDelayMs ?? 3500;
-  const nextDelay = () => Math.floor(lineMin + Math.random() * (lineMax - lineMin));
-
-  const playLine = (index = 0) => {
-    // Dialogue interrompu ailleurs
-    if (!this.dialogue.active) return;
-
-    // Fin du dialogue → lock avant le prochain
-    if (index >= d.lines.length) return this._endDialogue(true);
-
-    const { speaker, text } = d.lines[index] || {};
-    if (!speaker || !text) return this._endDialogue(true);
-
-    // Sécurité contexte (pas de rattrapage)
-    if (!this.speakingEnabled || this.visibilityPaused || this.isAnyPopupOpen?.()) {
-      return this._endDialogue(false);
+      if (!this.speakingEnabled) return false;
+      if (this.visibilityPaused) return false;
+      if (this.isAnyPopupOpen?.()) return false;
+      if (this.dialogue.active) return false;
+      if (!this.dialogues || this.dialogues.length === 0) return false;
+      const now = Date.now();
+      if (now < this.dialogue.lockUntil) return false;
+      const p = (this.dialogueConfig?.probability ?? 0.3);
+      return Math.random() < p;
     }
 
-    if (index === 0) {
-      // La 1ʳᵉ réplique respecte le gouverneur global (évite chevauchements)
-      if (!this.messageGovernor.canSpeak({ text })) {
-        // petit backoff pour réessayer la 1ʳᵉ réplique sans créer de backlog
-        this.dialogue.timeout = setTimeout(() => playLine(index), 500 + Math.random() * 500);
-        return;
+    _pickDialogue() {
+      const pool = this.dialogues;
+      if (!pool || pool.length === 0) return null;
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    _startDialogue() {
+      const d = this._pickDialogue();
+      if (!d) return false;
+
+      this.dialogue.active = true;
+
+      const lineMin = this.dialogueConfig?.lineMinDelayMs ?? 1500;
+      const lineMax = this.dialogueConfig?.lineMaxDelayMs ?? 3500;
+      const nextDelay = () => Math.floor(lineMin + Math.random() * (lineMax - lineMin));
+
+      const playLine = (index = 0) => {
+        // Dialogue interrompu ailleurs
+        if (!this.dialogue.active) return;
+
+        // Fin du dialogue → lock avant le prochain
+        if (index >= d.lines.length) return this._endDialogue(true);
+
+        const { speaker, text } = d.lines[index] || {};
+        if (!speaker || !text) return this._endDialogue(true);
+
+        // Sécurité contexte (pas de rattrapage)
+        if (!this.speakingEnabled || this.visibilityPaused || this.isAnyPopupOpen?.()) {
+          return this._endDialogue(false);
+        }
+
+        if (index === 0) {
+          // La 1ʳᵉ réplique respecte le gouverneur global (évite chevauchements)
+          if (!this.messageGovernor.canSpeak({ text })) {
+            // petit backoff pour réessayer la 1ʳᵉ réplique sans créer de backlog
+            this.dialogue.timeout = setTimeout(() => playLine(index), 500 + Math.random() * 500);
+            return;
+          }
+          this.showEntityMessage(speaker, text);
+          this.messageGovernor.record({ entityId: speaker, text });
+        } else {
+          // Répliques suivantes: BYPASS du gouverneur global
+          // (sinon elles seraient bloquées par le cooldown/burst)
+          this.showEntityMessage(speaker, text);
+          // pas de record() ici
+        }
+
+        // Prochaine ligne avec pacing dialogue
+        this.dialogue.timeout = setTimeout(() => playLine(index + 1), nextDelay());
+      };
+
+      playLine(0);
+      return true;
+    }
+
+
+    _endDialogue(scheduleLock) {
+      this.dialogue.active = false;
+      if (this.dialogue.timeout) { clearTimeout(this.dialogue.timeout); this.dialogue.timeout = null; }
+
+      if (scheduleLock) {
+        const min = this.dialogueConfig?.betweenDialoguesMinMs ?? 300000;
+        const max = this.dialogueConfig?.betweenDialoguesMaxMs ?? 480000;
+        this.dialogue.lockUntil = Date.now() + Math.floor(min + Math.random() * (max - min));
       }
-      this.showEntityMessage(speaker, text);
-      this.messageGovernor.record({ entityId: speaker, text });
-    } else {
-      // Répliques suivantes: BYPASS du gouverneur global
-      // (sinon elles seraient bloquées par le cooldown/burst)
-      this.showEntityMessage(speaker, text);
-      // pas de record() ici
     }
-
-    // Prochaine ligne avec pacing dialogue
-    this.dialogue.timeout = setTimeout(() => playLine(index + 1), nextDelay());
-  };
-
-  playLine(0);
-  return true;
-}
-
-
-  _endDialogue(scheduleLock) {
-    this.dialogue.active = false;
-    if (this.dialogue.timeout) { clearTimeout(this.dialogue.timeout); this.dialogue.timeout = null; }
-
-    if (scheduleLock) {
-      const min = this.dialogueConfig?.betweenDialoguesMinMs ?? 300000;
-      const max = this.dialogueConfig?.betweenDialoguesMaxMs ?? 480000;
-      this.dialogue.lockUntil = Date.now() + Math.floor(min + Math.random() * (max - min));
-    }
-  }
-  // 👆👆👆 FIN DU BLOC
+    // 👆👆👆 FIN DU BLOC
 
 
 
@@ -1227,55 +1227,55 @@ const [availableSkins, setAvailableSkins] = useState([{ id: 'default', label: 'D
       this.messageTimeouts.set(entity.id, timeoutId);
     }
 
-  trySpeak(entity) {
+    trySpeak(entity) {
 
-  // 1) Conditions de silence globales
-  if (!this.speakingEnabled || this.visibilityPaused || this.isAnyPopupOpen?.()) {
-    return this.scheduleNextMessage(entity, true);
-  }
+      // 1) Conditions de silence globales
+      if (!this.speakingEnabled || this.visibilityPaused || this.isAnyPopupOpen?.()) {
+        return this.scheduleNextMessage(entity, true);
+      }
 
-  // 2) Si un dialogue est en cours, on ne parle pas en solo
-  if (this.dialogue?.active) {
-    return this.scheduleNextMessage(entity, true);
-  }
+      // 2) Si un dialogue est en cours, on ne parle pas en solo
+      if (this.dialogue?.active) {
+        return this.scheduleNextMessage(entity, true);
+      }
 
-  // 3) Tenter de lancer un dialogue (une seule "entrée" déclenche; les autres lignes sont jouées par _startDialogue)
-  if (this._canStartDialogue()) {
-    const started = this._startDialogue();
-    // Quoi qu'il arrive, on replanifie ce speaker pour plus tard (pas de rattrapage)
-    this.scheduleNextMessage(entity);
-    if (started) return; // dialogue en cours → on sort
-  }
+      // 3) Tenter de lancer un dialogue (une seule "entrée" déclenche; les autres lignes sont jouées par _startDialogue)
+      if (this._canStartDialogue()) {
+        const started = this._startDialogue();
+        // Quoi qu'il arrive, on replanifie ce speaker pour plus tard (pas de rattrapage)
+        this.scheduleNextMessage(entity);
+        if (started) return; // dialogue en cours → on sort
+      }
 
-  // 4) Sinon: message solo classique
-  const pool = Array.isArray(entity.phrases) ? entity.phrases : [];
-  if (!pool.length) {
-    return this.scheduleNextMessage(entity, true);
-  }
+      // 4) Sinon: message solo classique
+      const pool = Array.isArray(entity.phrases) ? entity.phrases : [];
+      if (!pool.length) {
+        return this.scheduleNextMessage(entity, true);
+      }
 
-  // Anti-répétition simple (jusqu’à 5 essais)
-  let choice = null;
-  for (let i = 0; i < 5; i++) {
-    const c = pool[Math.floor(Math.random() * pool.length)];
-    if (this.messageGovernor._notRecentlyRepeated(c)) { choice = c; break; }
-  }
-  choice = choice || pool[Math.floor(Math.random() * pool.length)];
+      // Anti-répétition simple (jusqu’à 5 essais)
+      let choice = null;
+      for (let i = 0; i < 5; i++) {
+        const c = pool[Math.floor(Math.random() * pool.length)];
+        if (this.messageGovernor._notRecentlyRepeated(c)) { choice = c; break; }
+      }
+      choice = choice || pool[Math.floor(Math.random() * pool.length)];
 
-  // Anti-burst + cooldown global
-  if (!this.messageGovernor.canSpeak({ text: choice })) {
-    const backoff = 30_000 + Math.random() * 30_000; // 30–60s
-    const id = setTimeout(() => this.trySpeak(entity), backoff);
-    this.messageTimeouts.set(entity.id, id);
-    return;
-  }
+      // Anti-burst + cooldown global
+      if (!this.messageGovernor.canSpeak({ text: choice })) {
+        const backoff = 30_000 + Math.random() * 30_000; // 30–60s
+        const id = setTimeout(() => this.trySpeak(entity), backoff);
+        this.messageTimeouts.set(entity.id, id);
+        return;
+      }
 
-  // Émettre le message solo
-  this.showEntityMessage(entity.id, choice);
-  this.messageGovernor.record({ entityId: entity.id, text: choice });
+      // Émettre le message solo
+      this.showEntityMessage(entity.id, choice);
+      this.messageGovernor.record({ entityId: entity.id, text: choice });
 
-  // 5) Planifier la prochaine prise de parole
-  this.scheduleNextMessage(entity);
-}
+      // 5) Planifier la prochaine prise de parole
+      this.scheduleNextMessage(entity);
+    }
 
 
     // 🎮 Keyboard controls
@@ -2012,22 +2012,22 @@ const [availableSkins, setAvailableSkins] = useState([{ id: 'default', label: 'D
     return data[Math.floor(Math.random() * data.length)];
   };
 
-// ✅ STATS À JOUR depuis le CSV (08/10/2025)
-const characterStats = {
+  // ✅ STATS À JOUR depuis le CSV (08/10/2025)
+  const characterStats = {
     // ============================================
     // 🔥 SSR HUNTERS
     // ============================================
-    
+
     // ✨ AJOUT - Sung Il-Hwan (nouveau)
     'ilhwan': { attack: 6196, defense: 5599, hp: 11834, critRate: 0, mp: 1000 },
-    
+
     // ✅ FOREVER (IDLE)
     'minnie': { attack: 5568, defense: 6251, hp: 11779, critRate: 0, mp: 1000 },
     'miyeon': { attack: 5568, defense: 6251, hp: 11779, critRate: 0, mp: 1000 },
     'shuhua': { attack: 6356, defense: 5485, hp: 11733, critRate: 0, mp: 1000 },
     'soyeon': { attack: 6279, defense: 5566, hp: 11755, critRate: 0, mp: 1000 },
     'yuqi': { attack: 5547, defense: 5517, hp: 13422, critRate: 0, mp: 1000 },
-    
+
     // ✅ Autres SSR
     'jinah': { attack: 6356, defense: 5485, hp: 11733, critRate: 0, mp: 1000 }, // Sung Jinah
     'alicia': { attack: 6276, defense: 5471, hp: 11932, critRate: 0, mp: 1000 },
@@ -2076,7 +2076,7 @@ const characterStats = {
     'park-heejin': { attack: 5430, defense: 4991, hp: 10529, critRate: 0, mp: 1000 },
     'song': { attack: 5675, defense: 4852, hp: 10304, critRate: 0, mp: 1000 },
     'yoo-jinho': { attack: 4961, defense: 5489, hp: 10468, critRate: 0, mp: 1000 }
-};
+  };
 
   const [artifactsData, setArtifactsData] = useState({
     Helmet: {
@@ -2568,11 +2568,59 @@ Continuer?`;
     }
   };
 
-  // Ajouter ce useEffect (si tu en as déjà, intègre juste le contenu)
-useEffect(() => {
-  const skins = getAllAvailableSkins();
-  setAvailableSkins(skins);
-}, []); // Se charge au montage du component
+  const getAvailableColoringsForHunter = (hunterKey) => {
+    try {
+      const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+      const colorings = userData.user?.accounts?.default?.colorings || {};
+
+      // Récupérer les coloriages de CE hunter uniquement
+      const hunterColorings = colorings[hunterKey] || {};
+
+      // Convertir en tableau d'options pour le dropdown
+      const options = Object.keys(hunterColorings).map(modelId => ({
+        value: modelId,
+        label: hunterColorings[modelId].model || modelId, // Utilise le nom du modèle s'il existe
+        hunter: hunterKey
+      }));
+
+      console.log(`🎨 Coloriages disponibles pour ${hunterKey}:`, options);
+      return options;
+
+    } catch (error) {
+      console.error('❌ Erreur lecture coloriages:', error);
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    // 1️⃣ Charger tous les skins disponibles (pour la galerie globale)
+    const skins = getAllAvailableSkins();
+    setAvailableSkins(skins);
+
+    // 2️⃣ Filtrer les coloriages par hunter sélectionné
+    // ⚠️ PROTECTION : Si pas de hunter sélectionné, on arrête ici
+    if (!selectedCharacter) {
+      setAvailableColorings([]);
+      setSelectedColoring('default');
+      console.log('⚠️ Aucun hunter sélectionné, skins chargés:', skins.length);
+      return; // ← On sort AVANT d'appeler getAvailableColoringsForHunter()
+
+    }
+
+    // Récupérer les coloriages disponibles pour ce hunter
+    const colorings = getAvailableColoringsForHunter(selectedCharacter);
+    setAvailableColorings(colorings);
+
+    // Si le coloriage actuel n'est pas disponible pour ce hunter, reset à 'default'
+    const isCurrentColoringAvailable = colorings.some(c => c.value === selectedColoring);
+    if (!isCurrentColoringAvailable) {
+      setSelectedColoring(colorings.length > 0 ? colorings[0].value : 'default');
+    }
+
+    console.log('🎨 Skins chargés:', skins.length);
+    console.log('🖌️ Coloriages pour', selectedCharacter, ':', colorings.length);
+
+  }, []); // ⚡ Se déclenche au montage ET quand le hunter change
 
   // 4️⃣ DÉTECTER UN COMPTE DANS L'URL AU CHARGEMENT
   useEffect(() => {
@@ -2590,6 +2638,8 @@ useEffect(() => {
 
 
 
+
+
   const tankMessageRef = useRef('');
   const messageOpacityRef = useRef(1);
   const [tankMessage, setTankMessage] = useState('');
@@ -2601,6 +2651,9 @@ useEffect(() => {
   const [isAccountSwitching, setIsAccountSwitching] = useState(false);
   const [setSelectorSlot, setSetSelectorSlot] = useState(null); // ex: 'Helmet'
   const [showNoyauxPopup, setShowNoyauxPopup] = useState(false);
+  const [selectedColoring, setSelectedColoring] = useState('default');
+  const [availableColorings, setAvailableColorings] = useState([]);
+
 
   // 🐉 KAISEL FIX 4 - INITIALISATION STATE artifactScores SÉCURISÉE
   const [artifactScores, setArtifactScores] = useState(() => {
@@ -5159,17 +5212,17 @@ BobbyJones : "Allez l'Inter !"
     shadowManager.setTranslation(t);
     shadowManager.loadDialoguesFromI18n();
 
-// brancher le check popup/modal
-shadowManager.setPopupCheck(() => {
-  return !!(
-    showTutorial ||
-    showSernPopup ||
-    showBeruInteractionMenu ||
-    showKaiselInteractionMenu ||
-    showAdminPage ||
-    tvDialogue
-  );
-});
+    // brancher le check popup/modal
+    shadowManager.setPopupCheck(() => {
+      return !!(
+        showTutorial ||
+        showSernPopup ||
+        showBeruInteractionMenu ||
+        showKaiselInteractionMenu ||
+        showAdminPage ||
+        tvDialogue
+      );
+    });
     window.getShadowScreenPosition = getShadowScreenPosition;
 
     // 🔥 CALLBACKS avec références stables
@@ -5899,17 +5952,28 @@ shadowManager.setPopupCheck(() => {
                         </div>
                       </div>
                       {/* NOUVEAU : Sélecteur de skin */}
-<select 
-  value={selectedSkin}
-  onChange={(e) => setSelectedSkin(e.target.value)}
-  className="bg-[#1a0a2e] text-white border border-violet-500/30 rounded-lg px-3 py-2 hover:border-violet-400/50 transition-colors"
->
-  {availableSkins.map(skin => (
-    <option key={skin.id} value={skin.id}>
-      {skin.label}
-    </option>
-  ))}
-</select>
+                      <select
+                        value={selectedColoring}
+                        onChange={(e) => {
+                          const newValue = e.target.value;
+                          setSelectedColoring(newValue);
+                          console.log(`🖌️ Coloriage changé: ${selectedCharacter} → ${newValue}`);
+                        }}
+                        className="bg-purple-900/30 text-purple-300 border border-purple-600/50
+      px-3 py-2 rounded-lg text-sm
+      hover:border-purple-500 focus:outline-none focus:border-purple-400"
+                        disabled={availableColorings.length === 0}
+                      >
+                        {availableColorings.length === 0 ? (
+                          <option value="default">Aucun coloriage sauvegardé</option>
+                        ) : (
+                          availableColorings.map(coloring => (
+                            <option key={coloring.value} value={coloring.value}>
+                              {coloring.label}
+                            </option>
+                          ))
+                        )}
+                      </select>
 
                       {/* Debug Button */}
                       {showDebugButton && (
@@ -5970,13 +6034,14 @@ shadowManager.setPopupCheck(() => {
 
                         {/* Bloc Personnage Centre */}
                         <div className="w-full sm:w-1/3 flex flex-col items-center">
-                          <div className="relative">
+                          {/* 🔥 CONTAINER FIXE - Hauteur 256px qui ne bouge JAMAIS */}
+                          <div className="relative w-48 h-64 flex items-center justify-center flex-shrink-0">
                             {selectedCharacter && characters[selectedCharacter] && characters[selectedCharacter].img ? (
                               <>
                                 <img
                                   src={characters[selectedCharacter].img}
                                   alt={characters[selectedCharacter].name}
-                                  className="w-48 h-auto mb-2 relative z-10"
+                                  className="max-w-full max-h-full object-contain relative z-10"
                                   id="targetToDestroy"
                                 />
                                 {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
@@ -5985,7 +6050,8 @@ shadowManager.setPopupCheck(() => {
                                     style={{
                                       backgroundColor: getElementColor(characters[selectedCharacter].element),
                                       bottom: '0px',
-                                      marginLeft: '-15px'
+                                      left: '50%',
+                                      transform: 'translateX(-50%)'
                                     }}
                                   ></div>
                                 )}
@@ -5993,7 +6059,7 @@ shadowManager.setPopupCheck(() => {
                             ) : (
                               <img
                                 src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
-                                className="w-48 h-auto mb-2 relative z-10"
+                                className="max-w-full max-h-full object-contain relative z-10"
                                 id="targetToDestroy"
                               />
                             )}
@@ -7525,21 +7591,21 @@ shadowManager.setPopupCheck(() => {
                       )}
 
                       {/* SÉLECTEUR DE SKIN - NOUVEAU */}
-<select 
-  value={selectedSkin}
-  onChange={(e) => setSelectedSkin(e.target.value)}
-  className="bg-purple-800/30 text-purple-300
+                      <select
+                        value={selectedSkin}
+                        onChange={(e) => setSelectedSkin(e.target.value)}
+                        className="bg-purple-800/30 text-purple-300
     border border-purple-600/50 rounded-lg
     px-3 py-2 text-xs
     hover:bg-purple-700/30 hover:border-purple-400
     transition-colors ml-2"
->
-  {availableSkins.map(skin => (
-    <option key={skin.id} value={skin.id} className="bg-gray-900">
-      {skin.label}
-    </option>
-  ))}
-</select>
+                      >
+                        {availableSkins.map(skin => (
+                          <option key={skin.id} value={skin.id} className="bg-gray-900">
+                            {skin.label}
+                          </option>
+                        ))}
+                      </select>
 
                       {/* Separator */}
                       <div className="h-4 w-px bg-purple-600/30 mx-2" />
@@ -8293,40 +8359,39 @@ shadowManager.setPopupCheck(() => {
 
 
                           </div>
-                          {/* Bloc Personnage Centre */}
-                          <div className="relative">
-                            {selectedCharacter && characters[selectedCharacter] && characters[selectedCharacter].img ? (
-                              <>
-                                <img 
-  src={
-    selectedSkin === 'default' 
-      ? characters[selectedCharacter].img
-      : availableSkins.find(s => s.id === selectedSkin)?.preview || characters[selectedCharacter].img
-  }
-  alt={characters[selectedCharacter].name}
-  className="w-1/2 mx-auto rounded-md opacity-90 object-contain"
-/>
-                                {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
-                                  <div
-                                    className="absolute w-60 h-8 rounded-full blur-sm animate-fade-out z-0"
-                                    style={{
-                                      backgroundColor: getElementColor(characters[selectedCharacter].element),
-                                      bottom: '0px'
-                                    }}
-                                  ></div>
-                                )}
-                              </>
-                            ) : (
-                              <div className="relative">
-                                <img
-                                  src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
-                                  className="w-64 mb-2 relative z-10"
-                                  id="targetToDestroy"
-                                />
-                              </div>
-                            )}
-                          </div>
-
+               {/* Bloc Personnage Centre */}
+<div className="w-full sm:w-1/3 flex flex-col items-center">
+  {/* 🔥 CONTAINER PLUS GRAND - Hauteur 384px (h-96) */}
+  <div className="relative w-64 h-96 flex items-center justify-center flex-shrink-0">
+    {selectedCharacter && characters[selectedCharacter] && characters[selectedCharacter].img ? (
+      <>
+        <img
+          src={characters[selectedCharacter].img}
+          alt={characters[selectedCharacter].name}
+          className="max-w-full max-h-full object-contain relative z-10"
+          id="targetToDestroy"
+        />
+        {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
+          <div
+            className="absolute w-60 h-8 rounded-full blur-sm animate-fade-out z-0"
+            style={{
+              backgroundColor: getElementColor(characters[selectedCharacter].element),
+              bottom: '0px',
+              left: '50%',
+              transform: 'translateX(-50%)'
+            }}
+          ></div>
+        )}
+      </>
+    ) : (
+      <img
+        src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
+        className="max-w-full max-h-full object-contain relative z-10"
+        id="targetToDestroy"
+      />
+    )}
+  </div>
+</div>
 
                           {/* Bloc Gemmes à droite */}
                           <div className="w-40 text-white text-xs flex flex-col items-start">
