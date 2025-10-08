@@ -56,6 +56,28 @@ const drawBeruModels = {
                 }
             }
         }
+    },
+    Kanae: {
+        name: "Kanae",
+        models: {
+            default: {
+                id: "default",
+                name: "Kanae What",
+                reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759942372/kanaeWha_origi_rpqlgt.png",
+                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759942371/kanaeWhat_uncoloried_qd0yb0.png",
+                canvasSize: { width: 1024, height: 1536 },
+                palette: {
+                    "1": "#f9dcbf",
+                    "2": "#2d2928",
+                    "3": "#0c0d0b",
+                    "4": "#d79780",
+                    "5": "#fbfaf7",
+                    "6": "#9f3a47",
+                    "7": "#6b5a5c",
+                    "8": "#3c3638"
+                }
+            }
+        }
     }
 };
 
@@ -761,8 +783,8 @@ const DrawBeru = () => {
                                 onClick={undo}
                                 disabled={!canUndo}
                                 className={`px-4 py-2 rounded-lg transition-colors ${canUndo
-                                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                        : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                                     }`}
                                 title="Annuler (Ctrl+Z)"
                             >
@@ -773,8 +795,8 @@ const DrawBeru = () => {
                                 onClick={redo}
                                 disabled={!canRedo}
                                 className={`px-4 py-2 rounded-lg transition-colors ${canRedo
-                                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                        : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                                     }`}
                                 title="Refaire (Ctrl+Y)"
                             >
@@ -843,8 +865,8 @@ const DrawBeru = () => {
                                         key={id}
                                         onClick={() => setSelectedColor(color)}
                                         className={`w-12 h-12 rounded-lg border-2 transition-all ${selectedColor === color
-                                                ? 'border-white scale-110'
-                                                : 'border-purple-500/50 hover:border-purple-400'
+                                            ? 'border-white scale-110'
+                                            : 'border-purple-500/50 hover:border-purple-400'
                                             }`}
                                         style={{ backgroundColor: color }}
                                         title={`Couleur ${id}: ${color}`}
@@ -950,8 +972,8 @@ const DrawBeru = () => {
                                 <button
                                     onClick={() => setCurrentTool('brush')}
                                     className={`w-full py-2 px-4 rounded-lg transition-colors ${currentTool === 'brush'
-                                            ? 'bg-purple-600 text-white'
-                                            : 'bg-purple-800/50 text-purple-200 hover:bg-purple-700/50'
+                                        ? 'bg-purple-600 text-white'
+                                        : 'bg-purple-800/50 text-purple-200 hover:bg-purple-700/50'
                                         }`}
                                 >
                                     🖌️ Pinceau (B)
@@ -960,8 +982,8 @@ const DrawBeru = () => {
                                 <button
                                     onClick={() => setCurrentTool('eraser')}
                                     className={`w-full py-2 px-4 rounded-lg transition-colors ${currentTool === 'eraser'
-                                            ? 'bg-purple-600 text-white'
-                                            : 'bg-purple-800/50 text-purple-200 hover:bg-purple-700/50'
+                                        ? 'bg-purple-600 text-white'
+                                        : 'bg-purple-800/50 text-purple-200 hover:bg-purple-700/50'
                                         }`}
                                 >
                                     🧽 Gomme (E)
@@ -970,8 +992,8 @@ const DrawBeru = () => {
                                 <button
                                     onClick={() => setCurrentTool('pipette')}
                                     className={`w-full py-2 px-4 rounded-lg transition-colors ${currentTool === 'pipette'
-                                            ? 'bg-purple-600 text-white'
-                                            : 'bg-purple-800/50 text-purple-200 hover:bg-purple-700/50'
+                                        ? 'bg-purple-600 text-white'
+                                        : 'bg-purple-800/50 text-purple-200 hover:bg-purple-700/50'
                                         }`}
                                 >
                                     💧 Pipette (I)
@@ -989,8 +1011,8 @@ const DrawBeru = () => {
                                     <div
                                         key={layer.id}
                                         className={`p-3 rounded-lg border-2 transition-all ${activeLayer === layer.id
-                                                ? 'border-purple-400 bg-purple-900/50'
-                                                : 'border-purple-700/30 bg-purple-900/20'
+                                            ? 'border-purple-400 bg-purple-900/50'
+                                            : 'border-purple-700/30 bg-purple-900/20'
                                             }`}
                                     >
                                         <div className="flex items-center justify-between mb-2">
