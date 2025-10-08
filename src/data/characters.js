@@ -24,7 +24,7 @@ export const characters = {
     class: 'Assassin',
     grade: 'SSR',
     element: 'Dark',
-    scaleStat: 'Atk',
+    scaleStat: 'Attack',
      bdgLimits: {
       maxDamageOnElement: 30000000000,  // 30B max si bon élément
       maxDamageOffElement: 10000000000  // 10B max si mauvais élément

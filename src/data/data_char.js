@@ -6,7 +6,7 @@ const data_chars = {
       class: 'Assassin',
       grade: 'SSR',
       element: 'Dark',
-      scaleStat: 'Defense'
+      scaleStat: 'Attack'
     },
     'minnie': {
       name: 'Minnie',
