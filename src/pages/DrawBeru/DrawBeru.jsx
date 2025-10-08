@@ -78,6 +78,28 @@ const drawBeruModels = {
                 }
             }
         }
+    },
+    Seorin: {
+        name: "Seorin",
+        models: {
+            default: {
+                id: "default",
+                name: "Seorin pyjama",
+                reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759944005/seorin_origi_cnjynr.png",
+                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759944005/seorin_uncoloried_ymcwro.png",
+                canvasSize: { width: 408, height: 612 },
+                palette: {
+                    "1": "#9e948f",
+                    "2": "#161112", 
+                    "3": "#c5babf",
+                    "4": "#7d5c58",
+                    "5": "#b2a8ac",
+                    "6": "#887d79",
+                    "7": "#c88371",
+                    "8": "#443435"
+                }
+            }
+        }
     }
 };
 
