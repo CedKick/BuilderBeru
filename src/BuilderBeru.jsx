@@ -2569,58 +2569,32 @@ Continuer?`;
   };
 
   const getAvailableColoringsForHunter = (hunterKey) => {
-    try {
-      const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
-      const colorings = userData.user?.accounts?.default?.colorings || {};
+  try {
+    const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+    const colorings = userData.user?.accounts?.default?.colorings || {};
+    
+    // Mapper le nom du hunter (ex: 'minnie' → 'Minnie')
+    const mappedKey = hunterNameToKey(hunterKey);
+    const hunterColorings = colorings[mappedKey] || {};
+    
+    // Convertir en tableau d'options pour le dropdown
+    const options = Object.keys(hunterColorings).map(modelId => ({
+      value: modelId,
+      label: hunterColorings[modelId].model || modelId,
+      hunter: mappedKey,
+      preview: hunterColorings[modelId].preview
+    }));
+    
+    console.log(`🎨 Coloriages disponibles pour ${hunterKey}:`, options);
+    return options;
+    
+  } catch (error) {
+    console.error('❌ Erreur lecture coloriages:', error);
+    return [];
+  }
+};
 
-      // Récupérer les coloriages de CE hunter uniquement
-      const hunterColorings = colorings[hunterKey] || {};
 
-      // Convertir en tableau d'options pour le dropdown
-      const options = Object.keys(hunterColorings).map(modelId => ({
-        value: modelId,
-        label: hunterColorings[modelId].model || modelId, // Utilise le nom du modèle s'il existe
-        hunter: hunterKey
-      }));
-
-      console.log(`🎨 Coloriages disponibles pour ${hunterKey}:`, options);
-      return options;
-
-    } catch (error) {
-      console.error('❌ Erreur lecture coloriages:', error);
-      return [];
-    }
-  };
-
-  useEffect(() => {
-    // 1️⃣ Charger tous les skins disponibles (pour la galerie globale)
-    const skins = getAllAvailableSkins();
-    setAvailableSkins(skins);
-
-    // 2️⃣ Filtrer les coloriages par hunter sélectionné
-    // ⚠️ PROTECTION : Si pas de hunter sélectionné, on arrête ici
-    if (!selectedCharacter) {
-      setAvailableColorings([]);
-      setSelectedColoring('default');
-      console.log('⚠️ Aucun hunter sélectionné, skins chargés:', skins.length);
-      return; // ← On sort AVANT d'appeler getAvailableColoringsForHunter()
-
-    }
-
-    // Récupérer les coloriages disponibles pour ce hunter
-    const colorings = getAvailableColoringsForHunter(selectedCharacter);
-    setAvailableColorings(colorings);
-
-    // Si le coloriage actuel n'est pas disponible pour ce hunter, reset à 'default'
-    const isCurrentColoringAvailable = colorings.some(c => c.value === selectedColoring);
-    if (!isCurrentColoringAvailable) {
-      setSelectedColoring(colorings.length > 0 ? colorings[0].value : 'default');
-    }
-
-    console.log('🎨 Skins chargés:', skins.length);
-    console.log('🖌️ Coloriages pour', selectedCharacter, ':', colorings.length);
-
-  }, []); // ⚡ Se déclenche au montage ET quand le hunter change
 
   // 4️⃣ DÉTECTER UN COMPTE DANS L'URL AU CHARGEMENT
   useEffect(() => {
@@ -2652,7 +2626,60 @@ Continuer?`;
   const [setSelectorSlot, setSetSelectorSlot] = useState(null); // ex: 'Helmet'
   const [showNoyauxPopup, setShowNoyauxPopup] = useState(false);
   const [selectedColoring, setSelectedColoring] = useState('default');
+  const [currentColoringImage, setCurrentColoringImage] = useState(null);
   const [availableColorings, setAvailableColorings] = useState([]);
+  const [selectedCharacter, setSelectedCharacter] = useState('niermann');
+
+  /// 🎯 3️⃣ EFFECT CORRIGÉ (remplace ton useEffect actuel)
+useEffect(() => {
+  // 1️⃣ Charger tous les skins disponibles (pour la galerie globale)
+  const skins = getAllAvailableSkins();
+  setAvailableSkins(skins);
+
+  // 2️⃣ Filtrer les coloriages par hunter sélectionné
+  if (!selectedCharacter) {
+    setAvailableColorings([]);
+    setSelectedColoring('default');
+    setCurrentColoringImage(null);
+    console.log('⚠️ Aucun hunter sélectionné, skins chargés:', skins.length);
+    return;
+  }
+
+  // Récupérer les coloriages disponibles pour ce hunter
+  const colorings = getAvailableColoringsForHunter(selectedCharacter);
+  setAvailableColorings(colorings);
+
+  // Si le coloriage actuel n'est pas disponible pour ce hunter, reset
+  const isCurrentColoringAvailable = colorings.some(c => c.value === selectedColoring);
+  if (!isCurrentColoringAvailable && colorings.length > 0) {
+    setSelectedColoring(colorings[0].value);
+    setCurrentColoringImage(colorings[0].preview);
+  } else if (isCurrentColoringAvailable) {
+    const currentColoring = colorings.find(c => c.value === selectedColoring);
+    setCurrentColoringImage(currentColoring?.preview || null);
+  } else {
+    setSelectedColoring('default');
+    setCurrentColoringImage(null);
+  }
+
+  console.log('🎨 Skins chargés:', skins.length);
+  console.log('🖌️ Coloriages pour', selectedCharacter, ':', colorings.length);
+
+}, [selectedCharacter]); // ⚡ IMPORTANT : dépendance sur selectedCharacter !
+
+// 🎯 4️⃣ EFFECT pour mettre à jour l'image quand selectedColoring change
+useEffect(() => {
+  if (!selectedColoring || availableColorings.length === 0) {
+    setCurrentColoringImage(null);
+    return;
+  }
+  
+  const coloring = availableColorings.find(c => c.value === selectedColoring);
+  setCurrentColoringImage(coloring?.preview || null);
+  
+  console.log('🖼️ Image mise à jour:', selectedColoring, coloring?.preview ? 'Trouvée' : 'Non trouvée');
+  
+}, [selectedColoring, availableColorings]);
 
 
   // 🐉 KAISEL FIX 4 - INITIALISATION STATE artifactScores SÉCURISÉE
@@ -3173,9 +3200,6 @@ BobbyJones : "Allez l'Inter !"
 
   const [accounts, setAccounts] = useState({});
   const [activeAccount, setActiveAccount] = useState("main");
-
-  const [selectedCharacter, setSelectedCharacter] = useState('niermann');
-
   const [bubbleId, setBubbleId] = useState(Date.now());
   const [showSernPopup, setShowSernPopup] = useState(false);
   const triggerSernIntervention = () => {
@@ -5964,15 +5988,29 @@ BobbyJones : "Allez l'Inter !"
       hover:border-purple-500 focus:outline-none focus:border-purple-400"
                         disabled={availableColorings.length === 0}
                       >
-                        {availableColorings.length === 0 ? (
-                          <option value="default">Aucun coloriage sauvegardé</option>
-                        ) : (
-                          availableColorings.map(coloring => (
-                            <option key={coloring.value} value={coloring.value}>
-                              {coloring.label}
-                            </option>
-                          ))
-                        )}
+                        {availableColorings.length > 0 && (
+  <div className="mb-3">
+    <label className="text-purple-300 text-sm font-medium block mb-2">
+      🎨 Coloriages disponibles ({availableColorings.length})
+    </label>
+    <select
+      value={selectedColoring}
+      onChange={(e) => {
+        setSelectedColoring(e.target.value);
+        console.log('🖌️ Coloriage sélectionné:', e.target.value);
+      }}
+      className="w-full bg-purple-900/30 text-purple-300 border border-purple-600/50
+        px-3 py-2 rounded-lg text-sm
+        hover:border-purple-500 focus:outline-none focus:border-purple-400"
+    >
+      {availableColorings.map(coloring => (
+        <option key={coloring.value} value={coloring.value}>
+          {coloring.label}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
                       </select>
 
                       {/* Debug Button */}
@@ -6034,37 +6072,43 @@ BobbyJones : "Allez l'Inter !"
 
                         {/* Bloc Personnage Centre */}
                         <div className="w-full sm:w-1/3 flex flex-col items-center">
-                          {/* 🔥 CONTAINER FIXE - Hauteur 256px qui ne bouge JAMAIS */}
-                          <div className="relative w-48 h-64 flex items-center justify-center flex-shrink-0">
-                            {selectedCharacter && characters[selectedCharacter] && characters[selectedCharacter].img ? (
-                              <>
-                                <img
-                                  src={characters[selectedCharacter].img}
-                                  alt={characters[selectedCharacter].name}
-                                  className="max-w-full max-h-full object-contain relative z-10"
-                                  id="targetToDestroy"
-                                />
-                                {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
-                                  <div
-                                    className="absolute w-60 h-8 rounded-full blur-sm animate-fade-out z-0"
-                                    style={{
-                                      backgroundColor: getElementColor(characters[selectedCharacter].element),
-                                      bottom: '0px',
-                                      left: '50%',
-                                      transform: 'translateX(-50%)'
-                                    }}
-                                  ></div>
-                                )}
-                              </>
-                            ) : (
-                              <img
-                                src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
-                                className="max-w-full max-h-full object-contain relative z-10"
-                                id="targetToDestroy"
-                              />
-                            )}
-                          </div>
-                        </div>
+  <div className="relative w-64 h-96 flex items-center justify-center flex-shrink-0">
+    {selectedCharacter && characters[selectedCharacter] ? (
+      <>
+        {/* Afficher le coloriage SI disponible, sinon l'image par défaut */}
+        <img
+          src={currentColoringImage || characters[selectedCharacter].img}
+          alt={characters[selectedCharacter].name}
+          className="max-w-full max-h-full object-contain relative z-10"
+          id="targetToDestroy"
+          onError={(e) => {
+            console.warn('❌ Erreur chargement image, fallback vers image par défaut');
+            e.target.src = characters[selectedCharacter].img;
+          }}
+        />
+        
+        {/* Hologramme */}
+        {showHologram && characters[selectedCharacter]?.element && (
+          <div
+            className="absolute w-60 h-8 rounded-full blur-sm animate-fade-out z-0"
+            style={{
+              backgroundColor: getElementColor(characters[selectedCharacter].element),
+              bottom: '0px',
+              left: '50%',
+              transform: 'translateX(-50%)'
+            }}
+          ></div>
+        )}
+      </>
+    ) : (
+      <img
+        src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
+        className="max-w-full max-h-full object-contain relative z-10"
+        id="targetToDestroy"
+      />
+    )}
+  </div>
+</div>
 
                         {/* Bloc Gemmes */}
                         <div className="w-full sm:w-1/3 text-white text-xs">
@@ -7590,21 +7634,42 @@ BobbyJones : "Allez l'Inter !"
                         </select>
                       )}
 
-                      {/* SÉLECTEUR DE SKIN - NOUVEAU */}
+                       {/* NOUVEAU : Sélecteur de skin */}
                       <select
-                        value={selectedSkin}
-                        onChange={(e) => setSelectedSkin(e.target.value)}
-                        className="bg-purple-800/30 text-purple-300
-    border border-purple-600/50 rounded-lg
-    px-3 py-2 text-xs
-    hover:bg-purple-700/30 hover:border-purple-400
-    transition-colors ml-2"
+                        value={selectedColoring}
+                        onChange={(e) => {
+                          const newValue = e.target.value;
+                          setSelectedColoring(newValue);
+                          console.log(`🖌️ Coloriage changé: ${selectedCharacter} → ${newValue}`);
+                        }}
+                        className="bg-purple-900/30 text-purple-300 border border-purple-600/50
+      px-3 py-2 rounded-lg text-sm
+      hover:border-purple-500 focus:outline-none focus:border-purple-400"
+                        disabled={availableColorings.length === 0}
                       >
-                        {availableSkins.map(skin => (
-                          <option key={skin.id} value={skin.id} className="bg-gray-900">
-                            {skin.label}
-                          </option>
-                        ))}
+                        {availableColorings.length > 0 && (
+  <div className="mb-3">
+    <label className="text-purple-300 text-sm font-medium block mb-2">
+      🎨 Coloriages disponibles ({availableColorings.length})
+    </label>
+    <select
+      value={selectedColoring}
+      onChange={(e) => {
+        setSelectedColoring(e.target.value);
+        console.log('🖌️ Coloriage sélectionné:', e.target.value);
+      }}
+      className="w-full bg-purple-900/30 text-purple-300 border border-purple-600/50
+        px-3 py-2 rounded-lg text-sm
+        hover:border-purple-500 focus:outline-none focus:border-purple-400"
+    >
+      {availableColorings.map(coloring => (
+        <option key={coloring.value} value={coloring.value}>
+          {coloring.label}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
                       </select>
 
                       {/* Separator */}
@@ -7633,6 +7698,7 @@ BobbyJones : "Allez l'Inter !"
                         </div>
                       )}
                     </div>
+                    
 
                     {/* VERSION MOBILE - visible only on mobile */}
                     <div className="md:hidden space-y-2">
@@ -8361,17 +8427,23 @@ BobbyJones : "Allez l'Inter !"
                           </div>
                {/* Bloc Personnage Centre */}
 <div className="w-full sm:w-1/3 flex flex-col items-center">
-  {/* 🔥 CONTAINER PLUS GRAND - Hauteur 384px (h-96) */}
   <div className="relative w-64 h-96 flex items-center justify-center flex-shrink-0">
-    {selectedCharacter && characters[selectedCharacter] && characters[selectedCharacter].img ? (
+    {selectedCharacter && characters[selectedCharacter] ? (
       <>
+        {/* Afficher le coloriage SI disponible, sinon l'image par défaut */}
         <img
-          src={characters[selectedCharacter].img}
+          src={currentColoringImage || characters[selectedCharacter].img}
           alt={characters[selectedCharacter].name}
           className="max-w-full max-h-full object-contain relative z-10"
           id="targetToDestroy"
+          onError={(e) => {
+            console.warn('❌ Erreur chargement image, fallback vers image par défaut');
+            e.target.src = characters[selectedCharacter].img;
+          }}
         />
-        {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
+        
+        {/* Hologramme */}
+        {showHologram && characters[selectedCharacter]?.element && (
           <div
             className="absolute w-60 h-8 rounded-full blur-sm animate-fade-out z-0"
             style={{
