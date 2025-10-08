@@ -605,65 +605,213 @@ const DrawBeru = () => {
         setTimeout(renderLayers, 10);
     };
 
- // Remplace la fonction saveColoring() dans DrawBeru.jsx
+    // Remplace la fonction saveColoring() dans DrawBeru.jsx
 
-const saveColoring = () => {
-  console.log('🔍 DEBUG SAVE - Start');
-  console.log('Hunter:', selectedHunter, 'Model:', selectedModel);
+    const saveColoring = () => {
+        console.log('🔍 DEBUG SAVE - Start');
+        console.log('Hunter:', selectedHunter, 'Model:', selectedModel);
+
+        // 🎯 1️⃣ Sauvegarder les layers (pixels colorés uniquement)
+        const layersData = layersRef.current.map((layerCanvas, i) => {
+            try {
+                return {
+                    id: layers[i].id,
+                    name: layers[i].name,
+                    data: layerCanvas.toDataURL('image/png', 1.0),
+                    visible: layers[i].visible,
+                    opacity: layers[i].opacity,
+                    locked: layers[i].locked
+                };
+            } catch (e) {
+                console.error(`❌ Erreur export layer ${i}:`, e);
+                return null;
+            }
+        }).filter(l => l !== null);
+
+        if (layersData.length === 0) {
+            alert('❌ Impossible d\'exporter les layers. Essaie de dessiner quelque chose d\'abord.');
+            return;
+        }
+
+        console.log('✅ Layers exportés:', layersData.length);
+
+        // 🎨 2️⃣ Créer TWO previews : une avec fond blanc (affichage), une transparente (export)
+
+        // PREVIEW AVEC FOND BLANC (pour l'affichage dans le site)
+        const previewCanvas = document.createElement('canvas');
+        const canvas = canvasRef.current;
+        previewCanvas.width = canvas.width;
+        previewCanvas.height = canvas.height;
+        const previewCtx = previewCanvas.getContext('2d', { alpha: true });
+
+        // EXPORT PNG TRANSPARENT (juste les layers colorés)
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = canvas.width;
+        exportCanvas.height = canvas.height;
+        const exportCtx = exportCanvas.getContext('2d', { alpha: true });
+
+        const templateImg = new Image();
+        templateImg.crossOrigin = "anonymous";
+        templateImg.onload = () => {
+            // 🖼️ PREVIEW : Template + Layers (pour affichage dans le site)
+            previewCtx.drawImage(templateImg, 0, 0, previewCanvas.width, previewCanvas.height);
+            layers.forEach((layer, index) => {
+                if (layer.visible && layersRef.current[index]) {
+                    previewCtx.globalAlpha = layer.opacity;
+                    previewCtx.drawImage(layersRef.current[index], 0, 0);
+                    previewCtx.globalAlpha = 1;
+                }
+            });
+
+            // 🎯 EXPORT : UNIQUEMENT les layers (PNG transparent, sans template)
+            layers.forEach((layer, index) => {
+                if (layer.visible && layersRef.current[index]) {
+                    exportCtx.globalAlpha = layer.opacity;
+                    exportCtx.drawImage(layersRef.current[index], 0, 0);
+                    exportCtx.globalAlpha = 1;
+                }
+            });
+
+            // Générer les deux images
+            let previewImageData, exportImageData;
+            try {
+                previewImageData = previewCanvas.toDataURL('image/png', 0.8);
+                exportImageData = exportCanvas.toDataURL('image/png', 1.0); // 🔥 PNG transparent ici
+                console.log('✅ Preview générée:', (previewImageData.length / 1024).toFixed(0), 'Ko');
+                console.log('✅ Export transparent généré:', (exportImageData.length / 1024).toFixed(0), 'Ko');
+            } catch (e) {
+                console.error('❌ Erreur génération images:', e);
+                previewImageData = null;
+                exportImageData = null;
+            }
+
+            // Sauvegarder dans localStorage
+            const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+            if (!userData.user) userData.user = { accounts: {} };
+            if (!userData.user.accounts.default) userData.user.accounts.default = {};
+            if (!userData.user.accounts.default.colorings) userData.user.accounts.default.colorings = {};
+            if (!userData.user.accounts.default.colorings[selectedHunter]) {
+                userData.user.accounts.default.colorings[selectedHunter] = {};
+            }
+
+            const coloringData = {
+                preview: previewImageData,        // Avec fond blanc pour le site
+                exportImage: exportImageData,     // 🔥 PNG transparent pour export
+                layers: layersData,
+                palette: currentModelData.palette,
+                createdAt: userData.user.accounts.default.colorings[selectedHunter][selectedModel]?.createdAt || Date.now(),
+                updatedAt: Date.now(),
+                isCompleted: true,
+                hunter: selectedHunter,
+                model: selectedModel,
+                canvasSize: currentModelData.canvasSize,
+                version: '1.0'
+            };
+
+            userData.user.accounts.default.colorings[selectedHunter][selectedModel] = coloringData;
+
+            console.log('📦 Data structure:', {
+                hunter: selectedHunter,
+                model: selectedModel,
+                layersCount: coloringData.layers.length,
+                hasPreview: !!coloringData.preview,
+                hasExport: !!coloringData.exportImage,
+                totalSize: (JSON.stringify(coloringData).length / 1024).toFixed(0) + ' Ko'
+            });
+
+            try {
+                localStorage.setItem('builderberu_users', JSON.stringify(userData));
+
+                const verification = JSON.parse(localStorage.getItem('builderberu_users'));
+                const saved = verification.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
+
+                console.log('✅ Vérification:', {
+                    saved: !!saved,
+                    hasPreview: !!saved?.preview,
+                    hasExport: !!saved?.exportImage,
+                    layersCount: saved?.layers?.length
+                });
+
+                alert(`✅ Coloriage sauvegardé !\n\nHunter: ${selectedHunter}\nModèle: ${selectedModel}\nCalques: ${coloringData.layers.length}\nTaille totale: ${(JSON.stringify(coloringData).length / 1024).toFixed(0)} Ko\n\n🎯 PNG transparent créé pour export !`);
+
+            } catch (e) {
+                console.error('❌ Erreur sauvegarde:', e);
+                if (e.name === 'QuotaExceededError') {
+                    alert('⚠️ Espace localStorage plein ! Supprime d\'anciens coloriages ou réduis la qualité.');
+                } else {
+                    alert('❌ Erreur de sauvegarde : ' + e.message);
+                }
+            }
+        };
+
+        templateImg.onerror = () => {
+            console.error('❌ Erreur chargement template pour export');
+            alert('❌ Impossible de charger le template pour l\'export');
+        };
+
+        templateImg.src = currentModelData.template;
+    };
+    
+
+    // 🔥 BONUS : Fonction pour télécharger le PNG transparent
+   // 🖼️ TÉLÉCHARGER LE MODÈLE DE RÉFÉRENCE COLORÉ
+const downloadColoredPNG = () => {
+  console.log('🖼️ Download modèle de référence - Start');
   
-  // 🎯 1️⃣ Sauvegarder les layers (pixels colorés uniquement)
-  const layersData = layersRef.current.map((layerCanvas, i) => {
-    try {
-      return {
-        id: layers[i].id,
-        name: layers[i].name,
-        data: layerCanvas.toDataURL('image/png', 1.0),
-        visible: layers[i].visible,
-        opacity: layers[i].opacity,
-        locked: layers[i].locked
-      };
-    } catch (e) {
-      console.error(`❌ Erreur export layer ${i}:`, e);
-      return null;
-    }
-  }).filter(l => l !== null);
+  // Créer un canvas temporaire
+  const exportCanvas = document.createElement('canvas');
+  const refCanvas = referenceCanvasRef.current;
   
-  if (layersData.length === 0) {
-    alert('❌ Impossible d\'exporter les layers. Essaie de dessiner quelque chose d\'abord.');
+  if (!refCanvas) {
+    alert('❌ Modèle de référence non chargé');
     return;
   }
   
-  console.log('✅ Layers exportés:', layersData.length);
+  // Copier le modèle de référence
+  exportCanvas.width = refCanvas.width;
+  exportCanvas.height = refCanvas.height;
+  const exportCtx = exportCanvas.getContext('2d', { alpha: true });
   
-  // 🎨 2️⃣ Créer TWO previews : une avec fond blanc (affichage), une transparente (export)
+  // Dessiner le modèle de référence (image colorée originale)
+  exportCtx.drawImage(refCanvas, 0, 0);
   
-  // PREVIEW AVEC FOND BLANC (pour l'affichage dans le site)
-  const previewCanvas = document.createElement('canvas');
-  const canvas = canvasRef.current;
-  previewCanvas.width = canvas.width;
-  previewCanvas.height = canvas.height;
-  const previewCtx = previewCanvas.getContext('2d', { alpha: true });
+  // Convertir en blob et télécharger
+  exportCanvas.toBlob((blob) => {
+    if (!blob) {
+      alert('❌ Erreur lors de la génération de l\'image');
+      return;
+    }
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${selectedHunter}_${selectedModel}_reference_${Date.now()}.png`;
+    
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    console.log('✅ Modèle de référence téléchargé:', link.download);
+    alert(`✅ Modèle de référence téléchargé !\n\nFichier: ${link.download}\n\n🎨 Image originale colorée`);
+    
+  }, 'image/png', 1.0);
+};
+
+    const downloadTransparentPNG = () => {
+  console.log('📥 Download PNG avec template...');
   
-  // EXPORT PNG TRANSPARENT (juste les layers colorés)
   const exportCanvas = document.createElement('canvas');
+  const canvas = canvasRef.current;
   exportCanvas.width = canvas.width;
   exportCanvas.height = canvas.height;
   const exportCtx = exportCanvas.getContext('2d', { alpha: true });
   
   const templateImg = new Image();
   templateImg.crossOrigin = "anonymous";
+  
   templateImg.onload = () => {
-    // 🖼️ PREVIEW : Template + Layers (pour affichage dans le site)
-    previewCtx.drawImage(templateImg, 0, 0, previewCanvas.width, previewCanvas.height);
-    layers.forEach((layer, index) => {
-      if (layer.visible && layersRef.current[index]) {
-        previewCtx.globalAlpha = layer.opacity;
-        previewCtx.drawImage(layersRef.current[index], 0, 0);
-        previewCtx.globalAlpha = 1;
-      }
-    });
+    // Dessiner template + layers
+    exportCtx.drawImage(templateImg, 0, 0, exportCanvas.width, exportCanvas.height);
     
-    // 🎯 EXPORT : UNIQUEMENT les layers (PNG transparent, sans template)
     layers.forEach((layer, index) => {
       if (layer.visible && layersRef.current[index]) {
         exportCtx.globalAlpha = layer.opacity;
@@ -672,104 +820,26 @@ const saveColoring = () => {
       }
     });
     
-    // Générer les deux images
-    let previewImageData, exportImageData;
-    try {
-      previewImageData = previewCanvas.toDataURL('image/png', 0.8);
-      exportImageData = exportCanvas.toDataURL('image/png', 1.0); // 🔥 PNG transparent ici
-      console.log('✅ Preview générée:', (previewImageData.length / 1024).toFixed(0), 'Ko');
-      console.log('✅ Export transparent généré:', (exportImageData.length / 1024).toFixed(0), 'Ko');
-    } catch (e) {
-      console.error('❌ Erreur génération images:', e);
-      previewImageData = null;
-      exportImageData = null;
-    }
-    
-    // Sauvegarder dans localStorage
-    const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
-    if (!userData.user) userData.user = { accounts: {} };
-    if (!userData.user.accounts.default) userData.user.accounts.default = {};
-    if (!userData.user.accounts.default.colorings) userData.user.accounts.default.colorings = {};
-    if (!userData.user.accounts.default.colorings[selectedHunter]) {
-      userData.user.accounts.default.colorings[selectedHunter] = {};
-    }
-    
-    const coloringData = {
-      preview: previewImageData,        // Avec fond blanc pour le site
-      exportImage: exportImageData,     // 🔥 PNG transparent pour export
-      layers: layersData,
-      palette: currentModelData.palette,
-      createdAt: userData.user.accounts.default.colorings[selectedHunter][selectedModel]?.createdAt || Date.now(),
-      updatedAt: Date.now(),
-      isCompleted: true,
-      hunter: selectedHunter,
-      model: selectedModel,
-      canvasSize: currentModelData.canvasSize,
-      version: '1.0'
-    };
-    
-    userData.user.accounts.default.colorings[selectedHunter][selectedModel] = coloringData;
-    
-    console.log('📦 Data structure:', {
-      hunter: selectedHunter,
-      model: selectedModel,
-      layersCount: coloringData.layers.length,
-      hasPreview: !!coloringData.preview,
-      hasExport: !!coloringData.exportImage,
-      totalSize: (JSON.stringify(coloringData).length / 1024).toFixed(0) + ' Ko'
-    });
-    
-    try {
-      localStorage.setItem('builderberu_users', JSON.stringify(userData));
+    // Télécharger
+    exportCanvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${selectedHunter}_${selectedModel}_colored_${Date.now()}.png`;
+      link.click();
+      URL.revokeObjectURL(url);
       
-      const verification = JSON.parse(localStorage.getItem('builderberu_users'));
-      const saved = verification.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
-      
-      console.log('✅ Vérification:', {
-        saved: !!saved,
-        hasPreview: !!saved?.preview,
-        hasExport: !!saved?.exportImage,
-        layersCount: saved?.layers?.length
-      });
-      
-      alert(`✅ Coloriage sauvegardé !\n\nHunter: ${selectedHunter}\nModèle: ${selectedModel}\nCalques: ${coloringData.layers.length}\nTaille totale: ${(JSON.stringify(coloringData).length / 1024).toFixed(0)} Ko\n\n🎯 PNG transparent créé pour export !`);
-      
-    } catch (e) {
-      console.error('❌ Erreur sauvegarde:', e);
-      if (e.name === 'QuotaExceededError') {
-        alert('⚠️ Espace localStorage plein ! Supprime d\'anciens coloriages ou réduis la qualité.');
-      } else {
-        alert('❌ Erreur de sauvegarde : ' + e.message);
-      }
-    }
+      console.log('✅ PNG téléchargé:', link.download);
+      alert(`✅ Image téléchargée !\n\nFichier: ${link.download}`);
+    }, 'image/png', 1.0);
   };
   
   templateImg.onerror = () => {
-    console.error('❌ Erreur chargement template pour export');
-    alert('❌ Impossible de charger le template pour l\'export');
+    console.error('❌ Erreur chargement template');
+    alert('❌ Impossible de charger le template');
   };
   
   templateImg.src = currentModelData.template;
-};
-
-// 🔥 BONUS : Fonction pour télécharger le PNG transparent
-const downloadTransparentPNG = () => {
-  const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
-  const coloring = userData.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
-  
-  if (!coloring || !coloring.exportImage) {
-    alert('❌ Aucun export transparent trouvé. Sauvegarde d\'abord ton coloriage !');
-    return;
-  }
-  
-  // Télécharger l'image transparente
-  const link = document.createElement('a');
-  link.href = coloring.exportImage;
-  link.download = `${selectedHunter}_${selectedModel}_transparent_${Date.now()}.png`;
-  link.click();
-  
-  console.log('📥 PNG transparent téléchargé');
-  alert(`✅ PNG transparent téléchargé !\n\nFichier: ${link.download}`);
 };
 
     const resetColoring = () => {
@@ -989,6 +1059,24 @@ const downloadTransparentPNG = () => {
                                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
                             >
                                 💾 Sauvegarder
+                            </button>
+
+                            {/* 🖼️ TÉLÉCHARGER PNG COLORÉ (avec template) */}
+                            <button
+                                onClick={downloadColoredPNG}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                                title="Télécharger l'image colorée complète"
+                            >
+                                🖼️ PNG Coloré
+                            </button>
+
+                            {/* 🎨 TÉLÉCHARGER PNG TRANSPARENT (sans template) */}
+                            <button
+                                onClick={downloadTransparentPNG}
+                                className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg transition-colors"
+                                title="Télécharger uniquement les couleurs (fond transparent)"
+                            >
+                                🎨 PNG Transparent
                             </button>
 
                             <button
