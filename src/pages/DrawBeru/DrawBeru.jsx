@@ -10,7 +10,7 @@ const drawBeruModels = {
                 id: "default",
                 name: "Ilhwan Classique",
                 reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759920073/ilhwan_orig_fm4l2o.png",
-                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759920073/ilhwan_uncoloried_uzywyu.png",
+                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png",
                 canvasSize: { width: 450, height: 675 },
                 palette: {
                     "1": "#F5DEB3", "2": "#2F2F2F", "3": "#8B4513", "4": "#DC143C",
@@ -26,7 +26,7 @@ const drawBeruModels = {
                 id: "default",
                 name: "Yuqi Classique",
                 reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759927874/yuki_origi_m4l9h6.png",
-                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759927873/yuki_uncoloried_nyhkmc.png",
+                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951570/yuki_uncoloried_nyhkmc-removebg-preview_cs9qe5.png",
                 canvasSize: { width: 300, height: 450 },
                 palette: {
                     "1": "#3c3331", "2": "#fdd8b8", "3": "#1c1718", "4": "#c48e6d",
@@ -42,7 +42,7 @@ const drawBeruModels = {
                 id: "default",
                 name: "Minnie Classique",
                 reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759937740/Minnie_origi_afqdqa.png",
-                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759937740/Minnie_uncoloried_b5otkl.png",
+                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759949543/Minnie_uncoloried_test_h6erxt.png",
                 canvasSize: { width: 300, height: 450 },
                 palette: {
                     "1": "#3c3331",
@@ -64,7 +64,7 @@ const drawBeruModels = {
                 id: "default",
                 name: "Kanae What",
                 reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759942372/kanaeWha_origi_rpqlgt.png",
-                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759942371/kanaeWhat_uncoloried_qd0yb0.png",
+                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759950925/kanaeWhat_uncoloried_qd0yb0-removebg-preview_uqzupl.png",
                 canvasSize: { width: 1024, height: 1536 },
                 palette: {
                     "1": "#f9dcbf",
@@ -76,7 +76,24 @@ const drawBeruModels = {
                     "7": "#6b5a5c",
                     "8": "#3c3638"
                 }
-            }
+            },
+            second: {
+                id: "second",
+                name: "Kanae Pyjama",
+                reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759944854/kanaePyj_origi_lbe1co.png",
+                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951683/kanaePyj_uncoloried_skpopk-removebg-preview_j44vcy.png",
+                canvasSize: { width: 600, height: 760 },
+                palette: {
+                    "1": "#9e948f",
+                    "2": "#161112",
+                    "3": "#c5babf",
+                    "4": "#7d5c58",
+                    "5": "#b2a8ac",
+                    "6": "#887d79",
+                    "7": "#c88371",
+                    "8": "#443435"
+                }
+            },
         }
     },
     Seorin: {
@@ -86,11 +103,11 @@ const drawBeruModels = {
                 id: "default",
                 name: "Seorin pyjama",
                 reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759944005/seorin_origi_cnjynr.png",
-                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759944005/seorin_uncoloried_ymcwro.png",
+                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951097/seorin_uncoloried_ymcwro-removebg-preview_zq2nyf.png",
                 canvasSize: { width: 408, height: 612 },
                 palette: {
                     "1": "#9e948f",
-                    "2": "#161112", 
+                    "2": "#161112",
                     "3": "#c5babf",
                     "4": "#7d5c58",
                     "5": "#b2a8ac",
@@ -588,118 +605,172 @@ const DrawBeru = () => {
         setTimeout(renderLayers, 10);
     };
 
-    const saveColoring = () => {
-        console.log('🔍 DEBUG SAVE - Start');
-        console.log('Hunter:', selectedHunter, 'Model:', selectedModel);
+ // Remplace la fonction saveColoring() dans DrawBeru.jsx
 
-        // Sauvegarder UNIQUEMENT les layers (tes pixels dessinés)
-        const layersData = layersRef.current.map((layerCanvas, i) => {
-            try {
-                return {
-                    id: layers[i].id,
-                    name: layers[i].name,
-                    data: layerCanvas.toDataURL('image/png', 1.0),
-                    visible: layers[i].visible,
-                    opacity: layers[i].opacity,
-                    locked: layers[i].locked
-                };
-            } catch (e) {
-                console.error(`❌ Erreur export layer ${i}:`, e);
-                return null;
-            }
-        }).filter(l => l !== null);
-
-        if (layersData.length === 0) {
-            alert('❌ Impossible d\'exporter les layers. Essaie de dessiner quelque chose d\'abord.');
-            return;
-        }
-
-        console.log('✅ Layers exportés:', layersData.length);
-
-        // Créer une preview (fond blanc + layers) pour affichage futur
-        const exportCanvas = document.createElement('canvas');
-        const canvas = canvasRef.current;
-        exportCanvas.width = canvas.width;
-        exportCanvas.height = canvas.height;
-        const exportCtx = exportCanvas.getContext('2d');
-
-        // Fond blanc
-        exportCtx.fillStyle = '#FFFFFF';
-        exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-
-        // Dessiner les layers visibles
-        layers.forEach((layer, index) => {
-            if (layer.visible && layersRef.current[index]) {
-                exportCtx.globalAlpha = layer.opacity;
-                exportCtx.drawImage(layersRef.current[index], 0, 0);
-                exportCtx.globalAlpha = 1;
-            }
-        });
-
-        let previewImageData;
-        try {
-            previewImageData = exportCanvas.toDataURL('image/png', 0.8);
-            console.log('✅ Preview générée, taille:', (previewImageData.length / 1024).toFixed(0), 'Ko');
-        } catch (e) {
-            console.error('❌ Erreur génération preview:', e);
-            previewImageData = null;
-        }
-
-        const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
-        if (!userData.user) userData.user = { accounts: {} };
-        if (!userData.user.accounts.default) userData.user.accounts.default = {};
-        if (!userData.user.accounts.default.colorings) userData.user.accounts.default.colorings = {};
-        if (!userData.user.accounts.default.colorings[selectedHunter]) {
-            userData.user.accounts.default.colorings[selectedHunter] = {};
-        }
-
-        const coloringData = {
-            preview: previewImageData,
-            layers: layersData,
-            palette: currentModelData.palette,
-            createdAt: userData.user.accounts.default.colorings[selectedHunter][selectedModel]?.createdAt || Date.now(),
-            updatedAt: Date.now(),
-            isCompleted: true,
-            hunter: selectedHunter,
-            model: selectedModel,
-            canvasSize: currentModelData.canvasSize,
-            version: '1.0'
-        };
-
-        userData.user.accounts.default.colorings[selectedHunter][selectedModel] = coloringData;
-
-        console.log('📦 Data structure:', {
-            hunter: selectedHunter,
-            model: selectedModel,
-            layersCount: coloringData.layers.length,
-            hasPreview: !!coloringData.preview,
-            totalSize: (JSON.stringify(coloringData).length / 1024).toFixed(0) + ' Ko'
-        });
-
-        try {
-            localStorage.setItem('builderberu_users', JSON.stringify(userData));
-
-            // Vérification immédiate
-            const verification = JSON.parse(localStorage.getItem('builderberu_users'));
-            const saved = verification.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
-
-            console.log('✅ Vérification:', {
-                saved: !!saved,
-                hasPreview: !!saved?.preview,
-                layersCount: saved?.layers?.length
-            });
-
-            alert(`✅ Coloriage sauvegardé !\n\nHunter: ${selectedHunter}\nModèle: ${selectedModel}\nCalques: ${coloringData.layers.length}\nTaille totale: ${(JSON.stringify(coloringData).length / 1024).toFixed(0)} Ko`);
-
-        } catch (e) {
-            console.error('❌ Erreur sauvegarde:', e);
-            if (e.name === 'QuotaExceededError') {
-                alert('⚠️ Espace localStorage plein ! Supprime d\'anciens coloriages ou réduis la qualité.');
-            } else {
-                alert('❌ Erreur de sauvegarde : ' + e.message);
-            }
-        }
+const saveColoring = () => {
+  console.log('🔍 DEBUG SAVE - Start');
+  console.log('Hunter:', selectedHunter, 'Model:', selectedModel);
+  
+  // 🎯 1️⃣ Sauvegarder les layers (pixels colorés uniquement)
+  const layersData = layersRef.current.map((layerCanvas, i) => {
+    try {
+      return {
+        id: layers[i].id,
+        name: layers[i].name,
+        data: layerCanvas.toDataURL('image/png', 1.0),
+        visible: layers[i].visible,
+        opacity: layers[i].opacity,
+        locked: layers[i].locked
+      };
+    } catch (e) {
+      console.error(`❌ Erreur export layer ${i}:`, e);
+      return null;
+    }
+  }).filter(l => l !== null);
+  
+  if (layersData.length === 0) {
+    alert('❌ Impossible d\'exporter les layers. Essaie de dessiner quelque chose d\'abord.');
+    return;
+  }
+  
+  console.log('✅ Layers exportés:', layersData.length);
+  
+  // 🎨 2️⃣ Créer TWO previews : une avec fond blanc (affichage), une transparente (export)
+  
+  // PREVIEW AVEC FOND BLANC (pour l'affichage dans le site)
+  const previewCanvas = document.createElement('canvas');
+  const canvas = canvasRef.current;
+  previewCanvas.width = canvas.width;
+  previewCanvas.height = canvas.height;
+  const previewCtx = previewCanvas.getContext('2d', { alpha: true });
+  
+  // EXPORT PNG TRANSPARENT (juste les layers colorés)
+  const exportCanvas = document.createElement('canvas');
+  exportCanvas.width = canvas.width;
+  exportCanvas.height = canvas.height;
+  const exportCtx = exportCanvas.getContext('2d', { alpha: true });
+  
+  const templateImg = new Image();
+  templateImg.crossOrigin = "anonymous";
+  templateImg.onload = () => {
+    // 🖼️ PREVIEW : Template + Layers (pour affichage dans le site)
+    previewCtx.drawImage(templateImg, 0, 0, previewCanvas.width, previewCanvas.height);
+    layers.forEach((layer, index) => {
+      if (layer.visible && layersRef.current[index]) {
+        previewCtx.globalAlpha = layer.opacity;
+        previewCtx.drawImage(layersRef.current[index], 0, 0);
+        previewCtx.globalAlpha = 1;
+      }
+    });
+    
+    // 🎯 EXPORT : UNIQUEMENT les layers (PNG transparent, sans template)
+    layers.forEach((layer, index) => {
+      if (layer.visible && layersRef.current[index]) {
+        exportCtx.globalAlpha = layer.opacity;
+        exportCtx.drawImage(layersRef.current[index], 0, 0);
+        exportCtx.globalAlpha = 1;
+      }
+    });
+    
+    // Générer les deux images
+    let previewImageData, exportImageData;
+    try {
+      previewImageData = previewCanvas.toDataURL('image/png', 0.8);
+      exportImageData = exportCanvas.toDataURL('image/png', 1.0); // 🔥 PNG transparent ici
+      console.log('✅ Preview générée:', (previewImageData.length / 1024).toFixed(0), 'Ko');
+      console.log('✅ Export transparent généré:', (exportImageData.length / 1024).toFixed(0), 'Ko');
+    } catch (e) {
+      console.error('❌ Erreur génération images:', e);
+      previewImageData = null;
+      exportImageData = null;
+    }
+    
+    // Sauvegarder dans localStorage
+    const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+    if (!userData.user) userData.user = { accounts: {} };
+    if (!userData.user.accounts.default) userData.user.accounts.default = {};
+    if (!userData.user.accounts.default.colorings) userData.user.accounts.default.colorings = {};
+    if (!userData.user.accounts.default.colorings[selectedHunter]) {
+      userData.user.accounts.default.colorings[selectedHunter] = {};
+    }
+    
+    const coloringData = {
+      preview: previewImageData,        // Avec fond blanc pour le site
+      exportImage: exportImageData,     // 🔥 PNG transparent pour export
+      layers: layersData,
+      palette: currentModelData.palette,
+      createdAt: userData.user.accounts.default.colorings[selectedHunter][selectedModel]?.createdAt || Date.now(),
+      updatedAt: Date.now(),
+      isCompleted: true,
+      hunter: selectedHunter,
+      model: selectedModel,
+      canvasSize: currentModelData.canvasSize,
+      version: '1.0'
     };
+    
+    userData.user.accounts.default.colorings[selectedHunter][selectedModel] = coloringData;
+    
+    console.log('📦 Data structure:', {
+      hunter: selectedHunter,
+      model: selectedModel,
+      layersCount: coloringData.layers.length,
+      hasPreview: !!coloringData.preview,
+      hasExport: !!coloringData.exportImage,
+      totalSize: (JSON.stringify(coloringData).length / 1024).toFixed(0) + ' Ko'
+    });
+    
+    try {
+      localStorage.setItem('builderberu_users', JSON.stringify(userData));
+      
+      const verification = JSON.parse(localStorage.getItem('builderberu_users'));
+      const saved = verification.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
+      
+      console.log('✅ Vérification:', {
+        saved: !!saved,
+        hasPreview: !!saved?.preview,
+        hasExport: !!saved?.exportImage,
+        layersCount: saved?.layers?.length
+      });
+      
+      alert(`✅ Coloriage sauvegardé !\n\nHunter: ${selectedHunter}\nModèle: ${selectedModel}\nCalques: ${coloringData.layers.length}\nTaille totale: ${(JSON.stringify(coloringData).length / 1024).toFixed(0)} Ko\n\n🎯 PNG transparent créé pour export !`);
+      
+    } catch (e) {
+      console.error('❌ Erreur sauvegarde:', e);
+      if (e.name === 'QuotaExceededError') {
+        alert('⚠️ Espace localStorage plein ! Supprime d\'anciens coloriages ou réduis la qualité.');
+      } else {
+        alert('❌ Erreur de sauvegarde : ' + e.message);
+      }
+    }
+  };
+  
+  templateImg.onerror = () => {
+    console.error('❌ Erreur chargement template pour export');
+    alert('❌ Impossible de charger le template pour l\'export');
+  };
+  
+  templateImg.src = currentModelData.template;
+};
+
+// 🔥 BONUS : Fonction pour télécharger le PNG transparent
+const downloadTransparentPNG = () => {
+  const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+  const coloring = userData.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
+  
+  if (!coloring || !coloring.exportImage) {
+    alert('❌ Aucun export transparent trouvé. Sauvegarde d\'abord ton coloriage !');
+    return;
+  }
+  
+  // Télécharger l'image transparente
+  const link = document.createElement('a');
+  link.href = coloring.exportImage;
+  link.download = `${selectedHunter}_${selectedModel}_transparent_${Date.now()}.png`;
+  link.click();
+  
+  console.log('📥 PNG transparent téléchargé');
+  alert(`✅ PNG transparent téléchargé !\n\nFichier: ${link.download}`);
+};
 
     const resetColoring = () => {
         if (!confirm('Réinitialiser tout le coloriage ?')) return;
@@ -713,6 +784,87 @@ const DrawBeru = () => {
         setHistory([]);
         setHistoryIndex(-1);
         saveToHistory();
+    };
+
+    // 📤 EXPORTER le coloriage
+    const exportColoring = () => {
+        const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+        const coloring = userData.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
+
+        if (!coloring) {
+            alert('❌ Aucun coloriage à exporter pour ce hunter/model');
+            return;
+        }
+
+        const exportData = {
+            hunter: selectedHunter,
+            model: selectedModel,
+            data: coloring,
+            exportedAt: Date.now(),
+            version: '1.0'
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${selectedHunter}_${selectedModel}_${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        console.log('📤 Coloriage exporté:', selectedHunter, selectedModel);
+        alert(`✅ Coloriage exporté !\n\nFichier: ${a.download}`);
+    };
+
+    // 📥 IMPORTER le coloriage
+    const importColoring = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+
+                    if (!importedData.hunter || !importedData.data) {
+                        throw new Error('Format invalide');
+                    }
+
+                    // Sauvegarder dans localStorage
+                    const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+                    if (!userData.user) userData.user = { accounts: {} };
+                    if (!userData.user.accounts.default) userData.user.accounts.default = {};
+                    if (!userData.user.accounts.default.colorings) userData.user.accounts.default.colorings = {};
+                    if (!userData.user.accounts.default.colorings[importedData.hunter]) {
+                        userData.user.accounts.default.colorings[importedData.hunter] = {};
+                    }
+
+                    userData.user.accounts.default.colorings[importedData.hunter][importedData.model] = importedData.data;
+                    localStorage.setItem('builderberu_users', JSON.stringify(userData));
+
+                    console.log('📥 Coloriage importé:', importedData.hunter, importedData.model);
+                    alert(`✅ Coloriage importé !\n\nHunter: ${importedData.hunter}\nModèle: ${importedData.model}\n\nRecharge la page pour voir le résultat.`);
+
+                    // Recharger automatiquement si c'est le même hunter/model
+                    if (importedData.hunter === selectedHunter && importedData.model === selectedModel) {
+                        window.location.reload();
+                    }
+
+                } catch (error) {
+                    console.error('❌ Erreur import:', error);
+                    alert('❌ Erreur lors de l\'import. Vérifie que le fichier est valide.');
+                }
+            };
+
+            reader.readAsText(file);
+        };
+
+        input.click();
     };
 
     const handleModelChange = (modelId) => {
@@ -837,6 +989,22 @@ const DrawBeru = () => {
                                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
                             >
                                 💾 Sauvegarder
+                            </button>
+
+                            <button
+                                onClick={exportColoring}
+                                className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg transition-colors"
+                                title="Exporter ce coloriage"
+                            >
+                                📤 Export
+                            </button>
+
+                            <button
+                                onClick={importColoring}
+                                className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors"
+                                title="Importer un coloriage"
+                            >
+                                📥 Import
                             </button>
 
                             <button
