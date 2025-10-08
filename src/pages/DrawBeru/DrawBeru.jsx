@@ -1,17 +1,79 @@
 // src/pages/DrawBeru/DrawBeru.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { drawBeruModels, getModel, getHunterModels } from './config/models.js';
+
+const drawBeruModels = {
+  ilhwan: {
+    name: "Ilhwan",
+    models: {
+      default: {
+        id: "default",
+        name: "Ilhwan Classique",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759920073/ilhwan_orig_fm4l2o.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759920073/ilhwan_uncoloried_uzywyu.png",
+        canvasSize: { width: 450, height: 675 },
+        palette: {
+          "1": "#F5DEB3", "2": "#2F2F2F", "3": "#8B4513", "4": "#DC143C",
+          "5": "#FFFFFF", "6": "#000000", "7": "#FFD700", "8": "#4B0082"
+        }
+      }
+    }
+  },
+  Yuqi: {
+    name: "Yuqi",
+    models: {
+      default: {
+        id: "default",
+        name: "Yuqi Classique",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759927874/yuki_origi_m4l9h6.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759927873/yuki_uncoloried_nyhkmc.png",
+        canvasSize: { width: 300, height: 450 },
+        palette: {
+          "1": "#3c3331", "2": "#fdd8b8", "3": "#1c1718", "4": "#c48e6d",
+          "5": "#070402", "6": "#2d2d39", "7": "#645249", "8": "#f7f1e6"
+        }
+      }
+    }
+  },
+   Minnie: {
+    name: "Minnie",
+    models: {
+      default: {
+        id: "default",
+        name: "Minnie Classique",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759937740/Minnie_origi_afqdqa.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759937740/Minnie_uncoloried_b5otkl.png",
+        canvasSize: { width: 300, height: 450 },
+        palette: {
+  "1": "#3c3331",
+  "2": "#fdd8b8",
+  "3": "#1c1718",
+  "4": "#c48e6d",
+  "5": "#070402",
+  "6": "#2d2d39",
+  "7": "#645249",
+  "8": "#f7f1e6"
+}
+      }
+    }
+  }
+};
+
+const getModel = (hunter, modelId = 'default') => {
+  return drawBeruModels[hunter]?.models[modelId] || null;
+};
+
+const getHunterModels = (hunter) => {
+  return drawBeruModels[hunter]?.models || {};
+};
 
 const DrawBeru = () => {
   const { t } = useTranslation();
   
-  // Canvas refs
   const canvasRef = useRef(null);
-  const layersRef = useRef([]); // Refs pour chaque layer
-  const referenceCanvasRef = useRef(null); // Canvas pour le modèle de référence
+  const layersRef = useRef([]);
+  const referenceCanvasRef = useRef(null);
   
-  // States
   const [selectedHunter, setSelectedHunter] = useState('ilhwan');
   const [selectedModel, setSelectedModel] = useState('default');
   const [selectedColor, setSelectedColor] = useState('#FF0000');
@@ -25,14 +87,12 @@ const DrawBeru = () => {
   const [isPanning, setIsPanning] = useState(false);
   const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
   
-  // Zoom pour le modèle de référence
   const [refZoomLevel, setRefZoomLevel] = useState(1);
   const [refPanOffset, setRefPanOffset] = useState({ x: 0, y: 0 });
   const [isRefPanning, setIsRefPanning] = useState(false);
   const [lastRefPanPoint, setLastRefPanPoint] = useState({ x: 0, y: 0 });
-  const [debugPoint, setDebugPoint] = useState(null); // Point de debug pour la pipette
+  const [debugPoint, setDebugPoint] = useState(null);
   
-  // Layers system
   const [layers, setLayers] = useState([
     { id: 'base', name: 'Base', visible: true, opacity: 1, locked: false },
     { id: 'shadows', name: 'Ombres', visible: true, opacity: 1, locked: false },
@@ -40,17 +100,14 @@ const DrawBeru = () => {
   ]);
   const [activeLayer, setActiveLayer] = useState('base');
   
-  // Undo/Redo system
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   
-  // Récupérer le modèle actuel
   const currentModelData = getModel(selectedHunter, selectedModel);
   const availableModels = getHunterModels(selectedHunter);
   
-  // Initialisation des canvas
   useEffect(() => {
     if (!currentModelData) return;
     
@@ -59,11 +116,9 @@ const DrawBeru = () => {
     
     const { width, height } = currentModelData.canvasSize;
     
-    // Canvas template
     canvas.width = width;
     canvas.height = height;
     
-    // Créer les canvas des layers
     layersRef.current = layers.map(() => {
       const layerCanvas = document.createElement('canvas');
       layerCanvas.width = width;
@@ -71,26 +126,87 @@ const DrawBeru = () => {
       return layerCanvas;
     });
     
-    // Charger le template
-    const templateImg = new Image();
-    templateImg.crossOrigin = "anonymous";
-    templateImg.onload = () => {
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, width, height);
-      ctx.drawImage(templateImg, 0, 0, width, height);
+    console.log('🔍 DEBUG LOAD - Start');
+    console.log('Looking for:', selectedHunter, selectedModel);
+    
+    // Charger un coloriage existant s'il existe
+    const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+    const existingColoring = userData.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
+    
+    console.log('🎨 Existing coloring found:', !!existingColoring);
+    
+    if (existingColoring && existingColoring.layers) {
+      console.log('✅ Chargement du coloriage existant');
+      console.log('Layers count:', existingColoring.layers.length);
+      
+      let loadedLayers = 0;
+      const totalLayers = Math.min(existingColoring.layers.length, layersRef.current.length);
+      
+      // Charger les layers sauvegardés
+      existingColoring.layers.forEach((layerData, i) => {
+        if (i < layersRef.current.length) {
+          const img = new Image();
+          img.onload = () => {
+            const ctx = layersRef.current[i].getContext('2d');
+            ctx.clearRect(0, 0, layersRef.current[i].width, layersRef.current[i].height);
+            ctx.drawImage(img, 0, 0);
+            loadedLayers++;
+            
+            console.log(`Layer ${i + 1}/${totalLayers} chargé`);
+            
+            if (loadedLayers === totalLayers) {
+              renderLayers();
+              console.log('✅ Tous les layers chargés, rendu final');
+              setTimeout(() => saveToHistory(), 100);
+            }
+          };
+          img.onerror = () => {
+            console.error(`❌ Erreur chargement layer ${i}`);
+            loadedLayers++;
+            if (loadedLayers === totalLayers) {
+              renderLayers();
+              setTimeout(() => saveToHistory(), 100);
+            }
+          };
+          img.src = layerData.data;
+        }
+      });
+      
+      // Restaurer les paramètres des layers
+      setLayers(prevLayers => prevLayers.map((layer, i) => ({
+        ...layer,
+        visible: existingColoring.layers[i]?.visible ?? layer.visible,
+        opacity: existingColoring.layers[i]?.opacity ?? layer.opacity,
+        locked: existingColoring.layers[i]?.locked ?? layer.locked
+      })));
       
       setImagesLoaded(true);
-      saveToHistory(); // État initial
-      console.log('Template loaded:', width, 'x', height);
-    };
+      
+    } else {
+      console.log('📄 Aucun coloriage existant, chargement template vierge');
+      
+      // Charger le template vierge
+      const templateImg = new Image();
+      templateImg.crossOrigin = "anonymous";
+      templateImg.onload = () => {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, width, height);
+        ctx.drawImage(templateImg, 0, 0, width, height);
+        
+        setImagesLoaded(true);
+        saveToHistory();
+        console.log('✅ Template vierge chargé:', width, 'x', height);
+      };
+      
+      templateImg.onerror = () => {
+        console.error('❌ Erreur chargement template:', currentModelData.template);
+        setImagesLoaded(true);
+      };
+      
+      templateImg.src = currentModelData.template;
+    }
     
-    templateImg.onerror = () => {
-      console.error('Erreur chargement template:', currentModelData.template);
-    };
-    
-    templateImg.src = currentModelData.template;
-    
-    // Charger le modèle de référence dans son canvas
+    // Charger le modèle de référence
     const refCanvas = referenceCanvasRef.current;
     if (refCanvas) {
       const refImg = new Image();
@@ -100,19 +216,29 @@ const DrawBeru = () => {
         refCanvas.height = refImg.height;
         const refCtx = refCanvas.getContext('2d');
         refCtx.drawImage(refImg, 0, 0);
+        console.log('✅ Modèle de référence chargé');
+      };
+      refImg.onerror = () => {
+        console.error('❌ Erreur chargement référence');
       };
       refImg.src = currentModelData.reference;
     }
     
-  }, [currentModelData, layers.length]);
+  }, [currentModelData, selectedHunter, selectedModel]);
   
-  // Gestion historique
   const saveToHistory = () => {
     const newHistory = history.slice(0, historyIndex + 1);
-    const snapshot = layersRef.current.map(canvas => canvas.toDataURL());
+    const snapshot = layersRef.current.map(canvas => {
+      try {
+        return canvas.toDataURL();
+      } catch (e) {
+        console.warn('Warning: Could not save layer to history', e);
+        return null;
+      }
+    }).filter(s => s !== null);
+    
     newHistory.push(snapshot);
     
-    // Limiter l'historique à 50 étapes
     if (newHistory.length > 50) {
       newHistory.shift();
     } else {
@@ -158,7 +284,6 @@ const DrawBeru = () => {
     });
   };
   
-  // Raccourcis clavier
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.ctrlKey || e.metaKey) {
@@ -176,7 +301,6 @@ const DrawBeru = () => {
         }
       }
       
-      // Raccourcis outils
       if (!e.ctrlKey && !e.metaKey) {
         if (e.key === 'b' || e.key === 'B') setCurrentTool('brush');
         if (e.key === 'e' || e.key === 'E') setCurrentTool('eraser');
@@ -188,18 +312,27 @@ const DrawBeru = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [historyIndex, history.length]);
   
-  // Render tous les layers sur le canvas principal
   const renderLayers = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
-    // Recharger le template en fond
     const templateImg = new Image();
+    templateImg.crossOrigin = "anonymous";
     templateImg.onload = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
       
-      // Dessiner chaque layer visible
+      layers.forEach((layer, index) => {
+        if (layer.visible && layersRef.current[index]) {
+          ctx.globalAlpha = layer.opacity;
+          ctx.drawImage(layersRef.current[index], 0, 0);
+          ctx.globalAlpha = 1;
+        }
+      });
+    };
+    templateImg.onerror = () => {
+      console.warn('Could not load template for render');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       layers.forEach((layer, index) => {
         if (layer.visible && layersRef.current[index]) {
           ctx.globalAlpha = layer.opacity;
@@ -211,7 +344,6 @@ const DrawBeru = () => {
     templateImg.src = currentModelData.template;
   };
   
-  // Zoom et pan (canvas principal)
   const handleZoom = (delta) => {
     const newZoom = Math.max(0.5, Math.min(3, zoomLevel + delta));
     setZoomLevel(newZoom);
@@ -254,7 +386,6 @@ const DrawBeru = () => {
     setIsPanning(false);
   };
   
-  // Zoom et pan pour le modèle de référence
   const handleRefZoom = (delta) => {
     const newZoom = Math.max(0.5, Math.min(3, refZoomLevel + delta));
     setRefZoomLevel(newZoom);
@@ -297,49 +428,41 @@ const DrawBeru = () => {
     setIsRefPanning(false);
   };
   
- // Coordonnées précises sur le canvas (gère zoom/pan/ratio)
-const getCanvasCoordinates = (e, canvas) => {
-  const rect = canvas.getBoundingClientRect();           // bbox après transform
-  const scaleX = canvas.width  / rect.width;             // px intrinsèque / px CSS
-  const scaleY = canvas.height / rect.height;
-  const x = (e.clientX - rect.left) * scaleX;
-  const y = (e.clientY - rect.top)  * scaleY;
-  return { x, y };
-};
-
+  const getCanvasCoordinates = (e, canvas) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top)  * scaleY;
+    return { x, y };
+  };
   
-  // Pipette : récupérer couleur depuis le modèle de référence
   const pickColorFromReference = (e) => {
-  const refCanvas = referenceCanvasRef.current;
-  if (!refCanvas) return;
+    const refCanvas = referenceCanvasRef.current;
+    if (!refCanvas) return;
 
-  // 1) Coordonnées canvas intrinsèques
-  const rect = refCanvas.getBoundingClientRect();
-  const scaleX = refCanvas.width  / rect.width;
-  const scaleY = refCanvas.height / rect.height;
-  const x = Math.floor((e.clientX - rect.left) * scaleX);
-  const y = Math.floor((e.clientY - rect.top)  * scaleY);
+    const rect = refCanvas.getBoundingClientRect();
+    const scaleX = refCanvas.width  / rect.width;
+    const scaleY = refCanvas.height / rect.height;
+    const x = Math.floor((e.clientX - rect.left) * scaleX);
+    const y = Math.floor((e.clientY - rect.top)  * scaleY);
 
-  // 2) Debug point en coordonnées CSS (pour afficher le dot au bon endroit)
-  const cssX = e.clientX - rect.left;
-  const cssY = e.clientY - rect.top;
-  setDebugPoint({ cssX, cssY }); 
-  setTimeout(() => setDebugPoint(null), 1200);
+    const cssX = e.clientX - rect.left;
+    const cssY = e.clientY - rect.top;
+    setDebugPoint({ cssX, cssY }); 
+    setTimeout(() => setDebugPoint(null), 1200);
 
-  // 3) Bornes + lecture pixel
-  if (x < 0 || x >= refCanvas.width || y < 0 || y >= refCanvas.height) return;
-  const ctx = refCanvas.getContext('2d', { willReadFrequently: true });
-  const p = ctx.getImageData(x, y, 1, 1).data;
-  if (p[3] === 0) return; // transparent
+    if (x < 0 || x >= refCanvas.width || y < 0 || y >= refCanvas.height) return;
+    const ctx = refCanvas.getContext('2d', { willReadFrequently: true });
+    const p = ctx.getImageData(x, y, 1, 1).data;
+    if (p[3] === 0) return;
 
-  const hex = `#${((1 << 24) + (p[0] << 16) + (p[1] << 8) + p[2])
-    .toString(16).slice(1).toUpperCase()}`;
-  setSelectedColor(hex);
-  setCurrentTool('brush');
-};
-
+    const hex = `#${((1 << 24) + (p[0] << 16) + (p[1] << 8) + p[2])
+      .toString(16).slice(1).toUpperCase()}`;
+    setSelectedColor(hex);
+    setCurrentTool('brush');
+  };
   
-  // Pipette : récupérer couleur depuis le canvas de coloriage
   const pickColorFromCanvas = (e) => {
     const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
     const layerCanvas = layersRef.current[activeLayerIndex];
@@ -350,7 +473,6 @@ const getCanvasCoordinates = (e, canvas) => {
     const ctx = layerCanvas.getContext('2d');
     const pixel = ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
     
-    // Vérifier si le pixel n'est pas transparent
     if (pixel[3] > 0) {
       const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
       setSelectedColor(hex);
@@ -359,17 +481,14 @@ const getCanvasCoordinates = (e, canvas) => {
     setCurrentTool('brush');
   };
   
-  // Gestion du dessin
   const startDrawing = (e) => {
     if (e.button !== 0 || e.ctrlKey || isPanning) return;
     
-    // Pipette
     if (currentTool === 'pipette') {
       pickColorFromCanvas(e);
       return;
     }
     
-    // Vérifier que le layer n'est pas verrouillé
     const layer = layers.find(l => l.id === activeLayer);
     if (layer?.locked) return;
     
@@ -405,7 +524,6 @@ const getCanvasCoordinates = (e, canvas) => {
     renderLayers();
   };
   
-  // Toggle layer visibility
   const toggleLayerVisibility = (layerId) => {
     setLayers(layers.map(l => 
       l.id === layerId ? { ...l, visible: !l.visible } : l
@@ -413,14 +531,12 @@ const getCanvasCoordinates = (e, canvas) => {
     setTimeout(renderLayers, 10);
   };
   
-  // Toggle layer lock
   const toggleLayerLock = (layerId) => {
     setLayers(layers.map(l => 
       l.id === layerId ? { ...l, locked: !l.locked } : l
     ));
   };
   
-  // Change layer opacity
   const changeLayerOpacity = (layerId, opacity) => {
     setLayers(layers.map(l => 
       l.id === layerId ? { ...l, opacity: parseFloat(opacity) } : l
@@ -428,10 +544,62 @@ const getCanvasCoordinates = (e, canvas) => {
     setTimeout(renderLayers, 10);
   };
   
-  // Sauvegarde
   const saveColoring = () => {
+    console.log('🔍 DEBUG SAVE - Start');
+    console.log('Hunter:', selectedHunter, 'Model:', selectedModel);
+    
+    // Sauvegarder UNIQUEMENT les layers (tes pixels dessinés)
+    const layersData = layersRef.current.map((layerCanvas, i) => {
+      try {
+        return {
+          id: layers[i].id,
+          name: layers[i].name,
+          data: layerCanvas.toDataURL('image/png', 1.0),
+          visible: layers[i].visible,
+          opacity: layers[i].opacity,
+          locked: layers[i].locked
+        };
+      } catch (e) {
+        console.error(`❌ Erreur export layer ${i}:`, e);
+        return null;
+      }
+    }).filter(l => l !== null);
+    
+    if (layersData.length === 0) {
+      alert('❌ Impossible d\'exporter les layers. Essaie de dessiner quelque chose d\'abord.');
+      return;
+    }
+    
+    console.log('✅ Layers exportés:', layersData.length);
+    
+    // Créer une preview (fond blanc + layers) pour affichage futur
+    const exportCanvas = document.createElement('canvas');
     const canvas = canvasRef.current;
-    const dataURL = canvas.toDataURL();
+    exportCanvas.width = canvas.width;
+    exportCanvas.height = canvas.height;
+    const exportCtx = exportCanvas.getContext('2d');
+    
+    // Fond blanc
+    exportCtx.fillStyle = '#FFFFFF';
+    exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+    
+    // Dessiner les layers visibles
+    layers.forEach((layer, index) => {
+      if (layer.visible && layersRef.current[index]) {
+        exportCtx.globalAlpha = layer.opacity;
+        exportCtx.drawImage(layersRef.current[index], 0, 0);
+        exportCtx.globalAlpha = 1;
+      }
+    });
+    
+    let previewImageData;
+    try {
+      previewImageData = exportCanvas.toDataURL('image/png', 0.8);
+      console.log('✅ Preview générée, taille:', (previewImageData.length / 1024).toFixed(0), 'Ko');
+    } catch (e) {
+      console.error('❌ Erreur génération preview:', e);
+      previewImageData = null;
+    }
     
     const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
     if (!userData.user) userData.user = { accounts: {} };
@@ -441,28 +609,54 @@ const getCanvasCoordinates = (e, canvas) => {
       userData.user.accounts.default.colorings[selectedHunter] = {};
     }
     
-    userData.user.accounts.default.colorings[selectedHunter][selectedModel] = {
-      imageData: dataURL,
-      layers: layersRef.current.map((canvas, i) => ({
-        id: layers[i].id,
-        name: layers[i].name,
-        data: canvas.toDataURL(),
-        visible: layers[i].visible,
-        opacity: layers[i].opacity,
-        locked: layers[i].locked
-      })),
+    const coloringData = {
+      preview: previewImageData,
+      layers: layersData,
       palette: currentModelData.palette,
-      createdAt: Date.now(),
+      createdAt: userData.user.accounts.default.colorings[selectedHunter][selectedModel]?.createdAt || Date.now(),
+      updatedAt: Date.now(),
       isCompleted: true,
       hunter: selectedHunter,
-      model: selectedModel
+      model: selectedModel,
+      canvasSize: currentModelData.canvasSize,
+      version: '1.0'
     };
     
-    localStorage.setItem('builderberu_users', JSON.stringify(userData));
-    alert(`Coloriage ${currentModelData.name} sauvegardé ! 🎨`);
+    userData.user.accounts.default.colorings[selectedHunter][selectedModel] = coloringData;
+    
+    console.log('📦 Data structure:', {
+      hunter: selectedHunter,
+      model: selectedModel,
+      layersCount: coloringData.layers.length,
+      hasPreview: !!coloringData.preview,
+      totalSize: (JSON.stringify(coloringData).length / 1024).toFixed(0) + ' Ko'
+    });
+    
+    try {
+      localStorage.setItem('builderberu_users', JSON.stringify(userData));
+      
+      // Vérification immédiate
+      const verification = JSON.parse(localStorage.getItem('builderberu_users'));
+      const saved = verification.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
+      
+      console.log('✅ Vérification:', {
+        saved: !!saved,
+        hasPreview: !!saved?.preview,
+        layersCount: saved?.layers?.length
+      });
+      
+      alert(`✅ Coloriage sauvegardé !\n\nHunter: ${selectedHunter}\nModèle: ${selectedModel}\nCalques: ${coloringData.layers.length}\nTaille totale: ${(JSON.stringify(coloringData).length / 1024).toFixed(0)} Ko`);
+      
+    } catch (e) {
+      console.error('❌ Erreur sauvegarde:', e);
+      if (e.name === 'QuotaExceededError') {
+        alert('⚠️ Espace localStorage plein ! Supprime d\'anciens coloriages ou réduis la qualité.');
+      } else {
+        alert('❌ Erreur de sauvegarde : ' + e.message);
+      }
+    }
   };
   
-  // Reset
   const resetColoring = () => {
     if (!confirm('Réinitialiser tout le coloriage ?')) return;
     
@@ -477,9 +671,16 @@ const getCanvasCoordinates = (e, canvas) => {
     saveToHistory();
   };
   
-  // Changer de modèle
   const handleModelChange = (modelId) => {
     setSelectedModel(modelId);
+    setImagesLoaded(false);
+    setHistory([]);
+    setHistoryIndex(-1);
+  };
+
+  const handleHunterChange = (hunterId) => {
+    setSelectedHunter(hunterId);
+    setSelectedModel('default');
     setImagesLoaded(false);
     setHistory([]);
     setHistoryIndex(-1);
@@ -494,15 +695,29 @@ const getCanvasCoordinates = (e, canvas) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen bg-[#0a0118]">
       <style>{`
         @keyframes pulse {
           0%, 100% { transform: translate(-50%, -50%) scale(1); }
           50% { transform: translate(-50%, -50%) scale(1.3); }
         }
+        
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+          background: rgba(147, 51, 234, 0.5);
+          border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: rgba(147, 51, 234, 0.7);
+        }
       `}</style>
       
-      {/* Header */}
       <div className="bg-black/20 backdrop-blur-sm border-b border-purple-500/30">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
@@ -517,6 +732,18 @@ const getCanvasCoordinates = (e, canvas) => {
             
             <div className="flex items-center gap-3">
               <select
+                value={selectedHunter}
+                onChange={(e) => handleHunterChange(e.target.value)}
+                className="bg-purple-800/50 text-white border border-purple-500/50 rounded-lg px-3 py-2"
+              >
+                {Object.entries(drawBeruModels).map(([hunterId, hunterData]) => (
+                  <option key={hunterId} value={hunterId}>
+                    {hunterData.name}
+                  </option>
+                ))}
+              </select>
+              
+              <select
                 value={selectedModel}
                 onChange={(e) => handleModelChange(e.target.value)}
                 className="bg-purple-800/50 text-white border border-purple-500/50 rounded-lg px-3 py-2"
@@ -529,7 +756,7 @@ const getCanvasCoordinates = (e, canvas) => {
               </select>
             </div>
             
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap">
               <button
                 onClick={undo}
                 disabled={!canUndo}
@@ -571,6 +798,28 @@ const getCanvasCoordinates = (e, canvas) => {
               </button>
               
               <button
+                onClick={() => {
+                  const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+                  const colorings = userData.user?.accounts?.default?.colorings || {};
+                  
+                  console.log('🔍 DEBUG - État localStorage complet:');
+                  console.log('Tous les coloriages:', colorings);
+                  console.log('Hunter actuel:', selectedHunter);
+                  console.log('Model actuel:', selectedModel);
+                  console.log('Coloriage actuel:', colorings[selectedHunter]?.[selectedModel]);
+                  
+                  const hunterColorings = colorings[selectedHunter] || {};
+                  const count = Object.keys(hunterColorings).length;
+                  
+                  alert(`🔍 Debug Info:\n\nHunter: ${selectedHunter}\nModèle: ${selectedModel}\n\nColoriages sauvegardés: ${count}\n\nOuvre la console (F12) pour plus de détails.`);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                title="Inspecter le localStorage"
+              >
+                🔍 Debug
+              </button>
+              
+              <button
                 onClick={resetColoring}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
@@ -584,9 +833,7 @@ const getCanvasCoordinates = (e, canvas) => {
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           
-          {/* Palette + Layers */}
           <div className="lg:col-span-1 space-y-4">
-            {/* Palette */}
             <div className="bg-black/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4">
               <h3 className="text-white font-semibold mb-4">
                 🎨 Palette
@@ -636,28 +883,70 @@ const getCanvasCoordinates = (e, canvas) => {
                 <label className="text-purple-200 text-sm mb-2 block">
                   Zoom: {Math.round(zoomLevel * 100)}%
                 </label>
-                <div className="flex gap-2 mb-2">
+                <div className="grid grid-cols-3 gap-2 mb-2">
                   <button
                     onClick={() => handleZoom(-0.25)}
-                    className="flex-1 bg-purple-700/50 text-white py-1 px-2 rounded text-sm"
+                    className="bg-purple-700/50 text-white py-2 px-3 rounded text-lg font-bold"
                   >
-                    -
+                    −
                   </button>
                   <button
                     onClick={resetView}
-                    className="flex-1 bg-purple-700/50 text-white py-1 px-2 rounded text-sm"
+                    className="bg-purple-700/50 text-white py-2 px-3 rounded text-sm"
                   >
                     Reset
                   </button>
                   <button
                     onClick={() => handleZoom(0.25)}
-                    className="flex-1 bg-purple-700/50 text-white py-1 px-2 rounded text-sm"
+                    className="bg-purple-700/50 text-white py-2 px-3 rounded text-lg font-bold"
                   >
                     +
                   </button>
                 </div>
+                
+                <div className="mb-2">
+                  <div className="text-purple-300 text-xs mb-1">Déplacement:</div>
+                  <div className="grid grid-cols-3 gap-1 max-w-[120px] mx-auto">
+                    <div></div>
+                    <button
+                      onClick={() => setPanOffset(prev => ({ ...prev, y: prev.y + 50 }))}
+                      className="bg-purple-700/50 text-white py-2 rounded"
+                    >
+                      ↑
+                    </button>
+                    <div></div>
+                    <button
+                      onClick={() => setPanOffset(prev => ({ ...prev, x: prev.x + 50 }))}
+                      className="bg-purple-700/50 text-white py-2 rounded"
+                    >
+                      ←
+                    </button>
+                    <button
+                      onClick={resetView}
+                      className="bg-purple-700/50 text-white py-2 rounded text-xs"
+                    >
+                      ⊙
+                    </button>
+                    <button
+                      onClick={() => setPanOffset(prev => ({ ...prev, x: prev.x - 50 }))}
+                      className="bg-purple-700/50 text-white py-2 rounded"
+                    >
+                      →
+                    </button>
+                    <div></div>
+                    <button
+                      onClick={() => setPanOffset(prev => ({ ...prev, y: prev.y - 50 }))}
+                      className="bg-purple-700/50 text-white py-2 rounded"
+                    >
+                      ↓
+                    </button>
+                    <div></div>
+                  </div>
+                </div>
+                
                 <div className="text-purple-300 text-xs">
-                  Molette: zoom | Clic droit / Ctrl+clic: déplacer
+                  PC: Molette zoom | Clic droit déplacer<br/>
+                  Mobile: Boutons ci-dessus 👆
                 </div>
               </div>
               
@@ -697,7 +986,6 @@ const getCanvasCoordinates = (e, canvas) => {
               </div>
             </div>
             
-            {/* Layers */}
             <div className="bg-black/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4">
               <h3 className="text-white font-semibold mb-4">
                 📚 Calques
@@ -760,7 +1048,6 @@ const getCanvasCoordinates = (e, canvas) => {
             </div>
           </div>
 
-          {/* Zone de coloriage */}
           <div className="lg:col-span-2">
             <div className="bg-black/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4">
               <h3 className="text-white font-semibold mb-4">
@@ -851,7 +1138,6 @@ const getCanvasCoordinates = (e, canvas) => {
             </div>
           </div>
 
-          {/* Modèle de référence */}
           <div className="lg:col-span-1">
             {showReference && (
               <div className="bg-black/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4">
@@ -863,26 +1149,67 @@ const getCanvasCoordinates = (e, canvas) => {
                   <label className="text-purple-200 text-sm mb-2 block">
                     Zoom: {Math.round(refZoomLevel * 100)}%
                   </label>
-                  <div className="flex gap-2 mb-2">
+                  <div className="grid grid-cols-3 gap-2 mb-2">
                     <button
                       onClick={() => handleRefZoom(-0.25)}
-                      className="flex-1 bg-purple-700/50 text-white py-1 px-2 rounded text-sm"
+                      className="bg-purple-700/50 text-white py-2 px-3 rounded text-lg font-bold"
                     >
-                      -
+                      −
                     </button>
                     <button
                       onClick={resetRefView}
-                      className="flex-1 bg-purple-700/50 text-white py-1 px-2 rounded text-sm"
+                      className="bg-purple-700/50 text-white py-2 px-3 rounded text-sm"
                     >
                       Reset
                     </button>
                     <button
                       onClick={() => handleRefZoom(0.25)}
-                      className="flex-1 bg-purple-700/50 text-white py-1 px-2 rounded text-sm"
+                      className="bg-purple-700/50 text-white py-2 px-3 rounded text-lg font-bold"
                     >
                       +
                     </button>
                   </div>
+                  
+                  <div className="mb-2">
+                    <div className="text-purple-300 text-xs mb-1">Déplacement modèle:</div>
+                    <div className="grid grid-cols-3 gap-1 max-w-[120px] mx-auto">
+                      <div></div>
+                      <button
+                        onClick={() => setRefPanOffset(prev => ({ ...prev, y: prev.y + 30 }))}
+                        className="bg-purple-700/50 text-white py-2 rounded"
+                      >
+                        ↑
+                      </button>
+                      <div></div>
+                      <button
+                        onClick={() => setRefPanOffset(prev => ({ ...prev, x: prev.x + 30 }))}
+                        className="bg-purple-700/50 text-white py-2 rounded"
+                      >
+                        ←
+                      </button>
+                      <button
+                        onClick={resetRefView}
+                        className="bg-purple-700/50 text-white py-2 rounded text-xs"
+                      >
+                        ⊙
+                      </button>
+                      <button
+                        onClick={() => setRefPanOffset(prev => ({ ...prev, x: prev.x - 30 }))}
+                        className="bg-purple-700/50 text-white py-2 rounded"
+                      >
+                        →
+                      </button>
+                      <div></div>
+                      <button
+                        onClick={() => setRefPanOffset(prev => ({ ...prev, y: prev.y - 30 }))}
+                        className="bg-purple-700/50 text-white py-2 rounded"
+                      >
+                        ↓
+                      </button>
+                      <div></div>
+                    </div>
+                  </div>
+                  
                   <div className="text-purple-300 text-xs mb-2">
                     Clic sur l'image avec la pipette 💧 pour récupérer une couleur
                   </div>
@@ -921,23 +1248,21 @@ const getCanvasCoordinates = (e, canvas) => {
                       }}
                     />
                     
-                    {/* Point de debug pour la pipette - DANS le container transformé */}
                     {debugPoint && (
-  <div
-    style={{
-      position: 'absolute',
-      left: `${debugPoint.cssX}px`,
-      top: `${debugPoint.cssY}px`,
-      width: 20, height: 20, borderRadius: '50%',
-      backgroundColor: 'rgba(255,0,0,0.7)', border: '3px solid #fff',
-      transform: 'translate(-50%, -50%)',
-      pointerEvents: 'none', zIndex: 1000,
-      boxShadow: '0 0 20px rgba(255,0,0,1), inset 0 0 10px rgba(255,255,255,0.5)',
-      animation: 'pulse 0.5s ease-in-out infinite',
-    }}
-  />
-)}
-
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: `${debugPoint.cssX}px`,
+                          top: `${debugPoint.cssY}px`,
+                          width: 20, height: 20, borderRadius: '50%',
+                          backgroundColor: 'rgba(255,0,0,0.7)', border: '3px solid #fff',
+                          transform: 'translate(-50%, -50%)',
+                          pointerEvents: 'none', zIndex: 1000,
+                          boxShadow: '0 0 20px rgba(255,0,0,1), inset 0 0 10px rgba(255,255,255,0.5)',
+                          animation: 'pulse 0.5s ease-in-out infinite',
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
                 

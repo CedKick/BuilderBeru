@@ -21,6 +21,7 @@ import GemmesPopup from './components/GemmePopup';
 import SpaceMarineShadowTrail from './components/SpaceMarineShadowTrail/SpaceMarineShadowTrail';
 import WeaponPopup from './components/weaponPopup';
 import OCRPasteListener from './components/OCRPasteListener';
+import { getAllAvailableSkins, hunterNameToKey } from './utils/coloringHelper';
 import './i18n/i18n';
 import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
@@ -495,6 +496,8 @@ const BuilderBeru = () => {
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const { i18n } = useTranslation();
+  const [selectedSkin, setSelectedSkin] = useState('default');
+const [availableSkins, setAvailableSkins] = useState([{ id: 'default', label: 'Default' }]);
   const [activeSection, setActiveSection] = useState('artifacts');
   const [isSharing, setIsSharing] = useState(false);
   const [shareModalData, setShareModalData] = useState(null);
@@ -2553,6 +2556,12 @@ Continuer?`;
       setIsLoading(false);
     }
   };
+
+  // Ajouter ce useEffect (si tu en as déjà, intègre juste le contenu)
+useEffect(() => {
+  const skins = getAllAvailableSkins();
+  setAvailableSkins(skins);
+}, []); // Se charge au montage du component
 
   // 4️⃣ DÉTECTER UN COMPTE DANS L'URL AU CHARGEMENT
   useEffect(() => {
@@ -5878,6 +5887,18 @@ shadowManager.setPopupCheck(() => {
                           )}
                         </div>
                       </div>
+                      {/* NOUVEAU : Sélecteur de skin */}
+<select 
+  value={selectedSkin}
+  onChange={(e) => setSelectedSkin(e.target.value)}
+  className="bg-[#1a0a2e] text-white border border-violet-500/30 rounded-lg px-3 py-2 hover:border-violet-400/50 transition-colors"
+>
+  {availableSkins.map(skin => (
+    <option key={skin.id} value={skin.id}>
+      {skin.label}
+    </option>
+  ))}
+</select>
 
                       {/* Debug Button */}
                       {showDebugButton && (
@@ -7492,6 +7513,23 @@ shadowManager.setPopupCheck(() => {
                         </select>
                       )}
 
+                      {/* SÉLECTEUR DE SKIN - NOUVEAU */}
+<select 
+  value={selectedSkin}
+  onChange={(e) => setSelectedSkin(e.target.value)}
+  className="bg-purple-800/30 text-purple-300
+    border border-purple-600/50 rounded-lg
+    px-3 py-2 text-xs
+    hover:bg-purple-700/30 hover:border-purple-400
+    transition-colors ml-2"
+>
+  {availableSkins.map(skin => (
+    <option key={skin.id} value={skin.id} className="bg-gray-900">
+      {skin.label}
+    </option>
+  ))}
+</select>
+
                       {/* Separator */}
                       <div className="h-4 w-px bg-purple-600/30 mx-2" />
 
@@ -8248,12 +8286,15 @@ shadowManager.setPopupCheck(() => {
                           <div className="relative">
                             {selectedCharacter && characters[selectedCharacter] && characters[selectedCharacter].img ? (
                               <>
-                                <img
-                                  src={characters[selectedCharacter].img}
-                                  alt={characters[selectedCharacter].name}
-                                  className="w-64 mb-2 relative z-10"
-                                  id="targetToDestroy"
-                                />
+                                <img 
+  src={
+    selectedSkin === 'default' 
+      ? characters[selectedCharacter].img
+      : availableSkins.find(s => s.id === selectedSkin)?.preview || characters[selectedCharacter].img
+  }
+  alt={characters[selectedCharacter].name}
+  className="w-1/2 mx-auto rounded-md opacity-90 object-contain"
+/>
                                 {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
                                   <div
                                     className="absolute w-60 h-8 rounded-full blur-sm animate-fade-out z-0"
