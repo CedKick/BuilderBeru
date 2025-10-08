@@ -10,9 +10,24 @@ export const getCustomSkin = (hunterKey, modelId = 'default') => {
 };
 
 export const hunterNameToKey = {
-  'Minnie': 'ilhwan',
-  'Yuqi': 'Yuqi',
-};
+    'Ilhwan': 'ilhwan',
+        'Jinah': 'jinah',
+        'yuqi': 'yuqi',
+        'Soyeon': 'soyeon',
+        'Minnie': 'minnie',
+        'Miyeon': 'miyeon',
+        'Shuhua': 'shuhua',
+        'Lennart Niermann': 'niermann',
+        'Cha Hae-In Valkyrie': 'chae',
+        'Tawata Kanae': 'kanae',
+        'Seorin': 'seorin',
+        'Goto Ryuji': 'goto',
+        'Shimizu Akari': 'shimizu',
+        'Thomas André': 'thomas',
+        'Isla Wright': 'isla',
+        'Gina': 'gina',
+        'Esil Radiru': 'esil'
+    };
 
 export const getAllAvailableSkins = () => {
   try {

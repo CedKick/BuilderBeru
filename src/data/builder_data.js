@@ -3,6 +3,144 @@
 // 🔥 REFACTOR KAISEL - LOGIQUE UNIFIÉE
 
 const BUILDER_DATA = {
+    "ilhwan": {
+  "name": "Ilhwan",
+  "element": "Dark",
+  "class": "Assassin", 
+  "grade": "SSR",
+  "scaleStat": "Attack",
+
+"optimizationPriority": [
+  {
+    stat: "Additional Attack",           
+    priority: 1,
+    target: "maximum_possible",
+    reason: "Prioriser Attaque au maximum (scaleStat)",
+    description: "Minnie scale sur Attaque - maximise cette stat avant tout"
+  },
+  {
+    stat: "Damage Increase",              
+    priority: 2,
+    target: "maximum_possible",
+    reason: "Dégâts optimaux après défense"
+  },
+  {
+    stat: "Critical Hit Damage",
+    priority: 3,
+    target: "200%+",
+    reason: "Dégâts critiques optimaux"
+  },
+  {
+    stat: "Critical Hit Rate",
+    priority: 4,
+    target: 5000, // 50% minimum pour tank
+    reason: "Taux critique pour contre-attaques"
+  },
+  {
+    stat: "Defense Penetration",
+    priority: 5,
+    target: "10-20%",
+    reason: "Pénétration pour efficacité"
+  }
+],
+
+  // 📊 STATS RECOMMANDÉES (inchangé)
+  "recommendedStats": {
+    "criticalHitRate": "50%",
+    "criticalHitDamage": "200% - 210%",
+    "DamageIncrease": "30% +",
+    "defensePenetration": "10% - 20%",
+    "additionalDefense": "Le plus possible",
+    "additionalAttack": null,
+    "precision": null,
+    "damageReduction": null,
+    "healingReceived": null,
+    "mpRecoveryRate": null,
+    "mpCostReduction": null
+  },
+
+  // 🎮 MODES DE JEU & SETS - KAISEL FIX COMPLET
+  "gameModes": {
+    "general": {
+      "recommendedSet": "Hybrid Iron Will/Outstanding", // ← SET 1
+      "priority": "Balanced tank build",
+      "description": "Build tank équilibré défensif",
+      "availability": "L",
+      "setComposition": "4x Iron Will + 4x Outstanding Ability"
+    },
+    "pod": {
+      "recommendedSet": "Full Chaotic Infamy", // ← SET 2
+      "priority": "PvP maximum survivability",
+      "description": "Build PvP survie maximum",
+      "availability": "LR",
+      "setComposition": "8x Chaotic Infamy"
+    },
+    "bdg": {
+      "recommendedSet": "Full Chaotic Infamy", // ← SET 2 aussi
+      "priority": "Guild boss tanking",
+      "description": "Build boss de guilde tank",
+      "availability": "LR",
+      "setComposition": "8x Chaotic Infamy"
+    }
+  },
+
+  // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS - KAISEL FIX 2 BUILDS
+  "artifactSets": {
+    "fullChaoticInfamy": {
+      "name": "Full Chaotic Infamy",
+      "frenchName": "Infamie chaotique complète",
+      "availability": "LR",
+      "setComposition": "8x Chaotic Infamy",
+      "pieces": {
+        "helmet": "Casque d'infamie chaotique",
+        "chest": "Armure d'infamie chaotique",
+        "gloves": "Gants d'infamie chaotique",
+        "boots": "Bottes d'infamie chaotique",
+        "necklace": "Collier d'infamie chaotique",
+        "bracelet": "Bracelet d'infamie chaotique",
+        "ring": "Bague d'infamie chaotique",
+        "earrings": "Boucles d'oreilles d'infamie chaotique"
+      },
+      "mainStats": {
+        "helmet": "Additional Defense",
+        "chest": "Additional Defense",
+        "gloves": "Additional Attack",
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional Defense",
+        "bracelet": "Wind Damage %",
+        "ring": "Additional Defense",
+        "earrings": "Additional MP"
+      }
+    }
+  },
+
+  // 🧪 NOYAUX RECOMMANDÉS (inchangé)
+  "recommendedCores": {
+    "offensive": {
+      "name": "Trompette du Démon Anonyme",
+      "type": "Additional Attack",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, les Dégâts de coup critique de l'utilisateur augmentent de 30% pendant 8 secondes"
+    },
+    "defensive": {
+      "name": "Corne du Démon Anonyme", 
+      "type": "Additional Defense",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
+    },
+    "endurance": {
+      "name": "Dents du Veilleur",
+      "type": "Additional MP",
+      "bonus": "Diminue le taux de récupération de PM de 15% et la Consommation de PM de 15% lors de l'utilisation d'une compétence"
+    }
+  },
+
+  // 💡 CONSEILS BÉRU - KAISEL UPDATE
+  "beruAdvice": {
+    "newbie": "Minnie est un dps offensif buffant sa team en Atk.",
+    "intermediate": "Scale sur Attaque = focus Additional Attaque. Général vs PvP/BdG !",
+    "advanced": "2 builds : Hybride (Général), Full Chaotic (PvP/BdG).",
+    "expert": "Curse&OHK/Outstanding pour le général, Chaotic Infamy pour BDG !"
+  }
+},
   "minnie": {
   "name": "Minnie",
   "element": "Dark",

@@ -2012,60 +2012,71 @@ const [availableSkins, setAvailableSkins] = useState([{ id: 'default', label: 'D
     return data[Math.floor(Math.random() * data.length)];
   };
 
-  const characterStats = {
-    // SSR Hunters
-    'minnie': { attack: 5373, defense: 6031, hp: 11356, critRate: 0, mp: 1000 },
-    'soyeon': { attack: 6058, defense: 5370, hp: 11332, critRate: 0, mp: 1000 },
-    'yuqi': { attack: 5323, defense: 5352, hp: 12940, critRate: 0, mp: 1000 },
-    'jinwoo': { attack: 3032, defense: 2775, hp: 5436, critRate: 0, mp: 1034 },
-    'jinah': { attack: 6132, defense: 5292, hp: 11313, critRate: 0, mp: 1000 },
-    'alicia': { attack: 6056, defense: 5279, hp: 11503, critRate: 0, mp: 1000 },
-    'mirei': { attack: 6149, defense: 5231, hp: 11407, critRate: 0, mp: 1000 },
-    'baek': { attack: 5367, defense: 5954, hp: 11534, critRate: 0, mp: 1000 },
-    'chae-in': { attack: 6075, defense: 5363, hp: 11284, critRate: 0, mp: 1000 },
-    'chae': { attack: 5703, defense: 5755, hp: 11243, critRate: 0, mp: 1000 },
-    'charlotte': { attack: 5305, defense: 6100, hp: 11323, critRate: 0, mp: 1000 },
-    'choi': { attack: 6101, defense: 5199, hp: 11575, critRate: 0, mp: 1000 },
-    'emma': { attack: 5339, defense: 5295, hp: 12995, critRate: 0, mp: 1000 },
-    'esil': { attack: 6088, defense: 5376, hp: 11230, critRate: 0, mp: 1000 },
-    'gina': { attack: 6153, defense: 5326, hp: 11198, critRate: 0, mp: 1000 },
-    'go': { attack: 5295, defense: 6016, hp: 11555, critRate: 0, mp: 1000 },
-    'goto': { attack: 5278, defense: 5382, hp: 12940, critRate: 0, mp: 1000 },
-    'han': { attack: 5269, defense: 5383, hp: 12957, critRate: 0, mp: 1000 },
-    'harper': { attack: 5341, defense: 5352, hp: 12868, critRate: 0, mp: 1000 },
-    'hwang': { attack: 5363, defense: 6004, hp: 11437, critRate: 0, mp: 1000 },
-    'isla': { attack: 5442, defense: 6116, hp: 11032, critRate: 0, mp: 1000 },
-    'lee': { attack: 6045, defense: 5333, hp: 11412, critRate: 0, mp: 1000 },
-    'niermann': { attack: 5703, defense: 5755, hp: 11243, critRate: 0, mp: 1000 },
-    'lim': { attack: 6071, defense: 5437, hp: 11135, critRate: 0, mp: 1000 },
-    'meilin': { attack: 5935, defense: 5408, hp: 11486, critRate: 0, mp: 1000 },
-    'min': { attack: 5287, defense: 5326, hp: 13041, critRate: 0, mp: 1000 },
-    'miyeon': { attack: 5373, defense: 6031, hp: 11356, critRate: 0, mp: 1000 },
-    'seo': { attack: 5391, defense: 5461, hp: 12529, critRate: 0, mp: 1000 },
-    'seorin': { attack: 5237, defense: 5394, hp: 13001, critRate: 0, mp: 1000 },
-    'shimizu': { attack: 5424, defense: 5212, hp: 12992, critRate: 0, mp: 1000 },
-    'shuhua': { attack: 6132, defense: 5292, hp: 11313, critRate: 0, mp: 1000 },
-    'silverbaek': { attack: 6037, defense: 5357, hp: 11379, critRate: 0, mp: 1000 },
-    'kanae': { attack: 5847, defense: 5218, hp: 12077, critRate: 0, mp: 1000 },
-    'thomas': { attack: 5384, defense: 6153, hp: 11075, critRate: 0, mp: 1000 },
-    'woo': { attack: 5402, defense: 6083, hp: 11184, critRate: 0, mp: 1000 },
-    'yoo': { attack: 6102, defense: 5220, hp: 11529, critRate: 0, mp: 1000 },
+// ✅ STATS À JOUR depuis le CSV (08/10/2025)
+const characterStats = {
+    // ============================================
+    // 🔥 SSR HUNTERS
+    // ============================================
+    
+    // ✨ AJOUT - Sung Il-Hwan (nouveau)
+    'ilhwan': { attack: 6196, defense: 5599, hp: 11834, critRate: 0, mp: 1000 },
+    
+    // ✅ FOREVER (IDLE)
+    'minnie': { attack: 5568, defense: 6251, hp: 11779, critRate: 0, mp: 1000 },
+    'miyeon': { attack: 5568, defense: 6251, hp: 11779, critRate: 0, mp: 1000 },
+    'shuhua': { attack: 6356, defense: 5485, hp: 11733, critRate: 0, mp: 1000 },
+    'soyeon': { attack: 6279, defense: 5566, hp: 11755, critRate: 0, mp: 1000 },
+    'yuqi': { attack: 5547, defense: 5517, hp: 13422, critRate: 0, mp: 1000 },
+    
+    // ✅ Autres SSR
+    'jinah': { attack: 6356, defense: 5485, hp: 11733, critRate: 0, mp: 1000 }, // Sung Jinah
+    'alicia': { attack: 6276, defense: 5471, hp: 11932, critRate: 0, mp: 1000 },
+    'mirei': { attack: 6374, defense: 5421, hp: 11832, critRate: 0, mp: 1000 },
+    'baek': { attack: 5562, defense: 6170, hp: 11964, critRate: 0, mp: 1000 }, // Baek Yoonho
+    'silverbaek': { attack: 6257, defense: 5551, hp: 11804, critRate: 0, mp: 1000 }, // Silver Mane
+    'chae-in': { attack: 6296, defense: 5559, hp: 11703, critRate: 0, mp: 1000 }, // Cha Hae In
+    'chae': { attack: 5911, defense: 5964, hp: 11662, critRate: 0, mp: 1000 }, // Pure Sword Princess
+    'charlotte': { attack: 5499, defense: 6322, hp: 11755, critRate: 0, mp: 1000 },
+    'choi': { attack: 6323, defense: 5389, hp: 12007, critRate: 0, mp: 1000 },
+    'emma': { attack: 5534, defense: 5487, hp: 13479, critRate: 0, mp: 1000 },
+    'esil': { attack: 6309, defense: 5572, hp: 11648, critRate: 0, mp: 1000 },
+    'gina': { attack: 6377, defense: 5519, hp: 11615, critRate: 0, mp: 1000 },
+    'go': { attack: 5487, defense: 6235, hp: 11985, critRate: 0, mp: 1000 },
+    'goto': { attack: 5470, defense: 5578, hp: 13422, critRate: 0, mp: 1000 },
+    'han': { attack: 5461, defense: 5579, hp: 13438, critRate: 0, mp: 1000 },
+    'harper': { attack: 5535, defense: 5547, hp: 13348, critRate: 0, mp: 1000 },
+    'hwang': { attack: 5559, defense: 6222, hp: 11862, critRate: 0, mp: 1000 },
+    'isla': { attack: 5640, defense: 6338, hp: 11443, critRate: 0, mp: 1000 },
+    'lee': { attack: 6265, defense: 5528, hp: 11837, critRate: 0, mp: 1000 },
+    'niermann': { attack: 5911, defense: 5964, hp: 11662, critRate: 0, mp: 1000 },
+    'lim': { attack: 6292, defense: 5635, hp: 11549, critRate: 0, mp: 1000 },
+    'meilin': { attack: 6150, defense: 5605, hp: 11914, critRate: 0, mp: 1000 },
+    'min': { attack: 5480, defense: 5519, hp: 13527, critRate: 0, mp: 1000 },
+    'seo': { attack: 5587, defense: 5659, hp: 12995, critRate: 0, mp: 1000 },
+    'seorin': { attack: 5428, defense: 5590, hp: 13486, critRate: 0, mp: 1000 },
+    'shimizu': { attack: 5621, defense: 5402, hp: 13476, critRate: 0, mp: 1000 },
+    'kanae': { attack: 6059, defense: 5408, hp: 12528, critRate: 0, mp: 1000 },
+    'thomas': { attack: 5580, defense: 6376, hp: 11487, critRate: 0, mp: 1000 },
+    'woo': { attack: 5599, defense: 6304, hp: 11601, critRate: 0, mp: 1000 }, // CORRECTION : hp était 1601 → 11601
+    'yoo': { attack: 6325, defense: 5410, hp: 11959, critRate: 0, mp: 1000 },
 
-    // SR Hunters
-    'anna': { attack: 5372, defense: 4668, hp: 10108, critRate: 0, mp: 1000 },
-    'han-song': { attack: 5272, defense: 4751, hp: 10146, critRate: 0, mp: 1000 },
-    'hwang-dongsuk': { attack: 4716, defense: 4781, hp: 11265, critRate: 0, mp: 1000 },
-    'jo': { attack: 5286, defense: 4770, hp: 10075, critRate: 0, mp: 1000 },
-    'kang': { attack: 5335, defense: 4689, hp: 10144, critRate: 0, mp: 1000 },
-    'kim-chul': { attack: 4745, defense: 5376, hp: 9938, critRate: 0, mp: 1000 },
-    'kim-sangshik': { attack: 4858, defense: 5277, hp: 9908, critRate: 0, mp: 1000 },
-    'lee-johee': { attack: 4790, defense: 4585, hp: 11524, critRate: 0, mp: 1000 },
-    'nam': { attack: 4740, defense: 4747, hp: 11286, critRate: 0, mp: 1000 },
-    'park-beom': { attack: 4807, defense: 5302, hp: 9965, critRate: 0, mp: 1000 },
-    'park-heejin': { attack: 5228, defense: 4805, hp: 10125, critRate: 0, mp: 1000 },
-    'song': { attack: 5463, defense: 4671, hp: 9908, critRate: 0, mp: 1000 },
-    'yoo-jinho': { attack: 4776, defense: 5285, hp: 10066, critRate: 0, mp: 1000 }
-  };
+    // ============================================
+    // 🥈 SR HUNTERS
+    // ============================================
+    'anna': { attack: 5580, defense: 4849, hp: 10512, critRate: 0, mp: 1000 },
+    'han-song': { attack: 5476, defense: 4936, hp: 10551, critRate: 0, mp: 1000 },
+    'hwang-dongsuk': { attack: 4899, defense: 4966, hp: 11714, critRate: 0, mp: 1000 },
+    'jo': { attack: 5491, defense: 4955, hp: 10477, critRate: 0, mp: 1000 },
+    'kang': { attack: 5542, defense: 4870, hp: 10549, critRate: 0, mp: 1000 },
+    'kim-chul': { attack: 4929, defense: 5584, hp: 10335, critRate: 0, mp: 1000 },
+    'kim-sangshik': { attack: 5047, defense: 5481, hp: 10304, critRate: 0, mp: 1000 },
+    'lee-johee': { attack: 4975, defense: 4763, hp: 11984, critRate: 0, mp: 1000 },
+    'nam': { attack: 4924, defense: 4931, hp: 11736, critRate: 0, mp: 1000 },
+    'park-beom': { attack: 4993, defense: 5507, hp: 10363, critRate: 0, mp: 1000 },
+    'park-heejin': { attack: 5430, defense: 4991, hp: 10529, critRate: 0, mp: 1000 },
+    'song': { attack: 5675, defense: 4852, hp: 10304, critRate: 0, mp: 1000 },
+    'yoo-jinho': { attack: 4961, defense: 5489, hp: 10468, critRate: 0, mp: 1000 }
+};
 
   const [artifactsData, setArtifactsData] = useState({
     Helmet: {
@@ -3282,7 +3293,7 @@ BobbyJones : "Allez l'Inter !"
           defaultCharacter = mainRecent[0];
         } else {
           // En dernier recours, Niermann
-          defaultCharacter = 'minnie';
+          defaultCharacter = 'ilhwan';
         }
       }
 
