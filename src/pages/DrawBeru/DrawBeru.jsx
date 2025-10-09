@@ -1093,8 +1093,8 @@ const DrawBeru = () => {
                                                 setMobileMenuOpen(false);
                                             }}
                                             className={`h-12 rounded-lg border-2 transition-all ${selectedColor === color
-                                                    ? 'border-white scale-110'
-                                                    : 'border-purple-500/50'
+                                                ? 'border-white scale-110'
+                                                : 'border-purple-500/50'
                                                 }`}
                                             style={{ backgroundColor: color }}
                                         />
@@ -1132,8 +1132,8 @@ const DrawBeru = () => {
                                         <div
                                             key={layer.id}
                                             className={`p-2 rounded-lg border ${activeLayer === layer.id
-                                                    ? 'border-purple-400 bg-purple-900/50'
-                                                    : 'border-purple-700/30 bg-purple-900/20'
+                                                ? 'border-purple-400 bg-purple-900/50'
+                                                : 'border-purple-700/30 bg-purple-900/20'
                                                 }`}
                                         >
                                             <div className="flex items-center justify-between mb-1">
@@ -1210,299 +1210,348 @@ const DrawBeru = () => {
                 )}
 
                 {/* 🎨 CANVAS MOBILE FULLSCREEN */}
-        <div className="relative w-full" style={{ height: 'calc(100vh - 120px)' }}>
-          <div
-            className="absolute inset-0 bg-white flex items-center justify-center overflow-hidden"
-            onTouchStart={(e) => {
-              if (interactionMode === 'pan' && currentTool !== 'pipette') {
-                canvasTouchStart(e);
-              } else {
-                handleTouchDraw(e);
-              }
-            }}
-            onTouchMove={(e) => {
-              if (interactionMode === 'pan' && currentTool !== 'pipette') {
-                canvasTouchMove(e);
-              } else {
-                handleTouchDraw(e);
-              }
-            }}
-            onTouchEnd={(e) => {
-              if (interactionMode === 'pan' && currentTool !== 'pipette') {
-                canvasTouchEnd(e);
-              } else {
-                stopDrawing();
-              }
-            }}
-          >
-            <div
-              style={{
-                transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
-                transformOrigin: 'center center',
-                transition: 'none',
-                position: 'relative'
-              }}
-            >
-              {/* CANVAS PRINCIPAL (Template + Coloriage) - TOUJOURS VISIBLE */}
-              <canvas
-                ref={canvasRef}
-                style={{
-                  display: 'block',
-                  touchAction: 'none',
-                  cursor: currentTool === 'pipette' ? 'crosshair' : (interactionMode === 'pan' ? 'grab' : 'crosshair')
-                }}
-              />
-              
-              {/* 🆕 MODÈLE RÉFÉRENCE COLORÉ - Opacity variable */}
-              <canvas
-                ref={overlayCanvasRef}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  pointerEvents: 'none',
-                  opacity: showModelOverlay ? modelOverlayOpacity : 0.15,
-                  touchAction: 'none',
-                  transition: 'opacity 0.3s ease',
-                  mixBlendMode: 'multiply' // Pour mieux voir à travers
-                }}
-              />
-              
-              {/* 🆕 MODEL OVERLAY */}
-              {showModelOverlay && (
-                <canvas
-                  ref={overlayCanvasRef}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    pointerEvents: 'none',
-                    opacity: modelOverlayOpacity,
-                    touchAction: 'none'
-                  }}
-                />
-              )}
-            </div>
-          </div>
+                <div className="relative w-full" style={{ height: 'calc(100vh - 120px)' }}>
+                    <div
+                        className="absolute inset-0 bg-white flex items-center justify-center overflow-hidden"
+                        onTouchStart={(e) => {
+                            if (interactionMode === 'pan' && currentTool !== 'pipette') {
+                                canvasTouchStart(e);
+                            } else {
+                                handleTouchDraw(e);
+                            }
+                        }}
+                        onTouchMove={(e) => {
+                            if (interactionMode === 'pan' && currentTool !== 'pipette') {
+                                canvasTouchMove(e);
+                            } else {
+                                handleTouchDraw(e);
+                            }
+                        }}
+                        onTouchEnd={(e) => {
+                            if (interactionMode === 'pan' && currentTool !== 'pipette') {
+                                canvasTouchEnd(e);
+                            } else {
+                                stopDrawing();
+                            }
+                        }}
+                    >
+                        <div
+                            style={{
+                                transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
+                                transformOrigin: 'center center',
+                                transition: 'none',
+                                position: 'relative'
+                            }}
+                        >
+                            {/* CANVAS PRINCIPAL (Template + Coloriage) - TOUJOURS VISIBLE */}
+                            <canvas
+                                ref={canvasRef}
+                                style={{
+                                    display: 'block',
+                                    touchAction: 'none',
+                                    cursor: currentTool === 'pipette' ? 'crosshair' : (interactionMode === 'pan' ? 'grab' : 'crosshair')
+                                }}
+                            />
 
-          {/* 🔥 CONTROLS EN HAUT DANS LE CANVAS - ALIGNÉS */}
-          <div 
-            className="absolute top-4 left-4 right-4 z-[1000] flex items-start gap-3"
-            style={{ pointerEvents: 'auto' }}
-          >
-            {/* BOUTONS ALIGNÉS À GAUCHE */}
-            <div className="flex gap-2">
-              {/* BOUTON MODE PAN/DRAW */}
+                            {/* 🆕 MODÈLE RÉFÉRENCE COLORÉ - Opacity variable */}
+                            <canvas
+                                ref={overlayCanvasRef}
+                                style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    pointerEvents: 'none',
+                                    opacity: showModelOverlay ? modelOverlayOpacity : 0.15,
+                                    touchAction: 'none',
+                                    transition: 'opacity 0.3s ease',
+                                    mixBlendMode: 'multiply' // Pour mieux voir à travers
+                                }}
+                            />
+
+                            {/* 🆕 MODEL OVERLAY */}
+                            {showModelOverlay && (
+                                <canvas
+                                    ref={overlayCanvasRef}
+                                    style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        pointerEvents: 'none',
+                                        opacity: modelOverlayOpacity,
+                                        touchAction: 'none'
+                                    }}
+                                />
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 🔥 CONTROLS EN HAUT DANS LE CANVAS - ALIGNÉS */}
+                    <div
+                        className="absolute top-4 left-4 right-4 z-[1000] flex items-start gap-3"
+                        style={{ pointerEvents: 'auto' }}
+                    >
+                        {/* BOUTONS ALIGNÉS À GAUCHE */}
+                        <div className="flex gap-2">
+                            {/* BOUTON MODE PAN/DRAW */}
+                            <button
+                                onClick={() => setInteractionMode(interactionMode === 'draw' ? 'pan' : 'draw')}
+                                className={`flex items-center justify-center w-10 h-10 rounded-lg shadow-md text-lg transition-all active:scale-95 backdrop-blur-sm ${interactionMode === 'draw'
+                                    ? 'bg-green-600/40 hover:bg-green-600/60 text-white border border-green-400/20'
+                                    : 'bg-blue-600/40 hover:bg-blue-600/60 text-white border border-blue-400/20'
+                                    }`}
+                                title={interactionMode === 'draw' ? 'Mode Dessin' : 'Mode Déplacement'}
+                            >
+                                {interactionMode === 'draw' ? '🖌️' : '✋'}
+                            </button>
+
+                            {/* BOUTON TOGGLE MODEL OVERLAY */}
+                            <button
+                                onClick={() => setShowModelOverlay(!showModelOverlay)}
+                                className={`flex items-center justify-center w-10 h-10 rounded-lg shadow-md text-lg transition-all active:scale-95 backdrop-blur-sm ${showModelOverlay
+                                    ? 'bg-purple-600/40 hover:bg-purple-600/60 text-white border border-purple-400/20'
+                                    : 'bg-gray-700/40 hover:bg-gray-700/60 text-white border border-gray-500/20'
+                                    }`}
+                                title={showModelOverlay ? 'Cacher modèle' : 'Afficher modèle'}
+                            >
+                                {showModelOverlay ? '👁️' : '🙈'}
+                            </button>
+                        </div>
+
+                        {/* 🔥 SLIDER OPACITY À DROITE (visible si modèle affiché) */}
+                        {showModelOverlay && (
+                            <div
+                                className="flex-1 bg-black/60 backdrop-blur-md rounded-lg p-2 shadow-lg border border-purple-500/30 max-w-[200px]"
+                            >
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-white text-[10px] font-semibold">Opacité</span>
+                                    <span className="text-purple-300 text-[10px] font-mono">{Math.round(modelOverlayOpacity * 100)}%</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step="0.05"
+                                    value={modelOverlayOpacity}
+                                    onChange={(e) => setModelOverlayOpacity(parseFloat(e.target.value))}
+                                    className="w-full h-1.5 bg-purple-900/50 rounded-lg appearance-none cursor-pointer"
+                                    style={{
+                                        accentColor: '#9333ea'
+                                    }}
+                                />
+                                <div className="flex justify-between mt-1 gap-1">
+                                    <button
+                                        onClick={() => setModelOverlayOpacity(0.2)}
+                                        className="text-[9px] text-purple-300 hover:text-white px-1 py-0.5 rounded bg-purple-900/30 hover:bg-purple-900/50 transition-colors"
+                                    >
+                                        20%
+                                    </button>
+                                    <button
+                                        onClick={() => setModelOverlayOpacity(0.5)}
+                                        className="text-[9px] text-purple-300 hover:text-white px-1 py-0.5 rounded bg-purple-900/30 hover:bg-purple-900/50 transition-colors"
+                                    >
+                                        50%
+                                    </button>
+                                    <button
+                                        onClick={() => setModelOverlayOpacity(0.8)}
+                                        className="text-[9px] text-purple-300 hover:text-white px-1 py-0.5 rounded bg-purple-900/30 hover:bg-purple-900/50 transition-colors"
+                                    >
+                                        80%
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 🆕 INDICATEUR COULEUR ACTUELLE (en bas à droite) */}
+                    <div
+                        className="absolute backdrop-blur-sm"
+                        style={{
+                            bottom: '90px',
+                            right: '16px',
+                            width: '56px',
+                            height: '56px',
+                            borderRadius: '50%',
+                            backgroundColor: selectedColor,
+                            border: '3px solid rgba(255, 255, 255, 0.8)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                            zIndex: 1000,
+                            cursor: 'pointer',
+                            opacity: 0.95
+                        }}
+                        onClick={() => setMobileMenuOpen(true)}
+                        title="Changer de couleur"
+                    />
+
+                 {/* 🆕 CONTROLS BAS : Undo/Redo + Brush Size sur même ligne */}
+          <div className="absolute bottom-20 left-2 right-2 z-[1000] flex items-center gap-2">
+            {/* UNDO/REDO */}
+            <div className="flex gap-2 shrink-0">
               <button
-                onClick={() => setInteractionMode(interactionMode === 'draw' ? 'pan' : 'draw')}
-                className={`flex items-center justify-center w-12 h-12 rounded-lg shadow-lg text-xl transition-all active:scale-95 backdrop-blur-sm ${
-                  interactionMode === 'draw' 
-                    ? 'bg-green-600/70 hover:bg-green-600/90 text-white border border-green-400/30' 
-                    : 'bg-blue-600/70 hover:bg-blue-600/90 text-white border border-blue-400/30'
+                onClick={undo}
+                disabled={!canUndo}
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-md transition-all active:scale-95 backdrop-blur-sm ${
+                  canUndo
+                    ? 'bg-blue-600/40 hover:bg-blue-600/60 text-white border border-blue-400/20'
+                    : 'bg-gray-600/30 text-gray-400 border border-gray-500/15'
                 }`}
-                title={interactionMode === 'draw' ? 'Mode Dessin' : 'Mode Déplacement'}
               >
-                {interactionMode === 'draw' ? '🖌️' : '✋'}
+                ↶
               </button>
-
-              {/* BOUTON TOGGLE MODEL OVERLAY */}
               <button
-                onClick={() => setShowModelOverlay(!showModelOverlay)}
-                className={`flex items-center justify-center w-12 h-12 rounded-lg shadow-lg text-xl transition-all active:scale-95 backdrop-blur-sm ${
-                  showModelOverlay
-                    ? 'bg-purple-600/70 hover:bg-purple-600/90 text-white border border-purple-400/30'
-                    : 'bg-gray-700/70 hover:bg-gray-700/90 text-white border border-gray-500/30'
+                onClick={redo}
+                disabled={!canRedo}
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-md transition-all active:scale-95 backdrop-blur-sm ${
+                  canRedo
+                    ? 'bg-blue-600/40 hover:bg-blue-600/60 text-white border border-blue-400/20'
+                    : 'bg-gray-600/30 text-gray-400 border border-gray-500/15'
                 }`}
-                title={showModelOverlay ? 'Cacher modèle' : 'Afficher modèle'}
               >
-                {showModelOverlay ? '👁️' : '🙈'}
+                ↷
               </button>
             </div>
 
-            {/* 🔥 SLIDER OPACITY À DROITE (visible si modèle affiché) */}
-            {showModelOverlay && (
+            {/* BRUSH SIZE SLIDER - Visible en mode brush/eraser */}
+            {(currentTool === 'brush' || currentTool === 'eraser') && (
               <div 
-                className="flex-1 bg-black/60 backdrop-blur-md rounded-lg p-2 shadow-lg border border-purple-500/30 max-w-[200px]"
+                className="flex-1 bg-black/40 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-md border border-purple-500/20"
+                style={{ maxHeight: '46px' }}
               >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-white text-[10px] font-semibold">Opacité</span>
-                  <span className="text-purple-300 text-[10px] font-mono">{Math.round(modelOverlayOpacity * 100)}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={modelOverlayOpacity}
-                  onChange={(e) => setModelOverlayOpacity(parseFloat(e.target.value))}
-                  className="w-full h-1.5 bg-purple-900/50 rounded-lg appearance-none cursor-pointer"
-                  style={{
-                    accentColor: '#9333ea'
-                  }}
-                />
-                <div className="flex justify-between mt-1 gap-1">
-                  <button
-                    onClick={() => setModelOverlayOpacity(0.2)}
-                    className="text-[9px] text-purple-300 hover:text-white px-1 py-0.5 rounded bg-purple-900/30 hover:bg-purple-900/50 transition-colors"
-                  >
-                    20%
-                  </button>
-                  <button
-                    onClick={() => setModelOverlayOpacity(0.5)}
-                    className="text-[9px] text-purple-300 hover:text-white px-1 py-0.5 rounded bg-purple-900/30 hover:bg-purple-900/50 transition-colors"
-                  >
-                    50%
-                  </button>
-                  <button
-                    onClick={() => setModelOverlayOpacity(0.8)}
-                    className="text-[9px] text-purple-300 hover:text-white px-1 py-0.5 rounded bg-purple-900/30 hover:bg-purple-900/50 transition-colors"
-                  >
-                    80%
-                  </button>
+                <div className="flex items-center gap-2">
+                  {/* ICÔNE OUTIL */}
+                  <div className="flex items-center justify-center w-6 h-6 rounded bg-purple-600/50 text-sm shrink-0">
+                    {currentTool === 'brush' ? '🖌️' : '🧽'}
+                  </div>
+
+                  {/* SLIDER */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-white/80 text-[9px] font-medium">
+                        Taille
+                      </span>
+                      <span className="text-purple-300 text-[10px] font-mono font-bold">
+                        {brushSize.toFixed(1)}px
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="30"
+                      step="0.5"
+                      value={brushSize}
+                      onChange={(e) => setBrushSize(parseFloat(e.target.value))}
+                      className="w-full h-1 bg-purple-900/30 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        accentColor: currentTool === 'brush' ? '#9333ea' : '#f97316'
+                      }}
+                    />
+                  </div>
+
+                  {/* QUICK BUTTONS */}
+                  <div className="flex gap-1 shrink-0">
+                    <button
+                      onClick={() => setBrushSize(2)}
+                      className="text-[8px] text-purple-300/70 hover:text-white px-1.5 py-0.5 rounded bg-purple-900/20 hover:bg-purple-900/40 transition-colors"
+                    >
+                      S
+                    </button>
+                    <button
+                      onClick={() => setBrushSize(8)}
+                      className="text-[8px] text-purple-300/70 hover:text-white px-1.5 py-0.5 rounded bg-purple-900/20 hover:bg-purple-900/40 transition-colors"
+                    >
+                      M
+                    </button>
+                    <button
+                      onClick={() => setBrushSize(15)}
+                      className="text-[8px] text-purple-300/70 hover:text-white px-1.5 py-0.5 rounded bg-purple-900/20 hover:bg-purple-900/40 transition-colors"
+                    >
+                      L
+                    </button>
+                  </div>
+
+                  {/* PRÉVISUALISATION */}
+                  <div className="flex items-center justify-center w-8 h-8 bg-white/5 rounded border border-purple-500/20 shrink-0">
+                    <div
+                      style={{
+                        width: `${Math.min(brushSize * 1.5, 24)}px`,
+                        height: `${Math.min(brushSize * 1.5, 24)}px`,
+                        borderRadius: '50%',
+                        backgroundColor: currentTool === 'brush' ? selectedColor : '#ff6b6b',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        transition: 'all 0.2s ease'
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* 🆕 INDICATEUR COULEUR ACTUELLE (en bas à droite) */}
-          <div
-            className="absolute backdrop-blur-sm"
-            style={{ 
-              bottom: '90px', 
-              right: '16px',
-              width: '56px',
-              height: '56px',
-              borderRadius: '50%',
-              backgroundColor: selectedColor,
-              border: '3px solid rgba(255, 255, 255, 0.8)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-              zIndex: 1000,
-              cursor: 'pointer',
-              opacity: 0.95
-            }}
-            onClick={() => setMobileMenuOpen(true)}
-            title="Changer de couleur"
-          />
+                    {/* 🆕 INDICATEUR COULEUR ACTUELLE (en bas à droite) */}
+                    <div
+                        className="absolute"
+                        style={{
+                            bottom: '90px',
+                            right: '16px',
+                            width: '56px',
+                            height: '56px',
+                            borderRadius: '50%',
+                            backgroundColor: selectedColor,
+                            border: '3px solid white',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+                            zIndex: 1000,
+                            cursor: 'pointer'
+                        }}
+                        onClick={() => setMobileMenuOpen(true)}
+                        title="Changer de couleur"
+                    />
 
-          {/* 🆕 FAB: Undo/Redo (en bas à gauche) */}
-          <div className="absolute bottom-24 left-4 flex gap-2 z-[1000]">
-            <button
-              onClick={undo}
-              disabled={!canUndo}
-              className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg transition-all active:scale-95 backdrop-blur-sm ${
-                canUndo
-                  ? 'bg-blue-600/70 hover:bg-blue-600/90 text-white border border-blue-400/30'
-                  : 'bg-gray-600/50 text-gray-400 border border-gray-500/20'
-              }`}
-            >
-              ↶
-            </button>
-            <button
-              onClick={redo}
-              disabled={!canRedo}
-              className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg transition-all active:scale-95 backdrop-blur-sm ${
-                canRedo
-                  ? 'bg-blue-600/70 hover:bg-blue-600/90 text-white border border-blue-400/30'
-                  : 'bg-gray-600/50 text-gray-400 border border-gray-500/20'
-              }`}
-            >
-              ↷
-            </button>
-          </div>
+                   
+                </div>
 
-          {/* 🆕 INDICATEUR COULEUR ACTUELLE (en bas à droite) */}
-          <div
-            className="absolute"
-            style={{ 
-              bottom: '90px', 
-              right: '16px',
-              width: '56px',
-              height: '56px',
-              borderRadius: '50%',
-              backgroundColor: selectedColor,
-              border: '3px solid white',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-              zIndex: 1000,
-              cursor: 'pointer'
-            }}
-            onClick={() => setMobileMenuOpen(true)}
-            title="Changer de couleur"
-          />
-
-          {/* 🆕 FAB: Undo/Redo (en bas à gauche) */}
-          <div className="absolute bottom-24 left-4 flex gap-2 z-[1000]">
-            <button
-              onClick={undo}
-              disabled={!canUndo}
-              className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg transition-all active:scale-95 ${
-                canUndo
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-600 text-gray-400'
-              }`}
-            >
-              ↶
-            </button>
-            <button
-              onClick={redo}
-              disabled={!canRedo}
-              className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg transition-all active:scale-95 ${
-                canRedo
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-600 text-gray-400'
-              }`}
-            >
-              ↷
-            </button>
-          </div>
-        </div>
-
-               {/* 📱 BOTTOM TOOLBAR MOBILE */}
-        <div className="fixed bottom-0 left-0 right-0 bg-black/30 backdrop-blur-sm border-t border-purple-500/30 p-2 z-[999]">
-          <div className="flex items-center justify-around gap-1">
-            <button
-              onClick={() => setCurrentTool('brush')}
-              className={`flex-1 py-3 rounded-lg text-sm transition-all ${
-                currentTool === 'brush'
-                  ? 'bg-purple-600 text-white scale-105'
-                  : 'bg-purple-800/50 text-purple-200'
-              }`}
-            >
-              🖌️
-            </button>
-            <button
-              onClick={() => setCurrentTool('eraser')}
-              className={`flex-1 py-3 rounded-lg text-sm transition-all ${
-                currentTool === 'eraser'
-                  ? 'bg-purple-600 text-white scale-105'
-                  : 'bg-purple-800/50 text-purple-200'
-              }`}
-            >
-              🧽
-            </button>
-            <button
-              onClick={() => setCurrentTool('pipette')}
-              className={`flex-1 py-3 rounded-lg text-sm transition-all ${
-                currentTool === 'pipette'
-                  ? 'bg-purple-600 text-white scale-105'
-                  : 'bg-purple-800/50 text-purple-200'
-              }`}
-            >
-              💧
-            </button>
-            <button
-              onClick={() => handleZoom(0.25)}
-              className="flex-1 py-3 rounded-lg bg-purple-800/50 text-purple-200 text-sm"
-            >
-              🔍+
-            </button>
-            <button
-              onClick={() => handleZoom(-0.25)}
-              className="flex-1 py-3 rounded-lg bg-purple-800/50 text-purple-200 text-sm"
-            >
-              🔍−
-            </button>
-          </div>
-        </div>
+                {/* 📱 BOTTOM TOOLBAR MOBILE */}
+                <div className="fixed bottom-0 left-0 right-0 bg-black/30 backdrop-blur-sm border-t border-purple-500/30 p-2 z-[999]">
+                    <div className="flex items-center justify-around gap-1">
+                        <button
+                            onClick={() => setCurrentTool('brush')}
+                            className={`flex-1 py-3 rounded-lg text-sm transition-all ${currentTool === 'brush'
+                                ? 'bg-purple-600 text-white scale-105'
+                                : 'bg-purple-800/50 text-purple-200'
+                                }`}
+                        >
+                            🖌️
+                        </button>
+                        <button
+                            onClick={() => setCurrentTool('eraser')}
+                            className={`flex-1 py-3 rounded-lg text-sm transition-all ${currentTool === 'eraser'
+                                ? 'bg-purple-600 text-white scale-105'
+                                : 'bg-purple-800/50 text-purple-200'
+                                }`}
+                        >
+                            🧽
+                        </button>
+                        <button
+                            onClick={() => setCurrentTool('pipette')}
+                            className={`flex-1 py-3 rounded-lg text-sm transition-all ${currentTool === 'pipette'
+                                ? 'bg-purple-600 text-white scale-105'
+                                : 'bg-purple-800/50 text-purple-200'
+                                }`}
+                        >
+                            💧
+                        </button>
+                        <button
+                            onClick={() => handleZoom(0.25)}
+                            className="flex-1 py-3 rounded-lg bg-purple-800/50 text-purple-200 text-sm"
+                        >
+                            🔍+
+                        </button>
+                        <button
+                            onClick={() => handleZoom(-0.25)}
+                            className="flex-1 py-3 rounded-lg bg-purple-800/50 text-purple-200 text-sm"
+                        >
+                            🔍−
+                        </button>
+                    </div>
+                </div>
             </div>
         );
     }
