@@ -1362,25 +1362,7 @@ const DrawBeru = () => {
                         )}
                     </div>
 
-                    {/* 🆕 INDICATEUR COULEUR ACTUELLE (en bas à droite) */}
-                    <div
-                        className="absolute backdrop-blur-sm"
-                        style={{
-                            bottom: '90px',
-                            right: '16px',
-                            width: '56px',
-                            height: '56px',
-                            borderRadius: '50%',
-                            backgroundColor: selectedColor,
-                            border: '3px solid rgba(255, 255, 255, 0.8)',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                            zIndex: 1000,
-                            cursor: 'pointer',
-                            opacity: 0.95
-                        }}
-                        onClick={() => setMobileMenuOpen(true)}
-                        title="Changer de couleur"
-                    />
+                  
 
                  {/* 🆕 CONTROLS BAS : Undo/Redo + Brush Size sur même ligne - FIXED */}
           <div className="fixed bottom-20 left-2 right-2 z-[1000] flex items-center gap-2">
@@ -1434,9 +1416,9 @@ const DrawBeru = () => {
                     </div>
                     <input
                       type="range"
-                      min="0.5"
+                      min="0.1"
                       max="30"
-                      step="0.5"
+                      step="0.1"
                       value={brushSize}
                       onChange={(e) => setBrushSize(parseFloat(e.target.value))}
                       className="w-full h-1 bg-purple-900/30 rounded-lg appearance-none cursor-pointer"
@@ -1444,28 +1426,6 @@ const DrawBeru = () => {
                         accentColor: currentTool === 'brush' ? '#9333ea' : '#f97316'
                       }}
                     />
-                  </div>
-
-                  {/* QUICK BUTTONS */}
-                  <div className="flex gap-1 shrink-0">
-                    <button
-                      onClick={() => setBrushSize(2)}
-                      className="text-[8px] text-purple-300/70 hover:text-white px-1.5 py-0.5 rounded bg-purple-900/20 hover:bg-purple-900/40 transition-colors"
-                    >
-                      S
-                    </button>
-                    <button
-                      onClick={() => setBrushSize(8)}
-                      className="text-[8px] text-purple-300/70 hover:text-white px-1.5 py-0.5 rounded bg-purple-900/20 hover:bg-purple-900/40 transition-colors"
-                    >
-                      M
-                    </button>
-                    <button
-                      onClick={() => setBrushSize(15)}
-                      className="text-[8px] text-purple-300/70 hover:text-white px-1.5 py-0.5 rounded bg-purple-900/20 hover:bg-purple-900/40 transition-colors"
-                    >
-                      L
-                    </button>
                   </div>
 
                   {/* PRÉVISUALISATION */}
@@ -1484,9 +1444,7 @@ const DrawBeru = () => {
                 </div>
               </div>
             )}
-          </div>
-
-                    {/* 🆕 INDICATEUR COULEUR ACTUELLE (en bas à droite) */}
+            {/* 🆕 INDICATEUR COULEUR ACTUELLE (en bas à droite) */}
                     <div
                         className="absolute"
                         style={{
@@ -1504,6 +1462,9 @@ const DrawBeru = () => {
                         onClick={() => setMobileMenuOpen(true)}
                         title="Changer de couleur"
                     />
+          </div>
+
+                    
 
                    
                 </div>
