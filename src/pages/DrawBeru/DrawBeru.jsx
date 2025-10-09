@@ -1,140 +1,94 @@
-// src/pages/DrawBeru/DrawBeru.jsx
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { drawBeruModels, getModel, getHunterModels } from './config/models';
 
-const drawBeruModels = {
-    ilhwan: {
-        name: "Ilhwan",
-        models: {
-            default: {
-                id: "default",
-                name: "Ilhwan Classique",
-                reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759920073/ilhwan_orig_fm4l2o.png",
-                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png",
-                canvasSize: { width: 450, height: 675 },
-                palette: {
-                    "1": "#F5DEB3", "2": "#2F2F2F", "3": "#8B4513", "4": "#DC143C",
-                    "5": "#FFFFFF", "6": "#000000", "7": "#FFD700", "8": "#4B0082"
-                }
-            }
-        }
-    },
-    Yuqi: {
-        name: "Yuqi",
-        models: {
-            default: {
-                id: "default",
-                name: "Yuqi Classique",
-                reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759927874/yuki_origi_m4l9h6.png",
-                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951570/yuki_uncoloried_nyhkmc-removebg-preview_cs9qe5.png",
-                canvasSize: { width: 300, height: 450 },
-                palette: {
-                    "1": "#3c3331", "2": "#fdd8b8", "3": "#1c1718", "4": "#c48e6d",
-                    "5": "#070402", "6": "#2d2d39", "7": "#645249", "8": "#f7f1e6"
-                }
-            }
-        }
-    },
-    Minnie: {
-        name: "Minnie",
-        models: {
-            default: {
-                id: "default",
-                name: "Minnie Classique",
-                reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759937740/Minnie_origi_afqdqa.png",
-                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759949543/Minnie_uncoloried_test_h6erxt.png",
-                canvasSize: { width: 300, height: 450 },
-                palette: {
-                    "1": "#3c3331",
-                    "2": "#fdd8b8",
-                    "3": "#1c1718",
-                    "4": "#c48e6d",
-                    "5": "#070402",
-                    "6": "#2d2d39",
-                    "7": "#645249",
-                    "8": "#f7f1e6"
-                }
-            }
-        }
-    },
-    Kanae: {
-        name: "Kanae",
-        models: {
-            default: {
-                id: "default",
-                name: "Kanae What",
-                reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759942372/kanaeWha_origi_rpqlgt.png",
-                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759950925/kanaeWhat_uncoloried_qd0yb0-removebg-preview_uqzupl.png",
-                canvasSize: { width: 1024, height: 1536 },
-                palette: {
-                    "1": "#f9dcbf",
-                    "2": "#2d2928",
-                    "3": "#0c0d0b",
-                    "4": "#d79780",
-                    "5": "#fbfaf7",
-                    "6": "#9f3a47",
-                    "7": "#6b5a5c",
-                    "8": "#3c3638"
-                }
-            },
-            second: {
-                id: "second",
-                name: "Kanae Pyjama",
-                reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759944854/kanaePyj_origi_lbe1co.png",
-                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951683/kanaePyj_uncoloried_skpopk-removebg-preview_j44vcy.png",
-                canvasSize: { width: 600, height: 760 },
-                palette: {
-                    "1": "#9e948f",
-                    "2": "#161112",
-                    "3": "#c5babf",
-                    "4": "#7d5c58",
-                    "5": "#b2a8ac",
-                    "6": "#887d79",
-                    "7": "#c88371",
-                    "8": "#443435"
-                }
-            },
-        }
-    },
-    Seorin: {
-        name: "Seorin",
-        models: {
-            default: {
-                id: "default",
-                name: "Seorin pyjama",
-                reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759944005/seorin_origi_cnjynr.png",
-                template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951097/seorin_uncoloried_ymcwro-removebg-preview_zq2nyf.png",
-                canvasSize: { width: 408, height: 612 },
-                palette: {
-                    "1": "#9e948f",
-                    "2": "#161112",
-                    "3": "#c5babf",
-                    "4": "#7d5c58",
-                    "5": "#b2a8ac",
-                    "6": "#887d79",
-                    "7": "#c88371",
-                    "8": "#443435"
-                }
-            }
-        }
-    }
+// 🎯 HOOK CUSTOM : DÉTECTION MOBILE
+const useDevice = () => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    return { isMobile };
 };
 
-const getModel = (hunter, modelId = 'default') => {
-    return drawBeruModels[hunter]?.models[modelId] || null;
-};
+// 🎯 HOOK CUSTOM : GESTURES MOBILE (Pinch-to-zoom, Pan)
+const useTouchGestures = (enabled, onPinch, onPan) => {
+    const touchStartRef = useRef({ touches: [], distance: 0 });
 
-const getHunterModels = (hunter) => {
-    return drawBeruModels[hunter]?.models || {};
+    const getTouchDistance = (touches) => {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const handleTouchStart = (e) => {
+        if (!enabled) return;
+
+        if (e.touches.length === 2) {
+            // Pinch-to-zoom start
+            touchStartRef.current = {
+                touches: Array.from(e.touches),
+                distance: getTouchDistance(e.touches)
+            };
+        } else if (e.touches.length === 1) {
+            // Pan start
+            touchStartRef.current = {
+                touches: [{ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY }],
+                distance: 0
+            };
+        }
+    };
+
+    const handleTouchMove = (e) => {
+        if (!enabled) return;
+
+        if (e.touches.length === 2 && touchStartRef.current.distance > 0) {
+            // Pinch-to-zoom
+            e.preventDefault();
+            const newDistance = getTouchDistance(e.touches);
+            const delta = (newDistance - touchStartRef.current.distance) * 0.01;
+            onPinch?.(delta);
+            touchStartRef.current.distance = newDistance;
+        } else if (e.touches.length === 1 && touchStartRef.current.touches.length === 1) {
+            // Pan
+            const deltaX = e.touches[0].clientX - touchStartRef.current.touches[0].clientX;
+            const deltaY = e.touches[0].clientY - touchStartRef.current.touches[0].clientY;
+            onPan?.(deltaX, deltaY);
+            touchStartRef.current.touches = [{
+                clientX: e.touches[0].clientX,
+                clientY: e.touches[0].clientY
+            }];
+        }
+    };
+
+    const handleTouchEnd = () => {
+        touchStartRef.current = { touches: [], distance: 0 };
+    };
+
+    return { handleTouchStart, handleTouchMove, handleTouchEnd };
 };
 
 const DrawBeru = () => {
     const { t } = useTranslation();
+    const { isMobile } = useDevice();
 
     const canvasRef = useRef(null);
     const layersRef = useRef([]);
     const referenceCanvasRef = useRef(null);
+    const overlayCanvasRef = useRef(null); // 🆕 Canvas overlay modèle mobile
 
+    // 🆕 MOBILE SPECIFIC STATES
+    const [interactionMode, setInteractionMode] = useState('draw'); // 'draw' | 'pan'
+    const [showModelOverlay, setShowModelOverlay] = useState(false);
+    const [modelOverlayOpacity, setModelOverlayOpacity] = useState(0.3);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    // EXISTING STATES
     const [selectedHunter, setSelectedHunter] = useState('ilhwan');
     const [selectedModel, setSelectedModel] = useState('default');
     const [selectedColor, setSelectedColor] = useState('#FF0000');
@@ -169,6 +123,41 @@ const DrawBeru = () => {
     const currentModelData = getModel(selectedHunter, selectedModel);
     const availableModels = getHunterModels(selectedHunter);
 
+    // 🆕 GESTURES MOBILE
+    const { handleTouchStart: canvasTouchStart, handleTouchMove: canvasTouchMove, handleTouchEnd: canvasTouchEnd } =
+        useTouchGestures(
+            isMobile && interactionMode === 'pan',
+            (delta) => handleZoom(delta),
+            (dx, dy) => {
+                setPanOffset(prev => ({
+                    x: prev.x + dx,
+                    y: prev.y + dy
+                }));
+            }
+        );
+
+    // 🆕 LOAD MODEL OVERLAY (Mobile uniquement)
+    useEffect(() => {
+        if (!isMobile || !currentModelData || !showModelOverlay) return;
+
+        const overlayCanvas = overlayCanvasRef.current;
+        if (!overlayCanvas) return;
+
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            const { width, height } = currentModelData.canvasSize;
+            overlayCanvas.width = width;
+            overlayCanvas.height = height;
+            const ctx = overlayCanvas.getContext('2d');
+            ctx.clearRect(0, 0, width, height);
+            ctx.globalAlpha = modelOverlayOpacity;
+            ctx.drawImage(img, 0, 0, width, height);
+        };
+        img.src = currentModelData.reference;
+    }, [isMobile, showModelOverlay, modelOverlayOpacity, currentModelData]);
+
+    // EXISTING USEEFFECT - Load canvas/template
     useEffect(() => {
         if (!currentModelData) return;
 
@@ -190,7 +179,6 @@ const DrawBeru = () => {
         console.log('🔍 DEBUG LOAD - Start');
         console.log('Looking for:', selectedHunter, selectedModel);
 
-        // Charger un coloriage existant s'il existe
         const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
         const existingColoring = userData.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
 
@@ -203,7 +191,6 @@ const DrawBeru = () => {
             let loadedLayers = 0;
             const totalLayers = Math.min(existingColoring.layers.length, layersRef.current.length);
 
-            // Charger les layers sauvegardés
             existingColoring.layers.forEach((layerData, i) => {
                 if (i < layersRef.current.length) {
                     const img = new Image();
@@ -233,7 +220,6 @@ const DrawBeru = () => {
                 }
             });
 
-            // Restaurer les paramètres des layers
             setLayers(prevLayers => prevLayers.map((layer, i) => ({
                 ...layer,
                 visible: existingColoring.layers[i]?.visible ?? layer.visible,
@@ -246,7 +232,6 @@ const DrawBeru = () => {
         } else {
             console.log('📄 Aucun coloriage existant, chargement template vierge');
 
-            // Charger le template vierge
             const templateImg = new Image();
             templateImg.crossOrigin = "anonymous";
             templateImg.onload = () => {
@@ -267,7 +252,6 @@ const DrawBeru = () => {
             templateImg.src = currentModelData.template;
         }
 
-        // Charger le modèle de référence
         const refCanvas = referenceCanvasRef.current;
         if (refCanvas) {
             const refImg = new Image();
@@ -542,6 +526,68 @@ const DrawBeru = () => {
         setCurrentTool('brush');
     };
 
+    // 🆕 MOBILE TOUCH DRAWING (FIXED)
+    const handleTouchDraw = (e) => {
+        e.preventDefault();
+
+        if (!e.touches || e.touches.length === 0) return;
+        const touch = e.touches[0];
+
+        // 🎯 PIPETTE MODE
+        if (currentTool === 'pipette') {
+            const canvas = canvasRef.current;
+            const rect = canvas.getBoundingClientRect();
+
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = Math.floor((touch.clientX - rect.left) * scaleX);
+            const y = Math.floor((touch.clientY - rect.top) * scaleY);
+
+            if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return;
+
+            // Si overlay modèle visible, prendre couleur du modèle
+            if (showModelOverlay && overlayCanvasRef.current) {
+                const overlayCtx = overlayCanvasRef.current.getContext('2d', { willReadFrequently: true });
+                const pixel = overlayCtx.getImageData(x, y, 1, 1).data;
+                if (pixel[3] > 0) {
+                    const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                    setSelectedColor(hex);
+                    setCurrentTool('brush');
+                    return;
+                }
+            }
+
+            // Sinon, prendre couleur du layer actif
+            const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
+            const layerCanvas = layersRef.current[activeLayerIndex];
+            if (layerCanvas) {
+                const ctx = layerCanvas.getContext('2d', { willReadFrequently: true });
+                const pixel = ctx.getImageData(x, y, 1, 1).data;
+                if (pixel[3] > 0) {
+                    const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                    setSelectedColor(hex);
+                    setCurrentTool('brush');
+                }
+            }
+            return;
+        }
+
+        // MODE DESSIN
+        if (interactionMode !== 'draw') return;
+
+        const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            bubbles: true
+        });
+
+        if (e.type === 'touchstart') {
+            startDrawing(mouseEvent);
+        } else if (e.type === 'touchmove') {
+            draw(mouseEvent);
+        }
+    };
+
     const startDrawing = (e) => {
         if (e.button !== 0 || e.ctrlKey || isPanning) return;
 
@@ -605,13 +651,10 @@ const DrawBeru = () => {
         setTimeout(renderLayers, 10);
     };
 
-    // Remplace la fonction saveColoring() dans DrawBeru.jsx
-
     const saveColoring = () => {
         console.log('🔍 DEBUG SAVE - Start');
         console.log('Hunter:', selectedHunter, 'Model:', selectedModel);
 
-        // 🎯 1️⃣ Sauvegarder les layers (pixels colorés uniquement)
         const layersData = layersRef.current.map((layerCanvas, i) => {
             try {
                 return {
@@ -635,16 +678,12 @@ const DrawBeru = () => {
 
         console.log('✅ Layers exportés:', layersData.length);
 
-        // 🎨 2️⃣ Créer TWO previews : une avec fond blanc (affichage), une transparente (export)
-
-        // PREVIEW AVEC FOND BLANC (pour l'affichage dans le site)
         const previewCanvas = document.createElement('canvas');
         const canvas = canvasRef.current;
         previewCanvas.width = canvas.width;
         previewCanvas.height = canvas.height;
         const previewCtx = previewCanvas.getContext('2d', { alpha: true });
 
-        // EXPORT PNG TRANSPARENT (juste les layers colorés)
         const exportCanvas = document.createElement('canvas');
         exportCanvas.width = canvas.width;
         exportCanvas.height = canvas.height;
@@ -653,7 +692,6 @@ const DrawBeru = () => {
         const templateImg = new Image();
         templateImg.crossOrigin = "anonymous";
         templateImg.onload = () => {
-            // 🖼️ PREVIEW : Template + Layers (pour affichage dans le site)
             previewCtx.drawImage(templateImg, 0, 0, previewCanvas.width, previewCanvas.height);
             layers.forEach((layer, index) => {
                 if (layer.visible && layersRef.current[index]) {
@@ -663,7 +701,6 @@ const DrawBeru = () => {
                 }
             });
 
-            // 🎯 EXPORT : UNIQUEMENT les layers (PNG transparent, sans template)
             layers.forEach((layer, index) => {
                 if (layer.visible && layersRef.current[index]) {
                     exportCtx.globalAlpha = layer.opacity;
@@ -672,11 +709,10 @@ const DrawBeru = () => {
                 }
             });
 
-            // Générer les deux images
             let previewImageData, exportImageData;
             try {
                 previewImageData = previewCanvas.toDataURL('image/png', 0.8);
-                exportImageData = exportCanvas.toDataURL('image/png', 1.0); // 🔥 PNG transparent ici
+                exportImageData = exportCanvas.toDataURL('image/png', 1.0);
                 console.log('✅ Preview générée:', (previewImageData.length / 1024).toFixed(0), 'Ko');
                 console.log('✅ Export transparent généré:', (exportImageData.length / 1024).toFixed(0), 'Ko');
             } catch (e) {
@@ -685,7 +721,6 @@ const DrawBeru = () => {
                 exportImageData = null;
             }
 
-            // Sauvegarder dans localStorage
             const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
             if (!userData.user) userData.user = { accounts: {} };
             if (!userData.user.accounts.default) userData.user.accounts.default = {};
@@ -695,8 +730,8 @@ const DrawBeru = () => {
             }
 
             const coloringData = {
-                preview: previewImageData,        // Avec fond blanc pour le site
-                exportImage: exportImageData,     // 🔥 PNG transparent pour export
+                preview: previewImageData,
+                exportImage: exportImageData,
                 layers: layersData,
                 palette: currentModelData.palette,
                 createdAt: userData.user.accounts.default.colorings[selectedHunter][selectedModel]?.createdAt || Date.now(),
@@ -751,96 +786,87 @@ const DrawBeru = () => {
 
         templateImg.src = currentModelData.template;
     };
-    
 
-    // 🔥 BONUS : Fonction pour télécharger le PNG transparent
-   // 🖼️ TÉLÉCHARGER LE MODÈLE DE RÉFÉRENCE COLORÉ
-const downloadColoredPNG = () => {
-  console.log('🖼️ Download modèle de référence - Start');
-  
-  // Créer un canvas temporaire
-  const exportCanvas = document.createElement('canvas');
-  const refCanvas = referenceCanvasRef.current;
-  
-  if (!refCanvas) {
-    alert('❌ Modèle de référence non chargé');
-    return;
-  }
-  
-  // Copier le modèle de référence
-  exportCanvas.width = refCanvas.width;
-  exportCanvas.height = refCanvas.height;
-  const exportCtx = exportCanvas.getContext('2d', { alpha: true });
-  
-  // Dessiner le modèle de référence (image colorée originale)
-  exportCtx.drawImage(refCanvas, 0, 0);
-  
-  // Convertir en blob et télécharger
-  exportCanvas.toBlob((blob) => {
-    if (!blob) {
-      alert('❌ Erreur lors de la génération de l\'image');
-      return;
-    }
-    
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${selectedHunter}_${selectedModel}_reference_${Date.now()}.png`;
-    
-    link.click();
-    URL.revokeObjectURL(url);
-    
-    console.log('✅ Modèle de référence téléchargé:', link.download);
-    alert(`✅ Modèle de référence téléchargé !\n\nFichier: ${link.download}\n\n🎨 Image originale colorée`);
-    
-  }, 'image/png', 1.0);
-};
+    const downloadColoredPNG = () => {
+        console.log('🖼️ Download modèle de référence - Start');
+
+        const exportCanvas = document.createElement('canvas');
+        const refCanvas = referenceCanvasRef.current;
+
+        if (!refCanvas) {
+            alert('❌ Modèle de référence non chargé');
+            return;
+        }
+
+        exportCanvas.width = refCanvas.width;
+        exportCanvas.height = refCanvas.height;
+        const exportCtx = exportCanvas.getContext('2d', { alpha: true });
+
+        exportCtx.drawImage(refCanvas, 0, 0);
+
+        exportCanvas.toBlob((blob) => {
+            if (!blob) {
+                alert('❌ Erreur lors de la génération de l\'image');
+                return;
+            }
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${selectedHunter}_${selectedModel}_reference_${Date.now()}.png`;
+
+            link.click();
+            URL.revokeObjectURL(url);
+
+            console.log('✅ Modèle de référence téléchargé:', link.download);
+            alert(`✅ Modèle de référence téléchargé !\n\nFichier: ${link.download}\n\n🎨 Image originale colorée`);
+
+        }, 'image/png', 1.0);
+    };
 
     const downloadTransparentPNG = () => {
-  console.log('📥 Download PNG avec template...');
-  
-  const exportCanvas = document.createElement('canvas');
-  const canvas = canvasRef.current;
-  exportCanvas.width = canvas.width;
-  exportCanvas.height = canvas.height;
-  const exportCtx = exportCanvas.getContext('2d', { alpha: true });
-  
-  const templateImg = new Image();
-  templateImg.crossOrigin = "anonymous";
-  
-  templateImg.onload = () => {
-    // Dessiner template + layers
-    exportCtx.drawImage(templateImg, 0, 0, exportCanvas.width, exportCanvas.height);
-    
-    layers.forEach((layer, index) => {
-      if (layer.visible && layersRef.current[index]) {
-        exportCtx.globalAlpha = layer.opacity;
-        exportCtx.drawImage(layersRef.current[index], 0, 0);
-        exportCtx.globalAlpha = 1;
-      }
-    });
-    
-    // Télécharger
-    exportCanvas.toBlob((blob) => {
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${selectedHunter}_${selectedModel}_colored_${Date.now()}.png`;
-      link.click();
-      URL.revokeObjectURL(url);
-      
-      console.log('✅ PNG téléchargé:', link.download);
-      alert(`✅ Image téléchargée !\n\nFichier: ${link.download}`);
-    }, 'image/png', 1.0);
-  };
-  
-  templateImg.onerror = () => {
-    console.error('❌ Erreur chargement template');
-    alert('❌ Impossible de charger le template');
-  };
-  
-  templateImg.src = currentModelData.template;
-};
+        console.log('🔥 Download PNG avec template...');
+
+        const exportCanvas = document.createElement('canvas');
+        const canvas = canvasRef.current;
+        exportCanvas.width = canvas.width;
+        exportCanvas.height = canvas.height;
+        const exportCtx = exportCanvas.getContext('2d', { alpha: true });
+
+        const templateImg = new Image();
+        templateImg.crossOrigin = "anonymous";
+
+        templateImg.onload = () => {
+            exportCtx.drawImage(templateImg, 0, 0, exportCanvas.width, exportCanvas.height);
+
+            layers.forEach((layer, index) => {
+                if (layer.visible && layersRef.current[index]) {
+                    exportCtx.globalAlpha = layer.opacity;
+                    exportCtx.drawImage(layersRef.current[index], 0, 0);
+                    exportCtx.globalAlpha = 1;
+                }
+            });
+
+            exportCanvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${selectedHunter}_${selectedModel}_colored_${Date.now()}.png`;
+                link.click();
+                URL.revokeObjectURL(url);
+
+                console.log('✅ PNG téléchargé:', link.download);
+                alert(`✅ Image téléchargée !\n\nFichier: ${link.download}`);
+            }, 'image/png', 1.0);
+        };
+
+        templateImg.onerror = () => {
+            console.error('❌ Erreur chargement template');
+            alert('❌ Impossible de charger le template');
+        };
+
+        templateImg.src = currentModelData.template;
+    };
 
     const resetColoring = () => {
         if (!confirm('Réinitialiser tout le coloriage ?')) return;
@@ -856,7 +882,6 @@ const downloadColoredPNG = () => {
         saveToHistory();
     };
 
-    // 📤 EXPORTER le coloriage
     const exportColoring = () => {
         const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
         const coloring = userData.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
@@ -886,7 +911,6 @@ const downloadColoredPNG = () => {
         alert(`✅ Coloriage exporté !\n\nFichier: ${a.download}`);
     };
 
-    // 📥 IMPORTER le coloriage
     const importColoring = () => {
         const input = document.createElement('input');
         input.type = 'file';
@@ -905,7 +929,6 @@ const downloadColoredPNG = () => {
                         throw new Error('Format invalide');
                     }
 
-                    // Sauvegarder dans localStorage
                     const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
                     if (!userData.user) userData.user = { accounts: {} };
                     if (!userData.user.accounts.default) userData.user.accounts.default = {};
@@ -920,7 +943,6 @@ const downloadColoredPNG = () => {
                     console.log('📥 Coloriage importé:', importedData.hunter, importedData.model);
                     alert(`✅ Coloriage importé !\n\nHunter: ${importedData.hunter}\nModèle: ${importedData.model}\n\nRecharge la page pour voir le résultat.`);
 
-                    // Recharger automatiquement si c'est le même hunter/model
                     if (importedData.hunter === selectedHunter && importedData.model === selectedModel) {
                         window.location.reload();
                     }
@@ -956,6 +978,531 @@ const downloadColoredPNG = () => {
         return (
             <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
                 <div className="text-white text-xl">Modèle non trouvé</div>
+            </div>
+        );
+    }
+
+    // 🎨 RENDER MOBILE
+    if (isMobile) {
+        return (
+            <div className="min-h-screen bg-[#0a0118] overflow-hidden">
+                <style>{`
+          @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.3); }
+          }
+          
+          .mobile-fab {
+            position: fixed;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            z-index: 1000;
+            transition: all 0.3s ease;
+          }
+          
+          .mobile-fab:active {
+            transform: scale(0.95);
+          }
+        `}</style>
+
+                {/* 📱 HEADER MOBILE COMPACT */}
+                <div className="bg-black/30 backdrop-blur-sm border-b border-purple-500/30 px-3 py-2">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-xl font-bold text-white">🎨 DrawBeru</h1>
+                            <p className="text-xs text-purple-200">{currentModelData.name}</p>
+                        </div>
+
+                        <button
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            className="text-white text-2xl p-2"
+                        >
+                            ☰
+                        </button>
+                    </div>
+                </div>
+
+                {/* 📱 MOBILE MENU OVERLAY */}
+                {mobileMenuOpen && (
+                    <div
+                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] overflow-y-auto"
+                        onClick={() => setMobileMenuOpen(false)}
+                    >
+                        <div
+                            className="bg-[#1a1a2f] m-4 rounded-xl p-4 max-h-[85vh] overflow-y-auto border border-purple-500/30"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-lg font-bold text-white">Menu</h2>
+                                <button
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="text-white text-2xl"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            {/* HUNTER/MODEL SELECTORS */}
+                            <div className="mb-4 space-y-2">
+                                <select
+                                    value={selectedHunter}
+                                    onChange={(e) => {
+                                        handleHunterChange(e.target.value);
+                                        setMobileMenuOpen(false);
+                                    }}
+                                    className="w-full bg-purple-800/50 text-white border border-purple-500/50 rounded-lg px-3 py-2 text-sm"
+                                >
+                                    {Object.entries(drawBeruModels).map(([hunterId, hunterData]) => (
+                                        <option key={hunterId} value={hunterId}>
+                                            {hunterData.name}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <select
+                                    value={selectedModel}
+                                    onChange={(e) => {
+                                        handleModelChange(e.target.value);
+                                        setMobileMenuOpen(false);
+                                    }}
+                                    className="w-full bg-purple-800/50 text-white border border-purple-500/50 rounded-lg px-3 py-2 text-sm"
+                                >
+                                    {Object.entries(availableModels).map(([modelId, modelData]) => (
+                                        <option key={modelId} value={modelId}>
+                                            {modelData.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* PALETTE */}
+                            <div className="mb-4">
+                                <h3 className="text-white text-sm font-semibold mb-2">🎨 Palette</h3>
+                                <div className="grid grid-cols-4 gap-2 mb-3">
+                                    {Object.entries(currentModelData.palette).map(([id, color]) => (
+                                        <button
+                                            key={id}
+                                            onClick={() => {
+                                                setSelectedColor(color);
+                                                setMobileMenuOpen(false);
+                                            }}
+                                            className={`h-12 rounded-lg border-2 transition-all ${selectedColor === color
+                                                    ? 'border-white scale-110'
+                                                    : 'border-purple-500/50'
+                                                }`}
+                                            style={{ backgroundColor: color }}
+                                        />
+                                    ))}
+                                </div>
+                                <input
+                                    type="color"
+                                    value={selectedColor}
+                                    onChange={(e) => setSelectedColor(e.target.value)}
+                                    className="w-full h-10 rounded-lg border border-purple-500/50"
+                                />
+                            </div>
+
+                            {/* BRUSH SIZE */}
+                            <div className="mb-4">
+                                <label className="text-white text-sm mb-2 block">
+                                    Taille pinceau: {brushSize.toFixed(1)}px
+                                </label>
+                                <input
+                                    type="range"
+                                    min={0.5}
+                                    max={20}
+                                    step={0.5}
+                                    value={brushSize}
+                                    onChange={(e) => setBrushSize(parseFloat(e.target.value))}
+                                    className="w-full"
+                                />
+                            </div>
+
+                            {/* LAYERS */}
+                            <div className="mb-4">
+                                <h3 className="text-white text-sm font-semibold mb-2">📚 Calques</h3>
+                                <div className="space-y-2">
+                                    {layers.map((layer) => (
+                                        <div
+                                            key={layer.id}
+                                            className={`p-2 rounded-lg border ${activeLayer === layer.id
+                                                    ? 'border-purple-400 bg-purple-900/50'
+                                                    : 'border-purple-700/30 bg-purple-900/20'
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-between mb-1">
+                                                <button
+                                                    onClick={() => {
+                                                        setActiveLayer(layer.id);
+                                                        setMobileMenuOpen(false);
+                                                    }}
+                                                    className="text-white text-sm flex-1 text-left"
+                                                >
+                                                    {layer.name}
+                                                </button>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => toggleLayerVisibility(layer.id)}
+                                                        className="text-white text-lg"
+                                                    >
+                                                        {layer.visible ? '👁️' : '🚫'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => toggleLayerLock(layer.id)}
+                                                        className="text-white text-lg"
+                                                    >
+                                                        {layer.locked ? '🔒' : '🔓'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="1"
+                                                step="0.1"
+                                                value={layer.opacity}
+                                                onChange={(e) => changeLayerOpacity(layer.id, e.target.value)}
+                                                className="w-full"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* ACTIONS */}
+                            <div className="space-y-2">
+                                <button
+                                    onClick={() => {
+                                        saveColoring();
+                                        setMobileMenuOpen(false);
+                                    }}
+                                    className="w-full bg-green-600 text-white py-2 rounded-lg text-sm"
+                                >
+                                    💾 Sauvegarder
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        downloadTransparentPNG();
+                                        setMobileMenuOpen(false);
+                                    }}
+                                    className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm"
+                                >
+                                    🖼️ Télécharger PNG
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        resetColoring();
+                                        setMobileMenuOpen(false);
+                                    }}
+                                    className="w-full bg-red-600 text-white py-2 rounded-lg text-sm"
+                                >
+                                    🗑️ Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 🎨 CANVAS MOBILE FULLSCREEN */}
+        <div className="relative w-full" style={{ height: 'calc(100vh - 120px)' }}>
+          <div
+            className="absolute inset-0 bg-white flex items-center justify-center overflow-hidden"
+            onTouchStart={(e) => {
+              if (interactionMode === 'pan' && currentTool !== 'pipette') {
+                canvasTouchStart(e);
+              } else {
+                handleTouchDraw(e);
+              }
+            }}
+            onTouchMove={(e) => {
+              if (interactionMode === 'pan' && currentTool !== 'pipette') {
+                canvasTouchMove(e);
+              } else {
+                handleTouchDraw(e);
+              }
+            }}
+            onTouchEnd={(e) => {
+              if (interactionMode === 'pan' && currentTool !== 'pipette') {
+                canvasTouchEnd(e);
+              } else {
+                stopDrawing();
+              }
+            }}
+          >
+            <div
+              style={{
+                transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
+                transformOrigin: 'center center',
+                transition: 'none',
+                position: 'relative'
+              }}
+            >
+              {/* CANVAS PRINCIPAL (Template + Coloriage) - TOUJOURS VISIBLE */}
+              <canvas
+                ref={canvasRef}
+                style={{
+                  display: 'block',
+                  touchAction: 'none',
+                  cursor: currentTool === 'pipette' ? 'crosshair' : (interactionMode === 'pan' ? 'grab' : 'crosshair')
+                }}
+              />
+              
+              {/* 🆕 MODÈLE RÉFÉRENCE COLORÉ - Opacity variable */}
+              <canvas
+                ref={overlayCanvasRef}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  pointerEvents: 'none',
+                  opacity: showModelOverlay ? modelOverlayOpacity : 0.15,
+                  touchAction: 'none',
+                  transition: 'opacity 0.3s ease',
+                  mixBlendMode: 'multiply' // Pour mieux voir à travers
+                }}
+              />
+              
+              {/* 🆕 MODEL OVERLAY */}
+              {showModelOverlay && (
+                <canvas
+                  ref={overlayCanvasRef}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    pointerEvents: 'none',
+                    opacity: modelOverlayOpacity,
+                    touchAction: 'none'
+                  }}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* 🔥 CONTROLS EN HAUT DANS LE CANVAS - ALIGNÉS */}
+          <div 
+            className="absolute top-4 left-4 right-4 z-[1000] flex items-start gap-3"
+            style={{ pointerEvents: 'auto' }}
+          >
+            {/* BOUTONS ALIGNÉS À GAUCHE */}
+            <div className="flex gap-2">
+              {/* BOUTON MODE PAN/DRAW */}
+              <button
+                onClick={() => setInteractionMode(interactionMode === 'draw' ? 'pan' : 'draw')}
+                className={`flex items-center justify-center w-12 h-12 rounded-lg shadow-lg text-xl transition-all active:scale-95 backdrop-blur-sm ${
+                  interactionMode === 'draw' 
+                    ? 'bg-green-600/70 hover:bg-green-600/90 text-white border border-green-400/30' 
+                    : 'bg-blue-600/70 hover:bg-blue-600/90 text-white border border-blue-400/30'
+                }`}
+                title={interactionMode === 'draw' ? 'Mode Dessin' : 'Mode Déplacement'}
+              >
+                {interactionMode === 'draw' ? '🖌️' : '✋'}
+              </button>
+
+              {/* BOUTON TOGGLE MODEL OVERLAY */}
+              <button
+                onClick={() => setShowModelOverlay(!showModelOverlay)}
+                className={`flex items-center justify-center w-12 h-12 rounded-lg shadow-lg text-xl transition-all active:scale-95 backdrop-blur-sm ${
+                  showModelOverlay
+                    ? 'bg-purple-600/70 hover:bg-purple-600/90 text-white border border-purple-400/30'
+                    : 'bg-gray-700/70 hover:bg-gray-700/90 text-white border border-gray-500/30'
+                }`}
+                title={showModelOverlay ? 'Cacher modèle' : 'Afficher modèle'}
+              >
+                {showModelOverlay ? '👁️' : '🙈'}
+              </button>
+            </div>
+
+            {/* 🔥 SLIDER OPACITY À DROITE (visible si modèle affiché) */}
+            {showModelOverlay && (
+              <div 
+                className="flex-1 bg-black/60 backdrop-blur-md rounded-lg p-2 shadow-lg border border-purple-500/30 max-w-[200px]"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-white text-[10px] font-semibold">Opacité</span>
+                  <span className="text-purple-300 text-[10px] font-mono">{Math.round(modelOverlayOpacity * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={modelOverlayOpacity}
+                  onChange={(e) => setModelOverlayOpacity(parseFloat(e.target.value))}
+                  className="w-full h-1.5 bg-purple-900/50 rounded-lg appearance-none cursor-pointer"
+                  style={{
+                    accentColor: '#9333ea'
+                  }}
+                />
+                <div className="flex justify-between mt-1 gap-1">
+                  <button
+                    onClick={() => setModelOverlayOpacity(0.2)}
+                    className="text-[9px] text-purple-300 hover:text-white px-1 py-0.5 rounded bg-purple-900/30 hover:bg-purple-900/50 transition-colors"
+                  >
+                    20%
+                  </button>
+                  <button
+                    onClick={() => setModelOverlayOpacity(0.5)}
+                    className="text-[9px] text-purple-300 hover:text-white px-1 py-0.5 rounded bg-purple-900/30 hover:bg-purple-900/50 transition-colors"
+                  >
+                    50%
+                  </button>
+                  <button
+                    onClick={() => setModelOverlayOpacity(0.8)}
+                    className="text-[9px] text-purple-300 hover:text-white px-1 py-0.5 rounded bg-purple-900/30 hover:bg-purple-900/50 transition-colors"
+                  >
+                    80%
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 🆕 INDICATEUR COULEUR ACTUELLE (en bas à droite) */}
+          <div
+            className="absolute backdrop-blur-sm"
+            style={{ 
+              bottom: '90px', 
+              right: '16px',
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              backgroundColor: selectedColor,
+              border: '3px solid rgba(255, 255, 255, 0.8)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              zIndex: 1000,
+              cursor: 'pointer',
+              opacity: 0.95
+            }}
+            onClick={() => setMobileMenuOpen(true)}
+            title="Changer de couleur"
+          />
+
+          {/* 🆕 FAB: Undo/Redo (en bas à gauche) */}
+          <div className="absolute bottom-24 left-4 flex gap-2 z-[1000]">
+            <button
+              onClick={undo}
+              disabled={!canUndo}
+              className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg transition-all active:scale-95 backdrop-blur-sm ${
+                canUndo
+                  ? 'bg-blue-600/70 hover:bg-blue-600/90 text-white border border-blue-400/30'
+                  : 'bg-gray-600/50 text-gray-400 border border-gray-500/20'
+              }`}
+            >
+              ↶
+            </button>
+            <button
+              onClick={redo}
+              disabled={!canRedo}
+              className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg transition-all active:scale-95 backdrop-blur-sm ${
+                canRedo
+                  ? 'bg-blue-600/70 hover:bg-blue-600/90 text-white border border-blue-400/30'
+                  : 'bg-gray-600/50 text-gray-400 border border-gray-500/20'
+              }`}
+            >
+              ↷
+            </button>
+          </div>
+
+          {/* 🆕 INDICATEUR COULEUR ACTUELLE (en bas à droite) */}
+          <div
+            className="absolute"
+            style={{ 
+              bottom: '90px', 
+              right: '16px',
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              backgroundColor: selectedColor,
+              border: '3px solid white',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+              zIndex: 1000,
+              cursor: 'pointer'
+            }}
+            onClick={() => setMobileMenuOpen(true)}
+            title="Changer de couleur"
+          />
+
+          {/* 🆕 FAB: Undo/Redo (en bas à gauche) */}
+          <div className="absolute bottom-24 left-4 flex gap-2 z-[1000]">
+            <button
+              onClick={undo}
+              disabled={!canUndo}
+              className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg transition-all active:scale-95 ${
+                canUndo
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-600 text-gray-400'
+              }`}
+            >
+              ↶
+            </button>
+            <button
+              onClick={redo}
+              disabled={!canRedo}
+              className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-lg transition-all active:scale-95 ${
+                canRedo
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-600 text-gray-400'
+              }`}
+            >
+              ↷
+            </button>
+          </div>
+        </div>
+
+               {/* 📱 BOTTOM TOOLBAR MOBILE */}
+        <div className="fixed bottom-0 left-0 right-0 bg-black/30 backdrop-blur-sm border-t border-purple-500/30 p-2 z-[999]">
+          <div className="flex items-center justify-around gap-1">
+            <button
+              onClick={() => setCurrentTool('brush')}
+              className={`flex-1 py-3 rounded-lg text-sm transition-all ${
+                currentTool === 'brush'
+                  ? 'bg-purple-600 text-white scale-105'
+                  : 'bg-purple-800/50 text-purple-200'
+              }`}
+            >
+              🖌️
+            </button>
+            <button
+              onClick={() => setCurrentTool('eraser')}
+              className={`flex-1 py-3 rounded-lg text-sm transition-all ${
+                currentTool === 'eraser'
+                  ? 'bg-purple-600 text-white scale-105'
+                  : 'bg-purple-800/50 text-purple-200'
+              }`}
+            >
+              🧽
+            </button>
+            <button
+              onClick={() => setCurrentTool('pipette')}
+              className={`flex-1 py-3 rounded-lg text-sm transition-all ${
+                currentTool === 'pipette'
+                  ? 'bg-purple-600 text-white scale-105'
+                  : 'bg-purple-800/50 text-purple-200'
+              }`}
+            >
+              💧
+            </button>
+            <button
+              onClick={() => handleZoom(0.25)}
+              className="flex-1 py-3 rounded-lg bg-purple-800/50 text-purple-200 text-sm"
+            >
+              🔍+
+            </button>
+            <button
+              onClick={() => handleZoom(-0.25)}
+              className="flex-1 py-3 rounded-lg bg-purple-800/50 text-purple-200 text-sm"
+            >
+              🔍−
+            </button>
+          </div>
+        </div>
             </div>
         );
     }
@@ -1061,7 +1608,6 @@ const downloadColoredPNG = () => {
                                 💾 Sauvegarder
                             </button>
 
-                            {/* 🖼️ TÉLÉCHARGER PNG COLORÉ (avec template) */}
                             <button
                                 onClick={downloadColoredPNG}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -1070,7 +1616,6 @@ const downloadColoredPNG = () => {
                                 🖼️ PNG Coloré
                             </button>
 
-                            {/* 🎨 TÉLÉCHARGER PNG TRANSPARENT (sans template) */}
                             <button
                                 onClick={downloadTransparentPNG}
                                 className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg transition-colors"
@@ -1093,28 +1638,6 @@ const downloadColoredPNG = () => {
                                 title="Importer un coloriage"
                             >
                                 📥 Import
-                            </button>
-
-                            <button
-                                onClick={() => {
-                                    const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
-                                    const colorings = userData.user?.accounts?.default?.colorings || {};
-
-                                    console.log('🔍 DEBUG - État localStorage complet:');
-                                    console.log('Tous les coloriages:', colorings);
-                                    console.log('Hunter actuel:', selectedHunter);
-                                    console.log('Model actuel:', selectedModel);
-                                    console.log('Coloriage actuel:', colorings[selectedHunter]?.[selectedModel]);
-
-                                    const hunterColorings = colorings[selectedHunter] || {};
-                                    const count = Object.keys(hunterColorings).length;
-
-                                    alert(`🔍 Debug Info:\n\nHunter: ${selectedHunter}\nModèle: ${selectedModel}\n\nColoriages sauvegardés: ${count}\n\nOuvre la console (F12) pour plus de détails.`);
-                                }}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-                                title="Inspecter le localStorage"
-                            >
-                                🔍 Debug
                             </button>
 
                             <button
@@ -1163,14 +1686,14 @@ const downloadColoredPNG = () => {
                             </div>
 
                             <div className="mb-4">
-                                <label className="text-sm">Taille pinceau : {brushSize.toFixed(1)} px</label>
+                                <label className="text-sm text-white">Taille pinceau : {brushSize.toFixed(1)} px</label>
                                 <input
                                     type="range"
                                     min={0.1}
                                     max={20}
                                     step={0.1}
                                     value={brushSize}
-                                    onChange={(e) => setBrushSize(parseFloat(e.target.value))}  // ⬅️ ici le fix
+                                    onChange={(e) => setBrushSize(parseFloat(e.target.value))}
                                     className="w-full"
                                 />
                             </div>
@@ -1241,8 +1764,7 @@ const downloadColoredPNG = () => {
                                 </div>
 
                                 <div className="text-purple-300 text-xs">
-                                    PC: Molette zoom | Clic droit déplacer<br />
-                                    Mobile: Boutons ci-dessus 👆
+                                    PC: Molette zoom | Clic droit déplacer
                                 </div>
                             </div>
 
@@ -1388,28 +1910,6 @@ const downloadColoredPNG = () => {
                                         onMouseMove={draw}
                                         onMouseUp={stopDrawing}
                                         onMouseLeave={stopDrawing}
-                                        onTouchStart={(e) => {
-                                            e.preventDefault();
-                                            const touch = e.touches[0];
-                                            const mouseEvent = new MouseEvent('mousedown', {
-                                                clientX: touch.clientX,
-                                                clientY: touch.clientY
-                                            });
-                                            startDrawing(mouseEvent);
-                                        }}
-                                        onTouchMove={(e) => {
-                                            e.preventDefault();
-                                            const touch = e.touches[0];
-                                            const mouseEvent = new MouseEvent('mousemove', {
-                                                clientX: touch.clientX,
-                                                clientY: touch.clientY
-                                            });
-                                            draw(mouseEvent);
-                                        }}
-                                        onTouchEnd={(e) => {
-                                            e.preventDefault();
-                                            stopDrawing();
-                                        }}
                                     />
 
                                 </div>
