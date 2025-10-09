@@ -1382,8 +1382,8 @@ const DrawBeru = () => {
                         title="Changer de couleur"
                     />
 
-                 {/* 🆕 CONTROLS BAS : Undo/Redo + Brush Size sur même ligne */}
-          <div className="absolute bottom-20 left-2 right-2 z-[1000] flex items-center gap-2">
+                 {/* 🆕 CONTROLS BAS : Undo/Redo + Brush Size sur même ligne - FIXED */}
+          <div className="fixed bottom-20 left-2 right-2 z-[1000] flex items-center gap-2">
             {/* UNDO/REDO */}
             <div className="flex gap-2 shrink-0">
               <button
