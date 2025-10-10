@@ -132,7 +132,73 @@ export const drawBeruModels = {
         }
       }
     }
-  }
+  },
+  Frieren: {
+    name: "Frieren",
+    description: "Hunter stratège de BuilderBeru",
+    models: {
+      default: {
+        id: "default",
+        name: "Frieren",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760095328/frieren_origi_ppc90f.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760095322/frieren_uncolored_ryjru0.png",
+        canvasSize: { width: 600, height: 600 },
+        palette: {
+          "1": "#778297",
+          "2": "#232f3c",
+          "3": "#f6c7a1",
+          "4": "#544238",
+          "5": "#a088a2",
+          "6": "#5a6273",
+          "7": "#876c72",
+          "8": "#719aab"
+        }
+      },
+      second: {
+        id: "second",
+        name: "Frieren Art",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760099999/frifriArt_origi_lo50zj.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760099999/frifriArt_uncolored_edpz7k.png",
+        canvasSize: { width: 600, height: 600 },
+        palette: {
+          "1": "#58b3df",
+          "2": "#f4f6f3",
+          "3": "#15191d",
+          "4": "#3e6889",
+          "5": "#9cb2c4",
+          "6": "#8e7c5d",
+          "7": "#9adbe8",
+          "8": "#478dbc",
+          "9": "#384149",
+          "10": "#e1c192"
+        }
+      }
+    }
+  },
+  PrincesseSarah: {
+    name: "Princesse Sarah",
+    description: "Hunter stratège de BuilderBeru",
+    models: {
+      default: {
+        id: "default",
+        name: "Princesse Sarah",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760092206/sarah_origi_abtdsa.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760092204/sarah_uncoloried_eq63mh.png",
+        canvasSize: { width: 345, height: 391 },
+        palette: {
+          "1": "#778297",
+          "2": "#232f3c",
+          "3": "#f6c7a1",
+          "4": "#544238",
+          "5": "#a088a2",
+          "6": "#5a6273",
+          "7": "#876c72",
+          "8": "#719aab"
+        }
+      }
+    }
+  },
+
 };
 
 // ⚙️ HELPERS
