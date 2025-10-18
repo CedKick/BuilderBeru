@@ -15,6 +15,7 @@ import CraftSimulator from './components/CraftSimulator/CraftSimulator.jsx';
 import DamageCalculatorStandalone from './DamageCalculatorStandalone.jsx';
 import ChibiWorld from './components/ChibiSystem/ChibiWorld.jsx';
 import DrawBeru from './pages/DrawBeru/DrawBeru.jsx';
+import DrawBeruRefactored from './pages/DrawBeru/DrawBeruRefactored.jsx';
 
 // 🔥 NOUVELLES IMPORTS - Remplacer POD
 import BDGScore from './components/BDGScore.jsx';
@@ -28,6 +29,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/" element={<HomePage />} />
           <Route path="/build" element={<Builder />} />
           <Route path="/drawberu" element={<DrawBeru />} />
+          <Route path="/drawberuRefactored" element={<DrawBeruRefactored />} />
           <Route path="/craft-simulator" element={<CraftSimulator />} />
           <Route path="/trainingCenter" element={<TrainingCenter />} />
           <Route path="/guide-editor" element={<GuideEditor />} />
