@@ -295,110 +295,110 @@ const DrawBeruFixed = () => {
     };
 
     // FONCTION DE CALCUL DU POURCENTAGE DE COLORIAGE
-        const calculateColoringProgress = () => {
-            const canvas = canvasRef.current;
+    const calculateColoringProgress = () => {
+        const canvas = canvasRef.current;
 
-            if (!canvas || !currentModelData || !imagesLoaded) {
-                return Promise.resolve({
+        if (!canvas || !currentModelData || !imagesLoaded) {
+            return Promise.resolve({
+                percentage: 0,
+                coloredPixels: 0,
+                totalColorablePixels: 0,
+                details: { layers: 0, canvasSize: '0x0' }
+            });
+        }
+
+        return new Promise((resolve) => {
+            const templateCanvas = document.createElement('canvas');
+            templateCanvas.width = canvas.width;
+            templateCanvas.height = canvas.height;
+            const templateCtx = templateCanvas.getContext('2d');
+
+            const templateImg = new Image();
+            templateImg.crossOrigin = "anonymous";
+
+            templateImg.onload = () => {
+                // Dessiner le template de base
+                templateCtx.drawImage(templateImg, 0, 0, templateCanvas.width, templateCanvas.height);
+
+                // Obtenir les données du template
+                const templateData = templateCtx.getImageData(0, 0, templateCanvas.width, templateCanvas.height);
+
+                // Créer un canvas avec tout le coloriage actuel
+                const coloringCanvas = document.createElement('canvas');
+                coloringCanvas.width = canvas.width;
+                coloringCanvas.height = canvas.height;
+                const coloringCtx = coloringCanvas.getContext('2d');
+
+                // Dessiner le template de base
+                coloringCtx.drawImage(templateImg, 0, 0, coloringCanvas.width, coloringCanvas.height);
+
+                // Ajouter tous les layers visibles
+                layers.forEach((layer, index) => {
+                    if (layer.visible && layersRef.current[index]) {
+                        coloringCtx.globalAlpha = layer.opacity;
+                        coloringCtx.drawImage(layersRef.current[index], 0, 0);
+                        coloringCtx.globalAlpha = 1;
+                    }
+                });
+
+                // Obtenir les données du coloriage final
+                const coloringData = coloringCtx.getImageData(0, 0, coloringCanvas.width, coloringCanvas.height);
+
+                // Calculer le pourcentage
+                let totalColorablePixels = 0;
+                let coloredPixels = 0;
+
+                for (let i = 0; i < templateData.data.length; i += 4) {
+                    const templateR = templateData.data[i];
+                    const templateG = templateData.data[i + 1];
+                    const templateB = templateData.data[i + 2];
+                    const templateA = templateData.data[i + 3];
+
+                    const coloringR = coloringData.data[i];
+                    const coloringG = coloringData.data[i + 1];
+                    const coloringB = coloringData.data[i + 2];
+
+                    // Vérifier si c'est une zone colorable (pas transparente et pas complètement blanche)
+                    if (templateA > 0 && !(templateR > 240 && templateG > 240 && templateB > 240)) {
+                        totalColorablePixels++;
+
+                        // Vérifier si le pixel a été modifié par rapport au template
+                        const hasChanged = Math.abs(coloringR - templateR) > 10 ||
+                            Math.abs(coloringG - templateG) > 10 ||
+                            Math.abs(coloringB - templateB) > 10;
+
+                        if (hasChanged) {
+                            coloredPixels++;
+                        }
+                    }
+                }
+
+                const percentage = totalColorablePixels > 0 ?
+                    Math.round((coloredPixels / totalColorablePixels) * 100) : 0;
+
+                resolve({
+                    percentage,
+                    coloredPixels,
+                    totalColorablePixels,
+                    details: {
+                        layers: layers.filter(l => l.visible).length,
+                        canvasSize: `${canvas.width}x${canvas.height}`
+                    }
+                });
+            };
+
+            templateImg.onerror = () => {
+                resolve({
                     percentage: 0,
                     coloredPixels: 0,
                     totalColorablePixels: 0,
                     details: { layers: 0, canvasSize: '0x0' }
                 });
-            }
+            };
 
-            return new Promise((resolve) => {
-                const templateCanvas = document.createElement('canvas');
-                templateCanvas.width = canvas.width;
-                templateCanvas.height = canvas.height;
-                const templateCtx = templateCanvas.getContext('2d');
-
-                const templateImg = new Image();
-                templateImg.crossOrigin = "anonymous";
-
-                templateImg.onload = () => {
-                    // Dessiner le template de base
-                    templateCtx.drawImage(templateImg, 0, 0, templateCanvas.width, templateCanvas.height);
-
-                    // Obtenir les données du template
-                    const templateData = templateCtx.getImageData(0, 0, templateCanvas.width, templateCanvas.height);
-
-                    // Créer un canvas avec tout le coloriage actuel
-                    const coloringCanvas = document.createElement('canvas');
-                    coloringCanvas.width = canvas.width;
-                    coloringCanvas.height = canvas.height;
-                    const coloringCtx = coloringCanvas.getContext('2d');
-
-                    // Dessiner le template de base
-                    coloringCtx.drawImage(templateImg, 0, 0, coloringCanvas.width, coloringCanvas.height);
-
-                    // Ajouter tous les layers visibles
-                    layers.forEach((layer, index) => {
-                        if (layer.visible && layersRef.current[index]) {
-                            coloringCtx.globalAlpha = layer.opacity;
-                            coloringCtx.drawImage(layersRef.current[index], 0, 0);
-                            coloringCtx.globalAlpha = 1;
-                        }
-                    });
-
-                    // Obtenir les données du coloriage final
-                    const coloringData = coloringCtx.getImageData(0, 0, coloringCanvas.width, coloringCanvas.height);
-
-                    // Calculer le pourcentage
-                    let totalColorablePixels = 0;
-                    let coloredPixels = 0;
-
-                    for (let i = 0; i < templateData.data.length; i += 4) {
-                        const templateR = templateData.data[i];
-                        const templateG = templateData.data[i + 1];
-                        const templateB = templateData.data[i + 2];
-                        const templateA = templateData.data[i + 3];
-
-                        const coloringR = coloringData.data[i];
-                        const coloringG = coloringData.data[i + 1];
-                        const coloringB = coloringData.data[i + 2];
-
-                        // Vérifier si c'est une zone colorable (pas transparente et pas complètement blanche)
-                        if (templateA > 0 && !(templateR > 240 && templateG > 240 && templateB > 240)) {
-                            totalColorablePixels++;
-
-                            // Vérifier si le pixel a été modifié par rapport au template
-                            const hasChanged = Math.abs(coloringR - templateR) > 10 ||
-                                Math.abs(coloringG - templateG) > 10 ||
-                                Math.abs(coloringB - templateB) > 10;
-
-                            if (hasChanged) {
-                                coloredPixels++;
-                            }
-                        }
-                    }
-
-                    const percentage = totalColorablePixels > 0 ?
-                        Math.round((coloredPixels / totalColorablePixels) * 100) : 0;
-
-                    resolve({
-                        percentage,
-                        coloredPixels,
-                        totalColorablePixels,
-                        details: {
-                            layers: layers.filter(l => l.visible).length,
-                            canvasSize: `${canvas.width}x${canvas.height}`
-                        }
-                    });
-                };
-
-                templateImg.onerror = () => {
-                    resolve({
-                        percentage: 0,
-                        coloredPixels: 0,
-                        totalColorablePixels: 0,
-                        details: { layers: 0, canvasSize: '0x0' }
-                    });
-                };
-
-                templateImg.src = currentModelData.template;
-            });
-        };
+            templateImg.src = currentModelData.template;
+        });
+    };
 
     // CALCULER LE POURCENTAGE APRÈS CHAQUE MODIFICATION
     const updateProgress = async () => {
@@ -1191,9 +1191,16 @@ const DrawBeruFixed = () => {
                 {/* HEADER MOBILE COMPACT */}
                 <div className="bg-black/30 backdrop-blur-sm border-b border-purple-500/30 px-3 py-2">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-xl font-bold text-white">🎨 DrawBeru</h1>
-                            <p className="text-xs text-purple-200">{currentModelData.name}</p>
+                        <div className="flex items-center gap-3 py-3">
+                            <img
+                                src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760821994/DrasBeru_zd8ju5.png"
+                                alt="DrawBeru logo"
+                                className="w-8 h-8 select-none"
+                            />
+                            <div className="flex flex-col">
+                                <h1 className="text-2xl font-bold">DrawBeru</h1>
+                                <p className="text-xs text-purple-200">{currentModelData.name}</p>
+                            </div>
                         </div>
 
                         <button
@@ -1454,24 +1461,49 @@ const DrawBeruFixed = () => {
                     <div className="absolute top-4 left-4 right-4 z-[1000] flex items-start gap-3">
                         <div className="flex gap-2">
                             <button
-                                onClick={() => setInteractionMode(interactionMode === 'draw' ? 'pan' : 'draw')}
-                                className={`flex items-center justify-center w-10 h-10 rounded-lg shadow-md text-lg transition-all active:scale-95 backdrop-blur-sm ${interactionMode === 'draw'
-                                    ? 'bg-green-600/40 hover:bg-green-600/60 text-white border border-green-400/20'
-                                    : 'bg-blue-600/40 hover:bg-blue-600/60 text-white border border-blue-400/20'
-                                    }`}
-                            >
-                                {interactionMode === 'draw' ? '🖌️' : '✋'}
-                            </button>
+                                onClick={() =>
+                                    setInteractionMode(interactionMode === 'draw' ? 'pan' : 'draw')
+                                }
+                                className="w-10 h-10 rounded-lg shadow-md transition-all active:scale-95 backdrop-blur-sm border"
+                                style={{
+                                    backgroundImage:
+                                        interactionMode === 'draw'
+                                            ? "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760823190/Pinceau_cwjaxh.png')" // pinceau
+                                            : "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760824762/Deplace_v5rkuq.png')", // ✋ en PNG
+                                    backgroundSize: "100% 100%",   // prend toute la largeur et hauteur
+                                    backgroundPosition: "center",
+                                    backgroundRepeat: "no-repeat",
+                                    backgroundColor:
+                                        interactionMode === 'draw'
+                                            ? "rgba(22,163,74,0.4)"   // vert si draw
+                                            : "rgba(37,99,235,0.4)",  // bleu si pan
+                                    borderColor:
+                                        interactionMode === 'draw'
+                                            ? "rgba(74,222,128,0.2)"
+                                            : "rgba(147,197,253,0.2)"
+                                }}
+                                aria-label={interactionMode === 'draw' ? 'Pinceau' : 'Main'}
+                            />
 
                             <button
                                 onClick={() => setShowModelOverlay(!showModelOverlay)}
-                                className={`flex items-center justify-center w-10 h-10 rounded-lg shadow-md text-lg transition-all active:scale-95 backdrop-blur-sm ${showModelOverlay
-                                    ? 'bg-purple-600/40 hover:bg-purple-600/60 text-white border border-purple-400/20'
-                                    : 'bg-gray-700/40 hover:bg-gray-700/60 text-white border border-gray-500/20'
-                                    }`}
-                            >
-                                {showModelOverlay ? '👁️' : '🙈'}
-                            </button>
+                                className="w-10 h-10 rounded-lg shadow-md transition-all active:scale-95 backdrop-blur-sm border"
+                                style={{
+                                    backgroundImage: showModelOverlay
+                                        ? "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055045/sungicon_bfndrc.png')"   // 👁️
+                                        : "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760826182/hide_te5av9.png')", // 🙈
+                                    backgroundSize: "100% 100%",
+                                    backgroundPosition: "center",
+                                    backgroundRepeat: "no-repeat",
+                                    backgroundColor: showModelOverlay
+                                        ? "rgba(147,51,234,0.4)"   // violet si actif
+                                        : "rgba(55,65,81,0.4)",    // gris si inactif
+                                    borderColor: showModelOverlay
+                                        ? "rgba(216,180,254,0.2)"
+                                        : "rgba(156,163,175,0.2)"
+                                }}
+                                aria-label={showModelOverlay ? "Cacher le modèle" : "Afficher le modèle"}
+                            />
                         </div>
 
                         {showModelOverlay && (
@@ -1521,9 +1553,15 @@ const DrawBeruFixed = () => {
                         {(currentTool === 'brush' || currentTool === 'eraser') && (
                             <div className="flex-1 bg-black/40 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-md border border-purple-500/20">
                                 <div className="flex items-center gap-2">
-                                    <div className="flex items-center justify-center w-6 h-6 rounded bg-purple-600/50 text-sm shrink-0">
-                                        {currentTool === 'brush' ? '🖌️' : '🧽'}
-                                    </div>
+                                    <div
+                                        className="flex items-center justify-center w-6 h-6 rounded bg-purple-600/50 text-sm shrink-0 bg-center bg-no-repeat bg-contain"
+                                        style={{
+                                            backgroundImage:
+                                                currentTool === 'brush'
+                                                    ? "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760823190/Pinceau_cwjaxh.png')" // pinceau
+                                                    : "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827288/pipette_kqqmzh.png')" // gomme
+                                        }}
+                                    />
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between mb-0.5">
@@ -1580,46 +1618,62 @@ const DrawBeruFixed = () => {
 
                 {/* BOTTOM TOOLBAR MOBILE */}
                 <div className="fixed bottom-0 left-0 right-0 bg-black/30 backdrop-blur-sm border-t border-purple-500/30 p-2 z-[999]">
-                    <div className="flex items-center justify-around gap-1">
+                    <div className="flex items-center justify-center gap-2">
                         <button
                             onClick={() => setCurrentTool('brush')}
-                            className={`flex-1 py-3 rounded-lg text-sm transition-all ${currentTool === 'brush'
-                                ? 'bg-purple-600 text-white scale-105'
-                                : 'bg-purple-800/50 text-purple-200'
+                            className={`w-12 h-12 rounded-lg shadow-md transition-all bg-center bg-no-repeat bg-contain ${currentTool === 'brush'
+                                    ? 'bg-purple-600 scale-105'
+                                    : 'bg-purple-800/50'
                                 }`}
-                        >
-                            🖌️
-                        </button>
+                            style={{
+                                backgroundImage:
+                                    "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760823190/Pinceau_cwjaxh.png')"
+                            }}
+                            aria-label="Pinceau"
+                        />
+
                         <button
                             onClick={() => setCurrentTool('eraser')}
-                            className={`flex-1 py-3 rounded-lg text-sm transition-all ${currentTool === 'eraser'
-                                ? 'bg-purple-600 text-white scale-105'
-                                : 'bg-purple-800/50 text-purple-200'
+                            className={`w-12 h-12 rounded-lg shadow-md transition-all bg-center bg-no-repeat bg-contain ${currentTool === 'eraser'
+                                    ? 'bg-purple-600 scale-105'
+                                    : 'bg-purple-800/50'
                                 }`}
-                        >
-                            🧽
-                        </button>
+                            style={{
+                                backgroundImage:
+                                    "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827288/pipette_kqqmzh.png')"
+                            }}
+                            aria-label="Gomme"
+                        />
                         <button
                             onClick={() => setCurrentTool('pipette')}
-                            className={`flex-1 py-3 rounded-lg text-sm transition-all ${currentTool === 'pipette'
-                                ? 'bg-purple-600 text-white scale-105'
-                                : 'bg-purple-800/50 text-purple-200'
+                            className={`w-12 h-12 rounded-lg shadow-md transition-all bg-center bg-no-repeat bg-contain ${currentTool === 'pipette'
+                                    ? 'bg-purple-600 scale-105'
+                                    : 'bg-purple-800/50'
                                 }`}
-                        >
-                            💧
-                        </button>
+                            style={{
+                                backgroundImage:
+                                    "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827432/pipettevrai_vxsysi.png')"
+                            }}
+                            aria-label="Pipette"
+                        />
                         <button
                             onClick={() => handleZoom(0.25)}
-                            className="flex-1 py-3 rounded-lg bg-purple-800/50 text-purple-200 text-sm"
-                        >
-                            🔍+
-                        </button>
+                            className="w-12 h-12 rounded-lg shadow-md transition-all bg-center bg-no-repeat bg-contain bg-purple-800/50 text-purple-200"
+                            style={{
+                                backgroundImage:
+                                    "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827803/zoomgrow_hzuucr.png')"
+                            }}
+                            aria-label="Zoom +"
+                        />
                         <button
                             onClick={() => handleZoom(-0.25)}
-                            className="flex-1 py-3 rounded-lg bg-purple-800/50 text-purple-200 text-sm"
-                        >
-                            🔍−
-                        </button>
+                            className="w-12 h-12 rounded-lg shadow-md transition-all bg-center bg-no-repeat bg-contain bg-purple-800/50 text-purple-200"
+                            style={{
+                                backgroundImage:
+                                    "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827864/zoomreduce_lmj2sp.png')"
+                            }}
+                            aria-label="Zoom -"
+                        />
                     </div>
                 </div>
             </div>
@@ -1654,11 +1708,16 @@ const DrawBeruFixed = () => {
             <div className="bg-black/20 backdrop-blur-sm border-b border-purple-500/30">
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between flex-wrap gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold text-white">🎨 DrawBeru</h1>
-                            <p className="text-purple-200">Colorie {currentModelData.name}</p>
-                        </div>
+                        <div className="flex items-center gap-3 py-3">
+                            <img
+                                src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760821994/DrasBeru_zd8ju5.png"
+                                alt="DrawBeru logo"
+                                className="w-8 h-8 select-none"
+                            />
+                            <h1 className="text-2xl font-bold">DrawBeru</h1>
 
+                        </div>
+                        <p className="text-purple-200">Colorie {currentModelData.name}</p>
                         <div className="flex items-center gap-3">
                             <select
                                 value={selectedHunter}
