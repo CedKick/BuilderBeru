@@ -21,6 +21,7 @@ import GemmesPopup from './components/GemmePopup';
 import SpaceMarineShadowTrail from './components/SpaceMarineShadowTrail/SpaceMarineShadowTrail';
 import WeaponPopup from './components/weaponPopup';
 import OCRPasteListener from './components/OCRPasteListener';
+import { getAllAvailableSkins, hunterNameToKey } from './utils/coloringHelper';
 import './i18n/i18n';
 import i18n from 'i18next';
 import { useTranslation } from 'react-i18next';
@@ -495,6 +496,8 @@ const BuilderBeru = () => {
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const { i18n } = useTranslation();
+  const [selectedSkin, setSelectedSkin] = useState('default');
+  const [availableSkins, setAvailableSkins] = useState([{ id: 'default', label: 'Default' }]);
   const [activeSection, setActiveSection] = useState('artifacts');
   const [isSharing, setIsSharing] = useState(false);
   const [shareModalData, setShareModalData] = useState(null);
@@ -1127,84 +1130,84 @@ const BuilderBeru = () => {
     }
 
     _canStartDialogue() {
-    if (!this.speakingEnabled) return false;
-    if (this.visibilityPaused) return false;
-    if (this.isAnyPopupOpen?.()) return false;
-    if (this.dialogue.active) return false;
-    if (!this.dialogues || this.dialogues.length === 0) return false;
-    const now = Date.now();
-    if (now < this.dialogue.lockUntil) return false;
-    const p = (this.dialogueConfig?.probability ?? 0.3);
-    return Math.random() < p;
-  }
-
-  _pickDialogue() {
-    const pool = this.dialogues;
-    if (!pool || pool.length === 0) return null;
-    return pool[Math.floor(Math.random() * pool.length)];
-  }
-
-  _startDialogue() {
-  const d = this._pickDialogue();
-  if (!d) return false;
-
-  this.dialogue.active = true;
-
-  const lineMin = this.dialogueConfig?.lineMinDelayMs ?? 1500;
-  const lineMax = this.dialogueConfig?.lineMaxDelayMs ?? 3500;
-  const nextDelay = () => Math.floor(lineMin + Math.random() * (lineMax - lineMin));
-
-  const playLine = (index = 0) => {
-    // Dialogue interrompu ailleurs
-    if (!this.dialogue.active) return;
-
-    // Fin du dialogue → lock avant le prochain
-    if (index >= d.lines.length) return this._endDialogue(true);
-
-    const { speaker, text } = d.lines[index] || {};
-    if (!speaker || !text) return this._endDialogue(true);
-
-    // Sécurité contexte (pas de rattrapage)
-    if (!this.speakingEnabled || this.visibilityPaused || this.isAnyPopupOpen?.()) {
-      return this._endDialogue(false);
+      if (!this.speakingEnabled) return false;
+      if (this.visibilityPaused) return false;
+      if (this.isAnyPopupOpen?.()) return false;
+      if (this.dialogue.active) return false;
+      if (!this.dialogues || this.dialogues.length === 0) return false;
+      const now = Date.now();
+      if (now < this.dialogue.lockUntil) return false;
+      const p = (this.dialogueConfig?.probability ?? 0.3);
+      return Math.random() < p;
     }
 
-    if (index === 0) {
-      // La 1ʳᵉ réplique respecte le gouverneur global (évite chevauchements)
-      if (!this.messageGovernor.canSpeak({ text })) {
-        // petit backoff pour réessayer la 1ʳᵉ réplique sans créer de backlog
-        this.dialogue.timeout = setTimeout(() => playLine(index), 500 + Math.random() * 500);
-        return;
+    _pickDialogue() {
+      const pool = this.dialogues;
+      if (!pool || pool.length === 0) return null;
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    _startDialogue() {
+      const d = this._pickDialogue();
+      if (!d) return false;
+
+      this.dialogue.active = true;
+
+      const lineMin = this.dialogueConfig?.lineMinDelayMs ?? 1500;
+      const lineMax = this.dialogueConfig?.lineMaxDelayMs ?? 3500;
+      const nextDelay = () => Math.floor(lineMin + Math.random() * (lineMax - lineMin));
+
+      const playLine = (index = 0) => {
+        // Dialogue interrompu ailleurs
+        if (!this.dialogue.active) return;
+
+        // Fin du dialogue → lock avant le prochain
+        if (index >= d.lines.length) return this._endDialogue(true);
+
+        const { speaker, text } = d.lines[index] || {};
+        if (!speaker || !text) return this._endDialogue(true);
+
+        // Sécurité contexte (pas de rattrapage)
+        if (!this.speakingEnabled || this.visibilityPaused || this.isAnyPopupOpen?.()) {
+          return this._endDialogue(false);
+        }
+
+        if (index === 0) {
+          // La 1ʳᵉ réplique respecte le gouverneur global (évite chevauchements)
+          if (!this.messageGovernor.canSpeak({ text })) {
+            // petit backoff pour réessayer la 1ʳᵉ réplique sans créer de backlog
+            this.dialogue.timeout = setTimeout(() => playLine(index), 500 + Math.random() * 500);
+            return;
+          }
+          this.showEntityMessage(speaker, text);
+          this.messageGovernor.record({ entityId: speaker, text });
+        } else {
+          // Répliques suivantes: BYPASS du gouverneur global
+          // (sinon elles seraient bloquées par le cooldown/burst)
+          this.showEntityMessage(speaker, text);
+          // pas de record() ici
+        }
+
+        // Prochaine ligne avec pacing dialogue
+        this.dialogue.timeout = setTimeout(() => playLine(index + 1), nextDelay());
+      };
+
+      playLine(0);
+      return true;
+    }
+
+
+    _endDialogue(scheduleLock) {
+      this.dialogue.active = false;
+      if (this.dialogue.timeout) { clearTimeout(this.dialogue.timeout); this.dialogue.timeout = null; }
+
+      if (scheduleLock) {
+        const min = this.dialogueConfig?.betweenDialoguesMinMs ?? 300000;
+        const max = this.dialogueConfig?.betweenDialoguesMaxMs ?? 480000;
+        this.dialogue.lockUntil = Date.now() + Math.floor(min + Math.random() * (max - min));
       }
-      this.showEntityMessage(speaker, text);
-      this.messageGovernor.record({ entityId: speaker, text });
-    } else {
-      // Répliques suivantes: BYPASS du gouverneur global
-      // (sinon elles seraient bloquées par le cooldown/burst)
-      this.showEntityMessage(speaker, text);
-      // pas de record() ici
     }
-
-    // Prochaine ligne avec pacing dialogue
-    this.dialogue.timeout = setTimeout(() => playLine(index + 1), nextDelay());
-  };
-
-  playLine(0);
-  return true;
-}
-
-
-  _endDialogue(scheduleLock) {
-    this.dialogue.active = false;
-    if (this.dialogue.timeout) { clearTimeout(this.dialogue.timeout); this.dialogue.timeout = null; }
-
-    if (scheduleLock) {
-      const min = this.dialogueConfig?.betweenDialoguesMinMs ?? 300000;
-      const max = this.dialogueConfig?.betweenDialoguesMaxMs ?? 480000;
-      this.dialogue.lockUntil = Date.now() + Math.floor(min + Math.random() * (max - min));
-    }
-  }
-  // 👆👆👆 FIN DU BLOC
+    // 👆👆👆 FIN DU BLOC
 
 
 
@@ -1224,55 +1227,55 @@ const BuilderBeru = () => {
       this.messageTimeouts.set(entity.id, timeoutId);
     }
 
-  trySpeak(entity) {
+    trySpeak(entity) {
 
-  // 1) Conditions de silence globales
-  if (!this.speakingEnabled || this.visibilityPaused || this.isAnyPopupOpen?.()) {
-    return this.scheduleNextMessage(entity, true);
-  }
+      // 1) Conditions de silence globales
+      if (!this.speakingEnabled || this.visibilityPaused || this.isAnyPopupOpen?.()) {
+        return this.scheduleNextMessage(entity, true);
+      }
 
-  // 2) Si un dialogue est en cours, on ne parle pas en solo
-  if (this.dialogue?.active) {
-    return this.scheduleNextMessage(entity, true);
-  }
+      // 2) Si un dialogue est en cours, on ne parle pas en solo
+      if (this.dialogue?.active) {
+        return this.scheduleNextMessage(entity, true);
+      }
 
-  // 3) Tenter de lancer un dialogue (une seule "entrée" déclenche; les autres lignes sont jouées par _startDialogue)
-  if (this._canStartDialogue()) {
-    const started = this._startDialogue();
-    // Quoi qu'il arrive, on replanifie ce speaker pour plus tard (pas de rattrapage)
-    this.scheduleNextMessage(entity);
-    if (started) return; // dialogue en cours → on sort
-  }
+      // 3) Tenter de lancer un dialogue (une seule "entrée" déclenche; les autres lignes sont jouées par _startDialogue)
+      if (this._canStartDialogue()) {
+        const started = this._startDialogue();
+        // Quoi qu'il arrive, on replanifie ce speaker pour plus tard (pas de rattrapage)
+        this.scheduleNextMessage(entity);
+        if (started) return; // dialogue en cours → on sort
+      }
 
-  // 4) Sinon: message solo classique
-  const pool = Array.isArray(entity.phrases) ? entity.phrases : [];
-  if (!pool.length) {
-    return this.scheduleNextMessage(entity, true);
-  }
+      // 4) Sinon: message solo classique
+      const pool = Array.isArray(entity.phrases) ? entity.phrases : [];
+      if (!pool.length) {
+        return this.scheduleNextMessage(entity, true);
+      }
 
-  // Anti-répétition simple (jusqu’à 5 essais)
-  let choice = null;
-  for (let i = 0; i < 5; i++) {
-    const c = pool[Math.floor(Math.random() * pool.length)];
-    if (this.messageGovernor._notRecentlyRepeated(c)) { choice = c; break; }
-  }
-  choice = choice || pool[Math.floor(Math.random() * pool.length)];
+      // Anti-répétition simple (jusqu’à 5 essais)
+      let choice = null;
+      for (let i = 0; i < 5; i++) {
+        const c = pool[Math.floor(Math.random() * pool.length)];
+        if (this.messageGovernor._notRecentlyRepeated(c)) { choice = c; break; }
+      }
+      choice = choice || pool[Math.floor(Math.random() * pool.length)];
 
-  // Anti-burst + cooldown global
-  if (!this.messageGovernor.canSpeak({ text: choice })) {
-    const backoff = 30_000 + Math.random() * 30_000; // 30–60s
-    const id = setTimeout(() => this.trySpeak(entity), backoff);
-    this.messageTimeouts.set(entity.id, id);
-    return;
-  }
+      // Anti-burst + cooldown global
+      if (!this.messageGovernor.canSpeak({ text: choice })) {
+        const backoff = 30_000 + Math.random() * 30_000; // 30–60s
+        const id = setTimeout(() => this.trySpeak(entity), backoff);
+        this.messageTimeouts.set(entity.id, id);
+        return;
+      }
 
-  // Émettre le message solo
-  this.showEntityMessage(entity.id, choice);
-  this.messageGovernor.record({ entityId: entity.id, text: choice });
+      // Émettre le message solo
+      this.showEntityMessage(entity.id, choice);
+      this.messageGovernor.record({ entityId: entity.id, text: choice });
 
-  // 5) Planifier la prochaine prise de parole
-  this.scheduleNextMessage(entity);
-}
+      // 5) Planifier la prochaine prise de parole
+      this.scheduleNextMessage(entity);
+    }
 
 
     // 🎮 Keyboard controls
@@ -2009,59 +2012,70 @@ const BuilderBeru = () => {
     return data[Math.floor(Math.random() * data.length)];
   };
 
+  // ✅ STATS À JOUR depuis le CSV (08/10/2025)
   const characterStats = {
-    // SSR Hunters
-    'minnie': { attack: 5373, defense: 6031, hp: 11356, critRate: 0, mp: 1000 },
-    'soyeon': { attack: 6058, defense: 5370, hp: 11332, critRate: 0, mp: 1000 },
-    'yuqi': { attack: 5323, defense: 5352, hp: 12940, critRate: 0, mp: 1000 },
-    'jinwoo': { attack: 3032, defense: 2775, hp: 5436, critRate: 0, mp: 1034 },
-    'jinah': { attack: 6132, defense: 5292, hp: 11313, critRate: 0, mp: 1000 },
-    'alicia': { attack: 6056, defense: 5279, hp: 11503, critRate: 0, mp: 1000 },
-    'mirei': { attack: 6149, defense: 5231, hp: 11407, critRate: 0, mp: 1000 },
-    'baek': { attack: 5367, defense: 5954, hp: 11534, critRate: 0, mp: 1000 },
-    'chae-in': { attack: 6075, defense: 5363, hp: 11284, critRate: 0, mp: 1000 },
-    'chae': { attack: 5703, defense: 5755, hp: 11243, critRate: 0, mp: 1000 },
-    'charlotte': { attack: 5305, defense: 6100, hp: 11323, critRate: 0, mp: 1000 },
-    'choi': { attack: 6101, defense: 5199, hp: 11575, critRate: 0, mp: 1000 },
-    'emma': { attack: 5339, defense: 5295, hp: 12995, critRate: 0, mp: 1000 },
-    'esil': { attack: 6088, defense: 5376, hp: 11230, critRate: 0, mp: 1000 },
-    'gina': { attack: 6153, defense: 5326, hp: 11198, critRate: 0, mp: 1000 },
-    'go': { attack: 5295, defense: 6016, hp: 11555, critRate: 0, mp: 1000 },
-    'goto': { attack: 5278, defense: 5382, hp: 12940, critRate: 0, mp: 1000 },
-    'han': { attack: 5269, defense: 5383, hp: 12957, critRate: 0, mp: 1000 },
-    'harper': { attack: 5341, defense: 5352, hp: 12868, critRate: 0, mp: 1000 },
-    'hwang': { attack: 5363, defense: 6004, hp: 11437, critRate: 0, mp: 1000 },
-    'isla': { attack: 5442, defense: 6116, hp: 11032, critRate: 0, mp: 1000 },
-    'lee': { attack: 6045, defense: 5333, hp: 11412, critRate: 0, mp: 1000 },
-    'niermann': { attack: 5703, defense: 5755, hp: 11243, critRate: 0, mp: 1000 },
-    'lim': { attack: 6071, defense: 5437, hp: 11135, critRate: 0, mp: 1000 },
-    'meilin': { attack: 5935, defense: 5408, hp: 11486, critRate: 0, mp: 1000 },
-    'min': { attack: 5287, defense: 5326, hp: 13041, critRate: 0, mp: 1000 },
-    'miyeon': { attack: 5373, defense: 6031, hp: 11356, critRate: 0, mp: 1000 },
-    'seo': { attack: 5391, defense: 5461, hp: 12529, critRate: 0, mp: 1000 },
-    'seorin': { attack: 5237, defense: 5394, hp: 13001, critRate: 0, mp: 1000 },
-    'shimizu': { attack: 5424, defense: 5212, hp: 12992, critRate: 0, mp: 1000 },
-    'shuhua': { attack: 6132, defense: 5292, hp: 11313, critRate: 0, mp: 1000 },
-    'silverbaek': { attack: 6037, defense: 5357, hp: 11379, critRate: 0, mp: 1000 },
-    'kanae': { attack: 5847, defense: 5218, hp: 12077, critRate: 0, mp: 1000 },
-    'thomas': { attack: 5384, defense: 6153, hp: 11075, critRate: 0, mp: 1000 },
-    'woo': { attack: 5402, defense: 6083, hp: 11184, critRate: 0, mp: 1000 },
-    'yoo': { attack: 6102, defense: 5220, hp: 11529, critRate: 0, mp: 1000 },
+    // ============================================
+    // 🔥 SSR HUNTERS
+    // ============================================
 
-    // SR Hunters
-    'anna': { attack: 5372, defense: 4668, hp: 10108, critRate: 0, mp: 1000 },
-    'han-song': { attack: 5272, defense: 4751, hp: 10146, critRate: 0, mp: 1000 },
-    'hwang-dongsuk': { attack: 4716, defense: 4781, hp: 11265, critRate: 0, mp: 1000 },
-    'jo': { attack: 5286, defense: 4770, hp: 10075, critRate: 0, mp: 1000 },
-    'kang': { attack: 5335, defense: 4689, hp: 10144, critRate: 0, mp: 1000 },
-    'kim-chul': { attack: 4745, defense: 5376, hp: 9938, critRate: 0, mp: 1000 },
-    'kim-sangshik': { attack: 4858, defense: 5277, hp: 9908, critRate: 0, mp: 1000 },
-    'lee-johee': { attack: 4790, defense: 4585, hp: 11524, critRate: 0, mp: 1000 },
-    'nam': { attack: 4740, defense: 4747, hp: 11286, critRate: 0, mp: 1000 },
-    'park-beom': { attack: 4807, defense: 5302, hp: 9965, critRate: 0, mp: 1000 },
-    'park-heejin': { attack: 5228, defense: 4805, hp: 10125, critRate: 0, mp: 1000 },
-    'song': { attack: 5463, defense: 4671, hp: 9908, critRate: 0, mp: 1000 },
-    'yoo-jinho': { attack: 4776, defense: 5285, hp: 10066, critRate: 0, mp: 1000 }
+    // ✨ AJOUT - Sung Il-Hwan (nouveau)
+    'ilhwan': { attack: 6196, defense: 5599, hp: 11834, critRate: 0, mp: 1000 },
+
+    // ✅ FOREVER (IDLE)
+    'minnie': { attack: 5568, defense: 6251, hp: 11779, critRate: 0, mp: 1000 },
+    'miyeon': { attack: 5568, defense: 6251, hp: 11779, critRate: 0, mp: 1000 },
+    'shuhua': { attack: 6356, defense: 5485, hp: 11733, critRate: 0, mp: 1000 },
+    'soyeon': { attack: 6279, defense: 5566, hp: 11755, critRate: 0, mp: 1000 },
+    'yuqi': { attack: 5547, defense: 5517, hp: 13422, critRate: 0, mp: 1000 },
+
+    // ✅ Autres SSR
+    'jinah': { attack: 6356, defense: 5485, hp: 11733, critRate: 0, mp: 1000 }, // Sung Jinah
+    'alicia': { attack: 6276, defense: 5471, hp: 11932, critRate: 0, mp: 1000 },
+    'mirei': { attack: 6374, defense: 5421, hp: 11832, critRate: 0, mp: 1000 },
+    'baek': { attack: 5562, defense: 6170, hp: 11964, critRate: 0, mp: 1000 }, // Baek Yoonho
+    'silverbaek': { attack: 6257, defense: 5551, hp: 11804, critRate: 0, mp: 1000 }, // Silver Mane
+    'chae-in': { attack: 6296, defense: 5559, hp: 11703, critRate: 0, mp: 1000 }, // Cha Hae In
+    'chae': { attack: 5911, defense: 5964, hp: 11662, critRate: 0, mp: 1000 }, // Pure Sword Princess
+    'charlotte': { attack: 5499, defense: 6322, hp: 11755, critRate: 0, mp: 1000 },
+    'choi': { attack: 6323, defense: 5389, hp: 12007, critRate: 0, mp: 1000 },
+    'emma': { attack: 5534, defense: 5487, hp: 13479, critRate: 0, mp: 1000 },
+    'esil': { attack: 6309, defense: 5572, hp: 11648, critRate: 0, mp: 1000 },
+    'gina': { attack: 6377, defense: 5519, hp: 11615, critRate: 0, mp: 1000 },
+    'go': { attack: 5487, defense: 6235, hp: 11985, critRate: 0, mp: 1000 },
+    'goto': { attack: 5470, defense: 5578, hp: 13422, critRate: 0, mp: 1000 },
+    'han': { attack: 5461, defense: 5579, hp: 13438, critRate: 0, mp: 1000 },
+    'harper': { attack: 5535, defense: 5547, hp: 13348, critRate: 0, mp: 1000 },
+    'hwang': { attack: 5559, defense: 6222, hp: 11862, critRate: 0, mp: 1000 },
+    'isla': { attack: 5640, defense: 6338, hp: 11443, critRate: 0, mp: 1000 },
+    'lee': { attack: 6265, defense: 5528, hp: 11837, critRate: 0, mp: 1000 },
+    'niermann': { attack: 5911, defense: 5964, hp: 11662, critRate: 0, mp: 1000 },
+    'lim': { attack: 6292, defense: 5635, hp: 11549, critRate: 0, mp: 1000 },
+    'meilin': { attack: 6150, defense: 5605, hp: 11914, critRate: 0, mp: 1000 },
+    'min': { attack: 5480, defense: 5519, hp: 13527, critRate: 0, mp: 1000 },
+    'seo': { attack: 5587, defense: 5659, hp: 12995, critRate: 0, mp: 1000 },
+    'seorin': { attack: 5428, defense: 5590, hp: 13486, critRate: 0, mp: 1000 },
+    'shimizu': { attack: 5621, defense: 5402, hp: 13476, critRate: 0, mp: 1000 },
+    'kanae': { attack: 6059, defense: 5408, hp: 12528, critRate: 0, mp: 1000 },
+    'thomas': { attack: 5580, defense: 6376, hp: 11487, critRate: 0, mp: 1000 },
+    'woo': { attack: 5599, defense: 6304, hp: 11601, critRate: 0, mp: 1000 }, // CORRECTION : hp était 1601 → 11601
+    'yoo': { attack: 6325, defense: 5410, hp: 11959, critRate: 0, mp: 1000 },
+
+    // ============================================
+    // 🥈 SR HUNTERS
+    // ============================================
+    'anna': { attack: 5580, defense: 4849, hp: 10512, critRate: 0, mp: 1000 },
+    'han-song': { attack: 5476, defense: 4936, hp: 10551, critRate: 0, mp: 1000 },
+    'hwang-dongsuk': { attack: 4899, defense: 4966, hp: 11714, critRate: 0, mp: 1000 },
+    'jo': { attack: 5491, defense: 4955, hp: 10477, critRate: 0, mp: 1000 },
+    'kang': { attack: 5542, defense: 4870, hp: 10549, critRate: 0, mp: 1000 },
+    'kim-chul': { attack: 4929, defense: 5584, hp: 10335, critRate: 0, mp: 1000 },
+    'kim-sangshik': { attack: 5047, defense: 5481, hp: 10304, critRate: 0, mp: 1000 },
+    'lee-johee': { attack: 4975, defense: 4763, hp: 11984, critRate: 0, mp: 1000 },
+    'nam': { attack: 4924, defense: 4931, hp: 11736, critRate: 0, mp: 1000 },
+    'park-beom': { attack: 4993, defense: 5507, hp: 10363, critRate: 0, mp: 1000 },
+    'park-heejin': { attack: 5430, defense: 4991, hp: 10529, critRate: 0, mp: 1000 },
+    'song': { attack: 5675, defense: 4852, hp: 10304, critRate: 0, mp: 1000 },
+    'yoo-jinho': { attack: 4961, defense: 5489, hp: 10468, critRate: 0, mp: 1000 }
   };
 
   const [artifactsData, setArtifactsData] = useState({
@@ -2554,6 +2568,34 @@ Continuer?`;
     }
   };
 
+  const getAvailableColoringsForHunter = (hunterKey) => {
+  try {
+    const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+    const colorings = userData.user?.accounts?.default?.colorings || {};
+    
+    // Mapper le nom du hunter (ex: 'minnie' → 'Minnie')
+    const mappedKey = hunterNameToKey(hunterKey);
+    const hunterColorings = colorings[mappedKey] || {};
+    
+    // Convertir en tableau d'options pour le dropdown
+    const options = Object.keys(hunterColorings).map(modelId => ({
+      value: modelId,
+      label: hunterColorings[modelId].model || modelId,
+      hunter: mappedKey,
+      preview: hunterColorings[modelId].preview
+    }));
+    
+    console.log(`🎨 Coloriages disponibles pour ${hunterKey}:`, options);
+    return options;
+    
+  } catch (error) {
+    console.error('❌ Erreur lecture coloriages:', error);
+    return [];
+  }
+};
+
+
+
   // 4️⃣ DÉTECTER UN COMPTE DANS L'URL AU CHARGEMENT
   useEffect(() => {
     const hash = window.location.hash;
@@ -2570,6 +2612,8 @@ Continuer?`;
 
 
 
+
+
   const tankMessageRef = useRef('');
   const messageOpacityRef = useRef(1);
   const [tankMessage, setTankMessage] = useState('');
@@ -2581,6 +2625,62 @@ Continuer?`;
   const [isAccountSwitching, setIsAccountSwitching] = useState(false);
   const [setSelectorSlot, setSetSelectorSlot] = useState(null); // ex: 'Helmet'
   const [showNoyauxPopup, setShowNoyauxPopup] = useState(false);
+  const [selectedColoring, setSelectedColoring] = useState('default');
+  const [currentColoringImage, setCurrentColoringImage] = useState(null);
+  const [availableColorings, setAvailableColorings] = useState([]);
+  const [selectedCharacter, setSelectedCharacter] = useState('niermann');
+
+  /// 🎯 3️⃣ EFFECT CORRIGÉ (remplace ton useEffect actuel)
+useEffect(() => {
+  // 1️⃣ Charger tous les skins disponibles (pour la galerie globale)
+  const skins = getAllAvailableSkins();
+  setAvailableSkins(skins);
+
+  // 2️⃣ Filtrer les coloriages par hunter sélectionné
+  if (!selectedCharacter) {
+    setAvailableColorings([]);
+    setSelectedColoring('default');
+    setCurrentColoringImage(null);
+    console.log('⚠️ Aucun hunter sélectionné, skins chargés:', skins.length);
+    return;
+  }
+
+  // Récupérer les coloriages disponibles pour ce hunter
+  const colorings = getAvailableColoringsForHunter(selectedCharacter);
+  setAvailableColorings(colorings);
+
+  // Si le coloriage actuel n'est pas disponible pour ce hunter, reset
+  const isCurrentColoringAvailable = colorings.some(c => c.value === selectedColoring);
+  if (!isCurrentColoringAvailable && colorings.length > 0) {
+    setSelectedColoring(colorings[0].value);
+    setCurrentColoringImage(colorings[0].preview);
+  } else if (isCurrentColoringAvailable) {
+    const currentColoring = colorings.find(c => c.value === selectedColoring);
+    setCurrentColoringImage(currentColoring?.preview || null);
+  } else {
+    setSelectedColoring('default');
+    setCurrentColoringImage(null);
+  }
+
+  console.log('🎨 Skins chargés:', skins.length);
+  console.log('🖌️ Coloriages pour', selectedCharacter, ':', colorings.length);
+
+}, [selectedCharacter]); // ⚡ IMPORTANT : dépendance sur selectedCharacter !
+
+// 🎯 4️⃣ EFFECT pour mettre à jour l'image quand selectedColoring change
+useEffect(() => {
+  if (!selectedColoring || availableColorings.length === 0) {
+    setCurrentColoringImage(null);
+    return;
+  }
+  
+  const coloring = availableColorings.find(c => c.value === selectedColoring);
+  setCurrentColoringImage(coloring?.preview || null);
+  
+  console.log('🖼️ Image mise à jour:', selectedColoring, coloring?.preview ? 'Trouvée' : 'Non trouvée');
+  
+}, [selectedColoring, availableColorings]);
+
 
   // 🐉 KAISEL FIX 4 - INITIALISATION STATE artifactScores SÉCURISÉE
   const [artifactScores, setArtifactScores] = useState(() => {
@@ -3100,9 +3200,6 @@ BobbyJones : "Allez l'Inter !"
 
   const [accounts, setAccounts] = useState({});
   const [activeAccount, setActiveAccount] = useState("main");
-
-  const [selectedCharacter, setSelectedCharacter] = useState('niermann');
-
   const [bubbleId, setBubbleId] = useState(Date.now());
   const [showSernPopup, setShowSernPopup] = useState(false);
   const triggerSernIntervention = () => {
@@ -3273,7 +3370,7 @@ BobbyJones : "Allez l'Inter !"
           defaultCharacter = mainRecent[0];
         } else {
           // En dernier recours, Niermann
-          defaultCharacter = 'minnie';
+          defaultCharacter = 'ilhwan';
         }
       }
 
@@ -5139,17 +5236,17 @@ BobbyJones : "Allez l'Inter !"
     shadowManager.setTranslation(t);
     shadowManager.loadDialoguesFromI18n();
 
-// brancher le check popup/modal
-shadowManager.setPopupCheck(() => {
-  return !!(
-    showTutorial ||
-    showSernPopup ||
-    showBeruInteractionMenu ||
-    showKaiselInteractionMenu ||
-    showAdminPage ||
-    tvDialogue
-  );
-});
+    // brancher le check popup/modal
+    shadowManager.setPopupCheck(() => {
+      return !!(
+        showTutorial ||
+        showSernPopup ||
+        showBeruInteractionMenu ||
+        showKaiselInteractionMenu ||
+        showAdminPage ||
+        tvDialogue
+      );
+    });
     window.getShadowScreenPosition = getShadowScreenPosition;
 
     // 🔥 CALLBACKS avec références stables
@@ -5878,6 +5975,43 @@ shadowManager.setPopupCheck(() => {
                           )}
                         </div>
                       </div>
+                      {/* NOUVEAU : Sélecteur de skin */}
+                      <select
+                        value={selectedColoring}
+                        onChange={(e) => {
+                          const newValue = e.target.value;
+                          setSelectedColoring(newValue);
+                          console.log(`🖌️ Coloriage changé: ${selectedCharacter} → ${newValue}`);
+                        }}
+                        className="bg-purple-900/30 text-purple-300 border border-purple-600/50
+      px-3 py-2 rounded-lg text-sm
+      hover:border-purple-500 focus:outline-none focus:border-purple-400"
+                        disabled={availableColorings.length === 0}
+                      >
+                        {availableColorings.length > 0 && (
+  <div className="mb-3">
+    <label className="text-purple-300 text-sm font-medium block mb-2">
+      🎨 Coloriages disponibles ({availableColorings.length})
+    </label>
+    <select
+      value={selectedColoring}
+      onChange={(e) => {
+        setSelectedColoring(e.target.value);
+        console.log('🖌️ Coloriage sélectionné:', e.target.value);
+      }}
+      className="w-full bg-purple-900/30 text-purple-300 border border-purple-600/50
+        px-3 py-2 rounded-lg text-sm
+        hover:border-purple-500 focus:outline-none focus:border-purple-400"
+    >
+      {availableColorings.map(coloring => (
+        <option key={coloring.value} value={coloring.value}>
+          {coloring.label}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
+                      </select>
 
                       {/* Debug Button */}
                       {showDebugButton && (
@@ -5938,35 +6072,43 @@ shadowManager.setPopupCheck(() => {
 
                         {/* Bloc Personnage Centre */}
                         <div className="w-full sm:w-1/3 flex flex-col items-center">
-                          <div className="relative">
-                            {selectedCharacter && characters[selectedCharacter] && characters[selectedCharacter].img ? (
-                              <>
-                                <img
-                                  src={characters[selectedCharacter].img}
-                                  alt={characters[selectedCharacter].name}
-                                  className="w-48 h-auto mb-2 relative z-10"
-                                  id="targetToDestroy"
-                                />
-                                {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
-                                  <div
-                                    className="absolute w-60 h-8 rounded-full blur-sm animate-fade-out z-0"
-                                    style={{
-                                      backgroundColor: getElementColor(characters[selectedCharacter].element),
-                                      bottom: '0px',
-                                      marginLeft: '-15px'
-                                    }}
-                                  ></div>
-                                )}
-                              </>
-                            ) : (
-                              <img
-                                src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
-                                className="w-48 h-auto mb-2 relative z-10"
-                                id="targetToDestroy"
-                              />
-                            )}
-                          </div>
-                        </div>
+  <div className="relative w-64 h-96 flex items-center justify-center flex-shrink-0">
+    {selectedCharacter && characters[selectedCharacter] ? (
+      <>
+        {/* Afficher le coloriage SI disponible, sinon l'image par défaut */}
+        <img
+          src={currentColoringImage || characters[selectedCharacter].img}
+          alt={characters[selectedCharacter].name}
+          className="max-w-full max-h-full object-contain relative z-10"
+          id="targetToDestroy"
+          onError={(e) => {
+            console.warn('❌ Erreur chargement image, fallback vers image par défaut');
+            e.target.src = characters[selectedCharacter].img;
+          }}
+        />
+        
+        {/* Hologramme */}
+        {showHologram && characters[selectedCharacter]?.element && (
+          <div
+            className="absolute w-60 h-8 rounded-full blur-sm animate-fade-out z-0"
+            style={{
+              backgroundColor: getElementColor(characters[selectedCharacter].element),
+              bottom: '0px',
+              left: '50%',
+              transform: 'translateX(-50%)'
+            }}
+          ></div>
+        )}
+      </>
+    ) : (
+      <img
+        src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
+        className="max-w-full max-h-full object-contain relative z-10"
+        id="targetToDestroy"
+      />
+    )}
+  </div>
+</div>
 
                         {/* Bloc Gemmes */}
                         <div className="w-full sm:w-1/3 text-white text-xs">
@@ -7492,6 +7634,44 @@ shadowManager.setPopupCheck(() => {
                         </select>
                       )}
 
+                       {/* NOUVEAU : Sélecteur de skin */}
+                      <select
+                        value={selectedColoring}
+                        onChange={(e) => {
+                          const newValue = e.target.value;
+                          setSelectedColoring(newValue);
+                          console.log(`🖌️ Coloriage changé: ${selectedCharacter} → ${newValue}`);
+                        }}
+                        className="bg-purple-900/30 text-purple-300 border border-purple-600/50
+      px-3 py-2 rounded-lg text-sm
+      hover:border-purple-500 focus:outline-none focus:border-purple-400"
+                        disabled={availableColorings.length === 0}
+                      >
+                        {availableColorings.length > 0 && (
+  <div className="mb-3">
+    <label className="text-purple-300 text-sm font-medium block mb-2">
+      🎨 Coloriages disponibles ({availableColorings.length})
+    </label>
+    <select
+      value={selectedColoring}
+      onChange={(e) => {
+        setSelectedColoring(e.target.value);
+        console.log('🖌️ Coloriage sélectionné:', e.target.value);
+      }}
+      className="w-full bg-purple-900/30 text-purple-300 border border-purple-600/50
+        px-3 py-2 rounded-lg text-sm
+        hover:border-purple-500 focus:outline-none focus:border-purple-400"
+    >
+      {availableColorings.map(coloring => (
+        <option key={coloring.value} value={coloring.value}>
+          {coloring.label}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
+                      </select>
+
                       {/* Separator */}
                       <div className="h-4 w-px bg-purple-600/30 mx-2" />
 
@@ -7518,6 +7698,7 @@ shadowManager.setPopupCheck(() => {
                         </div>
                       )}
                     </div>
+                    
 
                     {/* VERSION MOBILE - visible only on mobile */}
                     <div className="md:hidden space-y-2">
@@ -8244,37 +8425,45 @@ shadowManager.setPopupCheck(() => {
 
 
                           </div>
-                          {/* Bloc Personnage Centre */}
-                          <div className="relative">
-                            {selectedCharacter && characters[selectedCharacter] && characters[selectedCharacter].img ? (
-                              <>
-                                <img
-                                  src={characters[selectedCharacter].img}
-                                  alt={characters[selectedCharacter].name}
-                                  className="w-64 mb-2 relative z-10"
-                                  id="targetToDestroy"
-                                />
-                                {showHologram && selectedCharacter && characters[selectedCharacter]?.element && (
-                                  <div
-                                    className="absolute w-60 h-8 rounded-full blur-sm animate-fade-out z-0"
-                                    style={{
-                                      backgroundColor: getElementColor(characters[selectedCharacter].element),
-                                      bottom: '0px'
-                                    }}
-                                  ></div>
-                                )}
-                              </>
-                            ) : (
-                              <div className="relative">
-                                <img
-                                  src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
-                                  className="w-64 mb-2 relative z-10"
-                                  id="targetToDestroy"
-                                />
-                              </div>
-                            )}
-                          </div>
-
+               {/* Bloc Personnage Centre */}
+<div className="w-full sm:w-1/3 flex flex-col items-center">
+  <div className="relative w-64 h-96 flex items-center justify-center flex-shrink-0">
+    {selectedCharacter && characters[selectedCharacter] ? (
+      <>
+        {/* Afficher le coloriage SI disponible, sinon l'image par défaut */}
+        <img
+          src={currentColoringImage || characters[selectedCharacter].img}
+          alt={characters[selectedCharacter].name}
+          className="max-w-full max-h-full object-contain relative z-10"
+          id="targetToDestroy"
+          onError={(e) => {
+            console.warn('❌ Erreur chargement image, fallback vers image par défaut');
+            e.target.src = characters[selectedCharacter].img;
+          }}
+        />
+        
+        {/* Hologramme */}
+        {showHologram && characters[selectedCharacter]?.element && (
+          <div
+            className="absolute w-60 h-8 rounded-full blur-sm animate-fade-out z-0"
+            style={{
+              backgroundColor: getElementColor(characters[selectedCharacter].element),
+              bottom: '0px',
+              left: '50%',
+              transform: 'translateX(-50%)'
+            }}
+          ></div>
+        )}
+      </>
+    ) : (
+      <img
+        src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
+        className="max-w-full max-h-full object-contain relative z-10"
+        id="targetToDestroy"
+      />
+    )}
+  </div>
+</div>
 
                           {/* Bloc Gemmes à droite */}
                           <div className="w-40 text-white text-xs flex flex-col items-start">

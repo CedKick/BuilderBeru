@@ -1380,6 +1380,7 @@
     "menu": {
       "build": "BUILD",
       "dpsCalculator": "DPS Calculator",
+      "craftSimulator": "Craft Simulator",
       "training": "Training simulator (Beta)",
       "hallOfFlame": "🏆 Hall Of Flame",
       "pod": "PoD",
@@ -1572,6 +1573,24 @@
     "autoCalculated": "(Auto-calculé)",
     "contribution": "contribution",
     "damage": "Dégâts",
+    "analyze": {
+      "button": "Analyze",
+      "tooltip": "Compare with previous performances",
+      "title": "Progression Analysis",
+      "noScoreYet": "No score to analyze yet",
+      "found": "Comparison found!",
+      "noHistory": "First attempt on this BDG",
+      "noData": "No comparison data available",
+      "firstAttempt": "This is your first attempt! Come back after saving more scores.",
+      "currentScore": "Current Score",
+      "progression": "Progression",
+      "difference": "Difference",
+      "percentage": "Percentage",
+      "close": "Close",
+      "perfectMatch": "Same config (Previous week)",
+      "sameBoss": "Same boss (Different elements)",
+      "recentBest": "Recent best (Different boss)"
+    },
     "sets": {
       "title": "Sets",
       "left": "Gauche",

@@ -1,4 +1,13 @@
 const data_chars = {
+  'ilhwan': {
+      name: 'Ilhwan',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
+      class: 'Assassin',
+      grade: 'SSR',
+      element: 'Dark',
+      scaleStat: 'Attack'
+    },
     'minnie': {
       name: 'Minnie',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403438/Minnie_bcfolv.png',

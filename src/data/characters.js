@@ -17,6 +17,37 @@ export const characters = {
     buffs: []
 
   },
+   'ilhwan': {
+    name: 'Ilhwan',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
+    class: 'Assassin',
+    grade: 'SSR',
+    element: 'Dark',
+    scaleStat: 'Attack',
+     bdgLimits: {
+      maxDamageOnElement: 30000000000,  // 30B max si bon élément
+      maxDamageOffElement: 10000000000  // 10B max si mauvais élément
+    },
+    importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di'],
+    skillMultipliers: {
+      core1: 3.5,
+      core2: 4.8,
+      skill1: 12.0,
+      skill2: 16.5,
+      ultimate: 35.0
+    },
+    buffs: [
+      {
+        name: 'Wind Shield',
+        values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+        cooldown: 12,
+        duration: 8,
+        target: 'shared', // 'self' ou 'shared'
+        type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+        element: 'Wind'
+      }]
+  },
   'yuqi': {
     name: 'yuqi',
     img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403437/yuki_dqefqm.png',
