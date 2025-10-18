@@ -1,10 +1,9 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { drawBeruModels, getModel, getHunterModels } from './config/models';
 
-// 🎯 HOOK CUSTOM : DÉTECTION MOBILE
-const useDevice = () => {
+// ⚡ HOOK MOBILE SIMPLIFIÉ (au lieu d'importer un fichier externe)
+const useIsMobile = () => {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
     useEffect(() => {
@@ -13,10 +12,10 @@ const useDevice = () => {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    return { isMobile };
+    return isMobile;
 };
 
-// 🎯 HOOK CUSTOM : GESTURES MOBILE (Pinch-to-zoom, Pan)
+// ⚡ HOOK GESTURES MOBILE
 const useTouchGestures = (enabled, onPinch, onPan) => {
     const touchStartRef = useRef({ touches: [], distance: 0 });
 
@@ -30,13 +29,11 @@ const useTouchGestures = (enabled, onPinch, onPan) => {
         if (!enabled) return;
 
         if (e.touches.length === 2) {
-            // Pinch-to-zoom start
             touchStartRef.current = {
                 touches: Array.from(e.touches),
                 distance: getTouchDistance(e.touches)
             };
         } else if (e.touches.length === 1) {
-            // Pan start
             touchStartRef.current = {
                 touches: [{ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY }],
                 distance: 0
@@ -48,14 +45,12 @@ const useTouchGestures = (enabled, onPinch, onPan) => {
         if (!enabled) return;
 
         if (e.touches.length === 2 && touchStartRef.current.distance > 0) {
-            // Pinch-to-zoom
             e.preventDefault();
             const newDistance = getTouchDistance(e.touches);
             const delta = (newDistance - touchStartRef.current.distance) * 0.01;
             onPinch?.(delta);
             touchStartRef.current.distance = newDistance;
         } else if (e.touches.length === 1 && touchStartRef.current.touches.length === 1) {
-            // Pan
             const deltaX = e.touches[0].clientX - touchStartRef.current.touches[0].clientX;
             const deltaY = e.touches[0].clientY - touchStartRef.current.touches[0].clientY;
             onPan?.(deltaX, deltaY);
@@ -73,43 +68,48 @@ const useTouchGestures = (enabled, onPinch, onPan) => {
     return { handleTouchStart, handleTouchMove, handleTouchEnd };
 };
 
-const DrawBeru = () => {
+const DrawBeruFixed = () => {
     const { t } = useTranslation();
-    const { isMobile } = useDevice();
+    const isMobile = useIsMobile();
 
+    // Canvas refs
     const canvasRef = useRef(null);
     const layersRef = useRef([]);
     const referenceCanvasRef = useRef(null);
-    const overlayCanvasRef = useRef(null); // 🆕 Canvas overlay modèle mobile
+    const overlayCanvasRef = useRef(null);
 
-    // 🆕 MOBILE SPECIFIC STATES
-    const [interactionMode, setInteractionMode] = useState('draw'); // 'draw' | 'pan'
-    const [showModelOverlay, setShowModelOverlay] = useState(false);
-    const [modelOverlayOpacity, setModelOverlayOpacity] = useState(0.3);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-    // EXISTING STATES
+    // States
     const [selectedHunter, setSelectedHunter] = useState('ilhwan');
     const [selectedModel, setSelectedModel] = useState('default');
     const [selectedColor, setSelectedColor] = useState('#FF0000');
     const [brushSize, setBrushSize] = useState(3);
     const [isDrawing, setIsDrawing] = useState(false);
-    const [showReference, setShowReference] = useState(true);
     const [currentTool, setCurrentTool] = useState('brush');
     const [imagesLoaded, setImagesLoaded] = useState(false);
+
+    // Mobile specific states
+    const [interactionMode, setInteractionMode] = useState('draw');
+    const [showModelOverlay, setShowModelOverlay] = useState(false);
+    const [modelOverlayOpacity, setModelOverlayOpacity] = useState(0.3);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    // Zoom & Pan
     const [zoomLevel, setZoomLevel] = useState(1);
     const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
     const [isPanning, setIsPanning] = useState(false);
-    const MAX_ZOOM = isMobile ? 8 : 3; // Au lieu de 3 partout
-    const ZOOM_STEP = isMobile ? 0.3 : 0.25; // Au lieu de 0.25 partout
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
+    const MAX_ZOOM = isMobile ? 8 : 3;
+    const ZOOM_STEP = isMobile ? 0.3 : 0.25;
 
+    // Reference canvas states
     const [refZoomLevel, setRefZoomLevel] = useState(1);
     const [refPanOffset, setRefPanOffset] = useState({ x: 0, y: 0 });
     const [isRefPanning, setIsRefPanning] = useState(false);
     const [lastRefPanPoint, setLastRefPanPoint] = useState({ x: 0, y: 0 });
     const [debugPoint, setDebugPoint] = useState(null);
+    const [showReference, setShowReference] = useState(true);
 
+    // Layers
     const [layers, setLayers] = useState([
         { id: 'base', name: 'Base', visible: true, opacity: 1, locked: false },
         { id: 'shadows', name: 'Ombres', visible: true, opacity: 1, locked: false },
@@ -117,15 +117,18 @@ const DrawBeru = () => {
     ]);
     const [activeLayer, setActiveLayer] = useState('base');
 
+    // History
     const [history, setHistory] = useState([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
     const [canUndo, setCanUndo] = useState(false);
     const [canRedo, setCanRedo] = useState(false);
+    const [coloringProgress, setColoringProgress] = useState(0);
+    const [progressDetails, setProgressDetails] = useState(null);
 
     const currentModelData = getModel(selectedHunter, selectedModel);
     const availableModels = getHunterModels(selectedHunter);
 
-    // 🆕 GESTURES MOBILE
+    // Touch gestures
     const { handleTouchStart: canvasTouchStart, handleTouchMove: canvasTouchMove, handleTouchEnd: canvasTouchEnd } =
         useTouchGestures(
             isMobile && interactionMode === 'pan',
@@ -138,7 +141,7 @@ const DrawBeru = () => {
             }
         );
 
-    // 🆕 LOAD MODEL OVERLAY (Mobile uniquement)
+    // Load model overlay for mobile
     useEffect(() => {
         if (!isMobile || !currentModelData || !showModelOverlay) return;
 
@@ -159,7 +162,7 @@ const DrawBeru = () => {
         img.src = currentModelData.reference;
     }, [isMobile, showModelOverlay, modelOverlayOpacity, currentModelData]);
 
-    // EXISTING USEEFFECT - Load canvas/template
+    // Load canvas and template
     useEffect(() => {
         if (!currentModelData) return;
 
@@ -167,7 +170,6 @@ const DrawBeru = () => {
         if (!canvas) return;
 
         const { width, height } = currentModelData.canvasSize;
-
         canvas.width = width;
         canvas.height = height;
 
@@ -179,17 +181,12 @@ const DrawBeru = () => {
         });
 
         console.log('🔍 DEBUG LOAD - Start');
-        console.log('Looking for:', selectedHunter, selectedModel);
 
         const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
         const existingColoring = userData.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
 
-        console.log('🎨 Existing coloring found:', !!existingColoring);
-
         if (existingColoring && existingColoring.layers) {
-            console.log('✅ Chargement du coloriage existant');
-            console.log('Layers count:', existingColoring.layers.length);
-
+            console.log('✅ Loading existing coloring');
             let loadedLayers = 0;
             const totalLayers = Math.min(existingColoring.layers.length, layersRef.current.length);
 
@@ -202,16 +199,13 @@ const DrawBeru = () => {
                         ctx.drawImage(img, 0, 0);
                         loadedLayers++;
 
-                        console.log(`Layer ${i + 1}/${totalLayers} chargé`);
-
                         if (loadedLayers === totalLayers) {
                             renderLayers();
-                            console.log('✅ Tous les layers chargés, rendu final');
                             setTimeout(() => saveToHistory(), 100);
                         }
                     };
                     img.onerror = () => {
-                        console.error(`❌ Erreur chargement layer ${i}`);
+                        console.error(`❌ Error loading layer ${i}`);
                         loadedLayers++;
                         if (loadedLayers === totalLayers) {
                             renderLayers();
@@ -230,30 +224,25 @@ const DrawBeru = () => {
             })));
 
             setImagesLoaded(true);
-
         } else {
-            console.log('📄 Aucun coloriage existant, chargement template vierge');
-
+            console.log('📄 Loading blank template');
             const templateImg = new Image();
             templateImg.crossOrigin = "anonymous";
             templateImg.onload = () => {
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, width, height);
                 ctx.drawImage(templateImg, 0, 0, width, height);
-
                 setImagesLoaded(true);
                 saveToHistory();
-                console.log('✅ Template vierge chargé:', width, 'x', height);
             };
-
             templateImg.onerror = () => {
-                console.error('❌ Erreur chargement template:', currentModelData.template);
+                console.error('❌ Error loading template');
                 setImagesLoaded(true);
             };
-
             templateImg.src = currentModelData.template;
         }
 
+        // Load reference
         const refCanvas = referenceCanvasRef.current;
         if (refCanvas) {
             const refImg = new Image();
@@ -263,15 +252,165 @@ const DrawBeru = () => {
                 refCanvas.height = refImg.height;
                 const refCtx = refCanvas.getContext('2d');
                 refCtx.drawImage(refImg, 0, 0);
-                console.log('✅ Modèle de référence chargé');
-            };
-            refImg.onerror = () => {
-                console.error('❌ Erreur chargement référence');
             };
             refImg.src = currentModelData.reference;
         }
-
     }, [currentModelData, selectedHunter, selectedModel]);
+
+    const renderLayers = () => {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+
+        const templateImg = new Image();
+        templateImg.crossOrigin = "anonymous";
+        templateImg.onload = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
+
+            layers.forEach((layer, index) => {
+                if (layer.visible && layersRef.current[index]) {
+                    ctx.globalAlpha = layer.opacity;
+                    ctx.drawImage(layersRef.current[index], 0, 0);
+                    ctx.globalAlpha = 1;
+                }
+            });
+
+            // Calculer la progression après le rendu
+            setTimeout(() => updateProgress(), 500);
+        };
+        templateImg.onerror = () => {
+            console.warn('Could not load template for render');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            layers.forEach((layer, index) => {
+                if (layer.visible && layersRef.current[index]) {
+                    ctx.globalAlpha = layer.opacity;
+                    ctx.drawImage(layersRef.current[index], 0, 0);
+                    ctx.globalAlpha = 1;
+                }
+            });
+            // Calculer la progression même en cas d'erreur
+            setTimeout(() => updateProgress(), 500);
+        };
+        templateImg.src = currentModelData.template;
+    };
+
+    // FONCTION DE CALCUL DU POURCENTAGE DE COLORIAGE
+        const calculateColoringProgress = () => {
+            const canvas = canvasRef.current;
+
+            if (!canvas || !currentModelData || !imagesLoaded) {
+                return Promise.resolve({
+                    percentage: 0,
+                    coloredPixels: 0,
+                    totalColorablePixels: 0,
+                    details: { layers: 0, canvasSize: '0x0' }
+                });
+            }
+
+            return new Promise((resolve) => {
+                const templateCanvas = document.createElement('canvas');
+                templateCanvas.width = canvas.width;
+                templateCanvas.height = canvas.height;
+                const templateCtx = templateCanvas.getContext('2d');
+
+                const templateImg = new Image();
+                templateImg.crossOrigin = "anonymous";
+
+                templateImg.onload = () => {
+                    // Dessiner le template de base
+                    templateCtx.drawImage(templateImg, 0, 0, templateCanvas.width, templateCanvas.height);
+
+                    // Obtenir les données du template
+                    const templateData = templateCtx.getImageData(0, 0, templateCanvas.width, templateCanvas.height);
+
+                    // Créer un canvas avec tout le coloriage actuel
+                    const coloringCanvas = document.createElement('canvas');
+                    coloringCanvas.width = canvas.width;
+                    coloringCanvas.height = canvas.height;
+                    const coloringCtx = coloringCanvas.getContext('2d');
+
+                    // Dessiner le template de base
+                    coloringCtx.drawImage(templateImg, 0, 0, coloringCanvas.width, coloringCanvas.height);
+
+                    // Ajouter tous les layers visibles
+                    layers.forEach((layer, index) => {
+                        if (layer.visible && layersRef.current[index]) {
+                            coloringCtx.globalAlpha = layer.opacity;
+                            coloringCtx.drawImage(layersRef.current[index], 0, 0);
+                            coloringCtx.globalAlpha = 1;
+                        }
+                    });
+
+                    // Obtenir les données du coloriage final
+                    const coloringData = coloringCtx.getImageData(0, 0, coloringCanvas.width, coloringCanvas.height);
+
+                    // Calculer le pourcentage
+                    let totalColorablePixels = 0;
+                    let coloredPixels = 0;
+
+                    for (let i = 0; i < templateData.data.length; i += 4) {
+                        const templateR = templateData.data[i];
+                        const templateG = templateData.data[i + 1];
+                        const templateB = templateData.data[i + 2];
+                        const templateA = templateData.data[i + 3];
+
+                        const coloringR = coloringData.data[i];
+                        const coloringG = coloringData.data[i + 1];
+                        const coloringB = coloringData.data[i + 2];
+
+                        // Vérifier si c'est une zone colorable (pas transparente et pas complètement blanche)
+                        if (templateA > 0 && !(templateR > 240 && templateG > 240 && templateB > 240)) {
+                            totalColorablePixels++;
+
+                            // Vérifier si le pixel a été modifié par rapport au template
+                            const hasChanged = Math.abs(coloringR - templateR) > 10 ||
+                                Math.abs(coloringG - templateG) > 10 ||
+                                Math.abs(coloringB - templateB) > 10;
+
+                            if (hasChanged) {
+                                coloredPixels++;
+                            }
+                        }
+                    }
+
+                    const percentage = totalColorablePixels > 0 ?
+                        Math.round((coloredPixels / totalColorablePixels) * 100) : 0;
+
+                    resolve({
+                        percentage,
+                        coloredPixels,
+                        totalColorablePixels,
+                        details: {
+                            layers: layers.filter(l => l.visible).length,
+                            canvasSize: `${canvas.width}x${canvas.height}`
+                        }
+                    });
+                };
+
+                templateImg.onerror = () => {
+                    resolve({
+                        percentage: 0,
+                        coloredPixels: 0,
+                        totalColorablePixels: 0,
+                        details: { layers: 0, canvasSize: '0x0' }
+                    });
+                };
+
+                templateImg.src = currentModelData.template;
+            });
+        };
+
+    // CALCULER LE POURCENTAGE APRÈS CHAQUE MODIFICATION
+    const updateProgress = async () => {
+        try {
+            const progress = await calculateColoringProgress();
+            setColoringProgress(progress.percentage);
+            setProgressDetails(progress);
+            console.log('🎯 Progression coloriage:', progress);
+        } catch (error) {
+            console.error('❌ Erreur calcul progression:', error);
+        }
+    };
 
     const saveToHistory = () => {
         const newHistory = history.slice(0, historyIndex + 1);
@@ -331,6 +470,7 @@ const DrawBeru = () => {
         });
     };
 
+    // Keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.ctrlKey || e.metaKey) {
@@ -359,36 +499,13 @@ const DrawBeru = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [historyIndex, history.length]);
 
-    const renderLayers = () => {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-
-        const templateImg = new Image();
-        templateImg.crossOrigin = "anonymous";
-        templateImg.onload = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
-
-            layers.forEach((layer, index) => {
-                if (layer.visible && layersRef.current[index]) {
-                    ctx.globalAlpha = layer.opacity;
-                    ctx.drawImage(layersRef.current[index], 0, 0);
-                    ctx.globalAlpha = 1;
-                }
-            });
-        };
-        templateImg.onerror = () => {
-            console.warn('Could not load template for render');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            layers.forEach((layer, index) => {
-                if (layer.visible && layersRef.current[index]) {
-                    ctx.globalAlpha = layer.opacity;
-                    ctx.drawImage(layersRef.current[index], 0, 0);
-                    ctx.globalAlpha = 1;
-                }
-            });
-        };
-        templateImg.src = currentModelData.template;
+    const getCanvasCoordinates = (e, canvas) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = (e.clientX - rect.left) * scaleX;
+        const y = (e.clientY - rect.top) * scaleY;
+        return { x, y };
     };
 
     const handleZoom = (delta) => {
@@ -411,14 +528,13 @@ const DrawBeru = () => {
 
         ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
 
-        // 🔥 MÊME LOGIQUE pour le point instantané
         if (brushSize < 1) {
             ctx.strokeStyle = selectedColor;
             ctx.lineWidth = brushSize * 2;
             ctx.lineCap = 'round';
             ctx.beginPath();
             ctx.moveTo(x, y);
-            ctx.lineTo(x + 0.1, y + 0.1); // Micro-trait pour forcer l'affichage
+            ctx.lineTo(x + 0.1, y + 0.1);
             ctx.stroke();
         } else {
             ctx.fillStyle = selectedColor;
@@ -430,14 +546,534 @@ const DrawBeru = () => {
         renderLayers();
     };
 
-    const resetView = () => {
-        setZoomLevel(1);
-        setPanOffset({ x: 0, y: 0 });
+    const handleTouchDraw = (e) => {
+        e.preventDefault();
+
+        if (!e.touches || e.touches.length === 0) return;
+        const touch = e.touches[0];
+
+        if (currentTool === 'pipette') {
+            const canvas = canvasRef.current;
+            const rect = canvas.getBoundingClientRect();
+
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = Math.floor((touch.clientX - rect.left) * scaleX);
+            const y = Math.floor((touch.clientY - rect.top) * scaleY);
+
+            if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return;
+
+            if (showModelOverlay && overlayCanvasRef.current) {
+                const overlayCtx = overlayCanvasRef.current.getContext('2d', { willReadFrequently: true });
+                const pixel = overlayCtx.getImageData(x, y, 1, 1).data;
+                if (pixel[3] > 0) {
+                    const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                    setSelectedColor(hex);
+                    setCurrentTool('brush');
+                    return;
+                }
+            }
+
+            const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
+            const layerCanvas = layersRef.current[activeLayerIndex];
+            if (layerCanvas) {
+                const ctx = layerCanvas.getContext('2d', { willReadFrequently: true });
+                const pixel = ctx.getImageData(x, y, 1, 1).data;
+                if (pixel[3] > 0) {
+                    const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                    setSelectedColor(hex);
+                    setCurrentTool('brush');
+                }
+            }
+            return;
+        }
+
+        if (interactionMode !== 'draw') return;
+
+        const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            bubbles: true
+        });
+
+        if (e.type === 'touchstart') {
+            startDrawing(mouseEvent);
+            drawInstantPoint(mouseEvent);
+        } else if (e.type === 'touchmove') {
+            draw(mouseEvent);
+        }
     };
 
+    const startDrawing = (e) => {
+        if (e.button !== 0 || e.ctrlKey || isPanning) return;
+
+        if (currentTool === 'pipette') {
+            pickColorFromCanvas(e);
+            return;
+        }
+
+        const layer = layers.find(l => l.id === activeLayer);
+        if (layer?.locked) return;
+
+        setIsDrawing(true);
+        if (!isMobile) {
+            draw(e);
+        }
+    };
+
+    const stopDrawing = () => {
+        if (isDrawing) {
+            setIsDrawing(false);
+            saveToHistory();
+        }
+    };
+
+    const draw = (e) => {
+        if (!isDrawing || isPanning || currentTool === 'pipette') return;
+
+        const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
+        const layerCanvas = layersRef.current[activeLayerIndex];
+        if (!layerCanvas) return;
+
+        const ctx = layerCanvas.getContext('2d');
+        const { x, y } = getCanvasCoordinates(e, canvasRef.current);
+
+        if (x < 0 || x > layerCanvas.width || y < 0 || y > layerCanvas.height) return;
+
+        ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
+        ctx.fillStyle = selectedColor;
+
+        if (brushSize < 1) {
+            ctx.strokeStyle = selectedColor;
+            ctx.lineWidth = brushSize * 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        } else {
+            ctx.beginPath();
+            ctx.arc(x, y, brushSize, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        renderLayers();
+    };
+
+    const pickColorFromCanvas = (e) => {
+        const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
+        const layerCanvas = layersRef.current[activeLayerIndex];
+        if (!layerCanvas) return;
+
+        const { x, y } = getCanvasCoordinates(e, canvasRef.current);
+        const ctx = layerCanvas.getContext('2d');
+        const pixel = ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+
+        if (pixel[3] > 0) {
+            const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+            setSelectedColor(hex);
+        }
+
+        setCurrentTool('brush');
+    };
+
+    const pickColorFromReference = (e) => {
+        const refCanvas = referenceCanvasRef.current;
+        if (!refCanvas) return;
+
+        const rect = refCanvas.getBoundingClientRect();
+        const scaleX = refCanvas.width / rect.width;
+        const scaleY = refCanvas.height / rect.height;
+        const x = Math.floor((e.clientX - rect.left) * scaleX);
+        const y = Math.floor((e.clientY - rect.top) * scaleY);
+
+        const cssX = e.clientX - rect.left;
+        const cssY = e.clientY - rect.top;
+        setDebugPoint({ cssX, cssY });
+        setTimeout(() => setDebugPoint(null), 1200);
+
+        if (x < 0 || x >= refCanvas.width || y < 0 || y >= refCanvas.height) return;
+        const ctx = refCanvas.getContext('2d', { willReadFrequently: true });
+        const p = ctx.getImageData(x, y, 1, 1).data;
+        if (p[3] === 0) return;
+
+        const hex = `#${((1 << 24) + (p[0] << 16) + (p[1] << 8) + p[2])
+            .toString(16).slice(1).toUpperCase()}`;
+        setSelectedColor(hex);
+        setCurrentTool('brush');
+    };
+
+    const toggleLayerVisibility = (layerId) => {
+        setLayers(layers.map(l =>
+            l.id === layerId ? { ...l, visible: !l.visible } : l
+        ));
+        setTimeout(renderLayers, 10);
+    };
+
+    const toggleLayerLock = (layerId) => {
+        setLayers(layers.map(l =>
+            l.id === layerId ? { ...l, locked: !l.locked } : l
+        ));
+    };
+
+    const changeLayerOpacity = (layerId, opacity) => {
+        setLayers(layers.map(l =>
+            l.id === layerId ? { ...l, opacity: parseFloat(opacity) } : l
+        ));
+        setTimeout(renderLayers, 10);
+    };
+
+    const saveColoring = () => {
+        console.log('🔍 DEBUG SAVE - Start');
+
+        const layersData = layersRef.current.map((layerCanvas, i) => {
+            try {
+                return {
+                    id: layers[i].id,
+                    name: layers[i].name,
+                    data: layerCanvas.toDataURL('image/png', 1.0),
+                    visible: layers[i].visible,
+                    opacity: layers[i].opacity,
+                    locked: layers[i].locked
+                };
+            } catch (e) {
+                console.error(`❌ Error exporting layer ${i}:`, e);
+                return null;
+            }
+        }).filter(l => l !== null);
+
+        if (layersData.length === 0) {
+            alert('❌ Impossible d\'exporter les layers');
+            return;
+        }
+
+        const previewCanvas = document.createElement('canvas');
+        const canvas = canvasRef.current;
+        previewCanvas.width = canvas.width;
+        previewCanvas.height = canvas.height;
+        const previewCtx = previewCanvas.getContext('2d', { alpha: true });
+
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = canvas.width;
+        exportCanvas.height = canvas.height;
+        const exportCtx = exportCanvas.getContext('2d', { alpha: true });
+
+        const templateImg = new Image();
+        templateImg.crossOrigin = "anonymous";
+        templateImg.onload = () => {
+            previewCtx.drawImage(templateImg, 0, 0, previewCanvas.width, previewCanvas.height);
+            layers.forEach((layer, index) => {
+                if (layer.visible && layersRef.current[index]) {
+                    previewCtx.globalAlpha = layer.opacity;
+                    previewCtx.drawImage(layersRef.current[index], 0, 0);
+                    previewCtx.globalAlpha = 1;
+                }
+            });
+
+            layers.forEach((layer, index) => {
+                if (layer.visible && layersRef.current[index]) {
+                    exportCtx.globalAlpha = layer.opacity;
+                    exportCtx.drawImage(layersRef.current[index], 0, 0);
+                    exportCtx.globalAlpha = 1;
+                }
+            });
+
+            let previewImageData, exportImageData;
+            try {
+                previewImageData = previewCanvas.toDataURL('image/png', 0.8);
+                exportImageData = exportCanvas.toDataURL('image/png', 1.0);
+            } catch (e) {
+                console.error('❌ Error generating images:', e);
+                previewImageData = null;
+                exportImageData = null;
+            }
+
+            const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+            if (!userData.user) userData.user = { accounts: {} };
+            if (!userData.user.accounts.default) userData.user.accounts.default = {};
+            if (!userData.user.accounts.default.colorings) userData.user.accounts.default.colorings = {};
+            if (!userData.user.accounts.default.colorings[selectedHunter]) {
+                userData.user.accounts.default.colorings[selectedHunter] = {};
+            }
+
+            const coloringData = {
+                preview: previewImageData,
+                exportImage: exportImageData,
+                layers: layersData,
+                palette: currentModelData.palette,
+                createdAt: userData.user.accounts.default.colorings[selectedHunter][selectedModel]?.createdAt || Date.now(),
+                updatedAt: Date.now(),
+                isCompleted: true,
+                hunter: selectedHunter,
+                model: selectedModel,
+                canvasSize: currentModelData.canvasSize,
+                version: '1.0'
+            };
+
+            userData.user.accounts.default.colorings[selectedHunter][selectedModel] = coloringData;
+
+            try {
+                localStorage.setItem('builderberu_users', JSON.stringify(userData));
+                alert(`✅ Coloriage sauvegardé !\n\nHunter: ${selectedHunter}\nModèle: ${selectedModel}\nCalques: ${coloringData.layers.length}`);
+            } catch (e) {
+                console.error('❌ Error saving:', e);
+                if (e.name === 'QuotaExceededError') {
+                    alert('⚠️ Espace localStorage plein !');
+                } else {
+                    alert('❌ Erreur de sauvegarde');
+                }
+            }
+        };
+
+        templateImg.src = currentModelData.template;
+    };
+
+    const downloadTransparentPNG = () => {
+        const exportCanvas = document.createElement('canvas');
+        const canvas = canvasRef.current;
+        exportCanvas.width = canvas.width;
+        exportCanvas.height = canvas.height;
+        const exportCtx = exportCanvas.getContext('2d', { alpha: true });
+
+        const templateImg = new Image();
+        templateImg.crossOrigin = "anonymous";
+
+        templateImg.onload = () => {
+            exportCtx.drawImage(templateImg, 0, 0, exportCanvas.width, exportCanvas.height);
+
+            layers.forEach((layer, index) => {
+                if (layer.visible && layersRef.current[index]) {
+                    exportCtx.globalAlpha = layer.opacity;
+                    exportCtx.drawImage(layersRef.current[index], 0, 0);
+                    exportCtx.globalAlpha = 1;
+                }
+            });
+
+            exportCanvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${selectedHunter}_${selectedModel}_colored_${Date.now()}.png`;
+                link.click();
+                URL.revokeObjectURL(url);
+                alert('✅ Image téléchargée !');
+            }, 'image/png', 1.0);
+        };
+
+        templateImg.src = currentModelData.template;
+    };
+
+    const downloadColoredPNG = () => {
+        const exportCanvas = document.createElement('canvas');
+        const refCanvas = referenceCanvasRef.current;
+
+        if (!refCanvas) {
+            alert('❌ Modèle de référence non chargé');
+            return;
+        }
+
+        exportCanvas.width = refCanvas.width;
+        exportCanvas.height = refCanvas.height;
+        const exportCtx = exportCanvas.getContext('2d', { alpha: true });
+        exportCtx.drawImage(refCanvas, 0, 0);
+
+        exportCanvas.toBlob((blob) => {
+            if (!blob) {
+                alert('❌ Erreur lors de la génération de l\'image');
+                return;
+            }
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${selectedHunter}_${selectedModel}_reference_${Date.now()}.png`;
+            link.click();
+            URL.revokeObjectURL(url);
+            alert('✅ Modèle de référence téléchargé !');
+        }, 'image/png', 1.0);
+    };
+
+    const resetColoring = () => {
+        if (!confirm('Réinitialiser tout le coloriage ?')) return;
+
+        layersRef.current.forEach(canvas => {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+
+        renderLayers();
+        setHistory([]);
+        setHistoryIndex(-1);
+        saveToHistory();
+    };
+
+    const exportColoring = () => {
+        const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+        const coloring = userData.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
+
+        if (!coloring) {
+            alert('❌ Aucun coloriage à exporter');
+            return;
+        }
+
+        const exportData = {
+            hunter: selectedHunter,
+            model: selectedModel,
+            data: coloring,
+            exportedAt: Date.now(),
+            version: '1.0'
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${selectedHunter}_${selectedModel}_${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        alert('✅ Coloriage exporté !');
+    };
+
+    const importColoring = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+
+                    if (!importedData.hunter || !importedData.data) {
+                        throw new Error('Format invalide');
+                    }
+
+                    const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
+                    if (!userData.user) userData.user = { accounts: {} };
+                    if (!userData.user.accounts.default) userData.user.accounts.default = {};
+                    if (!userData.user.accounts.default.colorings) userData.user.accounts.default.colorings = {};
+                    if (!userData.user.accounts.default.colorings[importedData.hunter]) {
+                        userData.user.accounts.default.colorings[importedData.hunter] = {};
+                    }
+
+                    userData.user.accounts.default.colorings[importedData.hunter][importedData.model] = importedData.data;
+                    localStorage.setItem('builderberu_users', JSON.stringify(userData));
+
+                    alert('✅ Coloriage importé ! Recharge la page pour voir le résultat.');
+
+                    if (importedData.hunter === selectedHunter && importedData.model === selectedModel) {
+                        window.location.reload();
+                    }
+                } catch (error) {
+                    alert('❌ Erreur lors de l\'import : ' + error.message);
+                }
+            };
+
+            reader.readAsText(file);
+        };
+
+        input.click();
+    };
+
+    const handleModelChange = (modelId) => {
+        setSelectedModel(modelId);
+        setImagesLoaded(false);
+        setHistory([]);
+        setHistoryIndex(-1);
+        setColoringProgress(0);
+        setProgressDetails(null);
+    };
+
+    // COMPOSANT D'AFFICHAGE DU POURCENTAGE
+    const ProgressDisplay = () => (
+        <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-3 mb-4">
+            <div className="flex items-center justify-between mb-2">
+                <span className="text-white font-semibold text-sm">🎯 Progression</span>
+                <span className="text-2xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text">
+                    {coloringProgress}%
+                </span>
+            </div>
+
+            <div className="w-full bg-purple-900/30 rounded-full h-3 mb-2 overflow-hidden">
+                <div
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full transition-all duration-700 ease-out relative"
+                    style={{ width: `${coloringProgress}%` }}
+                >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
+                </div>
+            </div>
+
+            {progressDetails && (
+                <div className="text-xs text-purple-200 space-y-1">
+                    <div>✨ Pixels colorés: {progressDetails.coloredPixels.toLocaleString()}</div>
+                    <div>🎯 Zones totales: {progressDetails.totalColorablePixels.toLocaleString()}</div>
+                    <div>📚 Calques actifs: {progressDetails.details.layers}</div>
+                </div>
+            )}
+
+            <div className="mt-2 text-xs text-center">
+                {coloringProgress === 0 && (
+                    <span className="text-purple-300">🚀 Commence ton chef-d'œuvre !</span>
+                )}
+                {coloringProgress > 0 && coloringProgress < 25 && (
+                    <span className="text-blue-300">👶 Tu commences bien !</span>
+                )}
+                {coloringProgress >= 25 && coloringProgress < 50 && (
+                    <span className="text-green-300">💪 Tu progresses rapidement !</span>
+                )}
+                {coloringProgress >= 50 && coloringProgress < 75 && (
+                    <span className="text-yellow-300">🔥 Tu es sur la bonne voie !</span>
+                )}
+                {coloringProgress >= 75 && coloringProgress < 90 && (
+                    <span className="text-orange-300">⭐ Presque fini, courage !</span>
+                )}
+                {coloringProgress >= 90 && coloringProgress < 100 && (
+                    <span className="text-pink-300">🎉 Plus que quelques détails !</span>
+                )}
+                {coloringProgress === 100 && (
+                    <span className="text-yellow-300 font-bold">🏆 CHEF-D'ŒUVRE TERMINÉ ! 🏆</span>
+                )}
+            </div>
+
+            <button
+                onClick={updateProgress}
+                className="w-full mt-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-1 rounded-lg text-xs font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
+            >
+                🔄 Recalculer progression
+            </button>
+        </div>
+    );
+
+    const MobileProgressBadge = () => (
+        <div
+            className="fixed top-20 right-4 z-[1000] bg-black/60 backdrop-blur-md rounded-full px-3 py-2 border border-purple-500/30"
+            style={{ minWidth: '70px' }}
+        >
+            <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"></div>
+                <span className="text-white font-bold text-sm">{coloringProgress}%</span>
+            </div>
+        </div>
+    );
+
+    const handleHunterChange = (hunterId) => {
+        setSelectedHunter(hunterId);
+        setSelectedModel('default');
+        setImagesLoaded(false);
+        setHistory([]);
+        setHistoryIndex(-1);
+        setColoringProgress(0);
+        setProgressDetails(null);
+    };
+
+    // Canvas event handlers
     const handleWheel = (e) => {
         e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
         handleZoom(delta);
     };
 
@@ -467,6 +1103,7 @@ const DrawBeru = () => {
         setIsPanning(false);
     };
 
+    // Reference canvas handlers
     const handleRefZoom = (delta) => {
         const newZoom = Math.max(0.5, Math.min(3, refZoomLevel + delta));
         setRefZoomLevel(newZoom);
@@ -509,523 +1146,9 @@ const DrawBeru = () => {
         setIsRefPanning(false);
     };
 
-    const getCanvasCoordinates = (e, canvas) => {
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const x = (e.clientX - rect.left) * scaleX;
-        const y = (e.clientY - rect.top) * scaleY;
-        return { x, y };
-    };
-
-    const pickColorFromReference = (e) => {
-        const refCanvas = referenceCanvasRef.current;
-        if (!refCanvas) return;
-
-        const rect = refCanvas.getBoundingClientRect();
-        const scaleX = refCanvas.width / rect.width;
-        const scaleY = refCanvas.height / rect.height;
-        const x = Math.floor((e.clientX - rect.left) * scaleX);
-        const y = Math.floor((e.clientY - rect.top) * scaleY);
-
-        const cssX = e.clientX - rect.left;
-        const cssY = e.clientY - rect.top;
-        setDebugPoint({ cssX, cssY });
-        setTimeout(() => setDebugPoint(null), 1200);
-
-        if (x < 0 || x >= refCanvas.width || y < 0 || y >= refCanvas.height) return;
-        const ctx = refCanvas.getContext('2d', { willReadFrequently: true });
-        const p = ctx.getImageData(x, y, 1, 1).data;
-        if (p[3] === 0) return;
-
-        const hex = `#${((1 << 24) + (p[0] << 16) + (p[1] << 8) + p[2])
-            .toString(16).slice(1).toUpperCase()}`;
-        setSelectedColor(hex);
-        setCurrentTool('brush');
-    };
-
-    const pickColorFromCanvas = (e) => {
-        const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
-        const layerCanvas = layersRef.current[activeLayerIndex];
-        if (!layerCanvas) return;
-
-        const { x, y } = getCanvasCoordinates(e, canvasRef.current);
-
-        const ctx = layerCanvas.getContext('2d');
-        const pixel = ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-
-        if (pixel[3] > 0) {
-            const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
-            setSelectedColor(hex);
-        }
-
-        setCurrentTool('brush');
-    };
-
-    const handleTouchDraw = (e) => {
-        e.preventDefault();
-
-        if (!e.touches || e.touches.length === 0) return;
-        const touch = e.touches[0];
-
-        // 🎯 PIPETTE MODE
-        if (currentTool === 'pipette') {
-            const canvas = canvasRef.current;
-            const rect = canvas.getBoundingClientRect();
-
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const x = Math.floor((touch.clientX - rect.left) * scaleX);
-            const y = Math.floor((touch.clientY - rect.top) * scaleY);
-
-            if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return;
-
-            // Si overlay modèle visible, prendre couleur du modèle
-            if (showModelOverlay && overlayCanvasRef.current) {
-                const overlayCtx = overlayCanvasRef.current.getContext('2d', { willReadFrequently: true });
-                const pixel = overlayCtx.getImageData(x, y, 1, 1).data;
-                if (pixel[3] > 0) {
-                    const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
-                    setSelectedColor(hex);
-                    setCurrentTool('brush');
-                    return;
-                }
-            }
-
-            // Sinon, prendre couleur du layer actif
-            const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
-            const layerCanvas = layersRef.current[activeLayerIndex];
-            if (layerCanvas) {
-                const ctx = layerCanvas.getContext('2d', { willReadFrequently: true });
-                const pixel = ctx.getImageData(x, y, 1, 1).data;
-                if (pixel[3] > 0) {
-                    const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
-                    setSelectedColor(hex);
-                    setCurrentTool('brush');
-                }
-            }
-            return;
-        }
-
-        // 🔥 MODE DESSIN INSTANTANÉ
-        if (interactionMode !== 'draw') return;
-
-        const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
-            clientX: touch.clientX,
-            clientY: touch.clientY,
-            bubbles: true
-        });
-
-        if (e.type === 'touchstart') {
-            startDrawing(mouseEvent);
-            // 🔥 COLORIAGE INSTANTANÉ : dessiner immédiatement au premier contact
-            drawInstantPoint(mouseEvent);
-        } else if (e.type === 'touchmove') {
-            draw(mouseEvent);
-        }
-    };
-
-    const startDrawing = (e) => {
-        if (e.button !== 0 || e.ctrlKey || isPanning) return;
-
-        if (currentTool === 'pipette') {
-            pickColorFromCanvas(e);
-            return;
-        }
-
-        const layer = layers.find(l => l.id === activeLayer);
-        if (layer?.locked) return;
-
-        setIsDrawing(true);
-        // Condition ajoutée : ne pas dessiner sur desktop pour éviter double point
-        if (!isMobile) {
-            draw(e);
-        }
-    };
-
-    const stopDrawing = () => {
-        if (isDrawing) {
-            setIsDrawing(false);
-            saveToHistory();
-        }
-    };
-
-    const draw = (e) => {
-        if (!isDrawing || isPanning || currentTool === 'pipette') return;
-
-        const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
-        const layerCanvas = layersRef.current[activeLayerIndex];
-        if (!layerCanvas) return;
-
-        const ctx = layerCanvas.getContext('2d');
-        const { x, y } = getCanvasCoordinates(e, canvasRef.current);
-
-        if (x < 0 || x > layerCanvas.width || y < 0 || y > layerCanvas.height) return;
-
-        ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
-        ctx.fillStyle = selectedColor;
-
-        // 🔥 AMÉLIORATION : traits continus même pour petits pinceaux
-        if (brushSize < 1) {
-            // Pour les très petits pinceaux, utiliser lineTo pour continuité
-            ctx.strokeStyle = selectedColor;
-            ctx.lineWidth = brushSize * 2; // Légèrement plus épais pour compenser
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.beginPath();
-            ctx.lineTo(x, y);
-            ctx.stroke();
-        } else {
-            // Méthode normale pour pinceaux normaux
-            ctx.beginPath();
-            ctx.arc(x, y, brushSize, 0, 2 * Math.PI);
-            ctx.fill();
-        }
-
-        renderLayers();
-    };
-
-    const toggleLayerVisibility = (layerId) => {
-        setLayers(layers.map(l =>
-            l.id === layerId ? { ...l, visible: !l.visible } : l
-        ));
-        setTimeout(renderLayers, 10);
-    };
-
-    const toggleLayerLock = (layerId) => {
-        setLayers(layers.map(l =>
-            l.id === layerId ? { ...l, locked: !l.locked } : l
-        ));
-    };
-
-    const changeLayerOpacity = (layerId, opacity) => {
-        setLayers(layers.map(l =>
-            l.id === layerId ? { ...l, opacity: parseFloat(opacity) } : l
-        ));
-        setTimeout(renderLayers, 10);
-    };
-
-    const saveColoring = () => {
-        console.log('🔍 DEBUG SAVE - Start');
-        console.log('Hunter:', selectedHunter, 'Model:', selectedModel);
-
-        const layersData = layersRef.current.map((layerCanvas, i) => {
-            try {
-                return {
-                    id: layers[i].id,
-                    name: layers[i].name,
-                    data: layerCanvas.toDataURL('image/png', 1.0),
-                    visible: layers[i].visible,
-                    opacity: layers[i].opacity,
-                    locked: layers[i].locked
-                };
-            } catch (e) {
-                console.error(`❌ Erreur export layer ${i}:`, e);
-                return null;
-            }
-        }).filter(l => l !== null);
-
-        if (layersData.length === 0) {
-            alert('❌ Impossible d\'exporter les layers. Essaie de dessiner quelque chose d\'abord.');
-            return;
-        }
-
-        console.log('✅ Layers exportés:', layersData.length);
-
-        const previewCanvas = document.createElement('canvas');
-        const canvas = canvasRef.current;
-        previewCanvas.width = canvas.width;
-        previewCanvas.height = canvas.height;
-        const previewCtx = previewCanvas.getContext('2d', { alpha: true });
-
-        const exportCanvas = document.createElement('canvas');
-        exportCanvas.width = canvas.width;
-        exportCanvas.height = canvas.height;
-        const exportCtx = exportCanvas.getContext('2d', { alpha: true });
-
-        const templateImg = new Image();
-        templateImg.crossOrigin = "anonymous";
-        templateImg.onload = () => {
-            previewCtx.drawImage(templateImg, 0, 0, previewCanvas.width, previewCanvas.height);
-            layers.forEach((layer, index) => {
-                if (layer.visible && layersRef.current[index]) {
-                    previewCtx.globalAlpha = layer.opacity;
-                    previewCtx.drawImage(layersRef.current[index], 0, 0);
-                    previewCtx.globalAlpha = 1;
-                }
-            });
-
-            layers.forEach((layer, index) => {
-                if (layer.visible && layersRef.current[index]) {
-                    exportCtx.globalAlpha = layer.opacity;
-                    exportCtx.drawImage(layersRef.current[index], 0, 0);
-                    exportCtx.globalAlpha = 1;
-                }
-            });
-
-            let previewImageData, exportImageData;
-            try {
-                previewImageData = previewCanvas.toDataURL('image/png', 0.8);
-                exportImageData = exportCanvas.toDataURL('image/png', 1.0);
-                console.log('✅ Preview générée:', (previewImageData.length / 1024).toFixed(0), 'Ko');
-                console.log('✅ Export transparent généré:', (exportImageData.length / 1024).toFixed(0), 'Ko');
-            } catch (e) {
-                console.error('❌ Erreur génération images:', e);
-                previewImageData = null;
-                exportImageData = null;
-            }
-
-            const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
-            if (!userData.user) userData.user = { accounts: {} };
-            if (!userData.user.accounts.default) userData.user.accounts.default = {};
-            if (!userData.user.accounts.default.colorings) userData.user.accounts.default.colorings = {};
-            if (!userData.user.accounts.default.colorings[selectedHunter]) {
-                userData.user.accounts.default.colorings[selectedHunter] = {};
-            }
-
-            const coloringData = {
-                preview: previewImageData,
-                exportImage: exportImageData,
-                layers: layersData,
-                palette: currentModelData.palette,
-                createdAt: userData.user.accounts.default.colorings[selectedHunter][selectedModel]?.createdAt || Date.now(),
-                updatedAt: Date.now(),
-                isCompleted: true,
-                hunter: selectedHunter,
-                model: selectedModel,
-                canvasSize: currentModelData.canvasSize,
-                version: '1.0'
-            };
-
-            userData.user.accounts.default.colorings[selectedHunter][selectedModel] = coloringData;
-
-            console.log('📦 Data structure:', {
-                hunter: selectedHunter,
-                model: selectedModel,
-                layersCount: coloringData.layers.length,
-                hasPreview: !!coloringData.preview,
-                hasExport: !!coloringData.exportImage,
-                totalSize: (JSON.stringify(coloringData).length / 1024).toFixed(0) + ' Ko'
-            });
-
-            try {
-                localStorage.setItem('builderberu_users', JSON.stringify(userData));
-
-                const verification = JSON.parse(localStorage.getItem('builderberu_users'));
-                const saved = verification.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
-
-                console.log('✅ Vérification:', {
-                    saved: !!saved,
-                    hasPreview: !!saved?.preview,
-                    hasExport: !!saved?.exportImage,
-                    layersCount: saved?.layers?.length
-                });
-
-                alert(`✅ Coloriage sauvegardé !\n\nHunter: ${selectedHunter}\nModèle: ${selectedModel}\nCalques: ${coloringData.layers.length}\nTaille totale: ${(JSON.stringify(coloringData).length / 1024).toFixed(0)} Ko\n\n🎯 PNG transparent créé pour export !`);
-
-            } catch (e) {
-                console.error('❌ Erreur sauvegarde:', e);
-                if (e.name === 'QuotaExceededError') {
-                    alert('⚠️ Espace localStorage plein ! Supprime d\'anciens coloriages ou réduis la qualité.');
-                } else {
-                    alert('❌ Erreur de sauvegarde : ' + e.message);
-                }
-            }
-        };
-
-        templateImg.onerror = () => {
-            console.error('❌ Erreur chargement template pour export');
-            alert('❌ Impossible de charger le template pour l\'export');
-        };
-
-        templateImg.src = currentModelData.template;
-    };
-
-    const downloadColoredPNG = () => {
-        console.log('🖼️ Download modèle de référence - Start');
-
-        const exportCanvas = document.createElement('canvas');
-        const refCanvas = referenceCanvasRef.current;
-
-        if (!refCanvas) {
-            alert('❌ Modèle de référence non chargé');
-            return;
-        }
-
-        exportCanvas.width = refCanvas.width;
-        exportCanvas.height = refCanvas.height;
-        const exportCtx = exportCanvas.getContext('2d', { alpha: true });
-
-        exportCtx.drawImage(refCanvas, 0, 0);
-
-        exportCanvas.toBlob((blob) => {
-            if (!blob) {
-                alert('❌ Erreur lors de la génération de l\'image');
-                return;
-            }
-
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${selectedHunter}_${selectedModel}_reference_${Date.now()}.png`;
-
-            link.click();
-            URL.revokeObjectURL(url);
-
-            console.log('✅ Modèle de référence téléchargé:', link.download);
-            alert(`✅ Modèle de référence téléchargé !\n\nFichier: ${link.download}\n\n🎨 Image originale colorée`);
-
-        }, 'image/png', 1.0);
-    };
-
-    const downloadTransparentPNG = () => {
-        console.log('🔥 Download PNG avec template...');
-
-        const exportCanvas = document.createElement('canvas');
-        const canvas = canvasRef.current;
-        exportCanvas.width = canvas.width;
-        exportCanvas.height = canvas.height;
-        const exportCtx = exportCanvas.getContext('2d', { alpha: true });
-
-        const templateImg = new Image();
-        templateImg.crossOrigin = "anonymous";
-
-        templateImg.onload = () => {
-            exportCtx.drawImage(templateImg, 0, 0, exportCanvas.width, exportCanvas.height);
-
-            layers.forEach((layer, index) => {
-                if (layer.visible && layersRef.current[index]) {
-                    exportCtx.globalAlpha = layer.opacity;
-                    exportCtx.drawImage(layersRef.current[index], 0, 0);
-                    exportCtx.globalAlpha = 1;
-                }
-            });
-
-            exportCanvas.toBlob((blob) => {
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `${selectedHunter}_${selectedModel}_colored_${Date.now()}.png`;
-                link.click();
-                URL.revokeObjectURL(url);
-
-                console.log('✅ PNG téléchargé:', link.download);
-                alert(`✅ Image téléchargée !\n\nFichier: ${link.download}`);
-            }, 'image/png', 1.0);
-        };
-
-        templateImg.onerror = () => {
-            console.error('❌ Erreur chargement template');
-            alert('❌ Impossible de charger le template');
-        };
-
-        templateImg.src = currentModelData.template;
-    };
-
-    const resetColoring = () => {
-        if (!confirm('Réinitialiser tout le coloriage ?')) return;
-
-        layersRef.current.forEach(canvas => {
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        });
-
-        renderLayers();
-        setHistory([]);
-        setHistoryIndex(-1);
-        saveToHistory();
-    };
-
-    const exportColoring = () => {
-        const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
-        const coloring = userData.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
-
-        if (!coloring) {
-            alert('❌ Aucun coloriage à exporter pour ce hunter/model');
-            return;
-        }
-
-        const exportData = {
-            hunter: selectedHunter,
-            model: selectedModel,
-            data: coloring,
-            exportedAt: Date.now(),
-            version: '1.0'
-        };
-
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${selectedHunter}_${selectedModel}_${Date.now()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-
-        console.log('📤 Coloriage exporté:', selectedHunter, selectedModel);
-        alert(`✅ Coloriage exporté !\n\nFichier: ${a.download}`);
-    };
-
-    const importColoring = () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const importedData = JSON.parse(event.target.result);
-
-                    if (!importedData.hunter || !importedData.data) {
-                        throw new Error('Format invalide');
-                    }
-
-                    const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
-                    if (!userData.user) userData.user = { accounts: {} };
-                    if (!userData.user.accounts.default) userData.user.accounts.default = {};
-                    if (!userData.user.accounts.default.colorings) userData.user.accounts.default.colorings = {};
-                    if (!userData.user.accounts.default.colorings[importedData.hunter]) {
-                        userData.user.accounts.default.colorings[importedData.hunter] = {};
-                    }
-
-                    userData.user.accounts.default.colorings[importedData.hunter][importedData.model] = importedData.data;
-                    localStorage.setItem('builderberu_users', JSON.stringify(userData));
-
-                    console.log('📥 Coloriage importé:', importedData.hunter, importedData.model);
-                    alert(`✅ Coloriage importé !\n\nHunter: ${importedData.hunter}\nModèle: ${importedData.model}\n\nRecharge la page pour voir le résultat.`);
-
-                    if (importedData.hunter === selectedHunter && importedData.model === selectedModel) {
-                        window.location.reload();
-                    }
-
-                } catch (error) {
-                    console.error('❌ Erreur import:', error);
-                    alert('❌ Erreur lors de l\'import. Vérifie que le fichier est valide.');
-                }
-            };
-
-            reader.readAsText(file);
-        };
-
-        input.click();
-    };
-
-    const handleModelChange = (modelId) => {
-        setSelectedModel(modelId);
-        setImagesLoaded(false);
-        setHistory([]);
-        setHistoryIndex(-1);
-    };
-
-    const handleHunterChange = (hunterId) => {
-        setSelectedHunter(hunterId);
-        setSelectedModel('default');
-        setImagesLoaded(false);
-        setHistory([]);
-        setHistoryIndex(-1);
+    const resetView = () => {
+        setZoomLevel(1);
+        setPanOffset({ x: 0, y: 0 });
     };
 
     if (!currentModelData) {
@@ -1036,36 +1159,36 @@ const DrawBeru = () => {
         );
     }
 
-    // 🎨 RENDER MOBILE
+    // RENDER MOBILE
     if (isMobile) {
         return (
             <div className="min-h-screen bg-[#0a0118] overflow-hidden">
                 <style>{`
-          @keyframes pulse {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.3); }
-          }
-          
-          .mobile-fab {
-            position: fixed;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            z-index: 1000;
-            transition: all 0.3s ease;
-          }
-          
-          .mobile-fab:active {
-            transform: scale(0.95);
-          }
-        `}</style>
+                    @keyframes pulse {
+                        0%, 100% { transform: translate(-50%, -50%) scale(1); }
+                        50% { transform: translate(-50%, -50%) scale(1.3); }
+                    }
+                    
+                    .mobile-fab {
+                        position: fixed;
+                        width: 56px;
+                        height: 56px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 24px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+                        z-index: 1000;
+                        transition: all 0.3s ease;
+                    }
+                    
+                    .mobile-fab:active {
+                        transform: scale(0.95);
+                    }
+                `}</style>
 
-                {/* 📱 HEADER MOBILE COMPACT */}
+                {/* HEADER MOBILE COMPACT */}
                 <div className="bg-black/30 backdrop-blur-sm border-b border-purple-500/30 px-3 py-2">
                     <div className="flex items-center justify-between">
                         <div>
@@ -1082,7 +1205,10 @@ const DrawBeru = () => {
                     </div>
                 </div>
 
-                {/* 📱 MOBILE MENU OVERLAY */}
+                {/* MOBILE PROGRESS BADGE */}
+                <MobileProgressBadge />
+
+                {/* MOBILE MENU OVERLAY */}
                 {mobileMenuOpen && (
                     <div
                         className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] overflow-y-auto"
@@ -1101,6 +1227,8 @@ const DrawBeru = () => {
                                     ✕
                                 </button>
                             </div>
+                            {/* PROGRESS DISPLAY MOBILE */}
+                            <ProgressDisplay />
 
                             {/* HUNTER/MODEL SELECTORS */}
                             <div className="mb-4 space-y-2">
@@ -1263,7 +1391,7 @@ const DrawBeru = () => {
                     </div>
                 )}
 
-                {/* 🎨 CANVAS MOBILE FULLSCREEN */}
+                {/* CANVAS MOBILE FULLSCREEN */}
                 <div className="relative w-full" style={{ height: 'calc(100vh - 120px)' }}>
                     <div
                         className="absolute inset-0 bg-white flex items-center justify-center overflow-hidden"
@@ -1297,7 +1425,6 @@ const DrawBeru = () => {
                                 position: 'relative'
                             }}
                         >
-                            {/* CANVAS PRINCIPAL (Template + Coloriage) - TOUJOURS VISIBLE */}
                             <canvas
                                 ref={canvasRef}
                                 style={{
@@ -1307,22 +1434,6 @@ const DrawBeru = () => {
                                 }}
                             />
 
-                            {/* 🆕 MODÈLE RÉFÉRENCE COLORÉ - Opacity variable */}
-                            <canvas
-                                ref={overlayCanvasRef}
-                                style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    pointerEvents: 'none',
-                                    opacity: showModelOverlay ? modelOverlayOpacity : 0.15,
-                                    touchAction: 'none',
-                                    transition: 'opacity 0.3s ease',
-                                    mixBlendMode: 'multiply' // Pour mieux voir à travers
-                                }}
-                            />
-
-                            {/* 🆕 MODEL OVERLAY */}
                             {showModelOverlay && (
                                 <canvas
                                     ref={overlayCanvasRef}
@@ -1339,43 +1450,32 @@ const DrawBeru = () => {
                         </div>
                     </div>
 
-                    {/* 🔥 CONTROLS EN HAUT DANS LE CANVAS - ALIGNÉS */}
-                    <div
-                        className="absolute top-4 left-4 right-4 z-[1000] flex items-start gap-3"
-                        style={{ pointerEvents: 'auto' }}
-                    >
-                        {/* BOUTONS ALIGNÉS À GAUCHE */}
+                    {/* CONTROLS EN HAUT */}
+                    <div className="absolute top-4 left-4 right-4 z-[1000] flex items-start gap-3">
                         <div className="flex gap-2">
-                            {/* BOUTON MODE PAN/DRAW */}
                             <button
                                 onClick={() => setInteractionMode(interactionMode === 'draw' ? 'pan' : 'draw')}
                                 className={`flex items-center justify-center w-10 h-10 rounded-lg shadow-md text-lg transition-all active:scale-95 backdrop-blur-sm ${interactionMode === 'draw'
                                     ? 'bg-green-600/40 hover:bg-green-600/60 text-white border border-green-400/20'
                                     : 'bg-blue-600/40 hover:bg-blue-600/60 text-white border border-blue-400/20'
                                     }`}
-                                title={interactionMode === 'draw' ? 'Mode Dessin' : 'Mode Déplacement'}
                             >
                                 {interactionMode === 'draw' ? '🖌️' : '✋'}
                             </button>
 
-                            {/* BOUTON TOGGLE MODEL OVERLAY */}
                             <button
                                 onClick={() => setShowModelOverlay(!showModelOverlay)}
                                 className={`flex items-center justify-center w-10 h-10 rounded-lg shadow-md text-lg transition-all active:scale-95 backdrop-blur-sm ${showModelOverlay
                                     ? 'bg-purple-600/40 hover:bg-purple-600/60 text-white border border-purple-400/20'
                                     : 'bg-gray-700/40 hover:bg-gray-700/60 text-white border border-gray-500/20'
                                     }`}
-                                title={showModelOverlay ? 'Cacher modèle' : 'Afficher modèle'}
                             >
                                 {showModelOverlay ? '👁️' : '🙈'}
                             </button>
                         </div>
 
-                        {/* 🔥 SLIDER OPACITY À DROITE (visible si modèle affiché) */}
                         {showModelOverlay && (
-                            <div
-                                className="flex-1 bg-black/60 backdrop-blur-md rounded-lg p-2 shadow-lg border border-purple-500/30 max-w-[200px]"
-                            >
+                            <div className="flex-1 bg-black/60 backdrop-blur-md rounded-lg p-2 shadow-lg border border-purple-500/30 max-w-[200px]">
                                 <div className="flex items-center justify-between mb-1">
                                     <span className="text-white text-[10px] font-semibold">Opacité</span>
                                     <span className="text-purple-300 text-[10px] font-mono">{Math.round(modelOverlayOpacity * 100)}%</span>
@@ -1388,39 +1488,13 @@ const DrawBeru = () => {
                                     value={modelOverlayOpacity}
                                     onChange={(e) => setModelOverlayOpacity(parseFloat(e.target.value))}
                                     className="w-full h-1.5 bg-purple-900/50 rounded-lg appearance-none cursor-pointer"
-                                    style={{
-                                        accentColor: '#9333ea'
-                                    }}
                                 />
-                                <div className="flex justify-between mt-1 gap-1">
-                                    <button
-                                        onClick={() => setModelOverlayOpacity(0.2)}
-                                        className="text-[9px] text-purple-300 hover:text-white px-1 py-0.5 rounded bg-purple-900/30 hover:bg-purple-900/50 transition-colors"
-                                    >
-                                        20%
-                                    </button>
-                                    <button
-                                        onClick={() => setModelOverlayOpacity(0.5)}
-                                        className="text-[9px] text-purple-300 hover:text-white px-1 py-0.5 rounded bg-purple-900/30 hover:bg-purple-900/50 transition-colors"
-                                    >
-                                        50%
-                                    </button>
-                                    <button
-                                        onClick={() => setModelOverlayOpacity(0.8)}
-                                        className="text-[9px] text-purple-300 hover:text-white px-1 py-0.5 rounded bg-purple-900/30 hover:bg-purple-900/50 transition-colors"
-                                    >
-                                        80%
-                                    </button>
-                                </div>
                             </div>
                         )}
                     </div>
 
-
-
-                    {/* 🆕 CONTROLS BAS : Undo/Redo + Brush Size sur même ligne - FIXED */}
+                    {/* CONTROLS BAS */}
                     <div className="fixed bottom-20 left-2 right-2 z-[1000] flex items-center gap-2">
-                        {/* UNDO/REDO */}
                         <div className="flex gap-2 shrink-0">
                             <button
                                 onClick={undo}
@@ -1444,24 +1518,16 @@ const DrawBeru = () => {
                             </button>
                         </div>
 
-                        {/* BRUSH SIZE SLIDER - Visible en mode brush/eraser */}
                         {(currentTool === 'brush' || currentTool === 'eraser') && (
-                            <div
-                                className="flex-1 bg-black/40 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-md border border-purple-500/20"
-                                style={{ maxHeight: '46px' }}
-                            >
+                            <div className="flex-1 bg-black/40 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-md border border-purple-500/20">
                                 <div className="flex items-center gap-2">
-                                    {/* ICÔNE OUTIL */}
                                     <div className="flex items-center justify-center w-6 h-6 rounded bg-purple-600/50 text-sm shrink-0">
                                         {currentTool === 'brush' ? '🖌️' : '🧽'}
                                     </div>
 
-                                    {/* SLIDER */}
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between mb-0.5">
-                                            <span className="text-white/80 text-[9px] font-medium">
-                                                Taille
-                                            </span>
+                                            <span className="text-white/80 text-[9px] font-medium">Taille</span>
                                             <span className="text-purple-300 text-[10px] font-mono font-bold">
                                                 {brushSize.toFixed(1)}px
                                             </span>
@@ -1474,13 +1540,9 @@ const DrawBeru = () => {
                                             value={brushSize}
                                             onChange={(e) => setBrushSize(parseFloat(e.target.value))}
                                             className="w-full h-1 bg-purple-900/30 rounded-lg appearance-none cursor-pointer"
-                                            style={{
-                                                accentColor: currentTool === 'brush' ? '#9333ea' : '#f97316'
-                                            }}
                                         />
                                     </div>
 
-                                    {/* PRÉVISUALISATION */}
                                     <div className="flex items-center justify-center w-8 h-8 bg-white/5 rounded border border-purple-500/20 shrink-0">
                                         <div
                                             style={{
@@ -1496,7 +1558,7 @@ const DrawBeru = () => {
                                 </div>
                             </div>
                         )}
-                        {/* 🆕 INDICATEUR COULEUR ACTUELLE (en bas à droite) */}
+
                         <div
                             className="absolute"
                             style={{
@@ -1512,16 +1574,11 @@ const DrawBeru = () => {
                                 cursor: 'pointer'
                             }}
                             onClick={() => setMobileMenuOpen(true)}
-                            title="Changer de couleur"
                         />
                     </div>
-
-
-
-
                 </div>
 
-                {/* 📱 BOTTOM TOOLBAR MOBILE */}
+                {/* BOTTOM TOOLBAR MOBILE */}
                 <div className="fixed bottom-0 left-0 right-0 bg-black/30 backdrop-blur-sm border-t border-purple-500/30 p-2 z-[999]">
                     <div className="flex items-center justify-around gap-1">
                         <button
@@ -1569,40 +1626,37 @@ const DrawBeru = () => {
         );
     }
 
+    // RENDER DESKTOP
     return (
         <div className="min-h-screen bg-[#0a0118]">
             <style>{`
-        @keyframes pulse {
-          0%, 100% { transform: translate(-50%, -50%) scale(1); }
-          50% { transform: translate(-50%, -50%) scale(1.3); }
-        }
-        
-        ::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.2);
-        }
-        ::-webkit-scrollbar-thumb {
-          background: rgba(147, 51, 234, 0.5);
-          border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: rgba(147, 51, 234, 0.7);
-        }
-      `}</style>
+                @keyframes pulse {
+                    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+                    50% { transform: translate(-50%, -50%) scale(1.3); }
+                }
+                
+                ::-webkit-scrollbar {
+                    width: 8px;
+                    height: 8px;
+                }
+                ::-webkit-scrollbar-track {
+                    background: rgba(0, 0, 0, 0.2);
+                }
+                ::-webkit-scrollbar-thumb {
+                    background: rgba(147, 51, 234, 0.5);
+                    border-radius: 4px;
+                }
+                ::-webkit-scrollbar-thumb:hover {
+                    background: rgba(147, 51, 234, 0.7);
+                }
+            `}</style>
 
             <div className="bg-black/20 backdrop-blur-sm border-b border-purple-500/30">
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between flex-wrap gap-4">
                         <div>
-                            <h1 className="text-3xl font-bold text-white">
-                                🎨 DrawBeru
-                            </h1>
-                            <p className="text-purple-200">
-                                Colorie {currentModelData.name}
-                            </p>
+                            <h1 className="text-3xl font-bold text-white">🎨 DrawBeru</h1>
+                            <p className="text-purple-200">Colorie {currentModelData.name}</p>
                         </div>
 
                         <div className="flex items-center gap-3">
@@ -1715,12 +1769,12 @@ const DrawBeru = () => {
 
             <div className="container mx-auto px-4 py-6">
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-
+                    {/* LEFT PANEL - PALETTE & TOOLS */}
                     <div className="lg:col-span-1 space-y-4">
+                        {/* PROGRESS DISPLAY DESKTOP */}
+                        <ProgressDisplay />
                         <div className="bg-black/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4">
-                            <h3 className="text-white font-semibold mb-4">
-                                🎨 Palette
-                            </h3>
+                            <h3 className="text-white font-semibold mb-4">🎨 Palette</h3>
 
                             <div className="grid grid-cols-4 gap-2 mb-4">
                                 {Object.entries(currentModelData.palette).map(([id, color]) => (
@@ -1863,10 +1917,9 @@ const DrawBeru = () => {
                             </div>
                         </div>
 
+                        {/* LAYERS PANEL */}
                         <div className="bg-black/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4">
-                            <h3 className="text-white font-semibold mb-4">
-                                📚 Calques
-                            </h3>
+                            <h3 className="text-white font-semibold mb-4">📚 Calques</h3>
 
                             <div className="space-y-2">
                                 {layers.map((layer) => (
@@ -1924,6 +1977,7 @@ const DrawBeru = () => {
                         </div>
                     </div>
 
+                    {/* CENTER - CANVAS */}
                     <div className="lg:col-span-2">
                         <div className="bg-black/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4">
                             <h3 className="text-white font-semibold mb-4">
@@ -1951,7 +2005,6 @@ const DrawBeru = () => {
                                 onMouseLeave={stopPan}
                                 onContextMenu={(e) => e.preventDefault()}
                             >
-
                                 <div
                                     className="relative inline-block"
                                     style={{
@@ -1960,7 +2013,6 @@ const DrawBeru = () => {
                                         transition: isPanning ? 'none' : 'transform 0.1s ease-out'
                                     }}
                                 >
-
                                     <canvas
                                         ref={canvasRef}
                                         style={{
@@ -1973,7 +2025,6 @@ const DrawBeru = () => {
                                         onMouseUp={stopDrawing}
                                         onMouseLeave={stopDrawing}
                                     />
-
                                 </div>
                             </div>
 
@@ -1986,12 +2037,14 @@ const DrawBeru = () => {
                                         <div>Tool: {currentTool} | Color: {selectedColor} | Brush: {brushSize}px</div>
                                         <div>Layer actif: {layers.find(l => l.id === activeLayer)?.name}</div>
                                         <div>Historique: {historyIndex + 1}/{history.length}</div>
+                                        <div>🎯 Progression: {coloringProgress}%</div>
                                     </>
                                 )}
                             </div>
                         </div>
                     </div>
 
+                    {/* RIGHT PANEL - REFERENCE */}
                     <div className="lg:col-span-1">
                         {showReference && (
                             <div className="bg-black/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4">
@@ -2141,4 +2194,4 @@ const DrawBeru = () => {
     );
 };
 
-export default DrawBeru;
+export default DrawBeruFixed;
