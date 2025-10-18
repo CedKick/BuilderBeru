@@ -410,10 +410,22 @@ const DrawBeru = () => {
         if (x < 0 || x > layerCanvas.width || y < 0 || y > layerCanvas.height) return;
 
         ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
-        ctx.fillStyle = selectedColor;
-        ctx.beginPath();
-        ctx.arc(x, y, brushSize, 0, 2 * Math.PI);
-        ctx.fill();
+
+        // 🔥 MÊME LOGIQUE pour le point instantané
+        if (brushSize < 1) {
+            ctx.strokeStyle = selectedColor;
+            ctx.lineWidth = brushSize * 2;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + 0.1, y + 0.1); // Micro-trait pour forcer l'affichage
+            ctx.stroke();
+        } else {
+            ctx.fillStyle = selectedColor;
+            ctx.beginPath();
+            ctx.arc(x, y, brushSize, 0, 2 * Math.PI);
+            ctx.fill();
+        }
 
         renderLayers();
     };
@@ -551,85 +563,85 @@ const DrawBeru = () => {
     };
 
     const handleTouchDraw = (e) => {
-    e.preventDefault();
+        e.preventDefault();
 
-    if (!e.touches || e.touches.length === 0) return;
-    const touch = e.touches[0];
+        if (!e.touches || e.touches.length === 0) return;
+        const touch = e.touches[0];
 
-    // 🎯 PIPETTE MODE
-    if (currentTool === 'pipette') {
-        const canvas = canvasRef.current;
-        const rect = canvas.getBoundingClientRect();
+        // 🎯 PIPETTE MODE
+        if (currentTool === 'pipette') {
+            const canvas = canvasRef.current;
+            const rect = canvas.getBoundingClientRect();
 
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const x = Math.floor((touch.clientX - rect.left) * scaleX);
-        const y = Math.floor((touch.clientY - rect.top) * scaleY);
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = Math.floor((touch.clientX - rect.left) * scaleX);
+            const y = Math.floor((touch.clientY - rect.top) * scaleY);
 
-        if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return;
+            if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return;
 
-        // Si overlay modèle visible, prendre couleur du modèle
-        if (showModelOverlay && overlayCanvasRef.current) {
-            const overlayCtx = overlayCanvasRef.current.getContext('2d', { willReadFrequently: true });
-            const pixel = overlayCtx.getImageData(x, y, 1, 1).data;
-            if (pixel[3] > 0) {
-                const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
-                setSelectedColor(hex);
-                setCurrentTool('brush');
-                return;
+            // Si overlay modèle visible, prendre couleur du modèle
+            if (showModelOverlay && overlayCanvasRef.current) {
+                const overlayCtx = overlayCanvasRef.current.getContext('2d', { willReadFrequently: true });
+                const pixel = overlayCtx.getImageData(x, y, 1, 1).data;
+                if (pixel[3] > 0) {
+                    const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                    setSelectedColor(hex);
+                    setCurrentTool('brush');
+                    return;
+                }
             }
+
+            // Sinon, prendre couleur du layer actif
+            const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
+            const layerCanvas = layersRef.current[activeLayerIndex];
+            if (layerCanvas) {
+                const ctx = layerCanvas.getContext('2d', { willReadFrequently: true });
+                const pixel = ctx.getImageData(x, y, 1, 1).data;
+                if (pixel[3] > 0) {
+                    const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                    setSelectedColor(hex);
+                    setCurrentTool('brush');
+                }
+            }
+            return;
         }
 
-        // Sinon, prendre couleur du layer actif
-        const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
-        const layerCanvas = layersRef.current[activeLayerIndex];
-        if (layerCanvas) {
-            const ctx = layerCanvas.getContext('2d', { willReadFrequently: true });
-            const pixel = ctx.getImageData(x, y, 1, 1).data;
-            if (pixel[3] > 0) {
-                const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
-                setSelectedColor(hex);
-                setCurrentTool('brush');
-            }
+        // 🔥 MODE DESSIN INSTANTANÉ
+        if (interactionMode !== 'draw') return;
+
+        const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            bubbles: true
+        });
+
+        if (e.type === 'touchstart') {
+            startDrawing(mouseEvent);
+            // 🔥 COLORIAGE INSTANTANÉ : dessiner immédiatement au premier contact
+            drawInstantPoint(mouseEvent);
+        } else if (e.type === 'touchmove') {
+            draw(mouseEvent);
         }
-        return;
-    }
-
-    // 🔥 MODE DESSIN INSTANTANÉ
-    if (interactionMode !== 'draw') return;
-
-    const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
-        clientX: touch.clientX,
-        clientY: touch.clientY,
-        bubbles: true
-    });
-
-    if (e.type === 'touchstart') {
-        startDrawing(mouseEvent);
-        // 🔥 COLORIAGE INSTANTANÉ : dessiner immédiatement au premier contact
-        drawInstantPoint(mouseEvent);
-    } else if (e.type === 'touchmove') {
-        draw(mouseEvent);
-    }
-};
+    };
 
     const startDrawing = (e) => {
-    if (e.button !== 0 || e.ctrlKey || isPanning) return;
+        if (e.button !== 0 || e.ctrlKey || isPanning) return;
 
-    if (currentTool === 'pipette') {
-        pickColorFromCanvas(e);
-        return;
-    }
+        if (currentTool === 'pipette') {
+            pickColorFromCanvas(e);
+            return;
+        }
 
-    const layer = layers.find(l => l.id === activeLayer);
-    if (layer?.locked) return;
+        const layer = layers.find(l => l.id === activeLayer);
+        if (layer?.locked) return;
 
-    setIsDrawing(true);
-    // Condition ajoutée : ne pas dessiner sur desktop pour éviter double point
-    if (!isMobile) {
-        draw(e);
-    }
-};
+        setIsDrawing(true);
+        // Condition ajoutée : ne pas dessiner sur desktop pour éviter double point
+        if (!isMobile) {
+            draw(e);
+        }
+    };
 
     const stopDrawing = () => {
         if (isDrawing) {
@@ -652,9 +664,23 @@ const DrawBeru = () => {
 
         ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
         ctx.fillStyle = selectedColor;
-        ctx.beginPath();
-        ctx.arc(x, y, brushSize, 0, 2 * Math.PI);
-        ctx.fill();
+
+        // 🔥 AMÉLIORATION : traits continus même pour petits pinceaux
+        if (brushSize < 1) {
+            // Pour les très petits pinceaux, utiliser lineTo pour continuité
+            ctx.strokeStyle = selectedColor;
+            ctx.lineWidth = brushSize * 2; // Légèrement plus épais pour compenser
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        } else {
+            // Méthode normale pour pinceaux normaux
+            ctx.beginPath();
+            ctx.arc(x, y, brushSize, 0, 2 * Math.PI);
+            ctx.fill();
+        }
 
         renderLayers();
     };
