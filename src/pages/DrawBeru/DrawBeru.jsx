@@ -1377,12 +1377,21 @@ const DrawBeruFixed = () => {
                                 </button>
                                 <button
                                     onClick={() => {
-                                        downloadTransparentPNG();
+                                        downloadColoredPNG();
                                         setMobileMenuOpen(false);
                                     }}
                                     className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm"
                                 >
-                                    🖼️ Télécharger PNG
+                                    🖼️ PNG Coloré
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        downloadTransparentPNG();
+                                        setMobileMenuOpen(false);
+                                    }}
+                                    className="w-full bg-pink-600 text-white py-2 rounded-lg text-sm"
+                                >
+                                    🎨 PNG Transparent
                                 </button>
                                 <button
                                     onClick={() => {
@@ -1622,8 +1631,8 @@ const DrawBeruFixed = () => {
                         <button
                             onClick={() => setCurrentTool('brush')}
                             className={`w-12 h-12 rounded-lg shadow-md transition-all bg-center bg-no-repeat bg-contain ${currentTool === 'brush'
-                                    ? 'bg-purple-600 scale-105'
-                                    : 'bg-purple-800/50'
+                                ? 'bg-purple-600 scale-105'
+                                : 'bg-purple-800/50'
                                 }`}
                             style={{
                                 backgroundImage:
@@ -1635,8 +1644,8 @@ const DrawBeruFixed = () => {
                         <button
                             onClick={() => setCurrentTool('eraser')}
                             className={`w-12 h-12 rounded-lg shadow-md transition-all bg-center bg-no-repeat bg-contain ${currentTool === 'eraser'
-                                    ? 'bg-purple-600 scale-105'
-                                    : 'bg-purple-800/50'
+                                ? 'bg-purple-600 scale-105'
+                                : 'bg-purple-800/50'
                                 }`}
                             style={{
                                 backgroundImage:
@@ -1647,8 +1656,8 @@ const DrawBeruFixed = () => {
                         <button
                             onClick={() => setCurrentTool('pipette')}
                             className={`w-12 h-12 rounded-lg shadow-md transition-all bg-center bg-no-repeat bg-contain ${currentTool === 'pipette'
-                                    ? 'bg-purple-600 scale-105'
-                                    : 'bg-purple-800/50'
+                                ? 'bg-purple-600 scale-105'
+                                : 'bg-purple-800/50'
                                 }`}
                             style={{
                                 backgroundImage:
