@@ -98,8 +98,8 @@ const DrawBeruFixed = () => {
     const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
-    const MAX_ZOOM = isMobile ? 8 : 3;
-    const ZOOM_STEP = isMobile ? 0.3 : 0.25;
+    const MAX_ZOOM = isMobile ? 25 : 3;
+    const ZOOM_STEP = isMobile ? 0.5 : 0.25;
 
     // Reference canvas states
     const [refZoomLevel, setRefZoomLevel] = useState(1);
