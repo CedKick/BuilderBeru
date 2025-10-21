@@ -57,16 +57,16 @@ export default function AppLayout({ children }) {
       {/* Bouton hamburger - Desktop & Mobile */}
       <button
         onClick={() => setShowMenu(true)}
-        className="menu-button fixed top-4 left-4 z-40 p-3 rounded-xl
-                   bg-gradient-to-br from-purple-600/90 to-indigo-600/90
-                   hover:from-purple-500 hover:to-indigo-500
+        className="menu-button fixed bottom-4 left-4 md:top-4 md:bottom-auto z-40 p-2 rounded-xl
+                   bg-gradient-to-br from-purple-600/60 to-indigo-600/60
+                   hover:from-purple-500/80 hover:to-indigo-500/80
                    backdrop-blur-md border border-purple-400/30
                    shadow-lg hover:shadow-purple-500/50
                    transition-all duration-300 hover:scale-110
                    group"
         aria-label="Ouvrir le menu"
       >
-        <Menu className="w-6 h-6 text-white group-hover:rotate-180 transition-transform duration-300" />
+        <Menu className="w-5 h-5 text-white group-hover:rotate-180 transition-transform duration-300" />
       </button>
 
       {/* Overlay backdrop - visible quand le menu est ouvert */}

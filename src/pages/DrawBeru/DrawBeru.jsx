@@ -119,7 +119,7 @@ const DrawBeruFixed = () => {
     const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
     const [isPanning, setIsPanning] = useState(false);
     const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
-    const MAX_ZOOM = isMobile ? 25 : 3;
+    const MAX_ZOOM = isMobile ? 25 : 10;
     const ZOOM_STEP = isMobile ? 0.5 : 0.25;
 
     // Reference canvas states
@@ -175,9 +175,9 @@ const DrawBeruFixed = () => {
         }
     }, [selectedHunter, selectedModel]);
 
-    // Load model overlay for mobile
+    // Load model overlay for mobile and desktop
     useEffect(() => {
-        if (!isMobile || !currentModelData || !showModelOverlay) return;
+        if (!currentModelData || !showModelOverlay) return;
 
         const overlayCanvas = overlayCanvasRef.current;
         if (!overlayCanvas) return;
@@ -194,7 +194,7 @@ const DrawBeruFixed = () => {
             ctx.drawImage(img, 0, 0, width, height);
         };
         img.src = currentModelData.reference;
-    }, [isMobile, showModelOverlay, modelOverlayOpacity, currentModelData]);
+    }, [showModelOverlay, modelOverlayOpacity, currentModelData]);
 
     // Load canvas and template
     useEffect(() => {
@@ -695,12 +695,27 @@ const DrawBeruFixed = () => {
     };
 
     const pickColorFromCanvas = (e) => {
-        const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
-        const layerCanvas = layersRef.current[activeLayerIndex];
-        if (!layerCanvas) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
 
-        const { x, y } = getCanvasCoordinates(e, canvasRef.current);
-        const ctx = layerCanvas.getContext('2d');
+        const { x, y } = getCanvasCoordinates(e, canvas);
+
+        // Si l'overlay du modèle est visible, essayer de prendre la couleur de l'overlay en premier
+        if (showModelOverlay && overlayCanvasRef.current) {
+            const overlayCtx = overlayCanvasRef.current.getContext('2d', { willReadFrequently: true });
+            const overlayPixel = overlayCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+
+            // Si le pixel de l'overlay n'est pas transparent, prendre cette couleur
+            if (overlayPixel[3] > 0) {
+                const hex = `#${((1 << 24) + (overlayPixel[0] << 16) + (overlayPixel[1] << 8) + overlayPixel[2]).toString(16).slice(1).toUpperCase()}`;
+                setSelectedColor(hex);
+                setCurrentTool('brush');
+                return;
+            }
+        }
+
+        // Sinon, prendre la couleur du canvas principal (qui contient le rendu final de tous les layers)
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const pixel = ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
 
         if (pixel[3] > 0) {
@@ -1106,9 +1121,17 @@ const DrawBeruFixed = () => {
 
     // Canvas event handlers
     const handleWheel = (e) => {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
-        handleZoom(delta);
+        // Vérifier si la molette est utilisée sur le canvas ou l'overlay
+        const isOnCanvas = e.target === canvasRef.current ||
+                          e.target === overlayCanvasRef.current;
+
+        if (isOnCanvas) {
+            // Si sur le canvas, empêcher le scroll et zoomer
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+            handleZoom(delta);
+        }
+        // Si pas sur le canvas, laisser le scroll normal fonctionner
     };
 
     const startPan = (e) => {
@@ -1709,6 +1732,13 @@ const DrawBeruFixed = () => {
                             aria-label="Zoom +"
                         />
                         <button
+                            onClick={resetView}
+                            className="w-12 h-12 rounded-lg shadow-md transition-all bg-purple-700/50 text-white text-xs font-bold"
+                            aria-label="Reset zoom"
+                        >
+                            ⊙
+                        </button>
+                        <button
                             onClick={() => handleZoom(-0.25)}
                             className="w-12 h-12 rounded-lg shadow-md transition-all bg-center bg-no-repeat bg-contain bg-purple-800/50 text-purple-200"
                             style={{
@@ -1871,220 +1901,253 @@ const DrawBeruFixed = () => {
 
             <div className="container mx-auto px-4 py-6">
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                    {/* LEFT PANEL - PALETTE & TOOLS */}
-                    <div className="lg:col-span-1 space-y-4">
-                        {/* PROGRESS DISPLAY DESKTOP */}
-                        <ProgressDisplay />
-                        <div className="bg-black/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4">
-                            <h3 className="text-white font-semibold mb-4">🎨 Palette</h3>
-
-                            <div className="grid grid-cols-4 gap-2 mb-4">
-                                {Object.entries(currentModelData.palette).map(([id, color]) => (
-                                    <button
-                                        key={id}
-                                        onClick={() => setSelectedColor(color)}
-                                        className={`w-12 h-12 rounded-lg border-2 transition-all ${selectedColor === color
-                                            ? 'border-white scale-110'
-                                            : 'border-purple-500/50 hover:border-purple-400'
-                                            }`}
-                                        style={{ backgroundColor: color }}
-                                        title={`Couleur ${id}: ${color}`}
-                                    />
-                                ))}
-                            </div>
-
-                            <div className="mb-4">
-                                <label className="text-purple-200 text-sm mb-2 block">Couleur libre:</label>
-                                <input
-                                    type="color"
-                                    value={selectedColor}
-                                    onChange={(e) => setSelectedColor(e.target.value)}
-                                    className="w-full h-10 rounded-lg border border-purple-500/50"
-                                />
-                            </div>
-
-                            <div className="mb-4">
-                                <label className="text-sm text-white">Taille pinceau : {brushSize.toFixed(1)} px</label>
-                                <input
-                                    type="range"
-                                    min={0.1}
-                                    max={20}
-                                    step={0.1}
-                                    value={brushSize}
-                                    onChange={(e) => setBrushSize(parseFloat(e.target.value))}
-                                    className="w-full"
-                                />
-                            </div>
-
-                            <div className="mb-4">
-                                <label className="text-purple-200 text-sm mb-2 block">
-                                    Zoom: {Math.round(zoomLevel * 100)}%
-                                </label>
-                                <div className="grid grid-cols-3 gap-2 mb-2">
-                                    <button
-                                        onClick={() => handleZoom(-0.25)}
-                                        className="bg-purple-700/50 text-white py-2 px-3 rounded text-lg font-bold"
-                                    >
-                                        −
-                                    </button>
-                                    <button
-                                        onClick={resetView}
-                                        className="bg-purple-700/50 text-white py-2 px-3 rounded text-sm"
-                                    >
-                                        Reset
-                                    </button>
-                                    <button
-                                        onClick={() => handleZoom(0.25)}
-                                        className="bg-purple-700/50 text-white py-2 px-3 rounded text-lg font-bold"
-                                    >
-                                        +
-                                    </button>
-                                </div>
-
-                                <div className="mb-2">
-                                    <div className="text-purple-300 text-xs mb-1">Déplacement:</div>
-                                    <div className="grid grid-cols-3 gap-1 max-w-[120px] mx-auto">
-                                        <div></div>
-                                        <button
-                                            onClick={() => setPanOffset(prev => ({ ...prev, y: prev.y + 50 }))}
-                                            className="bg-purple-700/50 text-white py-2 rounded"
-                                        >
-                                            ↑
-                                        </button>
-                                        <div></div>
-                                        <button
-                                            onClick={() => setPanOffset(prev => ({ ...prev, x: prev.x + 50 }))}
-                                            className="bg-purple-700/50 text-white py-2 rounded"
-                                        >
-                                            ←
-                                        </button>
-                                        <button
-                                            onClick={resetView}
-                                            className="bg-purple-700/50 text-white py-2 rounded text-xs"
-                                        >
-                                            ⊙
-                                        </button>
-                                        <button
-                                            onClick={() => setPanOffset(prev => ({ ...prev, x: prev.x - 50 }))}
-                                            className="bg-purple-700/50 text-white py-2 rounded"
-                                        >
-                                            →
-                                        </button>
-                                        <div></div>
-                                        <button
-                                            onClick={() => setPanOffset(prev => ({ ...prev, y: prev.y - 50 }))}
-                                            className="bg-purple-700/50 text-white py-2 rounded"
-                                        >
-                                            ↓
-                                        </button>
-                                        <div></div>
-                                    </div>
-                                </div>
-
-                                <div className="text-purple-300 text-xs">
-                                    PC: Molette zoom | Clic droit déplacer
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <button
-                                    onClick={() => setCurrentTool('brush')}
-                                    className={`w-full py-2 px-4 rounded-lg transition-colors ${currentTool === 'brush'
-                                        ? 'bg-purple-600 text-white'
-                                        : 'bg-purple-800/50 text-purple-200 hover:bg-purple-700/50'
-                                        }`}
-                                >
-                                    🖌️ Pinceau (B)
-                                </button>
-
-                                <button
-                                    onClick={() => setCurrentTool('eraser')}
-                                    className={`w-full py-2 px-4 rounded-lg transition-colors ${currentTool === 'eraser'
-                                        ? 'bg-purple-600 text-white'
-                                        : 'bg-purple-800/50 text-purple-200 hover:bg-purple-700/50'
-                                        }`}
-                                >
-                                    🧽 Gomme (E)
-                                </button>
-
-                                <button
-                                    onClick={() => setCurrentTool('pipette')}
-                                    className={`w-full py-2 px-4 rounded-lg transition-colors ${currentTool === 'pipette'
-                                        ? 'bg-purple-600 text-white'
-                                        : 'bg-purple-800/50 text-purple-200 hover:bg-purple-700/50'
-                                        }`}
-                                >
-                                    💧 Pipette (I)
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* LAYERS PANEL */}
-                        <div className="bg-black/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4">
-                            <h3 className="text-white font-semibold mb-4">📚 Calques</h3>
-
-                            <div className="space-y-2">
-                                {layers.map((layer) => (
-                                    <div
-                                        key={layer.id}
-                                        className={`p-3 rounded-lg border-2 transition-all ${activeLayer === layer.id
-                                            ? 'border-purple-400 bg-purple-900/50'
-                                            : 'border-purple-700/30 bg-purple-900/20'
-                                            }`}
-                                    >
-                                        <div className="flex items-center justify-between mb-2">
-                                            <button
-                                                onClick={() => setActiveLayer(layer.id)}
-                                                className="text-white font-medium text-sm flex-1 text-left"
-                                            >
-                                                {layer.name}
-                                            </button>
-
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => toggleLayerVisibility(layer.id)}
-                                                    className="text-white text-lg"
-                                                    title={layer.visible ? 'Masquer' : 'Afficher'}
-                                                >
-                                                    {layer.visible ? '👁️' : '🚫'}
-                                                </button>
-
-                                                <button
-                                                    onClick={() => toggleLayerLock(layer.id)}
-                                                    className="text-white text-lg"
-                                                    title={layer.locked ? 'Déverrouiller' : 'Verrouiller'}
-                                                >
-                                                    {layer.locked ? '🔒' : '🔓'}
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="text-purple-300 text-xs">
-                                                Opacité: {Math.round(layer.opacity * 100)}%
-                                            </label>
-                                            <input
-                                                type="range"
-                                                min="0"
-                                                max="1"
-                                                step="0.1"
-                                                value={layer.opacity}
-                                                onChange={(e) => changeLayerOpacity(layer.id, e.target.value)}
-                                                className="w-full"
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
                     {/* CENTER - CANVAS */}
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-3">
                         <div className="bg-black/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4">
                             <h3 className="text-white font-semibold mb-4">
                                 ✏️ Zone de coloriage - {currentModelData.name}
                             </h3>
+
+                            {/* CONTROLS BAR - Style Mobile */}
+                            <div className="mb-4 flex flex-wrap items-center gap-3 bg-black/40 backdrop-blur-sm rounded-xl p-3 border border-purple-500/20">
+                                {/* Afficher/Masquer Calque */}
+                                <button
+                                    onClick={() => setShowModelOverlay(!showModelOverlay)}
+                                    className="w-12 h-12 rounded-lg shadow-md transition-all active:scale-95 backdrop-blur-sm border"
+                                    style={{
+                                        backgroundImage: showModelOverlay
+                                            ? "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055045/sungicon_bfndrc.png')"
+                                            : "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760826182/hide_te5av9.png')",
+                                        backgroundSize: "100% 100%",
+                                        backgroundPosition: "center",
+                                        backgroundRepeat: "no-repeat",
+                                        backgroundColor: showModelOverlay
+                                            ? "rgba(147,51,234,0.4)"
+                                            : "rgba(55,65,81,0.4)",
+                                        borderColor: showModelOverlay
+                                            ? "rgba(216,180,254,0.2)"
+                                            : "rgba(156,163,175,0.2)"
+                                    }}
+                                    title={showModelOverlay ? "Masquer Calque" : "Afficher Calque"}
+                                />
+
+                                {/* Barre d'opacité */}
+                                {showModelOverlay && (
+                                    <div className="flex-1 bg-black/60 backdrop-blur-md rounded-lg p-2 shadow-lg border border-purple-500/30 min-w-[200px] max-w-[300px]">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="text-white text-xs font-semibold">Opacité Calque</span>
+                                            <span className="text-purple-300 text-xs font-mono">{Math.round(modelOverlayOpacity * 100)}%</span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="1"
+                                            step="0.05"
+                                            value={modelOverlayOpacity}
+                                            onChange={(e) => setModelOverlayOpacity(parseFloat(e.target.value))}
+                                            className="w-full h-1.5 bg-purple-900/50 rounded-lg appearance-none cursor-pointer"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Separator */}
+                                <div className="w-px h-10 bg-purple-500/30"></div>
+
+                                {/* Undo/Redo */}
+                                <button
+                                    onClick={undo}
+                                    disabled={!canUndo}
+                                    className={`w-12 h-12 rounded-lg flex items-center justify-center text-xl shadow-md transition-all active:scale-95 backdrop-blur-sm border ${canUndo
+                                        ? 'bg-blue-600/40 hover:bg-blue-600/60 text-white border-blue-400/20'
+                                        : 'bg-gray-600/30 text-gray-400 border-gray-500/15 cursor-not-allowed'
+                                    }`}
+                                    title="Annuler (Ctrl+Z)"
+                                >
+                                    ↶
+                                </button>
+                                <button
+                                    onClick={redo}
+                                    disabled={!canRedo}
+                                    className={`w-12 h-12 rounded-lg flex items-center justify-center text-xl shadow-md transition-all active:scale-95 backdrop-blur-sm border ${canRedo
+                                        ? 'bg-blue-600/40 hover:bg-blue-600/60 text-white border-blue-400/20'
+                                        : 'bg-gray-600/30 text-gray-400 border-gray-500/15 cursor-not-allowed'
+                                    }`}
+                                    title="Refaire (Ctrl+Y)"
+                                >
+                                    ↷
+                                </button>
+
+                                {/* Separator */}
+                                <div className="w-px h-10 bg-purple-500/30"></div>
+
+                                {/* Outils - Pinceau, Gomme, Pipette */}
+                                <button
+                                    onClick={() => setCurrentTool('brush')}
+                                    className={`w-12 h-12 rounded-lg shadow-md transition-all active:scale-95 ${currentTool === 'brush'
+                                        ? 'bg-purple-600 scale-105'
+                                        : 'bg-purple-800/50'
+                                    }`}
+                                    style={{
+                                        backgroundImage: "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760823190/Pinceau_cwjaxh.png')",
+                                        backgroundSize: "contain",
+                                        backgroundPosition: "center",
+                                        backgroundRepeat: "no-repeat"
+                                    }}
+                                    title="Pinceau (B)"
+                                />
+
+                                <button
+                                    onClick={() => setCurrentTool('eraser')}
+                                    className={`w-12 h-12 rounded-lg shadow-md transition-all active:scale-95 ${currentTool === 'eraser'
+                                        ? 'bg-purple-600 scale-105'
+                                        : 'bg-purple-800/50'
+                                    }`}
+                                    style={{
+                                        backgroundImage: "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827288/pipette_kqqmzh.png')",
+                                        backgroundSize: "contain",
+                                        backgroundPosition: "center",
+                                        backgroundRepeat: "no-repeat"
+                                    }}
+                                    title="Gomme (E)"
+                                />
+
+                                <button
+                                    onClick={() => setCurrentTool('pipette')}
+                                    className={`w-12 h-12 rounded-lg shadow-md transition-all active:scale-95 ${currentTool === 'pipette'
+                                        ? 'bg-purple-600 scale-105'
+                                        : 'bg-purple-800/50'
+                                    }`}
+                                    style={{
+                                        backgroundImage: "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827432/pipettevrai_vxsysi.png')",
+                                        backgroundSize: "contain",
+                                        backgroundPosition: "center",
+                                        backgroundRepeat: "no-repeat"
+                                    }}
+                                    title="Pipette (I)"
+                                />
+
+                                {/* Separator */}
+                                <div className="w-px h-10 bg-purple-500/30"></div>
+
+                                {/* Zoom Controls */}
+                                <button
+                                    onClick={() => handleZoom(0.25)}
+                                    className="w-12 h-12 rounded-lg shadow-md transition-all active:scale-95 bg-purple-800/50 hover:bg-purple-700/50"
+                                    style={{
+                                        backgroundImage: "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827803/zoomgrow_hzuucr.png')",
+                                        backgroundSize: "contain",
+                                        backgroundPosition: "center",
+                                        backgroundRepeat: "no-repeat"
+                                    }}
+                                    title="Zoom +"
+                                />
+
+                                <button
+                                    onClick={resetView}
+                                    className="w-12 h-12 rounded-lg shadow-md transition-all active:scale-95 bg-purple-700/50 hover:bg-purple-600/50 text-white text-xs font-bold flex items-center justify-center"
+                                    title="Recadrer"
+                                >
+                                    ⊙
+                                </button>
+
+                                <button
+                                    onClick={() => handleZoom(-0.25)}
+                                    className="w-12 h-12 rounded-lg shadow-md transition-all active:scale-95 bg-purple-800/50 hover:bg-purple-700/50"
+                                    style={{
+                                        backgroundImage: "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827864/zoomreduce_lmj2sp.png')",
+                                        backgroundSize: "contain",
+                                        backgroundPosition: "center",
+                                        backgroundRepeat: "no-repeat"
+                                    }}
+                                    title="Zoom -"
+                                />
+
+                                {/* Separator */}
+                                <div className="w-px h-10 bg-purple-500/30"></div>
+
+                                {/* Couleur actuelle */}
+                                <div className="flex items-center gap-2">
+                                    <div
+                                        className="w-12 h-12 rounded-lg border-2 border-white shadow-lg cursor-pointer"
+                                        style={{ backgroundColor: selectedColor }}
+                                        title={`Couleur actuelle: ${selectedColor}`}
+                                    />
+                                </div>
+
+                                {/* Palette de couleurs */}
+                                <div className="flex items-center gap-1.5">
+                                    {Object.entries(currentModelData.palette).slice(0, 6).map(([id, color]) => (
+                                        <button
+                                            key={id}
+                                            onClick={() => setSelectedColor(color)}
+                                            className={`w-8 h-8 rounded-lg border-2 transition-all ${selectedColor === color
+                                                ? 'border-white scale-110'
+                                                : 'border-purple-500/50 hover:border-purple-300/70'
+                                            }`}
+                                            style={{ backgroundColor: color }}
+                                            title={color}
+                                        />
+                                    ))}
+                                    <input
+                                        type="color"
+                                        value={selectedColor}
+                                        onChange={(e) => setSelectedColor(e.target.value)}
+                                        className="w-8 h-8 rounded-lg border-2 border-purple-500/50 cursor-pointer"
+                                        title="Choisir une couleur personnalisée"
+                                    />
+                                </div>
+
+                                {/* Taille du pinceau */}
+                                {(currentTool === 'brush' || currentTool === 'eraser') && (
+                                    <>
+                                        <div className="w-px h-10 bg-purple-500/30"></div>
+                                        <div className="flex-1 bg-black/60 backdrop-blur-md rounded-lg p-2 shadow-lg border border-purple-500/30 min-w-[200px] max-w-[300px]">
+                                            <div className="flex items-center gap-2">
+                                                <div
+                                                    className="w-6 h-6 rounded bg-purple-600/50 shrink-0"
+                                                    style={{
+                                                        backgroundImage: currentTool === 'brush'
+                                                            ? "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760823190/Pinceau_cwjaxh.png')"
+                                                            : "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827288/pipette_kqqmzh.png')",
+                                                        backgroundSize: "contain",
+                                                        backgroundPosition: "center",
+                                                        backgroundRepeat: "no-repeat"
+                                                    }}
+                                                />
+                                                <div className="flex-1">
+                                                    <div className="flex items-center justify-between mb-0.5">
+                                                        <span className="text-white/80 text-xs font-medium">Taille</span>
+                                                        <span className="text-purple-300 text-xs font-mono font-bold">
+                                                            {brushSize.toFixed(1)}px
+                                                        </span>
+                                                    </div>
+                                                    <input
+                                                        type="range"
+                                                        min="0.1"
+                                                        max="30"
+                                                        step="0.1"
+                                                        value={brushSize}
+                                                        onChange={(e) => setBrushSize(parseFloat(e.target.value))}
+                                                        className="w-full h-1 bg-purple-900/30 rounded-lg appearance-none cursor-pointer"
+                                                    />
+                                                </div>
+                                                <div className="w-8 h-8 bg-white/5 rounded border border-purple-500/20 shrink-0 flex items-center justify-center">
+                                                    <div
+                                                        style={{
+                                                            width: `${Math.min(brushSize * 1.5, 24)}px`,
+                                                            height: `${Math.min(brushSize * 1.5, 24)}px`,
+                                                            borderRadius: '50%',
+                                                            backgroundColor: currentTool === 'brush' ? selectedColor : '#ff6b6b',
+                                                            border: '1px solid rgba(255,255,255,0.2)',
+                                                            transition: 'all 0.2s ease'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
 
                             {!imagesLoaded && (
                                 <div className="bg-white rounded-lg p-8 text-center">
@@ -2127,6 +2190,20 @@ const DrawBeruFixed = () => {
                                         onMouseUp={stopDrawing}
                                         onMouseLeave={stopDrawing}
                                     />
+
+                                    {/* Overlay canvas for model reference with opacity */}
+                                    {showModelOverlay && (
+                                        <canvas
+                                            ref={overlayCanvasRef}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                pointerEvents: 'none',
+                                                opacity: modelOverlayOpacity
+                                            }}
+                                        />
+                                    )}
                                 </div>
                             </div>
 
@@ -2148,11 +2225,13 @@ const DrawBeruFixed = () => {
 
                     {/* RIGHT PANEL - REFERENCE */}
                     <div className="lg:col-span-1">
-                        {showReference && (
-                            <div className="bg-black/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4">
-                                <h3 className="text-white font-semibold mb-4">
-                                    👁️ Modèle {currentModelData.name}
-                                </h3>
+                        <div
+                            className="bg-black/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-4"
+                            style={{ display: showReference ? 'block' : 'none' }}
+                        >
+                            <h3 className="text-white font-semibold mb-4">
+                                👁️ Modèle {currentModelData.name}
+                            </h3>
 
                                 <div className="mb-3">
                                     <label className="text-purple-200 text-sm mb-2 block">
@@ -2288,7 +2367,6 @@ const DrawBeruFixed = () => {
                                     </button>
                                 </div>
                             </div>
-                        )}
                     </div>
                 </div>
             </div>
