@@ -198,7 +198,51 @@ export const drawBeruModels = {
       }
     }
   },
-
+ Chae: {
+    name: "Cha Hae-In",
+    description: "Hunter Cha Hae-In",
+    models: {
+      default: {
+        id: "default",
+        name: "Cha Hae-In",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761071898/chae_orig_kdpdml.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761071896/chae_uncoloried_eew8ey.png",
+        canvasSize: { width: 600, height: 900 },
+        palette: {
+          "1": "#778297",
+          "2": "#232f3c",
+          "3": "#f6c7a1",
+          "4": "#544238",
+          "5": "#a088a2",
+          "6": "#5a6273",
+          "7": "#876c72",
+          "8": "#719aab"
+        }
+      }
+    }
+  }, Juhee: {
+    name: "Juhee",
+    description: "Hunter Juhee",
+    models: {
+      default: {
+        id: "default",
+        name: "Juhee",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761071898/Juhee_orig_axshu2.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761071897/Juhee_uncoloried_enpxch.png",
+        canvasSize: { width: 900, height: 600 },
+        palette: {
+          "1": "#778297",
+          "2": "#232f3c",
+          "3": "#f6c7a1",
+          "4": "#544238",
+          "5": "#a088a2",
+          "6": "#5a6273",
+          "7": "#876c72",
+          "8": "#719aab"
+        }
+      }
+    }
+  },
 };
 
 // ⚙️ HELPERS
