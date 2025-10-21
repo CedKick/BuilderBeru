@@ -1375,11 +1375,21 @@
       "Endurance": "Endurance"
     }
   },
+  "menu": {
+    "navigation": "Navigation",
+    "tools": "Creative Tools",
+    "meta": "Meta & Guides",
+    "worlds": "Worlds",
+    "beruvianWorld": "Beruvian World",
+    "chibiWorld": "Chibi World"
+  },
    "home": {
     "title": "Builder Beru",
     "menu": {
+      "home": "Home",
       "build": "BUILD",
       "dpsCalculator": "DPS Calculator",
+      "drawBeru": "DrawBeru",
       "craftSimulator": "Craft Simulator",
       "training": "Training simulator (Beta)",
       "hallOfFlame": "🏆 Hall Of Flame",
@@ -1389,10 +1399,10 @@
       "bdg": "BdG"
     },
     "announcement": {
-      "imageAlt": "Jinah is the new coming Hunter",
-      "buildNew": "Build your new characters",
-      "buildJinah": "Build your new Jinah",
-      "dpsInfo": "DPS Calculator is finally here! (80% acc. - still testing)"
+      "imageAlt": "DrawBeru - New Solo Leveling coloring feature and Frieren collab",
+      "buildNew": "New Feature: DrawBeru!",
+      "buildJinah": "Color your favorite Solo Leveling characters",
+      "dpsInfo": "Frieren collab coming soon! Get your crayons ready 🎨"
     },
     "footer": {
       "disclaimer": "This is a fan-made website for Solo Leveling: Arise.",

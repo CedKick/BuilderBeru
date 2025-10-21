@@ -2360,12 +2360,22 @@
       "Endurance": "Endurance"
     }
   },
+  "menu": {
+    "navigation": "Navigation",
+    "tools": "Outils Créatifs",
+    "meta": "Meta & Guides",
+    "worlds": "Mondes",
+    "beruvianWorld": "Monde Beruvien",
+    "chibiWorld": "Enclos des Ombres"
+  },
   "home": {
     "title": "Builder Béru",
     "menu": {
+      "home": "Accueil",
       "build": "BUILD",
       "dpsCalculator": "Calculateur DPS",
       "training": "Simulation d'entraînement (Beta)",
+      "drawBeru": "DrawBeru",
       "craftSimulator": "Simulateur de Craft",
       "hallOfFlame": "🏆 Hall Of Flame",
       "pod": "PoD",
@@ -2374,10 +2384,10 @@
       "bdg": "BdG"
     },
     "announcement": {
-      "imageAlt": "Jinah est le nouveau Hunter à venir",
-      "buildNew": "Construis tes nouveaux personnages",
-      "buildJinah": "Construis ta nouvelle Jinah",
-      "dpsInfo": "Le Calculateur DPS est enfin là ! (80% précision - encore en test)"
+      "imageAlt": "DrawBeru - Nouvelle feature de coloriage Solo Leveling et collab Frieren",
+      "buildNew": "Nouvelle Feature : DrawBeru !",
+      "buildJinah": "Colorie tes personnages Solo Leveling favoris",
+      "dpsInfo": "Collab Frieren arrive bientôt ! Prépare tes crayons 🎨"
     },
     "footer": {
       "disclaimer": "Ceci est un site fan-made pour Solo Leveling: Arise.",

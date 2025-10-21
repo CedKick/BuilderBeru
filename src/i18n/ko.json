@@ -427,24 +427,34 @@
       "Endurance": "지구력형"
     }
   },
+  "menu": {
+    "navigation": "탐색",
+    "tools": "창작 도구",
+    "meta": "메타 & 가이드",
+    "worlds": "세계",
+    "beruvianWorld": "베루비안 월드",
+    "chibiWorld": "치비 월드"
+  },
   "home": {
     "title": "빌더 베루",
     "menu": {
+      "home": "홈",
       "build": "빌드",
       "dpsCalculator": "DPS 계산기",
       "training": "트레이닝 시뮬레이터 (베타)",
       "hallOfFlame": "🏆 명예의 전당",
+      "drawBeru": "베루 컬러링",
       "craftSimulator": "제작 시뮬레이터",
       "pod": "PoD",
       "guideEditor": "가이드 편집기",
       "bot": "BoT",
-      "bdg": "BdG"
+      "bdg": "GB"
     },
     "announcement": {
-      "imageAlt": "진아가 새로운 헌터입니다",
-      "buildNew": "새로운 캐릭터를 빌드하세요",
-      "buildJinah": "새로운 진아를 빌드하세요",
-      "dpsInfo": "DPS 계산기가 드디어 출시! (80% 정확도 - 아직 테스트 중)"
+      "imageAlt": "DrawBeru - 새로운 나 혼자만 레벨업 컬러링 기능 및 프리렌 콜라보",
+      "buildNew": "새 기능: DrawBeru!",
+      "buildJinah": "좋아하는 나 혼자만 레벨업 캐릭터를 색칠하세요",
+      "dpsInfo": "프리렌 콜라보 곧 출시! 크레용을 준비하세요 🎨"
     },
     "footer": {
       "disclaimer": "이것은 솔로 레벨링: 어라이즈의 팬 사이트입니다.",

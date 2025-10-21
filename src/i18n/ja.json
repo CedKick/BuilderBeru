@@ -1199,24 +1199,34 @@
       "Endurance": "持久力"
     }
   },
+  "menu": {
+    "navigation": "ナビゲーション",
+    "tools": "クリエイティブツール",
+    "meta": "メタ＆ガイド",
+    "worlds": "世界",
+    "beruvianWorld": "ベルビアンワールド",
+    "chibiWorld": "チビワールド"
+  },
   "home": {
     "title": "Builder Beru",
     "menu": {
+      "home": "ホーム",
       "build": "ビルド",
       "dpsCalculator": "DPS計算機",
       "training": "トレーニングシミュレーター（ベータ）",
       "hallOfFlame": "🏆 Hall Of Flame",
+      "drawBeru": "ベル塗り絵",
       "craftSimulator": "クラフトシミュレーター",
       "pod": "PoD",
       "guideEditor": "ガイドエディター",
       "bot": "BoT",
-      "bdg": "BdG"
+      "bdg": "GB"
     },
     "announcement": {
-      "imageAlt": "ジナは新登場のハンターです",
-      "buildNew": "新キャラクターをビルドしよう",
-      "buildJinah": "新しいジナをビルドしよう",
-      "dpsInfo": "DPS計算機がついに登場！(80%精度 - テスト中)"
+      "imageAlt": "DrawBeru - 新しい俺だけレベルアップ塗り絵機能とフリーレンコラボ",
+      "buildNew": "新機能：DrawBeru！",
+      "buildJinah": "お気に入りの俺だけレベルアップキャラを塗ろう",
+      "dpsInfo": "フリーレンコラボ近日公開！クレヨンを準備しよう 🎨"
     },
     "footer": {
       "disclaimer": "これはSolo Leveling: Ariseのファンメイドウェブサイトです。",

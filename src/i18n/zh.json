@@ -1198,24 +1198,34 @@
       "Endurance": "耐久型"
     }
   },
+  "menu": {
+    "navigation": "导航",
+    "tools": "创作工具",
+    "meta": "元数据与指南",
+    "worlds": "世界",
+    "beruvianWorld": "贝鲁维亚世界",
+    "chibiWorld": "奇比世界"
+  },
   "home": {
     "title": "Builder Beru",
     "menu": {
+      "home": "主页",
       "build": "构建",
       "dpsCalculator": "DPS计算器",
       "training": "训练模拟器（测试版）",
       "hallOfFlame": "🏆 火焰殿堂",
       "pod": "PoD",
+      "drawBeru": "贝鲁涂色",
       "craftSimulator": "锻造模拟器",
       "guideEditor": "指南编辑器",
       "bot": "BoT",
       "bdg": "BdG"
     },
     "announcement": {
-      "imageAlt": "进雅是即将到来的新猎人",
-      "buildNew": "构建你的新角色",
-      "buildJinah": "构建你的新进雅",
-      "dpsInfo": "DPS计算器终于来了！(80%精度 - 仍在测试)"
+      "imageAlt": "DrawBeru - 新的我独自升级涂色功能和芙莉莲联动",
+      "buildNew": "新功能：DrawBeru！",
+      "buildJinah": "为你最喜欢的我独自升级角色上色",
+      "dpsInfo": "芙莉莲联动即将推出！准备好你的蜡笔 🎨"
     },
     "footer": {
       "disclaimer": "这是Solo Leveling: Arise的粉丝网站。",
