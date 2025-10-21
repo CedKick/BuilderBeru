@@ -78,9 +78,30 @@ const DrawBeruFixed = () => {
     const referenceCanvasRef = useRef(null);
     const overlayCanvasRef = useRef(null);
 
+    // 🎨 Helper: Récupère le dernier dessin visité depuis localStorage
+    const getLastDrawing = () => {
+        try {
+            const stored = localStorage.getItem('drawberu_last_drawing');
+            if (stored) {
+                const { hunter, model } = JSON.parse(stored);
+                // Vérifie que le hunter existe dans les modèles disponibles
+                if (drawBeruModels[hunter] && drawBeruModels[hunter].models[model]) {
+                    return { hunter, model };
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error loading last drawing:', error);
+        }
+        // Par défaut: premier hunter de la liste avec son modèle par défaut
+        const firstHunter = Object.keys(drawBeruModels)[0];
+        return { hunter: firstHunter, model: 'default' };
+    };
+
+    const lastDrawing = getLastDrawing();
+
     // States
-    const [selectedHunter, setSelectedHunter] = useState('ilhwan');
-    const [selectedModel, setSelectedModel] = useState('default');
+    const [selectedHunter, setSelectedHunter] = useState(lastDrawing.hunter);
+    const [selectedModel, setSelectedModel] = useState(lastDrawing.model);
     const [selectedColor, setSelectedColor] = useState('#FF0000');
     const [brushSize, setBrushSize] = useState(3);
     const [isDrawing, setIsDrawing] = useState(false);
@@ -140,6 +161,19 @@ const DrawBeruFixed = () => {
                 }));
             }
         );
+
+    // 💾 Sauvegarde automatique du dernier dessin visité
+    useEffect(() => {
+        try {
+            localStorage.setItem('drawberu_last_drawing', JSON.stringify({
+                hunter: selectedHunter,
+                model: selectedModel
+            }));
+            console.log('✅ Last drawing saved:', selectedHunter, selectedModel);
+        } catch (error) {
+            console.error('❌ Error saving last drawing:', error);
+        }
+    }, [selectedHunter, selectedModel]);
 
     // Load model overlay for mobile
     useEffect(() => {

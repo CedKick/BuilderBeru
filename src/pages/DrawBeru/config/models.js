@@ -1,6 +1,29 @@
 // src/pages/DrawBeru/config/models.js
 
 export const drawBeruModels = {
+  Juhee: {
+    name: "Juhee",
+    description: "Hunter Juhee",
+    models: {
+      default: {
+        id: "default",
+        name: "Juhee",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761071898/Juhee_orig_axshu2.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761071897/Juhee_uncoloried_enpxch.png",
+        canvasSize: { width: 900, height: 600 },
+        palette: {
+          "1": "#778297",
+          "2": "#232f3c",
+          "3": "#f6c7a1",
+          "4": "#544238",
+          "5": "#a088a2",
+          "6": "#5a6273",
+          "7": "#876c72",
+          "8": "#719aab"
+        }
+      }
+    }
+  },
   ilhwan: {
     name: "Ilhwan",
     description: "Hunter polyvalent de BuilderBeru",
@@ -220,29 +243,7 @@ export const drawBeruModels = {
         }
       }
     }
-  }, Juhee: {
-    name: "Juhee",
-    description: "Hunter Juhee",
-    models: {
-      default: {
-        id: "default",
-        name: "Juhee",
-        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761071898/Juhee_orig_axshu2.png",
-        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761071897/Juhee_uncoloried_enpxch.png",
-        canvasSize: { width: 900, height: 600 },
-        palette: {
-          "1": "#778297",
-          "2": "#232f3c",
-          "3": "#f6c7a1",
-          "4": "#544238",
-          "5": "#a088a2",
-          "6": "#5a6273",
-          "7": "#876c72",
-          "8": "#719aab"
-        }
-      }
-    }
-  },
+  }, 
 };
 
 // ⚙️ HELPERS
