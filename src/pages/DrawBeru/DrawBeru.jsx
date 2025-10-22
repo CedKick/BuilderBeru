@@ -146,6 +146,14 @@ const DrawBeruFixed = () => {
     const [coloringProgress, setColoringProgress] = useState(0);
     const [progressDetails, setProgressDetails] = useState(null);
 
+    // 🎮 CHEAT CODE STATES
+    const [cheatModeActive, setCheatModeActive] = useState(false);
+    const [cheatCooldown, setCheatCooldown] = useState(null);
+    const [cheatTimeRemaining, setCheatTimeRemaining] = useState(10);
+    const [pressedKeys, setPressedKeys] = useState(new Set());
+    const cheatTimerRef = useRef(null);
+    const cheatCountdownRef = useRef(null);
+
     const currentModelData = getModel(selectedHunter, selectedModel);
     const availableModels = getHunterModels(selectedHunter);
 
@@ -290,6 +298,94 @@ const DrawBeruFixed = () => {
             refImg.src = currentModelData.reference;
         }
     }, [currentModelData, selectedHunter, selectedModel]);
+
+    // 🎮 CHEAT CODE: Détection de la combinaison A+E+R+T+Shift
+    useEffect(() => {
+        // Desktop uniquement
+        if (isMobile) return;
+
+        const handleKeyDown = (e) => {
+            setPressedKeys(prev => {
+                const newKeys = new Set(prev);
+                newKeys.add(e.key.toLowerCase());
+
+                // Vérifier si la combinaison correcte est pressée
+                if (newKeys.has('a') && newKeys.has('e') && newKeys.has('r') &&
+                    newKeys.has('t') && e.shiftKey) {
+                    activateCheatMode();
+                }
+
+                return newKeys;
+            });
+        };
+
+        const handleKeyUp = (e) => {
+            setPressedKeys(prev => {
+                const newKeys = new Set(prev);
+                newKeys.delete(e.key.toLowerCase());
+                return newKeys;
+            });
+        };
+
+        const activateCheatMode = () => {
+            // Vérifier le cooldown
+            const now = Date.now();
+            const storedCooldown = localStorage.getItem('drawberu_cheat_cooldown');
+
+            if (storedCooldown) {
+                const cooldownEnd = parseInt(storedCooldown);
+                if (now < cooldownEnd) {
+                    const remainingMinutes = Math.ceil((cooldownEnd - now) / 60000);
+                    alert(`⏳ Cheat code en cooldown ! Réessayez dans ${remainingMinutes} minute(s).`);
+                    return;
+                }
+            }
+
+            // Activer le cheat mode
+            setCheatModeActive(true);
+            setCheatTimeRemaining(10);
+            console.log('🎮 CHEAT MODE ACTIVÉ ! 10 secondes de coloriage parfait...');
+
+            // Décompte
+            let timeLeft = 10;
+            cheatCountdownRef.current = setInterval(() => {
+                timeLeft--;
+                setCheatTimeRemaining(timeLeft);
+                if (timeLeft <= 0) {
+                    clearInterval(cheatCountdownRef.current);
+                }
+            }, 1000);
+
+            // Timer de 10 secondes
+            if (cheatTimerRef.current) {
+                clearTimeout(cheatTimerRef.current);
+            }
+
+            cheatTimerRef.current = setTimeout(() => {
+                setCheatModeActive(false);
+                console.log('⏱️ Cheat mode désactivé');
+
+                // Définir le cooldown d'1 heure
+                const cooldownEnd = Date.now() + (60 * 60 * 1000); // 1 heure
+                localStorage.setItem('drawberu_cheat_cooldown', cooldownEnd.toString());
+                setCheatCooldown(cooldownEnd);
+            }, 10000); // 10 secondes
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+            if (cheatTimerRef.current) {
+                clearTimeout(cheatTimerRef.current);
+            }
+            if (cheatCountdownRef.current) {
+                clearInterval(cheatCountdownRef.current);
+            }
+        };
+    }, [isMobile]);
 
     const renderLayers = () => {
         const canvas = canvasRef.current;
@@ -674,12 +770,37 @@ const DrawBeruFixed = () => {
 
         if (x < 0 || x > layerCanvas.width || y < 0 || y > layerCanvas.height) return;
 
-        ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
-        ctx.fillStyle = selectedColor;
+        // 🎮 CHEAT MODE: Auto-pick couleur depuis référence et limite brush size
+        let colorToUse = selectedColor;
+        let brushSizeToUse = brushSize;
 
-        if (brushSize < 1) {
-            ctx.strokeStyle = selectedColor;
-            ctx.lineWidth = brushSize * 2;
+        if (cheatModeActive && currentTool === 'brush') {
+            // Limiter le brush à 3px max
+            brushSizeToUse = Math.min(brushSize, 3);
+
+            // Récupérer la couleur depuis l'image de référence
+            const refCanvas = referenceCanvasRef.current;
+            if (refCanvas) {
+                try {
+                    const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
+                    const pixel = refCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+
+                    // Si le pixel n'est pas transparent, utiliser sa couleur
+                    if (pixel[3] > 0) {
+                        colorToUse = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                    }
+                } catch (err) {
+                    console.warn('Impossible de lire la couleur de référence:', err);
+                }
+            }
+        }
+
+        ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
+        ctx.fillStyle = colorToUse;
+
+        if (brushSizeToUse < 1) {
+            ctx.strokeStyle = colorToUse;
+            ctx.lineWidth = brushSizeToUse * 2;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.beginPath();
@@ -687,7 +808,7 @@ const DrawBeruFixed = () => {
             ctx.stroke();
         } else {
             ctx.beginPath();
-            ctx.arc(x, y, brushSize, 0, 2 * Math.PI);
+            ctx.arc(x, y, brushSizeToUse, 0, 2 * Math.PI);
             ctx.fill();
         }
 
@@ -1756,6 +1877,19 @@ const DrawBeruFixed = () => {
     // RENDER DESKTOP
     return (
         <div className="min-h-screen bg-[#0a0118]">
+            {/* 🎮 CHEAT MODE NOTIFICATION */}
+            {cheatModeActive && (
+                <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[10000] animate-pulse">
+                    <div className="bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 text-white px-8 py-4 rounded-full shadow-2xl border-4 border-white/50">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold mb-1">🎮 CHEAT MODE ACTIVÉ ! 🎨</div>
+                            <div className="text-sm opacity-90">Coloriage parfait automatique ⚡</div>
+                            <div className="text-3xl font-bold mt-2">{cheatTimeRemaining}s</div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <style>{`
                 @keyframes pulse {
                     0%, 100% { transform: translate(-50%, -50%) scale(1); }

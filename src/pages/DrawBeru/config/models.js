@@ -198,6 +198,29 @@ export const drawBeruModels = {
       }
     }
   },
+  MousuCommunauty: {
+    name: "MousuCommunauty",
+    description: "Mousu's communauty",
+    models: {
+      default: {
+        id: "default",
+        name: "AYAAA",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761126693/mousdraw_orig_kumr1q.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761126692/mousudraw_uncoloried_wkwiy1.png",
+        canvasSize: { width: 900, height: 600 },
+        palette: {
+          "1": "#f8e8df",
+          "2": "#3c3732",
+          "3": "#8c7b71",
+          "4": "#b49d92",
+          "5": "#1b1915",
+          "6": "#60554c",
+          "7": "#d79d3f",
+          "8": "#cdbfb4"
+        }
+      }
+    }
+  },
   PrincesseSarah: {
     name: "Princesse Sarah",
     description: "Hunter stratège de BuilderBeru",
@@ -221,7 +244,7 @@ export const drawBeruModels = {
       }
     }
   },
- Chae: {
+  Chae: {
     name: "Cha Hae-In",
     description: "Hunter Cha Hae-In",
     models: {
@@ -243,7 +266,7 @@ export const drawBeruModels = {
         }
       }
     }
-  }, 
+  },
 };
 
 // ⚙️ HELPERS
