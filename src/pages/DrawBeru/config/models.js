@@ -267,6 +267,29 @@ export const drawBeruModels = {
       }
     }
   },
+  Luffy: {
+    name: "Luffy",
+    description: "Luffy",
+    models: {
+      default: {
+        id: "default",
+        name: "Luffy",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761329588/luffyr_original_nkgvf8.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761329579/luffy_coloring_lnwpfn.png",
+        canvasSize: { width: 600, height: 900 },
+        palette: {
+          "1": "#b1cfde",
+          "2": "#974931",
+          "3": "#171511",
+          "4": "#ebb47c",
+          "5": "#2d2e2f",
+          "6": "#d9e4e5",
+          "7": "#b16b44",
+          "8": "#5f2b1c"
+        }
+      }
+    }
+  },
 };
 
 // ⚙️ HELPERS
