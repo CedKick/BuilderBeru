@@ -89,6 +89,33 @@ const data_chars = {
       element: 'Fire',
       scaleStat: 'Attack'
     },
+    'frieren': {
+      name: 'Frieren',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+      class: 'Support',
+      grade: 'SSR',
+      element: 'Water',
+      scaleStat: 'Defense'
+    },
+    'stark': {
+      name: 'Stark',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/stark_portrait_ag5teg.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/stark_portrait_ag5teg.png',
+      class: 'Break',
+      grade: 'SSR',
+      element: 'Fire',
+      scaleStat: 'HP'
+    },
+    'fern': {
+      name: 'Fern',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+      class: 'DPS',
+      grade: 'SSR',
+      element: 'Fire',
+      scaleStat: 'Attack'
+    },
     'alicia': {
       name: 'Alicia Blanche',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604309/alicia_fzpzkf.png',

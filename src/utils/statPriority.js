@@ -314,6 +314,7 @@ function getHunterKey(hunter) {
     'Lennart Niermann': 'niermann',
     'Cha Hae-In': 'chae',
     'Tawata Kanae': 'kanae',
+    'Frieren': 'frieren',
     'Seorin': 'seorin',
     'Goto Ryuji': 'goto',
     'Shimizu Akari': 'shimizu',

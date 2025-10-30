@@ -466,6 +466,129 @@ export const characters = {
         element: 'Wind'
       }]
   },
+  'frieren': {
+    name: 'Frieren',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+    class: 'Support',
+    grade: 'SSR',
+    element: 'Water',
+    scaleStat: 'Defense',
+    bdgLimits: {
+      maxDamageOnElement: 15000000000,  // 15B max si bon élément
+      maxDamageOffElement: 4000000000  // 4B max si mauvais élément
+    },
+    importantStats: ['def', 'tc', 'dcc', 'defPen', 'di'],
+    skillMultipliers: {
+      core1: 2.76,
+      core2: 14.82,
+      skill1: 27.27,
+      skill2: 26.61,
+      ultimate: 68.69
+    },
+    buffs: [
+      {
+        name: 'Water Support',
+        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+        duration: 30,
+        target: 'shared',
+        effects: [
+          { type: 'defense', values: [10, 20, 30] }
+        ]
+      },
+      {
+        name: 'Water Damage Boost',
+        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+        duration: 20,
+        target: 'shared',
+        effects: [
+          { type: 'elementalDamage', element: 'Water', values: [1, 2, 3, 4, 5] }
+        ]
+      }
+    ]
+  },
+  'stark': {
+    name: 'Stark',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/stark_portrait_ag5teg.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/stark_portrait_ag5teg.png',
+    class: 'Break',
+    grade: 'SSR',
+    element: 'Fire',
+    scaleStat: 'HP',
+    bdgLimits: {
+      maxDamageOnElement: 14000000000,  // 14B max si bon élément
+      maxDamageOffElement: 4000000000  // 4B max si mauvais élément
+    },
+    importantStats: ['hp', 'tc', 'dcc', 'defPen', 'di'],
+    skillMultipliers: {
+      core1: 3.2,
+      core2: 5.5,
+      skill1: 15.0,
+      skill2: 18.5,
+      ultimate: 42.0
+    },
+    buffs: [
+      {
+        name: 'Fire Break',
+        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/stark_portrait_ag5teg.png',
+        duration: 25,
+        target: 'shared',
+        effects: [
+          { type: 'hp', values: [10, 20, 30] }
+        ]
+      },
+      {
+        name: 'Fire Damage Boost',
+        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/stark_portrait_ag5teg.png',
+        duration: 20,
+        target: 'shared',
+        effects: [
+          { type: 'elementalDamage', element: 'Fire', values: [2, 4, 6, 8, 10] }
+        ]
+      }
+    ]
+  },
+  'fern': {
+    name: 'Fern',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+    class: 'DPS',
+    grade: 'SSR',
+    element: 'Fire',
+    scaleStat: 'Attack',
+    bdgLimits: {
+      maxDamageOnElement: 13000000000,  // 13B max si bon élément
+      maxDamageOffElement: 4000000000  // 4B max si mauvais élément
+    },
+    importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di'],
+    skillMultipliers: {
+      core1: 4.2,
+      core2: 6.8,
+      skill1: 18.5,
+      skill2: 22.0,
+      ultimate: 48.5
+    },
+    buffs: [
+      {
+        name: 'Fire Attack Boost',
+        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+        duration: 30,
+        target: 'shared',
+        effects: [
+          { type: 'attack', values: [10, 20, 30] }
+        ]
+      },
+      {
+        name: 'Fire Damage Increase',
+        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+        duration: 25,
+        target: 'shared',
+        effects: [
+          { type: 'elementalDamage', element: 'Fire', values: [3, 6, 9, 12, 15] }
+        ]
+      }
+    ]
+  },
   'alicia': {
     name: 'Alicia Blanche',
     img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604309/alicia_fzpzkf.png',

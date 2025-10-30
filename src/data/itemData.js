@@ -3125,6 +3125,45 @@ export const characters = [
         }
     },
     {
+        name: 'Frieren',
+        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+        class: 'Support',
+        grade: 'SSR',
+        element: 'Water',
+        scaleStat: 'Defense',
+        importantStats:['def', 'tc', 'dcc', 'defPen', 'di'],
+        presets: {
+            PoD: {
+                leftArtifact: [{ name: 'Guardian', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+                core: {
+                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
+                }
+            },
+            BdG: {
+                leftArtifact: [{ name: 'Guardian', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+                rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+                core: {
+                    Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                    Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                    Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
+                }
+            }
+        },
+        BoT: {
+            leftArtifact: [{ name: 'Guardian', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730699/artifact_angelInWhite_4L_jet12q.png', amount: 4 }],
+            rightArtifact: [{ name: "Sylph's Blessing", src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730698/artifact_sylphSBlessing_4R_nmjkjl.png', amount: 4 }],
+            core: {
+                Offensive: { name: 'Watcher Eyes Of The Watcher', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730893/Defensive_CrimpsonApex_Desires_of_the_Cirmpson_Apex_mqsj9k.png' },
+                Defensive: { name: 'Desires of the Cirmpson Apex', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730891/Offensive_Watcher_EyesOfTheWatcher_n7wjhh.png' },
+                Endurance: { name: 'Nameless Demons Magisphere', src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748730887/Endurance_Nameless_NamelessDemonsMagisphere_pr8xk1.png' },
+            }
+        }
+    },
+    {
         name: 'Alicia Blanche',
         img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604309/alicia_fzpzkf.png',
         icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606278/icons/build.png',

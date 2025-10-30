@@ -1532,6 +1532,495 @@ const BUILDER_DATA = {
   }
 },
 
+  "frieren": {
+  "name": "Frieren",
+  "element": "Water",
+  "class": "Support",
+  "grade": "SSR",
+  "scaleStat": "Defense",
+
+  "optimizationPriority": [
+  {
+    stat: "Additional Defense",
+    priority: 1,
+    target: "maximum_possible",
+    reason: "Prioriser Defense au maximum (scaleStat)",
+    description: "Frieren scale sur Defense - maximise cette stat avant tout"
+  },
+  {
+    stat: "Defense %",
+    priority: 2,
+    target: "maximum_possible",
+    reason: "Prioriser Defense % pour scaling optimal",
+    description: "Defense % booste le scaling de Frieren"
+  },
+  {
+    stat: "Damage Increase",
+    priority: 3,
+    target: "maximum_possible",
+    reason: "Dégâts optimaux"
+  },
+  {
+    stat: "Critical Hit Damage",
+    priority: 4,
+    target: "200%+",
+    reason: "Dégâts critiques optimaux"
+  },
+  {
+    stat: "Critical Hit Rate",
+    priority: 5,
+    target: 8000,
+    reason: "Taux critique optimal pour support"
+  },
+  {
+    stat: "Defense Penetration",
+    priority: 6,
+    target: "15-25%",
+    reason: "Pénétration pour efficacité"
+  }
+],
+
+  // 📊 STATS RECOMMANDÉES
+  "recommendedStats": {
+    "criticalHitRate": "80-100%",
+    "criticalHitDamage": "180% - 200%",
+    "DamageIncrease": "30% +",
+    "defensePenetration": "15% - 25%",
+    "additionalDefense": "Le plus possible",
+    "additionalAttack": null,
+    "precision": null,
+    "damageReduction": null,
+    "healingReceived": null,
+    "mpRecoveryRate": null,
+    "mpCostReduction": null
+  },
+
+  // 🎮 MODES DE JEU & SETS - Configuration Frieren
+  "gameModes": {
+    "general": {
+      "recommendedSet": "Guardian/Sylph Build",
+      "priority": "Support défensif Water",
+      "description": "Build support défensif avec Guardian + Sylph",
+      "availability": "LR",
+      "setComposition": "4x Guardian + 4x Sylph"
+    },
+    "pod": {
+      "recommendedSet": "Guardian/Sylph Build",
+      "priority": "PvP support Water",
+      "description": "Build PvP support avec défense maximale",
+      "availability": "LR",
+      "setComposition": "4x Guardian + 4x Sylph"
+    },
+    "bdg": {
+      "recommendedSet": "Guardian/Sylph Build",
+      "priority": "Guild boss support",
+      "description": "Build boss de guilde support défensif",
+      "availability": "LR",
+      "setComposition": "4x Guardian + 4x Sylph"
+    }
+  },
+
+  // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS
+  "artifactSets": {
+    "guardianSylphBuild": {
+      "name": "Guardian/Sylph",
+      "frenchName": "Gardien/Sylphe",
+      "availability": "LR",
+      "setComposition": "Guardian (4), Sylph (4)",
+      "pieces": {
+        "helmet": "Casque de gardien",
+        "chest": "Armure de gardien",
+        "gloves": "Gants de gardien",
+        "boots": "Bottes de gardien",
+        "necklace": "Collier de sylphe",
+        "bracelet": "Bracelet de sylphe",
+        "ring": "Bague de sylphe",
+        "earrings": "Boucles d'oreilles de sylphe"
+      },
+      "mainStats": {
+        "helmet": "Additional Defense",
+        "chest": "Additional Defense",
+        "gloves": "Additional Defense",
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional HP",
+        "bracelet": "Water Damage %",
+        "ring": "Additional Defense",
+        "earrings": "Additional MP"
+      }
+    }
+  },
+
+  // 🧪 NOYAUX RECOMMANDÉS
+  "recommendedCores": {
+    "offensive": {
+      "name": "Trompette du Démon Anonyme",
+      "type": "Additional Attack",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, les Dégâts de coup critique de l'utilisateur augmentent de 30% pendant 8 secondes"
+    },
+    "defensive": {
+      "name": "Corne du Démon Anonyme",
+      "type": "Additional Defense",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
+    },
+    "endurance": {
+      "name": "Dents du Veilleur",
+      "type": "Additional HP",
+      "bonus": "Diminue le Taux de récupération de PM de 10% et la Consommation de PM de 12% lors de l'utilisation d'une compétence"
+    }
+  },
+
+  // 💡 CONSEILS BÉRU - Frieren
+  "beruAdvice": {
+    "newbie": "Frieren est un support défensif Water de Frieren: Beyond Journey's End !",
+    "intermediate": "Elle scale sur Defense ! Build 4x Guardian (gauche) + 4x Sylph (droite) !",
+    "advanced": "Maximise Defense % et maintiens 80-100% crit rate pour damage optimal !",
+    "expert": "Optimise les substats Defense % sur tous les artefacts pour scaling maximum !"
+  }
+},
+  "stark": {
+  "name": "Stark",
+  "element": "Fire",
+  "class": "Break",
+  "grade": "SSR",
+  "scaleStat": "HP",
+
+  "optimizationPriority": [
+  {
+    stat: "Additional HP",
+    priority: 1,
+    target: "maximum_possible",
+    reason: "Prioriser HP au maximum (scaleStat)",
+    description: "Stark scale sur HP - maximise cette stat avant tout"
+  },
+  {
+    stat: "HP %",
+    priority: 2,
+    target: "maximum_possible",
+    reason: "Prioriser HP % pour scaling optimal",
+    description: "HP % booste le scaling de Stark"
+  },
+  {
+    stat: "Damage Increase",
+    priority: 3,
+    target: "maximum_possible",
+    reason: "Dégâts optimaux"
+  },
+  {
+    stat: "Critical Hit Damage",
+    priority: 4,
+    target: "200%+",
+    reason: "Dégâts critiques optimaux"
+  },
+  {
+    stat: "Critical Hit Rate",
+    priority: 5,
+    target: 8000,
+    reason: "Taux critique optimal pour break"
+  },
+  {
+    stat: "Defense Penetration",
+    priority: 6,
+    target: "15-25%",
+    reason: "Pénétration pour efficacité"
+  }
+],
+
+  // 📊 STATS RECOMMANDÉES
+  "recommendedStats": {
+    "criticalHitRate": "80-100%",
+    "criticalHitDamage": "180% - 200%",
+    "DamageIncrease": "30% +",
+    "defensePenetration": "15% - 25%",
+    "additionalDefense": null,
+    "additionalAttack": null,
+    "additionalHP": "Le plus possible",
+    "precision": null,
+    "damageReduction": null,
+    "healingReceived": null,
+    "mpRecoveryRate": null,
+    "mpCostReduction": null
+  },
+
+  // 🎮 MODES DE JEU & SETS
+  "gameModes": {
+    "general": {
+      "recommendedSet": "Armed/Obsidian Build",
+      "priority": "Break Fire avec HP scaling",
+      "description": "Build break pour Portail avec Armed + Obsidian",
+      "availability": "LR",
+      "setComposition": "4x Armed + 4x Obsidian"
+    },
+    "pod": {
+      "recommendedSet": "Armed/Obsidian Build",
+      "priority": "PvP break Fire",
+      "description": "Build PvP break avec HP maximum",
+      "availability": "LR",
+      "setComposition": "4x Armed + 4x Obsidian"
+    },
+    "bdg": {
+      "recommendedSet": "Full Desire",
+      "priority": "Guild boss break",
+      "description": "Build boss de guilde break avec Desire",
+      "availability": "LR",
+      "setComposition": "8x Desire"
+    }
+  },
+
+  // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS
+  "artifactSets": {
+    "armedObsidianBuild": {
+      "name": "Armed/Obsidian",
+      "frenchName": "Armé/Obsidienne",
+      "availability": "LR",
+      "setComposition": "Armed (4), Obsidian (4)",
+      "pieces": {
+        "helmet": "Casque armé",
+        "chest": "Armure armée",
+        "gloves": "Gants armés",
+        "boots": "Bottes armées",
+        "necklace": "Collier d'obsidienne",
+        "bracelet": "Bracelet d'obsidienne",
+        "ring": "Bague d'obsidienne",
+        "earrings": "Boucles d'oreilles d'obsidienne"
+      },
+      "mainStats": {
+        "helmet": "Additional HP",
+        "chest": "Additional Defense",
+        "gloves": "Additional Attack",
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional HP",
+        "bracelet": "Fire Damage %",
+        "ring": "Additional HP",
+        "earrings": "Additional MP"
+      }
+    },
+    "fullDesire": {
+      "name": "Full Desire",
+      "frenchName": "Désir complet",
+      "availability": "LR",
+      "setComposition": "8x Desire",
+      "pieces": {
+        "helmet": "Casque du désir",
+        "chest": "Armure du désir",
+        "gloves": "Gants du désir",
+        "boots": "Bottes du désir",
+        "necklace": "Collier du désir",
+        "bracelet": "Bracelet du désir",
+        "ring": "Bague du désir",
+        "earrings": "Boucles d'oreilles du désir"
+      },
+      "mainStats": {
+        "helmet": "Additional HP",
+        "chest": "Additional Defense",
+        "gloves": "Additional Attack",
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional HP",
+        "bracelet": "Fire Damage %",
+        "ring": "Additional HP",
+        "earrings": "Additional MP"
+      }
+    }
+  },
+
+  // 🧪 NOYAUX RECOMMANDÉS
+  "recommendedCores": {
+    "offensive": {
+      "name": "Trompette du Démon Anonyme",
+      "type": "Additional Attack",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, les Dégâts de coup critique de l'utilisateur augmentent de 30% pendant 8 secondes"
+    },
+    "defensive": {
+      "name": "Corne du Démon Anonyme",
+      "type": "Additional Defense",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
+    },
+    "endurance": {
+      "name": "Dents du Veilleur",
+      "type": "Additional HP",
+      "bonus": "Diminue le Taux de récupération de PM de 10% et la Consommation de PM de 12% lors de l'utilisation d'une compétence"
+    }
+  },
+
+  // 💡 CONSEILS BÉRU
+  "beruAdvice": {
+    "newbie": "Stark est un Break Fire HP scaling de Frieren: Beyond Journey's End !",
+    "intermediate": "Il scale sur HP ! Build Armed/Obsidian (Portail) ou Full Desire (BDG) !",
+    "advanced": "Maximise HP % et maintiens 80-100% crit rate pour damage optimal !",
+    "expert": "Optimise les substats HP % sur tous les artefacts pour scaling maximum !"
+  }
+},
+  "fern": {
+  "name": "Fern",
+  "element": "Fire",
+  "class": "DPS",
+  "grade": "SSR",
+  "scaleStat": "Attack",
+
+  "optimizationPriority": [
+  {
+    stat: "Additional Attack",
+    priority: 1,
+    target: "maximum_possible",
+    reason: "Prioriser Attack au maximum (scaleStat)",
+    description: "Fern scale sur Attack - maximise cette stat avant tout"
+  },
+  {
+    stat: "Attack %",
+    priority: 2,
+    target: "maximum_possible",
+    reason: "Prioriser Attack % pour scaling optimal",
+    description: "Attack % booste le scaling de Fern"
+  },
+  {
+    stat: "Damage Increase",
+    priority: 3,
+    target: "maximum_possible",
+    reason: "Dégâts optimaux"
+  },
+  {
+    stat: "Critical Hit Damage",
+    priority: 4,
+    target: "200%+",
+    reason: "Dégâts critiques optimaux"
+  },
+  {
+    stat: "Critical Hit Rate",
+    priority: 5,
+    target: 10000,
+    reason: "Taux critique optimal pour DPS"
+  },
+  {
+    stat: "Defense Penetration",
+    priority: 6,
+    target: "15-25%",
+    reason: "Pénétration pour efficacité"
+  }
+],
+
+  // 📊 STATS RECOMMANDÉES
+  "recommendedStats": {
+    "criticalHitRate": "90-110%",
+    "criticalHitDamage": "200% - 220%",
+    "DamageIncrease": "35% +",
+    "defensePenetration": "15% - 25%",
+    "additionalDefense": null,
+    "additionalAttack": "Le plus possible",
+    "precision": null,
+    "damageReduction": null,
+    "healingReceived": null,
+    "mpRecoveryRate": null,
+    "mpCostReduction": null
+  },
+
+  // 🎮 MODES DE JEU & SETS
+  "gameModes": {
+    "general": {
+      "recommendedSet": "Full Chaotic Infamy",
+      "priority": "DPS Fire avec Attack scaling",
+      "description": "Build DPS général avec Chaotic Infamy",
+      "availability": "LR",
+      "setComposition": "8x Chaotic Infamy"
+    },
+    "pod": {
+      "recommendedSet": "Full Chaotic Infamy",
+      "priority": "PvP DPS Fire",
+      "description": "Build PvP DPS avec Attack maximum",
+      "availability": "LR",
+      "setComposition": "8x Chaotic Infamy"
+    },
+    "bdg": {
+      "recommendedSet": "Armed/Expert Build",
+      "priority": "Guild boss DPS",
+      "description": "Build boss de guilde DPS avec Armed + Expert",
+      "availability": "LR",
+      "setComposition": "4x Armed + 4x Expert"
+    }
+  },
+
+  // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS
+  "artifactSets": {
+    "fullChaoticInfamy": {
+      "name": "Full Chaotic Infamy",
+      "frenchName": "Infamie chaotique complète",
+      "availability": "LR",
+      "setComposition": "8x Chaotic Infamy",
+      "pieces": {
+        "helmet": "Casque d'infamie chaotique",
+        "chest": "Armure d'infamie chaotique",
+        "gloves": "Gants d'infamie chaotique",
+        "boots": "Bottes d'infamie chaotique",
+        "necklace": "Collier d'infamie chaotique",
+        "bracelet": "Bracelet d'infamie chaotique",
+        "ring": "Bague d'infamie chaotique",
+        "earrings": "Boucles d'oreilles d'infamie chaotique"
+      },
+      "mainStats": {
+        "helmet": "Additional Attack",
+        "chest": "Additional Defense",
+        "gloves": "Additional Attack",
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional HP",
+        "bracelet": "Fire Damage %",
+        "ring": "Additional Attack",
+        "earrings": "Additional MP"
+      }
+    },
+    "armedExpertBuild": {
+      "name": "Armed/Expert",
+      "frenchName": "Armé/Expert",
+      "availability": "LR",
+      "setComposition": "Armed (4), Expert (4)",
+      "pieces": {
+        "helmet": "Casque armé",
+        "chest": "Armure armée",
+        "gloves": "Gants armés",
+        "boots": "Bottes armées",
+        "necklace": "Collier d'expert",
+        "bracelet": "Bracelet d'expert",
+        "ring": "Bague d'expert",
+        "earrings": "Boucles d'oreilles d'expert"
+      },
+      "mainStats": {
+        "helmet": "Additional Attack",
+        "chest": "Additional Defense",
+        "gloves": "Additional Attack",
+        "boots": "Critical Hit Damage",
+        "necklace": "Additional HP",
+        "bracelet": "Fire Damage %",
+        "ring": "Additional Attack",
+        "earrings": "Additional MP"
+      }
+    }
+  },
+
+  // 🧪 NOYAUX RECOMMANDÉS
+  "recommendedCores": {
+    "offensive": {
+      "name": "Trompette du Démon Anonyme",
+      "type": "Additional Attack",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, les Dégâts de coup critique de l'utilisateur augmentent de 30% pendant 8 secondes"
+    },
+    "defensive": {
+      "name": "Corne du Démon Anonyme",
+      "type": "Additional Defense",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
+    },
+    "endurance": {
+      "name": "Dents du Veilleur",
+      "type": "Additional HP",
+      "bonus": "Diminue le Taux de récupération de PM de 10% et la Consommation de PM de 12% lors de l'utilisation d'une compétence"
+    }
+  },
+
+  // 💡 CONSEILS BÉRU
+  "beruAdvice": {
+    "newbie": "Fern est un DPS Fire Attack scaling de Frieren: Beyond Journey's End !",
+    "intermediate": "Elle scale sur Attack ! Build Chaotic Infamy (général) ou Armed/Expert (BDG) !",
+    "advanced": "Maximise Attack % et maintiens 90-110% crit rate pour damage optimal !",
+    "expert": "Optimise les substats Attack % sur tous les artefacts pour scaling maximum !"
+  }
+},
+
   "seorin": {
     "name": "Seorin",
     "element": "Water",

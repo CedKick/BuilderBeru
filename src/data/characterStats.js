@@ -42,6 +42,9 @@ export const characterStats = {
     'seorin': { attack: 5428, defense: 5590, hp: 13486, critRate: 0, mp: 1000 },
     'shimizu': { attack: 5621, defense: 5402, hp: 13476, critRate: 0, mp: 1000 },
     'kanae': { attack: 6059, defense: 5408, hp: 12528, critRate: 0, mp: 1000 },
+    'frieren': { attack: 5833, defense: 9076, hp: 11759, critRate: 0, mp: 1000 },
+    'stark': { attack: 5757, defense: 5604, hp: 18874, critRate: 0, mp: 1000 },
+    'fern': { attack: 9057, defense: 5519, hp: 12468, critRate: 0, mp: 1000 },
     'thomas': { attack: 5580, defense: 6376, hp: 11487, critRate: 0, mp: 1000 },
     'woo': { attack: 5599, defense: 6304, hp: 11601, critRate: 0, mp: 1000 }, // CORRECTION : hp était 1601 → 11601
     'yoo': { attack: 6325, defense: 5410, hp: 11959, critRate: 0, mp: 1000 },

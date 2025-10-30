@@ -3370,7 +3370,7 @@ BobbyJones : "Allez l'Inter !"
           defaultCharacter = mainRecent[0];
         } else {
           // En dernier recours, Niermann
-          defaultCharacter = 'frieren';
+          defaultCharacter = 'ilhwan';
         }
       }
 
@@ -3384,8 +3384,8 @@ BobbyJones : "Allez l'Inter !"
       // 📦 Chargement du build actif (si existe)
       if (defaultCharacter && currentAccount.builds?.[defaultCharacter]) {
         const build = currentAccount.builds[defaultCharacter];
-        setFlatStats(fixMPinLoadedStats(build.flatStats || {}, defaultCharacter));
-        setStatsWithoutArtefact(fixMPinLoadedStats(build.statsWithoutArtefact || {}, defaultCharacter));
+        setFlatStats(build.flatStats || {});
+        setStatsWithoutArtefact(build.statsWithoutArtefact || {});
         setArtifactsData(build.artifactsData || {});
         setHunterCores(prev => ({
           ...prev,
@@ -3680,8 +3680,8 @@ BobbyJones : "Allez l'Inter !"
               hunterCores: imported.hunterCores,
             };
 
-            setFlatStats(fixMPinLoadedStats(build.flatStats, imported.selectedCharacter));
-            setStatsWithoutArtefact(fixMPinLoadedStats(build.statsWithoutArtefact, imported.selectedCharacter));
+            setFlatStats(build.flatStats);
+            setStatsWithoutArtefact(build.statsWithoutArtefact);
             setArtifactsData(build.artifactsData);
             setHunterCores(build.hunterCores);
 
@@ -4114,8 +4114,8 @@ BobbyJones : "Allez l'Inter !"
     const build = storedData?.user?.accounts?.[activeAccount]?.builds?.[key];
 
     if (build) {
-      setFlatStats(fixMPinLoadedStats(build.flatStats || {}, key));
-      setStatsWithoutArtefact(fixMPinLoadedStats(build.statsWithoutArtefact || {}, key));
+      setFlatStats(build.flatStats || {});
+      setStatsWithoutArtefact(build.statsWithoutArtefact || {});
       setArtifactsData(build.artifactsData || {});
       setHunterCores(prev => ({
         ...prev,
@@ -4253,28 +4253,6 @@ BobbyJones : "Allez l'Inter !"
       'Precision': weapPrecision,
     };
   };
-
-  // 🔧 Fonction helper pour corriger les MP dans les builds chargés
-  const fixMPinLoadedStats = (flatStats, characterKey) => {
-    if (!flatStats) return flatStats;
-
-    const correctedStats = { ...flatStats };
-
-    // Si MP n'existe pas ou est 0, le définir à la valeur correcte
-    if (!correctedStats['MP'] || correctedStats['MP'] === 0) {
-      // Pour Jinwoo, MP = 1034
-      if (characterKey === 'jinwoo') {
-        correctedStats['MP'] = 1034;
-      } else {
-        // Pour les autres, MP = 1000 (valeur par défaut des characterStats)
-        const charData = characterStats[characterKey];
-        correctedStats['MP'] = charData?.mp || 1000;
-      }
-    }
-
-    return correctedStats;
-  };
-
   const defaultCharacter = selectedCharacter && characterStats[selectedCharacter];
 
   const [flatStats, setFlatStats] = useState(() => {
@@ -4548,13 +4526,6 @@ BobbyJones : "Allez l'Inter !"
     const weapon = hunterWeapons[selectedCharacter] || {};
     const scaleStat = char.scaleStat;
     const weaponBoost = weapon.mainStat || 0;
-
-    // 🔥 DÉTECTION JINWOO pour MP correct
-    const isJinwoo = selectedCharacter === 'jinwoo' ||
-      selectedCharacter === 'sung-jinwoo' ||
-      selectedCharacter === 'Sung Jinwoo' ||
-      selectedCharacter === 'sung';
-
     setFlatStats(prev =>
       completeStats({
         ...prev,
@@ -4570,7 +4541,7 @@ BobbyJones : "Allez l'Inter !"
         'MP Consumption Reduction': 0,
         'Damage Reduction': 0,
         'MP Recovery Rate Increase (%)': 0,
-        'MP': isJinwoo ? 1034 : (charStats.mp || 1000)
+        'MP': 0
 
       })
     );
@@ -4790,7 +4761,28 @@ BobbyJones : "Allez l'Inter !"
   //   }, [showSernPopup]);
 
 
-  // useEffect supprimé - code mort qui ne faisait rien (newStats créé mais jamais utilisé)
+  useEffect(() => {
+    if (selectedCharacter && characterStats[selectedCharacter]) {
+      const char = characterStats[selectedCharacter];
+      const newStats = {
+        'Attack': char.attack,
+        'Defense': char.defense,
+        'HP': char.hp,
+        'Critical Hit Rate': char.critRate,
+        'Critical Hit Damage': 0,
+        'Defense Penetration': 0,
+        'Additional Attack': 0,
+        'Healing Given Increase (%)': 0,
+        'Additional MP': 0,
+        'Damage Increase': 0,
+        'MP Consumption Reduction': 0,
+        'Damage Reduction': 0,
+        'MP Recovery Rate Increase (%)': 0,
+        'MP': 0,
+
+      };
+    }
+  }, [selectedCharacter]);
   const [joSaveCount, setJoSaveCount] = useState(0);
   const [kanaeSaveCount, setKanaeSaveCount] = useState(0);
   const [recentBuilds, setRecentBuilds] = useState([]);
@@ -4850,8 +4842,8 @@ BobbyJones : "Allez l'Inter !"
     setSelectedCharacter(characterName);
 
     // 2️⃣ Stats de base
-    setFlatStats(fixMPinLoadedStats(build.flatStats || {}, characterName));
-    setStatsWithoutArtefact(fixMPinLoadedStats(build.statsWithoutArtefact || {}, characterName));
+    setFlatStats(build.flatStats || {});
+    setStatsWithoutArtefact(build.statsWithoutArtefact || {});
 
     // 3️⃣ Artefacts complets
     setArtifactsData(build.artifactsData || {});
@@ -5026,8 +5018,8 @@ BobbyJones : "Allez l'Inter !"
 
           const finalUpdate = () => {
             setSelectedCharacter(firstCharacter);
-            setFlatStats(fixMPinLoadedStats(build.flatStats || {}, firstCharacter));
-            setStatsWithoutArtefact(fixMPinLoadedStats(build.statsWithoutArtefact || {}, firstCharacter));
+            setFlatStats(build.flatStats || {});
+            setStatsWithoutArtefact(build.statsWithoutArtefact || {});
             setArtifactsData(clonedArtifacts);
             setHunterCores(prev => ({
               ...prev,
@@ -5647,8 +5639,8 @@ BobbyJones : "Allez l'Inter !"
                             if (build && build.artifactsData) {
                               // ✅ BUILD EXISTANT : Charger tout
                               setSelectedCharacter(selected);
-                              setFlatStats(fixMPinLoadedStats(build.flatStats || {}, selected));
-                              setStatsWithoutArtefact(fixMPinLoadedStats(build.statsWithoutArtefact || {}, selected));
+                              setFlatStats(build.flatStats || {});
+                              setStatsWithoutArtefact(build.statsWithoutArtefact || {});
                               setArtifactsData(build.artifactsData || {});
                               setHunterCores(prev => ({
                                 ...prev,
@@ -7304,8 +7296,8 @@ BobbyJones : "Allez l'Inter !"
                           if (build && build.artifactsData) {
                             // ✅ BUILD EXISTANT : Charger tout
                             setSelectedCharacter(selected);
-                            setFlatStats(fixMPinLoadedStats(build.flatStats || {}, selected));
-                            setStatsWithoutArtefact(fixMPinLoadedStats(build.statsWithoutArtefact || {}, selected));
+                            setFlatStats(build.flatStats || {});
+                            setStatsWithoutArtefact(build.statsWithoutArtefact || {});
                             setArtifactsData(build.artifactsData || {});
                             setHunterCores(prev => ({
                               ...prev,
