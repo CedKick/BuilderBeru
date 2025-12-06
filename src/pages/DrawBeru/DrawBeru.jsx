@@ -154,6 +154,9 @@ const DrawBeruFixed = () => {
     const cheatTimerRef = useRef(null);
     const cheatCountdownRef = useRef(null);
 
+    // 🎨 AUTO-PIPETTE MODE - Colorie avec les couleurs du modèle de référence
+    const [autoPipetteMode, setAutoPipetteMode] = useState(false);
+
     const currentModelData = getModel(selectedHunter, selectedModel);
     const availableModels = getHunterModels(selectedHunter);
 
@@ -656,10 +659,44 @@ const DrawBeruFixed = () => {
 
         if (x < 0 || x > layerCanvas.width || y < 0 || y > layerCanvas.height) return;
 
+        // 🎨 AUTO-PIPETTE: Récupérer la couleur automatiquement
+        let colorToUse = selectedColor;
+
+        if (autoPipetteMode && currentTool === 'brush') {
+            let colorFound = false;
+
+            // Essayer d'abord l'overlay si visible
+            if (showModelOverlay && overlayCanvasRef.current) {
+                try {
+                    const overlayCtx = overlayCanvasRef.current.getContext('2d', { willReadFrequently: true });
+                    const pixel = overlayCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+                    if (pixel[3] > 0) {
+                        colorToUse = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                        colorFound = true;
+                    }
+                } catch (err) {
+                    console.warn('Auto-pipette overlay error:', err);
+                }
+            }
+
+            // Sinon, utiliser l'image de référence
+            if (!colorFound && referenceCanvasRef.current) {
+                try {
+                    const refCtx = referenceCanvasRef.current.getContext('2d', { willReadFrequently: true });
+                    const pixel = refCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+                    if (pixel[3] > 0) {
+                        colorToUse = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                    }
+                } catch (err) {
+                    console.warn('Auto-pipette reference error:', err);
+                }
+            }
+        }
+
         ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
 
         if (brushSize < 1) {
-            ctx.strokeStyle = selectedColor;
+            ctx.strokeStyle = colorToUse;
             ctx.lineWidth = brushSize * 2;
             ctx.lineCap = 'round';
             ctx.beginPath();
@@ -667,7 +704,7 @@ const DrawBeruFixed = () => {
             ctx.lineTo(x + 0.1, y + 0.1);
             ctx.stroke();
         } else {
-            ctx.fillStyle = selectedColor;
+            ctx.fillStyle = colorToUse;
             ctx.beginPath();
             ctx.arc(x, y, brushSize, 0, 2 * Math.PI);
             ctx.fill();
@@ -770,27 +807,49 @@ const DrawBeruFixed = () => {
 
         if (x < 0 || x > layerCanvas.width || y < 0 || y > layerCanvas.height) return;
 
-        // 🎮 CHEAT MODE: Auto-pick couleur depuis référence et limite brush size
+        // 🎮 CHEAT MODE & AUTO-PIPETTE: Auto-pick couleur depuis référence
         let colorToUse = selectedColor;
         let brushSizeToUse = brushSize;
 
-        if (cheatModeActive && currentTool === 'brush') {
-            // Limiter le brush à 3px max
-            brushSizeToUse = Math.min(brushSize, 3);
+        // Auto-pipette mode ou cheat mode actif
+        if ((autoPipetteMode || cheatModeActive) && currentTool === 'brush') {
+            // Limiter le brush à 3px max uniquement en cheat mode
+            if (cheatModeActive) {
+                brushSizeToUse = Math.min(brushSize, 3);
+            }
 
-            // Récupérer la couleur depuis l'image de référence
-            const refCanvas = referenceCanvasRef.current;
-            if (refCanvas) {
+            // Récupérer la couleur depuis l'overlay (si visible) ou l'image de référence
+            let colorFound = false;
+
+            // Essayer d'abord l'overlay si visible
+            if (showModelOverlay && overlayCanvasRef.current) {
                 try {
-                    const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
-                    const pixel = refCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-
-                    // Si le pixel n'est pas transparent, utiliser sa couleur
+                    const overlayCtx = overlayCanvasRef.current.getContext('2d', { willReadFrequently: true });
+                    const pixel = overlayCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
                     if (pixel[3] > 0) {
                         colorToUse = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                        colorFound = true;
                     }
                 } catch (err) {
-                    console.warn('Impossible de lire la couleur de référence:', err);
+                    console.warn('Impossible de lire la couleur de l\'overlay:', err);
+                }
+            }
+
+            // Sinon, utiliser l'image de référence
+            if (!colorFound) {
+                const refCanvas = referenceCanvasRef.current;
+                if (refCanvas) {
+                    try {
+                        const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
+                        const pixel = refCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+
+                        // Si le pixel n'est pas transparent, utiliser sa couleur
+                        if (pixel[3] > 0) {
+                            colorToUse = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                        }
+                    } catch (err) {
+                        console.warn('Impossible de lire la couleur de référence:', err);
+                    }
                 }
             }
         }
@@ -1390,6 +1449,18 @@ const DrawBeruFixed = () => {
                     </div>
                 </div>
 
+                {/* 🎨 AUTO-PIPETTE NOTIFICATION MOBILE */}
+                {autoPipetteMode && (
+                    <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-[9998]">
+                        <div className="bg-gradient-to-r from-green-500/90 to-emerald-600/90 text-white px-4 py-2 rounded-full shadow-lg border border-green-400/50 backdrop-blur-sm">
+                            <div className="flex items-center gap-2 text-sm font-medium">
+                                <span>🎯</span>
+                                <span>Auto-Pipette ON</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* MOBILE PROGRESS BADGE */}
                 <MobileProgressBadge />
 
@@ -1843,6 +1914,20 @@ const DrawBeruFixed = () => {
                             }}
                             aria-label="Pipette"
                         />
+                        {/* 🎨 AUTO-PIPETTE TOGGLE MOBILE */}
+                        <button
+                            onClick={() => setAutoPipetteMode(!autoPipetteMode)}
+                            className={`w-12 h-12 rounded-lg shadow-md transition-all flex items-center justify-center relative ${autoPipetteMode
+                                ? 'bg-gradient-to-br from-green-500 to-emerald-600 scale-105 ring-2 ring-green-400/50'
+                                : 'bg-purple-800/50'
+                            }`}
+                            aria-label={autoPipetteMode ? "Auto-Pipette activé" : "Auto-Pipette désactivé"}
+                        >
+                            <span className="text-xl">🎯</span>
+                            {autoPipetteMode && (
+                                <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
+                            )}
+                        </button>
                         <button
                             onClick={() => handleZoom(0.25)}
                             className="w-12 h-12 rounded-lg shadow-md transition-all bg-center bg-no-repeat bg-contain bg-purple-800/50 text-purple-200"
@@ -1885,6 +1970,21 @@ const DrawBeruFixed = () => {
                             <div className="text-2xl font-bold mb-1">🎮 CHEAT MODE ACTIVÉ ! 🎨</div>
                             <div className="text-sm opacity-90">Coloriage parfait automatique ⚡</div>
                             <div className="text-3xl font-bold mt-2">{cheatTimeRemaining}s</div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 🎨 AUTO-PIPETTE NOTIFICATION DESKTOP */}
+            {autoPipetteMode && !cheatModeActive && (
+                <div className="fixed top-4 right-4 z-[10000]">
+                    <div className="bg-gradient-to-r from-green-500/95 to-emerald-600/95 text-white px-5 py-3 rounded-xl shadow-xl border border-green-400/50 backdrop-blur-sm">
+                        <div className="flex items-center gap-3">
+                            <span className="text-2xl">🎯</span>
+                            <div>
+                                <div className="font-bold text-sm">Auto-Pipette ACTIVÉ</div>
+                                <div className="text-xs opacity-90">Colorie avec les couleurs du modèle</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2159,6 +2259,21 @@ const DrawBeruFixed = () => {
                                     }}
                                     title="Pipette (I)"
                                 />
+
+                                {/* 🎨 AUTO-PIPETTE TOGGLE */}
+                                <button
+                                    onClick={() => setAutoPipetteMode(!autoPipetteMode)}
+                                    className={`w-12 h-12 rounded-lg shadow-md transition-all active:scale-95 flex items-center justify-center relative ${autoPipetteMode
+                                        ? 'bg-gradient-to-br from-green-500 to-emerald-600 scale-105 ring-2 ring-green-400/50'
+                                        : 'bg-purple-800/50 hover:bg-purple-700/50'
+                                    }`}
+                                    title={autoPipetteMode ? "Auto-Pipette ACTIVÉ - Colorie avec les couleurs du modèle" : "Auto-Pipette - Cliquez pour activer"}
+                                >
+                                    <span className="text-xl">🎯</span>
+                                    {autoPipetteMode && (
+                                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
+                                    )}
+                                </button>
 
                                 {/* Separator */}
                                 <div className="w-px h-10 bg-purple-500/30"></div>
