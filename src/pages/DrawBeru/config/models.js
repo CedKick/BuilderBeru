@@ -1,6 +1,29 @@
 // src/pages/DrawBeru/config/models.js
 
 export const drawBeruModels = {
+  UsagiTsukino: {
+    name: "USagi Tsukino",
+    description: "USagi Tsukino",
+    models: {
+      default: {
+        id: "default",
+        name: "USagi Tsukino",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765491848/UsagiTsukino_orig_zi97t6.jpg",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765491848/UsagiTsukino_colored_ounqtz.png",
+        canvasSize: { width: 893, height: 1576 },
+        palette: {
+          "1": "#171b2f",
+          "2": "#9d604e",
+          "3": "#cda2a2",
+          "4": "#f6ede6",
+          "5": "#06060d",
+          "6": "#3c67ba",
+          "7": "#383550",
+          "8": "#eb9b4e"
+        }
+      }
+    }
+  },
   Juhee: {
     name: "Juhee",
     description: "Hunter Juhee",
