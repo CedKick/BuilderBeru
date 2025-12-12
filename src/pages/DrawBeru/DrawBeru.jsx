@@ -1875,6 +1875,12 @@ const DrawBeruFixed = () => {
                     </div>
                 </div>
 
+                {/* 🎨 CANVAS DE RÉFÉRENCE CACHÉ POUR PIPETTE MOBILE */}
+                <canvas
+                    ref={referenceCanvasRef}
+                    style={{ display: 'none' }}
+                />
+
                 {/* 🎨 AUTO-PIPETTE NOTIFICATION MOBILE */}
                 {autoPipetteMode && (
                     <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-[9998]">
