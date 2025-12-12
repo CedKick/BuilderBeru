@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { drawBeruModels, getModel, getHunterModels } from './config/models';
+import { BrushEngine, MANGA_BRUSHES } from './BrushEngine';
 
 // ⚡ HOOK MOBILE SIMPLIFIÉ (au lieu d'importer un fichier externe)
 const useIsMobile = () => {
@@ -68,6 +69,61 @@ const useTouchGestures = (enabled, onPinch, onPan) => {
     return { handleTouchStart, handleTouchMove, handleTouchEnd };
 };
 
+// 🎨 BRUSH TYPES CONFIGURATION - Mapping vers MANGA_BRUSHES
+// Ces types sont utilisés pour la compatibilité avec l'UI existante
+const BRUSH_TYPES = {
+    pen: {
+        id: 'gpen',
+        name: 'G-Pen',
+        icon: '✒️',
+        description: 'Encrage manga professionnel',
+        ...MANGA_BRUSHES.gpen
+    },
+    pencil: {
+        id: 'pencil',
+        name: 'Crayon Manga',
+        icon: '✏️',
+        description: 'Esquisse avec grain',
+        ...MANGA_BRUSHES.pencil
+    },
+    marker: {
+        id: 'marker',
+        name: 'Feutre Copic',
+        icon: '🖍️',
+        description: 'Coloriage semi-transparent',
+        ...MANGA_BRUSHES.marker
+    },
+    airbrush: {
+        id: 'airbrush',
+        name: 'Aérographe',
+        icon: '💨',
+        description: 'Dégradés et ombres douces',
+        ...MANGA_BRUSHES.airbrush
+    },
+    pixel: {
+        id: 'pixel',
+        name: 'Pixel',
+        icon: '▪️',
+        description: 'Pixel art',
+        ...MANGA_BRUSHES.pixel
+    },
+    // Nouveaux pinceaux manga
+    mapping: {
+        id: 'mapping',
+        name: 'Mapping Pen',
+        icon: '🖊️',
+        description: 'Lignes fines et détails',
+        ...MANGA_BRUSHES.mapping
+    },
+    softbrush: {
+        id: 'softbrush',
+        name: 'Brush Doux',
+        icon: '🖌️',
+        description: 'Ombres et dégradés',
+        ...MANGA_BRUSHES.softbrush
+    }
+};
+
 const DrawBeruFixed = () => {
     const { t } = useTranslation();
     const isMobile = useIsMobile();
@@ -102,8 +158,10 @@ const DrawBeruFixed = () => {
     // States
     const [selectedHunter, setSelectedHunter] = useState(lastDrawing.hunter);
     const [selectedModel, setSelectedModel] = useState(lastDrawing.model);
-    const [selectedColor, setSelectedColor] = useState('#FF0000');
+    // 🎨 Couleur par défaut: noir pour le lineart manga (pas rouge!)
+    const [selectedColor, setSelectedColor] = useState('#000000');
     const [brushSize, setBrushSize] = useState(3);
+    const [brushType, setBrushType] = useState('pen'); // 🎨 NEW: Type de brush (pen, pencil, marker, airbrush, pixel)
     const [isDrawing, setIsDrawing] = useState(false);
     const [currentTool, setCurrentTool] = useState('brush');
     const [imagesLoaded, setImagesLoaded] = useState(false);
@@ -156,6 +214,40 @@ const DrawBeruFixed = () => {
 
     // 🎨 AUTO-PIPETTE MODE - Colorie avec les couleurs du modèle de référence
     const [autoPipetteMode, setAutoPipetteMode] = useState(false);
+
+    // 🔢 BRUSH SIZE CONTROLS - Long press refs
+    const brushSizeIntervalRef = useRef(null);
+
+    // ✨ PRECISION DRAWING - Interpolation & Stabilization
+    const lastPointRef = useRef(null); // Dernier point dessiné pour interpolation
+    const [stabilization, setStabilization] = useState(0); // 0-10, 0 = off
+    const stabilizationBufferRef = useRef([]); // Buffer pour lissage
+    const STABILIZATION_BUFFER_SIZE = 8; // Nombre de points à moyenner
+
+    // 🎯 CURSOR PREVIEW - Position du curseur pour preview
+    const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0, visible: false });
+
+    // 🖌️ BRUSH ENGINE PRO - Tracking pression et vitesse
+    const lastDrawTimeRef = useRef(performance.now());
+    const lastDrawPositionRef = useRef(null);
+    const currentVelocityRef = useRef(0);
+    const currentPressureRef = useRef(1.0);
+
+    // 🖌️ BRUSH ENGINE PRO - Instance et paramètres avancés
+    const brushEngineRef = useRef(null);
+    const [pressureSensitivity, setPressureSensitivity] = useState(0.85); // 0-1
+    const [velocitySensitivity, setVelocitySensitivity] = useState(0.3);  // 0-1
+    const [currentPressure, setCurrentPressure] = useState(1.0);          // État de la pression actuelle
+    const [currentVelocity, setCurrentVelocity] = useState(0);            // État de la vitesse actuelle
+    const [enablePressure, setEnablePressure] = useState(true);           // Activer/désactiver pression
+    const [enableVelocity, setEnableVelocity] = useState(true);           // Activer/désactiver vitesse
+    const [taperStart, setTaperStart] = useState(0.2);                    // Effilage début
+    const [taperEnd, setTaperEnd] = useState(0.3);                        // Effilage fin
+
+    // Initialiser le BrushEngine
+    if (!brushEngineRef.current) {
+        brushEngineRef.current = new BrushEngine();
+    }
 
     const currentModelData = getModel(selectedHunter, selectedModel);
     const availableModels = getHunterModels(selectedHunter);
@@ -390,18 +482,24 @@ const DrawBeruFixed = () => {
         };
     }, [isMobile]);
 
+    // 🎨 FEATURE 3: Fixed renderLayers to ensure proper color rendering
     const renderLayers = () => {
         const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
+        // Use alpha: true and willReadFrequently for proper color handling
+        const ctx = canvas.getContext('2d', { alpha: true, willReadFrequently: true });
 
         const templateImg = new Image();
         templateImg.crossOrigin = "anonymous";
         templateImg.onload = () => {
+            // Reset composite operation to ensure proper color rendering
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 1;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
 
             layers.forEach((layer, index) => {
                 if (layer.visible && layersRef.current[index]) {
+                    ctx.globalCompositeOperation = 'source-over';
                     ctx.globalAlpha = layer.opacity;
                     ctx.drawImage(layersRef.current[index], 0, 0);
                     ctx.globalAlpha = 1;
@@ -413,9 +511,12 @@ const DrawBeruFixed = () => {
         };
         templateImg.onerror = () => {
             console.warn('Could not load template for render');
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 1;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             layers.forEach((layer, index) => {
                 if (layer.visible && layersRef.current[index]) {
+                    ctx.globalCompositeOperation = 'source-over';
                     ctx.globalAlpha = layer.opacity;
                     ctx.drawImage(layersRef.current[index], 0, 0);
                     ctx.globalAlpha = 1;
@@ -625,6 +726,17 @@ const DrawBeruFixed = () => {
                 if (e.key === 'b' || e.key === 'B') setCurrentTool('brush');
                 if (e.key === 'e' || e.key === 'E') setCurrentTool('eraser');
                 if (e.key === 'i' || e.key === 'I') setCurrentTool('pipette');
+
+                // 🎨 FEATURE 1: Brush type cycling with B key when tool is brush
+                // 🔢 FEATURE 2: Brush size shortcuts with [ and ]
+                if (e.key === '[') {
+                    e.preventDefault();
+                    setBrushSize(prev => Math.max(0.1, Math.round((prev - 0.1) * 10) / 10));
+                }
+                if (e.key === ']') {
+                    e.preventDefault();
+                    setBrushSize(prev => Math.min(50, Math.round((prev + 0.1) * 10) / 10));
+                }
             }
         };
 
@@ -646,6 +758,244 @@ const DrawBeruFixed = () => {
         setZoomLevel(newZoom);
     };
 
+    // 🔢 FEATURE 2: Brush Size Controls
+    const incrementBrushSize = () => {
+        setBrushSize(prev => Math.min(50, Math.round((prev + 0.1) * 10) / 10));
+    };
+
+    const decrementBrushSize = () => {
+        setBrushSize(prev => Math.max(0.1, Math.round((prev - 0.1) * 10) / 10));
+    };
+
+    const startBrushSizeRepeat = (increment) => {
+        if (brushSizeIntervalRef.current) return;
+        brushSizeIntervalRef.current = setInterval(() => {
+            if (increment) {
+                incrementBrushSize();
+            } else {
+                decrementBrushSize();
+            }
+        }, 100);
+    };
+
+    const stopBrushSizeRepeat = () => {
+        if (brushSizeIntervalRef.current) {
+            clearInterval(brushSizeIntervalRef.current);
+            brushSizeIntervalRef.current = null;
+        }
+    };
+
+    // ✨ PRECISION: Fonction d'interpolation linéaire entre deux points
+    const interpolatePoints = (p1, p2, spacing) => {
+        const points = [];
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Si la distance est trop petite, pas besoin d'interpoler
+        if (distance < spacing) {
+            return [p2];
+        }
+
+        const steps = Math.ceil(distance / spacing);
+        for (let i = 1; i <= steps; i++) {
+            const t = i / steps;
+            points.push({
+                x: p1.x + dx * t,
+                y: p1.y + dy * t
+            });
+        }
+        return points;
+    };
+
+    // ✨ PRECISION: Fonction de stabilisation (moyenne des derniers points)
+    const stabilizePoint = (point) => {
+        if (stabilization === 0) return point;
+
+        stabilizationBufferRef.current.push(point);
+
+        // Garder seulement les N derniers points
+        const bufferSize = Math.max(2, Math.floor(stabilization * STABILIZATION_BUFFER_SIZE / 10));
+        while (stabilizationBufferRef.current.length > bufferSize) {
+            stabilizationBufferRef.current.shift();
+        }
+
+        // Calculer la moyenne pondérée (points récents ont plus de poids)
+        let totalWeight = 0;
+        let sumX = 0;
+        let sumY = 0;
+
+        stabilizationBufferRef.current.forEach((p, i) => {
+            const weight = i + 1; // Les points plus récents ont plus de poids
+            sumX += p.x * weight;
+            sumY += p.y * weight;
+            totalWeight += weight;
+        });
+
+        return {
+            x: sumX / totalWeight,
+            y: sumY / totalWeight
+        };
+    };
+
+    // ✨ PRECISION: Générer curseur SVG dynamique
+    const generateDynamicCursor = (size, color, tool, brushTypeId) => {
+        const displaySize = Math.max(4, Math.min(size * 2, 64)); // Taille affichée (4-64px)
+        const center = displaySize / 2 + 2;
+        const totalSize = displaySize + 4;
+
+        let shape;
+        if (tool === 'eraser') {
+            // Gomme: cercle rouge avec bordure
+            shape = `<circle cx="${center}" cy="${center}" r="${displaySize/2}" fill="rgba(255,100,100,0.3)" stroke="rgba(255,100,100,0.8)" stroke-width="1.5"/>`;
+        } else if (brushTypeId === 'pixel') {
+            // Pixel: carré
+            const halfSize = displaySize / 2;
+            shape = `<rect x="${center - halfSize}" y="${center - halfSize}" width="${displaySize}" height="${displaySize}" fill="${color}40" stroke="${color}" stroke-width="1.5"/>`;
+        } else {
+            // Autres: cercle
+            shape = `<circle cx="${center}" cy="${center}" r="${displaySize/2}" fill="${color}40" stroke="${color}" stroke-width="1.5"/>`;
+        }
+
+        // Croix centrale pour la précision
+        const crossSize = 6;
+        const crosshair = `
+            <line x1="${center - crossSize}" y1="${center}" x2="${center + crossSize}" y2="${center}" stroke="white" stroke-width="1.5" opacity="0.9"/>
+            <line x1="${center}" y1="${center - crossSize}" x2="${center}" y2="${center + crossSize}" stroke="white" stroke-width="1.5" opacity="0.9"/>
+            <line x1="${center - crossSize}" y1="${center}" x2="${center + crossSize}" y2="${center}" stroke="black" stroke-width="0.5" opacity="0.5"/>
+            <line x1="${center}" y1="${center - crossSize}" x2="${center}" y2="${center + crossSize}" stroke="black" stroke-width="0.5" opacity="0.5"/>
+        `;
+
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalSize}" height="${totalSize}" viewBox="0 0 ${totalSize} ${totalSize}">${shape}${crosshair}</svg>`;
+
+        return `url('data:image/svg+xml;utf8,${encodeURIComponent(svg)}') ${center} ${center}, crosshair`;
+    };
+
+    // 🖌️ BRUSH ENGINE PRO: Convertit hex en rgba
+    const hexToRgba = (hex, alpha) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    };
+
+    // 🖌️ BRUSH ENGINE PRO: Calcule la taille effective avec pression et vitesse
+    const calculateEffectiveSize = (baseSize, pressure, velocity, brushConfig) => {
+        let effectiveSize = baseSize;
+
+        // Effet de la pression sur la taille
+        if (enablePressure && brushConfig.pressureAffectsSize) {
+            const sensitivity = brushConfig.pressureSensitivity * pressureSensitivity;
+            const pressureFactor = Math.pow(pressure * sensitivity + (1 - sensitivity) * 0.5, 1.5);
+            const sizeRange = brushConfig.maxSize - brushConfig.minSize;
+            effectiveSize *= brushConfig.minSize + (sizeRange * pressureFactor);
+        }
+
+        // Effet de la vitesse sur la taille (inverse: plus rapide = plus fin)
+        if (enableVelocity && brushConfig.velocityAffectsSize && velocity > 0) {
+            const velocityFactor = Math.min(1, velocity * brushConfig.velocitySensitivity * velocitySensitivity);
+            effectiveSize *= 1 - (velocityFactor * 0.5);
+        }
+
+        return Math.max(0.5, effectiveSize);
+    };
+
+    // 🖌️ BRUSH ENGINE PRO: Calcule l'opacité effective avec pression
+    const calculateEffectiveOpacity = (baseOpacity, pressure, brushConfig) => {
+        let effectiveOpacity = baseOpacity * (brushConfig.opacity || 1);
+
+        if (enablePressure && brushConfig.pressureAffectsOpacity) {
+            const sensitivity = brushConfig.pressureSensitivity * pressureSensitivity;
+            effectiveOpacity *= Math.pow(pressure * sensitivity + (1 - sensitivity) * 0.5, 1.2);
+        }
+
+        return Math.max(0, Math.min(1, effectiveOpacity));
+    };
+
+    // 🎨 BRUSH ENGINE PRO: Draw brush stroke with pressure/velocity support
+    const drawBrushStroke = (ctx, x, y, size, color, brushConfig, pressure = 1.0, velocity = 0) => {
+        // Calcul des valeurs effectives avec pression et vitesse
+        const effectiveSize = calculateEffectiveSize(size, pressure, velocity, brushConfig);
+        const effectiveOpacity = calculateEffectiveOpacity(1.0, pressure, brushConfig);
+
+        // Save context state
+        ctx.save();
+
+        // Set blend mode
+        if (brushConfig.blendMode === 'multiply') {
+            ctx.globalCompositeOperation = 'multiply';
+        }
+
+        // Set opacity
+        ctx.globalAlpha = effectiveOpacity;
+        ctx.fillStyle = color;
+
+        // Désactiver anti-aliasing pour pixel art
+        if (brushConfig.antiAlias === false) {
+            ctx.imageSmoothingEnabled = false;
+        }
+
+        // PIXEL BRUSH - Perfect square
+        if (brushConfig.square) {
+            const pixelSize = Math.max(1, Math.floor(effectiveSize));
+            ctx.fillRect(
+                Math.floor(x - pixelSize / 2),
+                Math.floor(y - pixelSize / 2),
+                pixelSize,
+                pixelSize
+            );
+        }
+        // AIRBRUSH - Radial gradient
+        else if (brushConfig.gradient) {
+            const gradientRadius = effectiveSize * 2;
+            const grad = ctx.createRadialGradient(x, y, 0, x, y, gradientRadius);
+            grad.addColorStop(0, color);
+            grad.addColorStop(0.3, hexToRgba(color, 0.6));
+            grad.addColorStop(0.6, hexToRgba(color, 0.2));
+            grad.addColorStop(1, hexToRgba(color, 0));
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(x, y, gradientRadius, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+        // SOFT BRUSH - Bords doux (hardness < 1)
+        else if (brushConfig.hardness !== undefined && brushConfig.hardness < 1) {
+            const innerRadius = effectiveSize * brushConfig.hardness;
+            const grad = ctx.createRadialGradient(x, y, innerRadius, x, y, effectiveSize);
+            grad.addColorStop(0, color);
+            grad.addColorStop(1, hexToRgba(color, 0));
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(x, y, effectiveSize, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+        // PENCIL/TEXTURE - Textured with grain
+        else if (brushConfig.texture?.enabled) {
+            const density = brushConfig.texture.density || 0.3;
+            const texSize = brushConfig.texture.size || 0.8;
+            const numDots = Math.max(3, Math.floor(effectiveSize * density * 4));
+
+            for (let i = 0; i < numDots; i++) {
+                const offsetX = (Math.random() - 0.5) * effectiveSize * texSize;
+                const offsetY = (Math.random() - 0.5) * effectiveSize * texSize;
+                const dotSize = effectiveSize * (0.3 + Math.random() * 0.4);
+                ctx.globalAlpha = effectiveOpacity * (0.5 + Math.random() * 0.5);
+                ctx.beginPath();
+                ctx.arc(x + offsetX, y + offsetY, dotSize, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+        // G-PEN / MAPPING PEN - Hard edges (default manga ink)
+        else {
+            ctx.beginPath();
+            ctx.arc(x, y, effectiveSize, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        // Restore context state
+        ctx.restore();
+    };
+
     const drawInstantPoint = (e) => {
         const layer = layers.find(l => l.id === activeLayer);
         if (layer?.locked) return;
@@ -654,10 +1004,19 @@ const DrawBeruFixed = () => {
         const layerCanvas = layersRef.current[activeLayerIndex];
         if (!layerCanvas) return;
 
-        const ctx = layerCanvas.getContext('2d');
-        const { x, y } = getCanvasCoordinates(e, canvasRef.current);
+        // 🎨 FEATURE 3: Use proper context options for color accuracy
+        const ctx = layerCanvas.getContext('2d', { alpha: true });
+        const rawPoint = getCanvasCoordinates(e, canvasRef.current);
 
-        if (x < 0 || x > layerCanvas.width || y < 0 || y > layerCanvas.height) return;
+        if (rawPoint.x < 0 || rawPoint.x > layerCanvas.width || rawPoint.y < 0 || rawPoint.y > layerCanvas.height) return;
+
+        // ✨ PRECISION: Appliquer la stabilisation et initialiser le buffer
+        stabilizationBufferRef.current = [rawPoint];
+        const stabilizedPoint = stabilizePoint(rawPoint);
+        const { x, y } = stabilizedPoint;
+
+        // ✨ PRECISION: Initialiser le dernier point pour l'interpolation mobile
+        lastPointRef.current = { x, y };
 
         // 🎨 AUTO-PIPETTE: Récupérer la couleur automatiquement
         let colorToUse = selectedColor;
@@ -695,19 +1054,17 @@ const DrawBeruFixed = () => {
 
         ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
 
-        if (brushSize < 1) {
-            ctx.strokeStyle = colorToUse;
-            ctx.lineWidth = brushSize * 2;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x + 0.1, y + 0.1);
-            ctx.stroke();
-        } else {
+        // 🎨 Use brush engine for drawing
+        if (currentTool === 'eraser') {
+            // Eraser uses simple circle
             ctx.fillStyle = colorToUse;
             ctx.beginPath();
             ctx.arc(x, y, brushSize, 0, 2 * Math.PI);
             ctx.fill();
+        } else {
+            // Use brush type configuration
+            const brushConfig = BRUSH_TYPES[brushType] || BRUSH_TYPES.pen;
+            drawBrushStroke(ctx, x, y, brushSize, colorToUse, brushConfig);
         }
 
         renderLayers();
@@ -719,6 +1076,7 @@ const DrawBeruFixed = () => {
         if (!e.touches || e.touches.length === 0) return;
         const touch = e.touches[0];
 
+        // 🎨 FEATURE 4: Touch pipette reads ALWAYS from reference image
         if (currentTool === 'pipette') {
             const canvas = canvasRef.current;
             const rect = canvas.getBoundingClientRect();
@@ -730,28 +1088,28 @@ const DrawBeruFixed = () => {
 
             if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return;
 
-            if (showModelOverlay && overlayCanvasRef.current) {
-                const overlayCtx = overlayCanvasRef.current.getContext('2d', { willReadFrequently: true });
-                const pixel = overlayCtx.getImageData(x, y, 1, 1).data;
-                if (pixel[3] > 0) {
-                    const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
-                    setSelectedColor(hex);
-                    setCurrentTool('brush');
-                    return;
-                }
-            }
+            // TOUJOURS lire depuis l'image de référence (referenceCanvasRef)
+            const refCanvas = referenceCanvasRef.current;
+            if (refCanvas) {
+                try {
+                    const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
+                    const pixel = refCtx.getImageData(x, y, 1, 1).data;
 
-            const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
-            const layerCanvas = layersRef.current[activeLayerIndex];
-            if (layerCanvas) {
-                const ctx = layerCanvas.getContext('2d', { willReadFrequently: true });
-                const pixel = ctx.getImageData(x, y, 1, 1).data;
-                if (pixel[3] > 0) {
-                    const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
-                    setSelectedColor(hex);
-                    setCurrentTool('brush');
+                    if (pixel[3] > 0) {
+                        const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                        setSelectedColor(hex);
+                    } else {
+                        // Pixel transparent -> blanc par défaut
+                        setSelectedColor('#FFFFFF');
+                    }
+                } catch (err) {
+                    console.warn('Touch pipette: impossible de lire la couleur de référence:', err);
+                    setSelectedColor('#FFFFFF');
                 }
+            } else {
+                setSelectedColor('#FFFFFF');
             }
+            setCurrentTool('brush');
             return;
         }
 
@@ -782,6 +1140,15 @@ const DrawBeruFixed = () => {
         const layer = layers.find(l => l.id === activeLayer);
         if (layer?.locked) return;
 
+        // ✨ PRECISION: Reset interpolation et stabilization au début du trait
+        lastPointRef.current = null;
+        stabilizationBufferRef.current = [];
+
+        // 🖌️ BRUSH ENGINE PRO: Reset tracking au début du trait
+        lastDrawTimeRef.current = performance.now();
+        lastDrawPositionRef.current = null;
+        currentVelocityRef.current = 0;
+
         setIsDrawing(true);
         if (!isMobile) {
             draw(e);
@@ -792,6 +1159,9 @@ const DrawBeruFixed = () => {
         if (isDrawing) {
             setIsDrawing(false);
             saveToHistory();
+            // ✨ PRECISION: Reset refs à la fin du trait
+            lastPointRef.current = null;
+            stabilizationBufferRef.current = [];
         }
     };
 
@@ -802,105 +1172,157 @@ const DrawBeruFixed = () => {
         const layerCanvas = layersRef.current[activeLayerIndex];
         if (!layerCanvas) return;
 
-        const ctx = layerCanvas.getContext('2d');
-        const { x, y } = getCanvasCoordinates(e, canvasRef.current);
+        // 🖌️ BRUSH ENGINE PRO: Extraire la pression (PointerEvent)
+        let pressure = 1.0;
+        if (e.pointerType === 'pen' && e.pressure > 0) {
+            pressure = e.pressure;
+        } else if (e.pressure !== undefined && e.pressure > 0) {
+            pressure = e.pressure;
+        }
+        currentPressureRef.current = pressure;
+        setCurrentPressure(pressure);
 
-        if (x < 0 || x > layerCanvas.width || y < 0 || y > layerCanvas.height) return;
+        // 🖌️ BRUSH ENGINE PRO: Calculer la vitesse
+        const now = performance.now();
+        const deltaTime = now - lastDrawTimeRef.current;
+        let velocity = 0;
+
+        // 🎨 FEATURE 3: Use proper context options for color accuracy
+        const ctx = layerCanvas.getContext('2d', { alpha: true });
+        let rawPoint = getCanvasCoordinates(e, canvasRef.current);
+
+        if (rawPoint.x < 0 || rawPoint.x > layerCanvas.width || rawPoint.y < 0 || rawPoint.y > layerCanvas.height) return;
+
+        // Calculer la vitesse basée sur le déplacement
+        if (lastDrawPositionRef.current && deltaTime > 0) {
+            const dx = rawPoint.x - lastDrawPositionRef.current.x;
+            const dy = rawPoint.y - lastDrawPositionRef.current.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            velocity = distance / deltaTime; // pixels/ms
+        }
+        currentVelocityRef.current = velocity;
+        setCurrentVelocity(velocity);
+        lastDrawTimeRef.current = now;
+        lastDrawPositionRef.current = { x: rawPoint.x, y: rawPoint.y };
+
+        // ✨ PRECISION: Appliquer la stabilisation si activée
+        const stabilizedPoint = stabilizePoint(rawPoint);
+        const { x, y } = stabilizedPoint;
 
         // 🎮 CHEAT MODE & AUTO-PIPETTE: Auto-pick couleur depuis référence
         let colorToUse = selectedColor;
         let brushSizeToUse = brushSize;
 
-        // Auto-pipette mode ou cheat mode actif
-        if ((autoPipetteMode || cheatModeActive) && currentTool === 'brush') {
-            // Limiter le brush à 3px max uniquement en cheat mode
-            if (cheatModeActive) {
-                brushSizeToUse = Math.min(brushSize, 3);
-            }
-
-            // Récupérer la couleur depuis l'overlay (si visible) ou l'image de référence
-            let colorFound = false;
+        // Fonction helper pour récupérer la couleur d'une position
+        const getColorAtPosition = (posX, posY) => {
+            let color = selectedColor;
+            let found = false;
 
             // Essayer d'abord l'overlay si visible
             if (showModelOverlay && overlayCanvasRef.current) {
                 try {
                     const overlayCtx = overlayCanvasRef.current.getContext('2d', { willReadFrequently: true });
-                    const pixel = overlayCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+                    const pixel = overlayCtx.getImageData(Math.floor(posX), Math.floor(posY), 1, 1).data;
                     if (pixel[3] > 0) {
-                        colorToUse = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
-                        colorFound = true;
+                        color = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                        found = true;
                     }
-                } catch (err) {
-                    console.warn('Impossible de lire la couleur de l\'overlay:', err);
-                }
+                } catch (err) { /* ignore */ }
             }
 
             // Sinon, utiliser l'image de référence
-            if (!colorFound) {
-                const refCanvas = referenceCanvasRef.current;
-                if (refCanvas) {
-                    try {
-                        const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
-                        const pixel = refCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-
-                        // Si le pixel n'est pas transparent, utiliser sa couleur
-                        if (pixel[3] > 0) {
-                            colorToUse = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
-                        }
-                    } catch (err) {
-                        console.warn('Impossible de lire la couleur de référence:', err);
+            if (!found && referenceCanvasRef.current) {
+                try {
+                    const refCtx = referenceCanvasRef.current.getContext('2d', { willReadFrequently: true });
+                    const pixel = refCtx.getImageData(Math.floor(posX), Math.floor(posY), 1, 1).data;
+                    if (pixel[3] > 0) {
+                        color = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
                     }
-                }
+                } catch (err) { /* ignore */ }
             }
+
+            return color;
+        };
+
+        // Auto-pipette mode ou cheat mode actif
+        if ((autoPipetteMode || cheatModeActive) && currentTool === 'brush') {
+            if (cheatModeActive) {
+                brushSizeToUse = Math.min(brushSize, 3);
+            }
+            colorToUse = getColorAtPosition(x, y);
         }
 
         ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
-        ctx.fillStyle = colorToUse;
 
-        if (brushSizeToUse < 1) {
-            ctx.strokeStyle = colorToUse;
-            ctx.lineWidth = brushSizeToUse * 2;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.beginPath();
-            ctx.lineTo(x, y);
-            ctx.stroke();
-        } else {
-            ctx.beginPath();
-            ctx.arc(x, y, brushSizeToUse, 0, 2 * Math.PI);
-            ctx.fill();
+        // ✨ PRECISION: Calculer l'espacement pour l'interpolation (basé sur la taille du pinceau)
+        const spacing = Math.max(1, brushSizeToUse * 0.3); // Espacement = 30% de la taille
+
+        // ✨ PRECISION: Interpolation entre le dernier point et le point actuel
+        const currentPoint = { x, y };
+        let pointsToDraw = [currentPoint];
+
+        if (lastPointRef.current) {
+            pointsToDraw = interpolatePoints(lastPointRef.current, currentPoint, spacing);
         }
+
+        // Dessiner tous les points interpolés
+        const brushConfig = BRUSH_TYPES[brushType] || BRUSH_TYPES.pen;
+
+        pointsToDraw.forEach(point => {
+            // En mode auto-pipette/cheat, récupérer la couleur pour chaque point interpolé
+            let pointColor = colorToUse;
+            if ((autoPipetteMode || cheatModeActive) && currentTool === 'brush') {
+                pointColor = getColorAtPosition(point.x, point.y);
+            }
+
+            if (currentTool === 'eraser') {
+                ctx.fillStyle = pointColor;
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, brushSizeToUse, 0, 2 * Math.PI);
+                ctx.fill();
+            } else {
+                // 🖌️ BRUSH ENGINE PRO: Passer pression et vitesse
+                drawBrushStroke(ctx, point.x, point.y, brushSizeToUse, pointColor, brushConfig, pressure, velocity);
+            }
+        });
+
+        // ✨ PRECISION: Sauvegarder le dernier point pour l'interpolation
+        lastPointRef.current = currentPoint;
 
         renderLayers();
     };
 
+    // 🎨 FEATURE 4: Pipette reads ALWAYS from reference image, regardless of overlay state
     const pickColorFromCanvas = (e) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
         const { x, y } = getCanvasCoordinates(e, canvas);
+        const floorX = Math.floor(x);
+        const floorY = Math.floor(y);
 
-        // Si l'overlay du modèle est visible, essayer de prendre la couleur de l'overlay en premier
-        if (showModelOverlay && overlayCanvasRef.current) {
-            const overlayCtx = overlayCanvasRef.current.getContext('2d', { willReadFrequently: true });
-            const overlayPixel = overlayCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+        // TOUJOURS lire depuis l'image de référence (referenceCanvasRef)
+        const refCanvas = referenceCanvasRef.current;
+        if (refCanvas) {
+            try {
+                const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
+                const pixel = refCtx.getImageData(floorX, floorY, 1, 1).data;
 
-            // Si le pixel de l'overlay n'est pas transparent, prendre cette couleur
-            if (overlayPixel[3] > 0) {
-                const hex = `#${((1 << 24) + (overlayPixel[0] << 16) + (overlayPixel[1] << 8) + overlayPixel[2]).toString(16).slice(1).toUpperCase()}`;
-                setSelectedColor(hex);
-                setCurrentTool('brush');
-                return;
+                // Si le pixel n'est pas transparent, utiliser sa couleur
+                if (pixel[3] > 0) {
+                    const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                    setSelectedColor(hex);
+                } else {
+                    // Pixel transparent -> blanc par défaut
+                    setSelectedColor('#FFFFFF');
+                }
+            } catch (err) {
+                console.warn('Pipette: impossible de lire la couleur de référence:', err);
+                setSelectedColor('#FFFFFF');
             }
-        }
-
-        // Sinon, prendre la couleur du canvas principal (qui contient le rendu final de tous les layers)
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        const pixel = ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-
-        if (pixel[3] > 0) {
-            const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
-            setSelectedColor(hex);
+        } else {
+            // Fallback: si pas de référence, blanc par défaut
+            setSelectedColor('#FFFFFF');
         }
 
         setCurrentTool('brush');
@@ -1546,20 +1968,88 @@ const DrawBeruFixed = () => {
                                 />
                             </div>
 
-                            {/* BRUSH SIZE */}
+                            {/* 🎨 FEATURE 1: BRUSH TYPE SELECTOR MOBILE */}
+                            <div className="mb-4">
+                                <h3 className="text-white text-sm font-semibold mb-2">🖌️ Type de pinceau</h3>
+                                <div className="grid grid-cols-5 gap-2">
+                                    {Object.values(BRUSH_TYPES).map((brush) => (
+                                        <button
+                                            key={brush.id}
+                                            onClick={() => {
+                                                setBrushType(brush.id);
+                                            }}
+                                            className={`h-12 rounded-lg flex flex-col items-center justify-center transition-all ${
+                                                brushType === brush.id
+                                                    ? 'bg-purple-600 ring-2 ring-purple-400'
+                                                    : 'bg-purple-800/50'
+                                            }`}
+                                        >
+                                            <span className="text-lg">{brush.icon}</span>
+                                            <span className="text-[9px] text-white/80">{brush.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 🔢 FEATURE 2: BRUSH SIZE with +/- */}
                             <div className="mb-4">
                                 <label className="text-white text-sm mb-2 block">
                                     Taille pinceau: {brushSize.toFixed(1)}px
                                 </label>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <button
+                                        onClick={decrementBrushSize}
+                                        onTouchStart={() => startBrushSizeRepeat(false)}
+                                        onTouchEnd={stopBrushSizeRepeat}
+                                        className="w-12 h-10 rounded bg-purple-700/50 active:bg-purple-600/50 text-white font-bold text-xl"
+                                    >
+                                        −
+                                    </button>
+                                    <span className="text-purple-300 font-mono font-bold flex-1 text-center">
+                                        {brushSize.toFixed(1)}px
+                                    </span>
+                                    <button
+                                        onClick={incrementBrushSize}
+                                        onTouchStart={() => startBrushSizeRepeat(true)}
+                                        onTouchEnd={stopBrushSizeRepeat}
+                                        className="w-12 h-10 rounded bg-purple-700/50 active:bg-purple-600/50 text-white font-bold text-xl"
+                                    >
+                                        +
+                                    </button>
+                                </div>
                                 <input
                                     type="range"
-                                    min={0.5}
-                                    max={20}
-                                    step={0.5}
+                                    min={0.1}
+                                    max={50}
+                                    step={0.1}
                                     value={brushSize}
                                     onChange={(e) => setBrushSize(parseFloat(e.target.value))}
                                     className="w-full"
                                 />
+                            </div>
+
+                            {/* ✨ PRECISION: Stabilisation Mobile */}
+                            <div className="mb-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="text-white text-sm flex items-center gap-2">
+                                        🎯 Stabilisation
+                                    </label>
+                                    <span className="text-purple-300 text-sm font-mono">
+                                        {stabilization === 0 ? 'OFF' : stabilization}
+                                    </span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={10}
+                                    step={1}
+                                    value={stabilization}
+                                    onChange={(e) => setStabilization(parseInt(e.target.value))}
+                                    className="w-full"
+                                />
+                                <p className="text-purple-300/70 text-xs mt-1">
+                                    Lisse le trait pour plus de précision
+                                </p>
                             </div>
 
                             {/* LAYERS */}
@@ -1808,6 +2298,7 @@ const DrawBeruFixed = () => {
                             </button>
                         </div>
 
+                        {/* 🔢 FEATURE 2: Mobile brush size with +/- buttons */}
                         {(currentTool === 'brush' || currentTool === 'eraser') && (
                             <div className="flex-1 bg-black/40 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-md border border-purple-500/20">
                                 <div className="flex items-center gap-2">
@@ -1816,22 +2307,37 @@ const DrawBeruFixed = () => {
                                         style={{
                                             backgroundImage:
                                                 currentTool === 'brush'
-                                                    ? "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760823190/Pinceau_cwjaxh.png')" // pinceau
-                                                    : "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827288/pipette_kqqmzh.png')" // gomme
+                                                    ? "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760823190/Pinceau_cwjaxh.png')"
+                                                    : "url('https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760827288/pipette_kqqmzh.png')"
                                         }}
                                     />
 
+                                    {/* 🔢 Boutons +/- mobile */}
+                                    <button
+                                        onClick={decrementBrushSize}
+                                        onTouchStart={() => startBrushSizeRepeat(false)}
+                                        onTouchEnd={stopBrushSizeRepeat}
+                                        className="w-8 h-8 rounded bg-purple-700/50 active:bg-purple-600/50 text-white font-bold text-lg flex items-center justify-center shrink-0"
+                                    >
+                                        −
+                                    </button>
+                                    <span className="text-purple-300 text-[10px] font-mono font-bold min-w-[38px] text-center">
+                                        {brushSize.toFixed(1)}px
+                                    </span>
+                                    <button
+                                        onClick={incrementBrushSize}
+                                        onTouchStart={() => startBrushSizeRepeat(true)}
+                                        onTouchEnd={stopBrushSizeRepeat}
+                                        className="w-8 h-8 rounded bg-purple-700/50 active:bg-purple-600/50 text-white font-bold text-lg flex items-center justify-center shrink-0"
+                                    >
+                                        +
+                                    </button>
+
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between mb-0.5">
-                                            <span className="text-white/80 text-[9px] font-medium">Taille</span>
-                                            <span className="text-purple-300 text-[10px] font-mono font-bold">
-                                                {brushSize.toFixed(1)}px
-                                            </span>
-                                        </div>
                                         <input
                                             type="range"
                                             min="0.1"
-                                            max="30"
+                                            max="50"
                                             step="0.1"
                                             value={brushSize}
                                             onChange={(e) => setBrushSize(parseFloat(e.target.value))}
@@ -1844,7 +2350,7 @@ const DrawBeruFixed = () => {
                                             style={{
                                                 width: `${Math.min(brushSize * 1.5, 24)}px`,
                                                 height: `${Math.min(brushSize * 1.5, 24)}px`,
-                                                borderRadius: '50%',
+                                                borderRadius: brushType === 'pixel' ? '0' : '50%',
                                                 backgroundColor: currentTool === 'brush' ? selectedColor : '#ff6b6b',
                                                 border: '1px solid rgba(255,255,255,0.2)',
                                                 transition: 'all 0.2s ease'
@@ -2260,6 +2766,26 @@ const DrawBeruFixed = () => {
                                     title="Pipette (I)"
                                 />
 
+                                {/* 🎨 FEATURE 1: Brush Type Selector */}
+                                {currentTool === 'brush' && (
+                                    <div className="flex items-center gap-1 bg-black/40 rounded-lg p-1 border border-purple-500/20">
+                                        {Object.values(BRUSH_TYPES).map((brush) => (
+                                            <button
+                                                key={brush.id}
+                                                onClick={() => setBrushType(brush.id)}
+                                                className={`w-9 h-9 rounded-md flex items-center justify-center text-lg transition-all ${
+                                                    brushType === brush.id
+                                                        ? 'bg-purple-600 scale-105 ring-2 ring-purple-400/50'
+                                                        : 'bg-purple-800/30 hover:bg-purple-700/40'
+                                                }`}
+                                                title={`${brush.name} - ${brush.description}`}
+                                            >
+                                                {brush.icon}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
                                 {/* 🎨 AUTO-PIPETTE TOGGLE */}
                                 <button
                                     onClick={() => setAutoPipetteMode(!autoPipetteMode)}
@@ -2346,11 +2872,11 @@ const DrawBeruFixed = () => {
                                     />
                                 </div>
 
-                                {/* Taille du pinceau */}
+                                {/* 🔢 FEATURE 2: Taille du pinceau avec boutons +/- */}
                                 {(currentTool === 'brush' || currentTool === 'eraser') && (
                                     <>
                                         <div className="w-px h-10 bg-purple-500/30"></div>
-                                        <div className="flex-1 bg-black/60 backdrop-blur-md rounded-lg p-2 shadow-lg border border-purple-500/30 min-w-[200px] max-w-[300px]">
+                                        <div className="flex-1 bg-black/60 backdrop-blur-md rounded-lg p-2 shadow-lg border border-purple-500/30 min-w-[280px] max-w-[350px]">
                                             <div className="flex items-center gap-2">
                                                 <div
                                                     className="w-6 h-6 rounded bg-purple-600/50 shrink-0"
@@ -2363,17 +2889,37 @@ const DrawBeruFixed = () => {
                                                         backgroundRepeat: "no-repeat"
                                                     }}
                                                 />
+                                                {/* 🔢 Boutons +/- avec valeur */}
+                                                <div className="flex items-center gap-1">
+                                                    <button
+                                                        onClick={decrementBrushSize}
+                                                        onMouseDown={() => startBrushSizeRepeat(false)}
+                                                        onMouseUp={stopBrushSizeRepeat}
+                                                        onMouseLeave={stopBrushSizeRepeat}
+                                                        className="w-7 h-7 rounded bg-purple-700/50 hover:bg-purple-600/50 text-white font-bold text-lg flex items-center justify-center transition-all active:scale-95"
+                                                        title="Réduire taille (touche [)"
+                                                    >
+                                                        −
+                                                    </button>
+                                                    <span className="text-purple-300 text-xs font-mono font-bold min-w-[45px] text-center">
+                                                        {brushSize.toFixed(1)}px
+                                                    </span>
+                                                    <button
+                                                        onClick={incrementBrushSize}
+                                                        onMouseDown={() => startBrushSizeRepeat(true)}
+                                                        onMouseUp={stopBrushSizeRepeat}
+                                                        onMouseLeave={stopBrushSizeRepeat}
+                                                        className="w-7 h-7 rounded bg-purple-700/50 hover:bg-purple-600/50 text-white font-bold text-lg flex items-center justify-center transition-all active:scale-95"
+                                                        title="Augmenter taille (touche ])"
+                                                    >
+                                                        +
+                                                    </button>
+                                                </div>
                                                 <div className="flex-1">
-                                                    <div className="flex items-center justify-between mb-0.5">
-                                                        <span className="text-white/80 text-xs font-medium">Taille</span>
-                                                        <span className="text-purple-300 text-xs font-mono font-bold">
-                                                            {brushSize.toFixed(1)}px
-                                                        </span>
-                                                    </div>
                                                     <input
                                                         type="range"
                                                         min="0.1"
-                                                        max="30"
+                                                        max="50"
                                                         step="0.1"
                                                         value={brushSize}
                                                         onChange={(e) => setBrushSize(parseFloat(e.target.value))}
@@ -2385,12 +2931,126 @@ const DrawBeruFixed = () => {
                                                         style={{
                                                             width: `${Math.min(brushSize * 1.5, 24)}px`,
                                                             height: `${Math.min(brushSize * 1.5, 24)}px`,
-                                                            borderRadius: '50%',
+                                                            borderRadius: brushType === 'pixel' ? '0' : '50%',
                                                             backgroundColor: currentTool === 'brush' ? selectedColor : '#ff6b6b',
                                                             border: '1px solid rgba(255,255,255,0.2)',
                                                             transition: 'all 0.2s ease'
                                                         }}
                                                     />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* ✨ PRECISION: Contrôle de stabilisation */}
+                                {(currentTool === 'brush' || currentTool === 'eraser') && (
+                                    <>
+                                        <div className="w-px h-10 bg-purple-500/30"></div>
+                                        <div className="bg-black/60 backdrop-blur-md rounded-lg p-2 shadow-lg border border-purple-500/30 min-w-[140px]">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-lg" title="Stabilisation du trait">🎯</span>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <span className="text-white text-[10px] font-semibold">Stabilisation</span>
+                                                        <span className="text-purple-300 text-[10px] font-mono">
+                                                            {stabilization === 0 ? 'OFF' : stabilization}
+                                                        </span>
+                                                    </div>
+                                                    <input
+                                                        type="range"
+                                                        min="0"
+                                                        max="10"
+                                                        step="1"
+                                                        value={stabilization}
+                                                        onChange={(e) => setStabilization(parseInt(e.target.value))}
+                                                        className="w-full h-1 bg-purple-900/30 rounded-lg appearance-none cursor-pointer"
+                                                        title="0 = OFF, 10 = Maximum (trait très lissé)"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* 🖌️ BRUSH ENGINE PRO: Contrôles de pression et vitesse */}
+                                {(currentTool === 'brush') && (
+                                    <>
+                                        <div className="w-px h-10 bg-purple-500/30"></div>
+                                        <div className="bg-black/60 backdrop-blur-md rounded-lg p-2 shadow-lg border border-purple-500/30 min-w-[200px]">
+                                            <div className="flex items-center gap-3">
+                                                {/* Indicateur de pression en temps réel */}
+                                                <div className="flex flex-col items-center">
+                                                    <div
+                                                        className="w-4 h-10 bg-purple-900/30 rounded-full overflow-hidden relative"
+                                                        title={`Pression: ${Math.round(currentPressure * 100)}%`}
+                                                    >
+                                                        <div
+                                                            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-purple-500 to-purple-300 transition-all duration-75"
+                                                            style={{ height: `${currentPressure * 100}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-[8px] text-purple-300 mt-1">P</span>
+                                                </div>
+
+                                                <div className="flex-1 space-y-2">
+                                                    {/* Toggle Pression */}
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => setEnablePressure(!enablePressure)}
+                                                            className={`w-6 h-6 rounded flex items-center justify-center text-xs transition-all ${
+                                                                enablePressure
+                                                                    ? 'bg-purple-600 text-white'
+                                                                    : 'bg-purple-900/30 text-purple-400'
+                                                            }`}
+                                                            title={enablePressure ? "Pression activée" : "Pression désactivée"}
+                                                        >
+                                                            ✍️
+                                                        </button>
+                                                        <div className="flex-1">
+                                                            <input
+                                                                type="range"
+                                                                min="0"
+                                                                max="1"
+                                                                step="0.05"
+                                                                value={pressureSensitivity}
+                                                                onChange={(e) => setPressureSensitivity(parseFloat(e.target.value))}
+                                                                disabled={!enablePressure}
+                                                                className="w-full h-1 bg-purple-900/30 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
+                                                                title="Sensibilité à la pression"
+                                                            />
+                                                        </div>
+                                                        <span className="text-[10px] text-purple-300 w-8">{Math.round(pressureSensitivity * 100)}%</span>
+                                                    </div>
+
+                                                    {/* Toggle Vitesse */}
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => setEnableVelocity(!enableVelocity)}
+                                                            className={`w-6 h-6 rounded flex items-center justify-center text-xs transition-all ${
+                                                                enableVelocity
+                                                                    ? 'bg-purple-600 text-white'
+                                                                    : 'bg-purple-900/30 text-purple-400'
+                                                            }`}
+                                                            title={enableVelocity ? "Vitesse activée" : "Vitesse désactivée"}
+                                                        >
+                                                            💨
+                                                        </button>
+                                                        <div className="flex-1">
+                                                            <input
+                                                                type="range"
+                                                                min="0"
+                                                                max="1"
+                                                                step="0.05"
+                                                                value={velocitySensitivity}
+                                                                onChange={(e) => setVelocitySensitivity(parseFloat(e.target.value))}
+                                                                disabled={!enableVelocity}
+                                                                className="w-full h-1 bg-purple-900/30 rounded-lg appearance-none cursor-pointer disabled:opacity-50"
+                                                                title="Sensibilité à la vitesse"
+                                                            />
+                                                        </div>
+                                                        <span className="text-[10px] text-purple-300 w-8">{Math.round(velocitySensitivity * 100)}%</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -2432,12 +3092,33 @@ const DrawBeruFixed = () => {
                                         style={{
                                             display: 'block',
                                             border: '1px solid #ccc',
-                                            cursor: isPanning ? 'move' : (currentTool === 'pipette' ? 'crosshair' : currentTool === 'eraser' ? 'crosshair' : 'crosshair')
+                                            cursor: isPanning
+                                                ? 'move'
+                                                : currentTool === 'pipette'
+                                                    ? 'crosshair'
+                                                    : generateDynamicCursor(brushSize, selectedColor, currentTool, brushType),
+                                            touchAction: 'none' // Important pour PointerEvents
                                         }}
-                                        onMouseDown={startDrawing}
-                                        onMouseMove={draw}
-                                        onMouseUp={stopDrawing}
-                                        onMouseLeave={stopDrawing}
+                                        // 🖌️ BRUSH ENGINE PRO: PointerEvents pour support tablette graphique
+                                        onPointerDown={startDrawing}
+                                        onPointerMove={(e) => {
+                                            draw(e);
+                                            // ✨ PRECISION: Update cursor position for preview
+                                            const rect = canvasRef.current?.getBoundingClientRect();
+                                            if (rect) {
+                                                setCursorPosition({
+                                                    x: e.clientX - rect.left,
+                                                    y: e.clientY - rect.top,
+                                                    visible: true
+                                                });
+                                            }
+                                        }}
+                                        onPointerUp={stopDrawing}
+                                        onPointerLeave={() => {
+                                            stopDrawing();
+                                            setCursorPosition(prev => ({ ...prev, visible: false }));
+                                        }}
+                                        onPointerCancel={stopDrawing}
                                     />
 
                                     {/* Overlay canvas for model reference with opacity */}
