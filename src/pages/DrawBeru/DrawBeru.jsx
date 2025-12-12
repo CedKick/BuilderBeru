@@ -1018,28 +1018,12 @@ const DrawBeruFixed = () => {
         // ✨ PRECISION: Initialiser le dernier point pour l'interpolation mobile
         lastPointRef.current = { x, y };
 
-        // 🎨 AUTO-PIPETTE: Récupérer la couleur automatiquement
+        // 🎨 AUTO-PIPETTE: Récupérer la couleur automatiquement depuis la référence (couleurs pures, sans opacité)
         let colorToUse = selectedColor;
 
         if (autoPipetteMode && currentTool === 'brush') {
-            let colorFound = false;
-
-            // Essayer d'abord l'overlay si visible
-            if (showModelOverlay && overlayCanvasRef.current) {
-                try {
-                    const overlayCtx = overlayCanvasRef.current.getContext('2d', { willReadFrequently: true });
-                    const pixel = overlayCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-                    if (pixel[3] > 0) {
-                        colorToUse = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
-                        colorFound = true;
-                    }
-                } catch (err) {
-                    console.warn('Auto-pipette overlay error:', err);
-                }
-            }
-
-            // Sinon, utiliser l'image de référence
-            if (!colorFound && referenceCanvasRef.current) {
+            // TOUJOURS lire depuis referenceCanvasRef pour avoir les vraies couleurs (sans opacité appliquée)
+            if (referenceCanvasRef.current) {
                 try {
                     const refCtx = referenceCanvasRef.current.getContext('2d', { willReadFrequently: true });
                     const pixel = refCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
@@ -1213,25 +1197,12 @@ const DrawBeruFixed = () => {
         let colorToUse = selectedColor;
         let brushSizeToUse = brushSize;
 
-        // Fonction helper pour récupérer la couleur d'une position
+        // Fonction helper pour récupérer la couleur d'une position (TOUJOURS depuis la référence pour couleurs pures)
         const getColorAtPosition = (posX, posY) => {
             let color = selectedColor;
-            let found = false;
 
-            // Essayer d'abord l'overlay si visible
-            if (showModelOverlay && overlayCanvasRef.current) {
-                try {
-                    const overlayCtx = overlayCanvasRef.current.getContext('2d', { willReadFrequently: true });
-                    const pixel = overlayCtx.getImageData(Math.floor(posX), Math.floor(posY), 1, 1).data;
-                    if (pixel[3] > 0) {
-                        color = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
-                        found = true;
-                    }
-                } catch (err) { /* ignore */ }
-            }
-
-            // Sinon, utiliser l'image de référence
-            if (!found && referenceCanvasRef.current) {
+            // TOUJOURS lire depuis referenceCanvasRef pour avoir les vraies couleurs (sans opacité appliquée)
+            if (referenceCanvasRef.current) {
                 try {
                     const refCtx = referenceCanvasRef.current.getContext('2d', { willReadFrequently: true });
                     const pixel = refCtx.getImageData(Math.floor(posX), Math.floor(posY), 1, 1).data;
