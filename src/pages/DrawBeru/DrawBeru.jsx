@@ -1023,12 +1023,21 @@ const DrawBeruFixed = () => {
 
         if (autoPipetteMode && currentTool === 'brush') {
             // TOUJOURS lire depuis referenceCanvasRef pour avoir les vraies couleurs (sans opacité appliquée)
-            if (referenceCanvasRef.current) {
+            const canvas = canvasRef.current;
+            const refCanvas = referenceCanvasRef.current;
+            if (refCanvas && canvas) {
                 try {
-                    const refCtx = referenceCanvasRef.current.getContext('2d', { willReadFrequently: true });
-                    const pixel = refCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
-                    if (pixel[3] > 0) {
-                        colorToUse = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                    // 🔄 Convertir les coordonnées du canvas de dessin vers le canvas de référence (proportionnel)
+                    const refX = Math.floor(x * refCanvas.width / canvas.width);
+                    const refY = Math.floor(y * refCanvas.height / canvas.height);
+
+                    // Vérifier les limites
+                    if (refX >= 0 && refX < refCanvas.width && refY >= 0 && refY < refCanvas.height) {
+                        const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
+                        const pixel = refCtx.getImageData(refX, refY, 1, 1).data;
+                        if (pixel[3] > 0) {
+                            colorToUse = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                        }
                     }
                 } catch (err) {
                     console.warn('Auto-pipette reference error:', err);
@@ -1063,34 +1072,39 @@ const DrawBeruFixed = () => {
         // 🎨 FEATURE 4: Touch pipette reads ALWAYS from reference image
         if (currentTool === 'pipette') {
             const canvas = canvasRef.current;
+            const refCanvas = referenceCanvasRef.current;
+            if (!canvas || !refCanvas) return;
+
             const rect = canvas.getBoundingClientRect();
 
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
-            const x = Math.floor((touch.clientX - rect.left) * scaleX);
-            const y = Math.floor((touch.clientY - rect.top) * scaleY);
+            const canvasX = Math.floor((touch.clientX - rect.left) * scaleX);
+            const canvasY = Math.floor((touch.clientY - rect.top) * scaleY);
 
-            if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return;
+            if (canvasX < 0 || canvasX >= canvas.width || canvasY < 0 || canvasY >= canvas.height) return;
+
+            // 🔄 Convertir les coordonnées du canvas de dessin vers le canvas de référence (proportionnel)
+            const refX = Math.floor(canvasX * refCanvas.width / canvas.width);
+            const refY = Math.floor(canvasY * refCanvas.height / canvas.height);
+
+            // Vérifier les limites du canvas de référence
+            if (refX < 0 || refX >= refCanvas.width || refY < 0 || refY >= refCanvas.height) return;
 
             // TOUJOURS lire depuis l'image de référence (referenceCanvasRef)
-            const refCanvas = referenceCanvasRef.current;
-            if (refCanvas) {
-                try {
-                    const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
-                    const pixel = refCtx.getImageData(x, y, 1, 1).data;
+            try {
+                const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
+                const pixel = refCtx.getImageData(refX, refY, 1, 1).data;
 
-                    if (pixel[3] > 0) {
-                        const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
-                        setSelectedColor(hex);
-                    } else {
-                        // Pixel transparent -> blanc par défaut
-                        setSelectedColor('#FFFFFF');
-                    }
-                } catch (err) {
-                    console.warn('Touch pipette: impossible de lire la couleur de référence:', err);
+                if (pixel[3] > 0) {
+                    const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                    setSelectedColor(hex);
+                } else {
+                    // Pixel transparent -> blanc par défaut
                     setSelectedColor('#FFFFFF');
                 }
-            } else {
+            } catch (err) {
+                console.warn('Touch pipette: impossible de lire la couleur de référence:', err);
                 setSelectedColor('#FFFFFF');
             }
             setCurrentTool('brush');
@@ -1202,12 +1216,21 @@ const DrawBeruFixed = () => {
             let color = selectedColor;
 
             // TOUJOURS lire depuis referenceCanvasRef pour avoir les vraies couleurs (sans opacité appliquée)
-            if (referenceCanvasRef.current) {
+            const canvas = canvasRef.current;
+            const refCanvas = referenceCanvasRef.current;
+            if (refCanvas && canvas) {
                 try {
-                    const refCtx = referenceCanvasRef.current.getContext('2d', { willReadFrequently: true });
-                    const pixel = refCtx.getImageData(Math.floor(posX), Math.floor(posY), 1, 1).data;
-                    if (pixel[3] > 0) {
-                        color = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                    // 🔄 Convertir les coordonnées du canvas de dessin vers le canvas de référence (proportionnel)
+                    const refX = Math.floor(posX * refCanvas.width / canvas.width);
+                    const refY = Math.floor(posY * refCanvas.height / canvas.height);
+
+                    // Vérifier les limites
+                    if (refX >= 0 && refX < refCanvas.width && refY >= 0 && refY < refCanvas.height) {
+                        const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
+                        const pixel = refCtx.getImageData(refX, refY, 1, 1).data;
+                        if (pixel[3] > 0) {
+                            color = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                        }
                     }
                 } catch (err) { /* ignore */ }
             }
@@ -1266,33 +1289,43 @@ const DrawBeruFixed = () => {
     // 🎨 FEATURE 4: Pipette reads ALWAYS from reference image, regardless of overlay state
     const pickColorFromCanvas = (e) => {
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        const refCanvas = referenceCanvasRef.current;
+        if (!canvas || !refCanvas) {
+            setSelectedColor('#FFFFFF');
+            setCurrentTool('brush');
+            return;
+        }
 
         const { x, y } = getCanvasCoordinates(e, canvas);
-        const floorX = Math.floor(x);
-        const floorY = Math.floor(y);
+        const canvasX = Math.floor(x);
+        const canvasY = Math.floor(y);
+
+        // 🔄 Convertir les coordonnées du canvas de dessin vers le canvas de référence (proportionnel)
+        const refX = Math.floor(canvasX * refCanvas.width / canvas.width);
+        const refY = Math.floor(canvasY * refCanvas.height / canvas.height);
+
+        // Vérifier les limites du canvas de référence
+        if (refX < 0 || refX >= refCanvas.width || refY < 0 || refY >= refCanvas.height) {
+            setSelectedColor('#FFFFFF');
+            setCurrentTool('brush');
+            return;
+        }
 
         // TOUJOURS lire depuis l'image de référence (referenceCanvasRef)
-        const refCanvas = referenceCanvasRef.current;
-        if (refCanvas) {
-            try {
-                const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
-                const pixel = refCtx.getImageData(floorX, floorY, 1, 1).data;
+        try {
+            const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
+            const pixel = refCtx.getImageData(refX, refY, 1, 1).data;
 
-                // Si le pixel n'est pas transparent, utiliser sa couleur
-                if (pixel[3] > 0) {
-                    const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
-                    setSelectedColor(hex);
-                } else {
-                    // Pixel transparent -> blanc par défaut
-                    setSelectedColor('#FFFFFF');
-                }
-            } catch (err) {
-                console.warn('Pipette: impossible de lire la couleur de référence:', err);
+            // Si le pixel n'est pas transparent, utiliser sa couleur
+            if (pixel[3] > 0) {
+                const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1).toUpperCase()}`;
+                setSelectedColor(hex);
+            } else {
+                // Pixel transparent -> blanc par défaut
                 setSelectedColor('#FFFFFF');
             }
-        } else {
-            // Fallback: si pas de référence, blanc par défaut
+        } catch (err) {
+            console.warn('Pipette: impossible de lire la couleur de référence:', err);
             setSelectedColor('#FFFFFF');
         }
 
