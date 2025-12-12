@@ -1036,18 +1036,10 @@ const DrawBeruFixed = () => {
                         const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
                         const pixel = refCtx.getImageData(refX, refY, 1, 1).data;
                         if (pixel[3] > 0) {
-                            // 🎨 MOBILE FIX: Calculer la couleur VISIBLE sur fond blanc (couleurs pures)
-                            const alpha = pixel[3] / 255;
-                            let r, g, b;
-                            if (alpha >= 1) {
-                                r = pixel[0];
-                                g = pixel[1];
-                                b = pixel[2];
-                            } else {
-                                r = Math.round(pixel[0] + (255 - pixel[0]) * (1 - alpha));
-                                g = Math.round(pixel[1] + (255 - pixel[1]) * (1 - alpha));
-                                b = Math.round(pixel[2] + (255 - pixel[2]) * (1 - alpha));
-                            }
+                            // 🎨 MOBILE FIX V2: Utiliser les valeurs RGB PURES (couleurs vives, pas fades)
+                            const r = pixel[0];
+                            const g = pixel[1];
+                            const b = pixel[2];
                             colorToUse = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
                         }
                     }
@@ -1109,21 +1101,11 @@ const DrawBeruFixed = () => {
                 const pixel = refCtx.getImageData(refX, refY, 1, 1).data;
 
                 if (pixel[3] > 0) {
-                    // 🎨 MOBILE FIX: Calculer la couleur VISIBLE sur fond blanc (comme desktop)
-                    // Si le pixel a de la transparence, on calcule la couleur blendée avec le fond blanc
-                    const alpha = pixel[3] / 255;
-                    let r, g, b;
-                    if (alpha >= 1) {
-                        // Pixel opaque: utiliser les valeurs RGB directement
-                        r = pixel[0];
-                        g = pixel[1];
-                        b = pixel[2];
-                    } else {
-                        // Pixel semi-transparent: calculer la couleur visible sur fond blanc
-                        r = Math.round(pixel[0] + (255 - pixel[0]) * (1 - alpha));
-                        g = Math.round(pixel[1] + (255 - pixel[1]) * (1 - alpha));
-                        b = Math.round(pixel[2] + (255 - pixel[2]) * (1 - alpha));
-                    }
+                    // 🎨 MOBILE FIX V2: Utiliser les valeurs RGB PURES (couleurs vives, pas fades)
+                    // On veut la couleur originale du pixel, pas la couleur mixée avec fond blanc
+                    const r = pixel[0];
+                    const g = pixel[1];
+                    const b = pixel[2];
                     const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
                     setSelectedColor(hex);
                 } else {
@@ -1256,18 +1238,10 @@ const DrawBeruFixed = () => {
                         const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
                         const pixel = refCtx.getImageData(refX, refY, 1, 1).data;
                         if (pixel[3] > 0) {
-                            // 🎨 MOBILE FIX: Calculer la couleur VISIBLE sur fond blanc (couleurs pures)
-                            const alpha = pixel[3] / 255;
-                            let r, g, b;
-                            if (alpha >= 1) {
-                                r = pixel[0];
-                                g = pixel[1];
-                                b = pixel[2];
-                            } else {
-                                r = Math.round(pixel[0] + (255 - pixel[0]) * (1 - alpha));
-                                g = Math.round(pixel[1] + (255 - pixel[1]) * (1 - alpha));
-                                b = Math.round(pixel[2] + (255 - pixel[2]) * (1 - alpha));
-                            }
+                            // 🎨 FIX V2: Utiliser les valeurs RGB PURES (couleurs vives, pas fades)
+                            const r = pixel[0];
+                            const g = pixel[1];
+                            const b = pixel[2];
                             color = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
                         }
                     }
@@ -1357,18 +1331,10 @@ const DrawBeruFixed = () => {
 
             // Si le pixel n'est pas transparent, utiliser sa couleur
             if (pixel[3] > 0) {
-                // 🎨 FIX: Calculer la couleur VISIBLE sur fond blanc (couleurs pures)
-                const alpha = pixel[3] / 255;
-                let r, g, b;
-                if (alpha >= 1) {
-                    r = pixel[0];
-                    g = pixel[1];
-                    b = pixel[2];
-                } else {
-                    r = Math.round(pixel[0] + (255 - pixel[0]) * (1 - alpha));
-                    g = Math.round(pixel[1] + (255 - pixel[1]) * (1 - alpha));
-                    b = Math.round(pixel[2] + (255 - pixel[2]) * (1 - alpha));
-                }
+                // 🎨 FIX V2: Utiliser les valeurs RGB PURES (couleurs vives, pas fades)
+                const r = pixel[0];
+                const g = pixel[1];
+                const b = pixel[2];
                 const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
                 setSelectedColor(hex);
             } else {
@@ -1403,18 +1369,10 @@ const DrawBeruFixed = () => {
         const p = ctx.getImageData(x, y, 1, 1).data;
         if (p[3] === 0) return;
 
-        // 🎨 FIX: Calculer la couleur VISIBLE sur fond blanc (couleurs pures)
-        const alpha = p[3] / 255;
-        let r, g, b;
-        if (alpha >= 1) {
-            r = p[0];
-            g = p[1];
-            b = p[2];
-        } else {
-            r = Math.round(p[0] + (255 - p[0]) * (1 - alpha));
-            g = Math.round(p[1] + (255 - p[1]) * (1 - alpha));
-            b = Math.round(p[2] + (255 - p[2]) * (1 - alpha));
-        }
+        // 🎨 FIX V2: Utiliser les valeurs RGB PURES (couleurs vives, pas fades)
+        const r = p[0];
+        const g = p[1];
+        const b = p[2];
         const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
         setSelectedColor(hex);
         setCurrentTool('brush');
