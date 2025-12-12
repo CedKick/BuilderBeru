@@ -2002,14 +2002,14 @@ const DrawBeruFixed = () => {
                             <div className="mb-4">
                                 <h3 className="text-white text-sm font-semibold mb-2">🖌️ Type de pinceau</h3>
                                 <div className="grid grid-cols-5 gap-2">
-                                    {Object.values(BRUSH_TYPES).map((brush) => (
+                                    {Object.entries(BRUSH_TYPES).map(([key, brush]) => (
                                         <button
-                                            key={brush.id}
+                                            key={key}
                                             onClick={() => {
-                                                setBrushType(brush.id);
+                                                setBrushType(key);
                                             }}
                                             className={`h-12 rounded-lg flex flex-col items-center justify-center transition-all ${
-                                                brushType === brush.id
+                                                brushType === key
                                                     ? 'bg-purple-600 ring-2 ring-purple-400'
                                                     : 'bg-purple-800/50'
                                             }`}
@@ -2799,12 +2799,12 @@ const DrawBeruFixed = () => {
                                 {/* 🎨 FEATURE 1: Brush Type Selector */}
                                 {currentTool === 'brush' && (
                                     <div className="flex items-center gap-1 bg-black/40 rounded-lg p-1 border border-purple-500/20">
-                                        {Object.values(BRUSH_TYPES).map((brush) => (
+                                        {Object.entries(BRUSH_TYPES).map(([key, brush]) => (
                                             <button
-                                                key={brush.id}
-                                                onClick={() => setBrushType(brush.id)}
+                                                key={key}
+                                                onClick={() => setBrushType(key)}
                                                 className={`w-9 h-9 rounded-md flex items-center justify-center text-lg transition-all ${
-                                                    brushType === brush.id
+                                                    brushType === key
                                                         ? 'bg-purple-600 scale-105 ring-2 ring-purple-400/50'
                                                         : 'bg-purple-800/30 hover:bg-purple-700/40'
                                                 }`}
