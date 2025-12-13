@@ -10,7 +10,7 @@ import {
   ModeSelector,
   RoomLobby,
   PlayerCursors,
-} from '../../components/DrawBeru/MultiplayerUI';
+} from '../../components/drawberu/MultiplayerUI';
 import useMultiplayer from './hooks/useMultiplayer';
 import DrawBeru from './DrawBeru';
 
