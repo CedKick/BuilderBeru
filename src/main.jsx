@@ -14,8 +14,7 @@ import BeruvianWorld from "./pages/beruvianWorld/BeruvianWorld.jsx";
 import CraftSimulator from './components/CraftSimulator/CraftSimulator.jsx';
 import DamageCalculatorStandalone from './DamageCalculatorStandalone.jsx';
 import ChibiWorld from './components/ChibiSystem/ChibiWorld.jsx';
-import DrawBeru from './pages/DrawBeru/DrawBeru.jsx';
-import DrawBeruRefactored from './pages/DrawBeru/DrawBeruRefactored.jsx';
+import DrawBeruLauncher from './pages/DrawBeru/DrawBeruLauncher.jsx';
 
 // 🔥 NOUVELLES IMPORTS - Remplacer POD
 import BDGScore from './components/BDGScore.jsx';
@@ -28,8 +27,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/build" element={<Builder />} />
-          <Route path="/drawberu" element={<DrawBeru />} />
-          <Route path="/drawberuRefactored" element={<DrawBeruRefactored />} />
+          <Route path="/drawberu" element={<DrawBeruLauncher />} />
           <Route path="/craft-simulator" element={<CraftSimulator />} />
           <Route path="/trainingCenter" element={<TrainingCenter />} />
           <Route path="/guide-editor" element={<GuideEditor />} />

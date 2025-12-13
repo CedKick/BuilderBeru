@@ -124,7 +124,14 @@ const BRUSH_TYPES = {
     }
 };
 
-const DrawBeruFixed = () => {
+const DrawBeruFixed = ({
+    // Props pour le mode multi
+    initialHunter = null,
+    initialModel = null,
+    multiplayerMode = false,
+    multiplayer = null,
+    onBack = null,
+}) => {
     const { t } = useTranslation();
     const isMobile = useIsMobile();
 
@@ -156,8 +163,8 @@ const DrawBeruFixed = () => {
     const lastDrawing = getLastDrawing();
 
     // States
-    const [selectedHunter, setSelectedHunter] = useState(lastDrawing.hunter);
-    const [selectedModel, setSelectedModel] = useState(lastDrawing.model);
+    const [selectedHunter, setSelectedHunter] = useState(initialHunter || lastDrawing.hunter);
+    const [selectedModel, setSelectedModel] = useState(initialModel || lastDrawing.model);
     // 🎨 Couleur par défaut: noir pour le lineart manga (pas rouge!)
     const [selectedColor, setSelectedColor] = useState('#000000');
     const [brushSize, setBrushSize] = useState(3);
@@ -248,6 +255,17 @@ const DrawBeruFixed = () => {
     if (!brushEngineRef.current) {
         brushEngineRef.current = new BrushEngine();
     }
+
+    // 🌐 MULTIPLAYER: Ref pour tracker les points du stroke en cours
+    const currentStrokePointsRef = useRef([]);
+
+    // 🌐 MULTIPLAYER: Utiliser les settings du serveur si en mode multi
+    const effectiveAutoPipette = multiplayerMode && multiplayer?.settings
+        ? multiplayer.settings.autoPipette
+        : autoPipetteMode;
+    const effectiveEraserAllowed = multiplayerMode && multiplayer?.settings
+        ? multiplayer.settings.eraserAllowed
+        : true;
 
     const currentModelData = getModel(selectedHunter, selectedModel);
     const availableModels = getHunterModels(selectedHunter);
@@ -481,6 +499,61 @@ const DrawBeruFixed = () => {
             }
         };
     }, [isMobile]);
+
+    // 🌐 MULTIPLAYER: Dessiner les strokes reçus des autres joueurs
+    useEffect(() => {
+        if (!multiplayerMode || !multiplayer?.receivedStrokes?.length) return;
+
+        const LAYER_INDEX_MAP = { base: 0, shadows: 1, details: 2 };
+
+        multiplayer.receivedStrokes.forEach((stroke) => {
+            const layerIndex = LAYER_INDEX_MAP[stroke.layer] ?? 0;
+            const layerCanvas = layersRef.current[layerIndex];
+            if (!layerCanvas) return;
+
+            const ctx = layerCanvas.getContext('2d', { alpha: true });
+
+            // Configurer le contexte selon l'outil
+            if (stroke.tool === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+            }
+
+            // Dessiner le stroke
+            if (stroke.points && stroke.points.length > 0) {
+                const brushConfig = BRUSH_TYPES[brushType] || BRUSH_TYPES.pen;
+
+                stroke.points.forEach((point, index) => {
+                    const [x, y] = point;
+                    if (stroke.tool === 'eraser') {
+                        ctx.fillStyle = stroke.color;
+                        ctx.beginPath();
+                        ctx.arc(x, y, stroke.brushSize, 0, 2 * Math.PI);
+                        ctx.fill();
+                    } else {
+                        drawBrushStroke(ctx, x, y, stroke.brushSize, stroke.color, brushConfig, 1.0, 0);
+                    }
+                });
+            }
+
+            ctx.globalCompositeOperation = 'source-over';
+        });
+
+        // Nettoyer les strokes traités
+        multiplayer.clearReceivedStrokes();
+        renderLayers();
+    }, [multiplayerMode, multiplayer?.receivedStrokes]);
+
+    // 🌐 MULTIPLAYER: Gérer les événements d'undo des autres joueurs
+    useEffect(() => {
+        if (!multiplayerMode || !multiplayer?.undoEvents?.length) return;
+
+        // Pour chaque undo, on devrait redessiner tout depuis l'historique
+        // Mais comme le backend gère déjà la suppression, on re-render simplement
+        multiplayer.clearUndoEvents();
+        renderLayers();
+    }, [multiplayerMode, multiplayer?.undoEvents]);
 
     // 🎨 FEATURE 3: Fixed renderLayers to ensure proper color rendering
     const renderLayers = () => {
@@ -1021,7 +1094,7 @@ const DrawBeruFixed = () => {
         // 🎨 AUTO-PIPETTE: Récupérer la couleur automatiquement depuis la référence (couleurs pures, sans opacité)
         let colorToUse = selectedColor;
 
-        if (autoPipetteMode && currentTool === 'brush') {
+        if (effectiveAutoPipette && currentTool === 'brush') {
             // TOUJOURS lire depuis referenceCanvasRef pour avoir les vraies couleurs (sans opacité appliquée)
             const canvas = canvasRef.current;
             const refCanvas = referenceCanvasRef.current;
@@ -1166,9 +1239,22 @@ const DrawBeruFixed = () => {
         if (isDrawing) {
             setIsDrawing(false);
             saveToHistory();
+
+            // 🌐 MULTIPLAYER: Envoyer le stroke complet au serveur
+            if (multiplayerMode && multiplayer && currentStrokePointsRef.current.length > 0) {
+                multiplayer.sendStroke({
+                    layer: activeLayer,
+                    points: currentStrokePointsRef.current,
+                    color: selectedColor,
+                    brushSize: brushSize,
+                    tool: currentTool,
+                });
+            }
+
             // ✨ PRECISION: Reset refs à la fin du trait
             lastPointRef.current = null;
             stabilizationBufferRef.current = [];
+            currentStrokePointsRef.current = [];
         }
     };
 
@@ -1252,7 +1338,7 @@ const DrawBeruFixed = () => {
         };
 
         // Auto-pipette mode ou cheat mode actif
-        if ((autoPipetteMode || cheatModeActive) && currentTool === 'brush') {
+        if ((effectiveAutoPipette || cheatModeActive) && currentTool === 'brush') {
             if (cheatModeActive) {
                 brushSizeToUse = Math.min(brushSize, 3);
             }
@@ -1278,7 +1364,7 @@ const DrawBeruFixed = () => {
         pointsToDraw.forEach(point => {
             // En mode auto-pipette/cheat, récupérer la couleur pour chaque point interpolé
             let pointColor = colorToUse;
-            if ((autoPipetteMode || cheatModeActive) && currentTool === 'brush') {
+            if ((effectiveAutoPipette || cheatModeActive) && currentTool === 'brush') {
                 pointColor = getColorAtPosition(point.x, point.y);
             }
 
@@ -1291,7 +1377,18 @@ const DrawBeruFixed = () => {
                 // 🖌️ BRUSH ENGINE PRO: Passer pression et vitesse
                 drawBrushStroke(ctx, point.x, point.y, brushSizeToUse, pointColor, brushConfig, pressure, velocity);
             }
+
+            // 🌐 MULTIPLAYER: Tracker les points pour l'envoi
+            if (multiplayerMode) {
+                currentStrokePointsRef.current.push([point.x, point.y]);
+            }
         });
+
+        // 🌐 MULTIPLAYER: Envoyer position du curseur et stroking en temps réel
+        if (multiplayerMode && multiplayer) {
+            multiplayer.sendCursorMove(x, y, true);
+            multiplayer.sendStroking([x, y], colorToUse, brushSizeToUse, activeLayer);
+        }
 
         // ✨ PRECISION: Sauvegarder le dernier point pour l'interpolation
         lastPointRef.current = currentPoint;
