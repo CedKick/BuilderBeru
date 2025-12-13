@@ -525,14 +525,16 @@ const DrawBeruFixed = ({
                 const brushConfig = BRUSH_TYPES[brushType] || BRUSH_TYPES.pen;
 
                 stroke.points.forEach((point, index) => {
-                    const [x, y] = point;
+                    const [x, y, pointColor] = point;
+                    // Utiliser la couleur du point si disponible (mode auto-pipette), sinon fallback sur stroke.color
+                    const colorToUse = pointColor || stroke.color;
                     if (stroke.tool === 'eraser') {
-                        ctx.fillStyle = stroke.color;
+                        ctx.fillStyle = colorToUse;
                         ctx.beginPath();
                         ctx.arc(x, y, stroke.brushSize, 0, 2 * Math.PI);
                         ctx.fill();
                     } else {
-                        drawBrushStroke(ctx, x, y, stroke.brushSize, stroke.color, brushConfig, 1.0, 0);
+                        drawBrushStroke(ctx, x, y, stroke.brushSize, colorToUse, brushConfig, 1.0, 0);
                     }
                 });
             }
@@ -1378,9 +1380,9 @@ const DrawBeruFixed = ({
                 drawBrushStroke(ctx, point.x, point.y, brushSizeToUse, pointColor, brushConfig, pressure, velocity);
             }
 
-            // 🌐 MULTIPLAYER: Tracker les points pour l'envoi
+            // 🌐 MULTIPLAYER: Tracker les points pour l'envoi (avec couleur en mode auto-pipette)
             if (multiplayerMode) {
-                currentStrokePointsRef.current.push([point.x, point.y]);
+                currentStrokePointsRef.current.push([point.x, point.y, pointColor]);
             }
         });
 
