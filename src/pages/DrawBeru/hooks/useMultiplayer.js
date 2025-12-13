@@ -33,6 +33,9 @@ export const useMultiplayer = () => {
   const [otherCursors, setOtherCursors] = useState({});
   const [undoEvents, setUndoEvents] = useState([]);
 
+  // Game state
+  const [gameStarted, setGameStarted] = useState(false);
+
   // Throttle refs
   const lastCursorEmitRef = useRef(0);
   const lastStrokingEmitRef = useRef(0);
@@ -109,6 +112,7 @@ export const useMultiplayer = () => {
     setIsHost(false);
     setReceivedStrokes([]);
     setOtherCursors({});
+    setGameStarted(false);
   }, []);
 
   // ========================================================================
@@ -159,6 +163,12 @@ export const useMultiplayer = () => {
       setRoom(null);
       setPlayers([]);
       setMyPlayer(null);
+    });
+
+    // Game start event
+    socket.on('game:started', () => {
+      console.log('Game started!');
+      setGameStarted(true);
     });
 
     // Drawing events
@@ -309,6 +319,7 @@ export const useMultiplayer = () => {
         setIsHost(false);
         setReceivedStrokes([]);
         setOtherCursors({});
+        setGameStarted(false);
       }
     });
   }, []);
@@ -347,6 +358,27 @@ export const useMultiplayer = () => {
       }
     });
   }, [isHost]);
+
+  /**
+   * Démarrer la partie (host only)
+   * Notifie tous les joueurs de la room
+   */
+  const startGame = useCallback(() => {
+    if (!socketRef.current?.connected || !room || !isHost) return;
+
+    return new Promise((resolve, reject) => {
+      socketRef.current.emit('game:start', {}, (response) => {
+        if (response.success) {
+          console.log('Game started successfully');
+          setGameStarted(true);
+          resolve(response);
+        } else {
+          console.error('Failed to start game:', response.error);
+          reject(new Error(response.error));
+        }
+      });
+    });
+  }, [room, isHost]);
 
   // ========================================================================
   // DRAWING ACTIONS
@@ -499,6 +531,10 @@ export const useMultiplayer = () => {
     leaveRoom,
     getRoomInfo,
     updateSettings,
+    startGame,
+
+    // Game state
+    gameStarted,
 
     // Drawing state
     receivedStrokes,

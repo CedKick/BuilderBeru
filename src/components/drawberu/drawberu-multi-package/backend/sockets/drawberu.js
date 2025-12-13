@@ -25,6 +25,7 @@ const createRoom = (hostId, hostName, hunter, model) => ({
   model: model,
   createdAt: Date.now(),
   lastActivity: Date.now(),
+  gameStarted: false,
   settings: {
     maxPlayers: 4,
     autoPipette: true,
@@ -113,6 +114,24 @@ const initDrawBeruSockets = (io) => {
         room.lastActivity = Date.now();
         drawberuIO.to(room.id).emit('room:settingsUpdated', { settings: room.settings });
         callback({ success: true, settings: room.settings });
+      } catch (error) {
+        callback({ success: false, error: error.message });
+      }
+    });
+
+    socket.on('game:start', (data, callback) => {
+      try {
+        if (!currentRoom) return callback({ success: false, error: 'Pas dans une room' });
+        const room = rooms.get(currentRoom);
+        if (!room) return callback({ success: false, error: 'Room introuvable' });
+        if (room.host !== socket.id) return callback({ success: false, error: 'Seul le host peut demarrer' });
+        if (room.gameStarted) return callback({ success: false, error: 'Partie deja en cours' });
+        room.gameStarted = true;
+        room.lastActivity = Date.now();
+        console.log('🎮 Game started in room: ' + room.id);
+        // Notifie tous les joueurs (y compris le host)
+        drawberuIO.to(room.id).emit('game:started');
+        callback({ success: true });
       } catch (error) {
         callback({ success: false, error: error.message });
       }

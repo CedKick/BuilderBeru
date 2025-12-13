@@ -65,6 +65,13 @@ const DrawBeruLauncher = () => {
     }
   }, [searchParams]);
 
+  // Écouter quand la partie démarre (pour tous les joueurs)
+  useEffect(() => {
+    if (multiplayer.gameStarted && currentState === LAUNCHER_STATES.MULTI_LOBBY) {
+      setCurrentState(LAUNCHER_STATES.PLAYING_MULTI);
+    }
+  }, [multiplayer.gameStarted, currentState]);
+
   // Données du modèle sélectionné
   const currentModelData = getModel(selectedHunter, selectedModel);
   const hunterName = drawBeruModels[selectedHunter]?.name || selectedHunter;
@@ -137,8 +144,13 @@ const DrawBeruLauncher = () => {
     }
   };
 
-  const handleStartGame = () => {
-    setCurrentState(LAUNCHER_STATES.PLAYING_MULTI);
+  const handleStartGame = async () => {
+    try {
+      await multiplayer.startGame();
+      // L'état sera changé via le useEffect qui écoute multiplayer.gameStarted
+    } catch (error) {
+      console.error('Failed to start game:', error);
+    }
   };
 
   const handleLeaveGame = () => {
