@@ -69,18 +69,20 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
         }
     }, [isVisible, onClose, isClosing]);
 
-    // 📍 AJUSTEMENT DE LA POSITION
+    // 📍 AJUSTEMENT DE LA POSITION - Bulle centrée au-dessus du chibi
     useEffect(() => {
         if (isMobileDevice) {
+            // Mobile : utiliser la position passée ou centrer
             setAdjustedPosition({
-                x: window.innerWidth / 2,
-                y: 80,
+                x: position?.x || window.innerWidth / 2,
+                y: Math.max(60, position?.y || 80),
                 currentCanvasId: position?.currentCanvasId
             });
         } else {
+            // Desktop : garder la position x du chibi pour centrer la bulle au-dessus
             const safePosition = {
-                x: Math.max(150, Math.min(window.innerWidth - 250, position?.x || window.innerWidth / 2)),
-                y: Math.max(100, Math.min(window.innerHeight - 150, position?.y - 50)),
+                x: Math.max(140, Math.min(window.innerWidth - 140, position?.x || window.innerWidth / 2)),
+                y: Math.max(80, Math.min(window.innerHeight - 150, position?.y || 200)),
                 currentCanvasId: position?.currentCanvasId
             };
             setAdjustedPosition(safePosition);
@@ -231,73 +233,87 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                             cursor: 'pointer'
                         }}
                     >
-                        {/* Header avec Icône et Nom */}
+                        {/* 📱 MOBILE: Icône en haut, texte en dessous */}
                         <div style={{
                             display: 'flex',
+                            flexDirection: 'column',
                             alignItems: 'center',
-                            marginBottom: '8px',
-                            paddingBottom: '6px',
-                            borderBottom: `1px solid ${entityColors[entityType]}60`,
-                            backgroundColor: 'rgba(0, 0, 0, 0.3)'
+                            gap: '8px'
                         }}>
-                            <img
-                                src={entityIcons[entityType]}
-                                alt={entityNames[entityType]}
+                            {/* Icône + Nom */}
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                paddingBottom: '6px',
+                                borderBottom: `1px solid ${entityColors[entityType]}60`,
+                                width: '100%',
+                                justifyContent: 'center',
+                                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                                borderRadius: '8px',
+                                padding: '6px'
+                            }}>
+                                <img
+                                    src={entityIcons[entityType]}
+                                    alt={entityNames[entityType]}
+                                    style={{
+                                        width: isBerserker ? '44px' : '40px',
+                                        height: isBerserker ? '44px' : '40px',
+                                        borderRadius: '50%',
+                                        border: `3px solid ${entityColors[entityType]}`,
+                                        filter: isIgrisk ? 'hue-rotate(270deg) saturate(1.5)' :
+                                               isBerserker ? 'drop-shadow(0 0 5px rgba(139,0,255,0.8))' : 'none',
+                                        boxShadow: `0 0 10px ${entityColors[entityType]}50`
+                                    }}
+                                />
+                                <span style={{
+                                    color: entityColors[entityType],
+                                    fontSize: '14px',
+                                    fontWeight: 'bold',
+                                    fontFamily: 'monospace'
+                                }}>
+                                    {entityNames[entityType]}
+                                    {isIgrisk && <span style={{
+                                        fontSize: '10px',
+                                        color: '#ff6b6b',
+                                        marginLeft: '5px',
+                                        animation: 'blink 1s infinite'
+                                    }}>⚠️</span>}
+                                    {isBerserker && <span style={{
+                                        fontSize: '10px',
+                                        color: '#ff00ff',
+                                        marginLeft: '5px'
+                                    }}>💀</span>}
+                                </span>
+                            </div>
+
+                            {/* Message avec DyText - EN DESSOUS sur mobile */}
+                            <div
+                                ref={bubbleRef}
                                 style={{
-                                    width: isBerserker ? '32px' : '24px',
-                                    height: isBerserker ? '32px' : '24px',
-                                    borderRadius: '50%',
-                                    marginRight: '8px',
-                                    border: `2px solid ${entityColors[entityType]}`,
-                                    filter: isIgrisk ? 'hue-rotate(270deg) saturate(1.5)' : 
-                                           isBerserker ? 'drop-shadow(0 0 5px rgba(139,0,255,0.8))' : 'none'
+                                    color: isBerserker ? '#ff4444' : 'white',
+                                    fontFamily: 'monospace',
+                                    fontSize: '13px',
+                                    lineHeight: '1.4',
+                                    whiteSpace: 'pre-line',
+                                    minHeight: '20px',
+                                    textShadow: isBerserker
+                                        ? '0 0 10px rgba(255,0,0,0.8)'
+                                        : isIgrisk
+                                        ? '1px 1px 3px rgba(255,0,0,0.5)'
+                                        : '1px 1px 2px rgba(0,0,0,0.8)',
+                                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                                    padding: '8px',
+                                    borderRadius: '6px',
+                                    visibility: 'visible',
+                                    opacity: 1,
+                                    position: 'relative',
+                                    zIndex: 1,
+                                    width: '100%',
+                                    textAlign: 'center'
                                 }}
                             />
-                            <span style={{
-                                color: entityColors[entityType],
-                                fontSize: '12px',
-                                fontWeight: 'bold',
-                                fontFamily: 'monospace'
-                            }}>
-                                {entityNames[entityType]}
-                                {isIgrisk && <span style={{
-                                    fontSize: '10px',
-                                    color: '#ff6b6b',
-                                    marginLeft: '5px',
-                                    animation: 'blink 1s infinite'
-                                }}>⚠️</span>}
-                                {isBerserker && <span style={{
-                                    fontSize: '10px',
-                                    color: '#ff00ff',
-                                    marginLeft: '5px'
-                                }}>💀</span>}
-                            </span>
                         </div>
-
-                        {/* Message avec DyText */}
-                        <div
-                            ref={bubbleRef}
-                            style={{
-                                color: isBerserker ? '#ff4444' : 'white',
-                                fontFamily: 'monospace',
-                                fontSize: '13px',
-                                lineHeight: '1.4',
-                                whiteSpace: 'pre-line',
-                                minHeight: '20px',
-                                textShadow: isBerserker
-                                    ? '0 0 10px rgba(255,0,0,0.8)'
-                                    : isIgrisk
-                                    ? '1px 1px 3px rgba(255,0,0,0.5)'
-                                    : '1px 1px 2px rgba(0,0,0,0.8)',
-                                backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                                padding: '6px',
-                                borderRadius: '6px',
-                                visibility: 'visible',
-                                opacity: 1,
-                                position: 'relative',
-                                zIndex: 1
-                            }}
-                        />
 
                         {/* Flèche vers le bas */}
                         <div style={{
@@ -318,14 +334,16 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                     </div>
                 </div>
             ) : (
-                // 🖥️ VERSION DESKTOP
+                // 🖥️ VERSION DESKTOP - Centré au-dessus du chibi
                 <div
                     style={{
                         position: 'fixed',
                         top: adjustedPosition.y,
-                        left: adjustedPosition.x - 120,
+                        left: adjustedPosition.x,
+                        transform: 'translateX(-50%)', // Centrer horizontalement
                         zIndex: isBerserker ? 10503 : 10100,
-                        maxWidth: '280px'
+                        maxWidth: '350px', // Plus large pour layout horizontal
+                        minWidth: '280px'
                     }}
                 >
                     <div style={{
@@ -338,66 +356,82 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                             ? '0 4px 20px rgba(255,0,0,0.3)'
                             : '0 4px 20px rgba(0,0,0,0.5)'
                     }}>
-                        {/* Header Desktop */}
+                        {/* 🖥️ DESKTOP: Icône à gauche, texte à droite */}
                         <div style={{
                             display: 'flex',
-                            alignItems: 'center',
-                            marginBottom: '6px'
+                            flexDirection: 'row',
+                            alignItems: 'flex-start',
+                            gap: '12px'
                         }}>
-                            <img
-                                src={entityIcons[entityType]}
-                                alt={entityNames[entityType]}
+                            {/* Icône grande + Nom */}
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '4px',
+                                flexShrink: 0
+                            }}>
+                                <img
+                                    src={entityIcons[entityType]}
+                                    alt={entityNames[entityType]}
+                                    style={{
+                                        width: isBerserker ? '44px' : '40px',
+                                        height: isBerserker ? '44px' : '40px',
+                                        borderRadius: '50%',
+                                        border: `3px solid ${entityColors[entityType]}`,
+                                        filter: isIgrisk ? 'hue-rotate(270deg) saturate(1.5)' :
+                                               isBerserker ? 'drop-shadow(0 0 5px rgba(139,0,255,0.8))' : 'none',
+                                        boxShadow: `0 0 10px ${entityColors[entityType]}50`
+                                    }}
+                                />
+                                <span style={{
+                                    color: entityColors[entityType],
+                                    fontSize: '10px',
+                                    fontWeight: 'bold',
+                                    fontFamily: 'monospace',
+                                    textAlign: 'center',
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    {entityNames[entityType]}
+                                    {isIgrisk && <span style={{
+                                        fontSize: '8px',
+                                        color: '#ff6b6b',
+                                        marginLeft: '3px'
+                                    }}>(?)</span>}
+                                    {isBerserker && <span style={{
+                                        fontSize: '8px',
+                                        color: '#ff00ff',
+                                        marginLeft: '3px'
+                                    }}>💀</span>}
+                                </span>
+                            </div>
+
+                            {/* Message Desktop - À DROITE de l'icône */}
+                            <div
+                                ref={bubbleRef}
                                 style={{
-                                    width: isBerserker ? '24px' : '20px',
-                                    height: isBerserker ? '24px' : '20px',
-                                    borderRadius: '50%',
-                                    marginRight: '6px',
-                                    border: `1px solid ${entityColors[entityType]}`,
-                                    filter: isIgrisk ? 'hue-rotate(270deg) saturate(1.5)' : 
-                                           isBerserker ? 'drop-shadow(0 0 5px rgba(139,0,255,0.8))' : 'none'
+                                    color: isBerserker ? '#ff4444' : 'white',
+                                    fontFamily: 'monospace',
+                                    fontSize: '12px',
+                                    lineHeight: '1.4',
+                                    whiteSpace: 'pre-line',
+                                    minHeight: '40px',
+                                    visibility: 'visible',
+                                    opacity: 1,
+                                    position: 'relative',
+                                    zIndex: 1,
+                                    textShadow: isBerserker
+                                        ? '0 0 10px rgba(255,0,0,0.8)'
+                                        : isIgrisk
+                                        ? '1px 1px 3px rgba(255,0,0,0.5)'
+                                        : '1px 1px 2px rgba(0,0,0,0.8)',
+                                    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                                    padding: '8px',
+                                    borderRadius: '6px',
+                                    flex: 1
                                 }}
                             />
-                            <span style={{
-                                color: entityColors[entityType],
-                                fontSize: '10px',
-                                fontWeight: 'bold',
-                                fontFamily: 'monospace'
-                            }}>
-                                {entityNames[entityType]}
-                                {isIgrisk && <span style={{
-                                    fontSize: '8px',
-                                    color: '#ff6b6b',
-                                    marginLeft: '3px'
-                                }}>(?)</span>}
-                                {isBerserker && <span style={{
-                                    fontSize: '8px',
-                                    color: '#ff00ff',
-                                    marginLeft: '3px'
-                                }}>💀</span>}
-                            </span>
                         </div>
-
-                        {/* Message Desktop */}
-                        <div
-                            ref={bubbleRef}
-                            style={{
-                                color: isBerserker ? '#ff4444' : 'white',
-                                fontFamily: 'monospace',
-                                fontSize: '12px',
-                                lineHeight: '1.3',
-                                whiteSpace: 'pre-line',
-                                minHeight: '16px',
-                                visibility: 'visible',
-                                opacity: 1,
-                                position: 'relative',
-                                zIndex: 1,
-                                textShadow: isBerserker
-                                    ? '0 0 10px rgba(255,0,0,0.8)'
-                                    : isIgrisk
-                                    ? '1px 1px 3px rgba(255,0,0,0.5)'
-                                    : '1px 1px 2px rgba(0,0,0,0.8)'
-                            }}
-                        />
                     </div>
                 </div>
             )}

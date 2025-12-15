@@ -3,7 +3,13 @@
 // Par Kaisel pour le Monarque des Ombres
 
 import React, { useState, useEffect } from 'react';
-import { drawBeruModels, getHunterModels, getModel } from '../../../pages/DrawBeru/config/models';
+import {
+  drawBeruModels,
+  getHunterModels,
+  getModel,
+  getAvailableThemes,
+  getHuntersByTheme
+} from '../../../pages/DrawBeru/config/models';
 
 const HunterModelSelector = ({
   selectedHunter,
@@ -12,9 +18,13 @@ const HunterModelSelector = ({
   onModelChange,
 }) => {
   const [previewImage, setPreviewImage] = useState(null);
+  const [selectedTheme, setSelectedTheme] = useState(null);
 
-  // Liste des hunters disponibles
-  const hunters = Object.entries(drawBeruModels);
+  // Liste des thèmes disponibles
+  const themes = getAvailableThemes();
+
+  // Liste des hunters filtrés par thème
+  const hunters = getHuntersByTheme(selectedTheme);
   const currentHunterModels = getHunterModels(selectedHunter);
   const currentModelData = getModel(selectedHunter, selectedModel);
 
@@ -27,11 +37,94 @@ const HunterModelSelector = ({
 
   return (
     <div className="space-y-6">
-      {/* Sélection Hunter */}
+      {/* Sélection Thème */}
+      <div>
+        <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+          <span>🎨</span>
+          <span>Choisis un Thème</span>
+        </h3>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {/* Bannière "Tous" */}
+          <button
+            onClick={() => setSelectedTheme(null)}
+            className={`relative h-16 rounded-xl overflow-hidden transition-all ${
+              selectedTheme === null
+                ? 'ring-4 ring-purple-500 scale-105 z-10'
+                : 'ring-2 ring-purple-500/30 hover:ring-purple-400 hover:scale-102'
+            }`}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-800" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-white font-bold text-lg drop-shadow-lg">
+                Tous
+              </span>
+            </div>
+            {selectedTheme === null && (
+              <div className="absolute top-1 right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center">
+                <span className="text-purple-600 text-xs">✓</span>
+              </div>
+            )}
+          </button>
+
+          {/* Bannières des thèmes */}
+          {themes.map((theme) => {
+            const isSelected = selectedTheme === theme.id;
+            const hasImage = theme.image !== null;
+
+            return (
+              <button
+                key={theme.id}
+                onClick={() => setSelectedTheme(theme.id)}
+                className={`relative h-16 rounded-xl overflow-hidden transition-all ${
+                  isSelected
+                    ? 'ring-4 ring-purple-500 scale-105 z-10'
+                    : 'ring-2 ring-purple-500/30 hover:ring-purple-400 hover:scale-102'
+                }`}
+              >
+                {/* Fond: image ou violet */}
+                {hasImage ? (
+                  <>
+                    <img
+                      src={theme.image}
+                      alt={theme.name}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40" />
+                  </>
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-800" />
+                )}
+
+                {/* Texte */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-white font-bold text-lg drop-shadow-lg">
+                    {theme.name}
+                  </span>
+                </div>
+
+                {/* Check si sélectionné */}
+                {isSelected && (
+                  <div className="absolute top-1 right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center">
+                    <span className="text-purple-600 text-xs">✓</span>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Sélection Personnage */}
       <div>
         <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
           <span>🎯</span>
-          <span>Choisis ton Hunter</span>
+          <span>Choisis ton Personnage</span>
+          {selectedTheme && (
+            <span className="text-purple-400 text-sm font-normal">
+              ({hunters.length} disponible{hunters.length > 1 ? 's' : ''})
+            </span>
+          )}
         </h3>
 
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">

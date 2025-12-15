@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { drawBeruModels, getModel, getHunterModels } from './config/models';
 import { BrushEngine, MANGA_BRUSHES } from './BrushEngine';
+import ChibiBubble from '../../components/ChibiBubble';
 
 // ⚡ HOOK MOBILE SIMPLIFIÉ (au lieu d'importer un fichier externe)
 const useIsMobile = () => {
@@ -221,6 +222,195 @@ const DrawBeruFixed = ({
 
     // 🎨 AUTO-PIPETTE MODE - Colorie avec les couleurs du modèle de référence
     const [autoPipetteMode, setAutoPipetteMode] = useState(false);
+
+    // 🦋 BERU PAPILLON ZONE SELECTION - Sélection de zone géométrique
+    const [zoneSelectionMode, setZoneSelectionMode] = useState(false); // Mode de sélection actif
+    const [selectedZoneShape, setSelectedZoneShape] = useState('rectangle'); // rectangle, square, circle, triangle
+    const [zoneRotation, setZoneRotation] = useState(0); // Rotation en degrés
+    const [zonePosition, setZonePosition] = useState({ x: 0, y: 0 }); // Position du centre
+    const [zoneSize, setZoneSize] = useState({ width: 150, height: 150 }); // Taille de la zone
+    const [isDraggingZone, setIsDraggingZone] = useState(false); // Drag en cours
+    const [isResizingZone, setIsResizingZone] = useState(false); // Resize en cours
+    const [pendingChibiId, setPendingChibiId] = useState(null); // Chibi en attente de zone
+    const zoneSelectionRef = useRef(null);
+
+    // 🎨 Configuration des Chibis dessinateurs (DOIT être avant les états qui l'utilisent)
+    const CHIBI_PAINTERS = {
+        beru_papillon: {
+            id: 'beru_papillon',
+            name: 'Béru-Papillon',
+            entityType: 'beru',
+            sprites: {
+                back: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422906/alecto_up_dwahgh.png',
+                front: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png'
+            },
+            // 📊 STATS du Chibi - affectent son comportement
+            stats: {
+                endurance: 80,      // 1-100: durée de travail
+                speed: 60,          // 1-100: vitesse de déplacement (60 = modéré, pas trop rapide)
+                pixelPrecision: 2   // Taille du pinceau (plus petit = plus précis)
+            },
+            pixelSize: 2, // Basé sur stats.pixelPrecision
+            duration: 60,
+            colorMode: 'accurate', // 'accurate' = vraie couleur
+            movementMode: 'zone', // 'zone' = colorie des zones non coloriées
+            inkSplash: false,
+            // 🎯 Config pour le mode zone
+            zoneConfig: {
+                minSize: 8,         // Taille min de zone à colorier
+                maxSize: 25,        // Taille max de zone à colorier
+                shapes: ['rect', 'square', 'triangle'],
+            },
+            messages: [
+                "Kiii... mais avec grâce maintenant !",
+                "Mes ailes chatouillent les ombres...",
+                "La nuit révèle ce que le jour cache.",
+                "Entre deux mondes, je danse.",
+                "Kiii… mais en douceur.",
+                "La nuit est mon royaume.",
+                "Un papillon de l'ombre... artistique !",
+                "Cette zone a besoin de couleur !",
+                "Mes couleurs sont aussi précises que mes griffes~",
+                "Admire mon art, humain !",
+                "Je cherche les zones vides...",
+                "Hop ! Une zone de plus !"
+            ],
+            startMessage: "C'est parti ! Je vais colorier les zones vides~",
+            endMessage: "Mission accomplie ! À la prochaine~",
+            // 🤝 Affinités (pour futur système multi-chibi)
+            affinities: { tank: 'chaotic' }
+        },
+        // 🐻 TANK - Le troll qui se trompe de couleur !
+        tank: {
+            id: 'tank',
+            name: 'Tank',
+            entityType: 'tank',
+            sprites: {
+                back: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604462/tank_dos_bk6poi.png',
+                front: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png'
+            },
+            // 📊 STATS du Chibi
+            stats: {
+                endurance: 50,      // Moins endurant
+                speed: 40,          // Plus lent
+                pixelPrecision: 5   // Moins précis, gros pinceau
+            },
+            pixelSize: 5, // Basé sur stats.pixelPrecision
+            duration: 45,
+            colorMode: 'troll', // Se trompe de couleur !
+            movementMode: 'random', // Mouvement aléatoire
+            inkSplash: true, // Fait des taches d'encre !
+            inkSplashChance: 0.08, // 8% de chance de faire une tache
+            messages: [
+                "Hehe... cette couleur va être PARFAITE !",
+                "*splash* Oups, c'est pas la bonne couleur ?",
+                "L'art c'est subjectif, non ?",
+                "Un vrai chef-d'œuvre ! ...ou pas.",
+                "TANK SMASH... avec de la peinture !",
+                "Wouaf ! Je suis un artiste incompris !",
+                "C'est... euh... de l'art abstrait !",
+                "Personne ne remarquera... hehe",
+                "Je fais la boule... sur ton dessin !",
+                "Oups, ma patte a glissé !"
+            ],
+            startMessage: "Wouaf ! Tank va t'aider... à sa manière !",
+            endMessage: "Hehe... c'est beau non ? ...Non ? WOUAF !",
+            // 🤝 Affinités (pour futur système multi-chibi)
+            affinities: { beru_papillon: 'chaotic' }
+        }
+    };
+
+    // 🎮 Sélection du Chibi dessinateur
+    const [selectedPainterId, setSelectedPainterId] = useState('beru_papillon');
+    const currentPainter = CHIBI_PAINTERS[selectedPainterId];
+
+    // 🦋 AUTO-DRAW MULTI-CHIBI - Système pour jusqu'à 2 Chibis dessinateurs
+    const MAX_ACTIVE_CHIBIS = 2;
+
+    // État pour chaque chibi actif: { [id]: { active, timeRemaining, position, facingFront, message, direction } }
+    const [activeChibis, setActiveChibis] = useState({});
+
+    // Ref pour accéder à l'état actuel des chibis dans les animations (évite les closures stale)
+    const activeChibisRef = useRef({});
+
+    // Refs pour chaque chibi actif
+    const chibiTimersRef = useRef({});
+    const chibiAnimationsRef = useRef({});
+    const chibiTargetsRef = useRef({});
+    const chibiMessageTimeoutsRef = useRef({});
+    const chibiScanPositionsRef = useRef({});
+    const chibiZoneDataRef = useRef({}); // Pour le mode zone
+
+    // Refs de compatibilité (pour le code existant)
+    const autoDrawBeruAnimationRef = useRef(null);
+    const autoDrawBeruTimerRef = useRef(null);
+    const beruTargetRef = useRef({ x: 0, y: 0 });
+    const beruMessageTimeoutRef = useRef(null);
+    const scanPositionRef = useRef({ row: 0, col: 0, direction: 1 });
+
+    // Helpers pour mettre à jour un chibi spécifique
+    const updateChibiState = (chibiId, updates) => {
+        setActiveChibis(prev => ({
+            ...prev,
+            [chibiId]: { ...prev[chibiId], ...updates }
+        }));
+    };
+
+    // Synchroniser la ref avec l'état pour les animations (évite les closures stale)
+    useEffect(() => {
+        activeChibisRef.current = activeChibis;
+    }, [activeChibis]);
+
+    // 📌 COMPATIBILITÉ - Wrappers pour l'ancien code (agissent sur le chibi sélectionné)
+    const setAutoDrawBeruActive = (value) => {
+        if (value) {
+            setActiveChibis(prev => ({
+                ...prev,
+                [selectedPainterId]: {
+                    ...prev[selectedPainterId],
+                    active: true,
+                    timeRemaining: CHIBI_PAINTERS[selectedPainterId]?.duration || 60
+                }
+            }));
+        } else {
+            setActiveChibis(prev => {
+                const newState = { ...prev };
+                if (newState[selectedPainterId]) {
+                    newState[selectedPainterId] = { ...newState[selectedPainterId], active: false };
+                }
+                return newState;
+            });
+        }
+    };
+    const setAutoDrawBeruTimeRemaining = (value) => updateChibiState(selectedPainterId, { timeRemaining: value });
+    const setBeruPosition = (value) => updateChibiState(selectedPainterId, {
+        position: typeof value === 'function'
+            ? value(activeChibis[selectedPainterId]?.position || { x: 0, y: 0 })
+            : value
+    });
+    const setBeruFacingFront = (value) => updateChibiState(selectedPainterId, { facingFront: value });
+    const setBeruMessage = (value) => updateChibiState(selectedPainterId, { message: value });
+    const setBeruDirection = (value) => updateChibiState(selectedPainterId, { direction: value });
+
+    // Valeurs calculées pour compatibilité avec l'ancien code
+    const autoDrawBeruActive = Object.values(activeChibis).some(c => c.active);
+    const autoDrawBeruTimeRemaining = activeChibis[selectedPainterId]?.timeRemaining || currentPainter?.duration || 60;
+    const beruPosition = activeChibis[selectedPainterId]?.position || { x: 0, y: 0 };
+    const beruFacingFront = activeChibis[selectedPainterId]?.facingFront || false;
+    const beruMessage = activeChibis[selectedPainterId]?.message || null;
+    const beruDirection = activeChibis[selectedPainterId]?.direction || 1;
+
+    // Helpers pour le système multi-chibi
+    const getActiveChibiCount = () => Object.values(activeChibis).filter(c => c.active).length;
+    const isChibiActive = (chibiId) => activeChibis[chibiId]?.active || false;
+    const getChibiState = (chibiId) => activeChibis[chibiId] || {
+        active: false,
+        timeRemaining: CHIBI_PAINTERS[chibiId]?.duration || 60,
+        position: { x: 0, y: 0 },
+        facingFront: false,
+        message: null,
+        direction: 1
+    };
 
     // 🔢 BRUSH SIZE CONTROLS - Long press refs
     const brushSizeIntervalRef = useRef(null);
@@ -499,6 +689,767 @@ const DrawBeruFixed = ({
             }
         };
     }, [isMobile]);
+
+    // 🎯 Identifiant stable des chibis actifs (ne change pas quand timeRemaining change)
+    const activeChibiIds = Object.keys(activeChibis)
+        .filter(id => activeChibis[id]?.active)
+        .sort()
+        .join(',');
+
+    // 🦋 AUTO-DRAW MULTI-CHIBI: Animation et coloriage automatique
+    useEffect(() => {
+        if (!currentModelData || !imagesLoaded) return;
+
+        const canvas = canvasRef.current;
+        const refCanvas = referenceCanvasRef.current;
+        if (!canvas || !refCanvas) return;
+
+        // Utiliser la ref pour accéder à l'état actuel des chibis (évite les closures stale)
+        const currentActiveChibis = activeChibisRef.current;
+
+        // Pour chaque chibi actif, démarrer son animation
+        Object.entries(currentActiveChibis).forEach(([chibiId, chibiState]) => {
+            if (!chibiState.active) return;
+
+            // Si ce chibi a déjà une animation en cours, ne pas en créer une nouvelle
+            if (chibiAnimationsRef.current[chibiId]) return;
+
+            const painter = CHIBI_PAINTERS[chibiId];
+            if (!painter) return;
+
+            console.log(`🎨 Démarrage animation pour: ${painter.name}`);
+
+            // Initialiser la position selon le mode de mouvement
+            const initialPos = painter.movementMode === 'methodical' || painter.movementMode === 'zone'
+                ? { x: 0, y: 0 }
+                : { x: canvas.width / 2, y: canvas.height / 2 };
+
+            updateChibiState(chibiId, { position: initialPos });
+
+            if (!chibiScanPositionsRef.current[chibiId]) {
+                chibiScanPositionsRef.current[chibiId] = { row: 0, col: 0, direction: 1 };
+            }
+            if (!chibiTargetsRef.current[chibiId]) {
+                chibiTargetsRef.current[chibiId] = {
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height
+                };
+            }
+            if (!chibiZoneDataRef.current[chibiId]) {
+                chibiZoneDataRef.current[chibiId] = { currentZone: null, zoneProgress: 0, lastZoneTime: 0 };
+            }
+        }); // Fin du forEach pour initialisation des chibis actifs
+
+        // Si aucun chibi actif, ne rien faire
+        const activeChiibsCount = Object.values(currentActiveChibis).filter(c => c.active).length;
+        if (activeChiibsCount === 0) return;
+
+        // Fonction pour obtenir la couleur depuis la référence
+        const getColorAtPosition = (posX, posY) => {
+            try {
+                const refX = Math.floor(posX * refCanvas.width / canvas.width);
+                const refY = Math.floor(posY * refCanvas.height / canvas.height);
+
+                if (refX >= 0 && refX < refCanvas.width && refY >= 0 && refY < refCanvas.height) {
+                    const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
+                    const pixel = refCtx.getImageData(refX, refY, 1, 1).data;
+                    if (pixel[3] > 0) {
+                        const r = pixel[0];
+                        const g = pixel[1];
+                        const b = pixel[2];
+                        return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+                    }
+                }
+            } catch (err) { /* ignore */ }
+            return '#FFFFFF';
+        };
+
+        // 🎨 Fonction pour modifier la couleur en mode troll (Tank)
+        const trollifyColor = (hexColor) => {
+            // Convertir hex en RGB
+            const r = parseInt(hexColor.slice(1, 3), 16);
+            const g = parseInt(hexColor.slice(3, 5), 16);
+            const b = parseInt(hexColor.slice(5, 7), 16);
+
+            // Mode troll : décaler les couleurs de manière aléatoire
+            const trollMode = Math.random();
+            let newR, newG, newB;
+
+            if (trollMode < 0.3) {
+                // Swap R et B
+                newR = b; newG = g; newB = r;
+            } else if (trollMode < 0.5) {
+                // Inverser
+                newR = 255 - r; newG = 255 - g; newB = 255 - b;
+            } else if (trollMode < 0.7) {
+                // Décaler vers le rouge/rose
+                newR = Math.min(255, r + 100);
+                newG = Math.max(0, g - 50);
+                newB = Math.min(255, b + 50);
+            } else {
+                // Couleur complètement aléatoire (rare mais chaotique)
+                newR = Math.floor(Math.random() * 256);
+                newG = Math.floor(Math.random() * 256);
+                newB = Math.floor(Math.random() * 256);
+            }
+
+            return `#${((1 << 24) + (newR << 16) + (newG << 8) + newB).toString(16).slice(1).toUpperCase()}`;
+        };
+
+        // 🖤 Fonction pour faire une tache d'encre (Tank)
+        const makeInkSplash = (x, y, ctx) => {
+            const splashSize = Math.floor(Math.random() * 15) + 10; // 10-25 pixels
+            const inkColors = ['#1a1a2e', '#16213e', '#0f0f1a', '#2c2c54', '#1e1e2f'];
+            const inkColor = inkColors[Math.floor(Math.random() * inkColors.length)];
+
+            ctx.fillStyle = inkColor;
+            ctx.beginPath();
+
+            // Dessiner plusieurs cercles pour un effet de splash
+            for (let i = 0; i < 5; i++) {
+                const offsetX = (Math.random() - 0.5) * splashSize;
+                const offsetY = (Math.random() - 0.5) * splashSize;
+                const radius = Math.random() * (splashSize / 3) + 2;
+                ctx.moveTo(x + offsetX + radius, y + offsetY);
+                ctx.arc(x + offsetX, y + offsetY, radius, 0, Math.PI * 2);
+            }
+            ctx.fill();
+        };
+
+        // 🎯 Fonction pour vérifier si une zone est non coloriée (transparente)
+        const isZoneUncolored = (x, y, width, height) => {
+            const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
+            const layerCanvas = layersRef.current[activeLayerIndex];
+            if (!layerCanvas) return false;
+
+            const ctx = layerCanvas.getContext('2d', { alpha: true });
+            const imageData = ctx.getImageData(Math.floor(x), Math.floor(y), Math.min(width, canvas.width - x), Math.min(height, canvas.height - y));
+            const data = imageData.data;
+
+            // Compter les pixels transparents
+            let transparentPixels = 0;
+            const totalPixels = imageData.width * imageData.height;
+
+            for (let i = 3; i < data.length; i += 4) {
+                if (data[i] < 10) { // Alpha < 10 = transparent
+                    transparentPixels++;
+                }
+            }
+
+            // Retourner true si plus de 60% de la zone est transparente
+            return (transparentPixels / totalPixels) > 0.6;
+        };
+
+        // 🎭 Fonction pour afficher un message pour un chibi spécifique
+        // chibiId: ID du chibi, painter: config du chibi, forceFaceFront: si true, se retourne vers la caméra
+        const showMessageForChibi = (chibiId, painter, forceFaceFront = false) => {
+            const messages = painter.messages;
+            if (!messages || messages.length === 0) return;
+
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+
+            // Mettre à jour l'état du chibi spécifique
+            updateChibiState(chibiId, { message: randomMessage });
+
+            // Ne se retourne que si forcé ou 30% de chance aléatoire
+            const shouldFaceFront = forceFaceFront || Math.random() < 0.3;
+            if (shouldFaceFront) {
+                updateChibiState(chibiId, { facingFront: true });
+            }
+
+            // Cache le message après 4 secondes
+            if (chibiMessageTimeoutsRef.current[chibiId]) {
+                clearTimeout(chibiMessageTimeoutsRef.current[chibiId]);
+            }
+            chibiMessageTimeoutsRef.current[chibiId] = setTimeout(() => {
+                updateChibiState(chibiId, { message: null });
+                if (shouldFaceFront) {
+                    updateChibiState(chibiId, { facingFront: false }); // Retourne au travail (dos)
+                }
+            }, 4000);
+        };
+
+        // 🎨 Fonction pour dessiner un pixel pour un painter spécifique
+        const drawPixelForPainter = (x, y, painter) => {
+            const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
+            const layerCanvas = layersRef.current[activeLayerIndex];
+            if (!layerCanvas) return;
+
+            const ctx = layerCanvas.getContext('2d', { alpha: true });
+            let color = getColorAtPosition(x, y);
+            const pixelSize = painter.stats?.pixelPrecision || painter.pixelSize;
+
+            if (painter.colorMode === 'troll') {
+                color = trollifyColor(color);
+            }
+
+            if (painter.inkSplash && Math.random() < (painter.inkSplashChance || 0.05)) {
+                makeInkSplash(x, y, ctx);
+            }
+
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = color;
+            ctx.fillRect(Math.floor(x), Math.floor(y), pixelSize, pixelSize);
+        };
+
+        // 🎯 Fonction pour trouver une zone non coloriée pour un painter spécifique
+        const findUncoloredZoneForPainter = (painter) => {
+            const config = painter.zoneConfig || { minSize: 8, maxSize: 25 };
+            const maxAttempts = 30;
+
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                const x = Math.floor(Math.random() * (canvas.width - config.maxSize));
+                const y = Math.floor(Math.random() * (canvas.height - config.maxSize));
+                const width = Math.floor(Math.random() * (config.maxSize - config.minSize) + config.minSize);
+                const height = Math.floor(Math.random() * (config.maxSize - config.minSize) + config.minSize);
+
+                if (isZoneUncolored(x, y, width, height)) {
+                    return { x, y, width, height };
+                }
+            }
+
+            return {
+                x: Math.floor(Math.random() * (canvas.width - config.maxSize)),
+                y: Math.floor(Math.random() * (canvas.height - config.maxSize)),
+                width: Math.floor(Math.random() * (config.maxSize - config.minSize) + config.minSize),
+                height: Math.floor(Math.random() * (config.maxSize - config.minSize) + config.minSize)
+            };
+        };
+
+        // 🦋 Fonction pour vérifier si un point est dans la zone définie par l'utilisateur (avec rotation)
+        const isPointInUserZone = (px, py, zone) => {
+            if (!zone) return false;
+
+            const { shape, x: cx, y: cy, width, height, rotation } = zone;
+
+            // Convertir la rotation en radians
+            const rad = -(rotation * Math.PI) / 180;
+
+            // Transformer le point dans le repère local de la zone (inverse de la rotation)
+            const dx = px - cx;
+            const dy = py - cy;
+            const localX = dx * Math.cos(rad) - dy * Math.sin(rad);
+            const localY = dx * Math.sin(rad) + dy * Math.cos(rad);
+
+            const halfW = width / 2;
+            const halfH = height / 2;
+
+            switch (shape) {
+                case 'rectangle':
+                    return Math.abs(localX) <= halfW && Math.abs(localY) <= halfH;
+
+                case 'square': {
+                    const side = Math.min(width, height) / 2;
+                    return Math.abs(localX) <= side && Math.abs(localY) <= side;
+                }
+
+                case 'circle': {
+                    // Ellipse: (x/a)² + (y/b)² <= 1
+                    const normalizedX = localX / halfW;
+                    const normalizedY = localY / halfH;
+                    return (normalizedX * normalizedX + normalizedY * normalizedY) <= 1;
+                }
+
+                case 'triangle': {
+                    // Triangle isocèle pointant vers le haut
+                    // Sommets: (0, -halfH), (halfW, halfH), (-halfW, halfH)
+                    // On vérifie si le point est dans le triangle
+                    const y1 = -halfH, y2 = halfH;
+                    // Point dans le triangle si:
+                    // 1. Y est entre -halfH et halfH
+                    // 2. X est dans les bornes du triangle à cette hauteur Y
+                    if (localY < y1 || localY > y2) return false;
+                    // Largeur du triangle à la hauteur localY (interpolation linéaire)
+                    const progress = (localY - y1) / (y2 - y1); // 0 en haut, 1 en bas
+                    const halfWidthAtY = halfW * progress;
+                    return Math.abs(localX) <= halfWidthAtY;
+                }
+
+                default:
+                    return false;
+            }
+        };
+
+        // 🦋 Générer les pixels à colorier dans la zone définie par l'utilisateur
+        const generateUserZonePixels = (zone) => {
+            if (!zone) return [];
+
+            const { x: cx, y: cy, width, height } = zone;
+            const pixels = [];
+
+            // Parcourir la bounding box et collecter les pixels dans la forme
+            const startX = Math.max(0, Math.floor(cx - width / 2 - 10));
+            const endX = Math.min(canvas.width, Math.ceil(cx + width / 2 + 10));
+            const startY = Math.max(0, Math.floor(cy - height / 2 - 10));
+            const endY = Math.min(canvas.height, Math.ceil(cy + height / 2 + 10));
+
+            for (let y = startY; y < endY; y++) {
+                for (let x = startX; x < endX; x++) {
+                    if (isPointInUserZone(x, y, zone)) {
+                        pixels.push({ x, y });
+                    }
+                }
+            }
+
+            return pixels;
+        };
+
+        // 🦋 Démarrer l'animation pour chaque chibi actif qui n'a pas encore d'animation
+        Object.entries(currentActiveChibis).forEach(([chibiId, chibiState]) => {
+            if (!chibiState.active) return;
+            if (chibiAnimationsRef.current[chibiId]) return; // Déjà une animation en cours
+
+            const painter = CHIBI_PAINTERS[chibiId];
+            if (!painter) return;
+
+            console.log(`🎨 Démarrage animation pour: ${painter.name} (${chibiId})`);
+
+            // Variables locales pour l'animation de ce chibi
+            let frameCount = 0;
+
+            // 🎬 Message de démarrage pour ce chibi
+            setTimeout(() => {
+                updateChibiState(chibiId, { message: painter.startMessage, facingFront: true });
+                setTimeout(() => {
+                    updateChibiState(chibiId, { message: null, facingFront: false });
+                }, 2500);
+            }, 500);
+
+            // Animation loop spécifique pour ce chibi
+            const animateChibi = () => {
+                frameCount++;
+                const now = performance.now();
+
+                // Récupérer l'état actuel du chibi via la ref (évite les closures stale)
+                const currentChibiState = activeChibisRef.current[chibiId];
+                if (!currentChibiState?.active) {
+                    // Chibi désactivé, arrêter l'animation
+                    return;
+                }
+
+                const baseDelay = 150;
+                const statsSpeed = painter.stats?.speed || 50;
+                const actionDelay = baseDelay * (100 / statsSpeed);
+
+                const zoneData = chibiZoneDataRef.current[chibiId];
+                if (!zoneData) return;
+
+                if (painter.movementMode === 'zone') {
+                    // 🎯 MODE ZONE : Utilise la zone définie par l'utilisateur OU trouve des zones non coloriées
+                    if (now - zoneData.lastZoneTime >= actionDelay) {
+                        zoneData.lastZoneTime = now;
+
+                        // 🦋 BERU PAPILLON: Mode zone définie par l'utilisateur
+                        if (zoneData.userDefinedZone) {
+                            // Initialiser les pixels à colorier si pas encore fait
+                            if (!zoneData.userZonePixels) {
+                                zoneData.userZonePixels = generateUserZonePixels(zoneData.userDefinedZone);
+                                zoneData.zoneProgress = 0;
+                                console.log(`🦋 Zone utilisateur: ${zoneData.userZonePixels.length} pixels à colorier`);
+
+                                // Positionner le chibi au début de la zone
+                                if (zoneData.userZonePixels.length > 0) {
+                                    const firstPixel = zoneData.userZonePixels[0];
+                                    updateChibiState(chibiId, {
+                                        position: { x: firstPixel.x, y: firstPixel.y },
+                                        direction: firstPixel.x > canvas.width / 2 ? -1 : 1
+                                    });
+                                }
+                            }
+
+                            // Colorier les pixels dans la zone définie
+                            const pixelsPerAction = Math.max(10, Math.floor(statsSpeed / 5)); // Plus rapide pour les grandes zones
+                            const totalPixels = zoneData.userZonePixels.length;
+
+                            for (let i = 0; i < pixelsPerAction && zoneData.zoneProgress < totalPixels; i++) {
+                                const pixel = zoneData.userZonePixels[zoneData.zoneProgress];
+                                if (pixel) {
+                                    const { x: posX, y: posY } = pixel;
+
+                                    if (posX >= 0 && posX < canvas.width && posY >= 0 && posY < canvas.height) {
+                                        const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
+                                        const layerCanvas = layersRef.current[activeLayerIndex];
+                                        if (layerCanvas) {
+                                            const ctx = layerCanvas.getContext('2d', { alpha: true });
+                                            let color = getColorAtPosition(posX, posY);
+                                            if (painter.colorMode === 'troll') {
+                                                color = trollifyColor(color);
+                                            }
+                                            ctx.fillStyle = color;
+                                            ctx.fillRect(posX, posY, 1, 1);
+                                        }
+                                    }
+                                }
+                                zoneData.zoneProgress++;
+                            }
+
+                            // Mise à jour de la position du chibi
+                            if (zoneData.zoneProgress < totalPixels) {
+                                const currentPixel = zoneData.userZonePixels[Math.min(zoneData.zoneProgress, totalPixels - 1)];
+                                if (currentPixel) {
+                                    updateChibiState(chibiId, {
+                                        position: { x: currentPixel.x, y: currentPixel.y }
+                                    });
+                                }
+                            }
+
+                            // Messages aléatoires pendant le coloriage
+                            if (Math.random() < 0.02 && !currentChibiState.message) {
+                                showMessageForChibi(chibiId, painter, false);
+                            }
+
+                            // Zone terminée - ne pas recommencer, la zone est finie !
+                            if (zoneData.zoneProgress >= totalPixels) {
+                                console.log(`🦋 Zone utilisateur terminée !`);
+                                // On ne reset pas - Beru Papillon a fini sa zone
+                            }
+                        } else {
+                            // Mode classique: trouve des zones non coloriées aléatoires
+                            if (!zoneData.currentZone) {
+                                zoneData.currentZone = findUncoloredZoneForPainter(painter);
+                                zoneData.zoneProgress = 0;
+
+                                updateChibiState(chibiId, {
+                                    position: { x: zoneData.currentZone.x, y: zoneData.currentZone.y },
+                                    direction: zoneData.currentZone.x > canvas.width / 2 ? -1 : 1
+                                });
+
+                                if (Math.random() < 0.08 && !currentChibiState.message) {
+                                    showMessageForChibi(chibiId, painter, false);
+                                }
+                            } else {
+                                const pixelsPerAction = Math.max(5, Math.floor(statsSpeed / 10));
+                                const totalPixels = zoneData.currentZone.width * zoneData.currentZone.height;
+
+                                for (let i = 0; i < pixelsPerAction && zoneData.zoneProgress < totalPixels; i++) {
+                                    const py = Math.floor(zoneData.zoneProgress / zoneData.currentZone.width);
+                                    const px = zoneData.zoneProgress % zoneData.currentZone.width;
+                                    const posX = zoneData.currentZone.x + px;
+                                    const posY = zoneData.currentZone.y + py;
+
+                                    if (posX >= 0 && posX < canvas.width && posY >= 0 && posY < canvas.height) {
+                                        const activeLayerIndex = layers.findIndex(l => l.id === activeLayer);
+                                        const layerCanvas = layersRef.current[activeLayerIndex];
+                                        if (layerCanvas) {
+                                            const ctx = layerCanvas.getContext('2d', { alpha: true });
+                                            let color = getColorAtPosition(posX, posY);
+                                            if (painter.colorMode === 'troll') {
+                                                color = trollifyColor(color);
+                                            }
+                                            ctx.fillStyle = color;
+                                            ctx.fillRect(posX, posY, 1, 1);
+                                        }
+                                    }
+                                    zoneData.zoneProgress++;
+                                }
+
+                                const currentPy = Math.floor(zoneData.zoneProgress / zoneData.currentZone.width);
+                                const currentPx = zoneData.zoneProgress % zoneData.currentZone.width;
+                                updateChibiState(chibiId, {
+                                    position: {
+                                        x: zoneData.currentZone.x + currentPx,
+                                        y: zoneData.currentZone.y + currentPy
+                                    }
+                                });
+
+                                if (zoneData.zoneProgress >= totalPixels) {
+                                    if (Math.random() < 0.15 && !currentChibiState.message) {
+                                        showMessageForChibi(chibiId, painter, false);
+                                    }
+                                    zoneData.currentZone = null;
+                                }
+                            }
+                        }
+                    }
+                } else if (painter.movementMode === 'methodical') {
+                    // 🎯 MODE MÉTHODIQUE : Ligne par ligne avec zig-zag
+                    const scan = chibiScanPositionsRef.current[chibiId];
+                    if (!scan) return;
+
+                    const pixelSize = painter.stats?.pixelPrecision || painter.pixelSize;
+                    const speed = Math.max(1, Math.floor((statsSpeed / 100) * 5));
+
+                    for (let i = 0; i < speed; i++) {
+                        if (!currentChibiState.facingFront) {
+                            drawPixelForPainter(scan.col, scan.row, painter);
+                        }
+
+                        scan.col += scan.direction * pixelSize;
+
+                        if (scan.col >= canvas.width) {
+                            scan.col = canvas.width - 1;
+                            scan.row += pixelSize;
+                            scan.direction = -1;
+                            updateChibiState(chibiId, { direction: -1 });
+
+                            if (Math.random() < 0.05 && !currentChibiState.message) {
+                                showMessageForChibi(chibiId, painter, false);
+                            }
+                        } else if (scan.col < 0) {
+                            scan.col = 0;
+                            scan.row += pixelSize;
+                            scan.direction = 1;
+                            updateChibiState(chibiId, { direction: 1 });
+
+                            if (Math.random() < 0.05 && !currentChibiState.message) {
+                                showMessageForChibi(chibiId, painter, false);
+                            }
+                        }
+
+                        if (scan.row >= canvas.height) {
+                            scan.row = 0;
+                            scan.col = 0;
+                            scan.direction = 1;
+                        }
+                    }
+
+                    updateChibiState(chibiId, { position: { x: scan.col, y: scan.row } });
+                } else {
+                    // 🎲 MODE ALÉATOIRE : Mouvement vers une cible aléatoire (Tank)
+                    const target = chibiTargetsRef.current[chibiId];
+                    if (!target) return;
+
+                    const currentPos = currentChibiState.position || { x: canvas.width / 2, y: canvas.height / 2 };
+                    const dx = target.x - currentPos.x;
+                    const dy = target.y - currentPos.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dx > 5) {
+                        updateChibiState(chibiId, { direction: 1 });
+                    } else if (dx < -5) {
+                        updateChibiState(chibiId, { direction: -1 });
+                    }
+
+                    if (distance < 5) {
+                        chibiTargetsRef.current[chibiId] = {
+                            x: Math.random() * canvas.width,
+                            y: Math.random() * canvas.height
+                        };
+
+                        if (Math.random() < 0.15 && !currentChibiState.message) {
+                            showMessageForChibi(chibiId, painter, false);
+                        }
+                    }
+
+                    const speed = Math.max(0.5, (statsSpeed / 100) * 2.5);
+                    const moveX = distance > 0 ? (dx / distance) * speed : 0;
+                    const moveY = distance > 0 ? (dy / distance) * speed : 0;
+
+                    const newX = Math.max(0, Math.min(canvas.width - 1, currentPos.x + moveX));
+                    const newY = Math.max(0, Math.min(canvas.height - 1, currentPos.y + moveY));
+
+                    if (!currentChibiState.facingFront) {
+                        drawPixelForPainter(newX, newY, painter);
+                    }
+
+                    updateChibiState(chibiId, { position: { x: newX, y: newY } });
+                }
+
+                if (frameCount % 3 === 0) {
+                    renderLayers();
+                }
+
+                chibiAnimationsRef.current[chibiId] = requestAnimationFrame(animateChibi);
+            };
+
+            // Démarrer l'animation pour ce chibi
+            chibiAnimationsRef.current[chibiId] = requestAnimationFrame(animateChibi);
+
+            // Timer pour ce chibi
+            let timeLeft = painter.duration;
+            updateChibiState(chibiId, { timeRemaining: timeLeft });
+
+            chibiTimersRef.current[chibiId] = setInterval(() => {
+                timeLeft--;
+                updateChibiState(chibiId, { timeRemaining: timeLeft });
+
+                if (timeLeft <= 0) {
+                    // Arrêter ce chibi
+                    if (chibiTimersRef.current[chibiId]) {
+                        clearInterval(chibiTimersRef.current[chibiId]);
+                        delete chibiTimersRef.current[chibiId];
+                    }
+                    if (chibiAnimationsRef.current[chibiId]) {
+                        cancelAnimationFrame(chibiAnimationsRef.current[chibiId]);
+                        delete chibiAnimationsRef.current[chibiId];
+                    }
+
+                    // Message de fin
+                    updateChibiState(chibiId, {
+                        message: painter.endMessage,
+                        facingFront: true
+                    });
+
+                    setTimeout(() => {
+                        // Supprimer le chibi des actifs
+                        setActiveChibis(prev => {
+                            const newState = { ...prev };
+                            delete newState[chibiId];
+                            return newState;
+                        });
+                    }, 2000);
+
+                    saveToHistory();
+                }
+            }, 1000);
+        });
+
+        // Cleanup global - IMPORTANT: supprimer les refs après cancel pour permettre le redémarrage
+        return () => {
+            Object.keys(chibiAnimationsRef.current).forEach(id => {
+                if (chibiAnimationsRef.current[id]) {
+                    cancelAnimationFrame(chibiAnimationsRef.current[id]);
+                    delete chibiAnimationsRef.current[id];
+                }
+            });
+            Object.keys(chibiTimersRef.current).forEach(id => {
+                if (chibiTimersRef.current[id]) {
+                    clearInterval(chibiTimersRef.current[id]);
+                    delete chibiTimersRef.current[id];
+                }
+            });
+            Object.keys(chibiMessageTimeoutsRef.current).forEach(id => {
+                if (chibiMessageTimeoutsRef.current[id]) {
+                    clearTimeout(chibiMessageTimeoutsRef.current[id]);
+                    delete chibiMessageTimeoutsRef.current[id];
+                }
+            });
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeChibiIds, currentModelData, imagesLoaded, activeLayer]);
+
+    // 🦋 Fonction pour activer/désactiver un Chibi spécifique
+    const toggleChibi = (chibiId) => {
+        const chibiState = activeChibis[chibiId];
+        const painter = CHIBI_PAINTERS[chibiId];
+
+        if (chibiState?.active) {
+            // Désactiver ce chibi
+            // Nettoyer les timers et animations
+            if (chibiAnimationsRef.current[chibiId]) {
+                cancelAnimationFrame(chibiAnimationsRef.current[chibiId]);
+                delete chibiAnimationsRef.current[chibiId];
+            }
+            if (chibiTimersRef.current[chibiId]) {
+                clearInterval(chibiTimersRef.current[chibiId]);
+                delete chibiTimersRef.current[chibiId];
+            }
+            if (chibiMessageTimeoutsRef.current[chibiId]) {
+                clearTimeout(chibiMessageTimeoutsRef.current[chibiId]);
+                delete chibiMessageTimeoutsRef.current[chibiId];
+            }
+
+            // Supprimer l'état du chibi
+            setActiveChibis(prev => {
+                const newState = { ...prev };
+                delete newState[chibiId];
+                return newState;
+            });
+
+            saveToHistory();
+        } else {
+            // Vérifier si on peut activer un nouveau chibi (max 2)
+            const activeCount = Object.values(activeChibis).filter(c => c.active).length;
+            if (activeCount >= MAX_ACTIVE_CHIBIS) {
+                console.log(`❌ Maximum ${MAX_ACTIVE_CHIBIS} chibis déjà actifs`);
+                return;
+            }
+
+            // 🦋 BERU PAPILLON: Ouvrir le sélecteur de zone avant de l'activer
+            if (chibiId === 'beru_papillon') {
+                const canvas = canvasRef.current;
+                if (canvas) {
+                    // Centrer la zone sur le canvas
+                    setZonePosition({ x: canvas.width / 2, y: canvas.height / 2 });
+                    setZoneSize({ width: 150, height: 150 });
+                    setZoneRotation(0);
+                    setSelectedZoneShape('rectangle');
+                }
+                setPendingChibiId(chibiId);
+                setZoneSelectionMode(true);
+                return;
+            }
+
+            // Activer directement pour les autres chibis (Tank, etc.)
+            startChibiDirectly(chibiId, painter);
+        }
+    };
+
+    // 🦋 Fonction pour démarrer un chibi directement (sans sélection de zone)
+    const startChibiDirectly = (chibiId, painter) => {
+        setActiveChibis(prev => ({
+            ...prev,
+            [chibiId]: {
+                active: true,
+                timeRemaining: painter.duration,
+                position: { x: Math.random() * 100, y: Math.random() * 100 },
+                facingFront: false,
+                message: null,
+                direction: 1
+            }
+        }));
+
+        // Initialiser les refs pour ce chibi
+        chibiTargetsRef.current[chibiId] = { x: 0, y: 0 };
+        chibiScanPositionsRef.current[chibiId] = { row: 0, col: 0, direction: 1 };
+        chibiZoneDataRef.current[chibiId] = { currentZone: null, zoneProgress: 0, lastZoneTime: 0 };
+    };
+
+    // 🦋 Fonction pour démarrer Beru Papillon avec la zone sélectionnée
+    const startChibiWithZone = () => {
+        if (!pendingChibiId) return;
+
+        const painter = CHIBI_PAINTERS[pendingChibiId];
+        if (!painter) return;
+
+        // Stocker la zone définie par l'utilisateur
+        const userDefinedZone = {
+            shape: selectedZoneShape,
+            x: zonePosition.x,
+            y: zonePosition.y,
+            width: zoneSize.width,
+            height: zoneSize.height,
+            rotation: zoneRotation
+        };
+
+        setActiveChibis(prev => ({
+            ...prev,
+            [pendingChibiId]: {
+                active: true,
+                timeRemaining: painter.duration,
+                position: { x: zonePosition.x, y: zonePosition.y },
+                facingFront: false,
+                message: null,
+                direction: 1,
+                userDefinedZone: userDefinedZone // Zone définie par l'utilisateur
+            }
+        }));
+
+        // Initialiser les refs pour ce chibi avec la zone définie
+        chibiTargetsRef.current[pendingChibiId] = { x: zonePosition.x, y: zonePosition.y };
+        chibiScanPositionsRef.current[pendingChibiId] = { row: 0, col: 0, direction: 1 };
+        chibiZoneDataRef.current[pendingChibiId] = {
+            currentZone: null,
+            zoneProgress: 0,
+            lastZoneTime: 0,
+            userDefinedZone: userDefinedZone // Zone définie par l'utilisateur
+        };
+
+        // Fermer le mode sélection
+        setZoneSelectionMode(false);
+        setPendingChibiId(null);
+    };
+
+    // 🦋 Annuler la sélection de zone
+    const cancelZoneSelection = () => {
+        setZoneSelectionMode(false);
+        setPendingChibiId(null);
+    };
+
+    // Compatibilité arrière - toggle le chibi sélectionné
+    const toggleAutoDrawBeru = () => {
+        toggleChibi(selectedPainterId);
+    };
 
     // 🌐 MULTIPLAYER: Dessiner les strokes reçus des autres joueurs
     useEffect(() => {
@@ -1950,7 +2901,12 @@ const DrawBeruFixed = ({
                         0%, 100% { transform: translate(-50%, -50%) scale(1); }
                         50% { transform: translate(-50%, -50%) scale(1.3); }
                     }
-                    
+
+                    @keyframes float {
+                        0%, 100% { transform: translate(-50%, -50%) scaleY(-1) translateY(0); }
+                        50% { transform: translate(-50%, -50%) scaleY(-1) translateY(-5px); }
+                    }
+
                     .mobile-fab {
                         position: fixed;
                         width: 56px;
@@ -1964,7 +2920,7 @@ const DrawBeruFixed = ({
                         z-index: 1000;
                         transition: all 0.3s ease;
                     }
-                    
+
                     .mobile-fab:active {
                         transform: scale(0.95);
                     }
@@ -2001,12 +2957,222 @@ const DrawBeruFixed = ({
                 />
 
                 {/* 🎨 AUTO-PIPETTE NOTIFICATION MOBILE */}
-                {autoPipetteMode && (
+                {autoPipetteMode && !autoDrawBeruActive && (
                     <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-[9998]">
                         <div className="bg-gradient-to-r from-green-500/90 to-emerald-600/90 text-white px-4 py-2 rounded-full shadow-lg border border-green-400/50 backdrop-blur-sm">
                             <div className="flex items-center gap-2 text-sm font-medium">
                                 <span>🎯</span>
                                 <span>Auto-Pipette ON</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 🦋 AUTO-DRAW NOTIFICATION MOBILE */}
+                {autoDrawBeruActive && (
+                    <div className="fixed top-16 left-1/2 transform -translate-x-1/2 z-[9998]">
+                        <div className={`text-white px-4 py-3 rounded-2xl shadow-lg border backdrop-blur-sm ${
+                            selectedPainterId === 'tank'
+                                ? 'bg-gradient-to-r from-green-500/90 via-emerald-500/90 to-green-600/90 border-green-400/50'
+                                : 'bg-gradient-to-r from-purple-500/90 via-pink-500/90 to-purple-600/90 border-purple-400/50'
+                        }`}>
+                            <div className="flex items-center gap-3">
+                                <img
+                                    src={currentPainter.sprites.front}
+                                    alt={currentPainter.name}
+                                    className="w-8 h-8 object-contain animate-bounce"
+                                />
+                                <div className="text-center">
+                                    <div className="text-sm font-bold">
+                                        {selectedPainterId === 'tank' ? '🐻 Tank' : '🦋 AutoDrawBeru'}
+                                    </div>
+                                    <div className="text-xl font-bold">{autoDrawBeruTimeRemaining}s</div>
+                                </div>
+                                <button
+                                    onClick={toggleAutoDrawBeru}
+                                    className="px-2 py-1 bg-red-500/80 rounded text-xs font-medium"
+                                >
+                                    Stop
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 🦋 BERU PAPILLON ZONE SELECTION OVERLAY MOBILE */}
+                {zoneSelectionMode && (
+                    <div className="fixed inset-0 z-[10001] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+                        <div className="bg-[#1a0a2e] rounded-2xl shadow-2xl border border-purple-500/50 p-4 w-full max-w-sm max-h-[90vh] overflow-y-auto">
+                            {/* Header */}
+                            <div className="flex items-center gap-2 mb-4">
+                                <img
+                                    src={CHIBI_PAINTERS.beru_papillon.sprites.front}
+                                    alt="Beru Papillon"
+                                    className="w-10 h-10 object-contain"
+                                />
+                                <div>
+                                    <h2 className="text-lg font-bold text-purple-200">Zone de coloriage</h2>
+                                    <p className="text-xs text-purple-400">Définir où Béru-Papillon doit colorier</p>
+                                </div>
+                            </div>
+
+                            {/* Zone Preview */}
+                            <div className="bg-black/30 rounded-xl p-3 mb-4 border border-purple-500/30">
+                                <div
+                                    className="relative mx-auto bg-purple-900/30 rounded-lg overflow-hidden"
+                                    style={{ width: '240px', height: '160px' }}
+                                >
+                                    <svg width="240" height="160" className="absolute inset-0">
+                                        <defs>
+                                            <pattern id="gridMobile" width="16" height="16" patternUnits="userSpaceOnUse">
+                                                <path d="M 16 0 L 0 0 0 16" fill="none" stroke="rgba(147,51,234,0.2)" strokeWidth="0.5"/>
+                                            </pattern>
+                                        </defs>
+                                        <rect width="100%" height="100%" fill="url(#gridMobile)" />
+                                        <g transform={`translate(120, 80) rotate(${zoneRotation})`}>
+                                            {selectedZoneShape === 'rectangle' && (
+                                                <rect
+                                                    x={-zoneSize.width / 5}
+                                                    y={-zoneSize.height / 5}
+                                                    width={zoneSize.width / 2.5}
+                                                    height={zoneSize.height / 2.5}
+                                                    fill="rgba(147,51,234,0.3)"
+                                                    stroke="rgba(236,72,153,0.8)"
+                                                    strokeWidth="2"
+                                                    strokeDasharray="4,4"
+                                                />
+                                            )}
+                                            {selectedZoneShape === 'square' && (
+                                                <rect
+                                                    x={-Math.min(zoneSize.width, zoneSize.height) / 5}
+                                                    y={-Math.min(zoneSize.width, zoneSize.height) / 5}
+                                                    width={Math.min(zoneSize.width, zoneSize.height) / 2.5}
+                                                    height={Math.min(zoneSize.width, zoneSize.height) / 2.5}
+                                                    fill="rgba(147,51,234,0.3)"
+                                                    stroke="rgba(236,72,153,0.8)"
+                                                    strokeWidth="2"
+                                                    strokeDasharray="4,4"
+                                                />
+                                            )}
+                                            {selectedZoneShape === 'circle' && (
+                                                <ellipse
+                                                    cx="0"
+                                                    cy="0"
+                                                    rx={zoneSize.width / 5}
+                                                    ry={zoneSize.height / 5}
+                                                    fill="rgba(147,51,234,0.3)"
+                                                    stroke="rgba(236,72,153,0.8)"
+                                                    strokeWidth="2"
+                                                    strokeDasharray="4,4"
+                                                />
+                                            )}
+                                            {selectedZoneShape === 'triangle' && (
+                                                <polygon
+                                                    points={`0,${-zoneSize.height / 5} ${zoneSize.width / 5},${zoneSize.height / 5} ${-zoneSize.width / 5},${zoneSize.height / 5}`}
+                                                    fill="rgba(147,51,234,0.3)"
+                                                    stroke="rgba(236,72,153,0.8)"
+                                                    strokeWidth="2"
+                                                    strokeDasharray="4,4"
+                                                />
+                                            )}
+                                        </g>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            {/* Shape Selection */}
+                            <div className="mb-3">
+                                <label className="block text-xs text-purple-300 mb-2">Forme</label>
+                                <div className="grid grid-cols-4 gap-1">
+                                    {[
+                                        { id: 'rectangle', icon: '▬' },
+                                        { id: 'square', icon: '■' },
+                                        { id: 'circle', icon: '●' },
+                                        { id: 'triangle', icon: '▲' }
+                                    ].map(shape => (
+                                        <button
+                                            key={shape.id}
+                                            onClick={() => setSelectedZoneShape(shape.id)}
+                                            className={`p-2 rounded-lg border-2 transition-all flex items-center justify-center ${
+                                                selectedZoneShape === shape.id
+                                                    ? 'bg-purple-600 border-pink-400 text-white'
+                                                    : 'bg-purple-900/30 border-purple-500/30 text-purple-300'
+                                            }`}
+                                        >
+                                            <span className="text-xl">{shape.icon}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Size Controls */}
+                            <div className="space-y-2 mb-3">
+                                <div>
+                                    <label className="block text-xs text-purple-300 mb-1">Largeur: {zoneSize.width}px</label>
+                                    <input
+                                        type="range"
+                                        min="50"
+                                        max="400"
+                                        value={zoneSize.width}
+                                        onChange={(e) => setZoneSize(prev => ({ ...prev, width: parseInt(e.target.value) }))}
+                                        className="w-full h-2 bg-purple-900/50 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-purple-300 mb-1">Hauteur: {zoneSize.height}px</label>
+                                    <input
+                                        type="range"
+                                        min="50"
+                                        max="400"
+                                        value={zoneSize.height}
+                                        onChange={(e) => setZoneSize(prev => ({ ...prev, height: parseInt(e.target.value) }))}
+                                        className="w-full h-2 bg-purple-900/50 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Rotation Control */}
+                            <div className="mb-4">
+                                <label className="block text-xs text-purple-300 mb-1">Rotation: {zoneRotation}°</label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="360"
+                                    value={zoneRotation}
+                                    onChange={(e) => setZoneRotation(parseInt(e.target.value))}
+                                    className="w-full h-2 bg-purple-900/50 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                                />
+                                <div className="flex gap-1 mt-2 flex-wrap">
+                                    {[0, 45, 90, 135, 180, 270].map(angle => (
+                                        <button
+                                            key={angle}
+                                            onClick={() => setZoneRotation(angle)}
+                                            className={`px-2 py-1 text-xs rounded transition-all ${
+                                                zoneRotation === angle
+                                                    ? 'bg-pink-500 text-white'
+                                                    : 'bg-purple-800/30 text-purple-300'
+                                            }`}
+                                        >
+                                            {angle}°
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={cancelZoneSelection}
+                                    className="flex-1 py-2 px-3 rounded-xl bg-gray-700/50 text-gray-200 font-medium text-sm"
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    onClick={startChibiWithZone}
+                                    className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-sm"
+                                >
+                                    🦋 Go !
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -2331,8 +3497,65 @@ const DrawBeruFixed = ({
                                     }}
                                 />
                             )}
+
+                            {/* 🦋 MULTI-CHIBI HELPERS MOBILE - Affiche tous les chibis actifs */}
+                            {canvasRef.current && Object.entries(activeChibis).map(([chibiId, chibiState]) => {
+                                if (!chibiState.active) return null;
+                                const painter = CHIBI_PAINTERS[chibiId];
+                                if (!painter) return null;
+
+                                return (
+                                    <img
+                                        key={chibiId}
+                                        src={chibiState.facingFront ? painter.sprites.front : painter.sprites.back}
+                                        alt={painter.name}
+                                        className="pointer-events-none drop-shadow-lg"
+                                        style={{
+                                            position: 'absolute',
+                                            left: `${(chibiState.position.x / canvasRef.current.width) * 100}%`,
+                                            top: `${(chibiState.position.y / canvasRef.current.height) * 100}%`,
+                                            width: '40px',
+                                            height: '40px',
+                                            transform: chibiState.facingFront
+                                                ? 'translate(-50%, -50%)'
+                                                : `translate(-50%, -50%) scaleX(${chibiState.direction || 1})`,
+                                            zIndex: 100 + (chibiId === 'tank' ? 1 : 0),
+                                            filter: chibiState.facingFront
+                                                ? painter.id === 'tank'
+                                                    ? 'drop-shadow(0 0 12px rgba(74, 222, 128, 0.9))'
+                                                    : 'drop-shadow(0 0 12px rgba(236, 72, 153, 0.9))'
+                                                : painter.id === 'tank'
+                                                    ? 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.8))'
+                                                    : 'drop-shadow(0 0 8px rgba(168, 85, 247, 0.8))',
+                                            animation: chibiState.facingFront ? 'none' : 'float 1s ease-in-out infinite',
+                                            transition: 'filter 0.3s ease, transform 0.2s ease'
+                                        }}
+                                    />
+                                );
+                            })}
                         </div>
                     </div>
+
+                    {/* 🦋 CHIBI BUBBLES MOBILE - Une bulle par chibi actif */}
+                    {canvasRef.current && Object.entries(activeChibis).map(([chibiId, chibiState]) => {
+                        if (!chibiState.active || !chibiState.message) return null;
+                        const painter = CHIBI_PAINTERS[chibiId];
+                        if (!painter) return null;
+
+                        return (
+                            <ChibiBubble
+                                key={`bubble-mobile-${chibiId}`}
+                                message={chibiState.message}
+                                position={{
+                                    x: window.innerWidth / 2,
+                                    y: Math.max(60, canvasRef.current.getBoundingClientRect().top +
+                                       (chibiState.position.y / canvasRef.current.height) * canvasRef.current.getBoundingClientRect().height - 80)
+                                }}
+                                entityType={painter.entityType}
+                                isMobile={{ isPhone: true }}
+                            />
+                        );
+                    })}
 
                     {/* CONTROLS EN HAUT */}
                     <div className="absolute top-4 left-4 right-4 z-[1000] flex items-start gap-3">
@@ -2563,6 +3786,44 @@ const DrawBeruFixed = ({
                                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
                             )}
                         </button>
+                        {/* 🦋 MULTI-CHIBI TOGGLE MOBILE - Clique sur chaque chibi pour l'activer */}
+                        <div className="flex items-center gap-1">
+                            {Object.values(CHIBI_PAINTERS).map((painter) => {
+                                const isActive = isChibiActive(painter.id);
+                                const chibiState = getChibiState(painter.id);
+                                const canActivate = !isActive && getActiveChibiCount() < MAX_ACTIVE_CHIBIS;
+
+                                return (
+                                    <button
+                                        key={painter.id}
+                                        onClick={() => toggleChibi(painter.id)}
+                                        className={`w-12 h-12 rounded-lg shadow-md transition-all flex items-center justify-center relative overflow-hidden ${
+                                            isActive
+                                                ? painter.id === 'tank'
+                                                    ? 'bg-gradient-to-br from-green-500 to-emerald-600 scale-105 ring-2 ring-green-400'
+                                                    : 'bg-gradient-to-br from-purple-500 to-pink-600 scale-105 ring-2 ring-purple-400'
+                                                : canActivate
+                                                    ? 'bg-purple-800/50'
+                                                    : 'bg-gray-700/30 opacity-50'
+                                        }`}
+                                        aria-label={isActive ? `Arrêter ${painter.name}` : `Activer ${painter.name}`}
+                                    >
+                                        <img
+                                            src={isActive ? painter.sprites.back : painter.sprites.front}
+                                            alt={painter.name}
+                                            className="w-10 h-10 object-contain"
+                                        />
+                                        {isActive && (
+                                            <span className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white ${
+                                                painter.id === 'tank' ? 'bg-green-400' : 'bg-purple-400'
+                                            }`}>
+                                                {chibiState.timeRemaining}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
                         <button
                             onClick={() => handleZoom(0.25)}
                             className="w-12 h-12 rounded-lg shadow-md transition-all bg-center bg-no-repeat bg-contain bg-purple-800/50 text-purple-200"
@@ -2611,7 +3872,7 @@ const DrawBeruFixed = ({
             )}
 
             {/* 🎨 AUTO-PIPETTE NOTIFICATION DESKTOP */}
-            {autoPipetteMode && !cheatModeActive && (
+            {autoPipetteMode && !cheatModeActive && !autoDrawBeruActive && (
                 <div className="fixed top-4 right-4 z-[10000]">
                     <div className="bg-gradient-to-r from-green-500/95 to-emerald-600/95 text-white px-5 py-3 rounded-xl shadow-xl border border-green-400/50 backdrop-blur-sm">
                         <div className="flex items-center gap-3">
@@ -2625,12 +3886,244 @@ const DrawBeruFixed = ({
                 </div>
             )}
 
+            {/* 🦋 AUTO-DRAW NOTIFICATION DESKTOP */}
+            {autoDrawBeruActive && (
+                <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[10000]">
+                    <div className={`text-white px-6 py-4 rounded-2xl shadow-2xl border-2 backdrop-blur-sm ${
+                        selectedPainterId === 'tank'
+                            ? 'bg-gradient-to-r from-green-500/95 via-emerald-500/95 to-green-600/95 border-green-300/50'
+                            : 'bg-gradient-to-r from-purple-500/95 via-pink-500/95 to-purple-600/95 border-purple-300/50'
+                    }`}>
+                        <div className="flex items-center gap-4">
+                            <img
+                                src={currentPainter.sprites.front}
+                                alt={currentPainter.name}
+                                className="w-12 h-12 object-contain animate-bounce"
+                            />
+                            <div className="text-center">
+                                <div className="text-lg font-bold">
+                                    {selectedPainterId === 'tank' ? '🐻 Tank le Troll' : '🦋 AutoDrawBeru'} ACTIVÉ !
+                                </div>
+                                <div className="text-sm opacity-90">
+                                    {selectedPainterId === 'tank'
+                                        ? "Tank t'aide... à sa manière !"
+                                        : `${currentPainter.name} t'aide à colorier...`}
+                                </div>
+                                <div className="text-2xl font-bold mt-1">{autoDrawBeruTimeRemaining}s</div>
+                            </div>
+                            <button
+                                onClick={toggleAutoDrawBeru}
+                                className="ml-2 px-3 py-1 bg-red-500/80 hover:bg-red-600 rounded-lg text-sm font-medium transition-colors"
+                            >
+                                Arrêter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 🦋 BERU PAPILLON ZONE SELECTION OVERLAY */}
+            {zoneSelectionMode && (
+                <div className="fixed inset-0 z-[10001] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                    <div className="bg-[#1a0a2e] rounded-2xl shadow-2xl border border-purple-500/50 p-6 max-w-lg w-full mx-4">
+                        {/* Header */}
+                        <div className="flex items-center gap-3 mb-6">
+                            <img
+                                src={CHIBI_PAINTERS.beru_papillon.sprites.front}
+                                alt="Beru Papillon"
+                                className="w-12 h-12 object-contain"
+                            />
+                            <div>
+                                <h2 className="text-xl font-bold text-purple-200">Définir la zone de coloriage</h2>
+                                <p className="text-sm text-purple-400">Béru-Papillon coloriera uniquement dans cette zone</p>
+                            </div>
+                        </div>
+
+                        {/* Zone Preview Canvas */}
+                        <div className="relative bg-black/30 rounded-xl p-4 mb-6 border border-purple-500/30">
+                            <div className="text-xs text-purple-400 mb-2 text-center">Aperçu de la zone</div>
+                            <div
+                                className="relative mx-auto bg-purple-900/30 rounded-lg overflow-hidden"
+                                style={{ width: '280px', height: '200px' }}
+                            >
+                                {/* Zone shape preview */}
+                                <svg width="280" height="200" className="absolute inset-0">
+                                    <defs>
+                                        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                                            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(147,51,234,0.2)" strokeWidth="0.5"/>
+                                        </pattern>
+                                    </defs>
+                                    <rect width="100%" height="100%" fill="url(#grid)" />
+                                    <g transform={`translate(140, 100) rotate(${zoneRotation})`}>
+                                        {selectedZoneShape === 'rectangle' && (
+                                            <rect
+                                                x={-zoneSize.width / 4}
+                                                y={-zoneSize.height / 4}
+                                                width={zoneSize.width / 2}
+                                                height={zoneSize.height / 2}
+                                                fill="rgba(147,51,234,0.3)"
+                                                stroke="rgba(236,72,153,0.8)"
+                                                strokeWidth="2"
+                                                strokeDasharray="5,5"
+                                            />
+                                        )}
+                                        {selectedZoneShape === 'square' && (
+                                            <rect
+                                                x={-Math.min(zoneSize.width, zoneSize.height) / 4}
+                                                y={-Math.min(zoneSize.width, zoneSize.height) / 4}
+                                                width={Math.min(zoneSize.width, zoneSize.height) / 2}
+                                                height={Math.min(zoneSize.width, zoneSize.height) / 2}
+                                                fill="rgba(147,51,234,0.3)"
+                                                stroke="rgba(236,72,153,0.8)"
+                                                strokeWidth="2"
+                                                strokeDasharray="5,5"
+                                            />
+                                        )}
+                                        {selectedZoneShape === 'circle' && (
+                                            <ellipse
+                                                cx="0"
+                                                cy="0"
+                                                rx={zoneSize.width / 4}
+                                                ry={zoneSize.height / 4}
+                                                fill="rgba(147,51,234,0.3)"
+                                                stroke="rgba(236,72,153,0.8)"
+                                                strokeWidth="2"
+                                                strokeDasharray="5,5"
+                                            />
+                                        )}
+                                        {selectedZoneShape === 'triangle' && (
+                                            <polygon
+                                                points={`0,${-zoneSize.height / 4} ${zoneSize.width / 4},${zoneSize.height / 4} ${-zoneSize.width / 4},${zoneSize.height / 4}`}
+                                                fill="rgba(147,51,234,0.3)"
+                                                stroke="rgba(236,72,153,0.8)"
+                                                strokeWidth="2"
+                                                strokeDasharray="5,5"
+                                            />
+                                        )}
+                                    </g>
+                                </svg>
+                            </div>
+                        </div>
+
+                        {/* Shape Selection */}
+                        <div className="mb-4">
+                            <label className="block text-sm text-purple-300 mb-2">Forme de la zone</label>
+                            <div className="grid grid-cols-4 gap-2">
+                                {[
+                                    { id: 'rectangle', icon: '▬', label: 'Rectangle' },
+                                    { id: 'square', icon: '■', label: 'Carré' },
+                                    { id: 'circle', icon: '●', label: 'Cercle' },
+                                    { id: 'triangle', icon: '▲', label: 'Triangle' }
+                                ].map(shape => (
+                                    <button
+                                        key={shape.id}
+                                        onClick={() => setSelectedZoneShape(shape.id)}
+                                        className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${
+                                            selectedZoneShape === shape.id
+                                                ? 'bg-purple-600 border-pink-400 text-white'
+                                                : 'bg-purple-900/30 border-purple-500/30 text-purple-300 hover:border-purple-400'
+                                        }`}
+                                    >
+                                        <span className="text-2xl">{shape.icon}</span>
+                                        <span className="text-xs">{shape.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Size Controls */}
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label className="block text-sm text-purple-300 mb-2">Largeur: {zoneSize.width}px</label>
+                                <input
+                                    type="range"
+                                    min="50"
+                                    max="500"
+                                    value={zoneSize.width}
+                                    onChange={(e) => setZoneSize(prev => ({ ...prev, width: parseInt(e.target.value) }))}
+                                    className="w-full h-2 bg-purple-900/50 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-purple-300 mb-2">Hauteur: {zoneSize.height}px</label>
+                                <input
+                                    type="range"
+                                    min="50"
+                                    max="500"
+                                    value={zoneSize.height}
+                                    onChange={(e) => setZoneSize(prev => ({ ...prev, height: parseInt(e.target.value) }))}
+                                    className="w-full h-2 bg-purple-900/50 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Rotation Control */}
+                        <div className="mb-6">
+                            <label className="block text-sm text-purple-300 mb-2">Rotation: {zoneRotation}°</label>
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="360"
+                                    value={zoneRotation}
+                                    onChange={(e) => setZoneRotation(parseInt(e.target.value))}
+                                    className="flex-1 h-2 bg-purple-900/50 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                                />
+                                <button
+                                    onClick={() => setZoneRotation(0)}
+                                    className="px-3 py-1 text-xs bg-purple-800/50 rounded-lg hover:bg-purple-700/50 text-purple-200"
+                                >
+                                    Reset
+                                </button>
+                            </div>
+                            {/* Quick rotation buttons */}
+                            <div className="flex gap-2 mt-2">
+                                {[0, 45, 90, 135, 180, 270].map(angle => (
+                                    <button
+                                        key={angle}
+                                        onClick={() => setZoneRotation(angle)}
+                                        className={`px-2 py-1 text-xs rounded transition-all ${
+                                            zoneRotation === angle
+                                                ? 'bg-pink-500 text-white'
+                                                : 'bg-purple-800/30 text-purple-300 hover:bg-purple-700/50'
+                                        }`}
+                                    >
+                                        {angle}°
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-3">
+                            <button
+                                onClick={cancelZoneSelection}
+                                className="flex-1 py-3 px-4 rounded-xl bg-gray-700/50 hover:bg-gray-600/50 text-gray-200 font-medium transition-colors"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                onClick={startChibiWithZone}
+                                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-bold transition-all shadow-lg shadow-purple-500/30"
+                            >
+                                🦋 C&apos;est parti !
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <style>{`
                 @keyframes pulse {
                     0%, 100% { transform: translate(-50%, -50%) scale(1); }
                     50% { transform: translate(-50%, -50%) scale(1.3); }
                 }
-                
+
+                @keyframes float {
+                    0%, 100% { transform: translate(-50%, -50%) scaleY(-1) translateY(0); }
+                    50% { transform: translate(-50%, -50%) scaleY(-1) translateY(-8px); }
+                }
+
                 ::-webkit-scrollbar {
                     width: 8px;
                     height: 8px;
@@ -2930,6 +4423,53 @@ const DrawBeruFixed = ({
                                     )}
                                 </button>
 
+                                {/* 🦋 AUTO-DRAW BERU TOGGLE + CHIBI SELECTOR */}
+                                <div className="flex items-center">
+                                    <button
+                                        onClick={toggleAutoDrawBeru}
+                                        className={`w-12 h-12 rounded-l-lg shadow-md transition-all active:scale-95 flex items-center justify-center relative overflow-hidden ${autoDrawBeruActive
+                                            ? selectedPainterId === 'tank'
+                                                ? 'bg-gradient-to-br from-green-500 to-emerald-600 scale-105 ring-2 ring-green-400/50'
+                                                : 'bg-gradient-to-br from-purple-500 to-pink-600 scale-105 ring-2 ring-purple-400/50'
+                                            : 'bg-purple-800/50 hover:bg-purple-700/50'
+                                        }`}
+                                        title={autoDrawBeruActive
+                                            ? `${currentPainter.name} ACTIVÉ - ${autoDrawBeruTimeRemaining}s restantes`
+                                            : `AutoDraw ${currentPainter.name} - ${currentPainter.duration}s d'aide`}
+                                    >
+                                        <img
+                                            src={currentPainter.sprites.back}
+                                            alt={currentPainter.name}
+                                            className="w-10 h-10 object-contain"
+                                            style={{ transform: selectedPainterId === 'tank' ? 'none' : 'scaleY(-1)' }}
+                                        />
+                                        {autoDrawBeruActive && (
+                                            <span className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white ${
+                                                selectedPainterId === 'tank' ? 'bg-green-400' : 'bg-purple-400'
+                                            }`}>
+                                                {autoDrawBeruTimeRemaining}
+                                            </span>
+                                        )}
+                                    </button>
+                                    {/* Bouton pour changer de Chibi */}
+                                    <button
+                                        onClick={() => {
+                                            if (!autoDrawBeruActive) {
+                                                setSelectedPainterId(prev => prev === 'beru_papillon' ? 'tank' : 'beru_papillon');
+                                            }
+                                        }}
+                                        disabled={autoDrawBeruActive}
+                                        className={`w-6 h-12 rounded-r-lg shadow-md transition-all flex items-center justify-center ${
+                                            autoDrawBeruActive
+                                                ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                                                : 'bg-purple-700/50 hover:bg-purple-600/50'
+                                        }`}
+                                        title={autoDrawBeruActive ? "Impossible de changer pendant l'animation" : "Changer de Chibi"}
+                                    >
+                                        <span className="text-xs">↔</span>
+                                    </button>
+                                </div>
+
                                 {/* Separator */}
                                 <div className="w-px h-10 bg-purple-500/30"></div>
 
@@ -3185,6 +4725,73 @@ const DrawBeruFixed = ({
                                         </div>
                                     </>
                                 )}
+
+                                {/* 🦋 BLOC CHIBIS DESSINATEURS - Multi-Chibi ! */}
+                                <div className="w-px h-10 bg-purple-500/30"></div>
+                                <div className="bg-black/60 backdrop-blur-md rounded-lg p-2 shadow-lg border border-purple-500/30 min-w-[220px]">
+                                    <div className="text-[9px] text-purple-300 mb-1.5 font-semibold">
+                                        🎨 Chibis Dessinateurs
+                                        <span className="ml-2 text-[8px] text-purple-400">
+                                            ({getActiveChibiCount()}/{MAX_ACTIVE_CHIBIS} actifs)
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {/* Sélecteur de Chibi - Clic pour activer/désactiver */}
+                                        {Object.values(CHIBI_PAINTERS).map((painter) => {
+                                            const isActive = isChibiActive(painter.id);
+                                            const chibiState = getChibiState(painter.id);
+                                            const canActivate = !isActive && getActiveChibiCount() < MAX_ACTIVE_CHIBIS;
+
+                                            return (
+                                                <button
+                                                    key={painter.id}
+                                                    onClick={() => toggleChibi(painter.id)}
+                                                    className={`relative w-14 h-14 rounded-lg transition-all flex items-center justify-center overflow-hidden ${
+                                                        isActive
+                                                            ? painter.id === 'tank'
+                                                                ? 'bg-gradient-to-br from-green-500 to-emerald-600 ring-2 ring-green-400 animate-pulse'
+                                                                : 'bg-gradient-to-br from-purple-500 to-pink-600 ring-2 ring-purple-400 animate-pulse'
+                                                            : canActivate
+                                                                ? 'bg-purple-900/30 hover:bg-purple-800/40 hover:ring-2 hover:ring-purple-500/50'
+                                                                : 'bg-gray-800/30 opacity-50'
+                                                    }`}
+                                                    title={isActive
+                                                        ? `${painter.name} ACTIF - ${chibiState.timeRemaining}s - Cliquer pour arrêter`
+                                                        : canActivate
+                                                            ? `Activer ${painter.name}`
+                                                            : `Max ${MAX_ACTIVE_CHIBIS} chibis actifs`
+                                                    }
+                                                >
+                                                    <img
+                                                        src={isActive ? painter.sprites.back : painter.sprites.front}
+                                                        alt={painter.name}
+                                                        className="w-12 h-12 object-contain"
+                                                        style={{ filter: isActive ? 'drop-shadow(0 0 8px rgba(255,255,255,0.5))' : 'none' }}
+                                                    />
+                                                    {/* Badge actif avec timer */}
+                                                    {isActive && (
+                                                        <span className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white ${
+                                                            painter.id === 'tank' ? 'bg-green-500' : 'bg-purple-500'
+                                                        }`}>
+                                                            {chibiState.timeRemaining}
+                                                        </span>
+                                                    )}
+                                                    {/* Nom du chibi */}
+                                                    <span className={`absolute bottom-0 left-0 right-0 text-[7px] text-white bg-black/70 px-1 py-0.5 text-center ${
+                                                        isActive ? 'font-bold' : ''
+                                                    }`}>
+                                                        {painter.id === 'tank' ? '🐻 Tank' : '🦋 Béru'}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="text-[8px] text-purple-400 mt-1.5">
+                                        {selectedPainterId === 'tank'
+                                            ? '🎭 Mode Troll : couleurs aléatoires !'
+                                            : '🎯 Mode Précis : ligne par ligne'}
+                                    </div>
+                                </div>
                             </div>
 
                             {!imagesLoaded && (
@@ -3263,8 +4870,68 @@ const DrawBeruFixed = ({
                                             }}
                                         />
                                     )}
+
+                                    {/* 🦋 MULTI-CHIBI HELPERS DESKTOP - Affiche tous les chibis actifs */}
+                                    {canvasRef.current && Object.entries(activeChibis).map(([chibiId, chibiState]) => {
+                                        if (!chibiState.active) return null;
+                                        const painter = CHIBI_PAINTERS[chibiId];
+                                        if (!painter) return null;
+
+                                        return (
+                                            <img
+                                                key={chibiId}
+                                                src={chibiState.facingFront ? painter.sprites.front : painter.sprites.back}
+                                                alt={painter.name}
+                                                className="pointer-events-none"
+                                                style={{
+                                                    position: 'absolute',
+                                                    left: `${(chibiState.position.x / canvasRef.current.width) * 100}%`,
+                                                    top: `${(chibiState.position.y / canvasRef.current.height) * 100}%`,
+                                                    width: '48px',
+                                                    height: '48px',
+                                                    transform: chibiState.facingFront
+                                                        ? 'translate(-50%, -50%)'
+                                                        : `translate(-50%, -50%) scaleX(${chibiState.direction || 1})`,
+                                                    zIndex: 100 + (chibiId === 'tank' ? 1 : 0),
+                                                    filter: chibiState.facingFront
+                                                        ? painter.id === 'tank'
+                                                            ? 'drop-shadow(0 0 15px rgba(74, 222, 128, 0.9))'
+                                                            : 'drop-shadow(0 0 15px rgba(236, 72, 153, 0.9))'
+                                                        : painter.id === 'tank'
+                                                            ? 'drop-shadow(0 0 10px rgba(34, 197, 94, 0.9))'
+                                                            : 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.9))',
+                                                    animation: chibiState.facingFront ? 'none' : 'float 1s ease-in-out infinite',
+                                                    transition: 'filter 0.3s ease, transform 0.2s ease'
+                                                }}
+                                            />
+                                        );
+                                    })}
                                 </div>
                             </div>
+
+                            {/* 🦋 CHIBI BUBBLES DESKTOP - Une bulle par chibi actif */}
+                            {Object.entries(activeChibis).map(([chibiId, chibiState]) => {
+                                if (!chibiState.active || !chibiState.message) return null;
+                                const painter = CHIBI_PAINTERS[chibiId];
+                                if (!painter) return null;
+
+                                return (
+                                    <ChibiBubble
+                                        key={`bubble-${chibiId}`}
+                                        message={chibiState.message}
+                                        position={{
+                                            x: canvasRef.current
+                                                ? canvasRef.current.getBoundingClientRect().left + (chibiState.position.x / canvasRef.current.width) * canvasRef.current.getBoundingClientRect().width
+                                                : window.innerWidth / 2,
+                                            y: canvasRef.current
+                                                ? canvasRef.current.getBoundingClientRect().top + (chibiState.position.y / canvasRef.current.height) * canvasRef.current.getBoundingClientRect().height - 100
+                                                : 200
+                                        }}
+                                        entityType={painter.entityType}
+                                        isMobile={false}
+                                    />
+                                );
+                            })}
 
                             <div className="text-white text-xs mt-2 space-y-1">
                                 <div>Canvas status: {imagesLoaded ? '✅ Loaded' : '⏳ Loading...'}</div>

@@ -1,9 +1,291 @@
 // src/pages/DrawBeru/config/models.js
 
+// Configuration des thèmes avec possibilité d'ajouter des images de bannière
+export const drawBeruThemes = {
+  "Solo Leveling": {
+    name: "Solo Leveling",
+    image: null, // Ajouter l'URL de l'image plus tard
+    order: 1
+  },
+  "Manga": {
+    name: "Manga",
+    image: null,
+    order: 2
+  },
+  "Anime": {
+    name: "Anime",
+    image: null,
+    order: 3
+  },
+  "Berserk": {
+    name: "Berserk",
+    image: null,
+    order: 4
+  },
+  "Landscape": {
+    name: "Landscape",
+    image: null,
+    order: 4
+  },
+  // Thèmes futurs
+  // "Paysage": { name: "Paysage", image: null, order: 4 },
+  // "Animals/Pets": { name: "Animals/Pets", image: null, order: 5 },
+  // "Berserk": { name: "Berserk", image: null, order: 6 },
+};
+
 export const drawBeruModels = {
+  Mountains: {
+    name: "Mountains",
+    description: "Mountains",
+    themes: ["Landscape"],
+    models: {
+      default: {
+        id: "default",
+        name: "Mountains",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806322/pays1_uncolor_vbawg2.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806323/pays1_color_li1nz4.png",
+        canvasSize: { width: 600, height: 600 },
+        palette: {
+          "1": "#dd724f",
+          "2": "#f9c072",
+          "3": "#973a13",
+          "4": "#591d19",
+          "5": "#e77c0b",
+          "6": "#faab43",
+          "7": "#9a243c",
+          "8": "#d24424"
+        }
+      }
+    }
+  }, Chrismas: {
+    name: "Chrismas",
+    description: "Chrismas",
+    themes: ["Landscape"],
+    models: {
+      default: {
+        id: "default",
+        name: "Chrismas",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806336/pays2_orig_h4inrm.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806336/pays2_uncolor_blvzlg.png",
+        canvasSize: { width: 1200, height: 800 },
+        palette: {
+          "1": "#dd724f",
+          "2": "#f9c072",
+          "3": "#973a13",
+          "4": "#591d19",
+          "5": "#e77c0b",
+          "6": "#faab43",
+          "7": "#9a243c",
+          "8": "#d24424"
+        }
+      }
+    }
+  }, Guts: {
+    name: "Guts",
+    description: "Guts",
+    themes: ["Manga", "Anime", "Berserk"],
+    models: {
+      default: {
+        id: "default",
+        name: "Guts",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806366/berserk2_orig_a3nlvr.jpg",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806410/berserk2_uncolor_mwaxpw.png",
+        canvasSize: { width: 800, height: 1200 },
+        palette: {
+          "1": "#dd724f",
+          "2": "#f9c072",
+          "3": "#973a13",
+          "4": "#591d19",
+          "5": "#e77c0b",
+          "6": "#faab43",
+          "7": "#9a243c",
+          "8": "#d24424"
+        }
+      },
+      second: {
+        id: "default",
+        name: "Guts second",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806349/berserk1_orig_u10357.jpg",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806349/berserk1_uncolor_jaiyjd.png",
+        canvasSize: { width: 800, height: 1200 },
+        palette: {
+          "1": "#dd724f",
+          "2": "#f9c072",
+          "3": "#973a13",
+          "4": "#591d19",
+          "5": "#e77c0b",
+          "6": "#faab43",
+          "7": "#9a243c",
+          "8": "#d24424"
+        }
+      }
+    }
+  }, Brunette: {
+    name: "Brunette",
+    description: "Brunette",
+    themes: ["Manga", "Anime"],
+    models: {
+      default: {
+        id: "default",
+        name: "Brunette",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806377/mang3_orig_h4vmdq.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806376/mang3__uncolor_sjl4gi.png",
+        canvasSize: { width: 800, height: 1200 },
+        palette: {
+          "1": "#dd724f",
+          "2": "#f9c072",
+          "3": "#973a13",
+          "4": "#591d19",
+          "5": "#e77c0b",
+          "6": "#faab43",
+          "7": "#9a243c",
+          "8": "#d24424"
+        }
+      }
+    }
+  }, Shinjuku: {
+    name: "Shinjuku",
+    description: "Shinjuku",
+    themes: ["Manga", "Anime"],
+    models: {
+      default: {
+        id: "default",
+        name: "Shinjuku",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806428/mang5_orig_dznnxy.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806427/mang5_uncolor_frxdrq.png",
+        canvasSize: { width: 800, height: 1200 },
+        palette: {
+          "1": "#dd724f",
+          "2": "#f9c072",
+          "3": "#973a13",
+          "4": "#591d19",
+          "5": "#e77c0b",
+          "6": "#faab43",
+          "7": "#9a243c",
+          "8": "#d24424"
+        }
+      }
+    }
+  }, BikeSurbubTokyo: {
+    name: "BikeSurbubTokyo",
+    description: "Cycling around Tokyo",
+    themes: ["Manga", "Anime"],
+    models: {
+      default: {
+        id: "default",
+        name: "Cycling in Japan",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806441/mang7_orig_nuff0y.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806436/mang7_uncolor_dv8kql.png",
+        canvasSize: { width: 800, height: 1200 },
+        palette: {
+          "1": "#dd724f",
+          "2": "#f9c072",
+          "3": "#973a13",
+          "4": "#591d19",
+          "5": "#e77c0b",
+          "6": "#faab43",
+          "7": "#9a243c",
+          "8": "#d24424"
+        }
+      }
+    }
+  }, Annapurna: {
+    name: "Annapurna",
+    description: "Mountains in Annapurna",
+    themes: ["Manga", "Anime"],
+    models: {
+      default: {
+        id: "default",
+        name: "Annapurna",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806440/mang6_orig_n4jetc.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806439/mang6_uncolor_kjtgmd.png",
+        canvasSize: { width: 800, height: 1200 },
+        palette: {
+          "1": "#dd724f",
+          "2": "#f9c072",
+          "3": "#973a13",
+          "4": "#591d19",
+          "5": "#e77c0b",
+          "6": "#faab43",
+          "7": "#9a243c",
+          "8": "#d24424"
+        }
+      }
+    }
+  }, GreenPark: {
+    name: "GreenPark",
+    description: "peace in GreenPark Seoul",
+    themes: ["Manga", "Anime"],
+    models: {
+      default: {
+        id: "default",
+        name: "GreenPark",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806442/mang9_orig_y8th46.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806431/mang9_uncolor_seoglc.png",
+        canvasSize: { width: 800, height: 1200 },
+        palette: {
+          "1": "#dd724f",
+          "2": "#f9c072",
+          "3": "#973a13",
+          "4": "#591d19",
+          "5": "#e77c0b",
+          "6": "#faab43",
+          "7": "#9a243c",
+          "8": "#d24424"
+        }
+      }
+    }
+  }, PeaceinAlpes: {
+    name: "PeaceinAlpes",
+    description: "Farniente at the mountains",
+    themes: ["Manga", "Anime"],
+    models: {
+      default: {
+        id: "default",
+        name: "PeaceAndLove",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806446/mang8_orig_xgrugz.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806435/mang8_uncolor_zt52od.png",
+        canvasSize: { width: 1200, height: 800 },
+        palette: {
+          "1": "#dd724f",
+          "2": "#f9c072",
+          "3": "#973a13",
+          "4": "#591d19",
+          "5": "#e77c0b",
+          "6": "#faab43",
+          "7": "#9a243c",
+          "8": "#d24424"
+        }
+      }
+    }
+  }, MeetCat: {
+    name: "MeetCat",
+    description: "Rencontre d'un chat à Donghae",
+    themes: ["Manga", "Anime"],
+    models: {
+      default: {
+        id: "default",
+        name: "Meet Cat",
+        reference: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806447/mang10_orig_aiybao.png",
+        template: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1765806432/mang10_uncolor_u245ry.png",
+        canvasSize: { width: 1200, height: 800 },
+        palette: {
+          "1": "#dd724f",
+          "2": "#f9c072",
+          "3": "#973a13",
+          "4": "#591d19",
+          "5": "#e77c0b",
+          "6": "#faab43",
+          "7": "#9a243c",
+          "8": "#d24424"
+        }
+      }
+    }
+  },
   UsagiTsukino: {
     name: "USagi Tsukino",
     description: "USagi Tsukino",
+    themes: ["Manga", "Anime"],
     models: {
       default: {
         id: "default",
@@ -27,6 +309,7 @@ export const drawBeruModels = {
   Juhee: {
     name: "Juhee",
     description: "Hunter Juhee",
+    themes: ["Solo Leveling", "Anime"],
     models: {
       default: {
         id: "default",
@@ -50,6 +333,7 @@ export const drawBeruModels = {
   ilhwan: {
     name: "Ilhwan",
     description: "Hunter polyvalent de BuilderBeru",
+    themes: ["Solo Leveling", "Anime"],
     models: {
       default: {
         id: "default",
@@ -73,6 +357,7 @@ export const drawBeruModels = {
   Yuqi: {
     name: "Yuqi",
     description: "Hunter agile de BuilderBeru",
+    themes: ["Solo Leveling", "Anime"],
     models: {
       default: {
         id: "default",
@@ -96,6 +381,7 @@ export const drawBeruModels = {
   Minnie: {
     name: "Minnie",
     description: "Hunter mystérieuse de BuilderBeru",
+    themes: ["Solo Leveling", "Anime"],
     models: {
       default: {
         id: "default",
@@ -119,6 +405,7 @@ export const drawBeruModels = {
   Kanae: {
     name: "Kanae",
     description: "Hunter élégante de BuilderBeru",
+    themes: ["Solo Leveling", "Anime"],
     models: {
       default: {
         id: "default",
@@ -159,6 +446,7 @@ export const drawBeruModels = {
   Seorin: {
     name: "Seorin",
     description: "Hunter stratège de BuilderBeru",
+    themes: ["Solo Leveling", "Anime"],
     models: {
       default: {
         id: "default",
@@ -182,6 +470,7 @@ export const drawBeruModels = {
   Frieren: {
     name: "Frieren",
     description: "Hunter stratège de BuilderBeru",
+    themes: ["Solo Leveling", "Anime"],
     models: {
       default: {
         id: "default",
@@ -224,6 +513,7 @@ export const drawBeruModels = {
   MousuCommunauty: {
     name: "MousuCommunauty",
     description: "Mousu's communauty",
+    themes: ["Solo Leveling", "Anime"],
     models: {
       default: {
         id: "default",
@@ -247,6 +537,7 @@ export const drawBeruModels = {
   PrincesseSarah: {
     name: "Princesse Sarah",
     description: "Hunter stratège de BuilderBeru",
+    themes: ["Manga", "Anime"],
     models: {
       default: {
         id: "default",
@@ -270,6 +561,7 @@ export const drawBeruModels = {
   Chae: {
     name: "Cha Hae-In",
     description: "Hunter Cha Hae-In",
+    themes: ["Solo Leveling", "Anime"],
     models: {
       default: {
         id: "default",
@@ -293,6 +585,7 @@ export const drawBeruModels = {
   Luffy: {
     name: "Luffy",
     description: "Luffy",
+    themes: ["Manga", "Anime"],
     models: {
       default: {
         id: "default",
@@ -333,4 +626,18 @@ export const getAllModelsCount = () => {
   return Object.values(drawBeruModels).reduce((total, hunter) => {
     return total + Object.keys(hunter.models).length;
   }, 0);
+};
+
+// Helpers pour les thèmes
+export const getAvailableThemes = () => {
+  return Object.entries(drawBeruThemes)
+    .sort((a, b) => a[1].order - b[1].order)
+    .map(([key, value]) => ({ id: key, ...value }));
+};
+
+export const getHuntersByTheme = (theme) => {
+  if (!theme) return Object.entries(drawBeruModels);
+  return Object.entries(drawBeruModels).filter(([_, hunterData]) =>
+    hunterData.themes?.includes(theme)
+  );
 };
