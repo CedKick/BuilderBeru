@@ -3817,7 +3817,7 @@ const DrawBeruFixed = ({
                                     />
                                     <div>
                                         <h2 className="text-sm font-bold text-purple-200">Placer la zone</h2>
-                                        <p className="text-[10px] text-purple-400">Glisse pour déplacer le cadre</p>
+                                        <p className="text-[10px] text-purple-400">Utilise les flèches pour déplacer</p>
                                     </div>
                                 </div>
                                 {/* Stats du chibi expliquant la taille */}
@@ -3829,55 +3829,69 @@ const DrawBeruFixed = ({
                             </div>
                         </div>
 
-                        {/* Canvas avec zone draggable */}
+                        {/* Canvas avec zone + flèches de déplacement */}
                         <div className="flex-1 relative overflow-hidden flex items-center justify-center">
-                            {/* Afficher le canvas en fond - zone touchable */}
+                            {/* Flèche GAUCHE */}
+                            <button
+                                onClick={() => {
+                                    const canvas = canvasRef.current;
+                                    if (!canvas) return;
+                                    setZonePosition(prev => ({
+                                        ...prev,
+                                        x: Math.max(zoneSize.width/2, prev.x - 20)
+                                    }));
+                                }}
+                                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-16 bg-purple-600/80 hover:bg-purple-500 active:bg-purple-400 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg"
+                            >
+                                ◀
+                            </button>
+
+                            {/* Flèche DROITE */}
+                            <button
+                                onClick={() => {
+                                    const canvas = canvasRef.current;
+                                    if (!canvas) return;
+                                    setZonePosition(prev => ({
+                                        ...prev,
+                                        x: Math.min(canvas.width - zoneSize.width/2, prev.x + 20)
+                                    }));
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-16 bg-purple-600/80 hover:bg-purple-500 active:bg-purple-400 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg"
+                            >
+                                ▶
+                            </button>
+
+                            {/* Flèche HAUT */}
+                            <button
+                                onClick={() => {
+                                    setZonePosition(prev => ({
+                                        ...prev,
+                                        y: Math.max(zoneSize.height/2, prev.y - 20)
+                                    }));
+                                }}
+                                className="absolute top-2 left-1/2 -translate-x-1/2 z-10 w-16 h-10 bg-purple-600/80 hover:bg-purple-500 active:bg-purple-400 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg"
+                            >
+                                ▲
+                            </button>
+
+                            {/* Flèche BAS */}
+                            <button
+                                onClick={() => {
+                                    const canvas = canvasRef.current;
+                                    if (!canvas) return;
+                                    setZonePosition(prev => ({
+                                        ...prev,
+                                        y: Math.min(canvas.height - zoneSize.height/2, prev.y + 20)
+                                    }));
+                                }}
+                                className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 w-16 h-10 bg-purple-600/80 hover:bg-purple-500 active:bg-purple-400 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg"
+                            >
+                                ▼
+                            </button>
+
+                            {/* Afficher le canvas en fond - SANS touch handlers */}
                             {canvasRef.current && (
-                                <div
-                                    className="relative touch-none"
-                                    onTouchStart={(e) => {
-                                        if (e.touches.length === 1) {
-                                            const touch = e.touches[0];
-                                            const canvas = canvasRef.current;
-                                            if (!canvas) return;
-
-                                            // 📐 Trouver le canvas affiché dans le DOM
-                                            const displayedCanvas = e.currentTarget.querySelector('canvas');
-                                            if (!displayedCanvas) return;
-                                            const canvasRect = displayedCanvas.getBoundingClientRect();
-
-                                            // Calculer la position relative au canvas affiché
-                                            const scale = canvasRect.width / canvas.width;
-                                            const canvasX = (touch.clientX - canvasRect.left) / scale;
-                                            const canvasY = (touch.clientY - canvasRect.top) / scale;
-
-                                            setZonePosition({
-                                                x: Math.max(zoneSize.width/2, Math.min(canvas.width - zoneSize.width/2, canvasX)),
-                                                y: Math.max(zoneSize.height/2, Math.min(canvas.height - zoneSize.height/2, canvasY))
-                                            });
-                                        }
-                                    }}
-                                    onTouchMove={(e) => {
-                                        if (e.touches.length === 1) {
-                                            const touch = e.touches[0];
-                                            const canvas = canvasRef.current;
-                                            if (!canvas) return;
-
-                                            const displayedCanvas = e.currentTarget.querySelector('canvas');
-                                            if (!displayedCanvas) return;
-                                            const canvasRect = displayedCanvas.getBoundingClientRect();
-
-                                            const scale = canvasRect.width / canvas.width;
-                                            const canvasX = (touch.clientX - canvasRect.left) / scale;
-                                            const canvasY = (touch.clientY - canvasRect.top) / scale;
-
-                                            setZonePosition({
-                                                x: Math.max(zoneSize.width/2, Math.min(canvas.width - zoneSize.width/2, canvasX)),
-                                                y: Math.max(zoneSize.height/2, Math.min(canvas.height - zoneSize.height/2, canvasY))
-                                            });
-                                        }
-                                    }}
-                                >
+                                <div className="relative">
                                     <canvas
                                         ref={(el) => {
                                             if (el && canvasRef.current) {

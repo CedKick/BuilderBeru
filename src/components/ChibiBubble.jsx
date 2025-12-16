@@ -214,16 +214,14 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
     };
 
     const getTransformForPhase = () => {
-        // translateX(-50%) est TOUJOURS appliqué pour le centrage
-        // Seuls translateY et scale changent selon la phase
         switch (phase) {
             case 'entering':
-                return 'translateY(-10px) scale(0.95)';
+                return 'translateX(-50%) translateY(-10px) scale(0.95)';
             case 'fading-out':
             case 'exiting':
-                return 'translateY(5px) scale(0.98)';
+                return 'translateX(-50%) translateY(5px) scale(0.98)';
             default:
-                return 'translateY(0) scale(1)';
+                return 'translateX(-50%) translateY(0) scale(1)';
         }
     };
 
@@ -276,7 +274,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                 ` : ''}
             `}</style>
 
-            {/* 📍 Container positionné - translateX(-50%) TOUJOURS présent pour centrage stable */}
+            {/* 📍 Container positionné */}
             <div
                 onClick={handleClick}
                 style={{
@@ -289,16 +287,12 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                         top: '80px',
                         left: '50%',
                     }),
-                    // 🎯 Centrage horizontal FIXE (jamais modifié par les animations)
-                    marginLeft: isMobileDevice ? '-42.5vw' : '0', // Compensation pour 85vw width
-                    transform: isMobileDevice ? animationStyle.transform : `translateX(-50%) ${animationStyle.transform}`,
                     zIndex: config.special === 'berserker' ? 10503 : 10100,
                     // 📏 Taille plus compacte sur mobile
                     width: isMobileDevice ? '85vw' : 'auto',
                     maxWidth: isMobileDevice ? '320px' : '380px',
                     minWidth: isMobileDevice ? '200px' : '280px',
-                    opacity: animationStyle.opacity,
-                    transition: animationStyle.transition,
+                    ...animationStyle,
                     cursor: isMobileDevice ? 'pointer' : 'default',
                 }}
             >
