@@ -95,11 +95,13 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
 
             // 📏 Calculer les timings du fadeout basés sur la durée
             // Si pas de durée fournie, estimer basé sur la longueur du message
-            // Formula: animation (50ms/char) + lecture (80ms/char) + marge (1500ms)
-            // Min: 4s, Max: 12s pour laisser le temps de lire
+            // ⚡ Animation rapide (20ms/char) + lecture longue (120ms/char) + marge (2500ms)
+            // Min: 5s, Max: 15s pour laisser le temps de lire
             const messageLength = message?.length || 20;
-            const estimatedDuration = (messageLength * 50) + (messageLength * 80) + 1500;
-            const totalDuration = duration || Math.min(12000, Math.max(4000, estimatedDuration));
+            const animationTime = messageLength * 20;  // Animation rapide
+            const readingTime = messageLength * 120;   // Plus de temps pour lire
+            const estimatedDuration = animationTime + readingTime + 2500;
+            const totalDuration = duration || Math.min(15000, Math.max(5000, estimatedDuration));
 
             // Timeline:
             // - Phase visible: 0 → (totalDuration - 2000ms)
@@ -274,25 +276,33 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                 ` : ''}
             `}</style>
 
-            {/* 📍 Container positionné */}
+            {/* 📍 Container positionné - centrage différent mobile/desktop */}
             <div
                 onClick={handleClick}
                 style={{
                     position: 'fixed',
                     ...(isMobileDevice ? {
-                        // 📱 Mobile: en haut, centré, compact
+                        // 📱 Mobile: centré avec left/right auto (pas de transform)
                         top: '12px',
-                        left: '50%',
+                        left: '0',
+                        right: '0',
+                        marginLeft: 'auto',
+                        marginRight: 'auto',
+                        // Pas de translateX pour mobile - centrage via margins
+                        transform: `translateY(${phase === 'entering' ? '-10px' : phase === 'fading-out' || phase === 'exiting' ? '5px' : '0'}) scale(${phase === 'entering' ? '0.95' : phase === 'fading-out' || phase === 'exiting' ? '0.98' : '1'})`,
                     } : {
+                        // 💻 Desktop: centré avec left 50% + translateX(-50%)
                         top: '80px',
                         left: '50%',
+                        transform: animationStyle.transform,
                     }),
                     zIndex: config.special === 'berserker' ? 10503 : 10100,
                     // 📏 Taille plus compacte sur mobile
                     width: isMobileDevice ? '85vw' : 'auto',
                     maxWidth: isMobileDevice ? '320px' : '380px',
                     minWidth: isMobileDevice ? '200px' : '280px',
-                    ...animationStyle,
+                    opacity: animationStyle.opacity,
+                    transition: animationStyle.transition,
                     cursor: isMobileDevice ? 'pointer' : 'default',
                 }}
             >

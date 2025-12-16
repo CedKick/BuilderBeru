@@ -1075,15 +1075,15 @@ const DrawBeruFixed = ({
             const { faceFront = false, priority = 'normal' } = options;
 
             // 📏 Calculer la durée basée sur la longueur du message
-            // Formula: animation (50ms/char) + lecture (80ms/char) + marge (1500ms)
+            // ⚡ Animation rapide (20ms/char) + lecture longue (120ms/char) + marge (2500ms)
             // Synchronisé avec ChibiBubble.jsx pour cohérence
             const messageLength = message?.length || 0;
-            const animationTime = messageLength * 50; // Temps d'animation du texte
-            const readingTime = messageLength * 80; // Temps de lecture
-            const calculatedDuration = animationTime + readingTime + 1500; // + marge généreuse
+            const animationTime = messageLength * 20; // Animation rapide
+            const readingTime = messageLength * 120;  // Plus de temps pour lire
+            const calculatedDuration = animationTime + readingTime + 2500;
 
-            // Durée finale: entre 4s minimum et 12s maximum (plus de temps pour lire)
-            const duration = options.duration || Math.min(12000, Math.max(4000, calculatedDuration));
+            // Durée finale: entre 5s minimum et 15s maximum
+            const duration = options.duration || Math.min(15000, Math.max(5000, calculatedDuration));
 
             // Anti-flood: max 3 messages en attente par chibi
             const pendingForChibi = messageQueueRef.current.filter(m => m.chibiId === chibiId).length;
@@ -3030,7 +3030,8 @@ const DrawBeruFixed = ({
             pressure = e.pressure;
         }
         currentPressureRef.current = pressure;
-        setCurrentPressure(pressure);
+        // ⚡ PERF: Ne pas appeler setState pendant le dessin pour éviter les re-renders
+        // setCurrentPressure(pressure); // Désactivé pour performance mobile
 
         // 🖌️ BRUSH ENGINE PRO: Calculer la vitesse
         const now = performance.now();
@@ -3051,7 +3052,8 @@ const DrawBeruFixed = ({
             velocity = distance / deltaTime; // pixels/ms
         }
         currentVelocityRef.current = velocity;
-        setCurrentVelocity(velocity);
+        // ⚡ PERF: Ne pas appeler setState pendant le dessin pour éviter les re-renders
+        // setCurrentVelocity(velocity); // Désactivé pour performance mobile
         lastDrawTimeRef.current = now;
         lastDrawPositionRef.current = { x: rawPoint.x, y: rawPoint.y };
 
@@ -3817,7 +3819,7 @@ const DrawBeruFixed = ({
                                     />
                                     <div>
                                         <h2 className="text-sm font-bold text-purple-200">Placer la zone</h2>
-                                        <p className="text-[10px] text-purple-400">Utilise les flèches pour déplacer</p>
+                                        <p className="text-[10px] text-purple-400">Glisse pour déplacer le cadre</p>
                                     </div>
                                 </div>
                                 {/* Stats du chibi expliquant la taille */}
@@ -3829,69 +3831,55 @@ const DrawBeruFixed = ({
                             </div>
                         </div>
 
-                        {/* Canvas avec zone + flèches de déplacement */}
+                        {/* Canvas avec zone draggable - SLIDE pour déplacer */}
                         <div className="flex-1 relative overflow-hidden flex items-center justify-center">
-                            {/* Flèche GAUCHE */}
-                            <button
-                                onClick={() => {
-                                    const canvas = canvasRef.current;
-                                    if (!canvas) return;
-                                    setZonePosition(prev => ({
-                                        ...prev,
-                                        x: Math.max(zoneSize.width/2, prev.x - 20)
-                                    }));
-                                }}
-                                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-16 bg-purple-600/80 hover:bg-purple-500 active:bg-purple-400 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg"
-                            >
-                                ◀
-                            </button>
-
-                            {/* Flèche DROITE */}
-                            <button
-                                onClick={() => {
-                                    const canvas = canvasRef.current;
-                                    if (!canvas) return;
-                                    setZonePosition(prev => ({
-                                        ...prev,
-                                        x: Math.min(canvas.width - zoneSize.width/2, prev.x + 20)
-                                    }));
-                                }}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-16 bg-purple-600/80 hover:bg-purple-500 active:bg-purple-400 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg"
-                            >
-                                ▶
-                            </button>
-
-                            {/* Flèche HAUT */}
-                            <button
-                                onClick={() => {
-                                    setZonePosition(prev => ({
-                                        ...prev,
-                                        y: Math.max(zoneSize.height/2, prev.y - 20)
-                                    }));
-                                }}
-                                className="absolute top-2 left-1/2 -translate-x-1/2 z-10 w-16 h-10 bg-purple-600/80 hover:bg-purple-500 active:bg-purple-400 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg"
-                            >
-                                ▲
-                            </button>
-
-                            {/* Flèche BAS */}
-                            <button
-                                onClick={() => {
-                                    const canvas = canvasRef.current;
-                                    if (!canvas) return;
-                                    setZonePosition(prev => ({
-                                        ...prev,
-                                        y: Math.min(canvas.height - zoneSize.height/2, prev.y + 20)
-                                    }));
-                                }}
-                                className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 w-16 h-10 bg-purple-600/80 hover:bg-purple-500 active:bg-purple-400 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg"
-                            >
-                                ▼
-                            </button>
-
-                            {/* Afficher le canvas en fond - SANS touch handlers */}
+                            {/* Afficher le canvas en fond - zone touchable */}
                             {canvasRef.current && (
-                                <div className="relative">
+                                <div
+                                    className="relative touch-none"
+                                    onTouchStart={(e) => {
+                                        if (e.touches.length === 1) {
+                                            const touch = e.touches[0];
+                                            const canvas = canvasRef.current;
+                                            if (!canvas) return;
+
+                                            // 📐 Trouver le canvas affiché dans le DOM
+                                            const displayedCanvas = e.currentTarget.querySelector('canvas');
+                                            if (!displayedCanvas) return;
+                                            const canvasRect = displayedCanvas.getBoundingClientRect();
+
+                                            // Calculer la position relative au canvas affiché
+                                            const scale = canvasRect.width / canvas.width;
+                                            const canvasX = (touch.clientX - canvasRect.left) / scale;
+                                            const canvasY = (touch.clientY - canvasRect.top) / scale;
+
+                                            setZonePosition({
+                                                x: Math.max(zoneSize.width/2, Math.min(canvas.width - zoneSize.width/2, canvasX)),
+                                                y: Math.max(zoneSize.height/2, Math.min(canvas.height - zoneSize.height/2, canvasY))
+                                            });
+                                        }
+                                    }}
+                                    onTouchMove={(e) => {
+                                        if (e.touches.length === 1) {
+                                            const touch = e.touches[0];
+                                            const canvas = canvasRef.current;
+                                            if (!canvas) return;
+
+                                            const displayedCanvas = e.currentTarget.querySelector('canvas');
+                                            if (!displayedCanvas) return;
+                                            const canvasRect = displayedCanvas.getBoundingClientRect();
+
+                                            const scale = canvasRect.width / canvas.width;
+                                            const canvasX = (touch.clientX - canvasRect.left) / scale;
+                                            const canvasY = (touch.clientY - canvasRect.top) / scale;
+
+                                            setZonePosition({
+                                                x: Math.max(zoneSize.width/2, Math.min(canvas.width - zoneSize.width/2, canvasX)),
+                                                y: Math.max(zoneSize.height/2, Math.min(canvas.height - zoneSize.height/2, canvasY))
+                                            });
+                                        }
+                                    }}
+                                >
                                     <canvas
                                         ref={(el) => {
                                             if (el && canvasRef.current) {
@@ -4655,27 +4643,33 @@ const DrawBeruFixed = ({
                     </div>
                 </div>
 
-                {/* BOTTOM TOOLBAR MOBILE - Scrollable horizontalement */}
+                {/* BOTTOM TOOLBAR MOBILE - Avec flèches de navigation */}
                 <div className="fixed bottom-0 left-0 right-0 bg-black/30 backdrop-blur-sm border-t border-purple-500/30 p-2 z-[999]">
-                    {/* Indicateur de scroll à gauche */}
-                    <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-black/50 to-transparent pointer-events-none z-10 flex items-center">
-                        <span className="text-white/50 text-xs ml-1">◀</span>
-                    </div>
-                    {/* Indicateur de scroll à droite */}
-                    <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-black/50 to-transparent pointer-events-none z-10 flex items-center justify-end">
-                        <span className="text-white/50 text-xs mr-1">▶</span>
-                    </div>
+                    {/* Flèche GAUCHE - bouton cliquable */}
+                    <button
+                        onClick={() => {
+                            if (mobileToolbarRef.current) {
+                                mobileToolbarRef.current.scrollBy({ left: -120, behavior: 'smooth' });
+                            }
+                        }}
+                        className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/70 to-transparent z-10 flex items-center justify-start active:from-purple-500/50"
+                    >
+                        <span className="text-white text-lg ml-1">◀</span>
+                    </button>
+                    {/* Flèche DROITE - bouton cliquable */}
+                    <button
+                        onClick={() => {
+                            if (mobileToolbarRef.current) {
+                                mobileToolbarRef.current.scrollBy({ left: 120, behavior: 'smooth' });
+                            }
+                        }}
+                        className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/70 to-transparent z-10 flex items-center justify-end active:from-purple-500/50"
+                    >
+                        <span className="text-white text-lg mr-1">▶</span>
+                    </button>
                     <div
                         ref={mobileToolbarRef}
-                        className="flex items-center gap-2 overflow-x-auto px-4 [&::-webkit-scrollbar]:hidden"
-                        style={{
-                            scrollbarWidth: 'none',
-                            msOverflowStyle: 'none',
-                            WebkitOverflowScrolling: 'touch'
-                        }}
-                        onTouchStart={handleToolbarTouchStart}
-                        onTouchMove={handleToolbarTouchMove}
-                        onTouchEnd={handleToolbarTouchEnd}
+                        className="flex items-center gap-2 overflow-x-hidden px-10"
                     >
                         <button
                             onClick={() => setCurrentTool('brush')}

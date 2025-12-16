@@ -7,53 +7,54 @@ import { useEffect } from "react";
 const activeAnimations = new Map();
 
 // 🎭 PERSONNALITÉS - Vitesse et style par entité
+// ⚡ PERF: Valeurs réduites pour affichage plus rapide du texte
 export const DYTEXT_PERSONALITIES = {
   tank: {
-    baseSpeed: 25,        // Rapide et chaotique
-    variance: 15,         // Beaucoup de variation
-    pauseMultiplier: 0.5, // Pauses courtes
+    baseSpeed: 15,        // Rapide et chaotique (était 25)
+    variance: 10,         // Beaucoup de variation
+    pauseMultiplier: 0.3, // Pauses très courtes
     easing: 'bounce',     // Style rebondissant
   },
   beru: {
-    baseSpeed: 40,        // Calme et précis
+    baseSpeed: 25,        // Calme et précis (était 40)
     variance: 5,          // Peu de variation
-    pauseMultiplier: 1.2, // Pauses plus longues, réfléchies
+    pauseMultiplier: 0.8, // Pauses modérées
     easing: 'smooth',     // Style fluide
   },
   beru_papillon: {
-    baseSpeed: 35,        // Élégant
-    variance: 8,
-    pauseMultiplier: 1.0,
+    baseSpeed: 20,        // Élégant (était 35)
+    variance: 5,
+    pauseMultiplier: 0.6,
     easing: 'smooth',
   },
   kaisel: {
-    baseSpeed: 20,        // Très rapide, nerveux
-    variance: 20,
-    pauseMultiplier: 0.3,
+    baseSpeed: 12,        // Très rapide, nerveux (était 20)
+    variance: 10,
+    pauseMultiplier: 0.2,
     easing: 'sharp',
   },
   igris: {
-    baseSpeed: 50,        // Lent, solennel
+    baseSpeed: 30,        // Lent, solennel (était 50)
     variance: 3,
-    pauseMultiplier: 1.5,
+    pauseMultiplier: 1.0,
     easing: 'smooth',
   },
   igrisk: {
-    baseSpeed: 30,
-    variance: 25,         // Très erratique
-    pauseMultiplier: 0.8,
+    baseSpeed: 18,        // (était 30)
+    variance: 15,         // Très erratique
+    pauseMultiplier: 0.5,
     easing: 'glitch',     // Style glitch
   },
   berserker: {
-    baseSpeed: 15,        // Ultra rapide
-    variance: 10,
-    pauseMultiplier: 0.4,
+    baseSpeed: 10,        // Ultra rapide (était 15)
+    variance: 5,
+    pauseMultiplier: 0.2,
     easing: 'sharp',
   },
   default: {
-    baseSpeed: 35,
-    variance: 8,
-    pauseMultiplier: 1.0,
+    baseSpeed: 20,        // (était 35)
+    variance: 5,
+    pauseMultiplier: 0.6,
     easing: 'smooth',
   }
 };
