@@ -254,8 +254,8 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
             <style>{DYTEXT_CURSOR_STYLE}</style>
             <style>{`
                 @keyframes chibi-bounce {
-                    0%, 100% { transform: translateX(-50%) translateY(0); }
-                    50% { transform: translateX(-50%) translateY(-3px); }
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-3px); }
                 }
                 @keyframes chibi-glow {
                     0%, 100% { box-shadow: 0 8px 32px ${config.color}40; }
@@ -263,9 +263,9 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                 }
                 ${config.special === 'glitch' ? `
                     @keyframes glitch-effect {
-                        0%, 90%, 100% { filter: none; transform: translateX(-50%); }
-                        92% { filter: hue-rotate(90deg); transform: translateX(-50%) skewX(2deg); }
-                        94% { filter: hue-rotate(-90deg); transform: translateX(-50%) skewX(-2deg); }
+                        0%, 90%, 100% { filter: none; transform: none; }
+                        92% { filter: hue-rotate(90deg); transform: skewX(2deg); }
+                        94% { filter: hue-rotate(-90deg); transform: skewX(-2deg); }
                     }
                 ` : ''}
                 ${config.special === 'berserker' ? `
