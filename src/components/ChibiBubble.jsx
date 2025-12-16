@@ -275,16 +275,18 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                 style={{
                     position: 'fixed',
                     ...(isMobileDevice ? {
-                        bottom: '90px',
+                        // 📱 Mobile: en haut, centré, compact
+                        top: '12px',
                         left: '50%',
                     } : {
                         top: '80px',
                         left: '50%',
                     }),
                     zIndex: config.special === 'berserker' ? 10503 : 10100,
-                    width: isMobileDevice ? '90vw' : 'auto',
-                    maxWidth: '380px',
-                    minWidth: isMobileDevice ? 'auto' : '280px',
+                    // 📏 Taille plus compacte sur mobile
+                    width: isMobileDevice ? '85vw' : 'auto',
+                    maxWidth: isMobileDevice ? '320px' : '380px',
+                    minWidth: isMobileDevice ? '200px' : '280px',
                     ...animationStyle,
                     cursor: isMobileDevice ? 'pointer' : 'default',
                 }}
@@ -293,7 +295,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                     ref={bubbleRef}
                     style={{
                         ...baseStyle,
-                        padding: '12px 16px',
+                        padding: isMobileDevice ? '8px 12px' : '12px 16px',
                         animation: phase === 'visible'
                             ? config.special === 'glitch'
                                 ? 'chibi-bounce 3s ease-in-out infinite, glitch-effect 8s infinite'
@@ -307,17 +309,17 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                     <div style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '10px',
-                        marginBottom: '10px',
-                        paddingBottom: '8px',
+                        gap: isMobileDevice ? '8px' : '10px',
+                        marginBottom: isMobileDevice ? '6px' : '10px',
+                        paddingBottom: isMobileDevice ? '6px' : '8px',
                         borderBottom: `1px solid ${config.color}40`,
                     }}>
                         <img
                             src={config.icon}
                             alt={config.name}
                             style={{
-                                width: '36px',
-                                height: '36px',
+                                width: isMobileDevice ? '28px' : '36px',
+                                height: isMobileDevice ? '28px' : '36px',
                                 borderRadius: '50%',
                                 border: `2px solid ${config.color}`,
                                 boxShadow: `0 0 12px ${config.color}50`,
@@ -330,7 +332,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                         />
                         <span style={{
                             color: config.color,
-                            fontSize: '13px',
+                            fontSize: isMobileDevice ? '11px' : '13px',
                             fontWeight: 'bold',
                             fontFamily: 'monospace',
                             textShadow: `0 0 10px ${config.color}50`,
@@ -351,10 +353,10 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                         style={{
                             color: config.special === 'berserker' ? '#ff6666' : '#ffffff',
                             fontFamily: 'monospace',
-                            fontSize: isMobileDevice ? '13px' : '12px',
-                            lineHeight: '1.6',
-                            minHeight: '24px',
-                            maxHeight: isMobileDevice ? '120px' : '100px',
+                            fontSize: isMobileDevice ? '11px' : '12px',
+                            lineHeight: isMobileDevice ? '1.4' : '1.6',
+                            minHeight: isMobileDevice ? '18px' : '24px',
+                            maxHeight: isMobileDevice ? '60px' : '100px',
                             overflowY: 'auto',
                             whiteSpace: 'pre-wrap',
                             wordWrap: 'break-word',
@@ -363,19 +365,19 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                                 : config.special === 'glitch'
                                 ? '1px 1px 3px rgba(255,0,0,0.4)'
                                 : '1px 1px 2px rgba(0,0,0,0.6)',
-                            padding: '4px 0',
+                            padding: isMobileDevice ? '2px 0' : '4px 0',
                         }}
                     />
 
-                    {/* 📱 Indicateur "tap to close" sur mobile */}
+                    {/* 📱 Indicateur "tap to close" sur mobile - plus discret */}
                     {isMobileDevice && (
                         <div style={{
                             textAlign: 'center',
-                            marginTop: '8px',
-                            paddingTop: '6px',
-                            borderTop: `1px solid ${config.color}20`,
-                            fontSize: '10px',
-                            color: `${config.color}80`,
+                            marginTop: '4px',
+                            paddingTop: '4px',
+                            borderTop: `1px solid ${config.color}15`,
+                            fontSize: '8px',
+                            color: `${config.color}60`,
                             fontFamily: 'monospace',
                         }}>
                             tap to close

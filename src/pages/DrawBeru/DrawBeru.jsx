@@ -3821,64 +3821,54 @@ const DrawBeruFixed = ({
                         </div>
 
                         {/* Canvas avec zone draggable */}
-                        <div
-                            className="flex-1 relative overflow-hidden"
-                            onTouchStart={(e) => {
-                                if (e.touches.length === 1) {
-                                    const touch = e.touches[0];
-                                    const rect = e.currentTarget.getBoundingClientRect();
-                                    const canvas = canvasRef.current;
-                                    if (!canvas) return;
-                                    // Calculer le ratio d'affichage
-                                    const displayWidth = rect.width;
-                                    const displayHeight = rect.height;
-                                    const canvasAspect = canvas.width / canvas.height;
-                                    const containerAspect = displayWidth / displayHeight;
-                                    let scale, offsetX, offsetY;
-                                    if (canvasAspect > containerAspect) {
-                                        scale = displayWidth / canvas.width;
-                                        offsetX = 0;
-                                        offsetY = (displayHeight - canvas.height * scale) / 2;
-                                    } else {
-                                        scale = displayHeight / canvas.height;
-                                        offsetX = (displayWidth - canvas.width * scale) / 2;
-                                        offsetY = 0;
-                                    }
-                                    // Convertir touch en coordonnées canvas
-                                    const canvasX = (touch.clientX - rect.left - offsetX) / scale;
-                                    const canvasY = (touch.clientY - rect.top - offsetY) / scale;
-                                    setZonePosition({ x: Math.max(zoneSize.width/2, Math.min(canvas.width - zoneSize.width/2, canvasX)), y: Math.max(zoneSize.height/2, Math.min(canvas.height - zoneSize.height/2, canvasY)) });
-                                }
-                            }}
-                            onTouchMove={(e) => {
-                                if (e.touches.length === 1) {
-                                    const touch = e.touches[0];
-                                    const rect = e.currentTarget.getBoundingClientRect();
-                                    const canvas = canvasRef.current;
-                                    if (!canvas) return;
-                                    const displayWidth = rect.width;
-                                    const displayHeight = rect.height;
-                                    const canvasAspect = canvas.width / canvas.height;
-                                    const containerAspect = displayWidth / displayHeight;
-                                    let scale, offsetX, offsetY;
-                                    if (canvasAspect > containerAspect) {
-                                        scale = displayWidth / canvas.width;
-                                        offsetX = 0;
-                                        offsetY = (displayHeight - canvas.height * scale) / 2;
-                                    } else {
-                                        scale = displayHeight / canvas.height;
-                                        offsetX = (displayWidth - canvas.width * scale) / 2;
-                                        offsetY = 0;
-                                    }
-                                    const canvasX = (touch.clientX - rect.left - offsetX) / scale;
-                                    const canvasY = (touch.clientY - rect.top - offsetY) / scale;
-                                    setZonePosition({ x: Math.max(zoneSize.width/2, Math.min(canvas.width - zoneSize.width/2, canvasX)), y: Math.max(zoneSize.height/2, Math.min(canvas.height - zoneSize.height/2, canvasY)) });
-                                }
-                            }}
-                        >
-                            {/* Afficher le canvas en fond */}
+                        <div className="flex-1 relative overflow-hidden flex items-center justify-center">
+                            {/* Afficher le canvas en fond - zone touchable */}
                             {canvasRef.current && (
-                                <div className="absolute inset-0 flex items-center justify-center">
+                                <div
+                                    className="relative touch-none"
+                                    onTouchStart={(e) => {
+                                        if (e.touches.length === 1) {
+                                            const touch = e.touches[0];
+                                            const canvas = canvasRef.current;
+                                            if (!canvas) return;
+
+                                            // 📐 Trouver le canvas affiché dans le DOM
+                                            const displayedCanvas = e.currentTarget.querySelector('canvas');
+                                            if (!displayedCanvas) return;
+                                            const canvasRect = displayedCanvas.getBoundingClientRect();
+
+                                            // Calculer la position relative au canvas affiché
+                                            const scale = canvasRect.width / canvas.width;
+                                            const canvasX = (touch.clientX - canvasRect.left) / scale;
+                                            const canvasY = (touch.clientY - canvasRect.top) / scale;
+
+                                            setZonePosition({
+                                                x: Math.max(zoneSize.width/2, Math.min(canvas.width - zoneSize.width/2, canvasX)),
+                                                y: Math.max(zoneSize.height/2, Math.min(canvas.height - zoneSize.height/2, canvasY))
+                                            });
+                                        }
+                                    }}
+                                    onTouchMove={(e) => {
+                                        if (e.touches.length === 1) {
+                                            const touch = e.touches[0];
+                                            const canvas = canvasRef.current;
+                                            if (!canvas) return;
+
+                                            const displayedCanvas = e.currentTarget.querySelector('canvas');
+                                            if (!displayedCanvas) return;
+                                            const canvasRect = displayedCanvas.getBoundingClientRect();
+
+                                            const scale = canvasRect.width / canvas.width;
+                                            const canvasX = (touch.clientX - canvasRect.left) / scale;
+                                            const canvasY = (touch.clientY - canvasRect.top) / scale;
+
+                                            setZonePosition({
+                                                x: Math.max(zoneSize.width/2, Math.min(canvas.width - zoneSize.width/2, canvasX)),
+                                                y: Math.max(zoneSize.height/2, Math.min(canvas.height - zoneSize.height/2, canvasY))
+                                            });
+                                        }
+                                    }}
+                                >
                                     <canvas
                                         ref={(el) => {
                                             if (el && canvasRef.current) {
@@ -3889,11 +3879,14 @@ const DrawBeruFixed = ({
                                             }
                                         }}
                                         className="max-w-full max-h-full object-contain opacity-60"
-                                        style={{ imageRendering: 'pixelated' }}
+                                        style={{
+                                            imageRendering: 'pixelated',
+                                            maxHeight: 'calc(100vh - 220px)', // Laisser place au header et footer
+                                        }}
                                     />
-                                    {/* Overlay de la zone */}
+                                    {/* Overlay de la zone - SUPERPOSÉ exactement sur le canvas */}
                                     <svg
-                                        className="absolute inset-0 pointer-events-none"
+                                        className="absolute top-0 left-0 pointer-events-none"
                                         style={{ width: '100%', height: '100%' }}
                                         viewBox={canvasRef.current ? `0 0 ${canvasRef.current.width} ${canvasRef.current.height}` : '0 0 100 100'}
                                         preserveAspectRatio="xMidYMid meet"
