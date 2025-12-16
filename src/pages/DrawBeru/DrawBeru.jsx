@@ -473,6 +473,14 @@ const DrawBeruFixed = ({
     const [selectedPainterId, setSelectedPainterId] = useState('beru_papillon');
     const currentPainter = CHIBI_PAINTERS[selectedPainterId];
 
+    // 🛡️ ANTI-SPAM: Protection contre les doubles clics
+    const lastButtonClickRef = useRef({
+        autoPipette: 0,
+        chibiToggle: 0,
+        chibiSelect: 0,
+    });
+    const BUTTON_COOLDOWN_MS = 300; // 300ms entre chaque clic
+
     // 🦋 AUTO-DRAW MULTI-CHIBI - Système pour jusqu'à 2 Chibis dessinateurs
     const MAX_ACTIVE_CHIBIS = 2;
 
@@ -1067,14 +1075,15 @@ const DrawBeruFixed = ({
             const { faceFront = false, priority = 'normal' } = options;
 
             // 📏 Calculer la durée basée sur la longueur du message
-            // ~40ms par caractère pour l'animation + 2s de lecture minimum + 1s de marge
+            // Formula: animation (50ms/char) + lecture (80ms/char) + marge (1500ms)
+            // Synchronisé avec ChibiBubble.jsx pour cohérence
             const messageLength = message?.length || 0;
-            const animationTime = messageLength * 45; // Temps d'animation du texte
-            const readingTime = Math.max(2000, messageLength * 50); // Temps de lecture (min 2s)
-            const calculatedDuration = animationTime + readingTime + 500; // + marge de sécurité
+            const animationTime = messageLength * 50; // Temps d'animation du texte
+            const readingTime = messageLength * 80; // Temps de lecture
+            const calculatedDuration = animationTime + readingTime + 1500; // + marge généreuse
 
-            // Durée finale: entre 3s minimum et 8s maximum
-            const duration = options.duration || Math.min(8000, Math.max(3000, calculatedDuration));
+            // Durée finale: entre 4s minimum et 12s maximum (plus de temps pour lire)
+            const duration = options.duration || Math.min(12000, Math.max(4000, calculatedDuration));
 
             // Anti-flood: max 3 messages en attente par chibi
             const pendingForChibi = messageQueueRef.current.filter(m => m.chibiId === chibiId).length;
@@ -5454,9 +5463,14 @@ const DrawBeruFixed = ({
                                     </div>
                                 )}
 
-                                {/* 🎨 AUTO-PIPETTE TOGGLE */}
+                                {/* 🎨 AUTO-PIPETTE TOGGLE - avec anti-spam */}
                                 <button
-                                    onClick={() => setAutoPipetteMode(!autoPipetteMode)}
+                                    onClick={() => {
+                                        const now = Date.now();
+                                        if (now - lastButtonClickRef.current.autoPipette < BUTTON_COOLDOWN_MS) return;
+                                        lastButtonClickRef.current.autoPipette = now;
+                                        setAutoPipetteMode(!autoPipetteMode);
+                                    }}
                                     className={`w-12 h-12 rounded-lg shadow-md transition-all active:scale-95 flex items-center justify-center relative ${autoPipetteMode
                                         ? 'bg-gradient-to-br from-green-500 to-emerald-600 scale-105 ring-2 ring-green-400/50'
                                         : 'bg-purple-800/50 hover:bg-purple-700/50'
@@ -5469,11 +5483,41 @@ const DrawBeruFixed = ({
                                     )}
                                 </button>
 
-                                {/* 🦋 AUTO-DRAW BERU TOGGLE + CHIBI SELECTOR */}
-                                <div className="flex items-center">
+                                {/* 🦋 AUTO-DRAW BERU TOGGLE + CHIBI SELECTOR - avec espacement et anti-spam */}
+                                <div className="flex items-center gap-1">
+                                    {/* Bouton pour changer de Chibi - AVANT le bouton de lancement */}
                                     <button
-                                        onClick={toggleAutoDrawBeru}
-                                        className={`w-12 h-12 rounded-l-lg shadow-md transition-all active:scale-95 flex items-center justify-center relative overflow-hidden ${autoDrawBeruActive
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const now = Date.now();
+                                            if (now - lastButtonClickRef.current.chibiSelect < BUTTON_COOLDOWN_MS) return;
+                                            lastButtonClickRef.current.chibiSelect = now;
+                                            if (!autoDrawBeruActive) {
+                                                setSelectedPainterId(prev => prev === 'beru_papillon' ? 'tank' : 'beru_papillon');
+                                            }
+                                        }}
+                                        disabled={autoDrawBeruActive}
+                                        className={`w-8 h-12 rounded-l-lg shadow-md transition-all flex items-center justify-center ${
+                                            autoDrawBeruActive
+                                                ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                                                : selectedPainterId === 'tank'
+                                                    ? 'bg-green-700/50 hover:bg-green-600/50'
+                                                    : 'bg-purple-700/50 hover:bg-purple-600/50'
+                                        }`}
+                                        title={autoDrawBeruActive ? "Impossible de changer pendant l'animation" : `Chibi actuel: ${currentPainter.name} - Cliquer pour changer`}
+                                    >
+                                        <span className="text-xs">↔</span>
+                                    </button>
+                                    {/* Bouton pour lancer l'animation */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const now = Date.now();
+                                            if (now - lastButtonClickRef.current.chibiToggle < BUTTON_COOLDOWN_MS) return;
+                                            lastButtonClickRef.current.chibiToggle = now;
+                                            toggleAutoDrawBeru();
+                                        }}
+                                        className={`w-12 h-12 rounded-r-lg shadow-md transition-all active:scale-95 flex items-center justify-center relative overflow-hidden ${autoDrawBeruActive
                                             ? selectedPainterId === 'tank'
                                                 ? 'bg-gradient-to-br from-green-500 to-emerald-600 scale-105 ring-2 ring-green-400/50'
                                                 : 'bg-gradient-to-br from-purple-500 to-pink-600 scale-105 ring-2 ring-purple-400/50'
@@ -5481,7 +5525,7 @@ const DrawBeruFixed = ({
                                         }`}
                                         title={autoDrawBeruActive
                                             ? `${currentPainter.name} ACTIVÉ - ${autoDrawBeruTimeRemaining}s restantes`
-                                            : `AutoDraw ${currentPainter.name} - ${currentPainter.duration}s d'aide`}
+                                            : `▶ Lancer ${currentPainter.name} - ${currentPainter.duration}s d'aide`}
                                     >
                                         <img
                                             src={currentPainter.sprites.back}
@@ -5496,23 +5540,6 @@ const DrawBeruFixed = ({
                                                 {autoDrawBeruTimeRemaining}
                                             </span>
                                         )}
-                                    </button>
-                                    {/* Bouton pour changer de Chibi */}
-                                    <button
-                                        onClick={() => {
-                                            if (!autoDrawBeruActive) {
-                                                setSelectedPainterId(prev => prev === 'beru_papillon' ? 'tank' : 'beru_papillon');
-                                            }
-                                        }}
-                                        disabled={autoDrawBeruActive}
-                                        className={`w-6 h-12 rounded-r-lg shadow-md transition-all flex items-center justify-center ${
-                                            autoDrawBeruActive
-                                                ? 'bg-gray-600 cursor-not-allowed opacity-50'
-                                                : 'bg-purple-700/50 hover:bg-purple-600/50'
-                                        }`}
-                                        title={autoDrawBeruActive ? "Impossible de changer pendant l'animation" : "Changer de Chibi"}
-                                    >
-                                        <span className="text-xs">↔</span>
                                     </button>
                                 </div>
 

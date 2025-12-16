@@ -95,7 +95,11 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
 
             // 📏 Calculer les timings du fadeout basés sur la durée
             // Si pas de durée fournie, estimer basé sur la longueur du message
-            const totalDuration = duration || Math.min(8000, Math.max(3500, (message?.length || 20) * 80));
+            // Formula: animation (50ms/char) + lecture (80ms/char) + marge (1500ms)
+            // Min: 4s, Max: 12s pour laisser le temps de lire
+            const messageLength = message?.length || 20;
+            const estimatedDuration = (messageLength * 50) + (messageLength * 80) + 1500;
+            const totalDuration = duration || Math.min(12000, Math.max(4000, estimatedDuration));
 
             // Timeline:
             // - Phase visible: 0 → (totalDuration - 2000ms)
@@ -196,6 +200,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
     };
 
     // 🎬 Style d'animation pour entrée/sortie avec fadeout progressif
+    // NOTE: translateX(-50%) est maintenant dans le style de base pour éviter le saut initial
     const getOpacityForPhase = () => {
         switch (phase) {
             case 'entering': return 0;
@@ -209,29 +214,31 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
     };
 
     const getTransformForPhase = () => {
+        // translateX(-50%) est TOUJOURS appliqué pour le centrage
+        // Seuls translateY et scale changent selon la phase
         switch (phase) {
             case 'entering':
-                return 'translateX(-50%) translateY(-10px) scale(0.95)';
+                return 'translateY(-10px) scale(0.95)';
             case 'fading-out':
             case 'exiting':
-                return 'translateX(-50%) translateY(5px) scale(0.98)';
+                return 'translateY(5px) scale(0.98)';
             default:
-                return 'translateX(-50%) translateY(0) scale(1)';
+                return 'translateY(0) scale(1)';
         }
     };
 
     const getTransitionForPhase = () => {
         switch (phase) {
             case 'entering':
-                return 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                return 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
             case 'fading-warning':
-                return 'all 0.8s ease-out'; // Transition douce pour le warning
+                return 'opacity 0.8s ease-out, transform 0.8s ease-out';
             case 'fading-out':
-                return 'all 0.8s ease-in-out'; // Fadeout lent
+                return 'opacity 0.8s ease-in-out, transform 0.8s ease-in-out';
             case 'exiting':
-                return 'all 0.5s ease-in';
+                return 'opacity 0.5s ease-in, transform 0.5s ease-in';
             default:
-                return 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                return 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
         }
     };
 
@@ -269,7 +276,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                 ` : ''}
             `}</style>
 
-            {/* 📍 Container positionné */}
+            {/* 📍 Container positionné - translateX(-50%) TOUJOURS présent pour centrage stable */}
             <div
                 onClick={handleClick}
                 style={{
@@ -282,12 +289,16 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                         top: '80px',
                         left: '50%',
                     }),
+                    // 🎯 Centrage horizontal FIXE (jamais modifié par les animations)
+                    marginLeft: isMobileDevice ? '-42.5vw' : '0', // Compensation pour 85vw width
+                    transform: isMobileDevice ? animationStyle.transform : `translateX(-50%) ${animationStyle.transform}`,
                     zIndex: config.special === 'berserker' ? 10503 : 10100,
                     // 📏 Taille plus compacte sur mobile
                     width: isMobileDevice ? '85vw' : 'auto',
                     maxWidth: isMobileDevice ? '320px' : '380px',
                     minWidth: isMobileDevice ? '200px' : '280px',
-                    ...animationStyle,
+                    opacity: animationStyle.opacity,
+                    transition: animationStyle.transition,
                     cursor: isMobileDevice ? 'pointer' : 'default',
                 }}
             >
