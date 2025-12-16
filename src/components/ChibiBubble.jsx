@@ -276,26 +276,17 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                 ` : ''}
             `}</style>
 
-            {/* 📍 Container positionné - centrage différent mobile/desktop */}
+            {/* 📍 Container positionné - MÊME TECHNIQUE mobile/desktop: left 50% + translateX(-50%) */}
             <div
                 onClick={handleClick}
                 style={{
                     position: 'fixed',
-                    ...(isMobileDevice ? {
-                        // 📱 Mobile: centré avec left/right auto (pas de transform)
-                        top: '12px',
-                        left: '0',
-                        right: '0',
-                        marginLeft: 'auto',
-                        marginRight: 'auto',
-                        // Pas de translateX pour mobile - centrage via margins
-                        transform: `translateY(${phase === 'entering' ? '-10px' : phase === 'fading-out' || phase === 'exiting' ? '5px' : '0'}) scale(${phase === 'entering' ? '0.95' : phase === 'fading-out' || phase === 'exiting' ? '0.98' : '1'})`,
-                    } : {
-                        // 💻 Desktop: centré avec left 50% + translateX(-50%)
-                        top: '80px',
-                        left: '50%',
-                        transform: animationStyle.transform,
-                    }),
+                    // 🎯 Centrage IDENTIQUE mobile/desktop: left: 50% + translateX(-50%)
+                    top: isMobileDevice ? '12px' : '80px',
+                    left: '50%',
+                    transform: isMobileDevice
+                        ? `translateX(-50%) translateY(${phase === 'entering' ? '-10px' : phase === 'fading-out' || phase === 'exiting' ? '5px' : '0'}) scale(${phase === 'entering' ? '0.95' : phase === 'fading-out' || phase === 'exiting' ? '0.98' : '1'})`
+                        : animationStyle.transform,
                     zIndex: config.special === 'berserker' ? 10503 : 10100,
                     // 📏 Taille plus compacte sur mobile
                     width: isMobileDevice ? '85vw' : 'auto',
