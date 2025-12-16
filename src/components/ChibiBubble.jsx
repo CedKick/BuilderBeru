@@ -1,458 +1,410 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { dytextAnimate } from "../useDytext";
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { dytextAnimate, DYTEXT_CURSOR_STYLE } from "../useDytext";
 
-const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose, onComplete }) => {
-    const bubbleRef = useRef();
-    const [isVisible, setIsVisible] = useState(true);
-    const [isClosing, setIsClosing] = useState(false);
-    const [adjustedPosition, setAdjustedPosition] = useState(position);
-    
-    // 🔧 FIX: Utiliser un ID unique pour chaque message pour éviter les doublons
-    const messageIdRef = useRef(null);
-    const animationInProgressRef = useRef(false);
-    const animationTimeoutRef = useRef(null);
+// 🎭 Configuration des entités (centralisé)
+const ENTITY_CONFIG = {
+    tank: {
+        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png',
+        name: 'Tank',
+        color: '#4CAF50',
+        personality: 'tank',
+    },
+    beru: {
+        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png',
+        name: 'Béru',
+        color: '#8A2BE2',
+        personality: 'beru',
+    },
+    beru_papillon: {
+        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png',
+        name: 'Béru-Papillon',
+        color: '#9932CC',
+        personality: 'beru_papillon',
+    },
+    kaisel: {
+        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
+        name: 'Kaisel',
+        color: '#00FF41',
+        personality: 'kaisel',
+    },
+    igris: {
+        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png',
+        name: 'Igris',
+        color: '#980808',
+        personality: 'igris',
+    },
+    cerbere: {
+        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731189/cerbere_icon_dtwfhu.png',
+        name: 'Cerbère',
+        color: '#e334ba',
+        personality: 'default',
+    },
+    igrisk: {
+        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_icon_vytfic.png',
+        name: 'Igris(?)',
+        color: '#FF6B6B',
+        personality: 'igrisk',
+        special: 'glitch',
+    },
+    berserker: {
+        icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756592473/berserk_up_rqjt0n.png',
+        name: 'Berserker',
+        color: '#8b00ff',
+        personality: 'berserker',
+        special: 'berserker',
+    },
+};
 
-    // 🎭 ICÔNES DES ENTITÉS (AVEC IGRISK !)
-    const entityIcons = {
-        tank: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png',
-        beru: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png',
-        kaisel: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
-        igris: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754570362/igris_face_xj5mqo.png',
-        cerbere: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731189/cerbere_icon_dtwfhu.png',
-        igrisk: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754731036/igrisk_icon_vytfic.png',
-        berserker: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756592473/berserk_up_rqjt0n.png"
+const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose, onComplete, duration }) => {
+    const bubbleRef = useRef(null);
+    const textRef = useRef(null);
+    const cleanupRef = useRef(null);
+    const fadeTimersRef = useRef({ warning: null, fadeout: null, hide: null });
+
+    // 🎬 États pour les animations
+    // Phases: 'entering' | 'visible' | 'fading-warning' | 'fading-out' | 'exiting' | 'hidden'
+    const [phase, setPhase] = useState('entering');
+    const [isAnimating, setIsAnimating] = useState(false);
+
+    // 📱 Détection mobile
+    const isMobileDevice = useMemo(() =>
+        isMobile?.isPhone || isMobile?.isTablet || (typeof window !== 'undefined' && window.innerWidth < 768),
+        [isMobile]
+    );
+
+    // 🎭 Config de l'entité
+    const config = ENTITY_CONFIG[entityType] || ENTITY_CONFIG.tank;
+    const isSpecial = config.special === 'glitch' || config.special === 'berserker';
+
+    // 🧹 Nettoyer tous les timers de fade
+    const clearFadeTimers = () => {
+        Object.values(fadeTimersRef.current).forEach(timer => {
+            if (timer) clearTimeout(timer);
+        });
+        fadeTimersRef.current = { warning: null, fadeout: null, hide: null };
     };
 
-    // 🏷️ NOMS DES ENTITÉS
-    const entityNames = {
-        tank: 'Tank',
-        beru: 'Béru',
-        kaisel: 'Kaisel',
-        igris: 'Igris',
-        cerbere: 'Cerbère',
-        igrisk: 'Igris(?)',
-        berserker: "Berserker des Ombres"
-    };
-
-    // 🎨 COULEURS DES ENTITÉS
-    const entityColors = {
-        tank: '#4CAF50',
-        beru: '#8A2BE2',
-        kaisel: '#00FF41',
-        igris: '#980808ff',
-        cerbere: '#e334baff',
-        cerbère: '#e334baff',
-        igrisk: '#FF6B6B',
-        berserker: "#8b00ff"
-    };
-
-    // 📱 DÉTECTION MOBILE
-    const isMobileDevice = isMobile?.isPhone || isMobile?.isTablet || window.innerWidth < 768;
-
-    // 👆 FONCTION CLICK-TO-DISMISS - MOBILE SEULEMENT
-    const handleBubbleClick = () => {
-        if (isMobileDevice) {
-            setIsClosing(true);
-            setTimeout(() => {
-                setIsVisible(false);
-            }, 300);
-        }
-    };
-
-    // 🔥 GESTION DE LA FERMETURE INTELLIGENTE
+    // 🎬 Gestion du cycle de vie de la bulle avec fadeout progressif
     useEffect(() => {
-        if (!isVisible && onClose) {
-            const wasManualClose = isClosing;
-            if (wasManualClose) {
-                onClose();
-            }
-        }
-    }, [isVisible, onClose, isClosing]);
+        if (message) {
+            clearFadeTimers();
+            setPhase('entering');
 
-    // 📍 AJUSTEMENT DE LA POSITION - Bulle centrée au-dessus du chibi
-    useEffect(() => {
-        if (isMobileDevice) {
-            // Mobile : utiliser la position passée ou centrer
-            setAdjustedPosition({
-                x: position?.x || window.innerWidth / 2,
-                y: Math.max(60, position?.y || 80),
-                currentCanvasId: position?.currentCanvasId
-            });
-        } else {
-            // Desktop : garder la position x du chibi pour centrer la bulle au-dessus
-            const safePosition = {
-                x: Math.max(140, Math.min(window.innerWidth - 140, position?.x || window.innerWidth / 2)),
-                y: Math.max(80, Math.min(window.innerHeight - 150, position?.y || 200)),
-                currentCanvasId: position?.currentCanvasId
+            // Transition vers visible après l'animation d'entrée
+            const enterTimer = setTimeout(() => setPhase('visible'), 50);
+
+            // 📏 Calculer les timings du fadeout basés sur la durée
+            // Si pas de durée fournie, estimer basé sur la longueur du message
+            const totalDuration = duration || Math.min(8000, Math.max(3500, (message?.length || 20) * 80));
+
+            // Timeline:
+            // - Phase visible: 0 → (totalDuration - 2000ms)
+            // - Phase warning (légère transparence): (totalDuration - 2000ms) → (totalDuration - 800ms)
+            // - Phase fadeout (disparition progressive): (totalDuration - 800ms) → totalDuration
+
+            const warningStart = Math.max(1000, totalDuration - 2000); // Commence 2s avant la fin
+            const fadeoutStart = Math.max(1500, totalDuration - 800);  // Commence 800ms avant la fin
+
+            fadeTimersRef.current.warning = setTimeout(() => {
+                setPhase('fading-warning');
+            }, warningStart);
+
+            fadeTimersRef.current.fadeout = setTimeout(() => {
+                setPhase('fading-out');
+            }, fadeoutStart);
+
+            return () => {
+                clearTimeout(enterTimer);
+                clearFadeTimers();
             };
-            setAdjustedPosition(safePosition);
+        } else {
+            // Message retiré par le parent → sortie immédiate mais douce
+            setPhase('exiting');
+            const exitTimer = setTimeout(() => setPhase('hidden'), 500);
+            return () => clearTimeout(exitTimer);
         }
-    }, [position, isMobileDevice]);
+    }, [message, duration]);
 
-    // 🎯 ANIMATION DU TEXTE - CORRIGÉ
+    // 🎯 Animation du texte avec personnalité
     useEffect(() => {
-        // 🔧 FIX: Générer un ID unique pour ce message
-        const currentMessageId = `${entityType}-${message}-${Date.now()}`;
-        
-        // Si c'est un nouveau message ou si l'animation n'est pas en cours
-        if (message && bubbleRef.current && messageIdRef.current !== currentMessageId && !animationInProgressRef.current) {
-            console.log(`🎯 Nouvelle animation pour: ${entityNames[entityType]}`);
-            
-            // Marquer ce message comme traité
-            messageIdRef.current = currentMessageId;
-            animationInProgressRef.current = true;
-            
-            // Nettoyer l'ancien contenu
-            bubbleRef.current.innerHTML = '';
-            
-            // Annuler l'ancien timeout s'il existe
-            if (animationTimeoutRef.current) {
-                clearTimeout(animationTimeoutRef.current);
-            }
-            
-            // Délai pour s'assurer que le DOM est prêt
-            animationTimeoutRef.current = setTimeout(() => {
-                if (bubbleRef.current && bubbleRef.current.offsetParent !== null && animationInProgressRef.current) {
-                    try {
-                        dytextAnimate(bubbleRef, message, 35, {
-                            onComplete: () => {
-                                console.log(`✅ Animation complétée pour: ${entityNames[entityType]}`);
-                                animationInProgressRef.current = false;
-                                if (onComplete) {
-                                    onComplete();
-                                }
-                            }
-                        });
-                    } catch (error) {
-                        console.error('Erreur animation:', error);
-                        animationInProgressRef.current = false;
-                        // Fallback: afficher le texte directement
-                        if (bubbleRef.current) {
-                            bubbleRef.current.textContent = message;
-                        }
-                    }
-                } else {
-                    animationInProgressRef.current = false;
-                }
-            }, 100); // Délai réduit pour plus de réactivité
-        }
-    }, [message, entityType, onComplete]);
+        if (phase === 'visible' && message && textRef.current && !isAnimating) {
+            setIsAnimating(true);
 
-    // 🧹 Cleanup complet au démontage
+            // Nettoyer l'animation précédente
+            if (cleanupRef.current) {
+                cleanupRef.current();
+            }
+
+            // Petit délai pour laisser le DOM se stabiliser
+            const startTimer = setTimeout(() => {
+                if (textRef.current) {
+                    cleanupRef.current = dytextAnimate(textRef, message, null, {
+                        personality: config.personality,
+                        showCursor: !isMobileDevice, // Pas de curseur sur mobile
+                        onComplete: () => {
+                            setIsAnimating(false);
+                            if (onComplete) onComplete();
+                        }
+                    });
+                }
+            }, 50);
+
+            return () => {
+                clearTimeout(startTimer);
+                if (cleanupRef.current) {
+                    cleanupRef.current();
+                }
+            };
+        }
+    }, [phase, message, config.personality, isMobileDevice, onComplete]);
+
+    // 🧹 Cleanup au démontage
     useEffect(() => {
         return () => {
-            // Nettoyer les timeouts
-            if (animationTimeoutRef.current) {
-                clearTimeout(animationTimeoutRef.current);
-            }
-            
-            // Réinitialiser les refs
-            animationInProgressRef.current = false;
-            messageIdRef.current = null;
-            
-            // Nettoyer le contenu du bubble
-            if (bubbleRef.current) {
-                bubbleRef.current.innerHTML = '';
+            if (cleanupRef.current) {
+                cleanupRef.current();
             }
         };
     }, []);
 
-    if (!message || !isVisible) return null;
+    // 👆 Click pour fermer (mobile)
+    const handleClick = () => {
+        if (isMobileDevice && onClose) {
+            setPhase('exiting');
+            setTimeout(() => {
+                onClose();
+            }, 300);
+        }
+    };
 
-    // 🎭 Styles spéciaux pour Igrisk et Berserker
-    const isIgrisk = entityType === 'igrisk';
-    const isBerserker = entityType === 'berserker';
-    
-    const bubbleStyle = isBerserker ? {
-        backgroundColor: 'rgba(25, 0, 40, 0.95)',
-        backdropFilter: 'blur(6px) saturate(1.5)',
-        border: `2px solid ${entityColors[entityType]}`,
-        boxShadow: '0 0 20px rgba(139, 0, 255, 0.6)',
-    } : isIgrisk ? {
-        backgroundColor: 'rgba(40, 20, 20, 0.95)',
-        backdropFilter: 'blur(4px) hue-rotate(-15deg)',
-        border: `2px solid ${entityColors[entityType]}60`,
-        animation: 'igriskGlitch 5s infinite'
-    } : {
-        backgroundColor: 'rgba(20, 20, 40, 0.95)',
-        backdropFilter: 'blur(4px)',
-        border: `2px solid ${entityColors[entityType]}60`
+    // Ne pas rendre si caché
+    if (phase === 'hidden' || !message) return null;
+
+    // 🎨 Styles dynamiques
+    const bubbleOpacity = isMobileDevice ? 0.85 : 0.95;
+
+    const baseStyle = {
+        backgroundColor: config.special === 'berserker'
+            ? `rgba(25, 0, 40, ${bubbleOpacity})`
+            : config.special === 'glitch'
+            ? `rgba(40, 20, 20, ${bubbleOpacity})`
+            : `rgba(20, 20, 40, ${bubbleOpacity})`,
+        backdropFilter: 'blur(8px)',
+        border: `2px solid ${config.color}80`,
+        borderRadius: '16px',
+        boxShadow: `0 8px 32px ${config.color}40`,
+    };
+
+    // 🎬 Style d'animation pour entrée/sortie avec fadeout progressif
+    const getOpacityForPhase = () => {
+        switch (phase) {
+            case 'entering': return 0;
+            case 'visible': return 1;
+            case 'fading-warning': return 0.75; // Légère baisse pour signaler
+            case 'fading-out': return 0.3;      // Disparition progressive
+            case 'exiting': return 0;
+            case 'hidden': return 0;
+            default: return 1;
+        }
+    };
+
+    const getTransformForPhase = () => {
+        switch (phase) {
+            case 'entering':
+                return 'translateX(-50%) translateY(-10px) scale(0.95)';
+            case 'fading-out':
+            case 'exiting':
+                return 'translateX(-50%) translateY(5px) scale(0.98)';
+            default:
+                return 'translateX(-50%) translateY(0) scale(1)';
+        }
+    };
+
+    const getTransitionForPhase = () => {
+        switch (phase) {
+            case 'entering':
+                return 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            case 'fading-warning':
+                return 'all 0.8s ease-out'; // Transition douce pour le warning
+            case 'fading-out':
+                return 'all 0.8s ease-in-out'; // Fadeout lent
+            case 'exiting':
+                return 'all 0.5s ease-in';
+            default:
+                return 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        }
+    };
+
+    const animationStyle = {
+        opacity: getOpacityForPhase(),
+        transform: getTransformForPhase(),
+        transition: getTransitionForPhase(),
     };
 
     return (
         <>
-            {/* 🎭 Style d'animation pour Igrisk */}
-            {isIgrisk && (
-                <style>{`
-                    @keyframes igriskGlitch {
-                        0%, 90%, 100% { 
-                            filter: hue-rotate(0deg) brightness(1);
-                            transform: translateX(-50%) scale(1);
-                        }
-                        91% { 
-                            filter: hue-rotate(180deg) brightness(1.2);
-                            transform: translateX(-50%) scale(1.02) skewX(2deg);
-                        }
-                        93% { 
-                            filter: hue-rotate(-90deg) brightness(0.8);
-                            transform: translateX(-50%) scale(0.98) skewX(-2deg);
-                        }
+            {/* 🎨 Styles CSS pour le curseur et animations */}
+            <style>{DYTEXT_CURSOR_STYLE}</style>
+            <style>{`
+                @keyframes chibi-bounce {
+                    0%, 100% { transform: translateX(-50%) translateY(0); }
+                    50% { transform: translateX(-50%) translateY(-3px); }
+                }
+                @keyframes chibi-glow {
+                    0%, 100% { box-shadow: 0 8px 32px ${config.color}40; }
+                    50% { box-shadow: 0 8px 40px ${config.color}60; }
+                }
+                ${config.special === 'glitch' ? `
+                    @keyframes glitch-effect {
+                        0%, 90%, 100% { filter: none; transform: translateX(-50%); }
+                        92% { filter: hue-rotate(90deg); transform: translateX(-50%) skewX(2deg); }
+                        94% { filter: hue-rotate(-90deg); transform: translateX(-50%) skewX(-2deg); }
                     }
-                `}</style>
-            )}
+                ` : ''}
+                ${config.special === 'berserker' ? `
+                    @keyframes berserker-pulse {
+                        0%, 100% { box-shadow: 0 8px 32px rgba(139,0,255,0.5); }
+                        50% { box-shadow: 0 8px 48px rgba(255,0,255,0.7); }
+                    }
+                ` : ''}
+            `}</style>
 
-            {isMobileDevice ? (
-                // 📱 VERSION MOBILE
+            {/* 📍 Container positionné */}
+            <div
+                onClick={handleClick}
+                style={{
+                    position: 'fixed',
+                    ...(isMobileDevice ? {
+                        bottom: '90px',
+                        left: '50%',
+                    } : {
+                        top: '80px',
+                        left: '50%',
+                    }),
+                    zIndex: config.special === 'berserker' ? 10503 : 10100,
+                    width: isMobileDevice ? '90vw' : 'auto',
+                    maxWidth: '380px',
+                    minWidth: isMobileDevice ? 'auto' : '280px',
+                    ...animationStyle,
+                    cursor: isMobileDevice ? 'pointer' : 'default',
+                }}
+            >
                 <div
+                    ref={bubbleRef}
                     style={{
-                        position: 'fixed',
-                        top: adjustedPosition.y,
+                        ...baseStyle,
+                        padding: '12px 16px',
+                        animation: phase === 'visible'
+                            ? config.special === 'glitch'
+                                ? 'chibi-bounce 3s ease-in-out infinite, glitch-effect 8s infinite'
+                                : config.special === 'berserker'
+                                ? 'chibi-bounce 3s ease-in-out infinite, berserker-pulse 2s infinite'
+                                : 'chibi-bounce 3s ease-in-out infinite, chibi-glow 4s ease-in-out infinite'
+                            : 'none',
+                    }}
+                >
+                    {/* 🎭 Header : Icône + Nom */}
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        marginBottom: '10px',
+                        paddingBottom: '8px',
+                        borderBottom: `1px solid ${config.color}40`,
+                    }}>
+                        <img
+                            src={config.icon}
+                            alt={config.name}
+                            style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                border: `2px solid ${config.color}`,
+                                boxShadow: `0 0 12px ${config.color}50`,
+                                filter: config.special === 'glitch'
+                                    ? 'hue-rotate(270deg) saturate(1.5)'
+                                    : config.special === 'berserker'
+                                    ? 'drop-shadow(0 0 5px rgba(139,0,255,0.8))'
+                                    : 'none',
+                            }}
+                        />
+                        <span style={{
+                            color: config.color,
+                            fontSize: '13px',
+                            fontWeight: 'bold',
+                            fontFamily: 'monospace',
+                            textShadow: `0 0 10px ${config.color}50`,
+                        }}>
+                            {config.name}
+                            {config.special === 'glitch' && (
+                                <span style={{ marginLeft: '5px', fontSize: '10px' }}>⚠️</span>
+                            )}
+                            {config.special === 'berserker' && (
+                                <span style={{ marginLeft: '5px', fontSize: '10px' }}>💀</span>
+                            )}
+                        </span>
+                    </div>
+
+                    {/* 📝 Zone de texte */}
+                    <div
+                        ref={textRef}
+                        style={{
+                            color: config.special === 'berserker' ? '#ff6666' : '#ffffff',
+                            fontFamily: 'monospace',
+                            fontSize: isMobileDevice ? '13px' : '12px',
+                            lineHeight: '1.6',
+                            minHeight: '24px',
+                            maxHeight: isMobileDevice ? '120px' : '100px',
+                            overflowY: 'auto',
+                            whiteSpace: 'pre-wrap',
+                            wordWrap: 'break-word',
+                            textShadow: config.special === 'berserker'
+                                ? '0 0 10px rgba(255,0,0,0.6)'
+                                : config.special === 'glitch'
+                                ? '1px 1px 3px rgba(255,0,0,0.4)'
+                                : '1px 1px 2px rgba(0,0,0,0.6)',
+                            padding: '4px 0',
+                        }}
+                    />
+
+                    {/* 📱 Indicateur "tap to close" sur mobile */}
+                    {isMobileDevice && (
+                        <div style={{
+                            textAlign: 'center',
+                            marginTop: '8px',
+                            paddingTop: '6px',
+                            borderTop: `1px solid ${config.color}20`,
+                            fontSize: '10px',
+                            color: `${config.color}80`,
+                            fontFamily: 'monospace',
+                        }}>
+                            tap to close
+                        </div>
+                    )}
+                </div>
+
+                {/* 🔺 Flèche */}
+                <div style={{
+                    position: 'absolute',
+                    ...(isMobileDevice ? {
+                        bottom: '-10px',
                         left: '50%',
                         transform: 'translateX(-50%)',
-                        zIndex: isBerserker ? 10503 : 9999,
-                        width: '90vw',
-                        maxWidth: '350px'
-                    }}
-                >
-                    <div
-                        onClick={handleBubbleClick}
-                        style={{
-                            ...bubbleStyle,
-                            borderRadius: '16px',
-                            padding: '12px',
-                            boxShadow: isBerserker
-                                ? '0 8px 32px rgba(139,0,255,0.5)'
-                                : isIgrisk
-                                ? '0 8px 32px rgba(255,0,0,0.3)'
-                                : '0 8px 32px rgba(0,0,0,0.4)',
-                            animation: isBerserker
-                                ? 'bounceGentle 2s ease-in-out infinite, berserkerPulse 3s infinite'
-                                : isIgrisk
-                                ? 'bounceGentle 2s ease-in-out infinite, igriskGlitch 5s infinite'
-                                : 'bounceGentle 2s ease-in-out infinite',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        {/* 📱 MOBILE: Icône en haut, texte en dessous */}
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: '8px'
-                        }}>
-                            {/* Icône + Nom */}
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                paddingBottom: '6px',
-                                borderBottom: `1px solid ${entityColors[entityType]}60`,
-                                width: '100%',
-                                justifyContent: 'center',
-                                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                                borderRadius: '8px',
-                                padding: '6px'
-                            }}>
-                                <img
-                                    src={entityIcons[entityType]}
-                                    alt={entityNames[entityType]}
-                                    style={{
-                                        width: isBerserker ? '44px' : '40px',
-                                        height: isBerserker ? '44px' : '40px',
-                                        borderRadius: '50%',
-                                        border: `3px solid ${entityColors[entityType]}`,
-                                        filter: isIgrisk ? 'hue-rotate(270deg) saturate(1.5)' :
-                                               isBerserker ? 'drop-shadow(0 0 5px rgba(139,0,255,0.8))' : 'none',
-                                        boxShadow: `0 0 10px ${entityColors[entityType]}50`
-                                    }}
-                                />
-                                <span style={{
-                                    color: entityColors[entityType],
-                                    fontSize: '14px',
-                                    fontWeight: 'bold',
-                                    fontFamily: 'monospace'
-                                }}>
-                                    {entityNames[entityType]}
-                                    {isIgrisk && <span style={{
-                                        fontSize: '10px',
-                                        color: '#ff6b6b',
-                                        marginLeft: '5px',
-                                        animation: 'blink 1s infinite'
-                                    }}>⚠️</span>}
-                                    {isBerserker && <span style={{
-                                        fontSize: '10px',
-                                        color: '#ff00ff',
-                                        marginLeft: '5px'
-                                    }}>💀</span>}
-                                </span>
-                            </div>
-
-                            {/* Message avec DyText - EN DESSOUS sur mobile */}
-                            <div
-                                ref={bubbleRef}
-                                style={{
-                                    color: isBerserker ? '#ff4444' : 'white',
-                                    fontFamily: 'monospace',
-                                    fontSize: '13px',
-                                    lineHeight: '1.4',
-                                    whiteSpace: 'pre-line',
-                                    minHeight: '20px',
-                                    textShadow: isBerserker
-                                        ? '0 0 10px rgba(255,0,0,0.8)'
-                                        : isIgrisk
-                                        ? '1px 1px 3px rgba(255,0,0,0.5)'
-                                        : '1px 1px 2px rgba(0,0,0,0.8)',
-                                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                                    padding: '8px',
-                                    borderRadius: '6px',
-                                    visibility: 'visible',
-                                    opacity: 1,
-                                    position: 'relative',
-                                    zIndex: 1,
-                                    width: '100%',
-                                    textAlign: 'center'
-                                }}
-                            />
-                        </div>
-
-                        {/* Flèche vers le bas */}
-                        <div style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: 0,
-                            height: 0,
-                            borderLeft: '12px solid transparent',
-                            borderRight: '12px solid transparent',
-                            borderTop: isBerserker
-                                ? '12px solid rgba(25, 0, 40, 0.95)'
-                                : isIgrisk
-                                ? '12px solid rgba(40, 20, 20, 0.95)'
-                                : '12px solid rgba(20, 20, 40, 0.95)'
-                        }} />
-                    </div>
-                </div>
-            ) : (
-                // 🖥️ VERSION DESKTOP - Centré au-dessus du chibi
-                <div
-                    style={{
-                        position: 'fixed',
-                        top: adjustedPosition.y,
-                        left: adjustedPosition.x,
-                        transform: 'translateX(-50%)', // Centrer horizontalement
-                        zIndex: isBerserker ? 10503 : 10100,
-                        maxWidth: '350px', // Plus large pour layout horizontal
-                        minWidth: '280px'
-                    }}
-                >
-                    <div style={{
-                        ...bubbleStyle,
-                        borderRadius: '12px',
-                        padding: '10px',
-                        boxShadow: isBerserker
-                            ? '0 4px 20px rgba(139,0,255,0.5)'
-                            : isIgrisk
-                            ? '0 4px 20px rgba(255,0,0,0.3)'
-                            : '0 4px 20px rgba(0,0,0,0.5)'
-                    }}>
-                        {/* 🖥️ DESKTOP: Icône à gauche, texte à droite */}
-                        <div style={{
-                            display: 'flex',
-                            flexDirection: 'row',
-                            alignItems: 'flex-start',
-                            gap: '12px'
-                        }}>
-                            {/* Icône grande + Nom */}
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: '4px',
-                                flexShrink: 0
-                            }}>
-                                <img
-                                    src={entityIcons[entityType]}
-                                    alt={entityNames[entityType]}
-                                    style={{
-                                        width: isBerserker ? '44px' : '40px',
-                                        height: isBerserker ? '44px' : '40px',
-                                        borderRadius: '50%',
-                                        border: `3px solid ${entityColors[entityType]}`,
-                                        filter: isIgrisk ? 'hue-rotate(270deg) saturate(1.5)' :
-                                               isBerserker ? 'drop-shadow(0 0 5px rgba(139,0,255,0.8))' : 'none',
-                                        boxShadow: `0 0 10px ${entityColors[entityType]}50`
-                                    }}
-                                />
-                                <span style={{
-                                    color: entityColors[entityType],
-                                    fontSize: '10px',
-                                    fontWeight: 'bold',
-                                    fontFamily: 'monospace',
-                                    textAlign: 'center',
-                                    whiteSpace: 'nowrap'
-                                }}>
-                                    {entityNames[entityType]}
-                                    {isIgrisk && <span style={{
-                                        fontSize: '8px',
-                                        color: '#ff6b6b',
-                                        marginLeft: '3px'
-                                    }}>(?)</span>}
-                                    {isBerserker && <span style={{
-                                        fontSize: '8px',
-                                        color: '#ff00ff',
-                                        marginLeft: '3px'
-                                    }}>💀</span>}
-                                </span>
-                            </div>
-
-                            {/* Message Desktop - À DROITE de l'icône */}
-                            <div
-                                ref={bubbleRef}
-                                style={{
-                                    color: isBerserker ? '#ff4444' : 'white',
-                                    fontFamily: 'monospace',
-                                    fontSize: '12px',
-                                    lineHeight: '1.4',
-                                    whiteSpace: 'pre-line',
-                                    minHeight: '40px',
-                                    visibility: 'visible',
-                                    opacity: 1,
-                                    position: 'relative',
-                                    zIndex: 1,
-                                    textShadow: isBerserker
-                                        ? '0 0 10px rgba(255,0,0,0.8)'
-                                        : isIgrisk
-                                        ? '1px 1px 3px rgba(255,0,0,0.5)'
-                                        : '1px 1px 2px rgba(0,0,0,0.8)',
-                                    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                                    padding: '8px',
-                                    borderRadius: '6px',
-                                    flex: 1
-                                }}
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Animations */}
-            {(isIgrisk || isBerserker) && (
-                <style>{`
-                    @keyframes blink {
-                        0%, 50%, 100% { opacity: 1; }
-                        25%, 75% { opacity: 0.3; }
-                    }
-                    @keyframes berserkerPulse {
-                        0%, 100% { 
-                            box-shadow: 0 8px 32px rgba(139,0,255,0.5);
-                        }
-                        50% { 
-                            box-shadow: 0 8px 40px rgba(255,0,255,0.7);
-                        }
-                    }
-                `}</style>
-            )}
+                        borderLeft: '10px solid transparent',
+                        borderRight: '10px solid transparent',
+                        borderTop: `10px solid ${baseStyle.backgroundColor}`,
+                    } : {
+                        top: '100%',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        borderLeft: '10px solid transparent',
+                        borderRight: '10px solid transparent',
+                        borderTop: `10px solid ${baseStyle.backgroundColor}`,
+                    }),
+                    width: 0,
+                    height: 0,
+                }} />
+            </div>
         </>
     );
 };
