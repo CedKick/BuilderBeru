@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { drawBeruModels, getModel, getHunterModels } from './config/models';
 import { BrushEngine, MANGA_BRUSHES } from './BrushEngine';
 import ChibiBubble from '../../components/ChibiBubble';
+import ColoringGame from './ColoringGame';
 
 // ⚡ HOOK MOBILE SIMPLIFIÉ (au lieu d'importer un fichier externe)
 const useIsMobile = () => {
@@ -179,6 +180,10 @@ const DrawBeruFixed = ({
     const [showModelOverlay, setShowModelOverlay] = useState(false);
     const [modelOverlayOpacity, setModelOverlayOpacity] = useState(0.3);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    // 🎮 MODE JEU - Coloring Game
+    const [gameMode, setGameMode] = useState(false);
+    const [referenceImageData, setReferenceImageData] = useState(null);
 
     // 📱 MOBILE TOOLBAR SCROLL - Gestion du scroll et tap vs long-press
     const mobileToolbarRef = useRef(null);
@@ -1731,10 +1736,7 @@ const DrawBeruFixed = ({
                 // Récupérer l'état actuel du chibi via la ref (évite les closures stale)
                 const currentChibiState = activeChibisRef.current[chibiId];
                 if (!currentChibiState?.active) {
-                    // ⚡ PERF: Chibi désactivé - nettoyer la ref pour éviter les animations orphelines
-                    if (chibiAnimationsRef.current[chibiId]) {
-                        delete chibiAnimationsRef.current[chibiId];
-                    }
+                    // Chibi désactivé, arrêter l'animation
                     return;
                 }
 
@@ -1743,13 +1745,7 @@ const DrawBeruFixed = ({
                 const actionDelay = baseDelay * (100 / statsSpeed);
 
                 const zoneData = chibiZoneDataRef.current[chibiId];
-                if (!zoneData) {
-                    // ⚡ PERF: Pas de zone data - nettoyer pour éviter les boucles infinies
-                    if (chibiAnimationsRef.current[chibiId]) {
-                        delete chibiAnimationsRef.current[chibiId];
-                    }
-                    return;
-                }
+                if (!zoneData) return;
 
                 if (painter.movementMode === 'zone') {
                     // 🎯 MODE ZONE : Utilise la zone définie par l'utilisateur OU trouve des zones non coloriées
@@ -2089,28 +2085,6 @@ const DrawBeruFixed = ({
             if (chibiMessageTimeoutsRef.current[chibiId]) {
                 clearTimeout(chibiMessageTimeoutsRef.current[chibiId]);
                 delete chibiMessageTimeoutsRef.current[chibiId];
-            }
-
-            // ⚡ PERF: Nettoyer les données de zone pour éviter les fuites mémoire
-            if (chibiZoneDataRef.current[chibiId]) {
-                delete chibiZoneDataRef.current[chibiId];
-            }
-            if (chibiScanPositionsRef.current[chibiId]) {
-                delete chibiScanPositionsRef.current[chibiId];
-            }
-            if (chibiTargetsRef.current[chibiId]) {
-                delete chibiTargetsRef.current[chibiId];
-            }
-            if (chibiLastMessageTimeRef.current[chibiId]) {
-                delete chibiLastMessageTimeRef.current[chibiId];
-            }
-
-            // ⚡ PERF: Nettoyer la file de messages pour ce chibi
-            messageQueueRef.current = messageQueueRef.current.filter(m => m.chibiId !== chibiId);
-            // Si ce chibi parlait, libérer le speaker
-            if (currentSpeakerRef.current === chibiId) {
-                currentSpeakerRef.current = null;
-                messageProcessingRef.current = false;
             }
 
             // Supprimer l'état du chibi
@@ -3096,19 +3070,13 @@ const DrawBeruFixed = ({
         let colorToUse = selectedColor;
         let brushSizeToUse = brushSize;
 
-        // ⚡ PERF: Cache de l'imageData pour éviter getImageData() à chaque point
-        // On charge UNE SEULE FOIS l'image entière, puis on lit depuis le cache
-        let cachedImageData = null;
-        let cachedRefCanvas = null;
-        let cachedCanvas = null;
-
         // Fonction helper pour récupérer la couleur d'une position (TOUJOURS depuis la référence pour couleurs pures)
         const getColorAtPosition = (posX, posY) => {
             let color = selectedColor;
 
             // TOUJOURS lire depuis referenceCanvasRef pour avoir les vraies couleurs (sans opacité appliquée)
-            const canvas = cachedCanvas || canvasRef.current;
-            const refCanvas = cachedRefCanvas || referenceCanvasRef.current;
+            const canvas = canvasRef.current;
+            const refCanvas = referenceCanvasRef.current;
             if (refCanvas && canvas) {
                 try {
                     // 🔄 Convertir les coordonnées du canvas de dessin vers le canvas de référence (proportionnel)
@@ -3117,26 +3085,14 @@ const DrawBeruFixed = ({
 
                     // Vérifier les limites
                     if (refX >= 0 && refX < refCanvas.width && refY >= 0 && refY < refCanvas.height) {
-                        // ⚡ PERF: Utiliser le cache imageData si disponible
-                        if (cachedImageData) {
-                            const idx = (refY * refCanvas.width + refX) * 4;
-                            const r = cachedImageData.data[idx];
-                            const g = cachedImageData.data[idx + 1];
-                            const b = cachedImageData.data[idx + 2];
-                            const a = cachedImageData.data[idx + 3];
-                            if (a > 0) {
-                                color = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
-                            }
-                        } else {
-                            // Fallback: getImageData pixel par pixel (plus lent)
-                            const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
-                            const pixel = refCtx.getImageData(refX, refY, 1, 1).data;
-                            if (pixel[3] > 0) {
-                                const r = pixel[0];
-                                const g = pixel[1];
-                                const b = pixel[2];
-                                color = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
-                            }
+                        const refCtx = refCanvas.getContext('2d', { willReadFrequently: true });
+                        const pixel = refCtx.getImageData(refX, refY, 1, 1).data;
+                        if (pixel[3] > 0) {
+                            // 🎨 FIX V2: Utiliser les valeurs RGB PURES (couleurs vives, pas fades)
+                            const r = pixel[0];
+                            const g = pixel[1];
+                            const b = pixel[2];
+                            color = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
                         }
                     }
                 } catch (err) { /* ignore */ }
@@ -3144,18 +3100,6 @@ const DrawBeruFixed = ({
 
             return color;
         };
-
-        // ⚡ PERF: Pré-charger l'imageData UNE SEULE FOIS si auto-pipette actif
-        if ((effectiveAutoPipette || cheatModeActive) && currentTool === 'brush') {
-            cachedCanvas = canvasRef.current;
-            cachedRefCanvas = referenceCanvasRef.current;
-            if (cachedRefCanvas) {
-                try {
-                    const refCtx = cachedRefCanvas.getContext('2d', { willReadFrequently: true });
-                    cachedImageData = refCtx.getImageData(0, 0, cachedRefCanvas.width, cachedRefCanvas.height);
-                } catch (err) { /* ignore */ }
-            }
-        }
 
         // Auto-pipette mode ou cheat mode actif
         if ((effectiveAutoPipette || cheatModeActive) && currentTool === 'brush') {
@@ -5868,6 +5812,27 @@ const DrawBeruFixed = ({
                                     </>
                                 )}
 
+                                {/* 🎮 BOUTON MODE JEU */}
+                                <div className="w-px h-10 bg-purple-500/30"></div>
+                                <button
+                                    onClick={() => {
+                                        // Préparer l'imageData de référence avant d'entrer en mode jeu
+                                        if (!gameMode && referenceCanvasRef.current) {
+                                            const refCtx = referenceCanvasRef.current.getContext('2d');
+                                            const imgData = refCtx.getImageData(0, 0, referenceCanvasRef.current.width, referenceCanvasRef.current.height);
+                                            setReferenceImageData(imgData);
+                                        }
+                                        setGameMode(!gameMode);
+                                    }}
+                                    className={`px-4 py-2 rounded-lg font-bold text-sm transition-all ${
+                                        gameMode
+                                            ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white ring-2 ring-pink-400'
+                                            : 'bg-purple-900/40 hover:bg-purple-800/50 text-purple-300 hover:text-white'
+                                    }`}
+                                >
+                                    🎮 {gameMode ? 'Quitter Jeu' : 'Mode Jeu'}
+                                </button>
+
                                 {/* 🦋 BLOC CHIBIS DESSINATEURS - Multi-Chibi ! */}
                                 <div className="w-px h-10 bg-purple-500/30"></div>
                                 <div className="bg-black/60 backdrop-blur-md rounded-lg p-2 shadow-lg border border-purple-500/30 min-w-[220px]">
@@ -5936,6 +5901,20 @@ const DrawBeruFixed = ({
                                 </div>
                             </div>
 
+                            {/* 🎮 MODE JEU - ColoringGame */}
+                            {gameMode && imagesLoaded && canvasRef.current && (
+                                <div className="absolute inset-0 z-50">
+                                    <ColoringGame
+                                        canvasWidth={canvasRef.current.width}
+                                        canvasHeight={canvasRef.current.height}
+                                        referenceImageData={referenceImageData}
+                                        onGameEnd={(result) => {
+                                            console.log('Game ended:', result);
+                                        }}
+                                    />
+                                </div>
+                            )}
+
                             {!imagesLoaded && (
                                 <div className="bg-white rounded-lg p-8 text-center">
                                     <div className="text-gray-500">Chargement du modèle...</div>
@@ -5943,7 +5922,7 @@ const DrawBeruFixed = ({
                             )}
 
                             <div
-                                className={`relative bg-white rounded-lg overflow-hidden ${!imagesLoaded ? 'hidden' : ''}`}
+                                className={`relative bg-white rounded-lg overflow-hidden ${!imagesLoaded || gameMode ? 'hidden' : ''}`}
                                 style={{
                                     minHeight: '400px',
                                     display: 'flex',
