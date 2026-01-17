@@ -323,6 +323,24 @@ const data_chars = {
       element: 'Dark',
       scaleStat: 'Attack'
     },
+    'sian': {
+      name: 'Sian Halat',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
+      class: 'Assassin',
+      grade: 'SSR',
+      element: 'Dark',
+      scaleStat: 'Attack'
+    },
+    'son': {
+      name: 'Son Kihoon',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604316/harper_fvn1d9.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606309/icons/build-14.png',
+      class: 'Tank',
+      grade: 'SSR',
+      element: 'Dark',
+      scaleStat: 'HP'
+    },
     'thomas': {
       name: 'Thomas Andre',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604216/thomas_jr9x92.png',

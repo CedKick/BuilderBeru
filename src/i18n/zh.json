@@ -1531,10 +1531,121 @@
     },
     "mobile": {
       "week": "第{{week}}周"
-    },
-     "shadows": {
-      "title": "影子",
-      "select":  "选择你的影子"
     }
+  },
+  "shadows": {
+    "title": "影子",
+    "select": "选择你的影子"
+  },
+  "optimization": {
+      "title": "优化 & 甜蜜点",
+      "presets": {
+        "title": "属性预设",
+        "description": "根据你的进度快速应用推荐属性。",
+        "note": "这些预设适用于主属性({{mainStat}})。其他属性(暴击率、暴伤、防穿)通过增益计算。",
+        "casual": {
+          "label": "休闲",
+          "description": "新手属性"
+        },
+        "dolphin": {
+          "label": "海豚",
+          "description": "进阶属性"
+        },
+        "whale": {
+          "label": "鲸鱼",
+          "description": "鲸鱼属性"
+        }
+      },
+      "benchmarks": {
+        "title": "基准",
+        "casual": "新手",
+        "intermediate": "中级",
+        "advanced": "进阶",
+        "whale": "鲸鱼"
+      },
+      "status": {
+        "optimal": "最佳！",
+        "good": "良好",
+        "improving": "需要改进",
+        "low": "不足",
+        "unknown": "未知",
+        "whale": "大佬",
+        "advanced": "进阶",
+        "intermediate": "中级",
+        "casual": "新手"
+      },
+      "sweetSpots": {
+        "title": "甜蜜点目标",
+        "ideal": "理想",
+        "priority": "优先级"
+      },
+      "mainStat": {
+        "title": "主属性",
+        "next": "下一个",
+        "remaining": "+{{value}}需要",
+        "max": "最大！"
+      },
+      "substats": {
+        "title": "副属性优先级"
+      },
+      "scaling": {
+        "title": "缩放"
+      },
+      "tips": {
+        "title": "提示"
+      },
+      "sets": {
+        "title": "推荐套装"
+      },
+      "stats": {
+        "critRate": "暴击率",
+        "critDMG": "暴击伤害",
+        "defPen": "防御穿透",
+        "atk": "攻击力",
+        "def": "防御力",
+        "hp": "HP"
+      },
+      "roles": {
+        "dpsBurst": "爆发DPS",
+        "dpsDebuffer": "DPS / 减益者",
+        "dpsBreak": "DPS / 破甲专家",
+        "supportDps": "辅助 / 副DPS",
+        "dpsAssassin": "刺客DPS",
+        "supportBuffer": "辅助 / 增益者",
+        "dpsUniversal": "万能DPS"
+      }
+    },
+    "theorycraft": {
+      "coreAttack": {
+        "title": "核心攻击 TC",
+        "description": "+10% 暴击率（默认启用）"
+      },
+      "weapon": {
+        "title": "武器",
+        "critRate": "暴击率",
+        "critDMG": "暴击伤害",
+        "defPen": "防御穿透"
+      },
+      "rawValues": {
+        "title": "原始数值",
+        "hint": "对敌人 Lv.{{level}} 的 % 计算"
+      },
+      "setBuffs": {
+        "title": "套装加成",
+        "equipped": "已装备套装:",
+        "bonus": "套装奖励:",
+        "noBonus": "无激活奖励"
+      },
+      "mainStat": {
+        "label": "主属性: {{stat}}",
+        "next": "下一个: {{value}}",
+        "max": "最大!"
+      },
+      "buffs": {
+        "title": "觉醒等级增益（索伦之眼）",
+        "description": "所有增益的详细信息。将鼠标悬停在数值上可查看来源。",
+        "level": "等级",
+        "specialBuffs": "特殊增益"
+        }
   }
 }

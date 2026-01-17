@@ -20,6 +20,9 @@ import DrawBeruLauncher from './pages/DrawBeru/DrawBeruLauncher.jsx';
 import BDGScore from './components/BDGScore.jsx';
 import PODScore from './components/PODScore.jsx';
 
+// ⚡ THEORYCRAFT - Calculateur de synergies
+import Theorycraft from './pages/Theorycraft/Theorycraft.jsx';
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
@@ -42,6 +45,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/damage-calculator" element={<DamageCalculatorStandalone />} />
           <Route path="/beruvian-world" element={<BeruvianWorld />} />
           <Route path="/chibi-world" element={<ChibiWorld />} />
+
+          {/* ⚡ THEORYCRAFT */}
+          <Route path="/theorycraft" element={<Theorycraft />} />
         </Routes>
       </AppLayout>
     </BrowserRouter>

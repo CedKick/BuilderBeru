@@ -2704,12 +2704,121 @@
     },
     "mobile": {
       "week": "S{{week}}"
-    },
-     "shadows": {
-      "title": "Shadows",
-      "select":  "Sélectionnez votre Ombre"
     }
+  },
+  "shadows": {
+    "title": "Shadows",
+    "select": "Sélectionnez votre Ombre"
+  },
+  "optimization": {
+      "title": "Optimisation & Sweet Spots",
+      "presets": {
+        "title": "Presets de Stats",
+        "description": "Applique rapidement les stats recommandées selon ton niveau de progression.",
+        "note": "Ces presets appliquent la stat principale ({{mainStat}}). Les autres stats (TC, DCC, Def Pen) sont calculées via les buffs.",
+        "casual": {
+          "label": "Casual",
+          "description": "Stats de débutant"
+        },
+        "dolphin": {
+          "label": "Dolphin",
+          "description": "Stats avancées"
+        },
+        "whale": {
+          "label": "Whale",
+          "description": "Stats de whale"
+        }
+      },
+      "benchmarks": {
+        "title": "Benchmarks",
+        "casual": "Débutant",
+        "intermediate": "Intermédiaire",
+        "advanced": "Avancé",
+        "whale": "Whale"
+      },
+      "status": {
+        "optimal": "Optimal !",
+        "good": "Bon",
+        "improving": "À améliorer",
+        "low": "Insuffisant",
+        "unknown": "Inconnu",
+        "whale": "Whale",
+        "advanced": "Avancé",
+        "intermediate": "Intermédiaire",
+        "casual": "Débutant"
+      },
+      "sweetSpots": {
+        "title": "Sweet Spots Cibles",
+        "ideal": "Idéal",
+        "priority": "Priorité"
+      },
+      "mainStat": {
+        "title": "Stat Principale",
+        "next": "Prochain",
+        "remaining": "+{{value}} requis",
+        "max": "MAX!"
+      },
+      "substats": {
+        "title": "Priorité des Substats"
+      },
+      "scaling": {
+        "title": "Scaling"
+      },
+      "tips": {
+        "title": "Conseils"
+      },
+      "sets": {
+        "title": "Sets Recommandés"
+      },
+      "stats": {
+        "critRate": "Taux Critique",
+        "critDMG": "Dégâts Critiques",
+        "defPen": "Pénétration Défense",
+        "atk": "ATK",
+        "def": "DEF",
+        "hp": "HP"
+      },
+      "roles": {
+        "dpsBurst": "DPS Burst",
+        "dpsDebuffer": "DPS / Debuffer",
+        "dpsBreak": "DPS / Break Specialist",
+        "supportDps": "Support / Sub-DPS",
+        "dpsAssassin": "DPS Assassin",
+        "supportBuffer": "Support / Buffer",
+        "dpsUniversal": "DPS Universel"
+      }
+    },
+    "theorycraft": {
+      "coreAttack": {
+        "title": "Core Attack TC",
+        "description": "+10% Taux Critique (activé par défaut)"
+      },
+      "weapon": {
+        "title": "Arme",
+        "critRate": "Taux Crit",
+        "critDMG": "Dégâts Crit",
+        "defPen": "Def Pen"
+      },
+      "rawValues": {
+        "title": "Valeurs Brutes",
+        "hint": "% calculés vs ennemi Lv.{{level}}"
+      },
+      "setBuffs": {
+        "title": "Buffs de Set",
+        "equipped": "Set équipé:",
+        "bonus": "Bonus de Set:",
+        "noBonus": "Aucun bonus actif"
+      },
+      "mainStat": {
+        "label": "Stat Principale: {{stat}}",
+        "next": "Prochain: {{value}}",
+        "max": "MAX!"
+      },
+      "buffs": {
+        "title": "Buffs Donnés par Advancement (L'Œil de Sauron)",
+        "description": "Détail complet de tous les buffs par source. Survolez les valeurs pour voir d'où elles proviennent.",
+        "level": "Niveau",
+        "specialBuffs": "Buffs Spéciaux"
+        }
   }
 }
-
-

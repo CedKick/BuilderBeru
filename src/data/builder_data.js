@@ -3171,6 +3171,135 @@ const BUILDER_DATA = {
       "advanced": "80% de crit pour soutenir l'équipe avec des dégâts optimaux.",
       "expert": "Support Attack unique - attend l'ajout de Garde du Palais !"
     }
+  },
+
+  // 🆕 SIAN HALAT - Dark Assassin (Attack scaling)
+  "sian": {
+    "name": "Sian Halat",
+    "element": "Dark",
+    "class": "Assassin",
+    "grade": "SSR",
+    "scaleStat": "Attack",
+
+    "optimizationPriority": [
+      {
+        stat: "Additional Attack",
+        priority: 1,
+        target: "maximum_possible",
+        reason: "Prioriser Attaque au maximum (scaleStat)",
+        description: "Sian scale sur Attaque - maximise cette stat avant tout"
+      },
+      {
+        stat: "Damage Increase",
+        priority: 2,
+        target: "maximum_possible",
+        reason: "Dégâts optimaux après attaque"
+      },
+      {
+        stat: "Critical Hit Damage",
+        priority: 3,
+        target: "200%+",
+        reason: "Dégâts critiques optimaux"
+      },
+      {
+        stat: "Critical Hit Rate",
+        priority: 4,
+        target: 5000,
+        reason: "Taux critique pour assassin"
+      },
+      {
+        stat: "Defense Penetration",
+        priority: 5,
+        target: "10-20%",
+        reason: "Pénétration pour efficacité"
+      }
+    ],
+
+    "recommendedStats": {
+      "criticalHitRate": "50%",
+      "criticalHitDamage": "200% - 210%",
+      "DamageIncrease": "30% +",
+      "defensePenetration": "10% - 20%",
+      "additionalAttack": "Le plus possible",
+      "additionalDefense": null,
+      "precision": null,
+      "damageReduction": null,
+      "healingReceived": null,
+      "mpRecoveryRate": null,
+      "mpCostReduction": null
+    },
+
+    "beruAdvice": {
+      "newbie": "Sian Halat est un Assassin Dark Attack ! Priorise Additional Attack au maximum !",
+      "intermediate": "Scale sur Attack = focus Additional Attack, puis Damage Increase.",
+      "advanced": "Build DPS assassin avec bonne pénétration défense.",
+      "expert": "Dark Assassin puissant - optimise les substats Attack %!"
+    }
+  },
+
+  // 🆕 SON KIHOON - Dark Tank (HP scaling)
+  "son": {
+    "name": "Son Kihoon",
+    "element": "Dark",
+    "class": "Tank",
+    "grade": "SSR",
+    "scaleStat": "HP",
+
+    "optimizationPriority": [
+      {
+        stat: "Additional HP",
+        priority: 1,
+        target: "maximum_possible",
+        reason: "Prioriser HP au maximum (scaleStat)",
+        description: "Son scale sur HP - maximise cette stat avant tout"
+      },
+      {
+        stat: "Damage Increase",
+        priority: 2,
+        target: "maximum_possible",
+        reason: "Dégâts optimaux après HP"
+      },
+      {
+        stat: "Critical Hit Damage",
+        priority: 3,
+        target: "200%+",
+        reason: "Dégâts critiques optimaux"
+      },
+      {
+        stat: "Critical Hit Rate",
+        priority: 4,
+        target: 5000,
+        reason: "Taux critique pour tank"
+      },
+      {
+        stat: "Defense Penetration",
+        priority: 5,
+        target: "10-20%",
+        reason: "Pénétration pour efficacité"
+      }
+    ],
+
+    "recommendedStats": {
+      "criticalHitRate": "50%",
+      "criticalHitDamage": "200% - 210%",
+      "DamageIncrease": "30% +",
+      "defensePenetration": "10% - 20%",
+      "additionalHP": "Le plus possible",
+      "additionalAttack": null,
+      "additionalDefense": null,
+      "precision": null,
+      "damageReduction": null,
+      "healingReceived": null,
+      "mpRecoveryRate": null,
+      "mpCostReduction": null
+    },
+
+    "beruAdvice": {
+      "newbie": "Son Kihoon est un Tank Dark HP ! Priorise Additional HP au maximum !",
+      "intermediate": "Scale sur HP = focus Additional HP, puis Damage Increase.",
+      "advanced": "Build tank avec bonne survivabilité HP.",
+      "expert": "Dark Tank HP scaling - optimise les substats HP %!"
+    }
   }
 };
 

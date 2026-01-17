@@ -1532,11 +1532,121 @@
     },
     "mobile": {
       "week": "第{{week}}週"
-    },
-     "shadows": {
-      "title": "シャドウ",
-      "select":  "シャドウを選択"
     }
+  },
+  "shadows": {
+    "title": "シャドウ",
+    "select": "シャドウを選択"
+  },
+  "optimization": {
+      "title": "最適化 & スイートスポット",
+      "presets": {
+        "title": "ステータスプリセット",
+        "description": "進行レベルに合わせた推奨ステータスを素早く適用できます。",
+        "note": "これらのプリセットはメインステータス({{mainStat}})を適用します。他のステータス(TC、DCC、防御貫通)はバフで計算されます。",
+        "casual": {
+          "label": "カジュアル",
+          "description": "初心者向けステータス"
+        },
+        "dolphin": {
+          "label": "ドルフィン",
+          "description": "上級者向けステータス"
+        },
+        "whale": {
+          "label": "クジラ",
+          "description": "クジラ向けステータス"
+        }
+      },
+      "benchmarks": {
+        "title": "ベンチマーク",
+        "casual": "初心者",
+        "intermediate": "中級者",
+        "advanced": "上級者",
+        "whale": "クジラ"
+      },
+      "status": {
+        "optimal": "最適！",
+        "good": "良好",
+        "improving": "改善が必要",
+        "low": "不足",
+        "unknown": "不明",
+        "whale": "クジラ",
+        "advanced": "上級",
+        "intermediate": "中級",
+        "casual": "初心者"
+      },
+      "sweetSpots": {
+        "title": "スイートスポット目標",
+        "ideal": "理想",
+        "priority": "優先度"
+      },
+      "mainStat": {
+        "title": "メインステータス",
+        "next": "次",
+        "remaining": "+{{value}}必要",
+        "max": "最大！"
+      },
+      "substats": {
+        "title": "サブステータス優先順位"
+      },
+      "scaling": {
+        "title": "スケーリング"
+      },
+      "tips": {
+        "title": "ヒント"
+      },
+      "sets": {
+        "title": "推奨セット"
+      },
+      "stats": {
+        "critRate": "クリティカル率",
+        "critDMG": "クリティカルダメージ",
+        "defPen": "防御貫通",
+        "atk": "攻撃力",
+        "def": "防御力",
+        "hp": "HP"
+      },
+      "roles": {
+        "dpsBurst": "バーストDPS",
+        "dpsDebuffer": "DPS / デバッファー",
+        "dpsBreak": "DPS / ブレイク専門",
+        "supportDps": "サポート / サブDPS",
+        "dpsAssassin": "アサシンDPS",
+        "supportBuffer": "サポート / バッファー",
+        "dpsUniversal": "万能DPS"
+      }
+    },
+    "theorycraft": {
+      "coreAttack": {
+        "title": "コアアタック TC",
+        "description": "+10% クリティカル率（デフォルトで有効）"
+      },
+      "weapon": {
+        "title": "武器",
+        "critRate": "クリ率",
+        "critDMG": "クリダメ",
+        "defPen": "防御貫通"
+      },
+      "rawValues": {
+        "title": "素のステータス",
+        "hint": "敵 Lv.{{level}} に対する%計算"
+      },
+      "setBuffs": {
+        "title": "セットバフ",
+        "equipped": "装備セット:",
+        "bonus": "セットボーナス:",
+        "noBonus": "有効なボーナスなし"
+      },
+      "mainStat": {
+        "label": "メインステータス: {{stat}}",
+        "next": "次の目標: {{value}}",
+        "max": "最大!"
+      },
+      "buffs": {
+        "title": "覚醒レベルによるバフ（サウロンの目）",
+        "description": "全バフの詳細。値にカーソルを合わせると出所を表示します。",
+        "level": "レベル",
+        "specialBuffs": "特殊バフ"
+        }
   }
 }
-          

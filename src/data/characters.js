@@ -1320,6 +1320,68 @@ export const characters = {
         element: 'Wind'
       }]
   },
+  'sian': {
+    name: 'Sian Halat',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
+    class: 'Assassin',
+    grade: 'SSR',
+    element: 'Dark',
+    scaleStat: 'Attack',
+     bdgLimits: {
+      maxDamageOnElement: 30000000000,  // 30B max si bon élément
+      maxDamageOffElement: 10000000000  // 10B max si mauvais élément
+    },
+    importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di'],
+    skillMultipliers: {
+      core1: 3.5,
+      core2: 4.8,
+      skill1: 12.0,
+      skill2: 16.5,
+      ultimate: 35.0
+    },
+    buffs: [
+      {
+        name: 'Wind Shield',
+        values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+        cooldown: 12,
+        duration: 8,
+        target: 'shared', // 'self' ou 'shared'
+        type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+        element: 'Wind'
+      }]
+  },
+  'son': {
+    name: 'Son Kihoon',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604316/harper_fvn1d9.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606309/icons/build-14.png',
+    class: 'Tank',
+    grade: 'SSR',
+    element: 'Dark',
+    scaleStat: 'HP',
+    importantStats: ['hp', 'tc', 'dcc', 'defPen', 'di'],
+    skillMultipliers: {
+      core1: 3.5,
+      core2: 4.8,
+      skill1: 12.0,
+      skill2: 16.5,
+      ultimate: 35.0
+    },
+    bdgLimits: {
+      maxDamageOnElement: 800000000,  // 73B max si bon élément
+      maxDamageOffElement: 100000000  // 9B max si mauvais élément
+    },
+    buffs: [
+      {
+        name: 'Wind Shield',
+        values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
+        cooldown: 12,
+        duration: 8,
+        target: 'shared', // 'self' ou 'shared'
+        type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
+        element: 'Wind'
+      }]
+  },
   'thomas': {
     name: 'Thomas Andre',
     img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604216/thomas_jr9x92.png',

@@ -128,6 +128,7 @@ export default function HomePage() {
       alt: "DrawBeru - Coloring and Drawing System"
     },
     { label: t('home.menu.dpsCalculator'), path: "/damage-calculator", special: true, new: true, alt: "Calculator Damage Solo Leveling Arise" },
+    { label: "⚡ Theorycraft", path: "/theorycraft", special: true, new: true, alt: "Team Synergy Calculator - Crit Rate, Crit DMG, Def Pen" },
     { label: t('home.menu.bdg'), path: "bdg", alt: " META Guild War Solo Leveling Arise" },
     { label: t('home.menu.pod'), path: "/pod", alt: "META POD Solo Leveling Arise" },
     { label: t('home.menu.hallOfFlame'), path: "/hall-of-flame", special: true, alt: "Ranking player Solo Leveling Arise" },

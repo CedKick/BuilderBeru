@@ -1628,10 +1628,121 @@
     },
     "mobile": {
       "week": "{{week}}주"
-    },
-     "shadows": {
-      "title": "그림자",
-      "select":  "그림자를 선택하세요"
     }
+  },
+  "shadows": {
+    "title": "그림자",
+    "select": "그림자를 선택하세요"
+  },
+  "optimization": {
+      "title": "최적화 & 스윗 스팟",
+      "presets": {
+        "title": "스탯 프리셋",
+        "description": "진행 수준에 맞는 권장 스탯을 빠르게 적용하세요.",
+        "note": "이 프리셋은 메인 스탯({{mainStat}})을 적용합니다. 다른 스탯(TC, DCC, 방관)은 버프로 계산됩니다.",
+        "casual": {
+          "label": "캐주얼",
+          "description": "초보자 스탯"
+        },
+        "dolphin": {
+          "label": "돌핀",
+          "description": "상급 스탯"
+        },
+        "whale": {
+          "label": "고래",
+          "description": "고래 스탯"
+        }
+      },
+      "benchmarks": {
+        "title": "벤치마크",
+        "casual": "초보자",
+        "intermediate": "중급자",
+        "advanced": "상급자",
+        "whale": "고래"
+      },
+      "status": {
+        "optimal": "최적!",
+        "good": "좋음",
+        "improving": "개선 필요",
+        "low": "부족",
+        "unknown": "알 수 없음",
+        "whale": "고래",
+        "advanced": "상급",
+        "intermediate": "중급",
+        "casual": "초보"
+      },
+      "sweetSpots": {
+        "title": "스윗 스팟 목표",
+        "ideal": "이상적",
+        "priority": "우선순위"
+      },
+      "mainStat": {
+        "title": "메인 스탯",
+        "next": "다음",
+        "remaining": "+{{value}} 필요",
+        "max": "최대!"
+      },
+      "substats": {
+        "title": "서브스탯 우선순위"
+      },
+      "scaling": {
+        "title": "스케일링"
+      },
+      "tips": {
+        "title": "팁"
+      },
+      "sets": {
+        "title": "추천 세트"
+      },
+      "stats": {
+        "critRate": "치명타 확률",
+        "critDMG": "치명타 피해",
+        "defPen": "방어 관통",
+        "atk": "공격력",
+        "def": "방어력",
+        "hp": "HP"
+      },
+      "roles": {
+        "dpsBurst": "버스트 딜러",
+        "dpsDebuffer": "딜러 / 디버퍼",
+        "dpsBreak": "딜러 / 브레이크 전문가",
+        "supportDps": "서포터 / 서브 딜러",
+        "dpsAssassin": "암살자 딜러",
+        "supportBuffer": "서포터 / 버퍼",
+        "dpsUniversal": "만능 딜러"
+      }
+    },
+    "theorycraft": {
+      "coreAttack": {
+        "title": "코어 어택 TC",
+        "description": "+10% 크리티컬 확률 (기본 활성화)"
+      },
+      "weapon": {
+        "title": "무기",
+        "critRate": "크리 확률",
+        "critDMG": "크리 데미지",
+        "defPen": "방어 관통"
+      },
+      "rawValues": {
+        "title": "기본 스탯",
+        "hint": "적 Lv.{{level}} 대상 % 계산"
+      },
+      "setBuffs": {
+        "title": "세트 버프",
+        "equipped": "장착 세트:",
+        "bonus": "세트 보너스:",
+        "noBonus": "활성 보너스 없음"
+      },
+      "mainStat": {
+        "label": "메인 스탯: {{stat}}",
+        "next": "다음: {{value}}",
+        "max": "최대!"
+      },
+      "buffs": {
+        "title": "각성 레벨별 버프 (사우론의 눈)",
+        "description": "모든 버프의 상세 내역. 값 위에 마우스를 올리면 출처를 확인할 수 있습니다.",
+        "level": "레벨",
+        "specialBuffs": "특수 버프"
+        }
   }
 }

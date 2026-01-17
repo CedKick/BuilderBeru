@@ -1708,10 +1708,121 @@
     },
     "mobile": {
       "week": "S{{week}}"
-    },
-     "shadows": {
-      "title": "Shadows",
-      "select":  "Select your shadow"
     }
+  },
+  "shadows": {
+    "title": "Shadows",
+    "select": "Select your shadow"
+  },
+  "optimization": {
+      "title": "Optimization & Sweet Spots",
+      "presets": {
+        "title": "Stats Presets",
+        "description": "Quickly apply recommended stats based on your progression level.",
+        "note": "These presets apply the main stat ({{mainStat}}). Other stats (CR, CD, Def Pen) are calculated via buffs.",
+        "casual": {
+          "label": "Casual",
+          "description": "Beginner stats"
+        },
+        "dolphin": {
+          "label": "Dolphin",
+          "description": "Advanced stats"
+        },
+        "whale": {
+          "label": "Whale",
+          "description": "Whale stats"
+        }
+      },
+      "benchmarks": {
+        "title": "Benchmarks",
+        "casual": "Beginner",
+        "intermediate": "Intermediate",
+        "advanced": "Advanced",
+        "whale": "Whale"
+      },
+      "status": {
+        "optimal": "Optimal!",
+        "good": "Good",
+        "improving": "Needs work",
+        "low": "Insufficient",
+        "unknown": "Unknown",
+        "whale": "Whale",
+        "advanced": "Advanced",
+        "intermediate": "Intermediate",
+        "casual": "Beginner"
+      },
+      "sweetSpots": {
+        "title": "Sweet Spot Targets",
+        "ideal": "Ideal",
+        "priority": "Priority"
+      },
+      "mainStat": {
+        "title": "Main Stat",
+        "next": "Next",
+        "remaining": "+{{value}} needed",
+        "max": "MAX!"
+      },
+      "substats": {
+        "title": "Substat Priority"
+      },
+      "scaling": {
+        "title": "Scaling"
+      },
+      "tips": {
+        "title": "Tips"
+      },
+      "sets": {
+        "title": "Recommended Sets"
+      },
+      "stats": {
+        "critRate": "Crit Rate",
+        "critDMG": "Crit DMG",
+        "defPen": "Def Pen",
+        "atk": "ATK",
+        "def": "DEF",
+        "hp": "HP"
+      },
+      "roles": {
+        "dpsBurst": "Burst DPS",
+        "dpsDebuffer": "DPS / Debuffer",
+        "dpsBreak": "DPS / Break Specialist",
+        "supportDps": "Support / Sub-DPS",
+        "dpsAssassin": "Assassin DPS",
+        "supportBuffer": "Support / Buffer",
+        "dpsUniversal": "Universal DPS"
+      }
+    },
+    "theorycraft": {
+      "coreAttack": {
+        "title": "Core Attack TC",
+        "description": "+10% Crit Rate (enabled by default)"
+      },
+      "weapon": {
+        "title": "Weapon",
+        "critRate": "Crit Rate",
+        "critDMG": "Crit DMG",
+        "defPen": "Def Pen"
+      },
+      "rawValues": {
+        "title": "Raw Values",
+        "hint": "% calculated vs enemy Lv.{{level}}"
+      },
+      "setBuffs": {
+        "title": "Set Buffs",
+        "equipped": "Equipped set:",
+        "bonus": "Set Bonus:",
+        "noBonus": "No active bonus"
+      },
+      "mainStat": {
+        "label": "Main Stat: {{stat}}",
+        "next": "Next: {{value}}",
+        "max": "MAX!"
+      },
+      "buffs": {
+        "title": "Buffs by Advancement (Eye of Sauron)",
+        "description": "Full detail of all buffs by source. Hover values to see their origin.",
+        "level": "Level",
+        "specialBuffs": "Special Buffs"
+        }
   }
 }
