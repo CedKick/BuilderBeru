@@ -30,6 +30,8 @@ export const CHARACTER_OPTIMIZATION = {
             note: "Baek scale massivement sur l'ATK - Les top whales visent 52-56K"
         },
 
+        // Buffs Def Pen: Sian A4 RAID 18% + Sian A5 team 10% + Armed 18% = 46%
+        // 71K raw ≈ 43.1% → Total ~89% Def Pen
         sweetSpots: {
             critRate: {
                 min: 95,
@@ -38,16 +40,18 @@ export const CHARACTER_OPTIMIZATION = {
                 priority: 1,
                 status: "CAP",
                 color: "#22c55e", // green
-                note: "Cap obligatoire à 100% - Baek crit à chaque coup"
+                rawMax: 11000, // 10-12K raw TC suffit avec buffs team
+                note: "Cap obligatoire à 100% - 10-12K raw suffit avec buffs team"
             },
             defPen: {
-                min: 70,
-                max: 82,
-                ideal: 77,
+                min: 85,
+                max: 92,
+                ideal: 89,
                 priority: 2,
                 status: "PRIORITY",
                 color: "#8b5cf6", // violet
-                note: "Def Pen prioritaire pour stabiliser Baek - Sweet spot 75-80%"
+                rawMax: 71000, // 71K raw ≈ 43.1% + 46% buffs = ~89%
+                note: "71K raw (43%) + 46% buffs = ~89% Def Pen - Sweet spot optimal"
             },
             critDMG: {
                 min: 200,
@@ -65,26 +69,26 @@ export const CHARACTER_OPTIMIZATION = {
         scaling: {
             atk: { grade: "S+", description: "Scale massivement - Passifs multiplient ATK" },
             critDMG: { grade: "S", description: "Multiplicateur direct très efficace" },
-            defPen: { grade: "A", description: "Important jusqu'au sweet spot" },
+            defPen: { grade: "A", description: "Important jusqu'au sweet spot (89%)" },
             critRate: { grade: "B", description: "Juste besoin d'atteindre le cap" }
         },
 
         tips: [
             "Baek a des passifs qui augmentent ses dégâts quand ses HP sont bas",
-            "Def Pen > DCC pour stabiliser Baek - Trop de DCC pas worth au bout d'un moment",
+            "Buffs Def Pen: Sian A4 18% + Sian A5 10% + Armed 18% = 46%",
+            "71K raw Def Pen (~43%) + 46% buffs = ~89% total - Sweet spot !",
             "Armed 4pc (+18% Def Pen) est quasi-obligatoire",
-            "Les top Baek font 170-200B sur 3 min avec ~77% Def Pen et 52K+ ATK",
-            "500 ATK ≈ 1000 Def Pen en valeur marginale une fois au sweet spot",
-            "DCC affichée = valeur / (50000 + valeur) - 200% affiché ≈ bonne DCC"
+            "Les top Baek font 170-200B sur 3 min avec ~89% Def Pen et 52K+ ATK",
+            "10-12K raw TC suffit avec les buffs team (Isla +12%, Lee Bora...)"
         ],
 
         recommendedSets: ["Armed 4pc + Obsidian 4pc", "Armed 4pc + Expert 4pc"],
 
         benchmarks: {
-            casual: { critRate: 80, critDMG: 150, defPen: 50, dps: "20-40B" },
-            intermediate: { critRate: 95, critDMG: 180, defPen: 65, dps: "60-100B" },
-            advanced: { critRate: 100, critDMG: 200, defPen: 75, dps: "100-150B" },
-            whale: { critRate: 100, critDMG: 200, defPen: 77, dps: "170-200B" }
+            casual: { critRate: 80, critDMG: 150, defPen: 60, dps: "20-40B" },
+            intermediate: { critRate: 95, critDMG: 180, defPen: 75, dps: "60-100B" },
+            advanced: { critRate: 100, critDMG: 200, defPen: 85, dps: "100-150B" },
+            whale: { critRate: 100, critDMG: 200, defPen: 89, dps: "170-200B" }
         }
     },
 
@@ -121,8 +125,8 @@ export const CHARACTER_OPTIMIZATION = {
                 priority: 2,
                 status: "HIGH",
                 color: "#22c55e",
-                rawMax: 16000, // Max 16K raw TC
-                note: "95%+ pour consistance - Max 16K raw"
+                rawMax: 11000, // 10-12K raw TC suffit avec buffs team (Isla +12%, Lee Bora, etc.)
+                note: "95%+ pour consistance - 10-12K raw suffit avec buffs team"
             },
             critDMG: {
                 min: 170,
@@ -165,10 +169,10 @@ export const CHARACTER_OPTIMIZATION = {
         recommendedSets: ["Armed 4pc + Expert 4pc", "Armed 4pc + Obsidian 4pc"],
 
         benchmarks: {
-            casual: { critRate: 70, critDMG: 150, defPen: 70, dps: "10-20B" },
-            intermediate: { critRate: 85, critDMG: 180, defPen: 85, dps: "30-50B" },
-            advanced: { critRate: 95, critDMG: 200, defPen: 95, dps: "50-80B" },
-            whale: { critRate: 100, critDMG: 200, defPen: 100, dps: "80-120B" }
+            casual: { critRate: 70, critDMG: 150, defPen: 70, dps: "5-12B" },
+            intermediate: { critRate: 85, critDMG: 180, defPen: 85, dps: "15-25B" },
+            advanced: { critRate: 95, critDMG: 200, defPen: 95, dps: "30-45B" },
+            whale: { critRate: 100, critDMG: 200, defPen: 100, dps: "50-62B" }
         }
     },
 
@@ -205,8 +209,8 @@ export const CHARACTER_OPTIMIZATION = {
                 priority: 2,
                 status: "HIGH",
                 color: "#22c55e",
-                rawMax: 16000,
-                note: "95%+ pour consistance - Max 16K raw"
+                rawMax: 11000, // 10-12K raw TC suffit avec buffs team
+                note: "95%+ pour consistance - 10-12K raw suffit avec buffs team"
             },
             critDMG: {
                 min: 200,
@@ -243,16 +247,16 @@ export const CHARACTER_OPTIMIZATION = {
             "Chaotic Desire 8pc = son set signature (DCC focus)",
             "Bénéficie des buffs Def Pen de Sian (46% total sans arme)",
             "Son arme ne donne PAS de buff Def Pen",
-            "Max 70K raw Def Pen (~33% raw + 46% buffs = 79%)"
+            "10-12K raw TC suffit avec les buffs team (Isla +12%, Lee Bora...)"
         ],
 
         recommendedSets: ["Chaotic Desire 8pc", "Armed 4pc + Expert 4pc"],
 
         benchmarks: {
-            casual: { critRate: 70, critDMG: 170, defPen: 55, dps: "15-25B" },
-            intermediate: { critRate: 85, critDMG: 200, defPen: 65, dps: "35-55B" },
-            advanced: { critRate: 95, critDMG: 220, defPen: 75, dps: "55-85B" },
-            whale: { critRate: 100, critDMG: 240, defPen: 80, dps: "85-120B" }
+            casual: { critRate: 70, critDMG: 170, defPen: 55, dps: "5-10B" },
+            intermediate: { critRate: 85, critDMG: 200, defPen: 65, dps: "12-20B" },
+            advanced: { critRate: 95, critDMG: 220, defPen: 75, dps: "22-32B" },
+            whale: { critRate: 100, critDMG: 240, defPen: 80, dps: "32-38B" }
         }
     },
 
@@ -289,8 +293,8 @@ export const CHARACTER_OPTIMIZATION = {
                 priority: 2,
                 status: "HIGH",
                 color: "#22c55e",
-                rawMax: 16000,
-                note: "90% recommandé - Max 16K raw"
+                rawMax: 11000, // 10-12K raw TC suffit - elle reçoit aussi ses propres buffs
+                note: "90% recommandé - 10-12K raw suffit avec buffs team"
             },
             critDMG: {
                 min: 170,
@@ -326,16 +330,16 @@ export const CHARACTER_OPTIMIZATION = {
             "Lee Bora A2 donne +6% TC/DCC personnel + buff RAID Dark",
             "Son arme A5 donne des buffs RAID importants (TC/DCC)",
             "Bénéficie des buffs Def Pen de Sian (46% total)",
-            "Angel + Chaotic Wish pour survie et buffs"
+            "10-12K raw TC suffit avec les buffs team"
         ],
 
         recommendedSets: ["Angel 4pc + Chaotic Wish 4pc", "Guardian 4pc + Sylph 4pc"],
 
         benchmarks: {
-            casual: { critRate: 65, critDMG: 140, defPen: 50, dps: "5-10B" },
-            intermediate: { critRate: 80, critDMG: 170, defPen: 60, dps: "12-22B" },
-            advanced: { critRate: 90, critDMG: 190, defPen: 70, dps: "22-35B" },
-            whale: { critRate: 95, critDMG: 200, defPen: 75, dps: "35-50B" }
+            casual: { critRate: 65, critDMG: 140, defPen: 50, dps: "1-3B" },
+            intermediate: { critRate: 80, critDMG: 170, defPen: 60, dps: "4-6B" },
+            advanced: { critRate: 90, critDMG: 190, defPen: 70, dps: "7-10B" },
+            whale: { critRate: 95, critDMG: 200, defPen: 75, dps: "10-12B" }
         }
     },
 
@@ -372,8 +376,8 @@ export const CHARACTER_OPTIMIZATION = {
                 priority: 1,
                 status: "CAP",
                 color: "#22c55e",
-                rawMax: 16000,
-                note: "Cap 100% obligatoire - A5 donne +36% TC perso"
+                rawMax: 9000, // A5 donne +36% TC perso ! 8-10K raw suffit largement
+                note: "Cap 100% - A5 donne +36% TC perso, donc 8-10K raw suffit !"
             },
             critDMG: {
                 min: 200,
@@ -406,19 +410,19 @@ export const CHARACTER_OPTIMIZATION = {
         },
 
         tips: [
-            "Ilhwan A5 donne +36% TC personnel (3×12%)",
+            "Ilhwan A5 donne +36% TC personnel (3×12%) - ÉNORME !",
+            "8-10K raw TC suffit car A5 donne déjà +36%",
             "Son arme donne aussi des buffs de DCC perso",
-            "Bénéficie des buffs Def Pen de Sian (46% total)",
-            "Armed 4pc + Expert 4pc est optimal"
+            "Bénéficie des buffs Def Pen de Sian (46% total)"
         ],
 
         recommendedSets: ["Armed 4pc + Expert 4pc", "Armed 4pc + Obsidian 4pc"],
 
         benchmarks: {
-            casual: { critRate: 70, critDMG: 140, defPen: 35, dps: "12-20B" },
-            intermediate: { critRate: 85, critDMG: 180, defPen: 50, dps: "25-40B" },
-            advanced: { critRate: 95, critDMG: 210, defPen: 60, dps: "45-70B" },
-            whale: { critRate: 100, critDMG: 240, defPen: 72, dps: "70-100B" }
+            casual: { critRate: 70, critDMG: 140, defPen: 35, dps: "8-15B" },
+            intermediate: { critRate: 85, critDMG: 180, defPen: 50, dps: "20-35B" },
+            advanced: { critRate: 95, critDMG: 210, defPen: 60, dps: "40-55B" },
+            whale: { critRate: 100, critDMG: 240, defPen: 72, dps: "55-64B" }
         }
     },
 
@@ -516,10 +520,10 @@ export const CHARACTER_OPTIMIZATION = {
         recommendedSets: ["Guardian 4pc + Sylph 4pc", "Angel 4pc + Guardian 4pc"],
 
         benchmarks: {
-            casual: { damageIncrease: 20, defense: 10000, critRate: 40, dps: "2-5B" },
-            intermediate: { damageIncrease: 28, defense: 13000, critRate: 55, dps: "5-10B" },
-            advanced: { damageIncrease: 35, defense: 16000, critRate: 70, dps: "10-18B" },
-            whale: { damageIncrease: 42, defense: 19000, critRate: 80, dps: "18-28B" }
+            casual: { damageIncrease: 20, defense: 10000, critRate: 40, dps: "0.3-0.6B" },
+            intermediate: { damageIncrease: 28, defense: 13000, critRate: 55, dps: "0.6-1B" },
+            advanced: { damageIncrease: 35, defense: 16000, critRate: 70, dps: "1-1.4B" },
+            whale: { damageIncrease: 42, defense: 19000, critRate: 80, dps: "1.4-1.8B" }
         }
     },
 
@@ -598,10 +602,10 @@ export const CHARACTER_OPTIMIZATION = {
         recommendedSets: ["Burning Greed 8pc", "Burning Greed 4pc + Armed 4pc"],
 
         benchmarks: {
-            casual: { critRate: 75, critDMG: 160, defPen: 40, dps: "30-50B" },
-            intermediate: { critRate: 90, critDMG: 200, defPen: 55, dps: "70-110B" },
-            advanced: { critRate: 100, critDMG: 235, defPen: 68, dps: "130-180B" },
-            whale: { critRate: 100, critDMG: 270, defPen: 78, dps: "200-280B" }
+            casual: { critRate: 75, critDMG: 160, defPen: 40, dps: "0.3-0.6B" },
+            intermediate: { critRate: 90, critDMG: 200, defPen: 55, dps: "0.7-1.1B" },
+            advanced: { critRate: 100, critDMG: 235, defPen: 68, dps: "1.2-1.6B" },
+            whale: { critRate: 100, critDMG: 270, defPen: 78, dps: "1.6-2B" }
         }
     }
 };
