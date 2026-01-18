@@ -283,7 +283,7 @@ export const CHARACTER_BUFFS = {
     // 🗡️ Sian Halat - A4 APPORTE BUFF RAID, A5 APPORTE BUFF PERSONNEL
     // IMPORTANT: A0, A1, A2, A3 n'apportent RIEN
     // A4 débloque le buff conditionnel RAID (+3% Def Pen par Dark hunter)
-    // A5 ajoute un buff personnel (+10% Def Pen)
+    // A5 ajoute un buff TEAM Dark (+10% Def Pen pour tous les Dark de la team)
     sian: {
         baseStats: {
             critRate: 0,  // TC de base du perso (%)
@@ -311,9 +311,9 @@ export const CHARACTER_BUFFS = {
                 critRate: 0,
                 critDMG: 0,
                 defPen: 0,
-                // Buffs personnels pour Sian uniquement (débloqués à A5)
-                personalBuffs: {
-                    defPen: 10   // +10% Def Pen à Sian lui-même
+                // Buff TEAM Dark (pas personnel !) - +10% Def Pen pour tous les Dark de la team
+                teamBuffsDark: {
+                    defPen: 10   // +10% Def Pen pour la TEAM Dark (Sung n'en profite pas !)
                 },
                 // Buff conditionnel RAID (persiste depuis A4)
                 conditionalBuff: {
@@ -322,7 +322,7 @@ export const CHARACTER_BUFFS = {
                     countCondition: 'element',
                     raidWide: true
                 }
-            },  // +10% Def Pen personnel + +3% Def Pen par Dark hunter
+            },  // +10% Def Pen TEAM Dark + +3% Def Pen par Dark hunter
         }
     },
 

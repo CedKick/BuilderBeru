@@ -2021,6 +2021,286 @@ const BUILDER_DATA = {
   }
 },
 
+  "reed": {
+  "name": "Christopher Reed",
+  "element": "Fire",
+  "class": "Infusion",
+  "grade": "SSR",
+  "scaleStat": "Defense",
+
+  "optimizationPriority": [
+  {
+    stat: "Additional Defense",
+    priority: 1,
+    target: "maximum_possible",
+    reason: "Prioriser Defense au maximum (scaleStat)",
+    description: "Reed scale sur Defense - maximise cette stat avant tout"
+  },
+  {
+    stat: "Defense %",
+    priority: 2,
+    target: "maximum_possible",
+    reason: "Prioriser Defense % pour scaling optimal",
+    description: "Defense % booste le scaling de Reed"
+  },
+  {
+    stat: "Damage Increase",
+    priority: 3,
+    target: "maximum_possible",
+    reason: "Dégâts optimaux"
+  },
+  {
+    stat: "Critical Hit Damage",
+    priority: 4,
+    target: "200%+",
+    reason: "Dégâts critiques optimaux"
+  },
+  {
+    stat: "Critical Hit Rate",
+    priority: 5,
+    target: 8000,
+    reason: "Taux critique optimal pour Infusion"
+  },
+  {
+    stat: "Defense Penetration",
+    priority: 6,
+    target: "15-25%",
+    reason: "Pénétration pour efficacité"
+  }
+],
+
+  // 📊 STATS RECOMMANDÉES
+  "recommendedStats": {
+    "criticalHitRate": "80-100%",
+    "criticalHitDamage": "180% - 200%",
+    "DamageIncrease": "30% +",
+    "defensePenetration": "15% - 25%",
+    "defense": "Maximum possible"
+  },
+
+  // 🎮 MODES DE JEU & SETS
+  "gameModes": {
+    "general": {
+      "recommendedSet": "Guardian/Sylph Build",
+      "priority": "Infusion Fire Defense-scaling",
+      "description": "Build Infusion avec Guardian + Sylph",
+      "availability": "LR",
+      "setComposition": "4x Guardian + 4x Sylph"
+    },
+    "pod": {
+      "recommendedSet": "Guardian/Sylph Build",
+      "priority": "PvP Infusion Fire",
+      "description": "Build PvP Infusion avec Defense maximum",
+      "availability": "LR",
+      "setComposition": "4x Guardian + 4x Sylph"
+    },
+    "bdg": {
+      "recommendedSet": "Guardian/Sylph Build",
+      "priority": "Guild boss Infusion",
+      "description": "Build boss de guilde Infusion avec Guardian + Sylph",
+      "availability": "LR",
+      "setComposition": "4x Guardian + 4x Sylph"
+    }
+  },
+
+  // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS
+  "artifactSets": {
+    "guardianSylph": {
+      "name": "Guardian/Sylph Build",
+      "frenchName": "Build Gardien/Sylphe",
+      "availability": "LR",
+      "setComposition": "4x Guardian + 4x Sylph",
+      "pieces": {
+        "helmet": "Casque du gardien",
+        "chest": "Armure du gardien",
+        "gloves": "Gants du gardien",
+        "boots": "Bottes du gardien",
+        "necklace": "Collier sylphe",
+        "bracelet": "Bracelet sylphe",
+        "ring": "Anneau sylphe",
+        "earrings": "Boucles sylphe"
+      },
+      "mainStats": {
+        "helmet": "Defense %",
+        "chest": "Defense %",
+        "gloves": "Defense %",
+        "boots": "Defense %",
+        "necklace": "Critical Hit Damage",
+        "bracelet": "Defense %",
+        "ring": "Defense %",
+        "earrings": "Defense %"
+      }
+    }
+  },
+
+  // 🧪 NOYAUX RECOMMANDÉS
+  "recommendedCores": {
+    "offensive": {
+      "name": "Trompette du Démon Anonyme",
+      "type": "Additional Defense",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, les Dégâts de coup critique de l'utilisateur augmentent de 30% pendant 8 secondes"
+    },
+    "defensive": {
+      "name": "Corne du Démon Anonyme",
+      "type": "Additional Defense",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
+    },
+    "endurance": {
+      "name": "Dents du Veilleur",
+      "type": "Additional HP",
+      "bonus": "Diminue le Taux de récupération de PM de 10% et la Consommation de PM de 12% lors de l'utilisation d'une compétence"
+    }
+  },
+
+  // 💡 CONSEILS BÉRU
+  "beruAdvice": {
+    "newbie": "Christopher Reed est un Infusion Fire Defense-scaling !",
+    "intermediate": "Il scale sur Defense ! Build Guardian + Sylph pour maximiser !",
+    "advanced": "Maximise Defense % et maintiens 80-100% crit rate pour damage optimal !",
+    "expert": "Optimise les substats Defense % sur tous les artefacts pour scaling maximum !"
+  }
+},
+
+  "laura": {
+  "name": "Laura",
+  "element": "Light",
+  "class": "Support",
+  "grade": "SSR",
+  "scaleStat": "Attack",
+
+  "optimizationPriority": [
+  {
+    stat: "Additional Attack",
+    priority: 1,
+    target: "maximum_possible",
+    reason: "Prioriser Attack au maximum (scaleStat)",
+    description: "Laura scale sur Attack - maximise cette stat avant tout"
+  },
+  {
+    stat: "Attack %",
+    priority: 2,
+    target: "maximum_possible",
+    reason: "Prioriser Attack % pour scaling optimal",
+    description: "Attack % booste le scaling de Laura"
+  },
+  {
+    stat: "Damage Increase",
+    priority: 3,
+    target: "maximum_possible",
+    reason: "Dégâts optimaux"
+  },
+  {
+    stat: "Critical Hit Damage",
+    priority: 4,
+    target: "200%+",
+    reason: "Dégâts critiques optimaux"
+  },
+  {
+    stat: "Critical Hit Rate",
+    priority: 5,
+    target: 10000,
+    reason: "Taux critique optimal pour Support"
+  },
+  {
+    stat: "Defense Penetration",
+    priority: 6,
+    target: "15-25%",
+    reason: "Pénétration pour efficacité"
+  }
+],
+
+  // 📊 STATS RECOMMANDÉES
+  "recommendedStats": {
+    "criticalHitRate": "85-100%",
+    "criticalHitDamage": "180% - 200%",
+    "DamageIncrease": "30% +",
+    "defensePenetration": "15% - 25%",
+    "additionalAttack": "Le plus possible"
+  },
+
+  // 🎮 MODES DE JEU & SETS
+  "gameModes": {
+    "general": {
+      "recommendedSet": "Angel/Chaotic Wish Build",
+      "priority": "Support Light Attack-scaling",
+      "description": "Build Support avec Angel + Chaotic Wish",
+      "availability": "LR",
+      "setComposition": "4x Angel + 4x Chaotic Wish"
+    },
+    "pod": {
+      "recommendedSet": "Angel/Chaotic Wish Build",
+      "priority": "PvP Support Light",
+      "description": "Build PvP Support avec Attack maximum",
+      "availability": "LR",
+      "setComposition": "4x Angel + 4x Chaotic Wish"
+    },
+    "bdg": {
+      "recommendedSet": "Armed/Expert Build",
+      "priority": "Guild boss Support",
+      "description": "Build boss de guilde Support avec Armed + Expert",
+      "availability": "LR",
+      "setComposition": "4x Armed + 4x Expert"
+    }
+  },
+
+  // ⚔️ SETS D'ARTEFACTS DÉTAILLÉS
+  "artifactSets": {
+    "angelChaoticWish": {
+      "name": "Angel/Chaotic Wish Build",
+      "frenchName": "Build Ange/Voeu Chaotique",
+      "availability": "LR",
+      "setComposition": "4x Angel + 4x Chaotic Wish",
+      "pieces": {
+        "helmet": "Casque angélique",
+        "chest": "Armure angélique",
+        "gloves": "Gants angéliques",
+        "boots": "Bottes angéliques",
+        "necklace": "Collier du voeu chaotique",
+        "bracelet": "Bracelet du voeu chaotique",
+        "ring": "Anneau du voeu chaotique",
+        "earrings": "Boucles du voeu chaotique"
+      },
+      "mainStats": {
+        "helmet": "Attack %",
+        "chest": "Attack %",
+        "gloves": "Attack %",
+        "boots": "Attack %",
+        "necklace": "Critical Hit Damage",
+        "bracelet": "Attack %",
+        "ring": "Additional Attack",
+        "earrings": "Additional MP"
+      }
+    }
+  },
+
+  // 🧪 NOYAUX RECOMMANDÉS
+  "recommendedCores": {
+    "offensive": {
+      "name": "Trompette du Démon Anonyme",
+      "type": "Additional Attack",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, les Dégâts de coup critique de l'utilisateur augmentent de 30% pendant 8 secondes"
+    },
+    "defensive": {
+      "name": "Corne du Démon Anonyme",
+      "type": "Additional Defense",
+      "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
+    },
+    "endurance": {
+      "name": "Dents du Veilleur",
+      "type": "Additional HP",
+      "bonus": "Diminue le Taux de récupération de PM de 10% et la Consommation de PM de 12% lors de l'utilisation d'une compétence"
+    }
+  },
+
+  // 💡 CONSEILS BÉRU
+  "beruAdvice": {
+    "newbie": "Laura est un Support Light Attack-scaling !",
+    "intermediate": "Elle scale sur Attack ! Build Angel + Chaotic Wish (général) ou Armed/Expert (BDG) !",
+    "advanced": "Maximise Attack % et maintiens 85-100% crit rate pour support optimal !",
+    "expert": "Optimise les substats Attack % sur tous les artefacts pour scaling maximum !"
+  }
+},
+
   "seorin": {
     "name": "Seorin",
     "element": "Water",

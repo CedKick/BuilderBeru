@@ -116,6 +116,24 @@ const data_chars = {
       element: 'Fire',
       scaleStat: 'Attack'
     },
+    'reed': {
+      name: 'Christopher Reed',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+      class: 'Infusion',
+      grade: 'SSR',
+      element: 'Fire',
+      scaleStat: 'Defense'
+    },
+    'laura': {
+      name: 'Laura',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+      class: 'Support',
+      grade: 'SSR',
+      element: 'Light',
+      scaleStat: 'Attack'
+    },
     'alicia': {
       name: 'Alicia Blanche',
       img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604309/alicia_fzpzkf.png',

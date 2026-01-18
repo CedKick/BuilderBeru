@@ -45,6 +45,8 @@ export const characterStats = {
     'frieren': { attack: 5833, defense: 9076, hp: 11759, critRate: 0, mp: 1000 },
     'stark': { attack: 5757, defense: 5604, hp: 18874, critRate: 0, mp: 1000 },
     'fern': { attack: 9057, defense: 5519, hp: 12468, critRate: 0, mp: 1000 },
+    'reed': { attack: 5833, defense: 9076, hp: 11759, critRate: 0, mp: 1000 }, // Christopher Reed (Infusion, Fire, DEF scaling)
+    'laura': { attack: 6265, defense: 5528, hp: 11837, critRate: 0, mp: 1000 }, // Laura (Support, Light)
     'sian': { attack: 6196, defense: 5599, hp: 11834, critRate: 0, mp: 1000 }, // Sian Halat (copié sur Ilhwan)
     'son': { attack: 5535, defense: 5547, hp: 13348, critRate: 0, mp: 1000 }, // Son Kihoon (copié sur Harper)
     'thomas': { attack: 5580, defense: 6376, hp: 11487, critRate: 0, mp: 1000 },

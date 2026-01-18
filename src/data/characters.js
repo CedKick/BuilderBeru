@@ -589,6 +589,88 @@ export const characters = {
       }
     ]
   },
+  'reed': {
+    name: 'Christopher Reed',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+    class: 'Infusion',
+    grade: 'SSR',
+    element: 'Fire',
+    scaleStat: 'Defense',
+    bdgLimits: {
+      maxDamageOnElement: 15000000000,  // 15B max si bon élément
+      maxDamageOffElement: 4000000000  // 4B max si mauvais élément
+    },
+    importantStats: ['def', 'tc', 'dcc', 'defPen', 'di'],
+    skillMultipliers: {
+      core1: 2.76,
+      core2: 14.82,
+      skill1: 27.27,
+      skill2: 26.61,
+      ultimate: 68.69
+    },
+    buffs: [
+      {
+        name: 'Fire Infusion',
+        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+        duration: 30,
+        target: 'shared',
+        effects: [
+          { type: 'defense', values: [10, 20, 30] }
+        ]
+      },
+      {
+        name: 'Fire Damage Boost',
+        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+        duration: 20,
+        target: 'shared',
+        effects: [
+          { type: 'elementalDamage', element: 'Fire', values: [1, 2, 3, 4, 5] }
+        ]
+      }
+    ]
+  },
+  'laura': {
+    name: 'Laura',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+    class: 'Support',
+    grade: 'SSR',
+    element: 'Light',
+    scaleStat: 'Attack',
+    bdgLimits: {
+      maxDamageOnElement: 13000000000,  // 13B max si bon élément
+      maxDamageOffElement: 4000000000  // 4B max si mauvais élément
+    },
+    importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di'],
+    skillMultipliers: {
+      core1: 4.2,
+      core2: 6.8,
+      skill1: 18.5,
+      skill2: 22.0,
+      ultimate: 48.5
+    },
+    buffs: [
+      {
+        name: 'Light Attack Boost',
+        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+        duration: 30,
+        target: 'shared',
+        effects: [
+          { type: 'attack', values: [10, 20, 30] }
+        ]
+      },
+      {
+        name: 'Light Damage Increase',
+        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+        duration: 25,
+        target: 'shared',
+        effects: [
+          { type: 'elementalDamage', element: 'Light', values: [3, 6, 9, 12, 15] }
+        ]
+      }
+    ]
+  },
   'alicia': {
     name: 'Alicia Blanche',
     img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604309/alicia_fzpzkf.png',
@@ -1342,13 +1424,14 @@ export const characters = {
     },
     buffs: [
       {
-        name: 'Wind Shield',
-        values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
-        cooldown: 12,
-        duration: 8,
-        target: 'shared', // 'self' ou 'shared'
-        type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
-        element: 'Wind'
+        name: 'Def Pen Buff (A5)',
+        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
+        duration: 30,
+        target: 'shared', // Buff TEAM Dark only
+        element: 'Dark', // Uniquement pour les membres Dark (Sung n'en profite pas !)
+        effects: [
+          { type: 'defPen', values: [2, 4, 6, 8, 10] } // +10% Def Pen à la TEAM Dark à A5
+        ]
       }]
   },
   'son': {

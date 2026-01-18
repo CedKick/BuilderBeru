@@ -94,17 +94,18 @@ const getSetDisplayText = (member) => {
 };
 
 // 🎯 ENEMIES DATA - Ennemis disponibles pour les calculs
+// Level 80 par défaut (correspond aux ennemis BDG standard)
 const ENEMIES = {
     fachtna: {
         id: 'fachtna',
         name: 'Fachtna',
-        level: 90,
+        level: 80,
         icon: '⚔️'
     },
     statue: {
         id: 'statue',
         name: 'La Statue',
-        level: 90,
+        level: 80,
         icon: '🗿'
     }
 };
@@ -121,7 +122,7 @@ const Theorycraft = () => {
 
     // Enemy selection (pour les calculs de stats réels)
     const [selectedEnemy, setSelectedEnemy] = useState('fachtna'); // fachtna par défaut
-    const [enemyLevel, setEnemyLevel] = useState(90); // Level de l'ennemi (par défaut 90)
+    const [enemyLevel, setEnemyLevel] = useState(80); // Level de l'ennemi (par défaut 80 - BDG standard)
 
     // Obtenir la liste des personnages disponibles
     const availableCharacters = useMemo(() => {
@@ -2636,6 +2637,19 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                 breakdown.defPen.push({
                     source: `🗡️ RAID Dark - Sian (${darkHunterCount} × ${sianA4.conditionalBuff.defPenPerAlly}%)`,
                     value: raidDarkDefPenBonus
+                });
+            }
+        }
+
+        // Sian A5 : +10% Def Pen pour TOUTE la team Dark (pas personnel, pas Sung !)
+        const sianA5InRaid = allMembers.find(m => m.id === 'sian' && m.advancement >= 5);
+        if (sianA5InRaid && memberElement === 'Dark') {
+            const sianA5 = getCharacterBuffs('sian', 5);
+            if (sianA5.teamBuffsDark && sianA5.teamBuffsDark.defPen > 0) {
+                totalDefPen += sianA5.teamBuffsDark.defPen;
+                breakdown.defPen.push({
+                    source: `🗡️ Sian A5 - Buff Team Dark`,
+                    value: sianA5.teamBuffsDark.defPen
                 });
             }
         }
