@@ -2,6 +2,34 @@
 // Ces formules ajustent les % réels en fonction du niveau de l'ennemi
 // Basé sur les données réelles de Solo Leveling: Arise (Level 90 Guild Boss data)
 
+// ═══════════════════════════════════════════════════════════════
+// 🆕 NOUVELLE FORMULE DEF PEN (confirmée Reddit + RDPS + tests LV80)
+// DefPenStat = (MonsterLevel × 1000 × DefPen%) / (100 - DefPen%)
+// Inverse: DefPen% = (DefPenStat × 100) / (DefPenStat + MonsterLevel × 1000)
+// ═══════════════════════════════════════════════════════════════
+export const newDefPenFormula = {
+  toPercent: (stat, enemyLevel = 80) => {
+    const value = parseFloat(stat) || 0;
+    if (value === 0) return '0.0';
+
+    // DefPen% = (DefPenStat × 100) / (DefPenStat + MonsterLevel × 1000)
+    const divisor = value + (enemyLevel * 1000);
+    const percentage = (value * 100) / divisor;
+
+    return Math.max(0, percentage).toFixed(1);
+  },
+  toStat: (percent, enemyLevel = 80) => {
+    const value = parseFloat(percent) || 0;
+    if (value === 0) return 0;
+    if (value >= 100) return Infinity; // Cap à 100%
+
+    // DefPenStat = (MonsterLevel × 1000 × DefPen%) / (100 - DefPen%)
+    const stat = (enemyLevel * 1000 * value) / (100 - value);
+
+    return Math.round(Math.max(0, stat));
+  }
+};
+
 export const statConversionsWithEnemy = {
   // TC (Taux de Critique) - dépend du niveau de l'ennemi
   tc: {

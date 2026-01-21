@@ -658,6 +658,378 @@ export const CHARACTER_BUFFS = {
         }
     },
 
+    // 🗡️ Weapon Kang (Arme) - N'apporte RIEN pour le theorycraft
+    weapon_kang: {
+        baseStats: {
+            critRate: 0,
+            critDMG: 0,
+            defPen: 0,
+        },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🥷 Kang - N'apporte AUCUN buff TC/DCC/Def Pen
+    kang: {
+        baseStats: {
+            critRate: 0,
+            critDMG: 0,
+            defPen: 0,
+        },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🗡️ Weapon Hwang Dongsuk (Arme) - N'apporte RIEN
+    weapon_hwang: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 👤 Hwang Dongsuk - N'apporte AUCUN buff TC/DCC/Def Pen
+    hwang: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🔥 FIRE ELEMENT CHARACTERS
+    // ═══════════════════════════════════════════════════════════════
+
+    // 🗡️ Weapon Emma (Arme) - N'apporte RIEN
+    weapon_emma: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🔥 Emma - A0 apporte 7.7% Def Pen pour sa TEAM
+    emma: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, teamBuff: { defPen: 7.7 } },  // +7.7% Def Pen TEAM
+            A1: { critRate: 0, critDMG: 0, defPen: 0, teamBuff: { defPen: 7.7 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, teamBuff: { defPen: 7.7 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, teamBuff: { defPen: 7.7 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, teamBuff: { defPen: 7.7 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, teamBuff: { defPen: 7.7 } },
+        }
+    },
+
+    // 🗡️ Weapon Esil (Arme) - Buff crit ATK trop complexe, ignoré
+    weapon_esil: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🔥 Esil - A4 apporte +4% Def Pen par allié Fire dans le RAID (Sung en bénéficie aussi!)
+    esil: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: {
+                critRate: 0, critDMG: 0, defPen: 0,
+                // Buff conditionnel RAID - +4% Def Pen par Fire hunter (Sung inclus!)
+                conditionalBuff: {
+                    targetElement: 'all',            // S'applique à TOUS (Sung inclus)
+                    defPenPerAlly: 4,                // +4% Def Pen par allié Fire
+                    countCondition: 'fire',          // Compte les Fire hunters
+                    raidWide: true
+                }
+            },
+            A5: {
+                critRate: 0, critDMG: 0, defPen: 0,
+                conditionalBuff: {
+                    targetElement: 'all',
+                    defPenPerAlly: 4,
+                    countCondition: 'fire',
+                    raidWide: true
+                }
+            },
+        }
+    },
+
+    // 🗡️ Weapon Yuqi (Arme) - N'apporte RIEN
+    weapon_yuqi: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🔥 Yuqi - N'apporte AUCUN buff TC/DCC/Def Pen
+    yuqi: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🗡️ Weapon Reed (Arme) - Def Pen PERSONNEL
+    // A0=2%, A1=4%, A2=6%, A3=9%, A4=12%, A5=15%
+    weapon_reed: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 2 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 4 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 6 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 9 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 12 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 15 } },
+        }
+    },
+
+    // 🔥 Christopher Reed - N'apporte AUCUN buff (tout vient de l'arme)
+    reed: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🗡️ Weapon Gina (Arme) - N'apporte RIEN
+    weapon_gina: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🔥 Gina - A4 apporte +4% Def Pen pour tout le RAID
+    gina: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 4 },  // +4% Def Pen RAID
+            A5: { critRate: 0, critDMG: 0, defPen: 4 },  // A4 persiste
+        }
+    },
+
+    // 🗡️ Weapon Yoo Soohyun (Arme) - N'apporte RIEN
+    weapon_soohyun: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🔥 Yoo Soohyun - A0: 24% Def Pen perso, A2: +12% Def Pen perso (total 36%)
+    soohyun: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 24 } },   // +24% Def Pen perso
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 24 } },   // A0 persiste
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 36 } },   // +24% + 12% = 36%
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 36 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 36 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 36 } },
+        }
+    },
+
+    // 🗡️ Weapon Fern (Arme) - DCC PERSONNEL
+    // A0=4%, A1=6%, A2=9%, A3=12%, A4=15%, A5=20%
+    weapon_fern: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critDMG: 4 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critDMG: 6 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critDMG: 9 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critDMG: 12 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critDMG: 15 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critDMG: 20 } },
+        }
+    },
+
+    // 🔥 Fern - Vision Véritable: A3=5%TC+10%DCC, A4+=10%TC+20%DCC (perso)
+    fern: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critRate: 5, critDMG: 10 } },   // Vision Véritable
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critRate: 10, critDMG: 20 } },  // Vision Véritable améliorée
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critRate: 10, critDMG: 20 } },  // A4 persiste
+        }
+    },
+
+    // 🗡️ Weapon Stark (Arme) - N'apporte RIEN
+    weapon_stark: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🔥 Stark (Frieren collab) - Def Pen perso + A1 TC perso + A3 buff team spécial
+    // A0: 20% Def Pen perso, A1: +10% TC perso, A3: 20% de sa raw Def Pen pour team, A5: +10% Def Pen perso
+    stark: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 20 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 20, critRate: 10 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 20, critRate: 10 } },
+            A3: {
+                critRate: 0, critDMG: 0, defPen: 0,
+                personalBuffs: { defPen: 20, critRate: 10 },
+                // Buff spécial: 20% de sa raw Def Pen pour la team
+                // Formule: rawDefPen / (50000 + rawDefPen) = % buff team
+                teamBuffFromRaw: {
+                    stat: 'defPen',
+                    percentage: 20,      // 20% de sa raw Def Pen
+                    formula: 'rawDefPen / (50000 + rawDefPen)'  // Résultat en %
+                }
+            },
+            A4: {
+                critRate: 0, critDMG: 0, defPen: 0,
+                personalBuffs: { defPen: 20, critRate: 10 },
+                teamBuffFromRaw: { stat: 'defPen', percentage: 20, formula: 'rawDefPen / (50000 + rawDefPen)' }
+            },
+            A5: {
+                critRate: 0, critDMG: 0, defPen: 0,
+                personalBuffs: { defPen: 30, critRate: 10 },  // 20% + 10% = 30% Def Pen perso
+                teamBuffFromRaw: { stat: 'defPen', percentage: 20, formula: 'rawDefPen / (50000 + rawDefPen)' }
+            },
+        }
+    },
+
+    // 🗡️ Weapon Frieren (Arme) - N'apporte RIEN
+    weapon_frieren: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🔥 Frieren (collab) - A4: +20% DCC team, A5: +15% DCC raid + 15% TC raid
+    frieren: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: {
+                critRate: 0, critDMG: 0, defPen: 0,
+                teamBuff: { critDMG: 20 }  // +20% DCC pour sa team
+            },
+            A5: {
+                critRate: 15, critDMG: 15, defPen: 0,  // +15% TC RAID + 15% DCC RAID
+                teamBuff: { critDMG: 20 }  // +20% DCC pour sa team (A4 persiste)
+            },
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // ⚔️ SUNG WEAPONS (Armes de Sung Jinwoo) - Def Pen PERSONNEL
+    // ═══════════════════════════════════════════════════════════════
+
+    // 🗡️ Weapon Sung - Ennio's Roar (16% Def Pen)
+    weapon_sung_ennio: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 3 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 5 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 8 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 10 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 13 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 16 } },
+        }
+    },
+
+    // 🗡️ Weapon Sung - Knight Killer (20% Def Pen)
+    weapon_sung_knightkiller: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 4 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 7 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 10 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 13 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 16 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 20 } },
+        }
+    },
+
     // Template pour ajouter d'autres persos
     // characterId: {
     //     baseStats: { critRate: 0, critDMG: 0, defPen: 0 },

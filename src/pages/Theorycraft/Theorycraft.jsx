@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { characters } from '../../data/characters';
 import { ARTIFACT_SETS, getSetBonuses } from '../../data/setData';
 import { CHARACTER_BUFFS, getCharacterBuffs, getCharacterBaseStats } from '../../data/characterBuffs';
-import { statConversions, statConversionsWithEnemy } from '../../utils/statConversions';
+import { statConversions, statConversionsWithEnemy, newDefPenFormula } from '../../utils/statConversions';
 import { OptimizationCard, InlineOptimizationDot, OptimizationBadge } from './OptimizationIndicator';
 import { CHARACTER_OPTIMIZATION, getOptimizationStatus, getOverallOptimization, getCurrentBenchmark, getMainStatStatus } from '../../data/characterOptimization';
 
@@ -123,6 +123,13 @@ const Theorycraft = () => {
     // Enemy selection (pour les calculs de stats réels)
     const [selectedEnemy, setSelectedEnemy] = useState('fachtna'); // fachtna par défaut
     const [enemyLevel, setEnemyLevel] = useState(80); // Level de l'ennemi (par défaut 80 - BDG standard)
+
+    // Settings popup
+    const [showSettings, setShowSettings] = useState(false);
+    const [useNewDefPenFormula, setUseNewDefPenFormula] = useState(true); // Nouvelle formule par défaut
+
+    // Sung Blessing (+24.5% Crit Rate)
+    const [sungBlessing, setSungBlessing] = useState(false);
 
     // Obtenir la liste des personnages disponibles
     const availableCharacters = useMemo(() => {
@@ -632,6 +639,115 @@ const Theorycraft = () => {
         setSelectedSlot(null);
     };
 
+    // 🔥 PRESET: Fire Team
+    // Sung actif, Team 1: Esil, Reed, Gina | Team 2: Yuki, Fern, Frieren
+    const applyFirePreset = () => {
+        // Activer Sung avec set Armed + Expert (4+4), arme: Ennio's Roar
+        const sungChar = availableCharacters.find(c => c.id === 'jinwoo');
+        if (sungChar) {
+            setSungEnabled(true);
+            setSungData({
+                ...sungChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                leftSet: 'armed',
+                leftPieces: 4,
+                rightSet: 'expert',
+                rightPieces: 4,
+                coreAttackTC: true,
+                sungWeapon: 'ennio', // Ennio's Roar (16% Def Pen)
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+            });
+        }
+
+        // Team 1: Esil (8pc Greed), Reed (Armed + Obsidian), Gina (Guardian + Sylph)
+        const esilChar = availableCharacters.find(c => c.id === 'esil');
+        const reedChar = availableCharacters.find(c => c.id === 'reed');
+        const ginaChar = availableCharacters.find(c => c.id === 'gina');
+
+        const newTeam1Fire = [
+            esilChar ? {
+                ...esilChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                leftSet: 'burning-greed',
+                leftPieces: 4,
+                rightSet: 'burning-greed',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+            } : null,
+            reedChar ? {
+                ...reedChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                leftSet: 'armed',
+                leftPieces: 4,
+                rightSet: 'obsidian',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+            } : null,
+            ginaChar ? {
+                ...ginaChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                leftSet: 'guardian',
+                leftPieces: 4,
+                rightSet: 'sylph',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+            } : null
+        ];
+        setTeam1(newTeam1Fire);
+
+        // Team 2: Yuqi (Greed + Desire), Fern (Armed + Obsidian), Frieren (Guardian + Sylph)
+        const yuqiChar = availableCharacters.find(c => c.id === 'yuqi');
+        const fernChar = availableCharacters.find(c => c.id === 'fern');
+        const frierenChar = availableCharacters.find(c => c.id === 'frieren');
+
+        const newTeam2Fire = [
+            yuqiChar ? {
+                ...yuqiChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                leftSet: 'burning-greed',
+                leftPieces: 4,
+                rightSet: 'chaotic-desire',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+            } : null,
+            fernChar ? {
+                ...fernChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                leftSet: 'armed',
+                leftPieces: 4,
+                rightSet: 'obsidian',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+            } : null,
+            frierenChar ? {
+                ...frierenChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                leftSet: 'guardian',
+                leftPieces: 4,
+                rightSet: 'sylph',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+            } : null
+        ];
+        setTeam2(newTeam2Fire);
+
+        // Fermer le modal de sélection si ouvert
+        setSelectedSlot(null);
+    };
+
     // 🧮 CALCULER LES STATS FINALES AVEC BREAKDOWN DÉTAILLÉ
     const calculateFinalStats = useMemo(() => {
         // Initialiser les totaux à 0 (pas de stats de base séparées)
@@ -848,7 +964,10 @@ const Theorycraft = () => {
             }
             // Def Pen: Formule ajustée selon le niveau de l'ennemi
             if (member.rawStats.defPen > 0) {
-                const defPenPercent = parseFloat(statConversionsWithEnemy.defPen.toPercent(member.rawStats.defPen, enemyLevel));
+                // Utiliser la nouvelle ou l'ancienne formule selon le paramètre
+                const defPenPercent = useNewDefPenFormula
+                    ? parseFloat(newDefPenFormula.toPercent(member.rawStats.defPen, enemyLevel))
+                    : parseFloat(statConversionsWithEnemy.defPen.toPercent(member.rawStats.defPen, enemyLevel));
                 rawStatsDefPen += defPenPercent;
             }
         });
@@ -920,7 +1039,7 @@ const Theorycraft = () => {
                 }
             }
         };
-    }, [sungData, team1, team2, sungEnabled, selectedEnemy, enemyLevel]);
+    }, [sungData, team1, team2, sungEnabled, selectedEnemy, enemyLevel, useNewDefPenFormula]);
 
     const elements = ['all', 'Fire', 'Water', 'Wind', 'Light', 'Dark'];
 
@@ -956,7 +1075,7 @@ const Theorycraft = () => {
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-center mb-8"
+                    className="text-center mb-8 relative"
                 >
                     <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-[#6c63ff] to-[#a855f7] bg-clip-text text-transparent">
                         ⚡ Theorycraft
@@ -964,6 +1083,14 @@ const Theorycraft = () => {
                     <p className="text-purple-300">
                         Calculateur de synergies de team - Crit Rate, Crit DMG, Def Pen
                     </p>
+                    {/* Settings Button */}
+                    <button
+                        onClick={() => setShowSettings(true)}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 p-3 bg-gray-800/80 hover:bg-gray-700 rounded-xl border border-gray-600 hover:border-purple-500 transition-all"
+                        title="Paramètres des formules"
+                    >
+                        ⚙️
+                    </button>
                 </motion.div>
 
                 {/* Preset Button */}
@@ -973,12 +1100,20 @@ const Theorycraft = () => {
                     transition={{ delay: 0.05 }}
                     className="flex justify-center mb-6"
                 >
-                    <button
-                        onClick={applyDarkPreset}
-                        className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-xl font-bold text-white shadow-lg shadow-purple-500/50 transition-all hover:scale-105 flex items-center gap-2"
-                    >
-                        🎯 Preset Dark Team
-                    </button>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={applyDarkPreset}
+                            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-xl font-bold text-white shadow-lg shadow-purple-500/50 transition-all hover:scale-105 flex items-center gap-2"
+                        >
+                            🌑 Preset Dark Team
+                        </button>
+                        <button
+                            onClick={applyFirePreset}
+                            className="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 rounded-xl font-bold text-white shadow-lg shadow-orange-500/50 transition-all hover:scale-105 flex items-center gap-2"
+                        >
+                            🔥 Preset Fire Team
+                        </button>
+                    </div>
                 </motion.div>
 
                 {/* Enemy Selector */}
@@ -1071,6 +1206,7 @@ const Theorycraft = () => {
                                                 weaponAdvancement: 5,
                                                 set: 'burning-greed',
                                                 setPieces: 0,
+                                                sungWeapon: 'none', // Arme de Sung (none, ennio, knightkiller)
                                                 rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
                                             };
                                             setSungData(newSungData);
@@ -1085,14 +1221,39 @@ const Theorycraft = () => {
                     {sungEnabled && (
                         <div className="flex items-center gap-4">
                             {sungData ? (
-                                <CharacterSlot
-                                    character={sungData}
-                                    onRemove={() => removeCharacter(0, 0)}
-                                    onAdvancementChange={(delta) => changeAdvancement(0, 0, delta)}
-                                    onSetPiecesChange={(pieces) => changeSetPieces(0, 0, pieces)}
-                                    onClick={() => selectCharForDetails(0, 0)}
-                                    isSelected={selectedCharForDetails?.team === 0}
-                                />
+                                <>
+                                    <CharacterSlot
+                                        character={sungData}
+                                        onRemove={() => removeCharacter(0, 0)}
+                                        onAdvancementChange={(delta) => changeAdvancement(0, 0, delta)}
+                                        onSetPiecesChange={(pieces) => changeSetPieces(0, 0, pieces)}
+                                        onClick={() => selectCharForDetails(0, 0)}
+                                        isSelected={selectedCharForDetails?.team === 0}
+                                    />
+                                    {/* Sélecteur d'arme Sung */}
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-xs text-gray-400">⚔️ Arme Def Pen</span>
+                                        <select
+                                            value={sungData.sungWeapon || 'none'}
+                                            onChange={(e) => setSungData({ ...sungData, sungWeapon: e.target.value })}
+                                            className="bg-gray-700 text-white text-xs rounded px-2 py-1 border border-gray-600 focus:border-purple-500 focus:outline-none"
+                                        >
+                                            <option value="none">Aucune</option>
+                                            <option value="ennio">Ennio's Roar (16%)</option>
+                                            <option value="knightkiller">Knight Killer (20%)</option>
+                                        </select>
+                                    </div>
+                                    {/* Checkbox Blessing (+24.5% Crit Rate) */}
+                                    <label className="flex items-center gap-2 cursor-pointer mt-1">
+                                        <input
+                                            type="checkbox"
+                                            checked={sungBlessing}
+                                            onChange={(e) => setSungBlessing(e.target.checked)}
+                                            className="w-4 h-4 rounded bg-gray-700 border-gray-600 text-yellow-500 focus:ring-yellow-500 focus:ring-2 cursor-pointer"
+                                        />
+                                        <span className="text-xs text-yellow-400">✨ Blessing (+24.5% TC)</span>
+                                    </label>
+                                </>
                             ) : (
                                 <button
                                     onClick={() => setSelectedSlot({ team: 0, slot: 0 })}
@@ -1162,6 +1323,7 @@ const Theorycraft = () => {
                             sungData={sungData}
                             team1={team1}
                             team2={team2}
+                            useNewDefPenFormula={useNewDefPenFormula}
                         />
                     )}
                 </AnimatePresence>
@@ -1185,6 +1347,9 @@ const Theorycraft = () => {
                         team1={team1}
                         team2={team2}
                         enemyLevel={enemyLevel}
+                        useNewDefPenFormula={useNewDefPenFormula}
+                        sungBlessing={sungBlessing}
+                        onCharacterClick={(teamId, slotId) => selectCharForDetails(teamId, slotId)}
                     />
                 </motion.div>
 
@@ -1199,6 +1364,113 @@ const Theorycraft = () => {
                         elements={elements}
                     />
                 )}
+
+                {/* Settings Popup */}
+                <AnimatePresence>
+                    {showSettings && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
+                            onClick={() => setShowSettings(false)}
+                        >
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                className="bg-gray-900 rounded-2xl p-6 max-w-2xl w-full mx-4 border border-purple-500/50 shadow-2xl max-h-[90vh] overflow-y-auto"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {/* Header */}
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-purple-300 flex items-center gap-2">
+                                        ⚙️ Paramètres des Formules
+                                    </h2>
+                                    <button
+                                        onClick={() => setShowSettings(false)}
+                                        className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                                    >
+                                        <X className="w-6 h-6" />
+                                    </button>
+                                </div>
+
+                                {/* Defense Penetration Formula */}
+                                <div className="bg-gray-800/50 rounded-xl p-4 mb-4 border border-blue-500/30">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h3 className="text-lg font-bold text-blue-400">🛡️ Defense Penetration</h3>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <span className={`text-sm ${!useNewDefPenFormula ? 'text-yellow-400' : 'text-gray-500'}`}>Ancienne</span>
+                                            <div
+                                                className={`relative w-12 h-6 rounded-full transition-colors ${useNewDefPenFormula ? 'bg-green-600' : 'bg-gray-600'}`}
+                                                onClick={() => setUseNewDefPenFormula(!useNewDefPenFormula)}
+                                            >
+                                                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${useNewDefPenFormula ? 'translate-x-7' : 'translate-x-1'}`} />
+                                            </div>
+                                            <span className={`text-sm ${useNewDefPenFormula ? 'text-green-400' : 'text-gray-500'}`}>Nouvelle</span>
+                                        </label>
+                                    </div>
+
+                                    {useNewDefPenFormula ? (
+                                        <div className="bg-green-900/30 rounded-lg p-3 border border-green-500/30">
+                                            <div className="text-green-400 font-bold mb-2">✅ Nouvelle Formule (Recommandée)</div>
+                                            <div className="text-sm text-gray-300 mb-2">
+                                                Confirmée via Reddit + RDPS + tests LV80
+                                            </div>
+                                            <div className="bg-black/30 rounded p-2 font-mono text-sm text-center">
+                                                <div className="text-yellow-300">DefPen% = (Stat × 100) / (Stat + Level × 1000)</div>
+                                            </div>
+                                            <div className="text-xs text-gray-400 mt-2">
+                                                Exemple: 57,931 Def Pen @ LV80 = <span className="text-green-400 font-bold">42%</span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-yellow-900/30 rounded-lg p-3 border border-yellow-500/30">
+                                            <div className="text-yellow-400 font-bold mb-2">⚠️ Ancienne Formule (slatracker)</div>
+                                            <div className="text-sm text-gray-300 mb-2">
+                                                Formule complexe avec coefficients exponentiels - peut avoir des erreurs
+                                            </div>
+                                            <div className="bg-black/30 rounded p-2 font-mono text-xs text-center">
+                                                <div className="text-yellow-300">Part1 × Part2 × 100</div>
+                                                <div className="text-gray-500 text-xs mt-1">Part1 = f(Stat²), Part2 = K(L) × (S+B) / (0.4S+M)</div>
+                                            </div>
+                                            <div className="text-xs text-gray-400 mt-2">
+                                                Exemple: 66,700 Def Pen @ LV80 = <span className="text-red-400 font-bold">~100%</span> (incorrect)
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Crit Rate Formula */}
+                                <div className="bg-gray-800/50 rounded-xl p-4 mb-4 border border-yellow-500/30">
+                                    <h3 className="text-lg font-bold text-yellow-400 mb-3">🎯 Taux Critique (TC)</h3>
+                                    <div className="bg-black/30 rounded p-2 font-mono text-sm text-center">
+                                        <div className="text-yellow-300">TC% = 5 + (Stat / (Stat + BaseResist)) × 100</div>
+                                    </div>
+                                    <div className="text-xs text-gray-400 mt-2">
+                                        BaseResist varie selon le level ennemi (LV80 ≈ 27,263)
+                                    </div>
+                                </div>
+
+                                {/* Crit DMG Formula */}
+                                <div className="bg-gray-800/50 rounded-xl p-4 border border-red-500/30">
+                                    <h3 className="text-lg font-bold text-red-400 mb-3">💥 Dégâts Critiques (DCC)</h3>
+                                    <div className="bg-black/30 rounded p-2 font-mono text-sm text-center">
+                                        <div className="text-red-300">DCC% = K × (Stat + B) / (0.4 × Stat + M) × 100</div>
+                                    </div>
+                                    <div className="text-xs text-gray-400 mt-2">
+                                        K, B, M sont des coefficients level-dépendants. Base: 50% (affiché 150% in-game)
+                                    </div>
+                                </div>
+
+                                {/* Footer */}
+                                <div className="mt-6 text-center text-xs text-gray-500">
+                                    💡 Les formules sont utilisées pour convertir les valeurs brutes en pourcentages réels
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );
@@ -1371,7 +1643,8 @@ const CharacterDetailsPanel = ({
     sungEnabled,
     sungData,
     team1,
-    team2
+    team2,
+    useNewDefPenFormula = true
 }) => {
     const { t } = useTranslation();
     const { member } = charData;
@@ -1384,13 +1657,26 @@ const CharacterDetailsPanel = ({
     // 🎯 Déterminer quelle arme utiliser selon le personnage
     const getWeaponId = (characterId) => {
         const weaponMap = {
+            // 🌑 DARK
             'lee': 'weapon',           // Lee Bora weapon
             'ilhwan': 'weapon_ilhwan', // Ilhwan weapon
             'sian': 'weapon_sian',     // Sian weapon
             'son': 'weapon_son',       // Son Kihoon weapon (n'apporte rien)
             'minnie': 'weapon_minnie', // Minnie weapon (buffs perso)
             'harper': 'weapon_harper', // Harper weapon (n'apporte rien)
-            'lim': 'weapon_lim'        // Lim weapon (n'apporte rien)
+            'lim': 'weapon_lim',       // Lim weapon (n'apporte rien)
+            'kang': 'weapon_kang',     // Kang weapon (n'apporte rien)
+            'hwang': 'weapon_hwang',   // Hwang Dongsuk (n'apporte rien)
+            // 🔥 FIRE
+            'emma': 'weapon_emma',     // Emma weapon (n'apporte rien)
+            'esil': 'weapon_esil',     // Esil weapon (ignoré - trop complexe)
+            'yuqi': 'weapon_yuqi',     // Yuqi weapon (n'apporte rien)
+            'reed': 'weapon_reed',     // Reed weapon (Def Pen perso)
+            'gina': 'weapon_gina',     // Gina weapon (n'apporte rien)
+            'soohyun': 'weapon_soohyun', // Yoo Soohyun weapon (n'apporte rien)
+            'fern': 'weapon_fern',     // Fern weapon (DCC perso)
+            'stark': 'weapon_stark',   // Stark weapon (n'apporte rien)
+            'frieren': 'weapon_frieren' // Frieren weapon (n'apporte rien)
         };
         return weaponMap[characterId] || null; // null si pas d'arme définie
     };
@@ -1496,6 +1782,7 @@ const CharacterDetailsPanel = ({
                             onChange={(val) => onRawStatChange('defPen', val)}
                             statType="defPen"
                             enemyLevel={enemyLevel}
+                            useNewDefPenFormula={useNewDefPenFormula}
                         />
                     </div>
 
@@ -2012,11 +2299,18 @@ const StatRow = ({ label, value, unit, color = "text-gray-300" }) => (
 );
 
 // Composant: Input pour stat brute avec affichage du % converti (AVEC NIVEAU D'ENNEMI)
-const RawStatInput = ({ label, value, onChange, statType, enemyLevel = 90 }) => {
+const RawStatInput = ({ label, value, onChange, statType, enemyLevel = 80, useNewDefPenFormula = true }) => {
     // Calculer le pourcentage converti AVEC le niveau de l'ennemi
     let convertedPercent = 0;
-    if (value > 0 && statConversionsWithEnemy[statType]) {
-        convertedPercent = parseFloat(statConversionsWithEnemy[statType].toPercent(value, enemyLevel));
+    if (value > 0) {
+        // Pour Def Pen, utiliser la nouvelle ou ancienne formule selon le paramètre
+        if (statType === 'defPen') {
+            convertedPercent = useNewDefPenFormula
+                ? parseFloat(newDefPenFormula.toPercent(value, enemyLevel))
+                : parseFloat(statConversionsWithEnemy.defPen.toPercent(value, enemyLevel));
+        } else if (statConversionsWithEnemy[statType]) {
+            convertedPercent = parseFloat(statConversionsWithEnemy[statType].toPercent(value, enemyLevel));
+        }
     }
 
     return (
@@ -2304,7 +2598,7 @@ const StatDisplay = ({ icon, label, value, unit, color, breakdown }) => {
 };
 
 // Composant: Affichage des stats individuelles par personnage
-const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLevel }) => {
+const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula = true, sungBlessing = false, onCharacterClick }) => {
     // Calculer les stats avec useMemo pour forcer le re-calcul quand les états changent
     const membersWithStats = useMemo(() => {
         // Récupérer tous les membres actifs
@@ -2554,6 +2848,12 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
             breakdown.critRate.push({ source: '🎯 Core Attack TC', value: 10 });
         }
 
+        // 3b. BLESSING (+24.5% TC pour Sung uniquement)
+        if (member.id === 'jinwoo' && sungBlessing) {
+            totalCritRate += 24.5;
+            breakdown.critRate.push({ source: '✨ Blessing', value: 24.5 });
+        }
+
         // 4. TEAM BUFFS (de tous les autres personnages du RAID - à implémenter plus tard)
         // Pour l'instant on n'a que des buffs RAID, pas de buffs Team-only
 
@@ -2681,6 +2981,184 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
             }
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // 🔥 FIRE ELEMENT BUFFS
+        // ═══════════════════════════════════════════════════════════════
+
+        // Compter les Fire hunters dans le RAID
+        const fireHunterCount = allMembers.filter(m => {
+            const charData = characters[m.id];
+            return charData && charData.element === 'Fire';
+        }).length;
+
+        // Esil A4+ : +4% Def Pen par allié Fire pour TOUT LE MONDE (Sung inclus!)
+        const esilA4InRaid = allMembers.find(m => m.id === 'esil' && m.advancement >= 4);
+        if (esilA4InRaid && fireHunterCount > 0) {
+            const esilBuff = getCharacterBuffs('esil', esilA4InRaid.advancement);
+            if (esilBuff.conditionalBuff && esilBuff.conditionalBuff.defPenPerAlly) {
+                const fireDefPenBonus = fireHunterCount * esilBuff.conditionalBuff.defPenPerAlly;
+                totalDefPen += fireDefPenBonus;
+                breakdown.defPen.push({
+                    source: `raid buff (Esil A${esilA4InRaid.advancement}) - ${fireHunterCount} Fire × ${esilBuff.conditionalBuff.defPenPerAlly}%`,
+                    value: fireDefPenBonus
+                });
+            }
+        }
+
+        // Gina A4+ : +4% Def Pen RAID (flat, pas par allié)
+        const ginaA4InRaid = allMembers.find(m => m.id === 'gina' && m.advancement >= 4);
+        if (ginaA4InRaid) {
+            const ginaBuffs = getCharacterBuffs('gina', ginaA4InRaid.advancement);
+            if (ginaBuffs.defPen > 0) {
+                totalDefPen += ginaBuffs.defPen;
+                breakdown.defPen.push({
+                    source: `raid buff (Gina A${ginaA4InRaid.advancement})`,
+                    value: ginaBuffs.defPen
+                });
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 🔥 EMMA A0+ : +7.7% Def Pen team buff (uniquement sa team)
+        // ═══════════════════════════════════════════════════════════════
+        const emmaInTeam1 = team1.find(m => m && m.id === 'emma');
+        const emmaInTeam2 = team2.find(m => m && m.id === 'emma');
+
+        if (emmaInTeam1) {
+            // Emma est dans Team1 - buff pour Team1 + Sung
+            if (member.teamId === 0 || member.teamId === 1) {
+                const emmaBuffs = getCharacterBuffs('emma', emmaInTeam1.advancement);
+                if (emmaBuffs.teamBuff && emmaBuffs.teamBuff.defPen > 0) {
+                    totalDefPen += emmaBuffs.teamBuff.defPen;
+                    breakdown.defPen.push({
+                        source: `team buff (Emma A${emmaInTeam1.advancement})`,
+                        value: emmaBuffs.teamBuff.defPen
+                    });
+                }
+            }
+        } else if (emmaInTeam2) {
+            // Emma est dans Team2 - buff uniquement Team2
+            if (member.teamId === 2) {
+                const emmaBuffs = getCharacterBuffs('emma', emmaInTeam2.advancement);
+                if (emmaBuffs.teamBuff && emmaBuffs.teamBuff.defPen > 0) {
+                    totalDefPen += emmaBuffs.teamBuff.defPen;
+                    breakdown.defPen.push({
+                        source: `team buff (Emma A${emmaInTeam2.advancement})`,
+                        value: emmaBuffs.teamBuff.defPen
+                    });
+                }
+            }
+        }
+
+        // Frieren A4 : +20% DCC team buff (uniquement sa team)
+        const frierenInTeam1 = team1.find(m => m && m.id === 'frieren' && m.advancement >= 4);
+        const frierenInTeam2 = team2.find(m => m && m.id === 'frieren' && m.advancement >= 4);
+
+        if (frierenInTeam1) {
+            // Frieren est dans Team1 - buff pour Team1 + Sung
+            if (member.teamId === 0 || member.teamId === 1) {
+                const frierenBuffs = getCharacterBuffs('frieren', frierenInTeam1.advancement);
+                if (frierenBuffs.teamBuff && frierenBuffs.teamBuff.critDMG > 0) {
+                    totalCritDMG += frierenBuffs.teamBuff.critDMG;
+                    breakdown.critDMG.push({
+                        source: `team buff (Frieren A${frierenInTeam1.advancement})`,
+                        value: frierenBuffs.teamBuff.critDMG
+                    });
+                }
+            }
+        } else if (frierenInTeam2) {
+            // Frieren est dans Team2 - buff uniquement Team2
+            if (member.teamId === 2) {
+                const frierenBuffs = getCharacterBuffs('frieren', frierenInTeam2.advancement);
+                if (frierenBuffs.teamBuff && frierenBuffs.teamBuff.critDMG > 0) {
+                    totalCritDMG += frierenBuffs.teamBuff.critDMG;
+                    breakdown.critDMG.push({
+                        source: `team buff (Frieren A${frierenInTeam2.advancement})`,
+                        value: frierenBuffs.teamBuff.critDMG
+                    });
+                }
+            }
+        }
+
+        // Frieren A5 : +15% TC RAID + 15% DCC RAID (tout le monde)
+        const frierenA5InRaid = allMembers.find(m => m.id === 'frieren' && m.advancement >= 5);
+        if (frierenA5InRaid) {
+            const frierenA5Buffs = getCharacterBuffs('frieren', 5);
+            if (frierenA5Buffs.critRate > 0) {
+                totalCritRate += frierenA5Buffs.critRate;
+                breakdown.critRate.push({
+                    source: `raid buff (Frieren A5)`,
+                    value: frierenA5Buffs.critRate
+                });
+            }
+            if (frierenA5Buffs.critDMG > 0) {
+                totalCritDMG += frierenA5Buffs.critDMG;
+                breakdown.critDMG.push({
+                    source: `raid buff (Frieren A5)`,
+                    value: frierenA5Buffs.critDMG
+                });
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // 🔥 STARK A3+ : Team buff basé sur sa Def Pen brute
+        // ═══════════════════════════════════════════════════════════════
+        const starkInTeam1 = team1.find(m => m && m.id === 'stark' && m.advancement >= 3);
+        const starkInTeam2 = team2.find(m => m && m.id === 'stark' && m.advancement >= 3);
+
+        if (starkInTeam1) {
+            // Stark est dans Team1 - buff pour Team1 + Sung (sauf Stark lui-même)
+            if ((member.teamId === 0 || member.teamId === 1) && member.id !== 'stark') {
+                const starkBuffs = getCharacterBuffs('stark', starkInTeam1.advancement);
+                if (starkBuffs.teamBuffFromRaw && starkInTeam1.rawStats && starkInTeam1.rawStats.defPen > 0) {
+                    // Calcul: rawDefPen / (50000 + rawDefPen) * 20% = % bonus pour la team
+                    const rawDefPen = starkInTeam1.rawStats.defPen;
+                    const starkRawDefPenPercent = (rawDefPen / (50000 + rawDefPen)) * 100;
+                    const teamDefPenBonus = starkRawDefPenPercent * (starkBuffs.teamBuffFromRaw.percentage / 100);
+                    if (teamDefPenBonus > 0) {
+                        totalDefPen += teamDefPenBonus;
+                        breakdown.defPen.push({
+                            source: `team buff (Stark A${starkInTeam1.advancement}) - 20% de ${starkRawDefPenPercent.toFixed(1)}% raw`,
+                            value: teamDefPenBonus
+                        });
+                    }
+                }
+            }
+        } else if (starkInTeam2) {
+            // Stark est dans Team2 - buff uniquement Team2 (sauf Stark lui-même)
+            if (member.teamId === 2 && member.id !== 'stark') {
+                const starkBuffs = getCharacterBuffs('stark', starkInTeam2.advancement);
+                if (starkBuffs.teamBuffFromRaw && starkInTeam2.rawStats && starkInTeam2.rawStats.defPen > 0) {
+                    const rawDefPen = starkInTeam2.rawStats.defPen;
+                    const starkRawDefPenPercent = (rawDefPen / (50000 + rawDefPen)) * 100;
+                    const teamDefPenBonus = starkRawDefPenPercent * (starkBuffs.teamBuffFromRaw.percentage / 100);
+                    if (teamDefPenBonus > 0) {
+                        totalDefPen += teamDefPenBonus;
+                        breakdown.defPen.push({
+                            source: `team buff (Stark A${starkInTeam2.advancement}) - 20% de ${starkRawDefPenPercent.toFixed(1)}% raw`,
+                            value: teamDefPenBonus
+                        });
+                    }
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // ⚔️ SUNG WEAPON BUFFS (Ennio / Knight Killer)
+        // ═══════════════════════════════════════════════════════════════
+        if (member.id === 'jinwoo' && member.sungWeapon && member.sungWeapon !== 'none') {
+            const weaponId = member.sungWeapon === 'ennio' ? 'weapon_sung_ennio' : 'weapon_sung_knightkiller';
+            const sungWeaponBuffs = getCharacterBuffs(weaponId, member.weaponAdvancement || 0);
+            if (sungWeaponBuffs.personalBuffs && sungWeaponBuffs.personalBuffs.defPen > 0) {
+                totalDefPen += sungWeaponBuffs.personalBuffs.defPen;
+                const weaponName = member.sungWeapon === 'ennio' ? "Ennio's Roar" : 'Knight Killer';
+                breakdown.defPen.push({
+                    source: `(only Sung ${weaponName} A${member.weaponAdvancement || 0})`,
+                    value: sungWeaponBuffs.personalBuffs.defPen
+                });
+            }
+        }
+
         // 7. VALEURS BRUTES (converties en % selon l'ennemi)
         if (member.rawStats.critRate > 0) {
             const tcPercent = parseFloat(statConversionsWithEnemy.tc.toPercent(member.rawStats.critRate, enemyLevel));
@@ -2694,7 +3172,10 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
             breakdown.critDMG.push({ source: `🔢 Valeurs Brutes (${member.rawStats.critDMG.toLocaleString()} DCC)`, value: dccBonus });
         }
         if (member.rawStats.defPen > 0) {
-            const defPenPercent = parseFloat(statConversionsWithEnemy.defPen.toPercent(member.rawStats.defPen, enemyLevel));
+            // Utiliser la nouvelle ou l'ancienne formule selon le paramètre
+            const defPenPercent = useNewDefPenFormula
+                ? parseFloat(newDefPenFormula.toPercent(member.rawStats.defPen, enemyLevel))
+                : parseFloat(statConversionsWithEnemy.defPen.toPercent(member.rawStats.defPen, enemyLevel));
             totalDefPen += defPenPercent;
             breakdown.defPen.push({ source: `🔢 Valeurs Brutes (${member.rawStats.defPen.toLocaleString()} Def Pen)`, value: defPenPercent });
         }
@@ -2710,7 +3191,7 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
             breakdown
         };
         });
-    }, [sungEnabled, sungData, team1, team2, enemyLevel]);
+    }, [sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula, sungBlessing]);
 
     // Si aucun personnage, afficher un message
     if (membersWithStats.length === 0) {
@@ -2724,20 +3205,27 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {membersWithStats.map((member, idx) => (
-                <IndividualCharacterStatCard key={`${member.teamId}-${member.slotId}-${idx}`} member={member} />
+                <IndividualCharacterStatCard
+                    key={`${member.teamId}-${member.slotId}-${idx}`}
+                    member={member}
+                    onClick={() => onCharacterClick && onCharacterClick(member.teamId, member.slotId)}
+                />
             ))}
         </div>
     );
 };
 
 // Composant: Carte de stats individuelles d'un personnage
-const IndividualCharacterStatCard = ({ member }) => {
+const IndividualCharacterStatCard = ({ member, onClick }) => {
     const hasOptimizationData = CHARACTER_OPTIMIZATION[member.id];
     const benchmark = hasOptimizationData ? getCurrentBenchmark(member.id, member.finalStats) : null;
     const overall = hasOptimizationData ? getOverallOptimization(member.id, member.finalStats) : null;
 
     return (
-        <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-purple-700/50">
+        <div
+            className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-purple-700/50 cursor-pointer hover:bg-gray-700/50 hover:border-purple-500 transition-all"
+            onClick={onClick}
+        >
             {/* Header avec image et nom */}
             <div className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-700/50">
                 {member.image ? (
