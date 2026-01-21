@@ -607,6 +607,297 @@ export const CHARACTER_OPTIMIZATION = {
             advanced: { critRate: 100, critDMG: 235, defPen: 68, dps: "1.2-1.6B" },
             whale: { critRate: 100, critDMG: 270, defPen: 78, dps: "1.6-2B" }
         }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🌙 MINNIE - DPS Assassin (Scale DEF)
+    // ═══════════════════════════════════════════════════════════════
+
+    // 🌙 Minnie - DPS Assassin (Scale DEF, buff perso massif)
+    // Buffs perso: A5 = 60% TC + 115% DCC + Arme 15% TC/DCC = 75% TC, 130% DCC PERSO !
+    // Elle est tellement capée en TC/DCC qu'il faut focus Def Pen et DEF
+    minnie: {
+        id: 'minnie',
+        name: "Minnie",
+        role: "DPS Assassin",
+        element: "Dark",
+        tier: "S",
+
+        // 💪 Stat principale de scaling - Minnie scale sur DEF !
+        mainStat: {
+            type: 'def',
+            label: 'DEF',
+            icon: '🛡️',
+            color: '#3b82f6',
+            benchmarks: {
+                casual: 12000,
+                intermediate: 18000,
+                advanced: 24000,
+                whale: 30000
+            },
+            note: "Minnie scale sur la DEF - Focus DEF puis Def Pen car elle est capée TC/DCC"
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 95,
+                max: 100,
+                ideal: 100,
+                priority: 4,
+                status: "CAP",
+                color: "#22c55e",
+                rawMax: 5000, // 4-6K raw suffit LARGEMENT car A5 + arme = 75% TC perso !
+                note: "Cap 100% - 4-6K raw max car A5 + arme donne déjà 75% TC perso"
+            },
+            critDMG: {
+                min: 220,
+                max: 280,
+                ideal: 250,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "250% ideal - A5 + arme donne déjà 130% DCC perso, peu d'invest nécessaire"
+            },
+            defPen: {
+                min: 80,
+                max: 95,
+                ideal: 88,
+                priority: 1,
+                status: "PRIORITY",
+                color: "#8b5cf6",
+                rawMax: 75000,
+                note: "PRIORITÉ #1 - Buffs team 46% + raw = vise 88%+ Def Pen"
+            },
+            defense: {
+                min: 18000,
+                max: 30000,
+                ideal: 24000,
+                priority: 2,
+                status: "HIGH",
+                color: "#3b82f6",
+                note: "PRIORITÉ #2 - Minnie scale sur DEF, maximise après Def Pen"
+            }
+        },
+
+        substatPriority: ["Def Pen", "DEF%", "HP%", "Crit Rate%"],
+
+        scaling: {
+            def: { grade: "S+", description: "Scaling principal - PRIORITAIRE" },
+            critDMG: { grade: "C", description: "A5 donne déjà 130% DCC perso - STOP" },
+            defPen: { grade: "S", description: "PRIORITÉ #1 - ROI énorme" },
+            critRate: { grade: "C", description: "A5 donne déjà 75% TC perso - STOP" }
+        },
+
+        tips: [
+            "⚠️ Minnie est capée TC/DCC perso : 75% TC + 130% DCC à A5 !",
+            "NE PAS investir en TC/DCC - C'est du gâchis total",
+            "Focus Def Pen > DEF > le reste",
+            "4-6K raw TC max, le reste c'est overinvest",
+            "Armed 4pc (+18% Def Pen) recommandé"
+        ],
+
+        recommendedSets: ["Armed 4pc + Expert 4pc", "Armed 4pc + Obsidian 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 85, critDMG: 180, defPen: 60, dps: "15-25B" },
+            intermediate: { critRate: 95, critDMG: 200, defPen: 75, dps: "30-50B" },
+            advanced: { critRate: 100, critDMG: 220, defPen: 85, dps: "55-75B" },
+            whale: { critRate: 100, critDMG: 230, defPen: 90, dps: "80-100B" }
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🎸 HARPER - Breaker / Support
+    // ═══════════════════════════════════════════════════════════════
+
+    // 🎸 Harper - Breaker Support (pas un DPS)
+    // Buffs perso: A5 = 62% TC + 62% DCC perso
+    // Son rôle: Break les ennemis, pas faire du DPS
+    harper: {
+        id: 'harper',
+        name: "Harper",
+        role: "Breaker / Support",
+        element: "Dark",
+        tier: "A",
+
+        // 💪 Stat principale de scaling
+        mainStat: {
+            type: 'atk',
+            label: 'ATK',
+            icon: '⚔️',
+            color: '#ef4444',
+            benchmarks: {
+                casual: 20000,
+                intermediate: 26000,
+                advanced: 32000,
+                whale: 38000
+            },
+            note: "Breaker - Pas besoin de beaucoup d'ATK, focus sur la survie et break"
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 95,
+                max: 100,
+                ideal: 100,
+                priority: 3,
+                status: "CAP",
+                color: "#22c55e",
+                rawMax: 6000, // A5 donne +62% TC perso, donc 5-7K raw max
+                note: "Cap 100% - 5-7K raw max car A5 donne déjà 62% TC perso"
+            },
+            critDMG: {
+                min: 220,
+                max: 280,
+                ideal: 250,
+                priority: 4,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "250% ideal - Breaker mais A5 donne 62% DCC perso"
+            },
+            defPen: {
+                min: 40,
+                max: 60,
+                ideal: 50,
+                priority: 2,
+                status: "MEDIUM",
+                color: "#8b5cf6",
+                rawMax: 50000,
+                note: "Breaker - Modéré suffit, pas besoin d'overinvest"
+            },
+            breakEffect: {
+                min: 30,
+                max: 50,
+                ideal: 40,
+                priority: 1,
+                status: "PRIORITY",
+                color: "#06b6d4",
+                note: "PRIORITÉ - Harper est là pour break, pas DPS"
+            }
+        },
+
+        substatPriority: ["Break Effect%", "HP%", "DEF%", "Crit Rate%"],
+
+        scaling: {
+            atk: { grade: "B", description: "Pas prioritaire - Breaker" },
+            critDMG: { grade: "C", description: "A5 donne 62% DCC perso - suffisant" },
+            defPen: { grade: "B", description: "Modéré suffit" },
+            critRate: { grade: "C", description: "A5 donne 62% TC perso - suffisant" }
+        },
+
+        tips: [
+            "Harper est un BREAKER, pas un DPS !",
+            "A5 donne 62% TC + 62% DCC perso - suffisant pour son rôle",
+            "Focus Break Effect > survie > le reste",
+            "Ne pas overinvest en TC/DCC",
+            "Son arme buff les ultis des autres (pas comptabilisé)"
+        ],
+
+        recommendedSets: ["Guardian 4pc + Sylph 4pc", "Angel 4pc + Guardian 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 70, critDMG: 130, defPen: 30, dps: "1-3B" },
+            intermediate: { critRate: 80, critDMG: 150, defPen: 40, dps: "3-5B" },
+            advanced: { critRate: 90, critDMG: 170, defPen: 50, dps: "5-8B" },
+            whale: { critRate: 95, critDMG: 180, defPen: 55, dps: "8-12B" }
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🧙 LIM - Semi-DPS / Breaker / Buffer
+    // ═══════════════════════════════════════════════════════════════
+
+    // 🧙 Lim - Semi-DPS / Breaker / Buffer (polyvalent)
+    // Buffs RAID: A1 = 5.6% TC + 8% DCC, A3 = 5.6% TC + 15% DCC pour TOUT LE RAID
+    // Rôle hybride: buff le raid, break, et fait du DPS correct
+    lim: {
+        id: 'lim',
+        name: "Lim",
+        role: "Buffer / Semi-DPS / Breaker",
+        element: "Dark",
+        tier: "A+",
+
+        // 💪 Stat principale de scaling
+        mainStat: {
+            type: 'atk',
+            label: 'ATK',
+            icon: '⚔️',
+            color: '#ef4444',
+            benchmarks: {
+                casual: 25000,
+                intermediate: 32000,
+                advanced: 38000,
+                whale: 44000
+            },
+            note: "Polyvalent - ATK modéré pour son DPS, focus sur ses buffs RAID"
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 75,
+                max: 95,
+                ideal: 85,
+                priority: 2,
+                status: "HIGH",
+                color: "#22c55e",
+                rawMax: 10000, // 8-10K raw TC - pas de buff perso
+                note: "Semi-DPS - 8-10K raw TC pour consistance"
+            },
+            critDMG: {
+                min: 200,
+                max: 260,
+                ideal: 230,
+                priority: 2,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "230% ideal - Semi-DPS polyvalent"
+            },
+            defPen: {
+                min: 55,
+                max: 75,
+                ideal: 65,
+                priority: 3,
+                status: "MODERATE",
+                color: "#8b5cf6",
+                rawMax: 60000,
+                note: "Buffs team 46% + raw modéré = ~65% Def Pen"
+            },
+            breakEffect: {
+                min: 20,
+                max: 40,
+                ideal: 30,
+                priority: 1,
+                status: "HIGH",
+                color: "#06b6d4",
+                note: "Utile pour son rôle breaker hybride"
+            }
+        },
+
+        substatPriority: ["ATK%", "Crit Rate%", "Crit DMG%", "Break Effect%"],
+
+        scaling: {
+            atk: { grade: "A", description: "Bon scaling pour son DPS" },
+            critDMG: { grade: "B+", description: "Modéré - polyvalent" },
+            defPen: { grade: "B+", description: "Modéré suffit" },
+            critRate: { grade: "A", description: "Important pour consistance" }
+        },
+
+        tips: [
+            "Lim A3 donne 5.6% TC + 15% DCC à TOUT LE RAID !",
+            "Polyvalent: buffer + breaker + semi-DPS",
+            "Pas besoin d'overinvest - rôle de support/utility",
+            "Son arme n'apporte rien pour le theorycraft",
+            "Focus équilibré, pas de stat à maxout"
+        ],
+
+        recommendedSets: ["Expert 4pc + Obsidian 4pc", "Guardian 4pc + Angel 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 65, critDMG: 140, defPen: 40, dps: "3-6B" },
+            intermediate: { critRate: 80, critDMG: 165, defPen: 55, dps: "8-14B" },
+            advanced: { critRate: 90, critDMG: 180, defPen: 65, dps: "16-24B" },
+            whale: { critRate: 95, critDMG: 195, defPen: 72, dps: "26-35B" }
+        }
     }
 };
 

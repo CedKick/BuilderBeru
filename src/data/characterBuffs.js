@@ -426,6 +426,238 @@ export const CHARACTER_BUFFS = {
         }
     },
 
+    // 🗡️ Weapon Minnie (Arme) - Buffs PERSONNELS selon l'advancement A0-A5
+    // Minnie weapon - Buff personnel uniquement (pas RAID-wide)
+    // Progression: A0=2.5%, A1=5%, A2=6%, A3=9%, A4=12%, A5=15% TC & DCC
+    weapon_minnie: {
+        baseStats: {
+            critRate: 0,
+            critDMG: 0,
+            defPen: 0,
+        },
+        buffs: {
+            A0: {
+                critRate: 0, critDMG: 0, defPen: 0,
+                personalBuffs: { critRate: 2.5, critDMG: 2.5 }  // +2.5% TC & DCC personnel
+            },
+            A1: {
+                critRate: 0, critDMG: 0, defPen: 0,
+                personalBuffs: { critRate: 5, critDMG: 5 }      // +5% TC & DCC personnel
+            },
+            A2: {
+                critRate: 0, critDMG: 0, defPen: 0,
+                personalBuffs: { critRate: 6, critDMG: 6 }      // +6% TC & DCC personnel
+            },
+            A3: {
+                critRate: 0, critDMG: 0, defPen: 0,
+                personalBuffs: { critRate: 9, critDMG: 9 }      // +9% TC & DCC personnel
+            },
+            A4: {
+                critRate: 0, critDMG: 0, defPen: 0,
+                personalBuffs: { critRate: 12, critDMG: 12 }    // +12% TC & DCC personnel
+            },
+            A5: {
+                critRate: 0, critDMG: 0, defPen: 0,
+                personalBuffs: { critRate: 15, critDMG: 15 }    // +15% TC & DCC personnel
+            },
+        }
+    },
+
+    // 🌙 Minnie - TOUS SES BUFFS SONT PERSONNELS (elle est capée TC 😭)
+    // A0: +30% TC, +25% DCC (perso)
+    // A1: +30% DCC supplémentaire (perso) - total DCC = 55%
+    // A3: +30% TC supplémentaire (perso) - total TC = 60%
+    // A5: +60% DCC (3x20%) supplémentaire (perso) - total DCC = 115%
+    minnie: {
+        baseStats: {
+            critRate: 0,
+            critDMG: 0,
+            defPen: 0,
+        },
+        buffs: {
+            A0: {
+                critRate: 0,
+                critDMG: 0,
+                defPen: 0,
+                personalBuffs: {
+                    critRate: 30,   // +30% TC perso
+                    critDMG: 25     // +25% DCC perso
+                }
+            },
+            A1: {
+                critRate: 0,
+                critDMG: 0,
+                defPen: 0,
+                personalBuffs: {
+                    critRate: 30,   // +30% TC perso (A0)
+                    critDMG: 55     // +25% (A0) + 30% (A1) = 55% DCC perso
+                }
+            },
+            A2: {
+                critRate: 0,
+                critDMG: 0,
+                defPen: 0,
+                personalBuffs: {
+                    critRate: 30,   // TC inchangé
+                    critDMG: 55     // DCC inchangé
+                }
+            },
+            A3: {
+                critRate: 0,
+                critDMG: 0,
+                defPen: 0,
+                personalBuffs: {
+                    critRate: 60,   // +30% (A0) + 30% (A3) = 60% TC perso
+                    critDMG: 55     // DCC inchangé
+                }
+            },
+            A4: {
+                critRate: 0,
+                critDMG: 0,
+                defPen: 0,
+                personalBuffs: {
+                    critRate: 60,   // TC inchangé
+                    critDMG: 55     // DCC inchangé
+                }
+            },
+            A5: {
+                critRate: 0,
+                critDMG: 0,
+                defPen: 0,
+                personalBuffs: {
+                    critRate: 60,   // TC inchangé
+                    critDMG: 115    // +55% (A0-A3) + 60% (3x20% A5) = 115% DCC perso
+                }
+            },
+        }
+    },
+
+    // 🗡️ Weapon Harper (Arme) - N'apporte RIEN pour le theorycraft
+    // Harper weapon - Augmente les dégâts ulti des autres joueurs (non comptabilisé)
+    weapon_harper: {
+        baseStats: {
+            critRate: 0,
+            critDMG: 0,
+            defPen: 0,
+        },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🎸 Harper - BUFFS PERSONNELS uniquement (TC & DCC)
+    // A0: +20% TC, +20% DCC (perso)
+    // A1-A4: rien de nouveau (A0 persiste)
+    // A5: +42% TC, +42% DCC supplémentaire (perso) - total = 62% TC & DCC
+    // Note: Autres buffs (ulti, PV, DEF) non comptabilisés pour le theorycraft
+    harper: {
+        baseStats: {
+            critRate: 0,
+            critDMG: 0,
+            defPen: 0,
+        },
+        buffs: {
+            A0: {
+                critRate: 0,
+                critDMG: 0,
+                defPen: 0,
+                personalBuffs: {
+                    critRate: 20,   // +20% TC perso
+                    critDMG: 20     // +20% DCC perso
+                }
+            },
+            A1: {
+                critRate: 0,
+                critDMG: 0,
+                defPen: 0,
+                personalBuffs: {
+                    critRate: 20,   // A0 persiste
+                    critDMG: 20
+                }
+            },
+            A2: {
+                critRate: 0,
+                critDMG: 0,
+                defPen: 0,
+                personalBuffs: {
+                    critRate: 20,   // A0 persiste
+                    critDMG: 20
+                }
+            },
+            A3: {
+                critRate: 0,
+                critDMG: 0,
+                defPen: 0,
+                personalBuffs: {
+                    critRate: 20,   // A0 persiste
+                    critDMG: 20
+                }
+            },
+            A4: {
+                critRate: 0,
+                critDMG: 0,
+                defPen: 0,
+                personalBuffs: {
+                    critRate: 20,   // A0 persiste
+                    critDMG: 20
+                }
+            },
+            A5: {
+                critRate: 0,
+                critDMG: 0,
+                defPen: 0,
+                personalBuffs: {
+                    critRate: 62,   // +20% (A0) + 42% (A5) = 62% TC perso
+                    critDMG: 62     // +20% (A0) + 42% (A5) = 62% DCC perso
+                }
+            },
+        }
+    },
+
+    // 🗡️ Weapon Lim (Arme) - N'apporte RIEN pour le theorycraft
+    weapon_lim: {
+        baseStats: {
+            critRate: 0,
+            critDMG: 0,
+            defPen: 0,
+        },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🧙 Lim - BUFFS RAID (TC & DCC pour tout le raid)
+    // A0: rien
+    // A1: +5.6% TC RAID, +8% DCC RAID
+    // A2: rien (A1 persiste)
+    // A3: +7% DCC RAID supplémentaire - total DCC = 15%
+    // A4-A5: rien (buffs persistent)
+    lim: {
+        baseStats: {
+            critRate: 0,
+            critDMG: 0,
+            defPen: 0,
+        },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },  // RIEN
+            A1: { critRate: 5.6, critDMG: 8, defPen: 0 },   // +5.6% TC RAID, +8% DCC RAID
+            A2: { critRate: 5.6, critDMG: 8, defPen: 0 },   // A1 persiste
+            A3: { critRate: 5.6, critDMG: 15, defPen: 0 },  // +8% (A1) + 7% (A3) = 15% DCC RAID
+            A4: { critRate: 5.6, critDMG: 15, defPen: 0 },  // A3 persiste
+            A5: { critRate: 5.6, critDMG: 15, defPen: 0 },  // A3 persiste
+        }
+    },
+
     // Template pour ajouter d'autres persos
     // characterId: {
     //     baseStats: { critRate: 0, critDMG: 0, defPen: 0 },

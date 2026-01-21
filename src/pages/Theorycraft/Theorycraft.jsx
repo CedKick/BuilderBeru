@@ -1387,9 +1387,12 @@ const CharacterDetailsPanel = ({
             'lee': 'weapon',           // Lee Bora weapon
             'ilhwan': 'weapon_ilhwan', // Ilhwan weapon
             'sian': 'weapon_sian',     // Sian weapon
-            'son': 'weapon_son'        // Son Kihoon weapon (n'apporte rien)
+            'son': 'weapon_son',       // Son Kihoon weapon (n'apporte rien)
+            'minnie': 'weapon_minnie', // Minnie weapon (buffs perso)
+            'harper': 'weapon_harper', // Harper weapon (n'apporte rien)
+            'lim': 'weapon_lim'        // Lim weapon (n'apporte rien)
         };
-        return weaponMap[characterId] || 'weapon'; // Par défaut : Lee Bora weapon
+        return weaponMap[characterId] || null; // null si pas d'arme définie
     };
 
     const weaponId = getWeaponId(member.id);
@@ -1653,21 +1656,27 @@ const CharacterDetailsPanel = ({
                                 if (buffs.personalBuffs) {
                                     const parts = [];
                                     if (buffs.personalBuffs.critRate > 0) {
-                                        parts.push(`+${buffs.personalBuffs.critRate}% TC`);
+                                        parts.push(`${buffs.personalBuffs.critRate}% TC`);
                                     }
                                     if (buffs.personalBuffs.critDMG > 0) {
-                                        parts.push(`+${buffs.personalBuffs.critDMG}% DCC`);
+                                        parts.push(`${buffs.personalBuffs.critDMG}% DCC`);
+                                    }
+                                    if (buffs.personalBuffs.defPen > 0) {
+                                        parts.push(`${buffs.personalBuffs.defPen}% Def Pen`);
                                     }
 
                                     if (parts.length > 0) {
                                         const characterName = member.id === 'lee' ? 'Lee Bora' :
                                                              member.id === 'ilhwan' ? 'Ilhwan' :
                                                              member.id === 'silverbaek' ? 'Silver Mane Baek Yoonho' :
-                                                             'ce personnage';
+                                                             member.id === 'minnie' ? 'Minnie' :
+                                                             member.id === 'harper' ? 'Harper' :
+                                                             member.id === 'lim' ? 'Lim' :
+                                                             member.name || 'ce personnage';
                                         specialBuffsDisplay.push({
-                                            label: '👤 Personnel',
+                                            label: `(only ${characterName})`,
                                             value: parts.join(', '),
-                                            tooltip: `Ces buffs s'appliquent UNIQUEMENT à ${characterName} lui-même`
+                                            tooltip: `Ces buffs s'appliquent UNIQUEMENT à ${characterName}`
                                         });
                                     }
                                 }
@@ -1701,8 +1710,8 @@ const CharacterDetailsPanel = ({
                                         const totalBuff = darkCount * leeA2.conditionalBuff.critDMGPerAlly;
 
                                         specialBuffsDisplay.push({
-                                            label: '🌑 RAID Dark',
-                                            value: `+${totalBuff}% DCC (${darkCount} × ${leeA2.conditionalBuff.critDMGPerAlly}%)`,
+                                            label: `raid buff (Lee Bora)`,
+                                            value: `${totalBuff}% DCC (${darkCount} Dark × ${leeA2.conditionalBuff.critDMGPerAlly}%)`,
                                             tooltip: `Buff appliqué à TOUS les hunters Dark du RAID. ${darkCount} Dark hunters × ${leeA2.conditionalBuff.critDMGPerAlly}% = +${totalBuff}% DCC`
                                         });
                                     }
@@ -2412,11 +2421,11 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                 if (islaBuffs.teamBuff) {
                     if (islaBuffs.teamBuff.critRate > 0) {
                         totalCritRate += islaBuffs.teamBuff.critRate;
-                        breakdown.critRate.push({ source: `💎 Isla Team Buff (A${islaInTeam1.advancement})`, value: islaBuffs.teamBuff.critRate });
+                        breakdown.critRate.push({ source: `team buff (Isla A${islaInTeam1.advancement})`, value: islaBuffs.teamBuff.critRate });
                     }
                     if (islaBuffs.teamBuff.critDMG > 0) {
                         totalCritDMG += islaBuffs.teamBuff.critDMG;
-                        breakdown.critDMG.push({ source: `💎 Isla Team Buff (A${islaInTeam1.advancement})`, value: islaBuffs.teamBuff.critDMG });
+                        breakdown.critDMG.push({ source: `team buff (Isla A${islaInTeam1.advancement})`, value: islaBuffs.teamBuff.critDMG });
                     }
                 }
             }
@@ -2427,11 +2436,11 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                 if (islaBuffs.teamBuff) {
                     if (islaBuffs.teamBuff.critRate > 0) {
                         totalCritRate += islaBuffs.teamBuff.critRate;
-                        breakdown.critRate.push({ source: `💎 Isla Team Buff (A${islaInTeam2.advancement})`, value: islaBuffs.teamBuff.critRate });
+                        breakdown.critRate.push({ source: `team buff (Isla A${islaInTeam2.advancement})`, value: islaBuffs.teamBuff.critRate });
                     }
                     if (islaBuffs.teamBuff.critDMG > 0) {
                         totalCritDMG += islaBuffs.teamBuff.critDMG;
-                        breakdown.critDMG.push({ source: `💎 Isla Team Buff (A${islaInTeam2.advancement})`, value: islaBuffs.teamBuff.critDMG });
+                        breakdown.critDMG.push({ source: `team buff (Isla A${islaInTeam2.advancement})`, value: islaBuffs.teamBuff.critDMG });
                     }
                 }
             }
@@ -2569,19 +2578,22 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                                  member.id === 'silverbaek' ? 'Silver Mane Baek Yoonho' :
                                  member.id === 'sian' ? 'Sian Halat' :
                                  member.id === 'son' ? 'Son Kihoon' :
-                                 'Personnage';
+                                 member.id === 'minnie' ? 'Minnie' :
+                                 member.id === 'harper' ? 'Harper' :
+                                 member.id === 'lim' ? 'Lim' :
+                                 member.name || 'Personnage';
 
             if (memberBuffs.personalBuffs.critRate > 0) {
                 totalCritRate += memberBuffs.personalBuffs.critRate;
-                breakdown.critRate.push({ source: `👤 Buffs Personnels (${characterName} A${member.advancement})`, value: memberBuffs.personalBuffs.critRate });
+                breakdown.critRate.push({ source: `(only ${characterName} A${member.advancement})`, value: memberBuffs.personalBuffs.critRate });
             }
             if (memberBuffs.personalBuffs.critDMG > 0) {
                 totalCritDMG += memberBuffs.personalBuffs.critDMG;
-                breakdown.critDMG.push({ source: `👤 Buffs Personnels (${characterName} A${member.advancement})`, value: memberBuffs.personalBuffs.critDMG });
+                breakdown.critDMG.push({ source: `(only ${characterName} A${member.advancement})`, value: memberBuffs.personalBuffs.critDMG });
             }
             if (memberBuffs.personalBuffs.defPen > 0) {
                 totalDefPen += memberBuffs.personalBuffs.defPen;
-                breakdown.defPen.push({ source: `👤 Buffs Personnels (${characterName} A${member.advancement})`, value: memberBuffs.personalBuffs.defPen });
+                breakdown.defPen.push({ source: `(only ${characterName} A${member.advancement})`, value: memberBuffs.personalBuffs.defPen });
             }
         } else if (member.id === 'silverbaek') {
             console.log('❌ [DEBUG] Pas de personalBuffs trouvés pour Silver Mane Baek Yoonho');
@@ -2592,15 +2604,15 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
             const ilhwanWeaponBuffs = getCharacterBuffs('weapon_ilhwan', member.weaponAdvancement);
             if (ilhwanWeaponBuffs.critRate > 0) {
                 totalCritRate += ilhwanWeaponBuffs.critRate;
-                breakdown.critRate.push({ source: `👤 Arme Personnelle (Ilhwan A${member.weaponAdvancement})`, value: ilhwanWeaponBuffs.critRate });
+                breakdown.critRate.push({ source: `(only Ilhwan weapon A${member.weaponAdvancement})`, value: ilhwanWeaponBuffs.critRate });
             }
             if (ilhwanWeaponBuffs.critDMG > 0) {
                 totalCritDMG += ilhwanWeaponBuffs.critDMG;
-                breakdown.critDMG.push({ source: `👤 Arme Personnelle (Ilhwan A${member.weaponAdvancement})`, value: ilhwanWeaponBuffs.critDMG });
+                breakdown.critDMG.push({ source: `(only Ilhwan weapon A${member.weaponAdvancement})`, value: ilhwanWeaponBuffs.critDMG });
             }
             if (ilhwanWeaponBuffs.defPen > 0) {
                 totalDefPen += ilhwanWeaponBuffs.defPen;
-                breakdown.defPen.push({ source: `👤 Arme Personnelle (Ilhwan A${member.weaponAdvancement})`, value: ilhwanWeaponBuffs.defPen });
+                breakdown.defPen.push({ source: `(only Ilhwan weapon A${member.weaponAdvancement})`, value: ilhwanWeaponBuffs.defPen });
             }
         }
 
@@ -2609,7 +2621,22 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
             const sianWeaponBuffs = getCharacterBuffs('weapon_sian', member.weaponAdvancement);
             if (sianWeaponBuffs.personalBuffs && sianWeaponBuffs.personalBuffs.defPen > 0) {
                 totalDefPen += sianWeaponBuffs.personalBuffs.defPen;
-                breakdown.defPen.push({ source: `⚔️ Arme Sian Halat (A${member.weaponAdvancement})`, value: sianWeaponBuffs.personalBuffs.defPen });
+                breakdown.defPen.push({ source: `(only Sian weapon A${member.weaponAdvancement})`, value: sianWeaponBuffs.personalBuffs.defPen });
+            }
+        }
+
+        // Minnie : buffs personnels de son arme (uniquement pour elle-même)
+        if (member.id === 'minnie' && member.weaponAdvancement >= 0) {
+            const minnieWeaponBuffs = getCharacterBuffs('weapon_minnie', member.weaponAdvancement);
+            if (minnieWeaponBuffs.personalBuffs) {
+                if (minnieWeaponBuffs.personalBuffs.critRate > 0) {
+                    totalCritRate += minnieWeaponBuffs.personalBuffs.critRate;
+                    breakdown.critRate.push({ source: `(only Minnie weapon A${member.weaponAdvancement})`, value: minnieWeaponBuffs.personalBuffs.critRate });
+                }
+                if (minnieWeaponBuffs.personalBuffs.critDMG > 0) {
+                    totalCritDMG += minnieWeaponBuffs.personalBuffs.critDMG;
+                    breakdown.critDMG.push({ source: `(only Minnie weapon A${member.weaponAdvancement})`, value: minnieWeaponBuffs.personalBuffs.critDMG });
+                }
             }
         }
 
@@ -2621,7 +2648,7 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                 const raidDarkBonus = darkHunterCount * leeA2.conditionalBuff.critDMGPerAlly;
                 totalCritDMG += raidDarkBonus;
                 breakdown.critDMG.push({
-                    source: `🌑 RAID Dark - Lee Bora (${darkHunterCount} × ${leeA2.conditionalBuff.critDMGPerAlly}%)`,
+                    source: `raid buff (Lee Bora) - ${darkHunterCount} Dark × ${leeA2.conditionalBuff.critDMGPerAlly}%`,
                     value: raidDarkBonus
                 });
             }
@@ -2635,7 +2662,7 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                 const raidDarkDefPenBonus = darkHunterCount * sianA4.conditionalBuff.defPenPerAlly;
                 totalDefPen += raidDarkDefPenBonus;
                 breakdown.defPen.push({
-                    source: `🗡️ RAID Dark - Sian (${darkHunterCount} × ${sianA4.conditionalBuff.defPenPerAlly}%)`,
+                    source: `raid buff (Sian) - ${darkHunterCount} Dark × ${sianA4.conditionalBuff.defPenPerAlly}%`,
                     value: raidDarkDefPenBonus
                 });
             }
@@ -2648,7 +2675,7 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
             if (sianA5.teamBuffsDark && sianA5.teamBuffsDark.defPen > 0) {
                 totalDefPen += sianA5.teamBuffsDark.defPen;
                 breakdown.defPen.push({
-                    source: `🗡️ Sian A5 - Buff Team Dark`,
+                    source: `team buff Dark (Sian A5)`,
                     value: sianA5.teamBuffsDark.defPen
                 });
             }
