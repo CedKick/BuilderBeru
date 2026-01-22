@@ -2302,7 +2302,14 @@ const BuilderBeru = () => {
     if (!targetCharacter) return;
 
     const char = characterStats[targetCharacter];
-    if (!char) return;
+
+    // 🔥 Pour Jinwoo, continuer même sans char dans characterStats (il a ses propres valeurs)
+    const isJinwoo = targetCharacter === 'jinwoo' ||
+      targetCharacter === 'sung-jinwoo' ||
+      targetCharacter === 'Sung Jinwoo' ||
+      targetCharacter === 'sung';
+
+    if (!char && !isJinwoo) return;
 
     // S'assurer que l'arme existe pour Jinwoo
     simulateWeaponSaveIfMissing(targetCharacter);
@@ -3458,7 +3465,14 @@ BobbyJones : "Allez l'Inter !"
 
     const char = characters[selectedCharacter];
     const charStats = characterStats[selectedCharacter];
-    if (!charStats) return;
+
+    // 🔥 Pour Jinwoo, continuer même sans charStats (il a ses propres valeurs codées en dur)
+    const isJinwoo = selectedCharacter === 'jinwoo' ||
+      selectedCharacter === 'sung-jinwoo' ||
+      selectedCharacter === 'Sung Jinwoo' ||
+      selectedCharacter === 'sung';
+
+    if (!charStats && !isJinwoo) return;
 
     const weapon = hunterWeapons[selectedCharacter] || {};
 
@@ -4183,40 +4197,31 @@ BobbyJones : "Allez l'Inter !"
   const [editStatsMode, setEditStatsMode] = useState(false);
   const getEditLabel = () => t(editStatsMode ? 'save' : 'modify');
 
-  const getFlatStatsWithWeapon = (char, weapon = {}, jinwooStrength = null, characterName = null) => {
-    if (!char) return {};
+  // Coop Training boost (+2760 ATK/DEF ou +5520 HP selon scaleStat)
+  const [coopTraining, setCoopTraining] = useState(true);
 
-    const scaleStat = char.scaleStat || '';
-    let weaponBoost = weapon.mainStat || 0;
-    let weapPrecision = weapon.precision || 0;
-
-    // 🔥 DÉTECTION JINWOO - utiliser le characterName passé en paramètre OU le selectedCharacter
+  const getFlatStatsWithWeapon = (char, weapon = {}, strengthParam = null, characterName = null) => {
+    // 🔥 DÉTECTION JINWOO EN PREMIER - utiliser le characterName passé en paramètre OU le selectedCharacter
     const charName = characterName || selectedCharacter;
     const isJinwoo = charName === 'jinwoo' ||
       charName === 'sung-jinwoo' ||
       charName === 'Sung Jinwoo' ||
       charName === 'sung';
 
-    // 🗡️ CALCUL SPÉCIAL POUR JINWOO
+    // 🗡️ CALCUL SPÉCIAL POUR JINWOO (avant le check !char car Jinwoo n'est pas dans characterStats)
     if (isJinwoo) {
-      weaponBoost = 6160;
-      weapPrecision = 8000;
+      const weaponBoost = 6160;
+      const weapPrecision = 8000;
 
-      // Récupérer la force actuelle (depuis le state ou la valeur par défaut)
-      const currentStrength = jinwooStrength || 0;
-      const level = 115;
-      const bonus = 6.0954 * currentStrength
-        - 0.0071901 * currentStrength * currentStrength
-        + 0.000018907 * currentStrength * currentStrength * currentStrength
-        - 0.000000027519 * Math.pow(currentStrength, 4)
-        + 0.000000000014916 * Math.pow(currentStrength, 5);
+      // Récupérer la force: utiliser le paramètre passé, sinon le state, sinon 0
+      const currentStrength = strengthParam !== null ? strengthParam : (jinwooStrength || 0);
 
       const adjustedBonus = sungForce[currentStrength] + 113;
       const baseATKWithStrength = 3033 + adjustedBonus;
 
-
+      // Jinwoo ne bénéficie PAS du Coop Training
       return {
-        'Attack': baseATKWithStrength + weaponBoost, // Base calculée + arme
+        'Attack': baseATKWithStrength + weaponBoost, // Base calculée + arme (pas de coop)
         'Defense': 2775,
         'HP': 5436,
         'Critical Hit Rate': 0,
@@ -4234,11 +4239,23 @@ BobbyJones : "Allez l'Inter !"
       };
     }
 
+    // Pour les autres personnages, vérifier que char existe
+    if (!char) return {};
+
+    const scaleStat = char.scaleStat || '';
+    let weaponBoost = weapon.mainStat || 0;
+    let weapPrecision = weapon.precision || 0;
+
     // CALCUL NORMAL pour les autres personnages
+    // Coop Training boost: +2760 ATK/DEF ou +5520 HP selon scaleStat
+    const coopBoostATK = coopTraining && scaleStat === 'Attack' ? 2760 : 0;
+    const coopBoostDEF = coopTraining && scaleStat === 'Defense' ? 2760 : 0;
+    const coopBoostHP = coopTraining && scaleStat === 'HP' ? 5520 : 0;
+
     return {
-      'Attack': (char?.attack || 0) + (scaleStat === 'Attack' ? weaponBoost : 0),
-      'Defense': (char?.defense || 0) + (scaleStat === 'Defense' ? weaponBoost : 0),
-      'HP': (char?.hp || 0) + (scaleStat === 'HP' ? weaponBoost : 0),
+      'Attack': (char?.attack || 0) + (scaleStat === 'Attack' ? weaponBoost : 0) + coopBoostATK,
+      'Defense': (char?.defense || 0) + (scaleStat === 'Defense' ? weaponBoost : 0) + coopBoostDEF,
+      'HP': (char?.hp || 0) + (scaleStat === 'HP' ? weaponBoost : 0) + coopBoostHP,
       'Critical Hit Rate': char?.critRate || 0,
       'Critical Hit Damage': 0,
       'Defense Penetration': 0,
@@ -4378,7 +4395,7 @@ BobbyJones : "Allez l'Inter !"
 
   useEffect(() => {
     recalculateStatsFromArtifacts();
-  }, [hunterCores, artifactsData, gemData, selectedCharacter]);
+  }, [hunterCores, artifactsData, gemData, selectedCharacter, coopTraining]);
 
   const [baseStats, setBaseStats] = useState({
     'Attack': defaultCharacter?.attack || 0,
@@ -4555,12 +4572,17 @@ BobbyJones : "Allez l'Inter !"
       selectedCharacter === 'Sung Jinwoo' ||
       selectedCharacter === 'sung';
 
+    // 🏋️ COOP TRAINING BOOST (Jinwoo ne bénéficie PAS du coop training)
+    const coopBoostATK = !isJinwoo && coopTraining && scaleStat === 'Attack' ? 2760 : 0;
+    const coopBoostDEF = !isJinwoo && coopTraining && scaleStat === 'Defense' ? 2760 : 0;
+    const coopBoostHP = !isJinwoo && coopTraining && scaleStat === 'HP' ? 5520 : 0;
+
     setFlatStats(prev =>
       completeStats({
         ...prev,
-        'Attack': charStats.attack + (scaleStat === 'Attack' ? weaponBoost : 0),
-        'Defense': charStats.defense + (scaleStat === 'Defense' ? weaponBoost : 0),
-        'HP': charStats.hp + (scaleStat === 'HP' ? weaponBoost : 0),
+        'Attack': charStats.attack + (scaleStat === 'Attack' ? weaponBoost : 0) + coopBoostATK,
+        'Defense': charStats.defense + (scaleStat === 'Defense' ? weaponBoost : 0) + coopBoostDEF,
+        'HP': charStats.hp + (scaleStat === 'HP' ? weaponBoost : 0) + coopBoostHP,
         'Critical Hit Rate': charStats.critRate,
         'Critical Hit Damage': 0,
         'Defense Penetration': 0,
@@ -4574,7 +4596,7 @@ BobbyJones : "Allez l'Inter !"
 
       })
     );
-  }, [selectedCharacter, hunterWeapons]);
+  }, [selectedCharacter, hunterWeapons, coopTraining]);
 
 
 
@@ -6204,6 +6226,21 @@ BobbyJones : "Allez l'Inter !"
                               />
                               <span className="text-purple-400 text-xs">⚔️</span>
                             </div>
+                          )}
+
+                          {/* 🏋️ COOP TRAINING TOGGLE (pas pour Jinwoo) */}
+                          {!(selectedCharacter === 'jinwoo' || selectedCharacter === 'sung-jinwoo' || selectedCharacter === 'Sung Jinwoo' || selectedCharacter === 'sung') && (
+                            <label className="flex items-center gap-2 cursor-pointer bg-gray-800/50 px-3 py-1.5 rounded-lg border border-green-500/50 hover:border-green-400 transition-colors">
+                              <input
+                                type="checkbox"
+                                checked={coopTraining}
+                                onChange={(e) => setCoopTraining(e.target.checked)}
+                                className="w-4 h-4 rounded bg-gray-700 border-gray-600 text-green-500 focus:ring-green-500 focus:ring-2 cursor-pointer"
+                              />
+                              <span className={`text-xs font-medium ${coopTraining ? 'text-green-400' : 'text-gray-400'}`}>
+                                Coop Training ({coopTraining ? `+${characters[selectedCharacter]?.scaleStat === 'HP' ? '5520' : '2760'} ${characters[selectedCharacter]?.scaleStat || 'ATK'}` : '+0'})
+                              </span>
+                            </label>
                           )}
 
                           <button
@@ -8604,6 +8641,21 @@ BobbyJones : "Allez l'Inter !"
                                   />
                                   <span className="text-purple-400 text-xs">⚔️</span>
                                 </div>
+                              )}
+
+                              {/* 🏋️ COOP TRAINING TOGGLE (pas pour Jinwoo) */}
+                              {!(selectedCharacter === 'jinwoo' || selectedCharacter === 'sung-jinwoo' || selectedCharacter === 'Sung Jinwoo' || selectedCharacter === 'sung') && (
+                                <label className="flex items-center gap-2 cursor-pointer bg-gray-800/50 px-3 py-1.5 rounded-lg border border-green-500/50 hover:border-green-400 transition-colors">
+                                  <input
+                                    type="checkbox"
+                                    checked={coopTraining}
+                                    onChange={(e) => setCoopTraining(e.target.checked)}
+                                    className="w-4 h-4 rounded bg-gray-700 border-gray-600 text-green-500 focus:ring-green-500 focus:ring-2 cursor-pointer"
+                                  />
+                                  <span className={`text-xs font-medium ${coopTraining ? 'text-green-400' : 'text-gray-400'}`}>
+                                    Coop ({coopTraining ? `+${characters[selectedCharacter]?.scaleStat === 'HP' ? '5520' : '2760'}` : '+0'})
+                                  </span>
+                                </label>
                               )}
 
                               {/* Bouton Modifier */}

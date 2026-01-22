@@ -658,6 +658,7 @@ const Theorycraft = () => {
                 sungWeapon: 'ennio', // Ennio's Roar (16% Def Pen)
                 rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
             });
+            setSungBlessing(true); // Activer Blessing (+24.5% TC)
         }
 
         // Team 1: Esil (8pc Greed), Reed (Armed + Obsidian), Gina (Guardian + Sylph)

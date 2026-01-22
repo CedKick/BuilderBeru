@@ -817,22 +817,8 @@ export const CHARACTER_BUFFS = {
         }
     },
 
-    // 🗡️ Weapon Reed (Arme) - Def Pen PERSONNEL
-    // A0=2%, A1=4%, A2=6%, A3=9%, A4=12%, A5=15%
+    // 🗡️ Weapon Reed (Arme) - N'apporte RIEN (le buff Def Pen vient du personnage)
     weapon_reed: {
-        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
-        buffs: {
-            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 2 } },
-            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 4 } },
-            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 6 } },
-            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 9 } },
-            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 12 } },
-            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 15 } },
-        }
-    },
-
-    // 🔥 Christopher Reed - N'apporte AUCUN buff (tout vient de l'arme)
-    reed: {
         baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
         buffs: {
             A0: { critRate: 0, critDMG: 0, defPen: 0 },
@@ -841,6 +827,19 @@ export const CHARACTER_BUFFS = {
             A3: { critRate: 0, critDMG: 0, defPen: 0 },
             A4: { critRate: 0, critDMG: 0, defPen: 0 },
             A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🔥 Christopher Reed - Buff PERSONNEL Def Pen (A0: 2.5%, A1: 4%, A2: 6%, A3: 9%, A4: 12%, A5: 15%)
+    reed: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 2.5 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 4 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 6 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 9 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 12 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 15 } },
         }
     },
 

@@ -49,14 +49,14 @@ export const characters = {
       }]
   },
   'yuqi': {
-    name: 'yuqi',
+    name: 'YUQI',
     img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403437/yuki_dqefqm.png',
     icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403437/yuki_dqefqm.png',
-    class: 'Fighter',
+    class: 'Breaker',
     grade: 'SSR',
     element: 'Fire',
     scaleStat: 'HP',
-     bdgLimits: {
+    bdgLimits: {
       maxDamageOnElement: 8000000000,  // 8B max si bon élément
       maxDamageOffElement: 2000000000  // 2B max si mauvais élément
     },
@@ -591,8 +591,8 @@ export const characters = {
   },
   'reed': {
     name: 'Christopher Reed',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820684/frieren_portrait_jtvtcd.png',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1769042084/Reed_portrait_ldj0p5.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1769042084/Reed_portrait_ldj0p5.png',
     class: 'Infusion',
     grade: 'SSR',
     element: 'Fire',
@@ -632,8 +632,8 @@ export const characters = {
   },
   'laura': {
     name: 'Laura',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/fern_portrait_vu4q7v.png',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1769042083/LauraPortrait_vrrea6.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1769042083/LauraPortrait_vrrea6.png',
     class: 'Support',
     grade: 'SSR',
     element: 'Light',
@@ -1404,8 +1404,8 @@ export const characters = {
   },
   'sian': {
     name: 'Sian Halat',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1759951014/ilhwan_uncoloried_uzywyu-removebg-preview_t87rro.png',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1769042083/Igris_portrait_xqbgqf.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1769042083/Igris_portrait_xqbgqf.png',
     class: 'Assassin',
     grade: 'SSR',
     element: 'Dark',
