@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { characters } from '../../data/characters';
 import { ARTIFACT_SETS, getSetBonuses } from '../../data/setData';
 import { CHARACTER_BUFFS, getCharacterBuffs, getCharacterBaseStats } from '../../data/characterBuffs';
+import { CHARACTER_ADVANCED_BUFFS, getCumulativeBuffs } from '../../data/characterAdvancedBuffs';
 import { statConversions, statConversionsWithEnemy, newDefPenFormula } from '../../utils/statConversions';
 import { OptimizationCard, InlineOptimizationDot, OptimizationBadge } from './OptimizationIndicator';
 import { CHARACTER_OPTIMIZATION, getOptimizationStatus, getOverallOptimization, getCurrentBenchmark, getMainStatStatus } from '../../data/characterOptimization';
@@ -590,20 +591,20 @@ const Theorycraft = () => {
         ];
         setTeam1(newTeam1);
 
-        // Team 2: Isla (Guardian+Sylph), Ilhwan (Armed+Expert), Lee Bora (Angel+Wish)
-        const islaChar = availableCharacters.find(c => c.id === 'isla');
+        // Team 2: Lim (Armed+Precision), Ilhwan (Armed+Expert), Lee Bora (Angel+Wish)
+        const limChar = availableCharacters.find(c => c.id === 'lim');
         const ilhwanChar = availableCharacters.find(c => c.id === 'ilhwan');
         const leeChar = availableCharacters.find(c => c.id === 'lee');
 
         const newTeam2 = [
-            islaChar ? {
-                ...islaChar,
+            limChar ? {
+                ...limChar,
                 advancement: 5,
                 weaponAdvancement: 5,
-                // 4pc Guardian + 4pc Sylph
-                leftSet: 'guardian',
+                // 4pc Armed + 4pc Precision (Breaker ATK Scaler optimal sets)
+                leftSet: 'armed',
                 leftPieces: 4,
-                rightSet: 'sylph',
+                rightSet: 'precision',
                 rightPieces: 4,
                 coreAttackTC: true,
                 rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
@@ -1296,6 +1297,31 @@ const Theorycraft = () => {
                     />
                 </div>
 
+                {/* Stats par Personnage - SECTION REPOSITIONNÉE */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="bg-gradient-to-r from-indigo-800/30 to-purple-800/30 backdrop-blur-sm rounded-xl p-6 mb-6 border border-indigo-500/50"
+                >
+                    <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                        👥 Stats par Personnage
+                    </h2>
+                    <p className="text-sm text-gray-400 mb-4">
+                        💡 Chaque personnage a des stats différentes selon ses buffs personnels et son élément. Survolez les valeurs pour voir le détail.
+                    </p>
+                    <IndividualStatsDisplay
+                        sungEnabled={sungEnabled}
+                        sungData={sungData}
+                        team1={team1}
+                        team2={team2}
+                        enemyLevel={enemyLevel}
+                        useNewDefPenFormula={useNewDefPenFormula}
+                        sungBlessing={sungBlessing}
+                        onCharacterClick={(teamId, slotId) => selectCharForDetails(teamId, slotId)}
+                    />
+                </motion.div>
+
                 {/* Panel de détails du personnage sélectionné */}
                 <AnimatePresence>
                     {selectedCharForDetails && (
@@ -1328,31 +1354,6 @@ const Theorycraft = () => {
                         />
                     )}
                 </AnimatePresence>
-
-                {/* Stats par Personnage - NOUVELLE SECTION */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="bg-gradient-to-r from-indigo-800/30 to-purple-800/30 backdrop-blur-sm rounded-xl p-6 border border-indigo-500/50"
-                >
-                    <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                        👥 Stats par Personnage
-                    </h2>
-                    <p className="text-sm text-gray-400 mb-4">
-                        💡 Chaque personnage a des stats différentes selon ses buffs personnels et son élément. Survolez les valeurs pour voir le détail.
-                    </p>
-                    <IndividualStatsDisplay
-                        sungEnabled={sungEnabled}
-                        sungData={sungData}
-                        team1={team1}
-                        team2={team2}
-                        enemyLevel={enemyLevel}
-                        useNewDefPenFormula={useNewDefPenFormula}
-                        sungBlessing={sungBlessing}
-                        onCharacterClick={(teamId, slotId) => selectCharForDetails(teamId, slotId)}
-                    />
-                </motion.div>
 
                 {/* Modal de sélection de personnage */}
                 {selectedSlot && (
@@ -1912,9 +1913,23 @@ const CharacterDetailsPanel = ({
                 </div>
             )}
 
+            {/* Section: Buffs/Debuffs Actifs (Advanced Mechanics) */}
+            {CHARACTER_ADVANCED_BUFFS[member.id] && (
+                <ActiveBuffsDisplayPanel
+                    characterId={member.id}
+                    advancement={member.advancement}
+                    weaponAdvancement={member.weaponAdvancement || 5}
+                />
+            )}
+
             {/* Section: Buffs donnés par advancement (A0 à A5) - VERSION DÉTAILLÉE */}
-            <div className="mt-6 bg-gray-800/50 rounded-lg p-4 border border-purple-700/50">
-                <h3 className="text-lg font-bold mb-3 text-green-400">👁️ {t('theorycraft.buffs.title')}</h3>
+            <CollapsibleSection
+                title="Buffs Donnés par Advancement (L'Œil de Sauron)"
+                icon="👁️"
+                defaultOpen={false}
+                borderColor="border-purple-700/50"
+                bgColor="bg-gray-800/50"
+            >
                 <p className="text-xs text-gray-400 mb-3">
                     {t('theorycraft.buffs.description')}
                 </p>
@@ -2075,16 +2090,363 @@ const CharacterDetailsPanel = ({
                         Les buffs spéciaux (personnels et conditionnels) sont affichés dans la dernière colonne.
                     </span>
                 </div>
-            </div>
+            </CollapsibleSection>
 
             {/* Section: Optimisation & Sweet Spots */}
             {CHARACTER_OPTIMIZATION[member.id] && (
-                <div className="mt-6 bg-gray-800/50 rounded-lg p-4 border border-green-700/50">
-                    <h3 className="text-lg font-bold mb-3 text-green-400">🎯 Optimisation & Sweet Spots</h3>
+                <CollapsibleSection
+                    title="Optimisation & Sweet Spots"
+                    icon="🎯"
+                    defaultOpen={false}
+                    borderColor="border-green-700/50"
+                    bgColor="bg-gray-800/50"
+                >
                     <CharacterOptimizationPanel characterId={member.id} />
-                </div>
+                </CollapsibleSection>
             )}
         </motion.div>
+    );
+};
+
+// Composant: Affichage des Buffs/Debuffs Actifs (Advanced Mechanics)
+const ActiveBuffsDisplayPanel = ({ characterId, advancement, weaponAdvancement }) => {
+    const charData = CHARACTER_ADVANCED_BUFFS[characterId];
+    if (!charData) return null;
+
+    // Obtenir les buffs cumulatifs jusqu'au niveau actuel
+    const advKey = `A${advancement}`;
+    const cumulativeData = getCumulativeBuffs(characterId, advKey);
+
+    // Obtenir les buffs de l'arme
+    const weaponId = `weapon_${characterId}`;
+    const weaponBuffs = CHARACTER_BUFFS[weaponId];
+    const weaponAdvKey = `A${weaponAdvancement}`;
+    const weaponData = weaponBuffs?.buffs?.[weaponAdvKey];
+
+    const currentAdv = charData.advancements[advKey];
+
+    // Vérifier que les données existent
+    if (!currentAdv || !cumulativeData) return null;
+
+    return (
+        <CollapsibleSection
+            title={
+                <span className="flex items-center gap-3 flex-1">
+                    <span className="text-emerald-400">Buffs & Debuffs Actifs</span>
+                    <span className="text-xs text-gray-400 font-normal">
+                        Advancement: <span className="text-purple-400 font-semibold">A{advancement}</span>
+                    </span>
+                </span>
+            }
+            icon="🔮"
+            defaultOpen={false}
+            borderColor="border-emerald-700/50"
+            bgColor="bg-gradient-to-br from-gray-800/60 to-gray-900/60"
+        >
+            <div className="space-y-4">
+                {/* SELF BUFFS (Vert) */}
+                {cumulativeData.selfBuffs && cumulativeData.selfBuffs.length > 0 && (
+                    <div>
+                        <div className="text-sm font-semibold text-green-400 mb-2 flex items-center gap-2">
+                            <span>💪</span> Buffs Personnels
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {cumulativeData.selfBuffs.map((buff, idx) => (
+                                <div
+                                    key={`self-${idx}`}
+                                    className="bg-green-900/20 border border-green-600/40 rounded-lg p-3 hover:border-green-500/60 transition-all"
+                                >
+                                    <div className="text-sm font-semibold text-green-300 mb-1">
+                                        {buff.name}
+                                    </div>
+                                    {buff.trigger && (
+                                        <div className="text-xs text-gray-400 mb-2 italic">
+                                            Trigger: {buff.trigger}
+                                        </div>
+                                    )}
+                                    <div className="text-xs text-green-200 space-y-0.5">
+                                        {Object.entries(buff.effects).map(([key, value]) => {
+                                            // Gérer les objets complexes (ex: selfDamage, shield, etc.)
+                                            if (typeof value === 'object' && value !== null) {
+                                                if (value.type && value.value !== undefined) {
+                                                    // Format pour selfDamage/shield: "10% current HP" ou "20% max HP"
+                                                    return (
+                                                        <div key={key}>
+                                                            • {key.replace(/([A-Z])/g, ' $1')}: {value.value}% {value.type.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                                                        </div>
+                                                    );
+                                                }
+                                                // Objets avec totalBonus (ex: Beast Form)
+                                                if (value.critRate !== undefined || value.critDMG !== undefined) {
+                                                    return (
+                                                        <div key={key}>
+                                                            • {key.replace(/([A-Z])/g, ' $1')}:
+                                                            {value.critRate && ` +${value.critRate}% TC`}
+                                                            {value.critDMG && ` +${value.critDMG}% DCC`}
+                                                        </div>
+                                                    );
+                                                }
+                                                // Autres objets complexes
+                                                return (
+                                                    <div key={key}>
+                                                        • {key.replace(/([A-Z])/g, ' $1')}: {JSON.stringify(value)}
+                                                    </div>
+                                                );
+                                            }
+                                            // Valeurs simples
+                                            return (
+                                                <div key={key}>
+                                                    • {key.replace(/([A-Z])/g, ' $1')}: +{value}%
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    {buff.duration && (
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            Durée: {buff.duration}s
+                                        </div>
+                                    )}
+                                    {buff.maxStacks && (
+                                        <div className="text-xs text-purple-400 mt-1">
+                                            Max {buff.maxStacks} stacks
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* TEAM BUFFS (Vert) */}
+                {cumulativeData.teamBuffs && cumulativeData.teamBuffs.length > 0 && (
+                    <div>
+                        <div className="text-sm font-semibold text-green-400 mb-2 flex items-center gap-2">
+                            <span>👥</span> Buffs d'Équipe (TEAM)
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {cumulativeData.teamBuffs.map((buff, idx) => (
+                                <div
+                                    key={`team-${idx}`}
+                                    className="bg-green-900/20 border border-green-600/40 rounded-lg p-3 hover:border-green-500/60 transition-all"
+                                >
+                                    <div className="text-sm font-semibold text-green-300 mb-1">
+                                        {buff.name}
+                                    </div>
+                                    {buff.trigger && (
+                                        <div className="text-xs text-gray-400 mb-2 italic">
+                                            Trigger: {buff.trigger}
+                                        </div>
+                                    )}
+                                    <div className="text-xs text-green-200 space-y-0.5">
+                                        {Object.entries(buff.effects).map(([key, value]) => {
+                                            // Gérer les objets complexes (ex: totalBonus avec critRate/critDMG)
+                                            if (typeof value === 'object' && value !== null) {
+                                                if (value.critRate !== undefined || value.critDMG !== undefined) {
+                                                    return (
+                                                        <div key={key}>
+                                                            • {key.replace(/([A-Z])/g, ' $1')}:
+                                                            {value.critRate && ` +${value.critRate}% TC`}
+                                                            {value.critDMG && ` +${value.critDMG}% DCC`}
+                                                        </div>
+                                                    );
+                                                }
+                                                // Autres objets complexes
+                                                return (
+                                                    <div key={key}>
+                                                        • {key.replace(/([A-Z])/g, ' $1')}: {JSON.stringify(value)}
+                                                    </div>
+                                                );
+                                            }
+                                            // Valeurs simples
+                                            return (
+                                                <div key={key}>
+                                                    • {key.replace(/([A-Z])/g, ' $1')}: +{value}%
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    {buff.targetScope && (
+                                        <div className="text-xs text-blue-400 mt-1">
+                                            Scope: {buff.targetScope}
+                                        </div>
+                                    )}
+                                    {buff.duration && (
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            Durée: {buff.duration === 'infinite' ? '∞' : `${buff.duration}s`}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* RAID BUFFS (Vert) */}
+                {cumulativeData.raidBuffs && cumulativeData.raidBuffs.length > 0 && (
+                    <div>
+                        <div className="text-sm font-semibold text-green-400 mb-2 flex items-center gap-2">
+                            <span>🌟</span> Buffs de Raid (RAID-WIDE)
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {cumulativeData.raidBuffs.map((buff, idx) => (
+                                <div
+                                    key={`raid-${idx}`}
+                                    className="bg-green-900/20 border border-green-600/40 rounded-lg p-3 hover:border-green-500/60 transition-all"
+                                >
+                                    <div className="text-sm font-semibold text-green-300 mb-1">
+                                        {buff.name}
+                                    </div>
+                                    {buff.trigger && (
+                                        <div className="text-xs text-gray-400 mb-2 italic">
+                                            Trigger: {buff.trigger}
+                                        </div>
+                                    )}
+                                    <div className="text-xs text-green-200 space-y-0.5">
+                                        {Object.entries(buff.effects).map(([key, value]) => {
+                                            // Gérer les objets complexes (ex: totalBonus avec critRate/critDMG)
+                                            if (typeof value === 'object' && value !== null) {
+                                                if (value.critRate !== undefined || value.critDMG !== undefined) {
+                                                    return (
+                                                        <div key={key}>
+                                                            • {key.replace(/([A-Z])/g, ' $1')}:
+                                                            {value.critRate && ` +${value.critRate}% TC`}
+                                                            {value.critDMG && ` +${value.critDMG}% DCC`}
+                                                        </div>
+                                                    );
+                                                }
+                                                // Autres objets complexes
+                                                return (
+                                                    <div key={key}>
+                                                        • {key.replace(/([A-Z])/g, ' $1')}: {JSON.stringify(value)}
+                                                    </div>
+                                                );
+                                            }
+                                            // Valeurs simples
+                                            return (
+                                                <div key={key}>
+                                                    • {key.replace(/([A-Z])/g, ' $1')}: +{value}%
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    {buff.targetScope && (
+                                        <div className="text-xs text-blue-400 mt-1">
+                                            Scope: {buff.targetScope}
+                                        </div>
+                                    )}
+                                    {buff.duration && (
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            Durée: {buff.duration === 'infinite' ? '∞' : `${buff.duration}s`}
+                                        </div>
+                                    )}
+                                    {buff.perAllyBonus && (
+                                        <div className="text-xs text-purple-400 mt-1">
+                                            +{buff.perAllyBonus}% par allié {buff.targetElement}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* WEAPON BUFFS (Vert si conditionnel) */}
+                {weaponData?.conditionalBuff && (
+                    <div>
+                        <div className="text-sm font-semibold text-amber-400 mb-2 flex items-center gap-2">
+                            <span>⚔️</span> Buff d'Arme (Conditionnel)
+                        </div>
+                        <div className="bg-amber-900/20 border border-amber-600/40 rounded-lg p-3 hover:border-amber-500/60 transition-all">
+                            <div className="text-sm font-semibold text-amber-300 mb-1">
+                                Crimson Shadow - Dark Damage
+                            </div>
+                            <div className="text-xs text-gray-400 mb-2 italic">
+                                Trigger: Ennemi a Dark Overload
+                            </div>
+                            <div className="text-xs text-amber-200 space-y-0.5">
+                                <div>
+                                    • +{weaponData.conditionalBuff.darkDamagePerStack}% Dark Damage par stack
+                                </div>
+                                <div>
+                                    • Max {weaponData.conditionalBuff.maxStacks} stacks = +{weaponData.conditionalBuff.darkDamagePerStack * weaponData.conditionalBuff.maxStacks}% Dark Damage
+                                </div>
+                            </div>
+                            <div className="text-xs text-blue-400 mt-1">
+                                Scope: {weaponData.conditionalBuff.targetScope}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ENEMY DEBUFFS (Rouge) */}
+                {cumulativeData.debuffs && cumulativeData.debuffs.length > 0 && (
+                    <div>
+                        <div className="text-sm font-semibold text-red-400 mb-2 flex items-center gap-2">
+                            <span>🎯</span> Debuffs sur Ennemis
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {cumulativeData.debuffs.map((debuff, idx) => (
+                                <div
+                                    key={`debuff-${idx}`}
+                                    className="bg-red-900/20 border border-red-600/40 rounded-lg p-3 hover:border-red-500/60 transition-all"
+                                >
+                                    <div className="text-sm font-semibold text-red-300 mb-1">
+                                        {debuff.name}
+                                    </div>
+                                    {debuff.trigger && (
+                                        <div className="text-xs text-gray-400 mb-2 italic">
+                                            Trigger: {debuff.trigger}
+                                        </div>
+                                    )}
+                                    <div className="text-xs text-red-200 space-y-0.5">
+                                        {Object.entries(debuff.effects).map(([key, value]) => {
+                                            // Gérer les objets complexes (ex: bleed avec type/value/interval)
+                                            if (typeof value === 'object' && value !== null) {
+                                                if (value.type && value.value !== undefined) {
+                                                    // Format: "bleed: 1% current HP every 3s"
+                                                    return (
+                                                        <div key={key}>
+                                                            • {key}: {value.value}% {value.type.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                                                            {value.interval && ` every ${value.interval}s`}
+                                                        </div>
+                                                    );
+                                                }
+                                                // Autres objets complexes
+                                                return (
+                                                    <div key={key}>
+                                                        • {key.replace(/([A-Z])/g, ' $1')}: {JSON.stringify(value)}
+                                                    </div>
+                                                );
+                                            }
+                                            // Valeurs simples
+                                            return (
+                                                <div key={key}>
+                                                    • {key.replace(/([A-Z])/g, ' $1')}: +{value}%
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    {debuff.duration && (
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            Durée: {debuff.duration}s
+                                        </div>
+                                    )}
+                                    {debuff.maxStacks && (
+                                        <div className="text-xs text-purple-400 mt-1">
+                                            Max {debuff.maxStacks} stacks
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="mt-4 text-xs text-gray-400 italic border-t border-gray-700 pt-3">
+                💡 Ces buffs/debuffs sont cumulatifs selon l'advancement. Les mécaniques avancées (gauge, stacks, conditionnels) sont affichées ici.
+            </div>
+        </CollapsibleSection>
     );
 };
 
@@ -2439,6 +2801,50 @@ const MainStatInput = ({ label, value, onChange, characterId, icon, color }) => 
     );
 };
 
+// Composant: Section Collapsible avec animation
+const CollapsibleSection = ({ title, icon, defaultOpen = false, borderColor = 'border-gray-700/50', bgColor = 'bg-gray-800/50', children }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+
+    return (
+        <div className={`mt-6 ${bgColor} rounded-lg border ${borderColor} overflow-hidden`}>
+            {/* Header cliquable */}
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors"
+            >
+                <h3 className="text-lg font-bold text-green-400 flex items-center gap-2">
+                    {icon && <span>{icon}</span>}
+                    {title}
+                </h3>
+                <motion.div
+                    animate={{ rotate: isOpen ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-gray-400"
+                >
+                    <ChevronDown size={20} />
+                </motion.div>
+            </button>
+
+            {/* Contenu avec animation */}
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                    >
+                        <div className="p-4 pt-0">
+                            {children}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
 // Composant: Bouton de preset pour appliquer des stats rapidement
 const PresetButton = ({ label, description, color, benchmarks, mainStatValue, mainStatLabel, onClick }) => {
     return (
@@ -2641,11 +3047,37 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
         let totalCritDMG = 0;
         let totalDefPen = 0;
 
+        // Advanced stats (nouveaux)
+        let totalDarkDamage = 0;
+        let totalDarkDamageOL = 0;  // Dark DMG conditionnel (During Overload uniquement)
+        let totalAttack = 0;
+        let totalHP = 0;  // HP% bonus (pour hunters qui scale sur HP)
+        let totalDefense = 0;  // DEF% bonus (pour hunters qui scale sur DEF)
+        let totalDarkElementalAccumulation = 0;
+        let totalDarkOverloadDamage = 0;
+        let totalDamageVsDarkOverloaded = 0;
+        let totalDarkDamageTaken = 0;
+        let totalDarkOverloadDamageTaken = 0;
+        let totalBasicSkillDamage = 0;  // Basic Skill DMG
+        let totalUltimateSkillDamage = 0;  // Ultimate Skill DMG
+
         // Breakdown détaillé (pour affichage au hover)
         const breakdown = {
             critRate: [],
             critDMG: [],
-            defPen: []
+            defPen: [],
+            darkDamage: [],
+            darkDamageOL: [],  // Dark DMG conditionnel (During Overload)
+            attack: [],
+            hp: [],  // HP% bonus
+            defense: [],  // DEF% bonus
+            darkElementalAccumulation: [],
+            darkOverloadDamage: [],
+            damageVsDarkOverloaded: [],
+            darkDamageTaken: [],
+            darkOverloadDamageTaken: [],
+            basicSkillDamage: [],  // Basic Skill DMG
+            ultimateSkillDamage: []  // Ultimate Skill DMG
         };
 
         // 1. WEAPON BUFFS (RAID-wide)
@@ -2703,41 +3135,66 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
             }
         }
 
-        // Isla: Team buff (TC + DCC pour sa team uniquement)
-        // Trouver si Isla est dans une team et appliquer son buff uniquement à sa team
-        const islaInTeam1 = team1.find(m => m && m.id === 'isla');
-        const islaInTeam2 = team2.find(m => m && m.id === 'isla');
+        // Lim Tae-Gyu: RAID buff (TC + DCC stacking pour TOUT LE RAID)
+        // Chercher Lim dans allMembers (peu importe sa team)
+        const limInRaid = allMembers.find(m => m && m.id === 'lim');
 
-        // Si Isla est présente et a A0+, appliquer son buff de team
-        if (islaInTeam1 && islaInTeam1.advancement >= 0) {
-            // Isla est dans Team1 - buff pour tous les membres de Team1 + Sung (teamId 0 ou 1)
-            if (member.teamId === 0 || member.teamId === 1) {
-                const islaBuffs = getCharacterBuffs('isla', islaInTeam1.advancement);
-                if (islaBuffs.teamBuff) {
-                    if (islaBuffs.teamBuff.critRate > 0) {
-                        totalCritRate += islaBuffs.teamBuff.critRate;
-                        breakdown.critRate.push({ source: `team buff (Isla A${islaInTeam1.advancement})`, value: islaBuffs.teamBuff.critRate });
+        // Si Lim est présent et a A1+, appliquer son buff RAID (max stacks pour Theorycraft optimal)
+        if (limInRaid && limInRaid.advancement >= 1) {
+            // Lim buff pour TOUT LE RAID (teamId 0, 1, 2)
+            const limBuffs = getCharacterBuffs('lim', limInRaid.advancement);
+
+            if (limBuffs.conditionalBuff?.totalBonus) {
+                // Appliquer les buffs max stacks (8 stacks = +5.6% TC + 8% DCC)
+                if (limBuffs.conditionalBuff.totalBonus.critRate > 0) {
+                    totalCritRate += limBuffs.conditionalBuff.totalBonus.critRate;
+                    breakdown.critRate.push({ source: `🏹 RAID buff (Lim A${limInRaid.advancement} - 8 stacks)`, value: limBuffs.conditionalBuff.totalBonus.critRate });
+                }
+                if (limBuffs.conditionalBuff.totalBonus.critDMG > 0) {
+                    totalCritDMG += limBuffs.conditionalBuff.totalBonus.critDMG;
+                    breakdown.critDMG.push({ source: `🏹 RAID buff (Lim A${limInRaid.advancement} - 8 stacks)`, value: limBuffs.conditionalBuff.totalBonus.critDMG });
+                }
+            }
+        }
+
+        // Son Kihoon : Team/RAID buffs (A4: +10% ATK/HP team, A5: +10% ATK/HP/DMG RAID)
+        // Trouver si Son est dans une team et appliquer ses buffs
+        const sonForBuffs = sonInTeam1 || sonInTeam2;
+        if (sonForBuffs && sonForBuffs.advancement >= 4) {
+            const sonBuffsData = CHARACTER_BUFFS['son'];
+            const sonAdvKey = `A${sonForBuffs.advancement}`;
+            const sonAdvBuffs = sonBuffsData?.buffs?.[sonAdvKey];
+
+            // A4 : Team buffs (+10% ATK/HP pour la team)
+            if (sonForBuffs.advancement === 4 && sonAdvBuffs?.teamBuffs) {
+                // Vérifier si member est dans la même team que Son
+                const sonTeam = sonInTeam1 ? [0, 1] : [2]; // Son in Team1 → teamId 0 ou 1, Son in Team2 → teamId 2
+                const memberInSameTeam = sonTeam.includes(member.teamId);
+
+                if (memberInSameTeam) {
+                    if (sonAdvBuffs.teamBuffs.attack > 0) {
+                        totalAttack += sonAdvBuffs.teamBuffs.attack;
+                        breakdown.attack.push({ source: `🛡️ Son Kihoon Team Buff (A4)`, value: sonAdvBuffs.teamBuffs.attack });
                     }
-                    if (islaBuffs.teamBuff.critDMG > 0) {
-                        totalCritDMG += islaBuffs.teamBuff.critDMG;
-                        breakdown.critDMG.push({ source: `team buff (Isla A${islaInTeam1.advancement})`, value: islaBuffs.teamBuff.critDMG });
+                    if (sonAdvBuffs.teamBuffs.hp > 0) {
+                        totalHP += sonAdvBuffs.teamBuffs.hp;
+                        breakdown.hp.push({ source: `🛡️ Son Kihoon Team Buff (A4)`, value: sonAdvBuffs.teamBuffs.hp });
                     }
                 }
             }
-        } else if (islaInTeam2 && islaInTeam2.advancement >= 0) {
-            // Isla est dans Team2 - buff uniquement pour les membres de Team2 (teamId 2)
-            if (member.teamId === 2) {
-                const islaBuffs = getCharacterBuffs('isla', islaInTeam2.advancement);
-                if (islaBuffs.teamBuff) {
-                    if (islaBuffs.teamBuff.critRate > 0) {
-                        totalCritRate += islaBuffs.teamBuff.critRate;
-                        breakdown.critRate.push({ source: `team buff (Isla A${islaInTeam2.advancement})`, value: islaBuffs.teamBuff.critRate });
-                    }
-                    if (islaBuffs.teamBuff.critDMG > 0) {
-                        totalCritDMG += islaBuffs.teamBuff.critDMG;
-                        breakdown.critDMG.push({ source: `team buff (Isla A${islaInTeam2.advancement})`, value: islaBuffs.teamBuff.critDMG });
-                    }
+
+            // A5 : RAID buffs (+10% ATK/HP/DMG dealt pour tout le RAID) - Strike Squad Leader
+            if (sonForBuffs.advancement >= 5 && sonAdvBuffs?.raidBuffs) {
+                if (sonAdvBuffs.raidBuffs.attack > 0) {
+                    totalAttack += sonAdvBuffs.raidBuffs.attack;
+                    breakdown.attack.push({ source: `🛡️ Son Strike Squad Leader (A5 RAID)`, value: sonAdvBuffs.raidBuffs.attack });
                 }
+                if (sonAdvBuffs.raidBuffs.hp > 0) {
+                    totalHP += sonAdvBuffs.raidBuffs.hp;
+                    breakdown.hp.push({ source: `🛡️ Son Strike Squad Leader (A5 RAID)`, value: sonAdvBuffs.raidBuffs.hp });
+                }
+                // Note: damageDealt (+10% DMG dealt) n'est pas géré dans le système actuel
+                // TODO: Ajouter damageDealt comme nouvelle stat si nécessaire
             }
         }
 
@@ -2926,6 +3383,26 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
             }
         }
 
+        // Weapon Sian : Buff TEAM conditionnel Dark Damage (when boss has Dark Overload)
+        // S'applique à tous les membres de la team de Sian
+        const sianInTeam = member.teamId === 1
+            ? team1.find(m => m && m.id === 'sian' && m.weaponAdvancement > 0)
+            : member.teamId === 2
+                ? team2.find(m => m && m.id === 'sian' && m.weaponAdvancement > 0)
+                : null;
+
+        if (sianInTeam) {
+            const sianWeaponBuffs = getCharacterBuffs('weapon_sian', sianInTeam.weaponAdvancement);
+            if (sianWeaponBuffs.conditionalBuff) {
+                const darkDmgValue = sianWeaponBuffs.conditionalBuff.darkDamagePerStack * sianWeaponBuffs.conditionalBuff.maxStacks;
+                totalDarkDamageOL += darkDmgValue;  // Ajouter à la stat conditionnelle OL
+                breakdown.darkDamageOL.push({
+                    source: `Crimson Shadow (Sian Weapon A${sianInTeam.weaponAdvancement}) - Scope: TEAM • ${sianWeaponBuffs.conditionalBuff.darkDamagePerStack}% × ${sianWeaponBuffs.conditionalBuff.maxStacks} stacks`,
+                    value: darkDmgValue
+                });
+            }
+        }
+
         // Minnie : buffs personnels de son arme (uniquement pour elle-même)
         if (member.id === 'minnie' && member.weaponAdvancement >= 0) {
             const minnieWeaponBuffs = getCharacterBuffs('weapon_minnie', member.weaponAdvancement);
@@ -2941,6 +3418,18 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
             }
         }
 
+        // Son Kihoon : buffs personnels de son arme (uniquement pour lui-même)
+        // +12% HP (A5) + team Dark DMG conditionnel (break trigger)
+        if (member.id === 'son' && member.weaponAdvancement >= 0) {
+            const sonWeaponBuffs = getCharacterBuffs('weapon_son', member.weaponAdvancement);
+            if (sonWeaponBuffs.personalBuffs) {
+                if (sonWeaponBuffs.personalBuffs.hp > 0) {
+                    totalHP += sonWeaponBuffs.personalBuffs.hp;
+                    breakdown.hp.push({ source: `⚔️ Son weapon A${member.weaponAdvancement}`, value: sonWeaponBuffs.personalBuffs.hp });
+                }
+            }
+        }
+
         // 6. BUFFS CONDITIONNELS RAID (selon l'élément)
         // Lee Bora A2+ : +2% DCC par Dark hunter, appliqué à TOUS les Dark hunters
         if (leeBoraA2InRaid && memberElement === 'Dark') {
@@ -2951,20 +3440,6 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                 breakdown.critDMG.push({
                     source: `raid buff (Lee Bora) - ${darkHunterCount} Dark × ${leeA2.conditionalBuff.critDMGPerAlly}%`,
                     value: raidDarkBonus
-                });
-            }
-        }
-
-        // Sian A4+ : +3% Def Pen par Dark hunter, appliqué à TOUS les Dark hunters
-        const sianA4InRaid = allMembers.find(m => m.id === 'sian' && m.advancement >= 4);
-        if (sianA4InRaid && memberElement === 'Dark') {
-            const sianA4 = getCharacterBuffs('sian', member.advancement >= 4 ? member.advancement : 4);
-            if (sianA4.conditionalBuff && sianA4.conditionalBuff.targetElement === 'Dark') {
-                const raidDarkDefPenBonus = darkHunterCount * sianA4.conditionalBuff.defPenPerAlly;
-                totalDefPen += raidDarkDefPenBonus;
-                breakdown.defPen.push({
-                    source: `raid buff (Sian) - ${darkHunterCount} Dark × ${sianA4.conditionalBuff.defPenPerAlly}%`,
-                    value: raidDarkDefPenBonus
                 });
             }
         }
@@ -3181,13 +3656,274 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
             breakdown.defPen.push({ source: `🔢 Valeurs Brutes (${member.rawStats.defPen.toLocaleString()} Def Pen)`, value: defPenPercent });
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // 8. ADVANCED BUFFS (CHARACTER_ADVANCED_BUFFS)
+        // ═══════════════════════════════════════════════════════════════
+
+        // 8.1 BUFFS PERSONNELS (selfBuffs) du membre actuel
+        if (CHARACTER_ADVANCED_BUFFS[member.id]) {
+            const advKey = `A${member.advancement}`;
+            const cumulativeData = getCumulativeBuffs(member.id, advKey);
+
+            if (cumulativeData && cumulativeData.selfBuffs) {
+                cumulativeData.selfBuffs.forEach(buff => {
+                    const effects = buff.effects || {};
+                    const characterName = member.name || member.id;
+                    const buffName = buff.name;
+
+                    // Dark Damage
+                    if (effects.darkDamage) {
+                        totalDarkDamage += effects.darkDamage;
+                        breakdown.darkDamage.push({
+                            source: `${buffName} (${characterName}) - Scope: PERSONAL`,
+                            value: effects.darkDamage
+                        });
+                    }
+
+                    // Attack (ATK%)
+                    if (effects.attack) {
+                        totalAttack += effects.attack;
+                        breakdown.attack.push({
+                            source: `${characterName} - ${buffName}`,
+                            value: effects.attack
+                        });
+                    }
+
+                    // HP% (pour hunters qui scale sur HP)
+                    if (effects.hp) {
+                        totalHP += effects.hp;
+                        breakdown.hp.push({
+                            source: `${characterName} - ${buffName}`,
+                            value: effects.hp
+                        });
+                    }
+
+                    // Defense% (pour hunters qui scale sur DEF)
+                    if (effects.defense) {
+                        totalDefense += effects.defense;
+                        breakdown.defense.push({
+                            source: `${characterName} - ${buffName}`,
+                            value: effects.defense
+                        });
+                    }
+
+                    // Dark Elemental Accumulation
+                    if (effects.darkElementalAccumulation) {
+                        totalDarkElementalAccumulation += effects.darkElementalAccumulation;
+                        breakdown.darkElementalAccumulation.push({
+                            source: `${characterName} - ${buffName}`,
+                            value: effects.darkElementalAccumulation
+                        });
+                    }
+
+                    // Basic Skill Damage (per stack ou direct)
+                    if (effects.basicSkillDamagePerStack) {
+                        const maxStacks = buff.maxStacks || 1;
+                        const maxValue = effects.basicSkillDamagePerStack * maxStacks;
+                        totalBasicSkillDamage += maxValue;
+                        breakdown.basicSkillDamage.push({
+                            source: `${buffName} (${characterName}) - ${effects.basicSkillDamagePerStack}% × ${maxStacks} stack${maxStacks > 1 ? 's' : ''}`,
+                            value: maxValue
+                        });
+                    }
+
+                    // Ultimate Skill Damage (per stack ou direct)
+                    if (effects.ultimateSkillDamagePerStack) {
+                        const maxStacks = buff.maxStacks || 1;
+                        const maxValue = effects.ultimateSkillDamagePerStack * maxStacks;
+                        totalUltimateSkillDamage += maxValue;
+                        breakdown.ultimateSkillDamage.push({
+                            source: `${buffName} (${characterName}) - ${effects.ultimateSkillDamagePerStack}% × ${maxStacks} stack${maxStacks > 1 ? 's' : ''}`,
+                            value: maxValue
+                        });
+                    }
+                });
+            }
+        }
+
+        // 8.2 TEAM BUFFS - Appliquer les buffs de team des autres membres de la même team
+        const sameTeamMembers = member.teamId === 0
+            ? [...team1.filter(m => m)] // Sung est team 0, reçoit buffs de team1
+            : member.teamId === 1
+                ? team1.filter(m => m)
+                : team2.filter(m => m);
+
+        sameTeamMembers.forEach(teamMember => {
+            if (!teamMember || !CHARACTER_ADVANCED_BUFFS[teamMember.id]) return;
+
+            const advKey = `A${teamMember.advancement}`;
+            const cumulativeData = getCumulativeBuffs(teamMember.id, advKey);
+
+            if (cumulativeData && cumulativeData.teamBuffs) {
+                cumulativeData.teamBuffs.forEach(buff => {
+                    const effects = buff.effects || {};
+                    const characterName = teamMember.name || teamMember.id;
+                    const buffName = buff.name;
+
+                    // Damage vs Dark Overloaded
+                    if (effects.damageVsDarkOverloaded) {
+                        totalDamageVsDarkOverloaded += effects.damageVsDarkOverloaded;
+                        breakdown.damageVsDarkOverloaded.push({
+                            source: `${buffName} (${characterName}) - Scope: TEAM`,
+                            value: effects.damageVsDarkOverloaded
+                        });
+                    }
+                });
+            }
+        });
+
+        // 8.3 RAID BUFFS - Appliquer les buffs de raid de tous les membres du raid
+        allMembers.forEach(raidMember => {
+            if (!raidMember || !CHARACTER_ADVANCED_BUFFS[raidMember.id]) return;
+
+            const advKey = `A${raidMember.advancement}`;
+            const cumulativeData = getCumulativeBuffs(raidMember.id, advKey);
+
+            if (cumulativeData && cumulativeData.raidBuffs) {
+                cumulativeData.raidBuffs.forEach(buff => {
+                    const effects = buff.effects || {};
+                    const scope = buff.scope || 'raid';
+                    const characterName = raidMember.name || raidMember.id;
+                    const buffName = buff.name;
+
+                    // Vérifier le scope (raid-dark, raid-fire, team-dark, etc.)
+                    if (scope === 'raid-dark' && memberElement !== 'Dark') return;
+                    if (scope === 'raid-fire' && memberElement !== 'Fire') return;
+
+                    // Scope team-dark : Applique uniquement aux Dark de la MÊME TEAM que le buffer
+                    if (scope === 'team-dark') {
+                        // Vérifier si le membre actuel est Dark
+                        if (memberElement !== 'Dark') return;
+
+                        // Vérifier si le raidMember (qui donne le buff) est dans la même team que member
+                        // Utiliser le teamId qui a été défini lors de la création de allMembers (lignes 2929-2931)
+                        const buffGiverTeam = raidMember.teamId;
+                        const buffReceiverTeam = member.teamId;
+
+                        // Si pas dans la même team, skip
+                        if (buffGiverTeam !== buffReceiverTeam) return;
+                    }
+
+                    // Dark Overload Damage
+                    if (effects.darkOverloadDamage) {
+                        totalDarkOverloadDamage += effects.darkOverloadDamage;
+                        const scopeLabel = scope === 'raid-dark' ? 'RAID Dark' : scope === 'raid' ? 'RAID' : 'TEAM';
+                        breakdown.darkOverloadDamage.push({
+                            source: `${buffName} (${characterName}) - Scope: ${scopeLabel}`,
+                            value: effects.darkOverloadDamage
+                        });
+                    }
+
+                    // Def Pen from raid buffs (ex: Sian A5 Zenith Sword)
+                    if (effects.defPen) {
+                        totalDefPen += effects.defPen;
+                        breakdown.defPen.push({
+                            source: `raid buff (${characterName} - ${buffName})`,
+                            value: effects.defPen
+                        });
+                    }
+
+                    // Attack from raid buffs
+                    if (effects.attack) {
+                        totalAttack += effects.attack;
+                        breakdown.attack.push({
+                            source: `raid buff (${characterName} - ${buffName})`,
+                            value: effects.attack
+                        });
+                    }
+
+                    // HP% from raid buffs
+                    if (effects.hp) {
+                        totalHP += effects.hp;
+                        breakdown.hp.push({
+                            source: `raid buff (${characterName} - ${buffName})`,
+                            value: effects.hp
+                        });
+                    }
+
+                    // Defense% from raid buffs
+                    if (effects.defense) {
+                        totalDefense += effects.defense;
+                        breakdown.defense.push({
+                            source: `raid buff (${characterName} - ${buffName})`,
+                            value: effects.defense
+                        });
+                    }
+
+                    // Def Pen per Dark Ally (ex: Sian A5 passive)
+                    if (effects.defPenPerDarkAlly) {
+                        const darkCount = allMembers.filter(m => {
+                            const charData = characters[m.id];
+                            return charData && charData.element === 'Dark';
+                        }).length;
+                        const totalValue = effects.defPenPerDarkAlly * darkCount;
+                        totalDefPen += totalValue;
+                        breakdown.defPen.push({
+                            source: `raid buff (${characterName} - ${buffName}) - ${darkCount} Dark × ${effects.defPenPerDarkAlly}%`,
+                            value: totalValue
+                        });
+                    }
+                });
+            }
+        });
+
+        // 8.4 DEBUFFS SUR ENNEMIS - Calculer les debuffs max des membres de la team
+        allMembers.forEach(raidMember => {
+            if (!raidMember || !CHARACTER_ADVANCED_BUFFS[raidMember.id]) return;
+
+            const advKey = `A${raidMember.advancement}`;
+            const cumulativeData = getCumulativeBuffs(raidMember.id, advKey);
+
+            if (cumulativeData && cumulativeData.debuffs) {
+                cumulativeData.debuffs.forEach(debuff => {
+                    const effects = debuff.effects || {};
+                    const maxStacks = debuff.maxStacks || 1;
+                    const characterName = raidMember.name || raidMember.id;
+                    const debuffName = debuff.name;
+
+                    // Dark Damage Taken (sur l'ennemi)
+                    if (effects.darkDamageTaken) {
+                        const maxValue = effects.darkDamageTaken * maxStacks;
+                        totalDarkDamageTaken += maxValue;
+                        breakdown.darkDamageTaken.push({
+                            source: `${debuffName} (${characterName}) - Scope: Debuff Boss • ${effects.darkDamageTaken}% × ${maxStacks} stack${maxStacks > 1 ? 's' : ''}`,
+                            value: maxValue
+                        });
+                    }
+
+                    // Dark Overload Damage Taken (sur l'ennemi)
+                    if (effects.darkOverloadDamageTaken) {
+                        const maxValue = effects.darkOverloadDamageTaken * maxStacks;
+                        totalDarkOverloadDamageTaken += maxValue;
+                        breakdown.darkOverloadDamageTaken.push({
+                            source: `${debuffName} (${characterName}) - Scope: Debuff Boss • ${effects.darkOverloadDamageTaken}% × ${maxStacks} stack${maxStacks > 1 ? 's' : ''}`,
+                            value: maxValue
+                        });
+                    }
+                });
+            }
+        });
+
         return {
             ...member,
             element: memberElement,
             finalStats: {
                 critRate: totalCritRate,
                 critDMG: totalCritDMG + 50, // Ajouter le 50% de base pour l'affichage final
-                defPen: totalDefPen
+                defPen: totalDefPen,
+                // Advanced stats
+                darkDamage: totalDarkDamage,
+                darkDamageOL: totalDarkDamageOL,  // Dark DMG conditionnel (During Overload)
+                attack: totalAttack,
+                hp: totalHP,  // HP% bonus
+                defense: totalDefense,  // DEF% bonus
+                darkElementalAccumulation: totalDarkElementalAccumulation,
+                darkOverloadDamage: totalDarkOverloadDamage,
+                damageVsDarkOverloaded: totalDamageVsDarkOverloaded,
+                darkDamageTaken: totalDarkDamageTaken,
+                darkOverloadDamageTaken: totalDarkOverloadDamageTaken,
+                basicSkillDamage: totalBasicSkillDamage,  // Basic Skill DMG
+                ultimateSkillDamage: totalUltimateSkillDamage  // Ultimate Skill DMG
             },
             breakdown
         };
@@ -3255,6 +3991,7 @@ const IndividualCharacterStatCard = ({ member, onClick }) => {
             </div>
 
             {/* Stats avec breakdown au hover + indicateurs d'optimisation */}
+            {/* SECTION 1 - Stats permanentes (toujours actives) */}
             <div className="space-y-2">
                 <StatWithBreakdown
                     label="TC"
@@ -3284,7 +4021,142 @@ const IndividualCharacterStatCard = ({ member, onClick }) => {
                     characterId={member.id}
                     statName="defPen"
                 />
+
+                {/* Afficher ATK, HP ou DEF selon le scaleStat du personnage */}
+                {(() => {
+                    const charAdvData = CHARACTER_ADVANCED_BUFFS[member.id];
+                    const scaleStat = charAdvData?.scaleStat || 'ATK'; // Par défaut ATK
+
+                    if (scaleStat === 'HP' && member.finalStats.hp > 0) {
+                        return (
+                            <StatWithBreakdown
+                                label="HP"
+                                value={member.finalStats.hp}
+                                breakdown={member.breakdown.hp}
+                                color="text-green-400"
+                                icon="💚"
+                            />
+                        );
+                    } else if (scaleStat === 'DEF' && member.finalStats.defense > 0) {
+                        return (
+                            <StatWithBreakdown
+                                label="DEF"
+                                value={member.finalStats.defense}
+                                breakdown={member.breakdown.defense}
+                                color="text-cyan-400"
+                                icon="🛡️"
+                            />
+                        );
+                    } else if (scaleStat === 'ATK' && member.finalStats.attack > 0) {
+                        return (
+                            <StatWithBreakdown
+                                label="ATK"
+                                value={member.finalStats.attack}
+                                breakdown={member.breakdown.attack}
+                                color="text-orange-400"
+                                icon="⚡"
+                            />
+                        );
+                    }
+                    return null;
+                })()}
+
+                {member.finalStats.darkElementalAccumulation > 0 && (
+                    <StatWithBreakdown
+                        label="Elem Acc"
+                        value={member.finalStats.darkElementalAccumulation}
+                        breakdown={member.breakdown.darkElementalAccumulation}
+                        color="text-indigo-400"
+                        icon="🔮"
+                    />
+                )}
+
+                {member.finalStats.darkDamage > 0 && (
+                    <StatWithBreakdown
+                        label="Dark DMG"
+                        value={member.finalStats.darkDamage}
+                        breakdown={member.breakdown.darkDamage}
+                        color="text-purple-400"
+                        icon="🌑"
+                    />
+                )}
+
+                {member.finalStats.darkDamageTaken > 0 && (
+                    <StatWithBreakdown
+                        label="Dark DMG Taken"
+                        value={member.finalStats.darkDamageTaken}
+                        breakdown={member.breakdown.darkDamageTaken}
+                        color="text-pink-400"
+                        icon="💔"
+                    />
+                )}
+
+                {/* Basic Skill DMG - Toujours affiché si > 0 */}
+                {member.finalStats.basicSkillDamage > 0 && (
+                    <StatWithBreakdown
+                        label="Basic Skill DMG"
+                        value={member.finalStats.basicSkillDamage}
+                        breakdown={member.breakdown.basicSkillDamage}
+                        color="text-cyan-400"
+                        icon="🎯"
+                    />
+                )}
+
+                {/* Ultimate Skill DMG - Toujours affiché si > 0 */}
+                {member.finalStats.ultimateSkillDamage > 0 && (
+                    <StatWithBreakdown
+                        label="Ultimate Skill DMG"
+                        value={member.finalStats.ultimateSkillDamage}
+                        breakdown={member.breakdown.ultimateSkillDamage}
+                        color="text-amber-400"
+                        icon="💫"
+                    />
+                )}
             </div>
+
+            {/* SECTION 2 - During Overload (stats conditionnelles OL) */}
+            {(member.finalStats.darkDamageOL > 0 || member.finalStats.darkOverloadDamage > 0 || member.finalStats.damageVsDarkOverloaded > 0 || member.finalStats.darkOverloadDamageTaken > 0) && (
+                <div className="mt-3 pt-3 border-t border-purple-500/30">
+                    <div className="text-xs text-purple-400 font-semibold mb-2 flex items-center gap-1">
+                        <span>⚡</span>
+                        <span>During Overload</span>
+                    </div>
+                    <div className="space-y-2">
+                        {member.finalStats.darkDamageOL > 0 && (
+                            <StatWithBreakdown
+                                label="Dark DMG (OL)"
+                                value={member.finalStats.darkDamageOL}
+                                breakdown={member.breakdown.darkDamageOL}
+                                color="text-purple-400"
+                                icon="🌑"
+                            />
+                        )}
+
+                        {(member.finalStats.darkOverloadDamage > 0 || member.finalStats.damageVsDarkOverloaded > 0) && (
+                            <StatWithBreakdown
+                                label="DMG (OL)"
+                                value={(member.finalStats.darkOverloadDamage || 0) + (member.finalStats.damageVsDarkOverloaded || 0)}
+                                breakdown={[
+                                    ...(member.breakdown.darkOverloadDamage || []),
+                                    ...(member.breakdown.damageVsDarkOverloaded || [])
+                                ]}
+                                color="text-violet-400"
+                                icon="💥"
+                            />
+                        )}
+
+                        {member.finalStats.darkOverloadDamageTaken > 0 && (
+                            <StatWithBreakdown
+                                label="Overload DMG Taken (OL)"
+                                value={member.finalStats.darkOverloadDamageTaken}
+                                breakdown={member.breakdown.darkOverloadDamageTaken}
+                                color="text-rose-400"
+                                icon="💢"
+                            />
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Carte d'optimisation (si données disponibles) */}
             {hasOptimizationData && overall && (

@@ -1154,6 +1154,46 @@ export const characters = {
         element: 'Wind'
       }]
   },
+  'lim': {
+    name: 'Lim Tae-Gyu',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604325/lim_gahgsq.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606332/icons/build-23.png',
+    class: 'Breaker',
+    grade: 'SSR',
+    element: 'Dark',
+    scaleStat: 'Attack',
+    importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di'],
+    skillMultipliers: {
+      core1: 8.3,      // Volley Fire (663-994.5% = avg 828.75%)
+      core2: 0,        // No second core attack
+      skill1: 7.4,     // Shoot and Maneuver (503-984% = avg 743.5%)
+      skill2: 24.0,    // Typhoon Fire (1920-2880% = avg 2400%)
+      ultimate: 136.8  // Quick Fire: Typhoon Fire total (1368-2052% × 8 = 13680%)
+    },
+    bdgLimits: {
+      maxDamageOnElement: 25000000000,  // 25B max si bon élément (Breaker Dark optimal)
+      maxDamageOffElement: 8000000000   // 8B max si mauvais élément
+    },
+    buffs: [
+      {
+        name: 'Magic Boost',
+        values: [30, 50, 110], // +30% (A0), +50% (A2), +110% (A3+) Core/Typhoon/Quick Fire DMG
+        cooldown: 15,  // Via Shoot and Maneuver (A3+)
+        duration: 15,
+        target: 'self',
+        type: 'skillBuffs',
+        element: 'Dark'
+      },
+      {
+        name: 'Precision & Power',
+        values: [5.6, 8], // +5.6% TC, +8% DCC (8 stacks at A1+)
+        cooldown: 0,  // Stacking buff
+        duration: 10,
+        target: 'shared',  // Team buff
+        type: 'coreBuffs',
+        element: 'Dark'
+      }]
+  },
   'lee': {
     name: 'Lee Bora',
     img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604324/lee_khjilr.png',
@@ -1163,37 +1203,6 @@ export const characters = {
     element: 'Dark',
     scaleStat: 'Attack',
     importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di', 'mpcr'],
-    skillMultipliers: {
-      core1: 3.5,
-      core2: 4.8,
-      skill1: 12.0,
-      skill2: 16.5,
-      ultimate: 35.0
-    },
-    bdgLimits: {
-      maxDamageOnElement: 1000000000,  // 73B max si bon élément
-      maxDamageOffElement: 300000000  // 9B max si mauvais élément
-    },
-    buffs: [
-      {
-        name: 'Wind Shield',
-        values: [5, 10, 15], // Accumulative: 5%, 10%, 15%
-        cooldown: 12,
-        duration: 8,
-        target: 'shared', // 'self' ou 'shared'
-        type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
-        element: 'Wind'
-      }]
-  },
-  'lim': {
-    name: 'Lim Tae-Gyu',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604325/lim_gahgsq.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606332/icons/build-23.png',
-    class: 'Ranger',
-    grade: 'SSR',
-    element: 'Dark',
-    scaleStat: 'Attack',
-    importantStats: ['atk', 'tc', 'dcc', 'defPen', 'di'],
     skillMultipliers: {
       core1: 3.5,
       core2: 4.8,

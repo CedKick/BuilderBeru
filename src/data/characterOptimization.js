@@ -92,13 +92,15 @@ export const CHARACTER_OPTIMIZATION = {
         }
     },
 
-    // 🗡️ Sian Halat - DPS / Debuffer Dark
+    // 🗡️ Sian Halat - Elemental Stacker Dark (DPS / Debuffer / Team Buffer)
     // Buffs Def Pen totaux (A5 + Armed): Arme 15% + A5 Team 10% + A4 RAID 18% + Armed 18% = 61%
     // Avec 70K raw max (~33%) → Total ~94% Def Pen atteignable
+    // NOUVEAU: Classe "Elemental Stacker" - Focus sur Dark Elemental Accumulation & Overload
     sian: {
         id: 'sian',
         name: "Sian Halat",
-        role: "DPS / Debuffer",
+        class: "Elemental Stacker",  // Nouvelle classe (Infuseur Élémentaire)
+        role: "DPS / Debuffer / Team Buffer",
         element: "Dark",
         tier: "S",
 
@@ -159,11 +161,16 @@ export const CHARACTER_OPTIMIZATION = {
         },
 
         tips: [
-            "Sian A5 donne +10% Def Pen à la TEAM Dark (pas Sung !)",
-            "Sian A4 donne +3% Def Pen par Dark hunter au RAID (6×3% = 18%)",
-            "Son arme A5 donne +15% Def Pen personnel",
+            "Classe Elemental Stacker: Focus sur Dark Elemental Accumulation pour trigger Overload",
+            "A2: Oath of Victory (+20% DMG vs Dark Overloaded targets) - TEAM permanent",
+            "A3: Guardian's Resolve (stack jusqu'à 20x) - +32% Dark DMG max",
+            "A4: +3% Def Pen par Dark hunter au RAID (6×3% = 18%)",
+            "A5: Zenith Sword via Ultimate (+30% Overload DMG, +10% Def Pen, +15% ATK) - RAID Dark",
+            "A5: Scarlet Domination debuff (stack 4x) - +40% Dark DMG Taken sur enemy",
+            "Arme A5: +15% Def Pen personnel + +48% Dark DMG (4 stacks Overload)",
             "Armed 4pc (+18% Def Pen) - Total buffs = 61% Def Pen !",
-            "Max 70K raw Def Pen recommandé (~33% raw + 61% buffs = 94%)"
+            "Max 70K raw Def Pen recommandé (~33% raw + 61% buffs = 94%)",
+            "Utiliser Ultimate dès que disponible pour trigger Zenith Sword (30s buff)"
         ],
 
         recommendedSets: ["Armed 4pc + Expert 4pc", "Armed 4pc + Obsidian 4pc"],
