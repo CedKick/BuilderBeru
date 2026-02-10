@@ -2764,6 +2764,2706 @@ export const CHARACTER_ADVANCED_BUFFS = {
         }
     },
 
+    // ═══════════════════════════════════════════════════════════════
+    // 🔥 FERN - DPS Mage Fire (Frieren collab)
+    // ═══════════════════════════════════════════════════════════════
+    fern: {
+        id: 'fern',
+        name: 'Fern',
+        class: 'Mage',
+        element: 'Fire',
+        scaleStat: 'ATK',
+        primaryRole: 'DPS',
+        secondaryRole: 'Fire Debuffer',
+        tags: ['Zoltraak Spammer', 'Boss Killer', 'Fire Vuln Stacker', 'Crit Scaler'],
+
+        advancements: {
+            // =================================================================
+            // A0 - Magical Prodigy + Mana Power Tracking (permanent)
+            // =================================================================
+            A0: {
+                passives: [
+                    {
+                        name: 'Basic Attack Chain',
+                        description: 'Basic Attack → Stage 1, 2, 3 consécutifs. Stage 3 → active Core Attack.',
+                        mechanic: 'chain'
+                    },
+                    {
+                        name: 'Magical Prodigy',
+                        description: '+10% ATK permanent. Si MP ≥ 50% → +10% ATK supplémentaire. -5% Mana Consumption.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Mana Power Tracking',
+                        description: '+30% DMG vs Boss. +5% Precision.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Magical Prodigy - ATK',
+                        effects: { atkPercent: 10 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    },
+                    {
+                        name: 'Magical Prodigy - ATK (MP ≥ 50%)',
+                        effects: { atkPercent: 10 },
+                        duration: 'infinite',
+                        condition: 'mp >= 50%'
+                    },
+                    {
+                        name: 'Mana Power Tracking - Boss DMG',
+                        effects: { bossDamage: 30 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // =================================================================
+            // A1 - Basic Quick Shot + Basic Focus + Enhanced Magical Prodigy/Mana Power Tracking
+            // =================================================================
+            A1: {
+                passives: [
+                    {
+                        name: 'Basic Attack Chain',
+                        description: 'Basic Attack → Stage 1, 2, 3 consécutifs. Stage 3 → active Core Attack.',
+                        mechanic: 'chain'
+                    },
+                    {
+                        name: 'Basic Quick Shot',
+                        description: 'Augmente Attack Speed de BA, Core, Skill 1, Skill 2. Skill 1/2 → active Core Attack. Core/Skill 1/2 → -25% CD Skill 1 et Skill 2.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Magical Prodigy (Enhanced)',
+                        description: '+20% ATK permanent. Si MP ≥ 50% → +20% ATK supplémentaire. -10% Mana Consumption.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Mana Power Tracking (Enhanced)',
+                        description: '+60% DMG vs Boss. +10% Precision.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Magical Prodigy (Enhanced) - ATK',
+                        effects: { atkPercent: 20 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    },
+                    {
+                        name: 'Magical Prodigy (Enhanced) - ATK (MP ≥ 50%)',
+                        effects: { atkPercent: 20 },
+                        duration: 'infinite',
+                        condition: 'mp >= 50%'
+                    },
+                    {
+                        name: 'Mana Power Tracking (Enhanced) - Boss DMG',
+                        effects: { bossDamage: 60 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    },
+                    {
+                        name: 'Basic Focus',
+                        description: 'Skill 1/2 → +25% Basic Skill DMG, +12% MP Consumption',
+                        effects: { basicSkillDamage: 25 },
+                        duration: 20,
+                        maxStacks: 4,
+                        trigger: 'Skill 1 or Skill 2 cast'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // =================================================================
+            // A2 - +20% Fire DMG + Fire Damage Taken Increase (debuff ennemi)
+            // =================================================================
+            A2: {
+                passives: [
+                    {
+                        name: 'Basic Attack Chain',
+                        description: 'Basic Attack → Stage 1, 2, 3 consécutifs. Stage 3 → active Core Attack.',
+                        mechanic: 'chain'
+                    },
+                    {
+                        name: 'Basic Quick Shot',
+                        description: 'Augmente Attack Speed. Skill 1/2 → Core Attack. Core/Skill 1/2 → -25% CD.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Magical Prodigy (Enhanced)',
+                        description: '+20% ATK. Si MP ≥ 50% → +20% ATK. -10% Mana Consumption.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Mana Power Tracking (Enhanced)',
+                        description: '+60% DMG vs Boss. +10% Precision.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Magical Prodigy (Enhanced) - ATK',
+                        effects: { atkPercent: 20 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    },
+                    {
+                        name: 'Magical Prodigy (Enhanced) - ATK (MP ≥ 50%)',
+                        effects: { atkPercent: 20 },
+                        duration: 'infinite',
+                        condition: 'mp >= 50%'
+                    },
+                    {
+                        name: 'Mana Power Tracking (Enhanced) - Boss DMG',
+                        effects: { bossDamage: 60 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    },
+                    {
+                        name: 'Basic Focus',
+                        effects: { basicSkillDamage: 25 },
+                        duration: 20,
+                        maxStacks: 4,
+                        trigger: 'Skill 1 or Skill 2 cast'
+                    },
+                    {
+                        name: 'Fire DMG Boost (A2)',
+                        effects: { fireDamage: 20 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Fire Damage Taken Increase',
+                        trigger: 'Skill 2 (Zoltraak - Rapid Fire) hit',
+                        target: 'enemy',
+                        effects: { fireDamageReceived: 0.3 },
+                        duration: 30,
+                        maxStacks: 60,
+                        stackable: true,
+                        note: 'Max 60 stacks × 0.3% = +18% Fire DMG received par l\'ennemi'
+                    }
+                ]
+            },
+
+            // =================================================================
+            // A3 - True Sight (TC+DCC) + Dispel/Defense Magic on tag-in
+            // =================================================================
+            A3: {
+                passives: [
+                    {
+                        name: 'Basic Attack Chain',
+                        description: 'Basic Attack → Stage 1, 2, 3. Stage 3 → Core Attack.',
+                        mechanic: 'chain'
+                    },
+                    {
+                        name: 'Basic Quick Shot',
+                        description: 'Augmente Attack Speed. Skill 1/2 → Core Attack. Core/Skill 1/2 → -25% CD.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Magical Prodigy (Enhanced)',
+                        description: '+20% ATK. Si MP ≥ 50% → +20% ATK. -10% Mana Consumption.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Mana Power Tracking (Enhanced)',
+                        description: '+60% DMG vs Boss. +10% Precision.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'True Sight',
+                        description: '+5% TC, +10% DCC permanent.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Dispel Magic + Defense Magic',
+                        description: 'Tag-in → Removes team debuffs + Shield (20% Fern ATK) + -20% DMG taken pour 20s. CD: 10s.',
+                        mechanic: 'tagIn',
+                        cooldown: 10
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Magical Prodigy (Enhanced) - ATK',
+                        effects: { atkPercent: 20 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    },
+                    {
+                        name: 'Magical Prodigy (Enhanced) - ATK (MP ≥ 50%)',
+                        effects: { atkPercent: 20 },
+                        duration: 'infinite',
+                        condition: 'mp >= 50%'
+                    },
+                    {
+                        name: 'Mana Power Tracking (Enhanced) - Boss DMG',
+                        effects: { bossDamage: 60 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    },
+                    {
+                        name: 'Basic Focus',
+                        effects: { basicSkillDamage: 25 },
+                        duration: 20,
+                        maxStacks: 4,
+                        trigger: 'Skill 1 or Skill 2 cast'
+                    },
+                    {
+                        name: 'Fire DMG Boost (A2)',
+                        effects: { fireDamage: 20 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    },
+                    {
+                        name: 'True Sight',
+                        effects: { critRate: 5, critDMG: 10 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Dispel Magic',
+                        description: 'Tag-in → Removes debuffs de toute la team',
+                        trigger: 'tagIn',
+                        cooldown: 10,
+                        effects: { debuffCleanse: true }
+                    },
+                    {
+                        name: 'Defense Magic',
+                        description: 'Tag-in → Shield (20% Fern ATK) + -20% DMG taken',
+                        trigger: 'tagIn',
+                        cooldown: 10,
+                        effects: { shieldPercent: 20, damageReduction: 20 },
+                        duration: 20
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Fire Damage Taken Increase',
+                        trigger: 'Skill 2 hit',
+                        target: 'enemy',
+                        effects: { fireDamageReceived: 0.3 },
+                        duration: 30,
+                        maxStacks: 60,
+                        stackable: true,
+                        note: 'Max 60 × 0.3% = +18% Fire DMG received'
+                    }
+                ]
+            },
+
+            // =================================================================
+            // A4 - +10% TC +20% DCC perso + Fire Vuln 0.3% → 0.5%
+            // =================================================================
+            A4: {
+                passives: [
+                    {
+                        name: 'Basic Attack Chain',
+                        description: 'Basic Attack → Stage 1, 2, 3. Stage 3 → Core Attack.',
+                        mechanic: 'chain'
+                    },
+                    {
+                        name: 'Basic Quick Shot',
+                        description: 'Augmente Attack Speed. Skill 1/2 → Core Attack. Core/Skill 1/2 → -25% CD.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Magical Prodigy (Enhanced)',
+                        description: '+20% ATK. Si MP ≥ 50% → +20% ATK. -10% Mana Consumption.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Mana Power Tracking (Enhanced)',
+                        description: '+60% DMG vs Boss. +10% Precision.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'True Sight (A3)',
+                        description: '+5% TC, +10% DCC permanent.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'A4 Crit Boost',
+                        description: '+10% TC, +20% DCC en plus.',
+                        mechanic: 'permanent'
+                    },
+                    {
+                        name: 'Dispel Magic + Defense Magic',
+                        description: 'Tag-in → Debuff cleanse + Shield + -20% DMG taken. CD: 10s.',
+                        mechanic: 'tagIn',
+                        cooldown: 10
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Magical Prodigy (Enhanced) - ATK',
+                        effects: { atkPercent: 20 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    },
+                    {
+                        name: 'Magical Prodigy (Enhanced) - ATK (MP ≥ 50%)',
+                        effects: { atkPercent: 20 },
+                        duration: 'infinite',
+                        condition: 'mp >= 50%'
+                    },
+                    {
+                        name: 'Mana Power Tracking (Enhanced) - Boss DMG',
+                        effects: { bossDamage: 60 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    },
+                    {
+                        name: 'Basic Focus',
+                        effects: { basicSkillDamage: 25 },
+                        duration: 20,
+                        maxStacks: 4,
+                        trigger: 'Skill 1 or Skill 2 cast'
+                    },
+                    {
+                        name: 'Fire DMG Boost (A2)',
+                        effects: { fireDamage: 20 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    },
+                    {
+                        name: 'True Sight (A3) + A4 Crit Boost',
+                        effects: { critRate: 15, critDMG: 30 },
+                        duration: 'infinite',
+                        condition: 'always',
+                        note: 'True Sight (5%TC+10%DCC) + A4 (+10%TC+20%DCC) = 15%TC+30%DCC'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Dispel Magic',
+                        trigger: 'tagIn',
+                        cooldown: 10,
+                        effects: { debuffCleanse: true }
+                    },
+                    {
+                        name: 'Defense Magic',
+                        trigger: 'tagIn',
+                        cooldown: 10,
+                        effects: { shieldPercent: 20, damageReduction: 20 },
+                        duration: 20
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Fire Damage Taken Increase (Enhanced)',
+                        trigger: 'Skill 2 hit',
+                        target: 'enemy',
+                        effects: { fireDamageReceived: 0.5 },
+                        duration: 30,
+                        maxStacks: 60,
+                        stackable: true,
+                        note: 'A4: 0.3% → 0.5% par stack. Max 60 × 0.5% = +30% Fire DMG received !'
+                    }
+                ]
+            },
+
+            // =================================================================
+            // A5 - True Sight Enhanced + Seismic Alert → Seeker's Gaze (burst phase)
+            // Ultimate ignores element for Fire weakness
+            // =================================================================
+            A5: {
+                passives: [
+                    {
+                        name: 'Basic Attack Chain',
+                        description: 'Basic Attack → Stage 1, 2, 3. Stage 3 → Core Attack.',
+                        mechanic: 'chain'
+                    },
+                    {
+                        name: 'Basic Quick Shot',
+                        description: 'Augmente Attack Speed. Skill 1/2 → Core Attack. Core/Skill 1/2 → -25% CD.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Magical Prodigy (Enhanced)',
+                        description: '+20% ATK. Si MP ≥ 50% → +20% ATK. -10% Mana Consumption.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Mana Power Tracking (Enhanced)',
+                        description: '+60% DMG vs Boss. +10% Precision.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'True Sight (Enhanced A5)',
+                        description: '+10% TC, +20% DCC permanent. Skill 1/2 hit → Seismic Alert.',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'A4 Crit Boost',
+                        description: '+10% TC, +20% DCC en plus.',
+                        mechanic: 'permanent'
+                    },
+                    {
+                        name: 'Seismic Alert → Seeker\'s Gaze',
+                        description: 'Skill 1/2 hit → +10% Fire DMG (5s, max 6 stacks). À 6 stacks → Seeker\'s Gaze: +60% Fire DMG +10% Def Pen pendant 20s.',
+                        mechanic: 'stacking',
+                        maxStacks: 6
+                    },
+                    {
+                        name: 'Fire Weakness Override',
+                        description: 'Ultimate → Fire weakness hit quel que soit l\'élément de la cible.',
+                        mechanic: 'ultimate'
+                    },
+                    {
+                        name: 'Dispel Magic + Defense Magic',
+                        description: 'Tag-in → Debuff cleanse + Shield + -20% DMG taken. CD: 10s.',
+                        mechanic: 'tagIn',
+                        cooldown: 10
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Magical Prodigy (Enhanced) - ATK',
+                        effects: { atkPercent: 20 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    },
+                    {
+                        name: 'Magical Prodigy (Enhanced) - ATK (MP ≥ 50%)',
+                        effects: { atkPercent: 20 },
+                        duration: 'infinite',
+                        condition: 'mp >= 50%'
+                    },
+                    {
+                        name: 'Mana Power Tracking (Enhanced) - Boss DMG',
+                        effects: { bossDamage: 60 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    },
+                    {
+                        name: 'Basic Focus',
+                        effects: { basicSkillDamage: 25 },
+                        duration: 20,
+                        maxStacks: 4,
+                        trigger: 'Skill 1 or Skill 2 cast'
+                    },
+                    {
+                        name: 'Fire DMG Boost (A2)',
+                        effects: { fireDamage: 20 },
+                        duration: 'infinite',
+                        condition: 'always'
+                    },
+                    {
+                        name: 'True Sight (Enhanced A5) + A4 Crit Boost',
+                        effects: { critRate: 20, critDMG: 40 },
+                        duration: 'infinite',
+                        condition: 'always',
+                        note: 'True Sight A5 (10%TC+20%DCC) + A4 (+10%TC+20%DCC) = 20%TC+40%DCC'
+                    },
+                    {
+                        name: 'Seismic Alert',
+                        effects: { fireDamage: 10 },
+                        duration: 5,
+                        maxStacks: 6,
+                        trigger: 'Skill 1 or Skill 2 hit',
+                        note: 'Max 6 × 10% = +60% Fire DMG (pendant 5s par stack)'
+                    },
+                    {
+                        name: 'Seeker\'s Gaze',
+                        description: 'Quand Seismic Alert atteint 6 stacks → burst mode',
+                        effects: { fireDamage: 60, defPen: 10 },
+                        duration: 20,
+                        trigger: 'Seismic Alert × 6 stacks',
+                        note: 'Remplace Seismic Alert. +60% Fire DMG +10% Def Pen pendant 20s !'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Dispel Magic',
+                        trigger: 'tagIn',
+                        cooldown: 10,
+                        effects: { debuffCleanse: true }
+                    },
+                    {
+                        name: 'Defense Magic',
+                        trigger: 'tagIn',
+                        cooldown: 10,
+                        effects: { shieldPercent: 20, damageReduction: 20 },
+                        duration: 20
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Fire Damage Taken Increase (Enhanced)',
+                        trigger: 'Skill 2 hit',
+                        target: 'enemy',
+                        effects: { fireDamageReceived: 0.5 },
+                        duration: 30,
+                        maxStacks: 60,
+                        stackable: true,
+                        note: 'Max 60 × 0.5% = +30% Fire DMG received par l\'ennemi'
+                    }
+                ]
+            }
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🔥 GINA - Support Fire (ATK scaling)
+    // ═══════════════════════════════════════════════════════════════
+    gina: {
+        id: 'gina',
+        name: 'Gina',
+        class: 'Supporter',
+        element: 'Fire',
+        scaleStat: 'ATK',
+        primaryRole: 'Support',
+        secondaryRole: 'Buffer / Healer',
+        tags: ['Team Buffer', 'Fire DMG Amplifier', 'Healer', 'Gravity Control', 'Def Pen Buffer'],
+
+        advancements: {
+            // A0 - Countercurrent → Mana Circulation + Body Retrograde
+            A0: {
+                passives: [
+                    {
+                        name: 'Countercurrent → Mana Circulation',
+                        description: 'Skills → stack Countercurrent (5 max). 5 stacks → Mana Circulation team: +15% ATK +15% Fire DMG (15s).',
+                        mechanic: 'stacking',
+                        maxStacks: 5
+                    },
+                    {
+                        name: 'Body Retrograde',
+                        description: 'Gravitational Field → team heal (2% ATK/3s) + Power Gauge +2%/3s (15s).',
+                        mechanic: 'onFieldCreation',
+                        duration: 15
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    {
+                        name: 'Mana Circulation',
+                        trigger: 'Countercurrent ×5',
+                        effects: { atkPercent: 15, fireDamage: 15 },
+                        duration: 15,
+                        note: '+15% ATK + 15% Fire DMG pour toute la team (15s)'
+                    },
+                    {
+                        name: 'Body Retrograde - Heal',
+                        trigger: 'Gravitational Field creation',
+                        effects: { healPerTick: 2, powerGaugePerTick: 2 },
+                        tickInterval: 3,
+                        duration: 15
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // A1 - Mana Transformation (Shield + DMG dealt + DMG reduction)
+            A1: {
+                passives: [
+                    { name: 'Countercurrent → Mana Circulation', mechanic: 'stacking', maxStacks: 5 },
+                    { name: 'Body Retrograde', mechanic: 'onFieldCreation', duration: 15 }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    {
+                        name: 'Mana Circulation',
+                        trigger: 'Countercurrent ×5',
+                        effects: { atkPercent: 15, fireDamage: 15 },
+                        duration: 15
+                    },
+                    {
+                        name: 'Mana Transformation',
+                        trigger: 'Mana Circulation activation',
+                        effects: { shieldPercent: 12, damageDealt: 12, damageReduction: 12 },
+                        duration: 20,
+                        note: 'Shield 12% ATK + +12% DMG dealt + -12% DMG taken (20s)'
+                    },
+                    {
+                        name: 'Body Retrograde - Heal',
+                        trigger: 'Gravitational Field creation',
+                        effects: { healPerTick: 2, powerGaugePerTick: 2 },
+                        tickInterval: 3,
+                        duration: 15
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // A2 - +20% Shield value + Shield → +10% DMG dealt
+            A2: {
+                passives: [
+                    { name: 'Countercurrent → Mana Circulation', mechanic: 'stacking', maxStacks: 5 },
+                    { name: 'Body Retrograde', mechanic: 'onFieldCreation', duration: 15 },
+                    { name: 'Shield Enhancement (A2)', description: '+20% Shield value. Shield actif → +10% DMG dealt.', mechanic: 'permanent' }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    {
+                        name: 'Mana Circulation',
+                        trigger: 'Countercurrent ×5',
+                        effects: { atkPercent: 15, fireDamage: 15 },
+                        duration: 15
+                    },
+                    {
+                        name: 'Mana Transformation (Enhanced A2)',
+                        trigger: 'Mana Circulation activation',
+                        effects: { shieldPercent: 14.4, damageDealt: 22, damageReduction: 12 },
+                        duration: 20,
+                        note: 'Shield 12%×1.2=14.4% + DMG dealt 12%+10%(shield)=22% + -12% DMG taken'
+                    },
+                    {
+                        name: 'Body Retrograde - Heal',
+                        trigger: 'Gravitational Field creation',
+                        effects: { healPerTick: 2, powerGaugePerTick: 2 },
+                        tickInterval: 3,
+                        duration: 15
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // A3 - Gravitational Mass → Gravitational Field + Gravity Boost (+10% Fire DMG taken)
+            A3: {
+                passives: [
+                    { name: 'Countercurrent → Mana Circulation', mechanic: 'stacking', maxStacks: 5 },
+                    { name: 'Body Retrograde', mechanic: 'onFieldCreation', duration: 15 },
+                    { name: 'Shield Enhancement (A2)', mechanic: 'permanent' },
+                    { name: 'Gravitational Mass → Gravitational Field (A3)', description: 'Crée Gravitational Field (20% DMG) + Gravity Boost debuff + Halt.', mechanic: 'onSkillCast' }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    { name: 'Mana Circulation', trigger: 'Countercurrent ×5', effects: { atkPercent: 15, fireDamage: 15 }, duration: 15 },
+                    { name: 'Mana Transformation (Enhanced A2)', trigger: 'Mana Circulation activation', effects: { shieldPercent: 14.4, damageDealt: 22, damageReduction: 12 }, duration: 20 },
+                    { name: 'Body Retrograde - Heal', trigger: 'Gravitational Field creation', effects: { healPerTick: 2, powerGaugePerTick: 2 }, tickInterval: 3, duration: 15 }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Gravity Boost',
+                        trigger: 'Gravitational Mass hit',
+                        target: 'enemy',
+                        effects: { fireDamageReceived: 10 },
+                        duration: 20,
+                        stackable: false,
+                        note: '+10% Fire DMG taken par l\'ennemi (20s)'
+                    },
+                    {
+                        name: 'Halt',
+                        trigger: 'Enemy touches Gravitational Field',
+                        target: 'enemy',
+                        effects: { interrupt: true },
+                        duration: 3,
+                        cooldown: 20
+                    }
+                ]
+            },
+
+            // A4 - +4% Def Pen ALL team + +4% Def Pen Fire members
+            A4: {
+                passives: [
+                    { name: 'Countercurrent → Mana Circulation', mechanic: 'stacking', maxStacks: 5 },
+                    { name: 'Body Retrograde', mechanic: 'onFieldCreation', duration: 15 },
+                    { name: 'Shield Enhancement (A2)', mechanic: 'permanent' },
+                    { name: 'Gravitational Mass → Gravitational Field (A3)', mechanic: 'onSkillCast' },
+                    { name: 'Def Pen Aura (A4)', description: '+4% Def Pen ALL team + +4% Def Pen Fire members.', mechanic: 'permanent' }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    { name: 'Mana Circulation', trigger: 'Countercurrent ×5', effects: { atkPercent: 15, fireDamage: 15 }, duration: 15 },
+                    { name: 'Mana Transformation (Enhanced A2)', trigger: 'Mana Circulation activation', effects: { shieldPercent: 14.4, damageDealt: 22, damageReduction: 12 }, duration: 20 },
+                    { name: 'Body Retrograde - Heal', trigger: 'Gravitational Field creation', effects: { healPerTick: 2, powerGaugePerTick: 2 }, tickInterval: 3, duration: 15 },
+                    {
+                        name: 'Def Pen Aura - ALL team',
+                        trigger: 'permanent',
+                        effects: { defPen: 4 },
+                        duration: 'infinite',
+                        note: '+4% Def Pen pour TOUT le RAID (y compris Sung !)'
+                    },
+                    {
+                        name: 'Def Pen Aura - Fire bonus',
+                        trigger: 'permanent',
+                        effects: { defPen: 4 },
+                        duration: 'infinite',
+                        elementRestriction: 'Fire',
+                        note: '+4% Def Pen supplémentaire pour les Fire members uniquement'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Gravity Boost', trigger: 'Gravitational Mass hit', target: 'enemy', effects: { fireDamageReceived: 10 }, duration: 20, stackable: false },
+                    { name: 'Halt', trigger: 'Enemy touches Gravitational Field', target: 'enemy', effects: { interrupt: true }, duration: 3, cooldown: 20 }
+                ]
+            },
+
+            // A5 - Space-Time Gap (+60% Path of Extinction DMG, +60% vs Gravity Boost)
+            A5: {
+                passives: [
+                    { name: 'Countercurrent → Mana Circulation', mechanic: 'stacking', maxStacks: 5 },
+                    { name: 'Body Retrograde', mechanic: 'onFieldCreation', duration: 15 },
+                    { name: 'Shield Enhancement (A2)', mechanic: 'permanent' },
+                    { name: 'Gravitational Mass → Gravitational Field (A3)', mechanic: 'onSkillCast' },
+                    { name: 'Def Pen Aura (A4)', mechanic: 'permanent' },
+                    { name: 'Space-Time Gap (A5)', description: 'Gravitational Field → +60% Path of Extinction DMG (+60% vs Gravity Boost). Consumed after use.', mechanic: 'onFieldCreation', duration: 10 }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Space-Time Gap',
+                        effects: { pathOfExtinctionDamage: 60, pathOfExtinctionVsGravityBoost: 60 },
+                        duration: 10,
+                        trigger: 'Gravitational Field creation',
+                        note: '+60% Path of Extinction DMG (+60% vs Gravity Boost = +120% total !)'
+                    }
+                ],
+                teamBuffs: [
+                    { name: 'Mana Circulation', trigger: 'Countercurrent ×5', effects: { atkPercent: 15, fireDamage: 15 }, duration: 15 },
+                    { name: 'Mana Transformation (Enhanced A2)', trigger: 'Mana Circulation activation', effects: { shieldPercent: 14.4, damageDealt: 22, damageReduction: 12 }, duration: 20 },
+                    { name: 'Body Retrograde - Heal', trigger: 'Gravitational Field creation', effects: { healPerTick: 2, powerGaugePerTick: 2 }, tickInterval: 3, duration: 15 },
+                    { name: 'Def Pen Aura - ALL team', trigger: 'permanent', effects: { defPen: 4 }, duration: 'infinite' },
+                    { name: 'Def Pen Aura - Fire bonus', trigger: 'permanent', effects: { defPen: 4 }, duration: 'infinite', elementRestriction: 'Fire' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Gravity Boost', trigger: 'Gravitational Mass hit', target: 'enemy', effects: { fireDamageReceived: 10 }, duration: 20, stackable: false },
+                    { name: 'Halt', trigger: 'Enemy touches Gravitational Field', target: 'enemy', effects: { interrupt: true }, duration: 3, cooldown: 20 }
+                ]
+            }
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🔥 SONG CHIYUL - DPS Mage Fire (SR, ATK scaling)
+    // DPS égoïste. 0 buff team. Focus Burn + Incinerate synergy.
+    // ═══════════════════════════════════════════════════════════════
+    song: {
+        id: 'song',
+        name: 'Song Chiyul',
+        class: 'Mage',
+        element: 'Fire',
+        scaleStat: 'ATK',
+        primaryRole: 'DPS',
+        secondaryRole: 'Normal Monster Farmer',
+        tags: ['Burn Specialist', 'Incinerate', 'Normal Monster Killer', 'Selfish DPS'],
+
+        advancements: {
+            // A0 - Iaido Red Lotus → +20% Incinerate DMG (3 stacks) + Core Gauge 100%
+            A0: {
+                passives: [
+                    {
+                        name: 'Iaido Red Lotus → Incinerate Boost',
+                        description: 'Iaido Type 4 hit → +20% Incinerate DMG (10s, 3 stacks max) + Core Gauge 100%.',
+                        mechanic: 'stacking',
+                        maxStacks: 3,
+                        duration: 10
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Incinerate DMG Boost',
+                        effects: { incinerateDamage: 20 },
+                        duration: 10,
+                        maxStacks: 3,
+                        trigger: 'Iaido Type 4: Red Lotus Flower hit',
+                        note: 'Max 3×20% = +60% Incinerate DMG'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // A1 - +50% MP Consumption, +50% DMG vs Normal Monsters
+            A1: {
+                passives: [
+                    {
+                        name: 'Iaido Red Lotus → Incinerate Boost',
+                        mechanic: 'stacking', maxStacks: 3, duration: 10
+                    },
+                    {
+                        name: 'Normal Monster Specialist (A1)',
+                        description: '+50% MP Consumption, mais +50% DMG vs Normal monsters.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Incinerate DMG Boost',
+                        effects: { incinerateDamage: 20 },
+                        duration: 10, maxStacks: 3,
+                        trigger: 'Iaido Type 4 hit'
+                    },
+                    {
+                        name: 'Normal Monster DMG (A1)',
+                        effects: { normalMonsterDamage: 50 },
+                        duration: 'infinite',
+                        condition: 'always',
+                        tradeoff: '+50% MP Consumption',
+                        note: '+50% DMG vs Normal monsters mais consomme +50% de MP'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // A2 - +20% MP
+            A2: {
+                passives: [
+                    { name: 'Iaido Red Lotus → Incinerate Boost', mechanic: 'stacking', maxStacks: 3, duration: 10 },
+                    { name: 'Normal Monster Specialist (A1)', mechanic: 'permanent' },
+                    { name: 'MP Pool (A2)', description: '+20% MP total.', mechanic: 'permanent' }
+                ],
+                selfBuffs: [
+                    { name: 'Incinerate DMG Boost', effects: { incinerateDamage: 20 }, duration: 10, maxStacks: 3, trigger: 'Iaido Type 4 hit' },
+                    { name: 'Normal Monster DMG (A1)', effects: { normalMonsterDamage: 50 }, duration: 'infinite' },
+                    { name: 'MP Pool (A2)', effects: { mpPercent: 20 }, duration: 'infinite', note: '+20% MP pour compenser le coût A1' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // A3 - Hellfire whirlwind range/duration +50%
+            A3: {
+                passives: [
+                    { name: 'Iaido Red Lotus → Incinerate Boost', mechanic: 'stacking', maxStacks: 3, duration: 10 },
+                    { name: 'Normal Monster Specialist (A1)', mechanic: 'permanent' },
+                    { name: 'MP Pool (A2)', mechanic: 'permanent' },
+                    { name: 'Hellfire Enhancement (A3)', description: 'Hellfire whirlwind range et duration +50%.', mechanic: 'permanent' }
+                ],
+                selfBuffs: [
+                    { name: 'Incinerate DMG Boost', effects: { incinerateDamage: 20 }, duration: 10, maxStacks: 3, trigger: 'Iaido Type 4 hit' },
+                    { name: 'Normal Monster DMG (A1)', effects: { normalMonsterDamage: 50 }, duration: 'infinite' },
+                    { name: 'MP Pool (A2)', effects: { mpPercent: 20 }, duration: 'infinite' },
+                    { name: 'Hellfire Enhancement (A3)', effects: { hellfireRange: 50, hellfireDuration: 50 }, duration: 'infinite', note: '+50% range et duration Hellfire whirlwind' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // A4 - Incinerate DMG +20% permanent
+            A4: {
+                passives: [
+                    { name: 'Iaido Red Lotus → Incinerate Boost', mechanic: 'stacking', maxStacks: 3, duration: 10 },
+                    { name: 'Normal Monster Specialist (A1)', mechanic: 'permanent' },
+                    { name: 'MP Pool (A2)', mechanic: 'permanent' },
+                    { name: 'Hellfire Enhancement (A3)', mechanic: 'permanent' },
+                    { name: 'Incinerate Mastery (A4)', description: '+20% Incinerate DMG permanent.', mechanic: 'permanent' }
+                ],
+                selfBuffs: [
+                    { name: 'Incinerate DMG Boost (passive)', effects: { incinerateDamage: 20 }, duration: 10, maxStacks: 3, trigger: 'Iaido Type 4 hit' },
+                    { name: 'Normal Monster DMG (A1)', effects: { normalMonsterDamage: 50 }, duration: 'infinite' },
+                    { name: 'MP Pool (A2)', effects: { mpPercent: 20 }, duration: 'infinite' },
+                    { name: 'Hellfire Enhancement (A3)', effects: { hellfireRange: 50, hellfireDuration: 50 }, duration: 'infinite' },
+                    { name: 'Incinerate Mastery (A4)', effects: { incinerateDamage: 20 }, duration: 'infinite', note: '+20% Incinerate DMG permanent (s\'ajoute aux stacks passive)' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // A5 - +50% DMG with Incinerate on Burned targets
+            A5: {
+                passives: [
+                    { name: 'Iaido Red Lotus → Incinerate Boost', mechanic: 'stacking', maxStacks: 3, duration: 10 },
+                    { name: 'Normal Monster Specialist (A1)', mechanic: 'permanent' },
+                    { name: 'MP Pool (A2)', mechanic: 'permanent' },
+                    { name: 'Hellfire Enhancement (A3)', mechanic: 'permanent' },
+                    { name: 'Incinerate Mastery (A4)', mechanic: 'permanent' },
+                    { name: 'Burn Executioner (A5)', description: '+50% DMG with Incinerate on Burned targets.', mechanic: 'conditional' }
+                ],
+                selfBuffs: [
+                    { name: 'Incinerate DMG Boost (passive)', effects: { incinerateDamage: 20 }, duration: 10, maxStacks: 3, trigger: 'Iaido Type 4 hit' },
+                    { name: 'Normal Monster DMG (A1)', effects: { normalMonsterDamage: 50 }, duration: 'infinite' },
+                    { name: 'MP Pool (A2)', effects: { mpPercent: 20 }, duration: 'infinite' },
+                    { name: 'Hellfire Enhancement (A3)', effects: { hellfireRange: 50, hellfireDuration: 50 }, duration: 'infinite' },
+                    { name: 'Incinerate Mastery (A4)', effects: { incinerateDamage: 20 }, duration: 'infinite' },
+                    {
+                        name: 'Burn Executioner (A5)',
+                        effects: { incinerateDamageVsBurn: 50 },
+                        duration: 'infinite',
+                        condition: 'target has Burn',
+                        note: '+50% Incinerate DMG vs Burned targets ! Total: passive 60% + A4 20% + A5 50% = massive'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            }
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🔥 STARK - Breaker / Sub-DPS Tank Fire (HP scaling, Frieren collab)
+    // Confidence (4 stacks) → Courage window. Break specialist.
+    // A3: Team Def Pen = 20% of Stark's raw Def Pen
+    // ═══════════════════════════════════════════════════════════════
+    stark: {
+        id: 'stark',
+        name: 'Stark',
+        class: 'Breaker / Tank',
+        element: 'Fire',
+        scaleStat: 'HP',
+        primaryRole: 'Breaker',
+        secondaryRole: 'Sub-DPS Tank',
+        tags: ['HP Scaler', 'Break Specialist', 'Confidence Stacker', 'Self Buffer', 'Team Def Pen'],
+
+        advancements: {
+            // A0 - Reserved → Confidence (4 stacks) → Courage window
+            A0: {
+                passives: [
+                    {
+                        name: 'Reserved',
+                        description: 'Skills active [Confidence] + trigger Whirling Strike. Whirling Strike → [Determination]. Power Gauge cannot charge sauf pendant [Courage].',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Break Duration Increase',
+                        description: 'Quand Stark ou un allié met un ennemi en Break → +3s Break duration.',
+                        mechanic: 'passive'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Confidence',
+                        effects: { fireDamage: 3, defPen: 3 },
+                        duration: 'infinite',
+                        maxStacks: 4,
+                        trigger: 'Spiral Strike / Lightning Strike variants',
+                        note: '+3% Fire DMG +3% Def Pen par stack (max 4 = +12%/+12%). À 4 stacks → Courage.'
+                    },
+                    {
+                        name: 'Courage',
+                        effects: { fireDamage: 20, defPen: 20 },
+                        duration: 5,
+                        trigger: 'Confidence ×4 stacks',
+                        note: '+20% Fire DMG +20% Def Pen pendant 5s. Power Gauge charge pendant Courage.'
+                    },
+                    {
+                        name: 'Determination',
+                        effects: { basicSkillDamage: 10, critRate: 10 },
+                        duration: 3,
+                        trigger: 'Whirling Strike use'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // A1 - Fighting Spirit + Warrior's Aura debuff + Determination enhanced
+            A1: {
+                passives: [
+                    { name: 'Reserved', mechanic: 'permanent', duration: 'infinite' },
+                    { name: 'Break Duration +3s', mechanic: 'passive' },
+                    {
+                        name: 'Fighting Spirit (A1)',
+                        description: '-20% DMG taken. Si HP ≤ 10% → recover 40% Max HP (CD 60s).',
+                        mechanic: 'permanent',
+                        duration: 'infinite'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Confidence',
+                        effects: { fireDamage: 3, defPen: 3 },
+                        duration: 'infinite', maxStacks: 4,
+                        trigger: 'Skills'
+                    },
+                    {
+                        name: 'Courage',
+                        effects: { fireDamage: 20, defPen: 20 },
+                        duration: 5,
+                        trigger: 'Confidence ×4'
+                    },
+                    {
+                        name: 'Determination (Enhanced A1)',
+                        effects: { basicSkillDamage: 15, critRate: 15 },
+                        duration: 10,
+                        trigger: 'Whirling Strike use',
+                        note: 'A1: 10%→15% Skill DMG, 10%→15% CR, 3s→10s duration'
+                    },
+                    {
+                        name: 'Fighting Spirit',
+                        effects: { damageReduction: 20 },
+                        duration: 'infinite',
+                        note: '-20% DMG taken + HP recovery si ≤ 10% (CD 60s)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: "Warrior's Aura",
+                        trigger: 'Whirling Strike hit',
+                        target: 'enemy',
+                        effects: { damageFromStark: 15 },
+                        duration: 15,
+                        note: "+15% DMG taken from Stark (15s)"
+                    }
+                ]
+            },
+
+            // A2 - +15% HP
+            A2: {
+                passives: [
+                    { name: 'Reserved', mechanic: 'permanent' },
+                    { name: 'Break Duration +3s', mechanic: 'passive' },
+                    { name: 'Fighting Spirit (A1)', mechanic: 'permanent' },
+                    { name: 'HP Pool (A2)', description: '+15% HP total.', mechanic: 'permanent' }
+                ],
+                selfBuffs: [
+                    { name: 'Confidence', effects: { fireDamage: 3, defPen: 3 }, duration: 'infinite', maxStacks: 4 },
+                    { name: 'Courage', effects: { fireDamage: 20, defPen: 20 }, duration: 5 },
+                    { name: 'Determination (Enhanced A1)', effects: { basicSkillDamage: 15, critRate: 15 }, duration: 10 },
+                    { name: 'Fighting Spirit', effects: { damageReduction: 20 }, duration: 'infinite' },
+                    { name: 'HP Pool (A2)', effects: { hpPercent: 15 }, duration: 'infinite' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    { name: "Warrior's Aura", trigger: 'Whirling Strike hit', target: 'enemy', effects: { damageFromStark: 15 }, duration: 15 }
+                ]
+            },
+
+            // A3 - Warrior's Aura enhanced (+30%) + Team Def Pen = 20% of Stark's raw Def Pen
+            A3: {
+                passives: [
+                    { name: 'Reserved', mechanic: 'permanent' },
+                    { name: 'Break Duration +3s', mechanic: 'passive' },
+                    { name: 'Fighting Spirit (A1)', mechanic: 'permanent' },
+                    { name: 'HP Pool (A2)', mechanic: 'permanent' },
+                    {
+                        name: 'Team Def Pen Aura (A3)',
+                        description: "Team Def Pen = 20% of Stark's extra base Def Pen stat.",
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    { name: 'Confidence', effects: { fireDamage: 3, defPen: 3 }, duration: 'infinite', maxStacks: 4 },
+                    { name: 'Courage', effects: { fireDamage: 20, defPen: 20 }, duration: 5 },
+                    { name: 'Determination (Enhanced A1)', effects: { basicSkillDamage: 15, critRate: 15 }, duration: 10 },
+                    { name: 'Fighting Spirit', effects: { damageReduction: 20 }, duration: 'infinite' },
+                    { name: 'HP Pool (A2)', effects: { hpPercent: 15 }, duration: 'infinite' }
+                ],
+                teamBuffs: [
+                    {
+                        name: "Team Def Pen (A3) - 20% of Stark's raw Def Pen",
+                        trigger: 'permanent',
+                        effects: { defPenFromRaw: 20 },
+                        duration: 'infinite',
+                        formula: 'rawDefPen / (50000 + rawDefPen)',
+                        note: "20% de la raw Def Pen de Stark → buff Def Pen pour toute la team"
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: "Warrior's Aura (Enhanced A3)",
+                        trigger: 'Whirling Strike hit',
+                        target: 'enemy',
+                        effects: { damageFromStark: 30 },
+                        duration: 15,
+                        note: "A3: 15%→30% DMG taken from Stark"
+                    }
+                ]
+            },
+
+            // A4 - Break effectiveness +36%
+            A4: {
+                passives: [
+                    { name: 'Reserved', mechanic: 'permanent' },
+                    { name: 'Break Duration +3s', mechanic: 'passive' },
+                    { name: 'Fighting Spirit (A1)', mechanic: 'permanent' },
+                    { name: 'HP Pool (A2)', mechanic: 'permanent' },
+                    { name: 'Team Def Pen Aura (A3)', mechanic: 'permanent' },
+                    { name: 'Break Mastery (A4)', description: '+36% Break effectiveness.', mechanic: 'permanent' }
+                ],
+                selfBuffs: [
+                    { name: 'Confidence', effects: { fireDamage: 3, defPen: 3 }, duration: 'infinite', maxStacks: 4 },
+                    { name: 'Courage', effects: { fireDamage: 20, defPen: 20 }, duration: 5 },
+                    { name: 'Determination (Enhanced A1)', effects: { basicSkillDamage: 15, critRate: 15 }, duration: 10 },
+                    { name: 'Fighting Spirit', effects: { damageReduction: 20 }, duration: 'infinite' },
+                    { name: 'HP Pool (A2)', effects: { hpPercent: 15 }, duration: 'infinite' },
+                    { name: 'Break Mastery (A4)', effects: { breakEffectiveness: 36 }, duration: 'infinite' }
+                ],
+                teamBuffs: [
+                    { name: "Team Def Pen (A3)", trigger: 'permanent', effects: { defPenFromRaw: 20 }, duration: 'infinite', formula: 'rawDefPen / (50000 + rawDefPen)' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: "Warrior's Aura (Enhanced A3)", trigger: 'Whirling Strike hit', target: 'enemy', effects: { damageFromStark: 30 }, duration: 15 }
+                ]
+            },
+
+            // A5 - Enhanced Confidence (+5%/stack) + Enhanced Courage (+30% Fire/DefPen +50% Annihilation)
+            // + Warrior's Talent (1000% Max HP DMG) + Spiral Strike → Determination
+            A5: {
+                passives: [
+                    { name: 'Reserved', mechanic: 'permanent' },
+                    { name: 'Break Duration +3s', mechanic: 'passive' },
+                    { name: 'Fighting Spirit (A1)', mechanic: 'permanent' },
+                    { name: 'HP Pool (A2)', mechanic: 'permanent' },
+                    { name: 'Team Def Pen Aura (A3)', mechanic: 'permanent' },
+                    { name: 'Break Mastery (A4)', mechanic: 'permanent' },
+                    {
+                        name: 'Enhanced Confidence/Courage (A5)',
+                        description: 'Confidence: +5%/stack (→ +20%). Courage: +30% Fire DMG +30% Def Pen +50% Annihilation DMG.',
+                        mechanic: 'permanent'
+                    },
+                    {
+                        name: "Warrior's Talent (A5)",
+                        description: "Lightning Strike vs Warrior's Aura target → 1000% Max HP DMG.",
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Confidence (Enhanced A5)',
+                        effects: { fireDamage: 5, defPen: 5 },
+                        duration: 'infinite', maxStacks: 4,
+                        trigger: 'Skills',
+                        note: 'A5: 3%→5% par stack (max 4 = +20% Fire DMG +20% Def Pen)'
+                    },
+                    {
+                        name: 'Courage (Enhanced A5)',
+                        effects: { fireDamage: 30, defPen: 30, annihilationDamage: 50 },
+                        duration: 5,
+                        trigger: 'Confidence ×4',
+                        note: 'A5: +30% Fire DMG +30% Def Pen +50% Annihilation DMG (5s)'
+                    },
+                    {
+                        name: 'Determination (Enhanced A1)',
+                        effects: { basicSkillDamage: 15, critRate: 15 },
+                        duration: 10,
+                        trigger: 'Whirling Strike OR Spiral Strike (A5)',
+                        note: 'A5: Spiral Strike also triggers Determination'
+                    },
+                    { name: 'Fighting Spirit', effects: { damageReduction: 20 }, duration: 'infinite' },
+                    { name: 'HP Pool (A2)', effects: { hpPercent: 15 }, duration: 'infinite' },
+                    { name: 'Break Mastery (A4)', effects: { breakEffectiveness: 36 }, duration: 'infinite' }
+                ],
+                teamBuffs: [
+                    { name: "Team Def Pen (A3)", trigger: 'permanent', effects: { defPenFromRaw: 20 }, duration: 'infinite', formula: 'rawDefPen / (50000 + rawDefPen)' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: "Warrior's Aura (Enhanced A3)",
+                        trigger: 'Whirling Strike hit',
+                        target: 'enemy',
+                        effects: { damageFromStark: 30 },
+                        duration: 15
+                    },
+                    {
+                        name: "Warrior's Talent (A5)",
+                        trigger: 'Lightning Strike vs Warrior\'s Aura target',
+                        target: 'enemy',
+                        effects: { bonusDamage: '1000% Max HP' },
+                        note: "Hit on Warrior's Aura target → 1000% Max HP bonus DMG"
+                    }
+                ]
+            }
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🔥 KANAE - DPS Assassin Fire (ATK scaling)
+    // Crimson→Scarlet→Fire chain. Instinct→Sixth Sense crit stacking.
+    // DPS égoïste avec buffs perso massifs.
+    // ═══════════════════════════════════════════════════════════════
+    kanae: {
+        id: 'kanae',
+        name: 'Tawata Kanae',
+        class: 'Assassin',
+        element: 'Fire',
+        scaleStat: 'ATK',
+        primaryRole: 'DPS',
+        secondaryRole: 'Burst Assassin',
+        tags: ['Selfish DPS', 'Crit Stacker', 'Fire DMG Scaler', 'Break Bonus', 'Execution Windows'],
+
+        advancements: {
+            // A0 - Crimson→Scarlet→Fire chain + Break DMG +24%
+            A0: {
+                passives: [
+                    {
+                        name: 'Crimson → Scarlet → Fire Chain',
+                        description: 'Munechika → [Crimson]. Enhanced Core → [Scarlet]. Kamaitachi with any buff → Ultimate-tier. [Fire] → +70% Tsuchigumo DMG. Using Kamaitachi removes all 3.',
+                        mechanic: 'chain'
+                    },
+                    {
+                        name: 'Break Damage Bonus',
+                        description: '+24% DMG vs Break targets.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    { name: 'Break DMG Bonus', effects: { breakDamage: 24 }, duration: 'infinite', condition: 'target in Break' },
+                    { name: 'Fire Effect → Tsuchigumo', effects: { tsuchigumoDamage: 70 }, duration: 'infinite', trigger: 'Fire effect active', note: '+70% Tsuchigumo DMG when Fire active' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // A1 - Instinct stacks (1%CR ×10) → Sixth Sense (+20% CR, MP reduction)
+            A1: {
+                passives: [
+                    { name: 'Crimson → Scarlet → Fire Chain', mechanic: 'chain' },
+                    { name: 'Break Damage +24%', mechanic: 'permanent' },
+                    {
+                        name: 'Instinct → Sixth Sense (A1)',
+                        description: 'Enemy death → +1 Instinct. Break state → +5 Instinct. 10 stacks → Sixth Sense (+20% CR, -40% MP at ≤20%).',
+                        mechanic: 'stacking',
+                        maxStacks: 10
+                    }
+                ],
+                selfBuffs: [
+                    { name: 'Break DMG Bonus', effects: { breakDamage: 24 }, duration: 'infinite' },
+                    { name: 'Fire Effect → Tsuchigumo', effects: { tsuchigumoDamage: 70 }, trigger: 'Fire active' },
+                    {
+                        name: 'Instinct',
+                        effects: { critRate: 1 },
+                        duration: 'infinite', maxStacks: 10,
+                        trigger: 'Enemy death (+1) / Break (+5)',
+                        note: '+1% CR par stack (max 10 = +10% CR). À 10 → Sixth Sense.'
+                    },
+                    {
+                        name: 'Sixth Sense',
+                        effects: { critRate: 20 },
+                        duration: 'infinite',
+                        trigger: 'Instinct ×10',
+                        note: '+20% CR permanent. MP ≤ 20% → -40% MP consumption.'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // A2 - +16% Crit DMG permanent
+            A2: {
+                passives: [
+                    { name: 'Crimson → Scarlet → Fire Chain', mechanic: 'chain' },
+                    { name: 'Break Damage +24%', mechanic: 'permanent' },
+                    { name: 'Instinct → Sixth Sense (A1)', mechanic: 'stacking', maxStacks: 10 },
+                    { name: 'Crit DMG Boost (A2)', description: '+16% Crit DMG permanent.', mechanic: 'permanent' }
+                ],
+                selfBuffs: [
+                    { name: 'Break DMG Bonus', effects: { breakDamage: 24 }, duration: 'infinite' },
+                    { name: 'Fire Effect → Tsuchigumo', effects: { tsuchigumoDamage: 70 }, trigger: 'Fire active' },
+                    { name: 'Instinct', effects: { critRate: 1 }, duration: 'infinite', maxStacks: 10 },
+                    { name: 'Sixth Sense', effects: { critRate: 20 }, duration: 'infinite', trigger: 'Instinct ×10' },
+                    { name: 'Crit DMG Boost (A2)', effects: { critDMG: 16 }, duration: 'infinite', note: '+16% DCC permanent' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // A3 - Super Armor on Munechika + Fire:Kamaitachi → -5s Munechika CD
+            A3: {
+                passives: [
+                    { name: 'Crimson → Scarlet → Fire Chain', mechanic: 'chain' },
+                    { name: 'Break Damage +24%', mechanic: 'permanent' },
+                    { name: 'Instinct → Sixth Sense (A1)', mechanic: 'stacking', maxStacks: 10 },
+                    { name: 'Crit DMG +16% (A2)', mechanic: 'permanent' },
+                    { name: 'Super Armor + CD Reduction (A3)', description: 'Munechika → Super Armor 5s. Fire:Kamaitachi → -5s Munechika CD.', mechanic: 'onSkillCast' }
+                ],
+                selfBuffs: [
+                    { name: 'Break DMG Bonus', effects: { breakDamage: 24 }, duration: 'infinite' },
+                    { name: 'Fire Effect → Tsuchigumo', effects: { tsuchigumoDamage: 70 }, trigger: 'Fire active' },
+                    { name: 'Instinct', effects: { critRate: 1 }, duration: 'infinite', maxStacks: 10 },
+                    { name: 'Sixth Sense', effects: { critRate: 20 }, duration: 'infinite', trigger: 'Instinct ×10' },
+                    { name: 'Crit DMG Boost (A2)', effects: { critDMG: 16 }, duration: 'infinite' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // A4 - +12% Fire DMG per Fire member (max 3 = +36%)
+            A4: {
+                passives: [
+                    { name: 'Crimson → Scarlet → Fire Chain', mechanic: 'chain' },
+                    { name: 'Break Damage +24%', mechanic: 'permanent' },
+                    { name: 'Instinct → Sixth Sense (A1)', mechanic: 'stacking', maxStacks: 10 },
+                    { name: 'Crit DMG +16% (A2)', mechanic: 'permanent' },
+                    { name: 'Super Armor + CD Reduction (A3)', mechanic: 'onSkillCast' },
+                    { name: 'Fire Synergy (A4)', description: '+12% Fire DMG per Fire member (max 3 = +36%).', mechanic: 'permanent' }
+                ],
+                selfBuffs: [
+                    { name: 'Break DMG Bonus', effects: { breakDamage: 24 }, duration: 'infinite' },
+                    { name: 'Fire Effect → Tsuchigumo', effects: { tsuchigumoDamage: 70 }, trigger: 'Fire active' },
+                    { name: 'Instinct', effects: { critRate: 1 }, duration: 'infinite', maxStacks: 10 },
+                    { name: 'Sixth Sense', effects: { critRate: 20 }, duration: 'infinite', trigger: 'Instinct ×10' },
+                    { name: 'Crit DMG Boost (A2)', effects: { critDMG: 16 }, duration: 'infinite' },
+                    {
+                        name: 'Fire Synergy (A4)',
+                        effects: { fireDamagePerFireAlly: 12 },
+                        duration: 'infinite',
+                        maxStacks: 3,
+                        note: '+12% Fire DMG per Fire member in party (max 3 = +36% Fire DMG)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // A5 - Enhanced Instinct/Sixth Sense (+ATK, +CR, +DCC massifs)
+            A5: {
+                passives: [
+                    { name: 'Crimson → Scarlet → Fire Chain', mechanic: 'chain' },
+                    { name: 'Break Damage +24%', mechanic: 'permanent' },
+                    { name: 'Instinct → Sixth Sense (Enhanced A5)', mechanic: 'stacking', maxStacks: 10 },
+                    { name: 'Crit DMG +16% (A2)', mechanic: 'permanent' },
+                    { name: 'Super Armor + CD Reduction (A3)', mechanic: 'onSkillCast' },
+                    { name: 'Fire Synergy (A4)', mechanic: 'permanent' }
+                ],
+                selfBuffs: [
+                    { name: 'Break DMG Bonus', effects: { breakDamage: 24 }, duration: 'infinite' },
+                    { name: 'Fire Effect → Tsuchigumo', effects: { tsuchigumoDamage: 70 }, trigger: 'Fire active' },
+                    {
+                        name: 'Instinct (Enhanced A5)',
+                        effects: { atkPercent: 5, critRate: 1.5, critDMG: 1.5 },
+                        duration: 'infinite', maxStacks: 10,
+                        trigger: 'Enemy death (+1) / Break (+5)',
+                        note: '+5% ATK +1.5% CR +1.5% DCC par stack (max 10 = +50% ATK +15% CR +15% DCC)'
+                    },
+                    {
+                        name: 'Sixth Sense (Enhanced A5)',
+                        effects: { atkPercent: 77, critRate: 20, critDMG: 20 },
+                        duration: 'infinite',
+                        trigger: 'Instinct ×10',
+                        note: '+77% ATK +20% CR +20% DCC ! MP ≤ 30% → -50% MP consumption.'
+                    },
+                    { name: 'Crit DMG Boost (A2)', effects: { critDMG: 16 }, duration: 'infinite' },
+                    {
+                        name: 'Fire Synergy (A4)',
+                        effects: { fireDamagePerFireAlly: 12 },
+                        duration: 'infinite', maxStacks: 3
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            }
+        }
+    },
+
+    // 🔥 Christopher Reed - Fire Infusion DEF - Elemental Stacker / Fire Overload Specialist
+    reed: {
+        id: 'reed',
+        name: 'Christopher Reed',
+        class: 'Infusion',
+        element: 'Fire',
+        scaleStat: 'DEF',
+        primaryRole: 'DPS',
+        secondaryRole: 'Elemental Stacker / Fire Overload Enabler',
+        tags: ['DEF Scaler', 'Elemental Stacker', 'Fire Overload', 'Burn Applier', 'Spiritual Body', 'Touchdown', 'Team Fire DMG'],
+
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: 'Spiritual Body Manifestation',
+                        description: 'Gauge chargée par skills. 100% → Special Core Attack → état amélioré: Enhanced BA/Core/Skill + CD reset, +25% Fire Elem Acc, +150% BA/Core/Skill DMG. 30s.',
+                        type: 'selfBuff',
+                        conditions: 'Spiritual Body Gauge 100%'
+                    },
+                    {
+                        name: 'Finishing Catch',
+                        description: '1500% DEF Fire DMG, compte comme Basic Skill, CD15. Disponible après Extreme Evasion.',
+                        type: 'extraSkill',
+                        conditions: 'After Extreme Evasion'
+                    },
+                    {
+                        name: 'Touchdown',
+                        description: '+15% Fire Overload DMG + +5% Fire Elem Acc par stack (max 3 = +45% OL DMG + 15% Elem Acc). 60s. Activé par Nitro Kick/Foul Play en Team Fight.',
+                        type: 'selfBuff',
+                        conditions: 'On Nitro Kick / Foul Play in Team Fight mode'
+                    },
+                    {
+                        name: 'Burn',
+                        description: 'Inflige Burn: 200% DEF tous les 3s pendant 30s. Appliqué par Rising Performance, Rapid Kick, Zero to a Hundred.',
+                        type: 'debuff',
+                        conditions: 'On specific skill hits'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Spiritual Body Manifestation',
+                        effects: { fireElementalAccumulation: 25, skillDamage: 150 },
+                        duration: 30,
+                        note: '+25% Fire Elem Acc + +150% BA/Core/Skill DMG + CD reset'
+                    },
+                    {
+                        name: 'Touchdown',
+                        effects: { fireOverloadDamage: 15, fireElementalAccumulation: 5 },
+                        duration: 60, maxStacks: 3,
+                        note: 'Max 3 stacks = +45% Fire Overload DMG + +15% Fire Elem Acc'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A1: {
+                passives: [
+                    {
+                        name: 'Enhanced Gauge Charging',
+                        description: 'Si Fire Elemental Accumulation Immunity active → charge Spiritual Body Gauge (CD15). Fire team Basic/Ult Skill charge aussi la gauge.',
+                        type: 'selfBuff',
+                        conditions: 'On Elem Acc Immunity or Fire team skill use'
+                    },
+                    {
+                        name: 'Finishing Catch vs Burn +25%',
+                        description: '+25% Finishing Catch DMG vs cibles Burn',
+                        type: 'selfBuff',
+                        conditions: 'vs Burn targets'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Spiritual Body Manifestation',
+                        effects: { fireElementalAccumulation: 25, skillDamage: 150 },
+                        duration: 30
+                    },
+                    {
+                        name: 'Touchdown',
+                        effects: { fireOverloadDamage: 15, fireElementalAccumulation: 5 },
+                        duration: 60, maxStacks: 3
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A2: {
+                passives: [
+                    {
+                        name: 'Fire Elemental Accumulation +20%',
+                        description: '+20% Fire Elemental Accumulation permanent',
+                        type: 'selfBuff',
+                        conditions: 'Always active'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Spiritual Body Manifestation',
+                        effects: { fireElementalAccumulation: 25, skillDamage: 150 },
+                        duration: 30
+                    },
+                    {
+                        name: 'Touchdown',
+                        effects: { fireOverloadDamage: 15, fireElementalAccumulation: 5 },
+                        duration: 60, maxStacks: 3
+                    },
+                    {
+                        name: 'Fire Elem Acc Enhancement (A2)',
+                        effects: { fireElementalAccumulation: 20 },
+                        duration: 'infinite',
+                        note: '+20% Fire Elem Acc permanent'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A3: {
+                passives: [
+                    {
+                        name: 'Spiritual Body HP Recovery + Shield',
+                        description: 'Spiritual Body Manifestation → +30% HP recovery + Shield (100% DEF, 20s)',
+                        type: 'selfBuff',
+                        conditions: 'On Spiritual Body Manifestation activation'
+                    },
+                    {
+                        name: 'Competitive Spirit',
+                        description: 'Quand attaque touche cible Burn → +165% Fire DMG + +15% Finishing Catch DMG. 15s, CD2.',
+                        type: 'selfBuff',
+                        conditions: 'On hitting Burn target (CD: 2s)'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Spiritual Body Manifestation',
+                        effects: { fireElementalAccumulation: 25, skillDamage: 150 },
+                        duration: 30
+                    },
+                    {
+                        name: 'Touchdown',
+                        effects: { fireOverloadDamage: 15, fireElementalAccumulation: 5 },
+                        duration: 60, maxStacks: 3
+                    },
+                    {
+                        name: 'Fire Elem Acc Enhancement (A2)',
+                        effects: { fireElementalAccumulation: 20 },
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Competitive Spirit (A3)',
+                        effects: { fireDamage: 165 },
+                        duration: 15,
+                        note: '+165% Fire DMG + +15% Finishing Catch DMG vs Burn targets (CD2, quasi permanent)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A4: {
+                passives: [
+                    {
+                        name: 'Fire Synergy',
+                        description: '+5% Fire DMG par Fire ally dans la team (max 3 = +15% Fire DMG) pour les membres Fire',
+                        type: 'teamBuff',
+                        conditions: 'Per Fire ally in party'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Spiritual Body Manifestation',
+                        effects: { fireElementalAccumulation: 25, skillDamage: 150 },
+                        duration: 30
+                    },
+                    {
+                        name: 'Touchdown',
+                        effects: { fireOverloadDamage: 15, fireElementalAccumulation: 5 },
+                        duration: 60, maxStacks: 3
+                    },
+                    {
+                        name: 'Fire Elem Acc Enhancement (A2)',
+                        effects: { fireElementalAccumulation: 20 },
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Competitive Spirit (A3)',
+                        effects: { fireDamage: 165 },
+                        duration: 15
+                    },
+                    {
+                        name: 'Fire Synergy (A4)',
+                        effects: { fireDamagePerFireAlly: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Fire Synergy (A4)',
+                        effects: { fireDamagePerFireAlly: 5 },
+                        duration: 'infinite', maxStacks: 3,
+                        note: '+5% Fire DMG par Fire ally (max 3 = +15%) pour Fire team members'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A5: {
+                passives: [
+                    {
+                        name: 'Fire Overload Synergy',
+                        description: 'Fire Overload trigger (self ou ally) → +20% Power Gauge + reset Zero to a Hundred CD (CD30)',
+                        type: 'selfBuff',
+                        conditions: 'On Fire Overload trigger'
+                    },
+                    {
+                        name: 'Blazing Shock',
+                        description: 'Quand attaque touche cible Fire Overloaded → +20% Fire Overload DMG Taken + Unrecoverable. 30s, CD30.',
+                        type: 'debuff',
+                        conditions: 'On hitting Fire Overloaded target (CD: 30s)'
+                    },
+                    {
+                        name: "Victor's Spirit",
+                        description: 'Spiritual Body Manifestation active → +250% Zero to a Hundred DMG. 60s, retiré à l\'utilisation.',
+                        type: 'selfBuff',
+                        conditions: 'On Spiritual Body Manifestation activation'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Spiritual Body Manifestation',
+                        effects: { fireElementalAccumulation: 25, skillDamage: 150 },
+                        duration: 30
+                    },
+                    {
+                        name: 'Touchdown',
+                        effects: { fireOverloadDamage: 15, fireElementalAccumulation: 5 },
+                        duration: 60, maxStacks: 3
+                    },
+                    {
+                        name: 'Fire Elem Acc Enhancement (A2)',
+                        effects: { fireElementalAccumulation: 20 },
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Competitive Spirit (A3)',
+                        effects: { fireDamage: 165 },
+                        duration: 15
+                    },
+                    {
+                        name: 'Fire Synergy (A4)',
+                        effects: { fireDamagePerFireAlly: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    },
+                    {
+                        name: "Victor's Spirit (A5)",
+                        effects: { zeroToHundredDamage: 250 },
+                        duration: 60,
+                        note: '+250% Zero to a Hundred DMG, retiré à utilisation'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Fire Synergy (A4)',
+                        effects: { fireDamagePerFireAlly: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Blazing Shock (A5)',
+                        effects: { fireOverloadDamageTaken: 20 },
+                        duration: 30,
+                        note: '+20% Fire Overload DMG Taken + Unrecoverable (CD30)'
+                    }
+                ]
+            }
+        }
+    },
+
+    // 🔥 YUQI - Fire Breaker/Sub-DPS Tank HP - Break Specialist + Team Buffer + Debuffer
+    yuqi: {
+        id: 'yuqi',
+        name: 'YUQI',
+        class: 'Breaker',
+        element: 'Fire',
+        scaleStat: 'HP',
+        primaryRole: 'Breaker',
+        secondaryRole: 'Sub-DPS / Team Buffer',
+        tags: ['HP Scaler', 'Break Specialist', 'Team Buffer', 'Debuffer', 'Full Burst', 'Tempo Stacker', 'Super Armor'],
+
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: 'FOREVER',
+                        description: '+5% DMG dealt, infini, stack ×3 = +15% DMG dealt. Activé en Encore Mission / Instance Dungeon',
+                        type: 'teamBuff',
+                        conditions: 'On entering Encore Mission / Instance Dungeon'
+                    },
+                    {
+                        name: 'Break Extension',
+                        description: 'Quand YUQI ou un allié met un ennemi en [Break], la durée du Break augmente de 3s',
+                        type: 'utility',
+                        conditions: 'On Break applied'
+                    },
+                    {
+                        name: 'Tempo',
+                        description: '+0.5% Max HP + 0.5% Shouting Kick DMG par stack (max 15 = +7.5% HP + 7.5% SK DMG). 10s par stack. Chargé par Shouting Kick/Amp Crash/Rising Spin Kick hits',
+                        type: 'selfBuff',
+                        conditions: 'On skill hit'
+                    },
+                    {
+                        name: 'Full Burst',
+                        description: 'Quand la jauge Full Burst = 100%: Skills améliorés, +25% Break effectiveness Shouting Kick, +10% SK DMG, +10% Max HP, Super Armor. 10s. Supprime Tempo.',
+                        type: 'selfBuff',
+                        conditions: 'Full Burst gauge 100%'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'FOREVER',
+                        effects: { damageDealt: 5 },
+                        duration: 'infinite', maxStacks: 3,
+                        note: 'Max 3 stacks = +15% DMG dealt (team)'
+                    },
+                    {
+                        name: 'Tempo',
+                        effects: { maxHP: 0.5, shoutingKickDmg: 0.5 },
+                        duration: 10, maxStacks: 15,
+                        note: 'Max 15 stacks = +7.5% HP + 7.5% SK DMG'
+                    },
+                    {
+                        name: 'Full Burst',
+                        effects: { breakEffectiveness: 25, shoutingKickDmg: 10, maxHP: 10 },
+                        duration: 10,
+                        note: 'Super Armor + Skills améliorés'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'FOREVER',
+                        effects: { damageDealt: 5 },
+                        duration: 'infinite', maxStacks: 3,
+                        note: '+15% DMG dealt pour toute la team'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A1: {
+                passives: [
+                    {
+                        name: 'Full Burst Gauge +100%',
+                        description: 'Le taux de charge du Full Burst augmente de 100% → Full Burst activé 2× plus vite',
+                        type: 'selfBuff',
+                        conditions: 'Always active'
+                    },
+                    {
+                        name: 'Distortion',
+                        description: '+3% DMG taken par stack (max 3 = +9%). Max stacks → active Breakdown',
+                        type: 'debuff',
+                        conditions: 'On Amp Crash/Crescendo Scream/Rising Spin Kick/Unlimited Shout hit'
+                    },
+                    {
+                        name: 'Breakdown',
+                        description: '+15% DMG taken + 20% Fire DMG taken. 20s. Supprime Distortion',
+                        type: 'debuff',
+                        conditions: 'On Kill the Stage hit OR Distortion max stacks'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'FOREVER',
+                        effects: { damageDealt: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    },
+                    {
+                        name: 'Tempo',
+                        effects: { maxHP: 0.5, shoutingKickDmg: 0.5 },
+                        duration: 10, maxStacks: 15
+                    },
+                    {
+                        name: 'Full Burst',
+                        effects: { breakEffectiveness: 25, shoutingKickDmg: 10, maxHP: 10 },
+                        duration: 10
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'FOREVER',
+                        effects: { damageDealt: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Distortion',
+                        effects: { damageTaken: 3 },
+                        duration: 10, maxStacks: 3,
+                        note: 'Max 3 stacks = +9% DMG taken → triggers Breakdown'
+                    },
+                    {
+                        name: 'Breakdown',
+                        effects: { damageTaken: 15, fireDamageTaken: 20 },
+                        duration: 20,
+                        note: 'Supprime Distortion pendant actif'
+                    }
+                ]
+            },
+            A2: {
+                passives: [
+                    {
+                        name: 'Break Effectiveness +20%',
+                        description: '+20% Break effectiveness permanent',
+                        type: 'selfBuff',
+                        conditions: 'Always active'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'FOREVER',
+                        effects: { damageDealt: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    },
+                    {
+                        name: 'Tempo',
+                        effects: { maxHP: 0.5, shoutingKickDmg: 0.5 },
+                        duration: 10, maxStacks: 15
+                    },
+                    {
+                        name: 'Full Burst',
+                        effects: { breakEffectiveness: 25, shoutingKickDmg: 10, maxHP: 10 },
+                        duration: 10
+                    },
+                    {
+                        name: 'Break Effectiveness (A2)',
+                        effects: { breakEffectiveness: 20 },
+                        duration: 'infinite'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'FOREVER',
+                        effects: { damageDealt: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Distortion',
+                        effects: { damageTaken: 3 },
+                        duration: 10, maxStacks: 3
+                    },
+                    {
+                        name: 'Breakdown',
+                        effects: { damageTaken: 15, fireDamageTaken: 20 },
+                        duration: 20
+                    }
+                ]
+            },
+            A3: {
+                passives: [
+                    {
+                        name: 'Enhanced Full Burst',
+                        description: 'Full Burst amélioré: +50% Break effectiveness SK (was 25%), +40% SK DMG (was 10%), +25% Max HP (was 10%), Power Gauge +20% on hit',
+                        type: 'selfBuff',
+                        conditions: 'Full Burst active'
+                    },
+                    {
+                        name: 'Afterglow',
+                        description: 'Kill the Stage active Afterglow sur toute la team: +12% DMG vs Break, +15% Basic/Ult Skill DMG, +15% Crit DMG. 20s',
+                        type: 'teamBuff',
+                        conditions: 'On Kill the Stage (Ultimate) use'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'FOREVER',
+                        effects: { damageDealt: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    },
+                    {
+                        name: 'Tempo',
+                        effects: { maxHP: 0.5, shoutingKickDmg: 0.5 },
+                        duration: 10, maxStacks: 15
+                    },
+                    {
+                        name: 'Enhanced Full Burst (A3)',
+                        effects: { breakEffectiveness: 50, shoutingKickDmg: 40, maxHP: 25, powerGaugeCharge: 20 },
+                        duration: 10,
+                        note: 'Amélioré vs A0: Break 50% (was 25%), SK DMG 40% (was 10%), HP 25% (was 10%)'
+                    },
+                    {
+                        name: 'Break Effectiveness (A2)',
+                        effects: { breakEffectiveness: 20 },
+                        duration: 'infinite'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'FOREVER',
+                        effects: { damageDealt: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    },
+                    {
+                        name: 'Afterglow',
+                        effects: { breakTargetDmg: 12, basicUltSkillDmg: 15, critDMG: 15 },
+                        duration: 20,
+                        note: '+12% DMG vs Break + +15% Basic/Ult Skill DMG + +15% DCC → buff team MASSIF'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Distortion',
+                        effects: { damageTaken: 3 },
+                        duration: 10, maxStacks: 3
+                    },
+                    {
+                        name: 'Breakdown',
+                        effects: { damageTaken: 15, fireDamageTaken: 20 },
+                        duration: 20
+                    }
+                ]
+            },
+            A4: {
+                passives: [
+                    {
+                        name: 'Fire Synergy',
+                        description: '+5% Fire DMG par Fire ally dans la team (max 3 = +15% Fire DMG) pour les membres Fire',
+                        type: 'teamBuff',
+                        conditions: 'Per Fire ally in party'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'FOREVER',
+                        effects: { damageDealt: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    },
+                    {
+                        name: 'Tempo',
+                        effects: { maxHP: 0.5, shoutingKickDmg: 0.5 },
+                        duration: 10, maxStacks: 15
+                    },
+                    {
+                        name: 'Enhanced Full Burst (A3)',
+                        effects: { breakEffectiveness: 50, shoutingKickDmg: 40, maxHP: 25, powerGaugeCharge: 20 },
+                        duration: 10
+                    },
+                    {
+                        name: 'Break Effectiveness (A2)',
+                        effects: { breakEffectiveness: 20 },
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Fire Synergy (A4)',
+                        effects: { fireDamagePerFireAlly: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'FOREVER',
+                        effects: { damageDealt: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    },
+                    {
+                        name: 'Afterglow',
+                        effects: { breakTargetDmg: 12, basicUltSkillDmg: 15, critDMG: 15 },
+                        duration: 20
+                    },
+                    {
+                        name: 'Fire Synergy (A4)',
+                        effects: { fireDamagePerFireAlly: 5 },
+                        duration: 'infinite', maxStacks: 3,
+                        note: '+5% Fire DMG par Fire ally (max 3 = +15%) pour Fire members'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Distortion',
+                        effects: { damageTaken: 3 },
+                        duration: 10, maxStacks: 3
+                    },
+                    {
+                        name: 'Breakdown',
+                        effects: { damageTaken: 15, fireDamageTaken: 20 },
+                        duration: 20
+                    }
+                ]
+            },
+            A5: {
+                passives: [
+                    {
+                        name: 'Enhanced Distortion',
+                        description: 'Distortion amélioré: +6% DMG taken (was 3%), 15s (was 10s), max 3 = +18% DMG taken',
+                        type: 'debuff',
+                        conditions: 'On skill hit'
+                    },
+                    {
+                        name: 'Enhanced Breakdown',
+                        description: 'Breakdown amélioré: +20% DMG taken (was 15%) + 25% Fire DMG taken (was 20%), 30s (was 20s)',
+                        type: 'debuff',
+                        conditions: 'On Distortion max stacks or Kill the Stage'
+                    },
+                    {
+                        name: 'Enhanced Afterglow',
+                        description: 'Afterglow amélioré: +12% DMG vs Break, +30% Basic/Ult Skill DMG (was 15%), +20% Crit DMG (was 15%), 30s (was 20s)',
+                        type: 'teamBuff',
+                        conditions: 'On Kill the Stage use'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'FOREVER',
+                        effects: { damageDealt: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    },
+                    {
+                        name: 'Tempo',
+                        effects: { maxHP: 0.5, shoutingKickDmg: 0.5 },
+                        duration: 10, maxStacks: 15
+                    },
+                    {
+                        name: 'Enhanced Full Burst (A3)',
+                        effects: { breakEffectiveness: 50, shoutingKickDmg: 40, maxHP: 25, powerGaugeCharge: 20 },
+                        duration: 10
+                    },
+                    {
+                        name: 'Break Effectiveness (A2)',
+                        effects: { breakEffectiveness: 20 },
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Fire Synergy (A4)',
+                        effects: { fireDamagePerFireAlly: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'FOREVER',
+                        effects: { damageDealt: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    },
+                    {
+                        name: 'Enhanced Afterglow (A5)',
+                        effects: { breakTargetDmg: 12, basicUltSkillDmg: 30, critDMG: 20 },
+                        duration: 30,
+                        note: 'Amélioré: +30% Basic/Ult DMG (was 15%) + +20% DCC (was 15%) + durée 30s (was 20s)'
+                    },
+                    {
+                        name: 'Fire Synergy (A4)',
+                        effects: { fireDamagePerFireAlly: 5 },
+                        duration: 'infinite', maxStacks: 3
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Enhanced Distortion (A5)',
+                        effects: { damageTaken: 6 },
+                        duration: 15, maxStacks: 3,
+                        note: 'Amélioré: +6% (was 3%), 15s (was 10s) → Max 3 = +18% DMG taken'
+                    },
+                    {
+                        name: 'Enhanced Breakdown (A5)',
+                        effects: { damageTaken: 20, fireDamageTaken: 25 },
+                        duration: 30,
+                        note: 'Amélioré: +20% DMG (was 15%) + 25% Fire DMG (was 20%), 30s (was 20s)'
+                    }
+                ]
+            }
+        }
+    },
+
+    // 🔥 Yoo Soohyun - Fire Striker ATK - Def Pen Specialist + Magic Reaction Debuffer
+    yoo: {
+        id: 'yoo',
+        name: 'Yoo Soohyun',
+        class: 'Striker',
+        element: 'Fire',
+        scaleStat: 'ATK',
+        primaryRole: 'DPS',
+        secondaryRole: 'Def Pen Specialist',
+        tags: ['Def Pen Stacker', 'Fire Debuffer', 'Magic Reaction', 'Hell Fire', 'Spotlight', 'DI from Def Pen'],
+
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: 'Spotlight',
+                        description: '+24% Def Pen permanent. Damage Increase = 24% of Def Pen stat (24s, renouvable)',
+                        type: 'selfBuff',
+                        conditions: 'Always active'
+                    },
+                    {
+                        name: 'Magic Firearm',
+                        description: 'Basic Attack applique [Magic Reaction] sur l\'ennemi. +1% Fire DMG taken par stack, max 20 stacks = +20% Fire DMG taken',
+                        type: 'debuff',
+                        conditions: 'On Basic Attack hit'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Spotlight (Def Pen)',
+                        effects: { defPen: 24 },
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Spotlight (Damage Increase)',
+                        effects: { damageIncrease: '24% of Def Pen stat' },
+                        duration: 24,
+                        note: 'Renouvelable - uptime quasi permanent'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Magic Reaction',
+                        effects: { fireDamageTaken: 1 },
+                        duration: 'stackable', maxStacks: 20,
+                        note: 'Max 20 stacks = +20% Fire DMG taken par ennemi'
+                    }
+                ]
+            },
+            A1: {
+                passives: [
+                    {
+                        name: 'Madness → Hell Fire',
+                        description: 'Active l\'état Madness. Quand Magic Reaction ≥10 stacks, Madness se transforme en Hell Fire (+40% DMG sur skills améliorés)',
+                        type: 'transformation',
+                        conditions: 'Magic Reaction ≥10 stacks sur ennemi'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Spotlight (Def Pen)',
+                        effects: { defPen: 24 },
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Spotlight (Damage Increase)',
+                        effects: { damageIncrease: '24% of Def Pen stat' },
+                        duration: 24
+                    },
+                    {
+                        name: 'Hell Fire Transformation',
+                        effects: { skillDamage: 40 },
+                        duration: 'while Hell Fire active',
+                        conditions: 'Magic Reaction ≥10 stacks'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Magic Reaction',
+                        effects: { fireDamageTaken: 1 },
+                        duration: 'stackable', maxStacks: 20
+                    }
+                ]
+            },
+            A2: {
+                passives: [
+                    {
+                        name: 'Enhanced Def Pen',
+                        description: '+12% Def Pen permanent (total Spotlight 24% + A2 12% = 36% Def Pen perso)',
+                        type: 'selfBuff',
+                        conditions: 'Always active'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Spotlight + A2 (Def Pen)',
+                        effects: { defPen: 36 },
+                        duration: 'infinite',
+                        note: '24% Spotlight + 12% A2 = 36% Def Pen perso'
+                    },
+                    {
+                        name: 'Spotlight (Damage Increase)',
+                        effects: { damageIncrease: '24% of Def Pen stat' },
+                        duration: 24
+                    },
+                    {
+                        name: 'Hell Fire Transformation',
+                        effects: { skillDamage: 40 },
+                        duration: 'while Hell Fire active',
+                        conditions: 'Magic Reaction ≥10 stacks'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Magic Reaction',
+                        effects: { fireDamageTaken: 1 },
+                        duration: 'stackable', maxStacks: 20
+                    }
+                ]
+            },
+            A3: {
+                passives: [
+                    {
+                        name: 'Trick Shot ATK Boost',
+                        description: 'Trick Shot donne +24% ATK au lancement',
+                        type: 'selfBuff',
+                        conditions: 'On Trick Shot use'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Spotlight + A2 (Def Pen)',
+                        effects: { defPen: 36 },
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Spotlight (Damage Increase)',
+                        effects: { damageIncrease: '24% of Def Pen stat' },
+                        duration: 24
+                    },
+                    {
+                        name: 'Hell Fire Transformation',
+                        effects: { skillDamage: 40 },
+                        duration: 'while Hell Fire active',
+                        conditions: 'Magic Reaction ≥10 stacks'
+                    },
+                    {
+                        name: 'Trick Shot ATK Boost',
+                        effects: { atk: 24 },
+                        duration: 'temporary',
+                        conditions: 'On Trick Shot use'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Magic Reaction',
+                        effects: { fireDamageTaken: 1 },
+                        duration: 'stackable', maxStacks: 20
+                    }
+                ]
+            },
+            A4: {
+                passives: [
+                    {
+                        name: 'ATK Enhancement',
+                        description: '+12% ATK permanent',
+                        type: 'selfBuff',
+                        conditions: 'Always active'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Spotlight + A2 (Def Pen)',
+                        effects: { defPen: 36 },
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Spotlight (Damage Increase)',
+                        effects: { damageIncrease: '24% of Def Pen stat' },
+                        duration: 24
+                    },
+                    {
+                        name: 'Hell Fire Transformation',
+                        effects: { skillDamage: 40 },
+                        duration: 'while Hell Fire active',
+                        conditions: 'Magic Reaction ≥10 stacks'
+                    },
+                    {
+                        name: 'Trick Shot ATK Boost',
+                        effects: { atk: 24 },
+                        duration: 'temporary',
+                        conditions: 'On Trick Shot use'
+                    },
+                    {
+                        name: 'ATK Enhancement (A4)',
+                        effects: { atk: 12 },
+                        duration: 'infinite'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Magic Reaction',
+                        effects: { fireDamageTaken: 1 },
+                        duration: 'stackable', maxStacks: 20
+                    }
+                ]
+            },
+            A5: {
+                passives: [
+                    {
+                        name: 'Enhanced Magic Reaction Scaling',
+                        description: '+6% Kill Shot/Hell Fire DMG par stack de Magic Reaction (max 20 stacks = +120% DMG)',
+                        type: 'selfBuff',
+                        conditions: 'Per Magic Reaction stack on enemy'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Spotlight + A2 (Def Pen)',
+                        effects: { defPen: 36 },
+                        duration: 'infinite',
+                        note: 'Total avec arme A5: 36% + 12% = 48% Def Pen perso'
+                    },
+                    {
+                        name: 'Spotlight (Damage Increase)',
+                        effects: { damageIncrease: '24% of Def Pen stat' },
+                        duration: 24
+                    },
+                    {
+                        name: 'Hell Fire Transformation',
+                        effects: { skillDamage: 40 },
+                        duration: 'while Hell Fire active',
+                        conditions: 'Magic Reaction ≥10 stacks'
+                    },
+                    {
+                        name: 'Trick Shot ATK Boost',
+                        effects: { atk: 24 },
+                        duration: 'temporary',
+                        conditions: 'On Trick Shot use'
+                    },
+                    {
+                        name: 'ATK Enhancement (A4)',
+                        effects: { atk: 12 },
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Magic Reaction Scaling (A5)',
+                        effects: { killShotHellFireDamage: 6 },
+                        duration: 'per Magic Reaction stack',
+                        maxStacks: 20,
+                        note: 'Max 20 stacks = +120% Kill Shot/Hell Fire DMG → burst INSANE'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Magic Reaction',
+                        effects: { fireDamageTaken: 1 },
+                        duration: 'stackable', maxStacks: 20,
+                        note: '+20% Fire DMG taken → buff TOUTE la team Fire'
+                    }
+                ]
+            }
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 💧 FRIEREN - Support / Sub-DPS Water (DEF scaling, Frieren collab)
+    // Mana Power Control → +50% DEF (A3). Vollzanbel debuff.
+    // A2: +9% ATK/DEF/HP team. A4: +20% Crit DMG team.
+    // ═══════════════════════════════════════════════════════════════
+    frieren: {
+        id: 'frieren',
+        name: 'Frieren',
+        class: 'Mage / Support',
+        element: 'Water',
+        scaleStat: 'DEF',
+        primaryRole: 'Support',
+        secondaryRole: 'Sub-DPS',
+        tags: ['DEF Scaler', 'Team Buffer', 'Debuffer', 'Shielder', 'Healer', 'Crit DMG Buffer'],
+
+        advancements: {
+            // A0 - Mana Power Control (+25% DEF, +25% if MP≥50%), Mana Power Liberation (Ult: +100% CR), Defense Magic (Shield)
+            A0: {
+                passives: [
+                    {
+                        name: 'Mana Power Control',
+                        description: '+25% DEF. Si MP ≥ 50% → +25% DEF supplémentaire (total +50% DEF conditionnellement).',
+                        mechanic: 'conditional',
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Mana Power Liberation',
+                        description: 'Pendant l\'Ultimate → +100% Crit Rate.',
+                        mechanic: 'conditional',
+                        duration: 'ultimate'
+                    },
+                    {
+                        name: 'Defense Magic',
+                        description: 'Shield = 20% DEF. -5% DMG taken. Durée 30s.',
+                        mechanic: 'passive',
+                        duration: 30
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Mana Power Control',
+                        effects: { defense: 25 },
+                        duration: 'infinite',
+                        note: '+25% DEF permanent'
+                    },
+                    {
+                        name: 'Mana Power Control (MP≥50%)',
+                        effects: { defense: 25 },
+                        duration: 'infinite',
+                        condition: 'MP ≥ 50%',
+                        note: '+25% DEF supplémentaire si MP ≥ 50% (total +50%)'
+                    },
+                    {
+                        name: 'Mana Power Liberation',
+                        effects: { critRate: 100 },
+                        duration: 'ultimate',
+                        trigger: 'During Ultimate',
+                        note: '+100% Crit Rate pendant l\'Ult → garantit les crits'
+                    },
+                    {
+                        name: 'Defense Magic',
+                        effects: { damageTakenReduction: 5 },
+                        duration: 30,
+                        trigger: 'Passive',
+                        note: 'Shield 20% DEF + -5% DMG taken (30s)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+
+            // A1 - Vollzanbel debuff (-5% DEF, +5% crit chance, +5% crit DMG taken, +35% DMG from Frieren)
+            A1: {
+                passives: [
+                    { name: 'Mana Power Control', mechanic: 'conditional', duration: 'infinite' },
+                    { name: 'Mana Power Liberation', mechanic: 'conditional', duration: 'ultimate' },
+                    { name: 'Defense Magic', mechanic: 'passive', duration: 30 },
+                    {
+                        name: 'Vollzanbel (A1)',
+                        description: 'Vollzanbel applique debuff: -5% DEF ennemi, +5% chance de recevoir crit, +5% Crit DMG taken, +35% DMG from Frieren. 20s.',
+                        mechanic: 'debuff',
+                        duration: 20
+                    }
+                ],
+                selfBuffs: [
+                    { name: 'Mana Power Control', effects: { defense: 25 }, duration: 'infinite' },
+                    { name: 'Mana Power Control (MP≥50%)', effects: { defense: 25 }, duration: 'infinite', condition: 'MP ≥ 50%' },
+                    { name: 'Mana Power Liberation', effects: { critRate: 100 }, duration: 'ultimate', trigger: 'During Ultimate' },
+                    { name: 'Defense Magic', effects: { damageTakenReduction: 5 }, duration: 30 }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Vollzanbel (A1)',
+                        effects: {
+                            defReduction: 5,
+                            critChanceReceived: 5,
+                            critDamageTaken: 5,
+                            personalDamageBonus: 35
+                        },
+                        duration: 20,
+                        trigger: 'Vollzanbel hit',
+                        note: '-5% DEF, +5% crit chance received, +5% Crit DMG taken, +35% DMG from Frieren (20s)'
+                    }
+                ]
+            },
+
+            // A2 - +9% ATK/DEF/HP entire team
+            A2: {
+                passives: [
+                    { name: 'Mana Power Control', mechanic: 'conditional', duration: 'infinite' },
+                    { name: 'Mana Power Liberation', mechanic: 'conditional', duration: 'ultimate' },
+                    { name: 'Defense Magic', mechanic: 'passive', duration: 30 },
+                    { name: 'Vollzanbel (A1)', mechanic: 'debuff', duration: 20 },
+                    {
+                        name: 'Team Stats Boost (A2)',
+                        description: '+9% ATK, +9% DEF, +9% HP pour toute la team.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    { name: 'Mana Power Control', effects: { defense: 25 }, duration: 'infinite' },
+                    { name: 'Mana Power Control (MP≥50%)', effects: { defense: 25 }, duration: 'infinite', condition: 'MP ≥ 50%' },
+                    { name: 'Mana Power Liberation', effects: { critRate: 100 }, duration: 'ultimate', trigger: 'During Ultimate' },
+                    { name: 'Defense Magic', effects: { damageTakenReduction: 5 }, duration: 30 }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Team Stats Boost (A2)',
+                        effects: { attack: 9, defense: 9, hp: 9 },
+                        duration: 'infinite',
+                        note: '+9% ATK/DEF/HP pour toute la team'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Vollzanbel (A1)',
+                        effects: { defReduction: 5, critChanceReceived: 5, critDamageTaken: 5, personalDamageBonus: 35 },
+                        duration: 20,
+                        trigger: 'Vollzanbel hit'
+                    }
+                ]
+            },
+
+            // A3 - Enhanced Mana Power Control (+50% DEF, +50% if MP≥50%), Enhanced Defense Magic (30% shield, -10% DMG taken, 60s)
+            A3: {
+                passives: [
+                    {
+                        name: 'Enhanced Mana Power Control (A3)',
+                        description: '+50% DEF (au lieu de +25%). Si MP ≥ 50% → +50% DEF supplémentaire (total +100% DEF!).',
+                        mechanic: 'conditional',
+                        duration: 'infinite'
+                    },
+                    { name: 'Mana Power Liberation', mechanic: 'conditional', duration: 'ultimate' },
+                    {
+                        name: 'Enhanced Defense Magic (A3)',
+                        description: 'Shield = 30% DEF (au lieu de 20%). -10% DMG taken (au lieu de -5%). Durée 60s (au lieu de 30s).',
+                        mechanic: 'passive',
+                        duration: 60
+                    },
+                    { name: 'Vollzanbel (A1)', mechanic: 'debuff', duration: 20 },
+                    { name: 'Team Stats Boost (A2)', mechanic: 'permanent' }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Enhanced Mana Power Control (A3)',
+                        effects: { defense: 50 },
+                        duration: 'infinite',
+                        note: '+50% DEF permanent (doublé par rapport à A0)'
+                    },
+                    {
+                        name: 'Enhanced Mana Power Control (MP≥50%) (A3)',
+                        effects: { defense: 50 },
+                        duration: 'infinite',
+                        condition: 'MP ≥ 50%',
+                        note: '+50% DEF supplémentaire si MP ≥ 50% (total +100% DEF!)'
+                    },
+                    { name: 'Mana Power Liberation', effects: { critRate: 100 }, duration: 'ultimate', trigger: 'During Ultimate' },
+                    {
+                        name: 'Enhanced Defense Magic (A3)',
+                        effects: { damageTakenReduction: 10 },
+                        duration: 60,
+                        note: 'Shield 30% DEF + -10% DMG taken (60s, doublé)'
+                    }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Team Stats Boost (A2)',
+                        effects: { attack: 9, defense: 9, hp: 9 },
+                        duration: 'infinite'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Vollzanbel (A1)',
+                        effects: { defReduction: 5, critChanceReceived: 5, critDamageTaken: 5, personalDamageBonus: 35 },
+                        duration: 20,
+                        trigger: 'Vollzanbel hit'
+                    }
+                ]
+            },
+
+            // A4 - +20% Crit DMG entire team
+            A4: {
+                passives: [
+                    { name: 'Enhanced Mana Power Control (A3)', mechanic: 'conditional', duration: 'infinite' },
+                    { name: 'Mana Power Liberation', mechanic: 'conditional', duration: 'ultimate' },
+                    { name: 'Enhanced Defense Magic (A3)', mechanic: 'passive', duration: 60 },
+                    { name: 'Vollzanbel (A1)', mechanic: 'debuff', duration: 20 },
+                    { name: 'Team Stats Boost (A2)', mechanic: 'permanent' },
+                    {
+                        name: 'Crit DMG Team Boost (A4)',
+                        description: '+20% Crit DMG pour toute la team.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [
+                    { name: 'Enhanced Mana Power Control (A3)', effects: { defense: 50 }, duration: 'infinite' },
+                    { name: 'Enhanced Mana Power Control (MP≥50%) (A3)', effects: { defense: 50 }, duration: 'infinite', condition: 'MP ≥ 50%' },
+                    { name: 'Mana Power Liberation', effects: { critRate: 100 }, duration: 'ultimate', trigger: 'During Ultimate' },
+                    { name: 'Enhanced Defense Magic (A3)', effects: { damageTakenReduction: 10 }, duration: 60 }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Team Stats Boost (A2)',
+                        effects: { attack: 9, defense: 9, hp: 9 },
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Crit DMG Team Boost (A4)',
+                        effects: { critDMG: 20 },
+                        duration: 'infinite',
+                        note: '+20% Crit DMG pour toute la team'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Vollzanbel (A1)',
+                        effects: { defReduction: 5, critChanceReceived: 5, critDamageTaken: 5, personalDamageBonus: 35 },
+                        duration: 20,
+                        trigger: 'Vollzanbel hit'
+                    }
+                ]
+            },
+
+            // A5 - Enhanced Vollzanbel (-10% DEF, +15% crit chance, +15% crit DMG taken, +70% DMG from Frieren, 30s) + Judradjim 80% Power Gauge
+            A5: {
+                passives: [
+                    { name: 'Enhanced Mana Power Control (A3)', mechanic: 'conditional', duration: 'infinite' },
+                    { name: 'Mana Power Liberation', mechanic: 'conditional', duration: 'ultimate' },
+                    { name: 'Enhanced Defense Magic (A3)', mechanic: 'passive', duration: 60 },
+                    { name: 'Team Stats Boost (A2)', mechanic: 'permanent' },
+                    { name: 'Crit DMG Team Boost (A4)', mechanic: 'permanent' },
+                    {
+                        name: 'Enhanced Vollzanbel (A5)',
+                        description: '-10% DEF, +15% crit chance received, +15% Crit DMG taken, +70% DMG from Frieren. 30s.',
+                        mechanic: 'debuff',
+                        duration: 30
+                    },
+                    {
+                        name: 'Judradjim Enhancement (A5)',
+                        description: 'Judradjim rempli 80% de la Power Gauge.',
+                        mechanic: 'utility'
+                    }
+                ],
+                selfBuffs: [
+                    { name: 'Enhanced Mana Power Control (A3)', effects: { defense: 50 }, duration: 'infinite' },
+                    { name: 'Enhanced Mana Power Control (MP≥50%) (A3)', effects: { defense: 50 }, duration: 'infinite', condition: 'MP ≥ 50%' },
+                    { name: 'Mana Power Liberation', effects: { critRate: 100 }, duration: 'ultimate', trigger: 'During Ultimate' },
+                    { name: 'Enhanced Defense Magic (A3)', effects: { damageTakenReduction: 10 }, duration: 60 }
+                ],
+                teamBuffs: [
+                    {
+                        name: 'Team Stats Boost (A2)',
+                        effects: { attack: 9, defense: 9, hp: 9 },
+                        duration: 'infinite'
+                    },
+                    {
+                        name: 'Crit DMG Team Boost (A4)',
+                        effects: { critDMG: 20 },
+                        duration: 'infinite'
+                    }
+                ],
+                raidBuffs: [
+                    {
+                        name: 'Frieren Raid Buffs (A5)',
+                        effects: { critRate: 15, critDMG: 15 },
+                        scope: 'raid',
+                        duration: 'infinite',
+                        note: '+15% TC + 15% DCC en Raid'
+                    }
+                ],
+                debuffs: [
+                    {
+                        name: 'Enhanced Vollzanbel (A5)',
+                        effects: {
+                            defReduction: 10,
+                            critChanceReceived: 15,
+                            critDamageTaken: 15,
+                            personalDamageBonus: 70
+                        },
+                        duration: 30,
+                        trigger: 'Vollzanbel hit',
+                        note: '-10% DEF, +15% crit received, +15% Crit DMG taken, +70% DMG from Frieren (30s)'
+                    }
+                ]
+            }
+        }
+    },
+
     // 🔥 Autres personnages à ajouter ici par la suite
     // etc.
 };

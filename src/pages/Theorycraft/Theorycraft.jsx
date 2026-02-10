@@ -3061,6 +3061,18 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
         let totalBasicSkillDamage = 0;  // Basic Skill DMG
         let totalUltimateSkillDamage = 0;  // Ultimate Skill DMG
 
+        // Fire advanced stats
+        let totalFireDamage = 0;        // Fire DMG%
+        let totalFireDamageTaken = 0;   // Fire DMG Taken (debuff on enemy)
+        let totalDamageDealt = 0;       // General DMG Dealt % (ex: FOREVER)
+        let totalDamageTaken = 0;       // General DMG Taken (debuff ex: Distortion)
+        let totalBreakTargetDmg = 0;    // DMG vs Break targets (ex: Afterglow)
+
+        // Fire Overload stats
+        let totalFireElementalAccumulation = 0;  // Fire Elemental Accumulation %
+        let totalFireOverloadDamage = 0;         // Fire Overload DMG %
+        let totalFireOverloadDamageTaken = 0;    // Fire Overload DMG Taken (debuff on enemy)
+
         // Breakdown détaillé (pour affichage au hover)
         const breakdown = {
             critRate: [],
@@ -3077,7 +3089,17 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
             darkDamageTaken: [],
             darkOverloadDamageTaken: [],
             basicSkillDamage: [],  // Basic Skill DMG
-            ultimateSkillDamage: []  // Ultimate Skill DMG
+            ultimateSkillDamage: [],  // Ultimate Skill DMG
+            // Fire stats
+            fireDamage: [],
+            fireDamageTaken: [],
+            damageDealt: [],
+            damageTaken: [],
+            breakTargetDmg: [],
+            // Fire Overload stats
+            fireElementalAccumulation: [],
+            fireOverloadDamage: [],
+            fireOverloadDamageTaken: []
         };
 
         // 1. WEAPON BUFFS (RAID-wide)
@@ -3481,18 +3503,8 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
             }
         }
 
-        // Gina A4+ : +4% Def Pen RAID (flat, pas par allié)
-        const ginaA4InRaid = allMembers.find(m => m.id === 'gina' && m.advancement >= 4);
-        if (ginaA4InRaid) {
-            const ginaBuffs = getCharacterBuffs('gina', ginaA4InRaid.advancement);
-            if (ginaBuffs.defPen > 0) {
-                totalDefPen += ginaBuffs.defPen;
-                breakdown.defPen.push({
-                    source: `raid buff (Gina A${ginaA4InRaid.advancement})`,
-                    value: ginaBuffs.defPen
-                });
-            }
-        }
+        // Gina A4+ : Def Pen géré via characterAdvancedBuffs (teamBuffs section 8.2)
+        // +4% Def Pen ALL team + +4% Def Pen Fire only (elementRestriction)
 
         // ═══════════════════════════════════════════════════════════════
         // 🔥 EMMA A0+ : +7.7% Def Pen team buff (uniquement sa team)
@@ -3737,6 +3749,73 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                             value: maxValue
                         });
                     }
+
+                    // 🔥 Fire Damage (selfBuff direct)
+                    if (effects.fireDamage) {
+                        totalFireDamage += effects.fireDamage;
+                        breakdown.fireDamage.push({
+                            source: `${buffName} (${characterName}) - Scope: PERSONAL`,
+                            value: effects.fireDamage
+                        });
+                    }
+
+                    // 🔥 Fire DMG per Fire Ally (selfBuff, ex: Kanae A4, YUQI A4)
+                    if (effects.fireDamagePerFireAlly) {
+                        const fireCount = allMembers.filter(m => {
+                            const cd = characters[m.id];
+                            return cd && cd.element === 'Fire';
+                        }).length;
+                        const maxAllies = buff.maxStacks || 3;
+                        const count = Math.min(fireCount, maxAllies);
+                        const totalValue = effects.fireDamagePerFireAlly * count;
+                        totalFireDamage += totalValue;
+                        breakdown.fireDamage.push({
+                            source: `${buffName} (${characterName}) - ${count} Fire × ${effects.fireDamagePerFireAlly}%`,
+                            value: totalValue
+                        });
+                    }
+
+                    // 🔥 Damage Dealt % (general, ex: YUQI FOREVER)
+                    if (effects.damageDealt) {
+                        const maxStacks = buff.maxStacks || 1;
+                        const totalValue = effects.damageDealt * maxStacks;
+                        totalDamageDealt += totalValue;
+                        breakdown.damageDealt.push({
+                            source: `${buffName} (${characterName}) - ${maxStacks > 1 ? `${effects.damageDealt}% × ${maxStacks} stacks` : 'PERSONAL'}`,
+                            value: totalValue
+                        });
+                    }
+
+                    // 🔥 Break Target DMG (selfBuff, ex: Afterglow)
+                    if (effects.breakTargetDmg) {
+                        totalBreakTargetDmg += effects.breakTargetDmg;
+                        breakdown.breakTargetDmg.push({
+                            source: `${buffName} (${characterName}) - Scope: PERSONAL`,
+                            value: effects.breakTargetDmg
+                        });
+                    }
+
+                    // 🔥🔥 Fire Elemental Accumulation (ex: Christopher Spiritual Body, Touchdown, A2)
+                    if (effects.fireElementalAccumulation) {
+                        const maxStacks = buff.maxStacks || 1;
+                        const totalValue = effects.fireElementalAccumulation * maxStacks;
+                        totalFireElementalAccumulation += totalValue;
+                        breakdown.fireElementalAccumulation.push({
+                            source: `${buffName} (${characterName}) - ${maxStacks > 1 ? `${effects.fireElementalAccumulation}% × ${maxStacks} stacks` : 'PERSONAL'}`,
+                            value: totalValue
+                        });
+                    }
+
+                    // 🔥🔥 Fire Overload DMG (ex: Christopher Touchdown)
+                    if (effects.fireOverloadDamage) {
+                        const maxStacks = buff.maxStacks || 1;
+                        const totalValue = effects.fireOverloadDamage * maxStacks;
+                        totalFireOverloadDamage += totalValue;
+                        breakdown.fireOverloadDamage.push({
+                            source: `${buffName} (${characterName}) - ${maxStacks > 1 ? `${effects.fireOverloadDamage}% × ${maxStacks} stacks` : 'PERSONAL'}`,
+                            value: totalValue
+                        });
+                    }
                 });
             }
         }
@@ -3760,12 +3839,96 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                     const characterName = teamMember.name || teamMember.id;
                     const buffName = buff.name;
 
+                    // Skip buffs avec elementRestriction si le membre n'est pas de cet élément
+                    if (buff.elementRestriction) {
+                        const memberCharData = characters[member.id];
+                        const memberElement = memberCharData ? memberCharData.element : null;
+                        if (memberElement !== buff.elementRestriction) return;
+                    }
+
                     // Damage vs Dark Overloaded
                     if (effects.damageVsDarkOverloaded) {
                         totalDamageVsDarkOverloaded += effects.damageVsDarkOverloaded;
                         breakdown.damageVsDarkOverloaded.push({
                             source: `${buffName} (${characterName}) - Scope: TEAM`,
                             value: effects.damageVsDarkOverloaded
+                        });
+                    }
+
+                    // 🔥 Crit DMG from team buffs (ex: YUQI Afterglow)
+                    if (effects.critDMG) {
+                        totalCritDMG += effects.critDMG;
+                        breakdown.critDMG.push({
+                            source: `team buff (${characterName} - ${buffName})`,
+                            value: effects.critDMG
+                        });
+                    }
+
+                    // 🔥 Def Pen from team buffs
+                    if (effects.defPen) {
+                        totalDefPen += effects.defPen;
+                        breakdown.defPen.push({
+                            source: `team buff (${characterName} - ${buffName})`,
+                            value: effects.defPen
+                        });
+                    }
+
+                    // 🔥 ATK from team buffs
+                    if (effects.attack) {
+                        totalAttack += effects.attack;
+                        breakdown.attack.push({
+                            source: `team buff (${characterName} - ${buffName})`,
+                            value: effects.attack
+                        });
+                    }
+
+                    // 🔥 Fire DMG per Fire Ally (team buff, ex: YUQI A4, Kanae A4)
+                    if (effects.fireDamagePerFireAlly) {
+                        const fireCount = allMembers.filter(m => {
+                            const cd = characters[m.id];
+                            return cd && cd.element === 'Fire';
+                        }).length;
+                        const maxAllies = buff.maxStacks || 3;
+                        const count = Math.min(fireCount, maxAllies);
+                        const totalValue = effects.fireDamagePerFireAlly * count;
+                        totalFireDamage += totalValue;
+                        breakdown.fireDamage.push({
+                            source: `team buff (${characterName} - ${buffName}) - ${count} Fire × ${effects.fireDamagePerFireAlly}%`,
+                            value: totalValue
+                        });
+                    }
+
+                    // 🔥 Damage Dealt % (team buff, ex: YUQI FOREVER)
+                    if (effects.damageDealt) {
+                        const maxStacks = buff.maxStacks || 1;
+                        const totalValue = effects.damageDealt * maxStacks;
+                        totalDamageDealt += totalValue;
+                        breakdown.damageDealt.push({
+                            source: `team buff (${characterName} - ${buffName}) - ${maxStacks > 1 ? `${effects.damageDealt}% × ${maxStacks} stacks` : 'TEAM'}`,
+                            value: totalValue
+                        });
+                    }
+
+                    // 🔥 Basic/Ult Skill DMG combined (ex: YUQI Afterglow)
+                    if (effects.basicUltSkillDmg) {
+                        totalBasicSkillDamage += effects.basicUltSkillDmg;
+                        totalUltimateSkillDamage += effects.basicUltSkillDmg;
+                        breakdown.basicSkillDamage.push({
+                            source: `team buff (${characterName} - ${buffName})`,
+                            value: effects.basicUltSkillDmg
+                        });
+                        breakdown.ultimateSkillDamage.push({
+                            source: `team buff (${characterName} - ${buffName})`,
+                            value: effects.basicUltSkillDmg
+                        });
+                    }
+
+                    // 🔥 Break Target DMG (team buff, ex: YUQI Afterglow)
+                    if (effects.breakTargetDmg) {
+                        totalBreakTargetDmg += effects.breakTargetDmg;
+                        breakdown.breakTargetDmg.push({
+                            source: `team buff (${characterName} - ${buffName})`,
+                            value: effects.breakTargetDmg
                         });
                     }
                 });
@@ -3801,6 +3964,14 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                         const buffReceiverTeam = member.teamId;
 
                         // Si pas dans la même team, skip
+                        if (buffGiverTeam !== buffReceiverTeam) return;
+                    }
+
+                    // 🔥 Scope team-fire : Applique uniquement aux Fire de la MÊME TEAM que le buffer
+                    if (scope === 'team-fire') {
+                        if (memberElement !== 'Fire') return;
+                        const buffGiverTeam = raidMember.teamId;
+                        const buffReceiverTeam = member.teamId;
                         if (buffGiverTeam !== buffReceiverTeam) return;
                     }
 
@@ -3900,6 +4071,36 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                             value: maxValue
                         });
                     }
+
+                    // 🔥 Fire Damage Taken (debuff sur l'ennemi, ex: YUQI Breakdown, Soohyun Magic Reaction)
+                    if (effects.fireDamageTaken) {
+                        const maxValue = effects.fireDamageTaken * maxStacks;
+                        totalFireDamageTaken += maxValue;
+                        breakdown.fireDamageTaken.push({
+                            source: `${debuffName} (${characterName}) - Scope: Debuff Boss • ${effects.fireDamageTaken}% × ${maxStacks} stack${maxStacks > 1 ? 's' : ''}`,
+                            value: maxValue
+                        });
+                    }
+
+                    // 🔥 General Damage Taken (debuff sur l'ennemi, ex: YUQI Distortion/Breakdown)
+                    if (effects.damageTaken) {
+                        const maxValue = effects.damageTaken * maxStacks;
+                        totalDamageTaken += maxValue;
+                        breakdown.damageTaken.push({
+                            source: `${debuffName} (${characterName}) - Scope: Debuff Boss • ${effects.damageTaken}% × ${maxStacks} stack${maxStacks > 1 ? 's' : ''}`,
+                            value: maxValue
+                        });
+                    }
+
+                    // 🔥🔥 Fire Overload DMG Taken (debuff sur l'ennemi, ex: Christopher Blazing Shock A5)
+                    if (effects.fireOverloadDamageTaken) {
+                        const maxValue = effects.fireOverloadDamageTaken * maxStacks;
+                        totalFireOverloadDamageTaken += maxValue;
+                        breakdown.fireOverloadDamageTaken.push({
+                            source: `${debuffName} (${characterName}) - Scope: Debuff Boss • ${effects.fireOverloadDamageTaken}% × ${maxStacks} stack${maxStacks > 1 ? 's' : ''}`,
+                            value: maxValue
+                        });
+                    }
                 });
             }
         });
@@ -3923,7 +4124,17 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                 darkDamageTaken: totalDarkDamageTaken,
                 darkOverloadDamageTaken: totalDarkOverloadDamageTaken,
                 basicSkillDamage: totalBasicSkillDamage,  // Basic Skill DMG
-                ultimateSkillDamage: totalUltimateSkillDamage  // Ultimate Skill DMG
+                ultimateSkillDamage: totalUltimateSkillDamage,  // Ultimate Skill DMG
+                // Fire stats
+                fireDamage: totalFireDamage,
+                fireDamageTaken: totalFireDamageTaken,
+                damageDealt: totalDamageDealt,
+                damageTaken: totalDamageTaken,
+                breakTargetDmg: totalBreakTargetDmg,
+                // Fire Overload stats
+                fireElementalAccumulation: totalFireElementalAccumulation,
+                fireOverloadDamage: totalFireOverloadDamage,
+                fireOverloadDamageTaken: totalFireOverloadDamageTaken
             },
             breakdown
         };
@@ -4091,6 +4302,61 @@ const IndividualCharacterStatCard = ({ member, onClick }) => {
                     />
                 )}
 
+                {/* 🔥 Fire DMG - Affiché si > 0 */}
+                {member.finalStats.fireDamage > 0 && (
+                    <StatWithBreakdown
+                        label="Fire DMG"
+                        value={member.finalStats.fireDamage}
+                        breakdown={member.breakdown.fireDamage}
+                        color="text-orange-400"
+                        icon="🔥"
+                    />
+                )}
+
+                {/* 🔥 Fire DMG Taken (debuff sur ennemi) */}
+                {member.finalStats.fireDamageTaken > 0 && (
+                    <StatWithBreakdown
+                        label="Fire DMG Taken"
+                        value={member.finalStats.fireDamageTaken}
+                        breakdown={member.breakdown.fireDamageTaken}
+                        color="text-pink-400"
+                        icon="💔"
+                    />
+                )}
+
+                {/* 🔥 DMG Dealt % (ex: YUQI FOREVER) */}
+                {member.finalStats.damageDealt > 0 && (
+                    <StatWithBreakdown
+                        label="DMG Dealt"
+                        value={member.finalStats.damageDealt}
+                        breakdown={member.breakdown.damageDealt}
+                        color="text-green-400"
+                        icon="💥"
+                    />
+                )}
+
+                {/* 🔥 DMG Taken (debuff général sur ennemi) */}
+                {member.finalStats.damageTaken > 0 && (
+                    <StatWithBreakdown
+                        label="DMG Taken"
+                        value={member.finalStats.damageTaken}
+                        breakdown={member.breakdown.damageTaken}
+                        color="text-rose-400"
+                        icon="💢"
+                    />
+                )}
+
+                {/* 🔥 Break Target DMG (ex: YUQI Afterglow) */}
+                {member.finalStats.breakTargetDmg > 0 && (
+                    <StatWithBreakdown
+                        label="DMG vs Break"
+                        value={member.finalStats.breakTargetDmg}
+                        breakdown={member.breakdown.breakTargetDmg}
+                        color="text-teal-400"
+                        icon="💎"
+                    />
+                )}
+
                 {/* Basic Skill DMG - Toujours affiché si > 0 */}
                 {member.finalStats.basicSkillDamage > 0 && (
                     <StatWithBreakdown
@@ -4150,6 +4416,47 @@ const IndividualCharacterStatCard = ({ member, onClick }) => {
                                 label="Overload DMG Taken (OL)"
                                 value={member.finalStats.darkOverloadDamageTaken}
                                 breakdown={member.breakdown.darkOverloadDamageTaken}
+                                color="text-rose-400"
+                                icon="💢"
+                            />
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* SECTION 3 - During Fire Overload (stats conditionnelles Fire OL) */}
+            {(member.finalStats.fireElementalAccumulation > 0 || member.finalStats.fireOverloadDamage > 0 || member.finalStats.fireOverloadDamageTaken > 0) && (
+                <div className="mt-3 pt-3 border-t border-orange-500/30">
+                    <div className="text-xs text-orange-400 font-semibold mb-2 flex items-center gap-1">
+                        <span>🔥</span>
+                        <span>During Fire Overload</span>
+                    </div>
+                    <div className="space-y-2">
+                        {member.finalStats.fireElementalAccumulation > 0 && (
+                            <StatWithBreakdown
+                                label="Fire Elem Acc"
+                                value={member.finalStats.fireElementalAccumulation}
+                                breakdown={member.breakdown.fireElementalAccumulation}
+                                color="text-orange-300"
+                                icon="🔮"
+                            />
+                        )}
+
+                        {member.finalStats.fireOverloadDamage > 0 && (
+                            <StatWithBreakdown
+                                label="Fire OL DMG"
+                                value={member.finalStats.fireOverloadDamage}
+                                breakdown={member.breakdown.fireOverloadDamage}
+                                color="text-orange-400"
+                                icon="💥"
+                            />
+                        )}
+
+                        {member.finalStats.fireOverloadDamageTaken > 0 && (
+                            <StatWithBreakdown
+                                label="Fire OL DMG Taken"
+                                value={member.finalStats.fireOverloadDamageTaken}
+                                breakdown={member.breakdown.fireOverloadDamageTaken}
                                 color="text-rose-400"
                                 icon="💢"
                             />

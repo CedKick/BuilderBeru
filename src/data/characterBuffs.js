@@ -2915,7 +2915,8 @@ export const CHARACTER_BUFFS = {
         }
     },
 
-    // 🗡️ Weapon Yuqi (Arme) - N'apporte RIEN
+    // 🗡️ Weapon Yuqi (Arme) - HP +5-12% + Fire DMG +5-30% on Full Burst (15s)
+    // Pas de TC/DCC/DefPen direct, mais buff HP et Fire DMG conditionnels
     weapon_yuqi: {
         baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
         buffs: {
@@ -2928,16 +2929,16 @@ export const CHARACTER_BUFFS = {
         }
     },
 
-    // 🔥 Yuqi - N'apporte AUCUN buff TC/DCC/Def Pen
+    // 🔥 Yuqi - A3: Afterglow +15% DCC team (20s), A4: +5% Fire DMG par Fire ally, A5: Afterglow +20% DCC team (30s)
     yuqi: {
         baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
         buffs: {
             A0: { critRate: 0, critDMG: 0, defPen: 0 },
             A1: { critRate: 0, critDMG: 0, defPen: 0 },
             A2: { critRate: 0, critDMG: 0, defPen: 0 },
-            A3: { critRate: 0, critDMG: 0, defPen: 0 },
-            A4: { critRate: 0, critDMG: 0, defPen: 0 },
-            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, teamBuffs: { critDMG: 15 } },              // Afterglow: +15% DCC team (20s)
+            A4: { critRate: 0, critDMG: 0, defPen: 0, teamBuffs: { critDMG: 15 }, teamBuffsFire: { fireDmg: 5 } },  // +5% Fire DMG par Fire ally (max 3 = 15%)
+            A5: { critRate: 0, critDMG: 0, defPen: 0, teamBuffs: { critDMG: 20 }, teamBuffsFire: { fireDmg: 5 } },  // Enhanced Afterglow: +20% DCC team (30s)
         }
     },
 
@@ -2980,21 +2981,8 @@ export const CHARACTER_BUFFS = {
         }
     },
 
-    // 🔥 Gina - A4 apporte +4% Def Pen pour tout le RAID
+    // 🔥 Gina - A4: +4% Def Pen TEAM (ALL) + 4% Def Pen Fire only (via characterAdvancedBuffs)
     gina: {
-        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
-        buffs: {
-            A0: { critRate: 0, critDMG: 0, defPen: 0 },
-            A1: { critRate: 0, critDMG: 0, defPen: 0 },
-            A2: { critRate: 0, critDMG: 0, defPen: 0 },
-            A3: { critRate: 0, critDMG: 0, defPen: 0 },
-            A4: { critRate: 0, critDMG: 0, defPen: 4 },  // +4% Def Pen RAID
-            A5: { critRate: 0, critDMG: 0, defPen: 4 },  // A4 persiste
-        }
-    },
-
-    // 🗡️ Weapon Yoo Soohyun (Arme) - N'apporte RIEN
-    weapon_soohyun: {
         baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
         buffs: {
             A0: { critRate: 0, critDMG: 0, defPen: 0 },
@@ -3006,8 +2994,22 @@ export const CHARACTER_BUFFS = {
         }
     },
 
+    // 🗡️ Weapon Yoo Soohyun (Arme) - Def Pen PERSONNEL + DMG boost Core/Kill Shot/Hell Fire
+    // A0=4%, A1=5.6%, A2=7.2%, A3=8.8%, A4=10.4%, A5=12%
+    weapon_yoo: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 4 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 5.6 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 7.2 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 8.8 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 10.4 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 12 } },
+        }
+    },
+
     // 🔥 Yoo Soohyun - A0: 24% Def Pen perso, A2: +12% Def Pen perso (total 36%)
-    soohyun: {
+    yoo: {
         baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
         buffs: {
             A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 24 } },   // +24% Def Pen perso
@@ -3091,7 +3093,7 @@ export const CHARACTER_BUFFS = {
         }
     },
 
-    // 🗡️ Weapon Frieren (Arme) - N'apporte RIEN
+    // 🗡️ Weapon Frieren (Arme) - +5-50% DEF perso, Team Basic/Ult Skill DMG +5-30%
     weapon_frieren: {
         baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
         buffs: {
@@ -3104,7 +3106,7 @@ export const CHARACTER_BUFFS = {
         }
     },
 
-    // 🔥 Frieren (collab) - A4: +20% DCC team, A5: +15% DCC raid + 15% TC raid
+    // 💧 Frieren (collab Water) - A2: +9% ATK/DEF/HP team, A4: +20% DCC team, A5: +15% TC raid + 15% DCC raid
     frieren: {
         baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
         buffs: {
@@ -3150,6 +3152,62 @@ export const CHARACTER_BUFFS = {
             A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 13 } },
             A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 16 } },
             A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defPen: 20 } },
+        }
+    },
+
+    // 🗡️ Weapon Song Chiyul (Arme) - N'apporte RIEN en TC/DCC/DefPen
+    // Juste +2-8% Fire DMG + DMG vs Normal Monster stacking
+    weapon_song: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🔥 Song Chiyul (SR) - DPS égoïste, 0 buff team. Focus Burn + Incinerate
+    song: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 🗡️ Weapon Kanae (Arme) - +ATK% + Crit Rate PERSONNEL
+    // A0=10%TC, A1=12%, A2=14%, A3=16%, A4=18%, A5=20%
+    weapon_kanae: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critRate: 10 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critRate: 12 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critRate: 14 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critRate: 16 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critRate: 18 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critRate: 20 } },
+        }
+    },
+
+    // 🔥 Kanae - DPS égoïste. A2: +16% DCC perso. A5 Sixth Sense: +20% CR +20% DCC perso
+    // Total perso A5: Sixth Sense 20%CR+20%DCC + A2 16%DCC = 20%CR+36%DCC
+    // + Arme 20%CR = 40%CR+36%DCC perso !!
+    kanae: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },  // Sixth Sense: +20% CR mais conditionnel (10 stacks)
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critDMG: 16 } },   // +16% DCC permanent
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critDMG: 16 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critDMG: 16 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { critRate: 20, critDMG: 36 } },  // Sixth Sense 20%CR+20%DCC + A2 16%DCC
         }
     },
 

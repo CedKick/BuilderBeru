@@ -12,7 +12,9 @@
       "Bash(test:*)",
       "Bash(node:*)",
       "Bash(npx eslint:*)",
-      "Bash(npx vite build)"
+      "Bash(npx vite build)",
+      "Bash(findstr:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

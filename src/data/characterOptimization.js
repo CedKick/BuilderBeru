@@ -905,6 +905,824 @@ export const CHARACTER_OPTIMIZATION = {
             advanced: { critRate: 90, critDMG: 180, defPen: 65, dps: "16-24B" },
             whale: { critRate: 95, critDMG: 195, defPen: 72, dps: "26-35B" }
         }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🔥 FERN - DPS Mage Fire (Frieren collab)
+    // ═══════════════════════════════════════════════════════════════
+    // Buffs perso: A5 True Sight 10%TC+20%DCC + A4 10%TC+20%DCC = 20%TC+40%DCC
+    // Arme: +5-10%TC +10-20%DCC (sur Zoltraak skills) + 5-12% ATK
+    // Seeker's Gaze (A5): +10% Def Pen temporaire (burst 20s)
+    // Debuff ennemi: Fire Vuln +30% (A4+ Skill 2, 60×0.5%)
+    // Pas de buff TC/DCC pour la team → ses stats perso comptent beaucoup
+
+    fern: {
+        id: 'fern',
+        name: "Fern",
+        role: "DPS Mage",
+        element: "Fire",
+        tier: "S+",
+
+        // 💪 Stat principale de scaling
+        mainStat: {
+            type: 'atk',
+            label: 'ATK',
+            icon: '⚔️',
+            color: '#ef4444',
+            benchmarks: {
+                casual: 32000,
+                intermediate: 40000,
+                advanced: 48000,
+                whale: 54000
+            },
+            note: "Fern scale sur l'ATK - Magical Prodigy donne +40% ATK permanent (si MP ≥ 50%)"
+        },
+
+        // Buffs TC/DCC perso massifs: True Sight A5 (10%TC+20%DCC) + A4 (10%TC+20%DCC) = 20%TC+40%DCC
+        // + Arme A5: ~10%TC +20%DCC sur Zoltraak skills
+        // Total perso: ~30%TC +60%DCC → Besoin de moins de raw TC/DCC
+        sweetSpots: {
+            critRate: {
+                min: 90,
+                max: 100,
+                ideal: 100,
+                priority: 1,
+                status: "CAP",
+                color: "#22c55e",
+                rawMax: 9000, // 8-10K raw suffit ! +20%TC perso + ~10%TC arme = ~30%TC de buffs
+                note: "Cap 100% - 8-10K raw suffit avec ses buffs perso (~30% TC perso + arme)"
+            },
+            critDMG: {
+                min: 200,
+                max: 260,
+                ideal: 230,
+                priority: 2,
+                status: "HIGH",
+                color: "#f59e0b",
+                note: "+40% DCC perso (A4+A5) + 20% arme - Focus DCC après cap TC"
+            },
+            defPen: {
+                min: 70,
+                max: 85,
+                ideal: 77,
+                priority: 3,
+                status: "MODERATE",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "Seeker's Gaze +10% Def Pen temporaire (A5 burst) - Investir après TC/DCC"
+            }
+        },
+
+        substatPriority: ["Crit Rate%", "Crit DMG%", "ATK%", "Def Pen"],
+
+        scaling: {
+            atk: { grade: "S+", description: "Magical Prodigy +40% ATK perso (si MP ≥ 50%)" },
+            critDMG: { grade: "S", description: "Excellent avec ses buffs DCC perso (+60%)" },
+            defPen: { grade: "A", description: "Seeker's Gaze +10% Def Pen burst (A5)" },
+            critRate: { grade: "S", description: "Cap crucial - 30% TC perso (A5+arme)" }
+        },
+
+        tips: [
+            "A5: True Sight +10%TC +20%DCC + A4 +10%TC +20%DCC = 20%TC +40%DCC perso",
+            "Arme A5: +10%TC +20%DCC sur Zoltraak skills → Total ~30%TC +60%DCC perso !",
+            "8-10K raw TC suffit grâce aux buffs perso massifs",
+            "A5 Seeker's Gaze: +60% Fire DMG +10% Def Pen pendant 20s (burst phase)",
+            "A4+ Skill 2: Fire Vuln debuff 0.5%×60 stacks = +30% Fire DMG sur l'ennemi",
+            "Magical Prodigy A1: +40% ATK si MP ≥ 50% - Garder le MP haut !",
+            "+60% Boss DMG permanent (Mana Power Tracking A1)"
+        ],
+
+        recommendedSets: ["Armed 4pc + Expert 4pc", "Armed 4pc + Obsidian 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 75, critDMG: 160, defPen: 45, dps: "8-15B" },
+            intermediate: { critRate: 90, critDMG: 200, defPen: 60, dps: "20-35B" },
+            advanced: { critRate: 100, critDMG: 230, defPen: 72, dps: "40-55B" },
+            whale: { critRate: 100, critDMG: 250, defPen: 80, dps: "55-70B" }
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🔥 GINA - Support Fire (ATK scaling)
+    // ═══════════════════════════════════════════════════════════════
+    // Buffs TEAM: Mana Circulation +15%ATK +15%FireDMG, Mana Transformation (+12%DMG dealt, Shield)
+    // A4: +4% Def Pen ALL + +4% Def Pen Fire
+    // A3: Gravity Boost debuff +10% Fire DMG taken sur ennemi
+    // Arme: Mana Circulation → +1% ATK & Fire DMG (4 stacks)
+    // SUPPORT PURE - ses stats perso sont secondaires, focus sur survie + Damage Increase
+
+    gina: {
+        id: 'gina',
+        name: "Gina",
+        role: "Support / Buffer / Healer",
+        element: "Fire",
+        tier: "S",
+
+        mainStat: {
+            type: 'atk',
+            label: 'ATK',
+            icon: '⚔️',
+            color: '#ef4444',
+            benchmarks: {
+                casual: 20000,
+                intermediate: 28000,
+                advanced: 34000,
+                whale: 40000
+            },
+            note: "Gina scale sur l'ATK - Son ATK définit aussi le heal (2% ATK) et le Shield (12% ATK)"
+        },
+
+        sweetSpots: {
+            damageIncrease: {
+                min: 20,
+                max: 40,
+                ideal: 30,
+                priority: 1,
+                status: "HIGH",
+                color: "#ef4444",
+                note: "PRIORITÉ #1 - Amplifie les dégâts de toute la team"
+            },
+            defense: {
+                min: 10000,
+                max: 18000,
+                ideal: 14000,
+                priority: 2,
+                status: "HIGH",
+                color: "#3b82f6",
+                note: "PRIORITÉ #2 - Survie pour maintenir les buffs actifs"
+            },
+            critRate: {
+                min: 50,
+                max: 80,
+                ideal: 65,
+                priority: 3,
+                status: "LOW",
+                color: "#22c55e",
+                note: "Support - stats perso moins importantes"
+            },
+            critDMG: {
+                min: 100,
+                max: 160,
+                ideal: 130,
+                priority: 4,
+                status: "LOW",
+                color: "#f59e0b",
+                note: "Secondaire - focus sur les buffs team"
+            },
+            defPen: {
+                min: 30,
+                max: 50,
+                ideal: 40,
+                priority: 5,
+                status: "LOW",
+                color: "#8b5cf6",
+                note: "Pas prioritaire pour un support"
+            }
+        },
+
+        substatPriority: ["Damage Increase%", "DEF%", "HP%", "ATK%"],
+
+        scaling: {
+            atk: { grade: "A", description: "Scaling pour heal/shield + Mana Circulation buff" },
+            damageIncrease: { grade: "S", description: "PRIORITÉ - Amplifie tout" },
+            def: { grade: "A+", description: "Survie cruciale pour maintenir buffs" },
+            critDMG: { grade: "C", description: "Pas prioritaire" },
+            critRate: { grade: "C", description: "Pas prioritaire" }
+        },
+
+        tips: [
+            "PRIORITÉ : Damage Increase > Survie (DEF/HP) > le reste",
+            "Mana Circulation: +15% ATK +15% Fire DMG pour toute la team (15s)",
+            "A1: Mana Transformation → Shield 12%ATK + 12%DMG dealt + -12%DMG taken (20s)",
+            "A3: Gravity Boost → +10% Fire DMG taken debuff sur ennemi (20s)",
+            "A4: +4% Def Pen TOUT le RAID + +4% Def Pen Fire members",
+            "Arme: Mana Circulation → team +50 mana + +1% ATK/Fire DMG (4 stacks)",
+            "A5: Space-Time Gap → +120% Path of Extinction DMG vs Gravity Boost"
+        ],
+
+        recommendedSets: ["Guardian 4pc + Sylph 4pc", "Angel 4pc + Guardian 4pc"],
+
+        benchmarks: {
+            casual: { damageIncrease: 15, defense: 9000, critRate: 40, dps: "0.2-0.5B" },
+            intermediate: { damageIncrease: 22, defense: 12000, critRate: 50, dps: "0.5-0.9B" },
+            advanced: { damageIncrease: 30, defense: 15000, critRate: 60, dps: "0.9-1.3B" },
+            whale: { damageIncrease: 38, defense: 17000, critRate: 70, dps: "1.3-1.8B" }
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🔥 SONG CHIYUL - DPS Mage Fire (SR, ATK scaling)
+    // ═══════════════════════════════════════════════════════════════
+    // SR character - pas de buffs team, DPS égoïste
+    // Focus Burn synergy + Incinerate stacking
+    // 0 buff perso TC/DCC/DefPen → besoin de raw stats pures
+    // A1: +50% DMG vs Normal monsters (farmer)
+
+    song: {
+        id: 'song',
+        name: "Song Chiyul",
+        role: "DPS Mage / Farmer",
+        element: "Fire",
+        tier: "B",
+
+        mainStat: {
+            type: 'atk',
+            label: 'ATK',
+            icon: '⚔️',
+            color: '#ef4444',
+            benchmarks: {
+                casual: 18000,
+                intermediate: 25000,
+                advanced: 30000,
+                whale: 36000
+            },
+            note: "SR - Scaling ATK pur. Burn DOT = 50% ATK/3s"
+        },
+
+        // 0 buff TC/DCC/DefPen perso → besoin de plus de raw TC que les SSR
+        // Pas de buff team non plus → peut investir plus en raw
+        sweetSpots: {
+            critRate: {
+                min: 80,
+                max: 100,
+                ideal: 95,
+                priority: 1,
+                status: "HIGH",
+                color: "#22c55e",
+                rawMax: 14000, // 0 buff TC perso → besoin de plus de raw (12-14K)
+                note: "0 buff TC perso - 12-14K raw nécessaire"
+            },
+            critDMG: {
+                min: 160,
+                max: 220,
+                ideal: 190,
+                priority: 2,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "Pas de buff DCC perso → investir en raw"
+            },
+            defPen: {
+                min: 50,
+                max: 70,
+                ideal: 60,
+                priority: 3,
+                status: "MODERATE",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "SR - moins prioritaire que TC/DCC"
+            }
+        },
+
+        substatPriority: ["Crit Rate%", "Crit DMG%", "ATK%", "Def Pen"],
+
+        scaling: {
+            atk: { grade: "A", description: "Scaling direct + Burn DOT (50% ATK)" },
+            critDMG: { grade: "A", description: "Important sans buff perso" },
+            defPen: { grade: "B+", description: "Utile mais SR = moins de scaling" },
+            critRate: { grade: "A+", description: "Cap important, 0 buff perso TC" }
+        },
+
+        tips: [
+            "SR - DPS égoïste, 0 buff pour la team",
+            "A1: +50% DMG vs Normal monsters → excellent farmer",
+            "Skill 2 Burns → synergy avec Ultimate (+30% vs Burned) et A5 (+50% Incinerate vs Burned)",
+            "Passive: Iaido hit → +60% Incinerate DMG (3 stacks) + Core Gauge 100%",
+            "0 buff TC/DCC perso → besoin de 12-14K raw TC",
+            "A4: +20% Incinerate DMG permanent"
+        ],
+
+        recommendedSets: ["Armed 4pc + Expert 4pc", "Expert 4pc + Obsidian 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 60, critDMG: 130, defPen: 35, dps: "1-3B" },
+            intermediate: { critRate: 80, critDMG: 165, defPen: 50, dps: "4-7B" },
+            advanced: { critRate: 90, critDMG: 185, defPen: 60, dps: "8-12B" },
+            whale: { critRate: 95, critDMG: 200, defPen: 65, dps: "12-16B" }
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🔥 STARK - Breaker / Sub-DPS Tank Fire (HP scaling, Frieren collab)
+    // ═══════════════════════════════════════════════════════════════
+    // Buffs perso: Confidence +5%/stack (A5, 4 stacks = +20% Def Pen +20% Fire DMG)
+    // → Courage: +30% Def Pen +30% Fire DMG (5s, A5)
+    // + Determination: +15% CR (10s)
+    // + A0 perso 20% Def Pen (characterBuffs) → A5: 30% Def Pen
+    // A3: Team Def Pen = 20% of Stark's raw Def Pen
+    // Arme: +5% HP seulement
+
+    stark: {
+        id: 'stark',
+        name: "Stark",
+        role: "Breaker / Sub-DPS Tank",
+        element: "Fire",
+        tier: "S",
+
+        mainStat: {
+            type: 'hp',
+            label: 'HP',
+            icon: '❤️',
+            color: '#ef4444',
+            benchmarks: {
+                casual: 80000,
+                intermediate: 110000,
+                advanced: 140000,
+                whale: 170000
+            },
+            note: "Stark scale sur HP - Tous ses dégâts basés sur Max HP. Arme +5% HP."
+        },
+
+        // Buffs perso massifs: Confidence cycling +20% Def Pen, Courage +30% Def Pen (A5)
+        // + personalBuffs 30% Def Pen (characterBuffs A5) + 10% CR (Determination)
+        // A3: team Def Pen from raw → lui-même a besoin de raw Def Pen aussi
+        sweetSpots: {
+            critRate: {
+                min: 85,
+                max: 100,
+                ideal: 95,
+                priority: 2,
+                status: "HIGH",
+                color: "#22c55e",
+                rawMax: 10000, // Determination +15% CR perso → 10K raw suffit
+                note: "Determination donne +15% CR (10s) → 10K raw suffit"
+            },
+            critDMG: {
+                min: 170,
+                max: 220,
+                ideal: 200,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "Important mais après CR et Def Pen"
+            },
+            defPen: {
+                min: 80,
+                max: 95,
+                ideal: 88,
+                priority: 1,
+                status: "PRIORITY",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "Courage A5 +30% Def Pen + personalBuffs 30% = ~60% buffs. Raw 70K (~33%) → ~93%. Sweet spot 88%."
+            }
+        },
+
+        substatPriority: ["HP%", "Def Pen", "Crit Rate%", "Crit DMG%"],
+
+        scaling: {
+            hp: { grade: "S+", description: "Tous ses dégâts basés sur Max HP" },
+            defPen: { grade: "S", description: "Buffs perso massifs (Confidence/Courage +30% + 30% perso)" },
+            critDMG: { grade: "A", description: "Multiplicateur utile" },
+            critRate: { grade: "A", description: "Determination +15% CR perso" }
+        },
+
+        tips: [
+            "HP SCALER - Tous les dégâts basés sur Max HP",
+            "Confidence A5: +5% Fire DMG/Def Pen par stack (4 stacks = +20%)",
+            "Courage A5: +30% Fire DMG +30% Def Pen +50% Annihilation DMG (5s burst)",
+            "A3: Team Def Pen = 20% de sa raw Def Pen → build Def Pen profite à la team !",
+            "A1: Fighting Spirit -20% DMG taken + HP recovery ≤10% (CD 60s)",
+            "A3: Warrior's Aura → ennemi prend +30% DMG from Stark (15s)",
+            "Power Gauge ne charge QUE pendant Courage → timing critique pour Ultimate"
+        ],
+
+        recommendedSets: ["Armed 4pc + Guardian 4pc", "Armed 4pc + Expert 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 70, critDMG: 140, defPen: 55, dps: "5-10B" },
+            intermediate: { critRate: 85, critDMG: 175, defPen: 70, dps: "15-25B" },
+            advanced: { critRate: 95, critDMG: 200, defPen: 82, dps: "30-45B" },
+            whale: { critRate: 100, critDMG: 215, defPen: 88, dps: "45-60B" }
+        }
+    },
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🔥 KANAE - DPS Assassin Fire (ATK scaling)
+    // ═══════════════════════════════════════════════════════════════
+    // Buffs perso MASSIFS A5: Sixth Sense +77%ATK +20%CR +20%DCC
+    // + A2: +16% DCC permanent
+    // + Arme A5: +20% CR perso
+    // Total perso A5: ~40% CR + 36% DCC + 77% ATK !!
+    // A4: +12% Fire DMG per Fire member (max 3 = +36% Fire DMG)
+    // 0 buff team → pure selfish DPS
+
+    kanae: {
+        id: 'kanae',
+        name: "Tawata Kanae",
+        role: "DPS Assassin",
+        element: "Fire",
+        tier: "S+",
+
+        mainStat: {
+            type: 'atk',
+            label: 'ATK',
+            icon: '⚔️',
+            color: '#ef4444',
+            benchmarks: {
+                casual: 30000,
+                intermediate: 38000,
+                advanced: 46000,
+                whale: 52000
+            },
+            note: "Kanae scale sur ATK. Sixth Sense A5 donne +77% ATK → scaling ATK monstrueux"
+        },
+
+        // Buffs perso: Arme 20%CR + Sixth Sense 20%CR + A2 16%DCC + Sixth Sense 20%DCC = 40%CR+36%DCC
+        // → Besoin de très peu de raw TC (7-9K max !)
+        sweetSpots: {
+            critRate: {
+                min: 90,
+                max: 100,
+                ideal: 100,
+                priority: 1,
+                status: "CAP",
+                color: "#22c55e",
+                rawMax: 8000, // 40% CR perso (arme 20% + Sixth Sense 20%) → 7-9K raw suffit !
+                note: "Cap 100% - 7-9K raw suffit ! Arme 20%CR + Sixth Sense 20%CR = 40% CR perso"
+            },
+            critDMG: {
+                min: 200,
+                max: 260,
+                ideal: 230,
+                priority: 2,
+                status: "HIGH",
+                color: "#f59e0b",
+                note: "A2 16%DCC + Sixth Sense 20%DCC = 36% DCC perso → investir en raw après cap CR"
+            },
+            defPen: {
+                min: 60,
+                max: 80,
+                ideal: 70,
+                priority: 3,
+                status: "MODERATE",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "Pas de buff Def Pen perso → dépend des buffs team"
+            }
+        },
+
+        substatPriority: ["Crit Rate%", "Crit DMG%", "ATK%", "Def Pen"],
+
+        scaling: {
+            atk: { grade: "S+", description: "Sixth Sense +77% ATK → scaling ATK monstrueux" },
+            critDMG: { grade: "S", description: "36% DCC perso → bon ROI en raw" },
+            defPen: { grade: "A", description: "Pas de buff perso → dépend de la team" },
+            critRate: { grade: "S", description: "40% CR perso → cap facile, peu de raw" }
+        },
+
+        tips: [
+            "A5 Sixth Sense: +77% ATK +20% CR +20% DCC → buffs perso MASSIFS",
+            "Arme A5: +20% CR perso → Total CR perso = 40% !",
+            "A2: +16% DCC permanent → Total DCC perso = 36%",
+            "7-9K raw TC suffit grâce aux 40% CR perso",
+            "A4: +12% Fire DMG par Fire member (max 3 = +36% Fire DMG)",
+            "+24% DMG vs Break targets + Crimson→Scarlet→Fire chain burst",
+            "0 buff team → DPS purement égoïste"
+        ],
+
+        recommendedSets: ["Armed 4pc + Expert 4pc", "Armed 4pc + Obsidian 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 75, critDMG: 160, defPen: 40, dps: "8-15B" },
+            intermediate: { critRate: 90, critDMG: 200, defPen: 55, dps: "20-35B" },
+            advanced: { critRate: 100, critDMG: 230, defPen: 65, dps: "40-55B" },
+            whale: { critRate: 100, critDMG: 255, defPen: 75, dps: "55-75B" }
+        }
+    },
+
+    // 🔥 Yoo Soohyun - Fire Striker ATK - Def Pen Specialist + Magic Reaction Debuffer
+    yoo: {
+        id: 'yoo',
+        name: "Yoo Soohyun",
+        role: "DPS Striker",
+        element: "Fire",
+        tier: "S+",
+
+        mainStat: {
+            type: 'atk',
+            label: 'ATK',
+            icon: '⚔️',
+            color: '#ef4444',
+            benchmarks: {
+                casual: 28000,
+                intermediate: 36000,
+                advanced: 44000,
+                whale: 50000
+            },
+            note: "Scale sur ATK. A3 +24% ATK (Trick Shot) + A4 +12% ATK permanent → bon scaling ATK"
+        },
+
+        sweetSpots: {
+            defPen: {
+                min: 85,
+                max: 100,
+                ideal: 92,
+                priority: 1,
+                status: "HIGH",
+                color: "#8b5cf6",
+                rawMax: 65000,
+                note: "PRIORITÉ #1 car DI = 24% du stat Def Pen → double bénéfice ! 48% Def Pen perso (36% char + 12% arme) → 60-65K raw suffit"
+            },
+            critRate: {
+                min: 90,
+                max: 100,
+                ideal: 100,
+                priority: 2,
+                status: "CAP",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "Cap 100% - 0% TC perso → besoin de 12-14K raw ou buffs team (Fern, etc.)"
+            },
+            critDMG: {
+                min: 200,
+                max: 260,
+                ideal: 230,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "0% DCC perso → investir après Def Pen et TC cap"
+            }
+        },
+
+        substatPriority: ["Def Pen", "Crit Rate%", "Crit DMG%", "ATK%"],
+
+        scaling: {
+            defPen: { grade: "S+", description: "48% Def Pen perso + DI from Def Pen → DOUBLE scaling, priorité absolue" },
+            atk: { grade: "S", description: "A3 +24% ATK + A4 +12% ATK → bon scaling" },
+            critRate: { grade: "A", description: "0% TC perso → dépend de la team et du raw" },
+            critDMG: { grade: "A", description: "0% DCC perso → investir en raw" }
+        },
+
+        tips: [
+            "Def Pen = PRIORITÉ #1 car Spotlight donne DI = 24% du stat Def Pen → plus de raw Def Pen = plus de DI + plus de pénétration",
+            "48% Def Pen perso (Spotlight 24% + A2 12% + Arme 12%) → monstrueux",
+            "Magic Reaction debuff: +20% Fire DMG taken par l'ennemi → buff TOUTE la team Fire",
+            "A5: +120% Kill Shot/Hell Fire DMG à max stacks → burst INSANE",
+            "A1: Hell Fire = +40% DMG sur skills améliorés quand Magic Reaction ≥10",
+            "A3: Trick Shot (CD10) → +24% ATK → spam pour maintenir le buff",
+            "0% TC/DCC perso → besoin de 12-14K raw TC ou buffs team"
+        ],
+
+        recommendedSets: ["Obsidian 4pc + Armed 4pc", "Obsidian 4pc + Expert 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 70, critDMG: 150, defPen: 55, dps: "5-12B" },
+            intermediate: { critRate: 85, critDMG: 190, defPen: 70, dps: "18-30B" },
+            advanced: { critRate: 100, critDMG: 220, defPen: 85, dps: "35-50B" },
+            whale: { critRate: 100, critDMG: 250, defPen: 92, dps: "50-68B" }
+        }
+    },
+
+    // 🔥 Christopher Reed - Fire Infusion DEF - Elemental Stacker / Fire Overload Specialist
+    reed: {
+        id: 'reed',
+        name: "Christopher Reed",
+        role: "DPS / Elemental Stacker",
+        element: "Fire",
+        tier: "S+",
+
+        mainStat: {
+            type: 'def',
+            label: 'DEF',
+            icon: '🛡️',
+            color: '#06b6d4',
+            benchmarks: {
+                casual: 15000,
+                intermediate: 22000,
+                advanced: 28000,
+                whale: 34000
+            },
+            note: "Scale sur DEF. Arme +50% DEF + Shield A3 100% DEF → DEF = DMG + survie. Spiritual Body +150% skill DMG"
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 85,
+                max: 100,
+                ideal: 95,
+                priority: 2,
+                status: "HIGH",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "0% TC perso → besoin de 12-14K raw. Cap 100% idéal"
+            },
+            critDMG: {
+                min: 180,
+                max: 240,
+                ideal: 200,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "0% DCC perso → investir après TC cap. Focus DEF > DCC"
+            },
+            defPen: {
+                min: 60,
+                max: 85,
+                ideal: 75,
+                priority: 1,
+                status: "HIGH",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "15% Def Pen perso (reed A5) + 15% arme (Zero to a Hundred) = 30% Def Pen perso → 65-70K raw suffit"
+            }
+        },
+
+        substatPriority: ["DEF%", "Def Pen", "Crit Rate%", "Crit DMG%"],
+
+        scaling: {
+            def: { grade: "S+", description: "Tout le kit scale sur DEF. Arme +50% DEF. Shield A3 = 100% DEF → priorité absolue" },
+            defPen: { grade: "S", description: "30% Def Pen perso (15% reed + 15% arme) → bon investissement raw" },
+            critRate: { grade: "A", description: "0% TC perso → besoin de raw ou team buffs" },
+            critDMG: { grade: "A", description: "0% DCC perso → investir en raw après TC" }
+        },
+
+        tips: [
+            "DEF = PRIORITÉ ABSOLUE car tout scale sur DEF + Shield A3 + Arme +50% DEF",
+            "Spiritual Body: +25% Fire Elem Acc + +150% BA/Core/Skill DMG → windows de burst massives",
+            "Touchdown (×3): +45% Fire Overload DMG + +15% Fire Elem Acc → Fire Overload enabler #1",
+            "A3 Competitive Spirit: +165% Fire DMG vs Burn (quasi permanent avec CD2)",
+            "A4: +5% Fire DMG par Fire ally (max 3 = +15%) pour toute la team Fire",
+            "A5 Blazing Shock: +20% Fire Overload DMG Taken → debuff ennemi massif",
+            "A5 Victor's Spirit: +250% Zero to a Hundred DMG → burst ult colossal",
+            "30% Def Pen perso (15% char + 15% arme) → 65-70K raw suffit"
+        ],
+
+        recommendedSets: ["Courageous 4pc + Obsidian 4pc", "Courageous 4pc + Armed 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 65, critDMG: 140, defPen: 40, dps: "5-12B" },
+            intermediate: { critRate: 80, critDMG: 175, defPen: 55, dps: "18-30B" },
+            advanced: { critRate: 95, critDMG: 200, defPen: 70, dps: "35-55B" },
+            whale: { critRate: 100, critDMG: 230, defPen: 80, dps: "55-75B" }
+        }
+    },
+
+    // 🔥 YUQI - Fire Breaker/Sub-DPS Tank HP - Break Specialist + Team Buffer + Debuffer
+    yuqi: {
+        id: 'yuqi',
+        name: "YUQI",
+        role: "Breaker / Sub-DPS",
+        element: "Fire",
+        tier: "S",
+
+        mainStat: {
+            type: 'hp',
+            label: 'Max HP',
+            icon: '❤️',
+            color: '#22c55e',
+            benchmarks: {
+                casual: 180000,
+                intermediate: 240000,
+                advanced: 300000,
+                whale: 360000
+            },
+            note: "Scale sur Max HP. Tempo +7.5% HP, Full Burst +25% HP (A3) → scaling HP massif. Arme +12% HP"
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 85,
+                max: 100,
+                ideal: 100,
+                priority: 2,
+                status: "CAP",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "Cap 100% - 0% TC perso → besoin de 12-14K raw ou buffs team"
+            },
+            critDMG: {
+                min: 180,
+                max: 240,
+                ideal: 210,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "0% DCC perso, mais Afterglow donne +20% DCC team (A5). Investir après TC cap"
+            },
+            defPen: {
+                min: 55,
+                max: 75,
+                ideal: 65,
+                priority: 1,
+                status: "MODERATE",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "0% Def Pen perso → dépend des buffs team. Priorité #1 pour maximiser le DMG"
+            }
+        },
+
+        substatPriority: ["Max HP%", "Def Pen", "Crit Rate%", "Crit DMG%"],
+
+        scaling: {
+            hp: { grade: "S+", description: "Tout le kit scale sur Max HP → priorité absolue" },
+            defPen: { grade: "A+", description: "0% Def Pen perso → dépend de la team" },
+            critRate: { grade: "A", description: "0% TC perso → besoin de raw ou team" },
+            critDMG: { grade: "A", description: "Afterglow A5 +20% DCC → aide un peu" }
+        },
+
+        tips: [
+            "BREAKER avant tout: Break Extension +3s + A2 +20% Break effectiveness + Full Burst +50% Break SK",
+            "Afterglow (A3/A5): BUFF TEAM MASSIF → +12% vs Break + +30% Basic/Ult DMG + +20% DCC (30s)",
+            "Breakdown debuff: +20% DMG taken + 25% Fire DMG taken (A5, 30s) → ÉNORME pour la team",
+            "Distortion A5: +18% DMG taken (6% ×3) → transitions en Breakdown automatiquement",
+            "A4: +5% Fire DMG par Fire ally (max 3 = +15%) → synergie Fire team",
+            "FOREVER: +15% DMG dealt pour toute la team (3 stacks, infini)",
+            "Full Burst: Super Armor + Skills améliorés + +25% HP (A3) → windows de burst",
+            "Arme: +12% HP permanent + +30% Fire DMG pendant Full Burst (15s)"
+        ],
+
+        recommendedSets: ["Courageous 4pc + Armed 4pc", "Courageous 4pc + Obsidian 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 65, critDMG: 140, defPen: 35, dps: "3-8B" },
+            intermediate: { critRate: 80, critDMG: 175, defPen: 50, dps: "12-22B" },
+            advanced: { critRate: 95, critDMG: 210, defPen: 60, dps: "28-42B" },
+            whale: { critRate: 100, critDMG: 235, defPen: 70, dps: "42-58B" }
+        }
+    },
+
+    // 💧 FRIEREN - Water Support/Sub-DPS DEF - Team Buffer + Debuffer + Shielder
+    frieren: {
+        id: 'frieren',
+        name: "Frieren",
+        role: "Support / Sub-DPS",
+        element: "Water",
+        tier: "S+",
+
+        mainStat: {
+            type: 'def',
+            label: 'Defense',
+            icon: '🛡️',
+            color: '#3b82f6',
+            benchmarks: {
+                casual: 30000,
+                intermediate: 45000,
+                advanced: 60000,
+                whale: 80000
+            },
+            note: "Scale sur DEF. Mana Power Control: +50% DEF (A3) + +50% si MP≥50% = +100% DEF ! Arme +50% DEF. Shield et skills scalent sur DEF."
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 60,
+                max: 100,
+                ideal: 80,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                rawMax: 14000,
+                note: "Mana Power Liberation: +100% TC pendant l'Ult → pas besoin de cap TC. Investir modérément."
+            },
+            critDMG: {
+                min: 180,
+                max: 240,
+                ideal: 210,
+                priority: 2,
+                status: "HIGH",
+                color: "#ef4444",
+                note: "A4 +20% DCC team, A5 +15% DCC raid. Bonne base perso + buffs team. Priorité #2."
+            },
+            defPen: {
+                min: 55,
+                max: 75,
+                ideal: 65,
+                priority: 1,
+                status: "PRIORITY",
+                color: "#8b5cf6",
+                rawMax: 65000,
+                note: "0% Def Pen perso → dépend des buffs team. Priorité #1 pour maximiser les dégâts."
+            }
+        },
+
+        substatPriority: ["DEF%", "Def Pen", "Crit DMG%", "Crit Rate%"],
+
+        scaling: {
+            def: { grade: "S+", description: "Tout le kit scale sur DEF. +100% DEF à A3 avec MP≥50%. Arme +50% DEF." },
+            defPen: { grade: "A+", description: "0% Def Pen perso → Priorité absolue en substats" },
+            critDMG: { grade: "A+", description: "A4 +20% DCC team + A5 +15% DCC raid → solide" },
+            critRate: { grade: "A", description: "Mana Power Liberation +100% TC pendant Ult → moins critique" }
+        },
+
+        tips: [
+            "SUPPORT #1 du jeu: +9% ATK/DEF/HP team (A2) + +20% DCC team (A4) + +15% TC/DCC raid (A5)",
+            "Vollzanbel debuff (A5): -10% DEF, +15% crit received, +15% Crit DMG taken, +70% DMG from Frieren (30s)",
+            "Mana Power Control (A3): +50% DEF permanent, +50% si MP≥50% → garder le MP haut !",
+            "Defense Magic (A3): Shield 30% DEF + -10% DMG taken (60s) → survie team",
+            "Mana Power Liberation: +100% TC pendant l'Ult → pas besoin de cap TC en substats",
+            "A5 Judradjim: 80% Power Gauge → Ult quasi en boucle → +100% TC en permanence",
+            "Arme: +50% DEF perso + Team Basic/Ult Skill DMG +30% → buff team massif",
+            "Water element: Pas de synergie élémentaire spécifique mais ses buffs sont universels"
+        ],
+
+        recommendedSets: ["Courageous 4pc + Armed 4pc", "Courageous 4pc + Defender 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 50, critDMG: 150, defPen: 35, dps: "3-8B" },
+            intermediate: { critRate: 70, critDMG: 180, defPen: 50, dps: "10-20B" },
+            advanced: { critRate: 85, critDMG: 210, defPen: 65, dps: "25-40B" },
+            whale: { critRate: 100, critDMG: 240, defPen: 75, dps: "40-60B" }
+        }
     }
 };
 
