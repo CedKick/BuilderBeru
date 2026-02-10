@@ -4697,15 +4697,17 @@ export const CHARACTER_ADVANCED_BUFFS = {
                         name: 'FOREVER',
                         effects: { damageDealt: 5 },
                         duration: 'infinite', maxStacks: 3
-                    },
+                    }
+                ],
+                raidBuffs: [
                     {
                         name: 'Afterglow',
                         effects: { breakTargetDmg: 12, basicUltSkillDmg: 15, critDMG: 15 },
                         duration: 20,
-                        note: '+12% DMG vs Break + +15% Basic/Ult Skill DMG + +15% DCC → buff team MASSIF'
+                        scope: 'raid',
+                        note: '+12% DMG vs Break + +15% Basic/Ult Skill DMG + +15% DCC → buff RAID entier'
                     }
                 ],
-                raidBuffs: [],
                 debuffs: [
                     {
                         name: 'Distortion',
@@ -4762,18 +4764,21 @@ export const CHARACTER_ADVANCED_BUFFS = {
                         duration: 'infinite', maxStacks: 3
                     },
                     {
-                        name: 'Afterglow',
-                        effects: { breakTargetDmg: 12, basicUltSkillDmg: 15, critDMG: 15 },
-                        duration: 20
-                    },
-                    {
                         name: 'Fire Synergy (A4)',
                         effects: { fireDamagePerFireAlly: 5 },
                         duration: 'infinite', maxStacks: 3,
                         note: '+5% Fire DMG par Fire ally (max 3 = +15%) pour Fire members'
                     }
                 ],
-                raidBuffs: [],
+                raidBuffs: [
+                    {
+                        name: 'Afterglow',
+                        effects: { breakTargetDmg: 12, basicUltSkillDmg: 15, critDMG: 15 },
+                        duration: 20,
+                        scope: 'raid',
+                        note: '+12% DMG vs Break + +15% Basic/Ult Skill DMG + +15% DCC → buff RAID entier'
+                    }
+                ],
                 debuffs: [
                     {
                         name: 'Distortion',
@@ -4842,18 +4847,20 @@ export const CHARACTER_ADVANCED_BUFFS = {
                         duration: 'infinite', maxStacks: 3
                     },
                     {
-                        name: 'Enhanced Afterglow (A5)',
-                        effects: { breakTargetDmg: 12, basicUltSkillDmg: 30, critDMG: 20 },
-                        duration: 30,
-                        note: 'Amélioré: +30% Basic/Ult DMG (was 15%) + +20% DCC (was 15%) + durée 30s (was 20s)'
-                    },
-                    {
                         name: 'Fire Synergy (A4)',
                         effects: { fireDamagePerFireAlly: 5 },
                         duration: 'infinite', maxStacks: 3
                     }
                 ],
-                raidBuffs: [],
+                raidBuffs: [
+                    {
+                        name: 'Enhanced Afterglow (A5)',
+                        effects: { breakTargetDmg: 12, basicUltSkillDmg: 30, critDMG: 20 },
+                        duration: 30,
+                        scope: 'raid',
+                        note: 'Amélioré: +30% Basic/Ult DMG (was 15%) + +20% DCC (was 15%) + durée 30s (was 20s) → buff RAID entier'
+                    }
+                ],
                 debuffs: [
                     {
                         name: 'Enhanced Distortion (A5)',

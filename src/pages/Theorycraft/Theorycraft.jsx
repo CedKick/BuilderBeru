@@ -4034,6 +4034,38 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                             value: totalValue
                         });
                     }
+
+                    // 🔥 Crit DMG from raid buffs (ex: YUQI Afterglow)
+                    if (effects.critDMG) {
+                        totalCritDMG += effects.critDMG;
+                        breakdown.critDMG.push({
+                            source: `raid buff (${characterName} - ${buffName})`,
+                            value: effects.critDMG
+                        });
+                    }
+
+                    // 🔥 Basic/Ult Skill DMG from raid buffs (ex: YUQI Afterglow)
+                    if (effects.basicUltSkillDmg) {
+                        totalBasicSkillDamage += effects.basicUltSkillDmg;
+                        totalUltimateSkillDamage += effects.basicUltSkillDmg;
+                        breakdown.basicSkillDamage.push({
+                            source: `raid buff (${characterName} - ${buffName})`,
+                            value: effects.basicUltSkillDmg
+                        });
+                        breakdown.ultimateSkillDamage.push({
+                            source: `raid buff (${characterName} - ${buffName})`,
+                            value: effects.basicUltSkillDmg
+                        });
+                    }
+
+                    // 🔥 Break Target DMG from raid buffs (ex: YUQI Afterglow)
+                    if (effects.breakTargetDmg) {
+                        totalBreakTargetDmg += effects.breakTargetDmg;
+                        breakdown.breakTargetDmg.push({
+                            source: `raid buff (${characterName} - ${buffName})`,
+                            value: effects.breakTargetDmg
+                        });
+                    }
                 });
             }
         });
