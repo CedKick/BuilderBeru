@@ -20,6 +20,225 @@
 // }
 
 export const CHARACTER_ADVANCED_BUFFS = {
+
+    // ═══════════════════════════════════════════════════════════════
+    // 🌑 LEE BORA - Support Dark (ATK scaling)
+    // Charm debuff +15% DMG taken. A2: +2% DCC per Dark ally (RAID entier).
+    // A2: Strengthening Charm +10% ATK Dark team. A3: -30% DMG taken Dark team.
+    // Note: Personal +6% TC/DCC et DCC per Dark ally gérés via characterBuffs.js
+    // ═══════════════════════════════════════════════════════════════
+    lee: {
+        id: 'lee',
+        name: 'Lee Bora',
+        class: 'Mage / Support',
+        element: 'Dark',
+        scaleStat: 'ATK',
+        primaryRole: 'Support',
+        secondaryRole: 'Sub-DPS',
+        tags: ['ATK Scaler', 'Team Buffer', 'Debuffer', 'Charm', 'Dark Crit Buffer', 'Phantom Foxes'],
+
+        advancements: {
+            // A0 - Charm Effect: +15% DMG taken on enemy (15s)
+            A0: {
+                passives: [
+                    {
+                        name: 'Charm Effect',
+                        description: 'Core Attack ou Tempest applique [Charm] → target damage taken +15%. 15s.',
+                        mechanic: 'debuff',
+                        duration: 15
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Charm Effect',
+                        effects: { damageTaken: 15 },
+                        duration: 15,
+                        trigger: 'Core Attack / Tempest hit',
+                        note: '+15% DMG taken sur l\'ennemi → buff DPS pour TOUT le RAID'
+                    }
+                ]
+            },
+
+            // A1 - Enhanced Phantom Foxes (3 foxes, +80% dmg each)
+            A1: {
+                passives: [
+                    { name: 'Charm Effect', mechanic: 'debuff', duration: 15 },
+                    {
+                        name: 'Enhanced Phantom Foxes (A1)',
+                        description: '3 foxes invoquées (au lieu de 1). +80% damage par fox.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Charm Effect',
+                        effects: { damageTaken: 15 },
+                        duration: 15,
+                        trigger: 'Core Attack / Tempest hit'
+                    }
+                ]
+            },
+
+            // A2 - +6% TC/DCC perso (géré characterBuffs.js) + +2% DCC per Dark ally RAID (géré characterBuffs.js)
+            // + Strengthening Charm: +5% ATK + 5% HP Dark team (2 stacks = +10% ATK)
+            A2: {
+                passives: [
+                    { name: 'Charm Effect', mechanic: 'debuff', duration: 15 },
+                    { name: 'Enhanced Phantom Foxes (A1)', mechanic: 'permanent' },
+                    {
+                        name: 'Personal Stats Boost (A2)',
+                        description: '+6% TC + 6% DCC personnel (géré via characterBuffs.js).',
+                        mechanic: 'permanent'
+                    },
+                    {
+                        name: 'Dark DCC Scaling (A2)',
+                        description: '+2% DCC par Dark ally pour tout le RAID (géré via characterBuffs.js).',
+                        mechanic: 'conditional'
+                    },
+                    {
+                        name: 'Strengthening Charm Buff (A2)',
+                        description: 'Strengthening Charm → +5% ATK + 5% HP Dark team members (2 stacks, 10s).',
+                        mechanic: 'on_skill'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    {
+                        name: 'Strengthening Charm (A2)',
+                        effects: { attack: 10 },
+                        duration: 10,
+                        elementRestriction: 'Dark',
+                        note: '+5% ATK × 2 stacks = +10% ATK pour Dark team members (10s)'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Charm Effect',
+                        effects: { damageTaken: 15 },
+                        duration: 15,
+                        trigger: 'Core Attack / Tempest hit'
+                    }
+                ]
+            },
+
+            // A3 - Enhanced Strengthening Charm (2 uses, +40% range/dmg) + Dark team -30% DMG taken
+            A3: {
+                passives: [
+                    { name: 'Charm Effect', mechanic: 'debuff', duration: 15 },
+                    { name: 'Enhanced Phantom Foxes (A1)', mechanic: 'permanent' },
+                    { name: 'Personal Stats Boost (A2)', mechanic: 'permanent' },
+                    { name: 'Dark DCC Scaling (A2)', mechanic: 'conditional' },
+                    {
+                        name: 'Enhanced Strengthening Charm (A3)',
+                        description: '2 uses. Range/damage +40%. Dark team members DMG taken -30%.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    {
+                        name: 'Strengthening Charm (A2+)',
+                        effects: { attack: 10 },
+                        duration: 10,
+                        elementRestriction: 'Dark',
+                        note: '+5% ATK × 2 stacks = +10% ATK pour Dark team members (10s). A3: +40% range/dmg.'
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Charm Effect',
+                        effects: { damageTaken: 15 },
+                        duration: 15,
+                        trigger: 'Core Attack / Tempest hit'
+                    }
+                ]
+            },
+
+            // A4 - Dark Charm: Meg CD -25% + Immortal in Enhancement Circle
+            A4: {
+                passives: [
+                    { name: 'Charm Effect', mechanic: 'debuff', duration: 15 },
+                    { name: 'Enhanced Phantom Foxes (A1)', mechanic: 'permanent' },
+                    { name: 'Personal Stats Boost (A2)', mechanic: 'permanent' },
+                    { name: 'Dark DCC Scaling (A2)', mechanic: 'conditional' },
+                    { name: 'Enhanced Strengthening Charm (A3)', mechanic: 'permanent' },
+                    {
+                        name: 'Dark Charm Meg CD Reduction (A4)',
+                        description: 'CD de Dark Charm: Meg réduit de 25%.',
+                        mechanic: 'permanent'
+                    },
+                    {
+                        name: 'Immortal (A4)',
+                        description: 'Si HP ≤ 1 dans Enhancement Circle → Immortal 2s → regain 50% ATK en HP. 1 fois par combat.',
+                        mechanic: 'conditional'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    {
+                        name: 'Strengthening Charm (A2+)',
+                        effects: { attack: 10 },
+                        duration: 10,
+                        elementRestriction: 'Dark',
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Charm Effect',
+                        effects: { damageTaken: 15 },
+                        duration: 15,
+                        trigger: 'Core Attack / Tempest hit'
+                    }
+                ]
+            },
+
+            // A5 - Small Megs +75% basic damage
+            A5: {
+                passives: [
+                    { name: 'Charm Effect', mechanic: 'debuff', duration: 15 },
+                    { name: 'Enhanced Phantom Foxes (A1)', mechanic: 'permanent' },
+                    { name: 'Personal Stats Boost (A2)', mechanic: 'permanent' },
+                    { name: 'Dark DCC Scaling (A2)', mechanic: 'conditional' },
+                    { name: 'Enhanced Strengthening Charm (A3)', mechanic: 'permanent' },
+                    { name: 'Dark Charm Meg CD Reduction (A4)', mechanic: 'permanent' },
+                    { name: 'Immortal (A4)', mechanic: 'conditional' },
+                    {
+                        name: 'Meg Damage Boost (A5)',
+                        description: 'Small Megs de Dark Charm: Meg → +75% basic damage.',
+                        mechanic: 'permanent'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    {
+                        name: 'Strengthening Charm (A2+)',
+                        effects: { attack: 10 },
+                        duration: 10,
+                        elementRestriction: 'Dark',
+                    }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Charm Effect',
+                        effects: { damageTaken: 15 },
+                        duration: 15,
+                        trigger: 'Core Attack / Tempest hit'
+                    }
+                ]
+            }
+        }
+    },
+
     // 🗡️ SIAN HALAT - Elemental Stacker Dark
     sian: {
         id: 'sian',
@@ -2268,12 +2487,13 @@ export const CHARACTER_ADVANCED_BUFFS = {
                     }
                 ],
 
-                // RAID buffs permanents (Strike Squad Leader - A5)
-                raidBuffs: [
+                // TEAM buffs permanents (Strike Squad Leader - A5)
+                // Note: Strike Squad Leader s'applique à la TEAM, pas au RAID entier
+                teamBuffs: [
                     {
                         name: 'Strike Squad Leader',  // NOUVEAU à A5
                         trigger: 'Kihoon enters stage',
-                        scope: 'raid',  // RAID-wide
+                        scope: 'team',  // Team only
                         effects: {
                             attack: 10,      // +10% ATK
                             hp: 10,          // +10% HP
@@ -2281,7 +2501,7 @@ export const CHARACTER_ADVANCED_BUFFS = {
                         },
                         duration: 'infinite',
                         stackable: false,
-                        note: 'Permanent RAID-wide buff when entering stage'
+                        note: 'Permanent TEAM buff when entering stage'
                     }
                 ],
 

@@ -830,27 +830,22 @@ const Theorycraft = () => {
             if (conditionalBuff && !conditionalBuffsApplied.has(member.id)) {
                 const conditional = conditionalBuff;
 
-                // Appliquer le buff conditionnel uniquement aux hunters de l'élément cible
+                // Appliquer le buff conditionnel à TOUT LE RAID (Lee Bora A2+ : DCC per Dark ally)
                 if (conditional.targetElement && conditional.raidWide) {
                     allMembers.forEach((targetMember, targetIndex) => {
-                        const targetCharData = characters[targetMember.id];
+                        // Calculer le bonus basé sur le nombre d'alliés de cet élément
+                        let bonusCritDMG = 0;
 
-                        // Vérifier si le hunter cible correspond à l'élément requis
-                        if (targetCharData && targetCharData.element === conditional.targetElement) {
-                            // Calculer le bonus basé sur le nombre d'alliés de cet élément
-                            let bonusCritDMG = 0;
-
-                            if (conditional.countCondition === 'element' && conditional.critDMGPerAlly) {
-                                bonusCritDMG = darkHunterCount * conditional.critDMGPerAlly;
-                            }
-
-                            // Stocker le bonus pour ce membre cible en utilisant son index unique
-                            if (!conditionalBuffsPerMember.has(targetIndex)) {
-                                conditionalBuffsPerMember.set(targetIndex, { critRate: 0, critDMG: 0, defPen: 0 });
-                            }
-                            const currentBuffs = conditionalBuffsPerMember.get(targetIndex);
-                            currentBuffs.critDMG += bonusCritDMG;
+                        if (conditional.countCondition === 'element' && conditional.critDMGPerAlly) {
+                            bonusCritDMG = darkHunterCount * conditional.critDMGPerAlly;
                         }
+
+                        // Stocker le bonus pour ce membre cible en utilisant son index unique
+                        if (!conditionalBuffsPerMember.has(targetIndex)) {
+                            conditionalBuffsPerMember.set(targetIndex, { critRate: 0, critDMG: 0, defPen: 0 });
+                        }
+                        const currentBuffs = conditionalBuffsPerMember.get(targetIndex);
+                        currentBuffs.critDMG += bonusCritDMG;
                     });
 
                     conditionalBuffsApplied.add(member.id);
@@ -1993,12 +1988,10 @@ const CharacterDetailsPanel = ({
                                 ].find(m => m && m.id === 'lee' && m.advancement >= 2);
 
                                 // IMPORTANT: Afficher seulement si le NIVEAU ACTUEL est A2+
-                                // Et seulement si le personnage actuel est Dark
+                                // Le buff DCC s'applique à TOUT LE RAID (pas que Dark !)
                                 if (leeInRaid && level >= 2) {
                                     const leeA2 = getCharacterBuffs('lee', 2);
-                                    const memberCharData = characters[member.id];
-                                    // Afficher le buff RAID UNIQUEMENT si ce personnage est de l'élément Dark
-                                    if (leeA2.conditionalBuff && memberCharData && memberCharData.element === 'Dark') {
+                                    if (leeA2.conditionalBuff) {
                                         // Compter les Dark hunters dans le RAID
                                         const allMembers = [
                                             ...(sungEnabled && sungData ? [sungData] : []),
@@ -2015,7 +2008,7 @@ const CharacterDetailsPanel = ({
                                         specialBuffsDisplay.push({
                                             label: `raid buff (Lee Bora)`,
                                             value: `${totalBuff}% DCC (${darkCount} Dark × ${leeA2.conditionalBuff.critDMGPerAlly}%)`,
-                                            tooltip: `Buff appliqué à TOUS les hunters Dark du RAID. ${darkCount} Dark hunters × ${leeA2.conditionalBuff.critDMGPerAlly}% = +${totalBuff}% DCC`
+                                            tooltip: `Buff appliqué à TOUT LE RAID. ${darkCount} Dark hunters × ${leeA2.conditionalBuff.critDMGPerAlly}% = +${totalBuff}% DCC`
                                         });
                                     }
                                 }
@@ -3004,10 +2997,8 @@ const StatDisplay = ({ icon, label, value, unit, color, breakdown }) => {
     );
 };
 
-// Composant: Affichage des stats individuelles par personnage
-const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula = true, sungBlessing = false, onCharacterClick }) => {
-    // Calculer les stats avec useMemo pour forcer le re-calcul quand les états changent
-    const membersWithStats = useMemo(() => {
+// Fonction pure pour calculer les stats de tous les membres (extraite pour réutilisation What-If)
+const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula, sungBlessing) => {
         // Récupérer tous les membres actifs
         const allMembers = [
             ...(sungEnabled && sungData ? [{ ...sungData, teamId: 0, slotId: 0 }] : []),
@@ -3205,18 +3196,25 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                 }
             }
 
-            // A5 : RAID buffs (+10% ATK/HP/DMG dealt pour tout le RAID) - Strike Squad Leader
-            if (sonForBuffs.advancement >= 5 && sonAdvBuffs?.raidBuffs) {
-                if (sonAdvBuffs.raidBuffs.attack > 0) {
-                    totalAttack += sonAdvBuffs.raidBuffs.attack;
-                    breakdown.attack.push({ source: `🛡️ Son Strike Squad Leader (A5 RAID)`, value: sonAdvBuffs.raidBuffs.attack });
+            // A5 : TEAM buffs (+10% ATK/HP/DMG dealt pour la TEAM) - Strike Squad Leader
+            if (sonForBuffs.advancement >= 5 && sonAdvBuffs?.teamBuffs) {
+                const sonTeamA5 = sonInTeam1 ? [0, 1] : [2];
+                const memberInSameTeamA5 = sonTeamA5.includes(member.teamId);
+
+                if (memberInSameTeamA5) {
+                    if (sonAdvBuffs.teamBuffs.attack > 0) {
+                        totalAttack += sonAdvBuffs.teamBuffs.attack;
+                        breakdown.attack.push({ source: `🛡️ Son Strike Squad Leader (A5 TEAM)`, value: sonAdvBuffs.teamBuffs.attack });
+                    }
+                    if (sonAdvBuffs.teamBuffs.hp > 0) {
+                        totalHP += sonAdvBuffs.teamBuffs.hp;
+                        breakdown.hp.push({ source: `🛡️ Son Strike Squad Leader (A5 TEAM)`, value: sonAdvBuffs.teamBuffs.hp });
+                    }
+                    if (sonAdvBuffs.teamBuffs.damageDealt > 0) {
+                        totalDamageDealt += sonAdvBuffs.teamBuffs.damageDealt;
+                        breakdown.damageDealt.push({ source: `🛡️ Son Strike Squad Leader (A5 TEAM) - DMG Dealt`, value: sonAdvBuffs.teamBuffs.damageDealt });
+                    }
                 }
-                if (sonAdvBuffs.raidBuffs.hp > 0) {
-                    totalHP += sonAdvBuffs.raidBuffs.hp;
-                    breakdown.hp.push({ source: `🛡️ Son Strike Squad Leader (A5 RAID)`, value: sonAdvBuffs.raidBuffs.hp });
-                }
-                // Note: damageDealt (+10% DMG dealt) n'est pas géré dans le système actuel
-                // TODO: Ajouter damageDealt comme nouvelle stat si nécessaire
             }
         }
 
@@ -3453,8 +3451,8 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
         }
 
         // 6. BUFFS CONDITIONNELS RAID (selon l'élément)
-        // Lee Bora A2+ : +2% DCC par Dark hunter, appliqué à TOUS les Dark hunters
-        if (leeBoraA2InRaid && memberElement === 'Dark') {
+        // Lee Bora A2+ : +2% DCC par Dark hunter, appliqué à TOUT LE RAID (pas que Dark !)
+        if (leeBoraA2InRaid) {
             const leeA2 = getCharacterBuffs('lee', 2);
             if (leeA2.conditionalBuff && leeA2.conditionalBuff.targetElement === 'Dark') {
                 const raidDarkBonus = darkHunterCount * leeA2.conditionalBuff.critDMGPerAlly;
@@ -4066,6 +4064,15 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                             value: effects.breakTargetDmg
                         });
                     }
+
+                    // 🔥 DMG Dealt from raid buffs (ex: Son Kihoon Strike Squad Leader A5)
+                    if (effects.damageDealt) {
+                        totalDamageDealt += effects.damageDealt;
+                        breakdown.damageDealt.push({
+                            source: `raid buff (${characterName} - ${buffName})`,
+                            value: effects.damageDealt
+                        });
+                    }
                 });
             }
         });
@@ -4124,6 +4131,16 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
                         });
                     }
 
+                    // 🌑 Crit Hit Chance Received (debuff ennemi = +TC pour le RAID, ex: Son Kihoon Broken Spirit A5)
+                    if (effects.critHitChanceReceived) {
+                        const maxValue = effects.critHitChanceReceived * maxStacks;
+                        totalCritRate += maxValue;
+                        breakdown.critRate.push({
+                            source: `${debuffName} (${characterName}) - Scope: Debuff Boss • +${effects.critHitChanceReceived}% TC RAID`,
+                            value: maxValue
+                        });
+                    }
+
                     // 🔥🔥 Fire Overload DMG Taken (debuff sur l'ennemi, ex: Christopher Blazing Shock A5)
                     if (effects.fireOverloadDamageTaken) {
                         const maxValue = effects.fireOverloadDamageTaken * maxStacks;
@@ -4171,7 +4188,132 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
             breakdown
         };
         });
+};
+
+// Labels des stats pour le résumé d'impact
+const STAT_LABELS = {
+    critRate: 'TC', critDMG: 'DCC', defPen: 'DefPen', attack: 'ATK', hp: 'HP', defense: 'DEF',
+    darkDamage: 'Dark DMG', fireDamage: 'Fire DMG', fireDamageTaken: 'Fire DMG Taken',
+    damageDealt: 'DMG Dealt', damageTaken: 'DMG Taken', breakTargetDmg: 'Break DMG',
+    basicSkillDamage: 'Basic Skill', ultimateSkillDamage: 'Ult Skill',
+    darkDamageTaken: 'Dark DMG Taken', darkOverloadDamage: 'OL DMG', darkOverloadDamageTaken: 'OL DMG Taken',
+    darkElementalAccumulation: 'Elem Acc', fireElementalAccumulation: 'Fire Elem Acc',
+    fireOverloadDamage: 'Fire OL DMG', fireOverloadDamageTaken: 'Fire OL DMG Taken',
+};
+
+// Composant: Affichage des stats individuelles par personnage
+const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula = true, sungBlessing = false, onCharacterClick }) => {
+
+    // === COMPARISON STATES ===
+    const [compareSlot, setCompareSlot] = useState(null);
+    const [compareCharacterId, setCompareCharacterId] = useState(null);
+    const [compareElementFilter, setCompareElementFilter] = useState('all');
+
+    // Calculer les stats avec useMemo
+    const membersWithStats = useMemo(() => {
+        return computeTeamStats(sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula, sungBlessing);
     }, [sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula, sungBlessing]);
+
+    // === WHAT-IF CALCULATION ===
+    const whatIfStats = useMemo(() => {
+        if (!compareSlot || !compareCharacterId) return null;
+
+        const charData = characters[compareCharacterId];
+        if (!charData) return null;
+
+        // Créer le perso de remplacement (A5, pas de sets, pas de raw stats)
+        const replacementMember = {
+            id: compareCharacterId,
+            name: charData.name || compareCharacterId,
+            element: charData.element || 'Unknown',
+            image: charData.img || charData.icon || '',
+            advancement: 5,
+            weaponAdvancement: 5,
+            leftSet: 'none', leftPieces: 0,
+            rightSet: 'none', rightPieces: 0,
+            coreAttackTC: true,
+            rawStats: { critRate: 0, critDMG: 0, defPen: 0 },
+            mainStatValue: 0,
+        };
+
+        // Cloner les teams avec le remplacement
+        let modSungData = sungData ? { ...sungData } : null;
+        let modTeam1 = [...team1];
+        let modTeam2 = [...team2];
+
+        if (compareSlot.teamId === 0) {
+            modSungData = replacementMember;
+        } else if (compareSlot.teamId === 1) {
+            modTeam1 = [...team1];
+            modTeam1[compareSlot.slotId] = replacementMember;
+        } else if (compareSlot.teamId === 2) {
+            modTeam2 = [...team2];
+            modTeam2[compareSlot.slotId] = replacementMember;
+        }
+
+        return computeTeamStats(sungEnabled, modSungData, modTeam1, modTeam2, enemyLevel, useNewDefPenFormula, sungBlessing);
+    }, [compareSlot, compareCharacterId, sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula, sungBlessing]);
+
+    // === DELTAS ===
+    const memberDeltas = useMemo(() => {
+        if (!whatIfStats || !membersWithStats) return null;
+
+        const deltaMap = {};
+        whatIfStats.forEach(whatIfMember => {
+            const key = `${whatIfMember.teamId}-${whatIfMember.slotId}`;
+            const original = membersWithStats.find(m => `${m.teamId}-${m.slotId}` === key);
+            if (original) {
+                const deltas = {};
+                for (const statKey of Object.keys(original.finalStats)) {
+                    deltas[statKey] = whatIfMember.finalStats[statKey] - original.finalStats[statKey];
+                }
+                deltaMap[key] = deltas;
+            }
+        });
+        return deltaMap;
+    }, [whatIfStats, membersWithStats]);
+
+    // === AVAILABLE CHARACTERS FOR COMPARISON ===
+    const availableForComparison = useMemo(() => {
+        if (!compareSlot) return [];
+        const usedIds = new Set();
+        if (sungEnabled && sungData) usedIds.add(sungData.id);
+        team1.forEach(m => { if (m) usedIds.add(m.id); });
+        team2.forEach(m => { if (m) usedIds.add(m.id); });
+
+        // Permettre le perso remplacé (il est "retiré" dans le what-if)
+        const replacedMember = compareSlot.teamId === 0 ? sungData
+            : compareSlot.teamId === 1 ? team1[compareSlot.slotId]
+            : team2[compareSlot.slotId];
+        if (replacedMember) usedIds.delete(replacedMember.id);
+
+        return Object.entries(characters)
+            .filter(([id]) => id !== '' && !usedIds.has(id))
+            .map(([id, data]) => ({
+                id,
+                name: data.name || id,
+                element: data.element || 'Unknown',
+                image: data.img || data.icon || '',
+            }))
+            .filter(c => compareElementFilter === 'all' || c.element === compareElementFilter);
+    }, [compareSlot, sungEnabled, sungData, team1, team2, compareElementFilter]);
+
+    // Handler pour le bouton compare
+    const handleCompare = (teamId, slotId) => {
+        if (teamId === null) {
+            // Fermer la comparaison
+            setCompareSlot(null);
+            setCompareCharacterId(null);
+        } else if (compareSlot?.teamId === teamId && compareSlot?.slotId === slotId) {
+            // Toggle off si même slot
+            setCompareSlot(null);
+            setCompareCharacterId(null);
+        } else {
+            // Ouvrir picker pour ce slot
+            setCompareSlot({ teamId, slotId });
+            setCompareCharacterId(null);
+        }
+    };
 
     // Si aucun personnage, afficher un message
     if (membersWithStats.length === 0) {
@@ -4183,29 +4325,80 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {membersWithStats.map((member, idx) => (
-                <IndividualCharacterStatCard
-                    key={`${member.teamId}-${member.slotId}-${idx}`}
-                    member={member}
-                    onClick={() => onCharacterClick && onCharacterClick(member.teamId, member.slotId)}
+        <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {membersWithStats.map((member, idx) => {
+                    const key = `${member.teamId}-${member.slotId}`;
+                    const isComparing = compareSlot && compareSlot.teamId === member.teamId && compareSlot.slotId === member.slotId;
+                    const whatIfMember = isComparing && whatIfStats
+                        ? whatIfStats.find(m => m.teamId === member.teamId && m.slotId === member.slotId)
+                        : null;
+                    // Breakdown what-if pour TOUS les membres (pas juste le comparé)
+                    const whatIfForThisMember = whatIfStats
+                        ? whatIfStats.find(m => m.teamId === member.teamId && m.slotId === member.slotId)
+                        : null;
+                    return (
+                        <IndividualCharacterStatCard
+                            key={`${key}-${idx}`}
+                            member={member}
+                            onClick={() => onCharacterClick && onCharacterClick(member.teamId, member.slotId)}
+                            onCompare={handleCompare}
+                            isComparing={isComparing}
+                            whatIfMember={whatIfMember}
+                            deltas={memberDeltas ? memberDeltas[key] : null}
+                            compareActive={!!compareCharacterId}
+                            whatIfBreakdown={whatIfForThisMember?.breakdown || null}
+                        />
+                    );
+                })}
+            </div>
+
+            {/* Modal picker pour la comparaison */}
+            {compareSlot && !compareCharacterId && (
+                <CharacterSelectionModal
+                    characters={availableForComparison}
+                    elementFilter={compareElementFilter}
+                    onElementChange={setCompareElementFilter}
+                    onSelect={(char) => setCompareCharacterId(char.id)}
+                    onClose={() => { setCompareSlot(null); setCompareCharacterId(null); }}
+                    elements={['all', 'Fire', 'Water', 'Wind', 'Light', 'Dark']}
                 />
-            ))}
-        </div>
+            )}
+        </>
     );
 };
 
 // Composant: Carte de stats individuelles d'un personnage
-const IndividualCharacterStatCard = ({ member, onClick }) => {
+const IndividualCharacterStatCard = ({ member, onClick, onCompare, isComparing, whatIfMember, deltas, compareActive, whatIfBreakdown }) => {
     const hasOptimizationData = CHARACTER_OPTIMIZATION[member.id];
     const benchmark = hasOptimizationData ? getCurrentBenchmark(member.id, member.finalStats) : null;
     const overall = hasOptimizationData ? getOverallOptimization(member.id, member.finalStats) : null;
 
     return (
         <div
-            className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border border-purple-700/50 cursor-pointer hover:bg-gray-700/50 hover:border-purple-500 transition-all"
+            className={`bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 border cursor-pointer hover:bg-gray-700/50 transition-all ${
+                isComparing && whatIfMember ? 'border-amber-500/70 ring-1 ring-amber-500/30' : 'border-purple-700/50 hover:border-purple-500'
+            }`}
             onClick={onClick}
         >
+            {/* Bannière What-If */}
+            {isComparing && whatIfMember && (
+                <div className="mb-3 px-3 py-2 bg-amber-900/30 border border-amber-500/30 rounded-lg text-sm text-amber-300 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <span>vs</span>
+                        {whatIfMember.image && <img src={whatIfMember.image} alt="" className="w-5 h-5 rounded object-cover" />}
+                        <span className="font-semibold">{whatIfMember.name}</span>
+                        <span>{getElementEmoji(whatIfMember.element)}</span>
+                    </div>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onCompare(null, null); }}
+                        className="text-gray-400 hover:text-white transition-colors p-0.5"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+            )}
+
             {/* Header avec image et nom */}
             <div className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-700/50">
                 {member.image ? (
@@ -4231,6 +4424,21 @@ const IndividualCharacterStatCard = ({ member, onClick }) => {
                         )}
                     </div>
                 </div>
+                {/* Bouton Compare */}
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onCompare(member.teamId, member.slotId);
+                    }}
+                    className={`p-1.5 rounded-lg transition-all flex-shrink-0 ${
+                        isComparing
+                            ? 'bg-amber-600/50 text-amber-300 hover:bg-amber-600/70'
+                            : 'bg-gray-700/50 text-gray-400 hover:bg-gray-600/50 hover:text-white'
+                    }`}
+                    title="Comparer avec un autre personnage"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3L4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>
+                </button>
             </div>
 
             {/* Stats avec breakdown au hover + indicateurs d'optimisation */}
@@ -4244,6 +4452,8 @@ const IndividualCharacterStatCard = ({ member, onClick }) => {
                     icon="🎯"
                     characterId={member.id}
                     statName="critRate"
+                    delta={deltas?.critRate}
+                    whatIfBreakdown={whatIfBreakdown?.critRate}
                 />
                 <StatWithBreakdown
                     label="DCC"
@@ -4254,6 +4464,8 @@ const IndividualCharacterStatCard = ({ member, onClick }) => {
                     hasBaseValue={true}
                     characterId={member.id}
                     statName="critDMG"
+                    delta={deltas?.critDMG}
+                    whatIfBreakdown={whatIfBreakdown?.critDMG}
                 />
                 <StatWithBreakdown
                     label="Def Pen"
@@ -4263,6 +4475,8 @@ const IndividualCharacterStatCard = ({ member, onClick }) => {
                     icon="🛡️"
                     characterId={member.id}
                     statName="defPen"
+                    delta={deltas?.defPen}
+                    whatIfBreakdown={whatIfBreakdown?.defPen}
                 />
 
                 {/* Afficher ATK, HP ou DEF selon le scaleStat du personnage */}
@@ -4270,7 +4484,7 @@ const IndividualCharacterStatCard = ({ member, onClick }) => {
                     const charAdvData = CHARACTER_ADVANCED_BUFFS[member.id];
                     const scaleStat = charAdvData?.scaleStat || 'ATK'; // Par défaut ATK
 
-                    if (scaleStat === 'HP' && member.finalStats.hp > 0) {
+                    if (scaleStat === 'HP' && (member.finalStats.hp > 0 || Math.abs(deltas?.hp || 0) > 0.05)) {
                         return (
                             <StatWithBreakdown
                                 label="HP"
@@ -4278,9 +4492,11 @@ const IndividualCharacterStatCard = ({ member, onClick }) => {
                                 breakdown={member.breakdown.hp}
                                 color="text-green-400"
                                 icon="💚"
+                                delta={deltas?.hp}
+                                whatIfBreakdown={whatIfBreakdown?.hp}
                             />
                         );
-                    } else if (scaleStat === 'DEF' && member.finalStats.defense > 0) {
+                    } else if (scaleStat === 'DEF' && (member.finalStats.defense > 0 || Math.abs(deltas?.defense || 0) > 0.05)) {
                         return (
                             <StatWithBreakdown
                                 label="DEF"
@@ -4288,9 +4504,11 @@ const IndividualCharacterStatCard = ({ member, onClick }) => {
                                 breakdown={member.breakdown.defense}
                                 color="text-cyan-400"
                                 icon="🛡️"
+                                delta={deltas?.defense}
+                                whatIfBreakdown={whatIfBreakdown?.defense}
                             />
                         );
-                    } else if (scaleStat === 'ATK' && member.finalStats.attack > 0) {
+                    } else if (scaleStat === 'ATK' && (member.finalStats.attack > 0 || Math.abs(deltas?.attack || 0) > 0.05)) {
                         return (
                             <StatWithBreakdown
                                 label="ATK"
@@ -4298,139 +4516,165 @@ const IndividualCharacterStatCard = ({ member, onClick }) => {
                                 breakdown={member.breakdown.attack}
                                 color="text-orange-400"
                                 icon="⚡"
+                                delta={deltas?.attack}
+                                whatIfBreakdown={whatIfBreakdown?.attack}
                             />
                         );
                     }
                     return null;
                 })()}
 
-                {member.finalStats.darkElementalAccumulation > 0 && (
+                {(member.finalStats.darkElementalAccumulation > 0 || Math.abs(deltas?.darkElementalAccumulation || 0) > 0.05) && (
                     <StatWithBreakdown
                         label="Elem Acc"
                         value={member.finalStats.darkElementalAccumulation}
                         breakdown={member.breakdown.darkElementalAccumulation}
                         color="text-indigo-400"
                         icon="🔮"
+                        delta={deltas?.darkElementalAccumulation}
+                        whatIfBreakdown={whatIfBreakdown?.darkElementalAccumulation}
                     />
                 )}
 
-                {member.finalStats.darkDamage > 0 && (
+                {(member.finalStats.darkDamage > 0 || Math.abs(deltas?.darkDamage || 0) > 0.05) && (
                     <StatWithBreakdown
                         label="Dark DMG"
                         value={member.finalStats.darkDamage}
                         breakdown={member.breakdown.darkDamage}
                         color="text-purple-400"
                         icon="🌑"
+                        delta={deltas?.darkDamage}
+                        whatIfBreakdown={whatIfBreakdown?.darkDamage}
                     />
                 )}
 
-                {member.finalStats.darkDamageTaken > 0 && (
+                {(member.finalStats.darkDamageTaken > 0 || Math.abs(deltas?.darkDamageTaken || 0) > 0.05) && (
                     <StatWithBreakdown
                         label="Dark DMG Taken"
                         value={member.finalStats.darkDamageTaken}
                         breakdown={member.breakdown.darkDamageTaken}
                         color="text-pink-400"
                         icon="💔"
+                        delta={deltas?.darkDamageTaken}
+                        whatIfBreakdown={whatIfBreakdown?.darkDamageTaken}
                     />
                 )}
 
-                {/* 🔥 Fire DMG - Affiché si > 0 */}
-                {member.finalStats.fireDamage > 0 && (
+                {/* Fire DMG */}
+                {(member.finalStats.fireDamage > 0 || Math.abs(deltas?.fireDamage || 0) > 0.05) && (
                     <StatWithBreakdown
                         label="Fire DMG"
                         value={member.finalStats.fireDamage}
                         breakdown={member.breakdown.fireDamage}
                         color="text-orange-400"
                         icon="🔥"
+                        delta={deltas?.fireDamage}
+                        whatIfBreakdown={whatIfBreakdown?.fireDamage}
                     />
                 )}
 
-                {/* 🔥 Fire DMG Taken (debuff sur ennemi) */}
-                {member.finalStats.fireDamageTaken > 0 && (
+                {/* Fire DMG Taken (debuff sur ennemi) */}
+                {(member.finalStats.fireDamageTaken > 0 || Math.abs(deltas?.fireDamageTaken || 0) > 0.05) && (
                     <StatWithBreakdown
                         label="Fire DMG Taken"
                         value={member.finalStats.fireDamageTaken}
                         breakdown={member.breakdown.fireDamageTaken}
                         color="text-pink-400"
                         icon="💔"
+                        delta={deltas?.fireDamageTaken}
+                        whatIfBreakdown={whatIfBreakdown?.fireDamageTaken}
                     />
                 )}
 
-                {/* 🔥 DMG Dealt % (ex: YUQI FOREVER) */}
-                {member.finalStats.damageDealt > 0 && (
+                {/* DMG Dealt % */}
+                {(member.finalStats.damageDealt > 0 || Math.abs(deltas?.damageDealt || 0) > 0.05) && (
                     <StatWithBreakdown
                         label="DMG Dealt"
                         value={member.finalStats.damageDealt}
                         breakdown={member.breakdown.damageDealt}
                         color="text-green-400"
                         icon="💥"
+                        delta={deltas?.damageDealt}
+                        whatIfBreakdown={whatIfBreakdown?.damageDealt}
                     />
                 )}
 
-                {/* 🔥 DMG Taken (debuff général sur ennemi) */}
-                {member.finalStats.damageTaken > 0 && (
+                {/* DMG Taken (debuff général sur ennemi) */}
+                {(member.finalStats.damageTaken > 0 || Math.abs(deltas?.damageTaken || 0) > 0.05) && (
                     <StatWithBreakdown
                         label="DMG Taken"
                         value={member.finalStats.damageTaken}
                         breakdown={member.breakdown.damageTaken}
                         color="text-rose-400"
                         icon="💢"
+                        delta={deltas?.damageTaken}
+                        whatIfBreakdown={whatIfBreakdown?.damageTaken}
                     />
                 )}
 
-                {/* 🔥 Break Target DMG (ex: YUQI Afterglow) */}
-                {member.finalStats.breakTargetDmg > 0 && (
+                {/* Break Target DMG */}
+                {(member.finalStats.breakTargetDmg > 0 || Math.abs(deltas?.breakTargetDmg || 0) > 0.05) && (
                     <StatWithBreakdown
                         label="DMG vs Break"
                         value={member.finalStats.breakTargetDmg}
                         breakdown={member.breakdown.breakTargetDmg}
                         color="text-teal-400"
                         icon="💎"
+                        delta={deltas?.breakTargetDmg}
+                        whatIfBreakdown={whatIfBreakdown?.breakTargetDmg}
                     />
                 )}
 
-                {/* Basic Skill DMG - Toujours affiché si > 0 */}
-                {member.finalStats.basicSkillDamage > 0 && (
+                {/* Basic Skill DMG */}
+                {(member.finalStats.basicSkillDamage > 0 || Math.abs(deltas?.basicSkillDamage || 0) > 0.05) && (
                     <StatWithBreakdown
                         label="Basic Skill DMG"
                         value={member.finalStats.basicSkillDamage}
                         breakdown={member.breakdown.basicSkillDamage}
                         color="text-cyan-400"
                         icon="🎯"
+                        delta={deltas?.basicSkillDamage}
+                        whatIfBreakdown={whatIfBreakdown?.basicSkillDamage}
                     />
                 )}
 
-                {/* Ultimate Skill DMG - Toujours affiché si > 0 */}
-                {member.finalStats.ultimateSkillDamage > 0 && (
+                {/* Ultimate Skill DMG */}
+                {(member.finalStats.ultimateSkillDamage > 0 || Math.abs(deltas?.ultimateSkillDamage || 0) > 0.05) && (
                     <StatWithBreakdown
                         label="Ultimate Skill DMG"
                         value={member.finalStats.ultimateSkillDamage}
                         breakdown={member.breakdown.ultimateSkillDamage}
                         color="text-amber-400"
                         icon="💫"
+                        delta={deltas?.ultimateSkillDamage}
+                        whatIfBreakdown={whatIfBreakdown?.ultimateSkillDamage}
                     />
                 )}
             </div>
 
             {/* SECTION 2 - During Overload (stats conditionnelles OL) */}
-            {(member.finalStats.darkDamageOL > 0 || member.finalStats.darkOverloadDamage > 0 || member.finalStats.damageVsDarkOverloaded > 0 || member.finalStats.darkOverloadDamageTaken > 0) && (
+            {(member.finalStats.darkDamageOL > 0 || member.finalStats.darkOverloadDamage > 0 || member.finalStats.damageVsDarkOverloaded > 0 || member.finalStats.darkOverloadDamageTaken > 0
+                || Math.abs(deltas?.darkDamageOL || 0) > 0.05 || Math.abs(deltas?.darkOverloadDamage || 0) > 0.05 || Math.abs(deltas?.darkOverloadDamageTaken || 0) > 0.05
+            ) && (
                 <div className="mt-3 pt-3 border-t border-purple-500/30">
                     <div className="text-xs text-purple-400 font-semibold mb-2 flex items-center gap-1">
                         <span>⚡</span>
                         <span>During Overload</span>
                     </div>
                     <div className="space-y-2">
-                        {member.finalStats.darkDamageOL > 0 && (
+                        {(member.finalStats.darkDamageOL > 0 || Math.abs(deltas?.darkDamageOL || 0) > 0.05) && (
                             <StatWithBreakdown
                                 label="Dark DMG (OL)"
                                 value={member.finalStats.darkDamageOL}
                                 breakdown={member.breakdown.darkDamageOL}
                                 color="text-purple-400"
                                 icon="🌑"
+                                delta={deltas?.darkDamageOL}
+                                whatIfBreakdown={whatIfBreakdown?.darkDamageOL}
                             />
                         )}
 
-                        {(member.finalStats.darkOverloadDamage > 0 || member.finalStats.damageVsDarkOverloaded > 0) && (
+                        {(member.finalStats.darkOverloadDamage > 0 || member.finalStats.damageVsDarkOverloaded > 0 || (deltas && Math.abs((deltas.darkOverloadDamage || 0) + (deltas.damageVsDarkOverloaded || 0)) > 0.05)) && (
                             <StatWithBreakdown
                                 label="DMG (OL)"
                                 value={(member.finalStats.darkOverloadDamage || 0) + (member.finalStats.damageVsDarkOverloaded || 0)}
@@ -4440,16 +4684,23 @@ const IndividualCharacterStatCard = ({ member, onClick }) => {
                                 ]}
                                 color="text-violet-400"
                                 icon="💥"
+                                delta={deltas ? ((deltas.darkOverloadDamage || 0) + (deltas.damageVsDarkOverloaded || 0)) : undefined}
+                                whatIfBreakdown={whatIfBreakdown ? [
+                                    ...(whatIfBreakdown.darkOverloadDamage || []),
+                                    ...(whatIfBreakdown.damageVsDarkOverloaded || [])
+                                ] : null}
                             />
                         )}
 
-                        {member.finalStats.darkOverloadDamageTaken > 0 && (
+                        {(member.finalStats.darkOverloadDamageTaken > 0 || Math.abs(deltas?.darkOverloadDamageTaken || 0) > 0.05) && (
                             <StatWithBreakdown
                                 label="Overload DMG Taken (OL)"
                                 value={member.finalStats.darkOverloadDamageTaken}
                                 breakdown={member.breakdown.darkOverloadDamageTaken}
                                 color="text-rose-400"
                                 icon="💢"
+                                delta={deltas?.darkOverloadDamageTaken}
+                                whatIfBreakdown={whatIfBreakdown?.darkOverloadDamageTaken}
                             />
                         )}
                     </div>
@@ -4457,40 +4708,48 @@ const IndividualCharacterStatCard = ({ member, onClick }) => {
             )}
 
             {/* SECTION 3 - During Fire Overload (stats conditionnelles Fire OL) */}
-            {(member.finalStats.fireElementalAccumulation > 0 || member.finalStats.fireOverloadDamage > 0 || member.finalStats.fireOverloadDamageTaken > 0) && (
+            {(member.finalStats.fireElementalAccumulation > 0 || member.finalStats.fireOverloadDamage > 0 || member.finalStats.fireOverloadDamageTaken > 0
+                || Math.abs(deltas?.fireElementalAccumulation || 0) > 0.05 || Math.abs(deltas?.fireOverloadDamage || 0) > 0.05 || Math.abs(deltas?.fireOverloadDamageTaken || 0) > 0.05
+            ) && (
                 <div className="mt-3 pt-3 border-t border-orange-500/30">
                     <div className="text-xs text-orange-400 font-semibold mb-2 flex items-center gap-1">
                         <span>🔥</span>
                         <span>During Fire Overload</span>
                     </div>
                     <div className="space-y-2">
-                        {member.finalStats.fireElementalAccumulation > 0 && (
+                        {(member.finalStats.fireElementalAccumulation > 0 || Math.abs(deltas?.fireElementalAccumulation || 0) > 0.05) && (
                             <StatWithBreakdown
                                 label="Fire Elem Acc"
                                 value={member.finalStats.fireElementalAccumulation}
                                 breakdown={member.breakdown.fireElementalAccumulation}
                                 color="text-orange-300"
                                 icon="🔮"
+                                delta={deltas?.fireElementalAccumulation}
+                                whatIfBreakdown={whatIfBreakdown?.fireElementalAccumulation}
                             />
                         )}
 
-                        {member.finalStats.fireOverloadDamage > 0 && (
+                        {(member.finalStats.fireOverloadDamage > 0 || Math.abs(deltas?.fireOverloadDamage || 0) > 0.05) && (
                             <StatWithBreakdown
                                 label="Fire OL DMG"
                                 value={member.finalStats.fireOverloadDamage}
                                 breakdown={member.breakdown.fireOverloadDamage}
                                 color="text-orange-400"
                                 icon="💥"
+                                delta={deltas?.fireOverloadDamage}
+                                whatIfBreakdown={whatIfBreakdown?.fireOverloadDamage}
                             />
                         )}
 
-                        {member.finalStats.fireOverloadDamageTaken > 0 && (
+                        {(member.finalStats.fireOverloadDamageTaken > 0 || Math.abs(deltas?.fireOverloadDamageTaken || 0) > 0.05) && (
                             <StatWithBreakdown
                                 label="Fire OL DMG Taken"
                                 value={member.finalStats.fireOverloadDamageTaken}
                                 breakdown={member.breakdown.fireOverloadDamageTaken}
                                 color="text-rose-400"
                                 icon="💢"
+                                delta={deltas?.fireOverloadDamageTaken}
+                                whatIfBreakdown={whatIfBreakdown?.fireOverloadDamageTaken}
                             />
                         )}
                     </div>
@@ -4503,19 +4762,68 @@ const IndividualCharacterStatCard = ({ member, onClick }) => {
                     <OptimizationCard characterId={member.id} stats={member.finalStats} compact={false} />
                 </div>
             )}
+
+            {/* Résumé d'impact What-If (pour les cartes non-comparées mais affectées) */}
+            {deltas && compareActive && !isComparing && (() => {
+                const changedStats = Object.entries(deltas)
+                    .filter(([key, v]) => Math.abs(v) > 0.05 && STAT_LABELS[key])
+                    .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+                if (changedStats.length === 0) return null;
+                return (
+                    <div className="mt-3 pt-3 border-t border-amber-500/20">
+                        <div className="text-xs text-amber-400/80 font-semibold mb-1">Impact du swap :</div>
+                        <div className="flex flex-wrap gap-1">
+                            {changedStats.map(([key, v]) => (
+                                <span key={key} className={`text-xs px-1.5 py-0.5 rounded ${v > 0 ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
+                                    {STAT_LABELS[key]} {v > 0 ? '+' : ''}{v.toFixed(1)}%
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                );
+            })()}
         </div>
     );
 };
 
 // Composant: Stat avec breakdown détaillé au hover
-const StatWithBreakdown = ({ label, value, breakdown, color, icon, hasBaseValue = false, characterId, statName }) => {
+const StatWithBreakdown = ({ label, value, breakdown, color, icon, hasBaseValue = false, characterId, statName, delta, whatIfBreakdown }) => {
     const hasOptimData = characterId && statName && CHARACTER_OPTIMIZATION[characterId];
     const optimStatus = hasOptimData ? getOptimizationStatus(characterId, statName, value) : null;
     const sweetSpot = hasOptimData ? CHARACTER_OPTIMIZATION[characterId]?.sweetSpots?.[statName] : null;
+    const showDelta = delta !== undefined && delta !== null && Math.abs(delta) > 0.05;
+
+    // Calculer les changements entre breakdown actuel et what-if
+    const changes = (showDelta && whatIfBreakdown && breakdown) ? (() => {
+        const currentMap = new Map();
+        breakdown.forEach(b => currentMap.set(b.source, b.value));
+        const whatIfMap = new Map();
+        whatIfBreakdown.forEach(b => whatIfMap.set(b.source, b.value));
+
+        const removed = []; // Sources perdues
+        const added = [];   // Sources gagnées
+        const changed = [];  // Sources modifiées
+
+        currentMap.forEach((val, src) => {
+            if (!whatIfMap.has(src)) {
+                removed.push({ source: src, value: val });
+            } else if (Math.abs(whatIfMap.get(src) - val) > 0.05) {
+                changed.push({ source: src, oldValue: val, newValue: whatIfMap.get(src) });
+            }
+        });
+        whatIfMap.forEach((val, src) => {
+            if (!currentMap.has(src)) {
+                added.push({ source: src, value: val });
+            }
+        });
+        return (removed.length > 0 || added.length > 0 || changed.length > 0) ? { removed, added, changed } : null;
+    })() : null;
 
     return (
         <div className="group relative">
-            <div className="flex items-center justify-between text-sm py-1 px-2 rounded bg-gray-900/30 hover:bg-gray-900/50 transition-colors cursor-help">
+            <div className={`flex items-center justify-between text-sm py-1 px-2 rounded transition-colors cursor-help ${
+                showDelta ? (delta > 0 ? 'bg-green-900/15 hover:bg-green-900/25' : 'bg-red-900/15 hover:bg-red-900/25') : 'bg-gray-900/30 hover:bg-gray-900/50'
+            }`}>
                 <span className="text-gray-400 flex items-center gap-1">
                     <span className="text-xs">{icon}</span>
                     <span>{label}:</span>
@@ -4524,8 +4832,16 @@ const StatWithBreakdown = ({ label, value, breakdown, color, icon, hasBaseValue 
                     <span className={`font-bold ${color}`}>
                         {value.toFixed(1)}%
                     </span>
+                    {/* Delta indicator */}
+                    {showDelta && (
+                        <span className={`text-xs font-bold px-1 py-0.5 rounded ${
+                            delta > 0 ? 'text-green-400 bg-green-900/30' : 'text-red-400 bg-red-900/30'
+                        }`}>
+                            {delta > 0 ? '+' : ''}{delta.toFixed(1)}%
+                        </span>
+                    )}
                     {/* Indicateur d'optimisation inline */}
-                    {optimStatus && (
+                    {optimStatus && !showDelta && (
                         <span
                             className="inline-block w-2.5 h-2.5 rounded-full"
                             style={{ backgroundColor: optimStatus.color }}
@@ -4536,7 +4852,7 @@ const StatWithBreakdown = ({ label, value, breakdown, color, icon, hasBaseValue 
             </div>
 
             {/* Tooltip au hover */}
-            {breakdown && breakdown.length > 0 && (
+            {((breakdown && breakdown.length > 0) || changes) && (
                 <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 pointer-events-none w-72">
                     <div className="bg-gray-900/98 text-white p-3 rounded-lg border border-purple-500/50 shadow-2xl">
                         <div className="text-xs font-bold mb-2 text-purple-300 border-b border-purple-500/30 pb-1 flex justify-between items-center">
@@ -4582,6 +4898,39 @@ const StatWithBreakdown = ({ label, value, breakdown, color, icon, hasBaseValue 
                                 </div>
                             )}
                         </div>
+                        {/* Section What-If : changements détaillés */}
+                        {changes && (
+                            <div className="mt-2 pt-2 border-t border-amber-500/30">
+                                <div className="text-xs font-bold mb-1.5 text-amber-400 flex items-center gap-1">
+                                    <span>🔄</span> Changements si swap
+                                </div>
+                                <div className="space-y-1 text-xs">
+                                    {changes.removed.map((item, idx) => (
+                                        <div key={`rm-${idx}`} className="flex justify-between items-center text-red-400">
+                                            <span className="truncate mr-2 opacity-80">✕ {item.source}</span>
+                                            <span className="font-semibold whitespace-nowrap">-{item.value.toFixed(1)}%</span>
+                                        </div>
+                                    ))}
+                                    {changes.added.map((item, idx) => (
+                                        <div key={`add-${idx}`} className="flex justify-between items-center text-green-400">
+                                            <span className="truncate mr-2 opacity-80">+ {item.source}</span>
+                                            <span className="font-semibold whitespace-nowrap">+{item.value.toFixed(1)}%</span>
+                                        </div>
+                                    ))}
+                                    {changes.changed.map((item, idx) => (
+                                        <div key={`chg-${idx}`} className="flex justify-between items-center text-amber-400">
+                                            <span className="truncate mr-2 opacity-80">~ {item.source}</span>
+                                            <span className="font-semibold whitespace-nowrap">{item.oldValue.toFixed(1)} → {item.newValue.toFixed(1)}%</span>
+                                        </div>
+                                    ))}
+                                    {/* Delta total */}
+                                    <div className={`flex justify-between items-center pt-1 mt-1 border-t border-amber-500/20 font-bold ${delta > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                        <span>DELTA</span>
+                                        <span>{delta > 0 ? '+' : ''}{delta.toFixed(1)}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         {/* Triangle pointer */}
                         <div className="absolute left-4 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-purple-500/50"></div>
                     </div>

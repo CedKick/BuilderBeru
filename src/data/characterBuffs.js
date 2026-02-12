@@ -416,44 +416,8 @@ export const CHARACTER_BUFFS = {
     },
 
     // Son Kihoon - Breaker Dark HP Scaler
-    // A0-A3: RIEN en TC/DCC/Def Pen
-    // A4: Team buffs (+10% ATK, +10% HP permanent)
-    // A5: Strike Squad Leader (RAID-wide: +10% ATK + 10% HP + 10% DMG dealt)
-    son: {
-        baseStats: {
-            critRate: 0,  // TC de base du perso (%)
-            critDMG: 0,   // DCC de base du perso (%)
-            defPen: 0,    // DefPen de base du perso (%)
-        },
-        buffs: {
-            A0: { critRate: 0, critDMG: 0, defPen: 0 },  // RIEN
-            A1: { critRate: 0, critDMG: 0, defPen: 0 },  // RIEN
-            A2: { critRate: 0, critDMG: 0, defPen: 0 },  // RIEN (+10% Break effectiveness mais pas de buffs TC/DCC/Def Pen)
-            A3: { critRate: 0, critDMG: 0, defPen: 0 },  // RIEN (enhance Break damage et Weakened Fighting Spirit)
-            A4: {
-                critRate: 0,
-                critDMG: 0,
-                defPen: 0,
-                // Team buffs permanents (débloqués à A4)
-                teamBuffs: {
-                    attack: 10,  // +10% ATK (team-wide, permanent)
-                    hp: 10       // +10% HP (team-wide, permanent)
-                }
-            },
-            A5: {
-                critRate: 0,
-                critDMG: 0,
-                defPen: 0,
-                // RAID buffs permanents (Strike Squad Leader - A5)
-                // Remplace et améliore les team buffs de A4
-                raidBuffs: {
-                    attack: 10,      // +10% ATK (RAID-wide, permanent)
-                    hp: 10,          // +10% HP (RAID-wide, permanent)
-                    damageDealt: 10  // +10% DMG dealt (RAID-wide, permanent)
-                }
-            }
-        }
-    },
+    // SUPPRIMÉ : Cette 1ère entrée était écrasée par la 2ème entrée `son:` plus bas
+    // Toutes les données sont maintenant fusionnées dans l'entrée unique `son:` ci-dessous
 
     // Lim Tae-Gyu - Breaker Dark ATK Scaler (Magic Boost specialist)
     // A0: RIEN
@@ -827,35 +791,38 @@ export const CHARACTER_BUFFS = {
         }
     },
 
-    // 🔨 Son Kihoon - SEUL A5 APPORTE DES BUFFS DE TEAM (conditionnels)
-    // IMPORTANT: A0, A1, A2, A3, A4 n'apportent RIEN
-    // A5 débloque des buffs de TEAM conditionnels selon l'état de bris
+    // 🔨 Son Kihoon - Breaker Dark HP Scaler
+    // A4: +10% ATK/HP team. A5: +30% DCC team (Berserk Strike) + Strike Squad Leader TEAM (+10% ATK/HP/DMG dealt)
+    // A5 debuff Broken Spirit: +15% TC RAID (via critHitChanceReceived dans characterAdvancedBuffs)
     son: {
         baseStats: {
-            critRate: 0,  // TC de base du perso (%)
-            critDMG: 0,   // DCC de base du perso (%)
-            defPen: 0,    // DefPen de base du perso (%)
+            critRate: 0,
+            critDMG: 0,
+            defPen: 0,
         },
         buffs: {
-            A0: { critRate: 0, critDMG: 0, defPen: 0 },  // RIEN
-            A1: { critRate: 0, critDMG: 0, defPen: 0 },  // RIEN
-            A2: { critRate: 0, critDMG: 0, defPen: 0 },  // RIEN
-            A3: { critRate: 0, critDMG: 0, defPen: 0 },  // RIEN
-            A4: { critRate: 0, critDMG: 0, defPen: 0 },  // RIEN
-            A5: {
-                critRate: 0,
-                critDMG: 0,
-                defPen: 0,
-                // Buffs de TEAM (pour sa team uniquement, débloqués à A5)
-                // Conditionnels selon l'état de bris
-                teamBuff: {
-                    critDMG: 15  // +15% DCC pour sa team par défaut (sans état de bris)
-                },
-                // Si état de bris activé
-                breakState: {
-                    critDMG: 30  // +30% DCC pour sa team si état de bris (au lieu de 15%)
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: {
+                critRate: 0, critDMG: 0, defPen: 0,
+                teamBuffs: {
+                    attack: 10,  // +10% ATK team
+                    hp: 10       // +10% HP team
                 }
-            },  // +15% DCC TEAM (ou +30% si break state activé)
+            },
+            A5: {
+                critRate: 0, critDMG: 0, defPen: 0,
+                teamBuff: {
+                    critDMG: 30  // +30% DCC pour sa team (Berserk Strike)
+                },
+                teamBuffs: {
+                    attack: 10,      // +10% ATK TEAM (Strike Squad Leader)
+                    hp: 10,          // +10% HP TEAM
+                    damageDealt: 10  // +10% DMG dealt TEAM
+                }
+            },
         }
     },
 
