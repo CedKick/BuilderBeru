@@ -1445,8 +1445,8 @@ export const characters = {
   },
   'son': {
     name: 'Son Kihoon',
-    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604316/harper_fvn1d9.png',
-    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606309/icons/build-14.png',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934305/Son_Portrait_vmup4f.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934305/Son_Portrait_vmup4f.png',
     class: 'Tank',
     grade: 'SSR',
     element: 'Dark',
@@ -1968,5 +1968,37 @@ export const characters = {
         type: 'damageBuffs', // damageBuffs, coreBuffs, skillBuffs, ultimateBuffs, elementalDamage
         element: 'Wind'
       }]
+  },
+  'meri': {
+    name: 'Meri Laine',
+    img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934646/Meri_Portrait_kjowxk.png',
+    icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934646/Meri_Portrait_kjowxk.png',
+    class: 'Infusion',
+    grade: 'SSR',
+    element: 'Water',
+    scaleStat: 'HP',
+    bdgLimits: {
+      maxDamageOnElement: 15000000000,
+      maxDamageOffElement: 4000000000
+    },
+    importantStats: ['hp', 'tc', 'dcc', 'defPen', 'di'],
+    skillMultipliers: {
+      core1: 3.0,
+      core2: 12.0,
+      skill1: 25.0,
+      skill2: 24.0,
+      ultimate: 65.0
+    },
+    buffs: [
+      {
+        name: 'Water Infusion',
+        img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934646/Meri_Portrait_kjowxk.png',
+        duration: 30,
+        target: 'shared',
+        effects: [
+          { type: 'hp', values: [10, 20, 30] }
+        ]
+      }
+    ]
   }
 };

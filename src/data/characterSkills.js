@@ -2000,8 +2000,88 @@ export const CHARACTER_SKILLS = {
         }
     },
 
-    // 🔥 Autres personnages à ajouter ici par la suite
-    // etc.
+    // 💧 Meri Laine - Water Infusion HP - Water Overload Specialist
+    meri: {
+        id: 'meri',
+        name: 'Meri Laine',
+        element: 'Water',
+        scaleStat: 'HP',
+
+        basicAttack: {
+            name: 'Meri Combo',
+            stages: [
+                { stage: 1, damage: [180, 270], description: 'Water strike Stage 1' },
+                { stage: 2, damage: [230, 345], description: 'Water strike Stage 2' },
+                { stage: 3, damage: [290, 435], description: 'Water finisher Stage 3' }
+            ],
+            element: 'Water',
+            effects: [
+                'Deals Weak Elemental Accumulation damage',
+                'Water Infusion enhanced attacks'
+            ]
+        },
+
+        coreAttack: {
+            name: 'Tidal Surge',
+            damage: [1000, 1500],
+            element: 'Water',
+            effects: [
+                'Deals Weak Elemental Accumulation damage',
+                'Super Armor during use'
+            ]
+        },
+
+        skills: [
+            {
+                id: 'skill1',
+                name: 'Aqua Burst',
+                damage: [2500, 3750],
+                cooldown: 15,
+                mpCost: [75, 99],
+                element: 'Water',
+                effects: [
+                    'Water AoE burst',
+                    'Deals Water Elemental Accumulation damage'
+                ]
+            },
+            {
+                id: 'skill2',
+                name: 'Hydro Cannon',
+                damage: [2400, 3600],
+                cooldown: 16,
+                mpCost: [80, 105],
+                element: 'Water',
+                effects: [
+                    'Concentrated water beam',
+                    'Deals Water Elemental Accumulation damage'
+                ]
+            }
+        ],
+
+        ultimate: {
+            name: 'Deluge',
+            damage: [6500, 9750],
+            cooldown: 0,
+            mpCost: 0,
+            element: 'Water',
+            effects: [
+                'Massive Water AoE',
+                'Water Overload enabler'
+            ],
+            gaugeRequired: 100
+        },
+
+        dpsCalculation: {
+            rotationDuration: 60,
+            expectedSkillUsage: {
+                coreAttack: 8,
+                skill1: 3,
+                skill2: 3,
+                ultimate: 2,
+                basicAttack: 12
+            }
+        }
+    },
 };
 
 // Helper function pour obtenir les skills d'un personnage

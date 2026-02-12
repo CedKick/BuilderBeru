@@ -3376,8 +3376,8 @@ BobbyJones : "Allez l'Inter !"
         if (mainRecent.length > 0) {
           defaultCharacter = mainRecent[0];
         } else {
-          // En dernier recours, Niermann
-          defaultCharacter = 'frieren';
+          // En dernier recours, Meri Laine
+          defaultCharacter = 'meri';
         }
       }
 
@@ -4200,6 +4200,18 @@ BobbyJones : "Allez l'Inter !"
   // Coop Training boost (+2760 ATK/DEF ou +5520 HP selon scaleStat)
   const [coopTraining, setCoopTraining] = useState(true);
 
+  // Handler pour toggle Coop — ajoute/soustrait directement la valeur aux flatStats actuels
+  const handleCoopToggle = (newCoop) => {
+    if (newCoop === coopTraining) return;
+    const scaleStat = characters[selectedCharacter]?.scaleStat;
+    if (!scaleStat) { setCoopTraining(newCoop); return; }
+    const coopValue = scaleStat === 'HP' ? 5520 : 2760;
+    const statKey = scaleStat === 'HP' ? 'HP' : scaleStat === 'Defense' ? 'Defense' : 'Attack';
+    const delta = newCoop ? coopValue : -coopValue;
+    setFlatStats(prev => ({ ...prev, [statKey]: (prev[statKey] || 0) + delta }));
+    setCoopTraining(newCoop);
+  };
+
   const getFlatStatsWithWeapon = (char, weapon = {}, strengthParam = null, characterName = null) => {
     // 🔥 DÉTECTION JINWOO EN PREMIER - utiliser le characterName passé en paramètre OU le selectedCharacter
     const charName = characterName || selectedCharacter;
@@ -4242,7 +4254,8 @@ BobbyJones : "Allez l'Inter !"
     // Pour les autres personnages, vérifier que char existe
     if (!char) return {};
 
-    const scaleStat = char.scaleStat || '';
+    // scaleStat vient de characters (pas de characterStats qui n'a pas cette propriété)
+    const scaleStat = characters[charName]?.scaleStat || char.scaleStat || '';
     let weaponBoost = weapon.mainStat || 0;
     let weapPrecision = weapon.precision || 0;
 
@@ -4596,7 +4609,7 @@ BobbyJones : "Allez l'Inter !"
 
       })
     );
-  }, [selectedCharacter, hunterWeapons, coopTraining]);
+  }, [selectedCharacter, hunterWeapons]);
 
 
 
@@ -6234,7 +6247,7 @@ BobbyJones : "Allez l'Inter !"
                               <input
                                 type="checkbox"
                                 checked={coopTraining}
-                                onChange={(e) => setCoopTraining(e.target.checked)}
+                                onChange={(e) => handleCoopToggle(e.target.checked)}
                                 className="w-4 h-4 rounded bg-gray-700 border-gray-600 text-green-500 focus:ring-green-500 focus:ring-2 cursor-pointer"
                               />
                               <span className={`text-xs font-medium ${coopTraining ? 'text-green-400' : 'text-gray-400'}`}>
@@ -8649,7 +8662,7 @@ BobbyJones : "Allez l'Inter !"
                                   <input
                                     type="checkbox"
                                     checked={coopTraining}
-                                    onChange={(e) => setCoopTraining(e.target.checked)}
+                                    onChange={(e) => handleCoopToggle(e.target.checked)}
                                     className="w-4 h-4 rounded bg-gray-700 border-gray-600 text-green-500 focus:ring-green-500 focus:ring-2 cursor-pointer"
                                   />
                                   <span className={`text-xs font-medium ${coopTraining ? 'text-green-400' : 'text-gray-400'}`}>

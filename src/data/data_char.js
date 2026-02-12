@@ -352,8 +352,8 @@ const data_chars = {
     },
     'son': {
       name: 'Son Kihoon',
-      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604316/harper_fvn1d9.png',
-      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606309/icons/build-14.png',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934305/Son_Portrait_vmup4f.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934305/Son_Portrait_vmup4f.png',
       class: 'Tank',
       grade: 'SSR',
       element: 'Dark',
@@ -493,6 +493,15 @@ const data_chars = {
       grade: 'SR',
       element: 'Fire',
       scaleStat: 'Attack'
+    },
+    'meri': {
+      name: 'Meri Laine',
+      img: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934646/Meri_Portrait_kjowxk.png',
+      icon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934646/Meri_Portrait_kjowxk.png',
+      class: 'Infusion',
+      grade: 'SSR',
+      element: 'Water',
+      scaleStat: 'HP'
     },
     'yoo-jinho': {
       name: 'Yoo Jinho',

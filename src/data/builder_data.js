@@ -3580,6 +3580,136 @@ const BUILDER_DATA = {
       "advanced": "Build tank avec bonne survivabilité HP.",
       "expert": "Dark Tank HP scaling - optimise les substats HP %!"
     }
+  },
+
+  "meri": {
+    "name": "Meri Laine",
+    "element": "Water",
+    "class": "Infusion",
+    "grade": "SSR",
+    "scaleStat": "HP",
+
+    "optimizationPriority": [
+      {
+        stat: "Additional HP",
+        priority: 1,
+        target: "maximum_possible",
+        reason: "Prioriser HP au maximum (scaleStat)",
+        description: "Meri scale sur HP - maximise cette stat avant tout"
+      },
+      {
+        stat: "HP %",
+        priority: 2,
+        target: "maximum_possible",
+        reason: "Prioriser HP % pour scaling optimal",
+        description: "HP % booste le scaling de Meri"
+      },
+      {
+        stat: "Damage Increase",
+        priority: 3,
+        target: "maximum_possible",
+        reason: "Dégâts optimaux"
+      },
+      {
+        stat: "Critical Hit Damage",
+        priority: 4,
+        target: "200%+",
+        reason: "Dégâts critiques optimaux"
+      },
+      {
+        stat: "Critical Hit Rate",
+        priority: 5,
+        target: 8000,
+        reason: "Taux critique optimal pour Infusion"
+      },
+      {
+        stat: "Defense Penetration",
+        priority: 6,
+        target: "15-25%",
+        reason: "Pénétration pour efficacité"
+      }
+    ],
+
+    "recommendedStats": {
+      "criticalHitRate": "80-100%",
+      "criticalHitDamage": "180% - 200%",
+      "DamageIncrease": "30% +",
+      "defensePenetration": "15% - 25%",
+      "hp": "Maximum possible"
+    },
+
+    "gameModes": {
+      "general": {
+        "recommendedSet": "Desire/Sylph Build",
+        "priority": "Infusion Water HP-scaling",
+        "description": "Build Infusion avec Desire + Sylph",
+        "availability": "LR",
+        "setComposition": "4x Desire + 4x Sylph"
+      },
+      "pod": {
+        "recommendedSet": "Desire/Sylph Build",
+        "priority": "PvP Infusion Water",
+        "description": "Build PvP Infusion avec HP maximum",
+        "availability": "LR",
+        "setComposition": "4x Desire + 4x Sylph"
+      },
+      "bdg": {
+        "recommendedSet": "Desire/Sylph Build",
+        "priority": "Guild boss Infusion",
+        "description": "Build boss de guilde Infusion avec Desire + Sylph",
+        "availability": "LR",
+        "setComposition": "4x Desire + 4x Sylph"
+      }
+    },
+
+    "artifactSets": {
+      "desireSylph": {
+        "name": "Desire/Sylph Build",
+        "frenchName": "Build Désir/Sylphe",
+        "availability": "LR",
+        "setComposition": "4x Desire + 4x Sylph",
+        "pieces": {
+          "helmet": "Casque du désir",
+          "chest": "Armure du désir",
+          "gloves": "Gants du désir",
+          "boots": "Bottes du désir",
+          "necklace": "Collier sylphe",
+          "bracelet": "Bracelet sylphe",
+          "ring": "Anneau sylphe",
+          "earrings": "Boucles sylphe"
+        },
+        "mainStats": {
+          "helmet": "HP %",
+          "chest": "HP %",
+          "gloves": "HP %",
+          "boots": "HP %",
+          "necklace": "Critical Hit Damage",
+          "bracelet": "HP %",
+          "ring": "HP %",
+          "earrings": "HP %"
+        }
+      }
+    },
+
+    "recommendedCores": {
+      "offensive": {
+        "name": "Trompette du Démon Anonyme",
+        "type": "Additional HP",
+        "bonus": "Lors de l'utilisation de la Compétence ultime, les Dégâts de coup critique de l'utilisateur augmentent de 30% pendant 8 secondes"
+      },
+      "defensive": {
+        "name": "Corne du Démon Anonyme",
+        "type": "Additional HP",
+        "bonus": "Lors de l'utilisation de la Compétence ultime, l'utilisateur bénéficie d'un bouclier équivalent à 10% de ses PV max pendant 8 secondes"
+      }
+    },
+
+    "beruAdvice": {
+      "newbie": "Meri Laine est une Infusion Water HP-scaling !",
+      "intermediate": "Elle scale sur HP ! Build Desire + Sylph pour maximiser !",
+      "advanced": "Maximise HP % et maintiens 80-100% crit rate pour damage optimal !",
+      "expert": "Optimise les substats HP % sur tous les artefacts pour scaling maximum !"
+    }
   }
 };
 

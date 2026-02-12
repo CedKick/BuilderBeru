@@ -1723,6 +1723,85 @@ export const CHARACTER_OPTIMIZATION = {
             advanced: { critRate: 85, critDMG: 210, defPen: 65, dps: "25-40B" },
             whale: { critRate: 100, critDMG: 240, defPen: 75, dps: "40-60B" }
         }
+    },
+
+    // 💧 Meri Laine - Water Infusion HP Scaler / Water Overload Specialist
+    meri: {
+        id: 'meri',
+        name: "Meri Laine",
+        role: "DPS / Water Overload Specialist",
+        element: "Water",
+        tier: "S",
+
+        mainStat: {
+            type: 'hp',
+            label: 'HP',
+            icon: '💚',
+            color: '#22c55e',
+            benchmarks: {
+                casual: 20000,
+                intermediate: 30000,
+                advanced: 40000,
+                whale: 50000
+            },
+            note: "Scale sur HP. Infusion Water → HP = DMG + survie."
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 85,
+                max: 100,
+                ideal: 95,
+                priority: 2,
+                status: "HIGH",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "0% CR perso → besoin de 12-14K raw. Cap 100% idéal"
+            },
+            critDMG: {
+                min: 180,
+                max: 240,
+                ideal: 200,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "0% CritDMG perso → investir après CR cap. Focus HP > CritDMG"
+            },
+            defPen: {
+                min: 60,
+                max: 85,
+                ideal: 75,
+                priority: 1,
+                status: "HIGH",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "Def Pen important pour maximiser les dégâts"
+            }
+        },
+
+        substatPriority: ["HP%", "Def Pen", "Crit Rate%", "Crit DMG%"],
+
+        scaling: {
+            hp: { grade: "S+", description: "Tout le kit scale sur HP → priorité absolue" },
+            defPen: { grade: "S", description: "Def Pen crucial pour dégâts optimaux" },
+            critRate: { grade: "A", description: "0% CR perso → besoin de raw ou team buffs" },
+            critDMG: { grade: "A", description: "0% CritDMG perso → investir en raw après CR" }
+        },
+
+        tips: [
+            "HP = PRIORITÉ ABSOLUE car tout scale sur HP",
+            "Infusion Water: Water Overload enabler",
+            "Build Desire + Sylph pour maximiser HP et Water synergy"
+        ],
+
+        recommendedSets: ["Desire 4pc + Sylph 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 65, critDMG: 140, defPen: 40, dps: "5-12B" },
+            intermediate: { critRate: 80, critDMG: 175, defPen: 55, dps: "18-30B" },
+            advanced: { critRate: 95, critDMG: 200, defPen: 70, dps: "35-55B" },
+            whale: { critRate: 100, critDMG: 230, defPen: 80, dps: "55-75B" }
+        }
     }
 };
 

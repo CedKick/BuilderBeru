@@ -4192,7 +4192,7 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
 
 // Labels des stats pour le résumé d'impact
 const STAT_LABELS = {
-    critRate: 'TC', critDMG: 'DCC', defPen: 'DefPen', attack: 'ATK', hp: 'HP', defense: 'DEF',
+    critRate: 'CR', critDMG: 'CritDMG', defPen: 'DefPen', attack: 'ATK', hp: 'HP', defense: 'DEF',
     darkDamage: 'Dark DMG', fireDamage: 'Fire DMG', fireDamageTaken: 'Fire DMG Taken',
     damageDealt: 'DMG Dealt', damageTaken: 'DMG Taken', breakTargetDmg: 'Break DMG',
     basicSkillDamage: 'Basic Skill', ultimateSkillDamage: 'Ult Skill',
@@ -4445,7 +4445,7 @@ const IndividualCharacterStatCard = ({ member, onClick, onCompare, isComparing, 
             {/* SECTION 1 - Stats permanentes (toujours actives) */}
             <div className="space-y-2">
                 <StatWithBreakdown
-                    label="TC"
+                    label="CR"
                     value={member.finalStats.critRate}
                     breakdown={member.breakdown.critRate}
                     color="text-yellow-400"
@@ -4456,7 +4456,7 @@ const IndividualCharacterStatCard = ({ member, onClick, onCompare, isComparing, 
                     whatIfBreakdown={whatIfBreakdown?.critRate}
                 />
                 <StatWithBreakdown
-                    label="DCC"
+                    label="CritDMG"
                     value={member.finalStats.critDMG}
                     breakdown={member.breakdown.critDMG}
                     color="text-red-400"

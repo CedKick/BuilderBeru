@@ -5691,8 +5691,105 @@ export const CHARACTER_ADVANCED_BUFFS = {
         }
     },
 
-    // 🔥 Autres personnages à ajouter ici par la suite
-    // etc.
+    // 💧 Meri Laine - Water Infusion HP - Water Overload Specialist
+    meri: {
+        id: 'meri',
+        name: 'Meri Laine',
+        element: 'Water',
+        scaleStat: 'HP',
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: 'Water Infusion',
+                        description: 'Meri infuses Water element into attacks',
+                        effects: { waterDamage: 5 },
+                        trigger: 'passive',
+                        note: '+5% Water DMG passive'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A1: {
+                passives: [
+                    {
+                        name: 'Water Infusion',
+                        description: 'Meri infuses Water element into attacks',
+                        effects: { waterDamage: 5 },
+                        trigger: 'passive',
+                        note: '+5% Water DMG passive'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A2: {
+                passives: [
+                    {
+                        name: 'Water Infusion',
+                        description: 'Meri infuses Water element into attacks',
+                        effects: { waterDamage: 10 },
+                        trigger: 'passive',
+                        note: '+10% Water DMG passive'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A3: {
+                passives: [
+                    {
+                        name: 'Water Infusion',
+                        description: 'Meri infuses Water element into attacks',
+                        effects: { waterDamage: 10 },
+                        trigger: 'passive',
+                        note: '+10% Water DMG passive'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A4: {
+                passives: [
+                    {
+                        name: 'Water Infusion',
+                        description: 'Meri infuses Water element into attacks',
+                        effects: { waterDamage: 10 },
+                        trigger: 'passive',
+                        note: '+10% Water DMG passive'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A5: {
+                passives: [
+                    {
+                        name: 'Water Infusion',
+                        description: 'Meri infuses Water element into attacks',
+                        effects: { waterDamage: 15 },
+                        trigger: 'passive',
+                        note: '+15% Water DMG passive'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            }
+        }
+    },
 };
 
 // Helper function pour obtenir les buffs d'un personnage à un advancement donné
