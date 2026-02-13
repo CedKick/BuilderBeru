@@ -112,6 +112,23 @@ export const statConversionsWithEnemy = {
     }
   },
 
+  // DI (Damage Increase) - dépend du niveau de l'ennemi
+  // Même formule que newDefPenFormula: DI% = (DIStat × 100) / (DIStat + MonsterLevel × 1000)
+  di: {
+    toPercent: (stat, enemyLevel = 80) => {
+      const value = parseFloat(stat) || 0;
+      if (value === 0) return '0.0';
+      const divisor = value + (enemyLevel * 1000);
+      return Math.max(0, (value * 100) / divisor).toFixed(1);
+    },
+    toStat: (percent, enemyLevel = 80) => {
+      const value = parseFloat(percent) || 0;
+      if (value === 0) return 0;
+      if (value >= 100) return Infinity;
+      return Math.round(Math.max(0, (enemyLevel * 1000 * value) / (100 - value)));
+    }
+  },
+
   // Def Pen (Defense Penetration) - dépend du niveau de l'ennemi
   // Formule développée par @Brrrrrrr (précision < 1.7% erreur pour Level 60-80, très précise pour 80+)
   defPen: {

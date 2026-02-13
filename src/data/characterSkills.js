@@ -1867,125 +1867,75 @@ export const CHARACTER_SKILLS = {
         scaleStat: 'DEF',
 
         basicAttack: {
-            name: 'Basic Attack',
-            type: 'chain',
+            name: 'Ordinary Offensive Magic (Zoltraak)',
             stages: [
-                { name: 'Stage 1', damage: [257, 405] },
-                { name: 'Stage 2', damage: [257, 405] },
-                { name: 'Stage 3', damage: [257, 405] }
+                { stage: 1, damage: [257, 385.5], description: 'Zoltraak Multi-Hit Stage 1' },
+                { stage: 2, damage: [266, 399], description: 'Zoltraak Multi-Hit Stage 2' },
+                { stage: 3, damage: [270, 405], description: 'Zoltraak Multi-Hit Stage 3' }
             ],
-            damage: [257, 405],
-            averageDamage: 331,
             element: 'Water',
-            effects: ['waterDamage'],
-            description: 'Combo de 3 stages. Scale sur DEF.'
+            effects: [
+                'Deals Water elemental damage',
+                'Scales on Defense',
+                'Stage 1-3 activate consecutively, Stage 3 triggers Concentrated (Core Attack)'
+            ]
         },
 
         coreAttack: {
-            name: 'Core Attack',
+            name: 'Ordinary Offensive Magic (Zoltraak) - Concentrated',
             damage: [1515, 2272.5],
-            averageDamage: 1893.75,
             element: 'Water',
-            effects: ['waterDamage'],
-            description: 'Core Attack DEF scaling. Dégâts massifs.'
+            effects: [
+                'Concentrated mana power Zoltraak blast',
+                'Deals Water elemental damage',
+                'Auto-triggered after Basic Stage 3'
+            ]
         },
 
         skills: [
             {
                 id: 'skill1',
-                name: 'Judradjim',
+                name: 'Destructive Lightning Magic (Judradjim)',
                 damage: [3020, 4530],
-                averageDamage: 3775,
                 cooldown: 16,
+                mpCost: [150, 198],
                 element: 'Water',
-                effects: ['waterDamage'],
-                description: 'Attaque magique puissante. A5: Remplit 80% de la Power Gauge.',
-                enhancedVersion: {
-                    name: 'Judradjim (A5)',
-                    bonus: '80% Power Gauge fill',
-                    note: 'À A5 Judradjim remplit 80% de la Power Gauge → Ult spam'
-                }
+                effects: [
+                    'Destructive lightning magic',
+                    'Inflicts [Airborne] on final hit',
+                    'A1: Inflicts [Paralyze] (3s)',
+                    'A5: Restores 80% Power Gauge'
+                ]
             },
             {
                 id: 'skill2',
-                name: 'Vollzanbel',
+                name: 'Hellish Flame Magic (Vollzanbel)',
                 damage: [3542, 5313],
-                averageDamage: 4427.5,
                 cooldown: 16,
+                mpCost: [200, 264],
                 element: 'Water',
-                effects: ['waterDamage', 'debuff'],
-                description: 'Attaque + débuff ennemi. A1: -5% DEF, +5% crit received, +5% Crit DMG taken, +35% DMG from Frieren (20s). A5: Enhanced → -10% DEF, +15% crit, +15% Crit DMG, +70% DMG from Frieren (30s).',
-                enhancedVersion: {
-                    name: 'Enhanced Vollzanbel (A5)',
-                    bonus: '-10% DEF, +15% crit received, +15% Crit DMG taken, +70% DMG from Frieren',
-                    duration: 30,
-                    note: 'Debuff massif à A5 → énorme contribution team'
-                }
+                effects: [
+                    'Hellfire magic attack',
+                    'Inflicts [Airborne] on final hit',
+                    'A1: Vollzanbel debuff (-5% DEF, +5% crit received, +5% CritDMG taken, +35% DMG from Frieren, 20s)',
+                    'A5: Enhanced (-10% DEF, +15% crit received, +15% CritDMG taken, +70% DMG from Frieren, 30s)'
+                ]
             }
         ],
 
         ultimate: {
-            name: 'Ultimate',
+            name: 'Ordinary Offensive Magic (Zoltraak) - Ultimate',
             damage: [4366, 6549],
-            averageDamage: 5457.5,
             cooldown: 45,
-            powerGaugeCost: 100,
+            mpCost: 0,
             element: 'Water',
-            effects: ['waterDamage'],
-            description: 'Ultimate DEF scaling. Pendant l\'Ult → +100% Crit Rate (Mana Power Liberation).',
-            specialEffect: {
-                name: 'Mana Power Liberation',
-                description: '+100% Crit Rate pendant l\'Ult → garantit les crits'
-            }
-        },
-
-        weapon: {
-            name: 'Frieren Weapon',
-            effects: {
-                defense: { min: 5, max: 50 },
-                teamBasicUltSkillDmg: { min: 5, max: 30 }
-            },
-            description: '+5-50% DEF perso. Team Basic/Ult Skill DMG +5-30%.'
-        },
-
-        specialMechanics: {
-            manaPowerControl: {
-                name: 'Mana Power Control',
-                description: '+25% DEF permanent. +25% DEF supplémentaire si MP ≥ 50%. A3: Doublé → +50%/+50% (total +100% DEF si MP ≥ 50%)',
-                scaling: 'DEF'
-            },
-            defenseMagic: {
-                name: 'Defense Magic',
-                description: 'Shield 20% DEF, -5% DMG taken (30s). A3: Shield 30% DEF, -10% DMG taken (60s)',
-                scaling: 'DEF'
-            },
-            vollzanbel: {
-                name: 'Vollzanbel Debuff',
-                description: 'A1: -5% DEF, +5% crit, +5% Crit DMG taken, +35% personal DMG (20s). A5: -10% DEF, +15% crit, +15% Crit DMG, +70% personal DMG (30s)',
-                trigger: 'Vollzanbel hit'
-            }
-        },
-
-        recommendedRotation: {
-            name: 'Support Burst Rotation',
-            sequence: [
-                'Vollzanbel → Apply debuff (-DEF, +crit received, +Crit DMG taken)',
-                'Judradjim → Damage + Power Gauge fill (A5: 80%)',
-                'Basic/Core Attacks → Build MP for Mana Power Control bonus',
-                'Ultimate → +100% Crit Rate burst (Mana Power Liberation)',
-                'Defense Magic → Shield + DMG reduction for survival',
-                'Repeat: Vollzanbel (maintain debuff uptime) → Judradjim → Ult'
+            effects: [
+                'Massive Zoltraak blast releasing full mana power',
+                'Inflicts [Airborne] on hit',
+                'Activates [Mana Power Liberation]: +100% Crit Rate, grants Defense Magic to team',
+                'A1: Removes enemy [Shield]'
             ],
-            notes: [
-                'Maintenir Vollzanbel debuff en permanence → +15% crit + +15% Crit DMG taken pour la team (A5)',
-                'A5 Judradjim → 80% Power Gauge → spam Ult régulier',
-                'A3: +100% DEF si MP ≥ 50% → garder le MP haut pour le bonus',
-                'Shield A3: 30% DEF shield + -10% DMG taken (60s) → très tanky',
-                'A2: +9% ATK/DEF/HP toute la team → buff permanent',
-                'A4: +20% Crit DMG toute la team → DCC buff majeur',
-                'Arme: Team Basic/Ult Skill DMG +30% (A5) → énorme pour les DPS',
-                'Mana Power Liberation: +100% TC pendant l\'Ult → ignorer le cap TC pour le burst'
-            ]
+            gaugeRequired: 100
         },
 
         dpsCalculation: {
@@ -1996,6 +1946,182 @@ export const CHARACTER_SKILLS = {
                 skill2: 3,       // Vollzanbel CD 16s
                 ultimate: 2,     // 2 Ults (A5 Judradjim fills 80% gauge)
                 basicAttack: 12
+            }
+        }
+    },
+
+    // 💧 Anna Ruiz - Water Breaker ATK - Poison/Break Specialist
+    anna: {
+        id: 'anna',
+        name: 'Anna Ruiz',
+        element: 'Water',
+        scaleStat: 'ATK',
+
+        basicAttack: {
+            name: 'Arrow Barrage',
+            stages: [
+                { stage: 1, damage: [100, 150], description: 'Rapid arrow fire Stage 1' },
+                { stage: 2, damage: [105, 157.5], description: 'Rapid arrow fire Stage 2' },
+                { stage: 3, damage: [114, 171], description: 'Rapid arrow fire Stage 3' }
+            ],
+            element: 'Water',
+            effects: [
+                'Deals Water elemental damage'
+            ]
+        },
+
+        coreAttack: {
+            name: 'Triple Shot',
+            damage: [793, 1189.5],
+            element: 'Water',
+            effects: [
+                'Lowers stance and fires 3 arrows quickly',
+                'Deals medium Break damage'
+            ]
+        },
+
+        skills: [
+            {
+                id: 'skill1',
+                name: 'Corrosive Poison Arrows',
+                damage: [520, 780],
+                cooldown: 8,
+                mpCost: [150, 198],
+                element: 'Water',
+                effects: [
+                    'Distances from enemy and fires corrosive arrows',
+                    'Creates [Poisonous Zone] on last shot',
+                    'Deals weak Break damage'
+                ]
+            },
+            {
+                id: 'skill2',
+                name: 'Arrow Rain',
+                damage: [1192, 1788],
+                cooldown: 12,
+                mpCost: [200, 264],
+                element: 'Water',
+                effects: [
+                    'Fires multiple arrows skyward that rain down',
+                    'Deals weak Break damage'
+                ]
+            }
+        ],
+
+        ultimate: {
+            name: 'Poison Wave',
+            damage: [1191, 2986.5],
+            cooldown: 45,
+            mpCost: 0,
+            element: 'Water',
+            effects: [
+                'Fires corrosive poison arrows creating large Poisonous Zone',
+                'Each arrow creates a [Poisonous Zone]',
+                'Inflicts [Corrosive Poison] on hit',
+                'A5: +100% Poison Wave damage'
+            ],
+            gaugeRequired: 100
+        },
+
+        dpsCalculation: {
+            rotationDuration: 60,
+            expectedSkillUsage: {
+                coreAttack: 8,
+                skill1: 5,       // CD 8s
+                skill2: 4,       // CD 12s
+                ultimate: 1,
+                basicAttack: 15
+            }
+        }
+    },
+
+    // 💧 Cha Hae-In Water (Pure Sword Princess) - Fighter DPS DEF Scaler
+    chae: {
+        id: 'chae',
+        name: 'Cha Hae-In (Pure Sword Princess)',
+        element: 'Water',
+        scaleStat: 'DEF',
+
+        basicAttack: {
+            name: 'Heavenly Swords Combo',
+            stages: [
+                { stage: 1, damage: [147, 220.5], description: 'Heavenly Sword swing Stage 1' },
+                { stage: 2, damage: [150, 225], description: 'Heavenly Sword swing Stage 2' },
+                { stage: 3, damage: [158, 237], description: 'Heavenly Sword swing Stage 3' }
+            ],
+            element: 'Water',
+            effects: [
+                'Deals Water elemental damage',
+                'Scales on Defense'
+            ]
+        },
+
+        coreAttack: {
+            name: 'Heavenly Sword Slash',
+            damage: [468, 702],
+            element: 'Water',
+            effects: [
+                'Controls Heavenly Swords to slash enemies',
+                'Inflicts [Airborne] on final hit',
+                'A1: Changes to Dance of Scattered Blades via Blade Master (Super Armor, no Core Gauge consumed)'
+            ]
+        },
+
+        skills: [
+            {
+                id: 'skill1',
+                name: 'Sword Princess\'s Dance (Heavenly Strike)',
+                damage: [1154, 1731],
+                cooldown: 16,
+                mpCost: [250, 330],
+                element: 'Water',
+                effects: [
+                    'Leaps and slashes with massive Heavenly Swords',
+                    'Inflicts [Airborne] on hit, [Knock Down] on final hit',
+                    'A3: At 100% gauge → Heavy Attack: Heavenly Strike (+170% damage)',
+                    'A5: +60% damage (Pure Sword Princess)'
+                ]
+            },
+            {
+                id: 'skill2',
+                name: 'Sword of Destiny',
+                damage: [1157, 1735.5],
+                cooldown: 10,
+                mpCost: [250, 330],
+                element: 'Water',
+                effects: [
+                    'Slices enemies in Sword Princess zone then strikes down',
+                    'Inflicts [Airborne] on final hit',
+                    'Inflicts [Unrecoverable] (30s)',
+                    'Super Armor during use',
+                    'A2: Inflicts [Paralyze] (3s) - wait this is Sword of Destiny',
+                    'A5: +60% damage (Pure Sword Princess)'
+                ]
+            }
+        ],
+
+        ultimate: {
+            name: 'Sword of Light',
+            damage: [3510, 5265],
+            cooldown: 45,
+            mpCost: 0,
+            element: 'Water',
+            effects: [
+                'Divine sword cuts through sky and charges through enemies',
+                'Inflicts [Knock Down] on final hit',
+                'Deals Water elemental damage'
+            ],
+            gaugeRequired: 100
+        },
+
+        dpsCalculation: {
+            rotationDuration: 60,
+            expectedSkillUsage: {
+                coreAttack: 10,
+                skill1: 3,       // CD 16s
+                skill2: 5,       // CD 10s
+                ultimate: 1,
+                basicAttack: 20  // High basic count due to Heavenly Swords + Blade Master
             }
         }
     },
@@ -2078,6 +2204,529 @@ export const CHARACTER_SKILLS = {
                 skill1: 3,
                 skill2: 3,
                 ultimate: 2,
+                basicAttack: 12
+            }
+        }
+    },
+    // 💧 Lee Joohee - Water Healer HP Scaler
+    'lee-johee': {
+        id: 'lee-johee',
+        name: 'Lee Joohee',
+        element: 'Water',
+        scaleStat: 'HP',
+
+        basicAttack: {
+            name: 'Magic Power Release',
+            stages: [
+                { stage: 1, damage: [83, 124.5], description: 'Magic attack Stage 1' },
+                { stage: 2, damage: [87, 130.5], description: 'Magic attack Stage 2' },
+                { stage: 3, damage: [93, 139.5], description: 'Magic attack Stage 3' }
+            ],
+            element: 'Water',
+            effects: ['Deals Water elemental damage', 'Scales on Max HP']
+        },
+
+        coreAttack: {
+            name: 'Divination Circle',
+            damage: [335, 502.5],
+            element: 'Water',
+            effects: ['Uses divination circle to attack', 'NOTE: Scales on Attack (not HP)']
+        },
+
+        skills: [
+            {
+                id: 'skill1',
+                name: 'Healing Power',
+                damage: [520, 780],
+                cooldown: 12,
+                mpCost: [225, 297],
+                element: 'Water',
+                effects: [
+                    'Heals team HP = 1.5-2.25% of Joohee\'s HP',
+                    'Grants [Attack Increase] +3% ATK to team (15s)',
+                    'Deals Water elemental damage'
+                ]
+            },
+            {
+                id: 'skill2',
+                name: 'Healing Circle',
+                damage: [380, 570],
+                cooldown: 18,
+                mpCost: [300, 369],
+                element: 'Water',
+                effects: [
+                    'Instant heal: 5-7.5% of Joohee\'s HP to team',
+                    'Circle heal: 1-1.5% of Joohee\'s HP over time',
+                    'A3: Restores 400 MP to Joohee and team',
+                    'A5: Auto-activates on tag out (CD 35s)'
+                ]
+            }
+        ],
+
+        ultimate: {
+            name: 'Grand Divination Circle',
+            damage: [540, 810],
+            cooldown: 45,
+            mpCost: 0,
+            element: 'Water',
+            effects: [
+                'Large divination circle attack',
+                'Inflicts [Airborne] on final hit',
+                'Fills entire team\'s Core Gauges to 100%'
+            ],
+            gaugeRequired: 100
+        },
+
+        dpsCalculation: {
+            rotationDuration: 60,
+            expectedSkillUsage: {
+                coreAttack: 6,
+                skill1: 4,
+                skill2: 3,
+                ultimate: 1,
+                basicAttack: 12
+            }
+        }
+    },
+
+    // 💧 Han Song-Yi - Water Assassin ATK - Umbral Weapon Specialist
+    'han-song': {
+        id: 'han-song',
+        name: 'Han Song-Yi',
+        element: 'Water',
+        scaleStat: 'ATK',
+
+        basicAttack: {
+            name: 'Throwing Knife Combo',
+            stages: [
+                { stage: 1, damage: [130, 195], description: 'Quick knife swing Stage 1' },
+                { stage: 2, damage: [136, 204], description: 'Quick knife swing Stage 2' },
+                { stage: 3, damage: [144, 216], description: 'Quick knife swing Stage 3' }
+            ],
+            element: 'Water',
+            effects: [
+                'Deals Water elemental damage',
+                'Scales on Attack'
+            ]
+        },
+
+        coreAttack: {
+            name: 'Umbral Weapon Strike',
+            damage: [607, 910.5],
+            element: 'Water',
+            effects: [
+                'Swings throwing knives + shoots Umbral Weapons',
+                'Places 1 Umbral Weapon on ground',
+                'Inflicts [Airborne] on final hit'
+            ]
+        },
+
+        skills: [
+            {
+                id: 'skill1',
+                name: 'Swift Flight',
+                damage: [782, 1173],
+                cooldown: 8,
+                mpCost: [150, 198],
+                element: 'Water',
+                effects: [
+                    'Throws numerous Umbral Weapons while stepping back',
+                    'Places 2 Umbral Weapons on ground',
+                    'A3: Throws 3 additional Umbral Weapons'
+                ]
+            },
+            {
+                id: 'skill2',
+                name: 'Retrieve',
+                damage: [222, 333],
+                cooldown: 12,
+                mpCost: [200, 264],
+                element: 'Water',
+                effects: [
+                    'Shoots Umbral Weapons in all directions while spinning',
+                    'Places 6 Umbral Weapons then retrieves them all',
+                    'A0: +30% damage on Poisoned targets',
+                    'Weapon: Assassination Ready buffs Retrieve damage'
+                ]
+            }
+        ],
+
+        ultimate: {
+            name: 'Rakshasa',
+            damage: [2591, 3886.5],
+            cooldown: 45,
+            mpCost: 0,
+            element: 'Water',
+            effects: [
+                'Throwing knives circle and attack, then throws Umbral Weapons forward',
+                'Places 5 Umbral Weapons on ground',
+                'Inflicts [Knock Down] on final hit',
+                'A5: Resets cooldowns of Swift Flight and Retrieve'
+            ],
+            gaugeRequired: 100
+        },
+
+        dpsCalculation: {
+            rotationDuration: 60,
+            expectedSkillUsage: {
+                coreAttack: 8,
+                skill1: 6,       // CD 8s + A5 resets
+                skill2: 4,       // CD 12s + A5 resets
+                ultimate: 1,
+                basicAttack: 15
+            }
+        }
+    },
+
+    // 💧 Meilin Fisher - Water Healer/Buffer HP Scaler
+    meilin: {
+        id: 'meilin',
+        name: 'Meilin Fisher',
+        element: 'Water',
+        scaleStat: 'HP',
+
+        basicAttack: {
+            name: 'Whip Combo',
+            stages: [
+                { stage: 1, damage: [50, 75], description: 'Whip swing Stage 1' },
+                { stage: 2, damage: [54, 81], description: 'Whip swing Stage 2' },
+                { stage: 3, damage: [60, 90], description: 'Whip swing Stage 3' }
+            ],
+            element: 'Water',
+            effects: ['Deals Water elemental damage', 'Scales on HP']
+        },
+
+        coreAttack: {
+            name: 'Water Whip Sweep',
+            damage: [212, 318],
+            element: 'Water',
+            effects: ['Sweeps with water whip', 'Inflicts [Airborne] on final hit', 'Scales on HP']
+        },
+
+        skills: [
+            {
+                id: 'skill1',
+                name: 'Rear Lash (Side Whip)',
+                damage: [234, 351],
+                cooldown: 8,
+                mpCost: [150, 198],
+                element: 'Water',
+                effects: [
+                    'Whip strike + throw into air',
+                    'Inflicts [Airborne] on final hit',
+                    'Heals team 5% of Meilin\'s HP',
+                    'Triggers [Bye, Meow!] (+8% ATK/DEF team, stacks 3x)',
+                    'A3: Charges team Power Gauge by 8% (16% vs Elite+)'
+                ]
+            },
+            {
+                id: 'skill2',
+                name: 'Up! (Cat Rush)',
+                damage: [475, 712.5],
+                cooldown: 12,
+                mpCost: [200, 264],
+                element: 'Water',
+                effects: [
+                    'Berry paws attack',
+                    'Inflicts [Airborne]',
+                    'Removes enemy [Shield]',
+                    'Grants [So Cute!] to team: +8% Core ATK DMG (A1: +32%) for 8s',
+                    'NOTE: Damage scales on Attack (not HP)'
+                ]
+            }
+        ],
+
+        ultimate: {
+            name: 'Berry Belly Flop',
+            damage: [874, 1311],
+            cooldown: 45,
+            mpCost: 0,
+            element: 'Water',
+            effects: [
+                'Berry belly flop AoE',
+                'Inflicts [Knock Down]',
+                'Grants [Pumped Up!] to team: +8% ATK/DEF/CR/Core ATK DMG, -8% DMG taken (24s)',
+                'A5: Enhanced to +16% each'
+            ],
+            gaugeRequired: 100
+        },
+
+        dpsCalculation: {
+            rotationDuration: 60,
+            expectedSkillUsage: {
+                coreAttack: 6,
+                skill1: 6,
+                skill2: 4,
+                ultimate: 1,
+                basicAttack: 12
+            }
+        }
+    },
+
+    // 💧 Nam Chae-Young - Water Breaker HP Scaler - Freeze Specialist
+    nam: {
+        id: 'nam',
+        name: 'Nam Chae-Young',
+        element: 'Water',
+        scaleStat: 'HP',
+
+        basicAttack: {
+            name: 'Cold Energy Bolt',
+            stages: [
+                { stage: 1, damage: [99, 148.5], description: 'Cold bolt Stage 1' },
+                { stage: 2, damage: [105, 157.5], description: 'Cold bolt Stage 2' },
+                { stage: 3, damage: [113, 169.5], description: 'Cold bolt Stage 3' }
+            ],
+            element: 'Water',
+            effects: ['Deals Water elemental damage', 'Scales on Max HP']
+        },
+
+        coreAttack: {
+            name: 'Ice Grenade Spin',
+            damage: [330, 495],
+            element: 'Water',
+            effects: ['Grenade spinning with ice energy', 'NOTE: Scales on Attack (not HP)']
+        },
+
+        skills: [
+            {
+                id: 'skill1',
+                name: 'K63 - Ice Grenade',
+                damage: [330, 502.5],
+                cooldown: 8,
+                mpCost: [150, 198],
+                element: 'Water',
+                effects: [
+                    'Throws and kicks ice grenade',
+                    'Inflicts [Freeze] (2s, A5: 3s)',
+                    'A4: +20% explosion range'
+                ]
+            },
+            {
+                id: 'skill2',
+                name: 'Light-Freezing Arrow',
+                damage: [706, 1059],
+                cooldown: 12,
+                mpCost: [200, 264],
+                element: 'Water',
+                effects: [
+                    'Fires 3 icy energy arrows',
+                    'Deals heavy Break damage',
+                    'Inflicts [Airborne]',
+                    'A3: +80% damage',
+                    'A5: Freeze duration 3s'
+                ]
+            }
+        ],
+
+        ultimate: {
+            name: 'Tip of the Iceberg',
+            damage: [540, 810],
+            cooldown: 45,
+            mpCost: 0,
+            element: 'Water',
+            effects: [
+                'Throws cold energy grenade + shoots bolt to explode',
+                'Inflicts [Freeze] (2s, A5: 3s)',
+                'A4: +20% explosion range'
+            ],
+            gaugeRequired: 100
+        },
+
+        dpsCalculation: {
+            rotationDuration: 60,
+            expectedSkillUsage: {
+                coreAttack: 6,
+                skill1: 6,
+                skill2: 4,
+                ultimate: 1,
+                basicAttack: 15
+            }
+        }
+    },
+
+    // 💧 Seo Jiwoo - Water Breaker HP Scaler - Water Dragon Training
+    seo: {
+        id: 'seo',
+        name: 'Seo Jiwoo',
+        element: 'Water',
+        scaleStat: 'HP',
+
+        basicAttack: {
+            name: 'Martial Arts Combo',
+            stages: [
+                { stage: 1, damage: [99, 148.5], description: 'Energy punch Stage 1' },
+                { stage: 2, damage: [103, 154.5], description: 'Energy punch Stage 2' },
+                { stage: 3, damage: [106, 159], description: 'Energy punch Stage 3' }
+            ],
+            element: 'Water',
+            effects: ['Deals Water elemental damage', 'Deals weak Break damage', 'Scales on Max HP']
+        },
+
+        coreAttack: {
+            name: 'Twin Dragon Strike',
+            damage: [420, 630],
+            element: 'Water',
+            effects: ['Both fists charged with Water Dragon energy', 'Inflicts [Airborne]', 'Deals weak Break damage', 'Applies 1 [Training] stack']
+        },
+
+        skills: [
+            {
+                id: 'skill1',
+                name: 'Water Dragon Rush / Heavy Attack: Water Dragon Rush',
+                damage: [730, 1095],
+                cooldown: 12,
+                mpCost: [100, 132],
+                element: 'Water',
+                effects: [
+                    'Jump strike → Knock Down',
+                    'Heavy Attack: Strikes ground with Water Dragon',
+                    'Heavy Attack: Grants team Shield (5% HP, 25s)',
+                    'Super Armor during use',
+                    'A1: Heavy Attack +150% damage',
+                    'A5: +32% CR + Skill DMG on Heavy Attack'
+                ]
+            },
+            {
+                id: 'skill2',
+                name: 'Lightning Kick / Heavy Attack: Lightning Kick',
+                damage: [730, 1095],
+                cooldown: 12,
+                mpCost: [100, 132],
+                element: 'Water',
+                effects: [
+                    'Vertical kick strike → Knock Down',
+                    'Heavy Attack: Water Dragon uppercut',
+                    'Heavy Attack: +50% Break effectiveness (A2)',
+                    'Super Armor during use',
+                    'A1: Heavy Attack +150% damage',
+                    'A5: +32% CR + Skill DMG on Heavy Attack'
+                ]
+            }
+        ],
+
+        ultimate: {
+            name: 'Lethal Move: Water Dragon Transformation Strike',
+            damage: [1484, 2226],
+            cooldown: 45,
+            mpCost: 0,
+            element: 'Water',
+            effects: [
+                'Gathers Water Dragon energy, jumps and slams',
+                'Inflicts [Airborne]',
+                'A5: +32% CR + Skill DMG'
+            ],
+            gaugeRequired: 100
+        },
+
+        dpsCalculation: {
+            rotationDuration: 60,
+            expectedSkillUsage: {
+                coreAttack: 8,
+                skill1: 4,
+                skill2: 4,
+                ultimate: 1,
+                basicAttack: 15
+            }
+        }
+    },
+
+    // 💧 Seorin - Water Ranger Breaker (HP scaling)
+    seorin: {
+        basicAttack: {
+            name: 'Basic Attack',
+            stages: [
+                { damage: [148, 222], element: 'Water' },
+                { damage: [153, 229.5], element: 'Water' },
+                { damage: [157, 235.5], element: 'Water' }
+            ]
+        },
+        coreAttack: {
+            name: 'Core Attack',
+            damage: [550, 825],
+            element: 'Water'
+        },
+        skills: [
+            {
+                name: 'Ice Shard Magnum',
+                damage: [963, 1444.5],
+                cooldown: 15,
+                mpCost: [300, 396],
+                element: 'Water'
+            },
+            {
+                name: 'Glacier Spin',
+                damage: [957, 1435.5],
+                cooldown: 10,
+                mpCost: [400, 528],
+                element: 'Water'
+            }
+        ],
+        ultimate: {
+            name: 'Ultimate',
+            damage: [1634, 2451],
+            cooldown: 45,
+            powerGaugeCost: 100,
+            element: 'Water'
+        },
+        scaleStat: 'HP',
+        dpsCalculation: {
+            rotationTime: 60,
+            skillUsage: {
+                skill1: 4,
+                skill2: 6,
+                ultimate: 1,
+                basicAttack: 10
+            }
+        }
+    },
+
+    // 💧 Shuhua - Water Assassin DPS (ATK scaling)
+    shuhua: {
+        basicAttack: {
+            name: 'Basic Attack',
+            stages: [
+                { damage: [153, 229.5], element: 'Water' },
+                { damage: [160, 240], element: 'Water' },
+                { damage: [165, 247.5], element: 'Water' }
+            ]
+        },
+        coreAttack: {
+            name: 'Core Attack',
+            damage: [800, 1200],
+            element: 'Water'
+        },
+        skills: [
+            {
+                name: 'Pop Star Landing',
+                damage: [1060, 1590],
+                cooldown: 20,
+                mpCost: [134, 177],
+                element: 'Water'
+            },
+            {
+                name: 'Starlight Bark / Starlight Howl',
+                damage: [895, 1342.5],
+                cooldown: 20,
+                mpCost: [235, 310],
+                element: 'Water'
+            }
+        ],
+        ultimate: {
+            name: 'Catharsis in Harmony',
+            damage: [3048, 4572],
+            cooldown: 45,
+            powerGaugeCost: 100,
+            element: 'Water'
+        },
+        scaleStat: 'Attack',
+        dpsCalculation: {
+            rotationTime: 60,
+            skillUsage: {
+                skill1: 3,
+                skill2: 3,
+                coreAttack: 10,
+                ultimate: 1,
                 basicAttack: 12
             }
         }

@@ -1705,14 +1705,14 @@ export const CHARACTER_OPTIMIZATION = {
         },
 
         tips: [
-            "SUPPORT #1 du jeu: +9% ATK/DEF/HP team (A2) + +20% DCC team (A4) + +15% TC/DCC raid (A5)",
-            "Vollzanbel debuff (A5): -10% DEF, +15% crit received, +15% Crit DMG taken, +70% DMG from Frieren (30s)",
-            "Mana Power Control (A3): +50% DEF permanent, +50% si MP≥50% → garder le MP haut !",
-            "Defense Magic (A3): Shield 30% DEF + -10% DMG taken (60s) → survie team",
-            "Mana Power Liberation: +100% TC pendant l'Ult → pas besoin de cap TC en substats",
-            "A5 Judradjim: 80% Power Gauge → Ult quasi en boucle → +100% TC en permanence",
+            "SUPPORT #1 du jeu: +9% ATK/DEF/HP team (A2) + +20% CritDMG team (A4)",
+            "Vollzanbel debuff (A5): -10% DEF, +15% crit received, +15% CritDMG taken, +70% DMG from Frieren (30s)",
+            "Mana Power Control (A3): +50% DEF permanent, +50% si MP≥50% → total +100% DEF",
+            "Defense Magic (A3): Shield 30% DEF + -10% DMG taken (60s) + heal 20% DEF team (A1)",
+            "Mana Power Liberation: +100% CR pendant l'Ult → pas besoin de cap CR en substats",
+            "A5 Judradjim: 80% Power Gauge → Ult quasi en boucle → +100% CR quasi permanent",
             "Arme: +50% DEF perso + Team Basic/Ult Skill DMG +30% → buff team massif",
-            "Water element: Pas de synergie élémentaire spécifique mais ses buffs sont universels"
+            "A1 Paralyze (3s) sur Judradjim + Vollzanbel debuff → CC + debuff combo"
         ],
 
         recommendedSets: ["Courageous 4pc + Armed 4pc", "Courageous 4pc + Defender 4pc"],
@@ -1722,6 +1722,174 @@ export const CHARACTER_OPTIMIZATION = {
             intermediate: { critRate: 70, critDMG: 180, defPen: 50, dps: "10-20B" },
             advanced: { critRate: 85, critDMG: 210, defPen: 65, dps: "25-40B" },
             whale: { critRate: 100, critDMG: 240, defPen: 75, dps: "40-60B" }
+        }
+    },
+
+    // 💧 Anna Ruiz - Water Breaker ATK - Poison/Break Specialist (SR)
+    anna: {
+        id: 'anna',
+        name: "Anna Ruiz",
+        role: "Breaker / Poison Specialist",
+        element: "Water",
+        tier: "A",
+
+        mainStat: {
+            type: 'atk',
+            label: 'ATK',
+            icon: '⚔️',
+            color: '#ef4444',
+            benchmarks: {
+                casual: 10000,
+                intermediate: 15000,
+                advanced: 20000,
+                whale: 25000
+            },
+            note: "Scale sur ATK. A4: +10% ATK. Weapon: +10% ATK. Poison DoT scale sur ATK."
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 80,
+                max: 100,
+                ideal: 90,
+                priority: 2,
+                status: "HIGH",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "0% CR perso → besoin de raw. Cap 100% idéal"
+            },
+            critDMG: {
+                min: 170,
+                max: 230,
+                ideal: 200,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "Investir après CR cap. Focus ATK > CritDMG"
+            },
+            defPen: {
+                min: 55,
+                max: 80,
+                ideal: 70,
+                priority: 1,
+                status: "HIGH",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "A3 Enhanced Corrosive Poison -10% DEF on enemy + Weapon -10% DEF → bon Def Pen naturel"
+            }
+        },
+
+        substatPriority: ["ATK%", "Def Pen", "Crit Rate%", "Crit DMG%"],
+
+        scaling: {
+            atk: { grade: "S", description: "Tout le kit + Poison DoT scale sur ATK. +20% ATK total (weapon 10% + A4 10%)" },
+            defPen: { grade: "A+", description: "A3: -10% DEF debuff sur ennemi + Weapon: -10% DEF debuff → synergie forte" },
+            critRate: { grade: "A", description: "0% CR perso → besoin de raw" },
+            critDMG: { grade: "A", description: "0% CritDMG perso → investir après CR" }
+        },
+
+        tips: [
+            "ATK priorité : Poison DoT + tous les skills scale sur ATK",
+            "A2: +10% Break DMG → spécialiste Break",
+            "A3: Enhanced Corrosive Poison → -1% DEF par stack (max -10%) sur ennemi",
+            "A4: +10% ATK permanent",
+            "A5: +100% Poison Wave (Ultimate) damage",
+            "Weapon: +10% ATK (self) + -10% DEF debuff sur ennemi (Poison Shower)",
+            "Total debuff potentiel: -20% DEF sur ennemi (weapon + A3 corrosive)"
+        ],
+
+        recommendedSets: ["Courageous 4pc + Armed 4pc", "Courageous 4pc + Obsidian 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 60, critDMG: 140, defPen: 35, dps: "1-3B" },
+            intermediate: { critRate: 75, critDMG: 170, defPen: 50, dps: "3-6B" },
+            advanced: { critRate: 90, critDMG: 200, defPen: 65, dps: "6-10B" },
+            whale: { critRate: 100, critDMG: 230, defPen: 75, dps: "10-15B" }
+        }
+    },
+
+    // 💧 Cha Hae-In Water (Pure Sword Princess) - Fighter DPS DEF Scaler
+    chae: {
+        id: 'chae',
+        name: "Cha Hae-In (Pure Sword Princess)",
+        role: "Main DPS / Fighter",
+        element: "Water",
+        tier: "S",
+
+        mainStat: {
+            type: 'def',
+            label: 'DEF',
+            icon: '🛡️',
+            color: '#3b82f6',
+            benchmarks: {
+                casual: 12000,
+                intermediate: 18000,
+                advanced: 25000,
+                whale: 35000
+            },
+            note: "Scale sur DEF. Will of the Sword: +60% DEF (6 stacks). Weapon: +12% DEF + stacking DEF. Tous les skills % DEF."
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 55,
+                max: 80,
+                ideal: 70,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                rawMax: 14000,
+                note: "Will of the Sword A5: +24% CR + A4 Water Synergy +21% CR = +45% CR self. Besoin modéré en raw"
+            },
+            critDMG: {
+                min: 130,
+                max: 200,
+                ideal: 170,
+                priority: 2,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "Will of the Sword A5: +24% CD + A4 Water Synergy +21% CD = +45% CD self. Investir après DEF"
+            },
+            defPen: {
+                min: 60,
+                max: 85,
+                ideal: 75,
+                priority: 1,
+                status: "HIGH",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "Def Pen crucial pour maximiser les dégâts DEF-scaling"
+            }
+        },
+
+        substatPriority: ["DEF%", "Def Pen", "Crit Rate%", "Crit DMG%"],
+
+        scaling: {
+            def: { grade: "S+", description: "Tout le kit scale sur DEF. Will of the Sword +60% DEF + Weapon +12% DEF + stacking DEF" },
+            defPen: { grade: "S", description: "Def Pen critique pour percer les défenses ennemies" },
+            critRate: { grade: "A+", description: "+45% CR self (A5 WotS + A4 Water Synergy) → besoin modéré en raw" },
+            critDMG: { grade: "A+", description: "+45% CD self (A5 WotS + A4 Water Synergy) → besoin modéré en raw" }
+        },
+
+        tips: [
+            "DEF = PRIORITÉ ABSOLUE car tout scale sur DEF",
+            "Will of the Sword (6 stacks): +60% DEF, +24% CR, +24% CD à A5",
+            "A4 Water Synergy: +21% CR/CD avec 3 alliés Water",
+            "Total self buffs A5: +45% CR, +45% CD, +60% DEF → très autonome en CR/CD",
+            "A1: Blade Master → Core Attack gratuit avec Super Armor (5s)",
+            "A3: Sword's Resolve → Heavy Attack: Heavenly Strike (+170% DMG à 100% gauge)",
+            "A5: Pure Sword Princess → +60% DMG permanent sur Heavenly Strike et Sword of Destiny",
+            "Weapon: +12% DEF flat + DEF stacking sur gauge recharge (jusqu'à 60 stacks)",
+            "Unrecoverable (30s) + Paralyze (3s) pour le CC"
+        ],
+
+        recommendedSets: ["Courageous 4pc + Armed 4pc", "Courageous 4pc + Obsidian 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 55, critDMG: 130, defPen: 40, dps: "5-15B" },
+            intermediate: { critRate: 65, critDMG: 160, defPen: 55, dps: "15-30B" },
+            advanced: { critRate: 75, critDMG: 185, defPen: 70, dps: "30-55B" },
+            whale: { critRate: 85, critDMG: 210, defPen: 80, dps: "55-80B" }
         }
     },
 
@@ -1802,7 +1970,529 @@ export const CHARACTER_OPTIMIZATION = {
             advanced: { critRate: 95, critDMG: 200, defPen: 70, dps: "35-55B" },
             whale: { critRate: 100, critDMG: 230, defPen: 80, dps: "55-75B" }
         }
-    }
+    },
+    // 💧 Lee Joohee - Water Healer HP Scaler (SR)
+    'lee-johee': {
+        id: 'lee-johee',
+        name: "Lee Joohee",
+        role: "Healer / Support",
+        element: "Water",
+        tier: "A",
+
+        mainStat: {
+            type: 'hp',
+            label: 'HP',
+            icon: '💚',
+            color: '#22c55e',
+            benchmarks: {
+                casual: 18000,
+                intermediate: 25000,
+                advanced: 35000,
+                whale: 45000
+            },
+            note: "Scale sur HP. +8% HP team (passive) + A2: +6% HP self. Heals et Shield scalent sur HP."
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 50,
+                max: 80,
+                ideal: 65,
+                priority: 3,
+                status: "LOW",
+                color: "#6b7280",
+                rawMax: 14000,
+                note: "Healer → CR moins prioritaire"
+            },
+            critDMG: {
+                min: 120,
+                max: 180,
+                ideal: 150,
+                priority: 3,
+                status: "LOW",
+                color: "#6b7280",
+                note: "Healer → CritDMG pas prioritaire"
+            },
+            defPen: {
+                min: 40,
+                max: 65,
+                ideal: 55,
+                priority: 2,
+                status: "MODERATE",
+                color: "#f59e0b",
+                rawMax: 60000,
+                note: "Utile pour contribution DPS mais pas prioritaire pour heal"
+            }
+        },
+
+        substatPriority: ["HP%", "Def Pen", "Crit Rate%", "Crit DMG%"],
+
+        scaling: {
+            hp: { grade: "S+", description: "Tout scale sur HP: dégâts, heals, shield. +8% HP team + A2 +6% HP self" },
+            defPen: { grade: "B+", description: "Utile pour DPS mais rôle principal = heal" },
+            critRate: { grade: "B", description: "Healer → CR secondaire" },
+            critDMG: { grade: "B", description: "Healer → CritDMG secondaire" }
+        },
+
+        tips: [
+            "HP = PRIORITÉ ABSOLUE (heals + shield + dégâts scalent sur HP)",
+            "Passive: +8% HP pour toute la team (permanent)",
+            "A1: Heals +20% plus puissants",
+            "A2: +6% HP self",
+            "A3: Healing Circle restore 400 MP à toute la team",
+            "A4: +50% Natural MP Recovery Rate",
+            "A5: Healing Circle auto-trigger au tag out + reset CD",
+            "Skill 1: +3% ATK team (15s) → petit buff offensif",
+            "Ultimate: remplit 100% Core Gauge de toute la team → DPS burst window",
+            "Weapon: Shield team au tag out (2-5% HP, 10s)"
+        ],
+
+        recommendedSets: ["Desire 4pc + Sylph 4pc", "Desire 4pc + Defender 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 40, critDMG: 100, defPen: 25, dps: "0.5-2B" },
+            intermediate: { critRate: 55, critDMG: 130, defPen: 40, dps: "2-5B" },
+            advanced: { critRate: 70, critDMG: 160, defPen: 55, dps: "5-10B" },
+            whale: { critRate: 80, critDMG: 180, defPen: 65, dps: "10-18B" }
+        }
+    },
+
+    // 💧 Han Song-Yi - Water Assassin ATK Scaler / Umbral Weapon Specialist (SR)
+    'han-song': {
+        id: 'han-song',
+        name: "Han Song-Yi",
+        role: "Assassin DPS / Umbral Weapon Specialist",
+        element: "Water",
+        tier: "A",
+
+        mainStat: {
+            type: 'atk',
+            label: 'ATK',
+            icon: '⚔️',
+            color: '#ef4444',
+            benchmarks: {
+                casual: 10000,
+                intermediate: 15000,
+                advanced: 20000,
+                whale: 25000
+            },
+            note: "Scale sur ATK. A4: +6% ATK. Weapon: +10% Water DMG. Shield A1 scale sur ATK."
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 75,
+                max: 100,
+                ideal: 90,
+                priority: 2,
+                status: "HIGH",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "A2: +5% CR. Besoin de raw pour cap. Assassin → crits importants"
+            },
+            critDMG: {
+                min: 170,
+                max: 230,
+                ideal: 200,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "A2: +5% CD. Investir après CR cap"
+            },
+            defPen: {
+                min: 55,
+                max: 80,
+                ideal: 70,
+                priority: 1,
+                status: "HIGH",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "Pas de Def Pen perso → raw obligatoire"
+            }
+        },
+
+        substatPriority: ["ATK%", "Def Pen", "Crit Rate%", "Crit DMG%"],
+
+        scaling: {
+            atk: { grade: "S", description: "Tout scale sur ATK. A4 +6% ATK. Shield A1 = 15% ATK" },
+            defPen: { grade: "A+", description: "0% Def Pen perso → raw obligatoire" },
+            critRate: { grade: "A", description: "A2: +5% CR → petit boost, besoin de raw" },
+            critDMG: { grade: "A", description: "A2: +5% CD → petit boost" }
+        },
+
+        tips: [
+            "Umbral Weapon gameplay: placer des armes → Retrieve pour burst massif",
+            "Passive: +30% Retrieve DMG sur cibles empoisonnées → Poison synergy",
+            "Weapon: Assassination Ready → +20% Retrieve DMG par arme placée (max 3 stacks)",
+            "A1: Shield 15% ATK sur Retrieve (3s) → survivabilité",
+            "A2: +5% CR & +5% CD permanent",
+            "A3: Swift Flight +3 Umbral Weapons → plus de Retrieve damage",
+            "A4: +6% ATK permanent",
+            "A5: Rakshasa (Ultimate) reset les CD de Swift Flight et Retrieve → burst énorme"
+        ],
+
+        recommendedSets: ["Courageous 4pc + Armed 4pc", "Courageous 4pc + Obsidian 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 60, critDMG: 140, defPen: 35, dps: "1-3B" },
+            intermediate: { critRate: 75, critDMG: 170, defPen: 50, dps: "3-6B" },
+            advanced: { critRate: 90, critDMG: 200, defPen: 65, dps: "6-10B" },
+            whale: { critRate: 100, critDMG: 230, defPen: 75, dps: "10-15B" }
+        }
+    },
+
+    // 💧 Meilin Fisher - Water Healer/Buffer HP Scaler (SSR)
+    meilin: {
+        id: 'meilin',
+        name: "Meilin Fisher",
+        role: "Healer / Buffer",
+        element: "Water",
+        tier: "S",
+
+        mainStat: {
+            type: 'hp',
+            label: 'HP',
+            icon: '💚',
+            color: '#22c55e',
+            benchmarks: {
+                casual: 20000,
+                intermediate: 30000,
+                advanced: 40000,
+                whale: 55000
+            },
+            note: "Scale sur HP. A4: +12% HP self. Bye Meow +24% ATK/DEF team. A2: +16% ATK/DEF Water. Weapon DMG buff scale sur HP."
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 50,
+                max: 80,
+                ideal: 65,
+                priority: 3,
+                status: "LOW",
+                color: "#6b7280",
+                rawMax: 14000,
+                note: "Healer/Buffer → CR secondaire"
+            },
+            critDMG: {
+                min: 120,
+                max: 180,
+                ideal: 150,
+                priority: 3,
+                status: "LOW",
+                color: "#6b7280",
+                note: "Buffer → CritDMG secondaire"
+            },
+            defPen: {
+                min: 40,
+                max: 65,
+                ideal: 55,
+                priority: 2,
+                status: "MODERATE",
+                color: "#f59e0b",
+                rawMax: 60000,
+                note: "Utile mais rôle = buffer/healer"
+            }
+        },
+
+        substatPriority: ["HP%", "Def Pen", "Crit Rate%", "Crit DMG%"],
+
+        scaling: {
+            hp: { grade: "S+", description: "HP = dégâts + heals + weapon DMG buff (1% per 2000 HP). A4 +12% HP self" },
+            defPen: { grade: "B+", description: "Utile pour DPS mais rôle principal = buffer" },
+            critRate: { grade: "B", description: "Buffer → CR secondaire" },
+            critDMG: { grade: "B", description: "Buffer → CritDMG secondaire" }
+        },
+
+        tips: [
+            "MEILLEUR BUFFER du jeu: Bye Meow +24% ATK/DEF team + A2 +16% ATK/DEF Water = +40% ATK/DEF",
+            "Cuddle Puddle: +8% Water DMG taken on enemy (debuff 16s) → énorme pour Water team",
+            "A1: So Cute! enhanced → +32% Core ATK DMG team (8s) sur Skill 2",
+            "A1: Cut Butler → protège l'allié au plus haut ATK (Super Armor 8s)",
+            "A2: +8% ATK/DEF all + +8% ATK/DEF Water = +16% permanent pour Water team",
+            "A3: Rear Lash charge 8% Power Gauge team (16% vs Elite+)",
+            "A4: +12% HP self",
+            "A5: Pumped Up! enhanced → +16% ATK/DEF/CR + Core ATK DMG + -16% DMG taken (24s)",
+            "Weapon: Highest ATK ally damage +16% (basé sur HP), Ult CD -20%"
+        ],
+
+        recommendedSets: ["Desire 4pc + Sylph 4pc", "Desire 4pc + Defender 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 40, critDMG: 100, defPen: 25, dps: "0.5-3B" },
+            intermediate: { critRate: 55, critDMG: 130, defPen: 40, dps: "3-8B" },
+            advanced: { critRate: 70, critDMG: 160, defPen: 55, dps: "8-15B" },
+            whale: { critRate: 80, critDMG: 180, defPen: 65, dps: "15-25B" }
+        }
+    },
+
+    // 💧 Nam Chae-Young - Water Breaker HP Scaler / Freeze Specialist (SR)
+    nam: {
+        id: 'nam',
+        name: "Nam Chae-Young",
+        role: "Breaker / Freeze Specialist",
+        element: "Water",
+        tier: "A",
+
+        mainStat: {
+            type: 'hp',
+            label: 'HP',
+            icon: '💚',
+            color: '#22c55e',
+            benchmarks: {
+                casual: 15000,
+                intermediate: 22000,
+                advanced: 30000,
+                whale: 40000
+            },
+            note: "Scale sur HP. A2: +6% HP self. Break + Freeze spécialiste."
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 70,
+                max: 100,
+                ideal: 85,
+                priority: 2,
+                status: "HIGH",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "0% CR perso → besoin de raw"
+            },
+            critDMG: {
+                min: 150,
+                max: 210,
+                ideal: 180,
+                priority: 3,
+                status: "MODERATE",
+                color: "#f59e0b",
+                note: "Investir après CR cap"
+            },
+            defPen: {
+                min: 50,
+                max: 75,
+                ideal: 65,
+                priority: 1,
+                status: "HIGH",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "Weapon: -20% DEF on Frozen → Def Pen naturel. Reste utile en raw"
+            }
+        },
+
+        substatPriority: ["HP%", "Def Pen", "Crit Rate%", "Crit DMG%"],
+
+        scaling: {
+            hp: { grade: "S", description: "Basic + Skills scale sur HP. A2 +6% HP" },
+            defPen: { grade: "A+", description: "Weapon -20% DEF sur Frozen + raw Def Pen → combo puissant" },
+            critRate: { grade: "A", description: "0% CR perso → besoin de raw" },
+            critDMG: { grade: "A", description: "0% CD perso → investir après CR" }
+        },
+
+        tips: [
+            "Freeze spécialiste: +8% DMG on Frozen (passive) + Weapon -20% DEF on Frozen",
+            "A1: +20% Break effectiveness",
+            "A2: +6% HP self",
+            "A3: +80% Light-Freezing Arrow (Skill 2) damage → burst énorme",
+            "A4: +20% explosion range sur K63, Icy Step, Tip of Iceberg",
+            "A5: Freeze duration → 3s (was 2s) → meilleur CC uptime + plus de Frozen debuff",
+            "Weapon: -20% DEF on Frozen targets (5s) → très puissant avec Freeze spam",
+            "Combo: Freeze → Weapon DEF debuff → team profite du -20% DEF"
+        ],
+
+        recommendedSets: ["Desire 4pc + Sylph 4pc", "Courageous 4pc + Armed 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 55, critDMG: 120, defPen: 30, dps: "1-4B" },
+            intermediate: { critRate: 70, critDMG: 155, defPen: 50, dps: "4-8B" },
+            advanced: { critRate: 85, critDMG: 185, defPen: 65, dps: "8-15B" },
+            whale: { critRate: 100, critDMG: 210, defPen: 75, dps: "15-25B" }
+        }
+    },
+
+    // 💧 Seo Jiwoo - Water Breaker HP Scaler / Water Dragon Training (SSR)
+    seo: {
+        id: 'seo',
+        name: "Seo Jiwoo",
+        role: "Breaker / DPS",
+        element: "Water",
+        tier: "S",
+
+        mainStat: {
+            type: 'hp',
+            label: 'HP',
+            icon: '💚',
+            color: '#22c55e',
+            benchmarks: {
+                casual: 20000,
+                intermediate: 30000,
+                advanced: 42000,
+                whale: 55000
+            },
+            note: "Scale sur HP. A4: +15% Max HP from CritDMG. Heavy Attacks + Shield scalent sur HP."
+        },
+
+        sweetSpots: {
+            critRate: {
+                min: 60,
+                max: 90,
+                ideal: 75,
+                priority: 2,
+                status: "HIGH",
+                color: "#22c55e",
+                rawMax: 14000,
+                note: "A5: +32% CR on Heavy Attacks/Ult → besoin modéré en raw"
+            },
+            critDMG: {
+                min: 170,
+                max: 240,
+                ideal: 210,
+                priority: 1,
+                status: "HIGH",
+                color: "#ef4444",
+                note: "Weapon: +20% CD + stacking CD (up to 120% with 20 stacks). A4: CritDMG → HP. Double value!"
+            },
+            defPen: {
+                min: 55,
+                max: 80,
+                ideal: 70,
+                priority: 2,
+                status: "HIGH",
+                color: "#8b5cf6",
+                rawMax: 70000,
+                note: "0% Def Pen perso → raw obligatoire"
+            }
+        },
+
+        substatPriority: ["HP%", "Crit DMG%", "Def Pen", "Crit Rate%"],
+
+        scaling: {
+            hp: { grade: "S+", description: "Tout scale HP + A4 convertit CritDMG en HP. Shield team 5% HP" },
+            critDMG: { grade: "S", description: "Weapon +20% CD + stacking up to 120% CD. A4: CritDMG → +15% Max HP. DOUBLE VALUE" },
+            defPen: { grade: "A+", description: "0% Def Pen perso → raw obligatoire" },
+            critRate: { grade: "A", description: "A5: +32% CR on Heavy Attacks/Ult → besoin modéré" }
+        },
+
+        tips: [
+            "HP + CritDMG = double priorité (A4 convertit CritDMG → +15% Max HP)",
+            "Water Dragon Training: 3 stacks → skills reset + Heavy Attack versions",
+            "A1: +150% Heavy Attack damage → burst fenêtre énorme",
+            "A2: +15% Break effectiveness (+50% sur Heavy Lightning Kick)",
+            "A5: +32% CR + Skill DMG sur Heavy Attacks et Ultimate",
+            "Weapon: +20% CritDMG flat + stacking +6% CritDMG (max 20 stacks = +120% CritDMG!)",
+            "Heavy Attack: Water Dragon Rush → Shield 5% HP team (25s)",
+            "Heavy Attack: Lightning Kick → +50% Break effectiveness (A2)",
+            "Rotation: Basic/Core → 3 stacks → Heavy Rush + Heavy Kick → repeat"
+        ],
+
+        recommendedSets: ["Desire 4pc + Sylph 4pc", "Courageous 4pc + Armed 4pc"],
+
+        benchmarks: {
+            casual: { critRate: 50, critDMG: 140, defPen: 35, dps: "5-15B" },
+            intermediate: { critRate: 65, critDMG: 180, defPen: 55, dps: "15-30B" },
+            advanced: { critRate: 80, critDMG: 220, defPen: 70, dps: "30-55B" },
+            whale: { critRate: 90, critDMG: 260, defPen: 80, dps: "55-80B" }
+        }
+    },
+
+    // 💧 Seorin - Water Ranger Breaker (HP scaling)
+    seorin: {
+        tier: 'A',
+        role: 'Breaker',
+        element: 'Water',
+        scaleStat: 'HP',
+        mainStat: {
+            name: 'HP',
+            benchmarks: {
+                casual: 20000,
+                intermediate: 28000,
+                advanced: 35000,
+                whale: 45000
+            }
+        },
+        sweetSpots: {
+            critRate: { min: 65, optimal: 85, max: 100, unit: '%' },
+            critDMG: { min: 150, optimal: 200, max: 260, unit: '%' },
+            defPen: { min: 40, optimal: 60, max: 80, unit: '%' }
+        },
+        substatPriority: ['HP %', 'Crit Rate', 'Crit DMG', 'Def Pen', 'Damage Increase'],
+        scaling: {
+            HP: 'S',
+            critRate: 'A',
+            critDMG: 'A',
+            defPen: 'B',
+            damageIncrease: 'A'
+        },
+        tips: [
+            'Seorin scale sur HP - maximise HP % sur tous les artefacts',
+            'Subzero stacks Water DMG taken sur les ennemis - excellent debuffeur Water',
+            'A3 Black Tea? donne +20% DEF et +20% HP a toute l\'equipe',
+            'A4 +10% Water DMG par membre Water (max 30%) - build full Water',
+            'A5 Enhanced Subzero double le debuff (+20% Water DMG taken)',
+            'Limited Break (+30-50% DMG/CritDMG) proc sur Break - maintiens le Break'
+        ],
+        recommendedSets: {
+            bdg: '8x Desire',
+            general: '4x Armed + 4x Obsidian',
+            alternative: '4x Guardian + 4x Sylph'
+        },
+        benchmarks: {
+            casual: { critRate: 50, critDMG: 150, defPen: 40, dps: "3-8B" },
+            intermediate: { critRate: 65, critDMG: 180, defPen: 55, dps: "8-18B" },
+            advanced: { critRate: 80, critDMG: 220, defPen: 70, dps: "18-35B" },
+            whale: { critRate: 90, critDMG: 260, defPen: 80, dps: "35-55B" }
+        }
+    },
+
+    // 💧 Shuhua - Water Assassin DPS (ATK scaling)
+    shuhua: {
+        tier: 'S',
+        role: 'DPS',
+        element: 'Water',
+        scaleStat: 'Attack',
+        mainStat: {
+            name: 'Attack',
+            benchmarks: {
+                casual: 12000,
+                intermediate: 16000,
+                advanced: 20000,
+                whale: 26000
+            }
+        },
+        sweetSpots: {
+            critRate: { min: 65, optimal: 85, max: 100, unit: '%' },
+            critDMG: { min: 160, optimal: 220, max: 280, unit: '%' },
+            defPen: { min: 45, optimal: 65, max: 85, unit: '%' }
+        },
+        substatPriority: ['ATK %', 'Crit DMG', 'Crit Rate', 'Def Pen', 'Damage Increase'],
+        scaling: {
+            attack: 'S',
+            critRate: 'A',
+            critDMG: 'S',
+            defPen: 'A',
+            damageIncrease: 'A'
+        },
+        tips: [
+            'Shuhua scale sur ATK - maximise ATK % sur tous les artefacts',
+            'FOREVER donne +15% DMG dealt a toute l\'equipe en donjon (3 stacks)',
+            'Combo: Pop Star Landing → Performance → Core Attack → High-energy Beat en boucle',
+            'A1 Tension Drop debuff +10% Water DMG taken (10 stacks) - debuff perso uniquement',
+            'A3 Tension Up +20% Water DMG pendant Performance',
+            'A4 +16% ATK passif permanent',
+            'A5 Volume Up +30% DMG + 30% CR sur Starlight Howl (10s) - excellent burst window'
+        ],
+        recommendedSets: {
+            bdg: '4x Armed + 4x Expert',
+            general: '8x Chaotic Infamy',
+            alternative: '4x Armed + 4x Obsidian'
+        },
+        benchmarks: {
+            casual: { critRate: 50, critDMG: 150, defPen: 40, dps: "5-15B" },
+            intermediate: { critRate: 65, critDMG: 200, defPen: 55, dps: "15-35B" },
+            advanced: { critRate: 80, critDMG: 240, defPen: 70, dps: "35-60B" },
+            whale: { critRate: 90, critDMG: 280, defPen: 85, dps: "60-100B" }
+        }
+    },
 };
 
 // Helper pour obtenir le statut d'optimisation d'une stat

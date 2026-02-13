@@ -48,6 +48,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
           {/* ⚡ THEORYCRAFT */}
           <Route path="/theorycraft" element={<Theorycraft />} />
+          <Route path="/theorycraft/:boss" element={<Theorycraft />} />
+          <Route path="/theorycraft/:boss/:element" element={<Theorycraft />} />
         </Routes>
       </AppLayout>
     </BrowserRouter>

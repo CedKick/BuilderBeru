@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, TrendingUp, Target, Shield, Swords, X, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -108,22 +109,52 @@ const ENEMIES = {
         name: 'La Statue',
         level: 80,
         icon: '🗿'
+    },
+    antQueen: {
+        id: 'antQueen',
+        name: 'Ant Queen',
+        level: 80,
+        icon: '🐜'
     }
 };
 
 const Theorycraft = () => {
+    // URL params & navigation
+    const { boss: urlBoss, element: urlElement } = useParams();
+    const navigate = useNavigate();
+
     // États principaux
     const [sungEnabled, setSungEnabled] = useState(false);
     const [sungData, setSungData] = useState(null);
     const [team1, setTeam1] = useState(Array(3).fill(null));
     const [team2, setTeam2] = useState(Array(3).fill(null));
     const [selectedSlot, setSelectedSlot] = useState(null); // { team: 0|1|2, slot: 0-2 }
-    const [elementFilter, setElementFilter] = useState('all');
+    const [elementFilter, setElementFilter] = useState(() => {
+        if (urlElement) {
+            const validElements = ['Water', 'Dark', 'Fire', 'Light', 'all'];
+            if (validElements.includes(urlElement)) return urlElement;
+        }
+        return 'all';
+    });
     const [selectedCharForDetails, setSelectedCharForDetails] = useState(null); // Perso sélectionné pour voir détails
 
     // Enemy selection (pour les calculs de stats réels)
-    const [selectedEnemy, setSelectedEnemy] = useState('fachtna'); // fachtna par défaut
-    const [enemyLevel, setEnemyLevel] = useState(80); // Level de l'ennemi (par défaut 80 - BDG standard)
+    const [selectedEnemy, setSelectedEnemy] = useState(() => {
+        if (urlBoss) {
+            const bossMap = { 'AntQueen': 'antQueen', 'Fachtna': 'fachtna', 'Statue': 'statue' };
+            const enemyId = bossMap[urlBoss];
+            if (enemyId && ENEMIES[enemyId]) return enemyId;
+        }
+        return 'fachtna';
+    });
+    const [enemyLevel, setEnemyLevel] = useState(() => {
+        if (urlBoss) {
+            const bossMap = { 'AntQueen': 'antQueen', 'Fachtna': 'fachtna', 'Statue': 'statue' };
+            const enemyId = bossMap[urlBoss];
+            if (enemyId && ENEMIES[enemyId]) return ENEMIES[enemyId].level;
+        }
+        return 80;
+    });
 
     // Settings popup
     const [showSettings, setShowSettings] = useState(false);
@@ -131,6 +162,26 @@ const Theorycraft = () => {
 
     // Sung Blessing (+24.5% Crit Rate)
     const [sungBlessing, setSungBlessing] = useState(false);
+
+    // 🔍 SEO - Document title & meta tags
+    useEffect(() => {
+        document.title = 'Theorycraft - Solo Leveling: Arise Build Calculator | BuilderBeru';
+        const metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) metaDesc.setAttribute('content', 'Theorycraft calculator for Solo Leveling: Arise. Optimize raid team synergies, compare character builds, and calculate damage with advanced buff tracking.');
+        const ogTitle = document.querySelector('meta[property="og:title"]');
+        if (ogTitle) ogTitle.setAttribute('content', 'Theorycraft - BuilderBeru');
+        const ogDesc = document.querySelector('meta[property="og:description"]');
+        if (ogDesc) ogDesc.setAttribute('content', 'Advanced theorycraft calculator for Solo Leveling: Arise raid optimization.');
+        return () => { document.title = 'BuilderBeru - Solo Leveling: Arise Build Calculator'; };
+    }, []);
+
+    // 🔗 URL Sync - Mettre à jour l'URL quand boss/element changent
+    useEffect(() => {
+        const bossSlug = { 'antQueen': 'AntQueen', 'fachtna': 'Fachtna', 'statue': 'Statue' };
+        const slug = bossSlug[selectedEnemy] || 'Fachtna';
+        const elemSlug = elementFilter !== 'all' ? `/${elementFilter}` : '';
+        navigate(`/theorycraft/${slug}${elemSlug}`, { replace: true });
+    }, [selectedEnemy, elementFilter, navigate]);
 
     // Obtenir la liste des personnages disponibles
     const availableCharacters = useMemo(() => {
@@ -240,6 +291,7 @@ const Theorycraft = () => {
                 critRate: 0,
                 critDMG: 0,
                 defPen: 0,
+                damageIncrease: 0,
             },
             mainStatValue: 0,        // Stat principale de scaling (ATK, DEF, HP)
         };
@@ -542,6 +594,7 @@ const Theorycraft = () => {
                     critRate: 0,
                     critDMG: 0,
                     defPen: 0,
+                    damageIncrease: 0,
                 }
             });
         }
@@ -562,7 +615,7 @@ const Theorycraft = () => {
                 rightSet: 'obsidian',
                 rightPieces: 4,
                 coreAttackTC: true,
-                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
             } : null,
             sianChar ? {
                 ...sianChar,
@@ -574,7 +627,7 @@ const Theorycraft = () => {
                 rightSet: 'expert',
                 rightPieces: 4,
                 coreAttackTC: true,
-                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
             } : null,
             sonChar ? {
                 ...sonChar,
@@ -586,7 +639,7 @@ const Theorycraft = () => {
                 rightSet: 'chaotic-desire',
                 rightPieces: 4,
                 coreAttackTC: true,
-                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
             } : null
         ];
         setTeam1(newTeam1);
@@ -607,7 +660,7 @@ const Theorycraft = () => {
                 rightSet: 'precision',
                 rightPieces: 4,
                 coreAttackTC: true,
-                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
             } : null,
             ilhwanChar ? {
                 ...ilhwanChar,
@@ -619,7 +672,7 @@ const Theorycraft = () => {
                 rightSet: 'expert',
                 rightPieces: 4,
                 coreAttackTC: true,
-                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
             } : null,
             leeChar ? {
                 ...leeChar,
@@ -631,7 +684,7 @@ const Theorycraft = () => {
                 rightSet: 'chaotic-wish',
                 rightPieces: 4,
                 coreAttackTC: true,
-                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
             } : null
         ];
         setTeam2(newTeam2);
@@ -657,7 +710,7 @@ const Theorycraft = () => {
                 rightPieces: 4,
                 coreAttackTC: true,
                 sungWeapon: 'ennio', // Ennio's Roar (16% Def Pen)
-                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
             });
             setSungBlessing(true); // Activer Blessing (+24.5% TC)
         }
@@ -677,7 +730,7 @@ const Theorycraft = () => {
                 rightSet: 'burning-greed',
                 rightPieces: 4,
                 coreAttackTC: true,
-                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
             } : null,
             reedChar ? {
                 ...reedChar,
@@ -688,7 +741,7 @@ const Theorycraft = () => {
                 rightSet: 'obsidian',
                 rightPieces: 4,
                 coreAttackTC: true,
-                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
             } : null,
             ginaChar ? {
                 ...ginaChar,
@@ -699,7 +752,7 @@ const Theorycraft = () => {
                 rightSet: 'sylph',
                 rightPieces: 4,
                 coreAttackTC: true,
-                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
             } : null
         ];
         setTeam1(newTeam1Fire);
@@ -719,7 +772,7 @@ const Theorycraft = () => {
                 rightSet: 'chaotic-desire',
                 rightPieces: 4,
                 coreAttackTC: true,
-                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
             } : null,
             fernChar ? {
                 ...fernChar,
@@ -730,7 +783,7 @@ const Theorycraft = () => {
                 rightSet: 'obsidian',
                 rightPieces: 4,
                 coreAttackTC: true,
-                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
             } : null,
             frierenChar ? {
                 ...frierenChar,
@@ -741,10 +794,130 @@ const Theorycraft = () => {
                 rightSet: 'sylph',
                 rightPieces: 4,
                 coreAttackTC: true,
-                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
             } : null
         ];
         setTeam2(newTeam2Fire);
+
+        // Fermer le modal de sélection si ouvert
+        setSelectedSlot(null);
+    };
+
+    // 💧 PRESET: Water Team
+    // Sung support (8pc Burning Greed), Team 1: Cha Hae-In Water, Seorin, Frieren | Team 2: Meilin, Shuhua, Meri Laine
+    const applyWaterPreset = () => {
+        // Activer Sung avec set 8pc Burning Greed (support)
+        const sungChar = availableCharacters.find(c => c.id === 'jinwoo');
+        if (sungChar) {
+            setSungEnabled(true);
+            setSungData({
+                ...sungChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                // 8pc Burning Greed
+                leftSet: 'burning-greed',
+                leftPieces: 4,
+                rightSet: 'burning-greed',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: {
+                    critRate: 0,
+                    critDMG: 0,
+                    defPen: 0,
+                    damageIncrease: 0,
+                }
+            });
+        }
+
+        // Team 1: Cha Hae-In Water (8pc Infamy), Seorin (8pc Desire), Frieren (8pc Infamy)
+        const chaeChar = availableCharacters.find(c => c.id === 'chae');
+        const seorinChar = availableCharacters.find(c => c.id === 'seorin');
+        const frierenChar = availableCharacters.find(c => c.id === 'frieren');
+
+        const newTeam1Water = [
+            chaeChar ? {
+                ...chaeChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                // 8pc Chaotic Infamy (Main DPS DEF scaler)
+                leftSet: 'chaotic-infamy',
+                leftPieces: 4,
+                rightSet: 'chaotic-infamy',
+                rightPieces: 4,
+                coreAttackTC: false,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
+            } : null,
+            seorinChar ? {
+                ...seorinChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                // 8pc Chaotic Desire (Breaker HP scaler)
+                leftSet: 'chaotic-desire',
+                leftPieces: 4,
+                rightSet: 'chaotic-desire',
+                rightPieces: 4,
+                coreAttackTC: false,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
+            } : null,
+            frierenChar ? {
+                ...frierenChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                // 8pc Chaotic Infamy (Support DEF scaler)
+                leftSet: 'chaotic-infamy',
+                leftPieces: 4,
+                rightSet: 'chaotic-infamy',
+                rightPieces: 4,
+                coreAttackTC: false,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
+            } : null
+        ];
+        setTeam1(newTeam1Water);
+
+        // Team 2: Meilin (4pc Guardian + 4pc Sylph), Shuhua (4pc Burning Curse + 4pc Expert), Meri Laine (4pc Angel + 4pc Watcher/Concentration)
+        const meilinChar = availableCharacters.find(c => c.id === 'meilin');
+        const shuhuaChar = availableCharacters.find(c => c.id === 'shuhua');
+        const meriChar = availableCharacters.find(c => c.id === 'meri');
+
+        const newTeam2Water = [
+            meilinChar ? {
+                ...meilinChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                // 4pc Guardian + 4pc Sylph (Healer/Buffer HP scaler)
+                leftSet: 'guardian',
+                leftPieces: 4,
+                rightSet: 'sylph',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
+            } : null,
+            shuhuaChar ? {
+                ...shuhuaChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                // 4pc Burning Curse + 4pc Expert (Assassin DPS ATK scaler)
+                leftSet: 'burning-curse',
+                leftPieces: 4,
+                rightSet: 'expert',
+                rightPieces: 4,
+                coreAttackTC: false,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
+            } : null,
+            meriChar ? {
+                ...meriChar,
+                advancement: 5,
+                weaponAdvancement: 5,
+                // 4pc Angel + 4pc Watcher (stand-in for Concentration of Firepower / Viresdescent)
+                leftSet: 'angel',
+                leftPieces: 4,
+                rightSet: 'watcher',
+                rightPieces: 4,
+                coreAttackTC: true,
+                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
+            } : null
+        ];
+        setTeam2(newTeam2Water);
 
         // Fermer le modal de sélection si ouvert
         setSelectedSlot(null);
@@ -1110,6 +1283,12 @@ const Theorycraft = () => {
                         >
                             🔥 Preset Fire Team
                         </button>
+                        <button
+                            onClick={applyWaterPreset}
+                            className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 rounded-xl font-bold text-white shadow-lg shadow-cyan-500/50 transition-all hover:scale-105 flex items-center gap-2"
+                        >
+                            💧 Preset Water Team
+                        </button>
                     </div>
                 </motion.div>
 
@@ -1204,7 +1383,7 @@ const Theorycraft = () => {
                                                 set: 'burning-greed',
                                                 setPieces: 0,
                                                 sungWeapon: 'none', // Arme de Sung (none, ennio, knightkiller)
-                                                rawStats: { critRate: 0, critDMG: 0, defPen: 0 }
+                                                rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 }
                                             };
                                             setSungData(newSungData);
                                         }
@@ -1313,6 +1492,7 @@ const Theorycraft = () => {
                         enemyLevel={enemyLevel}
                         useNewDefPenFormula={useNewDefPenFormula}
                         sungBlessing={sungBlessing}
+                        selectedEnemy={selectedEnemy}
                         onCharacterClick={(teamId, slotId) => selectCharForDetails(teamId, slotId)}
                     />
                 </motion.div>
@@ -1346,6 +1526,7 @@ const Theorycraft = () => {
                             team1={team1}
                             team2={team2}
                             useNewDefPenFormula={useNewDefPenFormula}
+                            selectedEnemy={selectedEnemy}
                         />
                     )}
                 </AnimatePresence>
@@ -1641,7 +1822,8 @@ const CharacterDetailsPanel = ({
     sungData,
     team1,
     team2,
-    useNewDefPenFormula = true
+    useNewDefPenFormula = true,
+    selectedEnemy = 'fachtna'
 }) => {
     const { t } = useTranslation();
     const { member } = charData;
@@ -1781,6 +1963,15 @@ const CharacterDetailsPanel = ({
                             enemyLevel={enemyLevel}
                             useNewDefPenFormula={useNewDefPenFormula}
                         />
+                        {selectedEnemy === 'antQueen' && (
+                            <RawStatInput
+                                label="Damage Increase"
+                                value={member.rawStats.damageIncrease}
+                                onChange={(val) => onRawStatChange('damageIncrease', val)}
+                                statType="di"
+                                enemyLevel={enemyLevel}
+                            />
+                        )}
                     </div>
 
                     {/* Stat principale de scaling si disponible */}
@@ -2195,8 +2386,18 @@ const ActiveBuffsDisplayPanel = ({ characterId, advancement, weaponAdvancement }
                                         })}
                                     </div>
                                     {buff.duration && (
-                                        <div className="text-xs text-gray-500 mt-1">
-                                            Durée: {buff.duration}s
+                                        <div className={`text-xs mt-1 flex items-center gap-1 ${
+                                            buff.cooldown
+                                                ? (buff.duration / buff.cooldown >= 0.75 ? 'text-green-400' : buff.duration / buff.cooldown >= 0.5 ? 'text-yellow-400' : 'text-red-400')
+                                                : buff.duration === 'infinite' ? 'text-green-400' : 'text-gray-500'
+                                        }`}>
+                                            <span>⏱</span>
+                                            <span>{buff.duration === 'infinite' ? '∞ Permanent' : `${buff.duration}s`}</span>
+                                            {buff.cooldown && (
+                                                <span className="font-semibold">
+                                                    / {buff.cooldown}s CD → Uptime: {Math.round((buff.duration / buff.cooldown) * 100)}%
+                                                </span>
+                                            )}
                                         </div>
                                     )}
                                     {buff.maxStacks && (
@@ -2264,8 +2465,18 @@ const ActiveBuffsDisplayPanel = ({ characterId, advancement, weaponAdvancement }
                                         </div>
                                     )}
                                     {buff.duration && (
-                                        <div className="text-xs text-gray-500 mt-1">
-                                            Durée: {buff.duration === 'infinite' ? '∞' : `${buff.duration}s`}
+                                        <div className={`text-xs mt-1 flex items-center gap-1 ${
+                                            buff.cooldown
+                                                ? (buff.duration / buff.cooldown >= 0.75 ? 'text-green-400' : buff.duration / buff.cooldown >= 0.5 ? 'text-yellow-400' : 'text-red-400')
+                                                : buff.duration === 'infinite' ? 'text-green-400' : 'text-gray-500'
+                                        }`}>
+                                            <span>⏱</span>
+                                            <span>{buff.duration === 'infinite' ? '∞ Permanent' : `${buff.duration}s`}</span>
+                                            {buff.cooldown && (
+                                                <span className="font-semibold">
+                                                    / {buff.cooldown}s CD → Uptime: {Math.round((buff.duration / buff.cooldown) * 100)}%
+                                                </span>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -2328,8 +2539,18 @@ const ActiveBuffsDisplayPanel = ({ characterId, advancement, weaponAdvancement }
                                         </div>
                                     )}
                                     {buff.duration && (
-                                        <div className="text-xs text-gray-500 mt-1">
-                                            Durée: {buff.duration === 'infinite' ? '∞' : `${buff.duration}s`}
+                                        <div className={`text-xs mt-1 flex items-center gap-1 ${
+                                            buff.cooldown
+                                                ? (buff.duration / buff.cooldown >= 0.75 ? 'text-green-400' : buff.duration / buff.cooldown >= 0.5 ? 'text-yellow-400' : 'text-red-400')
+                                                : buff.duration === 'infinite' ? 'text-green-400' : 'text-gray-500'
+                                        }`}>
+                                            <span>⏱</span>
+                                            <span>{buff.duration === 'infinite' ? '∞ Permanent' : `${buff.duration}s`}</span>
+                                            {buff.cooldown && (
+                                                <span className="font-semibold">
+                                                    / {buff.cooldown}s CD → Uptime: {Math.round((buff.duration / buff.cooldown) * 100)}%
+                                                </span>
+                                            )}
                                         </div>
                                     )}
                                     {buff.perAllyBonus && (
@@ -2420,8 +2641,18 @@ const ActiveBuffsDisplayPanel = ({ characterId, advancement, weaponAdvancement }
                                         })}
                                     </div>
                                     {debuff.duration && (
-                                        <div className="text-xs text-gray-500 mt-1">
-                                            Durée: {debuff.duration}s
+                                        <div className={`text-xs mt-1 flex items-center gap-1 ${
+                                            debuff.cooldown
+                                                ? (debuff.duration / debuff.cooldown >= 0.75 ? 'text-green-400' : debuff.duration / debuff.cooldown >= 0.5 ? 'text-yellow-400' : 'text-red-400')
+                                                : 'text-gray-500'
+                                        }`}>
+                                            <span>⏱</span>
+                                            <span>{debuff.duration}s</span>
+                                            {debuff.cooldown && (
+                                                <span className="font-semibold">
+                                                    / {debuff.cooldown}s CD → Uptime: {Math.round((debuff.duration / debuff.cooldown) * 100)}%
+                                                </span>
+                                            )}
                                         </div>
                                     )}
                                     {debuff.maxStacks && (
@@ -3064,6 +3295,16 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
         let totalFireOverloadDamage = 0;         // Fire Overload DMG %
         let totalFireOverloadDamageTaken = 0;    // Fire Overload DMG Taken (debuff on enemy)
 
+        // Water advanced stats
+        let totalWaterDamage = 0;          // Water DMG%
+        let totalWaterDamageTaken = 0;     // Water DMG Taken (debuff on enemy)
+        let totalWaterElementalAccumulation = 0;  // Water Elemental Accumulation %
+        let totalWaterOverloadDamage = 0;         // Water Overload DMG %
+        let totalWaterOverloadDamageTaken = 0;    // Water Overload DMG Taken (debuff on enemy)
+
+        // Damage Increase (raw stat → %)
+        let totalDamageIncrease = 0;
+
         // Breakdown détaillé (pour affichage au hover)
         const breakdown = {
             critRate: [],
@@ -3090,7 +3331,15 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
             // Fire Overload stats
             fireElementalAccumulation: [],
             fireOverloadDamage: [],
-            fireOverloadDamageTaken: []
+            fireOverloadDamageTaken: [],
+            // Water stats
+            waterDamage: [],
+            waterDamageTaken: [],
+            waterElementalAccumulation: [],
+            waterOverloadDamage: [],
+            waterOverloadDamageTaken: [],
+            // Damage Increase (raw stat → %)
+            damageIncrease: []
         };
 
         // 1. WEAPON BUFFS (RAID-wide)
@@ -3665,6 +3914,11 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
             totalDefPen += defPenPercent;
             breakdown.defPen.push({ source: `🔢 Valeurs Brutes (${member.rawStats.defPen.toLocaleString()} Def Pen)`, value: defPenPercent });
         }
+        if (member.rawStats.damageIncrease > 0) {
+            const diPercent = parseFloat(statConversionsWithEnemy.di.toPercent(member.rawStats.damageIncrease, enemyLevel));
+            totalDamageIncrease += diPercent;
+            breakdown.damageIncrease.push({ source: `🔢 Valeurs Brutes (${member.rawStats.damageIncrease.toLocaleString()} DI)`, value: diPercent });
+        }
 
         // ═══════════════════════════════════════════════════════════════
         // 8. ADVANCED BUFFS (CHARACTER_ADVANCED_BUFFS)
@@ -3681,12 +3935,41 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                     const characterName = member.name || member.id;
                     const buffName = buff.name;
 
+                    // Timing info pour uptime (si cooldown défini)
+                    const timingInfo = {};
+                    if (buff.cooldown && typeof buff.duration === 'number') {
+                        timingInfo.duration = buff.duration;
+                        timingInfo.cooldown = buff.cooldown;
+                        timingInfo.uptime = Math.round((buff.duration / buff.cooldown) * 100);
+                    }
+
+                    // Crit Rate (selfBuff)
+                    if (effects.critRate) {
+                        totalCritRate += effects.critRate;
+                        breakdown.critRate.push({
+                            source: `${characterName} - ${buffName}`,
+                            value: effects.critRate,
+                            ...timingInfo
+                        });
+                    }
+
+                    // Crit DMG (selfBuff)
+                    if (effects.critDMG) {
+                        totalCritDMG += effects.critDMG;
+                        breakdown.critDMG.push({
+                            source: `${characterName} - ${buffName}`,
+                            value: effects.critDMG,
+                            ...timingInfo
+                        });
+                    }
+
                     // Dark Damage
                     if (effects.darkDamage) {
                         totalDarkDamage += effects.darkDamage;
                         breakdown.darkDamage.push({
                             source: `${buffName} (${characterName}) - Scope: PERSONAL`,
-                            value: effects.darkDamage
+                            value: effects.darkDamage,
+                            ...timingInfo
                         });
                     }
 
@@ -3695,7 +3978,8 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalAttack += effects.attack;
                         breakdown.attack.push({
                             source: `${characterName} - ${buffName}`,
-                            value: effects.attack
+                            value: effects.attack,
+                            ...timingInfo
                         });
                     }
 
@@ -3704,7 +3988,8 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalHP += effects.hp;
                         breakdown.hp.push({
                             source: `${characterName} - ${buffName}`,
-                            value: effects.hp
+                            value: effects.hp,
+                            ...timingInfo
                         });
                     }
 
@@ -3713,7 +3998,8 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalDefense += effects.defense;
                         breakdown.defense.push({
                             source: `${characterName} - ${buffName}`,
-                            value: effects.defense
+                            value: effects.defense,
+                            ...timingInfo
                         });
                     }
 
@@ -3780,7 +4066,8 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalDamageDealt += totalValue;
                         breakdown.damageDealt.push({
                             source: `${buffName} (${characterName}) - ${maxStacks > 1 ? `${effects.damageDealt}% × ${maxStacks} stacks` : 'PERSONAL'}`,
-                            value: totalValue
+                            value: totalValue,
+                            ...timingInfo
                         });
                     }
 
@@ -3812,6 +4099,37 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         breakdown.fireOverloadDamage.push({
                             source: `${buffName} (${characterName}) - ${maxStacks > 1 ? `${effects.fireOverloadDamage}% × ${maxStacks} stacks` : 'PERSONAL'}`,
                             value: totalValue
+                        });
+                    }
+
+                    // 💧 Water DMG (selfBuff, ex: Meri Memories of Winter, Seorin Water Synergy, Shuhua Performance)
+                    if (effects.waterDamage || effects.waterDmg) {
+                        const waterVal = effects.waterDamage || effects.waterDmg;
+                        totalWaterDamage += waterVal;
+                        breakdown.waterDamage.push({
+                            source: `${buffName} (${characterName}) - Scope: PERSONAL`,
+                            value: waterVal,
+                            ...timingInfo
+                        });
+                    }
+
+                    // 💧 Water Elemental Accumulation (selfBuff, ex: Meri Pengqueen Booster Mode)
+                    if (effects.waterElementalAccumulation) {
+                        totalWaterElementalAccumulation += effects.waterElementalAccumulation;
+                        breakdown.waterElementalAccumulation.push({
+                            source: `${buffName} (${characterName}) - Scope: PERSONAL`,
+                            value: effects.waterElementalAccumulation,
+                            ...timingInfo
+                        });
+                    }
+
+                    // 💧 Water Overload DMG (selfBuff)
+                    if (effects.waterOverloadDamage) {
+                        totalWaterOverloadDamage += effects.waterOverloadDamage;
+                        breakdown.waterOverloadDamage.push({
+                            source: `${buffName} (${characterName}) - Scope: PERSONAL`,
+                            value: effects.waterOverloadDamage,
+                            ...timingInfo
                         });
                     }
                 });
@@ -3877,6 +4195,43 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         breakdown.attack.push({
                             source: `team buff (${characterName} - ${buffName})`,
                             value: effects.attack
+                        });
+                    }
+
+                    // 💧 Crit Rate from team buffs (ex: Meilin Pumped Up A5 +16% CR)
+                    if (effects.critRate) {
+                        totalCritRate += effects.critRate;
+                        breakdown.critRate.push({
+                            source: `team buff (${characterName} - ${buffName})`,
+                            value: effects.critRate
+                        });
+                    }
+
+                    // 💧 HP from team buffs (ex: Frieren A2 +9% HP, Seorin A3 Black Tea +20% HP)
+                    if (effects.hp) {
+                        totalHP += effects.hp;
+                        breakdown.hp.push({
+                            source: `team buff (${characterName} - ${buffName})`,
+                            value: effects.hp
+                        });
+                    }
+
+                    // 💧 DEF from team buffs (ex: Frieren A2 +9% DEF, Meilin Bye Meow +24% DEF, Seorin Black Tea +20% DEF)
+                    if (effects.defense) {
+                        totalDefense += effects.defense;
+                        breakdown.defense.push({
+                            source: `team buff (${characterName} - ${buffName})`,
+                            value: effects.defense
+                        });
+                    }
+
+                    // 💧 Water DMG from team buffs
+                    if (effects.waterDamage || effects.waterDmg) {
+                        const waterVal = effects.waterDamage || effects.waterDmg;
+                        totalWaterDamage += waterVal;
+                        breakdown.waterDamage.push({
+                            source: `team buff (${characterName} - ${buffName})`,
+                            value: waterVal
                         });
                     }
 
@@ -3947,9 +4302,13 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                     const characterName = raidMember.name || raidMember.id;
                     const buffName = buff.name;
 
-                    // Vérifier le scope (raid-dark, raid-fire, team-dark, etc.)
+                    // Vérifier le scope (self, raid-dark, raid-fire, raid-water, team-dark, etc.)
+                    // Scope self : le buff ne s'applique qu'au personnage qui le possède
+                    if (scope === 'self' && raidMember.id !== member.id) return;
+
                     if (scope === 'raid-dark' && memberElement !== 'Dark') return;
                     if (scope === 'raid-fire' && memberElement !== 'Fire') return;
+                    if (scope === 'raid-water' && memberElement !== 'Water') return;
 
                     // Scope team-dark : Applique uniquement aux Dark de la MÊME TEAM que le buffer
                     if (scope === 'team-dark') {
@@ -3968,6 +4327,14 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                     // 🔥 Scope team-fire : Applique uniquement aux Fire de la MÊME TEAM que le buffer
                     if (scope === 'team-fire') {
                         if (memberElement !== 'Fire') return;
+                        const buffGiverTeam = raidMember.teamId;
+                        const buffReceiverTeam = member.teamId;
+                        if (buffGiverTeam !== buffReceiverTeam) return;
+                    }
+
+                    // 💧 Scope team-water : Applique uniquement aux Water de la MÊME TEAM que le buffer
+                    if (scope === 'team-water') {
+                        if (memberElement !== 'Water') return;
                         const buffGiverTeam = raidMember.teamId;
                         const buffReceiverTeam = member.teamId;
                         if (buffGiverTeam !== buffReceiverTeam) return;
@@ -4033,6 +4400,15 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         });
                     }
 
+                    // Crit Rate from raid buffs
+                    if (effects.critRate) {
+                        totalCritRate += effects.critRate;
+                        breakdown.critRate.push({
+                            source: `raid buff (${characterName} - ${buffName})`,
+                            value: effects.critRate
+                        });
+                    }
+
                     // 🔥 Crit DMG from raid buffs (ex: YUQI Afterglow)
                     if (effects.critDMG) {
                         totalCritDMG += effects.critDMG;
@@ -4071,6 +4447,16 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         breakdown.damageDealt.push({
                             source: `raid buff (${characterName} - ${buffName})`,
                             value: effects.damageDealt
+                        });
+                    }
+
+                    // 💧 Water DMG from raid buffs
+                    if (effects.waterDamage || effects.waterDmg) {
+                        const waterVal = effects.waterDamage || effects.waterDmg;
+                        totalWaterDamage += waterVal;
+                        breakdown.waterDamage.push({
+                            source: `raid buff (${characterName} - ${buffName})`,
+                            value: waterVal
                         });
                     }
                 });
@@ -4150,6 +4536,27 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                             value: maxValue
                         });
                     }
+
+                    // 💧 Water DMG Taken (debuff sur l'ennemi, ex: Meilin Cuddle Puddle, Seorin Subzero, Shuhua Tension Drop, Meri Freezing Blood)
+                    if (effects.waterDamageTaken || effects.waterDmgTaken) {
+                        const waterDebuffVal = effects.waterDamageTaken || effects.waterDmgTaken;
+                        const maxValue = waterDebuffVal * maxStacks;
+                        totalWaterDamageTaken += maxValue;
+                        breakdown.waterDamageTaken.push({
+                            source: `${debuffName} (${characterName}) - Scope: Debuff Boss • ${waterDebuffVal}% × ${maxStacks} stack${maxStacks > 1 ? 's' : ''}`,
+                            value: maxValue
+                        });
+                    }
+
+                    // 💧 Water Overload DMG Taken (debuff sur l'ennemi, ex: Meri Freezing Blood)
+                    if (effects.waterOverloadDamageTaken) {
+                        const maxValue = effects.waterOverloadDamageTaken * maxStacks;
+                        totalWaterOverloadDamageTaken += maxValue;
+                        breakdown.waterOverloadDamageTaken.push({
+                            source: `${debuffName} (${characterName}) - Scope: Debuff Boss • ${effects.waterOverloadDamageTaken}% × ${maxStacks} stack${maxStacks > 1 ? 's' : ''}`,
+                            value: maxValue
+                        });
+                    }
                 });
             }
         });
@@ -4183,7 +4590,15 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                 // Fire Overload stats
                 fireElementalAccumulation: totalFireElementalAccumulation,
                 fireOverloadDamage: totalFireOverloadDamage,
-                fireOverloadDamageTaken: totalFireOverloadDamageTaken
+                fireOverloadDamageTaken: totalFireOverloadDamageTaken,
+                // Water stats
+                waterDamage: totalWaterDamage,
+                waterDamageTaken: totalWaterDamageTaken,
+                waterElementalAccumulation: totalWaterElementalAccumulation,
+                waterOverloadDamage: totalWaterOverloadDamage,
+                waterOverloadDamageTaken: totalWaterOverloadDamageTaken,
+                // Damage Increase (raw stat conversion)
+                damageIncrease: totalDamageIncrease
             },
             breakdown
         };
@@ -4199,10 +4614,14 @@ const STAT_LABELS = {
     darkDamageTaken: 'Dark DMG Taken', darkOverloadDamage: 'OL DMG', darkOverloadDamageTaken: 'OL DMG Taken',
     darkElementalAccumulation: 'Elem Acc', fireElementalAccumulation: 'Fire Elem Acc',
     fireOverloadDamage: 'Fire OL DMG', fireOverloadDamageTaken: 'Fire OL DMG Taken',
+    waterDamage: 'Water DMG', waterDamageTaken: 'Water DMG Taken',
+    waterElementalAccumulation: 'Water Elem Acc', waterOverloadDamage: 'Water OL DMG',
+    waterOverloadDamageTaken: 'Water OL DMG Taken',
+    damageIncrease: 'DMG Increase',
 };
 
 // Composant: Affichage des stats individuelles par personnage
-const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula = true, sungBlessing = false, onCharacterClick }) => {
+const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula = true, sungBlessing = false, selectedEnemy = 'fachtna', onCharacterClick }) => {
 
     // === COMPARISON STATES ===
     const [compareSlot, setCompareSlot] = useState(null);
@@ -4232,7 +4651,7 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
             leftSet: 'none', leftPieces: 0,
             rightSet: 'none', rightPieces: 0,
             coreAttackTC: true,
-            rawStats: { critRate: 0, critDMG: 0, defPen: 0 },
+            rawStats: { critRate: 0, critDMG: 0, defPen: 0, damageIncrease: 0 },
             mainStatValue: 0,
         };
 
@@ -4586,6 +5005,32 @@ const IndividualCharacterStatCard = ({ member, onClick, onCompare, isComparing, 
                     />
                 )}
 
+                {/* Water DMG */}
+                {(member.finalStats.waterDamage > 0 || Math.abs(deltas?.waterDamage || 0) > 0.05) && (
+                    <StatWithBreakdown
+                        label="Water DMG"
+                        value={member.finalStats.waterDamage}
+                        breakdown={member.breakdown.waterDamage}
+                        color="text-cyan-400"
+                        icon="💧"
+                        delta={deltas?.waterDamage}
+                        whatIfBreakdown={whatIfBreakdown?.waterDamage}
+                    />
+                )}
+
+                {/* Water DMG Taken (debuff sur ennemi) */}
+                {(member.finalStats.waterDamageTaken > 0 || Math.abs(deltas?.waterDamageTaken || 0) > 0.05) && (
+                    <StatWithBreakdown
+                        label="Water DMG Taken"
+                        value={member.finalStats.waterDamageTaken}
+                        breakdown={member.breakdown.waterDamageTaken}
+                        color="text-blue-400"
+                        icon="💧"
+                        delta={deltas?.waterDamageTaken}
+                        whatIfBreakdown={whatIfBreakdown?.waterDamageTaken}
+                    />
+                )}
+
                 {/* DMG Dealt % */}
                 {(member.finalStats.damageDealt > 0 || Math.abs(deltas?.damageDealt || 0) > 0.05) && (
                     <StatWithBreakdown
@@ -4596,6 +5041,19 @@ const IndividualCharacterStatCard = ({ member, onClick, onCompare, isComparing, 
                         icon="💥"
                         delta={deltas?.damageDealt}
                         whatIfBreakdown={whatIfBreakdown?.damageDealt}
+                    />
+                )}
+
+                {/* DMG Increase (Ant Queen only) */}
+                {(member.finalStats.damageIncrease > 0 || Math.abs(deltas?.damageIncrease || 0) > 0.05) && (
+                    <StatWithBreakdown
+                        label="DMG Increase"
+                        value={member.finalStats.damageIncrease}
+                        breakdown={member.breakdown.damageIncrease}
+                        color="text-amber-400"
+                        icon="⚡"
+                        delta={deltas?.damageIncrease}
+                        whatIfBreakdown={whatIfBreakdown?.damageIncrease}
                     />
                 )}
 
@@ -4756,6 +5214,55 @@ const IndividualCharacterStatCard = ({ member, onClick, onCompare, isComparing, 
                 </div>
             )}
 
+            {/* SECTION 4 - During Water Overload (stats conditionnelles Water OL) */}
+            {(member.finalStats.waterElementalAccumulation > 0 || member.finalStats.waterOverloadDamage > 0 || member.finalStats.waterOverloadDamageTaken > 0
+                || Math.abs(deltas?.waterElementalAccumulation || 0) > 0.05 || Math.abs(deltas?.waterOverloadDamage || 0) > 0.05 || Math.abs(deltas?.waterOverloadDamageTaken || 0) > 0.05
+            ) && (
+                <div className="mt-3 pt-3 border-t border-cyan-500/30">
+                    <div className="text-xs text-cyan-400 font-semibold mb-2 flex items-center gap-1">
+                        <span>💧</span>
+                        <span>During Water Overload</span>
+                    </div>
+                    <div className="space-y-2">
+                        {(member.finalStats.waterElementalAccumulation > 0 || Math.abs(deltas?.waterElementalAccumulation || 0) > 0.05) && (
+                            <StatWithBreakdown
+                                label="Water Elem Acc"
+                                value={member.finalStats.waterElementalAccumulation}
+                                breakdown={member.breakdown.waterElementalAccumulation}
+                                color="text-cyan-300"
+                                icon="🔮"
+                                delta={deltas?.waterElementalAccumulation}
+                                whatIfBreakdown={whatIfBreakdown?.waterElementalAccumulation}
+                            />
+                        )}
+
+                        {(member.finalStats.waterOverloadDamage > 0 || Math.abs(deltas?.waterOverloadDamage || 0) > 0.05) && (
+                            <StatWithBreakdown
+                                label="Water OL DMG"
+                                value={member.finalStats.waterOverloadDamage}
+                                breakdown={member.breakdown.waterOverloadDamage}
+                                color="text-cyan-400"
+                                icon="💥"
+                                delta={deltas?.waterOverloadDamage}
+                                whatIfBreakdown={whatIfBreakdown?.waterOverloadDamage}
+                            />
+                        )}
+
+                        {(member.finalStats.waterOverloadDamageTaken > 0 || Math.abs(deltas?.waterOverloadDamageTaken || 0) > 0.05) && (
+                            <StatWithBreakdown
+                                label="Water OL DMG Taken"
+                                value={member.finalStats.waterOverloadDamageTaken}
+                                breakdown={member.breakdown.waterOverloadDamageTaken}
+                                color="text-blue-400"
+                                icon="💢"
+                                delta={deltas?.waterOverloadDamageTaken}
+                                whatIfBreakdown={whatIfBreakdown?.waterOverloadDamageTaken}
+                            />
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* Carte d'optimisation (si données disponibles) */}
             {hasOptimizationData && overall && (
                 <div className="mt-3 pt-3 border-t border-gray-700/50">
@@ -4873,9 +5380,18 @@ const StatWithBreakdown = ({ label, value, breakdown, color, icon, hasBaseValue 
                             )}
                             {/* Liste des buffs */}
                             {breakdown.map((buff, idx) => (
-                                <div key={idx} className="flex justify-between items-center">
-                                    <span className="text-gray-300">{buff.source}</span>
-                                    <span className={`font-semibold ${color}`}>+{buff.value.toFixed(1)}%</span>
+                                <div key={idx}>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-300">{buff.source}</span>
+                                        <span className={`font-semibold ${color}`}>+{buff.value.toFixed(1)}%</span>
+                                    </div>
+                                    {buff.uptime && (
+                                        <div className={`text-[10px] ml-2 flex items-center gap-1 ${
+                                            buff.uptime >= 75 ? 'text-green-400' : buff.uptime >= 50 ? 'text-yellow-400' : 'text-red-400'
+                                        }`}>
+                                            ⏱ {buff.duration}s / {buff.cooldown}s CD → Uptime: {buff.uptime}%
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                             {/* Total */}

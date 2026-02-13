@@ -3061,34 +3061,32 @@ export const CHARACTER_BUFFS = {
     },
 
     // 🗡️ Weapon Frieren (Arme) - +5-50% DEF perso, Team Basic/Ult Skill DMG +5-30%
+    // 💧 Frieren Weapon - +5-50% DEF (self) + Team Basic/Ult Skill DMG +5-30%
     weapon_frieren: {
         baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
         buffs: {
-            A0: { critRate: 0, critDMG: 0, defPen: 0 },
-            A1: { critRate: 0, critDMG: 0, defPen: 0 },
-            A2: { critRate: 0, critDMG: 0, defPen: 0 },
-            A3: { critRate: 0, critDMG: 0, defPen: 0 },
-            A4: { critRate: 0, critDMG: 0, defPen: 0 },
-            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 5 }, teamBuffs: { basicSkillDmg: 5, ultimateSkillDmg: 5 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 14 }, teamBuffs: { basicSkillDmg: 10, ultimateSkillDmg: 10 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 23 }, teamBuffs: { basicSkillDmg: 15, ultimateSkillDmg: 15 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 32 }, teamBuffs: { basicSkillDmg: 20, ultimateSkillDmg: 20 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 41 }, teamBuffs: { basicSkillDmg: 25, ultimateSkillDmg: 25 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 50 }, teamBuffs: { basicSkillDmg: 30, ultimateSkillDmg: 30 } },
         }
     },
 
-    // 💧 Frieren (collab Water) - A2: +9% ATK/DEF/HP team, A4: +20% DCC team, A5: +15% TC raid + 15% DCC raid
+    // 💧 Frieren - Water Support/Sub-DPS DEF Scaler
+    // Mana Power Control: A0-A2: +50% DEF (25+25 if MP≥50%), A3+: +100% DEF (50+50)
+    // A2: +9% ATK/DEF/HP team, A4: +20% CritDMG team
+    // Vollzanbel debuff: A1: -5% DEF enemy, A5: -10% DEF enemy
     frieren: {
         baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
         buffs: {
-            A0: { critRate: 0, critDMG: 0, defPen: 0 },
-            A1: { critRate: 0, critDMG: 0, defPen: 0 },
-            A2: { critRate: 0, critDMG: 0, defPen: 0 },
-            A3: { critRate: 0, critDMG: 0, defPen: 0 },
-            A4: {
-                critRate: 0, critDMG: 0, defPen: 0,
-                teamBuff: { critDMG: 20 }  // +20% DCC pour sa team
-            },
-            A5: {
-                critRate: 15, critDMG: 15, defPen: 0,  // +15% TC RAID + 15% DCC RAID
-                teamBuff: { critDMG: 20 }  // +20% DCC pour sa team (A4 persiste)
-            },
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 50 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 50 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 50 }, teamBuffs: { attack: 9, defense: 9, hp: 9 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 100 }, teamBuffs: { attack: 9, defense: 9, hp: 9 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 100 }, teamBuffs: { attack: 9, defense: 9, hp: 9, critDMG: 20 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 100 }, teamBuffs: { attack: 9, defense: 9, hp: 9, critDMG: 20 } },
         }
     },
 
@@ -3191,6 +3189,62 @@ export const CHARACTER_BUFFS = {
         }
     },
 
+    // 🗡️ Weapon Anna (Arme) - +2.5-10% ATK personnel
+    weapon_anna: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 2.5 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 4 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 5.5 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 7 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 8.5 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 10 } },
+        }
+    },
+
+    // 💧 Anna Ruiz - Breaker Water ATK - Poison/Break Specialist
+    // A2: +10% Break DMG (self), A4: +10% ATK (self)
+    // Weapon debuff: -2.5-10% DEF on enemy (tracked in advancedBuffs)
+    anna: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { breakTargetDmg: 10 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { breakTargetDmg: 10 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 10, breakTargetDmg: 10 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 10, breakTargetDmg: 10 } },
+        }
+    },
+
+    // 💧 Cha Hae-In Water (Pure Sword Princess) - Weapon DEF buff
+    weapon_chae: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 2 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 4 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 6 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 8 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 10 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { defense: 12 } },
+        }
+    },
+
+    // 💧 Cha Hae-In Water - Fighter DPS DEF Scaler
+    // Will of the Sword (6 stacks): A0: +30% DEF/+12% CR/+12% CD, A1-A4: +60% DEF/+12% CR/+12% CD, A5: +60% DEF/+24% CR/+24% CD
+    // A4: +7% CR/CD per Water ally (max 3 = +21% CR/CD)
+    chae: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 12, critDMG: 12, defPen: 0, personalBuffs: { defense: 30 } },
+            A1: { critRate: 12, critDMG: 12, defPen: 0, personalBuffs: { defense: 60 } },
+            A2: { critRate: 12, critDMG: 12, defPen: 0, personalBuffs: { defense: 60 } },
+            A3: { critRate: 12, critDMG: 12, defPen: 0, personalBuffs: { defense: 60 } },
+            A4: { critRate: 33, critDMG: 33, defPen: 0, personalBuffs: { defense: 60 } },
+            A5: { critRate: 45, critDMG: 45, defPen: 0, personalBuffs: { defense: 60 } },
+        }
+    },
+
     // 💧 Meri Laine - Infusion Water HP Scaler
     meri: {
         baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
@@ -3201,6 +3255,217 @@ export const CHARACTER_BUFFS = {
             A3: { critRate: 0, critDMG: 0, defPen: 0 },
             A4: { critRate: 0, critDMG: 0, defPen: 0 },
             A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 💧 Han Song-Yi Weapon - +2.5-10% Water DMG + Assassination Ready (Retrieve DMG buff)
+    'weapon_han-song': {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { waterDamage: 2.5 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { waterDamage: 4 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { waterDamage: 5.5 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { waterDamage: 7 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { waterDamage: 8.5 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { waterDamage: 10 } },
+        }
+    },
+
+    // 💧 Han Song-Yi - Assassin Water ATK Scaler
+    // A2: +5% CR + 5% CD, A4: +6% ATK
+    'han-song': {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 5, critDMG: 5, defPen: 0 },
+            A3: { critRate: 5, critDMG: 5, defPen: 0 },
+            A4: { critRate: 5, critDMG: 5, defPen: 0, personalBuffs: { attack: 6 } },
+            A5: { critRate: 5, critDMG: 5, defPen: 0, personalBuffs: { attack: 6 } },
+        }
+    },
+
+    // 💧 Lee Joohee Weapon - +2-5% HP (self) + Shield on tag out
+    'weapon_lee-johee': {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 2 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 2.6 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 3.2 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 3.8 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 4.4 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 5 } },
+        }
+    },
+
+    // 💧 Lee Joohee - Healer Water HP Scaler
+    // A0: +8% HP team, A2: +6% HP self, Skill 1: +3% ATK team (15s)
+    'lee-johee': {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, teamBuffs: { hp: 8 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, teamBuffs: { hp: 8 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 6 }, teamBuffs: { hp: 8 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 6 }, teamBuffs: { hp: 8 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 6 }, teamBuffs: { hp: 8 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 6 }, teamBuffs: { hp: 8 } },
+        }
+    },
+
+    // 💧 Meilin Fisher Weapon - Highest ATK ally DMG +6-16%, Ult CD -5-20%
+    weapon_meilin: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 💧 Meilin Fisher - Healer/Buffer Water HP Scaler
+    // A0: Bye, Meow! +8% ATK/DEF per stack (max 3) = +24% ATK/DEF team
+    // A0: Cuddle Puddle +8% Water DMG taken on enemy
+    // A2: +16% ATK/DEF for Water team (8% all + 8% Water)
+    // A4: +12% HP self
+    meilin: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, teamBuffs: { attack: 24, defense: 24 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, teamBuffs: { attack: 24, defense: 24 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, teamBuffs: { attack: 40, defense: 40 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, teamBuffs: { attack: 40, defense: 40 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 12 }, teamBuffs: { attack: 40, defense: 40 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 12 }, teamBuffs: { attack: 40, defense: 40 } },
+        }
+    },
+
+    // 💧 Nam Chae-Young Weapon - conditional DMG + DEF debuff on Frozen
+    weapon_nam: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 0, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 💧 Nam Chae-Young - Breaker Water HP Scaler
+    // A2: +6% HP self. Weapon: -5-20% DEF on Frozen targets
+    nam: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 6 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 6 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 6 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 6 } },
+        }
+    },
+
+    // 💧 Seo Jiwoo Weapon - +5-20% CritDMG + stacking CritDMG (max 20 stacks)
+    weapon_seo: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 5, defPen: 0 },
+            A1: { critRate: 0, critDMG: 8, defPen: 0 },
+            A2: { critRate: 0, critDMG: 11, defPen: 0 },
+            A3: { critRate: 0, critDMG: 14, defPen: 0 },
+            A4: { critRate: 0, critDMG: 17, defPen: 0 },
+            A5: { critRate: 0, critDMG: 20, defPen: 0 },
+        }
+    },
+
+    // 💧 Seo Jiwoo - Breaker Water HP Scaler
+    // A2: +15% Break effectiveness, A4: +15% Max HP from additional CritDMG
+    // A5: +32% CR + Skill DMG on Heavy Attacks & Ultimate
+    seo: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0 },
+            A2: { critRate: 0, critDMG: 0, defPen: 0 },
+            A3: { critRate: 0, critDMG: 0, defPen: 0 },
+            A4: { critRate: 0, critDMG: 0, defPen: 0 },
+            A5: { critRate: 32, critDMG: 0, defPen: 0 },
+        }
+    },
+
+    // 💧 Seorin - Water Ranger Breaker (HP scaling)
+    weapon_seorin: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 5 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 6.4 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 7.8 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 9.2 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 10.6 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { hp: 12 } },
+        }
+    },
+    seorin: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 30, defPen: 0 },
+            A2: { critRate: 0, critDMG: 30, defPen: 0 },
+            A3: { critRate: 0, critDMG: 30, defPen: 0, teamBuffs: { defense: 20, hp: 20 } },
+            A4: { critRate: 0, critDMG: 30, defPen: 0, teamBuffs: { defense: 20, hp: 20 } },
+            A5: { critRate: 30, critDMG: 50, defPen: 0, teamBuffs: { defense: 20, hp: 20 } },
+        }
+    },
+
+    // 💧 Shuhua - Water Assassin DPS (ATK scaling)
+    weapon_shuhua: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 5 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 6.4 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 7.8 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 9.2 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 10.6 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 12 } },
+        }
+    },
+    shuhua: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0, teamBuffs: { damageDealt: 15 } },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, teamBuffs: { damageDealt: 15 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, teamBuffs: { damageDealt: 15 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, teamBuffs: { damageDealt: 15 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 16 }, teamBuffs: { damageDealt: 15 } },
+            A5: { critRate: 30, critDMG: 0, defPen: 0, personalBuffs: { attack: 16 }, teamBuffs: { damageDealt: 15 } },
+        }
+    },
+
+    // 💧 Alicia Blanche - Water Mage DPS (ATK scaling)
+    weapon_alicia: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 3, defense: 3, hp: 3 } },
+            A2: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 6, defense: 6, hp: 6 } },
+            A3: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 9, defense: 9, hp: 9 } },
+            A4: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 12, defense: 12, hp: 12 } },
+            A5: { critRate: 0, critDMG: 0, defPen: 0, personalBuffs: { attack: 15, defense: 15, hp: 15 } },
+        }
+    },
+    alicia: {
+        baseStats: { critRate: 0, critDMG: 0, defPen: 0 },
+        buffs: {
+            A0: { critRate: 0, critDMG: 0, defPen: 0 },
+            A1: { critRate: 20, critDMG: 20, defPen: 0 },
+            A2: { critRate: 20, critDMG: 20, defPen: 0 },
+            A3: { critRate: 20, critDMG: 20, defPen: 0, personalBuffs: { attack: 36 } },
+            A4: { critRate: 20, critDMG: 20, defPen: 0, personalBuffs: { attack: 36 } },
+            A5: { critRate: 20, critDMG: 20, defPen: 0, personalBuffs: { attack: 36 } },
         }
     },
 

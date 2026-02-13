@@ -15,7 +15,9 @@
       "Bash(npx vite build)",
       "Bash(findstr:*)",
       "Bash(dir:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

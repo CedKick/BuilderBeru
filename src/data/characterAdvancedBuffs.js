@@ -5664,15 +5664,7 @@ export const CHARACTER_ADVANCED_BUFFS = {
                         duration: 'infinite'
                     }
                 ],
-                raidBuffs: [
-                    {
-                        name: 'Frieren Raid Buffs (A5)',
-                        effects: { critRate: 15, critDMG: 15 },
-                        scope: 'raid',
-                        duration: 'infinite',
-                        note: '+15% TC + 15% DCC en Raid'
-                    }
-                ],
+                raidBuffs: [],
                 debuffs: [
                     {
                         name: 'Enhanced Vollzanbel (A5)',
@@ -5691,6 +5683,715 @@ export const CHARACTER_ADVANCED_BUFFS = {
         }
     },
 
+    // 💧 Anna Ruiz - Water Breaker ATK - Poison/Break Specialist
+    anna: {
+        id: 'anna',
+        name: 'Anna Ruiz',
+        element: 'Water',
+        scaleStat: 'ATK',
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: 'Corrosive Poison',
+                        description: '6% chance on skill hit to inflict Corrosive Poison (100 Break DMG + 30% ATK every 3s, 30s)',
+                        effects: {},
+                        trigger: 'on skill hit (6% chance)',
+                        note: 'DoT + Break over time. No direct stat buff'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Poison Shower',
+                        trigger: 'Poison Shower hits',
+                        scope: 'enemy',
+                        effects: { defReduction: 2.5 },
+                        duration: 5,
+                        note: '-2.5% DEF on enemy for 5s (Weapon A0)'
+                    }
+                ]
+            },
+            A1: {
+                passives: [
+                    {
+                        name: 'Corrosive Poison',
+                        description: '6% chance on skill hit to inflict Corrosive Poison',
+                        effects: {},
+                        trigger: 'on skill hit (6% chance)',
+                        note: 'DoT + Break over time'
+                    },
+                    {
+                        name: 'Blind',
+                        description: 'Enemies in Poisonous Zone are inflicted with Blind (1.5s immobilize)',
+                        effects: {},
+                        trigger: 'enemy in Poisonous Zone',
+                        note: 'CC: 1.5s immobilize in Poisonous Zone'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Poison Shower',
+                        trigger: 'Poison Shower hits',
+                        scope: 'enemy',
+                        effects: { defReduction: 4 },
+                        duration: 5,
+                        note: '-4% DEF on enemy for 5s (Weapon A1)'
+                    }
+                ]
+            },
+            A2: {
+                passives: [
+                    {
+                        name: 'Corrosive Poison',
+                        description: '6% chance on skill hit to inflict Corrosive Poison',
+                        effects: {},
+                        trigger: 'on skill hit (6% chance)',
+                        note: 'DoT + Break over time'
+                    },
+                    {
+                        name: 'Blind',
+                        description: 'Enemies in Poisonous Zone are inflicted with Blind (1.5s immobilize)',
+                        effects: {},
+                        trigger: 'enemy in Poisonous Zone',
+                        note: 'CC: 1.5s immobilize'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Break Specialist',
+                        trigger: 'passive',
+                        scope: 'self',
+                        effects: { breakTargetDmg: 10 },
+                        duration: 'infinite',
+                        note: '+10% Break damage'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Poison Shower',
+                        trigger: 'Poison Shower hits',
+                        scope: 'enemy',
+                        effects: { defReduction: 5.5 },
+                        duration: 5,
+                        note: '-5.5% DEF on enemy for 5s (Weapon A2)'
+                    }
+                ]
+            },
+            A3: {
+                passives: [
+                    {
+                        name: 'Enhanced Corrosive Poison',
+                        description: 'Corrosive Poison now decreases DEF by 1% per stack (max 10 stacks = -10% DEF)',
+                        effects: { defReduction: 10 },
+                        trigger: 'Corrosive Poison on enemy',
+                        note: '-1% DEF per stack, up to -10% DEF on enemy (30s)'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Break Specialist',
+                        trigger: 'passive',
+                        scope: 'self',
+                        effects: { breakTargetDmg: 10 },
+                        duration: 'infinite',
+                        note: '+10% Break damage'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Poison Shower',
+                        trigger: 'Poison Shower hits',
+                        scope: 'enemy',
+                        effects: { defReduction: 7 },
+                        duration: 5,
+                        note: '-7% DEF on enemy for 5s (Weapon A3)'
+                    },
+                    {
+                        name: 'Enhanced Corrosive Poison',
+                        trigger: 'Corrosive Poison stacks on enemy',
+                        scope: 'enemy',
+                        effects: { defReduction: 10 },
+                        duration: 30,
+                        note: '-1% DEF per stack, max 10 stacks = -10% DEF (30s)'
+                    }
+                ]
+            },
+            A4: {
+                passives: [
+                    {
+                        name: 'Enhanced Corrosive Poison',
+                        description: 'Corrosive Poison decreases DEF by 1% per stack (max 10)',
+                        effects: { defReduction: 10 },
+                        trigger: 'Corrosive Poison on enemy',
+                        note: '-10% DEF on enemy at max stacks'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Break Specialist',
+                        trigger: 'passive',
+                        scope: 'self',
+                        effects: { breakTargetDmg: 10 },
+                        duration: 'infinite',
+                        note: '+10% Break damage'
+                    },
+                    {
+                        name: 'ATK Boost',
+                        trigger: 'passive',
+                        scope: 'self',
+                        effects: { attack: 10 },
+                        duration: 'infinite',
+                        note: '+10% ATK'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Poison Shower',
+                        trigger: 'Poison Shower hits',
+                        scope: 'enemy',
+                        effects: { defReduction: 8.5 },
+                        duration: 5,
+                        note: '-8.5% DEF on enemy for 5s (Weapon A4)'
+                    },
+                    {
+                        name: 'Enhanced Corrosive Poison',
+                        trigger: 'Corrosive Poison stacks on enemy',
+                        scope: 'enemy',
+                        effects: { defReduction: 10 },
+                        duration: 30,
+                        note: '-1% DEF per stack, max 10 stacks = -10% DEF (30s)'
+                    }
+                ]
+            },
+            A5: {
+                passives: [
+                    {
+                        name: 'Enhanced Corrosive Poison',
+                        description: 'Corrosive Poison decreases DEF by 1% per stack (max 10)',
+                        effects: { defReduction: 10 },
+                        trigger: 'Corrosive Poison on enemy',
+                        note: '-10% DEF on enemy at max stacks'
+                    },
+                    {
+                        name: 'Poison Wave Amplification',
+                        description: 'Increases Poison Wave damage by 100%',
+                        effects: {},
+                        trigger: 'passive',
+                        note: '+100% Poison Wave damage (skill multiplier, not a stat buff)'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Break Specialist',
+                        trigger: 'passive',
+                        scope: 'self',
+                        effects: { breakTargetDmg: 10 },
+                        duration: 'infinite',
+                        note: '+10% Break damage'
+                    },
+                    {
+                        name: 'ATK Boost',
+                        trigger: 'passive',
+                        scope: 'self',
+                        effects: { attack: 10 },
+                        duration: 'infinite',
+                        note: '+10% ATK'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Poison Shower',
+                        trigger: 'Poison Shower hits',
+                        scope: 'enemy',
+                        effects: { defReduction: 10 },
+                        duration: 5,
+                        note: '-10% DEF on enemy for 5s (Weapon A5)'
+                    },
+                    {
+                        name: 'Enhanced Corrosive Poison',
+                        trigger: 'Corrosive Poison stacks on enemy',
+                        scope: 'enemy',
+                        effects: { defReduction: 10 },
+                        duration: 30,
+                        note: '-1% DEF per stack, max 10 stacks = -10% DEF (30s)'
+                    }
+                ]
+            }
+        }
+    },
+
+    // 💧 Cha Hae-In Water (Pure Sword Princess) - Fighter DPS DEF Scaler
+    chae: {
+        id: 'chae',
+        name: 'Cha Hae-In (Pure Sword Princess)',
+        element: 'Water',
+        scaleStat: 'DEF',
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: 'Heavenly Swords',
+                        description: 'When Sword Princess\'s Dance or Heavenly Strike hit, summons Heavenly Swords (175% DEF per blade, counts as Basic Skill)',
+                        effects: {},
+                        trigger: 'on Sword Princess\'s Dance or Heavenly Strike hit (CD 0.5s)',
+                        note: 'Extra damage source scaling on DEF'
+                    },
+                    {
+                        name: 'Will of the Sword',
+                        description: 'Per gauge recharge level: +5% DEF, +2% CR, +2% CritDMG (max 6 stacks, 15s)',
+                        effects: { defense: 30, critRate: 12, critDMG: 12 },
+                        trigger: 'Sword Princess\'s Dance or Heavenly Strike recharges gauge',
+                        note: '6 stacks max: +30% DEF, +12% CR, +12% CritDMG'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Will of the Sword (6 stacks)',
+                        trigger: 'gauge recharge (Sword Princess\'s Dance / Heavenly Strike)',
+                        scope: 'self',
+                        effects: { defense: 30, critRate: 12, critDMG: 12 },
+                        duration: 15,
+                        note: '+5% DEF, +2% CR, +2% CritDMG per stack (max 6)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Will of the Sword DEF Stack',
+                        trigger: 'Will of the Sword gauge recharge',
+                        scope: 'self',
+                        effects: { defense: 2 },
+                        duration: 'stacking',
+                        note: 'Weapon: +2% DEF per gauge recharge (up to 60 stacks)'
+                    }
+                ]
+            },
+            A1: {
+                passives: [
+                    {
+                        name: 'Heavenly Swords',
+                        description: 'Summons Heavenly Swords on hit (175% DEF per blade, Basic Skill)',
+                        effects: {},
+                        trigger: 'on Sword Princess\'s Dance or Heavenly Strike hit',
+                        note: 'Extra damage source scaling on DEF'
+                    },
+                    {
+                        name: 'Will of the Sword (Enhanced)',
+                        description: 'Per gauge recharge level: +10% DEF, +2% CR, +2% CritDMG (max 6 stacks, 15s)',
+                        effects: { defense: 60, critRate: 12, critDMG: 12 },
+                        trigger: 'gauge recharge',
+                        note: '6 stacks max: +60% DEF, +12% CR, +12% CritDMG'
+                    },
+                    {
+                        name: 'Quick Attack: Swordstorm',
+                        description: 'Swordstorm changes to Quick Attack: Swordstorm (+60% damage)',
+                        effects: {},
+                        trigger: 'passive',
+                        note: '+60% Swordstorm damage'
+                    },
+                    {
+                        name: 'Blade Master',
+                        description: 'After Heavenly Strike, Core Attack → Dance of Scattered Blades (Super Armor, no Core Gauge consumed, 5s)',
+                        effects: {},
+                        trigger: 'after Heavenly Strike',
+                        note: 'Free Core Attacks with Super Armor for 5s'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Will of the Sword Enhanced (6 stacks)',
+                        trigger: 'gauge recharge',
+                        scope: 'self',
+                        effects: { defense: 60, critRate: 12, critDMG: 12 },
+                        duration: 15,
+                        note: '+10% DEF, +2% CR, +2% CritDMG per stack (max 6)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Will of the Sword DEF Stack',
+                        trigger: 'Will of the Sword gauge recharge',
+                        scope: 'self',
+                        effects: { defense: 4 },
+                        duration: 'stacking',
+                        note: 'Weapon: +4% DEF per gauge recharge (up to 60 stacks)'
+                    }
+                ]
+            },
+            A2: {
+                passives: [
+                    {
+                        name: 'Heavenly Swords',
+                        description: 'Summons Heavenly Swords on hit (175% DEF per blade, Basic Skill)',
+                        effects: {},
+                        trigger: 'on hit',
+                        note: 'Extra DEF-scaling damage'
+                    },
+                    {
+                        name: 'Will of the Sword (Enhanced)',
+                        description: '+10% DEF, +2% CR, +2% CritDMG per stack (max 6, 15s)',
+                        effects: { defense: 60, critRate: 12, critDMG: 12 },
+                        trigger: 'gauge recharge',
+                        note: '6 stacks: +60% DEF, +12% CR, +12% CritDMG'
+                    },
+                    {
+                        name: 'Quick Attack: Swordstorm',
+                        description: '+60% Swordstorm damage',
+                        effects: {},
+                        trigger: 'passive',
+                        note: '+60% Swordstorm damage'
+                    },
+                    {
+                        name: 'Blade Master',
+                        description: 'Free Core Attacks with Super Armor for 5s after Heavenly Strike',
+                        effects: {},
+                        trigger: 'after Heavenly Strike',
+                        note: 'No Core Gauge consumption'
+                    },
+                    {
+                        name: 'Unrecoverable',
+                        description: 'Heavenly Strike inflicts Unrecoverable (30s)',
+                        effects: {},
+                        trigger: 'Heavenly Strike hit',
+                        note: 'Enemy cannot recover HP for 30s'
+                    },
+                    {
+                        name: 'Paralyze',
+                        description: 'Sword of Destiny inflicts Paralyze (3s)',
+                        effects: {},
+                        trigger: 'Sword of Destiny hit',
+                        note: 'CC: Interrupts enemy for 3s'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Will of the Sword Enhanced (6 stacks)',
+                        trigger: 'gauge recharge',
+                        scope: 'self',
+                        effects: { defense: 60, critRate: 12, critDMG: 12 },
+                        duration: 15,
+                        note: '+10% DEF, +2% CR, +2% CritDMG per stack (max 6)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Will of the Sword DEF Stack',
+                        trigger: 'gauge recharge',
+                        scope: 'self',
+                        effects: { defense: 6 },
+                        duration: 'stacking',
+                        note: 'Weapon: +6% DEF per gauge recharge (up to 60 stacks)'
+                    },
+                    {
+                        name: 'Unrecoverable',
+                        trigger: 'Heavenly Strike hit',
+                        scope: 'enemy',
+                        effects: {},
+                        duration: 30,
+                        note: 'Enemy cannot recover HP for 30s'
+                    },
+                    {
+                        name: 'Paralyze',
+                        trigger: 'Sword of Destiny hit',
+                        scope: 'enemy',
+                        effects: {},
+                        duration: 3,
+                        note: 'CC: Interrupts enemy for 3s'
+                    }
+                ]
+            },
+            A3: {
+                passives: [
+                    {
+                        name: 'Heavenly Swords',
+                        description: 'Summons Heavenly Swords on hit (175% DEF per blade, Basic Skill)',
+                        effects: {},
+                        trigger: 'on hit',
+                        note: 'Extra DEF-scaling damage'
+                    },
+                    {
+                        name: 'Will of the Sword (Enhanced)',
+                        description: '+10% DEF, +2% CR, +2% CritDMG per stack (max 6, 15s)',
+                        effects: { defense: 60, critRate: 12, critDMG: 12 },
+                        trigger: 'gauge recharge',
+                        note: '6 stacks: +60% DEF, +12% CR, +12% CritDMG'
+                    },
+                    {
+                        name: 'Quick Attack: Swordstorm (+60%)',
+                        description: '+60% Swordstorm damage',
+                        effects: {},
+                        trigger: 'passive',
+                        note: '+60% Swordstorm damage'
+                    },
+                    {
+                        name: 'Blade Master',
+                        description: 'Free Core Attacks with Super Armor (5s)',
+                        effects: {},
+                        trigger: 'after Heavenly Strike',
+                        note: 'No Core Gauge consumption'
+                    },
+                    {
+                        name: 'Sword\'s Resolve',
+                        description: 'At 100% Will of the Sword gauge: Heavenly Strike → Heavy Attack: Heavenly Strike (+170% damage, 6s)',
+                        effects: {},
+                        trigger: 'Will of the Sword gauge at 100%',
+                        note: 'Massive burst window: +170% Heavenly Strike damage for 6s'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Will of the Sword Enhanced (6 stacks)',
+                        trigger: 'gauge recharge',
+                        scope: 'self',
+                        effects: { defense: 60, critRate: 12, critDMG: 12 },
+                        duration: 15,
+                        note: '+10% DEF, +2% CR, +2% CritDMG per stack (max 6)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Will of the Sword DEF Stack',
+                        trigger: 'gauge recharge',
+                        scope: 'self',
+                        effects: { defense: 8 },
+                        duration: 'stacking',
+                        note: 'Weapon: +8% DEF per gauge recharge (up to 60 stacks)'
+                    },
+                    {
+                        name: 'Unrecoverable',
+                        trigger: 'Heavenly Strike hit',
+                        scope: 'enemy',
+                        effects: {},
+                        duration: 30,
+                        note: 'Enemy cannot recover HP for 30s'
+                    },
+                    {
+                        name: 'Paralyze',
+                        trigger: 'Sword of Destiny hit',
+                        scope: 'enemy',
+                        effects: {},
+                        duration: 3,
+                        note: 'CC: Interrupts enemy for 3s'
+                    }
+                ]
+            },
+            A4: {
+                passives: [
+                    {
+                        name: 'Heavenly Swords',
+                        description: 'Summons Heavenly Swords on hit (175% DEF per blade, Basic Skill)',
+                        effects: {},
+                        trigger: 'on hit',
+                        note: 'Extra DEF-scaling damage'
+                    },
+                    {
+                        name: 'Will of the Sword (Enhanced)',
+                        description: '+10% DEF, +2% CR, +2% CritDMG per stack (max 6, 15s)',
+                        effects: { defense: 60, critRate: 12, critDMG: 12 },
+                        trigger: 'gauge recharge',
+                        note: '6 stacks: +60% DEF, +12% CR, +12% CritDMG'
+                    },
+                    {
+                        name: 'Quick Attack: Swordstorm (+60%)',
+                        description: '+60% Swordstorm damage',
+                        effects: {},
+                        trigger: 'passive',
+                        note: '+60% Swordstorm damage'
+                    },
+                    {
+                        name: 'Blade Master',
+                        description: 'Free Core Attacks with Super Armor (5s)',
+                        effects: {},
+                        trigger: 'after Heavenly Strike',
+                        note: 'No Core Gauge consumption'
+                    },
+                    {
+                        name: 'Sword\'s Resolve',
+                        description: 'At 100% gauge: Heavy Attack: Heavenly Strike (+170% damage, 6s)',
+                        effects: {},
+                        trigger: 'Will of the Sword gauge at 100%',
+                        note: '+170% Heavenly Strike damage for 6s'
+                    },
+                    {
+                        name: 'Pure Sword Princess Synergy (A4)',
+                        description: '+7% CR & +7% CritDMG per Water ally. Guild Boss: no stack limit (6×7% = +42%)',
+                        effects: { critRate: 42, critDMG: 42 },
+                        trigger: 'passive (per Water ally in raid)',
+                        note: 'A4 NEW: Raid buff self only. +7% CR/CD per Water ally, no limit in Guild Boss'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Will of the Sword Enhanced (6 stacks)',
+                        trigger: 'gauge recharge',
+                        scope: 'self',
+                        effects: { defense: 60, critRate: 12, critDMG: 12 },
+                        duration: 15,
+                        note: '+10% DEF, +2% CR, +2% CritDMG per stack (max 6)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [
+                    {
+                        name: 'Pure Sword Princess Synergy (A4)',
+                        trigger: 'passive (per Water ally)',
+                        scope: 'raid-water',
+                        effects: { critRate: 42, critDMG: 42 },
+                        duration: 'infinite',
+                        note: 'A4: +7% CR & +7% CritDMG per Water ally. Guild Boss: 6×7% = +42% CR/CD (no stack limit, all Water)'
+                    }
+                ],
+                debuffs: [
+                    {
+                        name: 'Weapon: Will of the Sword DEF Stack',
+                        trigger: 'gauge recharge',
+                        scope: 'self',
+                        effects: { defense: 10 },
+                        duration: 'stacking',
+                        note: 'Weapon: +10% DEF per gauge recharge (up to 60 stacks)'
+                    },
+                    {
+                        name: 'Unrecoverable',
+                        trigger: 'Heavenly Strike hit',
+                        scope: 'enemy',
+                        effects: {},
+                        duration: 30,
+                        note: 'Enemy cannot recover HP for 30s'
+                    },
+                    {
+                        name: 'Paralyze',
+                        trigger: 'Sword of Destiny hit',
+                        scope: 'enemy',
+                        effects: {},
+                        duration: 3,
+                        note: 'CC: Interrupts enemy for 3s'
+                    }
+                ]
+            },
+            A5: {
+                passives: [
+                    {
+                        name: 'Heavenly Swords',
+                        description: 'Summons Heavenly Swords on hit (175% DEF per blade, Basic Skill)',
+                        effects: {},
+                        trigger: 'on hit',
+                        note: 'Extra DEF-scaling damage'
+                    },
+                    {
+                        name: 'Will of the Sword (A5 Enhanced)',
+                        description: '+10% DEF, +4% CR, +4% CritDMG per stack (max 6, 15s)',
+                        effects: { defense: 60, critRate: 24, critDMG: 24 },
+                        trigger: 'gauge recharge',
+                        note: '6 stacks: +60% DEF, +24% CR, +24% CritDMG'
+                    },
+                    {
+                        name: 'Quick Attack: Swordstorm (+60%)',
+                        description: '+60% Swordstorm damage',
+                        effects: {},
+                        trigger: 'passive',
+                        note: '+60% Swordstorm damage'
+                    },
+                    {
+                        name: 'Blade Master',
+                        description: 'Free Core Attacks with Super Armor (5s)',
+                        effects: {},
+                        trigger: 'after Heavenly Strike',
+                        note: 'No Core Gauge consumption'
+                    },
+                    {
+                        name: 'Sword\'s Resolve',
+                        description: 'At 100% gauge: Heavy Attack: Heavenly Strike (+170% damage, 6s)',
+                        effects: {},
+                        trigger: 'Will of the Sword gauge at 100%',
+                        note: '+170% Heavenly Strike damage for 6s'
+                    },
+                    {
+                        name: 'Pure Sword Princess',
+                        description: 'Sword of Destiny +60% damage, Heavenly Strike & Heavy Attack: Heavenly Strike +60% damage (permanent)',
+                        effects: {},
+                        trigger: 'on stage entry (infinite)',
+                        note: '+60% damage on Sword of Destiny + Heavenly Strike (permanent)'
+                    },
+                    {
+                        name: 'Pure Sword Princess Synergy (A4)',
+                        description: '+7% CR & +7% CritDMG per Water ally. Guild Boss: no stack limit (6×7% = +42%)',
+                        effects: { critRate: 42, critDMG: 42 },
+                        trigger: 'passive (per Water ally in raid)',
+                        note: 'A4: Raid buff self only. +7% CR/CD per Water ally, no limit in Guild Boss'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Will of the Sword A5 (6 stacks)',
+                        trigger: 'gauge recharge',
+                        scope: 'self',
+                        effects: { defense: 60, critRate: 24, critDMG: 24 },
+                        duration: 15,
+                        note: '+10% DEF, +4% CR, +4% CritDMG per stack (max 6)'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [
+                    {
+                        name: 'Pure Sword Princess Synergy (A4)',
+                        trigger: 'passive (per Water ally)',
+                        scope: 'raid-water',
+                        effects: { critRate: 42, critDMG: 42 },
+                        duration: 'infinite',
+                        note: 'A4: +7% CR & +7% CritDMG per Water ally. Guild Boss: 6×7% = +42% CR/CD (no stack limit, all Water)'
+                    }
+                ],
+                debuffs: [
+                    {
+                        name: 'Weapon: Will of the Sword DEF Stack',
+                        trigger: 'gauge recharge',
+                        scope: 'self',
+                        effects: { defense: 12 },
+                        duration: 'stacking',
+                        note: 'Weapon: +12% DEF per gauge recharge (up to 60 stacks)'
+                    },
+                    {
+                        name: 'Unrecoverable',
+                        trigger: 'Heavenly Strike / Skill 2 hit',
+                        scope: 'enemy',
+                        effects: {},
+                        duration: 30,
+                        note: 'Enemy cannot recover HP for 30s'
+                    },
+                    {
+                        name: 'Paralyze',
+                        trigger: 'Sword of Destiny hit',
+                        scope: 'enemy',
+                        effects: {},
+                        duration: 3,
+                        note: 'CC: Interrupts enemy for 3s'
+                    }
+                ]
+            }
+        }
+    },
+
     // 💧 Meri Laine - Water Infusion HP - Water Overload Specialist
     meri: {
         id: 'meri',
@@ -5700,13 +6401,796 @@ export const CHARACTER_ADVANCED_BUFFS = {
         advancements: {
             A0: {
                 passives: [
+                    { name: 'Pengqueen Normal Mode', description: 'Grinding Rush → 1 Winter Chill. Ascending Slam on Winter Chill → Memories of Winter. Skills charge Pengqueen Booster Gauge. Frozen Drive → Booster Mode.', effects: {}, trigger: 'stage start (infinite)', note: 'Core mechanic: cycle Normal → Booster Mode' },
+                    { name: 'Pengqueen Booster Mode', description: 'Blade Sweep → Raging Sweep, +25% DMG vs Winter Chill, +5% Water Elem Acc, Super Armor (10s)', effects: { waterElementalAccumulation: 5 }, trigger: 'on Frozen Drive', note: '+25% Raging Sweep/Frozen Drive DMG vs Winter Chill, +5% Water Elem Acc, Super Armor (10s)' },
+                    { name: 'Memories of Winter', description: '+15% Water DMG, +15% Blade/Raging Sweep DMG (30s)', effects: { waterDamage: 15 }, trigger: 'Ascending Slam on Winter Chill target', note: '+15% Water DMG + +15% Sweep DMG (30s)' },
+                    { name: 'Weapon: HP Boost', description: '+5% HP', effects: { hp: 5 }, trigger: 'passive', note: 'Weapon: +5% HP' },
+                    { name: 'Weapon: Water DMG Team', description: 'Blade/Raging Sweep → +0.1% Water DMG team (50 stacks = +5%)', effects: { waterDamage: 5 }, trigger: 'on Blade/Raging Sweep hit', note: 'Weapon: +5% Water DMG team (50×0.1%, 45s)' }
+                ],
+                selfBuffs: [
+                    { name: 'Pengqueen Booster Mode', trigger: 'on Frozen Drive', scope: 'self', effects: { waterElementalAccumulation: 5 }, duration: 10, note: '+5% Water Elem Acc (10s)' },
+                    { name: 'Memories of Winter', trigger: 'Ascending Slam on Winter Chill', scope: 'self', effects: { waterDamage: 15 }, duration: 30, note: '+15% Water DMG (30s)' },
+                    { name: 'Weapon: HP Boost', trigger: 'passive', scope: 'self', effects: { hp: 5 }, duration: 'infinite', note: 'Weapon: +5% HP' }
+                ],
+                teamBuffs: [
+                    { name: 'Weapon: Water DMG (50 stacks)', trigger: 'on Blade/Raging Sweep', scope: 'team', effects: { waterDamage: 5 }, duration: 45, note: 'Weapon: +0.1% × 50 stacks = +5% Water DMG team (45s)' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Winter Chill', trigger: 'Grinding Rush hit', scope: 'enemy', effects: {}, maxStacks: 10, duration: 30, note: 'DoT: 50% Max HP every 3s (30s, 10 stacks)' }
+                ]
+            },
+            A1: {
+                passives: [
+                    { name: 'Pengqueen Normal Mode', description: 'Grinding Rush → 2 Winter Chill (A1). Blade/Raging Sweep on Winter Chill → Freezing Blood (A1). Increased Attack Speed. +25% Raging Sweep hit count.', effects: {}, trigger: 'stage start (infinite)', note: 'A1: 2 Winter Chill per Grinding Rush, Freezing Blood on Sweep, +ATK Speed, +25% hit count' },
+                    { name: 'Pengqueen Booster Mode', description: '+25% DMG vs Winter Chill, +5% Water Elem Acc, Super Armor (10s)', effects: { waterElementalAccumulation: 5 }, trigger: 'on Frozen Drive', note: '+25% DMG vs Winter Chill, +5% Water Elem Acc (10s)' },
+                    { name: 'Memories of Winter', description: '+15% Water DMG, +15% Blade/Raging Sweep DMG (30s)', effects: { waterDamage: 15 }, trigger: 'Ascending Slam on Winter Chill', note: '+15% Water DMG + +15% Sweep DMG (30s)' },
+                    { name: 'Freezing Blood (A1)', description: '+0.6% Water DMG taken + 0.6% Water OL DMG taken per stack (70 stacks = +42%/42%)', effects: { waterDamageTaken: 42, waterOverloadDamageTaken: 42 }, trigger: 'Blade/Raging Sweep on Winter Chill target', note: 'Debuff: +42% Water DMG taken + +42% Water OL DMG taken (70×0.6%, 30s)' },
+                    { name: 'Weapon: HP Boost', description: '+6% HP', effects: { hp: 6 }, trigger: 'passive', note: 'Weapon: +6% HP' },
+                    { name: 'Weapon: Water DMG Team', description: '+0.2% Water DMG × 50 = +10%', effects: { waterDamage: 10 }, trigger: 'on hit', note: 'Weapon: +10% Water DMG team (45s)' }
+                ],
+                selfBuffs: [
+                    { name: 'Pengqueen Booster Mode', trigger: 'on Frozen Drive', scope: 'self', effects: { waterElementalAccumulation: 5 }, duration: 10, note: '+5% Water Elem Acc (10s)' },
+                    { name: 'Memories of Winter', trigger: 'Ascending Slam on Winter Chill', scope: 'self', effects: { waterDamage: 15 }, duration: 30, note: '+15% Water DMG (30s)' },
+                    { name: 'Weapon: HP Boost', trigger: 'passive', scope: 'self', effects: { hp: 6 }, duration: 'infinite', note: 'Weapon: +6% HP' }
+                ],
+                teamBuffs: [
+                    { name: 'Weapon: Water DMG (50 stacks)', trigger: 'on Blade/Raging Sweep', scope: 'team', effects: { waterDamage: 10 }, duration: 45, note: 'Weapon: +0.2% × 50 stacks = +10% Water DMG team (45s)' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Winter Chill', trigger: 'Grinding Rush hit (×2)', scope: 'enemy', effects: {}, maxStacks: 10, duration: 30, note: 'DoT: 50% Max HP every 3s (30s, 10 stacks). A1: 2 stacks per Grinding Rush' },
+                    { name: 'Freezing Blood', trigger: 'Blade/Raging Sweep on Winter Chill', scope: 'enemy', effects: { waterDamageTaken: 0.6, waterOverloadDamageTaken: 0.6 }, maxStacks: 70, duration: 30, note: '+0.6% Water DMG taken + +0.6% Water OL DMG taken per stack (70 stacks max = +42%/42%, 30s)' }
+                ]
+            },
+            A2: {
+                passives: [
+                    { name: 'Pengqueen Normal Mode', description: 'A1 kit + A2: +20% Water Elem Acc', effects: {}, trigger: 'stage start', note: 'Full A1 kit inherited' },
+                    { name: 'Pengqueen Booster Mode', description: '+25% DMG vs Winter Chill, +5% Water Elem Acc, Super Armor (10s)', effects: { waterElementalAccumulation: 5 }, trigger: 'on Frozen Drive', note: '+5% Water Elem Acc (10s)' },
+                    { name: 'Memories of Winter', description: '+15% Water DMG, +15% Sweep DMG (30s)', effects: { waterDamage: 15 }, trigger: 'Ascending Slam on Winter Chill', note: '+15% Water DMG (30s)' },
+                    { name: 'Water Elem Acc Boost (A2)', description: '+20% Water Elemental Accumulation', effects: { waterElementalAccumulation: 20 }, trigger: 'passive', note: '+20% Water Elem Acc (permanent)' },
+                    { name: 'Freezing Blood (A1)', description: '+42% Water DMG/OL DMG taken (70 stacks)', effects: { waterDamageTaken: 42, waterOverloadDamageTaken: 42 }, trigger: 'Sweep on Winter Chill', note: 'Debuff: 70×0.6% = +42% Water/OL DMG taken' },
+                    { name: 'Weapon: HP Boost', description: '+7% HP', effects: { hp: 7 }, trigger: 'passive', note: 'Weapon: +7% HP' },
+                    { name: 'Weapon: Water DMG Team', description: '+15% Water DMG team (50 stacks)', effects: { waterDamage: 15 }, trigger: 'on hit', note: 'Weapon: +15% Water DMG team (45s)' }
+                ],
+                selfBuffs: [
+                    { name: 'Pengqueen Booster Mode', trigger: 'on Frozen Drive', scope: 'self', effects: { waterElementalAccumulation: 5 }, duration: 10, note: '+5% Water Elem Acc (10s)' },
+                    { name: 'Memories of Winter', trigger: 'Ascending Slam on Winter Chill', scope: 'self', effects: { waterDamage: 15 }, duration: 30, note: '+15% Water DMG (30s)' },
+                    { name: 'Water Elem Acc Boost (A2)', trigger: 'passive', scope: 'self', effects: { waterElementalAccumulation: 20 }, duration: 'infinite', note: '+20% Water Elem Acc (permanent)' },
+                    { name: 'Weapon: HP Boost', trigger: 'passive', scope: 'self', effects: { hp: 7 }, duration: 'infinite', note: 'Weapon: +7% HP' }
+                ],
+                teamBuffs: [
+                    { name: 'Weapon: Water DMG (50 stacks)', trigger: 'on Blade/Raging Sweep', scope: 'team', effects: { waterDamage: 15 }, duration: 45, note: 'Weapon: +0.3% × 50 stacks = +15% Water DMG team (45s)' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Winter Chill', trigger: 'Grinding Rush hit (×2)', scope: 'enemy', effects: {}, maxStacks: 10, duration: 30, note: 'DoT: 50% Max HP every 3s (30s, 10 stacks)' },
+                    { name: 'Freezing Blood', trigger: 'Blade/Raging Sweep on Winter Chill', scope: 'enemy', effects: { waterDamageTaken: 0.6, waterOverloadDamageTaken: 0.6 }, maxStacks: 70, duration: 30, note: '+0.6% Water DMG/OL DMG taken per stack (70 max = +42%/42%, 30s)' }
+                ]
+            },
+            A3: {
+                passives: [
+                    { name: 'Pengqueen Normal Mode', description: 'Full A2 kit + A3: Enhanced Memories of Winter + Pengqueen Ice Cream', effects: {}, trigger: 'stage start', note: 'Full A2 kit inherited + A3 enhancements' },
+                    { name: 'Pengqueen Booster Mode', description: '+25% DMG vs Winter Chill, +5% Water Elem Acc, Super Armor (10s)', effects: { waterElementalAccumulation: 5 }, trigger: 'on Frozen Drive', note: '+5% Water Elem Acc (10s)' },
+                    { name: 'Enhanced Memories of Winter (A3)', description: '+30% Water DMG, +30% Blade/Raging Sweep DMG (30s)', effects: { waterDamage: 30 }, trigger: 'Ascending Slam on Winter Chill', note: 'A3 Enhanced: +30% Water DMG + +30% Sweep DMG (was +15%, 30s)' },
+                    { name: 'Pengqueen Ice Cream (A3)', description: '+20% DMG vs Winter Chill, +10% Water OL DMG, +10% Water Elem Acc (30s)', effects: { waterOverloadDamage: 10, waterElementalAccumulation: 10 }, trigger: 'on Frozen Drive', note: 'A3 NEW: +20% DMG vs Winter Chill, +10% Water OL DMG, +10% Water Elem Acc (30s)' },
+                    { name: 'Water Elem Acc Boost (A2)', description: '+20% Water Elem Acc', effects: { waterElementalAccumulation: 20 }, trigger: 'passive', note: '+20% Water Elem Acc (permanent)' },
+                    { name: 'Freezing Blood (A1)', description: '+42% Water DMG/OL DMG taken', effects: { waterDamageTaken: 42, waterOverloadDamageTaken: 42 }, trigger: 'Sweep on Winter Chill', note: 'Debuff: 70×0.6% = +42%' },
+                    { name: 'Weapon: HP Boost', description: '+9% HP', effects: { hp: 9 }, trigger: 'passive', note: 'Weapon: +9% HP' },
+                    { name: 'Weapon: Water DMG Team', description: '+20% Water DMG team', effects: { waterDamage: 20 }, trigger: 'on hit', note: 'Weapon: +20% Water DMG team (45s)' }
+                ],
+                selfBuffs: [
+                    { name: 'Pengqueen Booster Mode', trigger: 'on Frozen Drive', scope: 'self', effects: { waterElementalAccumulation: 5 }, duration: 10, note: '+5% Water Elem Acc (10s)' },
+                    { name: 'Enhanced Memories of Winter (A3)', trigger: 'Ascending Slam on Winter Chill', scope: 'self', effects: { waterDamage: 30 }, duration: 30, note: 'A3: +30% Water DMG (was +15%, 30s)' },
+                    { name: 'Pengqueen Ice Cream (A3)', trigger: 'on Frozen Drive', scope: 'self', effects: { waterOverloadDamage: 10, waterElementalAccumulation: 10 }, duration: 30, note: 'A3: +10% Water OL DMG + +10% Water Elem Acc (30s)' },
+                    { name: 'Water Elem Acc Boost (A2)', trigger: 'passive', scope: 'self', effects: { waterElementalAccumulation: 20 }, duration: 'infinite', note: '+20% Water Elem Acc' },
+                    { name: 'Weapon: HP Boost', trigger: 'passive', scope: 'self', effects: { hp: 9 }, duration: 'infinite', note: 'Weapon: +9% HP' }
+                ],
+                teamBuffs: [
+                    { name: 'Weapon: Water DMG (50 stacks)', trigger: 'on Blade/Raging Sweep', scope: 'team', effects: { waterDamage: 20 }, duration: 45, note: 'Weapon: +0.4% × 50 stacks = +20% Water DMG team (45s)' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Winter Chill', trigger: 'Grinding Rush hit (×2)', scope: 'enemy', effects: {}, maxStacks: 10, duration: 30, note: 'DoT: 50% Max HP every 3s (30s, 10 stacks)' },
+                    { name: 'Freezing Blood', trigger: 'Blade/Raging Sweep on Winter Chill', scope: 'enemy', effects: { waterDamageTaken: 0.6, waterOverloadDamageTaken: 0.6 }, maxStacks: 70, duration: 30, note: '+0.6% Water DMG/OL DMG taken per stack (70 max = +42%/42%, 30s)' }
+                ]
+            },
+            A4: {
+                passives: [
+                    { name: 'Pengqueen Normal Mode', description: 'Full A3 kit + A4: +5% Def Pen per Water ally', effects: {}, trigger: 'stage start', note: 'Full A3 kit inherited + A4: Def Pen team buff' },
+                    { name: 'Pengqueen Booster Mode', description: '+25% DMG vs Winter Chill, +5% Water Elem Acc, Super Armor (10s)', effects: { waterElementalAccumulation: 5 }, trigger: 'on Frozen Drive', note: '+5% Water Elem Acc (10s)' },
+                    { name: 'Enhanced Memories of Winter (A3)', description: '+30% Water DMG, +30% Blade/Raging Sweep DMG (30s)', effects: { waterDamage: 30 }, trigger: 'Ascending Slam on Winter Chill', note: 'A3: +30% Water DMG (30s)' },
+                    { name: 'Pengqueen Ice Cream (A3)', description: '+20% DMG vs Winter Chill, +10% Water OL DMG, +10% Water Elem Acc (30s)', effects: { waterOverloadDamage: 10, waterElementalAccumulation: 10 }, trigger: 'on Frozen Drive', note: 'A3: +10% Water OL DMG, +10% Water Elem Acc (30s)' },
+                    { name: 'Water Elem Acc Boost (A2)', description: '+20% Water Elem Acc', effects: { waterElementalAccumulation: 20 }, trigger: 'passive', note: '+20% Water Elem Acc (permanent)' },
+                    { name: 'Freezing Blood (A1)', description: '+42% Water DMG/OL DMG taken', effects: { waterDamageTaken: 42, waterOverloadDamageTaken: 42 }, trigger: 'Sweep on Winter Chill', note: 'Debuff: 70×0.6% = +42%' },
+                    { name: 'Water Def Pen (A4)', description: '+5% Def Pen per Water ally', effects: { defPen: 15 }, trigger: 'passive', note: 'A4 NEW: +5% Def Pen per Water ally (3 Water = +15%)' },
+                    { name: 'Weapon: HP Boost', description: '+10% HP', effects: { hp: 10 }, trigger: 'passive', note: 'Weapon: +10% HP' },
+                    { name: 'Weapon: Water DMG Team', description: '+25% Water DMG team', effects: { waterDamage: 25 }, trigger: 'on hit', note: 'Weapon: +25% Water DMG team (45s)' }
+                ],
+                selfBuffs: [
+                    { name: 'Pengqueen Booster Mode', trigger: 'on Frozen Drive', scope: 'self', effects: { waterElementalAccumulation: 5 }, duration: 10, note: '+5% Water Elem Acc (10s)' },
+                    { name: 'Enhanced Memories of Winter (A3)', trigger: 'Ascending Slam on Winter Chill', scope: 'self', effects: { waterDamage: 30 }, duration: 30, note: 'A3: +30% Water DMG (30s)' },
+                    { name: 'Pengqueen Ice Cream (A3)', trigger: 'on Frozen Drive', scope: 'self', effects: { waterOverloadDamage: 10, waterElementalAccumulation: 10 }, duration: 30, note: 'A3: +10% Water OL DMG + +10% Water Elem Acc (30s)' },
+                    { name: 'Water Elem Acc Boost (A2)', trigger: 'passive', scope: 'self', effects: { waterElementalAccumulation: 20 }, duration: 'infinite', note: '+20% Water Elem Acc' },
+                    { name: 'Weapon: HP Boost', trigger: 'passive', scope: 'self', effects: { hp: 10 }, duration: 'infinite', note: 'Weapon: +10% HP' }
+                ],
+                teamBuffs: [
+                    { name: 'Water Def Pen (A4)', trigger: 'passive', scope: 'team-water', effects: { defPen: 15 }, duration: 'infinite', note: 'A4: +5% Def Pen per Water ally (3 Water = +15%)' },
+                    { name: 'Weapon: Water DMG (50 stacks)', trigger: 'on Blade/Raging Sweep', scope: 'team', effects: { waterDamage: 25 }, duration: 45, note: 'Weapon: +0.5% × 50 stacks = +25% Water DMG team (45s)' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Winter Chill', trigger: 'Grinding Rush hit (×2)', scope: 'enemy', effects: {}, maxStacks: 10, duration: 30, note: 'DoT: 50% Max HP every 3s (30s, 10 stacks)' },
+                    { name: 'Freezing Blood', trigger: 'Blade/Raging Sweep on Winter Chill', scope: 'enemy', effects: { waterDamageTaken: 0.6, waterOverloadDamageTaken: 0.6 }, maxStacks: 70, duration: 30, note: '+0.6% Water DMG/OL DMG taken per stack (70 max = +42%/42%, 30s)' }
+                ]
+            },
+            A5: {
+                passives: [
+                    { name: 'Pengqueen Normal Mode', description: 'Full A4 kit + A5: Enhanced Booster Mode & Freezing Blood', effects: {}, trigger: 'stage start', note: 'Full A4 kit inherited + A5 enhancements' },
+                    { name: 'Enhanced Pengqueen Booster Mode (A5)', description: '+50% DMG vs Winter Chill, +10% Water Elem Acc, 3× Winter Chill, Super Armor (10s)', effects: { waterElementalAccumulation: 10 }, trigger: 'on Frozen Drive', note: 'A5: +10% Water Elem Acc (was +5%), +50% DMG vs Winter Chill, Raging Sweep inflicts 3 Winter Chill (was 2)' },
+                    { name: 'Enhanced Memories of Winter (A3)', description: '+30% Water DMG, +30% Blade/Raging Sweep DMG (30s)', effects: { waterDamage: 30 }, trigger: 'Ascending Slam on Winter Chill', note: 'A3: +30% Water DMG (30s)' },
+                    { name: 'Pengqueen Ice Cream (A3)', description: '+20% DMG vs Winter Chill, +10% Water OL DMG, +10% Water Elem Acc (30s)', effects: { waterOverloadDamage: 10, waterElementalAccumulation: 10 }, trigger: 'on Frozen Drive', note: 'A3: +10% Water OL DMG, +10% Water Elem Acc (30s)' },
+                    { name: 'Water Elem Acc Boost (A2)', description: '+20% Water Elem Acc', effects: { waterElementalAccumulation: 20 }, trigger: 'passive', note: '+20% Water Elem Acc (permanent)' },
+                    { name: 'Enhanced Freezing Blood (A5)', description: '+70% Water DMG/OL DMG taken (1%×70)', effects: { waterDamageTaken: 70, waterOverloadDamageTaken: 70 }, trigger: 'Sweep on Winter Chill', note: 'A5 Enhanced: 70×1% = +70%/70% (was 0.6%/stack = 42%)' },
+                    { name: 'Water Def Pen (A4)', description: '+5% Def Pen per Water ally', effects: { defPen: 15 }, trigger: 'passive', note: 'A4: +5% Def Pen per Water ally (3 Water = +15%)' },
+                    { name: 'Weapon: HP Boost', description: '+12% HP', effects: { hp: 12 }, trigger: 'passive', note: 'Weapon: +12% HP' },
+                    { name: 'Weapon: Water DMG Team', description: '+30% Water DMG team', effects: { waterDamage: 30 }, trigger: 'on hit', note: 'Weapon: +30% Water DMG team (45s)' }
+                ],
+                selfBuffs: [
+                    { name: 'Enhanced Pengqueen Booster Mode (A5)', trigger: 'on Frozen Drive', scope: 'self', effects: { waterElementalAccumulation: 10 }, duration: 10, note: 'A5: +10% Water Elem Acc (was +5%, 10s)' },
+                    { name: 'Enhanced Memories of Winter (A3)', trigger: 'Ascending Slam on Winter Chill', scope: 'self', effects: { waterDamage: 30 }, duration: 30, note: 'A3: +30% Water DMG (30s)' },
+                    { name: 'Pengqueen Ice Cream (A3)', trigger: 'on Frozen Drive', scope: 'self', effects: { waterOverloadDamage: 10, waterElementalAccumulation: 10 }, duration: 30, note: 'A3: +10% Water OL DMG + +10% Water Elem Acc (30s)' },
+                    { name: 'Water Elem Acc Boost (A2)', trigger: 'passive', scope: 'self', effects: { waterElementalAccumulation: 20 }, duration: 'infinite', note: '+20% Water Elem Acc' },
+                    { name: 'Weapon: HP Boost', trigger: 'passive', scope: 'self', effects: { hp: 12 }, duration: 'infinite', note: 'Weapon: +12% HP' }
+                ],
+                teamBuffs: [
+                    { name: 'Water Def Pen (A4)', trigger: 'passive', scope: 'team-water', effects: { defPen: 15 }, duration: 'infinite', note: 'A4: +5% Def Pen per Water ally (3 Water = +15%)' },
+                    { name: 'Weapon: Water DMG (50 stacks)', trigger: 'on Blade/Raging Sweep', scope: 'team', effects: { waterDamage: 30 }, duration: 45, note: 'Weapon: +0.6% × 50 stacks = +30% Water DMG team (45s)' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Winter Chill', trigger: 'Raging Sweep hit (×3)', scope: 'enemy', effects: {}, maxStacks: 10, duration: 30, note: 'A5: 3 instances per hit (was 2). DoT: 50% Max HP every 3s (30s, 10 stacks)' },
+                    { name: 'Enhanced Freezing Blood (A5)', trigger: 'Blade/Raging Sweep on Winter Chill', scope: 'enemy', effects: { waterDamageTaken: 1, waterOverloadDamageTaken: 1 }, maxStacks: 70, duration: 45, note: 'A5 Enhanced: +1%/stack (was 0.6%), 45s (was 30s), 70 max = +70%/70% Water DMG/OL DMG taken' }
+                ]
+            }
+        }
+    },
+    // 💧 Lee Joohee - Water Healer HP Scaler
+    'lee-johee': {
+        id: 'lee-johee',
+        name: 'Lee Joohee',
+        element: 'Water',
+        scaleStat: 'HP',
+        advancements: {
+            A0: {
+                passives: [
                     {
-                        name: 'Water Infusion',
-                        description: 'Meri infuses Water element into attacks',
-                        effects: { waterDamage: 5 },
-                        trigger: 'passive',
-                        note: '+5% Water DMG passive'
+                        name: 'HP Aura',
+                        description: '+8% HP for user and all team members',
+                        effects: { hp: 8 },
+                        trigger: 'passive (permanent)',
+                        note: '+8% HP team-wide'
                     }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    { name: 'HP Aura', trigger: 'passive', scope: 'team', effects: { hp: 8 }, duration: 'infinite', note: '+8% HP entire team' }
+                ],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A1: {
+                passives: [
+                    { name: 'HP Aura', description: '+8% HP team', effects: { hp: 8 }, trigger: 'passive', note: '+8% HP team-wide' },
+                    { name: 'Enhanced Healing (A1)', description: 'Given HP Recovery Rate +20%', effects: {}, trigger: 'passive', note: 'All heals are 20% stronger' }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    { name: 'HP Aura', trigger: 'passive', scope: 'team', effects: { hp: 8 }, duration: 'infinite', note: '+8% HP entire team' }
+                ],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A2: {
+                passives: [
+                    { name: 'HP Aura', description: '+8% HP team', effects: { hp: 8 }, trigger: 'passive', note: '+8% HP team-wide' },
+                    { name: 'Enhanced Healing (A1)', description: 'Heals +20%', effects: {}, trigger: 'passive', note: 'All heals +20%' }
+                ],
+                selfBuffs: [
+                    { name: 'HP Boost (A2)', trigger: 'passive', scope: 'self', effects: { hp: 6 }, duration: 'infinite', note: '+6% HP self' }
+                ],
+                teamBuffs: [
+                    { name: 'HP Aura', trigger: 'passive', scope: 'team', effects: { hp: 8 }, duration: 'infinite', note: '+8% HP entire team' }
+                ],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A3: {
+                passives: [
+                    { name: 'HP Aura', description: '+8% HP team', effects: { hp: 8 }, trigger: 'passive', note: '+8% HP team-wide' },
+                    { name: 'Enhanced Healing (A1)', description: 'Heals +20%', effects: {}, trigger: 'passive', note: 'All heals +20%' },
+                    { name: 'MP Restore (A3)', description: 'Healing Circle restores 400 MP to Joohee and team', effects: {}, trigger: 'on Healing Circle', note: '400 MP team restore' }
+                ],
+                selfBuffs: [
+                    { name: 'HP Boost (A2)', trigger: 'passive', scope: 'self', effects: { hp: 6 }, duration: 'infinite', note: '+6% HP' }
+                ],
+                teamBuffs: [
+                    { name: 'HP Aura', trigger: 'passive', scope: 'team', effects: { hp: 8 }, duration: 'infinite', note: '+8% HP entire team' }
+                ],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A4: {
+                passives: [
+                    { name: 'HP Aura', description: '+8% HP team', effects: { hp: 8 }, trigger: 'passive', note: '+8% HP team-wide' },
+                    { name: 'Enhanced Healing (A1)', description: 'Heals +20%', effects: {}, trigger: 'passive', note: 'All heals +20%' },
+                    { name: 'MP Restore (A3)', description: '400 MP on Healing Circle', effects: {}, trigger: 'on Healing Circle', note: '400 MP team restore' },
+                    { name: 'Natural MP Recovery (A4)', description: '+50% Natural MP Recovery Rate', effects: {}, trigger: 'passive', note: '+50% MP recovery' }
+                ],
+                selfBuffs: [
+                    { name: 'HP Boost (A2)', trigger: 'passive', scope: 'self', effects: { hp: 6 }, duration: 'infinite', note: '+6% HP' }
+                ],
+                teamBuffs: [
+                    { name: 'HP Aura', trigger: 'passive', scope: 'team', effects: { hp: 8 }, duration: 'infinite', note: '+8% HP entire team' }
+                ],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A5: {
+                passives: [
+                    { name: 'HP Aura', description: '+8% HP team', effects: { hp: 8 }, trigger: 'passive', note: '+8% HP team-wide' },
+                    { name: 'Enhanced Healing (A1)', description: 'Heals +20%', effects: {}, trigger: 'passive', note: 'All heals +20%' },
+                    { name: 'MP Restore (A3)', description: '400 MP on Healing Circle', effects: {}, trigger: 'on Healing Circle', note: '400 MP team restore' },
+                    { name: 'Natural MP Recovery (A4)', description: '+50% MP recovery', effects: {}, trigger: 'passive', note: '+50% MP recovery' },
+                    { name: 'Auto Healing Circle (A5)', description: 'Healing Circle activates on tag out + CD resets (CD 35s)', effects: {}, trigger: 'on tag out', note: 'Auto heal + MP restore on tag out' }
+                ],
+                selfBuffs: [
+                    { name: 'HP Boost (A2)', trigger: 'passive', scope: 'self', effects: { hp: 6 }, duration: 'infinite', note: '+6% HP' }
+                ],
+                teamBuffs: [
+                    { name: 'HP Aura', trigger: 'passive', scope: 'team', effects: { hp: 8 }, duration: 'infinite', note: '+8% HP entire team' }
+                ],
+                raidBuffs: [],
+                debuffs: []
+            }
+        }
+    },
+
+    // 💧 Han Song-Yi - Water Assassin ATK - Umbral Weapon Specialist
+    'han-song': {
+        id: 'han-song',
+        name: 'Han Song-Yi',
+        element: 'Water',
+        scaleStat: 'ATK',
+        advancements: {
+            A0: {
+                passives: [
+                    {
+                        name: 'Umbral Weapon Mastery',
+                        description: 'Retrieved Umbral Weapons deal +30% damage on Poisoned targets',
+                        effects: {},
+                        trigger: 'Retrieve on Poisoned target',
+                        note: '+30% Retrieve damage on Poisoned enemies'
+                    }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Assassination Ready',
+                        trigger: 'Placing Umbral Weapon (not from Retrieve)',
+                        scope: 'self',
+                        effects: { retrieveDmg: 10 },
+                        duration: 15,
+                        note: 'Weapon: Retrieve DMG +10% per placed weapon (max 3 stacks, 15s)'
+                    }
+                ]
+            },
+            A1: {
+                passives: [
+                    {
+                        name: 'Umbral Weapon Mastery',
+                        description: 'Retrieved Umbral Weapons deal +30% damage on Poisoned targets',
+                        effects: {},
+                        trigger: 'Retrieve on Poisoned target',
+                        note: '+30% Retrieve damage on Poisoned enemies'
+                    },
+                    {
+                        name: 'Retrieve Shield',
+                        description: 'Using Retrieve grants Shield equal to 15% of ATK (3s)',
+                        effects: {},
+                        trigger: 'on Retrieve',
+                        note: 'Defensive utility on Retrieve'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Retrieve Shield',
+                        trigger: 'on Retrieve use',
+                        scope: 'self',
+                        effects: { shield: 15 },
+                        duration: 3,
+                        note: 'Shield = 15% ATK for 3s on Retrieve'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Assassination Ready',
+                        trigger: 'Placing Umbral Weapon',
+                        scope: 'self',
+                        effects: { retrieveDmg: 12 },
+                        duration: 15,
+                        note: 'Weapon: Retrieve DMG +12% per placed weapon (max 3 stacks, 15s)'
+                    }
+                ]
+            },
+            A2: {
+                passives: [
+                    {
+                        name: 'Umbral Weapon Mastery',
+                        description: '+30% Retrieve damage on Poisoned targets',
+                        effects: {},
+                        trigger: 'Retrieve on Poisoned target',
+                        note: '+30% damage'
+                    },
+                    {
+                        name: 'Retrieve Shield',
+                        description: 'Shield 15% ATK (3s) on Retrieve',
+                        effects: {},
+                        trigger: 'on Retrieve',
+                        note: 'Defensive utility'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Retrieve Shield',
+                        trigger: 'on Retrieve',
+                        scope: 'self',
+                        effects: { shield: 15 },
+                        duration: 3,
+                        note: 'Shield = 15% ATK for 3s'
+                    },
+                    {
+                        name: 'Crit Boost (A2)',
+                        trigger: 'passive',
+                        scope: 'self',
+                        effects: { critRate: 5, critDMG: 5 },
+                        duration: 'infinite',
+                        note: '+5% Crit Rate & +5% Crit DMG'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Assassination Ready',
+                        trigger: 'Placing Umbral Weapon',
+                        scope: 'self',
+                        effects: { retrieveDmg: 14 },
+                        duration: 15,
+                        note: 'Weapon: Retrieve DMG +14% per placed weapon (max 3 stacks, 15s)'
+                    }
+                ]
+            },
+            A3: {
+                passives: [
+                    {
+                        name: 'Umbral Weapon Mastery',
+                        description: '+30% Retrieve damage on Poisoned targets',
+                        effects: {},
+                        trigger: 'Retrieve on Poisoned target',
+                        note: '+30% damage'
+                    },
+                    {
+                        name: 'Retrieve Shield',
+                        description: 'Shield 15% ATK (3s) on Retrieve',
+                        effects: {},
+                        trigger: 'on Retrieve',
+                        note: 'Defensive utility'
+                    },
+                    {
+                        name: 'Enhanced Swift Flight (A3)',
+                        description: 'Swift Flight throws 3 additional Umbral Weapons',
+                        effects: {},
+                        trigger: 'passive',
+                        note: '+3 Umbral Weapons on Swift Flight → more Retrieve damage'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Retrieve Shield',
+                        trigger: 'on Retrieve',
+                        scope: 'self',
+                        effects: { shield: 15 },
+                        duration: 3,
+                        note: 'Shield = 15% ATK for 3s'
+                    },
+                    {
+                        name: 'Crit Boost (A2)',
+                        trigger: 'passive',
+                        scope: 'self',
+                        effects: { critRate: 5, critDMG: 5 },
+                        duration: 'infinite',
+                        note: '+5% Crit Rate & +5% Crit DMG'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Assassination Ready',
+                        trigger: 'Placing Umbral Weapon',
+                        scope: 'self',
+                        effects: { retrieveDmg: 16 },
+                        duration: 15,
+                        note: 'Weapon: Retrieve DMG +16% per placed weapon (max 3 stacks, 15s)'
+                    }
+                ]
+            },
+            A4: {
+                passives: [
+                    {
+                        name: 'Umbral Weapon Mastery',
+                        description: '+30% Retrieve damage on Poisoned targets',
+                        effects: {},
+                        trigger: 'Retrieve on Poisoned target',
+                        note: '+30% damage'
+                    },
+                    {
+                        name: 'Retrieve Shield',
+                        description: 'Shield 15% ATK (3s) on Retrieve',
+                        effects: {},
+                        trigger: 'on Retrieve',
+                        note: 'Defensive utility'
+                    },
+                    {
+                        name: 'Enhanced Swift Flight (A3)',
+                        description: '+3 Umbral Weapons on Swift Flight',
+                        effects: {},
+                        trigger: 'passive',
+                        note: 'More Retrieve damage'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Retrieve Shield',
+                        trigger: 'on Retrieve',
+                        scope: 'self',
+                        effects: { shield: 15 },
+                        duration: 3,
+                        note: 'Shield = 15% ATK for 3s'
+                    },
+                    {
+                        name: 'Crit Boost (A2)',
+                        trigger: 'passive',
+                        scope: 'self',
+                        effects: { critRate: 5, critDMG: 5 },
+                        duration: 'infinite',
+                        note: '+5% CR & +5% CD'
+                    },
+                    {
+                        name: 'ATK Boost (A4)',
+                        trigger: 'passive',
+                        scope: 'self',
+                        effects: { attack: 6 },
+                        duration: 'infinite',
+                        note: '+6% ATK'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Assassination Ready',
+                        trigger: 'Placing Umbral Weapon',
+                        scope: 'self',
+                        effects: { retrieveDmg: 18 },
+                        duration: 15,
+                        note: 'Weapon: Retrieve DMG +18% per placed weapon (max 3 stacks, 15s)'
+                    }
+                ]
+            },
+            A5: {
+                passives: [
+                    {
+                        name: 'Umbral Weapon Mastery',
+                        description: '+30% Retrieve damage on Poisoned targets',
+                        effects: {},
+                        trigger: 'Retrieve on Poisoned target',
+                        note: '+30% damage'
+                    },
+                    {
+                        name: 'Retrieve Shield',
+                        description: 'Shield 15% ATK (3s) on Retrieve',
+                        effects: {},
+                        trigger: 'on Retrieve',
+                        note: 'Defensive utility'
+                    },
+                    {
+                        name: 'Enhanced Swift Flight (A3)',
+                        description: '+3 Umbral Weapons on Swift Flight',
+                        effects: {},
+                        trigger: 'passive',
+                        note: 'More Retrieve damage'
+                    },
+                    {
+                        name: 'Rakshasa Reset (A5)',
+                        description: 'Using Rakshasa (Ultimate) resets cooldowns of Swift Flight and Retrieve',
+                        effects: {},
+                        trigger: 'on Ultimate use',
+                        note: 'Full skill reset → massive burst window after Ult'
+                    }
+                ],
+                selfBuffs: [
+                    {
+                        name: 'Retrieve Shield',
+                        trigger: 'on Retrieve',
+                        scope: 'self',
+                        effects: { shield: 15 },
+                        duration: 3,
+                        note: 'Shield = 15% ATK for 3s'
+                    },
+                    {
+                        name: 'Crit Boost (A2)',
+                        trigger: 'passive',
+                        scope: 'self',
+                        effects: { critRate: 5, critDMG: 5 },
+                        duration: 'infinite',
+                        note: '+5% CR & +5% CD'
+                    },
+                    {
+                        name: 'ATK Boost (A4)',
+                        trigger: 'passive',
+                        scope: 'self',
+                        effects: { attack: 6 },
+                        duration: 'infinite',
+                        note: '+6% ATK'
+                    }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    {
+                        name: 'Weapon: Assassination Ready',
+                        trigger: 'Placing Umbral Weapon',
+                        scope: 'self',
+                        effects: { retrieveDmg: 20 },
+                        duration: 15,
+                        note: 'Weapon: Retrieve DMG +20% per placed weapon (max 3 stacks, 15s)'
+                    }
+                ]
+            }
+        }
+    },
+
+    // 💧 Meilin Fisher - Water Healer/Buffer HP Scaler
+    meilin: {
+        id: 'meilin',
+        name: 'Meilin Fisher',
+        element: 'Water',
+        scaleStat: 'HP',
+        advancements: {
+            A0: {
+                passives: [
+                    { name: 'Cuddle Puddle', description: 'Rear Lash/Cat Rush → +8% Water DMG taken on enemy (16s)', effects: { waterDamageTaken: 8 }, trigger: 'on Rear Lash/Cat Rush hit', note: 'Debuff: +8% Water DMG taken (16s)' },
+                    { name: 'Bye, Meow!', description: 'Side Whip/Up!/tag out → +8% ATK, +8% DEF to team (16s, max 3 stacks = +24%/24%)', effects: { attack: 24, defense: 24 }, trigger: 'on skill use or tag out', note: '+8% ATK/DEF per stack, max 3 = +24% each' }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    { name: 'Bye, Meow! (3 stacks)', trigger: 'on Side Whip/Up!/tag out', scope: 'team', effects: { attack: 24, defense: 24 }, duration: 16, note: '+8% ATK/DEF per stack, max 3 stacks (16s)' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Cuddle Puddle', trigger: 'Rear Lash/Cat Rush hit', scope: 'enemy', effects: { waterDamageTaken: 8 }, duration: 16, note: '+8% Water DMG taken (16s)' }
+                ]
+            },
+            A1: {
+                passives: [
+                    { name: 'Cuddle Puddle', description: '+8% Water DMG taken on enemy', effects: { waterDamageTaken: 8 }, trigger: 'on hit', note: 'Debuff (16s)' },
+                    { name: 'Bye, Meow! (3 stacks)', description: '+24% ATK/DEF team', effects: { attack: 24, defense: 24 }, trigger: 'on skill/tag', note: '3 stacks (16s)' },
+                    { name: 'Up! Enhanced (A1)', description: '+64% Up! damage', effects: {}, trigger: 'passive', note: '+64% Skill 2 damage' },
+                    { name: 'Cut Butler (A1)', description: 'Meilin takes 64% of highest ATK ally damage (8s, Super Armor)', effects: {}, trigger: 'on Side Whip/Up!', note: 'Damage transfer + Super Armor for ally' },
+                    { name: 'So Cute! Enhanced (A1)', description: '+32% Core Attack DMG (8s)', effects: { coreAttackDmg: 32 }, trigger: 'on Skill 2 hit', note: 'Was +8%, now +32%' }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    { name: 'Bye, Meow! (3 stacks)', trigger: 'on skill/tag', scope: 'team', effects: { attack: 24, defense: 24 }, duration: 16, note: '+24% ATK/DEF' },
+                    { name: 'So Cute! (A1)', trigger: 'on Skill 2', scope: 'team', effects: { coreAttackDmg: 32 }, duration: 8, note: '+32% Core Attack DMG (8s)' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Cuddle Puddle', trigger: 'on hit', scope: 'enemy', effects: { waterDamageTaken: 8 }, duration: 16, note: '+8% Water DMG taken' }
+                ]
+            },
+            A2: {
+                passives: [
+                    { name: 'Cuddle Puddle', description: '+8% Water DMG taken', effects: { waterDamageTaken: 8 }, trigger: 'on hit', note: 'Debuff (16s)' },
+                    { name: 'Bye, Meow! (3 stacks)', description: '+24% ATK/DEF team', effects: { attack: 24, defense: 24 }, trigger: 'on skill/tag', note: '3 stacks' },
+                    { name: 'Team Stats (A2)', description: '+8% ATK/DEF all team + +8% ATK/DEF Water team = +16% for Water', effects: { attack: 16, defense: 16 }, trigger: 'passive', note: '+16% ATK/DEF for Water team (permanent)' }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    { name: 'Bye, Meow! (3 stacks)', trigger: 'on skill/tag', scope: 'team', effects: { attack: 24, defense: 24 }, duration: 16, note: '+24% ATK/DEF' },
+                    { name: 'Team Stats (A2)', trigger: 'passive', scope: 'team', effects: { attack: 16, defense: 16 }, duration: 'infinite', note: '+8% ATK/DEF all + +8% ATK/DEF Water = +16% for Water team' },
+                    { name: 'So Cute! (A1)', trigger: 'on Skill 2', scope: 'team', effects: { coreAttackDmg: 32 }, duration: 8, note: '+32% Core Attack DMG' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Cuddle Puddle', trigger: 'on hit', scope: 'enemy', effects: { waterDamageTaken: 8 }, duration: 16, note: '+8% Water DMG taken' }
+                ]
+            },
+            A3: {
+                passives: [
+                    { name: 'Cuddle Puddle', description: '+8% Water DMG taken', effects: { waterDamageTaken: 8 }, trigger: 'on hit', note: 'Debuff (16s)' },
+                    { name: 'Bye, Meow! (3 stacks)', description: '+24% ATK/DEF team', effects: { attack: 24, defense: 24 }, trigger: 'on skill/tag', note: '3 stacks' },
+                    { name: 'Team Stats (A2)', description: '+16% ATK/DEF Water team', effects: { attack: 16, defense: 16 }, trigger: 'passive', note: 'Permanent' },
+                    { name: 'Power Gauge Charge (A3)', description: 'Rear Lash charges 8% Power Gauge for team (16% vs Elite+)', effects: {}, trigger: 'on Rear Lash hit', note: '8% gauge charge (16% vs Elite+)' }
+                ],
+                selfBuffs: [],
+                teamBuffs: [
+                    { name: 'Bye, Meow! (3 stacks)', trigger: 'on skill/tag', scope: 'team', effects: { attack: 24, defense: 24 }, duration: 16, note: '+24% ATK/DEF' },
+                    { name: 'Team Stats (A2)', trigger: 'passive', scope: 'team', effects: { attack: 16, defense: 16 }, duration: 'infinite', note: '+16% ATK/DEF Water team' },
+                    { name: 'So Cute! (A1)', trigger: 'on Skill 2', scope: 'team', effects: { coreAttackDmg: 32 }, duration: 8, note: '+32% Core Attack DMG' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Cuddle Puddle', trigger: 'on hit', scope: 'enemy', effects: { waterDamageTaken: 8 }, duration: 16, note: '+8% Water DMG taken' }
+                ]
+            },
+            A4: {
+                passives: [
+                    { name: 'Cuddle Puddle', description: '+8% Water DMG taken', effects: { waterDamageTaken: 8 }, trigger: 'on hit', note: 'Debuff' },
+                    { name: 'Bye, Meow! (3 stacks)', description: '+24% ATK/DEF team', effects: { attack: 24, defense: 24 }, trigger: 'on skill/tag', note: '3 stacks' },
+                    { name: 'Team Stats (A2)', description: '+16% ATK/DEF Water team', effects: { attack: 16, defense: 16 }, trigger: 'passive', note: 'Permanent' },
+                    { name: 'Power Gauge Charge (A3)', description: '8% gauge (16% vs Elite+)', effects: {}, trigger: 'on Rear Lash', note: 'Team gauge charge' }
+                ],
+                selfBuffs: [
+                    { name: 'HP Boost (A4)', trigger: 'passive', scope: 'self', effects: { hp: 12 }, duration: 'infinite', note: '+12% HP' }
+                ],
+                teamBuffs: [
+                    { name: 'Bye, Meow! (3 stacks)', trigger: 'on skill/tag', scope: 'team', effects: { attack: 24, defense: 24 }, duration: 16, note: '+24% ATK/DEF' },
+                    { name: 'Team Stats (A2)', trigger: 'passive', scope: 'team', effects: { attack: 16, defense: 16 }, duration: 'infinite', note: '+16% ATK/DEF Water team' },
+                    { name: 'So Cute! (A1)', trigger: 'on Skill 2', scope: 'team', effects: { coreAttackDmg: 32 }, duration: 8, note: '+32% Core Attack DMG' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Cuddle Puddle', trigger: 'on hit', scope: 'enemy', effects: { waterDamageTaken: 8 }, duration: 16, note: '+8% Water DMG taken' }
+                ]
+            },
+            A5: {
+                passives: [
+                    { name: 'Cuddle Puddle', description: '+8% Water DMG taken', effects: { waterDamageTaken: 8 }, trigger: 'on hit', note: 'Debuff' },
+                    { name: 'Bye, Meow! (3 stacks)', description: '+24% ATK/DEF team', effects: { attack: 24, defense: 24 }, trigger: 'on skill/tag', note: '3 stacks' },
+                    { name: 'Team Stats (A2)', description: '+16% ATK/DEF Water team', effects: { attack: 16, defense: 16 }, trigger: 'passive', note: 'Permanent' },
+                    { name: 'Power Gauge Charge (A3)', description: '8% gauge (16% vs Elite+)', effects: {}, trigger: 'on Rear Lash', note: 'Team gauge' },
+                    { name: 'Pumped Up! Enhanced (A5)', description: '+16% ATK/DEF/CR, +16% Core ATK DMG, -16% DMG taken (24s)', effects: { attack: 16, defense: 16, critRate: 16, coreAttackDmg: 16, damageTakenReduction: 16 }, trigger: 'on Ultimate', note: 'Was +8% each, now +16% each (24s)' }
+                ],
+                selfBuffs: [
+                    { name: 'HP Boost (A4)', trigger: 'passive', scope: 'self', effects: { hp: 12 }, duration: 'infinite', note: '+12% HP' }
+                ],
+                teamBuffs: [
+                    { name: 'Bye, Meow! (3 stacks)', trigger: 'on skill/tag', scope: 'team', effects: { attack: 24, defense: 24 }, duration: 16, note: '+24% ATK/DEF' },
+                    { name: 'Team Stats (A2)', trigger: 'passive', scope: 'team', effects: { attack: 16, defense: 16 }, duration: 'infinite', note: '+16% ATK/DEF Water team' },
+                    { name: 'So Cute! (A1)', trigger: 'on Skill 2', scope: 'team', effects: { coreAttackDmg: 32 }, duration: 8, note: '+32% Core Attack DMG' },
+                    { name: 'Pumped Up! (A5)', trigger: 'on Ultimate', scope: 'team', effects: { attack: 16, defense: 16, critRate: 16, coreAttackDmg: 16 }, duration: 24, note: '+16% ATK/DEF/CR + Core ATK DMG + -16% DMG taken (24s)' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Cuddle Puddle', trigger: 'on hit', scope: 'enemy', effects: { waterDamageTaken: 8 }, duration: 16, note: '+8% Water DMG taken' }
+                ]
+            }
+        }
+    },
+
+    // 💧 Nam Chae-Young - Water Breaker HP Scaler - Freeze Specialist
+    nam: {
+        id: 'nam',
+        name: 'Nam Chae-Young',
+        element: 'Water',
+        scaleStat: 'HP',
+        advancements: {
+            A0: {
+                passives: [
+                    { name: 'Frozen Damage Bonus', description: '+8% damage to Frozen targets', effects: { frozenDmgBonus: 8 }, trigger: 'passive', note: '+8% damage on Frozen enemies' }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Weapon: Frozen DEF Reduction', trigger: 'attacking Frozen target', scope: 'enemy', effects: { defReduction: 5 }, duration: 5, note: 'Weapon: -5% DEF on Frozen targets (5s)' }
+                ]
+            },
+            A1: {
+                passives: [
+                    { name: 'Frozen Damage Bonus', description: '+8% damage to Frozen', effects: { frozenDmgBonus: 8 }, trigger: 'passive', note: '+8% DMG' },
+                    { name: 'Break Specialist (A1)', description: '+20% Break effectiveness', effects: {}, trigger: 'passive', note: '+20% Break effectiveness' }
+                ],
+                selfBuffs: [],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Weapon: Frozen DEF Reduction', trigger: 'attacking Frozen', scope: 'enemy', effects: { defReduction: 8 }, duration: 5, note: 'Weapon: -8% DEF on Frozen (5s)' }
+                ]
+            },
+            A2: {
+                passives: [
+                    { name: 'Frozen Damage Bonus', description: '+8% DMG on Frozen', effects: { frozenDmgBonus: 8 }, trigger: 'passive', note: '+8%' },
+                    { name: 'Break Specialist (A1)', description: '+20% Break', effects: {}, trigger: 'passive', note: '+20%' }
+                ],
+                selfBuffs: [
+                    { name: 'HP Boost (A2)', trigger: 'passive', scope: 'self', effects: { hp: 6 }, duration: 'infinite', note: '+6% HP' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Weapon: Frozen DEF Reduction', trigger: 'attacking Frozen', scope: 'enemy', effects: { defReduction: 11 }, duration: 5, note: 'Weapon: -11% DEF on Frozen (5s)' }
+                ]
+            },
+            A3: {
+                passives: [
+                    { name: 'Frozen Damage Bonus', description: '+8% DMG on Frozen', effects: { frozenDmgBonus: 8 }, trigger: 'passive', note: '+8%' },
+                    { name: 'Break Specialist (A1)', description: '+20% Break', effects: {}, trigger: 'passive', note: '+20%' },
+                    { name: 'Light-Freezing Arrow Enhanced (A3)', description: '+80% Light-Freezing Arrow damage', effects: {}, trigger: 'passive', note: '+80% Skill 2 damage' }
+                ],
+                selfBuffs: [
+                    { name: 'HP Boost (A2)', trigger: 'passive', scope: 'self', effects: { hp: 6 }, duration: 'infinite', note: '+6% HP' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Weapon: Frozen DEF Reduction', trigger: 'attacking Frozen', scope: 'enemy', effects: { defReduction: 14 }, duration: 5, note: 'Weapon: -14% DEF on Frozen (5s)' }
+                ]
+            },
+            A4: {
+                passives: [
+                    { name: 'Frozen Damage Bonus', description: '+8% DMG on Frozen', effects: { frozenDmgBonus: 8 }, trigger: 'passive', note: '+8%' },
+                    { name: 'Break Specialist (A1)', description: '+20% Break', effects: {}, trigger: 'passive', note: '+20%' },
+                    { name: 'Light-Freezing Arrow (A3)', description: '+80% Skill 2 DMG', effects: {}, trigger: 'passive', note: '+80%' },
+                    { name: 'Explosion Range (A4)', description: '+20% explosion range for K63, Icy Step, Tip of the Iceberg', effects: {}, trigger: 'passive', note: '+20% AoE range' }
+                ],
+                selfBuffs: [
+                    { name: 'HP Boost (A2)', trigger: 'passive', scope: 'self', effects: { hp: 6 }, duration: 'infinite', note: '+6% HP' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Weapon: Frozen DEF Reduction', trigger: 'attacking Frozen', scope: 'enemy', effects: { defReduction: 17 }, duration: 5, note: 'Weapon: -17% DEF on Frozen (5s)' }
+                ]
+            },
+            A5: {
+                passives: [
+                    { name: 'Frozen Damage Bonus', description: '+8% DMG on Frozen', effects: { frozenDmgBonus: 8 }, trigger: 'passive', note: '+8%' },
+                    { name: 'Break Specialist (A1)', description: '+20% Break', effects: {}, trigger: 'passive', note: '+20%' },
+                    { name: 'Light-Freezing Arrow (A3)', description: '+80% Skill 2 DMG', effects: {}, trigger: 'passive', note: '+80%' },
+                    { name: 'Explosion Range (A4)', description: '+20% AoE range', effects: {}, trigger: 'passive', note: '+20%' },
+                    { name: 'Extended Freeze (A5)', description: 'Freeze duration → 3s (was 2s)', effects: {}, trigger: 'passive', note: 'More CC uptime → more Frozen DEF debuff uptime' }
+                ],
+                selfBuffs: [
+                    { name: 'HP Boost (A2)', trigger: 'passive', scope: 'self', effects: { hp: 6 }, duration: 'infinite', note: '+6% HP' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Weapon: Frozen DEF Reduction', trigger: 'attacking Frozen', scope: 'enemy', effects: { defReduction: 20 }, duration: 5, note: 'Weapon: -20% DEF on Frozen (5s)' },
+                    { name: 'Freeze', trigger: 'K63/Ultimate hit', scope: 'enemy', effects: {}, duration: 3, note: 'Freeze 3s (A5 enhanced, was 2s)' }
+                ]
+            }
+        }
+    },
+
+    // 💧 Seo Jiwoo - Water Breaker HP Scaler - Water Dragon Training
+    seo: {
+        id: 'seo',
+        name: 'Seo Jiwoo',
+        element: 'Water',
+        scaleStat: 'HP',
+        advancements: {
+            A0: {
+                passives: [
+                    { name: 'Water Dragon Training', description: 'After 3 Training stacks → Water Dragon Training: resets Skill 1/2 CDs, changes them to Heavy Attack versions', effects: {}, trigger: 'after 3 skill uses', note: 'Core mechanic: 3 stacks → enhanced skills with CD reset' }
                 ],
                 selfBuffs: [],
                 teamBuffs: [],
@@ -5715,13 +7199,8 @@ export const CHARACTER_ADVANCED_BUFFS = {
             },
             A1: {
                 passives: [
-                    {
-                        name: 'Water Infusion',
-                        description: 'Meri infuses Water element into attacks',
-                        effects: { waterDamage: 5 },
-                        trigger: 'passive',
-                        note: '+5% Water DMG passive'
-                    }
+                    { name: 'Water Dragon Training', description: '3 stacks → Heavy Attack skills', effects: {}, trigger: 'after 3 skill uses', note: 'CD reset + enhanced skills' },
+                    { name: 'Heavy Attack Boost (A1)', description: '+150% Heavy Attack: Water Dragon Rush & Lightning Kick damage', effects: {}, trigger: 'passive', note: '+150% Heavy Attack damage' }
                 ],
                 selfBuffs: [],
                 teamBuffs: [],
@@ -5730,13 +7209,9 @@ export const CHARACTER_ADVANCED_BUFFS = {
             },
             A2: {
                 passives: [
-                    {
-                        name: 'Water Infusion',
-                        description: 'Meri infuses Water element into attacks',
-                        effects: { waterDamage: 10 },
-                        trigger: 'passive',
-                        note: '+10% Water DMG passive'
-                    }
+                    { name: 'Water Dragon Training', description: '3 stacks → Heavy Attack skills', effects: {}, trigger: 'after 3 skill uses', note: 'CD reset + enhanced' },
+                    { name: 'Heavy Attack Boost (A1)', description: '+150% Heavy Attack damage', effects: {}, trigger: 'passive', note: '+150%' },
+                    { name: 'Break Specialist (A2)', description: '+15% Break effectiveness, +50% on Heavy Attack: Lightning Kick', effects: {}, trigger: 'passive', note: '+15% Break (+50% on Heavy Lightning Kick)' }
                 ],
                 selfBuffs: [],
                 teamBuffs: [],
@@ -5745,13 +7220,10 @@ export const CHARACTER_ADVANCED_BUFFS = {
             },
             A3: {
                 passives: [
-                    {
-                        name: 'Water Infusion',
-                        description: 'Meri infuses Water element into attacks',
-                        effects: { waterDamage: 10 },
-                        trigger: 'passive',
-                        note: '+10% Water DMG passive'
-                    }
+                    { name: 'Water Dragon Training', description: '3 stacks → Heavy Attack skills', effects: {}, trigger: 'after 3 skill uses', note: 'CD reset + enhanced' },
+                    { name: 'Heavy Attack Boost (A1)', description: '+150% Heavy Attack damage', effects: {}, trigger: 'passive', note: '+150%' },
+                    { name: 'Break Specialist (A2)', description: '+15% Break (+50% Heavy Lightning Kick)', effects: {}, trigger: 'passive', note: '+15%/+50%' },
+                    { name: 'MP Restore (A3)', description: '+50 MP on Water Dragon Training activation', effects: {}, trigger: 'on Training activation', note: '+50 MP sustain' }
                 ],
                 selfBuffs: [],
                 teamBuffs: [],
@@ -5760,13 +7232,11 @@ export const CHARACTER_ADVANCED_BUFFS = {
             },
             A4: {
                 passives: [
-                    {
-                        name: 'Water Infusion',
-                        description: 'Meri infuses Water element into attacks',
-                        effects: { waterDamage: 10 },
-                        trigger: 'passive',
-                        note: '+10% Water DMG passive'
-                    }
+                    { name: 'Water Dragon Training', description: '3 stacks → Heavy Attack skills', effects: {}, trigger: 'after 3 skill uses', note: 'CD reset + enhanced' },
+                    { name: 'Heavy Attack Boost (A1)', description: '+150% Heavy Attack damage', effects: {}, trigger: 'passive', note: '+150%' },
+                    { name: 'Break Specialist (A2)', description: '+15% Break (+50% Heavy Lightning Kick)', effects: {}, trigger: 'passive', note: '+15%/+50%' },
+                    { name: 'MP Restore (A3)', description: '+50 MP on Training', effects: {}, trigger: 'on Training', note: '+50 MP' },
+                    { name: 'HP from CritDMG (A4)', description: '+15% Max HP from additional CritDMG', effects: {}, trigger: 'passive', note: 'Converts CritDMG → HP' }
                 ],
                 selfBuffs: [],
                 teamBuffs: [],
@@ -5775,18 +7245,538 @@ export const CHARACTER_ADVANCED_BUFFS = {
             },
             A5: {
                 passives: [
-                    {
-                        name: 'Water Infusion',
-                        description: 'Meri infuses Water element into attacks',
-                        effects: { waterDamage: 15 },
-                        trigger: 'passive',
-                        note: '+15% Water DMG passive'
-                    }
+                    { name: 'Water Dragon Training', description: '3 stacks → Heavy Attack skills', effects: {}, trigger: 'after 3 skill uses', note: 'CD reset + enhanced' },
+                    { name: 'Heavy Attack Boost (A1)', description: '+150% Heavy Attack damage', effects: {}, trigger: 'passive', note: '+150%' },
+                    { name: 'Break Specialist (A2)', description: '+15% Break (+50% Heavy Lightning Kick)', effects: {}, trigger: 'passive', note: '+15%/+50%' },
+                    { name: 'MP Restore (A3)', description: '+50 MP on Training', effects: {}, trigger: 'on Training', note: '+50 MP' },
+                    { name: 'HP from CritDMG (A4)', description: '+15% Max HP from CritDMG', effects: {}, trigger: 'passive', note: 'CritDMG → HP' },
+                    { name: 'Water Dragon Mastery (A5)', description: '+32% CR and Skill DMG on Heavy Attacks & Ultimate', effects: { critRate: 32 }, trigger: 'on Heavy Attack/Ultimate', note: '+32% CR + Skill DMG on enhanced skills' }
+                ],
+                selfBuffs: [
+                    { name: 'Water Dragon Mastery (A5)', trigger: 'on Heavy Attack/Ultimate', scope: 'self', effects: { critRate: 32, skillDmg: 32 }, duration: 'during skill', note: '+32% CR + Skill DMG on Heavy Attacks & Ult' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            }
+        }
+    },
+
+    // 💧 Seorin - Water Ranger Breaker (HP scaling)
+    seorin: {
+        name: 'Seorin',
+        element: 'Water',
+        class: 'Ranger',
+        scaleStat: 'HP',
+        advancements: {
+            A0: {
+                passives: [
+                    { name: 'Pinpoint Missiles', description: 'Missiles deal 150% HP each' },
+                    { name: 'Subzero', description: '+1% Water DMG taken per stack (max 10 = +10%)' }
                 ],
                 selfBuffs: [],
                 teamBuffs: [],
                 raidBuffs: [],
+                debuffs: [
+                    { name: 'Subzero', effects: { waterDmgTaken: 10 }, condition: '10 stacks max', duration: 'stacking' }
+                ]
+            },
+            A1: {
+                passives: [
+                    { name: 'Pinpoint Missiles', description: 'Missiles deal 150% HP each' },
+                    { name: 'Subzero', description: '+1% Water DMG taken per stack (max 10 = +10%)' },
+                    { name: 'Limited Break', description: '+30% DMG, +30% CritDMG, +30% missile DMG on Break (120s)' }
+                ],
+                selfBuffs: [
+                    { name: 'Limited Break', effects: { damage: 30, critDMG: 30 }, condition: 'On Break', duration: 120 }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Subzero', effects: { waterDmgTaken: 10 }, condition: '10 stacks max', duration: 'stacking' }
+                ]
+            },
+            A2: {
+                passives: [
+                    { name: 'Pinpoint Missiles', description: 'Missiles deal 150% HP each' },
+                    { name: 'Subzero', description: '+1% Water DMG taken per stack (max 10 = +10%)' },
+                    { name: 'Limited Break', description: '+30% DMG, +30% CritDMG, +30% missile DMG on Break (120s)' },
+                    { name: 'Ice Shard Magnum', description: 'Skills fire 4 missiles' }
+                ],
+                selfBuffs: [
+                    { name: 'Limited Break', effects: { damage: 30, critDMG: 30 }, condition: 'On Break', duration: 120 }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Subzero', effects: { waterDmgTaken: 10 }, condition: '10 stacks max', duration: 'stacking' }
+                ]
+            },
+            A3: {
+                passives: [
+                    { name: 'Pinpoint Missiles', description: 'Missiles deal 150% HP each' },
+                    { name: 'Subzero', description: '+1% Water DMG taken per stack (max 10 = +10%)' },
+                    { name: 'Limited Break', description: '+30% DMG, +30% CritDMG, +30% missile DMG on Break (120s)' },
+                    { name: 'Ice Shard Magnum', description: 'Skills fire 4 missiles' },
+                    { name: 'Black Tea?', description: '+20% DEF, +20% HP, MP regen for team (infinite)' }
+                ],
+                selfBuffs: [
+                    { name: 'Limited Break', effects: { damage: 30, critDMG: 30 }, condition: 'On Break', duration: 120 }
+                ],
+                teamBuffs: [
+                    { name: 'Black Tea?', effects: { defense: 20, hp: 20 }, condition: 'Always active', duration: 'infinite' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Subzero', effects: { waterDmgTaken: 10 }, condition: '10 stacks max', duration: 'stacking' }
+                ]
+            },
+            A4: {
+                passives: [
+                    { name: 'Pinpoint Missiles', description: 'Missiles deal 150% HP each' },
+                    { name: 'Subzero', description: '+1% Water DMG taken per stack (max 10 = +10%)' },
+                    { name: 'Limited Break', description: '+30% DMG, +30% CritDMG, +30% missile DMG on Break (120s)' },
+                    { name: 'Ice Shard Magnum', description: 'Skills fire 4 missiles' },
+                    { name: 'Black Tea?', description: '+20% DEF, +20% HP, MP regen for team (infinite)' },
+                    { name: 'Water Synergy', description: '+10% Water DMG per Water member (max 3 = +30%)' }
+                ],
+                selfBuffs: [
+                    { name: 'Limited Break', effects: { damage: 30, critDMG: 30 }, condition: 'On Break', duration: 120 },
+                    { name: 'Water Synergy', effects: { waterDmg: 30 }, condition: '3 Water members', duration: 'passive' }
+                ],
+                teamBuffs: [
+                    { name: 'Black Tea?', effects: { defense: 20, hp: 20 }, condition: 'Always active', duration: 'infinite' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Subzero', effects: { waterDmgTaken: 10 }, condition: '10 stacks max', duration: 'stacking' }
+                ]
+            },
+            A5: {
+                passives: [
+                    { name: 'Pinpoint Missiles', description: 'Missiles deal 150% HP each, +30% CR/CritDMG on missiles' },
+                    { name: 'Enhanced Subzero', description: '+2% Water DMG taken per stack (max 10 = +20%)' },
+                    { name: 'Enhanced Limited Break', description: '+50% DMG, +50% CritDMG, +50% missile DMG on Break (120s)' },
+                    { name: 'Ice Shard Magnum', description: 'Skills fire 4 missiles' },
+                    { name: 'Black Tea?', description: '+20% DEF, +20% HP, MP regen for team (infinite)' },
+                    { name: 'Water Synergy', description: '+10% Water DMG per Water member (max 3 = +30%)' }
+                ],
+                selfBuffs: [
+                    { name: 'Enhanced Limited Break', effects: { damage: 50, critDMG: 50 }, condition: 'On Break', duration: 120 },
+                    { name: 'Water Synergy', effects: { waterDmg: 30 }, condition: '3 Water members', duration: 'passive' },
+                    { name: 'Missile Mastery', effects: { critRate: 30, critDMG: 30 }, condition: 'On missiles', duration: 'passive' }
+                ],
+                teamBuffs: [
+                    { name: 'Black Tea?', effects: { defense: 20, hp: 20 }, condition: 'Always active', duration: 'infinite' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Enhanced Subzero', effects: { waterDmgTaken: 20 }, condition: '10 stacks max', duration: 'stacking' }
+                ]
+            }
+        }
+    },
+
+    // 💧 Shuhua - Water Assassin DPS (ATK scaling)
+    shuhua: {
+        name: 'Shuhua',
+        element: 'Water',
+        class: 'Assassin',
+        scaleStat: 'Attack',
+        advancements: {
+            A0: {
+                passives: [
+                    { name: 'FOREVER', description: '+5% DMG dealt for team (max 3 stacks = +15%) in dungeons' },
+                    { name: 'On the Stage', description: 'Pop Star Landing activates Performance every 3s (15s)' },
+                    { name: 'Performance', description: '+50% Core Attack DMG, Shield (10% ATK), 3s' },
+                    { name: 'High-energy', description: '+50% High-energy Beat DMG, Core Attack no gauge cost, -3s cooldowns on Core hit (CD: 1s)' }
+                ],
+                selfBuffs: [
+                    { name: 'Performance', effects: { coreAttackDmg: 50 }, condition: 'After Pop Star Landing', duration: 3 },
+                    { name: 'High-energy', effects: { skillDmg: 50 }, condition: 'After Starlight Bark', duration: 3.5 }
+                ],
+                teamBuffs: [
+                    { name: 'FOREVER', effects: { damageDealt: 15 }, condition: 'In dungeons, 3 stacks', duration: 'infinite' }
+                ],
+                raidBuffs: [],
                 debuffs: []
+            },
+            A1: {
+                passives: [
+                    { name: 'FOREVER', description: '+5% DMG dealt for team (max 3 stacks = +15%) in dungeons' },
+                    { name: 'On the Stage', description: 'Pop Star Landing activates Performance every 3s (15s)' },
+                    { name: 'Performance', description: '+50% Core Attack DMG, Shield (10% ATK), 3s' },
+                    { name: 'Enhanced High-energy', description: '+100% DMG, -5s cooldowns on Core hit, inflicts Tension Drop' }
+                ],
+                selfBuffs: [
+                    { name: 'Performance', effects: { coreAttackDmg: 50 }, condition: 'After Pop Star Landing', duration: 3 },
+                    { name: 'Enhanced High-energy', effects: { damage: 100 }, condition: 'After Starlight Bark', duration: 3.5 }
+                ],
+                teamBuffs: [
+                    { name: 'FOREVER', effects: { damageDealt: 15 }, condition: 'In dungeons, 3 stacks', duration: 'infinite' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Tension Drop', effects: { waterDmgTaken: 10 }, condition: 'From SHUHUA only, 10 stacks max', duration: 30 }
+                ]
+            },
+            A2: {
+                passives: [
+                    { name: 'FOREVER', description: '+5% DMG dealt for team (max 3 stacks = +15%) in dungeons' },
+                    { name: 'On the Stage', description: 'Pop Star Landing activates Performance every 3s (15s)' },
+                    { name: 'Performance', description: '+50% Core Attack DMG, Shield (10% ATK), 3s' },
+                    { name: 'Enhanced High-energy', description: '+100% DMG, -5s cooldowns, inflicts Tension Drop' },
+                    { name: 'Starlight Howl', description: 'Starlight Bark becomes Starlight Howl, +100% DMG' }
+                ],
+                selfBuffs: [
+                    { name: 'Performance', effects: { coreAttackDmg: 50 }, condition: 'After Pop Star Landing', duration: 3 },
+                    { name: 'Enhanced High-energy', effects: { damage: 100 }, condition: 'After Starlight Howl', duration: 3.5 },
+                    { name: 'Starlight Howl', effects: { skillDmg: 100 }, condition: 'Replaces Starlight Bark', duration: 'passive' }
+                ],
+                teamBuffs: [
+                    { name: 'FOREVER', effects: { damageDealt: 15 }, condition: 'In dungeons, 3 stacks', duration: 'infinite' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Tension Drop', effects: { waterDmgTaken: 10 }, condition: 'From SHUHUA only, 10 stacks max', duration: 30 }
+                ]
+            },
+            A3: {
+                passives: [
+                    { name: 'FOREVER', description: '+5% DMG dealt for team (max 3 stacks = +15%) in dungeons' },
+                    { name: 'On the Stage', description: 'Pop Star Landing activates Performance every 3s (15s)' },
+                    { name: 'Enhanced Performance', description: '+55% Core ATK DMG, Shield (15% ATK), +10% gauge, Tension Up +20% Water DMG' },
+                    { name: 'Enhanced High-energy', description: '+100% DMG, -5s cooldowns, inflicts Tension Drop' },
+                    { name: 'Starlight Howl', description: 'Starlight Bark becomes Starlight Howl, +100% DMG' }
+                ],
+                selfBuffs: [
+                    { name: 'Enhanced Performance', effects: { coreAttackDmg: 55, waterDmg: 20 }, condition: 'After Pop Star Landing', duration: 3 },
+                    { name: 'Enhanced High-energy', effects: { damage: 100 }, condition: 'After Starlight Howl', duration: 3.5 },
+                    { name: 'Starlight Howl', effects: { skillDmg: 100 }, condition: 'Replaces Starlight Bark', duration: 'passive' }
+                ],
+                teamBuffs: [
+                    { name: 'FOREVER', effects: { damageDealt: 15 }, condition: 'In dungeons, 3 stacks', duration: 'infinite' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Tension Drop', effects: { waterDmgTaken: 10 }, condition: 'From SHUHUA only, 10 stacks max', duration: 30 }
+                ]
+            },
+            A4: {
+                passives: [
+                    { name: 'FOREVER', description: '+5% DMG dealt for team (max 3 stacks = +15%) in dungeons' },
+                    { name: 'On the Stage', description: 'Pop Star Landing activates Performance every 3s (15s)' },
+                    { name: 'Enhanced Performance', description: '+55% Core ATK DMG, Shield (15% ATK), +10% gauge, Tension Up +20% Water DMG' },
+                    { name: 'Enhanced High-energy', description: '+100% DMG, -5s cooldowns, inflicts Tension Drop' },
+                    { name: 'Starlight Howl', description: 'Starlight Bark becomes Starlight Howl, +100% DMG' },
+                    { name: 'ATK Boost', description: '+16% ATK' }
+                ],
+                selfBuffs: [
+                    { name: 'Enhanced Performance', effects: { coreAttackDmg: 55, waterDmg: 20 }, condition: 'After Pop Star Landing', duration: 3 },
+                    { name: 'Enhanced High-energy', effects: { damage: 100 }, condition: 'After Starlight Howl', duration: 3.5 },
+                    { name: 'Starlight Howl', effects: { skillDmg: 100 }, condition: 'Replaces Starlight Bark', duration: 'passive' },
+                    { name: 'ATK Boost', effects: { attack: 16 }, condition: 'Passive', duration: 'infinite' }
+                ],
+                teamBuffs: [
+                    { name: 'FOREVER', effects: { damageDealt: 15 }, condition: 'In dungeons, 3 stacks', duration: 'infinite' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Tension Drop', effects: { waterDmgTaken: 10 }, condition: 'From SHUHUA only, 10 stacks max', duration: 30 }
+                ]
+            },
+            A5: {
+                passives: [
+                    { name: 'FOREVER', description: '+5% DMG dealt for team (max 3 stacks = +15%) in dungeons' },
+                    { name: 'On the Stage', description: 'Pop Star Landing activates Performance every 3s (15s)' },
+                    { name: 'Enhanced Performance', description: '+55% Core ATK DMG, Shield (15% ATK), +10% gauge, Tension Up +20% Water DMG' },
+                    { name: 'Enhanced High-energy', description: '+100% DMG, -5s cooldowns, inflicts Tension Drop' },
+                    { name: 'Starlight Howl', description: 'Starlight Bark becomes Starlight Howl, +100% DMG' },
+                    { name: 'ATK Boost', description: '+16% ATK' },
+                    { name: 'Volume Up', description: '+30% DMG dealt, +30% CR on Starlight Howl (10s)' }
+                ],
+                selfBuffs: [
+                    { name: 'Enhanced Performance', effects: { coreAttackDmg: 55, waterDmg: 20 }, condition: 'After Pop Star Landing', duration: 3 },
+                    { name: 'Enhanced High-energy', effects: { damage: 100 }, condition: 'After Starlight Howl', duration: 3.5 },
+                    { name: 'Starlight Howl', effects: { skillDmg: 100 }, condition: 'Replaces Starlight Bark', duration: 'passive' },
+                    { name: 'ATK Boost', effects: { attack: 16 }, condition: 'Passive', duration: 'infinite' },
+                    { name: 'Volume Up', effects: { damageDealt: 30, critRate: 30 }, condition: 'After Starlight Howl', duration: 10, cooldown: 20 }
+                ],
+                teamBuffs: [
+                    { name: 'FOREVER', effects: { damageDealt: 15 }, condition: 'In dungeons, 3 stacks', duration: 'infinite' }
+                ],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Tension Drop', effects: { waterDmgTaken: 10 }, condition: 'From SHUHUA only, 10 stacks max', duration: 30 }
+                ]
+            }
+        }
+    },
+
+    // 💧 Alicia Blanche - Water Mage DPS (ATK scaling)
+    alicia: {
+        id: 'alicia',
+        name: 'Alicia Blanche',
+        element: 'Water',
+        class: 'Mage',
+        scaleStat: 'Attack',
+        advancements: {
+            A0: {
+                passives: [
+                    { name: 'Frost', description: 'Eternal Frost/Winter Storm/Ice Needle apply [Frost]. Core Attack → Bitter Cold Spear. +120% DMG per Frost consumed (max 3 = +360%). Infinite, 6 stacks max.', effects: {}, trigger: 'on skill use', note: 'Burst DMG mechanic on Core Attack' },
+                    { name: 'Weapon: Core ATK DMG', description: '+10% Core Attack DMG', effects: {}, trigger: 'passive', note: 'Weapon: +10% Core ATK DMG' },
+                    { name: 'Weapon: Water DMG (Ice Body Armor)', description: '+5% Water DMG (20s/30s CD)', effects: { waterDamage: 5 }, trigger: 'on Ice Body Armor', note: 'Weapon: +5% Water DMG (20s, CD 30s = 67% uptime)' }
+                ],
+                selfBuffs: [
+                    { name: 'Weapon: Water DMG (Ice Body Armor)', trigger: 'on Ice Body Armor activation', scope: 'self', effects: { waterDamage: 5 }, duration: 20, cooldown: 30, note: 'Weapon: +5% Water DMG (20s/30s CD = 67% uptime)' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: []
+            },
+            A1: {
+                passives: [
+                    { name: 'Frost', description: 'Core Attack → Bitter Cold Spear. +120%/Frost consumed (max 360%). 6 stacks.', effects: {}, trigger: 'on skill use', note: 'Burst DMG mechanic' },
+                    { name: 'Shield Crit Boost (A1)', description: 'When Shield active: +20% CR, +20% CritDMG', effects: { critRate: 20, critDMG: 20 }, trigger: 'Shield active', note: 'A1: +20% CR/CD when Shield is active' },
+                    { name: 'Winter Chill (A1)', description: 'Absolute Zero applies Winter Chill. DoT: 100% ATK/3s, 30s, 10 stacks', effects: {}, trigger: 'Absolute Zero hit', note: 'A1: DoT debuff on enemy' },
+                    { name: 'Weapon: Core ATK DMG', description: '+16% Core Attack DMG', effects: {}, trigger: 'passive', note: 'Weapon: +16% Core ATK DMG' },
+                    { name: 'Weapon: Water DMG (Ice Body Armor)', description: '+8% Water DMG (20s/30s CD)', effects: { waterDamage: 8 }, trigger: 'on Ice Body Armor', note: 'Weapon: +8% Water DMG (20s, CD 30s = 67%)' }
+                ],
+                selfBuffs: [
+                    { name: 'Shield Crit Boost (A1)', trigger: 'Shield active (Ice Body Armor)', scope: 'self', effects: { critRate: 20, critDMG: 20 }, duration: 'infinite', note: 'A1: +20% CR/CD while Shield is active' },
+                    { name: 'Weapon: Water DMG (Ice Body Armor)', trigger: 'on Ice Body Armor activation', scope: 'self', effects: { waterDamage: 8 }, duration: 20, cooldown: 30, note: 'Weapon: +8% Water DMG (20s/30s CD = 67%)' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Winter Chill', trigger: 'Absolute Zero hit', scope: 'enemy', effects: {}, maxStacks: 10, duration: 30, note: 'DoT: 100% ATK every 3s (30s, 10 stacks)' }
+                ]
+            },
+            A2: {
+                passives: [
+                    { name: 'Frost', description: 'Core Attack → Bitter Cold Spear. +120%/Frost (max 360%). 6 stacks.', effects: {}, trigger: 'on skill use', note: 'Burst DMG mechanic' },
+                    { name: 'Shield Crit Boost (A1)', description: '+20% CR, +20% CritDMG when Shield active', effects: { critRate: 20, critDMG: 20 }, trigger: 'Shield active', note: '+20% CR/CD' },
+                    { name: 'Double Frost (A2)', description: '+1 additional Frost per skill use', effects: {}, trigger: 'passive', note: 'A2: Faster Frost stacking' },
+                    { name: 'Winter Chill (A1)', description: 'DoT: 100% ATK/3s, 30s, 10 stacks', effects: {}, trigger: 'Absolute Zero hit', note: 'DoT debuff' },
+                    { name: 'Weapon: Core ATK DMG', description: '+22% Core Attack DMG', effects: {}, trigger: 'passive', note: 'Weapon: +22% Core ATK DMG' },
+                    { name: 'Weapon: Water DMG (Ice Body Armor)', description: '+11% Water DMG (20s/30s CD)', effects: { waterDamage: 11 }, trigger: 'on Ice Body Armor', note: 'Weapon: +11% Water DMG (20s/30s CD = 67%)' }
+                ],
+                selfBuffs: [
+                    { name: 'Shield Crit Boost (A1)', trigger: 'Shield active (Ice Body Armor)', scope: 'self', effects: { critRate: 20, critDMG: 20 }, duration: 'infinite', note: '+20% CR/CD while Shield active' },
+                    { name: 'Weapon: Water DMG (Ice Body Armor)', trigger: 'on Ice Body Armor activation', scope: 'self', effects: { waterDamage: 11 }, duration: 20, cooldown: 30, note: 'Weapon: +11% Water DMG (20s/30s CD = 67%)' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Winter Chill', trigger: 'Absolute Zero hit', scope: 'enemy', effects: {}, maxStacks: 10, duration: 30, note: 'DoT: 100% ATK every 3s (30s, 10 stacks)' }
+                ]
+            },
+            A3: {
+                passives: [
+                    { name: 'Frost', description: 'Bitter Cold Spear. +120%/Frost (max 360%). 6 stacks. +1 Frost (A2).', effects: {}, trigger: 'on skill use', note: 'Burst DMG mechanic' },
+                    { name: 'Shield Crit Boost (A1)', description: '+20% CR, +20% CritDMG when Shield active', effects: { critRate: 20, critDMG: 20 }, trigger: 'Shield active', note: '+20% CR/CD' },
+                    { name: 'Freeze DMG Boost (A3)', description: '+30% DMG vs [Freeze] targets', effects: {}, trigger: 'passive', note: 'A3: +30% DMG vs Frozen enemies' },
+                    { name: 'Winter Chill ATK Boost (A3)', description: '+12% ATK per hit on Winter Chill (60s, 3 stacks = +36%)', effects: { attack: 36 }, trigger: 'Frost Arrow/Bitter Cold Spear on Winter Chill', note: 'A3: +36% ATK (12%×3, 60s)' },
+                    { name: 'Weapon: Core ATK DMG', description: '+28% Core Attack DMG', effects: {}, trigger: 'passive', note: 'Weapon: +28% Core ATK DMG' },
+                    { name: 'Weapon: Water DMG (Ice Body Armor)', description: '+14% Water DMG (20s/30s CD)', effects: { waterDamage: 14 }, trigger: 'on Ice Body Armor', note: 'Weapon: +14% Water DMG (20s/30s CD = 67%)' }
+                ],
+                selfBuffs: [
+                    { name: 'Shield Crit Boost (A1)', trigger: 'Shield active (Ice Body Armor)', scope: 'self', effects: { critRate: 20, critDMG: 20 }, duration: 'infinite', note: '+20% CR/CD while Shield active' },
+                    { name: 'Winter Chill ATK Boost (A3)', trigger: 'Frost Arrow/Bitter Cold Spear on Winter Chill', scope: 'self', effects: { attack: 36 }, duration: 60, maxStacks: 3, note: 'A3: +12% ATK per hit (3 stacks = +36%, 60s)' },
+                    { name: 'Weapon: Water DMG (Ice Body Armor)', trigger: 'on Ice Body Armor activation', scope: 'self', effects: { waterDamage: 14 }, duration: 20, cooldown: 30, note: 'Weapon: +14% Water DMG (20s/30s CD = 67%)' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Winter Chill', trigger: 'Absolute Zero hit', scope: 'enemy', effects: {}, maxStacks: 10, duration: 30, note: 'DoT: 100% ATK every 3s (30s, 10 stacks)' }
+                ]
+            },
+            A4: {
+                passives: [
+                    { name: 'Frost', description: 'Bitter Cold Spear. +120%/Frost (max 360%). 6 stacks. +1 Frost (A2).', effects: {}, trigger: 'on skill use', note: 'Burst DMG mechanic' },
+                    { name: 'Shield Crit Boost (A1)', description: '+20% CR, +20% CritDMG when Shield active', effects: { critRate: 20, critDMG: 20 }, trigger: 'Shield active', note: '+20% CR/CD' },
+                    { name: 'Freeze DMG Boost (A3)', description: '+30% DMG vs [Freeze] targets', effects: {}, trigger: 'passive', note: '+30% DMG vs Frozen enemies' },
+                    { name: 'Winter Chill ATK Boost (A3)', description: '+36% ATK (12%×3, 60s)', effects: { attack: 36 }, trigger: 'on Winter Chill hit', note: '+36% ATK' },
+                    { name: 'Water DMG Boost (A4)', description: '+16% Water DMG', effects: { waterDamage: 16 }, trigger: 'passive', note: 'A4: +16% Water DMG (permanent)' },
+                    { name: 'Weapon: Core ATK DMG', description: '+34% Core Attack DMG', effects: {}, trigger: 'passive', note: 'Weapon: +34% Core ATK DMG' },
+                    { name: 'Weapon: Water DMG (Ice Body Armor)', description: '+17% Water DMG (20s/30s CD)', effects: { waterDamage: 17 }, trigger: 'on Ice Body Armor', note: 'Weapon: +17% Water DMG (20s/30s CD = 67%)' }
+                ],
+                selfBuffs: [
+                    { name: 'Shield Crit Boost (A1)', trigger: 'Shield active (Ice Body Armor)', scope: 'self', effects: { critRate: 20, critDMG: 20 }, duration: 'infinite', note: '+20% CR/CD while Shield active' },
+                    { name: 'Winter Chill ATK Boost (A3)', trigger: 'Frost Arrow/Bitter Cold Spear on Winter Chill', scope: 'self', effects: { attack: 36 }, duration: 60, maxStacks: 3, note: '+12% ATK per hit (3 stacks = +36%, 60s)' },
+                    { name: 'Water DMG Boost (A4)', trigger: 'passive', scope: 'self', effects: { waterDamage: 16 }, duration: 'infinite', note: 'A4: +16% Water DMG (permanent)' },
+                    { name: 'Weapon: Water DMG (Ice Body Armor)', trigger: 'on Ice Body Armor activation', scope: 'self', effects: { waterDamage: 17 }, duration: 20, cooldown: 30, note: 'Weapon: +17% Water DMG (20s/30s CD = 67%)' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Winter Chill', trigger: 'Absolute Zero hit', scope: 'enemy', effects: {}, maxStacks: 10, duration: 30, note: 'DoT: 100% ATK every 3s (30s, 10 stacks)' }
+                ]
+            },
+            A5: {
+                passives: [
+                    { name: 'Frost', description: 'Bitter Cold Spear. +120%/Frost (max 360%). 6 stacks. +1 Frost (A2).', effects: {}, trigger: 'on skill use', note: 'Burst DMG mechanic' },
+                    { name: 'Shield Crit Boost (A1)', description: '+20% CR, +20% CritDMG when Shield active', effects: { critRate: 20, critDMG: 20 }, trigger: 'Shield active', note: '+20% CR/CD' },
+                    { name: 'Freeze DMG Boost (A3)', description: '+30% DMG vs [Freeze] targets', effects: {}, trigger: 'passive', note: '+30% DMG vs Frozen enemies' },
+                    { name: 'Winter Chill ATK Boost (A3)', description: '+36% ATK (12%×3, 60s)', effects: { attack: 36 }, trigger: 'on Winter Chill hit', note: '+36% ATK' },
+                    { name: 'Water DMG Boost (A4)', description: '+16% Water DMG', effects: { waterDamage: 16 }, trigger: 'passive', note: '+16% Water DMG (permanent)' },
+                    { name: 'Enhanced Bitter Cold Spear (A5)', description: '+50% Bitter Cold Spear DMG, applies Freeze, +10% DMG per Winter Chill (10 stacks = +100%)', effects: {}, trigger: 'on Bitter Cold Spear hit', note: 'A5: +50% BCS DMG + Freeze + +100% DMG vs Winter Chill' },
+                    { name: 'Weapon: Core ATK DMG', description: '+40% Core Attack DMG', effects: {}, trigger: 'passive', note: 'Weapon: +40% Core ATK DMG' },
+                    { name: 'Weapon: Water DMG (Ice Body Armor)', description: '+20% Water DMG (20s/30s CD)', effects: { waterDamage: 20 }, trigger: 'on Ice Body Armor', note: 'Weapon: +20% Water DMG (20s/30s CD = 67%)' }
+                ],
+                selfBuffs: [
+                    { name: 'Shield Crit Boost (A1)', trigger: 'Shield active (Ice Body Armor)', scope: 'self', effects: { critRate: 20, critDMG: 20 }, duration: 'infinite', note: '+20% CR/CD while Shield active' },
+                    { name: 'Winter Chill ATK Boost (A3)', trigger: 'Frost Arrow/Bitter Cold Spear on Winter Chill', scope: 'self', effects: { attack: 36 }, duration: 60, maxStacks: 3, note: '+12% ATK per hit (3 stacks = +36%, 60s)' },
+                    { name: 'Water DMG Boost (A4)', trigger: 'passive', scope: 'self', effects: { waterDamage: 16 }, duration: 'infinite', note: '+16% Water DMG (permanent)' },
+                    { name: 'Weapon: Water DMG (Ice Body Armor)', trigger: 'on Ice Body Armor activation', scope: 'self', effects: { waterDamage: 20 }, duration: 20, cooldown: 30, note: 'Weapon: +20% Water DMG (20s/30s CD = 67% uptime)' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [],
+                debuffs: [
+                    { name: 'Winter Chill', trigger: 'Absolute Zero hit', scope: 'enemy', effects: {}, maxStacks: 10, duration: 30, note: 'DoT: 100% ATK every 3s (30s, 10 stacks)' },
+                    { name: 'Freeze', trigger: 'Bitter Cold Spear hit (A5)', scope: 'enemy', effects: {}, duration: 3, note: 'A5: CC interrupt 3s' }
+                ]
+            }
+        }
+    },
+
+    // ✨ Cha Hae-In Light (Original) - Fighter Striker (ATK scaling) - Team Buffer via [Brand]
+    'chae-in': {
+        id: 'chae-in',
+        name: 'Cha Hae-In (Light)',
+        element: 'Light',
+        class: 'Fighter',
+        scaleStat: 'Attack',
+        advancements: {
+            A0: {
+                passives: [
+                    { name: 'The Dancer', description: '+8% ATK & +8% CritDMG per stack (max 3, 10s). Skill 1 triggers Waltz of the Sword (3s).', effects: { attack: 24, critDMG: 24 }, trigger: 'on Skill 1 use', note: '3 stacks × 8% = +24% ATK/CritDMG (10s)' },
+                    { name: '[Brand] Effect', description: '66% chance on The Dancer hit: +12% CR, +12% CritDMG for all who attack branded target (15s)', effects: { critRate: 12, critDMG: 12 }, trigger: 'The Dancer hit (66%)', note: 'Raid-wide debuff: +12% CR/CD for everyone hitting branded target' },
+                    { name: 'Weapon: CritDMG Stack', description: '+2% CritDMG per Basic Skill × 6 stacks = +12% (12s)', effects: { critDMG: 12 }, trigger: 'on Basic Skill use', note: 'Weapon A0: +2% × 6 = +12% CritDMG (12s)' }
+                ],
+                selfBuffs: [
+                    { name: 'The Dancer (3 stacks)', trigger: 'on Skill 1 use', scope: 'self', effects: { attack: 24, critDMG: 24 }, duration: 10, note: '+8% ATK & +8% CritDMG per stack (max 3 = +24%/24%, 10s)' },
+                    { name: 'Weapon: CritDMG Stack', trigger: 'on Basic Skill use', scope: 'self', effects: { critDMG: 12 }, duration: 12, note: 'Weapon: +2% × 6 stacks = +12% CritDMG (12s)' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [
+                    { name: '[Brand] Effect', trigger: 'The Dancer hit (66% chance)', scope: 'raid', effects: { critRate: 12, critDMG: 12 }, duration: 15, note: '+12% CR & +12% CritDMG for all attackers on branded target (15s)' }
+                ],
+                debuffs: [
+                    { name: 'Brand', trigger: 'The Dancer hit (66%)', scope: 'enemy', effects: { critRate: 12, critDMG: 12 }, duration: 15, note: 'Enemy debuff: attackers gain +12% CR/CD (15s)' },
+                    { name: 'Unrecoverable', trigger: 'Skill 1 / Skill 2 hit', scope: 'enemy', effects: {}, duration: 30, note: 'Target cannot recover HP (30s)' }
+                ]
+            },
+            A1: {
+                passives: [
+                    { name: 'The Dancer (Enhanced)', description: '+8% ATK & +8% CritDMG per stack (max 5, 10s). Super Armor during Waltz.', effects: { attack: 40, critDMG: 40 }, trigger: 'on Skill 1 use', note: 'A1: 5 stacks × 8% = +40% ATK/CritDMG (was 3 stacks)' },
+                    { name: '[Brand] Effect', description: '+12% CR, +12% CritDMG for all on branded target (15s)', effects: { critRate: 12, critDMG: 12 }, trigger: 'The Dancer hit (66%)', note: 'Raid debuff' },
+                    { name: 'Weapon: CritDMG Stack', description: '+3% CritDMG × 6 = +18% (12s)', effects: { critDMG: 18 }, trigger: 'on Basic Skill', note: 'Weapon A1' }
+                ],
+                selfBuffs: [
+                    { name: 'The Dancer (5 stacks, A1)', trigger: 'on Skill 1 use', scope: 'self', effects: { attack: 40, critDMG: 40 }, duration: 10, note: 'A1: +8% × 5 stacks = +40% ATK/CritDMG (10s)' },
+                    { name: 'Weapon: CritDMG Stack', trigger: 'on Basic Skill use', scope: 'self', effects: { critDMG: 18 }, duration: 12, note: 'Weapon: +3% × 6 = +18% CritDMG (12s)' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [
+                    { name: '[Brand] Effect', trigger: 'The Dancer hit (66% chance)', scope: 'raid', effects: { critRate: 12, critDMG: 12 }, duration: 15, note: '+12% CR/CD for all on branded target (15s)' }
+                ],
+                debuffs: [
+                    { name: 'Brand', trigger: 'The Dancer hit (66%)', scope: 'enemy', effects: { critRate: 12, critDMG: 12 }, duration: 15, note: '+12% CR/CD for attackers (15s)' },
+                    { name: 'Unrecoverable', trigger: 'Skill 1 / Skill 2 hit', scope: 'enemy', effects: {}, duration: 30, note: 'No HP recovery (30s)' }
+                ]
+            },
+            A2: {
+                passives: [
+                    { name: 'The Dancer (5 stacks)', description: '+40% ATK/CritDMG (10s)', effects: { attack: 40, critDMG: 40 }, trigger: 'on Skill 1', note: '5 × 8%' },
+                    { name: 'CR Boost (A2)', description: '+16% Crit Rate', effects: { critRate: 16 }, trigger: 'passive', note: 'A2: +16% CR (permanent)' },
+                    { name: '[Brand] Effect', description: '+12% CR/CD raid (15s)', effects: { critRate: 12, critDMG: 12 }, trigger: 'The Dancer hit', note: 'Raid debuff' },
+                    { name: 'Weapon: CritDMG Stack', description: '+4% × 6 = +24% (12s)', effects: { critDMG: 24 }, trigger: 'on Basic Skill', note: 'Weapon A2' }
+                ],
+                selfBuffs: [
+                    { name: 'The Dancer (5 stacks)', trigger: 'on Skill 1 use', scope: 'self', effects: { attack: 40, critDMG: 40 }, duration: 10, note: '+8% × 5 = +40% ATK/CritDMG (10s)' },
+                    { name: 'CR Boost (A2)', trigger: 'passive', scope: 'self', effects: { critRate: 16 }, duration: 'infinite', note: 'A2: +16% CR (permanent)' },
+                    { name: 'Weapon: CritDMG Stack', trigger: 'on Basic Skill use', scope: 'self', effects: { critDMG: 24 }, duration: 12, note: 'Weapon: +4% × 6 = +24% CritDMG (12s)' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [
+                    { name: '[Brand] Effect', trigger: 'The Dancer hit (66% chance)', scope: 'raid', effects: { critRate: 12, critDMG: 12 }, duration: 15, note: '+12% CR/CD for all on branded target (15s)' }
+                ],
+                debuffs: [
+                    { name: 'Brand', trigger: 'The Dancer hit (66%)', scope: 'enemy', effects: { critRate: 12, critDMG: 12 }, duration: 15, note: '+12% CR/CD for attackers (15s)' },
+                    { name: 'Unrecoverable', trigger: 'Skill 1 / Skill 2 hit', scope: 'enemy', effects: {}, duration: 30, note: 'No HP recovery (30s)' }
+                ]
+            },
+            A3: {
+                passives: [
+                    { name: 'The Dancer (5 stacks)', description: '+40% ATK/CritDMG (10s)', effects: { attack: 40, critDMG: 40 }, trigger: 'on Skill 1', note: '5 × 8%' },
+                    { name: 'CR Boost (A2)', description: '+16% CR', effects: { critRate: 16 }, trigger: 'passive', note: '+16% CR' },
+                    { name: 'Brand Skill Boost (A3)', description: '+100% DMG for The Dancer & Sword of Light vs [Branded] targets', effects: {}, trigger: 'on hitting Branded target', note: 'A3: +100% skill DMG vs Brand (not a stat buff)' },
+                    { name: '[Brand] Effect', description: '+12% CR/CD raid (15s)', effects: { critRate: 12, critDMG: 12 }, trigger: 'The Dancer hit', note: 'Raid debuff' },
+                    { name: 'Weapon: CritDMG Stack', description: '+5% × 6 = +30% (12s)', effects: { critDMG: 30 }, trigger: 'on Basic Skill', note: 'Weapon A3' }
+                ],
+                selfBuffs: [
+                    { name: 'The Dancer (5 stacks)', trigger: 'on Skill 1 use', scope: 'self', effects: { attack: 40, critDMG: 40 }, duration: 10, note: '+8% × 5 = +40% ATK/CritDMG (10s)' },
+                    { name: 'CR Boost (A2)', trigger: 'passive', scope: 'self', effects: { critRate: 16 }, duration: 'infinite', note: '+16% CR (permanent)' },
+                    { name: 'Weapon: CritDMG Stack', trigger: 'on Basic Skill use', scope: 'self', effects: { critDMG: 30 }, duration: 12, note: 'Weapon: +5% × 6 = +30% CritDMG (12s)' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [
+                    { name: '[Brand] Effect', trigger: 'The Dancer hit (66% chance)', scope: 'raid', effects: { critRate: 12, critDMG: 12 }, duration: 15, note: '+12% CR/CD for all on branded target (15s)' }
+                ],
+                debuffs: [
+                    { name: 'Brand', trigger: 'The Dancer hit (66%)', scope: 'enemy', effects: { critRate: 12, critDMG: 12 }, duration: 15, note: '+12% CR/CD for attackers (15s)' },
+                    { name: 'Unrecoverable', trigger: 'Skill 1 / Skill 2 hit', scope: 'enemy', effects: {}, duration: 30, note: 'No HP recovery (30s)' }
+                ]
+            },
+            A4: {
+                passives: [
+                    { name: 'The Dancer (5 stacks)', description: '+40% ATK/CritDMG (10s)', effects: { attack: 40, critDMG: 40 }, trigger: 'on Skill 1', note: '5 × 8%' },
+                    { name: 'CR Boost (A2)', description: '+16% CR', effects: { critRate: 16 }, trigger: 'passive', note: '+16% CR' },
+                    { name: 'CritDMG Boost (A4)', description: '+16% CritDMG', effects: { critDMG: 16 }, trigger: 'passive', note: 'A4: +16% CritDMG (permanent)' },
+                    { name: 'Brand Skill Boost (A3)', description: '+100% The Dancer/Sword of Light DMG vs Brand', effects: {}, trigger: 'on Brand hit', note: '+100% skill DMG' },
+                    { name: '[Brand] Effect', description: '+12% CR/CD raid (15s)', effects: { critRate: 12, critDMG: 12 }, trigger: 'The Dancer hit', note: 'Raid debuff' },
+                    { name: 'Weapon: CritDMG Stack', description: '+6% × 6 = +36% (12s)', effects: { critDMG: 36 }, trigger: 'on Basic Skill', note: 'Weapon A4' }
+                ],
+                selfBuffs: [
+                    { name: 'The Dancer (5 stacks)', trigger: 'on Skill 1 use', scope: 'self', effects: { attack: 40, critDMG: 40 }, duration: 10, note: '+8% × 5 = +40% ATK/CritDMG (10s)' },
+                    { name: 'CR Boost (A2)', trigger: 'passive', scope: 'self', effects: { critRate: 16 }, duration: 'infinite', note: '+16% CR (permanent)' },
+                    { name: 'CritDMG Boost (A4)', trigger: 'passive', scope: 'self', effects: { critDMG: 16 }, duration: 'infinite', note: 'A4: +16% CritDMG (permanent)' },
+                    { name: 'Weapon: CritDMG Stack', trigger: 'on Basic Skill use', scope: 'self', effects: { critDMG: 36 }, duration: 12, note: 'Weapon: +6% × 6 = +36% CritDMG (12s)' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [
+                    { name: '[Brand] Effect', trigger: 'The Dancer hit (66% chance)', scope: 'raid', effects: { critRate: 12, critDMG: 12 }, duration: 15, note: '+12% CR/CD for all on branded target (15s)' }
+                ],
+                debuffs: [
+                    { name: 'Brand', trigger: 'The Dancer hit (66%)', scope: 'enemy', effects: { critRate: 12, critDMG: 12 }, duration: 15, note: '+12% CR/CD for attackers (15s)' },
+                    { name: 'Unrecoverable', trigger: 'Skill 1 / Skill 2 hit', scope: 'enemy', effects: {}, duration: 30, note: 'No HP recovery (30s)' }
+                ]
+            },
+            A5: {
+                passives: [
+                    { name: 'The Dancer (5 stacks)', description: '+40% ATK/CritDMG (10s)', effects: { attack: 40, critDMG: 40 }, trigger: 'on Skill 1', note: '5 × 8%' },
+                    { name: 'CR Boost (A2)', description: '+16% CR', effects: { critRate: 16 }, trigger: 'passive', note: '+16% CR' },
+                    { name: 'CritDMG Boost (A4)', description: '+16% CritDMG', effects: { critDMG: 16 }, trigger: 'passive', note: '+16% CritDMG' },
+                    { name: 'Brand Skill Boost (A3)', description: '+100% skill DMG vs Brand', effects: {}, trigger: 'on Brand hit', note: '+100%' },
+                    { name: 'Light of the End Boost (A5)', description: '+20% DMG & +2% CR per The Dancer stack (5 stacks = +100% DMG, +10% CR)', effects: { critRate: 10 }, trigger: 'on Ultimate with Dancer stacks', note: 'A5: Ultimate scaling with Dancer stacks' },
+                    { name: '[Brand] Effect', description: '+12% CR/CD raid (15s)', effects: { critRate: 12, critDMG: 12 }, trigger: 'The Dancer hit', note: 'Raid debuff' },
+                    { name: 'Weapon: CritDMG Stack', description: '+8% × 6 = +48% (12s)', effects: { critDMG: 48 }, trigger: 'on Basic Skill', note: 'Weapon A5' }
+                ],
+                selfBuffs: [
+                    { name: 'The Dancer (5 stacks)', trigger: 'on Skill 1 use', scope: 'self', effects: { attack: 40, critDMG: 40 }, duration: 10, note: '+8% × 5 = +40% ATK/CritDMG (10s)' },
+                    { name: 'CR Boost (A2)', trigger: 'passive', scope: 'self', effects: { critRate: 16 }, duration: 'infinite', note: '+16% CR (permanent)' },
+                    { name: 'CritDMG Boost (A4)', trigger: 'passive', scope: 'self', effects: { critDMG: 16 }, duration: 'infinite', note: '+16% CritDMG (permanent)' },
+                    { name: 'Weapon: CritDMG Stack', trigger: 'on Basic Skill use', scope: 'self', effects: { critDMG: 48 }, duration: 12, note: 'Weapon: +8% × 6 = +48% CritDMG (12s)' }
+                ],
+                teamBuffs: [],
+                raidBuffs: [
+                    { name: '[Brand] Effect', trigger: 'The Dancer hit (66% chance)', scope: 'raid', effects: { critRate: 12, critDMG: 12 }, duration: 15, note: '+12% CR/CD for ALL attackers on branded target (15s)' }
+                ],
+                debuffs: [
+                    { name: 'Brand', trigger: 'The Dancer hit (66%)', scope: 'enemy', effects: { critRate: 12, critDMG: 12 }, duration: 15, note: '+12% CR/CD for attackers (15s)' },
+                    { name: 'Unrecoverable', trigger: 'Skill 1 / Skill 2 hit', scope: 'enemy', effects: {}, duration: 30, note: 'No HP recovery (30s)' }
+                ]
             }
         }
     },
