@@ -11,6 +11,8 @@ import {
   STAT_PER_POINT, STAT_ORDER, STAT_META, POINTS_PER_LEVEL, MAX_LEVEL,
   statsAt, statsAtFull, xpForLevel, getElementMult, getEffStat,
   applySkillUpgrades, computeAttack, aiPickSkill, spdToInterval,
+  accountLevelFromXp, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT,
+  getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
 } from './colosseumCore';
 import {
   HUNTERS, SUNG_SKILLS, RAID_BOSSES,
@@ -19,13 +21,16 @@ import {
   computeSynergies, computeCrossTeamSynergy, computeRaidRewards,
   loadRaidData, saveRaidData, getHunterPool, getHunterStars,
 } from './raidData';
-import { computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses, HAMMERS, HAMMER_ORDER } from './equipmentData';
+import {
+  computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses, HAMMERS, HAMMER_ORDER,
+  generateRaidArtifact, MAX_DAILY_RAIDS, getActivePassives, RAID_ARTIFACT_SETS,
+} from './equipmentData';
 import { BattleStyles, RaidArena } from './BattleVFX';
 
 // ─── Colosseum shared save (chibi levels, stat points, skill tree, talents) ──
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultColoData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, respecCount: {}, cooldowns: {}, stagesCleared: [], stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponInventory: [], hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 } });
-const loadColoData = () => { try { const d = { ...defaultColoData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) }; if (!d.artifacts) d.artifacts = {}; if (!d.weapons) d.weapons = {}; if (!d.hammers) d.hammers = { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }; return d; } catch { return defaultColoData(); } };
+const defaultColoData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, respecCount: {}, cooldowns: {}, stagesCleared: [], stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponInventory: [], hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, dailyRaidDate: '', dailyRaidCount: 0 });
+const loadColoData = () => { try { const d = { ...defaultColoData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) }; if (!d.artifacts) d.artifacts = {}; if (!d.weapons) d.weapons = {}; if (!d.hammers) d.hammers = { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }; if (d.accountXp === undefined) d.accountXp = 0; if (!d.accountBonuses) d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }; if (d.accountAllocations === undefined) d.accountAllocations = 0; const today = new Date().toISOString().slice(0, 10); if (d.dailyRaidDate !== today) { d.dailyRaidDate = today; d.dailyRaidCount = 0; } return d; } catch { return defaultColoData(); } };
 const saveColoData = (d) => localStorage.setItem(SAVE_KEY, JSON.stringify(d));
 
 // ─── Format numbers ──────────────────────────────────────────
@@ -113,7 +118,11 @@ export default function RaidMode() {
     const lvData = coloData.chibiLevels[id] || { level: 1, xp: 0 };
     const allocated = coloData.statPoints[id] || {};
     const tb = computeTalentBonuses(coloData.talentTree[id] || {});
-    return statsAt(chibi.base, chibi.growth, lvData.level, allocated, tb);
+    const artBonuses = computeArtifactBonuses(coloData.artifacts?.[id]);
+    const weapBonuses = computeWeaponBonuses(coloData.weapons?.[id]);
+    const eqB = mergeEquipBonuses(artBonuses, weapBonuses);
+    const evStars = HUNTERS[id] ? getHunterStars(loadRaidData(), id) : 0;
+    return statsAtFull(chibi.base, chibi.growth, lvData.level, allocated, tb, eqB, evStars, coloData.accountBonuses);
   }, [allPool, coloData]);
 
   const getChibiLevel = (id) => (coloData.chibiLevels[id] || { level: 1, xp: 0 }).level;
@@ -173,7 +182,7 @@ export default function RaidMode() {
     const weapBonuses = computeWeaponBonuses(coloData.weapons?.[id]);
     const eqB = mergeEquipBonuses(artBonuses, weapBonuses);
     const evStars = HUNTERS[id] ? getHunterStars(loadRaidData(), id) : 0;
-    const st = statsAtFull(chibi.base, chibi.growth, lvData.level, allocated, tb, eqB, evStars);
+    const st = statsAtFull(chibi.base, chibi.growth, lvData.level, allocated, tb, eqB, evStars, coloData.accountBonuses);
 
     // Apply synergy bonuses
     const syn = synergyBonuses;
@@ -189,20 +198,32 @@ export default function RaidMode() {
     const finalCrit = +(st.crit + syn.crit).toFixed(1);
     const finalRes = +(st.res + syn.res).toFixed(1);
 
-    // Build upgraded skills
+    // Mana stats
+    const mana = st.mana || 0;
+    const manaRegen = st.manaRegen || 0;
+    const manaCostReduce = st.manaCostReduce || 0;
+
+    // Build upgraded skills with mana costs
     const skillTreeData = coloData.skillTree[id] || {};
     const skills = chibi.skills.map((sk, i) => {
       const lvl = skillTreeData[i] || 0;
       const upgraded = applySkillUpgrades(sk, lvl);
-      return { ...upgraded, cd: 0, cdMaxMs: upgraded.cdMax * spdToInterval(finalSpd) };
+      const rawCost = getSkillManaCost(upgraded);
+      const cost = Math.floor(rawCost * (1 - manaCostReduce / 100));
+      return { ...upgraded, cd: 0, cdMaxMs: upgraded.cdMax * spdToInterval(finalSpd), manaCost: cost };
     });
+
+    // Passives from raid sets
+    const passives = getActivePassives(coloData.artifacts?.[id]);
 
     return {
       id, name: chibi.name, element: chibi.element, class: chibi.class,
       sprite: chibi.sprite, rarity: chibi.rarity,
       hp: finalHp, maxHp: finalHp,
       atk: finalAtk, def: finalDef, spd: finalSpd, crit: finalCrit, res: finalRes,
-      skills, buffs: [],
+      mana, maxMana: mana, manaRegen, manaCostReduce,
+      skills, buffs: [], passives,
+      passiveState: { flammeStacks: 0, martyrHealed: false, echoCounter: 0 },
       talentBonuses: (() => { const m = { ...tb }; for (const [k, v] of Object.entries(eqB)) { if (v) m[k] = (m[k] || 0) + v; } return m; })(),
       lastAttackAt: 0, attackInterval: spdToInterval(finalSpd),
       alive: true,
@@ -227,6 +248,11 @@ export default function RaidMode() {
   }, [boss]);
 
   const startRaid = useCallback(() => {
+    // Daily raid limit check
+    const today = new Date().toISOString().slice(0, 10);
+    const currentCount = coloData.dailyRaidDate === today ? (coloData.dailyRaidCount || 0) : 0;
+    if (currentCount >= MAX_DAILY_RAIDS) return;
+
     const allBonuses1 = { ...synergy1.bonuses, crit: synergy1.bonuses.crit + crossSynergy.bonuses.crit };
     const allBonuses2 = { ...synergy2.bonuses, crit: synergy2.bonuses.crit + crossSynergy.bonuses.crit };
 
@@ -241,6 +267,27 @@ export default function RaidMode() {
     });
 
     if (chibis.length === 0) return;
+
+    // Apply team-wide passives from raid sets
+    chibis.forEach(c => {
+      // Martyr Aura: self ATK -30%, allies ATK +15%
+      const martyrAura = c.passives?.find(p => p.type === 'martyrAura');
+      if (martyrAura) {
+        c.atk = Math.floor(c.atk * (1 + (martyrAura.selfAtkMult || -0.30)));
+        chibis.forEach(ally => { if (ally.id !== c.id) ally.atk = Math.floor(ally.atk * (1 + (martyrAura.allyAtkBonus || 0.15))); });
+      }
+      // Commander DEF: all allies +10% DEF
+      const cmdDef = c.passives?.find(p => p.type === 'commanderDef');
+      if (cmdDef) chibis.forEach(ally => { ally.def = Math.floor(ally.def * 1.10); });
+    });
+    // Commander Crit: battle start +20% CRIT for ~30s (turns=30 in decay)
+    chibis.forEach(c => {
+      const cmdCrit = c.passives?.find(p => p.type === 'commanderCrit');
+      if (cmdCrit) chibis.forEach(ally => { ally.buffs.push({ stat: 'crit', value: 20, turns: 30 }); });
+    });
+
+    // Increment daily raid count
+    setColoData(prev => ({ ...prev, dailyRaidDate: today, dailyRaidCount: (prev.dailyRaidDate === today ? (prev.dailyRaidCount || 0) : 0) + 1 }));
 
     const bossEntity = buildBossEntity();
     const state = { chibis, boss: bossEntity };
@@ -338,11 +385,32 @@ export default function RaidMode() {
         hammerDrops[hId] = (hammerDrops[hId] || 0) + 1;
       }
 
-      // XP to participating chibis + save hammer drops
+      // Raid artifact drops (exclusive raid sets!)
+      const raidArtifactDrops = [];
+      if (rc >= 2) {
+        // Guaranteed 1 artifact at RC 2+
+        const rarity1 = rc >= 8 ? 'mythique' : rc >= 5 ? 'legendaire' : 'rare';
+        raidArtifactDrops.push(generateRaidArtifact(rarity1));
+      }
+      if (rc >= 6) {
+        // Bonus artifact at RC 6+
+        const rarity2 = rc >= 9 ? 'mythique' : 'legendaire';
+        raidArtifactDrops.push(generateRaidArtifact(rarity2));
+      }
+      if (isFullClear) {
+        // Full clear bonus: guaranteed mythique
+        raidArtifactDrops.push(generateRaidArtifact('mythique'));
+      }
+
+      // XP to participating chibis + save hammer drops + raid artifacts
       const newColoData = { ...coloData };
       const newHammers = { ...(newColoData.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }) };
       Object.entries(hammerDrops).forEach(([hId, count]) => { newHammers[hId] = (newHammers[hId] || 0) + count; });
       newColoData.hammers = newHammers;
+      // Add raid artifacts to inventory
+      if (raidArtifactDrops.length > 0) {
+        newColoData.artifactInventory = [...(newColoData.artifactInventory || []), ...raidArtifactDrops];
+      }
       state.chibis.forEach(c => {
         const cur = newColoData.chibiLevels[c.id] || { level: 1, xp: 0 };
         if (cur.level >= MAX_LEVEL) return;
@@ -354,6 +422,9 @@ export default function RaidMode() {
         }
         newColoData.chibiLevels[c.id] = { level: newLvl, xp: newXp };
       });
+      // Account XP from raid
+      const raidAccountXp = 30 + rc * 15 + (isFullClear ? 50 : 0);
+      newColoData.accountXp = (newColoData.accountXp || 0) + raidAccountXp;
       setColoData(newColoData);
 
       // Update raid data
@@ -389,7 +460,7 @@ export default function RaidMode() {
 
       setResultData({
         rc, isFullClear, totalDamage, endReason, dpsBreakdown,
-        rewards, unlockedHunters, hunterDuplicates, hammerDrops,
+        rewards, unlockedHunters, hunterDuplicates, hammerDrops, raidArtifactDrops,
         duration: Math.floor(elapsed),
       });
       setPhase('result');
@@ -404,6 +475,21 @@ export default function RaidMode() {
     state.chibis.forEach(chibi => {
       if (!chibi.alive) return;
       if (now - chibi.lastAttackAt < chibi.attackInterval) return;
+
+      // Mana regen (proportional to attack interval / 3s base)
+      if (chibi.maxMana > 0) {
+        chibi.mana = Math.min(chibi.maxMana, (chibi.mana || 0) + (chibi.manaRegen || 0) * (chibi.attackInterval / 3000));
+      }
+
+      // Echo Temporel: every 3 attack cycles, next skill is free
+      const echoFree = chibi.passives?.find(p => p.type === 'echoFreeMana');
+      if (echoFree) {
+        chibi.passiveState.echoCounter = (chibi.passiveState.echoCounter || 0) + 1;
+        if (chibi.passiveState.echoCounter >= 3) {
+          chibi.passiveState.echoCounter = 0;
+          chibi.passiveState.echoFreeMana = true;
+        }
+      }
 
       // Adjust stats with active Sung buffs
       const sungMults = { atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
@@ -439,18 +525,70 @@ export default function RaidMode() {
           const healAmt = Math.floor(lowestAlly.maxHp * 0.15 * (1 + healBonus / 100));
           lowestAlly.hp = Math.min(lowestAlly.maxHp, lowestAlly.hp + healAmt);
           chibi.lastAttackAt = now;
+          // Restore stats before return
+          chibi.atk = origAtk; chibi.crit = origCrit; state.boss.def = origBossDef;
           logEntries.push({ text: `${chibi.name} soigne ${lowestAlly.name} +${healAmt} PV`, time: elapsed, type: 'heal' });
           vfxEvents.push({ id: now + Math.random(), type: 'heal', targetId: lowestAlly.id, value: healAmt, timestamp: now });
           stateChanged = true;
-          return; // Skip normal attack
+          return;
         }
       }
 
-      // AI picks a skill (adapt from turn-based)
-      const entityForAI = { ...chibi, skills: chibi.skills.map(s => ({ ...s, cd: s.cd || 0 })) };
+      // Martyr Heal: if ally <30% HP and not yet healed, emergency heal once
+      const martyrHeal = chibi.passives?.find(p => p.type === 'martyrHeal');
+      if (martyrHeal && !chibi.passiveState.martyrHealed) {
+        const critAlly = state.chibis.find(a => a.alive && a.id !== chibi.id && (a.hp / a.maxHp) < (martyrHeal.threshold || 0.30));
+        if (critAlly) {
+          const healAmt = Math.floor(critAlly.maxHp * (martyrHeal.healPct || 0.20));
+          critAlly.hp = Math.min(critAlly.maxHp, critAlly.hp + healAmt);
+          chibi.passiveState.martyrHealed = true;
+          logEntries.push({ text: `${chibi.name} [Martyr] soigne ${critAlly.name} +${healAmt} PV !`, time: elapsed, type: 'heal' });
+          vfxEvents.push({ id: now + Math.random(), type: 'heal', targetId: critAlly.id, value: healAmt, timestamp: now });
+        }
+      }
+
+      // AI picks a skill considering mana
+      const availSkills = chibi.skills.filter(s => {
+        if ((s.cd || 0) > 0) return false;
+        const cost = chibi.passiveState?.echoFreeMana ? 0 : (s.manaCost || 0);
+        return (chibi.mana || 999) >= cost;
+      });
+      const entityForAI = { ...chibi, skills: availSkills.length > 0 ? availSkills.map(s => ({ ...s, cd: 0 })) : [{ ...chibi.skills[0], cd: 0 }] };
       const skill = aiPickSkill(entityForAI);
 
-      const result = computeAttack(chibi, skill, state.boss, chibi.talentBonuses || {});
+      // Consume mana
+      if (chibi.maxMana > 0 && skill.manaCost > 0) {
+        const actualCost = chibi.passiveState?.echoFreeMana ? 0 : skill.manaCost;
+        chibi.mana = Math.max(0, (chibi.mana || 0) - actualCost);
+        if (chibi.passiveState?.echoFreeMana) chibi.passiveState.echoFreeMana = false;
+      }
+
+      let result = computeAttack(chibi, skill, state.boss, chibi.talentBonuses || {});
+
+      // ── Passive: Desperate Fury — DMG scales with missing HP (+0.8% per 1% HP missing)
+      const furyPassive = chibi.passives?.find(p => p.type === 'desperateFury');
+      if (furyPassive && result.damage > 0) {
+        const missingPct = 1 - chibi.hp / chibi.maxHp;
+        result = { ...result, damage: Math.floor(result.damage * (1 + missingPct * 0.8)) };
+      }
+
+      // ── Passive: Last Stand — auto-crit + DEF ignore below 25% HP
+      const lastStand = chibi.passives?.find(p => p.type === 'lastStand');
+      if (lastStand && (chibi.hp / chibi.maxHp) < 0.25 && result.damage > 0) {
+        result = { ...result, damage: Math.floor(result.damage * 1.5), isCrit: true };
+      }
+
+      // ── Passive: Inner Flame — +3% DMG per stack (max 10), at 10 stacks auto-crit +50%
+      const flammeStack = chibi.passives?.find(p => p.type === 'innerFlameStack');
+      if (flammeStack && result.damage > 0) {
+        chibi.passiveState.flammeStacks = Math.min(10, (chibi.passiveState.flammeStacks || 0) + 1);
+        result = { ...result, damage: Math.floor(result.damage * (1 + chibi.passiveState.flammeStacks * 0.03)) };
+      }
+      const flammeRelease = chibi.passives?.find(p => p.type === 'innerFlameRelease');
+      if (flammeRelease && (chibi.passiveState.flammeStacks || 0) >= 10 && result.damage > 0) {
+        result = { ...result, damage: Math.floor(result.damage * 1.5), isCrit: true };
+        chibi.passiveState.flammeStacks = 0;
+      }
 
       // Restore original stats
       chibi.atk = origAtk;
@@ -461,6 +599,12 @@ export default function RaidMode() {
       if (result.damage > 0) {
         state.boss.hp -= result.damage;
         dpsTracker.current[chibi.id] = (dpsTracker.current[chibi.id] || 0) + result.damage;
+
+        // ── Passive: Lifesteal — 15% chance to steal 12% DMG as HP
+        if (chibi.passives?.find(p => p.type === 'lifesteal') && Math.random() < 0.15) {
+          const heal = Math.floor(result.damage * 0.12);
+          chibi.hp = Math.min(chibi.maxHp, chibi.hp + heal);
+        }
 
         // Check bar break
         if (state.boss.hp <= 0) {
@@ -497,6 +641,10 @@ export default function RaidMode() {
       chibi.skills.forEach(s => {
         if (s === skill && s.cdMax > 0) {
           s.cd = s.cdMaxMs || s.cdMax * chibi.attackInterval;
+          // ── Passive: Echo CD — 20% chance to reduce cooldown by 1 interval
+          if (chibi.passives?.find(p => p.type === 'echoCD') && Math.random() < 0.20) {
+            s.cd = Math.max(0, s.cd - chibi.attackInterval);
+          }
         } else if (s.cd > 0) {
           s.cd = Math.max(0, s.cd - chibi.attackInterval);
         }
@@ -525,36 +673,48 @@ export default function RaidMode() {
 
         bossSkill.lastUsedAt = now;
 
+        // Helper: apply damage to target with dodge check (Voile de l'Ombre passive)
+        const applyBossDmgToTarget = (target, bSkill) => {
+          const dodgeP = target.passives?.find(p => p.type === 'dodge');
+          if (dodgeP && Math.random() < 0.12) {
+            logEntries.push({ text: `${target.name} esquive !`, time: elapsed, type: 'dodge' });
+            // Counter on dodge
+            const counterP = target.passives?.find(p => p.type === 'shadowCounter');
+            if (counterP) {
+              const counterDmg = Math.floor(target.atk * 0.8);
+              state.boss.hp -= counterDmg;
+              dpsTracker.current[target.id] = (dpsTracker.current[target.id] || 0) + counterDmg;
+              logEntries.push({ text: `${target.name} contre-attaque ! -${counterDmg}`, time: elapsed, type: 'crit' });
+            }
+            return;
+          }
+          const dmg = computeAttack(state.boss, bSkill, target);
+          target.hp -= dmg.damage;
+          // Reset flamme stacks when hit
+          if (target.passiveState?.flammeStacks > 0) target.passiveState.flammeStacks = 0;
+          if (target.hp <= 0) { target.hp = 0; target.alive = false; }
+          return dmg;
+        };
+
         if (bossSkill.target === 'aoe') {
-          // Hit all alive chibis
-          alive.forEach(target => {
-            const dmg = computeAttack(state.boss, bossSkill, target);
-            target.hp -= dmg.damage;
-            if (target.hp <= 0) { target.hp = 0; target.alive = false; }
-          });
+          alive.forEach(target => applyBossDmgToTarget(target, bossSkill));
           logEntries.push({ text: `${state.boss.name} utilise ${bossSkill.name} ! AoE sur toute l'equipe !`, time: elapsed, type: 'boss' });
           vfxEvents.push({ id: now + Math.random() + 0.3, type: 'boss_aoe', timestamp: now });
         } else if (bossSkill.target === 'multi') {
-          // Hit random targets multiple times
           const hits = bossSkill.hits || 3;
           for (let i = 0; i < hits; i++) {
             const aliveNow = state.chibis.filter(c => c.alive);
             if (aliveNow.length === 0) break;
             const target = aliveNow[Math.floor(Math.random() * aliveNow.length)];
-            const dmg = computeAttack(state.boss, bossSkill, target);
-            target.hp -= dmg.damage;
-            if (target.hp <= 0) { target.hp = 0; target.alive = false; }
+            applyBossDmgToTarget(target, bossSkill);
           }
           logEntries.push({ text: `${state.boss.name} utilise ${bossSkill.name} ! ${bossSkill.hits || 3} frappes !`, time: elapsed, type: 'boss' });
           vfxEvents.push({ id: now + Math.random() + 0.4, type: 'boss_aoe', timestamp: now });
         } else {
-          // Single target — pick random alive chibi (prefer non-tanks unless random)
           const target = alive[Math.floor(Math.random() * alive.length)];
-          const dmg = computeAttack(state.boss, bossSkill, target);
-          target.hp -= dmg.damage;
-          if (target.hp <= 0) { target.hp = 0; target.alive = false; }
-          logEntries.push({ text: `${state.boss.name} → ${target.name}: ${bossSkill.name} -${dmg.damage} PV${!target.alive ? ' K.O. !' : ''}`, time: elapsed, type: 'boss' });
-          vfxEvents.push({ id: now + Math.random() + 0.5, type: 'boss_attack', targetId: target.id, damage: dmg.damage, timestamp: now });
+          const dmg = applyBossDmgToTarget(target, bossSkill);
+          logEntries.push({ text: `${state.boss.name} → ${target.name}: ${bossSkill.name} -${dmg?.damage || 0} PV${!target.alive ? ' K.O. !' : ''}`, time: elapsed, type: 'boss' });
+          vfxEvents.push({ id: now + Math.random() + 0.5, type: 'boss_attack', targetId: target.id, damage: dmg?.damage || 0, timestamp: now });
         }
 
         // Boss self buff
@@ -768,6 +928,18 @@ export default function RaidMode() {
         </motion.div>
       )}
 
+      {/* Daily raid counter */}
+      {(() => {
+        const today = new Date().toISOString().slice(0, 10);
+        const count = coloData.dailyRaidDate === today ? (coloData.dailyRaidCount || 0) : 0;
+        const remaining = MAX_DAILY_RAIDS - count;
+        return (
+          <div className={`text-center text-sm font-bold ${remaining > 3 ? 'text-emerald-400' : remaining > 0 ? 'text-amber-400' : 'text-red-400'}`}>
+            Tentatives : {remaining}/{MAX_DAILY_RAIDS} restantes aujourd'hui
+          </div>
+        );
+      })()}
+
       {/* Launch button */}
       <div className="flex justify-center gap-3">
         <Link to="/shadow-colosseum"
@@ -775,7 +947,7 @@ export default function RaidMode() {
           Retour
         </Link>
         <button onClick={startRaid}
-          disabled={selectedIds.length === 0}
+          disabled={selectedIds.length === 0 || (() => { const today = new Date().toISOString().slice(0, 10); return coloData.dailyRaidDate === today && (coloData.dailyRaidCount || 0) >= MAX_DAILY_RAIDS; })()}
           className="px-8 py-3 rounded-xl font-bold text-lg bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95">
           LANCER LE RAID
         </button>
@@ -789,7 +961,7 @@ export default function RaidMode() {
 
   const renderResult = () => {
     if (!resultData) return null;
-    const { rc, isFullClear, totalDamage, endReason, dpsBreakdown, rewards, unlockedHunters, hunterDuplicates = [], hammerDrops = {}, duration } = resultData;
+    const { rc, isFullClear, totalDamage, endReason, dpsBreakdown, rewards, unlockedHunters, hunterDuplicates = [], hammerDrops = {}, raidArtifactDrops = [], duration } = resultData;
     const min = Math.floor(duration / 60);
     const sec = duration % 60;
 
@@ -830,6 +1002,28 @@ export default function RaidMode() {
             </div>
           )}
         </div>
+
+        {/* Raid Artifact Drops */}
+        {raidArtifactDrops.length > 0 && (
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            className="bg-gradient-to-r from-violet-900/30 to-indigo-900/30 rounded-xl p-4 border border-violet-500/30 text-center">
+            <div className="text-lg font-bold text-violet-400 mb-2">Artefacts de Raid !</div>
+            <div className="flex justify-center gap-3 flex-wrap">
+              {raidArtifactDrops.map((art, i) => {
+                const setData = RAID_ARTIFACT_SETS[art.set];
+                const rarityColors = { rare: 'border-blue-400 text-blue-400', legendaire: 'border-yellow-400 text-yellow-400', mythique: 'border-red-400 text-red-400' };
+                return (
+                  <div key={art.uid || i} className={`flex flex-col items-center p-2 rounded-lg bg-white/5 border ${rarityColors[art.rarity]?.split(' ')[0] || 'border-white/20'}`}>
+                    <span className="text-xl">{setData?.icon || '?'}</span>
+                    <span className="text-[10px] font-bold mt-1">{art.slotId}</span>
+                    <span className={`text-[9px] ${rarityColors[art.rarity]?.split(' ')[1] || ''}`}>{art.rarity}</span>
+                    <span className="text-[8px] text-gray-400">{setData?.name || art.set}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
 
         {/* DPS Breakdown */}
         <div className="bg-white/5 rounded-xl p-3 border border-white/10">

@@ -65,6 +65,140 @@ export const ARTIFACT_SETS = {
 };
 
 // ═══════════════════════════════════════════════════════════════
+// RAID-EXCLUSIVE ARTIFACT SETS (drops from Raid Bosses only)
+// ═══════════════════════════════════════════════════════════════
+
+export const RAID_ARTIFACT_SETS = {
+  sacrifice_martyr: {
+    id: 'sacrifice_martyr', name: 'Sacrifice du Martyr', icon: '\uD83D\uDC9C', raid: true,
+    color: 'text-pink-400', bg: 'bg-pink-500/15', border: 'border-pink-500/30',
+    desc: 'Se sacrifier pour ses allies',
+    bonus2: {}, bonus2Desc: 'ATK -30%, ATK allies +15%',
+    bonus4: {}, bonus4Desc: 'Allie <30% PV \u2192 soigne 20% PV max (1x)',
+    passive2: { trigger: 'always', type: 'martyrAura', selfAtkMult: -0.30, allyAtkBonus: 0.15 },
+    passive4: { trigger: 'onAllyLow', type: 'martyrHeal', threshold: 0.30, healPct: 0.20, once: true },
+  },
+  fureur_desespoir: {
+    id: 'fureur_desespoir', name: 'Fureur du Desespoir', icon: '\uD83E\uDE78', raid: true,
+    color: 'text-rose-500', bg: 'bg-rose-500/15', border: 'border-rose-500/30',
+    desc: 'Plus tu souffres, plus tu frappes',
+    bonus2: {}, bonus2Desc: '+0.8% DMG par 1% PV manquant',
+    bonus4: {}, bonus4Desc: '<25% PV: crits garantis + ignore 25% DEF',
+    passive2: { trigger: 'beforeAttack', type: 'desperateFury', dmgPerMissingPct: 0.008 },
+    passive4: { trigger: 'beforeAttack', type: 'lastStand', hpThreshold: 0.25, autoCrit: true, defIgnore: 0.25 },
+  },
+  chaines_destin: {
+    id: 'chaines_destin', name: 'Chaines du Destin', icon: '\u26D3\uFE0F', raid: true,
+    color: 'text-red-300', bg: 'bg-red-400/15', border: 'border-red-400/30',
+    desc: 'Le destin lie tes coups a ta vie',
+    bonus2: {}, bonus2Desc: '15% chance voler 12% DMG en PV',
+    bonus4: {}, bonus4Desc: 'Soins +30%, 10% chance soin crit (x2)',
+    passive2: { trigger: 'afterAttack', type: 'lifesteal', chance: 0.15, stealPct: 0.12 },
+    passive4: { trigger: 'onHeal', type: 'healCrit', healBoostPct: 0.30, critChance: 0.10 },
+  },
+  echo_temporel: {
+    id: 'echo_temporel', name: 'Echo Temporel', icon: '\u23F3', raid: true,
+    color: 'text-teal-400', bg: 'bg-teal-500/15', border: 'border-teal-500/30',
+    desc: 'Manipuler le temps a ton avantage',
+    bonus2: {}, bonus2Desc: '20% chance -1 CD apres attaque',
+    bonus4: {}, bonus4Desc: 'Tous les 3 tours, prochain sort = 0 mana',
+    passive2: { trigger: 'afterAttack', type: 'echoCD', chance: 0.20 },
+    passive4: { trigger: 'onTurnStart', type: 'echoFreeMana', interval: 3 },
+  },
+  aura_commandeur: {
+    id: 'aura_commandeur', name: 'Aura du Commandeur', icon: '\uD83D\uDC51', raid: true,
+    color: 'text-amber-300', bg: 'bg-amber-400/15', border: 'border-amber-400/30',
+    desc: 'Un leader inspire ses troupes',
+    bonus2: {}, bonus2Desc: '+10% DEF tous allies en raid',
+    bonus4: {}, bonus4Desc: 'Debut combat: allies +20% CRIT 3 tours',
+    passive2: { trigger: 'always', type: 'commanderDef', allyDefBonus: 0.10 },
+    passive4: { trigger: 'onBattleStart', type: 'commanderCrit', allyCritBonus: 20, duration: 3 },
+  },
+  voile_ombre: {
+    id: 'voile_ombre', name: "Voile de l'Ombre", icon: '\uD83C\uDF2B\uFE0F', raid: true,
+    color: 'text-gray-300', bg: 'bg-gray-500/15', border: 'border-gray-500/30',
+    desc: "Insaisissable comme l'ombre",
+    bonus2: {}, bonus2Desc: '12% chance esquiver une attaque',
+    bonus4: {}, bonus4Desc: 'Si esquive, contre-attaque a 80% power',
+    passive2: { trigger: 'onHit', type: 'dodge', chance: 0.12 },
+    passive4: { trigger: 'onDodge', type: 'counter', powerMult: 0.80 },
+  },
+  source_arcanique: {
+    id: 'source_arcanique', name: 'Source Arcanique', icon: '\uD83D\uDD2E', raid: true,
+    color: 'text-violet-400', bg: 'bg-violet-500/15', border: 'border-violet-500/30',
+    desc: 'Une source infinie de pouvoir arcane',
+    bonus2: { manaPercent: 30 }, bonus2Desc: 'Mana Max +30%',
+    bonus4: { manaRegen: 50, manaCostReduce: 20 }, bonus4Desc: 'Regen Mana +50%, cout -20%',
+    passive2: null, passive4: null,
+  },
+  flamme_interieure: {
+    id: 'flamme_interieure', name: 'Flamme Interieure', icon: '\uD83D\uDD25', raid: true,
+    color: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/30',
+    desc: 'Chaque coup attise la flamme',
+    bonus2: {}, bonus2Desc: '+3% DMG par attaque (max 10 stacks)',
+    bonus4: {}, bonus4Desc: 'A 10 stacks: crit garanti +50% DMG',
+    passive2: { trigger: 'afterAttack', type: 'innerFlameStack', dmgPerStack: 0.03, maxStacks: 10 },
+    passive4: { trigger: 'beforeAttack', type: 'innerFlameRelease', stackThreshold: 10, bonusCritDmg: 0.50, autoCrit: true },
+  },
+};
+
+// All sets combined (for generation, bonuses, display)
+export const ALL_ARTIFACT_SETS = { ...ARTIFACT_SETS, ...RAID_ARTIFACT_SETS };
+
+// Get active passives from equipped artifacts
+export function getActivePassives(equippedArtifacts) {
+  if (!equippedArtifacts) return [];
+  const setCounts = {};
+  Object.values(equippedArtifacts).forEach(art => {
+    if (!art) return;
+    setCounts[art.set] = (setCounts[art.set] || 0) + 1;
+  });
+  const passives = [];
+  Object.entries(setCounts).forEach(([setId, count]) => {
+    const s = ALL_ARTIFACT_SETS[setId];
+    if (!s) return;
+    if (count >= 2 && s.passive2) passives.push({ ...s.passive2, setId, tier: 2 });
+    if (count >= 4 && s.passive4) passives.push({ ...s.passive4, setId, tier: 4 });
+  });
+  return passives;
+}
+
+// Generate a raid-exclusive artifact
+export function generateRaidArtifact(rarity) {
+  const setKeys = Object.keys(RAID_ARTIFACT_SETS);
+  const set = setKeys[Math.floor(Math.random() * setKeys.length)];
+  const slot = SLOT_ORDER[Math.floor(Math.random() * SLOT_ORDER.length)];
+  const slotDef = ARTIFACT_SLOTS[slot];
+  const mainStatId = slotDef.mainStats[Math.floor(Math.random() * slotDef.mainStats.length)];
+
+  const subCount = RARITY_SUB_COUNT[rarity].initial;
+  const availableSubs = SUB_STAT_POOL.filter(s => s.id !== mainStatId);
+  const subs = [];
+  const usedIds = new Set();
+  for (let i = 0; i < subCount; i++) {
+    const candidates = availableSubs.filter(s => !usedIds.has(s.id));
+    if (candidates.length === 0) break;
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    usedIds.add(pick.id);
+    const value = pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1));
+    subs.push({ id: pick.id, value });
+  }
+
+  return {
+    uid: `rart_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+    set, slot, rarity,
+    mainStat: mainStatId,
+    mainValue: MAIN_STAT_VALUES[mainStatId].base,
+    level: 0,
+    subs,
+    isRaid: true,
+  };
+}
+
+// Daily raid constants
+export const MAX_DAILY_RAIDS = 10;
+
+// ═══════════════════════════════════════════════════════════════
 // ARTIFACT SLOTS
 // ═══════════════════════════════════════════════════════════════
 
@@ -258,6 +392,8 @@ const EMPTY_BONUSES = () => ({
   critRate: 0, critDamage: 0,
   fireDamage: 0, waterDamage: 0, shadowDamage: 0,
   allDamage: 0, healBonus: 0, defPen: 0,
+  // Mana set bonuses
+  manaPercent: 0, manaRegen: 0, manaCostReduce: 0,
 });
 
 export function computeArtifactBonuses(equippedArtifacts) {
@@ -278,9 +414,9 @@ export function computeArtifactBonuses(equippedArtifacts) {
     setCounts[art.set] = (setCounts[art.set] || 0) + 1;
   });
 
-  // Apply set bonuses
+  // Apply set bonuses (from all sets including raid)
   Object.entries(setCounts).forEach(([setId, count]) => {
-    const setDef = ARTIFACT_SETS[setId];
+    const setDef = ALL_ARTIFACT_SETS[setId];
     if (!setDef) return;
     if (count >= 2) Object.entries(setDef.bonus2).forEach(([k, v]) => { if (b[k] !== undefined) b[k] += v; });
     if (count >= 4) Object.entries(setDef.bonus4).forEach(([k, v]) => { if (b[k] !== undefined) b[k] += v; });
@@ -299,10 +435,10 @@ export function getActiveSetBonuses(equippedArtifacts) {
   });
   const active = [];
   Object.entries(setCounts).forEach(([setId, count]) => {
-    const s = ARTIFACT_SETS[setId];
+    const s = ALL_ARTIFACT_SETS[setId];
     if (!s) return;
-    if (count >= 2) active.push({ set: s, pieces: count, bonus: s.bonus2Desc, tier: 2 });
-    if (count >= 4) active.push({ set: s, pieces: count, bonus: s.bonus4Desc, tier: 4 });
+    if (count >= 2) active.push({ set: s, pieces: count, bonus: s.bonus2Desc, tier: 2, hasPassive: !!s.passive2 });
+    if (count >= 4) active.push({ set: s, pieces: count, bonus: s.bonus4Desc, tier: 4, hasPassive: !!s.passive4 });
   });
   return active;
 }

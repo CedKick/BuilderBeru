@@ -240,10 +240,17 @@ export function BattleArena({ battle, phase, dmgPopup, stageEmoji, stageElement,
             {/* VFX on player when enemy attacks */}
             <VFXLayer element={enemyElement} active={showVFX === 'player'} onDone={() => {}} />
           </div>
-          {/* HP Bar */}
+          {/* HP + Mana Bars */}
           <div className="w-20 mt-1">
             <HpBar hp={player.hp} maxHp={player.maxHp} height="h-1.5" />
+            {player.maxMana > 0 && (
+              <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden mt-0.5">
+                <div className="h-full bg-gradient-to-r from-violet-500 to-blue-500 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (player.mana / player.maxMana) * 100)}%` }} />
+              </div>
+            )}
             <div className="text-[8px] text-center text-gray-400 mt-0.5">{player.name} Lv{player.level}</div>
+            {player.maxMana > 0 && <div className="text-[7px] text-center text-violet-400">{player.mana}/{player.maxMana} MP</div>}
           </div>
         </div>
 
@@ -319,16 +326,32 @@ export function BattleArena({ battle, phase, dmgPopup, stageEmoji, stageElement,
         ))}
       </div>
 
+      {/* ─── Passive Stacks indicator ─── */}
+      {battle.passiveState?.flammeStacks > 0 && (
+        <div className="flex items-center justify-center gap-1 mb-1">
+          <span className="text-[9px] text-amber-400">{'\uD83D\uDD25'} Flamme x{battle.passiveState.flammeStacks}</span>
+          {battle.passiveState.echoFreeMana && <span className="text-[9px] text-teal-400">{'\u23F3'} Sort gratuit !</span>}
+        </div>
+      )}
+      {battle.passiveState?.echoFreeMana && !battle.passiveState?.flammeStacks && (
+        <div className="flex items-center justify-center gap-1 mb-1">
+          <span className="text-[9px] text-teal-400">{'\u23F3'} Prochain sort gratuit !</span>
+        </div>
+      )}
+
       {/* ─── SKILLS ─── */}
       <div className="grid grid-cols-3 gap-2 mb-2">
         {player.skills.map((skill, i) => {
           const onCd = skill.cd > 0;
+          const noMana = (skill.manaCost || 0) > 0 && player.mana < skill.manaCost && !battle.passiveState?.echoFreeMana;
+          const blocked = onCd || noMana || phase !== 'idle';
           return (
             <button key={i}
-              onClick={() => !onCd && phase === 'idle' && onSkillUse(i)}
-              disabled={onCd || phase !== 'idle'}
+              onClick={() => !blocked && onSkillUse(i)}
+              disabled={blocked}
               className={`relative p-2 rounded-lg border text-center transition-all ${
                 onCd ? 'border-gray-700/30 bg-gray-800/20 opacity-40' :
+                noMana ? 'border-violet-700/30 bg-violet-900/20 opacity-50' :
                 phase !== 'idle' ? 'border-gray-700/30 bg-gray-800/20 opacity-60' :
                 'border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 active:scale-95'
               }`}>
@@ -340,9 +363,19 @@ export function BattleArena({ battle, phase, dmgPopup, stageEmoji, stageElement,
                 {skill.healSelf ? `Soin ${skill.healSelf}%` : ''}
                 {skill.debuffDef ? `DEF -${skill.debuffDef}%` : ''}
               </div>
+              {(skill.manaCost || 0) > 0 && (
+                <div className={`text-[7px] mt-0.5 ${noMana ? 'text-red-400' : 'text-violet-400'}`}>
+                  {battle.passiveState?.echoFreeMana ? <s>{skill.manaCost}</s> : skill.manaCost} MP
+                </div>
+              )}
               {onCd && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg">
                   <span className="text-gray-400 text-xs font-bold">{skill.cd}t</span>
+                </div>
+              )}
+              {!onCd && noMana && (
+                <div className="absolute inset-0 flex items-center justify-center bg-violet-900/40 rounded-lg">
+                  <span className="text-violet-300 text-[9px] font-bold">Mana</span>
                 </div>
               )}
             </button>

@@ -29,8 +29,8 @@ export const RARITY = {
 };
 
 // ─── Stat System ─────────────────────────────────────────────
-export const STAT_PER_POINT = { hp: 8, atk: 1.5, def: 1.5, spd: 1, crit: 0.8, res: 0.8 };
-export const STAT_ORDER = ['hp', 'atk', 'def', 'spd', 'crit', 'res'];
+export const STAT_PER_POINT = { hp: 8, atk: 1.5, def: 1.5, spd: 1, crit: 0.8, res: 0.8, mana: 4 };
+export const STAT_ORDER = ['hp', 'atk', 'def', 'spd', 'crit', 'res', 'mana'];
 export const STAT_META = {
   hp:   { name: 'PV',   icon: '\u2764\uFE0F', color: 'text-green-400',   desc: 'Points de Vie' },
   atk:  { name: 'ATK',  icon: '\u2694\uFE0F', color: 'text-red-400',     desc: "Puissance d'attaque" },
@@ -38,9 +38,34 @@ export const STAT_META = {
   spd:  { name: 'SPD',  icon: '\uD83D\uDCA8', color: 'text-emerald-400', desc: 'Vitesse' },
   crit: { name: 'CRIT', icon: '\uD83C\uDFAF', color: 'text-yellow-400', desc: 'Chance de coup critique' },
   res:  { name: 'RES',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-cyan-400',    desc: 'Reduction des degats' },
+  mana: { name: 'MANA', icon: '\uD83D\uDCA0', color: 'text-violet-400',  desc: 'Points de mana' },
+};
+
+// ─── Mana System ────────────────────────────────────────────
+export const getBaseMana = (base) => Math.floor(50 + base.hp / 4 + (base.res || 0) * 2);
+export const BASE_MANA_REGEN = 8;
+export const getSkillManaCost = (skill) => {
+  if (skill.manaCost !== undefined) return skill.manaCost;
+  if (!skill.power || skill.cdMax === 0) return 0;
+  return Math.floor(5 + skill.power / 15 + skill.cdMax * 3);
 };
 export const POINTS_PER_LEVEL = 2;
 export const MAX_LEVEL = 140;
+
+// ─── Account Level System ───────────────────────────────────
+export const ACCOUNT_XP_FOR_LEVEL = (lvl) => 80 + lvl * 25;
+export const ACCOUNT_BONUS_INTERVAL = 10;
+export const ACCOUNT_BONUS_AMOUNT = 10;
+export function accountLevelFromXp(totalXp) {
+  let lvl = 0, spent = 0;
+  while (true) {
+    const need = ACCOUNT_XP_FOR_LEVEL(lvl + 1);
+    if (spent + need > totalXp) break;
+    spent += need;
+    lvl++;
+  }
+  return { level: lvl, xpInLevel: totalXp - spent, xpForNext: ACCOUNT_XP_FOR_LEVEL(lvl + 1) };
+}
 
 // ─── Skill Tree Constants ────────────────────────────────────
 export const TIER_NAMES_SKILL = ['Eveil', 'Maitrise', 'Transcendance'];
@@ -152,8 +177,8 @@ export const statsAt = (base, growth, level, allocated = {}, tb = {}) => {
   };
 };
 
-// statsAtFull — wraps statsAt with eveil stars + equipment bonuses
-export const statsAtFull = (base, growth, level, allocated = {}, tb = {}, equipBonuses = {}, eveilStars = 0) => {
+// statsAtFull — wraps statsAt with eveil stars + equipment bonuses + global account bonuses
+export const statsAtFull = (base, growth, level, allocated = {}, tb = {}, equipBonuses = {}, eveilStars = 0, globalBonuses = {}) => {
   const eveilMult = 1 + eveilStars * 0.05;
   const adjBase = {
     hp: Math.floor(base.hp * eveilMult),
@@ -186,6 +211,21 @@ export const statsAtFull = (base, growth, level, allocated = {}, tb = {}, equipB
   stats.atk += (equipBonuses.atk_flat || 0);
   stats.def += (equipBonuses.def_flat || 0);
   stats.spd += (equipBonuses.spd_flat || 0);
+  // Add global account bonuses (flat, applied to all characters)
+  stats.hp += (globalBonuses.hp || 0) * STAT_PER_POINT.hp;
+  stats.atk += (globalBonuses.atk || 0) * STAT_PER_POINT.atk;
+  stats.def += (globalBonuses.def || 0) * STAT_PER_POINT.def;
+  stats.spd += (globalBonuses.spd || 0) * STAT_PER_POINT.spd;
+  stats.crit = +(stats.crit + (globalBonuses.crit || 0) * STAT_PER_POINT.crit).toFixed(1);
+  stats.res = +(stats.res + (globalBonuses.res || 0) * STAT_PER_POINT.res).toFixed(1);
+  // Mana (derived from base stats + allocated + equipment + account)
+  const baseMana = getBaseMana(base);
+  const manaFromAlloc = (allocated.mana || 0) * STAT_PER_POINT.mana;
+  const manaFromAccount = (globalBonuses.mana || 0) * STAT_PER_POINT.mana;
+  const manaPercent = 1 + (mergedTb.manaPercent || 0) / 100 + (equipBonuses.manaPercent || 0) / 100;
+  stats.mana = Math.floor((baseMana + manaFromAlloc + manaFromAccount) * manaPercent);
+  stats.manaRegen = BASE_MANA_REGEN + Math.floor(stats.spd / 15) + Math.floor(mergedTb.manaRegen || 0);
+  stats.manaCostReduce = Math.min(50, (mergedTb.manaCostReduce || 0) + (equipBonuses.manaCostReduce || 0));
   return stats;
 };
 

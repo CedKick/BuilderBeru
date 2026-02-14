@@ -13,14 +13,17 @@ import {
   TIER_NAMES_SKILL, TIER_COSTS, SP_INTERVAL, MAX_LEVEL,
   statsAt, statsAtFull, xpForLevel, getElementMult, getEffStat,
   applySkillUpgrades, getUpgradeDesc, computeAttack, aiPickSkill,
+  ACCOUNT_XP_FOR_LEVEL, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT, accountLevelFromXp,
+  getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
 } from './colosseumCore';
 import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate } from './raidData';
 import { BattleStyles, BattleArena } from './BattleVFX';
 import {
   ARTIFACT_SETS, ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL,
+  ALL_ARTIFACT_SETS, RAID_ARTIFACT_SETS,
   WEAPONS, WEAPON_PRICES, FORGE_COSTS, ENHANCE_COST, SELL_RATIO, MAX_ARTIFACT_LEVEL,
   generateArtifact, enhanceArtifact, computeArtifactBonuses, computeWeaponBonuses,
-  mergeEquipBonuses, getActiveSetBonuses, MAX_EVEIL_STARS, STAGE_HUNTER_DROP,
+  mergeEquipBonuses, getActiveSetBonuses, getActivePassives, MAX_EVEIL_STARS, STAGE_HUNTER_DROP,
   HAMMERS, HAMMER_ORDER, getRequiredHammer, rollHammerDrop,
 } from './equipmentData';
 
@@ -119,7 +122,7 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, respecCount: {}, cooldowns: {}, stagesCleared: [], stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponInventory: [], hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 } });
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, respecCount: {}, cooldowns: {}, stagesCleared: [], stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponInventory: [], hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0 });
 const loadData = () => {
   try {
     const d = { ...defaultData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) };
@@ -128,6 +131,9 @@ const loadData = () => {
     if (!d.weapons) d.weapons = {};
     if (!d.weaponInventory) d.weaponInventory = [];
     if (!d.hammers) d.hammers = { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 };
+    if (d.accountXp === undefined) d.accountXp = 0;
+    if (!d.accountBonuses) d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
+    if (d.accountAllocations === undefined) d.accountAllocations = 0;
     return d;
   } catch { return defaultData(); }
 };
@@ -151,6 +157,7 @@ export default function ShadowColosseum() {
   const [chibiRage, setChibiRage] = useState(null); // { id, level, text, anim }
   const [shopEnhTarget, setShopEnhTarget] = useState(null); // index in artifactInventory
   const [shopEnhEquipKey, setShopEnhEquipKey] = useState(null); // "chibiId|slotId"
+  const [accountLevelUpPending, setAccountLevelUpPending] = useState(0); // number of pending allocations
   const clickCountRef = useRef({});
   const clickTimerRef = useRef({});
   const phaseRef = useRef('idle');
@@ -332,20 +339,26 @@ export default function ShadowColosseum() {
     const tb = getChibiTalentBonuses(selChibi);
     const eqB = getChibiEquipBonuses(selChibi);
     const evStars = getChibiEveilStars(selChibi);
-    const s = statsAtFull(chibi.base, chibi.growth, level, alloc, tb, eqB, evStars);
+    const s = statsAtFull(chibi.base, chibi.growth, level, alloc, tb, eqB, evStars, data.accountBonuses);
     const tree = data.skillTree[selChibi] || {};
 
     // Apply cooldown reduction from talents
     const cdReduction = Math.floor(tb.cooldownReduction || 0);
+
+    const passives = getActivePassives(data.artifacts[selChibi]);
+    const costReduce = s.manaCostReduce || 0;
 
     setBattle({
       player: {
         id: selChibi, name: chibi.name, level, element: chibi.element,
         hp: s.hp, maxHp: s.hp, atk: s.atk, def: s.def, spd: s.spd,
         crit: Math.min(80, s.crit), res: Math.min(70, s.res),
+        mana: s.mana, maxMana: s.mana, manaRegen: s.manaRegen,
         skills: chibi.skills.map((sk, i) => {
           const upgraded = applySkillUpgrades(sk, tree[i] || 0);
-          return { ...upgraded, cdMax: Math.max(0, upgraded.cdMax - cdReduction), cd: 0 };
+          const baseCost = getSkillManaCost(upgraded);
+          const finalCost = Math.max(0, Math.floor(baseCost * (1 - costReduce / 100)));
+          return { ...upgraded, cdMax: Math.max(0, upgraded.cdMax - cdReduction), cd: 0, manaCost: finalCost };
         }),
         buffs: [],
       },
@@ -355,8 +368,11 @@ export default function ShadowColosseum() {
         crit: stage.crit, res: stage.res,
         skills: stage.skills.map(sk => ({ ...sk, cd: 0 })),
         buffs: [],
+        mana: 999, maxMana: 999, manaRegen: 0,
       },
       talentBonuses: (() => { const m = { ...tb }; for (const [k, v] of Object.entries(eqB)) { if (v) m[k] = (m[k] || 0) + v; } return m; })(),
+      passives,
+      passiveState: { flammeStacks: 0, martyrHealed: false, echoTurnCounter: 0, echoFreeMana: false },
       immortelUsed: false,
       turn: 1, log: [],
     });
@@ -373,12 +389,60 @@ export default function ShadowColosseum() {
     const player = JSON.parse(JSON.stringify(battle.player));
     const enemy = JSON.parse(JSON.stringify(battle.enemy));
     const tb = battle.talentBonuses || {};
+    const passives = battle.passives || [];
+    const ps = { ...(battle.passiveState || {}) };
     let immortelUsed = battle.immortelUsed || false;
     const log = [...battle.log];
     const playerSkill = player.skills[skillIdx];
 
+    // Check mana
+    const manaCost = ps.echoFreeMana ? 0 : (playerSkill.manaCost || 0);
+    if (player.mana < manaCost) {
+      log.push({ text: `Pas assez de mana ! (${player.mana}/${manaCost})`, type: 'info', id: Date.now() });
+      setBattle(prev => ({ ...prev, log: log.slice(-10) }));
+      return;
+    }
+    if (ps.echoFreeMana) ps.echoFreeMana = false;
+
+    // Consume mana
+    player.mana = Math.max(0, player.mana - manaCost);
+
+    // ─── PASSIVE: beforeAttack ─────────────────
+    let atkMult = 1;
+    let forceCrit = false;
+    let bonusCritDmg = 0;
+    let bonusDefIgnore = 0;
+    passives.forEach(p => {
+      if (p.trigger !== 'beforeAttack') return;
+      if (p.type === 'desperateFury') {
+        const missingPct = 1 - (player.hp / player.maxHp);
+        atkMult += missingPct * p.dmgPerMissingPct * 100;
+      }
+      if (p.type === 'lastStand' && (player.hp / player.maxHp) < p.hpThreshold) {
+        forceCrit = p.autoCrit;
+        bonusDefIgnore += p.defIgnore;
+      }
+      if (p.type === 'innerFlameRelease' && ps.flammeStacks >= p.stackThreshold) {
+        forceCrit = p.autoCrit;
+        bonusCritDmg += p.bonusCritDmg;
+        ps.flammeStacks = 0;
+        log.push({ text: `Flamme Interieure explose ! Crit garanti !`, type: 'info', id: Date.now() - 0.2 });
+      }
+    });
+
+    // Temporarily modify player for this attack
+    const savedAtk = player.atk;
+    const savedCrit = player.crit;
+    player.atk = Math.floor(player.atk * atkMult);
+    if (forceCrit) player.crit = 100;
+    const tbForAttack = { ...tb };
+    tbForAttack.critDamage = (tbForAttack.critDamage || 0) + bonusCritDmg * 100;
+    tbForAttack.defPen = (tbForAttack.defPen || 0) + bonusDefIgnore * 100;
+
     setPhase('player_atk');
-    const pRes = computeAttack(player, playerSkill, enemy, tb);
+    const pRes = computeAttack(player, playerSkill, enemy, tbForAttack);
+    player.atk = savedAtk;
+    player.crit = savedCrit;
 
     enemy.hp = Math.max(0, enemy.hp - pRes.damage);
     if (pRes.healed) player.hp = Math.min(player.maxHp, player.hp + pRes.healed);
@@ -386,6 +450,26 @@ export default function ShadowColosseum() {
     if (pRes.debuff) enemy.buffs.push({ ...pRes.debuff });
     playerSkill.cd = playerSkill.cdMax;
     log.push({ text: pRes.text, type: 'player', id: Date.now() });
+
+    // ─── PASSIVE: afterAttack ─────────────────
+    passives.forEach(p => {
+      if (p.trigger !== 'afterAttack') return;
+      if (p.type === 'lifesteal' && pRes.damage > 0 && Math.random() < p.chance) {
+        const stolen = Math.floor(pRes.damage * p.stealPct);
+        player.hp = Math.min(player.maxHp, player.hp + stolen);
+        log.push({ text: `Vol de vie ! +${stolen} PV`, type: 'info', id: Date.now() + 0.05 });
+      }
+      if (p.type === 'echoCD' && Math.random() < p.chance) {
+        const cdSkills = player.skills.filter(s => s.cd > 0);
+        if (cdSkills.length > 0) {
+          cdSkills[Math.floor(Math.random() * cdSkills.length)].cd--;
+          log.push({ text: `Echo Temporel ! -1 CD`, type: 'info', id: Date.now() + 0.06 });
+        }
+      }
+      if (p.type === 'innerFlameStack') {
+        ps.flammeStacks = Math.min(p.maxStacks, (ps.flammeStacks || 0) + 1);
+      }
+    });
 
     // Regen per turn (after player action)
     if (tb.regenPerTurn > 0) {
@@ -396,8 +480,11 @@ export default function ShadowColosseum() {
       }
     }
 
+    // Mana regen
+    player.mana = Math.min(player.maxMana, player.mana + (player.manaRegen || 0));
+
     setDmgPopup(pRes.damage > 0 ? { target: 'enemy', value: pRes.damage, isCrit: pRes.isCrit } : null);
-    setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, log: log.slice(-10) }));
+    setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, passiveState: ps, log: log.slice(-10) }));
 
     if (enemy.hp <= 0) {
       setTimeout(() => handleVictory(), 1200);
@@ -409,7 +496,36 @@ export default function ShadowColosseum() {
       const eSkill = aiPickSkill(enemy);
       const eRes = computeAttack(enemy, eSkill, player);
 
-      player.hp = Math.max(0, player.hp - eRes.damage);
+      let dmgToPlayer = eRes.damage;
+
+      // ─── PASSIVE: onHit (dodge) ──────────────
+      let dodged = false;
+      passives.forEach(p => {
+        if (p.trigger === 'onHit' && p.type === 'dodge' && Math.random() < p.chance) {
+          dodged = true;
+          log.push({ text: `${player.name} esquive l'attaque !`, type: 'info', id: Date.now() + 0.9 });
+        }
+      });
+
+      if (dodged) {
+        dmgToPlayer = 0;
+        // ─── PASSIVE: onDodge (counter) ────────
+        passives.forEach(p => {
+          if (p.trigger === 'onDodge' && p.type === 'counter') {
+            const counterDmg = Math.max(1, Math.floor(getEffStat(player.atk, player.buffs, 'atk') * p.powerMult));
+            enemy.hp = Math.max(0, enemy.hp - counterDmg);
+            log.push({ text: `Contre-attaque ! -${counterDmg} PV`, type: 'player', id: Date.now() + 0.95 });
+          }
+        });
+      } else {
+        // Flamme Interieure: reset stacks when hit
+        if (ps.flammeStacks > 0) {
+          const hadFlameReset = passives.some(p => p.type === 'innerFlameStack');
+          if (hadFlameReset) { ps.flammeStacks = 0; }
+        }
+      }
+
+      player.hp = Math.max(0, player.hp - dmgToPlayer);
 
       // Immortel: survive one fatal blow with 1 HP
       if (player.hp <= 0 && tb.hasImmortel && !immortelUsed) {
@@ -422,10 +538,10 @@ export default function ShadowColosseum() {
       if (eRes.buff) enemy.buffs.push({ ...eRes.buff });
       if (eRes.debuff) player.buffs.push({ ...eRes.debuff });
       eSkill.cd = eSkill.cdMax;
-      log.push({ text: eRes.text, type: 'enemy', id: Date.now() + 1 });
+      log.push({ text: dodged ? `${enemy.name} attaque mais rate !` : eRes.text, type: 'enemy', id: Date.now() + 1 });
 
       // Riposte: chance to counter-attack after enemy hit
-      if (tb.counterChance > 0 && eRes.damage > 0 && player.hp > 0) {
+      if (!dodged && tb.counterChance > 0 && eRes.damage > 0 && player.hp > 0) {
         if (Math.random() * 100 < tb.counterChance) {
           const riposteDmg = Math.max(1, Math.floor(getEffStat(player.atk, player.buffs, 'atk') * 0.5));
           enemy.hp = Math.max(0, enemy.hp - riposteDmg);
@@ -438,8 +554,17 @@ export default function ShadowColosseum() {
       player.buffs = player.buffs.map(b => ({ ...b, turns: b.turns - 1 })).filter(b => b.turns > 0);
       enemy.buffs = enemy.buffs.map(b => ({ ...b, turns: b.turns - 1 })).filter(b => b.turns > 0);
 
-      setDmgPopup(eRes.damage > 0 ? { target: 'player', value: eRes.damage, isCrit: eRes.isCrit } : null);
-      setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, immortelUsed, turn: prev.turn + 1, log: log.slice(-10) }));
+      // ─── PASSIVE: onTurnStart (for next turn) ───
+      ps.echoTurnCounter = (ps.echoTurnCounter || 0) + 1;
+      passives.forEach(p => {
+        if (p.trigger === 'onTurnStart' && p.type === 'echoFreeMana' && ps.echoTurnCounter % p.interval === 0) {
+          ps.echoFreeMana = true;
+          log.push({ text: `Echo Temporel ! Prochain sort gratuit !`, type: 'info', id: Date.now() + 1.5 });
+        }
+      });
+
+      setDmgPopup(dmgToPlayer > 0 ? { target: 'player', value: dmgToPlayer, isCrit: eRes.isCrit } : null);
+      setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, immortelUsed, passiveState: ps, turn: prev.turn + 1, log: log.slice(-10) }));
 
       if (enemy.hp <= 0) {
         setTimeout(() => handleVictory(), 1200);
@@ -477,6 +602,16 @@ export default function ShadowColosseum() {
 
     shadowCoinManager.addCoins(stage.coins, 'colosseum_victory');
 
+    // Account XP
+    const accountXpGain = 15 + stage.tier * 10 + (stage.isBoss ? 20 : 0);
+    const prevAccountXp = data.accountXp || 0;
+    const newAccountXp = prevAccountXp + accountXpGain;
+    const prevAccLvl = accountLevelFromXp(prevAccountXp).level;
+    const newAccLvl = accountLevelFromXp(newAccountXp).level;
+    const prevMilestones = Math.floor(prevAccLvl / ACCOUNT_BONUS_INTERVAL);
+    const newMilestones = Math.floor(newAccLvl / ACCOUNT_BONUS_INTERVAL);
+    const newAllocations = newMilestones - prevMilestones;
+
     // Hammer drop
     const hammerDrop = rollHammerDrop(stage.tier, !!stage.isBoss);
 
@@ -505,9 +640,11 @@ export default function ShadowColosseum() {
         stagesCleared: prev.stagesCleared.includes(stage.id) ? prev.stagesCleared : [...prev.stagesCleared, stage.id],
         stats: { battles: prev.stats.battles + 1, wins: prev.stats.wins + 1 },
         hammers: newHammers,
+        accountXp: newAccountXp,
       };
     });
-    setResult({ won: true, xp: stage.xp, coins: stage.coins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrop, hammerDrop });
+    if (newAllocations > 0) setAccountLevelUpPending(newAllocations);
+    setResult({ won: true, xp: stage.xp, coins: stage.coins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrop, hammerDrop, accountXpGain, accountLevelUp: newAccLvl > prevAccLvl ? newAccLvl : null, accountAllocations: newAllocations });
     setView('result');
   }, [selChibi, selStage, data]);
 
@@ -573,6 +710,51 @@ export default function ShadowColosseum() {
             </div>
           </div>
 
+          {/* Account Level Bar */}
+          {(() => {
+            const acc = accountLevelFromXp(data.accountXp || 0);
+            const totalBonusAllocated = Object.values(data.accountBonuses || {}).reduce((s, v) => s + v, 0);
+            const totalBonusEarned = Math.floor(acc.level / ACCOUNT_BONUS_INTERVAL) * ACCOUNT_BONUS_AMOUNT;
+            const pendingPoints = totalBonusEarned - totalBonusAllocated;
+            const ab = data.accountBonuses || {};
+            const hasAnyBonus = Object.values(ab).some(v => v > 0);
+            return (
+              <div className="mb-4 p-2.5 rounded-xl bg-gradient-to-r from-indigo-900/30 to-purple-900/30 border border-indigo-500/30">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm">{'\uD83C\uDFC5'}</span>
+                    <span className="text-xs font-bold text-indigo-300">Niveau Compte</span>
+                    <span className="text-sm font-black text-white">{acc.level}</span>
+                  </div>
+                  <span className="text-[9px] text-gray-500">{acc.xpInLevel}/{acc.xpForNext} XP</span>
+                </div>
+                <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, (acc.xpInLevel / acc.xpForNext) * 100)}%` }} />
+                </div>
+                {hasAnyBonus && (
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+                    {STAT_ORDER.filter(k => ab[k] > 0).map(k => (
+                      <span key={k} className="text-[8px] text-gray-400">
+                        {STAT_META[k].icon} {STAT_META[k].name} <span className="text-green-400 font-bold">+{ab[k]}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {pendingPoints > 0 && (
+                  <button
+                    onClick={() => setAccountLevelUpPending(Math.ceil(pendingPoints / ACCOUNT_BONUS_AMOUNT))}
+                    className="mt-1.5 w-full text-center text-[10px] font-bold text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 rounded-lg py-1 hover:bg-yellow-500/20 transition-all animate-pulse">
+                    {'\u2B50'} {pendingPoints} points de stats a attribuer !
+                  </button>
+                )}
+                <div className="text-[8px] text-gray-600 mt-1 text-center">
+                  Prochain bonus : Lv {(Math.floor(acc.level / ACCOUNT_BONUS_INTERVAL) + 1) * ACCOUNT_BONUS_INTERVAL} (+{ACCOUNT_BONUS_AMOUNT} pts d'une stat au choix)
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Raid Button */}
           <Link to="/shadow-colosseum/raid"
             className="block mb-4 p-3 rounded-xl border border-red-500/30 bg-gradient-to-r from-red-900/30 to-orange-900/30 hover:from-red-900/50 hover:to-orange-900/50 transition-all text-center group">
@@ -616,7 +798,7 @@ export default function ShadowColosseum() {
                   const alloc = data.statPoints[id] || {};
                   const tb = getChibiTalentBonuses(id);
                   const eqB = getChibiEquipBonuses(id);
-                  const s = statsAtFull(c.base, c.growth, level, alloc, tb, eqB, 0);
+                  const s = statsAtFull(c.base, c.growth, level, alloc, tb, eqB, 0, data.accountBonuses);
                   const onCd = isCooldown(id);
                   const selected = selChibi === id;
                   const availPts = getAvailStatPts(id);
@@ -711,21 +893,52 @@ export default function ShadowColosseum() {
                         const tbDetail = getChibiTalentBonuses(selChibi);
                         const eqBDetail = getChibiEquipBonuses(selChibi);
                         const evStars = getChibiEveilStars(selChibi);
-                        const s = statsAtFull(selData.base, selData.growth, getChibiLevel(selChibi).level, alloc, tbDetail, eqBDetail, evStars);
+                        const s = statsAtFull(selData.base, selData.growth, getChibiLevel(selChibi).level, alloc, tbDetail, eqBDetail, evStars, data.accountBonuses);
+                        // Merge talent + equip for derived stats
+                        const derived = { ...tbDetail };
+                        for (const [k, v] of Object.entries(eqBDetail)) { if (v) derived[k] = (derived[k] || 0) + v; }
+                        const totalCritDmg = 150 + (derived.critDamage || 0);
+                        const derivedLines = [
+                          { key: '_critDmgTotal', name: 'CRIT DMG', icon: '\uD83D\uDCA5', color: 'text-orange-400', suffix: '%', value: totalCritDmg },
+                          { key: 'physicalDamage', name: 'DMG Physique', icon: '\u2694\uFE0F', color: 'text-red-300', suffix: '%' },
+                          { key: 'elementalDamage', name: 'DMG Elementaire', icon: '\uD83C\uDF00', color: 'text-purple-300', suffix: '%' },
+                          { key: 'fireDamage', name: 'DMG Feu', icon: '\uD83D\uDD25', color: 'text-orange-400', suffix: '%' },
+                          { key: 'waterDamage', name: 'DMG Eau', icon: '\uD83D\uDCA7', color: 'text-cyan-400', suffix: '%' },
+                          { key: 'shadowDamage', name: 'DMG Ombre', icon: '\uD83C\uDF11', color: 'text-purple-400', suffix: '%' },
+                          { key: 'allDamage', name: 'Tous DMG', icon: '\u2728', color: 'text-emerald-400', suffix: '%' },
+                          { key: 'bossDamage', name: 'DMG Boss', icon: '\uD83D\uDC1C', color: 'text-red-400', suffix: '%' },
+                          { key: 'defPen', name: 'DEF PEN', icon: '\uD83D\uDDE1\uFE0F', color: 'text-yellow-300', suffix: '%' },
+                          { key: 'healBonus', name: 'Soins', icon: '\uD83D\uDC9A', color: 'text-green-400', suffix: '%' },
+                          { key: 'cooldownReduction', name: 'Reduc. CD', icon: '\u231B', color: 'text-blue-300', suffix: '' },
+                          { key: 'elementalAdvantageBonus', name: 'Avantage Elem.', icon: '\uD83C\uDF1F', color: 'text-yellow-400', suffix: '%' },
+                        ].filter(d => d.value !== undefined || (derived[d.key] || 0) > 0);
                         return (
-                          <div className="grid grid-cols-3 gap-1.5 mb-3">
-                            {STAT_ORDER.map(stat => {
-                              const isPct = stat === 'crit' || stat === 'res';
-                              const m = STAT_META[stat];
-                              return (
-                                <div key={stat} className="flex items-center gap-1 bg-gray-800/30 rounded-md px-1.5 py-1">
-                                  <span className="text-[10px]">{m.icon}</span>
-                                  <span className={`text-[9px] font-bold ${m.color}`}>{m.name}</span>
-                                  <span className="text-[10px] text-white ml-auto font-bold">{s[stat]}{isPct ? '%' : ''}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
+                          <>
+                            <div className="grid grid-cols-3 gap-1.5 mb-2">
+                              {STAT_ORDER.map(stat => {
+                                const isPct = stat === 'crit' || stat === 'res';
+                                const m = STAT_META[stat];
+                                return (
+                                  <div key={stat} className="flex items-center gap-1 bg-gray-800/30 rounded-md px-1.5 py-1">
+                                    <span className="text-[10px]">{m.icon}</span>
+                                    <span className={`text-[9px] font-bold ${m.color}`}>{m.name}</span>
+                                    <span className="text-[10px] text-white ml-auto font-bold">{s[stat]}{isPct ? '%' : ''}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {derivedLines.length > 0 && (
+                              <div className="grid grid-cols-2 gap-1 mb-3">
+                                {derivedLines.map(d => (
+                                  <div key={d.key} className="flex items-center gap-1 bg-gray-800/20 rounded-md px-1.5 py-0.5">
+                                    <span className="text-[9px]">{d.icon}</span>
+                                    <span className={`text-[8px] ${d.color}`}>{d.name}</span>
+                                    <span className={`text-[9px] ml-auto font-bold ${d.color}`}>{d.value !== undefined ? d.value : `+${derived[d.key]}`}{d.suffix}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
                         );
                       })()}
                       {/* Action Buttons */}
@@ -779,7 +992,7 @@ export default function ShadowColosseum() {
                   const tb = getChibiTalentBonuses(id);
                   const eqB = getChibiEquipBonuses(id);
                   const evStars = getChibiEveilStars(id);
-                  const s = statsAtFull(c.base, c.growth, level, alloc, tb, eqB, evStars);
+                  const s = statsAtFull(c.base, c.growth, level, alloc, tb, eqB, evStars, data.accountBonuses);
                   const selected = selChibi === id;
                   const availPts = getAvailStatPts(id);
                   const availSP = getAvailSP(id);
@@ -1988,6 +2201,22 @@ export default function ShadowColosseum() {
                   )}
                 </motion.div>
               )}
+              {/* Account XP */}
+              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.3 }}
+                className="mb-6">
+                <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
+                  <span>{'\uD83C\uDFC5'}</span>
+                  <span>Compte +{result.accountXpGain} XP</span>
+                </div>
+                {result.accountLevelUp && (
+                  <div className="mt-1 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border border-indigo-500/40 rounded-xl p-2 text-center">
+                    <div className="text-indigo-300 font-black">{'\u2B06\uFE0F'} Compte Lv {result.accountLevelUp} !</div>
+                    {result.accountAllocations > 0 && (
+                      <div className="text-yellow-400 text-[10px] mt-0.5">{'\u2B50'} +{result.accountAllocations * ACCOUNT_BONUS_AMOUNT} pts de stats a attribuer !</div>
+                    )}
+                  </div>
+                )}
+              </motion.div>
             </motion.div>
           ) : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -2008,6 +2237,56 @@ export default function ShadowColosseum() {
           >
             Retour au Colisee
           </button>
+        </div>
+      )}
+
+      {/* ═══ ACCOUNT LEVEL-UP ALLOCATION POPUP ═══ */}
+      {accountLevelUpPending > 0 && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            className="bg-[#12122a] border border-indigo-500/40 rounded-2xl p-5 max-w-sm w-full shadow-2xl">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">{'\uD83C\uDFC5'}</div>
+              <h3 className="text-xl font-black text-indigo-300">Niveau Compte !</h3>
+              <p className="text-sm text-gray-400 mt-1">Choisis une stat a booster de <span className="text-yellow-400 font-bold">+{ACCOUNT_BONUS_AMOUNT}</span> pts</p>
+              <p className="text-[10px] text-gray-500">Ce bonus s'applique a TOUS tes personnages (y compris Sung)</p>
+              {accountLevelUpPending > 1 && (
+                <p className="text-[10px] text-amber-400 mt-1">{accountLevelUpPending} allocations en attente</p>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {STAT_ORDER.map(statKey => {
+                const meta = STAT_META[statKey];
+                const currentVal = (data.accountBonuses || {})[statKey] || 0;
+                return (
+                  <button key={statKey}
+                    onClick={() => {
+                      setData(prev => ({
+                        ...prev,
+                        accountBonuses: { ...prev.accountBonuses, [statKey]: (prev.accountBonuses[statKey] || 0) + ACCOUNT_BONUS_AMOUNT },
+                        accountAllocations: (prev.accountAllocations || 0) + 1,
+                      }));
+                      setAccountLevelUpPending(p => p - 1);
+                    }}
+                    className={`p-3 rounded-xl border border-gray-700/40 bg-gray-800/30 hover:border-indigo-500/60 hover:bg-indigo-500/10 transition-all text-left group`}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{meta.icon}</span>
+                      <div>
+                        <div className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors">{meta.name}</div>
+                        <div className="text-[9px] text-gray-500">{meta.desc}</div>
+                      </div>
+                    </div>
+                    <div className="mt-1 text-[10px]">
+                      <span className="text-gray-400">Actuel : </span>
+                      <span className="text-green-400 font-bold">+{currentVal}</span>
+                      <span className="text-gray-500 mx-1">{'\u2192'}</span>
+                      <span className="text-yellow-400 font-bold">+{currentVal + ACCOUNT_BONUS_AMOUNT}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
         </div>
       )}
     </div>
