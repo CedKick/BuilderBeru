@@ -375,34 +375,11 @@ const ArtifactCraftSimulator = () => {
   const chibisRef = useRef([]);
   const screen = useResponsive();
 
-  // Ajoute ça juste après les useState au début du component
+  // Debug helpers (no-op in production)
 useEffect(() => {
-  window.debugChibi = () => {
-    console.log('=== DEBUG CHIBI SYSTEM ===');
-    console.log('Canvas exists:', !!canvasRef.current);
-    console.log('Canvas rect:', canvasRef.current?.getBoundingClientRect());
-    console.log('Chibis loaded:', chibisRef.current.map(c => ({
-      type: c.type,
-      x: c.x,
-      y: c.y,
-      size: c.size
-    })));
-    console.log('Show bubble:', showChibiBubble);
-    console.log('Bubble position:', chibiPos);
-    console.log('Current message:', chibiMessage);
-    console.log('Current speaker:', currentChibi);
-  };
-  
-  window.testBubble = () => {
-    console.log('--- TEST DIRECT ---');
-    const testPos = { x: window.innerWidth / 2, y: 200 };
-    console.log('Setting position:', testPos);
-    setChibiPos(testPos);
-    setShowChibiBubble(true);
-    setChibiMessage("TEST MESSAGE DIRECT!");
-    setCurrentChibi('tank');
-  };
-}, [showChibiBubble, chibiPos, chibiMessage, currentChibi]);
+  window.debugChibi = () => {};
+  window.testBubble = () => {};
+}, []);
 
 function useResponsive() {
   const [screen, setScreen] = React.useState(() => {
@@ -590,25 +567,11 @@ useEffect(() => {
   window.testChibi = {
     // Tester un message direct
     speak: (message = "Test message!", entity = 'tank') => {
-      console.log(`🎮 Testing chibi speak: ${entity} says "${message}"`);
       showChibiMessage(message, entity, true);
     },
     
     // Vérifier l'état des chibis
-    status: () => {
-      console.log('📊 Chibi System Status:');
-      console.log('- Canvas exists:', !!canvasRef.current);
-      console.log('- Chibis loaded:', chibisRef.current.length);
-      console.log('- Is speaking:', isSpeaking.current);
-      console.log('- Message queue:', messageQueue.current);
-      console.log('- Show bubble:', showChibiBubble);
-      console.log('- Current chibi:', currentChibi);
-      console.log('- Chibi positions:', chibisRef.current.map(c => ({
-        type: c.type,
-        x: c.x,
-        y: c.y
-      })));
-    },
+    status: () => {},
     
     // Forcer un message spontané
     triggerSpontaneous: () => {
@@ -616,14 +579,12 @@ useEffect(() => {
       const randomType = types[Math.floor(Math.random() * types.length)];
       const messages = SPONTANEOUS_MESSAGES[randomType];
       const msg = messages[Math.floor(Math.random() * messages.length)];
-      console.log(`🎲 Triggering spontaneous: ${randomType} says "${msg}"`);
       showChibiMessage(msg, randomType, true);
     },
     
     // Tester une interaction
     triggerInteraction: () => {
       const interaction = CHIBI_INTERACTIONS[0]; // Tank -> Beru
-      console.log('🤝 Triggering interaction:', interaction);
       interaction.messages.forEach((msg, idx) => {
         setTimeout(() => {
           showChibiMessage(msg.text, msg.from, idx === 0);
@@ -633,20 +594,10 @@ useEffect(() => {
     
     // Debug complet
     debug: () => {
-      console.log('🔍 Full Debug Info:');
       window.testChibi.status();
-      console.log('- Attempts:', attempts);
-      console.log('- Show bubble element exists:', !!document.querySelector('[style*="position: fixed"]'));
-      console.log('- getChibiScreenPosition test:', getChibiScreenPosition('tank'));
     }
   };
   
-  console.log('✅ Chibi debug tools loaded! Use:');
-  console.log('- window.testChibi.speak("Hello!", "tank")');
-  console.log('- window.testChibi.status()');
-  console.log('- window.testChibi.triggerSpontaneous()');
-  console.log('- window.testChibi.triggerInteraction()');
-  console.log('- window.testChibi.debug()');
 }, [showChibiMessage, showChibiBubble, currentChibi, attempts]);
 
   const handleCloseBubble = () => {
@@ -728,7 +679,6 @@ useEffect(() => {
     }, 3000);
     
     // Easter egg secret
-    console.log("🦶 Miergo's reward unlocked... 💕");
   };
 
   // 🎲 Roll unique avec exclusions

@@ -223,11 +223,9 @@ export const syncLocalCache = async (showTankMessage) => {
     const localData = JSON.parse(localStorage.getItem('hallofflame_cache') || '[]');
     
     if (localData.length === 0) {
-      console.log('✅ Aucune donnée à synchroniser');
       return { success: true, synced: 0, remaining: 0 };
     }
     
-    console.log(`🔄 Synchronisation de ${localData.length} hunter(s)...`);
     if (showTankMessage) {
       showTankMessage(`🔄 Synchronisation de ${localData.length} hunter(s) en cours...`, true, 'kaisel');
     }
@@ -276,7 +274,6 @@ export const syncLocalCache = async (showTankMessage) => {
       total: localData.length
     };
     
-    console.log(`✅ Synchronisation: ${successful.length} succès, ${remainingData.length} en attente`);
     
     if (showTankMessage) {
       if (successful.length > 0) {
@@ -531,7 +528,6 @@ const HallOfFlameDebugPopup = ({
     
     // Vérifier la taille totale
     const totalSize = filesToUpload.reduce((sum, file) => sum + file.size, 0);
-    console.log(`📊 Taille totale: ${(totalSize/1024/1024).toFixed(2)}MB`);
     
     setUploadProgress(`Upload de ${(totalSize/1024/1024).toFixed(2)}MB...`);
     showTankMessage(t('hallOfFlame.upload.uploading', { count: filesToUpload.length }), true, 'kaisel');
@@ -549,7 +545,6 @@ const HallOfFlameDebugPopup = ({
         }
         
         setUploadProgress(`Ajout ${i+1}/${filesToUpload.length}: ${file.name}`);
-        console.log(`📸 Fichier ${i+1}: ${file.name} (${(file.size/1024/1024).toFixed(2)}MB)`);
         uploadFormData.append('screenshots', file);
       }
       
@@ -563,7 +558,6 @@ const HallOfFlameDebugPopup = ({
       // Upload avec timeout plus long et configuration spéciale pour gros fichiers
       setUploadProgress('Envoi vers le serveur SERN...');
       
-      console.log('🚀 Début upload...');
       const startTime = Date.now();
       
       // 🔥 FIX KAISEL: XMLHttpRequest pour gérer les gros uploads
@@ -577,7 +571,6 @@ const HallOfFlameDebugPopup = ({
           if (e.lengthComputable) {
             const percentComplete = (e.loaded / e.total) * 100;
             setUploadProgress(`Upload: ${percentComplete.toFixed(1)}%`);
-            console.log(`📊 Progress: ${percentComplete.toFixed(1)}%`);
           }
         });
         
@@ -615,7 +608,6 @@ const HallOfFlameDebugPopup = ({
       
       const result = await uploadPromise;
       const uploadTime = Date.now() - startTime;
-      console.log(`📡 Upload terminé en ${uploadTime}ms`);
       
       if (result.success && result.screenshots) {
         setUploadProgress('✅ Upload terminé !');

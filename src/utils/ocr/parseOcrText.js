@@ -133,7 +133,6 @@ export function parseOcrText(text) {
     if (label && typeof label === 'string') {
       const statKey = statReverseMap[normalize(label)];
       result.mainStat.stat = statKey;
-      console.log("Stat key resolved:", statKey, "from OCR label:", label);
 
       // 🔍 On isole uniquement la portion APRES le label
       const labelIndex = mainStatLine.toLowerCase().indexOf(label.toLowerCase());
@@ -247,15 +246,7 @@ export function parseOcrText(text) {
 
       const value = valueStr ? parseFloat(valueStr) : 0;
 
-      console.log(
-        "[🧩 SubStat]",
-        "\n➡️ OCR line      :", line,
-        "\n➡️ Cleaned line :", cleanedLine,
-        "\n➡️ Matched label:", matchedLabel,
-        "\n➡️ Final stat key:", statReverseMap[normalize(matchedLabel)],
-        "\n➡️ Value        :", value,
-        "\n➡️ Proc         :", proc);
-      // 7. Ajout à l’objet
+      // 7. Ajout à l'objet
       result.subStats.push({
         stat: statReverseMap[normalize(matchedLabel)],
         value,

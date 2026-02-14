@@ -586,11 +586,6 @@ const ArtifactCard = ({
     const thisSubstatLevel = newSubStatsLevels[idx].level;
     
     if (thisSubstatLevel === 4 && ['Attack %', 'HP %', 'Defense %'].includes(stat)) {
-      console.log('🚀 SUBSTAT +4 ATTEINT !', {
-        stat,
-        value: newValue
-      });
-      
       setTimeout(() => {
         onTvTrigger?.({
           statType: stat,

@@ -7,6 +7,7 @@ import { validateBuildCompleteness } from './ScoreCard/bdgService';
 import '../i18n/i18n';
 import { characters } from '../data/characters';
 import bdgPresets from './ScoreCard/bdgPresets.json';
+import shadowAchievementManager from '../utils/ShadowAchievementManager';
 
 // Fonction pour calculer le numéro de semaine basé sur les jeudis
 const getThursdayWeekNumber = (date) => {
@@ -484,7 +485,6 @@ const BDGScore = () => {
 
   // Nouveau useEffect pour gérer le changement de preset
   useEffect(() => {
-    console.log("🔄 useEffect triggered - preset:", selectedPreset, "element:", selectedElement);
 
     if (weekData.presets && weekData.presets[selectedElement]) {
       const elementData = weekData.presets[selectedElement];
@@ -492,12 +492,10 @@ const BDGScore = () => {
       // 1. Vérifier d'abord s'il y a un brouillon (modifications non sauvegardées)
       const draftKey = `bdg_draft_${weekData.weekId}_${selectedElement}_${selectedPreset}`;
       const draft = localStorage.getItem(draftKey);
-      console.log("📝 Draft key:", draftKey, "Draft exists:", !!draft);
 
       if (draft) {
         try {
           const draftData = JSON.parse(draft);
-          console.log("📝 Loading draft data:", draftData);
 
           // IMPORTANT: Reconstruire les characters pour les hunters
           if (draftData.hunters) {
@@ -534,7 +532,6 @@ const BDGScore = () => {
           const savedData = data[username]?.accounts?.[activeAcc]?.bdgScores?.[weekData.weekId]?.[selectedElement]?.[selectedPreset];
 
           if (savedData) {
-            console.log("📂 Chargement depuis builderberu_users");
 
             // Reconstruire les characters
             const dataWithCharacters = {
@@ -559,7 +556,6 @@ const BDGScore = () => {
 
       // 3. Sinon charger le preset normal
       if (selectedPreset.startsWith('custom_')) {
-        console.log("🎨 Loading custom preset:", selectedPreset);
         // Pour les presets custom, toujours charger depuis le localStorage
         const builderberuUsers = localStorage.getItem('builderberu_users');
         if (builderberuUsers) {
@@ -567,17 +563,14 @@ const BDGScore = () => {
           const username = Object.keys(data)[0];
           const activeAcc = data[username]?.activeAccount || 'main';
           const freshCustomPreset = data[username]?.accounts?.[activeAcc]?.bdgPresets?.[weekData.weekId]?.[selectedElement]?.[selectedPreset];
-          console.log("🎨 Fresh custom preset data:", freshCustomPreset);
           if (freshCustomPreset) {
             loadPresetData(freshCustomPreset);
             return;
           }
         }
       } else if (elementData.presets && elementData.presets[selectedPreset]) {
-        console.log("📋 Loading base preset:", selectedPreset);
         loadPresetData(elementData.presets[selectedPreset]);
       } else if (!elementData.presets && selectedPreset === 'preset1') {
-        console.log("📋 Loading default preset");
         loadPresetData(elementData);
       }
     }
@@ -688,7 +681,6 @@ const BDGScore = () => {
 
   const handleValidate = (currentPreset) => {
     if (editMode) {
-      console.log("✅ Validate clicked - preset:", selectedPreset);
 
       const totalScore = calculateTotalScore();
       if (weekData.scoringLimits && totalScore > weekData.scoringLimits.maxTotalScore) {
@@ -737,7 +729,6 @@ const BDGScore = () => {
         const username = Object.keys(data)[0]; // "user" 
         const activeAcc = data[username]?.activeAccount || 'main';
 
-        console.log("👤 Username:", username, "ActiveAccount:", activeAcc);
 
         // Initialiser la structure si nécessaire
         if (!data[username].accounts[activeAcc].bdgScores) {
@@ -771,7 +762,6 @@ const BDGScore = () => {
 
         // Sauvegarder toute la structure
         localStorage.setItem('builderberu_users', JSON.stringify(data));
-        console.log("✅✅✅ SAUVEGARDÉ DANS BUILDERBERU_USERS !");
 
         // Supprimer le brouillon
         const draftKey = `bdg_draft_${weekData.weekId}_${selectedElement}_${selectedPreset}`;
@@ -1006,6 +996,7 @@ const BDGScore = () => {
                   localStorage.removeItem(draftKey);
 
                   setSelectedPreset(e.target.value);
+                  shadowAchievementManager.incrementCounter('bdgConsultations');
                   setHasUnsavedChanges(false);
                 }}
                 className="bg-white/20 hover:bg-white/30 px-3 py-2 rounded-lg text-white font-medium transition-colors border border-white/30"

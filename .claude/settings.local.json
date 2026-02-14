@@ -17,7 +17,10 @@
       "Bash(dir:*)",
       "Bash(python3:*)",
       "Bash(ls:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(for file in src/BuilderBeru.jsx src/components/ChibiSystem/ChibiDataStructure.js src/components/ChibiSystem/EnhancedChibiWorld.jsx src/components/HallOfFlameDebugPopup.jsx src/components/HallOfFlamePage.jsx src/components/ScoreCard/BDGAnalysisModal.jsx src/components/ScoreCard/BDGDetailedAnalysisModal.jsx src/pages/Theorycraft/Theorycraft.jsx src/utils/coloringHelper.js)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(2 grep -n \"^\\\\s*[a-zA-Z_][a-zA-Z0-9_]*:\\\\s*\\\\\\(result\\\\|data\\\\|props\\\\|state\\\\|hunterData\\\\|characterData\\\\\\)\" \"$file\")"
     ],
     "deny": [],
     "ask": []

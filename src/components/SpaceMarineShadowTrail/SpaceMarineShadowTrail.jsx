@@ -685,7 +685,6 @@ const SpaceMarineShadowTrail = () => {
     
     const checkInvasion = () => {
       if (Math.random() < MARINE_CONFIG.INVASION_CHANCE) {
-        console.log('👾 INVASION TRIGGERED!');
         startInvasion();
       }
     };

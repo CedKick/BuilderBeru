@@ -174,7 +174,6 @@ export const PathRecorderV2 = ({ canvasRef }) => {
     const canvas = canvasRef.current;
     
     const clickHandler = (e) => {
-      console.log('🖱️ Click détecté!');
       handleClick(e);
     };
     
@@ -185,7 +184,6 @@ export const PathRecorderV2 = ({ canvasRef }) => {
     canvas.addEventListener('click', clickHandler);
     canvas.addEventListener('mousemove', moveHandler);
     
-    console.log('✅ PathRecorderV2: Event listeners ajoutés');
     
     return () => {
       canvas.removeEventListener('click', clickHandler);
@@ -302,7 +300,6 @@ export const PathRecorderV2 = ({ canvasRef }) => {
 
   // Gestion des clics selon le mode
   const handleClick = (e) => {
-    console.log('🖱️ Click dans handleClick!');
     
     if (!canvasRef.current) {
       console.error('❌ Canvas ref non trouvé');
@@ -313,7 +310,6 @@ export const PathRecorderV2 = ({ canvasRef }) => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
-    console.log('📍 Position:', { x, y, mode, isRecording });
     
     // Si on tient Shift, on ajoute une intersection
     if (e.shiftKey) {
@@ -368,7 +364,6 @@ export const PathRecorderV2 = ({ canvasRef }) => {
       setIsRecording(true);
     }
     
-    console.log('🎯 Waypoint ajouté:', point);
   };
 
   // Mode 3: Patterns
@@ -414,7 +409,6 @@ export const PathRecorderV2 = ({ canvasRef }) => {
       }
     }, 100);
     
-    console.log('🔴 Enregistrement continu démarré');
   };
 
   // Arrêter l'enregistrement
@@ -435,7 +429,6 @@ export const PathRecorderV2 = ({ canvasRef }) => {
         [name]: optimized
       }));
       
-      console.log(`✅ Chemin "${name}" sauvegardé avec ${optimized.length} points`);
     }
     
     setCurrentPath([]);
@@ -453,7 +446,6 @@ export const PathRecorderV2 = ({ canvasRef }) => {
     };
     
     setIntersections(prev => [...prev, intersection]);
-    console.log('🔶 Intersection ajoutée:', intersection);
   };
 
   // Ajouter un point de spawn
@@ -466,7 +458,6 @@ export const PathRecorderV2 = ({ canvasRef }) => {
     };
     
     setSpawnPoints(prev => [...prev, spawn]);
-    console.log('🟢 Spawn point ajouté:', spawn);
   };
 
   // Optimiser le chemin
@@ -513,8 +504,6 @@ export const PathRecorderV2 = ({ canvasRef }) => {
       }
     };
     
-    console.log('🗺️ EXPORT SYSTÈME COMPLET:');
-    console.log(JSON.stringify(systemData, null, 2));
     
     navigator.clipboard.writeText(JSON.stringify(systemData, null, 2))
       .then(() => console.log('✅ Système copié dans le presse-papier!'))

@@ -9,7 +9,6 @@ const HallOfFlameStandalone = () => {
   // Function pour afficher les messages (version simplifiée adaptée mobile)
   const [showTankMessage] = useState(() => {
     return (message, isSuccess, source) => {
-      console.log(`${source}: ${message}`);
       
       // Toast simple pour mobile
       if (window.innerWidth < 768) {

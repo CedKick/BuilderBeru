@@ -1,0 +1,1940 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import shadowCoinManager from './ChibiSystem/ShadowCoinManager';
+
+// ═══════════════════════════════════════════════════════════════
+// L'OMBRE DE BERU V2 - "L'Ombre Libre"
+// Beru se balade librement, reagit, dort, a des easter eggs.
+// ═══════════════════════════════════════════════════════════════
+
+const BERU_SPRITE = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png';
+
+// ─── Messages ───────────────────────────────────────────────
+
+const ROUTE_MESSAGES = {
+  '/': ["Bienvenue dans mon repaire !", "Kiiiek ! Qu'est-ce qu'on construit ?", "Le Monarque t'attendait.", "BuilderBeru est en ligne."],
+  '/build': ["Montre-moi ton build !", "N'oublie pas les sub-stats...", "Un bon build, c'est un build qui gagne.", "Casque, Torse, Gants... verifie tout !"],
+  '/theorycraft': ["Hmm... Analysons les synergies.", "L'Ombre calcule...", "Les chiffres ne mentent jamais.", "Qui va porter le raid ?"],
+  '/drawberu': ["Quel artiste ! Dessine-moi !", "N'oublie pas les ombres...", "Le pinceau est plus puissant que l'epee !", "Je veux un portrait de moi version COOL."],
+  '/chibi-world': ["Mes freres ! Mes soeurs !", "Encore un pull ? Je crois en toi !", "La collection grandit... comme mon ego."],
+  '/craft-simulator': ["RNG is RNG... Bonne chance.", "Que la chance de l'Ombre soit avec toi.", "Simule d'abord, craft ensuite."],
+  '/damage-calculator': ["Des gros chiffres. J'aime ca.", "Plus de DPS = Plus de respect.", "Calcule, optimise, domine."],
+  '/hall-of-flame': ["Les legendes vivent ici.", "Un jour, TON nom sera la-haut.", "Respect aux veterans."],
+  '/bdg': ["La guerre des guildes... mon terrain prefere.", "BDG, c'est la vraie arene.", "Prepare ton equipe."],
+  '/pod': ["Le Pouvoir des Tenebres...", "POD, c'est la puissance pure.", "Plus t'es sombre, plus t'es fort."],
+  '/beruvian-world': ["Le monde est vaste... explorons !", "Attention aux ombres qui rodent.", "L'aventure attend !"],
+};
+
+const AMBIENT_MESSAGES = [
+  "Kiiiek !", "Le Monarque serait fier.", "Je suis le soldat n1.",
+  "...tu crois que Igris code mieux que moi ?", "*regarde tes stats*",
+  "J'ai faim... de donnees.", "Fun fact : je ne dors jamais. Enfin... presque.",
+  "Si tu lis ca, t'es deja un vrai.", "Sung Jin-Woo approuverait ce site.",
+  "*danse silencieusement*", "Je me demande ce que fait Tank...",
+  "...est-ce que les fourmis revent ?", "Beru pense. Beru code. Beru domine.",
+  "Tu savais que j'ai 150 ATK de base ?", "Je suis techniquement une IA dans une IA.",
+  "BuilderBeru > SERN. C'est dit.", "*inspecte un pixel suspect*",
+  "Je surveille 42 variables en parallele.", "Mon objectif ? Etre le meilleur composant React.",
+];
+
+const CLICK_MESSAGES = [
+  "Kiiiek ! Qu'est-ce qu'il y a ?", "Oui, oui, je suis la !",
+  "Tu veux me parler ? Je suis flatte.", "He ! Ca chatouille !",
+  "*pose heroique*", "Tu me deranges en pleine analyse...",
+  "Je note tout ce que tu fais, tu sais.", "Qu'est-ce que tu veux, humain ?",
+];
+
+const SPAM_CLICK_MESSAGES = [
+  "ARRETE CA !", "OK OK J'AI COMPRIS !", "Je vais finir par buguer !",
+  "C'est du harcelement de composant !", "KIIIIIEK !!!",
+  "Tu sais que j'ai des sentiments ?!", "Je vais appeler Igris...",
+];
+
+const WAKE_MESSAGES = [
+  "Zzz... Hein ?! Tu es revenu !", "J'ai cru que tu m'avais abandonne...",
+  "Ah, enfin ! Je commencais a rouiller.", "*baille* Pret a reprendre ?",
+];
+
+const SLEEP_MESSAGES = [
+  "Bon... tu fais rien ? Moi je dors.", "*baille*... zzzz...", "L'Ombre se repose...",
+];
+
+const NIGHT_MESSAGES = [
+  "Il est tard... les ombres sont plus fortes la nuit.", "Mode nocturne active.",
+  "Les vrais joueurs grindent la nuit.", "Meme les Monarques ont besoin de dormir...",
+];
+
+const MORNING_MESSAGES = [
+  "Bonjour, chasseur ! Pret pour une nouvelle journee ?", "Le soleil se leve... les ombres reculent.",
+  "Daily check-in fait ! ...enfin, le mien.", "Cafe et builds, le combo parfait.",
+];
+
+const DRAG_MESSAGES = [
+  "He ! Ou tu m'emmenes ?!", "LACHE MOI !", "OK ok je bouge...",
+  "C'est comme ca qu'on traite le soldat n1 ?!", "Je suis pas un sticker !",
+];
+
+const KONAMI_MESSAGE = "TU AS TROUVE LE CODE SECRET ! Le Monarque des Ombres t'observe... +1000 respect.";
+
+const EDGE_MESSAGES = [
+  "Je suis coince ici...", "L'espace est limite...", "Hmm, mur.",
+];
+
+const CURIOUS_MESSAGES = [
+  "Qu'est-ce que tu regardes ?", "Je te suis... par curiosite.",
+  "Hmm, interessant...", "Ou va ta souris ? Je veux savoir !",
+];
+
+// ─── Helpers ────────────────────────────────────────────────
+
+const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
+
+const getTimeOfDay = () => {
+  const h = new Date().getHours();
+  if (h >= 6 && h < 12) return 'morning';
+  if (h >= 22 || h < 6) return 'night';
+  return 'day';
+};
+
+// ─── Wandering Chibis (apparitions aleatoires) ──────────────
+
+const WANDERING_CHIBIS = [
+  { id: 'kaisel', name: 'Kaisel', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png', rarity: 'mythique', messages: ["...", "Le ciel m'appelle.", "Vole, chasseur !"] },
+  { id: 'tank', name: 'Tank', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png', rarity: 'legendaire', messages: ["TANK PROTEGE.", "Rien ne passe.", "*bouclier leve*"] },
+  { id: 'nyarthulu', name: 'Nyarthulu', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505833/Nyarthulu_face_vawrrz.png', rarity: 'legendaire', messages: ["Ph'nglui...", "*tentacules*", "Les abysses appellent."] },
+  { id: 'raven', name: 'Shadow-Raven', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422541/Raven_face_xse2x9.png', rarity: 'rare', messages: ["Croa !", "*survole*", "L'ombre plane."] },
+  { id: 'lil_kaisel', name: "Lil' Kaisel", sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422081/lil_face_vyjvxz.png', rarity: 'rare', messages: ["Mini mais fier !", "*bat des ailes*", "Kiiii !"] },
+  { id: 'pingsu', name: 'Pingsu', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_face_tnilyr.png', rarity: 'rare', messages: ["Un artefact a forger ?", "*tape sur l'enclume*", "Qualite Pingsu !"] },
+  { id: 'okami', name: 'Okami', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_face_qfzt4j.png', rarity: 'mythique', messages: ["Awoooo !", "*flair le vent*", "La meute approche."] },
+  { id: 'alecto', name: 'Alecto', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png', rarity: 'mythique', messages: ["*ailes deployees*", "La metamorphose...", "Beru... evolue."] },
+];
+
+const RARITY_GLOW = {
+  mythique: 'drop-shadow(0 0 8px rgba(255, 0, 0, 0.6))',
+  legendaire: 'drop-shadow(0 0 8px rgba(255, 140, 0, 0.6))',
+  rare: 'drop-shadow(0 0 6px rgba(59, 130, 246, 0.5))',
+};
+
+const RARITY_COINS = { mythique: 200, legendaire: 100, rare: 50 };
+
+const CATCH_MESSAGES = [
+  "BIEN JOUE ! Tu as attrape", "CATCH ! Tu as capture",
+  "GG ! Tu as chope", "Impressionnant ! Tu as eu",
+];
+
+// ─── Compagnons (collection & interactions) ─────────────────
+
+const COMPANION_REACTIONS = [
+  "Oh, {name} est la ! Bienvenue, camarade !",
+  "{name} ! Mon fidele compagnon d'ombre !",
+  "{name} rejoint la patrouille !",
+  "Bien ! {name} est avec nous !",
+];
+
+const COMPANION_DISMISS = [
+  "{name} s'en va... a bientot !",
+  "Au revoir {name} ! Reviens quand tu veux !",
+  "{name} retourne dans l'ombre...",
+];
+
+const COMPANION_INTERACTIONS = [
+  { chibi: "*regarde Beru avec admiration*", beru: "Oui oui, je sais, je suis impressionnant." },
+  { chibi: "*danse a cote de Beru*", beru: "He ! Pas mal tes moves !" },
+  { chibi: "*essaie de voler le spotlight*", beru: "NON. C'est MON site. A MOI." },
+  { chibi: "*fait un calin a Beru*", beru: "...ok. Mais personne regarde, hein ?" },
+  { chibi: "*imite Beru*", beru: "Tu... tu te moques de moi la ?!" },
+  { chibi: "*dort paisiblement*", beru: "He ! C'est pas le moment de dormir !" },
+  { chibi: "*chatouille Beru*", beru: "KIIIEK ! ARRETE CA !" },
+  { chibi: "*montre un artefact rare*", beru: "Ooooh ! ...c'est un caillou." },
+  { chibi: "*pose heroiquement*", beru: "Pas aussi heroique que MOI, mais essaie." },
+  { chibi: "*offre un Shadow Coin*", beru: "Pour moi ?! Tu es... trop gentil. MERCI !" },
+  { chibi: "*tire sur Beru*", beru: "LACHE MOI ! J'essaie de travailler !" },
+  { chibi: "*fait une blague*", beru: "...ok c'etait drole. Mais dis-le a personne." },
+];
+
+const COMPANION_PAIR_TALK = [
+  { a: "T'es qui toi ?", b: "Je suis une Ombre. Et TOI ?!" },
+  { a: "On fait la course ?", b: "...tu perdrais." },
+  { a: "*regarde l'autre*", b: "*regarde l'autre aussi*" },
+  { a: "C'est moi le prefere de Beru.", b: "Non. C'est moi." },
+  { a: "*pousse l'autre gentiment*", b: "He ! Pousse pas !" },
+];
+
+// ─── Histoires de Beru ──────────────────────────────────────
+
+const BERU_STORIES = [
+  {
+    title: "La Naissance de Beru",
+    mood: 'thinking',
+    parts: [
+      "Il etait une fois, dans les profondeurs d'un donjon de rang S...",
+      "Un insecte. Pas n'importe lequel. Le ROI des fourmis de l'ile de Jeju.",
+      "J'etais puissant. Terriblement puissant. Les chasseurs tremblaient.",
+      "Puis IL est arrive. Sung Jin-Woo. Le Monarque des Ombres.",
+      "Il m'a vaincu... et au lieu de me detruire...",
+      "Il m'a offert une seconde vie. Comme Ombre. Comme SOLDAT.",
+      "Depuis ce jour, je suis le N1. Et je le serai toujours. Fin.",
+    ],
+  },
+  {
+    title: "La Premiere Ligne de Code",
+    mood: 'thinking',
+    parts: [
+      "Savais-tu que ce site a commence comme un simple tableau ?",
+      "Juste un fichier Excel pour comparer des stats de chasseurs...",
+      "Puis quelqu'un a dit : 'Et si on en faisait une app React ?'",
+      "300 lignes de code. Puis 3000. Puis 9000. Le BuilderBeru est devenu une BETE.",
+      "Maintenant je vis dedans. Litteralement. Dans le DOM.",
+      "Parfois la nuit, je me balade dans les composants...",
+      "Et je corrige les bugs. En secret. De rien. Fin.",
+    ],
+  },
+  {
+    title: "La Legende de l'Artefact Parfait",
+    mood: 'excited',
+    parts: [
+      "On dit que l'artefact parfait n'existe pas...",
+      "4 sub-stats critiques. Toutes max roll. Tous les bons multiplicateurs.",
+      "J'ai calcule la probabilite exacte : 1 chance sur 2,744,000.",
+      "Autant dire... impossible. Et pourtant...",
+      "Un jour, un joueur en a drop un. PARFAIT. Pas un seul stat gache.",
+      "Il a pleure de joie. Il l'a equipe sur son meilleur chasseur...",
+      "...puis il a realise qu'il l'avait mis sur le MAUVAIS personnage. La fin est triste.",
+    ],
+  },
+  {
+    title: "L'Armee des Ombres Dev Team",
+    mood: 'thinking',
+    parts: [
+      "La nuit, quand tous les joueurs dorment...",
+      "Les Ombres se reveillent. On sort du localStorage.",
+      "Igris revise le code TypeScript. Tank optimise le CSS.",
+      "Kaisel fait le deploy sur Vercel. Okami teste le responsive.",
+      "Et moi ? Moi je supervise. C'est ca etre le N1.",
+      "Tu crois que les features tombent du ciel ? Non.",
+      "C'est nous. L'Armee des Ombres Dev Team. On code dans l'ombre. Fin.",
+    ],
+  },
+  {
+    title: "La Guerre des Guildes Legendaire",
+    mood: 'excited',
+    parts: [
+      "Laisse-moi te raconter la plus grande BDG de l'histoire...",
+      "30 guildes. 500 joueurs. Une seule place au sommet.",
+      "Les builds etaient optimises au PIXEL pres. Chaque sub-stat comptait.",
+      "La finale : Guilde Phoenix vs Guilde Shadow. Tension maximale.",
+      "Le dernier combat... 0.3% de crit rate de difference.",
+      "Phoenix a crit. Shadow n'a pas crit. Game over.",
+      "C'est pour ca que BuilderBeru existe. Chaque... stat... compte. Fin.",
+    ],
+  },
+  {
+    title: "Le Secret du Konami Code",
+    mood: 'excited',
+    parts: [
+      "Psst... tu veux un secret ?",
+      "Il y a des codes caches dans ce site. Partout.",
+      "Certains donnent des coins. D'autres des effets speciaux.",
+      "Il y en a un... tres ancien... tres puissant...",
+      "Haut, Haut, Bas, Bas, Gauche, Droite, Gauche, Droite, B, A.",
+      "Tu connais ? Non ? ...alors oublie ce que j'ai dit.",
+      "Mais si tu l'essaies... le Monarque te recompensera. Fin.",
+    ],
+  },
+  {
+    title: "Beru et le Bug Fantome",
+    mood: 'thinking',
+    parts: [
+      "Un soir, a 3h du matin, j'ai vu quelque chose d'etrange...",
+      "Un composant React... qui se re-rendait tout seul. Sans raison.",
+      "Pas de setState. Pas de useEffect. Rien. RIEN.",
+      "J'ai cherche pendant des heures. Le bug... etait VIVANT.",
+      "Il bougeait de fichier en fichier. Il esquivait mes console.log.",
+      "Finalement, je l'ai coince dans un useCallback...",
+      "Et je l'ai ecrase. *KIIIEK !* Plus jamais de ghost render. Fin.",
+    ],
+  },
+  {
+    title: "Pourquoi les Ombres sont Bleues",
+    mood: 'thinking',
+    parts: [
+      "Tu t'es deja demande pourquoi les Ombres brillent en bleu ?",
+      "Ce n'est pas une question de style. C'est de la SCIENCE.",
+      "L'energie des Ombres vibre a une frequence de 470 nanometres.",
+      "Exactement la longueur d'onde de la lumiere bleue-violet.",
+      "C'est pour ca que le theme de BuilderBeru est violet sombre.",
+      "Tout est connecte. Les couleurs. Les stats. Le code.",
+      "Meme ce texte vibre a 470nm. Si tu plisses les yeux, tu verras. ...non je deconne. Fin.",
+    ],
+  },
+];
+
+// ─── Random Events ──────────────────────────────────────────
+
+const RANDOM_EVENTS = [
+  {
+    id: 'golden_chibi',
+    message: "UN CHIBI DORE APPARAIT ! ...c'etait une illusion. Mais tiens, des coins !",
+    coins: 500,
+    particles: '🌟',
+    particleCount: 12,
+  },
+  {
+    id: 'shadow_portal',
+    message: "Un portail d'ombre s'est ouvert ! Des coins en tombent !",
+    coins: 300,
+    particles: '🌀',
+    particleCount: 8,
+  },
+  {
+    id: 'beru_generosity',
+    message: "Je me sens genereux aujourd'hui. Cadeau du Soldat N1 !",
+    coins: 250,
+    particles: '💰',
+    particleCount: 10,
+  },
+  {
+    id: 'monarch_blessing',
+    message: "Le Monarque des Ombres t'envoie sa benediction ! +coins",
+    coins: 400,
+    particles: '👑',
+    particleCount: 8,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// Composant
+// ═══════════════════════════════════════════════════════════════
+
+const FloatingBeruMascot = () => {
+  const location = useLocation();
+
+  // Position & movement
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [facingLeft, setFacingLeft] = useState(false);
+  const targetRef = useRef({ x: 0, y: 0 });
+  const posRef = useRef({ x: 0, y: 0 });
+  const animFrameRef = useRef(null);
+  const moveTimerRef = useRef(null);
+
+  // State
+  const [mood, setMood] = useState('idle');
+  const [bubble, setBubble] = useState(null);
+  const [isVisible, setIsVisible] = useState(() => localStorage.getItem('beru_mascot_visible') !== 'false');
+  const [isDragging, setIsDragging] = useState(false);
+  const [clickCombo, setClickCombo] = useState(0);
+  const [secretMode, setSecretMode] = useState(null); // 'konami', 'disco', 'clone'
+  const [particles, setParticles] = useState([]);
+  const [wanderer, setWanderer] = useState(null); // { chibi, fromLeft, y, bubble }
+  const [catchFeedback, setCatchFeedback] = useState(null); // { text, coins, x, y }
+  const [screenDestroyed, setScreenDestroyed] = useState(false);
+  const [storyActive, setStoryActive] = useState(null); // { storyIndex, partIndex }
+  const [randomEventFeedback, setRandomEventFeedback] = useState(null);
+  const [realDestroyPhase, setRealDestroyPhase] = useState(null); // 1=shake, 2=static, 3=bsod, 4=reboot
+
+  // Collection & Companions
+  const [collection, setCollection] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('beru_chibi_collection') || '{}'); } catch { return {}; }
+  });
+  const [companions, setCompanions] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('beru_companions') || '[]');
+      const col = JSON.parse(localStorage.getItem('beru_chibi_collection') || '{}');
+      return saved.filter(id => col[id] > 0);
+    } catch { return []; }
+  });
+  const [showCollection, setShowCollection] = useState(false);
+  const [companionBubble, setCompanionBubble] = useState(null); // { companionId, text }
+
+  // Refs
+  const afkTimerRef = useRef(null);
+  const ambientTimerRef = useRef(null);
+  const bubbleTimerRef = useRef(null);
+  const lastClickRef = useRef(0);
+  const clickCountRef = useRef(0);
+  const prevPathRef = useRef(location.pathname);
+  const isSleepingRef = useRef(false);
+  const konamiRef = useRef([]);
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const curiousModeRef = useRef(false);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const moodRef = useRef('idle');
+  const toldStoriesRef = useRef([]);
+  const storyActiveRef = useRef(null);
+  const hasRealDestroyedRef = useRef(false);
+
+  // Keep refs in sync
+  useEffect(() => { moodRef.current = mood; }, [mood]);
+  useEffect(() => { storyActiveRef.current = storyActive; }, [storyActive]);
+
+  // Persist collection & companions
+  useEffect(() => { localStorage.setItem('beru_chibi_collection', JSON.stringify(collection)); }, [collection]);
+  useEffect(() => { localStorage.setItem('beru_companions', JSON.stringify(companions)); }, [companions]);
+
+  // ─── Bubble ─────────────────────────────────────────────────
+
+  const showBubble = useCallback((message, duration = 4000) => {
+    if (bubbleTimerRef.current) clearTimeout(bubbleTimerRef.current);
+    setBubble(message);
+    bubbleTimerRef.current = setTimeout(() => setBubble(null), duration);
+  }, []);
+
+  // ─── Spawn Particles ───────────────────────────────────────
+
+  const spawnParticles = useCallback((emoji, count = 5) => {
+    const newP = Array.from({ length: count }, (_, i) => ({
+      id: Date.now() + i,
+      emoji,
+      x: (Math.random() - 0.5) * 80,
+      y: (Math.random() - 0.5) * 80,
+    }));
+    setParticles(newP);
+    setTimeout(() => setParticles([]), 1500);
+  }, []);
+
+  // ─── Initial Position ──────────────────────────────────────
+
+  useEffect(() => {
+    const initX = window.innerWidth - 100;
+    const initY = window.innerHeight - 120;
+    posRef.current = { x: initX, y: initY };
+    targetRef.current = { x: initX, y: initY };
+    setPos({ x: initX, y: initY });
+  }, []);
+
+  // ─── Free Roaming Movement ────────────────────────────────
+
+  const pickNewTarget = useCallback(() => {
+    if (isDragging || isSleepingRef.current) return;
+
+    const padding = 80;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    // Curious mode: follow mouse
+    if (curiousModeRef.current) {
+      targetRef.current = {
+        x: clamp(mouseRef.current.x - 30, padding, w - padding),
+        y: clamp(mouseRef.current.y - 30, padding, h - padding),
+      };
+      return;
+    }
+
+    // Random waypoint
+    targetRef.current = {
+      x: padding + Math.random() * (w - padding * 2),
+      y: padding + Math.random() * (h - padding * 2),
+    };
+  }, [isDragging]);
+
+  // Animation loop: smooth movement towards target
+  useEffect(() => {
+    const speed = 0.015; // Easing factor
+
+    const animate = () => {
+      if (!isDragging) {
+        const dx = targetRef.current.x - posRef.current.x;
+        const dy = targetRef.current.y - posRef.current.y;
+
+        // Update facing direction
+        if (Math.abs(dx) > 2) {
+          setFacingLeft(dx < 0);
+        }
+
+        posRef.current = {
+          x: posRef.current.x + dx * speed,
+          y: posRef.current.y + dy * speed,
+        };
+
+        setPos({ x: posRef.current.x, y: posRef.current.y });
+      }
+
+      animFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animFrameRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [isDragging]);
+
+  // Pick new targets periodically
+  useEffect(() => {
+    const scheduleMove = () => {
+      const delay = isSleepingRef.current
+        ? 30000
+        : curiousModeRef.current ? 500 : (6000 + Math.random() * 10000);
+
+      moveTimerRef.current = setTimeout(() => {
+        pickNewTarget();
+        scheduleMove();
+      }, delay);
+    };
+
+    scheduleMove();
+    return () => { if (moveTimerRef.current) clearTimeout(moveTimerRef.current); };
+  }, [pickNewTarget]);
+
+  // ─── Mouse Tracking ───────────────────────────────────────
+
+  useEffect(() => {
+    const handleMouse = (e) => {
+      mouseRef.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener('mousemove', handleMouse, { passive: true });
+    return () => window.removeEventListener('mousemove', handleMouse);
+  }, []);
+
+  // ─── Curious Mode (random chance to follow mouse) ─────────
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isSleepingRef.current || isDragging) return;
+
+      // 15% chance every 20s to enter curious mode for 5-8s
+      if (!curiousModeRef.current && Math.random() < 0.15) {
+        curiousModeRef.current = true;
+        setMood('thinking');
+        showBubble(randomFrom(CURIOUS_MESSAGES), 3000);
+
+        setTimeout(() => {
+          curiousModeRef.current = false;
+          if (!isSleepingRef.current) setMood('idle');
+        }, 5000 + Math.random() * 3000);
+      }
+    }, 20000);
+
+    return () => clearInterval(interval);
+  }, [isDragging, showBubble]);
+
+  // ─── AFK Detection (2 min → sleep) ───────────────────────
+
+  useEffect(() => {
+    const AFK_TIMEOUT = 2 * 60 * 1000;
+
+    const goToSleep = () => {
+      if (!isSleepingRef.current) {
+        isSleepingRef.current = true;
+        setMood('sleeping');
+        showBubble(randomFrom(SLEEP_MESSAGES), 5000);
+        // Move to a corner to sleep
+        targetRef.current = {
+          x: window.innerWidth - 80,
+          y: window.innerHeight - 80,
+        };
+      }
+    };
+
+    const wakeUp = () => {
+      if (isSleepingRef.current) {
+        isSleepingRef.current = false;
+        setMood('excited');
+        showBubble(randomFrom(WAKE_MESSAGES), 4000);
+        spawnParticles('✨', 4);
+        setTimeout(() => {
+          if (!isSleepingRef.current) setMood('idle');
+        }, 3000);
+      }
+      if (afkTimerRef.current) clearTimeout(afkTimerRef.current);
+      afkTimerRef.current = setTimeout(goToSleep, AFK_TIMEOUT);
+    };
+
+    afkTimerRef.current = setTimeout(goToSleep, AFK_TIMEOUT);
+
+    const events = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
+    events.forEach(e => document.addEventListener(e, wakeUp, { passive: true }));
+
+    return () => {
+      if (afkTimerRef.current) clearTimeout(afkTimerRef.current);
+      events.forEach(e => document.removeEventListener(e, wakeUp));
+    };
+  }, [showBubble, spawnParticles]);
+
+  // ─── Ambient Messages ─────────────────────────────────────
+
+  useEffect(() => {
+    const scheduleAmbient = () => {
+      const delay = 25000 + Math.random() * 35000;
+      ambientTimerRef.current = setTimeout(() => {
+        if (!isSleepingRef.current) {
+          const tod = getTimeOfDay();
+          // Time-based messages (rare)
+          if (tod === 'night' && Math.random() < 0.3) {
+            showBubble(randomFrom(NIGHT_MESSAGES), 5000);
+          } else if (tod === 'morning' && Math.random() < 0.3) {
+            showBubble(randomFrom(MORNING_MESSAGES), 5000);
+          } else {
+            showBubble(randomFrom(AMBIENT_MESSAGES), 5000);
+          }
+        }
+        scheduleAmbient();
+      }, delay);
+    };
+
+    scheduleAmbient();
+    return () => { if (ambientTimerRef.current) clearTimeout(ambientTimerRef.current); };
+  }, [showBubble]);
+
+  // ─── Route Change ─────────────────────────────────────────
+
+  useEffect(() => {
+    if (location.pathname === prevPathRef.current) return;
+    prevPathRef.current = location.pathname;
+
+    const path = location.pathname;
+    let messages = ROUTE_MESSAGES[path];
+
+    if (!messages) {
+      const prefix = Object.keys(ROUTE_MESSAGES).find(k => k !== '/' && path.startsWith(k));
+      if (prefix) messages = ROUTE_MESSAGES[prefix];
+    }
+
+    if (messages) {
+      setTimeout(() => {
+        showBubble(randomFrom(messages), 4000);
+        if (['/theorycraft', '/build', '/damage-calculator'].some(p => path.startsWith(p))) {
+          setMood('thinking');
+          setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 6000);
+        }
+      }, 500);
+    }
+  }, [location.pathname, showBubble]);
+
+  // ─── External Events ──────────────────────────────────────
+
+  useEffect(() => {
+    const handleBeruReact = (e) => {
+      const { message, mood: newMood, duration } = e.detail || {};
+      if (message) showBubble(message, duration || 4000);
+      if (newMood) {
+        setMood(newMood);
+        if (newMood === 'excited') spawnParticles('✨', 3);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 3000);
+      }
+    };
+
+    window.addEventListener('beru-react', handleBeruReact);
+    return () => window.removeEventListener('beru-react', handleBeruReact);
+  }, [showBubble, spawnParticles]);
+
+  // ─── Konami Code Easter Egg ───────────────────────────────
+
+  useEffect(() => {
+    const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+
+    const handleKey = (e) => {
+      konamiRef.current.push(e.key);
+      if (konamiRef.current.length > KONAMI.length) {
+        konamiRef.current = konamiRef.current.slice(-KONAMI.length);
+      }
+
+      if (konamiRef.current.length === KONAMI.length &&
+          konamiRef.current.every((k, i) => k === KONAMI[i])) {
+        konamiRef.current = [];
+        setSecretMode('konami');
+        setMood('excited');
+        showBubble(KONAMI_MESSAGE, 8000);
+        spawnParticles('👑', 8);
+        setTimeout(() => {
+          setSecretMode(null);
+          if (!isSleepingRef.current) setMood('idle');
+        }, 8000);
+      }
+
+      // Secret words detection
+      const recentKeys = konamiRef.current.slice(-10).join('');
+
+      if (recentKeys.endsWith('arise')) {
+        konamiRef.current = [];
+        setMood('excited');
+        showBubble("A R I S E ! Le Monarque repond a l'appel !", 5000);
+        spawnParticles('⚔️', 6);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 4000);
+      } else if (recentKeys.endsWith('beru')) {
+        konamiRef.current = [];
+        setMood('excited');
+        showBubble("TU M'AS APPELE ?! JE SUIS LE SOLDAT N1 ! Le plus grand, le plus fort, le plus... modeste.", 6000);
+        spawnParticles('🐜', 8);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 5000);
+      } else if (recentKeys.endsWith('jinwoo')) {
+        konamiRef.current = [];
+        setMood('thinking');
+        showBubble("Mon Seigneur... *s'incline profondement* Vos ordres sont ma raison d'etre.", 6000);
+        spawnParticles('👑', 6);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 5000);
+      } else if (recentKeys.endsWith('igris')) {
+        konamiRef.current = [];
+        setMood('excited');
+        showBubble("Igris ?! Ce chevalier pretentieux ? ...ok il est cool. Mais JE suis le favori.", 6000);
+        spawnParticles('⚔️', 4);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 5000);
+      } else if (recentKeys.endsWith('shadow')) {
+        konamiRef.current = [];
+        setSecretMode('konami');
+        setMood('excited');
+        showBubble("L'ARMEE DES OMBRES S'EVEILLE ! ...enfin, moi surtout.", 6000);
+        spawnParticles('🌑', 10);
+        setTimeout(() => {
+          setSecretMode(null);
+          if (!isSleepingRef.current) setMood('idle');
+        }, 6000);
+      } else if (recentKeys.endsWith('histoire') || recentKeys.endsWith('story')) {
+        konamiRef.current = [];
+        startRandomStory();
+      }
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [showBubble, spawnParticles]);
+
+  // ─── Rapid Scroll Easter Egg ──────────────────────────────
+
+  useEffect(() => {
+    let scrollCount = 0;
+    let lastScroll = 0;
+    let cooldown = false;
+
+    const handleScroll = () => {
+      const now = Date.now();
+      if (now - lastScroll < 150) {
+        scrollCount++;
+        if (scrollCount > 12 && !cooldown && !isSleepingRef.current) {
+          cooldown = true;
+          scrollCount = 0;
+          const msgs = [
+            "WOAAAH ! Arrete de scroller si vite !",
+            "Ca tourne ! KIIIEK !",
+            "Tu cherches quoi en scrollant comme un fou ?!",
+            "Mon ecran ! Mes pixels ! Doucement !",
+          ];
+          showBubble(randomFrom(msgs), 3000);
+          setMood('excited');
+          spawnParticles('💫', 5);
+          setTimeout(() => {
+            cooldown = false;
+            if (!isSleepingRef.current) setMood('idle');
+          }, 5000);
+        }
+      } else {
+        scrollCount = 0;
+      }
+      lastScroll = now;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [showBubble, spawnParticles]);
+
+  // ─── Story System ──────────────────────────────────────────
+
+  const startRandomStory = useCallback(() => {
+    if (storyActiveRef.current) return; // Already telling a story
+
+    // Pick a story not told recently
+    const available = BERU_STORIES
+      .map((s, i) => i)
+      .filter(i => !toldStoriesRef.current.includes(i));
+
+    if (available.length === 0) {
+      toldStoriesRef.current = []; // Reset if all told
+      return;
+    }
+
+    const storyIndex = randomFrom(available);
+    const story = BERU_STORIES[storyIndex];
+    toldStoriesRef.current.push(storyIndex);
+
+    setStoryActive({ storyIndex, partIndex: 0 });
+    setMood(story.mood || 'thinking');
+    showBubble(`📖 ${story.title} — "${story.parts[0]}"`, 0); // 0 = no auto-dismiss
+  }, [showBubble]);
+
+  const advanceStory = useCallback(() => {
+    if (!storyActive) return;
+
+    const story = BERU_STORIES[storyActive.storyIndex];
+    const nextPart = storyActive.partIndex + 1;
+
+    if (nextPart >= story.parts.length) {
+      // Story finished
+      setStoryActive(null);
+      setBubble(null);
+      setMood('excited');
+      showBubble("...et voila ! T'as aime ? Clique encore pour une autre !", 4000);
+      spawnParticles('📖', 5);
+      shadowCoinManager.addCoins(100, 'story_reward');
+      setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 4000);
+    } else {
+      setStoryActive({ ...storyActive, partIndex: nextPart });
+      showBubble(`📖 "${story.parts[nextPart]}"`, 0);
+    }
+  }, [storyActive, showBubble, spawnParticles]);
+
+  // ─── REAL Destruction (rare, epic BSOD) ──────────────────────
+
+  const triggerRealDestruction = useCallback(() => {
+    if (hasRealDestroyedRef.current) return;
+    hasRealDestroyedRef.current = true;
+
+    // Phase 1: Violent shake (2s)
+    setRealDestroyPhase(1);
+    setMood('excited');
+    showBubble("KIIIIIEEEEK !!! JE... JE PERDS LE CONTROLE !!!", 0);
+    spawnParticles('💥', 15);
+
+    // Phase 2: Static noise (1.5s)
+    setTimeout(() => {
+      setRealDestroyPhase(2);
+      setBubble(null);
+    }, 2000);
+
+    // Phase 3: BSOD (4.5s)
+    setTimeout(() => {
+      setRealDestroyPhase(3);
+    }, 3500);
+
+    // Phase 4: Reboot (2s)
+    setTimeout(() => {
+      setRealDestroyPhase(4);
+    }, 8000);
+
+    // Phase 5: Recovery
+    setTimeout(() => {
+      setRealDestroyPhase(null);
+      setMood('idle');
+      showBubble("...je... c'etait quoi CA ?! Plus JAMAIS tu cliques autant. COMPRIS ?!", 6000);
+      spawnParticles('🔧', 8);
+    }, 10000);
+  }, [showBubble, spawnParticles]);
+
+  // ─── Companion System ───────────────────────────────────────
+
+  const toggleCompanion = useCallback((chibiId) => {
+    setCompanions(prev => {
+      if (prev.includes(chibiId)) {
+        const chibi = WANDERING_CHIBIS.find(c => c.id === chibiId);
+        if (chibi) showBubble(randomFrom(COMPANION_DISMISS).replace('{name}', chibi.name), 3000);
+        return prev.filter(id => id !== chibiId);
+      }
+      const chibi = WANDERING_CHIBIS.find(c => c.id === chibiId);
+      if (chibi) {
+        showBubble(randomFrom(COMPANION_REACTIONS).replace('{name}', chibi.name), 3000);
+        setMood('excited');
+        spawnParticles('✨', 4);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 2500);
+      }
+      if (prev.length >= 2) return [prev[1], chibiId];
+      return [...prev, chibiId];
+    });
+  }, [showBubble, spawnParticles]);
+
+  // Companion interaction timer
+  useEffect(() => {
+    if (companions.length === 0) return;
+
+    const interval = setInterval(() => {
+      if (isSleepingRef.current || storyActiveRef.current || realDestroyPhase) return;
+      if (Math.random() > 0.35) return;
+
+      // If 2 companions: chance they talk to each other
+      if (companions.length === 2 && Math.random() < 0.3) {
+        const chibiA = WANDERING_CHIBIS.find(c => c.id === companions[0]);
+        const chibiB = WANDERING_CHIBIS.find(c => c.id === companions[1]);
+        if (chibiA && chibiB) {
+          const dialogue = randomFrom(COMPANION_PAIR_TALK);
+          setCompanionBubble({ companionId: companions[0], text: `${chibiA.name}: ${dialogue.a}` });
+          setTimeout(() => {
+            setCompanionBubble({ companionId: companions[1], text: `${chibiB.name}: ${dialogue.b}` });
+            setTimeout(() => setCompanionBubble(null), 3000);
+          }, 2500);
+          return;
+        }
+      }
+
+      // Solo or interaction with Béru
+      const companionId = randomFrom(companions);
+      const chibi = WANDERING_CHIBIS.find(c => c.id === companionId);
+      if (!chibi) return;
+
+      if (Math.random() < 0.4) {
+        // Solo
+        setCompanionBubble({ companionId, text: randomFrom(chibi.messages) });
+        setTimeout(() => setCompanionBubble(null), 3500);
+      } else {
+        // Interact with Béru
+        const interaction = randomFrom(COMPANION_INTERACTIONS);
+        setCompanionBubble({ companionId, text: interaction.chibi });
+        setTimeout(() => {
+          setCompanionBubble(null);
+          showBubble(`*a ${chibi.name}* ${interaction.beru}`, 4000);
+        }, 2500);
+      }
+    }, 22000);
+
+    return () => clearInterval(interval);
+  }, [companions, showBubble, realDestroyPhase]);
+
+  // Auto-start story after 50s of ambient (no interaction) — rare
+  useEffect(() => {
+    const storyTimer = setInterval(() => {
+      if (!isSleepingRef.current && !storyActiveRef.current && Math.random() < 0.08) {
+        startRandomStory();
+      }
+    }, 50000);
+    return () => clearInterval(storyTimer);
+  }, [startRandomStory]);
+
+  // ─── Random Events (Kanae-style surprises) ────────────────
+
+  useEffect(() => {
+    const eventTimer = setInterval(() => {
+      if (isSleepingRef.current || storyActiveRef.current) return;
+
+      // 4% chance every 75 seconds
+      if (Math.random() < 0.04) {
+        const event = randomFrom(RANDOM_EVENTS);
+        shadowCoinManager.addCoins(event.coins, 'random_event');
+
+        showBubble(event.message, 5000);
+        setMood('excited');
+        spawnParticles(event.particles, event.particleCount);
+
+        setRandomEventFeedback({
+          text: event.message,
+          coins: event.coins,
+        });
+        setTimeout(() => setRandomEventFeedback(null), 3000);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 4000);
+      }
+    }, 75000);
+
+    return () => clearInterval(eventTimer);
+  }, [showBubble, spawnParticles]);
+
+  // ─── Wandering Chibi Apparitions (plus frequent !) ────────
+
+  useEffect(() => {
+    const spawnWanderer = () => {
+      if (isSleepingRef.current || wanderer) return;
+
+      const chibi = randomFrom(WANDERING_CHIBIS);
+      const fromLeft = Math.random() > 0.5;
+      const y = 100 + Math.random() * (window.innerHeight - 200);
+      const msg = Math.random() < 0.6 ? randomFrom(chibi.messages) : null;
+
+      setWanderer({ chibi, fromLeft, y, bubble: msg });
+
+      // Beru reacts to the visitor
+      const beruReactions = [
+        `Oh ! ${chibi.name} passe par la ! Clique vite dessus !`,
+        `Tiens, ${chibi.name}... Attrape-le !`,
+        `${chibi.name} ! Clique dessus, vite !`,
+        `He, c'est ${chibi.name} ! Capture-le !`,
+      ];
+      setTimeout(() => {
+        if (!isSleepingRef.current) {
+          showBubble(randomFrom(beruReactions), 4000);
+          setMood('excited');
+          setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 3000);
+        }
+      }, 1500);
+
+      // Remove wanderer after animation
+      setTimeout(() => setWanderer(null), 10000);
+    };
+
+    // First apparition after 12-20s, then every 20-35s
+    const firstDelay = 12000 + Math.random() * 8000;
+    const firstTimer = setTimeout(() => {
+      spawnWanderer();
+    }, firstDelay);
+
+    const interval = setInterval(() => {
+      if (Math.random() < 0.55) spawnWanderer();
+    }, 20000 + Math.random() * 15000);
+
+    return () => {
+      clearTimeout(firstTimer);
+      clearInterval(interval);
+    };
+  }, [wanderer, showBubble]);
+
+  // ─── Catch Wandering Chibi ─────────────────────────────────
+
+  const handleCatchWanderer = useCallback((e) => {
+    if (!wanderer) return;
+    e.stopPropagation();
+    e.preventDefault();
+
+    const coins = RARITY_COINS[wanderer.chibi.rarity] || 50;
+    shadowCoinManager.addCoins(coins, 'chibi_catch');
+
+    // Add to collection
+    setCollection(prev => ({
+      ...prev,
+      [wanderer.chibi.id]: (prev[wanderer.chibi.id] || 0) + 1,
+    }));
+
+    // Visual feedback at click position
+    setCatchFeedback({
+      text: `${randomFrom(CATCH_MESSAGES)} ${wanderer.chibi.name} !`,
+      coins,
+      x: e.clientX,
+      y: e.clientY,
+    });
+    setTimeout(() => setCatchFeedback(null), 2500);
+
+    // Beru reacts
+    const rarityLabel = wanderer.chibi.rarity === 'mythique' ? 'MYTHIQUE' : wanderer.chibi.rarity === 'legendaire' ? 'LEGENDAIRE' : 'Rare';
+    showBubble(`${wanderer.chibi.name} capture ! [${rarityLabel}] +${coins} coins !`, 4000);
+    setMood('excited');
+    spawnParticles(wanderer.chibi.rarity === 'mythique' ? '🌟' : '✨', 8);
+    setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 3000);
+
+    // Remove wanderer
+    setWanderer(null);
+  }, [wanderer, showBubble, spawnParticles]);
+
+  // ─── Click Handler ────────────────────────────────────────
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    const now = Date.now();
+
+    // If story is active, advance it
+    if (storyActive) {
+      advanceStory();
+      return;
+    }
+
+    clickCountRef.current += 1;
+    const combo = clickCountRef.current;
+    setClickCombo(combo);
+
+    // Reset combo after 2s of no clicks
+    setTimeout(() => {
+      if (clickCountRef.current === combo) {
+        clickCountRef.current = 0;
+        setClickCombo(0);
+      }
+    }, 2000);
+
+    if (isSleepingRef.current) {
+      isSleepingRef.current = false;
+      setMood('excited');
+      showBubble("Tu m'as reveille ! ...mais c'est pas grave.", 3000);
+      spawnParticles('💫', 3);
+    } else if (combo >= 15 && !screenDestroyed && !realDestroyPhase) {
+      if (!hasRealDestroyedRef.current && Math.random() < 0.15) {
+        // RARE: REAL destruction — BSOD, static, the works
+        triggerRealDestruction();
+      } else {
+        // Light destruction
+        setScreenDestroyed(true);
+        setSecretMode('clone');
+        setMood('excited');
+        showBubble("J'AI TOUT CASSE ! KIIIIIEEEEK !!! Le site... est... DETRUIT !", 6000);
+        spawnParticles('💥', 15);
+
+        setTimeout(() => {
+          setScreenDestroyed(false);
+          setSecretMode(null);
+          showBubble("Oups... je repare... voila. Rien ne s'est passe. Arrete de cliquer.", 5000);
+          spawnParticles('🔧', 5);
+          setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 4000);
+        }, 6000);
+      }
+    } else if (combo >= 10) {
+      // 10 clicks: clone mode
+      setSecretMode('clone');
+      setMood('excited');
+      showBubble("KIIIEK ! JE ME MULTIPLIE !", 4000);
+      spawnParticles('🐜', 10);
+      setTimeout(() => setSecretMode(null), 5000);
+    } else if (combo >= 5) {
+      // Spam clicking
+      setMood('excited');
+      showBubble(randomFrom(SPAM_CLICK_MESSAGES), 3000);
+      spawnParticles('💢', 4);
+    } else if (now - lastClickRef.current < 500) {
+      // Double click: startled
+      setMood('excited');
+      showBubble("WAAH ! Tu m'as fait peur !", 3000);
+      spawnParticles('❗', 3);
+      targetRef.current = {
+        x: clamp(posRef.current.x + (Math.random() - 0.5) * 300, 80, window.innerWidth - 80),
+        y: clamp(posRef.current.y - 100 - Math.random() * 100, 80, window.innerHeight - 80),
+      };
+    } else {
+      // Normal click — small chance to start a story
+      if (Math.random() < 0.08) {
+        startRandomStory();
+      } else {
+        setMood('excited');
+        showBubble(randomFrom(CLICK_MESSAGES), 3500);
+      }
+    }
+
+    lastClickRef.current = now;
+    if (!storyActive) {
+      setTimeout(() => { if (!isSleepingRef.current && !storyActiveRef.current) setMood('idle'); }, 2500);
+    }
+  };
+
+  // ─── Drag & Drop ──────────────────────────────────────────
+
+  const handleDragStart = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+    const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
+    const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
+    dragOffsetRef.current = {
+      x: clientX - posRef.current.x,
+      y: clientY - posRef.current.y,
+    };
+    showBubble(randomFrom(DRAG_MESSAGES), 2000);
+    setMood('excited');
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMove = (e) => {
+      const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
+      const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
+      const newX = clientX - dragOffsetRef.current.x;
+      const newY = clientY - dragOffsetRef.current.y;
+      posRef.current = { x: newX, y: newY };
+      targetRef.current = { x: newX, y: newY };
+      setPos({ x: newX, y: newY });
+    };
+
+    const handleUp = () => {
+      setIsDragging(false);
+      setMood('idle');
+      showBubble("Bon... je reste la alors.", 2000);
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    window.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', handleUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleUp);
+    };
+  }, [isDragging, showBubble]);
+
+  // ─── Resize handler ───────────────────────────────────────
+
+  useEffect(() => {
+    const handleResize = () => {
+      posRef.current = {
+        x: clamp(posRef.current.x, 40, window.innerWidth - 80),
+        y: clamp(posRef.current.y, 40, window.innerHeight - 80),
+      };
+      targetRef.current = { ...posRef.current };
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // ─── Screen Destruction Effect ──────────────────────────
+
+  useEffect(() => {
+    if (screenDestroyed) {
+      document.body.style.animation = 'screenShake 0.15s linear infinite';
+    } else {
+      document.body.style.animation = '';
+    }
+    return () => { document.body.style.animation = ''; };
+  }, [screenDestroyed]);
+
+  // ─── Real Destruction Body Effect ──────────────────────────
+
+  useEffect(() => {
+    if (realDestroyPhase === 1) {
+      document.body.style.animation = 'screenShakeViolent 0.08s linear infinite';
+    } else if (realDestroyPhase) {
+      document.body.style.animation = '';
+    } else if (!screenDestroyed) {
+      document.body.style.animation = '';
+    }
+    return () => {
+      if (!screenDestroyed && !realDestroyPhase) document.body.style.animation = '';
+    };
+  }, [realDestroyPhase, screenDestroyed]);
+
+  // ─── Toggle visibility ───────────────────────────────────
+
+  const toggleVisibility = () => {
+    const newVal = !isVisible;
+    setIsVisible(newVal);
+    localStorage.setItem('beru_mascot_visible', String(newVal));
+  };
+
+  // ─── Mood Styles ──────────────────────────────────────────
+
+  const getMoodFilter = () => {
+    switch (mood) {
+      case 'excited': return 'drop-shadow(0 0 14px rgba(168, 85, 247, 0.9))';
+      case 'sleeping': return 'drop-shadow(0 0 6px rgba(100, 100, 200, 0.3)) brightness(0.7)';
+      case 'thinking': return 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.6))';
+      default: return 'drop-shadow(0 0 8px rgba(139, 0, 255, 0.5))';
+    }
+  };
+
+  const getFloatSpeed = () => {
+    switch (mood) {
+      case 'excited': return '0.6s';
+      case 'sleeping': return '5s';
+      case 'thinking': return '2s';
+      default: return '3s';
+    }
+  };
+
+  // ─── Render ───────────────────────────────────────────────
+
+  return (
+    <>
+      <style>{`
+        @keyframes beruFloat {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+        @keyframes beruSleep {
+          0%, 100% { transform: translateY(0px) rotate(-5deg); }
+          50% { transform: translateY(-3px) rotate(5deg); }
+        }
+        @keyframes beruDisco {
+          0% { filter: hue-rotate(0deg) drop-shadow(0 0 20px red); }
+          25% { filter: hue-rotate(90deg) drop-shadow(0 0 20px lime); }
+          50% { filter: hue-rotate(180deg) drop-shadow(0 0 20px cyan); }
+          75% { filter: hue-rotate(270deg) drop-shadow(0 0 20px magenta); }
+          100% { filter: hue-rotate(360deg) drop-shadow(0 0 20px red); }
+        }
+        @keyframes particleFly {
+          0% { opacity: 1; transform: translate(0, 0) scale(1); }
+          100% { opacity: 0; transform: translate(var(--px), var(--py)) scale(0); }
+        }
+        @keyframes clonePulse {
+          0%, 100% { opacity: 0.4; transform: scale(0.7); }
+          50% { opacity: 0.7; transform: scale(0.9); }
+        }
+        @keyframes wanderLR {
+          0% { left: -50px; opacity: 0; }
+          5% { opacity: 1; }
+          50% { opacity: 1; }
+          95% { opacity: 1; }
+          100% { left: calc(100vw + 50px); opacity: 0; }
+        }
+        @keyframes wanderRL {
+          0% { right: -50px; opacity: 0; }
+          5% { opacity: 1; }
+          50% { opacity: 1; }
+          95% { opacity: 1; }
+          100% { right: calc(100vw + 50px); opacity: 0; }
+        }
+        @keyframes wanderBounce {
+          0%, 100% { transform: translateY(0) scaleX(var(--dir)); }
+          50% { transform: translateY(-6px) scaleX(var(--dir)); }
+        }
+        @keyframes wanderBubbleFade {
+          0% { opacity: 0; transform: translateY(5px) scale(0.8); }
+          10% { opacity: 1; transform: translateY(0) scale(1); }
+          80% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+        @keyframes screenShake {
+          0%, 100% { transform: translate(0); }
+          10% { transform: translate(-8px, 5px) skewX(-1deg); }
+          20% { transform: translate(8px, -5px) skewX(1deg); }
+          30% { transform: translate(-6px, 8px); }
+          40% { transform: translate(6px, -8px) skewX(-0.5deg); }
+          50% { transform: translate(-10px, -3px); }
+          60% { transform: translate(10px, 3px) skewX(0.5deg); }
+          70% { transform: translate(-5px, 6px); }
+          80% { transform: translate(5px, -6px); }
+          90% { transform: translate(-8px, -5px) skewX(-1deg); }
+        }
+        @keyframes glitchFlicker {
+          0% { opacity: 0; }
+          5% { opacity: 0.8; clip-path: inset(20% 0 60% 0); }
+          10% { opacity: 0; }
+          15% { opacity: 0.6; clip-path: inset(50% 0 20% 0); }
+          20% { opacity: 0; }
+          30% { opacity: 0.9; clip-path: inset(10% 0 70% 0); }
+          35% { opacity: 0; }
+          50% { opacity: 0.7; clip-path: inset(70% 0 5% 0); }
+          55% { opacity: 0; }
+          70% { opacity: 0.8; clip-path: inset(5% 0 85% 0); }
+          75% { opacity: 0; }
+          85% { opacity: 0.5; clip-path: inset(40% 0 40% 0); }
+          90% { opacity: 0; }
+          100% { opacity: 0; }
+        }
+        @keyframes screenRedFlash {
+          0%, 100% { opacity: 0.15; }
+          50% { opacity: 0.35; }
+        }
+        @keyframes destructionText {
+          0%, 100% { transform: scale(1) rotate(0deg); text-shadow: 0 0 20px red; }
+          25% { transform: scale(1.05) rotate(-1deg); text-shadow: 0 0 40px red, 0 0 80px darkred; }
+          50% { transform: scale(0.98) rotate(1deg); text-shadow: 0 0 20px red; }
+          75% { transform: scale(1.03) rotate(-0.5deg); text-shadow: 0 0 60px red, 0 0 100px darkred; }
+        }
+        @keyframes screenShakeViolent {
+          0%, 100% { transform: translate(0); }
+          10% { transform: translate(-15px, 10px) skewX(-3deg) rotate(-1deg); }
+          20% { transform: translate(15px, -10px) skewX(3deg) rotate(1deg); }
+          30% { transform: translate(-12px, 15px) skewX(-2deg); }
+          40% { transform: translate(12px, -15px) skewX(2deg) rotate(-2deg); }
+          50% { transform: translate(-18px, -8px) rotate(1.5deg); }
+          60% { transform: translate(18px, 8px) skewX(1deg); }
+          70% { transform: translate(-10px, 12px) rotate(-1deg); }
+          80% { transform: translate(10px, -12px) skewX(-1deg); }
+          90% { transform: translate(-15px, -10px) skewX(2deg) rotate(2deg); }
+        }
+        @keyframes beruStaticFlicker {
+          0%, 100% { opacity: 0; }
+          5% { opacity: 0.8; }
+          10% { opacity: 0; }
+          15% { opacity: 0.6; }
+          20% { opacity: 0; }
+          30% { opacity: 0.9; }
+          35% { opacity: 0; }
+          50% { opacity: 0.7; }
+          55% { opacity: 0; }
+          70% { opacity: 0.8; }
+          75% { opacity: 0; }
+          85% { opacity: 0.5; }
+          90% { opacity: 0; }
+        }
+        @keyframes rebootProgress {
+          0% { width: 0%; }
+          100% { width: 100%; }
+        }
+        @keyframes bsodCursorBlink {
+          0%, 50% { opacity: 1; }
+          51%, 100% { opacity: 0; }
+        }
+        @keyframes randomEventPulse {
+          0% { transform: scale(0.5); opacity: 0; }
+          50% { transform: scale(1.1); opacity: 1; }
+          100% { transform: scale(1); opacity: 0.9; }
+        }
+        .screen-destroyed > *:not([class*="z-[99"]) {
+          animation: screenShake 0.15s linear infinite !important;
+        }
+      `}</style>
+
+      {/* Toggle Button */}
+      <button
+        onClick={toggleVisibility}
+        className="fixed bottom-2 right-2 z-[9997] w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 text-[10px]"
+        style={{
+          opacity: isVisible ? 0.2 : 0.5,
+          background: isVisible ? 'rgba(139, 0, 255, 0.2)' : 'rgba(139, 0, 255, 0.4)',
+        }}
+        title={isVisible ? "Masquer Beru" : "Afficher Beru"}
+      >
+        {'\uD83D\uDC1C'}
+      </button>
+
+      {/* Collection Button */}
+      {isVisible && (
+        <button
+          onClick={() => setShowCollection(!showCollection)}
+          className="fixed bottom-2 right-10 z-[9997] w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 text-[10px]"
+          style={{
+            opacity: showCollection ? 0.7 : 0.3,
+            background: showCollection ? 'rgba(139, 0, 255, 0.4)' : 'rgba(139, 0, 255, 0.15)',
+          }}
+          title="Collection de Chibis"
+        >
+          {'\uD83C\uDF92'}
+        </button>
+      )}
+
+      {/* Collection Panel */}
+      <AnimatePresence>
+        {showCollection && isVisible && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-10 right-2 z-[9997] bg-gray-900/95 backdrop-blur-md rounded-xl p-3 border border-purple-500/30 shadow-xl"
+            style={{ width: '220px' }}
+          >
+            <div className="text-[10px] text-purple-400/80 font-bold uppercase tracking-wider mb-2 text-center">
+              Collection ({Object.keys(collection).filter(k => collection[k] > 0).length}/{WANDERING_CHIBIS.length})
+            </div>
+            <div className="grid grid-cols-4 gap-1.5">
+              {WANDERING_CHIBIS.map(chibi => {
+                const count = collection[chibi.id] || 0;
+                const isDeployed = companions.includes(chibi.id);
+                return (
+                  <button
+                    key={chibi.id}
+                    onClick={() => count > 0 && toggleCompanion(chibi.id)}
+                    className={`flex flex-col items-center p-1 rounded-lg transition-all ${
+                      count > 0 ? 'hover:bg-purple-500/20 cursor-pointer' : 'opacity-25 cursor-not-allowed'
+                    } ${isDeployed ? 'bg-purple-500/30 ring-1 ring-purple-400/60' : ''}`}
+                    disabled={count === 0}
+                    title={count > 0 ? `${chibi.name} (x${count}) — ${isDeployed ? 'Retirer' : 'Deployer'}` : `${chibi.name} — Pas encore capture`}
+                  >
+                    <img
+                      src={chibi.sprite}
+                      alt={chibi.name}
+                      className="w-8 h-8 object-contain"
+                      style={{
+                        filter: count > 0 ? RARITY_GLOW[chibi.rarity] : 'grayscale(1) brightness(0.3)',
+                        imageRendering: 'auto',
+                      }}
+                    />
+                    <span className={`text-[7px] mt-0.5 truncate w-full text-center ${
+                      chibi.rarity === 'mythique' ? 'text-red-400' :
+                      chibi.rarity === 'legendaire' ? 'text-orange-400' : 'text-blue-400'
+                    } ${count === 0 ? '!text-gray-600' : ''}`}>
+                      {chibi.name}
+                    </span>
+                    {count > 0 && (
+                      <span className="text-[7px] text-yellow-400/80">x{count}</span>
+                    )}
+                    {isDeployed && (
+                      <span className="text-[6px] text-purple-300">actif</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="text-[8px] text-gray-600 text-center mt-2">
+              Clique pour deployer/retirer (max 2)
+            </div>
+            {companions.length > 0 && (
+              <div className="text-[8px] text-purple-400/60 text-center mt-1">
+                {companions.length}/2 compagnons actifs
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Beru Mascot */}
+      <AnimatePresence>
+        {isVisible && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.5 }}
+            className="fixed z-[9998]"
+            style={{
+              left: pos.x,
+              top: pos.y,
+              pointerEvents: 'auto',
+              willChange: 'left, top',
+            }}
+          >
+            {/* Particles */}
+            {particles.map(p => (
+              <span
+                key={p.id}
+                className="absolute text-lg pointer-events-none"
+                style={{
+                  '--px': `${p.x}px`,
+                  '--py': `${p.y}px`,
+                  animation: 'particleFly 1.2s ease-out forwards',
+                  left: '50%',
+                  top: '50%',
+                }}
+              >
+                {p.emoji}
+              </span>
+            ))}
+
+            {/* Clone Easter Egg */}
+            {secretMode === 'clone' && (
+              <>
+                {[...Array(4)].map((_, i) => (
+                  <img
+                    key={i}
+                    src={BERU_SPRITE}
+                    alt=""
+                    className="absolute w-8 h-8 pointer-events-none"
+                    style={{
+                      left: `${(i % 2 === 0 ? -1 : 1) * (25 + i * 10)}px`,
+                      top: `${(i < 2 ? -1 : 1) * (20 + i * 5)}px`,
+                      animation: `clonePulse ${1 + i * 0.3}s ease-in-out infinite`,
+                      imageRendering: 'auto',
+                    }}
+                  />
+                ))}
+              </>
+            )}
+
+            {/* Speech Bubble - position-aware */}
+            <AnimatePresence>
+              {bubble && (() => {
+                const nearRight = posRef.current.x > window.innerWidth - 220;
+                const nearLeft = posRef.current.x < 180;
+                const alignClass = nearRight
+                  ? 'right-0'
+                  : nearLeft
+                    ? 'left-0'
+                    : 'left-1/2 -translate-x-1/2';
+                const arrowClass = nearRight
+                  ? 'right-4'
+                  : nearLeft
+                    ? 'left-4'
+                    : 'left-1/2 -translate-x-1/2';
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.8 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    className={`absolute bottom-full ${alignClass} mb-2 w-max max-w-[200px] md:max-w-[250px]`}
+                  >
+                    <div className={`relative backdrop-blur-sm text-white text-[11px] md:text-xs px-3 py-2 rounded-xl shadow-lg ${
+                      storyActive
+                        ? 'bg-indigo-950/95 border border-indigo-400/50 shadow-indigo-900/40 max-w-[260px] md:max-w-[320px]'
+                        : 'bg-gray-900/95 border border-purple-500/40 shadow-purple-900/30'
+                    }`}>
+                      <span className="leading-relaxed">{bubble}</span>
+                      {storyActive && (
+                        <div className="mt-1.5 text-[9px] text-indigo-300/70 italic text-right">
+                          {storyActive.partIndex + 1}/{BERU_STORIES[storyActive.storyIndex].parts.length} — clique pour la suite...
+                        </div>
+                      )}
+                      <div className={`absolute -bottom-1.5 ${arrowClass} w-3 h-3 rotate-45 ${storyActive ? 'bg-indigo-950/95 border-r border-b border-indigo-400/50' : 'bg-gray-900/95 border-r border-b border-purple-500/40'}`} />
+                    </div>
+                  </motion.div>
+                );
+              })()}
+            </AnimatePresence>
+
+            {/* Mood Indicators */}
+            <AnimatePresence>
+              {mood === 'sleeping' && !bubble && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute -top-5 left-1/2 -translate-x-1/2 text-lg"
+                  style={{ animation: 'beruFloat 2s ease-in-out infinite' }}
+                >
+                  {'\uD83D\uDCA4'}
+                </motion.div>
+              )}
+              {mood === 'thinking' && !bubble && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  exit={{ opacity: 0 }}
+                  className="absolute -top-4 left-1/2 -translate-x-1/2 text-xs text-blue-400 font-bold"
+                >
+                  ...
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Click Combo Counter */}
+            <AnimatePresence>
+              {clickCombo >= 3 && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                  className="absolute -top-3 -right-3 bg-red-500 text-white text-[9px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg"
+                >
+                  {clickCombo}x
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Beru Sprite */}
+            <motion.div
+              whileHover={{ scale: 1.15 }}
+              whileTap={{ scale: 0.85 }}
+              onClick={handleClick}
+              onMouseDown={handleDragStart}
+              onTouchStart={handleDragStart}
+              className="cursor-grab active:cursor-grabbing select-none"
+              style={{
+                animation: mood === 'sleeping'
+                  ? `beruSleep 5s ease-in-out infinite`
+                  : secretMode === 'konami'
+                    ? 'beruDisco 1s linear infinite'
+                    : `beruFloat ${getFloatSpeed()} ease-in-out infinite`,
+                filter: secretMode === 'konami' ? undefined : getMoodFilter(),
+                transform: `scaleX(${facingLeft ? -1 : 1})`,
+              }}
+            >
+              <img
+                src={BERU_SPRITE}
+                alt="Beru"
+                className="w-14 h-14 md:w-[72px] md:h-[72px] object-contain pointer-events-none"
+                style={{ imageRendering: 'auto' }}
+                draggable={false}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ DEPLOYED COMPANIONS ═══ */}
+      {isVisible && companions.map((chibiId, i) => {
+        const chibi = WANDERING_CHIBIS.find(c => c.id === chibiId);
+        if (!chibi) return null;
+        const offsets = [{ x: -45, y: 32 }, { x: 55, y: 28 }];
+        const offset = offsets[i] || offsets[0];
+        return (
+          <div
+            key={`companion-${chibiId}`}
+            className="fixed z-[9997] pointer-events-none"
+            style={{
+              left: pos.x + offset.x,
+              top: pos.y + offset.y,
+              willChange: 'left, top',
+              transition: 'left 0.15s ease-out, top 0.15s ease-out',
+            }}
+          >
+            {/* Companion speech bubble */}
+            <AnimatePresence>
+              {companionBubble?.companionId === chibiId && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5, scale: 0.8 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -5, scale: 0.8 }}
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-max max-w-[160px]"
+                >
+                  <div className="bg-gray-800/90 backdrop-blur-sm text-white text-[9px] px-2 py-1 rounded-lg border border-white/20 shadow-lg">
+                    <span className="leading-relaxed">{companionBubble.text}</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {/* Companion sprite */}
+            <img
+              src={chibi.sprite}
+              alt={chibi.name}
+              className="w-8 h-8 md:w-10 md:h-10 object-contain"
+              style={{
+                animation: `beruFloat ${3.5 + i * 0.8}s ease-in-out infinite`,
+                filter: RARITY_GLOW[chibi.rarity],
+                transform: `scaleX(${facingLeft ? -1 : 1})`,
+                imageRendering: 'auto',
+              }}
+              draggable={false}
+            />
+            {/* Name tag */}
+            <div className="text-center mt-0.5">
+              <span className={`text-[6px] font-bold uppercase tracking-wider ${
+                chibi.rarity === 'mythique' ? 'text-red-400/70' :
+                chibi.rarity === 'legendaire' ? 'text-orange-400/70' : 'text-blue-400/70'
+              }`}>
+                {chibi.name}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Wandering Chibi Apparition - CLICKABLE ! */}
+      {isVisible && wanderer && (
+        <div
+          className="fixed z-[9996] cursor-pointer group/wander"
+          style={{
+            top: wanderer.y,
+            animation: `${wanderer.fromLeft ? 'wanderLR' : 'wanderRL'} 12s linear forwards`,
+            pointerEvents: 'auto',
+          }}
+          onClick={handleCatchWanderer}
+        >
+          {/* Hover hint */}
+          <div
+            className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover/wander:opacity-100 transition-opacity duration-200"
+          >
+            <div className="bg-yellow-500/90 text-black text-[9px] md:text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg">
+              Clique pour capturer ! +{RARITY_COINS[wanderer.chibi.rarity] || 50} coins
+            </div>
+          </div>
+          {/* Wanderer bubble */}
+          {wanderer.bubble && (
+            <div
+              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 whitespace-nowrap pointer-events-none"
+              style={{ animation: 'wanderBubbleFade 4s ease-out forwards', animationDelay: '2s', opacity: 0 }}
+            >
+              <div className="bg-gray-900/90 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded-lg border border-white/20 shadow-md">
+                {wanderer.bubble}
+              </div>
+            </div>
+          )}
+          {/* Wanderer sprite */}
+          <img
+            src={wanderer.chibi.sprite}
+            alt={wanderer.chibi.name}
+            className="w-12 h-12 md:w-14 md:h-14 object-contain transition-transform duration-200 group-hover/wander:scale-125"
+            style={{
+              '--dir': wanderer.fromLeft ? '1' : '-1',
+              animation: 'wanderBounce 0.8s ease-in-out infinite',
+              filter: RARITY_GLOW[wanderer.chibi.rarity] || 'none',
+              imageRendering: 'auto',
+            }}
+            draggable={false}
+          />
+          {/* Rarity indicator */}
+          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
+            <span className={`text-[8px] font-bold uppercase tracking-wider ${
+              wanderer.chibi.rarity === 'mythique' ? 'text-red-400' :
+              wanderer.chibi.rarity === 'legendaire' ? 'text-orange-400' : 'text-blue-400'
+            }`}>
+              {wanderer.chibi.name}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Catch Feedback Animation */}
+      <AnimatePresence>
+        {catchFeedback && (
+          <motion.div
+            initial={{ opacity: 1, y: 0, scale: 0.8 }}
+            animate={{ opacity: 0, y: -80, scale: 1.3 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 2, ease: 'easeOut' }}
+            className="fixed z-[10000] pointer-events-none text-center"
+            style={{ left: catchFeedback.x, top: catchFeedback.y, transform: 'translateX(-50%)' }}
+          >
+            <div className="text-yellow-400 font-extrabold text-lg md:text-xl drop-shadow-lg">
+              +{catchFeedback.coins} coins !
+            </div>
+            <div className="text-white text-[11px] md:text-xs font-medium drop-shadow-lg mt-0.5">
+              {catchFeedback.text}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* SCREEN DESTRUCTION OVERLAY */}
+      <AnimatePresence>
+        {screenDestroyed && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-[99990] pointer-events-none overflow-hidden"
+          >
+            {/* Red flash */}
+            <div
+              className="absolute inset-0 bg-red-900/25"
+              style={{ animation: 'screenRedFlash 0.4s ease-in-out infinite' }}
+            />
+
+            {/* Glitch bars */}
+            {[...Array(12)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-full"
+                style={{
+                  top: `${(i * 8.5) + Math.random() * 3}%`,
+                  height: `${2 + Math.random() * 4}px`,
+                  background: `linear-gradient(90deg, transparent ${Math.random() * 20}%, rgba(255,0,0,0.4) ${20 + Math.random() * 20}%, rgba(0,255,255,0.3) ${50 + Math.random() * 10}%, transparent ${70 + Math.random() * 20}%)`,
+                  animation: `glitchFlicker ${0.1 + Math.random() * 0.2}s linear infinite`,
+                  animationDelay: `${i * 0.05}s`,
+                }}
+              />
+            ))}
+
+            {/* Scan lines */}
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)',
+                animation: 'glitchFlicker 0.3s linear infinite',
+              }}
+            />
+
+            {/* KIIIEK text */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div
+                className="text-red-500 text-5xl md:text-7xl font-black"
+                style={{ animation: 'destructionText 0.3s ease-in-out infinite' }}
+              >
+                KIIIEK !!!
+              </div>
+            </div>
+
+            {/* Corner cracks (pseudo) */}
+            <div className="absolute top-0 left-0 w-32 h-32 border-l-2 border-t-2 border-red-500/60 opacity-80" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
+            <div className="absolute top-0 right-0 w-32 h-32 border-r-2 border-t-2 border-red-500/60 opacity-80" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%)' }} />
+            <div className="absolute bottom-0 left-0 w-32 h-32 border-l-2 border-b-2 border-red-500/60 opacity-80" style={{ clipPath: 'polygon(0 0, 0 100%, 100% 100%)' }} />
+            <div className="absolute bottom-0 right-0 w-32 h-32 border-r-2 border-b-2 border-red-500/60 opacity-80" style={{ clipPath: 'polygon(100% 0, 0 100%, 100% 100%)' }} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ REAL DESTRUCTION OVERLAY ═══ */}
+      <AnimatePresence>
+        {realDestroyPhase && realDestroyPhase >= 2 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: realDestroyPhase === 2 ? 0.5 : 0.3 }}
+            className="fixed inset-0 z-[99999] overflow-hidden"
+          >
+            {/* Phase 2: Static Noise */}
+            {realDestroyPhase === 2 && (
+              <div className="absolute inset-0 bg-black">
+                {/* Scan lines */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(255,255,255,0.03) 1px, rgba(255,255,255,0.03) 2px)',
+                  }}
+                />
+                {/* Static bars */}
+                {[...Array(25)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-full"
+                    style={{
+                      top: `${(i * 4) + Math.random() * 2}%`,
+                      height: `${1 + Math.random() * 4}px`,
+                      background: `linear-gradient(90deg, transparent ${Math.random() * 15}%, rgba(255,255,255,${0.08 + Math.random() * 0.15}) ${20 + Math.random() * 20}%, rgba(0,255,255,${0.05 + Math.random() * 0.1}) ${50 + Math.random() * 10}%, transparent ${70 + Math.random() * 25}%)`,
+                      animation: `beruStaticFlicker ${0.05 + Math.random() * 0.15}s steps(2) infinite`,
+                      animationDelay: `${i * 0.02}s`,
+                    }}
+                  />
+                ))}
+                {/* Big glitch blocks */}
+                {[...Array(6)].map((_, i) => (
+                  <div
+                    key={`block-${i}`}
+                    className="absolute"
+                    style={{
+                      top: `${Math.random() * 90}%`,
+                      left: `${Math.random() * 80}%`,
+                      width: `${20 + Math.random() * 40}%`,
+                      height: `${3 + Math.random() * 8}%`,
+                      background: `rgba(${Math.random() > 0.5 ? '255,0,0' : '0,255,255'}, ${0.05 + Math.random() * 0.1})`,
+                      animation: `beruStaticFlicker ${0.08 + Math.random() * 0.12}s steps(3) infinite`,
+                      animationDelay: `${Math.random() * 0.3}s`,
+                    }}
+                  />
+                ))}
+                {/* SIGNAL LOST text */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div
+                    className="text-white/20 text-3xl md:text-5xl font-mono font-bold tracking-widest"
+                    style={{ animation: 'beruStaticFlicker 0.15s steps(2) infinite' }}
+                  >
+                    SIGNAL LOST
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Phase 3: BSOD */}
+            {realDestroyPhase === 3 && (
+              <div className="absolute inset-0 bg-[#0078d7] flex items-start p-8 md:p-16 lg:p-20">
+                <div className="text-white max-w-2xl">
+                  <div className="text-[100px] md:text-[140px] leading-none mb-6" style={{ fontFamily: 'Segoe UI, sans-serif' }}>:(</div>
+                  <div className="text-lg md:text-xl mb-4 font-light" style={{ fontFamily: 'Segoe UI, sans-serif' }}>
+                    Your BuilderBeru ran into a problem caused by <span className="font-bold">BERU.exe</span> and needs to restart.
+                  </div>
+                  <div className="text-sm md:text-base opacity-70 mb-6 font-light" style={{ fontFamily: 'Segoe UI, sans-serif' }}>
+                    We're just collecting some error info, and then we'll restart for you.
+                  </div>
+                  <div className="text-sm md:text-base opacity-50 mb-2 font-mono">
+                    Stop Code: BERU_KIIIEK_CRITICAL_DESTRUCTION
+                  </div>
+                  <div className="text-sm md:text-base opacity-50 mb-1 font-mono">
+                    Error: 0xBERU_N1_OVERFLOW
+                  </div>
+                  <div className="text-xs md:text-sm opacity-40 mb-6 font-mono">
+                    The Shadow Soldier N1 has terminated all processes.
+                  </div>
+                  <div className="text-xs md:text-sm opacity-60 font-mono flex items-center gap-1">
+                    <span>100% complete</span>
+                    <span style={{ animation: 'bsodCursorBlink 1s steps(1) infinite' }}>_</span>
+                  </div>
+                  <div className="mt-8 text-[10px] md:text-xs opacity-30 font-mono">
+                    If you'd like to know more, search online for: BERU_CLICKED_TOO_MANY_TIMES
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Phase 4: Reboot */}
+            {realDestroyPhase === 4 && (
+              <div className="absolute inset-0 bg-black flex flex-col items-center justify-center gap-6">
+                <img
+                  src={BERU_SPRITE}
+                  alt="Beru"
+                  className="w-16 h-16 md:w-20 md:h-20 object-contain"
+                  style={{
+                    filter: 'drop-shadow(0 0 20px rgba(139, 0, 255, 0.6))',
+                    animation: 'beruFloat 1.5s ease-in-out infinite',
+                    imageRendering: 'auto',
+                  }}
+                />
+                <div className="text-white/50 text-xs md:text-sm font-mono">
+                  Shadow System Recovery...
+                </div>
+                <div className="w-48 md:w-64 h-1 bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-purple-600 to-violet-500 rounded-full"
+                    style={{ animation: 'rebootProgress 2s ease-out forwards' }}
+                  />
+                </div>
+                <div className="text-white/30 text-[10px] font-mono mt-2">
+                  Restoring components... Please don't click Beru again.
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Random Event Feedback */}
+      <AnimatePresence>
+        {randomEventFeedback && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: -20 }}
+            transition={{ duration: 0.5, type: 'spring' }}
+            className="fixed z-[99995] pointer-events-none"
+            style={{ top: '30%', left: '50%', transform: 'translateX(-50%)' }}
+          >
+            <div className="bg-gradient-to-r from-yellow-600/90 to-amber-600/90 backdrop-blur-md rounded-2xl px-6 py-4 border border-yellow-400/50 shadow-2xl shadow-yellow-900/50 text-center">
+              <div className="text-3xl mb-2" style={{ animation: 'randomEventPulse 1s ease-out' }}>
+                {RANDOM_EVENTS.find(e => e.message === randomEventFeedback.text)?.particles || '🌟'}
+              </div>
+              <div className="text-yellow-100 text-sm md:text-base font-bold">
+                +{randomEventFeedback.coins} Shadow Coins !
+              </div>
+              <div className="text-yellow-200/80 text-[10px] md:text-xs mt-1">
+                {randomEventFeedback.text}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
+export default FloatingBeruMascot;

@@ -111,7 +111,6 @@ class ShadowCoinManager {
     this.updateUserData({ shadowCoins: newTotal });
     
     // Log pour debug
-    console.log(`💰 +${amount} Shadow Coins (${source}) | Total: ${newTotal}`);
     
     // Notifier les callbacks
     this.notifyUpdate(newTotal, amount, source);
@@ -161,7 +160,6 @@ class ShadowCoinManager {
   // 💬 Afficher une notification
   showNotification(title, message) {
     // À implémenter selon ton système de notifications
-    console.log(`📢 ${title}: ${message}`);
     
     // Notification navigateur si autorisée
     if ('Notification' in window && Notification.permission === 'granted') {

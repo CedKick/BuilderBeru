@@ -19,14 +19,6 @@ setupEntityEvents(entity) {
     const spriteTop = entity.y - hitboxPadding - VERTICAL_OFFSET;
     const spriteBottom = entity.y + entity.size + hitboxPadding - VERTICAL_OFFSET;
 
-    // 🐛 DEBUG CONSOLE (optionnel)
-    console.log(`🐛 Click Debug ${entity.id}:`, {
-      click: `(${clickX.toFixed(1)}, ${clickY.toFixed(1)})`,
-      entity: `(${entity.x}, ${entity.y})`,
-      hitbox: `(${spriteLeft}, ${spriteTop}) to (${spriteRight}, ${spriteBottom})`,
-      scale: `${scaleX.toFixed(2)}x${scaleY.toFixed(2)}`,
-      padding: hitboxPadding
-    });
 
     // 🔥 MISE À JOUR HITBOX DATA pour l'affichage
     if (window.updateHitboxData) {
@@ -163,7 +155,6 @@ const debugStyles = `
 // 9️⃣ FONCTION POUR AJUSTER LES HITBOXES (tu pourras modifier les valeurs)
 const adjustHitbox = (entityType, newPadding) => {
   // Cette fonction te permettra d'ajuster les hitboxes en live
-  console.log(`Adjusting ${entityType} hitbox to ${newPadding}px padding`);
   // Tu peux ajouter un state pour les paddings personnalisés
 };
 

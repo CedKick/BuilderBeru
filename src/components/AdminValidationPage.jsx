@@ -135,7 +135,6 @@ const loadAdminStats = async () => {
 
   // 🆕 OUVRIR MODAL COMPARAISON v5.0 - CORRIGÉ
   const handleOpenComparison = (hunter, duplicate) => {
-    console.log('🔍 Opening comparison:', { hunter, duplicate });
     setComparisonData({ new: hunter, old: duplicate.hunter });
     setShowComparisonModal(true);
   };
@@ -248,8 +247,6 @@ const loadAdminStats = async () => {
 
   // 🔍 VOIR DÉTAILS
   const handleViewDetails = (hunter) => {
-    console.log('🔍 Hunter details:', hunter);
-    console.log('📸 Screenshots format:', hunter.screenshots);
     setSelectedHunter(hunter);
     setShowDetails(true);
     // Reset notation par défaut
@@ -1828,9 +1825,6 @@ const loadAdminStats = async () => {
                   <div className={`grid gap-3 ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-2 md:grid-cols-3'}`}>
                     {selectedHunter.screenshots.map((screenshot, index) => {
                       // Debug complet du format
-                      console.log(`📸 Screenshot ${index}:`, screenshot);
-                      console.log('Type:', typeof screenshot);
-                      console.log('Keys:', screenshot && typeof screenshot === 'object' ? Object.keys(screenshot) : 'N/A');
                       
                       // Gestion des différents formats de screenshots
                       let screenshotUrl = '';
@@ -1866,7 +1860,6 @@ const loadAdminStats = async () => {
                             className="w-full h-48 md:h-64 object-cover cursor-pointer hover:scale-105 transition-transform"
                             crossOrigin="anonymous"
                             onClick={() => {
-                              console.log('Ouverture screenshot:', finalUrl);
                               // Essayer d'ouvrir l'image directement
                               const link = document.createElement('a');
                               link.href = finalUrl;
@@ -1875,7 +1868,6 @@ const loadAdminStats = async () => {
                               link.click();
                             }}
                             onLoad={() => {
-                              console.log('✅ Screenshot chargé:', finalUrl);
                             }}
                             onError={(e) => {
                               console.error('❌ Erreur chargement screenshot:', finalUrl);
@@ -1887,7 +1879,6 @@ const loadAdminStats = async () => {
                               // Si c'est une erreur CORS ou 404, essayer sans le préfixe API
                               if (finalUrl.includes('/uploads/')) {
                                 const alternativeUrl = `https://builderberu.com${finalUrl.split('/uploads')[1]}`;
-                                console.log('🔄 Essai URL alternative:', alternativeUrl);
                                 e.target.onerror = null;
                                 e.target.src = alternativeUrl;
                               } else {

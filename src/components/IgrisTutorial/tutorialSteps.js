@@ -184,7 +184,6 @@ export const buildDynamicTutorialSteps = () => {
     const IS_IGRISK = Math.random() < 0.05;
     const GUIDE_NAME = IS_IGRISK ? 'igrisk' : 'igris';
 
-    console.log(IS_IGRISK ? '🎭 IGRISK DETECTED! Tank s\'est déguisé !' : '⚔️ Igris guide normal');
 
     addShakeAnimation();
 
@@ -870,7 +869,6 @@ export const buildDynamicTutorialSteps = () => {
             if (step.hasAction) {
                 stepData.action = () => {
                     setTimeout(() => {
-                        console.log('🔥 DEMO EFFECT: Préparation du laser orbital...');
                         document.body.style.animation = 'shake 0.5s';
                         setTimeout(() => {
                             document.body.style.animation = '';
@@ -883,7 +881,6 @@ export const buildDynamicTutorialSteps = () => {
                 stepData.action = () => {
                     setTimeout(() => {
                         if (window.fireTankLaser) {
-                            console.log('🚀 DEMO EFFECT: LASER ORBITAL ACTIVÉ !');
                             window.fireTankLaser();
 
                             if (window.umami) {
@@ -1068,7 +1065,6 @@ window.setHelmetMainStat = function (value = 'Attack %') {
         nativeValueSetter.call(select, value);
         select.dispatchEvent(new Event('input', { bubbles: true }));
         select.dispatchEvent(new Event('change', { bubbles: true }));
-        console.log(`✅ MainStat -> ${value}`);
         return true;
     }
     return false;
@@ -1084,7 +1080,6 @@ window.setSubstat1 = function (value = 'Critical Hit Damage') {
         nativeValueSetter.call(select, value);
         select.dispatchEvent(new Event('input', { bubbles: true }));
         select.dispatchEvent(new Event('change', { bubbles: true }));
-        console.log(`✅ SubStat 1 -> ${value}`);
         return true;
     }
     return false;
@@ -1099,7 +1094,6 @@ window.setSubstat2 = function (value = 'Critical Hit Rate') {
         nativeValueSetter.call(select, value);
         select.dispatchEvent(new Event('input', { bubbles: true }));
         select.dispatchEvent(new Event('change', { bubbles: true }));
-        console.log(`✅ SubStat 2 -> ${value}`);
         return true;
     }
     return false;
@@ -1114,7 +1108,6 @@ window.setSubstat3 = function (value = 'Defense Penetration') {
         nativeValueSetter.call(select, value);
         select.dispatchEvent(new Event('input', { bubbles: true }));
         select.dispatchEvent(new Event('change', { bubbles: true }));
-        console.log(`✅ SubStat 3 -> ${value}`);
         return true;
     }
     return false;
@@ -1129,7 +1122,6 @@ window.setSubstat4 = function (value = 'Additional Attack') {
         nativeValueSetter.call(select, value);
         select.dispatchEvent(new Event('input', { bubbles: true }));
         select.dispatchEvent(new Event('change', { bubbles: true }));
-        console.log(`✅ SubStat 4 -> ${value}`);
         return true;
     }
     return false;
@@ -1152,11 +1144,9 @@ window.doOneProc = function () {
         const clickedIndex = allButtons.indexOf(randomButton);
         const substatIndex = Math.floor(clickedIndex / 2) + 1;
 
-        console.log(`✅ Proc effectué sur SubStat ${substatIndex}`);
         return true;
     }
 
-    console.log('❌ Aucun bouton + actif');
     return false;
 };
 
@@ -1166,12 +1156,10 @@ window.openSetMenu = function () {
     const setButton = helmetCard.querySelector('img[alt="Sélectionner un Set"]');
 
     if (setButton) {
-        console.log('✅ Ouverture du menu des sets...');
         setButton.click();
         return true;
     }
 
-    console.log('❌ Bouton Set non trouvé');
     return false;
 };
 
@@ -1193,7 +1181,6 @@ window.selectRandomSet = async function () {
     }
 
     if (!setMenu) {
-        console.log('❌ Menu des sets non trouvé');
         return false;
     }
 
@@ -1203,7 +1190,6 @@ window.selectRandomSet = async function () {
         const selectedSet = setOptions[randomIndex];
         const setName = selectedSet.textContent.trim();
 
-        console.log(`✅ Set sélectionné: ${setName}`);
         selectedSet.click();
         return true;
     }
@@ -1230,7 +1216,6 @@ window.selectGuardSet = async function () {
     }
 
     if (!setMenu) {
-        console.log('❌ Menu des sets non trouvé');
         return false;
     }
 
@@ -1242,12 +1227,10 @@ window.selectGuardSet = async function () {
     );
 
     if (guardOption) {
-        console.log(`✅ Set Guard forcé par Igrisk ! 🛡️`);
         guardOption.click();
         return true;
     } else {
         // Si Guard pas trouvé, prendre au hasard
-        console.log('⚠️ Set Guard non trouvé, sélection aléatoire');
         return window.selectRandomSet();
     }
 };
@@ -1258,12 +1241,10 @@ window.clickSaveButton = function () {
     const saveButton = helmetCard.querySelector('img[alt="Save le set"]');
 
     if (saveButton) {
-        console.log('✅ Bouton Save trouvé, clic...');
         saveButton.click();
         return true;
     }
 
-    console.log('❌ Bouton Save non trouvé');
     return false;
 };
 
@@ -1274,7 +1255,6 @@ window.enterArtifactName = async function (name = "GG Igris Build") {
     const artifactNameInput = allInputs[5];
 
     if (artifactNameInput) {
-        console.log(`✅ Input trouvé, saisie de: "${name}"`);
 
         const nativeValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
         nativeValueSetter.call(artifactNameInput, name);
@@ -1282,11 +1262,9 @@ window.enterArtifactName = async function (name = "GG Igris Build") {
         artifactNameInput.dispatchEvent(new Event('input', { bubbles: true }));
         artifactNameInput.dispatchEvent(new Event('change', { bubbles: true }));
 
-        console.log(`Value après update: "${artifactNameInput.value}"`);
         return true;
     }
 
-    console.log('❌ Input non trouvé');
     return false;
 };
 
@@ -1297,11 +1275,9 @@ window.clickCancelButton = function () {
     );
 
     if (cancelButton) {
-        console.log('✅ Bouton Cancel trouvé, clic...');
         cancelButton.click();
         return true;
     }
 
-    console.log('❌ Bouton Cancel non trouvé');
     return false;
 };

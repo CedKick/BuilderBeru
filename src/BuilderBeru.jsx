@@ -2592,7 +2592,6 @@ Continuer?`;
       preview: hunterColorings[modelId].preview
     }));
     
-    console.log(`🎨 Coloriages disponibles pour ${hunterKey}:`, options);
     return options;
     
   } catch (error) {
@@ -2648,7 +2647,6 @@ useEffect(() => {
     setAvailableColorings([]);
     setSelectedColoring('default');
     setCurrentColoringImage(null);
-    console.log('⚠️ Aucun hunter sélectionné, skins chargés:', skins.length);
     return;
   }
 
@@ -2669,8 +2667,6 @@ useEffect(() => {
     setCurrentColoringImage(null);
   }
 
-  console.log('🎨 Skins chargés:', skins.length);
-  console.log('🖌️ Coloriages pour', selectedCharacter, ':', colorings.length);
 
 }, [selectedCharacter]); // ⚡ IMPORTANT : dépendance sur selectedCharacter !
 
@@ -2684,7 +2680,6 @@ useEffect(() => {
   const coloring = availableColorings.find(c => c.value === selectedColoring);
   setCurrentColoringImage(coloring?.preview || null);
   
-  console.log('🖼️ Image mise à jour:', selectedColoring, coloring?.preview ? 'Trouvée' : 'Non trouvée');
   
 }, [selectedColoring, availableColorings]);
 
@@ -3455,7 +3450,6 @@ BobbyJones : "Allez l'Inter !"
 
     // Si c'est Jinwoo, forcer le recalcul
     if (isJinwoo) {
-      console.log('🔥 Jinwoo détecté dans useEffect, recalcul...');
       recalculateAllStatsForJinwoo(jinwooStrength);
     }
   }, [selectedCharacter]); // Se déclenche CHAQUE fois que selectedCharacter change
@@ -3817,7 +3811,6 @@ BobbyJones : "Allez l'Inter !"
     });
     setArtifactsData(emptyArtifacts);
 
-    console.log('✅ Jinwoo setup complete - Attack:', baseATKWithStrength + jinwooWeapon.mainStat);
   };
 
   const handleResetStats = () => {
@@ -4701,7 +4694,6 @@ BobbyJones : "Allez l'Inter !"
             const screenHeight = (spriteBottom - spriteTop) * scaleY;
 
             // 🔥 DEBUG - Ajoute juste ça pour voir
-            console.log(`🎯 ${entity.id}:`, { left: screenLeft, top: screenTop, width: screenWidth, height: screenHeight });
 
             setHitboxPositions(prev => ({
               ...prev,
@@ -5225,7 +5217,6 @@ BobbyJones : "Allez l'Inter !"
     window.toggleDebug = () => {
       setShowDebugButton(prev => {
         const newValue = !prev;
-        console.log(`🐛 Debug button: ${newValue ? 'VISIBLE' : 'HIDDEN'}`);
         return newValue;
       });
     };
@@ -5452,7 +5443,6 @@ BobbyJones : "Allez l'Inter !"
         return;
       }
       if (isTutorialActive && !priority) {
-        console.log("🛡️ Message bloqué pendant le tutoriel:", message);
         return;
       }
 
@@ -6024,7 +6014,6 @@ BobbyJones : "Allez l'Inter !"
                         onChange={(e) => {
                           const newValue = e.target.value;
                           setSelectedColoring(newValue);
-                          console.log(`🖌️ Coloriage changé: ${selectedCharacter} → ${newValue}`);
                         }}
                         className="bg-purple-900/30 text-purple-300 border border-purple-600/50
       px-3 py-2 rounded-lg text-sm
@@ -6040,7 +6029,6 @@ BobbyJones : "Allez l'Inter !"
       value={selectedColoring}
       onChange={(e) => {
         setSelectedColoring(e.target.value);
-        console.log('🖌️ Coloriage sélectionné:', e.target.value);
       }}
       className="w-full bg-purple-900/30 text-purple-300 border border-purple-600/50
         px-3 py-2 rounded-lg text-sm
@@ -6723,7 +6711,6 @@ BobbyJones : "Allez l'Inter !"
                     currentWeapon={hunterWeapons[selectedCharacter] || {}}
                     showTankMessage={showTankMessage}
                     onSave={(hunterData) => {
-                      console.log('Hunter sauvegardé:', hunterData);
                       // Si tu veux naviguer après sauvegarde :
                       // setShowHallOfFlamePage(true);
                     }}
@@ -7698,7 +7685,6 @@ BobbyJones : "Allez l'Inter !"
                         onChange={(e) => {
                           const newValue = e.target.value;
                           setSelectedColoring(newValue);
-                          console.log(`🖌️ Coloriage changé: ${selectedCharacter} → ${newValue}`);
                         }}
                         className="bg-purple-900/30 text-purple-300 border border-purple-600/50
       px-3 py-2 rounded-lg text-sm
@@ -7714,7 +7700,6 @@ BobbyJones : "Allez l'Inter !"
       value={selectedColoring}
       onChange={(e) => {
         setSelectedColoring(e.target.value);
-        console.log('🖌️ Coloriage sélectionné:', e.target.value);
       }}
       className="w-full bg-purple-900/30 text-purple-300 border border-purple-600/50
         px-3 py-2 rounded-lg text-sm
@@ -8027,7 +8012,6 @@ BobbyJones : "Allez l'Inter !"
                       currentWeapon={hunterWeapons[selectedCharacter] || {}}
                       showTankMessage={showTankMessage}
                       onSave={(hunterData) => {
-                        console.log('Hunter sauvegardé:', hunterData);
                         // Si tu veux naviguer après sauvegarde :
                         // setShowHallOfFlamePage(true);
                       }}

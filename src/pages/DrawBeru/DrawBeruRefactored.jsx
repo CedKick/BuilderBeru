@@ -180,13 +180,11 @@ const DrawBeruFixed = () => {
             return layerCanvas;
         });
 
-        console.log('🔍 DEBUG LOAD - Start');
 
         const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
         const existingColoring = userData.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
 
         if (existingColoring && existingColoring.layers) {
-            console.log('✅ Loading existing coloring');
             let loadedLayers = 0;
             const totalLayers = Math.min(existingColoring.layers.length, layersRef.current.length);
 
@@ -225,7 +223,6 @@ const DrawBeruFixed = () => {
 
             setImagesLoaded(true);
         } else {
-            console.log('📄 Loading blank template');
             const templateImg = new Image();
             templateImg.crossOrigin = "anonymous";
             templateImg.onload = () => {
@@ -406,7 +403,6 @@ const DrawBeruFixed = () => {
             const progress = await calculateColoringProgress();
             setColoringProgress(progress.percentage);
             setProgressDetails(progress);
-            console.log('🎯 Progression coloriage:', progress);
         } catch (error) {
             console.error('❌ Erreur calcul progression:', error);
         }
@@ -724,7 +720,6 @@ const DrawBeruFixed = () => {
     };
 
     const saveColoring = () => {
-        console.log('🔍 DEBUG SAVE - Start');
 
         const layersData = layersRef.current.map((layerCanvas, i) => {
             try {

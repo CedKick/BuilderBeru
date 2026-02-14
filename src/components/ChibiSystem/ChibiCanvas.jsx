@@ -15,7 +15,6 @@ const ChibiCanvas = ({ worldData, activeChibiEntities = [], onChibiClick }) => {
     const checkHash = () => {
       const isDebug = window.location.hash === '#debug';
       setDebugMode(isDebug);
-      console.log('Debug mode:', isDebug);
     };
     
     checkHash();

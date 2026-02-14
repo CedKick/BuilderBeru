@@ -512,7 +512,6 @@ const DamageCalculator = ({
 
   // Remplacer handleApplyBuffs par ceci :
   const handleApplyBuffs = (source, buffs) => {
-    console.log(`🗡️ KAISEL: Applying ${source} buffs:`, buffs);
 
     // Appliquer directement aux customStats
     setCustomStats(prev => {

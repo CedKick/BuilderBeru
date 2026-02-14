@@ -98,7 +98,6 @@ export class ChibiPathfindingAdvanced {
     // Assigner un chemin initial proche du spawn
     this.assignNearestPath(chibi);
     
-    console.log(`🎮 ${id} créé au spawn ${spawn.id} (${spawn.x}, ${spawn.y})`);
     return chibi;
   }
 
@@ -133,7 +132,6 @@ export class ChibiPathfindingAdvanced {
       chibi.isMoving = true;
       chibi.visitedPaths.add(nearestPath.name);
       
-      console.log(`🛤️ ${chibi.id} assigné au chemin ${nearestPath.name} (lissé)`);
     }
   }
 
@@ -257,7 +255,6 @@ export class ChibiPathfindingAdvanced {
 
   // Gérer l'arrivée à une intersection
   handleIntersection(chibi, intersection) {
-    console.log(`🔶 ${chibi.id} arrive à l'intersection ${intersection.id}`);
     
     chibi.lastIntersection = intersection.id;
     
@@ -292,7 +289,6 @@ export class ChibiPathfindingAdvanced {
     chibi.targetPoint = chibi.smoothedPath[choice.index];
     chibi.visitedPaths.add(choice.pathName);
     
-    console.log(`↪️ ${chibi.id} prend la direction ${choice.pathName}`);
   }
 
   // Trouver les chemins possibles depuis une intersection
@@ -325,7 +321,6 @@ export class ChibiPathfindingAdvanced {
 
   // Gérer la fin d'un chemin
   handlePathEnd(chibi) {
-    console.log(`🏁 ${chibi.id} a terminé le chemin ${chibi.currentPath}`);
     
     // Trouver un nouveau chemin proche
     this.assignNearestPath(chibi);

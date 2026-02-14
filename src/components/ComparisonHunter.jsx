@@ -346,7 +346,6 @@ const extractHunterFromLocalStorage = (hunterName, accountName = null) => {
         precision: 4000
       };
 
-      console.log('⚠️ Arme par défaut créée:', weapon);
     }
 
     const result = {
@@ -359,12 +358,6 @@ const extractHunterFromLocalStorage = (hunterName, accountName = null) => {
       accountName: targetAccount,
       characterName: hunterName
     };
-
-    console.log('✅ Hunter extrait avec arme:', {
-      weapon: result.currentWeapon,
-      cores: result.currentCores,
-      gems: result.currentGems
-    });
 
     return result;
   } catch (error) {
@@ -523,9 +516,6 @@ const ComparisonHunter = ({
   const isMobileDevice = window.innerWidth < 768;
 
   const handleStartCombat = () => {
-    console.log('⚔️ COMBAT DÉCLENCHÉ !');
-    console.log('Hunter 1 (Hall):', referenceHunter.character, referenceHunter.pseudo);
-    console.log('Hunter 2 (Vous):', localHunterData?.characterName);
 
     setShowCombat(true);
 
@@ -536,11 +526,8 @@ const ComparisonHunter = ({
 
   useEffect(() => {
     if (isOpen) {
-      console.log('🔍 Extraction automatique du hunter actif...');
-      console.log('🎯 Hunter référence (Hall of Flame):', referenceHunter.character);
 
       const characterToFind = getCharacterFromHunter(referenceHunter);
-      console.log('🔎 Recherche du character:', characterToFind);
 
       const extractedData = extractHunterFromLocalStorage(characterToFind);
 
@@ -555,12 +542,6 @@ const ComparisonHunter = ({
         // Calculer les stats from artifacts
         const artifactStats = calculateStatsFromArtifactsOnly(extractedData.artifactsData, calcResult.flatStats);
         setCurrentStatsFromArtifacts(artifactStats);
-
-        console.log('✅ Hunter extrait avec stats finales:', {
-          character: characterToFind,
-          finalStats: calcResult.finalStats,
-          artifactStats
-        });
 
         if (showTankMessage) {
           showTankMessage(`✅ ${characterToFind} chargé pour comparaison`, true, 'kaisel');

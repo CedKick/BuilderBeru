@@ -7075,7 +7075,7 @@ export const CHARACTER_ADVANCED_BUFFS = {
                     { name: 'Bye, Meow! (3 stacks)', trigger: 'on skill/tag', scope: 'team', effects: { attack: 24, defense: 24 }, duration: 16, note: '+24% ATK/DEF' },
                     { name: 'Team Stats (A2)', trigger: 'passive', scope: 'team', effects: { attack: 16, defense: 16 }, duration: 'infinite', note: '+16% ATK/DEF Water team' },
                     { name: 'So Cute! (A1)', trigger: 'on Skill 2', scope: 'team', effects: { coreAttackDmg: 32 }, duration: 8, note: '+32% Core Attack DMG' },
-                    { name: 'Pumped Up! (A5)', trigger: 'on Ultimate', scope: 'team', effects: { attack: 16, defense: 16, critRate: 16, coreAttackDmg: 16 }, duration: 24, note: '+16% ATK/DEF/CR + Core ATK DMG + -16% DMG taken (24s)' }
+                    { name: 'Pumped Up! (A5)', trigger: 'on Ultimate', scope: 'team', effects: { attack: 16, defense: 16, critRate: 16, coreAttackDmg: 16 }, duration: 24, cooldown: 45, note: '+16% ATK/DEF/CR + Core ATK DMG + -16% DMG taken (24s / 45s CD)' }
                 ],
                 raidBuffs: [],
                 debuffs: [

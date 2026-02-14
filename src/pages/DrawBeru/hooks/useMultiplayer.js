@@ -49,7 +49,6 @@ export const useMultiplayer = () => {
    */
   const connect = useCallback(() => {
     if (socketRef.current?.connected) {
-      console.log('Already connected to DrawBeru Multi');
       return Promise.resolve();
     }
 
@@ -69,7 +68,6 @@ export const useMultiplayer = () => {
       socketRef.current = socket;
 
       socket.on('connect', () => {
-        console.log('Connected to DrawBeru Multi:', socket.id);
         setIsConnected(true);
         setIsConnecting(false);
         setConnectionError(null);
@@ -84,7 +82,6 @@ export const useMultiplayer = () => {
       });
 
       socket.on('disconnect', (reason) => {
-        console.log('Disconnected:', reason);
         setIsConnected(false);
         if (reason === 'io server disconnect') {
           // Server disconnected us, need to reconnect manually
@@ -122,12 +119,10 @@ export const useMultiplayer = () => {
   const setupEventListeners = (socket) => {
     // Room events
     socket.on('room:playerJoined', ({ player }) => {
-      console.log('Player joined:', player.name);
       setPlayers((prev) => [...prev, player]);
     });
 
     socket.on('room:playerLeft', ({ playerId, playerName }) => {
-      console.log('Player left:', playerName);
       setPlayers((prev) => prev.filter((p) => p.id !== playerId));
       setOtherCursors((prev) => {
         const newCursors = { ...prev };
@@ -137,7 +132,6 @@ export const useMultiplayer = () => {
     });
 
     socket.on('room:newHost', ({ newHostId, newHostName }) => {
-      console.log('New host:', newHostName);
       setPlayers((prev) =>
         prev.map((p) => ({
           ...p,
@@ -148,17 +142,14 @@ export const useMultiplayer = () => {
     });
 
     socket.on('room:settingsUpdated', ({ settings: newSettings }) => {
-      console.log('Settings updated:', newSettings);
       setSettings(newSettings);
     });
 
     socket.on('room:spectatorJoined', ({ spectator }) => {
-      console.log('Spectator joined:', spectator.name);
       setSpectators((prev) => [...prev, spectator]);
     });
 
     socket.on('room:expired', ({ reason }) => {
-      console.log('Room expired:', reason);
       alert(`La room a expiré: ${reason}`);
       setRoom(null);
       setPlayers([]);
@@ -167,7 +158,6 @@ export const useMultiplayer = () => {
 
     // Game start event
     socket.on('game:started', () => {
-      console.log('Game started!');
       setGameStarted(true);
     });
 
@@ -192,13 +182,11 @@ export const useMultiplayer = () => {
     });
 
     socket.on('draw:undo', ({ playerId, strokeId }) => {
-      console.log('Undo from:', playerId, 'stroke:', strokeId);
       setUndoEvents((prev) => [...prev, { playerId, strokeId, timestamp: Date.now() }]);
       setReceivedStrokes((prev) => prev.filter((s) => s.id !== strokeId));
     });
 
     socket.on('draw:clearLayer', ({ layer, by }) => {
-      console.log(`Layer ${layer} cleared by ${by}`);
       setReceivedStrokes((prev) => prev.filter((s) => s.layer !== layer));
     });
 
@@ -243,7 +231,6 @@ export const useMultiplayer = () => {
           },
           (response) => {
             if (response.success) {
-              console.log('Room created:', response.room.id);
               setRoom(response.room);
               setPlayers(response.room.players);
               setMyPlayer(response.you);
@@ -279,7 +266,6 @@ export const useMultiplayer = () => {
           },
           (response) => {
             if (response.success) {
-              console.log('Joined room:', roomId);
               setRoom(response.room);
               setPlayers(response.room.players);
               setMyPlayer(response.you);
@@ -312,7 +298,6 @@ export const useMultiplayer = () => {
 
     socketRef.current.emit('room:leave', (response) => {
       if (response.success) {
-        console.log('Left room');
         setRoom(null);
         setPlayers([]);
         setMyPlayer(null);
@@ -369,7 +354,6 @@ export const useMultiplayer = () => {
     return new Promise((resolve, reject) => {
       socketRef.current.emit('game:start', {}, (response) => {
         if (response.success) {
-          console.log('Game started successfully');
           setGameStarted(true);
           resolve(response);
         } else {

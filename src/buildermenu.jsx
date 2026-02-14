@@ -12,6 +12,9 @@ import {
   Swords,
   Shield,
   Sparkles,
+  Zap,
+  BookOpen,
+  Gamepad2,
   X
 } from 'lucide-react';
 
@@ -84,6 +87,13 @@ export default function BuilderMenu({ isOpen, onClose }) {
           icon: Flame,
           color: 'violet'
         },
+        {
+          path: '/theorycraft',
+          label: 'Theorycraft',
+          icon: Zap,
+          color: 'blue',
+          isNew: true
+        },
       ]
     },
     {
@@ -100,6 +110,20 @@ export default function BuilderMenu({ isOpen, onClose }) {
           label: t('menu.chibiWorld', 'Monde Chibi'),
           icon: Swords,
           color: 'emerald'
+        },
+        {
+          path: '/lorestory',
+          label: 'LoreStory',
+          icon: BookOpen,
+          color: 'violet',
+          isNew: true
+        },
+        {
+          path: '/shadow-colosseum',
+          label: 'Shadow Colosseum',
+          icon: Gamepad2,
+          color: 'red',
+          isNew: true
         },
       ]
     }

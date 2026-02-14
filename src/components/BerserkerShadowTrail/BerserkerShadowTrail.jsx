@@ -545,7 +545,6 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
       Object.entries(SECRET_TRIGGERS).forEach(([codeName, sequence]) => {
         const currentSequence = keySequenceRef.current.slice(-sequence.length);
         if (JSON.stringify(currentSequence) === JSON.stringify(sequence)) {
-          console.log(`🎮 SECRET CODE ACTIVATED: ${codeName}`);
           handleSecretCode(codeName);
           keySequenceRef.current = [];
         }
@@ -566,7 +565,6 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
           const response = await fetch('https://ipapi.co/json/');
           locationData = await response.json();
         } catch (error) {
-          console.log('Geo API failed, using timezone fallback');
         }
 
         // Analyse de la localisation
@@ -576,7 +574,6 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
         
         if (isCanadian) {
           setIsFromCanada(true);
-          console.log('🍁 Richo Mode activated - Canadian user detected!');
         }
 
         // Analyse du profil audience
@@ -595,7 +592,6 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
         for (const [eventName, event] of Object.entries(SPECIAL_EVENTS)) {
           if (event.trigger()) {
             setSpecialEvent(eventName);
-            console.log(`Special event triggered: ${eventName}`);
             break;
           }
         }
@@ -607,7 +603,6 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
         localStorage.setItem('berserker_last_visit', now.toString());
 
       } catch (error) {
-        console.log('User context detection failed:', error);
       }
     };
 
@@ -701,7 +696,6 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
 
   // 🌪️ SYSTÈME DE CORRUPTION AVANCÉ
   const applyCorruptionEffects = useCallback((intensity = 'normal') => {
-    console.log(`Applying ${intensity} corruption effects`);
     
     // Effets visuels globaux
     document.body.classList.add('berserker-screen-shake');
@@ -792,9 +786,6 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
     });
 
     // Easter egg dans la console
-    console.log('%c🔥 BERSERKER MESSAGE 🔥', 'color: red; font-size: 20px; font-weight: bold;');
-    console.log('%cThis site is a hidden gem. Share it with the world!', 'color: purple; font-size: 14px;');
-    console.log('%cType "berserker" to unlock chaos mode...', 'color: gold; font-size: 12px;');
   }, []);
 
   // 😱 SYSTÈME DE RÉACTIONS CHIBIS SOPHISTIQUÉ
@@ -844,7 +835,6 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
 
   // 🧹 SYSTÈME DE NETTOYAGE INTELLIGENT
   const cleanupEffects = useCallback(() => {
-    console.log('Initiating cleanup sequence...');
     
     // Nettoyage progressif avec animation
     setTimeout(() => {
@@ -906,11 +896,9 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
   // 🚀 SÉQUENCE PRINCIPALE - VERSION ÉPIQUE
   const triggerBerserkerEvent = useCallback(async (forceSpawn = false) => {
     if ((!canSpawnBerserker() && !forceSpawn) || isActive) {
-      console.log('Berserker spawn conditions not met');
       return;
     }
 
-    console.log(`🔥 BERSERKER SHADOW TRAIL - CHAOS EDITION ${isFromCanada ? '(RICHO SPECIAL 🍁)' : ''}`);
     localStorage.setItem('berserker_last_spawn', Date.now().toString());
     
     // Détermination du type d'événement
@@ -923,11 +911,8 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
     setIsUltraRare(ultraRoll < BERSERKER_CONFIG.ULTRA_RARE_CHANCE);
     
     if (isChaosMode) {
-      console.log('💀 CHAOS MODE ACTIVATED! PREPARE FOR TOTAL DESTRUCTION! 💀');
     } else if (isLegendary) {
-      console.log('✨ LEGENDARY EVENT TRIGGERED! ✨');
     } else if (isUltraRare) {
-      console.log('🌟 Ultra Rare event activated!');
     }
 
     // Position initiale
@@ -1090,7 +1075,6 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
 
   // 💀 CHAOS ULTIME
   const applyUltimateChaos = useCallback(() => {
-    console.log('💀 ULTIMATE CHAOS ACTIVATED 💀');
     
     // Rotation de la page entière
     document.body.style.transform = 'rotate(1deg)';
@@ -1113,9 +1097,7 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
       }, index * 20);
     });
     
-    // Messages dans la console
-    console.log('%c💀 YOUR DOM BELONGS TO BERSERKER NOW 💀', 
-                'color: red; font-size: 30px; font-weight: bold; text-shadow: 2px 2px 4px black;');
+    // Messages dans la console (removed)
     
     // Changement du titre
     const originalTitle = document.title;
@@ -1166,7 +1148,6 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
   }, []);
 
   const summonMultipleBerserkers = useCallback(() => {
-    console.log('🔥 MULTIPLE BERSERKERS SUMMONED! 🔥');
     // Cette fonction pourrait créer plusieurs instances visuelles
     // Pour l'instant, on déclenche juste un événement spécial
     setIsLegendary(true);
@@ -1174,7 +1155,6 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
   }, [triggerBerserkerEvent]);
 
   const activateSteinsGateMode = useCallback(() => {
-    console.log('⏰ EL PSY KONGROO ⏰');
     document.body.style.filter = 'sepia(0.5) hue-rotate(30deg)';
     setCurrentMessage("Le SERN ne peut arrêter BuilderBeru !");
     setTimeout(() => {
@@ -1187,7 +1167,6 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
   useEffect(() => {
     const checkSpawn = () => {
       const currentSpawnRate = getSpawnRate();
-      console.log(`Berserker spawn check: ${(currentSpawnRate * 100).toFixed(1)}% chance ${isFromCanada ? '(Richo mode 🍁)' : ''}`);
       
       if (Math.random() < currentSpawnRate) {
         triggerBerserkerEvent();

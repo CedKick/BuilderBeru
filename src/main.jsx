@@ -1,57 +1,67 @@
 // src/main.jsx
-import React from 'react';
+import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './index.css';
 
-import Builder from './BuilderBeru';
-import GuideEditor from './pages/GuideEditor.jsx';
 import HomePage from './HomePage.jsx';
 import AppLayout from './AppLayout.jsx';
-import HallOfFlameStandalone from './components/HallOfFlameStandalone.jsx';
-import TrainingCenter from './components/Training/TrainingCenter.jsx';
-import BeruvianWorld from "./pages/beruvianWorld/BeruvianWorld.jsx";
-import CraftSimulator from './components/CraftSimulator/CraftSimulator.jsx';
-import DamageCalculatorStandalone from './DamageCalculatorStandalone.jsx';
-import ChibiWorld from './components/ChibiSystem/ChibiWorld.jsx';
-import DrawBeruLauncher from './pages/DrawBeru/DrawBeruLauncher.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 
-// 🔥 NOUVELLES IMPORTS - Remplacer POD
-import BDGScore from './components/BDGScore.jsx';
-import PODScore from './components/PODScore.jsx';
+// Lazy loaded routes
+const Builder = React.lazy(() => import('./BuilderBeru'));
+const GuideEditor = React.lazy(() => import('./pages/GuideEditor.jsx'));
+const HallOfFlameStandalone = React.lazy(() => import('./components/HallOfFlameStandalone.jsx'));
+const TrainingCenter = React.lazy(() => import('./components/Training/TrainingCenter.jsx'));
+const BeruvianWorld = React.lazy(() => import('./pages/beruvianWorld/BeruvianWorld.jsx'));
+const CraftSimulator = React.lazy(() => import('./components/CraftSimulator/CraftSimulator.jsx'));
+const DamageCalculatorStandalone = React.lazy(() => import('./DamageCalculatorStandalone.jsx'));
+const ChibiWorld = React.lazy(() => import('./components/ChibiSystem/ChibiWorld.jsx'));
+const DrawBeruLauncher = React.lazy(() => import('./pages/DrawBeru/DrawBeruLauncher.jsx'));
+const BDGScore = React.lazy(() => import('./components/BDGScore.jsx'));
+const PODScore = React.lazy(() => import('./components/PODScore.jsx'));
+const Theorycraft = React.lazy(() => import('./pages/Theorycraft/Theorycraft.jsx'));
+const LoreStory = React.lazy(() => import('./pages/LoreStory/LoreStory.jsx'));
+const ShadowColosseum = React.lazy(() => import('./pages/ShadowColosseum/ShadowColosseum.jsx'));
 
-// ⚡ THEORYCRAFT - Calculateur de synergies
-import Theorycraft from './pages/Theorycraft/Theorycraft.jsx';
+// Loading fallback
+const PageLoader = () => (
+  <div className="min-h-screen bg-[#0f0f1a] flex items-center justify-center">
+    <div className="text-center">
+      <div className="w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+      <p className="text-gray-500 text-xs">Chargement...</p>
+    </div>
+  </div>
+);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AppLayout>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/build" element={<Builder />} />
-          <Route path="/drawberu" element={<DrawBeruLauncher />} />
-          <Route path="/craft-simulator" element={<CraftSimulator />} />
-          <Route path="/trainingCenter" element={<TrainingCenter />} />
-          <Route path="/guide-editor" element={<GuideEditor />} />
-          
-          {/* 🔥 REMPLACER L'ANCIENNE ROUTE POD */}
-          <Route path="/pod" element={<PODScore />} />
-          
-          {/* 🔥 AJOUTER LA NOUVELLE ROUTE BDG */}
-          <Route path="/bdg" element={<BDGScore />} />
-          
-          <Route path="/hall-of-flame" element={<HallOfFlameStandalone />} />
-          <Route path="/damage-calculator" element={<DamageCalculatorStandalone />} />
-          <Route path="/beruvian-world" element={<BeruvianWorld />} />
-          <Route path="/chibi-world" element={<ChibiWorld />} />
-
-          {/* ⚡ THEORYCRAFT */}
-          <Route path="/theorycraft" element={<Theorycraft />} />
-          <Route path="/theorycraft/:boss" element={<Theorycraft />} />
-          <Route path="/theorycraft/:boss/:element" element={<Theorycraft />} />
-        </Routes>
-      </AppLayout>
+      <ErrorBoundary>
+        <AppLayout>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/build" element={<Builder />} />
+              <Route path="/drawberu" element={<DrawBeruLauncher />} />
+              <Route path="/craft-simulator" element={<CraftSimulator />} />
+              <Route path="/trainingCenter" element={<TrainingCenter />} />
+              <Route path="/guide-editor" element={<GuideEditor />} />
+              <Route path="/pod" element={<PODScore />} />
+              <Route path="/bdg" element={<BDGScore />} />
+              <Route path="/hall-of-flame" element={<HallOfFlameStandalone />} />
+              <Route path="/damage-calculator" element={<DamageCalculatorStandalone />} />
+              <Route path="/beruvian-world" element={<BeruvianWorld />} />
+              <Route path="/chibi-world" element={<ChibiWorld />} />
+              <Route path="/lorestory" element={<LoreStory />} />
+              <Route path="/theorycraft" element={<Theorycraft />} />
+              <Route path="/theorycraft/:boss" element={<Theorycraft />} />
+              <Route path="/theorycraft/:boss/:element" element={<Theorycraft />} />
+              <Route path="/shadow-colosseum" element={<ShadowColosseum />} />
+            </Routes>
+          </Suspense>
+        </AppLayout>
+      </ErrorBoundary>
     </BrowserRouter>
   </React.StrictMode>
 );

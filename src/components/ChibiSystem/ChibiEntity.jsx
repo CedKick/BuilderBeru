@@ -9,7 +9,6 @@ const ChibiEntity = ({ chibiEntity, position, onClick, canvasRef }) => {
     // Utiliser un spawn point aléatoire de pathData
     if (PATH_DATA.spawnPoints && PATH_DATA.spawnPoints.length > 0) {
       const randomSpawn = PATH_DATA.spawnPoints[Math.floor(Math.random() * PATH_DATA.spawnPoints.length)];
-      console.log(`🎯 ${chibiEntity.name} spawn at:`, randomSpawn);
       return { x: randomSpawn.x, y: randomSpawn.y };
     }
     return position || { x: 500, y: 300 };
@@ -78,7 +77,6 @@ const ChibiEntity = ({ chibiEntity, position, onClick, canvasRef }) => {
     const maxPause = 120000; // 2 minutes
     const pauseDuration = minPause + Math.random() * (maxPause - minPause);
     
-    console.log(`⏸️ ${chibiEntity.name} va se reposer pendant ${Math.round(pauseDuration/1000)}s`);
     
     moveTimeoutRef.current = setTimeout(() => {
       startMovement();
@@ -91,7 +89,6 @@ const ChibiEntity = ({ chibiEntity, position, onClick, canvasRef }) => {
   const startMovement = () => {
     if (!currentPath || currentPath.length === 0) return;
     
-    console.log(`🚶 ${chibiEntity.name} commence à bouger`);
     setMovementPhase('moving');
     setIsMoving(true);
     
@@ -108,7 +105,6 @@ const ChibiEntity = ({ chibiEntity, position, onClick, canvasRef }) => {
 
   // Fonction pour arrêter le mouvement
   const stopMovement = () => {
-    console.log(`🛑 ${chibiEntity.name} s'arrête`);
     setIsMoving(false);
     setMovementPhase('idle');
     setCurrentSprite('idle'); // Retour au sprite idle
@@ -117,7 +113,6 @@ const ChibiEntity = ({ chibiEntity, position, onClick, canvasRef }) => {
 
   // Initialiser un chemin au démarrage
   useEffect(() => {
-    console.log(`🚀 Initializing ${chibiEntity.name}`);
     
     // Trouver un chemin proche du spawn
     if (PATH_DATA.paths) {
@@ -163,11 +158,9 @@ const ChibiEntity = ({ chibiEntity, position, onClick, canvasRef }) => {
             10000 + Math.random() * 30000;  // 10-40 secondes pour les autres
           
           moveTimeoutRef.current = setTimeout(() => {
-            console.log(`🏃 ${chibiEntity.name} commence son premier mouvement !`);
             startMovement();
           }, initialDelay);
           
-          console.log(`⏰ ${chibiEntity.name} bougera dans ${Math.round(initialDelay/1000)}s`);
         }
       }
     }
@@ -204,7 +197,6 @@ const ChibiEntity = ({ chibiEntity, position, onClick, canvasRef }) => {
         if (distance < 5) {
           // 20% de chance de faire une pause à ce waypoint
           if (!pauseAtWaypoint && Math.random() < 0.2) {
-            console.log(`⏸️ ${chibiEntity.name} fait une pause au waypoint`);
             setPauseAtWaypoint(true);
             setIsMoving(false);
             setCurrentSprite('idle'); // Retour au sprite idle
@@ -247,7 +239,6 @@ const ChibiEntity = ({ chibiEntity, position, onClick, canvasRef }) => {
         if (newDirection !== direction) {
           setDirection(newDirection);
           setCurrentSprite(newDirection); // IMPORTANT : mettre à jour le sprite !
-          console.log(`🎮 ${chibiEntity.name} change de direction: ${newDirection}`);
         }
         
         return {
@@ -281,7 +272,6 @@ const ChibiEntity = ({ chibiEntity, position, onClick, canvasRef }) => {
       
       // 50% de chance de commencer à bouger après le clic
       if (!isMoving && Math.random() < 0.5) {
-        console.log(`🎲 ${chibiEntity.name} se met à bouger après le clic !`);
         // Annuler le timeout en cours
         if (moveTimeoutRef.current) {
           clearTimeout(moveTimeoutRef.current);
@@ -300,7 +290,6 @@ const ChibiEntity = ({ chibiEntity, position, onClick, canvasRef }) => {
     
     // DEBUG : afficher quel sprite on utilise
     if (window.location.hash === '#debug') {
-      console.log(`Sprite actuel pour ${chibiEntity.name}: ${currentSprite}, Moving: ${isMoving}`);
     }
     
     if (chibiEntity.sprites) {

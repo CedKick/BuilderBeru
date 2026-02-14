@@ -221,7 +221,6 @@ class EasterEggManager {
   // 🔊 Jouer un son d'Easter Egg
   playEasterEggSound() {
     // À implémenter si tu as des sons
-    console.log('🔊 Easter Egg trouvé!');
   }
 
   // 📊 Obtenir les statistiques

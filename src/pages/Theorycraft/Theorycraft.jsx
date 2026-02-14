@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, TrendingUp, Target, Shield, Swords, X, ChevronDown } from 'lucide-react';
@@ -8,6 +8,7 @@ import { ARTIFACT_SETS, getSetBonuses } from '../../data/setData';
 import { CHARACTER_BUFFS, getCharacterBuffs, getCharacterBaseStats } from '../../data/characterBuffs';
 import { CHARACTER_ADVANCED_BUFFS, getCumulativeBuffs } from '../../data/characterAdvancedBuffs';
 import { statConversions, statConversionsWithEnemy, newDefPenFormula } from '../../utils/statConversions';
+import shadowAchievementManager from '../../utils/ShadowAchievementManager';
 import { OptimizationCard, InlineOptimizationDot, OptimizationBadge } from './OptimizationIndicator';
 import { CHARACTER_OPTIMIZATION, getOptimizationStatus, getOverallOptimization, getCurrentBenchmark, getMainStatStatus } from '../../data/characterOptimization';
 
@@ -118,6 +119,61 @@ const ENEMIES = {
     }
 };
 
+// ============================================================
+// BERU'S TIPS - Micro-dialogues contextuels
+// ============================================================
+const BERU_TIPS = {
+    crOver100: [
+        "100% CR ?! On crit a chaque coup... L'Ombre approuve violemment.",
+        "Crit garanti. Meme le Monarque serait impressionne.",
+        "100% CR atteint ! Les ennemis vont pleurer.",
+        "Taux de critique max ! C'est beau. J'ai presque une larme.",
+        "CR 100%... Les monstres ne savent pas ce qui les attend.",
+        "Full crit ! C'est comme si Igris se mettait a danser.",
+    ],
+    crOver80: [
+        "80%+ de CR ! Les probabilites sont de ton cote, Monarque.",
+        "Presque full crit... Ca sent la devastation.",
+    ],
+    downgrade: [
+        "...Tu veux vraiment downgrade ? L'Ombre refuse.",
+        "Non. Juste... non. Remets l'autre.",
+        "L'Ombre a vu des erreurs. Mais celle-la...",
+        "Downgrade detecte. Meme Tank ne valide pas.",
+        "Tu testes ma patience la... Downgrade interdit.",
+        "Le Monarque te regarde avec desapprobation.",
+    ],
+    upgrade: [
+        "Upgrade pur ! L'Ombre est fiere de toi.",
+        "Maintenant ON PARLE. GG Monarque.",
+        "C'est un upgrade net. Continue comme ca.",
+    ],
+    presetDark: [
+        "Dark Team activee ! L'Ombre se sent chez elle.",
+        "Les tenebres repondent a ton appel...",
+        "Preset Dark ! Baek va tout detruire.",
+    ],
+    presetFire: [
+        "Preset Fire ! Ca va bruler.",
+        "L'equipe de feu est prete. Tout va flamber.",
+        "Fire Team ! Esil va les calciner.",
+    ],
+    presetWater: [
+        "Preset Water ! La vague arrive.",
+        "Equipe Eau activee. Cha Hae-In Water en tete !",
+        "Water Team ! L'Ombre aime quand ca coule de source.",
+    ],
+};
+
+const dispatchBeruTip = (pool, mood = 'excited') => {
+    const messages = BERU_TIPS[pool];
+    if (!messages || messages.length === 0) return;
+    const msg = messages[Math.floor(Math.random() * messages.length)];
+    window.dispatchEvent(new CustomEvent('beru-react', {
+        detail: { message: msg, mood, duration: 5000 }
+    }));
+};
+
 const Theorycraft = () => {
     // URL params & navigation
     const { boss: urlBoss, element: urlElement } = useParams();
@@ -162,6 +218,9 @@ const Theorycraft = () => {
 
     // Sung Blessing (+24.5% Crit Rate)
     const [sungBlessing, setSungBlessing] = useState(false);
+
+    // Achievement: compter une session Theorycraft
+    useEffect(() => { shadowAchievementManager.incrementCounter('theorycraftSessions'); }, []);
 
     // 🔍 SEO - Document title & meta tags
     useEffect(() => {
@@ -691,6 +750,7 @@ const Theorycraft = () => {
 
         // Fermer le modal de sélection si ouvert
         setSelectedSlot(null);
+        setTimeout(() => dispatchBeruTip('presetDark', 'excited'), 300);
     };
 
     // 🔥 PRESET: Fire Team
@@ -801,6 +861,7 @@ const Theorycraft = () => {
 
         // Fermer le modal de sélection si ouvert
         setSelectedSlot(null);
+        setTimeout(() => dispatchBeruTip('presetFire', 'excited'), 300);
     };
 
     // 💧 PRESET: Water Team
@@ -921,6 +982,7 @@ const Theorycraft = () => {
 
         // Fermer le modal de sélection si ouvert
         setSelectedSlot(null);
+        setTimeout(() => dispatchBeruTip('presetWater', 'excited'), 300);
     };
 
     // 🧮 CALCULER LES STATS FINALES AVEC BREAKDOWN DÉTAILLÉ
@@ -3588,16 +3650,6 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
         // Récupérer les buffs du niveau actuel du personnage
         const memberBuffs = getCharacterBuffs(member.id, member.advancement);
 
-        // DEBUG: Log pour Silver Mane Baek Yoonho
-        if (member.id === 'silverbaek') {
-            console.log('🐺 [DEBUG] Silver Mane Baek Yoonho:', {
-                id: member.id,
-                advancement: member.advancement,
-                memberBuffs: memberBuffs,
-                hasPersonalBuffs: !!memberBuffs.personalBuffs,
-                personalBuffs: memberBuffs.personalBuffs
-            });
-        }
 
         if (memberBuffs.personalBuffs) {
             const characterName = member.id === 'lee' ? 'Lee Bora' :
@@ -3623,7 +3675,6 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                 breakdown.defPen.push({ source: `(only ${characterName} A${member.advancement})`, value: memberBuffs.personalBuffs.defPen });
             }
         } else if (member.id === 'silverbaek') {
-            console.log('❌ [DEBUG] Pas de personalBuffs trouvés pour Silver Mane Baek Yoonho');
         }
 
         // Ilhwan : buffs personnels de son arme (uniquement pour lui-même)
@@ -4155,6 +4206,14 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                     const characterName = teamMember.name || teamMember.id;
                     const buffName = buff.name;
 
+                    // Timing info pour uptime (si cooldown défini)
+                    const timingInfo = {};
+                    if (buff.cooldown && typeof buff.duration === 'number') {
+                        timingInfo.duration = buff.duration;
+                        timingInfo.cooldown = buff.cooldown;
+                        timingInfo.uptime = Math.round((buff.duration / buff.cooldown) * 100);
+                    }
+
                     // Skip buffs avec elementRestriction si le membre n'est pas de cet élément
                     if (buff.elementRestriction) {
                         const memberCharData = characters[member.id];
@@ -4167,7 +4226,8 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalDamageVsDarkOverloaded += effects.damageVsDarkOverloaded;
                         breakdown.damageVsDarkOverloaded.push({
                             source: `${buffName} (${characterName}) - Scope: TEAM`,
-                            value: effects.damageVsDarkOverloaded
+                            value: effects.damageVsDarkOverloaded,
+                            ...timingInfo
                         });
                     }
 
@@ -4176,7 +4236,8 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalCritDMG += effects.critDMG;
                         breakdown.critDMG.push({
                             source: `team buff (${characterName} - ${buffName})`,
-                            value: effects.critDMG
+                            value: effects.critDMG,
+                            ...timingInfo
                         });
                     }
 
@@ -4185,7 +4246,8 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalDefPen += effects.defPen;
                         breakdown.defPen.push({
                             source: `team buff (${characterName} - ${buffName})`,
-                            value: effects.defPen
+                            value: effects.defPen,
+                            ...timingInfo
                         });
                     }
 
@@ -4194,7 +4256,8 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalAttack += effects.attack;
                         breakdown.attack.push({
                             source: `team buff (${characterName} - ${buffName})`,
-                            value: effects.attack
+                            value: effects.attack,
+                            ...timingInfo
                         });
                     }
 
@@ -4203,7 +4266,8 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalCritRate += effects.critRate;
                         breakdown.critRate.push({
                             source: `team buff (${characterName} - ${buffName})`,
-                            value: effects.critRate
+                            value: effects.critRate,
+                            ...timingInfo
                         });
                     }
 
@@ -4212,7 +4276,8 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalHP += effects.hp;
                         breakdown.hp.push({
                             source: `team buff (${characterName} - ${buffName})`,
-                            value: effects.hp
+                            value: effects.hp,
+                            ...timingInfo
                         });
                     }
 
@@ -4221,7 +4286,8 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalDefense += effects.defense;
                         breakdown.defense.push({
                             source: `team buff (${characterName} - ${buffName})`,
-                            value: effects.defense
+                            value: effects.defense,
+                            ...timingInfo
                         });
                     }
 
@@ -4231,7 +4297,8 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalWaterDamage += waterVal;
                         breakdown.waterDamage.push({
                             source: `team buff (${characterName} - ${buffName})`,
-                            value: waterVal
+                            value: waterVal,
+                            ...timingInfo
                         });
                     }
 
@@ -4247,7 +4314,8 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalFireDamage += totalValue;
                         breakdown.fireDamage.push({
                             source: `team buff (${characterName} - ${buffName}) - ${count} Fire × ${effects.fireDamagePerFireAlly}%`,
-                            value: totalValue
+                            value: totalValue,
+                            ...timingInfo
                         });
                     }
 
@@ -4258,7 +4326,8 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalDamageDealt += totalValue;
                         breakdown.damageDealt.push({
                             source: `team buff (${characterName} - ${buffName}) - ${maxStacks > 1 ? `${effects.damageDealt}% × ${maxStacks} stacks` : 'TEAM'}`,
-                            value: totalValue
+                            value: totalValue,
+                            ...timingInfo
                         });
                     }
 
@@ -4268,11 +4337,13 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalUltimateSkillDamage += effects.basicUltSkillDmg;
                         breakdown.basicSkillDamage.push({
                             source: `team buff (${characterName} - ${buffName})`,
-                            value: effects.basicUltSkillDmg
+                            value: effects.basicUltSkillDmg,
+                            ...timingInfo
                         });
                         breakdown.ultimateSkillDamage.push({
                             source: `team buff (${characterName} - ${buffName})`,
-                            value: effects.basicUltSkillDmg
+                            value: effects.basicUltSkillDmg,
+                            ...timingInfo
                         });
                     }
 
@@ -4281,7 +4352,8 @@ const computeTeamStats = (sungEnabled, sungData, team1, team2, enemyLevel, useNe
                         totalBreakTargetDmg += effects.breakTargetDmg;
                         breakdown.breakTargetDmg.push({
                             source: `team buff (${characterName} - ${buffName})`,
-                            value: effects.breakTargetDmg
+                            value: effects.breakTargetDmg,
+                            ...timingInfo
                         });
                     }
                 });
@@ -4633,6 +4705,24 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
         return computeTeamStats(sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula, sungBlessing);
     }, [sungEnabled, sungData, team1, team2, enemyLevel, useNewDefPenFormula, sungBlessing]);
 
+    // Beru's Tips: detecter CR > 100% ou > 80%
+    const crTipShownRef = useRef(new Set());
+    useEffect(() => {
+        if (!membersWithStats) return;
+        membersWithStats.forEach(m => {
+            if (!m.finalStats) return;
+            const cr = m.finalStats.critRate;
+            const key = `${m.id}-${m.teamId}-${m.slotId}`;
+            if (cr >= 100 && !crTipShownRef.current.has(key + '-100')) {
+                crTipShownRef.current.add(key + '-100');
+                setTimeout(() => dispatchBeruTip('crOver100', 'proud'), 500);
+            } else if (cr >= 80 && cr < 100 && !crTipShownRef.current.has(key + '-80')) {
+                crTipShownRef.current.add(key + '-80');
+                setTimeout(() => dispatchBeruTip('crOver80', 'excited'), 500);
+            }
+        });
+    }, [membersWithStats]);
+
     // === WHAT-IF CALCULATION ===
     const whatIfStats = useMemo(() => {
         if (!compareSlot || !compareCharacterId) return null;
@@ -4691,6 +4781,30 @@ const IndividualStatsDisplay = ({ sungEnabled, sungData, team1, team2, enemyLeve
         });
         return deltaMap;
     }, [whatIfStats, membersWithStats]);
+
+    // Beru's Tips: reagir aux comparaisons (downgrade/upgrade)
+    const lastCompareRef = useRef(null);
+    useEffect(() => {
+        if (!memberDeltas || !compareCharacterId) return;
+        if (lastCompareRef.current === compareCharacterId) return;
+        lastCompareRef.current = compareCharacterId;
+
+        // Analyser le delta du slot compare
+        const slotKey = compareSlot ? `${compareSlot.teamId}-${compareSlot.slotId}` : null;
+        const deltas = slotKey ? memberDeltas[slotKey] : null;
+        if (!deltas) return;
+
+        const gains = Object.values(deltas).filter(v => v > 0.05);
+        const losses = Object.values(deltas).filter(v => v < -0.05);
+
+        setTimeout(() => {
+            if (gains.length === 0 && losses.length > 0) {
+                dispatchBeruTip('downgrade', 'idle');
+            } else if (losses.length === 0 && gains.length > 0) {
+                dispatchBeruTip('upgrade', 'proud');
+            }
+        }, 800);
+    }, [memberDeltas, compareCharacterId, compareSlot]);
 
     // === AVAILABLE CHARACTERS FOR COMPARISON ===
     const availableForComparison = useMemo(() => {
@@ -4817,6 +4931,75 @@ const IndividualCharacterStatCard = ({ member, onClick, onCompare, isComparing, 
                     </button>
                 </div>
             )}
+
+            {/* Verdict de l'Ombre - Résumé ultra-court du swap */}
+            {isComparing && whatIfMember && deltas && (() => {
+                const gains = Object.entries(deltas)
+                    .filter(([k, v]) => v > 0.05 && STAT_LABELS[k])
+                    .sort((a, b) => b[1] - a[1]);
+                const losses = Object.entries(deltas)
+                    .filter(([k, v]) => v < -0.05 && STAT_LABELS[k])
+                    .sort((a, b) => a[1] - b[1]);
+                const totalGain = gains.reduce((sum, [, v]) => sum + v, 0);
+                const totalLoss = Math.abs(losses.reduce((sum, [, v]) => sum + v, 0));
+
+                // Verdict logic
+                let verdictColor, verdictBg, verdictBorder, verdictIcon, verdictText;
+                if (gains.length === 0 && losses.length === 0) {
+                    verdictColor = 'text-gray-400'; verdictBg = 'bg-gray-900/40'; verdictBorder = 'border-gray-600/30';
+                    verdictIcon = '💀'; verdictText = 'Aucun impact. L\'Ombre s\'ennuie.';
+                } else if (losses.length === 0) {
+                    verdictColor = 'text-green-300'; verdictBg = 'bg-green-900/30'; verdictBorder = 'border-green-500/40';
+                    verdictIcon = '👑'; verdictText = 'Upgrade pur. L\'Ombre approuve.';
+                } else if (gains.length === 0) {
+                    verdictColor = 'text-red-300'; verdictBg = 'bg-red-900/30'; verdictBorder = 'border-red-500/40';
+                    verdictIcon = '💀'; verdictText = 'Downgrade total. L\'Ombre refuse.';
+                } else if (totalGain > totalLoss * 2) {
+                    verdictColor = 'text-green-300'; verdictBg = 'bg-green-900/25'; verdictBorder = 'border-green-500/30';
+                    verdictIcon = '⚔️'; verdictText = 'Swap favorable. L\'Ombre valide.';
+                } else if (totalLoss > totalGain * 2) {
+                    verdictColor = 'text-red-300'; verdictBg = 'bg-red-900/25'; verdictBorder = 'border-red-500/30';
+                    verdictIcon = '🛡️'; verdictText = 'Swap défavorable. L\'Ombre hésite.';
+                } else {
+                    verdictColor = 'text-amber-300'; verdictBg = 'bg-amber-900/25'; verdictBorder = 'border-amber-500/30';
+                    verdictIcon = '⚖️'; verdictText = 'Trade-off. L\'Ombre analyse...';
+                }
+
+                // Résumé compact
+                const gainLabels = gains.slice(0, 3).map(([k]) => STAT_LABELS[k]).join(', ');
+                const lossLabels = losses.slice(0, 3).map(([k]) => STAT_LABELS[k]).join(', ');
+
+                return (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                        className={`mb-3 px-3 py-2.5 ${verdictBg} border ${verdictBorder} rounded-lg`}
+                    >
+                        {/* Ligne résumé */}
+                        <div className="flex flex-wrap gap-1 text-[11px] mb-1.5">
+                            {gains.length > 0 && (
+                                <span className="text-green-400">
+                                    ▲ {gainLabels}
+                                </span>
+                            )}
+                            {gains.length > 0 && losses.length > 0 && (
+                                <span className="text-gray-500">|</span>
+                            )}
+                            {losses.length > 0 && (
+                                <span className="text-red-400">
+                                    ▼ {lossLabels}
+                                </span>
+                            )}
+                        </div>
+                        {/* Verdict de l'Ombre */}
+                        <div className={`text-xs font-bold ${verdictColor} flex items-center gap-1.5`}>
+                            <span>{verdictIcon}</span>
+                            <span className="italic">{verdictText}</span>
+                        </div>
+                    </motion.div>
+                );
+            })()}
 
             {/* Header avec image et nom */}
             <div className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-700/50">
@@ -5277,16 +5460,28 @@ const IndividualCharacterStatCard = ({ member, onClick, onCompare, isComparing, 
                     .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
                 if (changedStats.length === 0) return null;
                 return (
-                    <div className="mt-3 pt-3 border-t border-amber-500/20">
+                    <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                        className="mt-3 pt-3 border-t border-amber-500/20"
+                    >
                         <div className="text-xs text-amber-400/80 font-semibold mb-1">Impact du swap :</div>
                         <div className="flex flex-wrap gap-1">
                             {changedStats.map(([key, v]) => (
-                                <span key={key} className={`text-xs px-1.5 py-0.5 rounded ${v > 0 ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}>
+                                <motion.span
+                                    key={key}
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.12, ease: 'easeOut' }}
+                                    className={`text-xs px-1.5 py-0.5 rounded flex items-center gap-0.5 ${v > 0 ? 'bg-green-900/30 text-green-400' : 'bg-red-900/30 text-red-400'}`}
+                                >
+                                    <span className="text-[9px]">{v > 0 ? '▲' : '▼'}</span>
                                     {STAT_LABELS[key]} {v > 0 ? '+' : ''}{v.toFixed(1)}%
-                                </span>
+                                </motion.span>
                             ))}
                         </div>
-                    </div>
+                    </motion.div>
                 );
             })()}
         </div>
@@ -5339,13 +5534,19 @@ const StatWithBreakdown = ({ label, value, breakdown, color, icon, hasBaseValue 
                     <span className={`font-bold ${color}`}>
                         {value.toFixed(1)}%
                     </span>
-                    {/* Delta indicator */}
+                    {/* Delta indicator with micro-animation + arrow */}
                     {showDelta && (
-                        <span className={`text-xs font-bold px-1 py-0.5 rounded ${
-                            delta > 0 ? 'text-green-400 bg-green-900/30' : 'text-red-400 bg-red-900/30'
-                        }`}>
+                        <motion.span
+                            initial={{ opacity: 0, scale: 0.5, x: delta > 0 ? -8 : 8 }}
+                            animate={{ opacity: 1, scale: 1, x: 0 }}
+                            transition={{ duration: 0.15, ease: 'easeOut' }}
+                            className={`text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${
+                                delta > 0 ? 'text-green-400 bg-green-900/30' : 'text-red-400 bg-red-900/30'
+                            }`}
+                        >
+                            <span className="text-[10px]">{delta > 0 ? '▲' : '▼'}</span>
                             {delta > 0 ? '+' : ''}{delta.toFixed(1)}%
-                        </span>
+                        </motion.span>
                     )}
                     {/* Indicateur d'optimisation inline */}
                     {optimStatus && !showDelta && (

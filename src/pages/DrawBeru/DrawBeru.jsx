@@ -649,7 +649,6 @@ const DrawBeruFixed = ({
                 hunter: selectedHunter,
                 model: selectedModel
             }));
-            console.log('✅ Last drawing saved:', selectedHunter, selectedModel);
         } catch (error) {
             console.error('❌ Error saving last drawing:', error);
         }
@@ -694,13 +693,11 @@ const DrawBeruFixed = ({
             return layerCanvas;
         });
 
-        console.log('🔍 DEBUG LOAD - Start');
 
         const userData = JSON.parse(localStorage.getItem('builderberu_users') || '{}');
         const existingColoring = userData.user?.accounts?.default?.colorings?.[selectedHunter]?.[selectedModel];
 
         if (existingColoring && existingColoring.layers) {
-            console.log('✅ Loading existing coloring');
             let loadedLayers = 0;
             const totalLayers = Math.min(existingColoring.layers.length, layersRef.current.length);
 
@@ -739,7 +736,6 @@ const DrawBeruFixed = ({
 
             setImagesLoaded(true);
         } else {
-            console.log('📄 Loading blank template');
             const templateImg = new Image();
             templateImg.crossOrigin = "anonymous";
             templateImg.onload = () => {
@@ -816,7 +812,6 @@ const DrawBeruFixed = ({
             // Activer le cheat mode
             setCheatModeActive(true);
             setCheatTimeRemaining(10);
-            console.log('🎮 CHEAT MODE ACTIVÉ ! 10 secondes de coloriage parfait...');
 
             // Décompte
             let timeLeft = 10;
@@ -835,7 +830,6 @@ const DrawBeruFixed = ({
 
             cheatTimerRef.current = setTimeout(() => {
                 setCheatModeActive(false);
-                console.log('⏱️ Cheat mode désactivé');
 
                 // Définir le cooldown d'1 heure
                 const cooldownEnd = Date.now() + (60 * 60 * 1000); // 1 heure
@@ -886,7 +880,6 @@ const DrawBeruFixed = ({
             const painter = CHIBI_PAINTERS[chibiId];
             if (!painter) return;
 
-            console.log(`🎨 Démarrage animation pour: ${painter.name}`);
 
             // Initialiser la position selon le mode de mouvement
             const initialPos = painter.movementMode === 'methodical' || painter.movementMode === 'zone'
@@ -1043,7 +1036,6 @@ const DrawBeruFixed = ({
             // 🔧 SAFETY: Reset automatique après 10 secondes max (au cas où le timeout échoue)
             setTimeout(() => {
                 if (messageProcessingRef.current && currentSpeakerRef.current === chibiId) {
-                    console.log('🔧 Safety reset du système de messages');
                     messageProcessingRef.current = false;
                     currentSpeakerRef.current = null;
                     processMessageQueue();
@@ -1240,7 +1232,6 @@ const DrawBeruFixed = ({
             legendary.lastLegendaryTime = now;
             legendary.legendaryCount++;
 
-            console.log(`🌟 MESSAGE LÉGENDAIRE #${legendary.legendaryCount} de ${chibiId} !`);
 
             return selected;
         };
@@ -1709,7 +1700,6 @@ const DrawBeruFixed = ({
             const painter = CHIBI_PAINTERS[chibiId];
             if (!painter) return;
 
-            console.log(`🎨 Démarrage animation pour: ${painter.name} (${chibiId})`);
 
             // 🔧 RESET du système de messages au démarrage d'un chibi
             // Évite que le système reste bloqué après un arrêt précédent
@@ -1764,7 +1754,6 @@ const DrawBeruFixed = ({
                             zoneData.pixelsPerFrame = Math.ceil(zoneData.userZonePixels.length / totalFrames);
                             zoneData.totalDurationMs = durationSeconds * 1000 * 0.95;
 
-                            console.log(`🦋 Zone: ${zoneData.userZonePixels.length} pixels, ${zoneData.pixelsPerFrame}/frame, finit en ${durationSeconds * 0.95}s`);
 
                             // Positionner le chibi au début de la zone
                             if (zoneData.userZonePixels.length > 0) {
@@ -1826,7 +1815,6 @@ const DrawBeruFixed = ({
 
                         // Zone terminée !
                         if (zoneData.zoneProgress >= totalPixels) {
-                            console.log(`🦋 Zone utilisateur terminée ! ${totalPixels} pixels coloriés.`);
                         }
                     } else if (now - zoneData.lastZoneTime >= actionDelay) {
                         // Mode classique avec délai: trouve des zones non coloriées aléatoires
@@ -2099,7 +2087,6 @@ const DrawBeruFixed = ({
             // Vérifier si on peut activer un nouveau chibi (max 2)
             const activeCount = Object.values(activeChibis).filter(c => c.active).length;
             if (activeCount >= MAX_ACTIVE_CHIBIS) {
-                console.log(`❌ Maximum ${MAX_ACTIVE_CHIBIS} chibis déjà actifs`);
                 return;
             }
 
@@ -2427,7 +2414,6 @@ const DrawBeruFixed = ({
             const progress = await calculateColoringProgress();
             setColoringProgress(progress.percentage);
             setProgressDetails(progress);
-            console.log('🎯 Progression coloriage:', progress);
         } catch (error) {
             console.error('❌ Erreur calcul progression:', error);
         }
@@ -3260,7 +3246,6 @@ const DrawBeruFixed = ({
     };
 
     const saveColoring = () => {
-        console.log('🔍 DEBUG SAVE - Start');
 
         const layersData = layersRef.current.map((layerCanvas, i) => {
             try {
@@ -5909,7 +5894,6 @@ const DrawBeruFixed = ({
                                         canvasHeight={canvasRef.current.height}
                                         referenceImageData={referenceImageData}
                                         onGameEnd={(result) => {
-                                            console.log('Game ended:', result);
                                         }}
                                     />
                                 </div>

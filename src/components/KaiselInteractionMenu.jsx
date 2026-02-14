@@ -107,7 +107,6 @@ const KaiselInteractionMenu = ({
       const now = Math.floor(Date.now() / 1000);
       
       if (payload.exp && payload.exp < now) {
-        console.log('🔒 Token admin expiré');
         setAdminToken(null);
         return false;
       }
@@ -141,10 +140,8 @@ const KaiselInteractionMenu = ({
       // 🔥 SAUVEGARDER LE TOKEN SIGNÉ, PAS UN BOOLEAN
       if (result.success && result.adminToken) {
         setAdminToken(result.adminToken); // ← TOKEN SÉCURISÉ INVIOLABLE
-        console.log('🔓 Token Admin Kaisel reçu et validé pour', result.verificationDetails?.accountFound);
       } else {
         setAdminToken(null);
-        console.log('🔒 Kaisel mode standard - pas de token admin');
       }
     } catch (error) {
       console.error('❌ Erreur vérification admin Kaisel:', error);
@@ -171,7 +168,6 @@ const KaiselInteractionMenu = ({
       const validation = await serverCheck.json();
       
       if (!validation.authorized) {
-        console.log('🔒 Action refusée par le serveur');
         setAdminToken(null); // Reset token si rejeté
         return false;
       }

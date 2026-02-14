@@ -41,7 +41,6 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
   useEffect(() => {
     if (tutorialSteps.length > 0 && tutorialSteps[0].speaker === 'igrisk') {
       setIsIgrisk(true);
-      console.log('🎭 IGRISK MODE ACTIVÉ ! Tank s\'est déguisé !');
       
       if (window.umami) {
         window.umami.track('tutorial-igrisk-activated', {
@@ -55,14 +54,12 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
 
   // 🎮 Fonction pour accepter le tutoriel
   const acceptTutorial = () => {
-    console.log('✅ Tutoriel accepté');
     setShowSystemNotification(false);
     setCurrentStep(0);
   };
 
   // 💀 Fonction pour refuser (PUNITION!)
   const declineTutorial = () => {
-    console.log('❌ Tutoriel refusé');
     setShowSystemNotification(false);
     setShowPunishment(true);
     
@@ -238,10 +235,8 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
       }
       
       if (step.waitForElement) {
-        console.log('⏳ En attente de:', step.waitForElement);
         const element = await waitForElement(step.waitForElement);
         if (element) {
-          console.log('✅ Élément trouvé !');
         }
       }
       
@@ -252,7 +247,6 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
       }
       
       if (step.waitForClick && step.selector) {
-        console.log('👆 En attente du clic utilisateur...');
         
         const element = typeof step.selector === 'function' 
           ? step.selector()
@@ -260,7 +254,6 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
           
         if (element) {
           const handleClick = () => {
-            console.log('✅ Clic détecté !');
             element.removeEventListener('click', handleClick);
             
             if (step.onElementClick) {

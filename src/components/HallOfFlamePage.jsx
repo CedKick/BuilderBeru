@@ -55,7 +55,6 @@ const HallOfFlamePage = ({
     // Empêcher la propagation du clic pour ne pas ouvrir les détails
     event.stopPropagation();
     
-    console.log('🆚 Comparaison avec:', hunter);
     setSelectedHunterForComparison(hunter);
     setShowComparison(true);
     // 🔥 Utiliser le character name au lieu du pseudo
@@ -133,9 +132,6 @@ const HallOfFlamePage = ({
   // Debug helper
   useEffect(() => {
     if (hunters.length > 0) {
-      console.log('🔍 Premier hunter pour debug:', hunters[0]);
-      console.log('📊 CP Details Total:', hunters[0].cpDetailsTotal);
-      console.log('🎨 CP Details Artifacts:', hunters[0].cpDetailsArtifacts);
     }
   }, [hunters]);
 
@@ -1384,7 +1380,6 @@ html, body, #root {
                                 className="cp-score-hover relative"
                                 onMouseEnter={() => {
                                   if (!isMobileDevice) {
-                                    console.log('🔍 Hover hunter:', hunter.id, 'CP Details:', hunter.cpDetailsTotal);
                                     setShowCpTooltipTotal(hunter.id);
                                   }
                                 }}
@@ -1392,7 +1387,6 @@ html, body, #root {
                                 onClick={(e) => {
                                   if (isMobileDevice) {
                                     e.stopPropagation();
-                                    console.log('📱 Click hunter:', hunter.id, 'CP Details:', hunter.cpDetailsTotal);
                                     setShowCpTooltipTotal(showCpTooltipTotal === hunter.id ? null : hunter.id);
                                   }
                                 }}
@@ -1441,7 +1435,6 @@ html, body, #root {
                                   className="cp-score-hover relative"
                                   onMouseEnter={() => {
                                     if (!isMobileDevice) {
-                                      console.log('🔍 Hover artifacts:', hunter.id, 'Details:', hunter.cpDetailsArtifacts);
                                       setShowCpTooltipArtifacts(hunter.id);
                                     }
                                   }}

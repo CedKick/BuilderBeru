@@ -132,7 +132,6 @@ export default function BeruvianWorld() {
     
     if (newZone !== currentZone) {
       setCurrentZone(newZone);
-      console.log(`📍 Entrée dans la zone: ${newZone} - ${zoneMap[newZone]?.name}`);
       
       // Explorer automatiquement les zones adjacentes
       exploreAdjacentZones(newZone);
@@ -262,7 +261,6 @@ export default function BeruvianWorld() {
 
     switch (actionId) {
       case "patrol":
-        console.log("🔍 Patrouille en cours...");
         setActionsRemaining(prev => prev - 1);
         // Chance de rencontrer une ombre ou un ennemi
         const encounterRoll = Math.random();
@@ -310,7 +308,6 @@ export default function BeruvianWorld() {
         break;
         
       case "rest":
-        console.log("💤 Repos...");
         setActionsRemaining(prev => prev - 1);
         // Restaurer des HP
         const healAmount = Math.floor(hunterStats.maxHp * 0.2);
@@ -322,7 +319,6 @@ export default function BeruvianWorld() {
         break;
         
       case "explore":
-        console.log("🗺️ Exploration gratuite");
         alert("🔍 Cette zone est maintenant visible pour votre faction !");
         break;
     }
@@ -377,12 +373,10 @@ export default function BeruvianWorld() {
     showNotification(`🌀 Résonance établie! +${xpResult.xpGained} XP`, 'resonance');
     updateHunterStats();
     
-    console.log("🌀 Résonance activée:", resonanceData);
   };
 
   const handleCorruptionMax = () => {
     setIsCorrupted(true);
-    console.log("⚠️ Corruption maximale atteinte!");
     // En mode corrompu, le joueur devient hostile
     setTimeout(() => {
       setIsCorrupted(false);
@@ -392,7 +386,6 @@ export default function BeruvianWorld() {
 
   const handleResonanceEnd = () => {
     setActiveResonance(null);
-    console.log("🌀 Résonance terminée");
   };
 
   const territoryStats = getTerritorialStats();

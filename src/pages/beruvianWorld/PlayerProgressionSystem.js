@@ -112,8 +112,6 @@ class PlayerProgressionSystem {
     // Restaurer full HP au level up
     this.playerData.stats.hp = this.playerData.stats.maxHp;
     
-    console.log(`🎉 LEVEL UP! Niveau ${this.playerData.level}`);
-    console.log('Nouvelles stats:', this.playerData.stats);
     
     return {
       newLevel: this.playerData.level,

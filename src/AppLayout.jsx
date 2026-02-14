@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import BuilderMenu from './buildermenu';
+import FloatingBeruMascot from './components/FloatingBeruMascot';
+import AchievementToast from './components/AchievementToast';
+import shadowAchievementManager from './utils/ShadowAchievementManager';
 
 export default function AppLayout({ children }) {
   const [showMenu, setShowMenu] = useState(false);
+
+  // Initialiser le systeme d'achievements
+  useEffect(() => { shadowAchievementManager.init(); }, []);
 
   // Fermer le menu avec la touche Escape
   useEffect(() => {
@@ -85,6 +91,12 @@ export default function AppLayout({ children }) {
       <main className="w-full min-h-screen">
         {children}
       </main>
+
+      {/* L'Ombre de Béru - Mascotte Flottante */}
+      <FloatingBeruMascot />
+
+      {/* Shadow Achievements - Toast Notification */}
+      <AchievementToast />
     </div>
   );
 }

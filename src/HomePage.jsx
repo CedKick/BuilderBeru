@@ -1,6 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
+import HomeDashboard from './components/HomeDashboard';
 
 export default function HomePage() {
   const { t, i18n } = useTranslation();
@@ -117,27 +118,73 @@ export default function HomePage() {
 
   }, [i18n.language]);
 
-  const activeItems = [
-    { label: t('home.menu.build'), path: "/build", alt: "Build your Hunter SLA" },
-    // { label: t('home.menu.training'), path: "/trainingCenter", special: true, new: true, alt:"Simulation Training Solo Leveling Arise"},
+  const slaItems = [
+    {
+      label: t('home.menu.build'),
+      path: "/build",
+      img: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771071790/LogoBuild128_pf9wkk.png",
+      glowColor: "rgba(168, 85, 247, 0.5)",
+      beruMessage: "Un build en preparation ? Montre-moi ca, chasseur !",
+      alt: "Build your Hunter SLA",
+    },
+    {
+      label: "Theorycraft",
+      path: "/theorycraft",
+      img: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771074452/LogoTheyroycraft128_maeizs.png",
+      glowColor: "rgba(59, 130, 246, 0.5)",
+      isNew: true,
+      beruMessage: "Du theorycraft ? L'Ombre calcule deja les synergies...",
+      alt: "Team Synergy Calculator - Crit Rate, Crit DMG, Def Pen",
+    },
+  ];
+
+  const fanartItems = [
     {
       label: t('home.menu.drawBeru'),
       path: "/drawberu",
-      special: true,
-      new: true,
-      alt: "DrawBeru - Coloring and Drawing System"
+      img: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771073331/LogoDrawBERU128-removebg-preview_rhst5w.png",
+      glowColor: "rgba(236, 72, 153, 0.5)",
+      isNew: true,
+      beruMessage: "Tu vas me dessiner ? Fais-moi beau cette fois !",
+      alt: "DrawBeru - Coloring and Drawing System",
     },
-    { label: t('home.menu.dpsCalculator'), path: "/damage-calculator", special: true, new: true, alt: "Calculator Damage Solo Leveling Arise" },
-    { label: "⚡ Theorycraft", path: "/theorycraft", special: true, new: true, alt: "Team Synergy Calculator - Crit Rate, Crit DMG, Def Pen" },
-    { label: t('home.menu.bdg'), path: "bdg", alt: " META Guild War Solo Leveling Arise" },
-    { label: t('home.menu.pod'), path: "/pod", alt: "META POD Solo Leveling Arise" },
-    { label: t('home.menu.hallOfFlame'), path: "/hall-of-flame", special: true, alt: "Ranking player Solo Leveling Arise" },
-    // { label: t('home.menu.guideEditor'), path: "/guide-editor" },
+    {
+      label: "LoreStory",
+      path: "/lorestory",
+      img: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771076750/LogoLoreStory128_mqxibm.png",
+      glowColor: "rgba(139, 92, 246, 0.5)",
+      isNew: true,
+      beruMessage: "Des histoires ? Installe-toi... le Soldat N1 raconte.",
+      alt: "LoreStory - Shadow Army Chronicles",
+    },
+    {
+      label: "Shadow Colosseum",
+      path: "/shadow-colosseum",
+      img: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771080428/LogoColossum128-removebg-preview_jrzpts.png",
+      glowColor: "rgba(239, 68, 68, 0.5)",
+      isNew: true,
+      beruMessage: "Le Colisee des Ombres t'attend... Tes chibis sont prets ?",
+      alt: "Shadow Colosseum - Chibi Battle RPG",
+    },
   ];
 
-  const inactiveItems = [
-    // { label: t('home.menu.bot'), disabled: true },
+  // Beru hover reaction cooldown
+  const beruHoverCooldown = useRef(0);
+  const handleNavHover = useCallback((item) => {
+    const now = Date.now();
+    if (now - beruHoverCooldown.current < 8000) return;
+    beruHoverCooldown.current = now;
+    window.dispatchEvent(new CustomEvent('beru-react', {
+      detail: { message: item.beruMessage, mood: 'thinking', duration: 4000 }
+    }));
+  }, []);
 
+  const langFlags = [
+    { src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png", alt: "Fran\u00e7ais Solo Leveling Arise", lang: 'fr' },
+    { src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png", alt: "English SOLO LEVELING ARISE", lang: 'en' },
+    { src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754778825/ko_flag_zdbhiz.png", alt: "\uD55C\uAD6D\uC5B4", lang: 'ko' },
+    { src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814859/jap_flag_bet2ob.png", alt: "\u65E5\u672C\u8A9E", lang: 'ja' },
+    { src: "https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814970/zh_flag_r9l06y.png", alt: "\u4E2D\u6587", lang: 'zh' },
   ];
 
   // 🎯 SEO DATA POUR AFFICHAGE DYNAMIQUE
@@ -173,308 +220,212 @@ export default function HomePage() {
   const currentSEODisplay = seoDisplayData[currentLang] || seoDisplayData.fr;
 
   return (
-    <div className="min-h-screen bg-[#0f0f1a] text-white flex flex-col items-center justify-center py-4 md:py-10 px-4">
-      {/* 🌐 LANGUAGE SELECTOR */}
-      <div className="absolute top-4 right-4">
-        <div className="flex gap-2 items-center">
-          <img
-            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/Francia_sboce9.png"
-            alt="Français Solo Leveling Arise"
-            onClick={() => i18n.changeLanguage('fr')}
-            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
-          />
-          <img
-            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748533955/BritishAirLine_s681io.png"
-            alt="English SOLO LEVELING ARISE"
-            onClick={() => i18n.changeLanguage('en')}
-            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
-          />
-          <img
-            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754778825/ko_flag_zdbhiz.png"
-            alt="한국어"
-            onClick={() => i18n.changeLanguage('ko')}
-            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
-          />
-          <img
-            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814859/jap_flag_bet2ob.png"
-            alt="日本語"
-            onClick={() => i18n.changeLanguage('ja')}
-            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
-          />
-          <img
-            src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754814970/zh_flag_r9l06y.png"
-            alt="中文"
-            onClick={() => i18n.changeLanguage('zh')}
-            className="w-7 h-5 cursor-pointer hover:scale-110 transition-transform rounded border border-transparent hover:border-yellow-500"
-          />
+    <div
+      className="min-h-screen bg-[#0f0f1a] text-white flex flex-col items-center py-6 md:py-12 px-3 md:px-4 relative"
+      style={{ backgroundImage: 'url(https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771068462/backgroundVD_ywvghj.png)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }}
+    >
+      <div className="absolute inset-0 bg-[#0f0f1a]/75 pointer-events-none" />
+
+      {/* Language Selector */}
+      <div className="absolute top-3 right-3 z-10">
+        <div className="flex gap-1.5 items-center bg-black/40 backdrop-blur-sm rounded-lg px-2.5 py-1.5">
+          {langFlags.map(flag => (
+            <img
+              key={flag.lang}
+              src={flag.src}
+              alt={flag.alt}
+              onClick={() => i18n.changeLanguage(flag.lang)}
+              className={`w-6 h-4 cursor-pointer hover:scale-110 transition-all duration-200 rounded
+                ${currentLang === flag.lang ? 'ring-1 ring-yellow-400 scale-110 opacity-100' : 'opacity-60 hover:opacity-100'}`}
+            />
+          ))}
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes shimmer {
-          0% { background-position: -200% center; }
-          100% { background-position: 200% center; }
-        }
-
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-5px); }
-        }
-
-        @keyframes glow-pulse {
-          0%, 100% { 
-            box-shadow: 0 0 20px rgba(255, 105, 180, 0.5);
-          }
-          50% { 
-            box-shadow: 0 0 40px rgba(255, 105, 180, 0.8), 0 0 60px rgba(255, 105, 180, 0.4);
-          }
-        }
-
-        .character-announcement {
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255, 255, 255, 0.1),
-            transparent
-          );
-          background-size: 200% 100%;
-          animation: shimmer 3s infinite;
-          padding: 10px;
-          border-radius: 12px;
-          margin: 8px 0;
-          max-width: 280px;
-        }
-
-        .new-character-text {
-          text-shadow: 
-            0 0 10px rgba(255, 105, 180, 0.8),
-            0 0 20px rgba(255, 105, 180, 0.6),
-            0 0 30px rgba(255, 105, 180, 0.4);
-          animation: float 3s ease-in-out infinite;
-        }
-
-        .theorycraft-text {
-          background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          position: relative;
-        }
-
-        .theorycraft-text::after {
-          content: '...';
-          position: absolute;
-          animation: dots 1.5s infinite;
-        }
-
-        @keyframes dots {
-          0%, 20% { content: '.'; }
-          40% { content: '..'; }
-          60%, 100% { content: '...'; }
-        }
-
-        .character-image {
-          animation: glow-pulse 2s ease-in-out infinite;
-        }
-
-        /* 📱 MOBILE SPECIFIC OPTIMIZATIONS */
-        @media (max-width: 768px) {
-          .mobile-title-container {
-            max-height: 16vh !important;
-            overflow: hidden;
-            padding: 4px 8px;
-          }
-          
-          .mobile-title-h1 {
-            font-size: 14px !important;
-            line-height: 1.2 !important;
-            margin-bottom: 3px !important;
-            text-align: center;
-          }
-          
-          .mobile-title-h2 {
-            font-size: 10px !important;
-            line-height: 1.2 !important;
-            margin-bottom: 2px !important;
-            text-align: center;
-          }
-          
-          .mobile-title-h3 {
-            font-size: 8px !important;
-            line-height: 1.2 !important;
-            text-align: center;
-          }
-          
-          .mobile-nav-button {
-            min-height: 45px !important;
-            border-radius: 12px !important;
-            font-size: 11px !important;
-            font-weight: 600 !important;
-            box-shadow: 0 2px 8px rgba(168, 85, 247, 0.2) !important;
-            transition: all 0.2s ease !important;
-          }
-          
-          .mobile-nav-button:hover {
-            transform: translateY(-1px) !important;
-            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3) !important;
-          }
-          
-          .mobile-nav-disabled {
-            min-height: 45px !important;
-            border-radius: 12px !important;
-            font-size: 11px !important;
-            opacity: 0.4 !important;
-          }
-        }
-      `}</style>
-
-      {/* 🎯 HEADER RECENTRÉ ET AGRANDI MOBILE - MAXIMAL 16% DE L'ÉCRAN */}
-      <header className="text-center mb-2 md:mb-10 mobile-title-container">
-        <h1 className="mobile-title-h1 md:text-4xl font-extrabold text-purple-400 drop-shadow-md">
+      {/* Header SEO */}
+      <header className="text-center mb-3 md:mb-8 relative z-10 max-w-2xl">
+        <h1 className="text-base md:text-4xl font-extrabold text-purple-400 drop-shadow-md">
           {currentSEODisplay.h1}
         </h1>
-        <h2 className="mobile-title-h2 md:text-xl text-gray-300 md:mb-2 font-semibold">
+        <h2 className="text-[11px] md:text-xl text-gray-300 mt-1 font-semibold">
           {currentSEODisplay.h2}
         </h2>
-        <h3 className="mobile-title-h3 md:text-lg text-purple-300 font-medium">
+        <h3 className="text-[9px] md:text-lg text-purple-300/70 mt-0.5 font-medium">
           {currentSEODisplay.h3}
         </h3>
       </header>
 
-      {/* 🎮 LAYOUT ADAPTATIF DESKTOP/MOBILE */}
-      <div className="w-full max-w-6xl mx-auto flex-1 flex flex-col">
+      {/* Navigation */}
+      <nav className="w-full max-w-2xl mx-auto relative z-10 mb-6 md:mb-10 px-2" aria-label="Main Navigation">
+        <style>{`
+          @keyframes navFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+          }
+          @keyframes navShine {
+            0% { left: -60%; }
+            100% { left: 160%; }
+          }
+          @keyframes navGlowPulse {
+            0%, 100% { opacity: 0.15; transform: scale(0.85); }
+            50% { opacity: 0.3; transform: scale(0.95); }
+          }
+          .nav-link:hover .nav-shine-bar {
+            animation: navShine 0.7s ease-out;
+          }
+          .nav-link:hover .nav-logo {
+            transform: scale(1.18);
+            filter: brightness(1.25) drop-shadow(0 0 20px var(--glow-color));
+          }
+          .nav-link:hover .nav-glow {
+            opacity: 0.6 !important;
+            transform: scale(1.3) !important;
+          }
+          .nav-link:hover .nav-badge {
+            animation: navFloat 0.6s ease-in-out infinite;
+          }
+        `}</style>
 
-        {/* 📱 VERSION MOBILE - ULTRA COMPACT */}
-        <div className="block md:hidden flex-1 flex flex-col">
-          <section className="character-announcement mx-auto flex-shrink-0" aria-label="New Character Announcement">
-            <img
-              src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761077446/DrawBeruBer_p8lizf.png"
-              alt={t('home.announcement.imageAlt')}
-              className="character-image w-full rounded-lg hover:scale-105 transition-all duration-300"
-              loading="lazy"
-            />
-
-            <div className="mt-1 text-center">
-              <p className="text-[9px] font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
-                {t('home.announcement.buildNew')}
-              </p>
-              <p className="new-character-text text-[11px] font-extrabold mt-1 text-white">
-                {t('home.announcement.buildJinah')}
-              </p>
-              <p className="theorycraft-text text-[9px] mt-1 font-medium">
-                {t('home.announcement.dpsInfo')}
-              </p>
-            </div>
-          </section>
-
-          <nav className="grid grid-cols-2 gap-3 max-w-sm w-full mx-auto mt-3 flex-1" aria-label="Main Navigation">
-            {activeItems.map((item) => (
-              <Link
-                key={item.label}
-                to={item.path}
-                className="mobile-nav-button border border-purple-600 bg-[#1c1c2a] text-center text-white
-                  hover:bg-purple-700 flex items-center justify-center"
-                aria-label={`Go to ${item.label}`}
-              >
-                {item.label}
-              </Link>
-            ))}
-
-            {inactiveItems.map((item) => (
-              <div
-                key={item.label}
-                className="mobile-nav-disabled border border-gray-700 bg-[#1a1a1a] text-center text-gray-500
-                  cursor-not-allowed flex items-center justify-center"
-                aria-label={`${item.label} - Coming Soon`}
-              >
-                {item.label}
-              </div>
-            ))}
-          </nav>
+        {/* SLA Section */}
+        <div className="text-center mb-5">
+          <span className="text-[10px] md:text-xs font-bold text-purple-400/80 uppercase tracking-widest">Solo Leveling: Arise</span>
         </div>
-
-        {/* 💻 VERSION DESKTOP */}
-        <div className="hidden md:block">
-          <div className="grid md:grid-cols-2 gap-12 items-center max-w-4xl mx-auto">
-
-            <div className="md:order-1">
-              <h4 className="text-xl font-bold text-purple-300 mb-6 text-center">
-              </h4>
-              <nav className="grid gap-4" aria-label="Main Navigation">
-                {activeItems.map((item) => (
-                  <Link
-                    key={item.label}
-                    to={item.path}
-                    className="border border-purple-600 bg-[#1c1c2a] rounded-xl p-4 text-center text-lg font-bold text-white
-                      transition duration-300 transform hover:scale-105 hover:shadow-[0_0_15px_#a855f7] hover:bg-purple-700
-                      flex items-center justify-center min-h-[60px]"
-                    aria-label={`Go to ${item.label}`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-
-                {inactiveItems.map((item) => (
-                  <div
-                    key={item.label}
-                    className="border border-gray-700 bg-[#1a1a1a] rounded-xl p-4 text-center text-lg font-bold text-gray-500
-                      opacity-50 cursor-not-allowed flex items-center justify-center min-h-[60px]"
-                    aria-label={`${item.label} - Coming Soon`}
-                  >
-                    {item.label}
-                  </div>
-                ))}
-              </nav>
-            </div>
-
-            <div className="md:order-2">
-              <section className="character-announcement mx-auto max-w-sm" aria-label="New Character Announcement">
-                <img
-                  src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761077446/DrawBeruBer_p8lizf.png"
-                  alt={t('home.announcement.imageAlt')}
-                  className="character-image w-full rounded-lg hover:scale-105 transition-all duration-300"
-                  loading="lazy"
+        <div className="flex justify-center items-center gap-10 md:gap-20 mb-10">
+          {slaItems.map((item, i) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className="nav-link group relative flex flex-col items-center"
+              aria-label={item.alt}
+              onMouseEnter={() => handleNavHover(item)}
+            >
+              <div
+                className="relative"
+                style={{ animation: `navFloat 4s ease-in-out infinite`, animationDelay: `${-i * 1.5}s` }}
+              >
+                {/* Ambient glow pulse */}
+                <div
+                  className="nav-glow absolute inset-[-30%] rounded-full blur-3xl transition-all duration-700 pointer-events-none"
+                  style={{
+                    backgroundColor: item.glowColor,
+                    animation: 'navGlowPulse 4s ease-in-out infinite',
+                    animationDelay: `${-i * 2}s`,
+                  }}
                 />
 
-                <div className="mt-4 text-center">
-                  <p className="text-sm font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
-                    {t('home.announcement.buildNew')}
-                  </p>
-                  <p className="new-character-text text-xl font-extrabold mt-2 text-white">
-                    {t('home.announcement.buildJinah')}
-                  </p>
-                  <p className="theorycraft-text text-sm mt-3 font-medium">
-                    {t('home.announcement.dpsInfo')}
-                  </p>
+                {/* Shine sweep on hover */}
+                <div className="absolute inset-0 overflow-hidden rounded-full z-20 pointer-events-none">
+                  <div
+                    className="nav-shine-bar absolute top-0 h-full pointer-events-none"
+                    style={{
+                      width: '40%',
+                      left: '-60%',
+                      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)',
+                    }}
+                  />
                 </div>
-              </section>
-            </div>
 
-          </div>
+                {/* Logo */}
+                <img
+                  src={item.img}
+                  alt={item.label}
+                  className="nav-logo w-24 h-24 md:w-32 md:h-32 object-contain relative z-10 transition-all duration-500 ease-out"
+                  style={{ '--glow-color': item.glowColor, filter: `drop-shadow(0 4px 12px ${item.glowColor})` }}
+                  draggable={false}
+                />
+              </div>
+
+              {item.isNew && (
+                <span className="nav-badge absolute -top-1 -right-2 z-30 px-2 py-0.5 rounded-full text-[8px] md:text-[9px] font-bold bg-green-500 text-white shadow-md shadow-green-500/50">
+                  NEW
+                </span>
+              )}
+            </Link>
+          ))}
         </div>
 
-      </div>
+        {/* FanArts Section */}
+        <div className="text-center mb-5">
+          <span className="text-[10px] md:text-xs font-bold text-pink-400/80 uppercase tracking-widest">FanArts</span>
+        </div>
+        <div className="flex justify-center items-center gap-10 md:gap-20">
+          {fanartItems.map((item, i) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className="nav-link group relative flex flex-col items-center"
+              aria-label={item.alt}
+              onMouseEnter={() => handleNavHover(item)}
+            >
+              <div
+                className="relative"
+                style={{ animation: 'navFloat 4s ease-in-out infinite', animationDelay: `${-0.8 - i * 1.3}s` }}
+              >
+                <div
+                  className="nav-glow absolute inset-[-30%] rounded-full blur-3xl transition-all duration-700 pointer-events-none"
+                  style={{
+                    backgroundColor: item.glowColor,
+                    animation: 'navGlowPulse 4s ease-in-out infinite',
+                    animationDelay: `${-1 - i * 1.5}s`,
+                  }}
+                />
+                <div className="absolute inset-0 overflow-hidden rounded-full z-20 pointer-events-none">
+                  <div
+                    className="nav-shine-bar absolute top-0 h-full pointer-events-none"
+                    style={{
+                      width: '40%',
+                      left: '-60%',
+                      background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)',
+                    }}
+                  />
+                </div>
+                {item.img ? (
+                  <img
+                    src={item.img}
+                    alt={item.label}
+                    className="nav-logo w-24 h-24 md:w-32 md:h-32 object-contain relative z-10 transition-all duration-500 ease-out"
+                    style={{ '--glow-color': item.glowColor, filter: `drop-shadow(0 4px 12px ${item.glowColor})` }}
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="nav-logo relative z-10 flex flex-col items-center justify-center w-24 h-24 md:w-32 md:h-32 transition-all duration-500 ease-out">
+                    <span className="text-5xl md:text-6xl" style={{ filter: `drop-shadow(0 4px 12px ${item.glowColor})` }}>{item.icon}</span>
+                    <span className="text-[10px] md:text-xs font-bold text-white/90 mt-1">{item.label}</span>
+                  </div>
+                )}
+              </div>
+              {item.isNew && (
+                <span className="nav-badge absolute -top-1 -right-2 z-30 px-2 py-0.5 rounded-full text-[8px] md:text-[9px] font-bold bg-green-500 text-white shadow-md shadow-green-500/50">
+                  NEW
+                </span>
+              )}
+            </Link>
+          ))}
+        </div>
+      </nav>
 
-      {/* 📄 FOOTER AVEC PROTECTION LÉGALE */}
-      <footer className="mt-2 md:mt-12 text-sm text-gray-500 italic text-center max-w-sm flex-shrink-0">
-        <p className="mb-2">
+      {/* Dashboard Vivant */}
+      <HomeDashboard />
+
+      {/* Footer */}
+      <footer className="mt-auto pt-4 md:pt-8 text-center max-w-md relative z-10">
+        <p className="text-[10px] md:text-xs text-gray-500 italic mb-1.5">
           {t('home.footer.disclaimer')}
         </p>
-        <p className="text-xs text-gray-600 mb-2">
-          🎮 This is a fan-made website for Solo Leveling: Arise. Not affiliated with Netmarble or any official entities.
+        <p className="text-[9px] md:text-[11px] text-gray-600 mb-1.5">
+          This is a fan-made website for Solo Leveling: Arise. Not affiliated with Netmarble.
         </p>
-        <p>
+        <p className="text-[10px] md:text-xs text-gray-500">
           {t('home.footer.community')}{" "}
           <a
             href="https://discord.gg/m8RCuDz5"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-purple-400 hover:underline"
+            className="text-purple-400 hover:text-purple-300 hover:underline transition-colors"
             aria-label="Join BuilderBeru Discord Community"
           >
             Discord
-          </a>
-          .
+          </a>.
         </p>
       </footer>
     </div>

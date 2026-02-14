@@ -159,8 +159,6 @@ const analyzeSubstatsForSlot = (artifactData, hunterData) => {
         .filter(([stat, value]) => value !== null)
         .map(([stat, value]) => stat);
 
-    console.log('🔍 Kaisel Debug - Stats recommandées:', recommendedStats);
-    console.log('🔍 Kaisel Debug - Slot détecté:', slot);
 
     // 3️⃣ Filtrer selon les restrictions du slot
     const restrictions = SLOT_RESTRICTIONS[slot] || { forbidden: [] };
@@ -168,15 +166,11 @@ const analyzeSubstatsForSlot = (artifactData, hunterData) => {
         !restrictions.forbidden.includes(stat)
     );
 
-    console.log('🔍 Kaisel Debug - Stats autorisées pour ce slot:', allowedStats);
-    console.log('🔍 Kaisel Debug - Stats interdites:', restrictions.forbidden);
 
     // 4️⃣ Vérifier les substats existants
     const existingSubstats = artifactData.subStats || [];
     const existingMainStat = artifactData.mainStat || '';
     
-    console.log('🔍 Kaisel Debug - Substats existants:', existingSubstats);
-    console.log('🔍 Kaisel Debug - MainStat existante:', existingMainStat);
 
     // 5️⃣ Mapping des noms pour comparaison
     const statMapping = {
@@ -209,9 +203,7 @@ const analyzeSubstatsForSlot = (artifactData, hunterData) => {
         const found = foundInSubstats || foundInMainStat;
         
         if (!found) {
-            console.log(`❌ MANQUANT: ${recommendedStat} (aliases: ${aliases.join(', ')})`);
         } else {
-            console.log(`✅ TROUVÉ: ${recommendedStat}`);
         }
 
         return !found;
@@ -234,7 +226,6 @@ const analyzeSubstatsForSlot = (artifactData, hunterData) => {
         });
 
         if (!isUseful) {
-            console.log(`🗑️ INUTILE: ${substat}`);
         }
 
         return !isUseful;
@@ -431,8 +422,6 @@ const analyzeOverallSubstatsForReport = (artifacts, hunterData) => {
         .filter(([stat, value]) => value !== null)
         .map(([stat, value]) => stat);
 
-    console.log('🔍 Kaisel Debug Global - Stats recommandées:', recommendedStats);
-    console.log('🔍 Kaisel Debug Global - Substats trouvées:', allSubstats);
 
     // Mapping des noms pour comparaison
     const statMapping = {
@@ -457,7 +446,6 @@ const analyzeOverallSubstatsForReport = (artifacts, hunterData) => {
         );
 
         if (!found) {
-            console.log(`❌ GLOBAL MANQUANT: ${recommendedStat}`);
         }
 
         return !found;

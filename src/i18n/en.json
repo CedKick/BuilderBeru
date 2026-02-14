@@ -1824,5 +1824,33 @@
         "level": "Level",
         "specialBuffs": "Special Buffs"
         }
+  },
+  "dashboard": {
+    "chibiMessages": [
+      "Kiiiek!",
+      "Welcome to the Lair!",
+      "Did you farm today?",
+      "My King is the strongest!",
+      "The shadows are watching...",
+      "Beru is here!",
+      "Ready for battle?",
+      "Shadow Army, charge!",
+      "An enemy? Where?!",
+      "The Monarch approves."
+    ],
+    "stats": {
+      "coins": "Shadow Coins",
+      "streak": "Streak",
+      "chibis": "Chibis",
+      "builds": "Builds"
+    },
+    "resume": "Resume",
+    "seasonal": {
+      "valentine": "Even Shadows have a heart...",
+      "april": "Beru has been reversed! ...or not.",
+      "halloween": "The Shadows grow darker tonight...",
+      "christmas": "Merry Christmas from the Shadow Monarch!",
+      "sla_anniversary": "Happy Anniversary Solo Leveling: Arise!"
+    }
   }
 }
