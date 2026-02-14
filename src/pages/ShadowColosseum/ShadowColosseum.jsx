@@ -7,139 +7,26 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import shadowCoinManager from '../../components/ChibiSystem/ShadowCoinManager';
 import { TALENT_TREES, computeTalentBonuses, getTreeMaxPoints, getNodeDesc } from './talentTreeData';
+import {
+  SPRITES, ELEMENTS, RARITY, CHIBIS,
+  STAT_PER_POINT, STAT_ORDER, STAT_META, POINTS_PER_LEVEL,
+  TIER_NAMES_SKILL, TIER_COSTS, SP_INTERVAL, MAX_LEVEL,
+  statsAt, statsAtFull, xpForLevel, getElementMult, getEffStat,
+  applySkillUpgrades, getUpgradeDesc, computeAttack, aiPickSkill,
+} from './colosseumCore';
+import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate } from './raidData';
+import { BattleStyles, BattleArena } from './BattleVFX';
+import {
+  ARTIFACT_SETS, ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL,
+  WEAPONS, WEAPON_PRICES, FORGE_COSTS, ENHANCE_COST, SELL_RATIO, MAX_ARTIFACT_LEVEL,
+  generateArtifact, enhanceArtifact, computeArtifactBonuses, computeWeaponBonuses,
+  mergeEquipBonuses, getActiveSetBonuses, MAX_EVEIL_STARS, STAGE_HUNTER_DROP,
+  HAMMERS, HAMMER_ORDER, getRequiredHammer, rollHammerDrop,
+} from './equipmentData';
 
-// ═══════════════════════════════════════════════════════════════
-// DATA
-// ═══════════════════════════════════════════════════════════════
-
-const SPRITES = {
-  kaisel: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png',
-  tank: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747604465/tank_face_n9kxrh.png',
-  nyarthulu: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505833/Nyarthulu_face_vawrrz.png',
-  raven: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422541/Raven_face_xse2x9.png',
-  lil_kaisel: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422081/lil_face_vyjvxz.png',
-  pingsu: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_face_tnilyr.png',
-  okami: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_face_qfzt4j.png',
-  alecto: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png',
-};
-
-const ELEMENTS = {
-  shadow: { name: 'Ombre', color: 'text-purple-400', bg: 'bg-purple-500/20', border: 'border-purple-500/40', icon: '\uD83C\uDF11', beats: 'wind' },
-  fire: { name: 'Feu', color: 'text-red-400', bg: 'bg-red-500/20', border: 'border-red-500/40', icon: '\uD83D\uDD25', beats: 'shadow' },
-  wind: { name: 'Vent', color: 'text-emerald-400', bg: 'bg-emerald-500/20', border: 'border-emerald-500/40', icon: '\uD83D\uDCA8', beats: 'earth' },
-  earth: { name: 'Terre', color: 'text-amber-400', bg: 'bg-amber-500/20', border: 'border-amber-500/40', icon: '\uD83E\uDEA8', beats: 'fire' },
-};
-
-const RARITY = {
-  mythique: { stars: '\u2605\u2605\u2605', color: 'text-red-400', glow: 'drop-shadow(0 0 6px rgba(255,0,0,0.5))' },
-  legendaire: { stars: '\u2605\u2605', color: 'text-orange-400', glow: 'drop-shadow(0 0 6px rgba(255,140,0,0.5))' },
-  rare: { stars: '\u2605', color: 'text-blue-400', glow: 'drop-shadow(0 0 5px rgba(59,130,246,0.4))' },
-};
-
-// ─── Stat Point System ───────────────────────────────────────
-
-const STAT_PER_POINT = { hp: 8, atk: 1.5, def: 1.5, spd: 1, crit: 0.8, res: 0.8 };
-const STAT_ORDER = ['hp', 'atk', 'def', 'spd', 'crit', 'res'];
-const STAT_META = {
-  hp:   { name: 'PV',   icon: '\u2764\uFE0F', color: 'text-green-400',   desc: 'Points de Vie' },
-  atk:  { name: 'ATK',  icon: '\u2694\uFE0F', color: 'text-red-400',     desc: "Puissance d'attaque" },
-  def:  { name: 'DEF',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-blue-400', desc: 'Resistance physique' },
-  spd:  { name: 'SPD',  icon: '\uD83D\uDCA8', color: 'text-emerald-400', desc: 'Vitesse' },
-  crit: { name: 'CRIT', icon: '\uD83C\uDFAF', color: 'text-yellow-400', desc: 'Chance de coup critique' },
-  res:  { name: 'RES',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-cyan-400',    desc: 'Reduction des degats' },
-};
-const POINTS_PER_LEVEL = 2;
-
-// ─── Skill Tree System ───────────────────────────────────────
-
-const TIER_NAMES_SKILL = ['Eveil', 'Maitrise', 'Transcendance'];
-const TIER_COSTS = [1, 1, 2]; // SP cost for each tier
-const SP_INTERVAL = 5; // 1 SP every 5 levels (max 6 at lv30)
-
-// ─── Chibi Battle Stats ─────────────────────────────────────
-
-const CHIBIS = {
-  kaisel: {
-    name: 'Kaisel', rarity: 'mythique', element: 'wind',
-    base: { hp: 160, atk: 42, def: 28, spd: 55, crit: 15, res: 5 },
-    growth: { hp: 10, atk: 3, def: 1.8, spd: 3.2, crit: 0.3, res: 0.15 },
-    skills: [
-      { name: 'Griffes du Vent', power: 100, cdMax: 0, desc: 'Laceration aerienne' },
-      { name: 'Plongeon Celeste', power: 180, cdMax: 2, desc: 'Attaque plongeante devastatrice' },
-      { name: 'Tempete Draconique', power: 260, cdMax: 4, desc: 'Tempete de vent ultime' },
-    ],
-  },
-  tank: {
-    name: 'Tank', rarity: 'legendaire', element: 'earth',
-    base: { hp: 250, atk: 25, def: 50, spd: 18, crit: 5, res: 15 },
-    growth: { hp: 16, atk: 1.5, def: 3.5, spd: 0.8, crit: 0.1, res: 0.5 },
-    skills: [
-      { name: 'Coup de Bouclier', power: 90, cdMax: 0, desc: 'Frappe defensive' },
-      { name: 'Forteresse', power: 0, cdMax: 3, desc: 'DEF +80% pendant 3 tours', buffDef: 80, buffDur: 3 },
-      { name: 'Rempart Absolu', power: 0, cdMax: 4, desc: 'Recupere 40% PV max', healSelf: 40 },
-    ],
-  },
-  nyarthulu: {
-    name: 'Nyarthulu', rarity: 'legendaire', element: 'shadow',
-    base: { hp: 200, atk: 38, def: 22, spd: 30, crit: 10, res: 6 },
-    growth: { hp: 12, atk: 2.8, def: 1.5, spd: 1.8, crit: 0.25, res: 0.2 },
-    skills: [
-      { name: 'Tentacule', power: 100, cdMax: 0, desc: 'Frappe de tentacule' },
-      { name: 'Maree Noire', power: 160, cdMax: 2, desc: 'Degats + DEF ennemi -30%', debuffDef: 30, debuffDur: 2 },
-      { name: 'Abysse Eternel', power: 240, cdMax: 4, desc: 'Devastation abyssale' },
-    ],
-  },
-  raven: {
-    name: 'Shadow-Raven', rarity: 'rare', element: 'wind',
-    base: { hp: 120, atk: 30, def: 18, spd: 45, crit: 12, res: 4 },
-    growth: { hp: 8, atk: 2, def: 1.2, spd: 2.8, crit: 0.3, res: 0.1 },
-    skills: [
-      { name: "Bec d'Ombre", power: 95, cdMax: 0, desc: 'Coup de bec rapide' },
-      { name: 'Vol Rasant', power: 155, cdMax: 2, desc: 'Attaque en rase-mottes' },
-      { name: 'Tempete de Plumes', power: 210, cdMax: 3, desc: 'Pluie de plumes tranchantes' },
-    ],
-  },
-  lil_kaisel: {
-    name: "Lil' Kaisel", rarity: 'rare', element: 'wind',
-    base: { hp: 110, atk: 25, def: 15, spd: 38, crit: 8, res: 5 },
-    growth: { hp: 7, atk: 1.8, def: 1, spd: 2.5, crit: 0.2, res: 0.15 },
-    skills: [
-      { name: 'Mini Griffes', power: 90, cdMax: 0, desc: 'Petites griffes rapides' },
-      { name: 'Petit Plongeon', power: 140, cdMax: 2, desc: 'Mini plongeon aerien' },
-      { name: 'Cri Percant', power: 0, cdMax: 3, desc: 'ATK +60% pendant 3 tours', buffAtk: 60, buffDur: 3 },
-    ],
-  },
-  pingsu: {
-    name: 'Pingsu', rarity: 'rare', element: 'fire',
-    base: { hp: 140, atk: 28, def: 20, spd: 22, crit: 7, res: 8 },
-    growth: { hp: 9, atk: 2, def: 1.5, spd: 1.2, crit: 0.15, res: 0.25 },
-    skills: [
-      { name: 'Marteau Enflamme', power: 95, cdMax: 0, desc: "Frappe de forge ardente" },
-      { name: 'Forge Ardente', power: 0, cdMax: 3, desc: 'ATK +50% pendant 3 tours', buffAtk: 50, buffDur: 3 },
-      { name: 'Eruption', power: 220, cdMax: 4, desc: 'Explosion de lave' },
-    ],
-  },
-  okami: {
-    name: 'Okami', rarity: 'mythique', element: 'shadow',
-    base: { hp: 140, atk: 50, def: 20, spd: 52, crit: 18, res: 3 },
-    growth: { hp: 8, atk: 3.5, def: 1.2, spd: 3, crit: 0.4, res: 0.1 },
-    skills: [
-      { name: "Crocs d'Ombre", power: 110, cdMax: 0, desc: 'Morsure des tenebres' },
-      { name: 'Charge Lupine', power: 190, cdMax: 2, desc: 'Charge sauvage' },
-      { name: 'Hurlement du Monarque', power: 280, cdMax: 5, desc: 'Hurlement devastateur' },
-    ],
-  },
-  alecto: {
-    name: 'Alecto', rarity: 'mythique', element: 'fire',
-    base: { hp: 180, atk: 44, def: 25, spd: 40, crit: 14, res: 7 },
-    growth: { hp: 11, atk: 3, def: 1.8, spd: 2.5, crit: 0.3, res: 0.2 },
-    skills: [
-      { name: "Flamme d'Ombre", power: 100, cdMax: 0, desc: 'Feu des tenebres' },
-      { name: 'Metamorphose', power: 0, cdMax: 3, desc: 'ATK +40% pendant 3 tours', buffAtk: 40, buffDur: 3 },
-      { name: 'Phoenix Noir', power: 250, cdMax: 4, desc: 'Explosion phenix + soin 20%', healSelf: 20 },
-    ],
-  },
-};
+// Unified lookup helpers — works for both shadow chibis and hunters
+const getChibiData = (id) => CHIBIS[id] || HUNTERS[id] || null;
+const getChibiSprite = (id) => SPRITES[id] || (HUNTERS[id] && HUNTERS[id].sprite) || '';
 
 // ─── Stages ──────────────────────────────────────────────────
 
@@ -228,147 +115,22 @@ const TIER_NAMES = { 1: 'Donjon des Ombres', 2: 'Ruines Ancestrales', 3: 'Les Ab
 const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 
 // ═══════════════════════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════════════════════
-
-const MAX_LEVEL = 60;
-
-const statsAt = (base, growth, level, allocated = {}, tb = {}) => {
-  const raw = {
-    hp: base.hp + growth.hp * (level - 1) + (allocated.hp || 0) * STAT_PER_POINT.hp,
-    atk: base.atk + growth.atk * (level - 1) + (allocated.atk || 0) * STAT_PER_POINT.atk,
-    def: base.def + growth.def * (level - 1) + (allocated.def || 0) * STAT_PER_POINT.def,
-    spd: base.spd + growth.spd * (level - 1) + (allocated.spd || 0) * STAT_PER_POINT.spd,
-    crit: base.crit + growth.crit * (level - 1) + (allocated.crit || 0) * STAT_PER_POINT.crit,
-    res: base.res + growth.res * (level - 1) + (allocated.res || 0) * STAT_PER_POINT.res,
-  };
-  return {
-    hp: Math.floor(raw.hp * (1 + (tb.hpPercent || 0) / 100)),
-    atk: Math.floor(raw.atk * (1 + (tb.atkPercent || 0) / 100)),
-    def: Math.floor(raw.def * (1 + (tb.defPercent || 0) / 100)),
-    spd: Math.floor(raw.spd * (1 + (tb.spdPercent || 0) / 100)),
-    crit: +(raw.crit + (tb.critRate || 0)).toFixed(1),
-    res: +(raw.res + (tb.resFlat || 0)).toFixed(1),
-  };
-};
-
-const xpForLevel = (level) => level <= 30 ? level * 20 : 600 + (level - 30) * 35;
-
-const getElementMult = (atkElem, defElem) => {
-  if (ELEMENTS[atkElem]?.beats === defElem) return 1.3;
-  if (ELEMENTS[defElem]?.beats === atkElem) return 0.7;
-  return 1.0;
-};
-
-const getEffStat = (base, buffs, stat) => {
-  const mult = buffs.filter(b => b.stat === stat).reduce((s, b) => s + b.value, 0);
-  return Math.max(1, Math.floor(base * (1 + mult)));
-};
-
-const applySkillUpgrades = (skill, upgradeLevel) => {
-  const s = { ...skill };
-  if (upgradeLevel >= 1) {
-    // Eveil: +30% power / +25% effects
-    if (s.power > 0) s.power = Math.floor(s.power * 1.3);
-    if (s.buffAtk) s.buffAtk = Math.floor(s.buffAtk * 1.25);
-    if (s.buffDef) s.buffDef = Math.floor(s.buffDef * 1.25);
-    if (s.healSelf) s.healSelf = Math.floor(s.healSelf * 1.25);
-    if (s.debuffDef) s.debuffDef = Math.floor(s.debuffDef * 1.2);
-  }
-  if (upgradeLevel >= 2) {
-    // Maitrise: cooldown -1
-    s.cdMax = Math.max(0, s.cdMax - 1);
-  }
-  if (upgradeLevel >= 3) {
-    // Transcendance: +25% power / +30% effects
-    if (s.power > 0) s.power = Math.floor(s.power * 1.25);
-    if (s.buffAtk) s.buffAtk = Math.floor(s.buffAtk * 1.3);
-    if (s.buffDef) s.buffDef = Math.floor(s.buffDef * 1.3);
-    if (s.healSelf) s.healSelf = Math.floor(s.healSelf * 1.3);
-    if (s.debuffDef) s.debuffDef = Math.floor(s.debuffDef * 1.3);
-  }
-  return s;
-};
-
-const getUpgradeDesc = (skill, tierIdx) => {
-  if (tierIdx === 1) return 'Cooldown -1';
-  if (skill.power > 0) return tierIdx === 0 ? 'DMG +30%' : 'DMG +25%';
-  if (skill.healSelf) return tierIdx === 0 ? 'Soin +25%' : 'Soin +30%';
-  if (skill.buffAtk || skill.buffDef) return tierIdx === 0 ? 'Buff +25%' : 'Buff +30%';
-  if (skill.debuffDef) return tierIdx === 0 ? 'Debuff +20%' : 'Debuff +30%';
-  return tierIdx === 0 ? 'Effet +25%' : 'Effet +30%';
-};
-
-const computeAttack = (attacker, skill, defender, tb = {}) => {
-  const res = { damage: 0, isCrit: false, healed: 0, buff: null, debuff: null, text: '' };
-  let effAtk = getEffStat(attacker.atk, attacker.buffs, 'atk');
-  const effDef = getEffStat(defender.def, defender.buffs, 'def');
-
-  // Berserk: ATK +40% when HP < 30%
-  if (tb.hasBerserk && attacker.hp < attacker.maxHp * 0.3) {
-    effAtk = Math.floor(effAtk * 1.4);
-  }
-
-  if (skill.power > 0) {
-    const raw = effAtk * (skill.power / 100);
-    let elemMult = getElementMult(attacker.element, defender.element);
-    // Transcendance: elemental advantage 1.3x → 1.6x
-    if (tb.hasTranscendance && elemMult > 1) elemMult = 1.6;
-    // Elemental advantage bonus (stacks)
-    if (elemMult > 1 && tb.elementalAdvantageBonus) elemMult += tb.elementalAdvantageBonus / 100;
-    const defFactor = 100 / (100 + Math.max(0, effDef));
-    // Crit
-    const critChance = Math.min(80, attacker.crit || 0);
-    res.isCrit = Math.random() * 100 < critChance;
-    const critMult = res.isCrit ? 1.5 + (tb.critDamage || 0) / 100 : 1;
-    // RES
-    const resFactor = Math.max(0.3, 1 - Math.min(70, defender.res || 0) / 100);
-    // Damage type multipliers
-    const physMult = 1 + (tb.physicalDamage || 0) / 100;
-    const elemDmgMult = 1 + (tb.elementalDamage || 0) / 100;
-    // Boss damage
-    const bossMult = defender.isBoss ? 1 + (tb.bossDamage || 0) / 100 : 1;
-    const variance = 0.9 + Math.random() * 0.2;
-    res.damage = Math.max(1, Math.floor(raw * elemMult * defFactor * resFactor * critMult * physMult * elemDmgMult * bossMult * variance));
-  }
-  if (skill.healSelf) res.healed = Math.floor(attacker.maxHp * skill.healSelf / 100);
-  if (skill.buffAtk) res.buff = { stat: 'atk', value: skill.buffAtk / 100, turns: skill.buffDur || 3 };
-  if (skill.buffDef) res.buff = { stat: 'def', value: skill.buffDef / 100, turns: skill.buffDur || 3 };
-  if (skill.debuffDef) res.debuff = { stat: 'def', value: -(skill.debuffDef / 100), turns: skill.debuffDur || 2 };
-
-  const parts = [];
-  if (res.isCrit) parts.push('CRITIQUE !');
-  parts.push(`${attacker.name} utilise ${skill.name} !`);
-  if (res.damage > 0) parts.push(`-${res.damage} PV`);
-  if (res.healed > 0) parts.push(`+${res.healed} soins`);
-  if (res.buff) parts.push(`${res.buff.stat.toUpperCase()} +${Math.round(res.buff.value * 100)}%`);
-  if (res.debuff) parts.push(`DEF ennemi ${Math.round(res.debuff.value * 100)}%`);
-  res.text = parts.join(' ');
-  return res;
-};
-
-const aiPickSkill = (entity) => {
-  const avail = entity.skills.filter(s => s.cd === 0);
-  if (entity.hp < entity.maxHp * 0.35) {
-    const heal = avail.find(s => s.healSelf);
-    if (heal) return heal;
-  }
-  if (entity.buffs.length === 0) {
-    const buff = avail.find(s => s.buffAtk || s.buffDef);
-    if (buff && Math.random() < 0.5) return buff;
-  }
-  const attacks = avail.filter(s => s.power > 0).sort((a, b) => b.power - a.power);
-  if (attacks.length > 0 && Math.random() < 0.7) return attacks[0];
-  return avail[Math.floor(Math.random() * avail.length)] || entity.skills[0];
-};
-
-// ═══════════════════════════════════════════════════════════════
 // PERSISTENCE
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, respecCount: {}, cooldowns: {}, stagesCleared: [], stats: { battles: 0, wins: 0 } });
-const loadData = () => { try { return { ...defaultData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) }; } catch { return defaultData(); } };
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, respecCount: {}, cooldowns: {}, stagesCleared: [], stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponInventory: [], hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 } });
+const loadData = () => {
+  try {
+    const d = { ...defaultData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) };
+    if (!d.artifacts) d.artifacts = {};
+    if (!d.artifactInventory) d.artifactInventory = [];
+    if (!d.weapons) d.weapons = {};
+    if (!d.weaponInventory) d.weaponInventory = [];
+    if (!d.hammers) d.hammers = { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 };
+    return d;
+  } catch { return defaultData(); }
+};
 const saveData = (d) => localStorage.setItem(SAVE_KEY, JSON.stringify(d));
 
 // ═══════════════════════════════════════════════════════════════
@@ -387,6 +149,8 @@ export default function ShadowColosseum() {
   const [manageTarget, setManageTarget] = useState(null); // chibi ID for stats/skilltree views
   const [activeTree, setActiveTree] = useState('fury'); // talent tree tab
   const [chibiRage, setChibiRage] = useState(null); // { id, level, text, anim }
+  const [shopEnhTarget, setShopEnhTarget] = useState(null); // index in artifactInventory
+  const [shopEnhEquipKey, setShopEnhEquipKey] = useState(null); // "chibiId|slotId"
   const clickCountRef = useRef({});
   const clickTimerRef = useRef({});
   const phaseRef = useRef('idle');
@@ -407,6 +171,10 @@ export default function ShadowColosseum() {
   // Collection from mascot system
   const collection = (() => { try { return JSON.parse(localStorage.getItem('beru_chibi_collection') || '{}'); } catch { return {}; } })();
   const ownedIds = Object.keys(collection).filter(k => collection[k] > 0 && CHIBIS[k]);
+
+  // Hunter chibis unlocked via raid
+  const raidData = loadRaidData();
+  const ownedHunterIds = (raidData.hunterCollection || []).map(e => typeof e === 'string' ? e : e.id).filter(id => HUNTERS[id]);
 
   const getChibiLevel = (id) => data.chibiLevels[id] || { level: 1, xp: 0 };
   const isCooldown = (id) => data.cooldowns[id] && Date.now() < data.cooldowns[id];
@@ -499,6 +267,14 @@ export default function ShadowColosseum() {
 
   const getChibiTalentBonuses = (id) => computeTalentBonuses(data.talentTree[id]);
 
+  // Equipment bonus computation for a chibi/hunter
+  const getChibiEquipBonuses = (id) => {
+    const artBonuses = computeArtifactBonuses(data.artifacts[id]);
+    const weapBonuses = computeWeaponBonuses(data.weapons[id]);
+    return mergeEquipBonuses(artBonuses, weapBonuses);
+  };
+  const getChibiEveilStars = (id) => HUNTERS[id] ? getHunterStars(raidData, id) : 0;
+
   const canRankUpNode = (id, treeId, nodeId) => {
     if (getAvailTalentPts(id) <= 0) return false;
     const tree = TALENT_TREES[treeId];
@@ -548,12 +324,15 @@ export default function ShadowColosseum() {
 
   const startBattle = () => {
     if (!selChibi || selStage === null || isCooldown(selChibi)) return;
-    const chibi = CHIBIS[selChibi];
+    const chibi = getChibiData(selChibi);
+    if (!chibi) return;
     const stage = STAGES[selStage];
     const { level } = getChibiLevel(selChibi);
     const alloc = data.statPoints[selChibi] || {};
     const tb = getChibiTalentBonuses(selChibi);
-    const s = statsAt(chibi.base, chibi.growth, level, alloc, tb);
+    const eqB = getChibiEquipBonuses(selChibi);
+    const evStars = getChibiEveilStars(selChibi);
+    const s = statsAtFull(chibi.base, chibi.growth, level, alloc, tb, eqB, evStars);
     const tree = data.skillTree[selChibi] || {};
 
     // Apply cooldown reduction from talents
@@ -577,7 +356,7 @@ export default function ShadowColosseum() {
         skills: stage.skills.map(sk => ({ ...sk, cd: 0 })),
         buffs: [],
       },
-      talentBonuses: tb,
+      talentBonuses: (() => { const m = { ...tb }; for (const [k, v] of Object.entries(eqB)) { if (v) m[k] = (m[k] || 0) + v; } return m; })(),
       immortelUsed: false,
       turn: 1, log: [],
     });
@@ -697,13 +476,38 @@ export default function ShadowColosseum() {
     if (newLevel >= MAX_LEVEL) newXp = 0;
 
     shadowCoinManager.addCoins(stage.coins, 'colosseum_victory');
-    setData(prev => ({
-      ...prev,
-      chibiLevels: { ...prev.chibiLevels, [selChibi]: { level: newLevel, xp: newXp } },
-      stagesCleared: prev.stagesCleared.includes(stage.id) ? prev.stagesCleared : [...prev.stagesCleared, stage.id],
-      stats: { battles: prev.stats.battles + 1, wins: prev.stats.wins + 1 },
-    }));
-    setResult({ won: true, xp: stage.xp, coins: stage.coins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP });
+
+    // Hammer drop
+    const hammerDrop = rollHammerDrop(stage.tier, !!stage.isBoss);
+
+    // Hunter drop chance
+    let hunterDrop = null;
+    const dropChance = stage.isBoss ? STAGE_HUNTER_DROP.dropChance.boss : STAGE_HUNTER_DROP.dropChance.normal;
+    if (Math.random() < dropChance) {
+      const tierPool = STAGE_HUNTER_DROP.tierPool[stage.tier] || ['rare'];
+      const dropRarity = tierPool[Math.floor(Math.random() * tierPool.length)];
+      const hunterCandidates = Object.values(HUNTERS).filter(h => h.rarity === dropRarity);
+      if (hunterCandidates.length > 0) {
+        const pick = hunterCandidates[Math.floor(Math.random() * hunterCandidates.length)];
+        const rd = loadRaidData();
+        const res = addHunterOrDuplicate(rd, pick.id);
+        saveRaidData(rd);
+        hunterDrop = { id: pick.id, name: pick.name, rarity: pick.rarity, isDuplicate: res.isDuplicate, newStars: res.newStars };
+      }
+    }
+
+    setData(prev => {
+      const newHammers = { ...(prev.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }) };
+      if (hammerDrop) newHammers[hammerDrop] = (newHammers[hammerDrop] || 0) + 1;
+      return {
+        ...prev,
+        chibiLevels: { ...prev.chibiLevels, [selChibi]: { level: newLevel, xp: newXp } },
+        stagesCleared: prev.stagesCleared.includes(stage.id) ? prev.stagesCleared : [...prev.stagesCleared, stage.id],
+        stats: { battles: prev.stats.battles + 1, wins: prev.stats.wins + 1 },
+        hammers: newHammers,
+      };
+    });
+    setResult({ won: true, xp: stage.xp, coins: stage.coins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrop, hammerDrop });
     setView('result');
   }, [selChibi, selStage, data]);
 
@@ -751,14 +555,7 @@ export default function ShadowColosseum() {
 
   return (
     <div className="min-h-screen bg-[#0a0a1a] text-white pb-20">
-      <style>{`
-        @keyframes hitShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
-        @keyframes dmgFloat { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-40px) scale(1.4)} }
-        @keyframes victoryPulse { 0%,100%{text-shadow:0 0 10px gold} 50%{text-shadow:0 0 30px gold,0 0 60px orange} }
-        @keyframes defeatPulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
-        @keyframes nodePulse { 0%,100%{box-shadow:0 0 4px rgba(251,191,36,0.3)} 50%{box-shadow:0 0 12px rgba(251,191,36,0.6)} }
-        @keyframes statGlow { 0%,100%{opacity:0.5} 50%{opacity:1} }
-      `}</style>
+      <BattleStyles />
 
       {/* ═══ HUB VIEW ═══ */}
       {view === 'hub' && (
@@ -776,6 +573,29 @@ export default function ShadowColosseum() {
             </div>
           </div>
 
+          {/* Raid Button */}
+          <Link to="/shadow-colosseum/raid"
+            className="block mb-4 p-3 rounded-xl border border-red-500/30 bg-gradient-to-r from-red-900/30 to-orange-900/30 hover:from-red-900/50 hover:to-orange-900/50 transition-all text-center group">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-xl">{'\uD83D\uDC1C'}</span>
+              <span className="font-bold text-red-400 group-hover:text-red-300">MODE RAID</span>
+              <span className="text-xs text-gray-400">— Reine des Fourmis</span>
+            </div>
+            <p className="text-[10px] text-gray-500 mt-0.5">Jusqu'a 6 chibis vs Raid Boss ! Controle Sung Jinwoo au clavier !</p>
+          </Link>
+
+          {/* Shop Button */}
+          <button
+            onClick={() => setView('shop')}
+            className="block w-full mb-4 p-3 rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-900/20 to-yellow-900/20 hover:from-amber-900/40 hover:to-yellow-900/40 transition-all text-center group">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-xl">{'\uD83D\uDED2'}</span>
+              <span className="font-bold text-amber-400 group-hover:text-amber-300">BOUTIQUE</span>
+              <span className="text-xs text-gray-400">— Forge & Armurerie</span>
+            </div>
+            <p className="text-[10px] text-gray-500 mt-0.5">Forge des artefacts, achete des armes ! {'\uD83D\uDCB0'} {shadowCoinManager.getBalance()} coins</p>
+          </button>
+
           {/* No chibis warning */}
           {ownedIds.length === 0 && (
             <div className="text-center py-8 text-gray-500 text-sm">
@@ -791,11 +611,12 @@ export default function ShadowColosseum() {
               <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Tes Chibis</div>
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {ownedIds.map(id => {
-                  const c = CHIBIS[id];
+                  const c = getChibiData(id);
                   const { level, xp } = getChibiLevel(id);
                   const alloc = data.statPoints[id] || {};
                   const tb = getChibiTalentBonuses(id);
-                  const s = statsAt(c.base, c.growth, level, alloc, tb);
+                  const eqB = getChibiEquipBonuses(id);
+                  const s = statsAtFull(c.base, c.growth, level, alloc, tb, eqB, 0);
                   const onCd = isCooldown(id);
                   const selected = selChibi === id;
                   const availPts = getAvailStatPts(id);
@@ -814,7 +635,7 @@ export default function ShadowColosseum() {
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <img src={SPRITES[id]} alt={c.name} className="w-10 h-10 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
+                        <img src={getChibiSprite(id)} alt={c.name} className="w-10 h-10 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-bold truncate">{c.name}</div>
                           <div className="flex items-center gap-1 text-[9px]">
@@ -874,19 +695,23 @@ export default function ShadowColosseum() {
                   >
                     <div className="p-3 rounded-xl border border-purple-500/30 bg-purple-500/5">
                       <div className="flex items-center gap-3 mb-3">
-                        <img src={SPRITES[selChibi]} alt="" className="w-12 h-12 object-contain" style={{ filter: RARITY[CHIBIS[selChibi].rarity].glow }} />
+                        <img src={getChibiSprite(selChibi)} alt="" className="w-12 h-12 object-contain" style={{ filter: RARITY[getChibiData(selChibi).rarity].glow }} />
                         <div className="flex-1">
-                          <div className="text-sm font-bold">{CHIBIS[selChibi].name}</div>
+                          <div className="text-sm font-bold">{getChibiData(selChibi).name}</div>
                           <div className="text-[10px] text-gray-400">
-                            Lv{getChibiLevel(selChibi).level} {RARITY[CHIBIS[selChibi].rarity].stars} {ELEMENTS[CHIBIS[selChibi].element].icon}
+                            Lv{getChibiLevel(selChibi).level} {RARITY[getChibiData(selChibi).rarity].stars} {ELEMENTS[getChibiData(selChibi).element].icon}
+                            {HUNTERS[selChibi] && <span className="ml-1 text-red-400">[Hunter]</span>}
                           </div>
                         </div>
                       </div>
                       {/* 6 Stats */}
                       {(() => {
+                        const selData = getChibiData(selChibi);
                         const alloc = data.statPoints[selChibi] || {};
                         const tbDetail = getChibiTalentBonuses(selChibi);
-                        const s = statsAt(CHIBIS[selChibi].base, CHIBIS[selChibi].growth, getChibiLevel(selChibi).level, alloc, tbDetail);
+                        const eqBDetail = getChibiEquipBonuses(selChibi);
+                        const evStars = getChibiEveilStars(selChibi);
+                        const s = statsAtFull(selData.base, selData.growth, getChibiLevel(selChibi).level, alloc, tbDetail, eqBDetail, evStars);
                         return (
                           <div className="grid grid-cols-3 gap-1.5 mb-3">
                             {STAT_ORDER.map(stat => {
@@ -925,11 +750,102 @@ export default function ShadowColosseum() {
                             {'\u2728'} Talents {getAvailTalentPts(selChibi) > 0 && <span className="ml-1 px-1 rounded bg-green-500/30 text-[9px]">{getAvailTalentPts(selChibi)}</span>}
                           </button>
                         )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setManageTarget(selChibi); setView('equipment'); }}
+                          className="flex-1 py-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-400 text-xs font-bold hover:bg-cyan-500/20 transition-colors"
+                        >
+                          {'\uD83D\uDEE1\uFE0F'} Equip
+                        </button>
                       </div>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
+            </>
+          )}
+
+          {/* Hunter Chibis */}
+          {ownedHunterIds.length > 0 && (
+            <>
+              <div className="text-xs text-red-400 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <span>{'\u2694\uFE0F'}</span> Tes Hunters <span className="text-[9px] text-gray-500 font-normal ml-1">({ownedHunterIds.length})</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                {ownedHunterIds.map(id => {
+                  const c = getChibiData(id);
+                  if (!c) return null;
+                  const { level, xp } = getChibiLevel(id);
+                  const alloc = data.statPoints[id] || {};
+                  const tb = getChibiTalentBonuses(id);
+                  const eqB = getChibiEquipBonuses(id);
+                  const evStars = getChibiEveilStars(id);
+                  const s = statsAtFull(c.base, c.growth, level, alloc, tb, eqB, evStars);
+                  const selected = selChibi === id;
+                  const availPts = getAvailStatPts(id);
+                  const availSP = getAvailSP(id);
+                  const availTP = getAvailTalentPts(id);
+                  const hasUnspent = availPts > 0 || availSP > 0 || availTP > 0;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setSelChibi(selected ? null : id)}
+                      className={`relative p-2 rounded-xl border transition-all text-left ${
+                        selected ? 'border-red-400 bg-red-500/15 ring-1 ring-red-400/50' :
+                        'border-gray-700/40 bg-gray-800/30 hover:border-red-500/40'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <img src={getChibiSprite(id)} alt={c.name} className="w-10 h-10 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-bold truncate">{c.name}</div>
+                          <div className="flex items-center gap-1 text-[9px]">
+                            <span className={RARITY[c.rarity].color}>{RARITY[c.rarity].stars}</span>
+                            <span className={ELEMENTS[c.element].color}>{ELEMENTS[c.element].icon}</span>
+                            <span className="text-gray-400">Lv{level}</span>
+                            <span className="text-red-400/60 text-[8px]">{c.class}</span>
+                          </div>
+                          {evStars > 0 && (
+                            <div className="text-[9px] mt-0.5" style={evStars >= MAX_EVEIL_STARS ? { animation: 'statGlow 2s ease-in-out infinite' } : {}}>
+                              {Array.from({ length: MAX_EVEIL_STARS }).map((_, i) => (
+                                <span key={i} className={i < evStars ? 'text-yellow-400' : 'text-gray-600'}>{'\u2605'}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-0.5 text-[8px] text-gray-400">
+                        <span>PV:{s.hp}</span><span>ATK:{s.atk}</span><span>DEF:{s.def}</span>
+                        <span>SPD:{s.spd}</span><span>CRT:{s.crit}%</span><span>RES:{s.res}%</span>
+                      </div>
+                      {level < MAX_LEVEL && (
+                        <div className="mt-1 w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-red-500/60 rounded-full" style={{ width: `${(xp / xpForLevel(level)) * 100}%` }} />
+                        </div>
+                      )}
+                      {hasUnspent && (
+                        <div className="absolute -top-1 -right-1 flex gap-0.5">
+                          {availPts > 0 && (
+                            <span className="px-1 py-0.5 rounded text-[7px] font-bold bg-amber-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                              {availPts} PTS
+                            </span>
+                          )}
+                          {availSP > 0 && (
+                            <span className="px-1 py-0.5 rounded text-[7px] font-bold bg-purple-500/80 text-white" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                              {availSP} SP
+                            </span>
+                          )}
+                          {availTP > 0 && (
+                            <span className="px-1 py-0.5 rounded text-[7px] font-bold bg-green-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                              {availTP} TP
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="text-[9px] text-gray-600 text-center mb-3 italic">Les hunters gagnent de l'XP et montent en niveau dans les Raids.</div>
             </>
           )}
 
@@ -945,7 +861,7 @@ export default function ShadowColosseum() {
                   const unlocked = isStageUnlocked(globalIdx);
                   const cleared = data.stagesCleared.includes(stage.id);
                   const selected = selStage === globalIdx;
-                  const elemAdv = selChibi ? getElementMult(CHIBIS[selChibi].element, stage.element) : 1;
+                  const elemAdv = selChibi && getChibiData(selChibi) ? getElementMult(getChibiData(selChibi).element, stage.element) : 1;
                   return (
                     <button
                       key={stage.id}
@@ -985,8 +901,8 @@ export default function ShadowColosseum() {
             </div>
           ))}
 
-          {/* Fight Button */}
-          {selChibi && selStage !== null && (
+          {/* Fight Button — shadow chibis only (hunters fight in Raids) */}
+          {selChibi && selStage !== null && !HUNTERS[selChibi] && (
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed bottom-4 left-0 right-0 flex justify-center z-50">
               <button
                 onClick={startBattle}
@@ -1002,7 +918,8 @@ export default function ShadowColosseum() {
       {/* ═══ STATS VIEW ═══ */}
       {view === 'stats' && manageTarget && (() => {
         const id = manageTarget;
-        const c = CHIBIS[id];
+        const c = getChibiData(id);
+        if (!c) return null;
         const { level } = getChibiLevel(id);
         const alloc = data.statPoints[id] || {};
         const available = getAvailStatPts(id);
@@ -1015,10 +932,11 @@ export default function ShadowColosseum() {
 
             {/* Header */}
             <div className="text-center mb-5">
-              <img src={SPRITES[id]} alt={c.name} className="w-16 h-16 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
+              <img src={getChibiSprite(id)} alt={c.name} className="w-16 h-16 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
               <div className="text-[10px] text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon} {ELEMENTS[c.element].name}
+                {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter]</span>}
               </div>
             </div>
 
@@ -1109,7 +1027,8 @@ export default function ShadowColosseum() {
       {/* ═══ SKILL TREE VIEW ═══ */}
       {view === 'skilltree' && manageTarget && (() => {
         const id = manageTarget;
-        const c = CHIBIS[id];
+        const c = getChibiData(id);
+        if (!c) return null;
         const { level } = getChibiLevel(id);
         const tree = data.skillTree[id] || {};
         const availSP = getAvailSP(id);
@@ -1122,10 +1041,11 @@ export default function ShadowColosseum() {
 
             {/* Header */}
             <div className="text-center mb-5">
-              <img src={SPRITES[id]} alt={c.name} className="w-16 h-16 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
+              <img src={getChibiSprite(id)} alt={c.name} className="w-16 h-16 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
               <div className="text-[10px] text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon} {ELEMENTS[c.element].name}
+                {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter]</span>}
               </div>
             </div>
 
@@ -1227,7 +1147,8 @@ export default function ShadowColosseum() {
       {/* ═══ TALENTS VIEW ═══ */}
       {view === 'talents' && manageTarget && (() => {
         const id = manageTarget;
-        const c = CHIBIS[id];
+        const c = getChibiData(id);
+        if (!c) return null;
         const { level } = getChibiLevel(id);
         const totalTP = getTotalTalentPts(level);
         const spentTP = getSpentTalentPts(id);
@@ -1244,7 +1165,7 @@ export default function ShadowColosseum() {
 
             {/* Header */}
             <div className="text-center mb-4">
-              <img src={SPRITES[id]} alt={c.name} className="w-14 h-14 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
+              <img src={getChibiSprite(id)} alt={c.name} className="w-14 h-14 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
               <div className="text-[10px] text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon}
@@ -1438,140 +1359,561 @@ export default function ShadowColosseum() {
         );
       })()}
 
+      {/* ═══ EQUIPMENT VIEW ═══ */}
+      {view === 'equipment' && manageTarget && (() => {
+        const id = manageTarget;
+        const c = getChibiData(id);
+        if (!c) return null;
+        const { level } = getChibiLevel(id);
+        const equipped = data.artifacts[id] || {};
+        const weaponId = data.weapons[id] || null;
+        const weapon = weaponId ? WEAPONS[weaponId] : null;
+        const activeSets = getActiveSetBonuses(equipped);
+        const evStars = getChibiEveilStars(id);
+
+        const equipArtifact = (art) => {
+          setData(prev => {
+            const prevEquipped = { ...(prev.artifacts[id] || {}) };
+            const prevInv = [...prev.artifactInventory];
+            // Unequip current in same slot → back to inventory
+            if (prevEquipped[art.slot]) prevInv.push(prevEquipped[art.slot]);
+            // Remove from inventory
+            const idx = prevInv.findIndex(a => a.uid === art.uid);
+            if (idx !== -1) prevInv.splice(idx, 1);
+            prevEquipped[art.slot] = art;
+            return { ...prev, artifacts: { ...prev.artifacts, [id]: prevEquipped }, artifactInventory: prevInv };
+          });
+        };
+
+        const unequipArtifact = (slot) => {
+          setData(prev => {
+            const prevEquipped = { ...(prev.artifacts[id] || {}) };
+            if (!prevEquipped[slot]) return prev;
+            const prevInv = [...prev.artifactInventory, prevEquipped[slot]];
+            delete prevEquipped[slot];
+            return { ...prev, artifacts: { ...prev.artifacts, [id]: prevEquipped }, artifactInventory: prevInv };
+          });
+        };
+
+        const equipWeapon = (wId) => {
+          setData(prev => {
+            const prevWeapon = prev.weapons[id];
+            const prevInv = [...prev.weaponInventory];
+            if (prevWeapon) prevInv.push(prevWeapon);
+            const idx = prevInv.indexOf(wId);
+            if (idx !== -1) prevInv.splice(idx, 1);
+            return { ...prev, weapons: { ...prev.weapons, [id]: wId }, weaponInventory: prevInv };
+          });
+        };
+
+        const unequipWeapon = () => {
+          setData(prev => {
+            const cur = prev.weapons[id];
+            if (!cur) return prev;
+            return { ...prev, weapons: { ...prev.weapons, [id]: null }, weaponInventory: [...prev.weaponInventory, cur] };
+          });
+        };
+
+        return (
+          <div className="max-w-lg mx-auto px-3 pt-4">
+            <button onClick={() => setView('hub')} className="text-gray-500 text-xs hover:text-white transition-colors mb-3 block">&larr; Retour</button>
+
+            {/* Header */}
+            <div className="text-center mb-4">
+              <img src={getChibiSprite(id)} alt={c.name} className="w-14 h-14 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
+              <h2 className="text-lg font-black mt-2">{c.name}</h2>
+              <div className="text-[10px] text-gray-400">
+                Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon}
+                {evStars > 0 && <span className="ml-1 text-yellow-400">{Array.from({ length: evStars }).map(() => '\u2605').join('')}</span>}
+              </div>
+            </div>
+
+            {/* Weapon Slot */}
+            <div className="mb-4">
+              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1.5">{'\u2694\uFE0F'} Arme</div>
+              {weapon ? (
+                <div className="p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{weapon.icon}</span>
+                    <div className="flex-1">
+                      <div className="text-xs font-bold text-amber-300">{weapon.name}</div>
+                      <div className="text-[9px] text-gray-400">
+                        ATK +{weapon.atk} | {MAIN_STAT_VALUES[weapon.bonusStat]?.name || weapon.bonusStat} +{weapon.bonusValue}
+                      </div>
+                      <div className="text-[8px] text-gray-500">{weapon.desc}</div>
+                    </div>
+                    <button onClick={unequipWeapon} className="text-[9px] px-2 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30">Retirer</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-2.5 rounded-xl border border-gray-700/30 bg-gray-800/20 text-center text-[10px] text-gray-500">
+                  Aucune arme equipee
+                </div>
+              )}
+              {/* Available weapons from inventory */}
+              {data.weaponInventory.filter(wId => wId !== weaponId).length > 0 && (
+                <div className="mt-2 space-y-1">
+                  <div className="text-[9px] text-gray-500">Armes disponibles :</div>
+                  {data.weaponInventory.filter(wId => wId !== weaponId).map((wId, i) => {
+                    const w = WEAPONS[wId];
+                    if (!w) return null;
+                    return (
+                      <button key={`${wId}_${i}`} onClick={() => equipWeapon(wId)}
+                        className="w-full flex items-center gap-2 p-1.5 rounded-lg border border-gray-700/30 bg-gray-800/20 hover:border-amber-500/40 transition-all text-left">
+                        <span>{w.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[10px] font-bold text-gray-300 truncate">{w.name}</div>
+                          <div className="text-[8px] text-gray-500">ATK +{w.atk} | {MAIN_STAT_VALUES[w.bonusStat]?.name || w.bonusStat} +{w.bonusValue}</div>
+                        </div>
+                        <span className="text-[8px] text-cyan-400">Equiper</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Artifact Slots */}
+            <div className="mb-4">
+              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1.5">{'\uD83D\uDEE1\uFE0F'} Artefacts</div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {SLOT_ORDER.map(slotId => {
+                  const slotDef = ARTIFACT_SLOTS[slotId];
+                  const art = equipped[slotId];
+                  const setDef = art ? ARTIFACT_SETS[art.set] : null;
+                  const mainDef = art ? MAIN_STAT_VALUES[art.mainStat] : null;
+                  return (
+                    <div key={slotId} className="text-center">
+                      {art ? (
+                        <button onClick={() => unequipArtifact(slotId)}
+                          className={`w-full p-2 rounded-lg border ${setDef?.border || 'border-gray-600/30'} ${setDef?.bg || 'bg-gray-800/20'} hover:brightness-125 transition-all relative`}>
+                          <div className="flex items-center justify-center gap-0.5">
+                            <span className="text-sm">{slotDef.icon}</span>
+                            <span className={`text-[7px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
+                          </div>
+                          <div className={`text-[8px] font-bold mt-0.5 ${setDef?.color || 'text-gray-300'}`}>{mainDef?.name || '?'}</div>
+                          <div className="text-[10px] font-black text-white">{art.mainValue}</div>
+                          <div className="mt-0.5 space-y-px">
+                            {art.subs.slice(0, 2).map((sub, si) => {
+                              const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
+                              return <div key={si} className="text-[6px] text-gray-400 truncate">{subDef?.name || sub.id} +{sub.value}</div>;
+                            })}
+                            {art.subs.length > 2 && <div className="text-[6px] text-gray-500">+{art.subs.length - 2} subs</div>}
+                          </div>
+                          <div className={`absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full ${setDef?.border?.replace('border-', 'bg-').replace('/30', '') || 'bg-gray-500'}`} />
+                        </button>
+                      ) : (
+                        <div className="w-full p-2 rounded-lg border border-gray-700/20 bg-gray-800/10">
+                          <div className="text-lg opacity-30">{slotDef.icon}</div>
+                          <div className="text-[7px] text-gray-600">{slotDef.name}</div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Active Set Bonuses */}
+            {activeSets.length > 0 && (
+              <div className="mb-4 p-2 rounded-lg bg-gray-800/20 border border-gray-700/20">
+                <div className="text-[9px] text-gray-500 mb-1">Sets actifs :</div>
+                {activeSets.map((s, i) => (
+                  <div key={i} className="flex items-center gap-1 text-[9px]">
+                    <span className={s.set.color}>{s.set.icon}</span>
+                    <span className={s.set.color}>{s.set.name}</span>
+                    <span className="text-gray-500">({s.tier}p)</span>
+                    <span className="text-green-400 ml-auto">{s.bonus}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Total Equipment Stats Summary */}
+            {(() => {
+              const eqB = getChibiEquipBonuses(id);
+              const statLines = [
+                { label: 'PV', flat: eqB.hp_flat, pct: (eqB.hp_pct || 0) + (eqB.hpPercent || 0), icon: '\u2764\uFE0F' },
+                { label: 'ATK', flat: eqB.atk_flat, pct: (eqB.atk_pct || 0) + (eqB.atkPercent || 0), icon: '\u2694\uFE0F' },
+                { label: 'DEF', flat: eqB.def_flat, pct: (eqB.def_pct || 0) + (eqB.defPercent || 0), icon: '\uD83D\uDEE1\uFE0F' },
+                { label: 'SPD', flat: eqB.spd_flat, pct: (eqB.spd_pct || 0) + (eqB.spdPercent || 0), icon: '\uD83D\uDCA8' },
+                { label: 'CRIT%', flat: (eqB.crit_rate || 0) + (eqB.critRate || 0), pct: 0, icon: '\uD83C\uDFAF' },
+                { label: 'CRIT DMG%', flat: (eqB.crit_dmg || 0) + (eqB.critDamage || 0), pct: 0, icon: '\uD83D\uDCA5' },
+                { label: 'RES', flat: eqB.res_flat, pct: 0, icon: '\uD83D\uDEE1\uFE0F' },
+              ].filter(s => s.flat > 0 || s.pct > 0);
+              const specialLines = [
+                eqB.fireDamage > 0 && { label: 'Degats Feu', value: `+${eqB.fireDamage}%`, color: 'text-orange-400' },
+                eqB.waterDamage > 0 && { label: 'Degats Eau', value: `+${eqB.waterDamage}%`, color: 'text-cyan-400' },
+                eqB.shadowDamage > 0 && { label: 'Degats Ombre', value: `+${eqB.shadowDamage}%`, color: 'text-purple-400' },
+                eqB.allDamage > 0 && { label: 'Tous Degats', value: `+${eqB.allDamage}%`, color: 'text-emerald-400' },
+                eqB.healBonus > 0 && { label: 'Soins', value: `+${eqB.healBonus}%`, color: 'text-green-400' },
+                eqB.defPen > 0 && { label: 'DEF PEN', value: `+${eqB.defPen}%`, color: 'text-yellow-300' },
+              ].filter(Boolean);
+              if (statLines.length === 0 && specialLines.length === 0) return null;
+              return (
+                <div className="mb-4 p-2.5 rounded-xl bg-gradient-to-br from-gray-800/40 to-gray-900/40 border border-gray-700/30">
+                  <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">{'\uD83D\uDCCA'} Bonus totaux d'equipement</div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                    {statLines.map((s, i) => (
+                      <div key={i} className="flex items-center justify-between text-[9px]">
+                        <span className="text-gray-400">{s.icon} {s.label}</span>
+                        <span className="text-green-400 font-bold">
+                          {s.flat > 0 && `+${Number.isInteger(s.flat) ? s.flat : s.flat.toFixed(1)}`}
+                          {s.flat > 0 && s.pct > 0 && ' '}
+                          {s.pct > 0 && <span className="text-emerald-300">+{s.pct.toFixed(1)}%</span>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  {specialLines.length > 0 && (
+                    <div className="mt-1.5 pt-1.5 border-t border-gray-700/20 grid grid-cols-2 gap-x-4 gap-y-1">
+                      {specialLines.map((s, i) => (
+                        <div key={i} className="flex items-center justify-between text-[9px]">
+                          <span className="text-gray-400">{s.label}</span>
+                          <span className={`font-bold ${s.color}`}>{s.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Artifact Inventory */}
+            <div className="mb-4">
+              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1.5">
+                Inventaire ({data.artifactInventory.length})
+              </div>
+              {data.artifactInventory.length === 0 ? (
+                <div className="text-center text-[10px] text-gray-600 py-4">Aucun artefact. Forge-en dans la Boutique !</div>
+              ) : (
+                <div className="grid grid-cols-2 gap-1.5 max-h-72 overflow-y-auto">
+                  {data.artifactInventory.map((art, i) => {
+                    const setDef = ARTIFACT_SETS[art.set];
+                    const slotDef = ARTIFACT_SLOTS[art.slot];
+                    const mainDef = MAIN_STAT_VALUES[art.mainStat];
+                    return (
+                      <button key={art.uid || i} onClick={() => equipArtifact(art)}
+                        className={`p-2 rounded-lg border ${setDef?.border || 'border-gray-600/30'} ${setDef?.bg || 'bg-gray-800/20'} hover:brightness-125 transition-all text-left`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm">{slotDef?.icon || '?'}</span>
+                            <span className={`text-[8px] font-bold truncate ${setDef?.color || 'text-gray-300'}`}>{setDef?.name?.split(' ')[0] || '?'}</span>
+                          </div>
+                          <span className={`text-[7px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <span className="text-[9px] text-gray-300 font-bold">{mainDef?.icon} {mainDef?.name || '?'}</span>
+                          <span className="text-[10px] font-black text-white ml-auto">+{art.mainValue}</span>
+                        </div>
+                        {art.subs.length > 0 && (
+                          <div className="mt-1 pt-1 border-t border-gray-700/20 space-y-px">
+                            {art.subs.map((sub, si) => {
+                              const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
+                              return <div key={si} className="text-[7px] text-gray-500">{subDef?.name || sub.id} +{sub.value}</div>;
+                            })}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Sell artifacts */}
+            {data.artifactInventory.length > 0 && (
+              <button
+                onClick={() => {
+                  const worst = [...data.artifactInventory].sort((a, b) => a.level - b.level)[0];
+                  if (!worst) return;
+                  const sellPrice = Math.floor(FORGE_COSTS[worst.rarity] * SELL_RATIO);
+                  shadowCoinManager.addCoins(sellPrice, 'artifact_sell');
+                  setData(prev => ({
+                    ...prev,
+                    artifactInventory: prev.artifactInventory.filter(a => a.uid !== worst.uid),
+                  }));
+                }}
+                className="w-full text-center text-[10px] text-gray-500 hover:text-yellow-400 transition-colors py-2"
+              >
+                Vendre le pire artefact ({Math.floor(FORGE_COSTS[([...data.artifactInventory].sort((a, b) => a.level - b.level)[0])?.rarity] * SELL_RATIO || 0)} coins)
+              </button>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* ═══ SHOP VIEW ═══ */}
+      {view === 'shop' && (() => {
+        const coins = shadowCoinManager.getBalance();
+        const hammers = data.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 };
+
+        const forgeArtifact = (rarity) => {
+          const cost = FORGE_COSTS[rarity];
+          if (coins < cost) return;
+          shadowCoinManager.spendCoins(cost);
+          const art = generateArtifact(rarity);
+          setData(prev => ({ ...prev, artifactInventory: [...prev.artifactInventory, art] }));
+        };
+
+        const buyWeapon = (wId) => {
+          const w = WEAPONS[wId];
+          if (!w) return;
+          const price = WEAPON_PRICES[w.rarity];
+          if (coins < price) return;
+          if (data.weaponInventory.includes(wId)) return;
+          const equippedByAnyone = Object.values(data.weapons).includes(wId);
+          if (equippedByAnyone) return;
+          shadowCoinManager.spendCoins(price);
+          setData(prev => ({ ...prev, weaponInventory: [...prev.weaponInventory, wId] }));
+        };
+
+        const buyHammer = (hId) => {
+          const h = HAMMERS[hId];
+          if (!h || coins < h.shopPrice) return;
+          shadowCoinManager.spendCoins(h.shopPrice);
+          setData(prev => {
+            const newH = { ...(prev.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }) };
+            newH[hId] = (newH[hId] || 0) + 1;
+            return { ...prev, hammers: newH };
+          });
+        };
+
+        const ownedWeapons = new Set([...data.weaponInventory, ...Object.values(data.weapons).filter(Boolean)]);
+
+        // Artifact enhancement with hammers
+        const enhTarget = shopEnhTarget;
+        const setEnhTarget = setShopEnhTarget;
+        const enhEquipKey = shopEnhEquipKey;
+        const setEnhEquipKey = setShopEnhEquipKey;
+
+        const enhArt = enhTarget !== null ? data.artifactInventory[enhTarget] : null;
+        const enhEquipArt = (() => {
+          if (!enhEquipKey) return null;
+          const [cId, sId] = enhEquipKey.split('|');
+          return data.artifacts[cId]?.[sId] || null;
+        })();
+
+        const selectedArt = enhArt || enhEquipArt;
+        const coinCost = selectedArt ? ENHANCE_COST(selectedArt.level) : 0;
+        const validHammers = selectedArt ? getRequiredHammer(selectedArt.level) : [];
+        const bestHammer = validHammers.find(hId => (hammers[hId] || 0) > 0) || null;
+        const canEnhance = selectedArt && selectedArt.level < MAX_ARTIFACT_LEVEL && coins >= coinCost && bestHammer;
+        const isMilestone = selectedArt ? (selectedArt.level + 1) % 5 === 0 : false;
+
+        const doEnhance = () => {
+          if (!canEnhance) return;
+          shadowCoinManager.spendCoins(coinCost);
+          setData(prev => {
+            const newH = { ...(prev.hammers || {}) };
+            newH[bestHammer] = Math.max(0, (newH[bestHammer] || 0) - 1);
+            if (enhArt) {
+              const newInv = [...prev.artifactInventory];
+              newInv[enhTarget] = enhanceArtifact(newInv[enhTarget]);
+              return { ...prev, artifactInventory: newInv, hammers: newH };
+            } else {
+              const [cId, sId] = enhEquipKey.split('|');
+              const newArts = { ...prev.artifacts };
+              newArts[cId] = { ...newArts[cId], [sId]: enhanceArtifact(newArts[cId][sId]) };
+              return { ...prev, artifacts: newArts, hammers: newH };
+            }
+          });
+        };
+
+        return (
+          <div className="max-w-lg mx-auto px-3 pt-4">
+            <button onClick={() => setView('hub')} className="text-gray-500 text-xs hover:text-white transition-colors mb-3 block">&larr; Retour</button>
+
+            <div className="text-center mb-5">
+              <h2 className="text-xl font-black bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">Boutique</h2>
+              <div className="text-sm text-yellow-400 font-bold mt-1">{'\uD83D\uDCB0'} {coins} Shadow Coins</div>
+            </div>
+
+            {/* Hammer Inventory */}
+            <div className="mb-4 p-2.5 rounded-xl bg-gray-800/20 border border-gray-700/20">
+              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1.5">{'\uD83D\uDD28'} Tes Marteaux</div>
+              <div className="flex justify-center gap-4">
+                {HAMMER_ORDER.map(hId => {
+                  const h = HAMMERS[hId];
+                  const count = hammers[hId] || 0;
+                  return (
+                    <div key={hId} className="text-center">
+                      <div className="text-xl">{h.icon}</div>
+                      <div className="text-[9px] text-gray-400">{h.name.split(' ').pop()}</div>
+                      <div className={`text-sm font-bold ${count > 0 ? 'text-amber-400' : 'text-gray-600'}`}>{count}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Buy Hammers */}
+            <div className="mb-5">
+              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">{'\uD83D\uDEE0\uFE0F'} Acheter des Marteaux</div>
+              <div className="grid grid-cols-3 gap-2">
+                {HAMMER_ORDER.map(hId => {
+                  const h = HAMMERS[hId];
+                  return (
+                    <button key={hId} onClick={() => buyHammer(hId)} disabled={coins < h.shopPrice}
+                      className="p-2 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/15 disabled:opacity-30 transition-all text-center">
+                      <div className="text-lg">{h.icon}</div>
+                      <div className="text-[9px] font-bold text-amber-300">{h.name.replace('Marteau ', '')}</div>
+                      <div className="text-[8px] text-gray-500">Lv0-{h.maxLevel}</div>
+                      <div className="text-[9px] text-amber-400 mt-0.5">{h.shopPrice} coins</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Forge Section */}
+            <div className="mb-5">
+              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">{'\uD83D\uDD2E'} Forge d'Artefacts</div>
+              <div className="grid grid-cols-3 gap-2">
+                {[{ rarity: 'rare', color: 'blue', label: 'Rare' }, { rarity: 'legendaire', color: 'purple', label: 'Legendaire' }, { rarity: 'mythique', color: 'amber', label: 'Mythique' }].map(({ rarity, color, label }) => (
+                  <button key={rarity} onClick={() => forgeArtifact(rarity)} disabled={coins < FORGE_COSTS[rarity]}
+                    className={`p-2.5 rounded-xl border border-${color}-500/30 bg-${color}-500/5 hover:bg-${color}-500/15 disabled:opacity-30 transition-all text-center`}>
+                    <div className="text-lg">{'\uD83D\uDD2E'}</div>
+                    <div className={`text-[10px] font-bold text-${color}-400`}>{label}</div>
+                    <div className="text-[9px] text-gray-400 mt-0.5">{FORGE_COSTS[rarity]} coins</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Armory Section */}
+            <div className="mb-5">
+              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">{'\u2694\uFE0F'} Armurerie</div>
+              <div className="grid grid-cols-2 gap-1.5 max-h-72 overflow-y-auto">
+                {Object.values(WEAPONS).map(w => {
+                  const owned = ownedWeapons.has(w.id);
+                  const price = WEAPON_PRICES[w.rarity];
+                  return (
+                    <button key={w.id} onClick={() => !owned && buyWeapon(w.id)} disabled={owned || coins < price}
+                      className={`p-2 rounded-lg border text-left transition-all ${
+                        owned ? 'border-green-500/30 bg-green-500/5 opacity-60' :
+                        coins >= price ? 'border-gray-700/40 bg-gray-800/20 hover:border-amber-500/40' :
+                        'border-gray-800/20 bg-gray-900/10 opacity-30'
+                      }`}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm">{w.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[10px] font-bold text-gray-200 truncate">{w.name}</div>
+                          <div className="text-[8px] text-gray-500">ATK +{w.atk} | {MAIN_STAT_VALUES[w.bonusStat]?.name || w.bonusStat} +{w.bonusValue}</div>
+                          {w.element && <div className={`text-[7px] ${ELEMENTS[w.element]?.color || 'text-gray-400'}`}>{ELEMENTS[w.element]?.icon} {w.element}</div>}
+                        </div>
+                      </div>
+                      <div className="mt-1 text-[9px] text-right">
+                        {owned ? <span className="text-green-400">{'\u2713'} Possedee</span> : <span className="text-amber-400">{price} coins</span>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Enhance Section — with hammers */}
+            <div className="mb-5">
+              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">{'\u2B06\uFE0F'} Ameliorer un Artefact</div>
+
+              {data.artifactInventory.length === 0 && Object.keys(data.artifacts).length === 0 ? (
+                <div className="text-center text-[10px] text-gray-600 py-3">Aucun artefact a ameliorer.</div>
+              ) : (
+                <>
+                  {/* Inventory artifacts */}
+                  {data.artifactInventory.length > 0 && (
+                    <>
+                      <div className="text-[9px] text-gray-500 mb-1">Inventaire :</div>
+                      <div className="grid grid-cols-3 gap-1 mb-2">
+                        {data.artifactInventory.map((art, i) => {
+                          const setDef = ARTIFACT_SETS[art.set];
+                          const selected = enhTarget === i;
+                          return (
+                            <button key={art.uid || i} onClick={() => { setEnhTarget(selected ? null : i); setEnhEquipKey(null); }}
+                              className={`p-1 rounded-lg border text-center transition-all ${
+                                selected ? 'border-cyan-400 bg-cyan-500/10' :
+                                `${setDef?.border || 'border-gray-700/30'} ${setDef?.bg || 'bg-gray-800/10'}`
+                              }`}>
+                              <div className={`text-[8px] font-bold truncate ${setDef?.color || 'text-gray-400'}`}>{ARTIFACT_SLOTS[art.slot]?.icon} {setDef?.name?.split(' ')[0]}</div>
+                              <div className="text-[8px] text-gray-400">Lv{art.level}/{MAX_ARTIFACT_LEVEL}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Enhancement preview */}
+                  {selectedArt && (() => {
+                    const mainDef = MAIN_STAT_VALUES[selectedArt.mainStat];
+                    const nextMainVal = selectedArt.level < MAX_ARTIFACT_LEVEL ? +(mainDef.base + mainDef.perLevel * (selectedArt.level + 1)).toFixed(1) : selectedArt.mainValue;
+                    return (
+                      <div className="p-2.5 rounded-xl border border-cyan-500/30 bg-cyan-500/5 mb-2">
+                        <div className="text-[10px] font-bold text-cyan-300 mb-1">
+                          {ARTIFACT_SLOTS[selectedArt.slot]?.icon} {ARTIFACT_SETS[selectedArt.set]?.name || '?'} — Lv{selectedArt.level}/{MAX_ARTIFACT_LEVEL}
+                        </div>
+                        <div className="text-[9px] text-gray-300">
+                          {mainDef?.name}: {selectedArt.mainValue} {'\u2192'} <span className="text-green-400">{nextMainVal}</span>
+                        </div>
+                        {selectedArt.subs.map((sub, i) => {
+                          const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
+                          const willUpgrade = isMilestone && selectedArt.subs.length > 0;
+                          return (
+                            <div key={i} className="text-[8px] text-gray-400">
+                              {subDef?.name || sub.id}: +{sub.value}
+                              {willUpgrade && <span className="text-amber-400/60 ml-1">(chance {'\u2B06\uFE0F'})</span>}
+                            </div>
+                          );
+                        })}
+                        {isMilestone && (
+                          <div className="text-[9px] text-amber-400 mt-1 font-bold">{'\u2B50'} Palier Lv{selectedArt.level + 1} — Boost de sub-stat !</div>
+                        )}
+                        {(selectedArt.level + 1) === 10 && selectedArt.subs.length < (selectedArt.rarity === 'mythique' ? 4 : selectedArt.rarity === 'legendaire' ? 3 : 2) && (
+                          <div className="text-[9px] text-green-400 mt-0.5">{'\u2728'} Nouvelle sub-stat au Lv10 !</div>
+                        )}
+                        {/* Hammer requirement */}
+                        <div className="mt-2 flex items-center gap-2 p-1.5 rounded-lg bg-gray-800/30 border border-gray-700/20">
+                          <span className="text-[9px] text-gray-400">Requis :</span>
+                          {bestHammer ? (
+                            <span className="text-[9px] text-amber-300">{HAMMERS[bestHammer].icon} {HAMMERS[bestHammer].name} (x1)</span>
+                          ) : (
+                            <span className="text-[9px] text-red-400">Pas de marteau compatible !</span>
+                          )}
+                          <span className="text-[9px] text-gray-400 ml-auto">+ {coinCost} coins</span>
+                        </div>
+                        {!bestHammer && selectedArt.level < MAX_ARTIFACT_LEVEL && (
+                          <div className="text-[8px] text-gray-500 mt-1">
+                            Lv{selectedArt.level}+ requiert : {validHammers.map(hId => HAMMERS[hId].name).join(' ou ')}
+                          </div>
+                        )}
+                        <button onClick={doEnhance}
+                          disabled={!canEnhance}
+                          className="mt-2 w-full py-1.5 rounded-lg bg-cyan-600/30 text-cyan-300 text-xs font-bold hover:bg-cyan-600/50 disabled:opacity-30 transition-colors">
+                          {'\uD83D\uDD28'} Ameliorer ({bestHammer ? `1 ${HAMMERS[bestHammer].name.split(' ').pop()}` : '?'} + {coinCost} coins)
+                        </button>
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ═══ BATTLE VIEW ═══ */}
       {view === 'battle' && battle && (
-        <div className="max-w-md mx-auto px-3 pt-3">
-          <div className="text-center text-[10px] text-gray-500 mb-2">Tour {battle.turn}</div>
-
-          {/* Enemy */}
-          <div className={`relative p-3 rounded-xl border ${ELEMENTS[battle.enemy.element].border} ${ELEMENTS[battle.enemy.element].bg} mb-3`}
-            style={{ animation: phase === 'enemy_atk' ? 'none' : dmgPopup?.target === 'enemy' ? 'hitShake 0.4s ease-out' : 'none' }}
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">{STAGES[selStage].emoji}</span>
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold">{battle.enemy.name}</span>
-                  <span className={`text-[9px] ${ELEMENTS[battle.enemy.element].color}`}>{ELEMENTS[battle.enemy.element].icon}</span>
-                </div>
-                <HpBar hp={battle.enemy.hp} maxHp={battle.enemy.maxHp} />
-                <div className="flex items-center justify-between mt-0.5">
-                  <span className="text-[9px] text-gray-400">{battle.enemy.hp}/{battle.enemy.maxHp} PV</span>
-                  <span className="text-[8px] text-gray-500">CRT:{battle.enemy.crit}% RES:{battle.enemy.res}%</span>
-                </div>
-                {battle.enemy.buffs.length > 0 && (
-                  <div className="flex gap-1 mt-1 flex-wrap">
-                    {battle.enemy.buffs.map((b, i) => (
-                      <span key={i} className={`text-[8px] px-1 rounded ${b.value > 0 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
-                        {b.stat.toUpperCase()} {b.value > 0 ? '+' : ''}{Math.round(b.value * 100)}% ({b.turns}t)
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            <AnimatePresence>
-              {dmgPopup?.target === 'enemy' && (
-                <motion.div initial={{ opacity: 1, y: 0 }} animate={{ opacity: 0, y: -30 }} transition={{ duration: 0.8 }}
-                  className={`absolute top-1 right-4 font-black text-lg ${dmgPopup.isCrit ? 'text-yellow-400' : 'text-green-400'}`}>
-                  -{dmgPopup.value}{dmgPopup.isCrit ? ' CRIT!' : ''}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* VS */}
-          <div className="text-center text-gray-600 text-xs font-bold my-1">VS</div>
-
-          {/* Player */}
-          <div className={`relative p-3 rounded-xl border border-purple-500/40 bg-purple-500/10 mb-3`}
-            style={{ animation: phase === 'player_atk' ? 'none' : dmgPopup?.target === 'player' ? 'hitShake 0.4s ease-out' : 'none' }}
-          >
-            <div className="flex items-center gap-3">
-              <img src={SPRITES[battle.player.id]} alt={battle.player.name} className="w-12 h-12 object-contain" style={{ filter: RARITY[CHIBIS[battle.player.id].rarity].glow, imageRendering: 'auto' }} />
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold">{battle.player.name} <span className="text-gray-400 text-[10px]">Lv{battle.player.level}</span></span>
-                  <span className={`text-[9px] ${ELEMENTS[battle.player.element].color}`}>{ELEMENTS[battle.player.element].icon}</span>
-                </div>
-                <HpBar hp={battle.player.hp} maxHp={battle.player.maxHp} />
-                <div className="flex items-center justify-between mt-0.5">
-                  <span className="text-[9px] text-gray-400">{battle.player.hp}/{battle.player.maxHp} PV</span>
-                  <span className="text-[8px] text-gray-500">CRT:{battle.player.crit}% RES:{battle.player.res}%</span>
-                </div>
-                {battle.player.buffs.length > 0 && (
-                  <div className="flex gap-1 mt-1 flex-wrap">
-                    {battle.player.buffs.map((b, i) => (
-                      <span key={i} className={`text-[8px] px-1 rounded ${b.value > 0 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
-                        {b.stat.toUpperCase()} {b.value > 0 ? '+' : ''}{Math.round(b.value * 100)}% ({b.turns}t)
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            <AnimatePresence>
-              {dmgPopup?.target === 'player' && (
-                <motion.div initial={{ opacity: 1, y: 0 }} animate={{ opacity: 0, y: -30 }} transition={{ duration: 0.8 }}
-                  className={`absolute top-1 right-4 font-black text-lg ${dmgPopup.isCrit ? 'text-yellow-400' : 'text-red-400'}`}>
-                  -{dmgPopup.value}{dmgPopup.isCrit ? ' CRIT!' : ''}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Battle Log */}
-          <div className="bg-gray-900/50 rounded-lg p-2 mb-3 max-h-24 overflow-y-auto border border-gray-800/50">
-            {battle.log.length === 0 && <div className="text-[10px] text-gray-600 text-center">Le combat commence...</div>}
-            {battle.log.map((entry, i) => (
-              <div key={entry.id} className={`text-[10px] leading-relaxed ${
-                i === battle.log.length - 1 ? 'text-white font-medium' :
-                entry.type === 'player' ? 'text-green-400/70' : 'text-red-400/70'
-              }`}>
-                {entry.text}
-              </div>
-            ))}
-          </div>
-
-          {/* Skills */}
-          <div className="grid grid-cols-3 gap-2 mb-2">
-            {battle.player.skills.map((skill, i) => {
-              const onCd = skill.cd > 0;
-              return (
-                <button
-                  key={i}
-                  onClick={() => !onCd && phase === 'idle' && executeRound(i)}
-                  disabled={onCd || phase !== 'idle'}
-                  className={`relative p-2 rounded-lg border text-center transition-all ${
-                    onCd ? 'border-gray-700/30 bg-gray-800/20 opacity-40' :
-                    phase !== 'idle' ? 'border-gray-700/30 bg-gray-800/20 opacity-60' :
-                    'border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 active:scale-95'
-                  }`}
-                >
-                  <div className="text-[10px] font-bold truncate">{skill.name}</div>
-                  <div className="text-[8px] text-gray-400 mt-0.5">{skill.desc}</div>
-                  {skill.power > 0 && <div className="text-[8px] text-red-400 mt-0.5">DMG: {skill.power}%</div>}
-                  {(skill.healSelf || skill.buffAtk || skill.buffDef) && (
-                    <div className="text-[8px] text-cyan-400 mt-0.5">
-                      {skill.healSelf ? `Soin ${skill.healSelf}%` : skill.buffAtk ? `ATK +${skill.buffAtk}%` : `DEF +${skill.buffDef}%`}
-                    </div>
-                  )}
-                  {skill.debuffDef && <div className="text-[8px] text-orange-400 mt-0.5">DEF ennemi -{skill.debuffDef}%</div>}
-                  {onCd && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg">
-                      <span className="text-gray-400 text-xs font-bold">{skill.cd}t</span>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Flee */}
-          <button onClick={flee} className="w-full text-center text-[10px] text-gray-500 hover:text-red-400 transition-colors py-1">
-            Fuir (cooldown 5min)
-          </button>
-        </div>
+        <BattleArena
+          battle={battle}
+          phase={phase}
+          dmgPopup={dmgPopup}
+          stageEmoji={STAGES[selStage]?.emoji || ''}
+          stageElement={STAGES[selStage]?.element || 'shadow'}
+          onSkillUse={(i) => phase === 'idle' && executeRound(i)}
+          onFlee={flee}
+          getChibiSprite={getChibiSprite}
+          getChibiData={getChibiData}
+        />
       )}
 
       {/* ═══ RESULT VIEW ═══ */}
@@ -1581,7 +1923,7 @@ export default function ShadowColosseum() {
             <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200 }}>
               <div className="text-6xl mb-4" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>{'\uD83C\uDFC6'}</div>
               <h2 className="text-3xl font-black text-yellow-400 mb-2">VICTOIRE !</h2>
-              <p className="text-gray-300 text-sm mb-6">{CHIBIS[selChibi]?.name} a triomphe !</p>
+              <p className="text-gray-300 text-sm mb-6">{getChibiData(selChibi)?.name} a triomphe !</p>
               <div className="flex justify-center gap-6 mb-6">
                 <div className="text-center">
                   <div className="text-2xl font-black text-blue-400">+{result.xp}</div>
@@ -1616,16 +1958,46 @@ export default function ShadowColosseum() {
                   </div>
                 </motion.div>
               )}
+              {result.hammerDrop && (
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.0 }}
+                  className="bg-gradient-to-r from-amber-600/15 to-orange-600/15 border border-amber-500/30 rounded-xl p-2 mb-4">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-xl">{HAMMERS[result.hammerDrop]?.icon || '\uD83D\uDD28'}</span>
+                    <span className="text-sm font-bold text-amber-300">{HAMMERS[result.hammerDrop]?.name || 'Marteau'}</span>
+                    <span className="text-xs text-amber-400">+1</span>
+                  </div>
+                </motion.div>
+              )}
+              {result.hunterDrop && (
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.1 }}
+                  className="bg-gradient-to-r from-red-600/20 to-purple-600/20 border border-red-500/40 rounded-xl p-3 mb-6">
+                  <div className="text-red-400 font-black text-lg">{'\u2694\uFE0F'} HUNTER DROP !</div>
+                  <div className="flex items-center justify-center gap-2 mt-1">
+                    <img src={HUNTERS[result.hunterDrop.id]?.sprite || ''} alt="" className="w-10 h-10 object-contain" />
+                    <div>
+                      <div className="text-sm font-bold text-white">{result.hunterDrop.name}</div>
+                      <div className={`text-[10px] ${RARITY[result.hunterDrop.rarity]?.color || 'text-gray-400'}`}>
+                        {RARITY[result.hunterDrop.rarity]?.stars || ''}
+                      </div>
+                    </div>
+                  </div>
+                  {result.hunterDrop.isDuplicate ? (
+                    <div className="text-yellow-400 text-xs mt-1">Doublon ! Eveil {'\u2605'}{result.hunterDrop.newStars}/{MAX_EVEIL_STARS}</div>
+                  ) : (
+                    <div className="text-green-400 text-xs mt-1">Nouveau hunter debloque !</div>
+                  )}
+                </motion.div>
+              )}
             </motion.div>
           ) : (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <div className="text-6xl mb-4" style={{ animation: 'defeatPulse 2s ease-in-out infinite' }}>{'\uD83D\uDC80'}</div>
               <h2 className="text-3xl font-black text-red-400 mb-2">DEFAITE...</h2>
-              <p className="text-gray-300 text-sm mb-4">{CHIBIS[selChibi]?.name} est KO.</p>
+              <p className="text-gray-300 text-sm mb-4">{getChibiData(selChibi)?.name} est KO.</p>
               <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 mb-6">
                 <div className="text-red-400 text-sm font-bold">{'\u23F3'} Cooldown : {result.cooldownMin} minutes</div>
                 <div className="text-gray-400 text-[10px] mt-1">
-                  {CHIBIS[selChibi]?.name} ne peut plus combattre pendant {result.cooldownMin}min.
+                  {getChibiData(selChibi)?.name} ne peut plus combattre pendant {result.cooldownMin}min.
                 </div>
               </div>
             </motion.div>

@@ -23,6 +23,7 @@ const PODScore = React.lazy(() => import('./components/PODScore.jsx'));
 const Theorycraft = React.lazy(() => import('./pages/Theorycraft/Theorycraft.jsx'));
 const LoreStory = React.lazy(() => import('./pages/LoreStory/LoreStory.jsx'));
 const ShadowColosseum = React.lazy(() => import('./pages/ShadowColosseum/ShadowColosseum.jsx'));
+const RaidMode = React.lazy(() => import('./pages/ShadowColosseum/RaidMode.jsx'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -58,6 +59,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="/theorycraft/:boss" element={<Theorycraft />} />
               <Route path="/theorycraft/:boss/:element" element={<Theorycraft />} />
               <Route path="/shadow-colosseum" element={<ShadowColosseum />} />
+              <Route path="/shadow-colosseum/raid" element={<RaidMode />} />
             </Routes>
           </Suspense>
         </AppLayout>
