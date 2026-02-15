@@ -473,6 +473,9 @@ export const WEAPONS = {
   w_epee_ancienne:    { id: 'w_epee_ancienne',    name: 'Epee Ancienne',        rarity: 'legendaire', element: null,     atk: 16, bonusStat: 'atk_pct',   bonusValue: 8,  icon: '\u2694\uFE0F', desc: "Arme d'une ere oubliee" },
   w_baguette_sage:    { id: 'w_baguette_sage',    name: 'Baguette du Sage',     rarity: 'rare',       element: null,     atk: 8,  bonusStat: 'crit_rate', bonusValue: 5,  icon: '\uD83E\uDE84', desc: 'Sagesse cristallisee' },
   w_bouclier_hero:    { id: 'w_bouclier_hero',    name: 'Bouclier du Heros',    rarity: 'rare',       element: null,     atk: 6,  bonusStat: 'def_pct',   bonusValue: 10, icon: '\uD83D\uDEE1\uFE0F', desc: 'Protection legendaire' },
+
+  // Secret — drop 1/30000 from Ragnarok
+  w_sulfuras:         { id: 'w_sulfuras',         name: 'Masse de Sulfuras',    rarity: 'mythique',   element: 'fire',   atk: 250, bonusStat: 'atk_pct', bonusValue: 25, icon: '\uD83D\uDD28', desc: '???', secret: true, passive: 'sulfuras_fury', fireRes: 50 },
 };
 
 export const WEAPON_PRICES = { rare: 500, legendaire: 2000, mythique: 5000 };
@@ -484,8 +487,13 @@ export function computeWeaponBonuses(weaponId) {
   if (!w) return b;
   b.atk_flat += w.atk;
   if (b[w.bonusStat] !== undefined) b[w.bonusStat] += w.bonusValue;
+  if (w.fireRes) b.res_flat += w.fireRes;
   return b;
 }
+
+// Sulfuras stacking passive: +33% dmg per turn (max +100%)
+export const SULFURAS_STACK_PER_TURN = 33;
+export const SULFURAS_STACK_MAX = 100;
 
 // ═══════════════════════════════════════════════════════════════
 // MERGE EQUIPMENT BONUSES

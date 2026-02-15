@@ -22,6 +22,16 @@ export const SPRITES = {
   phoenix: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771153418/Ph%C3%A9nixNoir_cdwoso.png',
   titan: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771153898/TitanDesGlaces_mjtynl.png',
   monarch: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771154347/OmbreMineure_zwqbr3.png',
+  wraith: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771160342/Wraith_qgs3bo.png',
+  ifrit: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771160340/Ifrit_pl9t6q.png',
+  wyvern: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771160338/Wyverne_dzrxk5.png',
+  lich_king: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771160337/RoiLiche_xgu6ug.png',
+  banshee: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771160335/Banshee_bnwnzn.png',
+  dragon_rouge: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771160332/DragonRouge_fvwtzi.png',
+  tempestaire: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771160334/Tempestaire_xx926x.png',
+  colossus: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771160331/Colossus_xok08m.png',
+  archdemon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771160758/Archdemon_hiem7r.png',
+  ragnarok: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771161413/Ragnarok_liihbd.png',
 };
 
 // ─── Elements ────────────────────────────────────────────────
@@ -366,3 +376,53 @@ export const aiPickSkillSupport = (entity, allies) => {
 
 // ─── SPD to attack interval (for raid real-time) ─────────────
 export const spdToInterval = (spd) => Math.max(500, Math.floor(3000 / (1 + spd / 50)));
+
+// ═══════════════════════════════════════════════════════════════
+// STAR DIFFICULTY SYSTEM
+// ═══════════════════════════════════════════════════════════════
+
+const STAR_SCALING = { hp: 0.25, atk: 0.18, def: 0.15, spd: 0.08, crit_flat: 1.2, res_flat: 1.0 };
+
+export function getStarScaledStats(stage, stars) {
+  if (!stars) return { hp: stage.hp, atk: stage.atk, def: stage.def, spd: stage.spd, crit: stage.crit, res: stage.res };
+  return {
+    hp:   Math.floor(stage.hp  * (1 + stars * STAR_SCALING.hp)),
+    atk:  Math.floor(stage.atk * (1 + stars * STAR_SCALING.atk)),
+    def:  Math.floor(stage.def * (1 + stars * STAR_SCALING.def)),
+    spd:  Math.floor(stage.spd * (1 + stars * STAR_SCALING.spd)),
+    crit: Math.min(90, +(stage.crit + stars * STAR_SCALING.crit_flat).toFixed(1)),
+    res:  Math.min(80, +(stage.res  + stars * STAR_SCALING.res_flat).toFixed(1)),
+  };
+}
+
+export function getStarRewardMult(stars) {
+  if (!stars) return { xp: 1, coins: 1, accountXp: 1 };
+  return { xp: 1 + stars * 0.20, coins: 1 + stars * 0.15, accountXp: 1 + stars * 0.10 };
+}
+
+export function getStarDropBonus(stars) {
+  return { hammerPct: Math.min(40, stars * 4), hunterPct: Math.min(3, stars * 0.3) };
+}
+
+export function getGuaranteedArtifactRarity(stars) {
+  if (stars >= 9) return 'mythique';
+  if (stars >= 7) return 'legendaire';
+  if (stars >= 5) return 'rare';
+  return null;
+}
+
+export function calculatePowerScore(stats, isBoss = false) {
+  const base = (stats.hp || 0) * 0.5 + (stats.atk || 0) * 8 + (stats.def || 0) * 3
+    + (stats.spd || 0) * 2 + (stats.crit || 0) * 5 + (stats.res || 0) * 4;
+  return Math.floor(base * (isBoss ? 1.2 : 1));
+}
+
+export function getDifficultyRating(playerPower, enemyPower) {
+  const r = playerPower / enemyPower;
+  if (r >= 1.5) return { label: 'Trivial',    color: 'text-gray-400',   icon: '\uD83D\uDE34' };
+  if (r >= 1.2) return { label: 'Facile',     color: 'text-green-400',  icon: '\u2714' };
+  if (r >= 0.9) return { label: 'Equilibre',  color: 'text-blue-400',   icon: '\u2694\uFE0F' };
+  if (r >= 0.7) return { label: 'Difficile',  color: 'text-orange-400', icon: '\u26A0\uFE0F' };
+  if (r >= 0.5) return { label: 'Extreme',    color: 'text-red-400',    icon: '\uD83D\uDC80' };
+  return                { label: 'Impossible', color: 'text-red-600',    icon: '\u2620\uFE0F' };
+}

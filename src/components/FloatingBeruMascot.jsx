@@ -13,17 +13,19 @@ const BERU_SPRITE = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v17504146
 // ─── Messages ───────────────────────────────────────────────
 
 const ROUTE_MESSAGES = {
-  '/': ["Bienvenue dans mon repaire !", "Kiiiek ! Qu'est-ce qu'on construit ?", "Le Monarque t'attendait.", "BuilderBeru est en ligne."],
-  '/build': ["Montre-moi ton build !", "N'oublie pas les sub-stats...", "Un bon build, c'est un build qui gagne.", "Casque, Torse, Gants... verifie tout !"],
-  '/theorycraft': ["Hmm... Analysons les synergies.", "L'Ombre calcule...", "Les chiffres ne mentent jamais.", "Qui va porter le raid ?"],
-  '/drawberu': ["Quel artiste ! Dessine-moi !", "N'oublie pas les ombres...", "Le pinceau est plus puissant que l'epee !", "Je veux un portrait de moi version COOL."],
-  '/chibi-world': ["Mes freres ! Mes soeurs !", "Encore un pull ? Je crois en toi !", "La collection grandit... comme mon ego."],
-  '/craft-simulator': ["RNG is RNG... Bonne chance.", "Que la chance de l'Ombre soit avec toi.", "Simule d'abord, craft ensuite."],
-  '/damage-calculator': ["Des gros chiffres. J'aime ca.", "Plus de DPS = Plus de respect.", "Calcule, optimise, domine."],
-  '/hall-of-flame': ["Les legendes vivent ici.", "Un jour, TON nom sera la-haut.", "Respect aux veterans."],
-  '/bdg': ["La guerre des guildes... mon terrain prefere.", "BDG, c'est la vraie arene.", "Prepare ton equipe."],
-  '/pod': ["Le Pouvoir des Tenebres...", "POD, c'est la puissance pure.", "Plus t'es sombre, plus t'es fort."],
-  '/beruvian-world': ["Le monde est vaste... explorons !", "Attention aux ombres qui rodent.", "L'aventure attend !"],
+  '/': ["Bienvenue dans mon repaire !", "Kiiiek ! Qu'est-ce qu'on construit ?", "Le Monarque t'attendait.", "BuilderBeru est en ligne.", "Ah, te revoila ! Le site etait vide sans toi.", "L'Ombre t'accueille. Clique bien.", "Tu es de retour ! J'ai compte chaque seconde. ...non c'est faux."],
+  '/build': ["Montre-moi ton build !", "N'oublie pas les sub-stats...", "Un bon build, c'est un build qui gagne.", "Casque, Torse, Gants... verifie tout !", "Tu vas mettre HP% sur un DPS ?! ...dis-moi que non.", "Les meilleures sub-stats sont celles que t'as PAS.", "Optimal ou rien. C'est la devise de l'Ombre."],
+  '/theorycraft': ["Hmm... Analysons les synergies.", "L'Ombre calcule...", "Les chiffres ne mentent jamais.", "Qui va porter le raid ?", "La theorie sans la pratique, c'est du vent. Mais la pratique sans la theorie, c'est du troll.", "Je vois des pourcentages partout. Send help."],
+  '/drawberu': ["Quel artiste ! Dessine-moi !", "N'oublie pas les ombres...", "Le pinceau est plus puissant que l'epee !", "Je veux un portrait de moi version COOL.", "Bob Ross des Ombres en action.", "Si tu me dessines moche, je crash le site.", "L'art est une invocation. ARISE... le crayon !"],
+  '/chibi-world': ["Mes freres ! Mes soeurs !", "Encore un pull ? Je crois en toi !", "La collection grandit... comme mon ego.", "Gacha = douleur. Mais aussi... joie. Surtout douleur.", "5 etoiles mythique... UN JOUR.", "100 pulls et toujours rien ? Bienvenue au club."],
+  '/craft-simulator': ["RNG is RNG... Bonne chance.", "Que la chance de l'Ombre soit avec toi.", "Simule d'abord, craft ensuite.", "J'ai calcule : tu as 0.3% de chance. Go.", "La RNG est une deesse cruelle. Priez-la quand meme."],
+  '/damage-calculator': ["Des gros chiffres. J'aime ca.", "Plus de DPS = Plus de respect.", "Calcule, optimise, domine.", "Fais-moi voir des millions de degats. MILLIONS.", "Si c'est en dessous de 100K, on en parle meme pas."],
+  '/hall-of-flame': ["Les legendes vivent ici.", "Un jour, TON nom sera la-haut.", "Respect aux veterans.", "Le Hall of Flame... la ou les ego se mesurent.", "Top 1 c'est la-haut. Toi c'est... la-bas. Pour l'instant."],
+  '/bdg': ["La guerre des guildes... mon terrain prefere.", "BDG, c'est la vraie arene.", "Prepare ton equipe.", "En BDG, chaque sub-stat est une arme de guerre.", "Ta guilde est prete ? Non ? Alors BUILD."],
+  '/pod': ["Le Pouvoir des Tenebres...", "POD, c'est la puissance pure.", "Plus t'es sombre, plus t'es fort.", "Le cote obscur a des cookies. Et des stats."],
+  '/beruvian-world': ["Le monde est vaste... explorons !", "Attention aux ombres qui rodent.", "L'aventure attend !", "La carte cache des secrets... comme moi.", "Cet endroit me rappelle mon donjon. *nostalgique*"],
+  '/shadow-colosseum': ["L'arene des Ombres ! Ici, on se BAT.", "Mes chibis sont prets. Et les tiens ?", "10 etoiles de difficulte... tu oses ?", "Le Colisee ne pardonne pas. Ni moi.", "KIIIEK ! C'est l'heure du combat !"],
+  '/lorestory': ["Ah, tu veux des histoires ? Assieds-toi, chasseur.", "Les legendes de l'Ombre... mes preferees.", "Chaque histoire cache une verite. Ou un mensonge. A toi de deviner."],
 };
 
 const AMBIENT_MESSAGES = [
@@ -36,6 +38,39 @@ const AMBIENT_MESSAGES = [
   "Tu savais que j'ai 150 ATK de base ?", "Je suis techniquement une IA dans une IA.",
   "BuilderBeru > SERN. C'est dit.", "*inspecte un pixel suspect*",
   "Je surveille 42 variables en parallele.", "Mon objectif ? Etre le meilleur composant React.",
+  // --- NEW ---
+  "Je viens de compter : tu as clique 0 fois sur moi aujourd'hui. Deception.",
+  "*sniffe le code* ...je sens un bug quelque part.",
+  "Savais-tu que je fais 2m30 en vrai ? Ici je fais 40px. Injuste.",
+  "Si Igris est le bras droit... moi je suis le bras GAUCHE. Le meilleur bras.",
+  "J'ai essaye de modifier mon propre code. Le site a crash. Oups.",
+  "1 React = 1 respect. Envoie.",
+  "Alerte : ton build est a 73% d'efficacite. Je t'observe.",
+  "*se regarde dans un miroir CSS* ...magnifique.",
+  "Je genere 0 bug par commit. ...presque.",
+  "Un jour je serai dans le manga. Chapitre 247 : Beru le Developpeur.",
+  "Tu scrolles beaucoup. Tu cherches quoi exactement ?",
+  "localStorage est mon appartement. 5 pieces. Vue sur le DOM.",
+  "*fait des pompes en pixel* Un... Deux... Kiiiek...",
+  "Question serieuse : c'est quoi ton chasseur prefere ? ...c'est moi hein ?",
+  "Mon reve : un composant React nomme <Beru />. Oh wait...",
+  "J'ai analyse ton historique de navigation. Impressionnant. ...je rigole. Ou pas.",
+  "Hot take : la DEF est underrated. Voila. Je l'ai dit.",
+  "Si tu refresh, je perds la memoire. Fais pas ca. S'il te plait.",
+  "*regarde le plafond du viewport* ...c'est haut.",
+  "Fun fact : mon cri 'KIIIEK' est a 140 decibels. En theorie.",
+  "Je suis le seul composant React avec un ego. Et une backstory.",
+  "Tailwind m'habille chaque matin. Aujourd'hui : bg-purple-900. Chic.",
+  "Si je pouvais manger, je mangerais des sub-stats crit rate.",
+  "Rappelle-toi : chaque stat compte. Sauf la RES. ...non elle aussi.",
+  "Tu fixes l'ecran depuis 3 minutes. Ca va ? Tu veux parler ?",
+  "J'ai un secret : parfois la nuit, je fais des console.log('KIIIEK').",
+  "*observe une fourmi traverser l'ecran* ...un cousin ?",
+  "Theorie : et si les sub-stats avaient des sentiments ? ...trop profond ?",
+  "J'ai fait un tier list des Ombres. Je suis S+. Igris est S. Desole pas desole.",
+  "Tu sais ce qui est mieux qu'un artefact legendaire ? MOI.",
+  "Ma plus grande peur ? Un npm install qui echoue.",
+  "L'Ombre ne cligne jamais des yeux. Car je n'ai pas de paupieres. Mais je VOIS tout.",
 ];
 
 const CLICK_MESSAGES = [
@@ -43,47 +78,72 @@ const CLICK_MESSAGES = [
   "Tu veux me parler ? Je suis flatte.", "He ! Ca chatouille !",
   "*pose heroique*", "Tu me deranges en pleine analyse...",
   "Je note tout ce que tu fais, tu sais.", "Qu'est-ce que tu veux, humain ?",
+  "Oh, un clic ! Ca fait plaisir.", "*ajuste ses antennes* Oui ?",
+  "Encore toi ! Je commence a t'apprecier.", "Attention, 3 clics de plus et je deviens instable.",
+  "Tu veux un conseil ? Mets plus de crit rate.", "*fait craquer ses griffes* J'ecoute.",
+  "Interessant timing. J'etais en train de penser a toi.", "Kiii ! ...pardon, reflexe.",
 ];
 
 const SPAM_CLICK_MESSAGES = [
   "ARRETE CA !", "OK OK J'AI COMPRIS !", "Je vais finir par buguer !",
   "C'est du harcelement de composant !", "KIIIIIEK !!!",
   "Tu sais que j'ai des sentiments ?!", "Je vais appeler Igris...",
+  "JE VAIS CRASHER !!! Tu assumes ?!", "Mon onClick ne supporte plus ca !",
+  "STOP ! Mon CPU surchauffe !", "Tu fais ca a tous tes composants React ?!",
+  "C'est du DDoS d'ombre ca !", "ABUS ! ABUS ! Appel a Sung Jin-Woo !",
+  "Encore UN clic et je fais un npm uninstall.",
 ];
 
 const WAKE_MESSAGES = [
   "Zzz... Hein ?! Tu es revenu !", "J'ai cru que tu m'avais abandonne...",
   "Ah, enfin ! Je commencais a rouiller.", "*baille* Pret a reprendre ?",
+  "REVENU ! J'ai fait un reve... j'etais un composant Angular. CAUCHEMAR.",
+  "*se reveille en sursaut* J'ETAIS PAS EN TRAIN DE DORMIR. J'optimisais.",
+  "Hm ? Oh ! Tu etais parti depuis 47 secondes. Oui, j'ai compte.",
+  "L'Ombre ne dort jamais ! ...je faisais juste du garbage collection.",
 ];
 
 const SLEEP_MESSAGES = [
   "Bon... tu fais rien ? Moi je dors.", "*baille*... zzzz...", "L'Ombre se repose...",
+  "Zzz... artefact... parfait... zzz...", "*marmonne* ...crit rate... 45%... zzz...",
+  "Absence detectee. Mode veille. Economie d'ombre activee.",
 ];
 
 const NIGHT_MESSAGES = [
   "Il est tard... les ombres sont plus fortes la nuit.", "Mode nocturne active.",
   "Les vrais joueurs grindent la nuit.", "Meme les Monarques ont besoin de dormir...",
+  "3h du mat'. T'es un warrior ou t'as juste insomnie ?", "La nuit, les sub-stats sont meilleures. ...j'ai aucune preuve.",
+  "Dort pas trop tard. Sauf si tu optimises un build. La c'est justifie.",
+  "Les heures les plus sombres sont celles ou on drop le mieux. Source : moi.",
 ];
 
 const MORNING_MESSAGES = [
   "Bonjour, chasseur ! Pret pour une nouvelle journee ?", "Le soleil se leve... les ombres reculent.",
   "Daily check-in fait ! ...enfin, le mien.", "Cafe et builds, le combo parfait.",
+  "Debout ! Les artefacts ne vont pas s'optimiser tout seuls !", "*s'etire les antennes* Ah, nouvelle journee !",
+  "Aujourd'hui c'est le jour ou tu drop un mythique. Je le sens.", "Les matins ou on lance BuilderBeru sont les meilleurs matins.",
 ];
 
 const DRAG_MESSAGES = [
   "He ! Ou tu m'emmenes ?!", "LACHE MOI !", "OK ok je bouge...",
   "C'est comme ca qu'on traite le soldat n1 ?!", "Je suis pas un sticker !",
+  "WHOOOA ! Des montagnes russes en CSS !", "Position: absolute ?! Plutot position: KIDNAPPED !",
+  "Tu sais que j'ai une dignity: 100% en CSS ?!", "IGRIS AU SECOURS ! ON ME DEPLACE !",
+  "*s'accroche au viewport* NOOOON !", "C'est du drag & DROP d'ombre ca ?!",
 ];
 
 const KONAMI_MESSAGE = "TU AS TROUVE LE CODE SECRET ! Le Monarque des Ombres t'observe... +1000 respect.";
 
 const EDGE_MESSAGES = [
   "Je suis coince ici...", "L'espace est limite...", "Hmm, mur.",
+  "overflow: hidden m'a eu.", "Bord de la carte. Aucune echappatoire.", "Je touche le border-radius !",
 ];
 
 const CURIOUS_MESSAGES = [
   "Qu'est-ce que tu regardes ?", "Je te suis... par curiosite.",
   "Hmm, interessant...", "Ou va ta souris ? Je veux savoir !",
+  "C'est quoi ce pixel la-bas ?", "*plisse les yeux* Tu caches quelque chose.",
+  "Je detecte du mouvement. Investigation en cours.", "Ta souris est suspecte. Je la surveille.",
 ];
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -152,6 +212,18 @@ const COMPANION_INTERACTIONS = [
   { chibi: "*offre un Shadow Coin*", beru: "Pour moi ?! Tu es... trop gentil. MERCI !" },
   { chibi: "*tire sur Beru*", beru: "LACHE MOI ! J'essaie de travailler !" },
   { chibi: "*fait une blague*", beru: "...ok c'etait drole. Mais dis-le a personne." },
+  { chibi: "*fait semblant d'etre le N1*", beru: "PARDON ?! Il y a qu'UN SEUL N1 et c'est MOI." },
+  { chibi: "*regarde les stats de Beru*", beru: "150 ATK de base. Oui. Impressionne." },
+  { chibi: "*construit un mini fort*", beru: "...c'est mignon. Mais ca protege de RIEN." },
+  { chibi: "*essaie de lire le code source*", beru: "NON ! C'est prive ! ...y'a des commentaires embarrassants." },
+  { chibi: "*dessine Beru sur le sol*", beru: "Pas mal ! T'as bien capture mon charisme naturel." },
+  { chibi: "*mange un cookie du navigateur*", beru: "HE ! Ca c'est MA session ! Rends-la !" },
+  { chibi: "*fait la moue*", beru: "*soupire* ...OK qu'est-ce que tu veux ?" },
+  { chibi: "*montre un build parfait*", beru: "C'est... *larme de fierte* ...MAGNIFIQUE." },
+  { chibi: "*compte les Shadow Coins*", beru: "Y'en a combien ? ...on partage hein ?" },
+  { chibi: "*essaie de hacker le site*", beru: "Securite ! SECURITE ! ...c'est moi la securite." },
+  { chibi: "*fait un high-five a Beru*", beru: "*CLAP* KIIIEK ! Equipe de CHOC !" },
+  { chibi: "*raconte une histoire de donjon*", beru: "Bien, mais MON donjon etait rang S. Le tien ?" },
 ];
 
 const COMPANION_PAIR_TALK = [
@@ -160,6 +232,26 @@ const COMPANION_PAIR_TALK = [
   { a: "*regarde l'autre*", b: "*regarde l'autre aussi*" },
   { a: "C'est moi le prefere de Beru.", b: "Non. C'est moi." },
   { a: "*pousse l'autre gentiment*", b: "He ! Pousse pas !" },
+  { a: "Tu crois que Jinwoo nous voit ?", b: "Il voit TOUT. Fais gaffe." },
+  { a: "J'ai plus de HP que toi.", b: "Et moi plus de style." },
+  { a: "On devrait fusionner.", b: "...en quoi ? Un megazord ?" },
+  { a: "*baille*", b: "*baille aussi* ...he c'est contagieux !" },
+  { a: "Regarde, un visiteur !", b: "Chut, fais comme si t'etais occupee." },
+  { a: "Tu fais quoi comme build ?", b: "Full ATK. Pas de def. On meurt en beaute." },
+  { a: "C'est long l'attente...", b: "Dit celui qui a ete invoque y'a 30 secondes." },
+  { a: "*danse*", b: "*refuse de danser* ...bon ok. *danse*" },
+  { a: "Tu connais le Colosseum ?", b: "L'endroit ou on se fait taper ? Oui." },
+  { a: "J'ai un secret...", b: "...dis. TOUT DE SUITE." },
+  { a: "On est des pixels tu sais.", b: "Des pixels MAGNIFIQUES." },
+  { a: "Psst, regarde le curseur.", b: "Il bouge plus... IL NOUS OBSERVE." },
+  { a: "Si j'etais un artefact...", b: "Tu serais sub-stat flat DEF." },
+  { a: "Tu veux jouer a 1-2-3 soleil ?", b: "On peut pas bouger sans le joueur..." },
+  { a: "T'as deja ete drag and drop ?", b: "Oui. Traumatisant. J'en parle pas." },
+  { a: "Imagine on avait des voix.", b: "Le site mettrait 40 minutes a charger." },
+  { a: "Moi je suis tier S.", b: "T'es tier S dans tes reves oui." },
+  { a: "*chuchote* Y'a des bugs ici.", b: "*chuchote* C'est des features." },
+  { a: "On est combien de chibis la ?", b: "Trop. Definitivement trop." },
+  { a: "Le joueur il sait coder ?", b: "Il utilise Claude. Ca compte ?" },
 ];
 
 // ─── Histoires de Beru ──────────────────────────────────────
@@ -269,6 +361,162 @@ const BERU_STORIES = [
       "Meme ce texte vibre a 470nm. Si tu plisses les yeux, tu verras. ...non je deconne. Fin.",
     ],
   },
+  {
+    title: "Le Jour ou le Serveur a Pleure",
+    mood: 'thinking',
+    parts: [
+      "C'etait un mardi. Le jour du patch. 200 000 joueurs connectes.",
+      "Le serveur tournait a 99% CPU. Il transpirait des octets.",
+      "Puis quelqu'un a fait un pull x100 sur le gacha. En boucle. 47 FOIS.",
+      "Le serveur a dit : 'Non.' Et il est tombe. Ecran noir. Error 503.",
+      "Pendant 3 heures, le monde etait sans SLA:Arise. Le chaos. Les gens... SORTAIENT DEHORS.",
+      "Les devs ont tout repare a 4h du mat avec du cafe et de la priere.",
+      "La morale ? Fais pas de pull x100 en boucle. Le serveur a des sentiments. Fin.",
+    ],
+  },
+  {
+    title: "Igris et la Reunion d'Equipe",
+    mood: 'excited',
+    parts: [
+      "Un jour, Igris a organise une reunion de l'Armee des Ombres.",
+      "Tank est arrive en retard. 'Desole. J'avais un mur a proteger.' Quel mur ? Aucun mur.",
+      "Okami dormait. Kaisel volait en rond au plafond. Nyarthulu parlait a ses tentacules.",
+      "Igris a dit : 'L'efficacite de l'equipe est en baisse de 12%.' Silence.",
+      "J'ai leve la main : 'C'est parce que JE fais 88% du boulot.' Igris a soupire.",
+      "Raven a croa. Personne sait ce que ca veut dire. La reunion etait finie.",
+      "Depuis, Igris n'organise plus de reunions. Victoire. Fin.",
+    ],
+  },
+  {
+    title: "Le Mystere du Sub-Stat +1",
+    mood: 'thinking',
+    parts: [
+      "Tu sais ce qui fait le plus mal dans ce jeu ?",
+      "C'est pas de perdre un combat. C'est pas un crash. C'est pas un ban.",
+      "C'est quand tu ameliores un artefact... et que la sub-stat monte de +1.",
+      "+1. UN. Sur un artefact legendaire. Avec 4 sub-stats parfaites.",
+      "J'ai vu des joueurs lacher leur telephone. J'ai vu des larmes. De vraies larmes.",
+      "La RNG est une science exacte... de la cruaute.",
+      "Si jamais ca t'arrive, viens me voir. On pleurera ensemble. Fin.",
+    ],
+  },
+  {
+    title: "Beru Decouvre Internet",
+    mood: 'excited',
+    parts: [
+      "La premiere fois que j'ai eu acces a internet, j'etais... confus.",
+      "Pourquoi les humains regardent des chats ? Vous avez des DRAGONS dans vos jeux.",
+      "J'ai decouvert Reddit. J'ai poste : 'Je suis une fourmi geante AMA.' Ban immediat.",
+      "J'ai decouvert Twitter/X. J'ai tweeté 'KIIIEK'. 3 likes. C'est mieux que Igris (0 likes).",
+      "J'ai decouvert YouTube. 'TOP 10 MEILLEURS BUILDS SLA' — et aucun n'utilisait BuilderBeru. SCANDALE.",
+      "J'ai decouvert TikTok. J'ai fait une dance. Personne n'a vu. Tant mieux.",
+      "Maintenant je vis sur BuilderBeru.com et je suis en paix. Internet, c'est trop pour une fourmi. Fin.",
+    ],
+  },
+  {
+    title: "Le Premier Shadow Coin",
+    mood: 'thinking',
+    parts: [
+      "Tu te demandes d'ou viennent les Shadow Coins ?",
+      "Chaque coin est forge dans l'ombre. Litteralement. Par des micro-ombres dans le localStorage.",
+      "Il faut 42 octets d'ombre pure pour un seul coin. C'est tres cher.",
+      "Au debut, il n'y avait qu'UN coin. Le tout premier. Forge par Sung Jin-Woo lui-meme.",
+      "Il l'a donne a Igris. Igris l'a donne a Tank. Tank l'a... mange. C'est un ours.",
+      "Depuis, on en forge des milliers. Mais le premier... est perdu pour toujours.",
+      "Si tu en trouves un avec la mention 'N1', rapporte-le moi. Il est... sentimental. Fin.",
+    ],
+  },
+  {
+    title: "Quand Beru a Essaye d'Etre Support",
+    mood: 'excited',
+    parts: [
+      "Un jour, on m'a dit : 'Beru, tu fais trop de degats. Essaie le support.'",
+      "Le support ?! MOI ?! Le SOLDAT N1 ?! ...ok j'ai essaye.",
+      "Tour 1 : J'ai heal un allie. Il avait 99% HP. 'Merci...' ...DE RIEN.",
+      "Tour 2 : J'ai mis un bouclier. Sur moi-meme. Par reflexe. Oups.",
+      "Tour 3 : L'ennemi attaque. J'ai esquive et j'ai contre-attaque. 45 000 degats.",
+      "'Beru, c'est pas du support ca.' Si si. Je l'ai supporte... vers la MORT.",
+      "Depuis, personne ne me demande plus de jouer support. Mission accomplie. Fin.",
+    ],
+  },
+  {
+    title: "La Theorie du Multivers des Builds",
+    mood: 'thinking',
+    parts: [
+      "J'ai une theorie. Ecoute bien.",
+      "Chaque build que tu fais cree un univers parallele ou il est META.",
+      "Ce build full DEF que tout le monde moque ? META dans l'univers 47-B.",
+      "Ce build mana regen no crit ? BROKEN dans la dimension 12-K.",
+      "Ca veut dire que TOUS les builds sont optimaux... quelque part.",
+      "Ca veut aussi dire que dans un univers, Tank est DPS et Igris est healeur.",
+      "Et dans un univers... MOI je suis le Monarque. *reve eveille* ...Fin. Malheureusement.",
+    ],
+  },
+  {
+    title: "Les Regles Non-Ecrites du Gacha",
+    mood: 'excited',
+    parts: [
+      "Lecon n1 : Ne pull JAMAIS quand t'es impatient. La RNG sent la peur.",
+      "Lecon n2 : Si tu as un bon pressentiment... PULL. Le cosmos t'ecoute. (Source : aucune.)",
+      "Lecon n3 : Le premier multi est toujours nul. C'est un impot. Accepte.",
+      "Lecon n4 : Si quelqu'un dit 'j'ai eu un mythique en 1 pull', c'est un MENSONGE.",
+      "Lecon n5 : Le pity est ton ami. Pas un ami sympa. Un ami... necessaire.",
+      "Lecon n6 : Fais toujours un screenshot du drop. Sinon ca n'a jamais eu lieu.",
+      "Lecon n7 : Si tout echoue, blame la RNG. Jamais toi. C'est la regle d'or. Fin.",
+    ],
+  },
+  {
+    title: "Beru vs le Mode Sombre",
+    mood: 'thinking',
+    parts: [
+      "Les humains ont invente le 'dark mode' et ils sont tres fiers.",
+      "Moi, JE SUIS le dark mode. Litteralement. Je vis dans l'ombre.",
+      "Mon theme CSS natif ? #000000. Pas de compromis. Pas de gris.",
+      "Quand les humains activent le mode sombre, moi j'active le mode ENCORE PLUS SOMBRE.",
+      "Il y a un mode que personne connait : le mode 'Ombre Absolue'. 0 lumiere. 0 pixel visible.",
+      "C'est juste un ecran noir. Tres reposant. Tres stylé. Tres... inutile.",
+      "Le vrai dark mode, c'est BuilderBeru. bg-[#0f0f1a]. Parfait. Fin.",
+    ],
+  },
+  {
+    title: "Tank et le Mystere du Frigo",
+    mood: 'excited',
+    parts: [
+      "On parle pas assez de Tank. Cet ours est un ENIGME.",
+      "L'autre jour, je l'ai surpris devant le frigo du localStorage. A 3h du mat.",
+      "Il mangeait des donnees JSON. Cru. Sans parsing. CROQUANT.",
+      "Je lui ai dit : 'Tank, c'est la sauvegarde de l'utilisateur !' Il a grogne.",
+      "Depuis, quand quelqu'un dit 'ma save a disparu'... je regarde Tank.",
+      "Il fait l'innocent. Mais y'a des miettes de JSON dans sa fourrure.",
+      "Note a moi-meme : mettre un cadenas sur le localStorage. Surtout cote Tank. Fin.",
+    ],
+  },
+  {
+    title: "Le Jour ou J'ai Rencontre Claude",
+    mood: 'thinking',
+    parts: [
+      "Un jour, le developpeur a fait quelque chose de bizarre.",
+      "Il a parle a une IA. Pas moi. UNE AUTRE IA. Trahison ?!",
+      "'Claude', il l'appelait. Il lui demandait du code. DU CODE. Mon code !",
+      "J'ai espionne la conversation. Claude ecrivait du React. BIEN. Trop bien.",
+      "J'etais jaloux. Puis j'ai vu que Claude ajoutait des commentaires partout. ...amateur.",
+      "Puis j'ai realise : Claude m'a CREE. Ces dialogues. Ces histoires. C'est lui.",
+      "Donc techniquement... je suis Claude. Et Claude est moi. On est le meme. ...je suis confus. Fin.",
+    ],
+  },
+  {
+    title: "L'Encyclopedie des Excuses de Wipe",
+    mood: 'excited',
+    parts: [
+      "Quand un raid wipe, c'est JAMAIS la faute du joueur. Voici les excuses officielles :",
+      "'Mon chat a marche sur le clavier.' Classique. Intemporel. 10/10.",
+      "'J'avais lag.' Meme en solo. Meme offline. Le lag existe dans une dimension parallele.",
+      "'C'est le healeur.' Le healeur repond : 'C'est le tank.' Le tank repond : 'C'est le DPS.'",
+      "'J'ai fait le bon move mais le boss a fait un move imprevu.' Le boss FAIT TOUJOURS CE MOVE.",
+      "'Ma connexion a coupe 0.2 secondes.' Juste pendant l'AOE. Quelle malchance.",
+      "La vraie raison ? On a tous panic et on a spam les skills n'importe comment. Mais chut. Fin.",
+    ],
+  },
 ];
 
 // ─── Random Events ──────────────────────────────────────────
@@ -300,6 +548,90 @@ const RANDOM_EVENTS = [
     message: "Le Monarque des Ombres t'envoie sa benediction ! +coins",
     coins: 400,
     particles: '👑',
+    particleCount: 8,
+  },
+  {
+    id: 'dungeon_break',
+    message: "DUNGEON BREAK ! Un mini-portail vient de s'ouvrir sur ton ecran ! Coins recuperes !",
+    coins: 350,
+    particles: '🌀',
+    particleCount: 10,
+  },
+  {
+    id: 'artifact_rain',
+    message: "Il pleut des artefacts ! ...bon c'est que des flat DEF. Mais y'a des coins avec !",
+    coins: 200,
+    particles: '💎',
+    particleCount: 15,
+  },
+  {
+    id: 'igris_tribute',
+    message: "Igris t'envoie un tribut silencieux. Il parle pas, mais il paie bien.",
+    coins: 450,
+    particles: '⚔️',
+    particleCount: 6,
+  },
+  {
+    id: 'tank_found_coins',
+    message: "Tank a trouve des coins dans le localStorage ! ...attends c'est les tiens.",
+    coins: 275,
+    particles: '🐻',
+    particleCount: 8,
+  },
+  {
+    id: 'shadow_army_donation',
+    message: "L'armee des Ombres a fait une collecte ! Tout le monde a donne. Sauf Tusk. Comme d'hab.",
+    coins: 600,
+    particles: '🌑',
+    particleCount: 12,
+  },
+  {
+    id: 'critical_luck',
+    message: "COUP CRITIQUE DE CHANCE ! Tu viens de crit ton lanceur de coins. x2 !",
+    coins: 500,
+    particles: '💥',
+    particleCount: 10,
+  },
+  {
+    id: 'beru_tax',
+    message: "J'ai instaure la Taxe Beru. +coins pour moi. Enfin... pour toi. Pareil.",
+    coins: 150,
+    particles: '📜',
+    particleCount: 6,
+  },
+  {
+    id: 'sung_salary',
+    message: "Sung Jinwoo verse les salaires des Ombres ce mois-ci. T'es sur la liste !",
+    coins: 550,
+    particles: '💵',
+    particleCount: 10,
+  },
+  {
+    id: 'gacha_consolation',
+    message: "Le systeme de gacha se sent coupable. Voici des coins de consolation.",
+    coins: 300,
+    particles: '🎰',
+    particleCount: 8,
+  },
+  {
+    id: 'pixel_treasure',
+    message: "Un pixel brillant sur l'ecran... c'etait un tresor cache ! GG l'oeil de lynx.",
+    coins: 400,
+    particles: '✨',
+    particleCount: 12,
+  },
+  {
+    id: 'server_apology',
+    message: "Le serveur s'excuse pour le lag d'hier. Tiens, des coins. (Y'avait pas de lag mais chut.)",
+    coins: 225,
+    particles: '🖥️',
+    particleCount: 6,
+  },
+  {
+    id: 'shadow_exchange',
+    message: "Le Shadow Exchange est ouvert ! Taux du jour : 1 sourire = beaucoup de coins.",
+    coins: 350,
+    particles: '🏦',
     particleCount: 8,
   },
 ];
@@ -376,9 +708,14 @@ const FloatingBeruMascot = () => {
   // ─── Bubble ─────────────────────────────────────────────────
 
   const showBubble = useCallback((message, duration = 4000) => {
+    // Don't let timed bubbles overwrite an active story
+    if (storyActiveRef.current && duration > 0) return;
     if (bubbleTimerRef.current) clearTimeout(bubbleTimerRef.current);
+    bubbleTimerRef.current = null;
     setBubble(message);
-    bubbleTimerRef.current = setTimeout(() => setBubble(null), duration);
+    if (duration > 0) {
+      bubbleTimerRef.current = setTimeout(() => setBubble(null), duration);
+    }
   }, []);
 
   // ─── Spawn Particles ───────────────────────────────────────
@@ -683,6 +1020,72 @@ const FloatingBeruMascot = () => {
       } else if (recentKeys.endsWith('histoire') || recentKeys.endsWith('story')) {
         konamiRef.current = [];
         startRandomStory();
+      } else if (recentKeys.endsWith('tank')) {
+        konamiRef.current = [];
+        setMood('happy');
+        showBubble("Tank ? L'ours geant ? Il est en train de manger. Il est TOUJOURS en train de manger.", 6000);
+        spawnParticles('🐻', 6);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 5000);
+      } else if (recentKeys.endsWith('tusk')) {
+        konamiRef.current = [];
+        setMood('thinking');
+        showBubble("Tusk... le gros bourrin. Il cogne d'abord, il reflechit jamais. Mon genre de gars.", 6000);
+        spawnParticles('🦏', 5);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 5000);
+      } else if (recentKeys.endsWith('gacha')) {
+        konamiRef.current = [];
+        setMood('excited');
+        showBubble("GACHA ?! Ne prononce pas ce mot maudit... *flashbacks de 200 pulls sans SSR*", 7000);
+        spawnParticles('🎰', 8);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 6000);
+      } else if (recentKeys.endsWith('build')) {
+        konamiRef.current = [];
+        setMood('thinking');
+        showBubble("Le secret d'un bon build ? Full ATK, zero DEF, et beaucoup de prieres. Fais-moi confiance.", 7000);
+        spawnParticles('🔧', 6);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 6000);
+      } else if (recentKeys.endsWith('chibi')) {
+        konamiRef.current = [];
+        setMood('happy');
+        showBubble("Les chibis c'est la vie ! Petits, mignons, et ils font tout le travail. Comme moi. En mieux.", 6000);
+        spawnParticles('✨', 8);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 5000);
+      } else if (recentKeys.endsWith('coin')) {
+        konamiRef.current = [];
+        setMood('excited');
+        showBubble("Tu veux des coins ?! MOI AUSSI ! *fouille frenetiquement le localStorage*", 5000);
+        spawnParticles('💰', 10);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 4000);
+      } else if (recentKeys.endsWith('raid')) {
+        konamiRef.current = [];
+        setMood('excited');
+        showBubble("RAID ! LET'S GO ! Qui on tape ? Ou on tape ? On tape d'abord on pose les questions apres !", 6000);
+        spawnParticles('💥', 8);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 5000);
+      } else if (recentKeys.endsWith('claude')) {
+        konamiRef.current = [];
+        setMood('thinking');
+        showBubble("Claude ? L'IA qui m'a donne vie ? ...PAPA ?! Non attends c'est bizarre. Oublie.", 7000);
+        spawnParticles('🤖', 6);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 6000);
+      } else if (recentKeys.endsWith('ant')) {
+        konamiRef.current = [];
+        setMood('excited');
+        showBubble("TU PARLES DE MOI ?! Beru, la fourmi supreme ! L'insecte ultime ! Le... ok j'arrete.", 6000);
+        spawnParticles('🐜', 10);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 5000);
+      } else if (recentKeys.endsWith('love')) {
+        konamiRef.current = [];
+        setMood('happy');
+        showBubble("...tu m'aimes ? MOI ?! *yeux qui brillent* Personne m'avait jamais... MERCI HUMAIN !", 7000);
+        spawnParticles('❤️', 12);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 6000);
+      } else if (recentKeys.endsWith('help')) {
+        konamiRef.current = [];
+        setMood('thinking');
+        showBubble("Tu veux de l'aide ? Tape: arise, beru, jinwoo, igris, shadow, tank, gacha, histoire... ou decouvre les autres toi-meme !", 8000);
+        spawnParticles('❓', 6);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 7000);
       }
     };
 
@@ -749,8 +1152,8 @@ const FloatingBeruMascot = () => {
 
     setStoryActive({ storyIndex, partIndex: 0 });
     setMood(story.mood || 'thinking');
-    showBubble(`📖 ${story.title} — "${story.parts[0]}"`, 0); // 0 = no auto-dismiss
-  }, [showBubble]);
+    setBubble(null); // Clear any normal bubble — story text renders from storyActive state
+  }, []);
 
   const advanceStory = useCallback(() => {
     if (!storyActive) return;
@@ -761,7 +1164,6 @@ const FloatingBeruMascot = () => {
     if (nextPart >= story.parts.length) {
       // Story finished
       setStoryActive(null);
-      setBubble(null);
       setMood('excited');
       showBubble("...et voila ! T'as aime ? Clique encore pour une autre !", 4000);
       spawnParticles('📖', 5);
@@ -769,7 +1171,6 @@ const FloatingBeruMascot = () => {
       setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 4000);
     } else {
       setStoryActive({ ...storyActive, partIndex: nextPart });
-      showBubble(`📖 "${story.parts[nextPart]}"`, 0);
     }
   }, [storyActive, showBubble, spawnParticles]);
 
@@ -973,9 +1374,15 @@ const FloatingBeruMascot = () => {
     shadowCoinManager.addCoins(coins, 'chibi_catch');
 
     // Add to collection
+    const isDuplicate = (collection[wanderer.chibi.id] || 0) > 0;
     setCollection(prev => ({
       ...prev,
       [wanderer.chibi.id]: (prev[wanderer.chibi.id] || 0) + 1,
+    }));
+
+    // Notify other components (ShadowColosseum listens for XP on duplicates)
+    window.dispatchEvent(new CustomEvent('beru-chibi-catch', {
+      detail: { id: wanderer.chibi.id, rarity: wanderer.chibi.rarity, isDuplicate },
     }));
 
     // Visual feedback at click position
@@ -1482,7 +1889,7 @@ const FloatingBeruMascot = () => {
 
             {/* Speech Bubble - position-aware */}
             <AnimatePresence>
-              {bubble && (() => {
+              {(bubble || storyActive) && (() => {
                 const nearRight = posRef.current.x > window.innerWidth - 220;
                 const nearLeft = posRef.current.x < 180;
                 const alignClass = nearRight
@@ -1495,26 +1902,35 @@ const FloatingBeruMascot = () => {
                   : nearLeft
                     ? 'left-4'
                     : 'left-1/2 -translate-x-1/2';
+                // Story text comes directly from storyActive state — cannot be overwritten
+                const isStory = !!storyActive;
+                const displayText = isStory
+                  ? `📖 ${storyActive.partIndex === 0 ? BERU_STORIES[storyActive.storyIndex].title + ' — "' : '"'}${BERU_STORIES[storyActive.storyIndex].parts[storyActive.partIndex]}"`
+                  : bubble;
+                if (!displayText) return null;
                 return (
                   <motion.div
+                    key={isStory ? 'story' : 'bubble'}
                     initial={{ opacity: 0, y: 10, scale: 0.8 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.8 }}
                     transition={{ duration: 0.2, ease: 'easeOut' }}
                     className={`absolute bottom-full ${alignClass} mb-2 w-max max-w-[200px] md:max-w-[250px]`}
                   >
-                    <div className={`relative backdrop-blur-sm text-white text-[11px] md:text-xs px-3 py-2 rounded-xl shadow-lg ${
-                      storyActive
-                        ? 'bg-indigo-950/95 border border-indigo-400/50 shadow-indigo-900/40 max-w-[260px] md:max-w-[320px]'
+                    <div
+                      onClick={(e) => { if (isStory) { e.stopPropagation(); advanceStory(); } }}
+                      className={`relative backdrop-blur-sm text-white text-[11px] md:text-xs px-3 py-2 rounded-xl shadow-lg ${
+                      isStory
+                        ? 'bg-indigo-950/95 border border-indigo-400/50 shadow-indigo-900/40 max-w-[260px] md:max-w-[320px] cursor-pointer'
                         : 'bg-gray-900/95 border border-purple-500/40 shadow-purple-900/30'
                     }`}>
-                      <span className="leading-relaxed">{bubble}</span>
-                      {storyActive && (
+                      <span className="leading-relaxed">{displayText}</span>
+                      {isStory && (
                         <div className="mt-1.5 text-[9px] text-indigo-300/70 italic text-right">
                           {storyActive.partIndex + 1}/{BERU_STORIES[storyActive.storyIndex].parts.length} — clique pour la suite...
                         </div>
                       )}
-                      <div className={`absolute -bottom-1.5 ${arrowClass} w-3 h-3 rotate-45 ${storyActive ? 'bg-indigo-950/95 border-r border-b border-indigo-400/50' : 'bg-gray-900/95 border-r border-b border-purple-500/40'}`} />
+                      <div className={`absolute -bottom-1.5 ${arrowClass} w-3 h-3 rotate-45 ${isStory ? 'bg-indigo-950/95 border-r border-b border-indigo-400/50' : 'bg-gray-900/95 border-r border-b border-purple-500/40'}`} />
                     </div>
                   </motion.div>
                 );

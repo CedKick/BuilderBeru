@@ -15,6 +15,8 @@ import {
   applySkillUpgrades, getUpgradeDesc, computeAttack, aiPickSkill,
   ACCOUNT_XP_FOR_LEVEL, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT, accountLevelFromXp,
   getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
+  getStarScaledStats, getStarRewardMult, getStarDropBonus, getGuaranteedArtifactRarity,
+  calculatePowerScore, getDifficultyRating,
 } from './colosseumCore';
 import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate } from './raidData';
 import { BattleStyles, BattleArena } from './BattleVFX';
@@ -25,6 +27,7 @@ import {
   generateArtifact, enhanceArtifact, computeArtifactBonuses, computeWeaponBonuses,
   mergeEquipBonuses, getActiveSetBonuses, getActivePassives, MAX_EVEIL_STARS, STAGE_HUNTER_DROP,
   HAMMERS, HAMMER_ORDER, getRequiredHammer, rollHammerDrop,
+  SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
 } from './equipmentData';
 
 // Unified lookup helpers — works for both shadow chibis and hunters
@@ -87,35 +90,45 @@ const STAGES = [
     skills: [{ name: 'Ombre Royale', power: 110, cdMax: 0 }, { name: 'Domination', power: 0, cdMax: 3, buffAtk: 60, buffDur: 3 }, { name: 'Jugement Final', power: 280, cdMax: 5 }] },
   // Tier 4 — Citadelle Maudite
   { id: 'wraith', name: 'Wraith', tier: 4, element: 'shadow', emoji: '\uD83D\uDC7B',
+    sprite: SPRITES.wraith,
     hp: 600, atk: 65, def: 30, spd: 40, crit: 18, res: 12, xp: 130, coins: 220,
     skills: [{ name: 'Drain Vital', power: 100, cdMax: 0, healSelf: 15 }, { name: 'Hurlement Spectral', power: 200, cdMax: 3, debuffDef: 30, debuffDur: 2 }] },
   { id: 'ifrit', name: 'Ifrit', tier: 4, element: 'fire', emoji: '\uD83D\uDD25',
+    sprite: SPRITES.ifrit,
     hp: 550, atk: 75, def: 25, spd: 35, crit: 20, res: 8, xp: 140, coins: 240,
     skills: [{ name: 'Flamme Infernale', power: 115, cdMax: 0 }, { name: 'Nova de Feu', power: 230, cdMax: 3 }] },
   { id: 'wyvern', name: 'Wyverne', tier: 4, element: 'wind', emoji: '\uD83D\uDC32',
+    sprite: SPRITES.wyvern,
     hp: 500, atk: 60, def: 28, spd: 50, crit: 22, res: 6, xp: 150, coins: 250,
     skills: [{ name: 'Souffle Tempete', power: 105, cdMax: 0 }, { name: 'Tornade', power: 210, cdMax: 2 }] },
   { id: 'lich_king', name: 'Roi Liche', tier: 4, element: 'earth', emoji: '\uD83D\uDC80', isBoss: true,
+    sprite: SPRITES.lich_king,
     hp: 1400, atk: 70, def: 50, spd: 25, crit: 12, res: 20, xp: 250, coins: 450,
     skills: [{ name: 'Frappe Glaciale', power: 100, cdMax: 0 }, { name: 'Armure d\'Os', power: 0, cdMax: 3, buffDef: 90, buffDur: 3 }, { name: 'Apocalypse Noire', power: 280, cdMax: 5 }] },
   // Tier 5 — Throne des Anciens
   { id: 'banshee', name: 'Banshee', tier: 5, element: 'shadow', emoji: '\uD83D\uDE31',
+    sprite: SPRITES.banshee,
     hp: 700, atk: 85, def: 32, spd: 45, crit: 22, res: 15, xp: 200, coins: 350,
     skills: [{ name: 'Cri Mortel', power: 110, cdMax: 0 }, { name: 'Lamentation', power: 240, cdMax: 3, debuffDef: 40, debuffDur: 2 }] },
   { id: 'dragon_rouge', name: 'Dragon Rouge', tier: 5, element: 'fire', emoji: '\uD83D\uDC09',
+    sprite: SPRITES.dragon_rouge,
     hp: 900, atk: 95, def: 40, spd: 32, crit: 18, res: 12, xp: 220, coins: 380,
     skills: [{ name: 'Crache-Flamme', power: 115, cdMax: 0 }, { name: 'Souffle de Dragon', power: 260, cdMax: 3 }, { name: 'Inferno Total', power: 320, cdMax: 5 }] },
   { id: 'tempestaire', name: 'Tempestaire', tier: 5, element: 'wind', emoji: '\uD83C\uDF2A\uFE0F',
+    sprite: SPRITES.tempestaire,
     hp: 650, atk: 80, def: 30, spd: 55, crit: 25, res: 10, xp: 210, coins: 360,
     skills: [{ name: 'Lame de Vent', power: 105, cdMax: 0 }, { name: 'Cyclone', power: 250, cdMax: 3 }] },
   { id: 'colossus', name: 'Colossus', tier: 5, element: 'earth', emoji: '\uD83D\uDDFF', isBoss: true,
+    sprite: SPRITES.colossus,
     hp: 2200, atk: 85, def: 65, spd: 18, crit: 8, res: 25, xp: 380, coins: 650,
     skills: [{ name: 'Poing Titanesque', power: 110, cdMax: 0 }, { name: 'Bouclier Ancestral', power: 0, cdMax: 3, buffDef: 100, buffDur: 3 }, { name: 'Seisme Supreme', power: 300, cdMax: 5 }] },
   // Tier 6 — Domaine du Monarque
   { id: 'archdemon', name: 'Archdemon', tier: 6, element: 'shadow', emoji: '\uD83D\uDE08',
+    sprite: SPRITES.archdemon,
     hp: 1100, atk: 110, def: 45, spd: 42, crit: 25, res: 18, xp: 300, coins: 500,
     skills: [{ name: 'Griffe Demoniaque', power: 115, cdMax: 0 }, { name: 'Pluie de Tenebres', power: 280, cdMax: 3 }] },
   { id: 'ragnarok', name: 'Ragnarok', tier: 6, element: 'fire', emoji: '\u2604\uFE0F',
+    sprite: SPRITES.ragnarok, spriteSize: 'lg',
     hp: 1000, atk: 120, def: 38, spd: 38, crit: 22, res: 12, xp: 320, coins: 550,
     skills: [{ name: 'Extinction', power: 120, cdMax: 0 }, { name: 'Jugement de Feu', power: 300, cdMax: 3 }, { name: 'Apocalypse', power: 380, cdMax: 5 }] },
   { id: 'zephyr', name: 'Zephyr Ultime', tier: 6, element: 'wind', emoji: '\uD83C\uDF2C\uFE0F',
@@ -134,7 +147,7 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, respecCount: {}, cooldowns: {}, stagesCleared: [], stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponInventory: [], hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0 });
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponInventory: [], hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0 });
 const loadData = () => {
   try {
     const d = { ...defaultData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) };
@@ -146,6 +159,14 @@ const loadData = () => {
     if (d.accountXp === undefined) d.accountXp = 0;
     if (!d.accountBonuses) d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
     if (d.accountAllocations === undefined) d.accountAllocations = 0;
+    // Migration: stagesCleared array → object { [id]: { maxStars } }
+    if (Array.isArray(d.stagesCleared)) {
+      const m = {};
+      d.stagesCleared.forEach(id => { m[id] = { maxStars: 0 }; });
+      d.stagesCleared = m;
+    } else if (!d.stagesCleared || typeof d.stagesCleared !== 'object') {
+      d.stagesCleared = {};
+    }
     return d;
   } catch { return defaultData(); }
 };
@@ -160,6 +181,7 @@ export default function ShadowColosseum() {
   const [data, setData] = useState(loadData);
   const [selChibi, setSelChibi] = useState(null);
   const [selStage, setSelStage] = useState(null);
+  const [selectedStar, setSelectedStar] = useState(0);
   const [battle, setBattle] = useState(null);
   const [phase, setPhase] = useState('idle');
   const [dmgPopup, setDmgPopup] = useState(null);
@@ -171,6 +193,9 @@ export default function ShadowColosseum() {
   const [shopEnhEquipKey, setShopEnhEquipKey] = useState(null); // "chibiId|slotId"
   const [accountLevelUpPending, setAccountLevelUpPending] = useState(0); // number of pending allocations
   const [showTutorial, setShowTutorial] = useState(false);
+  const [coinDisplay, setCoinDisplay] = useState(shadowCoinManager.getBalance());
+  const [coinDelta, setCoinDelta] = useState(null); // { amount, key }
+  const [collectionVer, setCollectionVer] = useState(0); // bump to re-read collection
   const clickCountRef = useRef({});
   const clickTimerRef = useRef({});
   const phaseRef = useRef('idle');
@@ -188,7 +213,65 @@ export default function ShadowColosseum() {
     }));
   }, []);
 
-  // Collection from mascot system
+  // Subscribe to coin changes for instant reactive updates
+  useEffect(() => {
+    const unsub = shadowCoinManager.subscribe(({ total, change }) => {
+      setCoinDisplay(total);
+      if (change !== 0) setCoinDelta({ amount: change, key: Date.now() });
+    });
+    return unsub;
+  }, []);
+
+  // Poll collection for reactive updates (no event system for localStorage)
+  const collectionCacheRef = useRef(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      try {
+        const col = JSON.parse(localStorage.getItem('beru_chibi_collection') || '{}');
+        const count = Object.keys(col).filter(k => col[k] > 0 && CHIBIS[k]).length;
+        if (count !== collectionCacheRef.current) {
+          collectionCacheRef.current = count;
+          setCollectionVer(v => v + 1);
+        }
+      } catch {}
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Listen for chibi catches — duplicate = bonus XP
+  const [catchToast, setCatchToast] = useState(null);
+  useEffect(() => {
+    const DUPE_XP = { rare: 30, legendaire: 60, mythique: 120 };
+    const handler = (e) => {
+      const { id, rarity, isDuplicate } = e.detail;
+      if (isDuplicate && CHIBIS[id]) {
+        const xpBonus = DUPE_XP[rarity] || 30;
+        setData(prev => {
+          const cur = prev.chibiLevels[id] || { level: 1, xp: 0 };
+          let newXp = cur.xp + xpBonus;
+          let newLevel = cur.level;
+          let leveled = false;
+          while (newLevel < MAX_LEVEL && newXp >= xpForLevel(newLevel)) {
+            newXp -= xpForLevel(newLevel);
+            newLevel++;
+            leveled = true;
+          }
+          if (newLevel >= MAX_LEVEL) newXp = 0;
+          return { ...prev, chibiLevels: { ...prev.chibiLevels, [id]: { level: newLevel, xp: newXp } } };
+        });
+        setCatchToast({ id, name: CHIBIS[id].name, xp: DUPE_XP[rarity] || 30, key: Date.now() });
+        setTimeout(() => setCatchToast(null), 3000);
+      } else if (!isDuplicate && CHIBIS[id]) {
+        setCatchToast({ id, name: CHIBIS[id].name, isNew: true, key: Date.now() });
+        setTimeout(() => setCatchToast(null), 3000);
+      }
+    };
+    window.addEventListener('beru-chibi-catch', handler);
+    return () => window.removeEventListener('beru-chibi-catch', handler);
+  }, []);
+
+  // Collection from mascot system (reactive via collectionVer)
+  // eslint-disable-next-line
   const collection = (() => { try { return JSON.parse(localStorage.getItem('beru_chibi_collection') || '{}'); } catch { return {}; } })();
   const ownedIds = Object.keys(collection).filter(k => collection[k] > 0 && CHIBIS[k]);
 
@@ -202,7 +285,9 @@ export default function ShadowColosseum() {
     if (!isCooldown(id)) return 0;
     return Math.ceil((data.cooldowns[id] - Date.now()) / 60000);
   };
-  const isStageUnlocked = (idx) => idx === 0 || data.stagesCleared.includes(STAGES[idx - 1].id);
+  const isStageCleared = (id) => id in data.stagesCleared;
+  const getMaxStars = (id) => data.stagesCleared[id]?.maxStars ?? -1;
+  const isStageUnlocked = (idx) => idx === 0 || isStageCleared(STAGES[idx - 1].id);
 
   // ─── Stat Points Logic ─────────────────────────────────────
 
@@ -375,18 +460,26 @@ export default function ShadowColosseum() {
         }),
         buffs: [],
       },
-      enemy: {
-        id: stage.id, name: stage.name, element: stage.element, isBoss: !!stage.isBoss,
-        hp: stage.hp, maxHp: stage.hp, atk: stage.atk, def: stage.def, spd: stage.spd,
-        crit: stage.crit, res: stage.res,
-        skills: stage.skills.map(sk => ({ ...sk, cd: 0 })),
-        buffs: [],
-        mana: 999, maxMana: 999, manaRegen: 0,
-      },
+      enemy: (() => {
+        const sc = getStarScaledStats(stage, selectedStar);
+        return {
+          id: stage.id, name: stage.name, element: stage.element, isBoss: !!stage.isBoss,
+          hp: sc.hp, maxHp: sc.hp, atk: sc.atk, def: sc.def, spd: sc.spd,
+          crit: sc.crit, res: sc.res,
+          skills: stage.skills.map(sk => ({ ...sk, cd: 0 })),
+          buffs: [],
+          mana: 999, maxMana: 999, manaRegen: 0,
+        };
+      })(),
+      starLevel: selectedStar,
       talentBonuses: (() => { const m = { ...tb }; for (const [k, v] of Object.entries(eqB)) { if (v) m[k] = (m[k] || 0) + v; } return m; })(),
       passives,
       passiveState: { flammeStacks: 0, martyrHealed: false, echoTurnCounter: 0, echoFreeMana: false },
       immortelUsed: false,
+      sulfurasStacks: (() => {
+        const wId = data.weapons[selChibi];
+        return wId && WEAPONS[wId]?.passive === 'sulfuras_fury' ? 0 : undefined;
+      })(),
       turn: 1, log: [],
     });
     setPhase('idle');
@@ -442,6 +535,11 @@ export default function ShadowColosseum() {
         log.push({ text: `Flamme Interieure explose ! Crit garanti !`, type: 'info', id: Date.now() - 0.2 });
       }
     });
+
+    // Sulfuras stacking passive: +33% dmg per turn, max +100%
+    if (battle.sulfurasStacks !== undefined) {
+      atkMult += battle.sulfurasStacks / 100;
+    }
 
     // Temporarily modify player for this attack
     const savedAtk = player.atk;
@@ -576,8 +674,14 @@ export default function ShadowColosseum() {
         }
       });
 
+      // Sulfuras: increment stacking damage each turn
+      let newSulfurasStacks = battle.sulfurasStacks;
+      if (newSulfurasStacks !== undefined) {
+        newSulfurasStacks = Math.min(SULFURAS_STACK_MAX, newSulfurasStacks + SULFURAS_STACK_PER_TURN);
+      }
+
       setDmgPopup(dmgToPlayer > 0 ? { target: 'player', value: dmgToPlayer, isCrit: eRes.isCrit } : null);
-      setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, immortelUsed, passiveState: ps, turn: prev.turn + 1, log: log.slice(-10) }));
+      setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, immortelUsed, passiveState: ps, sulfurasStacks: newSulfurasStacks, turn: prev.turn + 1, log: log.slice(-10) }));
 
       if (enemy.hp <= 0) {
         setTimeout(() => handleVictory(), 1200);
@@ -596,8 +700,15 @@ export default function ShadowColosseum() {
   const handleVictory = useCallback(() => {
     setPhase('done');
     const stage = STAGES[selStage];
+    const currentStar = battle?.starLevel || 0;
+
+    // Star-scaled rewards
+    const rMult = getStarRewardMult(currentStar);
+    const scaledXp = Math.floor(stage.xp * rMult.xp);
+    const scaledCoins = Math.floor(stage.coins * rMult.coins);
+
     const { level, xp } = getChibiLevel(selChibi);
-    let newXp = xp + stage.xp;
+    let newXp = xp + scaledXp;
     let newLevel = level;
     let leveled = false;
     let newStatPts = 0;
@@ -609,14 +720,15 @@ export default function ShadowColosseum() {
       leveled = true;
       newStatPts += POINTS_PER_LEVEL;
       if (newLevel % SP_INTERVAL === 0) newSP++;
-      if (newLevel >= 10) newTP++; // 1 talent point per level from 10+
+      if (newLevel >= 10) newTP++;
     }
     if (newLevel >= MAX_LEVEL) newXp = 0;
 
-    shadowCoinManager.addCoins(stage.coins, 'colosseum_victory');
+    shadowCoinManager.addCoins(scaledCoins, 'colosseum_victory');
 
-    // Account XP
-    const accountXpGain = 15 + stage.tier * 10 + (stage.isBoss ? 20 : 0);
+    // Account XP (scaled)
+    const baseAccountXp = 15 + stage.tier * 10 + (stage.isBoss ? 20 : 0);
+    const accountXpGain = Math.floor(baseAccountXp * rMult.accountXp);
     const prevAccountXp = data.accountXp || 0;
     const newAccountXp = prevAccountXp + accountXpGain;
     const prevAccLvl = accountLevelFromXp(prevAccountXp).level;
@@ -625,13 +737,20 @@ export default function ShadowColosseum() {
     const newMilestones = Math.floor(newAccLvl / ACCOUNT_BONUS_INTERVAL);
     const newAllocations = newMilestones - prevMilestones;
 
-    // Hammer drop
+    // Hammer drop (star bonus on base chance)
+    const dropBonus = getStarDropBonus(currentStar);
     const hammerDrop = rollHammerDrop(stage.tier, !!stage.isBoss);
+    // Extra hammer roll from star bonus
+    let extraHammer = null;
+    if (!hammerDrop && dropBonus.hammerPct > 0 && Math.random() * 100 < dropBonus.hammerPct) {
+      extraHammer = rollHammerDrop(stage.tier, !!stage.isBoss);
+    }
 
-    // Hunter drop chance
+    // Hunter drop (base + star bonus)
     let hunterDrop = null;
-    const dropChance = stage.isBoss ? STAGE_HUNTER_DROP.dropChance.boss : STAGE_HUNTER_DROP.dropChance.normal;
-    if (Math.random() < dropChance) {
+    const baseHunterChance = stage.isBoss ? STAGE_HUNTER_DROP.dropChance.boss : STAGE_HUNTER_DROP.dropChance.normal;
+    const hunterChance = baseHunterChance + dropBonus.hunterPct / 100;
+    if (Math.random() < hunterChance) {
       const tierPool = STAGE_HUNTER_DROP.tierPool[stage.tier] || ['rare'];
       const dropRarity = tierPool[Math.floor(Math.random() * tierPool.length)];
       const hunterCandidates = Object.values(HUNTERS).filter(h => h.rarity === dropRarity);
@@ -644,22 +763,44 @@ export default function ShadowColosseum() {
       }
     }
 
+    // Guaranteed artifact at high stars
+    let guaranteedArtifact = null;
+    const gRarity = getGuaranteedArtifactRarity(currentStar);
+    if (gRarity) guaranteedArtifact = generateArtifact(gRarity);
+
+    // Secret weapon drop: Masse de Sulfuras (1/30000 from Ragnarok only)
+    let weaponDrop = null;
+    if (stage.id === 'ragnarok' && Math.random() < 1 / 30000) {
+      const alreadyOwned = data.weaponInventory.includes('w_sulfuras') || Object.values(data.weapons).includes('w_sulfuras');
+      if (!alreadyOwned) {
+        weaponDrop = WEAPONS.w_sulfuras;
+      }
+    }
+
+    // Star tracking
+    const prevMaxStars = getMaxStars(stage.id);
+    const newMaxStars = Math.max(prevMaxStars, currentStar);
+    const isNewStarRecord = currentStar > prevMaxStars;
+
     setData(prev => {
       const newHammers = { ...(prev.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }) };
       if (hammerDrop) newHammers[hammerDrop] = (newHammers[hammerDrop] || 0) + 1;
+      if (extraHammer) newHammers[extraHammer] = (newHammers[extraHammer] || 0) + 1;
       return {
         ...prev,
         chibiLevels: { ...prev.chibiLevels, [selChibi]: { level: newLevel, xp: newXp } },
-        stagesCleared: prev.stagesCleared.includes(stage.id) ? prev.stagesCleared : [...prev.stagesCleared, stage.id],
+        stagesCleared: { ...prev.stagesCleared, [stage.id]: { maxStars: Math.max((prev.stagesCleared[stage.id]?.maxStars ?? -1), currentStar) } },
         stats: { battles: prev.stats.battles + 1, wins: prev.stats.wins + 1 },
         hammers: newHammers,
         accountXp: newAccountXp,
+        weaponInventory: weaponDrop ? [...prev.weaponInventory, weaponDrop.id] : prev.weaponInventory,
+        artifactInventory: guaranteedArtifact ? [...prev.artifactInventory, guaranteedArtifact] : prev.artifactInventory,
       };
     });
     if (newAllocations > 0) setAccountLevelUpPending(newAllocations);
-    setResult({ won: true, xp: stage.xp, coins: stage.coins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrop, hammerDrop, accountXpGain, accountLevelUp: newAccLvl > prevAccLvl ? newAccLvl : null, accountAllocations: newAllocations });
+    setResult({ won: true, xp: scaledXp, coins: scaledCoins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrop, hammerDrop: hammerDrop || extraHammer, weaponDrop, guaranteedArtifact, starLevel: currentStar, isNewStarRecord, newMaxStars, accountXpGain, accountLevelUp: newAccLvl > prevAccLvl ? newAccLvl : null, accountAllocations: newAllocations });
     setView('result');
-  }, [selChibi, selStage, data]);
+  }, [selChibi, selStage, battle, data]);
 
   // ─── Defeat ────────────────────────────────────────────────
 
@@ -707,17 +848,27 @@ export default function ShadowColosseum() {
     <div className="min-h-screen bg-[#0a0a1a] text-white pb-20">
       <BattleStyles />
 
+      {/* Fixed bottom back button for sub-views (not result/battle) */}
+      {!['hub', 'battle', 'result'].includes(view) && (
+        <div className="fixed bottom-4 left-0 right-0 flex justify-center z-50">
+          <button onClick={() => setView('hub')}
+            className="px-6 py-2.5 bg-gradient-to-r from-gray-700 to-gray-600 rounded-xl font-bold text-sm shadow-lg shadow-gray-900/40 hover:scale-105 transition-transform active:scale-95 border border-gray-500/30">
+            {'\u2190'} Menu
+          </button>
+        </div>
+      )}
+
       {/* ═══ HUB VIEW ═══ */}
       {view === 'hub' && (
-        <div className="max-w-lg mx-auto px-3 pt-4">
+        <div className="max-w-2xl mx-auto px-4 pt-4">
           {/* Header */}
           <div className="text-center mb-5">
             <Link to="/" className="text-gray-500 text-xs hover:text-white transition-colors">&larr; Retour</Link>
             <h1 className="text-2xl md:text-3xl font-black mt-1 bg-gradient-to-r from-purple-400 to-red-400 bg-clip-text text-transparent">
               Shadow Colosseum
             </h1>
-            <p className="text-[10px] text-gray-500 mt-1">Le Colisee des Ombres — Fais combattre tes chibis !</p>
-            <div className="flex justify-center gap-4 mt-2 text-[10px] text-gray-400">
+            <p className="text-xs text-gray-500 mt-1">Le Colisee des Ombres — Fais combattre tes chibis !</p>
+            <div className="flex justify-center gap-4 mt-2 text-xs text-gray-400">
               <span>{data.stats.battles} combats</span>
               <span>{data.stats.wins} victoires</span>
             </div>
@@ -748,7 +899,7 @@ export default function ShadowColosseum() {
                 {hasAnyBonus && (
                   <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
                     {STAT_ORDER.filter(k => ab[k] > 0).map(k => (
-                      <span key={k} className="text-[8px] text-gray-400">
+                      <span key={k} className="text-[10px] text-gray-400">
                         {STAT_META[k].icon} {STAT_META[k].name} <span className="text-green-400 font-bold">+{ab[k]}</span>
                       </span>
                     ))}
@@ -761,7 +912,7 @@ export default function ShadowColosseum() {
                     {'\u2B50'} {pendingPoints} points de stats a attribuer !
                   </button>
                 )}
-                <div className="text-[8px] text-gray-600 mt-1 text-center">
+                <div className="text-[10px] text-gray-600 mt-1 text-center">
                   Prochain bonus : Lv {(Math.floor(acc.level / ACCOUNT_BONUS_INTERVAL) + 1) * ACCOUNT_BONUS_INTERVAL} (+{ACCOUNT_BONUS_AMOUNT} pts d'une stat au choix)
                 </div>
               </div>
@@ -788,7 +939,19 @@ export default function ShadowColosseum() {
               <span className="font-bold text-amber-400 group-hover:text-amber-300">BOUTIQUE</span>
               <span className="text-xs text-gray-400">— Forge & Armurerie</span>
             </div>
-            <p className="text-[10px] text-gray-500 mt-0.5">Forge des artefacts, achete des armes ! {'\uD83D\uDCB0'} {shadowCoinManager.getBalance()} coins</p>
+            <p className="text-[10px] text-gray-500 mt-0.5 relative inline-flex items-center gap-1">
+              Forge des artefacts, achete des armes ! {'\uD83D\uDCB0'}{' '}
+              <span className="text-amber-400 font-bold">{coinDisplay} coins</span>
+              {coinDelta && (
+                <motion.span
+                  key={coinDelta.key}
+                  initial={{ opacity: 1, y: 0 }}
+                  animate={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 1.5 }}
+                  className={`absolute -top-3 right-0 text-[10px] font-bold ${coinDelta.amount > 0 ? 'text-green-400' : 'text-red-400'}`}
+                >{coinDelta.amount > 0 ? '+' : ''}{coinDelta.amount}</motion.span>
+              )}
+            </p>
           </button>
 
           {/* No chibis warning */}
@@ -829,18 +992,18 @@ export default function ShadowColosseum() {
                         'border-gray-700/40 bg-gray-800/30 hover:border-purple-500/40'
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <img src={getChibiSprite(id)} alt={c.name} className="w-10 h-10 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
+                      <div className="flex items-center gap-2.5">
+                        <img src={getChibiSprite(id)} alt={c.name} className="w-12 h-12 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs font-bold truncate">{c.name}</div>
-                          <div className="flex items-center gap-1 text-[9px]">
+                          <div className="text-sm font-bold truncate">{c.name}</div>
+                          <div className="flex items-center gap-1 text-[11px]">
                             <span className={RARITY[c.rarity].color}>{RARITY[c.rarity].stars}</span>
                             <span className={ELEMENTS[c.element].color}>{ELEMENTS[c.element].icon}</span>
                             <span className="text-gray-400">Lv{level}</span>
                           </div>
                         </div>
                       </div>
-                      <div className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-0.5 text-[8px] text-gray-400">
+                      <div className="mt-1.5 grid grid-cols-3 gap-x-3 gap-y-0.5 text-[10px] text-gray-400">
                         <span>PV:{s.hp}</span><span>ATK:{s.atk}</span><span>DEF:{s.def}</span>
                         <span>SPD:{s.spd}</span><span>CRT:{s.crit}%</span><span>RES:{s.res}%</span>
                       </div>
@@ -852,17 +1015,17 @@ export default function ShadowColosseum() {
                       {hasUnspent && !onCd && (
                         <div className="absolute -top-1 -right-1 flex gap-0.5">
                           {availPts > 0 && (
-                            <span className="px-1 py-0.5 rounded text-[7px] font-bold bg-amber-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
                               {availPts} PTS
                             </span>
                           )}
                           {availSP > 0 && (
-                            <span className="px-1 py-0.5 rounded text-[7px] font-bold bg-purple-500/80 text-white" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/80 text-white" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
                               {availSP} SP
                             </span>
                           )}
                           {availTP > 0 && (
-                            <span className="px-1 py-0.5 rounded text-[7px] font-bold bg-green-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
                               {availTP} TP
                             </span>
                           )}
@@ -888,12 +1051,12 @@ export default function ShadowColosseum() {
                     transition={{ duration: 0.25 }}
                     className="overflow-hidden mb-4"
                   >
-                    <div className="p-3 rounded-xl border border-purple-500/30 bg-purple-500/5">
+                    <div className="p-4 rounded-xl border border-purple-500/30 bg-purple-500/5">
                       <div className="flex items-center gap-3 mb-3">
-                        <img src={getChibiSprite(selChibi)} alt="" className="w-12 h-12 object-contain" style={{ filter: RARITY[getChibiData(selChibi).rarity].glow }} />
+                        <img src={getChibiSprite(selChibi)} alt="" className="w-14 h-14 object-contain" style={{ filter: RARITY[getChibiData(selChibi).rarity].glow }} />
                         <div className="flex-1">
-                          <div className="text-sm font-bold">{getChibiData(selChibi).name}</div>
-                          <div className="text-[10px] text-gray-400">
+                          <div className="text-base font-bold">{getChibiData(selChibi).name}</div>
+                          <div className="text-xs text-gray-400">
                             Lv{getChibiLevel(selChibi).level} {RARITY[getChibiData(selChibi).rarity].stars} {ELEMENTS[getChibiData(selChibi).element].icon}
                             {HUNTERS[selChibi] && <span className="ml-1 text-red-400">[Hunter]</span>}
                           </div>
@@ -932,10 +1095,10 @@ export default function ShadowColosseum() {
                                 const isPct = stat === 'crit' || stat === 'res';
                                 const m = STAT_META[stat];
                                 return (
-                                  <div key={stat} className="flex items-center gap-1 bg-gray-800/30 rounded-md px-1.5 py-1">
-                                    <span className="text-[10px]">{m.icon}</span>
-                                    <span className={`text-[9px] font-bold ${m.color}`}>{m.name}</span>
-                                    <span className="text-[10px] text-white ml-auto font-bold">{s[stat]}{isPct ? '%' : ''}</span>
+                                  <div key={stat} className="flex items-center gap-1.5 bg-gray-800/30 rounded-md px-2 py-1.5">
+                                    <span className="text-xs">{m.icon}</span>
+                                    <span className={`text-[11px] font-bold ${m.color}`}>{m.name}</span>
+                                    <span className="text-xs text-white ml-auto font-bold">{s[stat]}{isPct ? '%' : ''}</span>
                                   </div>
                                 );
                               })}
@@ -943,10 +1106,10 @@ export default function ShadowColosseum() {
                             {derivedLines.length > 0 && (
                               <div className="grid grid-cols-2 gap-1 mb-3">
                                 {derivedLines.map(d => (
-                                  <div key={d.key} className="flex items-center gap-1 bg-gray-800/20 rounded-md px-1.5 py-0.5">
-                                    <span className="text-[9px]">{d.icon}</span>
-                                    <span className={`text-[8px] ${d.color}`}>{d.name}</span>
-                                    <span className={`text-[9px] ml-auto font-bold ${d.color}`}>{d.value !== undefined ? d.value : `+${derived[d.key]}`}{d.suffix}</span>
+                                  <div key={d.key} className="flex items-center gap-1 bg-gray-800/20 rounded-md px-2 py-1">
+                                    <span className="text-[11px]">{d.icon}</span>
+                                    <span className={`text-[10px] ${d.color}`}>{d.name}</span>
+                                    <span className={`text-[11px] ml-auto font-bold ${d.color}`}>{d.value !== undefined ? d.value : `+${derived[d.key]}`}{d.suffix}</span>
                                   </div>
                                 ))}
                               </div>
@@ -958,27 +1121,27 @@ export default function ShadowColosseum() {
                       <div className="flex gap-2">
                         <button
                           onClick={(e) => { e.stopPropagation(); setManageTarget(selChibi); setView('stats'); }}
-                          className="flex-1 py-2 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-400 text-xs font-bold hover:bg-amber-500/20 transition-colors"
+                          className="flex-1 py-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-400 text-sm font-bold hover:bg-amber-500/20 transition-colors"
                         >
-                          {'\uD83D\uDCCA'} Stats {getAvailStatPts(selChibi) > 0 && <span className="ml-1 px-1 rounded bg-amber-500/30 text-[9px]">{getAvailStatPts(selChibi)}</span>}
+                          {'\uD83D\uDCCA'} Stats {getAvailStatPts(selChibi) > 0 && <span className="ml-1 px-1 rounded bg-amber-500/30 text-[10px]">{getAvailStatPts(selChibi)}</span>}
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setManageTarget(selChibi); setView('skilltree'); }}
-                          className="flex-1 py-2 rounded-lg border border-purple-500/40 bg-purple-500/10 text-purple-400 text-xs font-bold hover:bg-purple-500/20 transition-colors"
+                          className="flex-1 py-2.5 rounded-lg border border-purple-500/40 bg-purple-500/10 text-purple-400 text-sm font-bold hover:bg-purple-500/20 transition-colors"
                         >
-                          {'\uD83C\uDF33'} Skills {getAvailSP(selChibi) > 0 && <span className="ml-1 px-1 rounded bg-purple-500/30 text-[9px]">{getAvailSP(selChibi)}</span>}
+                          {'\uD83C\uDF33'} Skills {getAvailSP(selChibi) > 0 && <span className="ml-1 px-1 rounded bg-purple-500/30 text-[10px]">{getAvailSP(selChibi)}</span>}
                         </button>
                         {getChibiLevel(selChibi).level >= 10 && (
                           <button
                             onClick={(e) => { e.stopPropagation(); setManageTarget(selChibi); setView('talents'); }}
-                            className="flex-1 py-2 rounded-lg border border-green-500/40 bg-green-500/10 text-green-400 text-xs font-bold hover:bg-green-500/20 transition-colors"
+                            className="flex-1 py-2.5 rounded-lg border border-green-500/40 bg-green-500/10 text-green-400 text-sm font-bold hover:bg-green-500/20 transition-colors"
                           >
-                            {'\u2728'} Talents {getAvailTalentPts(selChibi) > 0 && <span className="ml-1 px-1 rounded bg-green-500/30 text-[9px]">{getAvailTalentPts(selChibi)}</span>}
+                            {'\u2728'} Talents {getAvailTalentPts(selChibi) > 0 && <span className="ml-1 px-1 rounded bg-green-500/30 text-[10px]">{getAvailTalentPts(selChibi)}</span>}
                           </button>
                         )}
                         <button
                           onClick={(e) => { e.stopPropagation(); setManageTarget(selChibi); setView('equipment'); }}
-                          className="flex-1 py-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-400 text-xs font-bold hover:bg-cyan-500/20 transition-colors"
+                          className="flex-1 py-2.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-400 text-sm font-bold hover:bg-cyan-500/20 transition-colors"
                         >
                           {'\uD83D\uDEE1\uFE0F'} Equip
                         </button>
@@ -1028,7 +1191,7 @@ export default function ShadowColosseum() {
                             <span className={RARITY[c.rarity].color}>{RARITY[c.rarity].stars}</span>
                             <span className={ELEMENTS[c.element].color}>{ELEMENTS[c.element].icon}</span>
                             <span className="text-gray-400">Lv{level}</span>
-                            <span className="text-red-400/60 text-[8px]">{c.class}</span>
+                            <span className="text-red-400/60 text-[10px]">{c.class}</span>
                           </div>
                           {evStars > 0 && (
                             <div className="text-[9px] mt-0.5" style={evStars >= MAX_EVEIL_STARS ? { animation: 'statGlow 2s ease-in-out infinite' } : {}}>
@@ -1039,7 +1202,7 @@ export default function ShadowColosseum() {
                           )}
                         </div>
                       </div>
-                      <div className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-0.5 text-[8px] text-gray-400">
+                      <div className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-0.5 text-[10px] text-gray-400">
                         <span>PV:{s.hp}</span><span>ATK:{s.atk}</span><span>DEF:{s.def}</span>
                         <span>SPD:{s.spd}</span><span>CRT:{s.crit}%</span><span>RES:{s.res}%</span>
                       </div>
@@ -1051,17 +1214,17 @@ export default function ShadowColosseum() {
                       {hasUnspent && (
                         <div className="absolute -top-1 -right-1 flex gap-0.5">
                           {availPts > 0 && (
-                            <span className="px-1 py-0.5 rounded text-[7px] font-bold bg-amber-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
                               {availPts} PTS
                             </span>
                           )}
                           {availSP > 0 && (
-                            <span className="px-1 py-0.5 rounded text-[7px] font-bold bg-purple-500/80 text-white" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/80 text-white" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
                               {availSP} SP
                             </span>
                           )}
                           {availTP > 0 && (
-                            <span className="px-1 py-0.5 rounded text-[7px] font-bold bg-green-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
                               {availTP} TP
                             </span>
                           )}
@@ -1078,55 +1241,121 @@ export default function ShadowColosseum() {
           {/* Stages */}
           {ownedIds.length > 0 && [1, 2, 3, 4, 5, 6].map(tier => (
             <div key={tier} className="mb-4">
-              <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1.5">
+              <div className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">
                 Tier {tier} — {TIER_NAMES[tier]}
               </div>
               <div className="space-y-1.5">
                 {STAGES.filter(s => s.tier === tier).map((stage) => {
                   const globalIdx = STAGES.indexOf(stage);
                   const unlocked = isStageUnlocked(globalIdx);
-                  const cleared = data.stagesCleared.includes(stage.id);
+                  const cleared = isStageCleared(stage.id);
                   const selected = selStage === globalIdx;
+                  const maxSt = getMaxStars(stage.id);
                   const elemAdv = selChibi && getChibiData(selChibi) ? getElementMult(getChibiData(selChibi).element, stage.element) : 1;
+                  const sc = selected ? getStarScaledStats(stage, selectedStar) : null;
                   return (
-                    <button
-                      key={stage.id}
-                      onClick={() => unlocked && setSelStage(selected ? null : globalIdx)}
-                      disabled={!unlocked}
-                      className={`w-full flex items-center gap-2 p-2 rounded-lg border transition-all text-left ${
-                        selected ? 'border-purple-400 bg-purple-500/15' :
-                        !unlocked ? 'border-gray-800/40 bg-gray-900/20 opacity-40' :
-                        cleared ? 'border-green-600/30 bg-green-900/10 hover:border-purple-500/40' :
-                        'border-gray-700/40 bg-gray-800/30 hover:border-purple-500/40'
-                      }`}
-                    >
-                      {!unlocked ? (
-                        <span className="text-xl w-8 text-center">{'\uD83D\uDD12'}</span>
-                      ) : stage.sprite ? (
-                        <img src={stage.sprite} alt={stage.name} className="w-8 h-8 object-contain rounded" />
-                      ) : (
-                        <span className="text-xl w-8 text-center">{stage.emoji}</span>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold truncate">{stage.name}</span>
-                          {stage.isBoss && <span className="text-[8px] bg-red-500/30 text-red-300 px-1 rounded">BOSS</span>}
-                          {cleared && <span className="text-green-400 text-[10px]">{'\u2705'}</span>}
+                    <div key={stage.id}>
+                      <button
+                        onClick={() => { if (unlocked) { if (selected) { setSelStage(null); } else { setSelStage(globalIdx); setSelectedStar(0); } } }}
+                        disabled={!unlocked}
+                        className={`w-full flex items-center gap-3 p-2.5 rounded-lg border transition-all text-left ${
+                          selected ? 'border-purple-400 bg-purple-500/15' :
+                          !unlocked ? 'border-gray-800/40 bg-gray-900/20 opacity-40' :
+                          cleared ? 'border-green-600/30 bg-green-900/10 hover:border-purple-500/40' :
+                          'border-gray-700/40 bg-gray-800/30 hover:border-purple-500/40'
+                        }`}
+                      >
+                        {!unlocked ? (
+                          <span className="text-2xl w-10 text-center">{'\uD83D\uDD12'}</span>
+                        ) : stage.sprite ? (
+                          <img src={stage.sprite} alt={stage.name} className={`${stage.spriteSize === 'lg' ? 'w-14 h-14' : 'w-10 h-10'} object-contain rounded`} />
+                        ) : (
+                          <span className="text-2xl w-10 text-center">{stage.emoji}</span>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-bold truncate">{stage.name}</span>
+                            {stage.isBoss && <span className="text-[10px] bg-red-500/30 text-red-300 px-1.5 rounded">BOSS</span>}
+                            {cleared && <span className="text-green-400 text-xs">{'\u2705'}</span>}
+                            {maxSt > 0 && <span className="text-[10px] text-yellow-400">{'\u2B50'}{maxSt}</span>}
+                          </div>
+                          <div className="flex items-center gap-2.5 text-[11px] text-gray-400 mt-0.5">
+                            <span className={ELEMENTS[stage.element].color}>{ELEMENTS[stage.element].icon} {ELEMENTS[stage.element].name}</span>
+                            <span>PV:{selected ? sc.hp : stage.hp}</span>
+                            <span>RES:{selected ? Math.round(sc.res) : stage.res}%</span>
+                            <span>XP:{selected ? Math.floor(stage.xp * getStarRewardMult(selectedStar).xp) : stage.xp}</span>
+                            <span>{'\uD83D\uDCB0'}{selected ? Math.floor(stage.coins * getStarRewardMult(selectedStar).coins) : stage.coins}</span>
+                            {selChibi && elemAdv !== 1 && (
+                              <span className={elemAdv > 1 ? 'text-green-400' : 'text-red-400'}>
+                                {elemAdv > 1 ? '\u25B2' : '\u25BC'}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-[9px] text-gray-400 mt-0.5">
-                          <span className={ELEMENTS[stage.element].color}>{ELEMENTS[stage.element].icon} {ELEMENTS[stage.element].name}</span>
-                          <span>PV:{stage.hp}</span>
-                          <span>RES:{stage.res}%</span>
-                          <span>XP:{stage.xp}</span>
-                          <span>{'\uD83D\uDCB0'}{stage.coins}</span>
-                          {selChibi && elemAdv !== 1 && (
-                            <span className={elemAdv > 1 ? 'text-green-400' : 'text-red-400'}>
-                              {elemAdv > 1 ? '\u25B2' : '\u25BC'}
-                            </span>
+                      </button>
+                      {/* Star difficulty selector */}
+                      {cleared && selected && (() => {
+                        let diff = null, playerPower = 0, enemyPower = 0, gRarity = null;
+                        if (selChibi) {
+                          const chibi = getChibiData(selChibi);
+                          if (chibi) {
+                            const { level } = getChibiLevel(selChibi);
+                            const alloc = data.statPoints[selChibi] || {};
+                            const tb = getChibiTalentBonuses(selChibi);
+                            const eqB = getChibiEquipBonuses(selChibi);
+                            const evS = getChibiEveilStars(selChibi);
+                            const ps = statsAtFull(chibi.base, chibi.growth, level, alloc, tb, eqB, evS, data.accountBonuses);
+                            playerPower = calculatePowerScore(ps);
+                            enemyPower = calculatePowerScore(sc, stage.isBoss);
+                            diff = getDifficultyRating(playerPower, enemyPower);
+                          }
+                        }
+                        gRarity = getGuaranteedArtifactRarity(selectedStar);
+                        return (
+                        <div className="mt-1 px-2 py-1.5 bg-gray-900/60 rounded-lg border border-purple-500/20">
+                          {/* Star row: indicator + buttons on one line */}
+                          <div className="flex items-center gap-1.5">
+                            {diff && (
+                              <div className={`flex-shrink-0 text-center px-1.5 py-1 rounded ${diff.color} bg-gray-800/80 border border-current`}>
+                                <div className="text-[10px] leading-none">{diff.icon}</div>
+                                <div className="text-[9px] font-bold leading-tight mt-0.5">{diff.label}</div>
+                              </div>
+                            )}
+                            <div className="flex-1 grid grid-cols-11 gap-[3px]">
+                              {[0,1,2,3,4,5,6,7,8,9,10].map(star => {
+                                const starUnlocked = star === 0 || star <= maxSt + 1;
+                                return (
+                                  <button key={star} onClick={(e) => { e.stopPropagation(); if (starUnlocked) setSelectedStar(star); }}
+                                    disabled={!starUnlocked}
+                                    className={`aspect-square rounded text-[9px] font-bold transition-all ${
+                                      selectedStar === star ? 'bg-yellow-500/20 text-yellow-300 font-black ring-1 ring-yellow-400/60 shadow shadow-yellow-500/40' :
+                                      !starUnlocked ? 'bg-gray-800/60 text-gray-600 opacity-40' :
+                                      'bg-gray-700/50 text-yellow-400 hover:bg-gray-600'
+                                    }`}>
+                                    {star === 0 ? '-' : star}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          {/* Info row */}
+                          <div className="flex items-center justify-between mt-1">
+                            {diff ? (
+                              <span className="text-[9px] text-gray-500">
+                                <span className="text-blue-400">{playerPower}</span> vs <span className="text-red-400">{enemyPower}</span>
+                              </span>
+                            ) : <span />}
+                            <span className="text-[9px] text-gray-500">Record {maxSt}{'\u2605'} | Max {Math.min(10, maxSt + 1)}{'\u2605'}</span>
+                          </div>
+                          {gRarity && (
+                            <div className="mt-1 text-center text-[10px] text-purple-300 bg-purple-900/20 rounded py-0.5 border border-purple-500/20">
+                              {'\u2728'} Artefact {gRarity} garanti
+                            </div>
                           )}
                         </div>
-                      </div>
-                    </button>
+                        );
+                      })()}
+                    </div>
                   );
                 })}
               </div>
@@ -1159,8 +1388,7 @@ export default function ShadowColosseum() {
         const spent = getSpentStatPts(id);
 
         return (
-          <div className="max-w-lg mx-auto px-3 pt-4">
-            <button onClick={() => setView('hub')} className="text-gray-500 text-xs hover:text-white transition-colors mb-3 block">&larr; Retour</button>
+          <div className="max-w-2xl mx-auto px-4 pt-4">
 
             {/* Header */}
             <div className="text-center mb-5">
@@ -1209,7 +1437,7 @@ export default function ShadowColosseum() {
                           )}
                         </div>
                       </div>
-                      <div className="text-[8px] text-gray-500 mt-0.5">{m.desc}</div>
+                      <div className="text-[10px] text-gray-500 mt-0.5">{m.desc}</div>
                       {/* Allocation bar */}
                       <div className="mt-1 w-full h-1 bg-gray-800 rounded-full overflow-hidden">
                         <div className={`h-full rounded-full transition-all duration-300 ${m.color.replace('text-', 'bg-')}`}
@@ -1236,7 +1464,7 @@ export default function ShadowColosseum() {
 
             {/* Per-point info */}
             <div className="text-center mb-3 p-2 rounded-lg bg-gray-800/20 border border-gray-700/20">
-              <div className="text-[8px] text-gray-500 mb-1">Valeur par point :</div>
+              <div className="text-[10px] text-gray-500 mb-1">Valeur par point :</div>
               <div className="flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-[9px] text-gray-400">
                 {STAT_ORDER.map(stat => (
                   <span key={stat}>
@@ -1270,8 +1498,7 @@ export default function ShadowColosseum() {
         const spentSP = getSpentSP(id);
 
         return (
-          <div className="max-w-lg mx-auto px-3 pt-4">
-            <button onClick={() => setView('hub')} className="text-gray-500 text-xs hover:text-white transition-colors mb-3 block">&larr; Retour</button>
+          <div className="max-w-2xl mx-auto px-4 pt-4">
 
             {/* Header */}
             <div className="text-center mb-5">
@@ -1303,7 +1530,7 @@ export default function ShadowColosseum() {
                     {/* Skill Name */}
                     <div className="p-1.5 rounded-t-lg bg-gray-800/40 border border-gray-700/30 border-b-0">
                       <div className="text-[9px] font-bold text-white truncate">{skill.name}</div>
-                      <div className="text-[7px] text-gray-500 mt-0.5">
+                      <div className="text-[9px] text-gray-500 mt-0.5">
                         {upgraded.power > 0 ? `DMG: ${upgraded.power}%` : ''}
                         {upgraded.buffAtk ? `ATK +${upgraded.buffAtk}%` : ''}
                         {upgraded.buffDef ? `DEF +${upgraded.buffDef}%` : ''}
@@ -1336,14 +1563,14 @@ export default function ShadowColosseum() {
                             }`}
                             style={isAvailable ? { animation: 'nodePulse 2s ease-in-out infinite' } : {}}
                           >
-                            <div className={`text-[8px] font-bold ${
+                            <div className={`text-[10px] font-bold ${
                               isUnlocked ? 'text-purple-300' : isAvailable ? 'text-amber-400' : 'text-gray-600'
                             }`}>
                               {isUnlocked ? '\u2713 ' : ''}{TIER_NAMES_SKILL[tierIdx]}
                             </div>
-                            <div className="text-[7px] text-gray-400 mt-0.5">{desc}</div>
+                            <div className="text-[9px] text-gray-400 mt-0.5">{desc}</div>
                             {!isUnlocked && (
-                              <div className={`text-[7px] mt-0.5 ${isAvailable ? 'text-amber-400' : 'text-gray-600'}`}>
+                              <div className={`text-[9px] mt-0.5 ${isAvailable ? 'text-amber-400' : 'text-gray-600'}`}>
                                 {TIER_COSTS[tierIdx]} SP
                               </div>
                             )}
@@ -1358,8 +1585,8 @@ export default function ShadowColosseum() {
 
             {/* Upgrade descriptions */}
             <div className="p-2 rounded-lg bg-gray-800/20 border border-gray-700/20 mb-3">
-              <div className="text-[8px] text-gray-500 mb-1">Tiers de competence :</div>
-              <div className="space-y-0.5 text-[8px] text-gray-400">
+              <div className="text-[10px] text-gray-500 mb-1">Tiers de competence :</div>
+              <div className="space-y-0.5 text-[10px] text-gray-400">
                 <div><span className="text-purple-400 font-bold">Eveil</span> — DMG/Effet +30/25% (1 SP)</div>
                 <div><span className="text-purple-400 font-bold">Maitrise</span> — Cooldown -1 tour (1 SP)</div>
                 <div><span className="text-purple-400 font-bold">Transcendance</span> — DMG/Effet +25/30% (2 SP)</div>
@@ -1394,8 +1621,7 @@ export default function ShadowColosseum() {
         const treeMax = getTreeMaxPoints(activeTree);
 
         return (
-          <div className="max-w-lg mx-auto px-3 pt-4">
-            <button onClick={() => setView('hub')} className="text-gray-500 text-xs hover:text-white transition-colors mb-3 block">&larr; Retour</button>
+          <div className="max-w-2xl mx-auto px-4 pt-4">
 
             {/* Header */}
             <div className="text-center mb-4">
@@ -1431,7 +1657,7 @@ export default function ShadowColosseum() {
                   >
                     <div className="text-base">{t.icon}</div>
                     <div className={`text-[10px] font-bold ${isActive ? 'text-white' : 'text-gray-400'}`}>{t.name}</div>
-                    <div className="text-[8px] text-gray-500">{pts}/{max}</div>
+                    <div className="text-[10px] text-gray-500">{pts}/{max}</div>
                   </button>
                 );
               })}
@@ -1454,7 +1680,7 @@ export default function ShadowColosseum() {
                     {row.requiredPoints > 0 && (
                       <div className="flex items-center gap-2 my-2">
                         <div className="flex-1 h-px bg-gray-700/40" />
-                        <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full ${
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           locked ? 'text-gray-600 bg-gray-800/30' : 'bg-gray-800/40'
                         }`} style={!locked ? { color: tree.accent } : {}}>
                           {row.requiredPoints} pts requis
@@ -1518,12 +1744,12 @@ export default function ShadowColosseum() {
                               ))}
                             </div>
 
-                            <div className="text-[8px] mt-1" style={{ color: isMaxed ? tree.accent : rank > 0 ? '#9CA3AF' : '#6B7280' }}>
+                            <div className="text-[10px] mt-1" style={{ color: isMaxed ? tree.accent : rank > 0 ? '#9CA3AF' : '#6B7280' }}>
                               {rank}/{node.maxRank}
                             </div>
 
                             {/* Description */}
-                            <div className={`text-[7px] mt-0.5 ${rank > 0 ? 'text-gray-300' : 'text-gray-500'}`}>
+                            <div className={`text-[9px] mt-0.5 ${rank > 0 ? 'text-gray-300' : 'text-gray-500'}`}>
                               {desc}
                             </div>
 
@@ -1567,7 +1793,7 @@ export default function ShadowColosseum() {
               if (bonuses.length === 0) return null;
               return (
                 <div className="mt-2 p-2 rounded-lg bg-gray-800/20 border border-gray-700/20">
-                  <div className="text-[8px] text-gray-500 mb-1.5 text-center">Bonus actifs</div>
+                  <div className="text-[10px] text-gray-500 mb-1.5 text-center">Bonus actifs</div>
                   <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[9px]">
                     {bonuses.map(b => (
                       <span key={b.label}>
@@ -1649,8 +1875,7 @@ export default function ShadowColosseum() {
         };
 
         return (
-          <div className="max-w-lg mx-auto px-3 pt-4">
-            <button onClick={() => setView('hub')} className="text-gray-500 text-xs hover:text-white transition-colors mb-3 block">&larr; Retour</button>
+          <div className="max-w-2xl mx-auto px-4 pt-4">
 
             {/* Header */}
             <div className="text-center mb-4">
@@ -1674,7 +1899,7 @@ export default function ShadowColosseum() {
                       <div className="text-[9px] text-gray-400">
                         ATK +{weapon.atk} | {MAIN_STAT_VALUES[weapon.bonusStat]?.name || weapon.bonusStat} +{weapon.bonusValue}
                       </div>
-                      <div className="text-[8px] text-gray-500">{weapon.desc}</div>
+                      <div className="text-[10px] text-gray-500">{weapon.desc}</div>
                     </div>
                     <button onClick={unequipWeapon} className="text-[9px] px-2 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30">Retirer</button>
                   </div>
@@ -1697,9 +1922,9 @@ export default function ShadowColosseum() {
                         <span>{w.icon}</span>
                         <div className="flex-1 min-w-0">
                           <div className="text-[10px] font-bold text-gray-300 truncate">{w.name}</div>
-                          <div className="text-[8px] text-gray-500">ATK +{w.atk} | {MAIN_STAT_VALUES[w.bonusStat]?.name || w.bonusStat} +{w.bonusValue}</div>
+                          <div className="text-[10px] text-gray-500">ATK +{w.atk} | {MAIN_STAT_VALUES[w.bonusStat]?.name || w.bonusStat} +{w.bonusValue}</div>
                         </div>
-                        <span className="text-[8px] text-cyan-400">Equiper</span>
+                        <span className="text-[10px] text-cyan-400">Equiper</span>
                       </button>
                     );
                   })}
@@ -1723,23 +1948,23 @@ export default function ShadowColosseum() {
                           className={`w-full p-2 rounded-lg border ${setDef?.border || 'border-gray-600/30'} ${setDef?.bg || 'bg-gray-800/20'} hover:brightness-125 transition-all relative`}>
                           <div className="flex items-center justify-center gap-0.5">
                             <span className="text-sm">{slotDef.icon}</span>
-                            <span className={`text-[7px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
+                            <span className={`text-[9px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
                           </div>
-                          <div className={`text-[8px] font-bold mt-0.5 ${setDef?.color || 'text-gray-300'}`}>{mainDef?.name || '?'}</div>
+                          <div className={`text-[10px] font-bold mt-0.5 ${setDef?.color || 'text-gray-300'}`}>{mainDef?.name || '?'}</div>
                           <div className="text-[10px] font-black text-white">{art.mainValue}</div>
                           <div className="mt-0.5 space-y-px">
                             {art.subs.slice(0, 2).map((sub, si) => {
                               const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
-                              return <div key={si} className="text-[6px] text-gray-400 truncate">{subDef?.name || sub.id} +{sub.value}</div>;
+                              return <div key={si} className="text-[9px] text-gray-400 truncate">{subDef?.name || sub.id} +{sub.value}</div>;
                             })}
-                            {art.subs.length > 2 && <div className="text-[6px] text-gray-500">+{art.subs.length - 2} subs</div>}
+                            {art.subs.length > 2 && <div className="text-[9px] text-gray-500">+{art.subs.length - 2} subs</div>}
                           </div>
                           <div className={`absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full ${setDef?.border?.replace('border-', 'bg-').replace('/30', '') || 'bg-gray-500'}`} />
                         </button>
                       ) : (
                         <div className="w-full p-2 rounded-lg border border-gray-700/20 bg-gray-800/10">
                           <div className="text-lg opacity-30">{slotDef.icon}</div>
-                          <div className="text-[7px] text-gray-600">{slotDef.name}</div>
+                          <div className="text-[9px] text-gray-600">{slotDef.name}</div>
                         </div>
                       )}
                     </div>
@@ -1832,9 +2057,9 @@ export default function ShadowColosseum() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1">
                             <span className="text-sm">{slotDef?.icon || '?'}</span>
-                            <span className={`text-[8px] font-bold truncate ${setDef?.color || 'text-gray-300'}`}>{setDef?.name?.split(' ')[0] || '?'}</span>
+                            <span className={`text-[10px] font-bold truncate ${setDef?.color || 'text-gray-300'}`}>{setDef?.name?.split(' ')[0] || '?'}</span>
                           </div>
-                          <span className={`text-[7px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
+                          <span className={`text-[9px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
                         </div>
                         <div className="flex items-center gap-1 mt-1">
                           <span className="text-[9px] text-gray-300 font-bold">{mainDef?.icon} {mainDef?.name || '?'}</span>
@@ -1844,7 +2069,7 @@ export default function ShadowColosseum() {
                           <div className="mt-1 pt-1 border-t border-gray-700/20 space-y-px">
                             {art.subs.map((sub, si) => {
                               const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
-                              return <div key={si} className="text-[7px] text-gray-500">{subDef?.name || sub.id} +{sub.value}</div>;
+                              return <div key={si} className="text-[9px] text-gray-500">{subDef?.name || sub.id} +{sub.value}</div>;
                             })}
                           </div>
                         )}
@@ -1955,8 +2180,7 @@ export default function ShadowColosseum() {
         };
 
         return (
-          <div className="max-w-lg mx-auto px-3 pt-4">
-            <button onClick={() => setView('hub')} className="text-gray-500 text-xs hover:text-white transition-colors mb-3 block">&larr; Retour</button>
+          <div className="max-w-2xl mx-auto px-4 pt-4">
 
             <div className="text-center mb-5">
               <h2 className="text-xl font-black bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">Boutique</h2>
@@ -1992,7 +2216,7 @@ export default function ShadowColosseum() {
                       className="p-2 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/15 disabled:opacity-30 transition-all text-center">
                       <div className="text-lg">{h.icon}</div>
                       <div className="text-[9px] font-bold text-amber-300">{h.name.replace('Marteau ', '')}</div>
-                      <div className="text-[8px] text-gray-500">Lv0-{h.maxLevel}</div>
+                      <div className="text-[10px] text-gray-500">Lv0-{h.maxLevel}</div>
                       <div className="text-[9px] text-amber-400 mt-0.5">{h.shopPrice} coins</div>
                     </button>
                   );
@@ -2019,7 +2243,7 @@ export default function ShadowColosseum() {
             <div className="mb-5">
               <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">{'\u2694\uFE0F'} Armurerie</div>
               <div className="grid grid-cols-2 gap-1.5 max-h-72 overflow-y-auto">
-                {Object.values(WEAPONS).map(w => {
+                {Object.values(WEAPONS).filter(w => !w.secret).map(w => {
                   const owned = ownedWeapons.has(w.id);
                   const price = WEAPON_PRICES[w.rarity];
                   return (
@@ -2033,8 +2257,8 @@ export default function ShadowColosseum() {
                         <span className="text-sm">{w.icon}</span>
                         <div className="flex-1 min-w-0">
                           <div className="text-[10px] font-bold text-gray-200 truncate">{w.name}</div>
-                          <div className="text-[8px] text-gray-500">ATK +{w.atk} | {MAIN_STAT_VALUES[w.bonusStat]?.name || w.bonusStat} +{w.bonusValue}</div>
-                          {w.element && <div className={`text-[7px] ${ELEMENTS[w.element]?.color || 'text-gray-400'}`}>{ELEMENTS[w.element]?.icon} {w.element}</div>}
+                          <div className="text-[10px] text-gray-500">ATK +{w.atk} | {MAIN_STAT_VALUES[w.bonusStat]?.name || w.bonusStat} +{w.bonusValue}</div>
+                          {w.element && <div className={`text-[9px] ${ELEMENTS[w.element]?.color || 'text-gray-400'}`}>{ELEMENTS[w.element]?.icon} {w.element}</div>}
                         </div>
                       </div>
                       <div className="mt-1 text-[9px] text-right">
@@ -2068,8 +2292,8 @@ export default function ShadowColosseum() {
                                 selected ? 'border-cyan-400 bg-cyan-500/10' :
                                 `${setDef?.border || 'border-gray-700/30'} ${setDef?.bg || 'bg-gray-800/10'}`
                               }`}>
-                              <div className={`text-[8px] font-bold truncate ${setDef?.color || 'text-gray-400'}`}>{ARTIFACT_SLOTS[art.slot]?.icon} {setDef?.name?.split(' ')[0]}</div>
-                              <div className="text-[8px] text-gray-400">Lv{art.level}/{MAX_ARTIFACT_LEVEL}</div>
+                              <div className={`text-[10px] font-bold truncate ${setDef?.color || 'text-gray-400'}`}>{ARTIFACT_SLOTS[art.slot]?.icon} {setDef?.name?.split(' ')[0]}</div>
+                              <div className="text-[10px] text-gray-400">Lv{art.level}/{MAX_ARTIFACT_LEVEL}</div>
                             </button>
                           );
                         })}
@@ -2102,9 +2326,9 @@ export default function ShadowColosseum() {
                                   selected ? 'border-cyan-400 bg-cyan-500/10' :
                                   `${setDef?.border || 'border-gray-700/30'} ${setDef?.bg || 'bg-gray-800/10'}`
                                 }`}>
-                                <div className={`text-[8px] font-bold truncate ${setDef?.color || 'text-gray-400'}`}>{ARTIFACT_SLOTS[art.slot]?.icon} {setDef?.name?.split(' ')[0]}</div>
-                                <div className="text-[8px] text-gray-400">Lv{art.level}/{MAX_ARTIFACT_LEVEL}</div>
-                                <div className="text-[7px] text-purple-400 truncate">{chibiName}</div>
+                                <div className={`text-[10px] font-bold truncate ${setDef?.color || 'text-gray-400'}`}>{ARTIFACT_SLOTS[art.slot]?.icon} {setDef?.name?.split(' ')[0]}</div>
+                                <div className="text-[10px] text-gray-400">Lv{art.level}/{MAX_ARTIFACT_LEVEL}</div>
+                                <div className="text-[9px] text-purple-400 truncate">{chibiName}</div>
                               </button>
                             );
                           })}
@@ -2129,7 +2353,7 @@ export default function ShadowColosseum() {
                           const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
                           const willUpgrade = isMilestone && selectedArt.subs.length > 0;
                           return (
-                            <div key={i} className="text-[8px] text-gray-400">
+                            <div key={i} className="text-[10px] text-gray-400">
                               {subDef?.name || sub.id}: +{sub.value}
                               {willUpgrade && <span className="text-amber-400/60 ml-1">(chance {'\u2B06\uFE0F'})</span>}
                             </div>
@@ -2152,7 +2376,7 @@ export default function ShadowColosseum() {
                           <span className="text-[9px] text-gray-400 ml-auto">+ {coinCost} coins</span>
                         </div>
                         {!bestHammer && selectedArt.level < MAX_ARTIFACT_LEVEL && (
-                          <div className="text-[8px] text-gray-500 mt-1">
+                          <div className="text-[10px] text-gray-500 mt-1">
                             Lv{selectedArt.level}+ requiert : {validHammers.map(hId => HAMMERS[hId].name).join(' ou ')}
                           </div>
                         )}
@@ -2179,6 +2403,7 @@ export default function ShadowColosseum() {
           dmgPopup={dmgPopup}
           stageEmoji={STAGES[selStage]?.emoji || ''}
           stageSprite={STAGES[selStage]?.sprite || ''}
+          stageSpriteSize={STAGES[selStage]?.spriteSize || ''}
           stageElement={STAGES[selStage]?.element || 'shadow'}
           onSkillUse={(i) => phase === 'idle' && executeRound(i)}
           onFlee={flee}
@@ -2189,11 +2414,23 @@ export default function ShadowColosseum() {
 
       {/* ═══ RESULT VIEW ═══ */}
       {view === 'result' && result && (
-        <div className="max-w-md mx-auto px-4 pt-12 text-center">
+        <div className="max-w-xl mx-auto px-4 pt-12 text-center">
           {result.won ? (
             <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200 }}>
               <div className="text-6xl mb-4" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>{'\uD83C\uDFC6'}</div>
               <h2 className="text-3xl font-black text-yellow-400 mb-2">VICTOIRE !</h2>
+              {result.starLevel > 0 && (
+                <div className="mb-2">
+                  <div className="flex items-center justify-center gap-0.5">
+                    {[...Array(result.starLevel)].map((_, i) => <span key={i} className="text-yellow-400 text-lg">{'\u2B50'}</span>)}
+                  </div>
+                  {result.isNewStarRecord && (
+                    <div className="text-[10px] font-bold text-yellow-300 mt-1" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>
+                      Nouveau record ! {result.newMaxStars < 10 && `${result.newMaxStars + 1}\u2605 debloquee !`}
+                    </div>
+                  )}
+                </div>
+              )}
               <p className="text-gray-300 text-sm mb-6">{getChibiData(selChibi)?.name} a triomphe !</p>
               <div className="flex justify-center gap-6 mb-6">
                 <div className="text-center">
@@ -2257,6 +2494,23 @@ export default function ShadowColosseum() {
                   ) : (
                     <div className="text-green-400 text-xs mt-1">Nouveau hunter debloque !</div>
                   )}
+                </motion.div>
+              )}
+              {result.weaponDrop && (
+                <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 1.2, type: 'spring', stiffness: 200 }}
+                  className="bg-gradient-to-r from-orange-600/30 to-red-600/30 border-2 border-orange-400/60 rounded-xl p-4 mb-6" style={{ boxShadow: '0 0 30px rgba(251, 146, 60, 0.3)' }}>
+                  <div className="text-orange-300 font-black text-lg animate-pulse">{'\uD83D\uDD28'} ARME LEGENDAIRE !</div>
+                  <div className="text-2xl mt-1">{result.weaponDrop.icon}</div>
+                  <div className="text-white font-black text-sm mt-1">{result.weaponDrop.name}</div>
+                  <div className="text-orange-400 text-[10px] mt-0.5">ATK +{result.weaponDrop.atk} | ATK +{result.weaponDrop.bonusValue}%</div>
+                  <div className="text-red-400 text-[9px] mt-1 italic">Drop rate: 1/30 000</div>
+                </motion.div>
+              )}
+              {result.guaranteedArtifact && (
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.25 }}
+                  className="bg-purple-900/20 border border-purple-500/30 rounded-xl p-2 mb-4">
+                  <div className="text-purple-300 text-xs font-bold">{'\u2728'} Artefact {result.guaranteedArtifact.rarity} obtenu !</div>
+                  <div className="text-[9px] text-gray-400 mt-0.5">{ARTIFACT_SETS[result.guaranteedArtifact.setId]?.name || 'Artefact'} — {ARTIFACT_SLOTS[result.guaranteedArtifact.slotId]?.name || result.guaranteedArtifact.slotId}</div>
                 </motion.div>
               )}
               {/* Account XP */}
@@ -2365,7 +2619,7 @@ export default function ShadowColosseum() {
           >
             <motion.div
               initial={{ scale: 0.85, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.85, y: 30 }}
-              className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-2xl border border-indigo-500/40 bg-[#0f0f2a] p-5 shadow-2xl"
+              className="w-full max-w-xl max-h-[80vh] overflow-y-auto rounded-2xl border border-indigo-500/40 bg-[#0f0f2a] p-5 shadow-2xl"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
@@ -2448,6 +2702,35 @@ export default function ShadowColosseum() {
                 Compris !
               </button>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ CATCH TOAST ═══ */}
+      <AnimatePresence>
+        {catchToast && (
+          <motion.div
+            key={catchToast.key}
+            initial={{ opacity: 0, y: 40, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
+          >
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border shadow-lg backdrop-blur-sm ${
+              catchToast.isNew
+                ? 'bg-green-900/90 border-green-500/50 shadow-green-500/20'
+                : 'bg-blue-900/90 border-blue-500/50 shadow-blue-500/20'
+            }`}>
+              <img src={getChibiSprite(catchToast.id)} alt="" className="w-8 h-8 object-contain" />
+              <div>
+                <div className="text-xs font-bold text-white">{catchToast.name}</div>
+                {catchToast.isNew ? (
+                  <div className="text-[10px] text-green-400">Nouveau chibi debloque !</div>
+                ) : (
+                  <div className="text-[10px] text-blue-300">Doublon ! +{catchToast.xp} XP</div>
+                )}
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

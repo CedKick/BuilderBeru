@@ -513,7 +513,7 @@ export const RAID_BOSSES = {
     name: 'Reine des Fourmis',
     element: 'earth',
     emoji: '\uD83D\uDC1C',
-    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505833/Nyarthulu_face_vawrrz.png',
+    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1753968545/antQueen_jzt22r.png',
     totalBars: 10,
     baseHP: 50000,
     barScaling: (i) => 50000 * (1 + 0.3 * i),
