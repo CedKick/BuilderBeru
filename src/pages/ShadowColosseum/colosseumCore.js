@@ -10,6 +10,18 @@ export const SPRITES = {
   pingsu: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_face_tnilyr.png',
   okami: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_face_qfzt4j.png',
   alecto: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png',
+  shadow_goblin: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771149665/ShadowGobelin_xi9cbs.png',
+  corrupted_wolf: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771149665/CorruptedWolf_eytnug.png',
+  stone_golem: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771150402/CobbleStone_de1rac.png',
+  fallen_knight: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771150858/ChevalierDechu_ruqbx7.png',
+  ancestral_spectre: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771151405/SpectreAncestral_vtqpbr.png',
+  salamandre: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771151763/Salamandre_oyqyyi.png',
+  griffon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771152055/Griffon_qwiklr.png',
+  guardian: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771152576/GardiendesPortails_mthlve.png',
+  chimera: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771153171/ChimereAbyssal_illdft.png',
+  phoenix: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771153418/Ph%C3%A9nixNoir_cdwoso.png',
+  titan: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771153898/TitanDesGlaces_mjtynl.png',
+  monarch: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771154347/OmbreMineure_zwqbr3.png',
 };
 
 // ─── Elements ────────────────────────────────────────────────

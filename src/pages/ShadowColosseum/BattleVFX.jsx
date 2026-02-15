@@ -161,7 +161,7 @@ function HpBar({ hp, maxHp, height = 'h-2', showText = false }) {
 // BATTLE ARENA — Turn-Based Stage Combat (Animated)
 // ═══════════════════════════════════════════════════════════════
 
-export function BattleArena({ battle, phase, dmgPopup, stageEmoji, stageElement, onSkillUse, onFlee, getChibiSprite, getChibiData }) {
+export function BattleArena({ battle, phase, dmgPopup, stageEmoji, stageSprite, stageElement, onSkillUse, onFlee, getChibiSprite, getChibiData }) {
   if (!battle) return null;
   const { player, enemy } = battle;
   const playerData = getChibiData(player.id);
@@ -277,9 +277,14 @@ export function BattleArena({ battle, phase, dmgPopup, stageEmoji, stageElement,
                   'idleBreathe 3s ease-in-out infinite',
                 boxShadow: enemy.isBoss ? `0 0 20px ${ELEMENT_COLORS_RAW[enemyElement] || '#a855f7'}40` : 'none',
               }}>
-              <span className="text-3xl" style={{ filter: enemy.isBoss ? `drop-shadow(0 0 8px ${ELEMENT_COLORS_RAW[enemyElement] || '#a855f7'})` : '' }}>
-                {stageEmoji}
-              </span>
+              {stageSprite ? (
+                <img src={stageSprite} alt={enemy.name} className="w-12 h-12 object-contain"
+                  style={{ filter: enemy.isBoss ? `drop-shadow(0 0 8px ${ELEMENT_COLORS_RAW[enemyElement] || '#a855f7'})` : '' }} />
+              ) : (
+                <span className="text-3xl" style={{ filter: enemy.isBoss ? `drop-shadow(0 0 8px ${ELEMENT_COLORS_RAW[enemyElement] || '#a855f7'})` : '' }}>
+                  {stageEmoji}
+                </span>
+              )}
             </div>
             {/* Enemy damage taken */}
             {dmgPopup?.target === 'enemy' && phase === 'player_atk' && (

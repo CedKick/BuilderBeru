@@ -36,41 +36,53 @@ const getChibiSprite = (id) => SPRITES[id] || (HUNTERS[id] && HUNTERS[id].sprite
 const STAGES = [
   // Tier 1 — Donjon des Ombres
   { id: 'goblin', name: 'Gobelin des Ombres', tier: 1, element: 'shadow', emoji: '\uD83D\uDC79',
+    sprite: SPRITES.shadow_goblin,
     hp: 120, atk: 18, def: 12, spd: 15, crit: 5, res: 0, xp: 25, coins: 40,
     skills: [{ name: 'Griffure', power: 100, cdMax: 0 }, { name: 'Rage', power: 0, cdMax: 3, buffAtk: 40, buffDur: 3 }] },
   { id: 'wolf', name: 'Loup Corrompu', tier: 1, element: 'shadow', emoji: '\uD83D\uDC3A',
+    sprite: SPRITES.corrupted_wolf,
     hp: 100, atk: 22, def: 8, spd: 25, crit: 10, res: 0, xp: 30, coins: 50,
     skills: [{ name: 'Morsure', power: 110, cdMax: 0 }, { name: 'Morsure Sauvage', power: 170, cdMax: 3 }] },
   { id: 'golem', name: 'Golem de Pierre', tier: 1, element: 'earth', emoji: '\uD83E\uDEA8',
+    sprite: SPRITES.stone_golem,
     hp: 200, atk: 15, def: 30, spd: 8, crit: 3, res: 12, xp: 35, coins: 55,
     skills: [{ name: 'Ecrasement', power: 95, cdMax: 0 }, { name: 'Seisme', power: 155, cdMax: 3 }] },
   { id: 'knight', name: 'Chevalier Dechu', tier: 1, element: 'shadow', emoji: '\u2694\uFE0F', isBoss: true,
+    sprite: SPRITES.fallen_knight,
     hp: 320, atk: 28, def: 22, spd: 22, crit: 8, res: 5, xp: 60, coins: 100,
     skills: [{ name: 'Epee Maudite', power: 100, cdMax: 0 }, { name: 'Charge Sombre', power: 170, cdMax: 2 }, { name: 'Frappe Fatale', power: 240, cdMax: 4 }] },
   // Tier 2 — Ruines Ancestrales
   { id: 'spectre', name: 'Spectre Ancestral', tier: 2, element: 'shadow', emoji: '\uD83D\uDC7B',
+    sprite: SPRITES.ancestral_spectre,
     hp: 200, atk: 32, def: 15, spd: 30, crit: 12, res: 8, xp: 45, coins: 70,
     skills: [{ name: 'Drain', power: 100, cdMax: 0, healSelf: 15 }, { name: 'Malediction', power: 0, cdMax: 3, debuffDef: 35, debuffDur: 2 }] },
   { id: 'salamandre', name: 'Salamandre', tier: 2, element: 'fire', emoji: '\uD83E\uDD8E',
+    sprite: SPRITES.salamandre,
     hp: 250, atk: 35, def: 20, spd: 22, crit: 8, res: 5, xp: 50, coins: 80,
     skills: [{ name: 'Crache-Feu', power: 105, cdMax: 0 }, { name: 'Inferno', power: 185, cdMax: 3 }] },
   { id: 'griffon', name: 'Griffon', tier: 2, element: 'wind', emoji: '\uD83E\uDD85',
+    sprite: SPRITES.griffon,
     hp: 220, atk: 30, def: 18, spd: 35, crit: 15, res: 3, xp: 55, coins: 85,
     skills: [{ name: 'Serres', power: 100, cdMax: 0 }, { name: 'Tempete', power: 175, cdMax: 2 }] },
   { id: 'guardian', name: 'Gardien du Portail', tier: 2, element: 'earth', emoji: '\uD83D\uDDFF', isBoss: true,
+    sprite: SPRITES.guardian,
     hp: 550, atk: 38, def: 35, spd: 16, crit: 5, res: 15, xp: 100, coins: 180,
     skills: [{ name: 'Poing de Pierre', power: 100, cdMax: 0 }, { name: 'Mur de Roche', power: 0, cdMax: 3, buffDef: 80, buffDur: 3 }, { name: 'Avalanche', power: 200, cdMax: 4 }] },
   // Tier 3 — Les Abysses
   { id: 'chimera', name: 'Chimere des Abysses', tier: 3, element: 'fire', emoji: '\uD83D\uDC09',
+    sprite: SPRITES.chimera,
     hp: 380, atk: 45, def: 28, spd: 30, crit: 12, res: 10, xp: 80, coins: 120,
     skills: [{ name: 'Souffle', power: 110, cdMax: 0 }, { name: 'Triple Frappe', power: 200, cdMax: 3 }] },
   { id: 'phoenix', name: 'Phenix Noir', tier: 3, element: 'fire', emoji: '\uD83D\uDD3B',
+    sprite: SPRITES.phoenix,
     hp: 320, atk: 50, def: 22, spd: 38, crit: 15, res: 8, xp: 90, coins: 140,
     skills: [{ name: 'Flamme Noire', power: 110, cdMax: 0 }, { name: 'Renaissance', power: 0, cdMax: 4, healSelf: 35 }, { name: 'Explosion Solaire', power: 250, cdMax: 4 }] },
   { id: 'titan', name: 'Titan de Glace', tier: 3, element: 'earth', emoji: '\u2744\uFE0F',
+    sprite: SPRITES.titan,
     hp: 650, atk: 38, def: 48, spd: 12, crit: 5, res: 20, xp: 100, coins: 160,
     skills: [{ name: 'Ecrasement Glacial', power: 100, cdMax: 0 }, { name: 'Cuirasse', power: 0, cdMax: 3, buffDef: 100, buffDur: 3 }, { name: 'Avalanche', power: 220, cdMax: 5 }] },
   { id: 'monarch', name: 'Monarque Mineure', tier: 3, element: 'shadow', emoji: '\uD83D\uDC51', isBoss: true,
+    sprite: SPRITES.monarch,
     hp: 900, atk: 55, def: 38, spd: 32, crit: 18, res: 12, xp: 180, coins: 300,
     skills: [{ name: 'Ombre Royale', power: 110, cdMax: 0 }, { name: 'Domination', power: 0, cdMax: 3, buffAtk: 60, buffDur: 3 }, { name: 'Jugement Final', power: 280, cdMax: 5 }] },
   // Tier 4 — Citadelle Maudite
@@ -158,6 +170,7 @@ export default function ShadowColosseum() {
   const [shopEnhTarget, setShopEnhTarget] = useState(null); // index in artifactInventory
   const [shopEnhEquipKey, setShopEnhEquipKey] = useState(null); // "chibiId|slotId"
   const [accountLevelUpPending, setAccountLevelUpPending] = useState(0); // number of pending allocations
+  const [showTutorial, setShowTutorial] = useState(false);
   const clickCountRef = useRef({});
   const clickTimerRef = useRef({});
   const phaseRef = useRef('idle');
@@ -1087,7 +1100,13 @@ export default function ShadowColosseum() {
                         'border-gray-700/40 bg-gray-800/30 hover:border-purple-500/40'
                       }`}
                     >
-                      <span className="text-xl w-8 text-center">{unlocked ? stage.emoji : '\uD83D\uDD12'}</span>
+                      {!unlocked ? (
+                        <span className="text-xl w-8 text-center">{'\uD83D\uDD12'}</span>
+                      ) : stage.sprite ? (
+                        <img src={stage.sprite} alt={stage.name} className="w-8 h-8 object-contain rounded" />
+                      ) : (
+                        <span className="text-xl w-8 text-center">{stage.emoji}</span>
+                      )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs font-bold truncate">{stage.name}</span>
@@ -1166,9 +1185,11 @@ export default function ShadowColosseum() {
               {STAT_ORDER.map(stat => {
                 const m = STAT_META[stat];
                 const isPct = stat === 'crit' || stat === 'res';
-                const baseVal = isPct
-                  ? +(c.base[stat] + c.growth[stat] * (level - 1)).toFixed(1)
-                  : Math.floor(c.base[stat] + c.growth[stat] * (level - 1));
+                const baseVal = stat === 'mana'
+                  ? getBaseMana(c.base)
+                  : isPct
+                    ? +(c.base[stat] + c.growth[stat] * (level - 1)).toFixed(1)
+                    : Math.floor(c.base[stat] + c.growth[stat] * (level - 1));
                 const bonusVal = (alloc[stat] || 0) * STAT_PER_POINT[stat];
                 const totalVal = isPct ? +(baseVal + bonusVal).toFixed(1) : Math.floor(baseVal + bonusVal);
                 const allocated = alloc[stat] || 0;
@@ -2039,7 +2060,7 @@ export default function ShadowColosseum() {
                       <div className="text-[9px] text-gray-500 mb-1">Inventaire :</div>
                       <div className="grid grid-cols-3 gap-1 mb-2">
                         {data.artifactInventory.map((art, i) => {
-                          const setDef = ARTIFACT_SETS[art.set];
+                          const setDef = ALL_ARTIFACT_SETS[art.set];
                           const selected = enhTarget === i;
                           return (
                             <button key={art.uid || i} onClick={() => { setEnhTarget(selected ? null : i); setEnhEquipKey(null); }}
@@ -2056,6 +2077,42 @@ export default function ShadowColosseum() {
                     </>
                   )}
 
+                  {/* Equipped artifacts */}
+                  {Object.keys(data.artifacts).length > 0 && (() => {
+                    const equippedList = [];
+                    Object.entries(data.artifacts).forEach(([cId, slots]) => {
+                      if (!slots) return;
+                      Object.entries(slots).forEach(([sId, art]) => {
+                        if (art) equippedList.push({ cId, sId, art });
+                      });
+                    });
+                    if (equippedList.length === 0) return null;
+                    return (
+                      <>
+                        <div className="text-[9px] text-gray-500 mb-1">Equipes :</div>
+                        <div className="grid grid-cols-3 gap-1 mb-2">
+                          {equippedList.map(({ cId, sId, art }) => {
+                            const setDef = ALL_ARTIFACT_SETS[art.set];
+                            const key = `${cId}|${sId}`;
+                            const selected = enhEquipKey === key;
+                            const chibiName = (CHIBIS[cId]?.name || HUNTERS[cId]?.name || cId).split(' ')[0];
+                            return (
+                              <button key={key} onClick={() => { setEnhEquipKey(selected ? null : key); setEnhTarget(null); }}
+                                className={`p-1 rounded-lg border text-center transition-all ${
+                                  selected ? 'border-cyan-400 bg-cyan-500/10' :
+                                  `${setDef?.border || 'border-gray-700/30'} ${setDef?.bg || 'bg-gray-800/10'}`
+                                }`}>
+                                <div className={`text-[8px] font-bold truncate ${setDef?.color || 'text-gray-400'}`}>{ARTIFACT_SLOTS[art.slot]?.icon} {setDef?.name?.split(' ')[0]}</div>
+                                <div className="text-[8px] text-gray-400">Lv{art.level}/{MAX_ARTIFACT_LEVEL}</div>
+                                <div className="text-[7px] text-purple-400 truncate">{chibiName}</div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    );
+                  })()}
+
                   {/* Enhancement preview */}
                   {selectedArt && (() => {
                     const mainDef = MAIN_STAT_VALUES[selectedArt.mainStat];
@@ -2063,7 +2120,7 @@ export default function ShadowColosseum() {
                     return (
                       <div className="p-2.5 rounded-xl border border-cyan-500/30 bg-cyan-500/5 mb-2">
                         <div className="text-[10px] font-bold text-cyan-300 mb-1">
-                          {ARTIFACT_SLOTS[selectedArt.slot]?.icon} {ARTIFACT_SETS[selectedArt.set]?.name || '?'} — Lv{selectedArt.level}/{MAX_ARTIFACT_LEVEL}
+                          {ARTIFACT_SLOTS[selectedArt.slot]?.icon} {ALL_ARTIFACT_SETS[selectedArt.set]?.name || '?'} — Lv{selectedArt.level}/{MAX_ARTIFACT_LEVEL}
                         </div>
                         <div className="text-[9px] text-gray-300">
                           {mainDef?.name}: {selectedArt.mainValue} {'\u2192'} <span className="text-green-400">{nextMainVal}</span>
@@ -2121,6 +2178,7 @@ export default function ShadowColosseum() {
           phase={phase}
           dmgPopup={dmgPopup}
           stageEmoji={STAGES[selStage]?.emoji || ''}
+          stageSprite={STAGES[selStage]?.sprite || ''}
           stageElement={STAGES[selStage]?.element || 'shadow'}
           onSkillUse={(i) => phase === 'idle' && executeRound(i)}
           onFlee={flee}
@@ -2289,6 +2347,110 @@ export default function ShadowColosseum() {
           </motion.div>
         </div>
       )}
+
+      {/* ═══ TUTORIAL BUTTON (top-right) ═══ */}
+      <button
+        onClick={() => setShowTutorial(true)}
+        className="fixed top-4 right-4 z-40 w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 border-2 border-indigo-400/50 shadow-lg shadow-indigo-500/30 flex items-center justify-center text-lg hover:scale-110 active:scale-95 transition-transform"
+        title="Comment jouer ?"
+      >?</button>
+
+      {/* ═══ TUTORIAL MODAL ═══ */}
+      <AnimatePresence>
+        {showTutorial && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowTutorial(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.85, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.85, y: 30 }}
+              className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-2xl border border-indigo-500/40 bg-[#0f0f2a] p-5 shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-black bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Comment Jouer</h2>
+                <button onClick={() => setShowTutorial(false)} className="text-gray-500 hover:text-white text-xl transition-colors">&times;</button>
+              </div>
+
+              {/* 1. Elements */}
+              <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10">
+                <div className="text-sm font-bold text-indigo-300 mb-2">1. Les Elements</div>
+                <p className="text-[10px] text-gray-400 mb-2">Chaque chibi a un element. Exploite les faiblesses pour +30% de degats !</p>
+                <div className="grid grid-cols-2 gap-1">
+                  <div className="text-[10px]"><span className="text-purple-400">{'\uD83C\uDF11'} Ombre</span> &gt; <span className="text-emerald-400">{'\uD83D\uDCA8'} Vent</span></div>
+                  <div className="text-[10px]"><span className="text-red-400">{'\uD83D\uDD25'} Feu</span> &gt; <span className="text-purple-400">{'\uD83C\uDF11'} Ombre</span></div>
+                  <div className="text-[10px]"><span className="text-emerald-400">{'\uD83D\uDCA8'} Vent</span> &gt; <span className="text-amber-400">{'\uD83E\uDEA8'} Terre</span></div>
+                  <div className="text-[10px]"><span className="text-amber-400">{'\uD83E\uDEA8'} Terre</span> &gt; <span className="text-red-400">{'\uD83D\uDD25'} Feu</span></div>
+                  <div className="text-[10px]"><span className="text-blue-400">{'\uD83D\uDCA7'} Eau</span> &gt; <span className="text-red-400">{'\uD83D\uDD25'} Feu</span></div>
+                  <div className="text-[10px]"><span className="text-yellow-300">{'\u2728'} Lumiere</span> &gt; <span className="text-purple-400">{'\uD83C\uDF11'} Ombre</span></div>
+                </div>
+              </div>
+
+              {/* 2. Farming & Leveling */}
+              <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10">
+                <div className="text-sm font-bold text-emerald-300 mb-2">2. Farming & Leveling</div>
+                <div className="space-y-1 text-[10px] text-gray-400">
+                  <p>{'\u2694\uFE0F'} <b className="text-white">Combats d'etages</b> : Bats des ennemis de plus en plus forts pour gagner de l'XP, des coins et des marteaux.</p>
+                  <p>{'\uD83D\uDCC8'} <b className="text-white">Montee en niveau</b> : Chaque niveau donne des points de stats a repartir (PV, ATK, DEF, SPD, CRIT, RES, MANA).</p>
+                  <p>{'\uD83C\uDF33'} <b className="text-white">Arbre de competences</b> : Debloque des ameliorations pour les sorts de tes chibis.</p>
+                  <p>{'\uD83C\uDFC5'} <b className="text-white">Talents</b> : Des bonus passifs puissants. Plus tu progresses, plus tu en debloques.</p>
+                  <p>{'\uD83C\uDF10'} <b className="text-white">Niveau de compte</b> : Tous les 10 niveaux, choisis une stat a booster de +10 pts pour TOUS tes personnages !</p>
+                </div>
+              </div>
+
+              {/* 3. Equipment */}
+              <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10">
+                <div className="text-sm font-bold text-amber-300 mb-2">3. Equipement</div>
+                <div className="space-y-1 text-[10px] text-gray-400">
+                  <p>{'\uD83D\uDD2E'} <b className="text-white">Artefacts</b> : Forge-les dans la Boutique (rare/legendaire/mythique). Chaque piece a une stat principale et des sub-stats.</p>
+                  <p>{'\u2B06\uFE0F'} <b className="text-white">Amelioration</b> : Utilise des Marteaux + coins pour monter tes artefacts (max Lv20). Tous les 5 niveaux, une sub-stat est boostee !</p>
+                  <p>{'\uD83D\uDEE1\uFE0F'} <b className="text-white">Sets</b> : Equipe 2 ou 4 pieces du meme set pour des bonus puissants (ATK%, DEF%, SPD...).</p>
+                  <p>{'\u2694\uFE0F'} <b className="text-white">Armes</b> : Achete des armes dans la Boutique pour booster l'ATK de base.</p>
+                  <p>{'\uD83D\uDC9C'} <b className="text-white">Sets de Raid</b> : Des sets exclusifs avec des passives uniques ! Obtenus uniquement via le Raid Boss.</p>
+                </div>
+              </div>
+
+              {/* 4. Mana */}
+              <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10">
+                <div className="text-sm font-bold text-violet-300 mb-2">4. Mana</div>
+                <div className="space-y-1 text-[10px] text-gray-400">
+                  <p>{'\uD83D\uDCA0'} <b className="text-white">Chaque sort coute de la mana</b>. Les sorts basiques sont gratuits, les sorts puissants coutent plus cher.</p>
+                  <p>{'\uD83D\uDD04'} <b className="text-white">Regeneration</b> : La mana remonte a chaque tour, bonus avec la SPD.</p>
+                  <p>{'\uD83D\uDCA1'} <b className="text-white">Astuce</b> : Investis des points en MANA ou equipe le set "Source Arcanique" pour +30% mana max et -20% cout !</p>
+                </div>
+              </div>
+
+              {/* 5. Raid Boss */}
+              <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10">
+                <div className="text-sm font-bold text-red-300 mb-2">5. Raid Boss</div>
+                <div className="space-y-1 text-[10px] text-gray-400">
+                  <p>{'\uD83D\uDC1C'} <b className="text-white">Le Raid est un combat en temps reel</b> contre un boss a barres de vie multiples. Compose 2 equipes de 3 combattants.</p>
+                  <p>{'\uD83D\uDCA5'} <b className="text-white">Rage Count (RC)</b> : Chaque barre detruite = +1 RC. Plus le RC est haut, meilleures sont les recompenses !</p>
+                  <p>{'\u23F1\uFE0F'} <b className="text-white">Limite</b> : 10 tentatives par jour. Utilise-les bien !</p>
+                  <p>{'\uD83C\uDFB9'} <b className="text-white">Sung Jinwoo</b> : Pendant le raid, utilise les touches clavier (A, Z, E, R, T) pour activer les sorts de Sung en temps reel !</p>
+                  <p>{'\uD83D\uDCE6'} <b className="text-white">Recompenses</b> : Coins, XP, marteaux et artefacts de sets de Raid exclusifs !</p>
+                </div>
+              </div>
+
+              {/* 6. Hunters */}
+              <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10">
+                <div className="text-sm font-bold text-yellow-300 mb-2">6. Debloquer des Hunters</div>
+                <div className="space-y-1 text-[10px] text-gray-400">
+                  <p>{'\uD83C\uDFC6'} <b className="text-white">Les Hunters</b> sont des combattants speciaux debloques en accumulant du RC total sur le Raid Boss.</p>
+                  <p>{'\u2B50'} <b className="text-white">Eveil</b> : Les duplicatas augmentent les etoiles d'un Hunter (+5% stats de base par etoile, max 5).</p>
+                  <p>{'\uD83D\uDCAA'} <b className="text-white">Objectif</b> : Farm le Raid, monte ton RC total, et debloque tous les Hunters pour avoir la meilleure equipe !</p>
+                </div>
+              </div>
+
+              <button onClick={() => setShowTutorial(false)}
+                className="w-full py-2 rounded-xl bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 text-sm font-bold hover:bg-indigo-600/50 transition-colors">
+                Compris !
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

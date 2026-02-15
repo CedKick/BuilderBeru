@@ -3,6 +3,7 @@ import React, { Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './index.css';
+import './i18n/i18n';
 
 import HomePage from './HomePage.jsx';
 import AppLayout from './AppLayout.jsx';
