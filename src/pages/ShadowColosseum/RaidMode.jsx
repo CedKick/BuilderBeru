@@ -20,17 +20,20 @@ import {
   HUNTER_UNLOCK_THRESHOLDS,
   computeSynergies, computeCrossTeamSynergy, computeRaidRewards,
   loadRaidData, saveRaidData, getHunterPool, getHunterStars,
+  HUNTER_PASSIVE_EFFECTS,
+  RAID_TIERS, MAX_RAID_TIER, getTierData, getTierArtifactRarity,
 } from './raidData';
 import {
   computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses, HAMMERS, HAMMER_ORDER,
-  generateRaidArtifact, MAX_DAILY_RAIDS, getActivePassives, RAID_ARTIFACT_SETS,
+  generateRaidArtifact, generateRaidArtifactFromTier, MAX_DAILY_RAIDS, getActivePassives, RAID_ARTIFACT_SETS,
+  WEAPONS, MAIN_STAT_VALUES, rollRaidWeaponDrop, MAX_WEAPON_AWAKENING,
 } from './equipmentData';
 import { BattleStyles, RaidArena } from './BattleVFX';
 
 // ─── Colosseum shared save (chibi levels, stat points, skill tree, talents) ──
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultColoData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, respecCount: {}, cooldowns: {}, stagesCleared: [], stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponInventory: [], hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, dailyRaidDate: '', dailyRaidCount: 0 });
-const loadColoData = () => { try { const d = { ...defaultColoData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) }; if (!d.artifacts) d.artifacts = {}; if (!d.weapons) d.weapons = {}; if (!d.hammers) d.hammers = { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }; if (d.accountXp === undefined) d.accountXp = 0; if (!d.accountBonuses) d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }; if (d.accountAllocations === undefined) d.accountAllocations = 0; const today = new Date().toISOString().slice(0, 10); if (d.dailyRaidDate !== today) { d.dailyRaidDate = today; d.dailyRaidCount = 0; } return d; } catch { return defaultColoData(); } };
+const defaultColoData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, respecCount: {}, cooldowns: {}, stagesCleared: [], stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, dailyRaidDate: '', dailyRaidCount: 0 });
+const loadColoData = () => { try { const d = { ...defaultColoData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) }; if (!d.artifacts) d.artifacts = {}; if (!d.weapons) d.weapons = {}; if (!d.hammers) d.hammers = { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }; if (d.accountXp === undefined) d.accountXp = 0; if (!d.accountBonuses) d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }; if (d.accountAllocations === undefined) d.accountAllocations = 0; if (d.weaponInventory && Array.isArray(d.weaponInventory)) { if (!d.weaponCollection || typeof d.weaponCollection !== 'object' || Array.isArray(d.weaponCollection)) d.weaponCollection = {}; d.weaponInventory.forEach(wId => { if (d.weaponCollection[wId] === undefined) d.weaponCollection[wId] = 0; }); Object.values(d.weapons).forEach(wId => { if (wId && d.weaponCollection[wId] === undefined) d.weaponCollection[wId] = 0; }); delete d.weaponInventory; } if (!d.weaponCollection) d.weaponCollection = {}; const today = new Date().toISOString().slice(0, 10); if (d.dailyRaidDate !== today) { d.dailyRaidDate = today; d.dailyRaidCount = 0; } return d; } catch { return defaultColoData(); } };
 const saveColoData = (d) => localStorage.setItem(SAVE_KEY, JSON.stringify(d));
 
 // ─── Format numbers ──────────────────────────────────────────
@@ -54,6 +57,7 @@ export default function RaidMode() {
   const [coloData, setColoData] = useState(loadColoData);
   const [raidData, setRaidData] = useState(loadRaidData);
   const [bossId] = useState('ant_queen');
+  const [selectedTier, setSelectedTier] = useState(raidData.currentTier || 1);
 
   // ─── Setup state ───────────────────────────────────────────
   const [team1, setTeam1] = useState([null, null, null]);
@@ -119,7 +123,8 @@ export default function RaidMode() {
     const allocated = coloData.statPoints[id] || {};
     const tb = computeTalentBonuses(coloData.talentTree[id] || {});
     const artBonuses = computeArtifactBonuses(coloData.artifacts?.[id]);
-    const weapBonuses = computeWeaponBonuses(coloData.weapons?.[id]);
+    const wId = coloData.weapons?.[id];
+    const weapBonuses = computeWeaponBonuses(wId, coloData.weaponCollection?.[wId] || 0);
     const eqB = mergeEquipBonuses(artBonuses, weapBonuses);
     const evStars = HUNTERS[id] ? getHunterStars(loadRaidData(), id) : 0;
     return statsAtFull(chibi.base, chibi.growth, lvData.level, allocated, tb, eqB, evStars, coloData.accountBonuses);
@@ -179,24 +184,40 @@ export default function RaidMode() {
     const allocated = coloData.statPoints[id] || {};
     const tb = computeTalentBonuses(coloData.talentTree[id] || {});
     const artBonuses = computeArtifactBonuses(coloData.artifacts?.[id]);
-    const weapBonuses = computeWeaponBonuses(coloData.weapons?.[id]);
+    const wId2 = coloData.weapons?.[id];
+    const weapBonuses = computeWeaponBonuses(wId2, coloData.weaponCollection?.[wId2] || 0);
     const eqB = mergeEquipBonuses(artBonuses, weapBonuses);
     const evStars = HUNTERS[id] ? getHunterStars(loadRaidData(), id) : 0;
     const st = statsAtFull(chibi.base, chibi.growth, lvData.level, allocated, tb, eqB, evStars, coloData.accountBonuses);
 
+    // Hunter innate passive
+    const hunterPassive = HUNTERS[id] ? (HUNTER_PASSIVE_EFFECTS[id] || null) : null;
+
     // Apply synergy bonuses
     const syn = synergyBonuses;
-    const hpBonus = 1 + (syn.hp + syn.allStats) / 100;
-    const atkBonus = 1 + (syn.atk + syn.allStats) / 100;
-    const defBonus = 1 + (syn.def + syn.allStats) / 100;
-    const spdBonus = 1 + (syn.spd + syn.allStats) / 100;
+    let hpMult = 1 + (syn.hp + syn.allStats) / 100;
+    let atkMult = 1 + (syn.atk + syn.allStats) / 100;
+    let defMult = 1 + (syn.def + syn.allStats) / 100;
+    let spdMult = 1 + (syn.spd + syn.allStats) / 100;
+    let critFlat = syn.crit;
+    let resFlat = syn.res;
 
-    const finalHp = Math.floor(st.hp * hpBonus);
-    const finalAtk = Math.floor(st.atk * atkBonus);
-    const finalDef = Math.floor(st.def * defBonus);
-    const finalSpd = Math.floor(st.spd * spdBonus);
-    const finalCrit = +(st.crit + syn.crit).toFixed(1);
-    const finalRes = +(st.res + syn.res).toFixed(1);
+    // Apply permanent hunter passives (% bonuses)
+    if (hunterPassive?.type === 'permanent' && hunterPassive.stats) {
+      if (hunterPassive.stats.hp)   hpMult  += hunterPassive.stats.hp / 100;
+      if (hunterPassive.stats.atk)  atkMult += hunterPassive.stats.atk / 100;
+      if (hunterPassive.stats.def)  defMult += hunterPassive.stats.def / 100;
+      if (hunterPassive.stats.spd)  spdMult += hunterPassive.stats.spd / 100;
+      if (hunterPassive.stats.crit) critFlat += hunterPassive.stats.crit;
+      if (hunterPassive.stats.res)  resFlat  += hunterPassive.stats.res;
+    }
+
+    const finalHp = Math.floor(st.hp * hpMult);
+    const finalAtk = Math.floor(st.atk * atkMult);
+    const finalDef = Math.floor(st.def * defMult);
+    const finalSpd = Math.floor(st.spd * spdMult);
+    const finalCrit = +(st.crit + critFlat).toFixed(1);
+    const finalRes = +(st.res + resFlat).toFixed(1);
 
     // Mana stats
     const mana = st.mana || 0;
@@ -216,6 +237,21 @@ export default function RaidMode() {
     // Passives from raid sets
     const passives = getActivePassives(coloData.artifacts?.[id]);
 
+    // Build talentBonuses with hunter passive injections
+    const mergedTb = (() => {
+      const m = { ...tb };
+      for (const [k, v] of Object.entries(eqB)) { if (v) m[k] = (m[k] || 0) + v; }
+      // Inject hunter passive bonuses into talentBonuses
+      if (hunterPassive) {
+        if (hunterPassive.type === 'healBonus') m.healBonus = (m.healBonus || 0) + hunterPassive.value;
+        if (hunterPassive.type === 'critDmg')   m.critDamage = (m.critDamage || 0) + hunterPassive.value;
+        if (hunterPassive.type === 'magicDmg')  m.allDamage = (m.allDamage || 0) + hunterPassive.value;
+        if (hunterPassive.type === 'vsBoss')    m.bossDamage = (m.bossDamage || 0) + (hunterPassive.stats?.atk || 0);
+        if (hunterPassive.type === 'debuffBonus') m.debuffBonus = (m.debuffBonus || 0) + hunterPassive.value;
+      }
+      return m;
+    })();
+
     return {
       id, name: chibi.name, element: chibi.element, class: chibi.class,
       sprite: chibi.sprite, rarity: chibi.rarity,
@@ -223,27 +259,32 @@ export default function RaidMode() {
       atk: finalAtk, def: finalDef, spd: finalSpd, crit: finalCrit, res: finalRes,
       mana, maxMana: mana, manaRegen, manaCostReduce,
       skills, buffs: [], passives,
-      passiveState: { flammeStacks: 0, martyrHealed: false, echoCounter: 0 },
-      talentBonuses: (() => { const m = { ...tb }; for (const [k, v] of Object.entries(eqB)) { if (v) m[k] = (m[k] || 0) + v; } return m; })(),
+      passiveState: { flammeStacks: 0, martyrHealed: false, echoCounter: 0, sianStacks: 0 },
+      talentBonuses: mergedTb,
+      hunterPassive,
       lastAttackAt: 0, attackInterval: spdToInterval(finalSpd),
       alive: true,
     };
   }, [allPool, coloData]);
 
-  const buildBossEntity = useCallback(() => {
+  const buildBossEntity = useCallback((tier = 1) => {
     const b = boss;
-    const barHP = b.barScaling(0);
+    const tierData = getTierData(tier);
+    const barHP = Math.floor(b.barScaling(0) * tierData.bossHPMult);
     return {
       id: 'boss', name: b.name, element: b.element, isBoss: true,
       sprite: b.sprite, emoji: b.emoji,
       hp: barHP, maxHp: barHP,
-      atk: b.stats.atk, def: b.stats.def, spd: b.stats.spd,
+      atk: Math.floor(b.stats.atk * tierData.bossAtkMult),
+      def: Math.floor(b.stats.def * tierData.bossDefMult),
+      spd: Math.floor(b.stats.spd * tierData.bossSpdMult),
       crit: b.stats.crit, res: b.stats.res,
       buffs: [],
       currentBar: 0, totalBars: b.totalBars, barsDestroyed: 0,
       skills: b.skills.map(s => ({ ...s, lastUsedAt: 0 })),
       phase: b.phases[0],
       lastAttackAt: 0,
+      tier, tierData, rcPerBar: tierData.rcPerBar,
     };
   }, [boss]);
 
@@ -285,16 +326,33 @@ export default function RaidMode() {
       const cmdCrit = c.passives?.find(p => p.type === 'commanderCrit');
       if (cmdCrit) chibis.forEach(ally => { ally.buffs.push({ stat: 'crit', value: 20, turns: 30 }); });
     });
+    // Hunter passive: teamDef (Reed) → all allies DEF +X%
+    chibis.forEach(c => {
+      if (c.hunterPassive?.type === 'teamDef') {
+        const val = c.hunterPassive.value || 0;
+        chibis.forEach(ally => { ally.def = Math.floor(ally.def * (1 + val / 100)); });
+      }
+      // Hunter passive: buffBonus (Meri) → increase buff durations by X%
+      if (c.hunterPassive?.type === 'buffBonus') {
+        c.talentBonuses.buffBonus = (c.talentBonuses.buffBonus || 0) + c.hunterPassive.value;
+      }
+      // Hunter passive: firstTurn (Kanae) → SPD boost at battle start
+      if (c.hunterPassive?.type === 'firstTurn' && c.hunterPassive.stats?.spd) {
+        c.buffs.push({ stat: 'spd', value: c.hunterPassive.stats.spd / 100, turns: 1 });
+      }
+    });
 
-    // Increment daily raid count
+    // Increment daily raid count + save tier preference
     setColoData(prev => ({ ...prev, dailyRaidDate: today, dailyRaidCount: (prev.dailyRaidDate === today ? (prev.dailyRaidCount || 0) : 0) + 1 }));
+    setRaidData(prev => ({ ...prev, currentTier: selectedTier }));
 
-    const bossEntity = buildBossEntity();
+    const tierData = getTierData(selectedTier);
+    const bossEntity = buildBossEntity(selectedTier);
     const state = { chibis, boss: bossEntity };
 
     setBattleState(state);
     battleRef.current = state;
-    setCombatLog([{ text: `Raid commence ! ${boss.name} apparait !`, time: 0, type: 'system' }]);
+    setCombatLog([{ text: `Raid ${tierData.name} commence ! ${boss.name} apparait !`, time: 0, type: 'system' }]);
     setSungCooldowns({});
     sungCDRef.current = {};
     setActiveSungBuffs([]);
@@ -332,10 +390,13 @@ export default function RaidMode() {
       clearInterval(gameLoopRef.current);
       gameLoopRef.current = null;
 
-      const rc = state.boss.barsDestroyed;
-      const isFullClear = rc >= state.boss.totalBars;
+      const barsDestroyed = state.boss.barsDestroyed;
+      const tier = state.boss.tier || 1;
+      const tierData = state.boss.tierData || getTierData(1);
+      const rc = barsDestroyed * tierData.rcPerBar;
+      const isFullClear = barsDestroyed >= state.boss.totalBars;
       const totalDamage = Object.values(dpsTracker.current).reduce((s, v) => s + v, 0);
-      const rewards = computeRaidRewards(rc, isFullClear);
+      const rewards = computeRaidRewards(rc, isFullClear, tierData);
       const endReason = remaining <= 0 ? 'timeout' : aliveCount === 0 ? 'wipe' : 'clear';
 
       // DPS breakdown
@@ -345,7 +406,7 @@ export default function RaidMode() {
         percent: totalDamage > 0 ? ((dpsTracker.current[c.id] || 0) / totalDamage * 100) : 0,
       })).sort((a, b) => b.damage - a.damage);
 
-      // Check hunter unlocks via thresholds
+      // Check hunter unlocks via thresholds (uses cumulative totalRC)
       const newRC = (raidData.raidStats.totalRC || 0) + rc;
       const unlockedHunters = [];
       const hunterDuplicates = [];
@@ -363,7 +424,6 @@ export default function RaidMode() {
             unlockedHunters.push(pick);
             alreadyOwned.add(pick);
           } else {
-            // All hunters of this rarity owned — give a duplicate for eveil
             const dupePool = hunterIds.filter(h => HUNTERS[h].rarity === threshold.rarity);
             if (dupePool.length > 0) {
               const pick = dupePool[Math.floor(Math.random() * dupePool.length)];
@@ -376,30 +436,34 @@ export default function RaidMode() {
       // Apply rewards
       shadowCoinManager.addCoins(rewards.coins, 'raid_reward');
 
-      // Hammer drops based on RC
+      // Hammer drops — tier-aware
       const hammerDrops = {};
-      const hammerTiers = rc >= 8 ? ['marteau_runique', 'marteau_celeste'] : rc >= 4 ? ['marteau_forge', 'marteau_runique'] : ['marteau_forge'];
-      const hammerCount = Math.min(3, Math.floor(rc / 2) + (isFullClear ? 2 : 0));
+      const hammerCount = Math.floor(tierData.hammerCountBase + rc * tierData.hammerCountPerRC + (isFullClear ? 2 : 0));
       for (let i = 0; i < hammerCount; i++) {
-        const hId = hammerTiers[Math.floor(Math.random() * hammerTiers.length)];
+        const hId = tierData.hammerTiers[Math.floor(Math.random() * tierData.hammerTiers.length)];
         hammerDrops[hId] = (hammerDrops[hId] || 0) + 1;
       }
 
-      // Raid artifact drops (exclusive raid sets!)
+      // Raid artifact drops — tier-aware
       const raidArtifactDrops = [];
-      if (rc >= 2) {
-        // Guaranteed 1 artifact at RC 2+
-        const rarity1 = rc >= 8 ? 'mythique' : rc >= 5 ? 'legendaire' : 'rare';
-        raidArtifactDrops.push(generateRaidArtifact(rarity1));
+      if (rc >= tierData.artifactDrop1.rcMin) {
+        const rarity1 = getTierArtifactRarity(tierData.artifactDrop1, rc);
+        raidArtifactDrops.push(generateRaidArtifactFromTier(rarity1, tier));
       }
-      if (rc >= 6) {
-        // Bonus artifact at RC 6+
-        const rarity2 = rc >= 9 ? 'mythique' : 'legendaire';
-        raidArtifactDrops.push(generateRaidArtifact(rarity2));
+      if (tierData.artifactDrop2 && rc >= tierData.artifactDrop2.rcMin) {
+        const rarity2 = getTierArtifactRarity(tierData.artifactDrop2, rc);
+        raidArtifactDrops.push(generateRaidArtifactFromTier(rarity2, tier));
       }
       if (isFullClear) {
-        // Full clear bonus: guaranteed mythique
-        raidArtifactDrops.push(generateRaidArtifact('mythique'));
+        raidArtifactDrops.push(generateRaidArtifactFromTier(tierData.artifactDropFullClear, tier));
+      }
+
+      // Weapon drops — tier-aware
+      let raidWeaponDrop = null;
+      const rolledWeapon = rollRaidWeaponDrop(tier, isFullClear);
+      if (rolledWeapon) {
+        const wData = WEAPONS[rolledWeapon];
+        if (wData) raidWeaponDrop = { id: rolledWeapon, ...wData };
       }
 
       // XP to participating chibis + save hammer drops + raid artifacts
@@ -407,9 +471,25 @@ export default function RaidMode() {
       const newHammers = { ...(newColoData.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }) };
       Object.entries(hammerDrops).forEach(([hId, count]) => { newHammers[hId] = (newHammers[hId] || 0) + count; });
       newColoData.hammers = newHammers;
-      // Add raid artifacts to inventory
       if (raidArtifactDrops.length > 0) {
         newColoData.artifactInventory = [...(newColoData.artifactInventory || []), ...raidArtifactDrops];
+      }
+      if (raidWeaponDrop) {
+        const wc = { ...(newColoData.weaponCollection || {}) };
+        if (wc[raidWeaponDrop.id] !== undefined) {
+          if (wc[raidWeaponDrop.id] < MAX_WEAPON_AWAKENING) {
+            wc[raidWeaponDrop.id]++;
+            raidWeaponDrop.isNew = false;
+            raidWeaponDrop.newAwakening = wc[raidWeaponDrop.id];
+          } else {
+            raidWeaponDrop.isNew = false;
+            raidWeaponDrop.newAwakening = MAX_WEAPON_AWAKENING;
+          }
+        } else {
+          wc[raidWeaponDrop.id] = 0;
+          raidWeaponDrop.isNew = true;
+        }
+        newColoData.weaponCollection = wc;
       }
       state.chibis.forEach(c => {
         const cur = newColoData.chibiLevels[c.id] || { level: 1, xp: 0 };
@@ -422,31 +502,39 @@ export default function RaidMode() {
         }
         newColoData.chibiLevels[c.id] = { level: newLvl, xp: newXp };
       });
-      // Account XP from raid
-      const raidAccountXp = 30 + rc * 15 + (isFullClear ? 50 : 0);
+      const raidAccountXp = Math.floor((30 + rc * 15 + (isFullClear ? 50 : 0)) * tierData.xpMult);
       newColoData.accountXp = (newColoData.accountXp || 0) + raidAccountXp;
       setColoData(newColoData);
 
-      // Update raid data
+      // Update raid data — with tier tracking
       const newRaidData = { ...raidData };
+      const oldTierBestRC = { ...(newRaidData.raidStats?.tierBestRC || {}) };
+      oldTierBestRC[tier] = Math.max(oldTierBestRC[tier] || 0, rc);
       newRaidData.raidStats = {
         totalRC: newRC,
         bestRC: Math.max(raidData.raidStats.bestRC || 0, rc),
         totalDamage: (raidData.raidStats.totalDamage || 0) + totalDamage,
         raidsPlayed: (raidData.raidStats.raidsPlayed || 0) + 1,
+        bestTierCleared: newRaidData.raidStats?.bestTierCleared || 0,
+        tierBestRC: oldTierBestRC,
       };
+      // Unlock next tier on full clear
+      let tierUnlocked = null;
+      if (isFullClear && tier === (newRaidData.unlockedTier || 1) && tier < MAX_RAID_TIER) {
+        newRaidData.unlockedTier = tier + 1;
+        newRaidData.raidStats.bestTierCleared = tier;
+        tierUnlocked = tier + 1;
+      }
       if (!newRaidData.weeklyBoss[bossId]) newRaidData.weeklyBoss[bossId] = { attempts: 0, bestRC: 0 };
       newRaidData.weeklyBoss[bossId].attempts++;
       newRaidData.weeklyBoss[bossId].bestRC = Math.max(newRaidData.weeklyBoss[bossId].bestRC, rc);
       newRaidData.lastTeam = [...team1, ...team2];
-      // Add unlocked hunters (new format)
       unlockedHunters.forEach(hId => {
         const existing = (newRaidData.hunterCollection || []).find(e => (typeof e === 'string' ? e : e.id) === hId);
         if (!existing) {
           newRaidData.hunterCollection = [...(newRaidData.hunterCollection || []), { id: hId, stars: 0 }];
         }
       });
-      // Handle duplicates (eveil)
       hunterDuplicates.forEach(hId => {
         const col = newRaidData.hunterCollection || [];
         const idx = col.findIndex(e => (typeof e === 'string' ? e : e.id) === hId);
@@ -459,9 +547,11 @@ export default function RaidMode() {
       setRaidData(newRaidData);
 
       setResultData({
-        rc, isFullClear, totalDamage, endReason, dpsBreakdown,
+        rc, barsDestroyed, isFullClear, totalDamage, endReason, dpsBreakdown,
         rewards, unlockedHunters, hunterDuplicates, hammerDrops, raidArtifactDrops,
+        raidWeaponDrop,
         duration: Math.floor(elapsed),
+        tier, tierData, tierUnlocked,
       });
       setPhase('result');
       return;
@@ -509,8 +599,34 @@ export default function RaidMode() {
       // Temporarily modify chibi stats
       const origAtk = chibi.atk;
       const origCrit = chibi.crit;
+      const origDef = chibi.def;
       chibi.atk = Math.floor(origAtk * (1 + sungMults.atk / 100));
       chibi.crit = +(origCrit + sungMults.crit).toFixed(1);
+
+      // Apply conditional hunter passives
+      const hp = chibi.hunterPassive;
+      if (hp) {
+        const hpPct = chibi.hp / chibi.maxHp * 100;
+        if (hp.type === 'lowHp' && hpPct < hp.threshold && hp.stats) {
+          if (hp.stats.def) chibi.def = Math.floor(origDef * (1 + hp.stats.def / 100));
+          if (hp.stats.atk) chibi.atk = Math.floor(chibi.atk * (1 + hp.stats.atk / 100));
+        }
+        if (hp.type === 'highHp' && hpPct > hp.threshold && hp.stats) {
+          if (hp.stats.atk)  chibi.atk = Math.floor(chibi.atk * (1 + hp.stats.atk / 100));
+          if (hp.stats.crit) chibi.crit = +(chibi.crit + hp.stats.crit).toFixed(1);
+        }
+        if (hp.type === 'stacking') {
+          chibi.passiveState.sianStacks = Math.min(hp.maxStacks || 10, (chibi.passiveState.sianStacks || 0) + 1);
+          const stackBonus = (hp.perStack?.atk || 0) * chibi.passiveState.sianStacks;
+          chibi.atk = Math.floor(chibi.atk * (1 + stackBonus / 100));
+        }
+        if (hp.type === 'vsLowHp' && (state.boss.hp / state.boss.maxHp * 100) < hp.threshold && hp.stats) {
+          if (hp.stats.crit) chibi.crit = +(chibi.crit + hp.stats.crit).toFixed(1);
+        }
+        if (hp.type === 'vsDebuffed' && state.boss.buffs?.some(b => b.value < 0) && hp.stats) {
+          if (hp.stats.atk) chibi.atk = Math.floor(chibi.atk * (1 + hp.stats.atk / 100));
+        }
+      }
 
       // Temporarily modify boss DEF
       const origBossDef = state.boss.def;
@@ -526,7 +642,7 @@ export default function RaidMode() {
           lowestAlly.hp = Math.min(lowestAlly.maxHp, lowestAlly.hp + healAmt);
           chibi.lastAttackAt = now;
           // Restore stats before return
-          chibi.atk = origAtk; chibi.crit = origCrit; state.boss.def = origBossDef;
+          chibi.atk = origAtk; chibi.crit = origCrit; chibi.def = origDef; state.boss.def = origBossDef;
           logEntries.push({ text: `${chibi.name} soigne ${lowestAlly.name} +${healAmt} PV`, time: elapsed, type: 'heal' });
           vfxEvents.push({ id: now + Math.random(), type: 'heal', targetId: lowestAlly.id, value: healAmt, timestamp: now });
           stateChanged = true;
@@ -563,7 +679,19 @@ export default function RaidMode() {
         if (chibi.passiveState?.echoFreeMana) chibi.passiveState.echoFreeMana = false;
       }
 
+      // Hunter passive: skillCd (Yoo) — CRIT boost on high-CD skills
+      const preSkillCrit = chibi.crit;
+      if (hp?.type === 'skillCd' && (skill.cdMax || 0) >= (hp.minCd || 3) && hp.stats?.crit) {
+        chibi.crit = +(chibi.crit + hp.stats.crit).toFixed(1);
+      }
+
       let result = computeAttack(chibi, skill, state.boss, chibi.talentBonuses || {});
+      chibi.crit = preSkillCrit; // restore after compute
+
+      // Hunter passive: defIgnore (Minnie) — extra DMG on crits (simulated as DEF ignore)
+      if (hp?.type === 'defIgnore' && result.isCrit && result.damage > 0) {
+        result = { ...result, damage: Math.floor(result.damage * (1 + (hp.value || 10) / 100)) };
+      }
 
       // ── Passive: Desperate Fury — DMG scales with missing HP (+0.8% per 1% HP missing)
       const furyPassive = chibi.passives?.find(p => p.type === 'desperateFury');
@@ -593,6 +721,7 @@ export default function RaidMode() {
       // Restore original stats
       chibi.atk = origAtk;
       chibi.crit = origCrit;
+      chibi.def = origDef;
       state.boss.def = origBossDef;
 
       // Apply damage to boss
@@ -610,10 +739,11 @@ export default function RaidMode() {
         if (state.boss.hp <= 0) {
           state.boss.barsDestroyed++;
           if (state.boss.barsDestroyed < state.boss.totalBars) {
-            const nextBarHP = boss.barScaling(state.boss.barsDestroyed);
+            const tierHPMult = state.boss.tierData?.bossHPMult || 1;
+            const nextBarHP = Math.floor(boss.barScaling(state.boss.barsDestroyed) * tierHPMult);
             state.boss.hp = nextBarHP;
             state.boss.maxHp = nextBarHP;
-            logEntries.push({ text: `BARRE ${state.boss.barsDestroyed} DETRUITE ! RC +1`, time: elapsed, type: 'bar_break' });
+            logEntries.push({ text: `BARRE ${state.boss.barsDestroyed} DETRUITE ! +${state.boss.rcPerBar || 1} RC`, time: elapsed, type: 'bar_break' });
             vfxEvents.push({ id: now + Math.random() + 0.1, type: 'bar_break', timestamp: now });
 
             // Check phase transition
@@ -837,10 +967,16 @@ export default function RaidMode() {
   // RENDER — Setup Phase
   // ═══════════════════════════════════════════════════════════
 
-  const renderSetup = () => (
+  const renderSetup = () => {
+    const currentTierData = getTierData(selectedTier);
+    return (
     <div className="space-y-6">
       {/* Boss Preview */}
-      <div className="bg-gradient-to-r from-red-900/40 to-amber-900/40 border border-red-500/30 rounded-2xl p-4 text-center">
+      <div className="bg-gradient-to-r from-red-900/40 to-amber-900/40 border border-red-500/30 rounded-2xl p-4 text-center relative">
+        {/* Tier badge */}
+        <div className={`absolute top-2 right-2 px-2 py-1 rounded-lg border ${currentTierData.borderColor} bg-gradient-to-r ${currentTierData.bgGradient}`}>
+          <span className={`text-xs font-bold ${currentTierData.nameColor}`}>Tier {selectedTier}: {currentTierData.name}</span>
+        </div>
         <div className="text-3xl mb-1">{boss.emoji}</div>
         <h2 className="text-xl font-bold text-red-400">{boss.name}</h2>
         <div className="flex items-center justify-center gap-3 text-sm text-gray-400 mt-1">
@@ -848,13 +984,49 @@ export default function RaidMode() {
           <span>|</span>
           <span>{boss.totalBars} Barres</span>
           <span>|</span>
-          <span>HP: {fmt(boss.baseHP)} → {fmt(boss.barScaling(boss.totalBars - 1))}</span>
+          <span>HP: {fmt(Math.floor(boss.baseHP * currentTierData.bossHPMult))} → {fmt(Math.floor(boss.barScaling(boss.totalBars - 1) * currentTierData.bossHPMult))}</span>
         </div>
         <div className="flex justify-center gap-1 mt-2">
           {Array.from({ length: boss.totalBars }).map((_, i) => (
             <div key={i} className="w-3 h-3 rotate-45 bg-red-500/60 border border-red-400/40" />
           ))}
         </div>
+      </div>
+
+      {/* Tier Selector */}
+      <div className="bg-white/5 rounded-xl p-3 border border-white/10">
+        <h3 className="text-sm font-bold text-center mb-2 text-gray-300">Difficulte</h3>
+        <div className="flex gap-2 justify-center flex-wrap">
+          {Array.from({ length: raidData.unlockedTier || 1 }, (_, i) => i + 1).map(tier => {
+            const td = getTierData(tier);
+            const isSelected = selectedTier === tier;
+            const tierBest = raidData.raidStats?.tierBestRC?.[tier] || 0;
+            const isCleared = tierBest >= td.maxRC;
+            return (
+              <button key={tier} onClick={() => setSelectedTier(tier)}
+                className={`flex flex-col items-center px-3 py-2 rounded-lg border-2 transition-all ${
+                  isSelected ? `${td.borderColor} bg-gradient-to-r ${td.bgGradient} scale-105` : 'border-white/20 bg-white/5 hover:border-white/40'
+                }`}>
+                <span className={`text-sm font-bold ${td.nameColor}`}>{td.name}</span>
+                <span className="text-[10px] text-gray-400">RC x{td.rcPerBar}</span>
+                {isCleared && <span className="text-[10px] text-green-400">Clear</span>}
+                {tierBest > 0 && !isCleared && <span className="text-[9px] text-gray-500">Best: {tierBest}</span>}
+              </button>
+            );
+          })}
+        </div>
+        {/* Tier details */}
+        <div className="mt-3 p-2 rounded-lg bg-black/20 border border-white/10">
+          <div className="grid grid-cols-4 gap-2 text-[10px] text-center">
+            <div className="text-gray-400">RC Max<br/><span className="text-white font-bold text-xs">{currentTierData.maxRC}</span></div>
+            <div className="text-gray-400">Coins<br/><span className="text-yellow-400 font-bold text-xs">x{currentTierData.coinMult}</span></div>
+            <div className="text-gray-400">HP Boss<br/><span className="text-red-400 font-bold text-xs">x{currentTierData.bossHPMult}</span></div>
+            <div className="text-gray-400">XP<br/><span className="text-green-400 font-bold text-xs">x{currentTierData.xpMult}</span></div>
+          </div>
+        </div>
+        {(raidData.unlockedTier || 1) < MAX_RAID_TIER && selectedTier === (raidData.unlockedTier || 1) && (
+          <div className="mt-2 text-center text-[10px] text-amber-400">Clear complet (10/10) pour debloquer Tier {(raidData.unlockedTier || 1) + 1}</div>
+        )}
       </div>
 
       {/* Teams */}
@@ -954,6 +1126,7 @@ export default function RaidMode() {
       </div>
     </div>
   );
+  };
 
   // ═══════════════════════════════════════════════════════════
   // RENDER — Result Phase
@@ -961,7 +1134,8 @@ export default function RaidMode() {
 
   const renderResult = () => {
     if (!resultData) return null;
-    const { rc, isFullClear, totalDamage, endReason, dpsBreakdown, rewards, unlockedHunters, hunterDuplicates = [], hammerDrops = {}, raidArtifactDrops = [], duration } = resultData;
+    const { rc, barsDestroyed = 0, isFullClear, totalDamage, endReason, dpsBreakdown, rewards, unlockedHunters, hunterDuplicates = [], hammerDrops = {}, raidArtifactDrops = [], raidWeaponDrop = null, duration, tier = 1, tierData: resTierData, tierUnlocked } = resultData;
+    const resTd = resTierData || getTierData(tier);
     const min = Math.floor(duration / 60);
     const sec = duration % 60;
 
@@ -974,16 +1148,35 @@ export default function RaidMode() {
             endReason === 'wipe' ? 'bg-gradient-to-r from-red-900/40 to-gray-900/40 border-red-500/30' :
             'bg-gradient-to-r from-blue-900/40 to-purple-900/40 border-blue-500/30'
           }`}>
+          {/* Tier badge */}
+          <div className={`inline-block px-3 py-1 rounded-lg mb-2 border ${resTd.borderColor} bg-gradient-to-r ${resTd.bgGradient}`}>
+            <span className={`text-sm font-bold ${resTd.nameColor}`}>Tier {tier}: {resTd.name}</span>
+          </div>
           <div className="text-4xl mb-2">{isFullClear ? '\uD83C\uDFC6' : endReason === 'wipe' ? '\uD83D\uDC80' : '\u23F1\uFE0F'}</div>
           <h2 className="text-2xl font-bold mb-1">
             {isFullClear ? 'VICTOIRE TOTALE !' : endReason === 'wipe' ? 'EQUIPE ELIMINEE' : 'TEMPS ECOULE'}
           </h2>
           <div className="flex justify-center gap-6 text-lg">
-            <span className="text-orange-400">RC: <b>{rc}</b></span>
+            <span className="text-orange-400">RC: <b>{rc}</b> <span className="text-xs text-gray-400">({barsDestroyed}/10 barres)</span></span>
             <span className="text-blue-400">DMG: <b>{fmt(totalDamage)}</b></span>
             <span className="text-gray-400">{min}:{sec.toString().padStart(2, '0')}</span>
           </div>
         </motion.div>
+
+        {/* Tier Unlock Notification */}
+        {tierUnlocked && (
+          <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.5 }}
+            className="bg-gradient-to-r from-yellow-900/40 to-orange-900/40 border-2 border-yellow-500/50 rounded-2xl p-4 text-center">
+            <div className="text-3xl mb-2">{'\uD83D\uDD13'}</div>
+            <div className="text-lg font-bold text-yellow-400 mb-1">Nouveau Tier Debloque !</div>
+            <div className={`text-sm font-bold ${getTierData(tierUnlocked).nameColor}`}>
+              Tier {tierUnlocked}: {getTierData(tierUnlocked).name}
+            </div>
+            <div className="text-xs text-gray-400 mt-1">
+              RC Max: {getTierData(tierUnlocked).maxRC} | Boss HP: x{getTierData(tierUnlocked).bossHPMult} | Coins: x{getTierData(tierUnlocked).coinMult}
+            </div>
+          </motion.div>
+        )}
 
         {/* Rewards */}
         <div className="bg-white/5 rounded-xl p-4 border border-white/10 text-center">
@@ -1021,6 +1214,24 @@ export default function RaidMode() {
                   </div>
                 );
               })}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Raid Weapon Drop */}
+        {raidWeaponDrop && (
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            className="bg-gradient-to-r from-orange-900/30 to-red-900/30 rounded-xl p-4 border border-orange-500/30 text-center">
+            <div className="text-lg font-bold text-orange-400 mb-2">{'\u2694\uFE0F'} Arme Obtenue !</div>
+            <div className="flex flex-col items-center">
+              <span className="text-3xl mb-1">{raidWeaponDrop.icon}</span>
+              <span className="text-sm font-black text-white">{raidWeaponDrop.name}</span>
+              <span className="text-[10px] text-orange-300">ATK +{raidWeaponDrop.atk} | {MAIN_STAT_VALUES[raidWeaponDrop.bonusStat]?.name} +{raidWeaponDrop.bonusValue}</span>
+              {raidWeaponDrop.isNew ? (
+                <span className="text-green-400 text-xs mt-1">Nouvelle arme !</span>
+              ) : (
+                <span className="text-yellow-400 text-xs mt-1">Eveil A{(raidWeaponDrop.newAwakening || 1) - 1} {'\u2192'} A{raidWeaponDrop.newAwakening || 1}</span>
+              )}
             </div>
           </motion.div>
         )}

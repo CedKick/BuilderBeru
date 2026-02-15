@@ -532,6 +532,83 @@ export const RAID_BOSSES = {
   },
 };
 
+// ─── Raid Tier System ────────────────────────────────────────
+
+export const RAID_TIERS = {
+  1: {
+    id: 1, name: 'Normal',
+    nameColor: 'text-gray-300', bgGradient: 'from-gray-800/40 to-gray-700/40',
+    borderColor: 'border-gray-500/30', emoji: '',
+    rcPerBar: 1, maxRC: 10,
+    bossHPMult: 1.0, bossAtkMult: 1.0, bossDefMult: 1.0, bossSpdMult: 1.0,
+    coinMult: 1.0, xpMult: 1.0,
+    hammerTiers: ['marteau_forge'], hammerCountBase: 1, hammerCountPerRC: 0.2,
+    artifactDrop1: { rcMin: 2, rarities: ['rare', 'legendaire', 'mythique'], thresholds: [2, 5, 8] },
+    artifactDrop2: { rcMin: 6, rarities: ['legendaire', 'mythique'], thresholds: [6, 9] },
+    artifactDropFullClear: 'legendaire',
+  },
+  2: {
+    id: 2, name: 'Heroique',
+    nameColor: 'text-blue-400', bgGradient: 'from-blue-900/40 to-blue-700/40',
+    borderColor: 'border-blue-500/30', emoji: '',
+    rcPerBar: 10, maxRC: 100,
+    bossHPMult: 3.0, bossAtkMult: 1.5, bossDefMult: 1.3, bossSpdMult: 1.1,
+    coinMult: 2.5, xpMult: 2.0,
+    hammerTiers: ['marteau_forge', 'marteau_runique'], hammerCountBase: 2, hammerCountPerRC: 0.15,
+    artifactDrop1: { rcMin: 20, rarities: ['legendaire', 'mythique'], thresholds: [20, 60] },
+    artifactDrop2: { rcMin: 50, rarities: ['legendaire', 'mythique'], thresholds: [50, 80] },
+    artifactDropFullClear: 'mythique',
+  },
+  3: {
+    id: 3, name: 'Legendaire',
+    nameColor: 'text-purple-400', bgGradient: 'from-purple-900/40 to-purple-700/40',
+    borderColor: 'border-purple-500/30', emoji: '',
+    rcPerBar: 100, maxRC: 1000,
+    bossHPMult: 10.0, bossAtkMult: 2.2, bossDefMult: 1.8, bossSpdMult: 1.3,
+    coinMult: 5.0, xpMult: 3.5,
+    hammerTiers: ['marteau_runique', 'marteau_celeste'], hammerCountBase: 3, hammerCountPerRC: 0.10,
+    artifactDrop1: { rcMin: 200, rarities: ['legendaire', 'mythique'], thresholds: [200, 600] },
+    artifactDrop2: { rcMin: 500, rarities: ['mythique'], thresholds: [500] },
+    artifactDropFullClear: 'mythique',
+  },
+  4: {
+    id: 4, name: 'Mythique',
+    nameColor: 'text-red-400', bgGradient: 'from-red-900/40 to-red-700/40',
+    borderColor: 'border-red-500/30', emoji: '',
+    rcPerBar: 1000, maxRC: 10000,
+    bossHPMult: 35.0, bossAtkMult: 3.0, bossDefMult: 2.5, bossSpdMult: 1.5,
+    coinMult: 10.0, xpMult: 5.0,
+    hammerTiers: ['marteau_celeste'], hammerCountBase: 5, hammerCountPerRC: 0.08,
+    artifactDrop1: { rcMin: 2000, rarities: ['mythique'], thresholds: [2000] },
+    artifactDrop2: { rcMin: 5000, rarities: ['mythique'], thresholds: [5000] },
+    artifactDropFullClear: 'mythique',
+  },
+  5: {
+    id: 5, name: 'Divin',
+    nameColor: 'text-yellow-300', bgGradient: 'from-yellow-900/40 to-amber-700/40',
+    borderColor: 'border-yellow-500/30', emoji: '',
+    rcPerBar: 10000, maxRC: 100000,
+    bossHPMult: 120.0, bossAtkMult: 4.0, bossDefMult: 3.5, bossSpdMult: 1.8,
+    coinMult: 20.0, xpMult: 8.0,
+    hammerTiers: ['marteau_celeste'], hammerCountBase: 8, hammerCountPerRC: 0.05,
+    artifactDrop1: { rcMin: 20000, rarities: ['mythique'], thresholds: [20000] },
+    artifactDrop2: { rcMin: 50000, rarities: ['mythique'], thresholds: [50000] },
+    artifactDropFullClear: 'mythique',
+  },
+};
+
+export const MAX_RAID_TIER = 5;
+export const getTierData = (tierId) => RAID_TIERS[tierId] || RAID_TIERS[1];
+
+// Helper: determine artifact rarity from RC thresholds
+export const getTierArtifactRarity = (drop, rc) => {
+  if (!drop) return 'rare';
+  for (let i = drop.thresholds.length - 1; i >= 0; i--) {
+    if (rc >= drop.thresholds[i]) return drop.rarities[Math.min(i, drop.rarities.length - 1)];
+  }
+  return drop.rarities[0];
+};
+
 // ─── Raid Constants ──────────────────────────────────────────
 
 export const RAID_DURATION_SEC = 180;
@@ -634,10 +711,10 @@ export const HUNTER_SHOP_PRICES = {
 
 // ─── Raid Rewards ────────────────────────────────────────────
 
-export const computeRaidRewards = (rc, isFullClear) => {
-  const baseCoins = rc * 200;
-  const fullClearBonus = isFullClear ? 500 : 0;
-  const xpPerChibi = 150 + rc * 25;
+export const computeRaidRewards = (rc, isFullClear, tierData = RAID_TIERS[1]) => {
+  const baseCoins = Math.floor(rc * 200 * tierData.coinMult);
+  const fullClearBonus = isFullClear ? Math.floor(500 * tierData.coinMult) : 0;
+  const xpPerChibi = Math.floor((150 + rc * 25) * tierData.xpMult);
   return { coins: baseCoins + fullClearBonus, xpPerChibi, isFullClear };
 };
 
@@ -647,9 +724,11 @@ export const RAID_SAVE_KEY = 'shadow_colosseum_raid';
 
 export const defaultRaidData = () => ({
   hunterCollection: [],
-  raidStats: { totalRC: 0, bestRC: 0, totalDamage: 0, raidsPlayed: 0 },
+  raidStats: { totalRC: 0, bestRC: 0, totalDamage: 0, raidsPlayed: 0, bestTierCleared: 0, tierBestRC: {} },
   weeklyBoss: {},
   lastTeam: [],
+  unlockedTier: 1,
+  currentTier: 1,
 });
 
 export const loadRaidData = () => {
@@ -658,8 +737,13 @@ export const loadRaidData = () => {
     // Migration: convert old string[] hunterCollection to {id, stars}[]
     if (raw.hunterCollection.length > 0 && typeof raw.hunterCollection[0] === 'string') {
       raw.hunterCollection = raw.hunterCollection.map(id => ({ id, stars: 0 }));
-      localStorage.setItem(RAID_SAVE_KEY, JSON.stringify(raw));
     }
+    // Migration: add tier fields
+    if (!raw.unlockedTier) raw.unlockedTier = 1;
+    if (!raw.currentTier) raw.currentTier = 1;
+    if (!raw.raidStats.bestTierCleared && raw.raidStats.bestTierCleared !== 0) raw.raidStats.bestTierCleared = 0;
+    if (!raw.raidStats.tierBestRC) raw.raidStats.tierBestRC = {};
+    localStorage.setItem(RAID_SAVE_KEY, JSON.stringify(raw));
     return raw;
   } catch {
     return defaultRaidData();
@@ -667,6 +751,70 @@ export const loadRaidData = () => {
 };
 
 export const saveRaidData = (d) => localStorage.setItem(RAID_SAVE_KEY, JSON.stringify(d));
+
+// ─── Hunter Passive Effects (structured, applied in combat) ──────────
+// Types:
+//   permanent  → stat % applied at entity build time
+//   healBonus  → injected into talentBonuses.healBonus
+//   buffBonus  → buff effectiveness (support buff durations/values)
+//   teamDef    → team-wide DEF % passive
+//   lowHp      → stat % when HP < threshold%
+//   highHp     → stat % when HP > threshold%
+//   firstTurn  → stat % on turn 1 only
+//   vsBoss     → stat % vs boss targets
+//   stacking   → +X% per attack (max stacks)
+//   critDmg    → crit damage bonus %
+//   magicDmg   → magic/skill damage bonus (treated as allDamage)
+//   aoeDmg     → AoE damage bonus (applied to multi-hit/AoE)
+//   defIgnore  → DEF ignore % on crits
+//   dotDmg     → DoT damage bonus
+//   debuffBonus→ debuff effectiveness bonus
+//   skillCd    → stat bonus on skills with cdMax >= N
+//   vsLowHp   → stat bonus vs enemies below threshold% HP
+//   vsDebuffed→ stat bonus vs debuffed enemies
+
+export const HUNTER_PASSIVE_EFFECTS = {
+  // ── FIRE ──
+  h_kanae:     { type: 'firstTurn', stats: { spd: 20 } },
+  h_stark:     { type: 'lowHp', threshold: 40, stats: { def: 30 } },
+  h_fern:      { type: 'permanent', stats: { atk: 15 } },
+  h_reed:      { type: 'teamDef', value: 10 },
+  h_choi:      { type: 'aoeDmg', value: 15 },
+  h_emma:      { type: 'permanent', stats: { def: 20 } },
+  h_esil:      { type: 'lowHp', threshold: 50, stats: { def: 25 } },
+  h_yuqi:      { type: 'permanent', stats: { hp: 15 } },
+  h_yoo:       { type: 'skillCd', minCd: 3, stats: { crit: 10 } },
+  h_gina:      { type: 'healBonus', value: 15 },
+  h_song:      { type: 'vsBoss', stats: { atk: 10 } },
+  // ── WATER ──
+  h_chae_in:   { type: 'permanent', stats: { atk: 10, spd: 10 } },
+  h_frieren:   { type: 'magicDmg', value: 25 },
+  h_alicia:    { type: 'critDmg', value: 20 },
+  h_meri:      { type: 'buffBonus', value: 15 },
+  h_shuhua:    { type: 'permanent', stats: { atk: 12 } },
+  h_meilin:    { type: 'healBonus', value: 20 },
+  h_seo:       { type: 'permanent', stats: { hp: 20 } },
+  h_anna:      { type: 'permanent', stats: { crit: 12 } },
+  h_han_song:  { type: 'permanent', stats: { spd: 15 } },
+  h_seorin:    { type: 'vsLowHp', threshold: 50, stats: { crit: 8 } },
+  h_lee_johee: { type: 'healBonus', value: 10 },
+  h_nam:       { type: 'permanent', stats: { spd: 10 } },
+  // ── SHADOW ──
+  h_ilhwan:    { type: 'highHp', threshold: 80, stats: { crit: 15 } },
+  h_minnie:    { type: 'defIgnore', value: 10 },
+  h_silverbaek:{ type: 'highHp', threshold: 70, stats: { atk: 20 } },
+  h_sian:      { type: 'stacking', perStack: { atk: 3 }, maxStacks: 10 },
+  h_charlotte: { type: 'dotDmg', value: 25 },
+  h_lee_bora:  { type: 'debuffBonus', value: 15 },
+  h_harper:    { type: 'permanent', stats: { def: 20 } },
+  h_lim:       { type: 'vsDebuffed', stats: { atk: 15 } },
+  h_kang:      { type: 'permanent', stats: { crit: 10 } },
+  h_son:       { type: 'permanent', stats: { res: 15 } },
+  h_isla:      { type: 'healBonus', value: 10 },
+  h_hwang:     { type: 'permanent', stats: { def: 10 } },
+};
+
+export const getHunterPassive = (hunterId) => HUNTER_PASSIVE_EFFECTS[hunterId] || null;
 
 // ─── Helper: get available pool (shadow chibis + unlocked hunters) ─
 

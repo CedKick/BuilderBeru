@@ -517,6 +517,19 @@ const BERU_STORIES = [
       "La vraie raison ? On a tous panic et on a spam les skills n'importe comment. Mais chut. Fin.",
     ],
   },
+  {
+    title: "La Legende de Sulfuras",
+    mood: 'mysterious',
+    parts: [
+      "Approche, humain. J'ai un secret. Un VRAI secret. Pas un truc de forum.",
+      "Tu connais Ragnarok ? Le boss du Colosseum ? Celui qui tape comme un camion en feu ?",
+      "On dit que dans ses entrailles brule une arme ancienne... une masse forgee dans le coeur d'un volcan.",
+      "SULFURAS. La Masse Legendaire. L'arme que meme les Monarques craignent. Un seul coup et la carte tremble.",
+      "Personne ne l'a jamais vue tomber. Certains disent qu'elle n'existe pas. D'autres disent qu'il faut vaincre Ragnarok des centaines de fois...",
+      "Le taux de drop ? Personne ne sait. Meme moi. Mais j'ai VU l'icone dans le code. Elle est la. Quelque part. Qui attend.",
+      "Alors continue de farmer Ragnarok. Encore. Et encore. Un jour peut-etre... tu entendras le bruit d'une masse qui tombe. Et ce jour-la, tu comprendras. Fin.",
+    ],
+  },
 ];
 
 // ─── Random Events ──────────────────────────────────────────
@@ -943,7 +956,24 @@ const FloatingBeruMascot = () => {
 
   useEffect(() => {
     const handleBeruReact = (e) => {
-      const { message, mood: newMood, duration } = e.detail || {};
+      const { message, mood: newMood, duration, type } = e.detail || {};
+      if (type === 'sulfuras') {
+        setMood('excited');
+        spawnParticles('🔥', 12);
+        showBubble(message || "SULFURAS !!! LA MASSE LEGENDAIRE !!!", 10000);
+        setTimeout(() => spawnParticles('🔨', 8), 1500);
+        setTimeout(() => spawnParticles('⭐', 10), 3000);
+        setTimeout(() => {
+          showBubble("Je... je crois que je vais pleurer. C'est le plus beau jour de ma vie de fourmi.", 8000);
+          spawnParticles('😭', 6);
+        }, 10000);
+        setTimeout(() => {
+          showBubble("Equipe-la vite ! +33% de degats par tour... c'est BROKEN. J'adore.", 7000);
+          setMood('happy');
+        }, 19000);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 27000);
+        return;
+      }
       if (message) showBubble(message, duration || 4000);
       if (newMood) {
         setMood(newMood);

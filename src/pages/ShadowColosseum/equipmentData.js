@@ -195,6 +195,44 @@ export function generateRaidArtifact(rarity) {
   };
 }
 
+// Generate a raid artifact for a specific tier (higher tiers = guaranteed raid-exclusive sets)
+export function generateRaidArtifactFromTier(rarity, tier = 1) {
+  // Tier 1 uses standard generateRaidArtifact
+  if (tier <= 1) return generateRaidArtifact(rarity);
+  // Tier 2+ always generates from raid-exclusive sets
+  const setKeys = Object.keys(RAID_ARTIFACT_SETS);
+  const set = setKeys[Math.floor(Math.random() * setKeys.length)];
+  const slot = SLOT_ORDER[Math.floor(Math.random() * SLOT_ORDER.length)];
+  const slotDef = ARTIFACT_SLOTS[slot];
+  const mainStatId = slotDef.mainStats[Math.floor(Math.random() * slotDef.mainStats.length)];
+
+  const subCount = RARITY_SUB_COUNT[rarity].initial;
+  const availableSubs = SUB_STAT_POOL.filter(s => s.id !== mainStatId);
+  const subs = [];
+  const usedIds = new Set();
+  for (let i = 0; i < subCount; i++) {
+    const candidates = availableSubs.filter(s => !usedIds.has(s.id));
+    if (candidates.length === 0) break;
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    usedIds.add(pick.id);
+    // Higher tiers get slightly better sub-stat rolls
+    const tierBonus = Math.min(tier - 1, 3);
+    const value = pick.range[0] + tierBonus + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1));
+    subs.push({ id: pick.id, value });
+  }
+
+  return {
+    uid: `rart_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+    set, slot, rarity,
+    mainStat: mainStatId,
+    mainValue: MAIN_STAT_VALUES[mainStatId].base,
+    level: 0,
+    subs,
+    isRaid: true,
+    tier,
+  };
+}
+
 // Daily raid constants
 export const MAX_DAILY_RAIDS = 10;
 
@@ -480,14 +518,184 @@ export const WEAPONS = {
 
 export const WEAPON_PRICES = { rare: 500, legendaire: 2000, mythique: 5000 };
 
-export function computeWeaponBonuses(weaponId) {
-  const b = { atk_flat: 0, atk_pct: 0, def_pct: 0, hp_pct: 0, spd_flat: 0, crit_rate: 0, crit_dmg: 0, res_flat: 0 };
+// ═══════════════════════════════════════════════════════════════
+// WEAPON AWAKENING SYSTEM (A0-A10)
+// A0 = base, A1-A5 = unique passives, A6-A10 = +3% ATK/DEF/HP each
+// ═══════════════════════════════════════════════════════════════
+
+export const MAX_WEAPON_AWAKENING = 10;
+const AW_PASSIVE_CAP = 5; // A1-A5 have unique passives
+const AW_FLAT_BONUS = 3;  // A6-A10: +3% ATK, DEF, HP each
+
+export const WEAPON_AWAKENING_PASSIVES = {
+  // ── FIRE ──
+  w_lame_inferno: [
+    { desc: 'Degats Feu +8%', stats: { fireDamage: 8 } },
+    { desc: 'CRIT +5%', stats: { crit_rate: 5 } },
+    { desc: 'CRIT DMG +12%', stats: { crit_dmg: 12 } },
+    { desc: 'ATK +8%', stats: { atk_pct: 8 } },
+    { desc: 'Ignore 10% DEF', stats: { defPen: 10 } },
+  ],
+  w_hache_volcanique: [
+    { desc: 'ATK +6%', stats: { atk_pct: 6 } },
+    { desc: 'Degats Feu +6%', stats: { fireDamage: 6 } },
+    { desc: 'PV +8%', stats: { hp_pct: 8 } },
+    { desc: 'CRIT DMG +8%', stats: { crit_dmg: 8 } },
+    { desc: 'DEF +6%', stats: { def_pct: 6 } },
+  ],
+  w_arc_braise: [
+    { desc: 'SPD +4', stats: { spd_flat: 4 } },
+    { desc: 'Degats Feu +5%', stats: { fireDamage: 5 } },
+    { desc: 'CRIT +4%', stats: { crit_rate: 4 } },
+    { desc: 'ATK +6%', stats: { atk_pct: 6 } },
+    { desc: 'Tous Degats +5%', stats: { allDamage: 5 } },
+  ],
+  w_dague_pyrite: [
+    { desc: 'CRIT +3%', stats: { crit_rate: 3 } },
+    { desc: 'ATK +4%', stats: { atk_pct: 4 } },
+    { desc: 'Degats Feu +4%', stats: { fireDamage: 4 } },
+    { desc: 'SPD +3', stats: { spd_flat: 3 } },
+    { desc: 'CRIT DMG +5%', stats: { crit_dmg: 5 } },
+  ],
+  w_marteau_forge: [
+    { desc: 'DEF +4%', stats: { def_pct: 4 } },
+    { desc: 'PV +5%', stats: { hp_pct: 5 } },
+    { desc: 'Degats Feu +3%', stats: { fireDamage: 3 } },
+    { desc: 'ATK +4%', stats: { atk_pct: 4 } },
+    { desc: 'RES +3', stats: { res_flat: 3 } },
+  ],
+  // ── WATER ──
+  w_trident_abyssal: [
+    { desc: 'Degats Eau +10%', stats: { waterDamage: 10 } },
+    { desc: 'ATK +8%', stats: { atk_pct: 8 } },
+    { desc: 'CRIT DMG +10%', stats: { crit_dmg: 10 } },
+    { desc: 'Ignore 8% DEF', stats: { defPen: 8 } },
+    { desc: 'Tous Degats +8%', stats: { allDamage: 8 } },
+  ],
+  w_epee_glaciale: [
+    { desc: 'CRIT DMG +8%', stats: { crit_dmg: 8 } },
+    { desc: 'Degats Eau +6%', stats: { waterDamage: 6 } },
+    { desc: 'ATK +6%', stats: { atk_pct: 6 } },
+    { desc: 'CRIT +5%', stats: { crit_rate: 5 } },
+    { desc: 'Ignore 6% DEF', stats: { defPen: 6 } },
+  ],
+  w_arc_tsunami: [
+    { desc: 'SPD +5', stats: { spd_flat: 5 } },
+    { desc: 'Degats Eau +5%', stats: { waterDamage: 5 } },
+    { desc: 'ATK +6%', stats: { atk_pct: 6 } },
+    { desc: 'CRIT +4%', stats: { crit_rate: 4 } },
+    { desc: 'Tous Degats +5%', stats: { allDamage: 5 } },
+  ],
+  w_lance_corail: [
+    { desc: 'PV +5%', stats: { hp_pct: 5 } },
+    { desc: 'Degats Eau +4%', stats: { waterDamage: 4 } },
+    { desc: 'DEF +4%', stats: { def_pct: 4 } },
+    { desc: 'ATK +3%', stats: { atk_pct: 3 } },
+    { desc: 'RES +3', stats: { res_flat: 3 } },
+  ],
+  w_baton_brume: [
+    { desc: 'RES +3', stats: { res_flat: 3 } },
+    { desc: 'Degats Eau +3%', stats: { waterDamage: 3 } },
+    { desc: 'PV +4%', stats: { hp_pct: 4 } },
+    { desc: 'DEF +3%', stats: { def_pct: 3 } },
+    { desc: 'SPD +3', stats: { spd_flat: 3 } },
+  ],
+  // ── SHADOW ──
+  w_faux_monarque: [
+    { desc: 'Degats Ombre +10%', stats: { shadowDamage: 10 } },
+    { desc: 'CRIT DMG +10%', stats: { crit_dmg: 10 } },
+    { desc: 'ATK +10%', stats: { atk_pct: 10 } },
+    { desc: 'Ignore 10% DEF', stats: { defPen: 10 } },
+    { desc: 'Tous Degats +10%', stats: { allDamage: 10 } },
+  ],
+  w_katana_void: [
+    { desc: 'CRIT +8%', stats: { crit_rate: 8 } },
+    { desc: 'Degats Ombre +8%', stats: { shadowDamage: 8 } },
+    { desc: 'CRIT DMG +12%', stats: { crit_dmg: 12 } },
+    { desc: 'ATK +8%', stats: { atk_pct: 8 } },
+    { desc: 'Ignore 8% DEF', stats: { defPen: 8 } },
+  ],
+  w_griffe_nuit: [
+    { desc: 'SPD +5', stats: { spd_flat: 5 } },
+    { desc: 'Degats Ombre +6%', stats: { shadowDamage: 6 } },
+    { desc: 'CRIT +5%', stats: { crit_rate: 5 } },
+    { desc: 'ATK +6%', stats: { atk_pct: 6 } },
+    { desc: 'Tous Degats +5%', stats: { allDamage: 5 } },
+  ],
+  w_masse_tenebres: [
+    { desc: 'PV +8%', stats: { hp_pct: 8 } },
+    { desc: 'Degats Ombre +6%', stats: { shadowDamage: 6 } },
+    { desc: 'DEF +6%', stats: { def_pct: 6 } },
+    { desc: 'ATK +6%', stats: { atk_pct: 6 } },
+    { desc: 'Tous Degats +5%', stats: { allDamage: 5 } },
+  ],
+  w_dague_ombre: [
+    { desc: 'ATK +4%', stats: { atk_pct: 4 } },
+    { desc: 'Degats Ombre +4%', stats: { shadowDamage: 4 } },
+    { desc: 'CRIT +3%', stats: { crit_rate: 3 } },
+    { desc: 'SPD +3', stats: { spd_flat: 3 } },
+    { desc: 'CRIT DMG +5%', stats: { crit_dmg: 5 } },
+  ],
+  // ── NEUTRAL ──
+  w_epee_ancienne: [
+    { desc: 'ATK +6%', stats: { atk_pct: 6 } },
+    { desc: 'Tous Degats +5%', stats: { allDamage: 5 } },
+    { desc: 'CRIT +5%', stats: { crit_rate: 5 } },
+    { desc: 'CRIT DMG +8%', stats: { crit_dmg: 8 } },
+    { desc: 'DEF +5%', stats: { def_pct: 5 } },
+  ],
+  w_baguette_sage: [
+    { desc: 'CRIT +3%', stats: { crit_rate: 3 } },
+    { desc: 'Tous Degats +3%', stats: { allDamage: 3 } },
+    { desc: 'ATK +3%', stats: { atk_pct: 3 } },
+    { desc: 'SPD +3', stats: { spd_flat: 3 } },
+    { desc: 'PV +4%', stats: { hp_pct: 4 } },
+  ],
+  w_bouclier_hero: [
+    { desc: 'DEF +5%', stats: { def_pct: 5 } },
+    { desc: 'PV +5%', stats: { hp_pct: 5 } },
+    { desc: 'RES +3', stats: { res_flat: 3 } },
+    { desc: 'ATK +3%', stats: { atk_pct: 3 } },
+    { desc: 'Tous Degats +3%', stats: { allDamage: 3 } },
+  ],
+  // ── SECRET ──
+  w_sulfuras: [
+    { desc: 'Degats Feu +15%', stats: { fireDamage: 15 } },
+    { desc: 'ATK +12%', stats: { atk_pct: 12 } },
+    { desc: 'CRIT +10%', stats: { crit_rate: 10 } },
+    { desc: 'CRIT DMG +20%', stats: { crit_dmg: 20 } },
+    { desc: 'Ignore 15% DEF + Tous Degats +10%', stats: { defPen: 15, allDamage: 10 } },
+  ],
+};
+
+export function getWeaponAwakeningBonuses(weaponId, awakening = 0) {
+  const b = { atk_pct: 0, def_pct: 0, hp_pct: 0, crit_rate: 0, crit_dmg: 0, spd_flat: 0, res_flat: 0, fireDamage: 0, waterDamage: 0, shadowDamage: 0, allDamage: 0, defPen: 0 };
+  if (!weaponId || awakening <= 0) return b;
+  const passives = WEAPON_AWAKENING_PASSIVES[weaponId] || [];
+  for (let i = 0; i < Math.min(awakening, AW_PASSIVE_CAP); i++) {
+    if (passives[i]?.stats) {
+      Object.entries(passives[i].stats).forEach(([k, v]) => { if (b[k] !== undefined) b[k] += v; });
+    }
+  }
+  const flatLevels = Math.max(0, awakening - AW_PASSIVE_CAP);
+  b.atk_pct += flatLevels * AW_FLAT_BONUS;
+  b.def_pct += flatLevels * AW_FLAT_BONUS;
+  b.hp_pct += flatLevels * AW_FLAT_BONUS;
+  return b;
+}
+
+export function computeWeaponBonuses(weaponId, awakening = 0) {
+  const b = { atk_flat: 0, atk_pct: 0, def_pct: 0, hp_pct: 0, spd_flat: 0, crit_rate: 0, crit_dmg: 0, res_flat: 0, fireDamage: 0, waterDamage: 0, shadowDamage: 0, allDamage: 0, defPen: 0 };
   if (!weaponId) return b;
   const w = WEAPONS[weaponId];
   if (!w) return b;
   b.atk_flat += w.atk;
   if (b[w.bonusStat] !== undefined) b[w.bonusStat] += w.bonusValue;
   if (w.fireRes) b.res_flat += w.fireRes;
+  if (awakening > 0) {
+    const awB = getWeaponAwakeningBonuses(weaponId, awakening);
+    Object.entries(awB).forEach(([k, v]) => { if (b[k] !== undefined) b[k] += v; });
+  }
   return b;
 }
 
@@ -529,3 +737,52 @@ export const STAGE_HUNTER_DROP = {
     6: ['mythique'],
   },
 };
+
+// ═══════════════════════════════════════════════════════════════
+// WEAPON DROP TABLES (Colosseum stages + Raids)
+// ═══════════════════════════════════════════════════════════════
+
+export const COLOSSEUM_WEAPON_DROP = {
+  dropChance: { 1: 0.03, 2: 0.05, 3: 0.07, 4: 0.07, 5: 0.10, 6: 0.10 },
+  bossMultiplier: 1.5,
+  tierPool: {
+    1: ['rare'], 2: ['rare'],
+    3: ['rare', 'legendaire'], 4: ['rare', 'legendaire'],
+    5: ['legendaire', 'mythique'], 6: ['legendaire', 'mythique'],
+  },
+};
+
+export const RAID_WEAPON_DROP = {
+  dropChance: { 1: 0.10, 2: 0.15, 3: 0.20, 4: 0.25, 5: 0.30 },
+  fullClearGuaranteed: true,
+  tierPool: {
+    1: ['rare', 'legendaire'], 2: ['legendaire'],
+    3: ['legendaire', 'mythique'], 4: ['mythique'], 5: ['mythique'],
+  },
+};
+
+export function rollWeaponDrop(stageTier, isBoss = false) {
+  const baseChance = COLOSSEUM_WEAPON_DROP.dropChance[stageTier] || 0.03;
+  const chance = isBoss ? baseChance * COLOSSEUM_WEAPON_DROP.bossMultiplier : baseChance;
+  if (Math.random() > chance) return null;
+  const rarityPool = COLOSSEUM_WEAPON_DROP.tierPool[stageTier] || ['rare'];
+  const rarity = rarityPool[Math.floor(Math.random() * rarityPool.length)];
+  const candidates = Object.values(WEAPONS).filter(w => !w.secret && w.rarity === rarity);
+  if (candidates.length === 0) return null;
+  return candidates[Math.floor(Math.random() * candidates.length)].id;
+}
+
+export function rollRaidWeaponDrop(raidTier, isFullClear = false) {
+  if (isFullClear && RAID_WEAPON_DROP.fullClearGuaranteed) {
+    const rarityPool = RAID_WEAPON_DROP.tierPool[raidTier] || ['rare'];
+    const rarity = rarityPool[Math.floor(Math.random() * rarityPool.length)];
+    const candidates = Object.values(WEAPONS).filter(w => !w.secret && w.rarity === rarity);
+    return candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)].id : null;
+  }
+  const chance = RAID_WEAPON_DROP.dropChance[raidTier] || 0.10;
+  if (Math.random() > chance) return null;
+  const rarityPool = RAID_WEAPON_DROP.tierPool[raidTier] || ['rare'];
+  const rarity = rarityPool[Math.floor(Math.random() * rarityPool.length)];
+  const candidates = Object.values(WEAPONS).filter(w => !w.secret && w.rarity === rarity);
+  return candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)].id : null;
+}
