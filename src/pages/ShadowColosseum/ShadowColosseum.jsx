@@ -943,8 +943,9 @@ export default function ShadowColosseum() {
 
     // Weapon drop reveal + Beru reaction
     if (weaponDrop) {
-      setAutoReplay(false);
       setWeaponReveal(weaponDrop);
+      // Auto-dismiss le reveal après 4s pour ne pas bloquer le farm
+      setTimeout(() => setWeaponReveal(null), 4000);
       if (weaponDrop.id === 'w_sulfuras') {
         try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'sulfuras', message: "OOOH MON DIEU !! LA MASSE DE SULFURAS !!! C'est... c'est REEL ?! Tu l'as eu ! TU L'AS VRAIMENT EU ! Je pleure des larmes de fourmi !!" } })); } catch (e) {}
       } else if (weaponDrop.rarity === 'mythique') {
@@ -952,10 +953,10 @@ export default function ShadowColosseum() {
       }
     }
 
-    // Auto-replay logic — si arme droppée, pause 3s pour l'animation puis reprend
+    // Auto-replay logic — si arme droppée, pause 4.5s pour l'animation puis reprend
     if (autoReplayRef.current) {
       setView('result');
-      const delay = weaponDrop ? 3000 : 1500;
+      const delay = weaponDrop ? 4500 : 1500;
       setTimeout(() => {
         if (autoReplayRef.current) {
           setResult(null); setBattle(null);
