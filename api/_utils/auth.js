@@ -2,7 +2,7 @@
 // Zero external dependencies — uses Node.js crypto only
 
 import crypto from 'crypto';
-import { query } from '../db/neon.js';
+import { query } from '../_db/neon.js';
 
 const AUTH_SECRET = process.env.AUTH_SECRET || 'dev-secret-change-in-production';
 const PBKDF2_ITERATIONS = 100000;

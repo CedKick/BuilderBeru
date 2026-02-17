@@ -1,8 +1,8 @@
 // api/auth.js — Authentication serverless function (register, login, me)
 // Pseudo + password, PBKDF2 hashing, HMAC-SHA256 tokens
 
-import { query } from './db/neon.js';
-import { hashPassword, verifyPassword, createToken, extractUser } from './utils/auth.js';
+import { query } from './_db/neon.js';
+import { hashPassword, verifyPassword, createToken, extractUser } from './_utils/auth.js';
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
 const MIN_PASSWORD_LEN = 6;

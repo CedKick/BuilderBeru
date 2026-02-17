@@ -1,5 +1,5 @@
-import { query } from './db/neon.js';
-import { extractUser } from './utils/auth.js';
+import { query } from './_db/neon.js';
+import { extractUser } from './_utils/auth.js';
 
 const ELO_K = 32;
 const MIN_RATING = 100;

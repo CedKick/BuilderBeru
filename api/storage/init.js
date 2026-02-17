@@ -1,4 +1,4 @@
-import { query } from '../db/neon.js';
+import { query } from '../_db/neon.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

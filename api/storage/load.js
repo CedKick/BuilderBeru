@@ -1,5 +1,5 @@
-import { query } from '../db/neon.js';
-import { extractUser } from '../utils/auth.js';
+import { query } from '../_db/neon.js';
+import { extractUser } from '../_utils/auth.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', 'https://builderberu.com');
