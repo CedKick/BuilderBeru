@@ -90,13 +90,19 @@ export async function login(username, password) {
   if (data.success) {
     setAuth(data.token, { userId: data.userId, username: data.username });
     // Cross-device: adopt the account's canonical deviceId + pull cloud data
+    const currentDeviceId = localStorage.getItem(DEVICE_ID_KEY);
+    const isCrossDevice = data.deviceId && currentDeviceId !== data.deviceId;
     if (data.deviceId) {
       localStorage.setItem(DEVICE_ID_KEY, data.deviceId);
-      // Force re-sync to pull all cloud data for this deviceId
+      // Pull all cloud data for this deviceId
       await cloudStorage.resync();
     }
     // Dispatch event
     window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'auth-change', loggedIn: true, username: data.username } }));
+    // Cross-device: reload page so all components pick up the new localStorage data
+    if (isCrossDevice) {
+      setTimeout(() => window.location.reload(), 600);
+    }
   }
   return data;
 }
