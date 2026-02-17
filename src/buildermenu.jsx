@@ -29,6 +29,13 @@ export default function BuilderMenu({ isOpen, onClose }) {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authState, setAuthState] = useState(() => ({ loggedIn: isLoggedIn(), user: getAuthUser() }));
 
+  // Re-check auth state every time sidebar opens
+  useEffect(() => {
+    if (isOpen) {
+      setAuthState({ loggedIn: isLoggedIn(), user: getAuthUser() });
+    }
+  }, [isOpen]);
+
   // Listen for auth-change events
   useEffect(() => {
     const handler = (e) => {
