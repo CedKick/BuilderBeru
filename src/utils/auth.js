@@ -1,7 +1,7 @@
 // src/utils/auth.js — Client-side auth utility
 // Token storage, login, register, logout, authHeaders
 
-import { cloudStorage } from './CloudStorage';
+import { cloudStorage, CLOUD_KEYS } from './CloudStorage';
 
 const AUTH_TOKEN_KEY = 'builderberu_auth_token';
 const AUTH_USER_KEY = 'builderberu_auth_user';
@@ -96,12 +96,14 @@ export async function login(username, password) {
   const data = await resp.json();
   if (data.success) {
     setAuth(data.token, { userId: data.userId, username: data.username });
-    // Cross-device: adopt the account's canonical deviceId
+    // Adopt the account's canonical deviceId
     if (data.deviceId) {
       const proto = Storage.prototype;
       proto.setItem.call(localStorage, DEVICE_ID_KEY, data.deviceId);
     }
-    // Hard reload — cloud sync will happen via initialSync() in main.jsx
+    // Clear all cloud-tracked keys from localStorage so cloud data wins after reload
+    CLOUD_KEYS.forEach(key => localStorage.removeItem(key));
+    // Hard reload — initialSync() will pull fresh data from cloud
     window.location.reload();
   }
   return data;

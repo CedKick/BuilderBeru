@@ -24,7 +24,7 @@ function _getAuthHeaders() {
 }
 
 // Keys that should be synced to the cloud
-const CLOUD_KEYS = [
+export const CLOUD_KEYS = [
   'builderberu_users',
   'shadow_colosseum_data',
   'shadow_colosseum_raid',
