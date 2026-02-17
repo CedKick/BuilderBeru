@@ -8,11 +8,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import shadowCoinManager from '../../components/ChibiSystem/ShadowCoinManager';
 import { TALENT_TREES, computeTalentBonuses, getTreeMaxPoints, getNodeDesc } from './talentTreeData';
 import {
+  TALENT2_BRANCHES, TALENT2_ROOT, TALENT2_UNLOCK_LEVEL,
+  computeTalentBonuses2, getAllTalent2Nodes, getTalent2Connections,
+  getBranchPts, getSpentTalent2Pts, canAllocateNode, getTalent2MaxPoints,
+  WEAPON_TYPE_NAMES,
+} from './talentTree2Data';
+import {
   SPRITES, ELEMENTS, RARITY, CHIBIS,
   STAT_PER_POINT, STAT_ORDER, STAT_META, POINTS_PER_LEVEL,
   TIER_NAMES_SKILL, TIER_COSTS, SP_INTERVAL, MAX_LEVEL,
   statsAt, statsAtFull, xpForLevel, getElementMult, getEffStat,
-  applySkillUpgrades, getUpgradeDesc, computeAttack, aiPickSkill,
+  applySkillUpgrades, getUpgradeDesc, computeAttack, aiPickSkill, mergeTalentBonuses,
   ACCOUNT_XP_FOR_LEVEL, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT, accountLevelFromXp,
   getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
   getStarScaledStats, getStarRewardMult, getStarDropBonus, getGuaranteedArtifactRarity,
@@ -150,7 +156,7 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0 });
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0 });
 const loadData = () => {
   try {
     const d = { ...defaultData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) };
@@ -199,7 +205,8 @@ export default function ShadowColosseum() {
   const [dmgPopup, setDmgPopup] = useState(null);
   const [result, setResult] = useState(null);
   const [manageTarget, setManageTarget] = useState(null); // chibi ID for stats/skilltree views
-  const [activeTree, setActiveTree] = useState('fury'); // talent tree tab
+  const [activeTree, setActiveTree] = useState('fury'); // talent I tree tab
+  const [talentTab, setTalentTab] = useState(1); // 1 = Talent I, 2 = Talent II
   const [chibiRage, setChibiRage] = useState(null); // { id, level, text, anim }
   const [shopEnhTarget, setShopEnhTarget] = useState(null); // index in artifactInventory
   const [shopEnhEquipKey, setShopEnhEquipKey] = useState(null); // "chibiId|slotId"
@@ -383,7 +390,8 @@ export default function ShadowColosseum() {
   // ─── Talent Tree Logic ─────────────────────────────────────
 
   const getTotalTalentPts = (level) => Math.max(0, level - 9);
-  const getSpentTalentPts = (id) => {
+  // Talent I spent
+  const getSpentTalent1Pts = (id) => {
     const alloc = data.talentTree[id] || {};
     let total = 0;
     for (const treeId of Object.keys(TALENT_TREES)) {
@@ -392,13 +400,35 @@ export default function ShadowColosseum() {
     }
     return total;
   };
+  // Total spent (T1 + T2) — shared pool
+  const getSpentTalentPts = (id) => getSpentTalent1Pts(id) + getSpentTalent2Pts(data.talentTree2[id]);
   const getAvailTalentPts = (id) => getTotalTalentPts(getChibiLevel(id).level) - getSpentTalentPts(id);
   const getTreePoints = (id, treeId) => {
     const tree = (data.talentTree[id] || {})[treeId] || {};
     return Object.values(tree).reduce((s, v) => s + v, 0);
   };
 
-  const getChibiTalentBonuses = (id) => computeTalentBonuses(data.talentTree[id]);
+  // Talent II helpers
+  const getChibiTalent2Alloc = (id) => data.talentTree2[id] || {};
+  const canAllocT2 = (id, nodeId) => {
+    if (getAvailTalentPts(id) <= 0) return false;
+    return canAllocateNode(nodeId, getChibiTalent2Alloc(id));
+  };
+  const allocateTalent2Point = (id, nodeId) => {
+    if (!canAllocT2(id, nodeId)) return;
+    setData(prev => {
+      const alloc = { ...(prev.talentTree2[id] || {}) };
+      alloc[nodeId] = (alloc[nodeId] || 0) + 1;
+      return { ...prev, talentTree2: { ...prev.talentTree2, [id]: alloc } };
+    });
+  };
+
+  // Merged bonuses: Talent I + Talent II
+  const getChibiTalentBonuses = (id) => {
+    const tb1 = computeTalentBonuses(data.talentTree[id]);
+    const tb2 = computeTalentBonuses2(data.talentTree2[id]);
+    return mergeTalentBonuses(tb1, tb2);
+  };
 
   // Equipment bonus computation for a chibi/hunter
   const getChibiEquipBonuses = (id) => {
@@ -461,6 +491,7 @@ export default function ShadowColosseum() {
     setData(prev => ({
       ...prev,
       talentTree: { ...prev.talentTree, [id]: {} },
+      talentTree2: { ...prev.talentTree2, [id]: {} },
       respecCount: { ...prev.respecCount, [id]: respecN + 1 },
     }));
     return true;
@@ -523,9 +554,14 @@ export default function ShadowColosseum() {
       initBuffs.push({ stat: 'spd', value: hunterPassive.stats.spd / 100, turns: 1 });
     }
 
+    // Get weapon type for Talent II weapon-type bonuses
+    const playerWeaponId = data.weapons[selChibi];
+    const playerWeaponType = playerWeaponId && WEAPONS[playerWeaponId] ? WEAPONS[playerWeaponId].weaponType : null;
+
     setBattle({
       player: {
         id: selChibi, name: chibi.name, level, element: chibi.element,
+        weaponType: playerWeaponType,
         hp: s.hp, maxHp: s.hp, atk: s.atk, def: s.def, spd: s.spd,
         crit: Math.min(80, s.crit), res: Math.min(70, s.res),
         mana: s.mana, maxMana: s.mana, manaRegen: s.manaRegen,
@@ -554,6 +590,7 @@ export default function ShadowColosseum() {
       passives,
       passiveState: { flammeStacks: 0, martyrHealed: false, echoTurnCounter: 0, echoFreeMana: false, sianStacks: 0 },
       immortelUsed: false,
+      colossusUsed: false,
       sulfurasStacks: (() => {
         const wId = data.weapons[selChibi];
         return wId && WEAPONS[wId]?.passive === 'sulfuras_fury' ? 0 : undefined;
@@ -576,6 +613,7 @@ export default function ShadowColosseum() {
     const passives = battle.passives || [];
     const ps = { ...(battle.passiveState || {}) };
     let immortelUsed = battle.immortelUsed || false;
+    let colossusUsed = battle.colossusUsed || false;
     const log = [...battle.log];
     const playerSkill = player.skills[skillIdx];
 
@@ -757,6 +795,12 @@ export default function ShadowColosseum() {
         immortelUsed = true;
         log.push({ text: `${player.name} survit au coup fatal ! (Immortel)`, type: 'info', id: Date.now() + 0.2 });
       }
+      // Colossus (Talent II): survive one fatal blow, revive at 20% HP
+      if (player.hp <= 0 && tb.hasColossus && !colossusUsed) {
+        player.hp = Math.floor(player.maxHp * 0.2);
+        colossusUsed = true;
+        log.push({ text: `${player.name} se releve tel un Colossus ! (20% PV)`, type: 'info', id: Date.now() + 0.25 });
+      }
 
       if (eRes.healed) enemy.hp = Math.min(enemy.maxHp, enemy.hp + eRes.healed);
       if (eRes.buff) enemy.buffs.push({ ...eRes.buff });
@@ -794,7 +838,7 @@ export default function ShadowColosseum() {
       }
 
       setDmgPopup(dmgToPlayer > 0 ? { target: 'player', value: dmgToPlayer, isCrit: eRes.isCrit } : null);
-      setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, immortelUsed, passiveState: ps, sulfurasStacks: newSulfurasStacks, turn: prev.turn + 1, log: log.slice(-10) }));
+      setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, immortelUsed, colossusUsed, passiveState: ps, sulfurasStacks: newSulfurasStacks, turn: prev.turn + 1, log: log.slice(-10) }));
 
       if (enemy.hp <= 0) {
         setTimeout(() => handleVictory(), 1200);
@@ -1911,18 +1955,16 @@ export default function ShadowColosseum() {
         const { level } = getChibiLevel(id);
         const totalTP = getTotalTalentPts(level);
         const spentTP = getSpentTalentPts(id);
+        const spent1 = getSpentTalent1Pts(id);
+        const spent2 = getSpentTalent2Pts(data.talentTree2[id]);
         const availTP = totalTP - spentTP;
-        const chibiAlloc = data.talentTree[id] || {};
-        const treeIds = Object.keys(TALENT_TREES);
-        const tree = TALENT_TREES[activeTree];
-        const treePts = getTreePoints(id, activeTree);
-        const treeMax = getTreeMaxPoints(activeTree);
+        const t2Unlocked = level >= TALENT2_UNLOCK_LEVEL;
 
         return (
           <div className="max-w-2xl mx-auto px-4 pt-4">
 
             {/* Header */}
-            <div className="text-center mb-4">
+            <div className="text-center mb-3">
               <img src={getChibiSprite(id)} alt={c.name} className="w-14 h-14 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
               <div className="text-[10px] text-gray-400">
@@ -1930,141 +1972,333 @@ export default function ShadowColosseum() {
               </div>
               <div className="mt-2 px-3 py-1.5 rounded-lg bg-green-500/5 border border-green-500/20 inline-block">
                 <span className="text-sm font-bold text-green-400">{availTP}</span>
-                <span className="text-xs text-gray-400 ml-1">points de talent disponibles</span>
-                <span className="text-[9px] text-gray-500 ml-1">({spentTP}/{totalTP})</span>
+                <span className="text-xs text-gray-400 ml-1">pts dispo</span>
+                <span className="text-[9px] text-gray-500 ml-1">(I:{spent1} + II:{spent2} / {totalTP})</span>
               </div>
             </div>
 
-            {/* Tree Tabs */}
-            <div className="flex gap-1.5 mb-4">
-              {treeIds.map(tid => {
-                const t = TALENT_TREES[tid];
-                const pts = getTreePoints(id, tid);
-                const max = getTreeMaxPoints(tid);
-                const isActive = activeTree === tid;
-                return (
-                  <button
-                    key={tid}
-                    onClick={() => setActiveTree(tid)}
-                    className={`flex-1 py-2 rounded-lg border text-center transition-all ${
-                      isActive
-                        ? `border-${t.color}-500/60 bg-${t.color}-500/15`
-                        : 'border-gray-700/40 bg-gray-800/20 hover:border-gray-600/60'
-                    }`}
-                    style={isActive ? { borderColor: t.accent + '60', backgroundColor: t.accent + '15' } : {}}
-                  >
-                    <div className="text-base">{t.icon}</div>
-                    <div className={`text-[10px] font-bold ${isActive ? 'text-white' : 'text-gray-400'}`}>{t.name}</div>
-                    <div className="text-[10px] text-gray-500">{pts}/{max}</div>
-                  </button>
-                );
-              })}
+            {/* Talent I / II Toggle */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setTalentTab(1)}
+                className={`flex-1 py-2 rounded-lg border text-center transition-all ${
+                  talentTab === 1 ? 'border-green-500/60 bg-green-500/15 text-green-400' : 'border-gray-700/40 bg-gray-800/20 text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                <span className="text-base">{'\uD83C\uDF1F'}</span>
+                <span className="text-xs font-bold ml-1">Talents I</span>
+                {spent1 > 0 && <span className="text-[9px] ml-1 text-gray-400">({spent1})</span>}
+              </button>
+              <button
+                onClick={() => t2Unlocked && setTalentTab(2)}
+                disabled={!t2Unlocked}
+                className={`flex-1 py-2 rounded-lg border text-center transition-all ${
+                  !t2Unlocked ? 'border-gray-800/30 bg-gray-900/10 text-gray-600 cursor-not-allowed' :
+                  talentTab === 2 ? 'border-purple-500/60 bg-purple-500/15 text-purple-400' : 'border-gray-700/40 bg-gray-800/20 text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                <span className="text-base">{'\u26A1'}</span>
+                <span className="text-xs font-bold ml-1">Talents II</span>
+                {!t2Unlocked && <span className="text-[9px] ml-1">(Lv{TALENT2_UNLOCK_LEVEL})</span>}
+                {t2Unlocked && spent2 > 0 && <span className="text-[9px] ml-1 text-gray-400">({spent2})</span>}
+              </button>
             </div>
 
-            {/* Tree Description */}
-            <div className="text-center text-[10px] text-gray-500 mb-3" style={{ color: tree.accent + 'aa' }}>
-              {tree.desc}
-            </div>
+            {/* ═══ TALENT I ═══ */}
+            {talentTab === 1 && (() => {
+              const chibiAlloc = data.talentTree[id] || {};
+              const treeIds = Object.keys(TALENT_TREES);
+              const tree = TALENT_TREES[activeTree];
+              const treePts = getTreePoints(id, activeTree);
+              const treeMax = getTreeMaxPoints(activeTree);
 
-            {/* Talent Nodes — WoW-style vertical layout */}
-            <div className="relative pb-4">
-              {tree.rows.map((row, rowIdx) => {
-                const locked = treePts < row.requiredPoints;
-                const treeAlloc = chibiAlloc[activeTree] || {};
+              return (
+                <>
+                  {/* Tree Tabs */}
+                  <div className="flex gap-1.5 mb-4">
+                    {treeIds.map(tid => {
+                      const t = TALENT_TREES[tid];
+                      const pts = getTreePoints(id, tid);
+                      const max = getTreeMaxPoints(tid);
+                      const isActive = activeTree === tid;
+                      return (
+                        <button
+                          key={tid}
+                          onClick={() => setActiveTree(tid)}
+                          className={`flex-1 py-2 rounded-lg border text-center transition-all ${
+                            isActive
+                              ? `border-${t.color}-500/60 bg-${t.color}-500/15`
+                              : 'border-gray-700/40 bg-gray-800/20 hover:border-gray-600/60'
+                          }`}
+                          style={isActive ? { borderColor: t.accent + '60', backgroundColor: t.accent + '15' } : {}}
+                        >
+                          <div className="text-base">{t.icon}</div>
+                          <div className={`text-[10px] font-bold ${isActive ? 'text-white' : 'text-gray-400'}`}>{t.name}</div>
+                          <div className="text-[10px] text-gray-500">{pts}/{max}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
 
-                return (
-                  <div key={rowIdx}>
-                    {/* Tier gate label */}
-                    {row.requiredPoints > 0 && (
-                      <div className="flex items-center gap-2 my-2">
-                        <div className="flex-1 h-px bg-gray-700/40" />
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          locked ? 'text-gray-600 bg-gray-800/30' : 'bg-gray-800/40'
-                        }`} style={!locked ? { color: tree.accent } : {}}>
-                          {row.requiredPoints} pts requis
-                        </span>
-                        <div className="flex-1 h-px bg-gray-700/40" />
+                  {/* Tree Description */}
+                  <div className="text-center text-[10px] text-gray-500 mb-3" style={{ color: tree.accent + 'aa' }}>
+                    {tree.desc}
+                  </div>
+
+                  {/* Talent Nodes — WoW-style vertical layout */}
+                  <div className="relative pb-4">
+                    {tree.rows.map((row, rowIdx) => {
+                      const locked = treePts < row.requiredPoints;
+                      const treeAlloc = chibiAlloc[activeTree] || {};
+
+                      return (
+                        <div key={rowIdx}>
+                          {/* Tier gate label */}
+                          {row.requiredPoints > 0 && (
+                            <div className="flex items-center gap-2 my-2">
+                              <div className="flex-1 h-px bg-gray-700/40" />
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                locked ? 'text-gray-600 bg-gray-800/30' : 'bg-gray-800/40'
+                              }`} style={!locked ? { color: tree.accent } : {}}>
+                                {row.requiredPoints} pts requis
+                              </span>
+                              <div className="flex-1 h-px bg-gray-700/40" />
+                            </div>
+                          )}
+
+                          {/* SVG connecting lines */}
+                          {rowIdx > 0 && (
+                            <div className="flex justify-center mb-1">
+                              <div className={`w-0.5 h-4 ${locked ? 'bg-gray-700/30' : 'bg-gray-600/40'}`}
+                                style={!locked ? { backgroundColor: tree.accent + '40' } : {}} />
+                            </div>
+                          )}
+
+                          {/* Nodes Row */}
+                          <div className="flex justify-center gap-3">
+                            {row.nodes.map(node => {
+                              const rank = treeAlloc[node.id] || 0;
+                              const isMaxed = rank >= node.maxRank;
+                              const canUpgrade = !locked && rank < node.maxRank && availTP > 0 && treePts >= row.requiredPoints;
+                              const isCapstone = node.capstone;
+                              const desc = rank > 0 ? getNodeDesc(node, rank) : getNodeDesc(node, 1);
+
+                              return (
+                                <button
+                                  key={node.id}
+                                  onClick={() => canUpgrade && allocateTalentPoint(id, activeTree, node.id)}
+                                  disabled={!canUpgrade}
+                                  className={`relative w-full max-w-[140px] p-2 rounded-xl border transition-all text-center ${
+                                    isMaxed ? 'border-yellow-500/50 bg-yellow-500/5' :
+                                    canUpgrade ? 'border-amber-400/50 bg-amber-500/5 hover:bg-amber-500/10 cursor-pointer' :
+                                    locked ? 'border-gray-800/30 bg-gray-900/20 opacity-30' :
+                                    'border-gray-700/30 bg-gray-800/20 opacity-50'
+                                  }`}
+                                  style={
+                                    isMaxed ? { borderColor: tree.accent + '60', boxShadow: `0 0 12px ${tree.accent}30` } :
+                                    canUpgrade ? { animation: 'nodePulse 2s ease-in-out infinite' } : {}
+                                  }
+                                >
+                                  {/* Capstone special border */}
+                                  {isCapstone && isMaxed && (
+                                    <div className="absolute inset-0 rounded-xl border-2 pointer-events-none"
+                                      style={{ borderColor: tree.accent + '80', boxShadow: `0 0 20px ${tree.accent}40, inset 0 0 12px ${tree.accent}15` }} />
+                                  )}
+
+                                  <div className="text-xl mb-0.5">{node.icon}</div>
+                                  <div className={`text-[10px] font-bold ${isMaxed ? 'text-white' : locked ? 'text-gray-600' : 'text-gray-300'}`}>
+                                    {node.name}
+                                  </div>
+
+                                  {/* Rank dots */}
+                                  <div className="flex justify-center gap-0.5 mt-1">
+                                    {Array.from({ length: node.maxRank }).map((_, i) => (
+                                      <div
+                                        key={i}
+                                        className={`w-1.5 h-1.5 rounded-full ${i < rank ? 'bg-yellow-400' : 'bg-gray-700'}`}
+                                        style={i < rank ? { backgroundColor: tree.accent, boxShadow: `0 0 4px ${tree.accent}60` } : {}}
+                                      />
+                                    ))}
+                                  </div>
+
+                                  <div className="text-[10px] mt-1" style={{ color: isMaxed ? tree.accent : rank > 0 ? '#9CA3AF' : '#6B7280' }}>
+                                    {rank}/{node.maxRank}
+                                  </div>
+
+                                  {/* Description */}
+                                  <div className={`text-[9px] mt-0.5 ${rank > 0 ? 'text-gray-300' : 'text-gray-500'}`}>
+                                    {desc}
+                                  </div>
+
+                                  {/* Locked icon */}
+                                  {locked && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-xl">
+                                      <span className="text-lg">{'\uD83D\uDD12'}</span>
+                                    </div>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
+
+            {/* ═══ TALENT II — Graph View ═══ */}
+            {talentTab === 2 && t2Unlocked && (() => {
+              const t2Alloc = getChibiTalent2Alloc(id);
+              const allNodes = getAllTalent2Nodes();
+              const connections = getTalent2Connections();
+              // Grid unit = 40px, center at (300, 340)
+              const UNIT = 40;
+              const CX = 300;
+              const CY = 340;
+              const toX = (gx) => CX + gx * UNIT;
+              const toY = (gy) => CY + gy * UNIT;
+
+              return (
+                <>
+                  {/* Branch legend */}
+                  <div className="flex flex-wrap justify-center gap-2 mb-3">
+                    {Object.values(TALENT2_BRANCHES).map(br => (
+                      <div key={br.id} className="flex items-center gap-1 text-[9px]" style={{ color: br.color }}>
+                        <span>{br.icon}</span> <span>{br.name}</span>
+                        <span className="text-gray-500">({getBranchPts(br.id, t2Alloc)}/{Object.values(br.nodes).reduce((s, n) => s + n.maxRank, 0)})</span>
                       </div>
-                    )}
+                    ))}
+                  </div>
 
-                    {/* SVG connecting lines */}
-                    {rowIdx > 0 && (
-                      <div className="flex justify-center mb-1">
-                        <div className={`w-0.5 h-4 ${locked ? 'bg-gray-700/30' : 'bg-gray-600/40'}`}
-                          style={!locked ? { backgroundColor: tree.accent + '40' } : {}} />
-                      </div>
-                    )}
+                  {/* Graph container */}
+                  <div className="relative overflow-auto rounded-xl border border-gray-700/30 bg-[#0a0a14]" style={{ height: 720 }}>
+                    <svg width={600} height={700} className="absolute inset-0">
+                      {/* Grid dots */}
+                      {Array.from({ length: 15 }).map((_, gx) =>
+                        Array.from({ length: 18 }).map((_, gy) => (
+                          <circle key={`g${gx}_${gy}`} cx={gx * UNIT} cy={gy * UNIT} r={1} fill="rgba(255,255,255,0.03)" />
+                        ))
+                      )}
+                      {/* Connections */}
+                      {connections.map((conn, i) => {
+                        const fromNode = allNodes[conn.from];
+                        const toNode = allNodes[conn.to];
+                        if (!fromNode || !toNode) return null;
+                        const fromAllocated = (t2Alloc[conn.from] || 0) > 0;
+                        const toAllocated = (t2Alloc[conn.to] || 0) > 0;
+                        const active = fromAllocated;
+                        return (
+                          <line
+                            key={i}
+                            x1={toX(fromNode.pos.x)} y1={toY(fromNode.pos.y)}
+                            x2={toX(toNode.pos.x)} y2={toY(toNode.pos.y)}
+                            stroke={active ? conn.branchColor : '#333'}
+                            strokeWidth={active ? 2 : 1}
+                            strokeOpacity={active ? 0.7 : 0.2}
+                            strokeDasharray={active ? 'none' : '4 4'}
+                          />
+                        );
+                      })}
+                    </svg>
 
-                    {/* Nodes Row */}
-                    <div className="flex justify-center gap-3">
-                      {row.nodes.map(node => {
-                        const rank = treeAlloc[node.id] || 0;
-                        const isMaxed = rank >= node.maxRank;
-                        const canUpgrade = !locked && rank < node.maxRank && availTP > 0 && treePts >= row.requiredPoints;
+                    {/* Root Node */}
+                    {(() => {
+                      const rk = t2Alloc.root || 0;
+                      const canUp = canAllocT2(id, 'root');
+                      return (
+                        <button
+                          onClick={() => canUp && allocateTalent2Point(id, 'root')}
+                          className="absolute z-10 flex flex-col items-center justify-center rounded-full border-2 transition-all"
+                          style={{
+                            left: toX(0) - 28, top: toY(0) - 28, width: 56, height: 56,
+                            borderColor: rk > 0 ? '#EAB308' : canUp ? '#EAB30880' : '#444',
+                            backgroundColor: rk > 0 ? 'rgba(234,179,8,0.15)' : 'rgba(30,30,40,0.8)',
+                            boxShadow: rk > 0 ? '0 0 20px rgba(234,179,8,0.3)' : 'none',
+                            cursor: canUp ? 'pointer' : 'default',
+                          }}
+                        >
+                          <span className="text-lg">{TALENT2_ROOT.icon}</span>
+                          <span className="text-[8px] text-gray-400">{rk}/{TALENT2_ROOT.maxRank}</span>
+                        </button>
+                      );
+                    })()}
+
+                    {/* Branch Nodes */}
+                    {Object.values(TALENT2_BRANCHES).map(branch =>
+                      Object.entries(branch.nodes).map(([nodeId, node]) => {
+                        const rk = t2Alloc[nodeId] || 0;
+                        const isMaxed = rk >= node.maxRank;
+                        const canUp = canAllocT2(id, nodeId);
                         const isCapstone = node.capstone;
-                        const desc = rank > 0 ? getNodeDesc(node, rank) : getNodeDesc(node, 1);
+                        const nodeSize = isCapstone ? 52 : 44;
+                        const half = nodeSize / 2;
 
                         return (
                           <button
-                            key={node.id}
-                            onClick={() => canUpgrade && allocateTalentPoint(id, activeTree, node.id)}
-                            disabled={!canUpgrade}
-                            className={`relative w-full max-w-[140px] p-2 rounded-xl border transition-all text-center ${
-                              isMaxed ? 'border-yellow-500/50 bg-yellow-500/5' :
-                              canUpgrade ? 'border-amber-400/50 bg-amber-500/5 hover:bg-amber-500/10 cursor-pointer' :
-                              locked ? 'border-gray-800/30 bg-gray-900/20 opacity-30' :
-                              'border-gray-700/30 bg-gray-800/20 opacity-50'
-                            }`}
-                            style={
-                              isMaxed ? { borderColor: tree.accent + '60', boxShadow: `0 0 12px ${tree.accent}30` } :
-                              canUpgrade ? { animation: 'nodePulse 2s ease-in-out infinite' } : {}
-                            }
+                            key={nodeId}
+                            onClick={() => canUp && allocateTalent2Point(id, nodeId)}
+                            className="absolute z-10 flex flex-col items-center justify-center transition-all group"
+                            style={{
+                              left: toX(node.pos.x) - half, top: toY(node.pos.y) - half,
+                              width: nodeSize, height: nodeSize,
+                              borderRadius: isCapstone ? '12px' : '50%',
+                              border: `2px solid ${isMaxed ? branch.color : canUp ? branch.color + '80' : '#444'}`,
+                              backgroundColor: isMaxed ? branch.color + '20' : rk > 0 ? branch.color + '10' : 'rgba(20,20,30,0.8)',
+                              boxShadow: isMaxed ? `0 0 16px ${branch.color}40` : canUp ? `0 0 8px ${branch.color}20` : 'none',
+                              cursor: canUp ? 'pointer' : 'default',
+                              animation: canUp ? 'nodePulse 2s ease-in-out infinite' : 'none',
+                            }}
+                            title={`${node.name}\n${node.desc}\n${rk}/${node.maxRank}`}
                           >
-                            {/* Capstone special border */}
-                            {isCapstone && isMaxed && (
-                              <div className="absolute inset-0 rounded-xl border-2 pointer-events-none"
-                                style={{ borderColor: tree.accent + '80', boxShadow: `0 0 20px ${tree.accent}40, inset 0 0 12px ${tree.accent}15` }} />
-                            )}
+                            <span className="text-sm leading-none">{node.icon}</span>
+                            <span className="text-[7px] leading-none mt-0.5" style={{ color: isMaxed ? branch.color : '#888' }}>
+                              {rk}/{node.maxRank}
+                            </span>
 
-                            <div className="text-xl mb-0.5">{node.icon}</div>
-                            <div className={`text-[10px] font-bold ${isMaxed ? 'text-white' : locked ? 'text-gray-600' : 'text-gray-300'}`}>
-                              {node.name}
+                            {/* Tooltip on hover */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 pointer-events-none">
+                              <div className="bg-gray-900/95 border border-gray-600/50 rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-xl">
+                                <div className="text-[10px] font-bold text-white">{node.name}</div>
+                                <div className="text-[9px] text-gray-300 mt-0.5">{node.desc}</div>
+                                {node.requiredBranchPts && (
+                                  <div className="text-[8px] mt-0.5" style={{ color: branch.color }}>
+                                    Requis: {node.requiredBranchPts} pts dans {branch.name}
+                                  </div>
+                                )}
+                              </div>
                             </div>
 
-                            {/* Rank dots */}
-                            <div className="flex justify-center gap-0.5 mt-1">
-                              {Array.from({ length: node.maxRank }).map((_, i) => (
-                                <div
-                                  key={i}
-                                  className={`w-1.5 h-1.5 rounded-full ${i < rank ? 'bg-yellow-400' : 'bg-gray-700'}`}
-                                  style={i < rank ? { backgroundColor: tree.accent, boxShadow: `0 0 4px ${tree.accent}60` } : {}}
-                                />
-                              ))}
-                            </div>
-
-                            <div className="text-[10px] mt-1" style={{ color: isMaxed ? tree.accent : rank > 0 ? '#9CA3AF' : '#6B7280' }}>
-                              {rank}/{node.maxRank}
-                            </div>
-
-                            {/* Description */}
-                            <div className={`text-[9px] mt-0.5 ${rank > 0 ? 'text-gray-300' : 'text-gray-500'}`}>
-                              {desc}
-                            </div>
-
-                            {/* Locked icon */}
-                            {locked && (
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-xl">
-                                <span className="text-lg">{'\uD83D\uDD12'}</span>
+                            {/* Lock overlay */}
+                            {rk === 0 && !canUp && (
+                              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40" style={{ borderRadius: isCapstone ? '12px' : '50%' }}>
+                                <span className="text-[10px]">{'\uD83D\uDD12'}</span>
                               </div>
                             )}
                           </button>
                         );
-                      })}
-                    </div>
+                      })
+                    )}
+
+                    {/* Branch Labels */}
+                    {Object.values(TALENT2_BRANCHES).map(branch => {
+                      const positions = { weapons: { x: -5, y: 0 }, elements: { x: 5, y: 0 }, titan: { x: 0, y: -6 }, reaper: { x: 0, y: 6 } };
+                      const p = positions[branch.id] || { x: 0, y: 0 };
+                      return (
+                        <div
+                          key={branch.id + '_label'}
+                          className="absolute text-[8px] font-bold text-center pointer-events-none"
+                          style={{ left: toX(p.x) - 40, top: toY(p.y) + 30, width: 80, color: branch.color + 'aa' }}
+                        >
+                          {branch.icon} {branch.name}
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
+                </>
+              );
+            })()}
 
             {/* Active Bonuses Summary */}
             {spentTP > 0 && (() => {
@@ -2084,14 +2318,20 @@ export default function ShadowColosseum() {
               if (tb.cooldownReduction > 0) bonuses.push({ label: 'CD', value: `-${tb.cooldownReduction}`, color: 'text-sky-400' });
               if (tb.regenPerTurn > 0) bonuses.push({ label: 'Regen', value: `+${tb.regenPerTurn}%/t`, color: 'text-green-300' });
               if (tb.counterChance > 0) bonuses.push({ label: 'Riposte', value: `${tb.counterChance}%`, color: 'text-amber-400' });
+              if (tb.defPen > 0) bonuses.push({ label: 'DEF Pen', value: `+${tb.defPen}%`, color: 'text-pink-400' });
+              if (tb.executionDmg > 0) bonuses.push({ label: 'Execution', value: `+${tb.executionDmg}%`, color: 'text-yellow-500' });
               if (tb.hasBerserk) bonuses.push({ label: 'Berserk', value: '\u2713', color: 'text-red-400' });
               if (tb.hasTranscendance) bonuses.push({ label: 'Transcendance', value: '\u2713', color: 'text-blue-400' });
               if (tb.hasImmortel) bonuses.push({ label: 'Immortel', value: '\u2713', color: 'text-green-400' });
+              if (tb.hasColossus) bonuses.push({ label: 'Colossus', value: '\u2713', color: 'text-emerald-400' });
+              if (tb.masterWeapons) bonuses.push({ label: "Maitre d'Armes", value: '\u2713', color: 'text-orange-400' });
+              if (tb.convergenceAll) bonuses.push({ label: 'Convergence', value: '\u2713', color: 'text-purple-400' });
+              if (tb.critDefIgnore) bonuses.push({ label: 'Ange de la Mort', value: '\u2713', color: 'text-yellow-400' });
 
               if (bonuses.length === 0) return null;
               return (
                 <div className="mt-2 p-2 rounded-lg bg-gray-800/20 border border-gray-700/20">
-                  <div className="text-[10px] text-gray-500 mb-1.5 text-center">Bonus actifs</div>
+                  <div className="text-[10px] text-gray-500 mb-1.5 text-center">Bonus actifs (I + II)</div>
                   <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[9px]">
                     {bonuses.map(b => (
                       <span key={b.label}>
@@ -2110,7 +2350,7 @@ export default function ShadowColosseum() {
                 disabled={spentTP === 0}
                 className="text-xs text-gray-500 hover:text-red-400 disabled:opacity-30 transition-colors py-2"
               >
-                Reinitialiser les talents {getRespecCost(id) > 0 ? `(${getRespecCost(id)} coins)` : '(gratuit)'}
+                Reinitialiser TOUS les talents {getRespecCost(id) > 0 ? `(${getRespecCost(id)} coins)` : '(gratuit)'}
               </button>
             </div>
           </div>

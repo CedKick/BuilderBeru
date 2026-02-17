@@ -1,17 +1,19 @@
 // PvpMode.jsx — Async 6v6 PVP for Shadow Colosseum
-// Phases: setup → matchmaking → battle → result
+// Phases: setup → matchmaking → battle → result → rankings
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { computeTalentBonuses } from './talentTreeData';
+import { computeTalentBonuses2 } from './talentTree2Data';
 import {
   SPRITES, ELEMENTS, RARITY, CHIBIS,
   STAT_PER_POINT, STAT_ORDER, STAT_META, MAX_LEVEL,
   statsAtFull, getEffStat,
   applySkillUpgrades, computeAttack, aiPickSkill, aiPickSkillSupport, spdToInterval,
   accountLevelFromXp, getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
-  PVP_DAMAGE_MULT, PVP_DURATION_SEC, PVP_TICK_MS,
+  PVP_DAMAGE_MULT, PVP_HP_MULT, PVP_DEF_MULT, PVP_RES_MULT, PVP_DURATION_SEC, PVP_TICK_MS,
+  mergeTalentBonuses,
 } from './colosseumCore';
 import {
   HUNTERS, HUNTER_PASSIVE_EFFECTS,
@@ -22,6 +24,7 @@ import {
   computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses,
   getActivePassives, WEAPONS, computeEquipILevel,
 } from './equipmentData';
+import { BattleStyles } from './BattleVFX';
 
 // ─── Save keys ──────────────────────────────────────────────
 const COLO_KEY = 'shadow_colosseum_data';
@@ -42,6 +45,34 @@ const getDeviceId = () => {
 
 const fmt = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(Math.floor(n));
 
+const ELEMENT_COLORS_RAW = {
+  shadow: '#a855f7', fire: '#ef4444', wind: '#10b981', earth: '#f59e0b', water: '#3b82f6', light: '#fbbf24',
+};
+
+// Positions for 6v6 arena: left team (attackers) and right team (defenders)
+const ATK_POSITIONS = [
+  { left: '5%', top: '15%' },
+  { left: '3%', top: '40%' },
+  { left: '5%', top: '65%' },
+  { left: '18%', top: '8%' },
+  { left: '16%', top: '36%' },
+  { left: '18%', top: '60%' },
+];
+const DEF_POSITIONS = [
+  { right: '5%', top: '15%' },
+  { right: '3%', top: '40%' },
+  { right: '5%', top: '65%' },
+  { right: '18%', top: '8%' },
+  { right: '16%', top: '36%' },
+  { right: '18%', top: '60%' },
+];
+
+// PVP Arena backgrounds (random per battle)
+const PVP_ARENAS = [
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771328568/pvpArena1_wfxqmk.png',
+  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771328568/pvpArena2_hqeqzb.png',
+];
+
 // ═══════════════════════════════════════════════════════════════
 // PVP MODE COMPONENT
 // ═══════════════════════════════════════════════════════════════
@@ -49,7 +80,7 @@ const fmt = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(Math.floor(n
 export default function PvpMode() {
   const [coloData] = useState(() => loadColoData());
   const [pvpData, setPvpData] = useState(() => loadPvpData());
-  const [phase, setPhase] = useState('setup'); // setup, matchmaking, battle, result, rankings
+  const [phase, setPhase] = useState('setup');
 
   // Setup state
   const [team1, setTeam1] = useState(() => {
@@ -68,15 +99,16 @@ export default function PvpMode() {
     const t = loadPvpData().defenseTeam || [];
     return [t[3] || null, t[4] || null, t[5] || null];
   });
-  const [pickSlot, setPickSlot] = useState(null); // { team: 1|2, idx, mode: 'atk'|'def' }
+  const [pickSlot, setPickSlot] = useState(null);
   const [displayName, setDisplayName] = useState(() => loadPvpData().displayName || '');
-  const [tab, setTab] = useState('atk'); // 'atk' or 'def'
+  const [tab, setTab] = useState('atk');
   const [registerMsg, setRegisterMsg] = useState('');
 
   // Matchmaking state
   const [opponents, setOpponents] = useState([]);
   const [loadingOpponents, setLoadingOpponents] = useState(false);
   const [selectedOpponent, setSelectedOpponent] = useState(null);
+  const [dailyRemaining, setDailyRemaining] = useState(25);
 
   // Battle state
   const [battleState, setBattleState] = useState(null);
@@ -89,6 +121,11 @@ export default function PvpMode() {
   const dpsTracker = useRef({});
   const [speedMult, setSpeedMult] = useState(1);
   const speedMultRef = useRef(1);
+  const [vfxEvents, setVfxEvents] = useState([]);
+  const vfxIdRef = useRef(0);
+
+  // Arena background
+  const [arenaBg, setArenaBg] = useState(() => PVP_ARENAS[Math.floor(Math.random() * PVP_ARENAS.length)]);
 
   // Result state
   const [resultData, setResultData] = useState(null);
@@ -133,17 +170,19 @@ export default function PvpMode() {
     if (!chibi) return null;
     const lvData = coloData.chibiLevels[id] || { level: 1, xp: 0 };
     const allocated = coloData.statPoints[id] || {};
-    const tb = computeTalentBonuses(coloData.talentTree[id] || {});
+    const tb1 = computeTalentBonuses(coloData.talentTree[id] || {});
+    const tb2 = computeTalentBonuses2(coloData.talentTree2?.[id]);
+    const tb = mergeTalentBonuses(tb1, tb2);
     const artBonuses = computeArtifactBonuses(coloData.artifacts?.[id]);
     const wId = coloData.weapons?.[id];
     const weapBonuses = computeWeaponBonuses(wId, coloData.weaponCollection?.[wId] || 0);
     const eqB = mergeEquipBonuses(artBonuses, weapBonuses);
     const evStars = HUNTERS[id] ? getHunterStars(raidData, id) : 0;
     const st = statsAtFull(chibi.base, chibi.growth, lvData.level, allocated, tb, eqB, evStars, coloData.accountBonuses);
+    const weaponType = wId && WEAPONS[wId] ? WEAPONS[wId].weaponType : null;
 
     const hunterPassive = HUNTERS[id] ? (HUNTER_PASSIVE_EFFECTS[id] || null) : null;
 
-    // Apply permanent hunter passives
     let hp2 = st.hp, atk2 = st.atk, def2 = st.def, spd2 = st.spd, crit2 = st.crit, res2 = st.res;
     if (hunterPassive?.type === 'permanent' && hunterPassive.stats) {
       if (hunterPassive.stats.hp) hp2 = Math.floor(hp2 * (1 + hunterPassive.stats.hp / 100));
@@ -165,7 +204,6 @@ export default function PvpMode() {
 
     const passives = getActivePassives(coloData.artifacts?.[id]);
 
-    // Build talentBonuses with equip + hunter bonuses merged
     const mergedTb = { ...tb };
     Object.entries(eqB).forEach(([k, v]) => { if (v) mergedTb[k] = (mergedTb[k] || 0) + v; });
     if (hunterPassive) {
@@ -177,6 +215,7 @@ export default function PvpMode() {
     return {
       id, name: chibi.name, element: chibi.element, class: chibi.class,
       sprite: chibi.sprite || SPRITES[id], rarity: chibi.rarity,
+      weaponType,
       hp: hp2, maxHp: hp2,
       atk: atk2, def: def2, spd: spd2, crit: crit2, res: res2,
       mana: st.mana || 0, maxMana: st.mana || 0, manaRegen: st.manaRegen || 0, manaCostReduce: st.manaCostReduce || 0,
@@ -189,7 +228,6 @@ export default function PvpMode() {
     };
   }, [allPool, coloData, raidData]);
 
-  // Compute power score for team
   const computePowerScore = useCallback((ids) => {
     let total = 0;
     ids.filter(Boolean).forEach(id => {
@@ -200,6 +238,14 @@ export default function PvpMode() {
     });
     return total;
   }, [coloData]);
+
+  // Apply PVP multipliers to entity (HP x3, DEF x1.6, RES x1.4)
+  const applyPvpStats = (entity) => {
+    entity.hp = Math.floor(entity.hp * PVP_HP_MULT);
+    entity.maxHp = Math.floor(entity.maxHp * PVP_HP_MULT);
+    entity.def = Math.floor(entity.def * PVP_DEF_MULT);
+    entity.res = +(entity.res * PVP_RES_MULT).toFixed(1);
+  };
 
   // ═══════════════════════════════════════════════════════════════
   // TEAM SELECTION
@@ -279,6 +325,7 @@ export default function PvpMode() {
       const json = await resp.json();
       if (json.success) {
         setOpponents(json.opponents || []);
+        if (json.dailyRemaining !== undefined) setDailyRemaining(json.dailyRemaining);
       }
     } catch (err) {
       console.warn('PVP find error:', err);
@@ -299,18 +346,24 @@ export default function PvpMode() {
   // BATTLE — 6v6 Combat Engine
   // ═══════════════════════════════════════════════════════════════
 
-  const startBattle = (opponent) => {
-    setSelectedOpponent(opponent);
+  const addVfx = (type, data) => {
+    const id = ++vfxIdRef.current;
+    setVfxEvents(prev => [...prev.slice(-20), { id, type, timestamp: Date.now(), ...data }]);
+  };
 
-    // Build attacker entities from local data
+  const startBattle = (opponent) => {
+    if (dailyRemaining <= 0) return;
+    setSelectedOpponent(opponent);
+    setArenaBg(PVP_ARENAS[Math.floor(Math.random() * PVP_ARENAS.length)]);
+
     const atkIds = [...team1, ...team2].filter(Boolean);
     const attackers = atkIds.map(id => buildChibiEntity(id)).filter(Boolean);
     if (attackers.length === 0) return;
 
-    // Apply team-wide passives to attackers
+    // Apply PVP stat multipliers (HP x3, DEF x1.6, RES x1.4)
+    attackers.forEach(applyPvpStats);
     applyTeamPassives(attackers);
 
-    // Defender entities come pre-computed from DB
     const defenders = (opponent.teamData || []).map(d => ({
       ...d,
       hp: d.maxHp || d.hp,
@@ -321,14 +374,15 @@ export default function PvpMode() {
       alive: true,
       skills: (d.skills || []).map(s => ({ ...s, cd: 0 })),
     }));
-
-    // Apply team-wide passives to defenders
+    // Apply PVP stat multipliers to defenders too
+    defenders.forEach(applyPvpStats);
     applyTeamPassives(defenders);
 
     const state = { attackers, defenders };
     setBattleState(state);
     battleRef.current = state;
     setCombatLog([{ text: `PVP: ${displayName || 'Toi'} vs ${opponent.displayName} !`, time: 0, type: 'system' }]);
+    setVfxEvents([]);
     dpsTracker.current = {};
     attackers.forEach(c => { dpsTracker.current[c.id] = 0; });
     startTimeRef.current = Date.now();
@@ -339,22 +393,18 @@ export default function PvpMode() {
 
   function applyTeamPassives(units) {
     units.forEach(c => {
-      // Martyr Aura
       const martyrAura = c.passives?.find(p => p.type === 'martyrAura');
       if (martyrAura) {
         c.atk = Math.floor(c.atk * (1 + (martyrAura.selfAtkMult || -0.30)));
         units.forEach(ally => { if (ally.id !== c.id) ally.atk = Math.floor(ally.atk * (1 + (martyrAura.allyAtkBonus || 0.15))); });
       }
-      // Commander DEF
       const cmdDef = c.passives?.find(p => p.type === 'commanderDef');
       if (cmdDef) units.forEach(ally => { ally.def = Math.floor(ally.def * 1.10); });
     });
-    // Commander Crit
     units.forEach(c => {
       const cmdCrit = c.passives?.find(p => p.type === 'commanderCrit');
       if (cmdCrit) units.forEach(ally => { ally.buffs.push({ stat: 'crit', value: 20, turns: 30 }); });
     });
-    // Hunter passives: teamDef, firstTurn
     units.forEach(c => {
       if (c.hunterPassive?.type === 'teamDef') {
         const val = c.hunterPassive.value || 0;
@@ -389,13 +439,12 @@ export default function PvpMode() {
 
       let attackerWon;
       if (aliveAtk.length === 0 && aliveDef.length === 0) {
-        attackerWon = false; // draw = defender wins
+        attackerWon = false;
       } else if (aliveAtk.length === 0) {
         attackerWon = false;
       } else if (aliveDef.length === 0) {
         attackerWon = true;
       } else {
-        // Timeout: compare total HP% remaining
         const atkHpPct = aliveAtk.reduce((s, c) => s + c.hp / c.maxHp, 0) / state.attackers.length;
         const defHpPct = aliveDef.reduce((s, c) => s + c.hp / c.maxHp, 0) / state.defenders.length;
         attackerWon = atkHpPct > defHpPct;
@@ -409,7 +458,6 @@ export default function PvpMode() {
         alive: c.alive,
       })).sort((a, b) => b.damage - a.damage);
 
-      // Report result to server
       const deviceId = getDeviceId();
       fetch('/api/pvp?action=report-result', {
         method: 'POST',
@@ -423,7 +471,7 @@ export default function PvpMode() {
         }),
       }).then(r => r.json()).then(json => {
         if (json.success) {
-          setResultData(prev => prev ? { ...prev, newRating: json.newRating, ratingChange: json.ratingChange } : prev);
+          setResultData(prev => prev ? { ...prev, newRating: json.newRating, ratingChange: json.ratingChange, capped: json.capped } : prev);
           setPvpData(prev => ({
             ...prev,
             pvpStats: {
@@ -447,13 +495,14 @@ export default function PvpMode() {
         opponentName: selectedOpponent?.displayName || '???',
         newRating: null,
         ratingChange: null,
+        capped: false,
       });
       setPhase('result');
       return;
     }
 
     // ─── Process unit attacks for one team ────────────────
-    const processUnit = (unit, enemies, allies) => {
+    const processUnit = (unit, enemies, allies, isAttacker) => {
       if (!unit.alive) return;
       if (now - unit.lastAttackAt < unit.attackInterval) return;
 
@@ -482,6 +531,7 @@ export default function PvpMode() {
           lowest.hp = Math.min(lowest.maxHp, lowest.hp + healAmt);
           unit.lastAttackAt = now;
           logEntries.push({ text: `${unit.name} soigne ${lowest.name} +${healAmt}`, time: elapsed, type: 'heal' });
+          addVfx('heal', { targetId: lowest.id });
           stateChanged = true;
           return;
         }
@@ -554,18 +604,17 @@ export default function PvpMode() {
       const dodgePassive = target.passives?.find(p => p.type === 'dodge');
       if (dodgePassive && Math.random() < (dodgePassive.chance || 0.12) && result.damage > 0) {
         logEntries.push({ text: `${target.name} esquive ${unit.name} !`, time: elapsed, type: 'dodge' });
-        // Counter-attack on dodge
         const counterPassive = target.passives?.find(p => p.type === 'counter');
         if (counterPassive) {
-          const counterSkill = target.skills[0]; // basic attack
+          const counterSkill = target.skills[0];
           const counterResult = computeAttack(target, counterSkill, unit, target.talentBonuses || {});
           const counterDmg = Math.max(1, Math.floor(counterResult.damage * PVP_DAMAGE_MULT * (counterPassive.powerMult || 0.80)));
           unit.hp -= counterDmg;
           if (unit.hp <= 0) { unit.hp = 0; unit.alive = false; }
           logEntries.push({ text: `${target.name} contre-attaque ! -${counterDmg}`, time: elapsed, type: 'counter' });
+          addVfx('hit', { targetId: unit.id, damage: counterDmg });
         }
         unit.lastAttackAt = now;
-        // Tick cooldowns
         unit.skills.forEach(s => {
           if (s === skill && s.cdMax > 0) s.cd = s.cdMaxMs || s.cdMax * unit.attackInterval;
           else if (s.cd > 0) s.cd = Math.max(0, s.cd - unit.attackInterval);
@@ -578,10 +627,13 @@ export default function PvpMode() {
       if (result.damage > 0) {
         target.hp -= result.damage;
 
-        // Track DPS (attackers only)
         if (dpsTracker.current[unit.id] !== undefined) {
           dpsTracker.current[unit.id] += result.damage;
         }
+
+        // VFX: attack + hit
+        addVfx('attack', { sourceId: unit.id, isAttacker, element: unit.element });
+        addVfx('hit', { targetId: target.id, damage: result.damage, isCrit: result.isCrit, element: unit.element });
 
         // Lifesteal
         if (unit.passives?.find(p => p.type === 'lifesteal') && Math.random() < 0.15) {
@@ -589,24 +641,22 @@ export default function PvpMode() {
           unit.hp = Math.min(unit.maxHp, unit.hp + heal);
         }
 
-        // Check death
         if (target.hp <= 0) {
           target.hp = 0;
           target.alive = false;
           logEntries.push({ text: `${target.name} est KO !`, time: elapsed, type: 'kill' });
+          addVfx('ko', { targetId: target.id });
         }
       }
 
-      // Self heal
       if (result.healed > 0) {
         unit.hp = Math.min(unit.maxHp, unit.hp + result.healed);
+        addVfx('heal', { targetId: unit.id });
       }
 
-      // Buffs / debuffs
       if (result.buff) unit.buffs.push({ ...result.buff });
       if (result.debuff) target.buffs.push({ ...result.debuff });
 
-      // Cooldowns
       unit.skills.forEach(s => {
         if (s === skill && s.cdMax > 0) {
           s.cd = s.cdMaxMs || s.cdMax * unit.attackInterval;
@@ -620,17 +670,15 @@ export default function PvpMode() {
 
       unit.lastAttackAt = now;
       if (result.damage > 0) {
-        logEntries.push({ text: `${unit.name} → ${target.name} -${result.damage}${result.isCrit ? ' CRIT!' : ''}`, time: elapsed, type: result.isCrit ? 'crit' : 'normal' });
+        logEntries.push({ text: `${unit.name} \u2192 ${target.name} -${result.damage}${result.isCrit ? ' CRIT!' : ''}`, time: elapsed, type: result.isCrit ? 'crit' : 'normal' });
       }
       stateChanged = true;
     };
 
-    // Process all attackers
-    state.attackers.forEach(u => processUnit(u, state.defenders, state.attackers));
-    // Process all defenders
-    state.defenders.forEach(u => processUnit(u, state.attackers, state.defenders));
+    state.attackers.forEach(u => processUnit(u, state.defenders, state.attackers, true));
+    state.defenders.forEach(u => processUnit(u, state.attackers, state.defenders, false));
 
-    // Buff decay every ~3s (every 30 ticks at 100ms)
+    // Buff decay every ~3s
     if (Math.floor(elapsed * 10) % 30 === 0) {
       [...state.attackers, ...state.defenders].forEach(u => {
         u.buffs = u.buffs.filter(b => { b.turns--; return b.turns > 0; });
@@ -667,17 +715,15 @@ export default function PvpMode() {
     }
   }, [speedMult, phase, gameTick]);
 
-  // Skip battle (instant simulation)
+  // Skip battle
   const skipBattle = () => {
     if (!battleRef.current) return;
-    // Run ticks until end
     const maxIter = 5000;
     for (let i = 0; i < maxIter; i++) {
       const state = battleRef.current;
       const aliveAtk = state.attackers.filter(c => c.alive).length;
       const aliveDef = state.defenders.filter(c => c.alive).length;
       if (aliveAtk === 0 || aliveDef === 0) break;
-      // Simulate one "round" — force all units to attack
       state.attackers.filter(c => c.alive).forEach(u => { u.lastAttackAt = 0; });
       state.defenders.filter(c => c.alive).forEach(u => { u.lastAttackAt = 0; });
       startTimeRef.current = Date.now() - (PVP_DURATION_SEC * 1000 - i * 100);
@@ -707,6 +753,86 @@ export default function PvpMode() {
   };
 
   // ═══════════════════════════════════════════════════════════════
+  // ARENA SPRITE COMPONENT
+  // ═══════════════════════════════════════════════════════════════
+
+  const now = Date.now();
+  const recentVfx = vfxEvents.filter(v => now - v.timestamp < 600);
+
+  function ArenaSprite({ unit, pos, side }) {
+    const hpPct = unit.maxHp > 0 ? unit.hp / unit.maxHp : 0;
+    const hpColor = hpPct > 0.5 ? '#22c55e' : hpPct > 0.2 ? '#eab308' : '#ef4444';
+
+    const isAttacking = recentVfx.some(v => v.type === 'attack' && v.sourceId === unit.id && now - v.timestamp < 400);
+    const hitEvent = recentVfx.find(v => v.type === 'hit' && v.targetId === unit.id && now - v.timestamp < 500);
+    const isHealing = recentVfx.some(v => v.type === 'heal' && v.targetId === unit.id && now - v.timestamp < 500);
+    const isKO = recentVfx.some(v => v.type === 'ko' && v.targetId === unit.id);
+
+    const flipStyle = side === 'left' ? 'scaleX(-1)' : '';
+
+    const anim = !unit.alive ? 'arenaKO 0.6s ease-out forwards' :
+      isAttacking && side === 'left' ? 'arenaDashRight 0.5s ease-in-out' :
+      isAttacking && side === 'right' ? 'arenaDashLeft 0.5s ease-in-out' :
+      hitEvent ? 'arenaHitChib 0.35s ease-out' :
+      side === 'left' ? 'arenaIdleChib 2.5s ease-in-out infinite' :
+      'arenaIdleBoss 2.5s ease-in-out infinite';
+
+    const posStyle = side === 'left'
+      ? { left: pos.left, top: pos.top }
+      : { right: pos.right, top: pos.top };
+
+    return (
+      <div className="absolute flex flex-col items-center pointer-events-none"
+        style={{ ...posStyle, zIndex: isAttacking ? 20 : 10 }}>
+        <div className="text-[8px] font-bold text-white/80 mb-0.5 whitespace-nowrap drop-shadow-lg"
+          style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
+          {unit.name}
+        </div>
+        <div className="relative">
+          <img src={unit.sprite} alt={unit.name}
+            className="w-10 h-10 object-contain"
+            style={{
+              animation: anim,
+              transform: !isAttacking && !hitEvent && unit.alive ? flipStyle : undefined,
+              filter: !unit.alive ? 'grayscale(1) brightness(0.3)' :
+                isHealing ? 'brightness(1.4) drop-shadow(0 0 6px rgba(34,197,94,0.7))' :
+                (RARITY[unit.rarity]?.glow || ''),
+              imageRendering: 'auto',
+            }} />
+          {/* Heal sparkle */}
+          {isHealing && unit.alive && (
+            <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-green-400 text-sm font-black"
+              style={{ animation: 'dmgFloatUp 0.6s ease-out forwards', textShadow: '0 0 6px rgba(34,197,94,0.8)' }}>+</div>
+          )}
+          {/* Floating damage */}
+          {hitEvent && (
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none"
+              style={{
+                color: hitEvent.isCrit ? '#fbbf24' : ELEMENT_COLORS_RAW[hitEvent.element] || '#ef4444',
+                fontWeight: 900,
+                fontSize: hitEvent.isCrit ? '0.85rem' : '0.7rem',
+                textShadow: '0 1px 4px rgba(0,0,0,0.9)',
+                animation: hitEvent.isCrit ? 'dmgFloatCrit 0.7s ease-out forwards' : 'dmgFloatUp 0.6s ease-out forwards',
+              }}>
+              -{hitEvent.damage}{hitEvent.isCrit ? '!' : ''}
+            </div>
+          )}
+          {/* Ground shadow */}
+          {unit.alive && (
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1.5 rounded-full bg-black/30"
+              style={{ animation: 'arenaShadow 2.5s ease-in-out infinite', filter: 'blur(2px)' }} />
+          )}
+        </div>
+        {/* HP bar */}
+        <div className="w-10 h-1 bg-gray-900/80 rounded-full overflow-hidden mt-0.5">
+          <div className="h-full rounded-full transition-all duration-200" style={{ width: `${hpPct * 100}%`, backgroundColor: hpColor }} />
+        </div>
+        {!unit.alive && <div className="text-[7px] text-red-500 font-bold mt-0.5">K.O.</div>}
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════════════
 
@@ -717,6 +843,8 @@ export default function PvpMode() {
 
   return (
     <div className="min-h-screen bg-[#0f0f1a] text-white pb-20 select-none">
+      <BattleStyles />
+
       {/* Header */}
       <div className="max-w-2xl mx-auto px-4 pt-4">
         <div className="flex items-center justify-between mb-4">
@@ -739,7 +867,6 @@ export default function PvpMode() {
       {/* ═══ SETUP PHASE ═══ */}
       {phase === 'setup' && (
         <div className="max-w-2xl mx-auto px-4">
-          {/* Tab toggle ATK / DEF */}
           <div className="flex gap-2 mb-4">
             <button onClick={() => setTab('atk')}
               className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${tab === 'atk' ? 'bg-red-500/30 text-red-400 border border-red-500/40' : 'bg-gray-800/30 text-gray-500 border border-gray-700/20'}`}>
@@ -751,7 +878,6 @@ export default function PvpMode() {
             </button>
           </div>
 
-          {/* Team slots */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             {[1, 2].map(teamNum => (
               <div key={teamNum} className="space-y-1.5">
@@ -788,7 +914,6 @@ export default function PvpMode() {
             ))}
           </div>
 
-          {/* Pick popup */}
           {pickSlot && (
             <div className="mb-4 p-3 rounded-xl bg-gray-800/50 border border-gray-700/30">
               <div className="text-xs text-gray-400 mb-2 font-bold">Choisis une unite :</div>
@@ -807,7 +932,6 @@ export default function PvpMode() {
             </div>
           )}
 
-          {/* Defense registration */}
           {tab === 'def' && (
             <div className="mb-4 p-3 rounded-xl bg-blue-900/20 border border-blue-500/20">
               <div className="text-xs text-blue-400 font-bold mb-2">{'\uD83D\uDEE1\uFE0F'} Enregistrer ton equipe defensive</div>
@@ -823,7 +947,6 @@ export default function PvpMode() {
             </div>
           )}
 
-          {/* Start PVP button */}
           {tab === 'atk' && (
             <button onClick={startMatchmaking}
               disabled={[...team1, ...team2].filter(Boolean).length < 6 || !pvpData.defenseTeam || pvpData.defenseTeam.length < 6}
@@ -844,6 +967,7 @@ export default function PvpMode() {
         <div className="max-w-2xl mx-auto px-4">
           <div className="text-center mb-4">
             <div className="text-sm text-gray-400">Choisis ton adversaire</div>
+            <div className="text-[10px] text-gray-600">Combats restants: <span className={`font-bold ${dailyRemaining > 5 ? 'text-green-400' : dailyRemaining > 0 ? 'text-yellow-400' : 'text-red-400'}`}>{dailyRemaining}/25</span></div>
           </div>
 
           {loadingOpponents && (
@@ -864,10 +988,14 @@ export default function PvpMode() {
           <div className="space-y-2 mb-4">
             {opponents.map((opp, i) => (
               <button key={i} onClick={() => startBattle(opp)}
-                className="w-full p-3 rounded-xl bg-gray-800/40 border border-gray-700/30 hover:border-red-500/40 hover:bg-red-900/10 transition-all text-left">
+                disabled={dailyRemaining <= 0}
+                className="w-full p-3 rounded-xl bg-gray-800/40 border border-gray-700/30 hover:border-red-500/40 hover:bg-red-900/10 transition-all text-left disabled:opacity-30 disabled:cursor-not-allowed">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="font-bold text-sm">{opp.displayName}</div>
-                  <div className="text-xs text-amber-400">Rating {opp.rating}</div>
+                  <div className="flex items-center gap-2">
+                    {opp.foughtToday > 0 && <span className="text-[9px] text-yellow-400">{opp.foughtToday}/3 combats</span>}
+                    <span className="text-xs text-amber-400">Rating {opp.rating}</span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1 mb-1">
                   {(opp.teamData || []).map((unit, j) => (
@@ -895,12 +1023,19 @@ export default function PvpMode() {
         </div>
       )}
 
-      {/* ═══ BATTLE PHASE ═══ */}
+      {/* ═══ BATTLE PHASE — Raid-style Arena ═══ */}
       {phase === 'battle' && battleState && (
         <div className="max-w-2xl mx-auto px-4">
           {/* Timer + controls */}
           <div className="flex items-center justify-between mb-3">
-            <div className="text-lg font-black text-amber-400">{Math.ceil(timer)}s</div>
+            <div className={`text-lg font-black font-mono ${timer < 15 ? 'text-red-400 animate-pulse' : 'text-amber-400'}`}>
+              {Math.floor(timer / 60)}:{Math.floor(timer % 60).toString().padStart(2, '0')}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-green-400 font-bold">{battleState.attackers.filter(c => c.alive).length}</span>
+              <span className="text-[10px] text-gray-500">vs</span>
+              <span className="text-[10px] text-red-400 font-bold">{battleState.defenders.filter(c => c.alive).length}</span>
+            </div>
             <div className="flex gap-1.5">
               {[1, 2, 3].map(s => (
                 <button key={s} onClick={() => setSpeedMult(s)}
@@ -915,53 +1050,105 @@ export default function PvpMode() {
             </div>
           </div>
 
-          {/* Battle arena */}
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            {/* Attackers */}
-            <div className="space-y-1">
-              <div className="text-[10px] text-green-400 font-bold text-center mb-1">TON EQUIPE</div>
-              {battleState.attackers.map((unit, i) => (
-                <div key={i} className={`flex items-center gap-1.5 p-1.5 rounded-lg transition-all ${unit.alive ? 'bg-green-900/10 border border-green-500/20' : 'bg-gray-900/30 border border-gray-800/20 opacity-40'}`}>
-                  <img src={unit.sprite} alt="" className={`w-7 h-7 rounded-full object-cover ${!unit.alive ? 'grayscale' : ''}`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-bold truncate">{unit.name}</div>
-                    <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-200"
-                        style={{ width: `${Math.max(0, unit.hp / unit.maxHp * 100)}%` }} />
-                    </div>
-                    <div className="text-[8px] text-gray-500">{fmt(Math.max(0, unit.hp))}/{fmt(unit.maxHp)}</div>
-                  </div>
-                </div>
+          {/* ═══ VISUAL BATTLE ARENA ═══ */}
+          <div className="relative rounded-2xl overflow-hidden border border-white/10 mb-3"
+            style={{
+              height: 280,
+              backgroundImage: `url(${arenaBg})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}>
+            {/* Dark overlay for readability */}
+            <div className="absolute inset-0 bg-black/25 pointer-events-none" />
+            {/* Atmospheric particles */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="absolute w-1 h-1 rounded-full bg-purple-400/20"
+                  style={{
+                    left: `${10 + i * 16}%`,
+                    top: `${20 + (i % 3) * 25}%`,
+                    animation: `healSparkle ${3 + i * 0.5}s ease-in-out infinite`,
+                    animationDelay: `${i * 0.7}s`,
+                  }} />
               ))}
             </div>
+            {/* VS indicator */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white/8 font-black text-4xl select-none pointer-events-none">
+              VS
+            </div>
+            {/* Center divider line */}
+            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-purple-500/20 to-transparent pointer-events-none" />
 
-            {/* Defenders */}
-            <div className="space-y-1">
-              <div className="text-[10px] text-red-400 font-bold text-center mb-1">{selectedOpponent?.displayName || 'ADVERSAIRE'}</div>
-              {battleState.defenders.map((unit, i) => (
-                <div key={i} className={`flex items-center gap-1.5 p-1.5 rounded-lg transition-all ${unit.alive ? 'bg-red-900/10 border border-red-500/20' : 'bg-gray-900/30 border border-gray-800/20 opacity-40'}`}>
-                  <img src={unit.sprite} alt="" className={`w-7 h-7 rounded-full object-cover ${!unit.alive ? 'grayscale' : ''}`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-bold truncate">{unit.name}</div>
-                    <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-red-500 to-rose-500 rounded-full transition-all duration-200"
-                        style={{ width: `${Math.max(0, unit.hp / unit.maxHp * 100)}%` }} />
+            {/* Attackers (left) */}
+            {battleState.attackers.map((unit, i) => (
+              <ArenaSprite key={`atk-${unit.id}`} unit={unit} pos={ATK_POSITIONS[i]} side="left" />
+            ))}
+            {/* Defenders (right) */}
+            {battleState.defenders.map((unit, i) => (
+              <ArenaSprite key={`def-${unit.id}`} unit={unit} pos={DEF_POSITIONS[i]} side="right" />
+            ))}
+
+            {/* Arena label */}
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[8px] text-gray-600/30 italic select-none pointer-events-none">
+              Shadow Colosseum — PVP Arena
+            </div>
+          </div>
+
+          {/* Team HP summary */}
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <div className="text-[9px] text-green-400 font-bold text-center mb-1">TON EQUIPE</div>
+              <div className="grid grid-cols-3 gap-1">
+                {battleState.attackers.map(c => {
+                  const hpPct = c.maxHp > 0 ? c.hp / c.maxHp : 0;
+                  return (
+                    <div key={c.id} className="text-center">
+                      <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-200" style={{
+                          width: `${hpPct * 100}%`,
+                          backgroundColor: !c.alive ? '#374151' : hpPct > 0.5 ? '#22c55e' : hpPct > 0.2 ? '#eab308' : '#ef4444',
+                        }} />
+                      </div>
+                      <div className={`text-[7px] truncate ${!c.alive ? 'text-red-500' : 'text-gray-500'}`}>
+                        {c.name.split(' ')[0]}
+                      </div>
                     </div>
-                    <div className="text-[8px] text-gray-500">{fmt(Math.max(0, unit.hp))}/{fmt(unit.maxHp)}</div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <div className="text-[9px] text-red-400 font-bold text-center mb-1">{selectedOpponent?.displayName || 'ADVERSAIRE'}</div>
+              <div className="grid grid-cols-3 gap-1">
+                {battleState.defenders.map(c => {
+                  const hpPct = c.maxHp > 0 ? c.hp / c.maxHp : 0;
+                  return (
+                    <div key={c.id} className="text-center">
+                      <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-200" style={{
+                          width: `${hpPct * 100}%`,
+                          backgroundColor: !c.alive ? '#374151' : hpPct > 0.5 ? '#ef4444' : hpPct > 0.2 ? '#eab308' : '#22c55e',
+                        }} />
+                      </div>
+                      <div className={`text-[7px] truncate ${!c.alive ? 'text-red-500' : 'text-gray-500'}`}>
+                        {c.name.split(' ')[0]}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
           {/* Combat log */}
-          <div className="p-2 rounded-xl bg-gray-900/40 border border-gray-800/30 max-h-32 overflow-y-auto">
+          <div className="bg-black/40 rounded-xl p-2 border border-white/5 max-h-24 overflow-y-auto text-[9px] font-mono">
             {combatLog.slice(-8).map((entry, i) => (
-              <div key={i} className={`text-[9px] leading-relaxed ${
+              <div key={i} className={`py-0.5 ${
                 entry.type === 'crit' ? 'text-yellow-400 font-bold' :
                 entry.type === 'heal' ? 'text-green-400' :
                 entry.type === 'kill' ? 'text-red-400 font-bold' :
                 entry.type === 'dodge' ? 'text-cyan-400' :
+                entry.type === 'counter' ? 'text-orange-400' :
                 entry.type === 'system' ? 'text-purple-400 font-bold' :
                 'text-gray-400'
               }`}>{entry.text}</div>
@@ -977,7 +1164,8 @@ export default function PvpMode() {
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-            className={`text-5xl font-black mb-2 ${resultData.attackerWon ? 'text-green-400' : 'text-red-400'}`}>
+            className={`text-5xl font-black mb-2 ${resultData.attackerWon ? 'text-green-400' : 'text-red-400'}`}
+            style={{ animation: resultData.attackerWon ? 'victoryPulse 2s ease-in-out infinite' : 'defeatPulse 2s ease-in-out infinite' }}>
             {resultData.attackerWon ? 'VICTOIRE !' : 'DEFAITE'}
           </motion.div>
 
@@ -986,15 +1174,15 @@ export default function PvpMode() {
             {resultData.aliveCount.atk}/6 survivants — {resultData.duration}s
           </div>
 
-          {/* Rating change */}
           {resultData.ratingChange !== null && (
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
               className="mb-4">
-              <div className={`text-2xl font-black ${resultData.ratingChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {resultData.ratingChange >= 0 ? '+' : ''}{resultData.ratingChange} Rating
+              <div className={`text-2xl font-black ${resultData.ratingChange > 0 ? 'text-green-400' : resultData.ratingChange < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                {resultData.ratingChange > 0 ? '+' : ''}{resultData.ratingChange} Rating
+                {resultData.capped && <span className="text-xs text-gray-500 ml-2">(Elo cap)</span>}
               </div>
               <div className="text-sm text-gray-400">
                 Nouveau rating: <span className="text-cyan-400 font-bold">{resultData.newRating}</span>
@@ -1002,7 +1190,6 @@ export default function PvpMode() {
             </motion.div>
           )}
 
-          {/* DPS breakdown */}
           <div className="mb-4 p-3 rounded-xl bg-gray-800/30 border border-gray-700/20">
             <div className="text-xs text-gray-400 font-bold mb-2">DPS Breakdown</div>
             {resultData.dpsBreakdown.map((c, i) => (
@@ -1020,7 +1207,6 @@ export default function PvpMode() {
             ))}
           </div>
 
-          {/* Actions */}
           <div className="flex gap-2">
             <button onClick={() => { setPhase('matchmaking'); findOpponents(); }}
               className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold text-sm hover:from-red-500 hover:to-orange-500 transition-all">

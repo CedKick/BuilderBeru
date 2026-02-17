@@ -2,6 +2,10 @@ import { query } from './db/neon.js';
 
 const ELO_K = 32;
 const MIN_RATING = 100;
+const MAX_ELO_DIFF = 400;     // Beyond this, no rating change
+const MAX_DAILY_MATCHES = 25;
+const MAX_SAME_OPP_PER_DAY = 3;
+const MIN_REMATCH_HOURS = 1;
 
 function computeElo(atkRating, defRating, attackerWon) {
   const expected = 1 / (1 + Math.pow(10, (defRating - atkRating) / 400));
@@ -92,14 +96,48 @@ async function handleFindOpponents(req, res) {
 
   const ps = parseInt(powerScore, 10) || 0;
 
-  let result = await query(
+  // Get today's match counts per defender to exclude overplayed opponents
+  const todayMatches = await query(
+    `SELECT defender_id, COUNT(*) as cnt, MAX(created_at) as last_match
+     FROM pvp_match_history
+     WHERE attacker_id = $1 AND created_at > NOW() - INTERVAL '24 hours'
+     GROUP BY defender_id`,
+    [deviceId]
+  );
+  const matchMap = {};
+  todayMatches.rows.forEach(r => {
+    matchMap[r.defender_id] = { count: parseInt(r.cnt, 10), lastMatch: new Date(r.last_match) };
+  });
+
+  // Exclude opponents fought 3+ times today or fought less than 1h ago
+  const excludeIds = Object.entries(matchMap)
+    .filter(([, v]) => v.count >= MAX_SAME_OPP_PER_DAY || (Date.now() - v.lastMatch.getTime()) < MIN_REMATCH_HOURS * 3600 * 1000)
+    .map(([id]) => id);
+
+  // Also count total daily matches
+  const dailyTotal = await query(
+    `SELECT COUNT(*) as cnt FROM pvp_match_history
+     WHERE attacker_id = $1 AND created_at > NOW() - INTERVAL '24 hours'`,
+    [deviceId]
+  );
+  const dailyCount = parseInt(dailyTotal.rows[0]?.cnt, 10) || 0;
+  const dailyRemaining = Math.max(0, MAX_DAILY_MATCHES - dailyCount);
+
+  let result;
+  const excludeClause = excludeIds.length > 0
+    ? `AND device_id NOT IN (${excludeIds.map((_, i) => `$${i + 3}`).join(',')})`
+    : '';
+  const params = [deviceId, ps, ...excludeIds];
+
+  result = await query(
     `SELECT device_id, display_name, team_data, power_score, rating, wins, losses
      FROM pvp_defense_teams
      WHERE device_id != $1
      AND power_score BETWEEN $2 * 0.7 AND $2 * 1.3
+     ${excludeClause}
      ORDER BY ABS(power_score - $2)
      LIMIT 5`,
-    [deviceId, ps]
+    params
   );
 
   if (result.rows.length < 3) {
@@ -107,23 +145,28 @@ async function handleFindOpponents(req, res) {
       `SELECT device_id, display_name, team_data, power_score, rating, wins, losses
        FROM pvp_defense_teams
        WHERE device_id != $1
+       ${excludeClause}
        ORDER BY ABS(power_score - $2)
        LIMIT 5`,
-      [deviceId, ps]
+      params
     );
   }
 
-  const opponents = result.rows.map(r => ({
-    deviceId: r.device_id,
-    displayName: r.display_name,
-    teamData: r.team_data,
-    powerScore: r.power_score,
-    rating: r.rating,
-    wins: r.wins,
-    losses: r.losses,
-  }));
+  const opponents = result.rows.map(r => {
+    const oppInfo = matchMap[r.device_id];
+    return {
+      deviceId: r.device_id,
+      displayName: r.display_name,
+      teamData: r.team_data,
+      powerScore: r.power_score,
+      rating: r.rating,
+      wins: r.wins,
+      losses: r.losses,
+      foughtToday: oppInfo?.count || 0,
+    };
+  });
 
-  return res.status(200).json({ success: true, opponents });
+  return res.status(200).json({ success: true, opponents, dailyRemaining });
 }
 
 async function handleReportResult(req, res) {
@@ -138,6 +181,34 @@ async function handleReportResult(req, res) {
     return res.status(403).json({ error: 'Invalid deviceId' });
   }
 
+  // ─── Anti-abuse checks ─────────────────────────────────
+  // Check daily match limit
+  const dailyTotal = await query(
+    `SELECT COUNT(*) as cnt FROM pvp_match_history
+     WHERE attacker_id = $1 AND created_at > NOW() - INTERVAL '24 hours'`,
+    [deviceId]
+  );
+  if (parseInt(dailyTotal.rows[0]?.cnt, 10) >= MAX_DAILY_MATCHES) {
+    return res.status(429).json({ error: 'Daily match limit reached (25/day)', limitReached: true });
+  }
+
+  // Check same opponent limit (3/day) and cooldown (1h)
+  const oppHistory = await query(
+    `SELECT COUNT(*) as cnt, MAX(created_at) as last_match
+     FROM pvp_match_history
+     WHERE attacker_id = $1 AND defender_id = $2 AND created_at > NOW() - INTERVAL '24 hours'`,
+    [deviceId, defenderId]
+  );
+  const oppCount = parseInt(oppHistory.rows[0]?.cnt, 10) || 0;
+  if (oppCount >= MAX_SAME_OPP_PER_DAY) {
+    return res.status(429).json({ error: 'Max 3 fights per opponent per day', limitReached: true });
+  }
+  const lastMatch = oppHistory.rows[0]?.last_match ? new Date(oppHistory.rows[0].last_match) : null;
+  if (lastMatch && (Date.now() - lastMatch.getTime()) < MIN_REMATCH_HOURS * 3600 * 1000) {
+    return res.status(429).json({ error: '1h cooldown between rematches', limitReached: true });
+  }
+
+  // Get both ratings
   const atkResult = await query(
     'SELECT rating FROM pvp_defense_teams WHERE device_id = $1',
     [deviceId]
@@ -150,7 +221,15 @@ async function handleReportResult(req, res) {
   const atkRating = atkResult.rows[0]?.rating || 1000;
   const defRating = defResult.rows[0]?.rating || 1000;
 
-  const change = computeElo(atkRating, defRating, attackerWon);
+  // Elo cap: if difference > 400, no rating change
+  const eloDiff = Math.abs(atkRating - defRating);
+  let change = 0;
+  let capped = false;
+  if (eloDiff > MAX_ELO_DIFF) {
+    capped = true;
+  } else {
+    change = computeElo(atkRating, defRating, attackerWon);
+  }
 
   const newAtkRating = Math.max(MIN_RATING, atkRating + change);
   const newDefRating = Math.max(MIN_RATING, defRating - change);
@@ -181,6 +260,7 @@ async function handleReportResult(req, res) {
     success: true,
     newRating: newAtkRating,
     ratingChange: change,
+    capped,
   });
 }
 

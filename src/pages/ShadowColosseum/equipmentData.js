@@ -487,33 +487,33 @@ export function getActiveSetBonuses(equippedArtifacts) {
 
 export const WEAPONS = {
   // Fire (5)
-  w_lame_inferno:     { id: 'w_lame_inferno',     name: "Lame de l'Inferno",   rarity: 'mythique',   element: 'fire',   atk: 25, bonusStat: 'crit_rate', bonusValue: 8,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Forgee dans les flammes eternelles' },
-  w_hache_volcanique: { id: 'w_hache_volcanique', name: 'Hache Volcanique',     rarity: 'legendaire', element: 'fire',   atk: 18, bonusStat: 'atk_pct',   bonusValue: 10, icon: '\uD83E\uDE93', desc: 'Lave solidifiee en acier' },
-  w_arc_braise:       { id: 'w_arc_braise',       name: 'Arc de Braise',        rarity: 'legendaire', element: 'fire',   atk: 15, bonusStat: 'spd_flat',  bonusValue: 8,  icon: '\uD83C\uDFF9', desc: 'Fleches enflammees' },
-  w_dague_pyrite:     { id: 'w_dague_pyrite',     name: 'Dague de Pyrite',      rarity: 'rare',       element: 'fire',   atk: 10, bonusStat: 'crit_rate', bonusValue: 5,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Lame incandescente' },
-  w_marteau_forge:    { id: 'w_marteau_forge',    name: 'Marteau de la Forge',  rarity: 'rare',       element: 'fire',   atk: 12, bonusStat: 'def_pct',   bonusValue: 6,  icon: '\uD83D\uDD28', desc: 'Outil du forgeron ancestral' },
+  w_lame_inferno:     { id: 'w_lame_inferno',     name: "Lame de l'Inferno",   rarity: 'mythique',   element: 'fire',   weaponType: 'blade',   atk: 25, bonusStat: 'crit_rate', bonusValue: 8,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Forgee dans les flammes eternelles' },
+  w_hache_volcanique: { id: 'w_hache_volcanique', name: 'Hache Volcanique',     rarity: 'legendaire', element: 'fire',   weaponType: 'heavy',   atk: 18, bonusStat: 'atk_pct',   bonusValue: 10, icon: '\uD83E\uDE93', desc: 'Lave solidifiee en acier' },
+  w_arc_braise:       { id: 'w_arc_braise',       name: 'Arc de Braise',        rarity: 'legendaire', element: 'fire',   weaponType: 'ranged',  atk: 15, bonusStat: 'spd_flat',  bonusValue: 8,  icon: '\uD83C\uDFF9', desc: 'Fleches enflammees' },
+  w_dague_pyrite:     { id: 'w_dague_pyrite',     name: 'Dague de Pyrite',      rarity: 'rare',       element: 'fire',   weaponType: 'blade',   atk: 10, bonusStat: 'crit_rate', bonusValue: 5,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Lame incandescente' },
+  w_marteau_forge:    { id: 'w_marteau_forge',    name: 'Marteau de la Forge',  rarity: 'rare',       element: 'fire',   weaponType: 'heavy',   atk: 12, bonusStat: 'def_pct',   bonusValue: 6,  icon: '\uD83D\uDD28', desc: 'Outil du forgeron ancestral' },
 
   // Water (5)
-  w_trident_abyssal:  { id: 'w_trident_abyssal',  name: 'Trident Abyssal',     rarity: 'mythique',   element: 'water',  atk: 22, bonusStat: 'atk_pct',   bonusValue: 12, icon: '\uD83D\uDD31', desc: 'Arme des profondeurs' },
-  w_epee_glaciale:    { id: 'w_epee_glaciale',    name: 'Epee Glaciale',        rarity: 'legendaire', element: 'water',  atk: 18, bonusStat: 'crit_dmg',  bonusValue: 12, icon: '\u2694\uFE0F', desc: 'Glace eternelle tranchante' },
-  w_arc_tsunami:      { id: 'w_arc_tsunami',      name: 'Arc du Tsunami',       rarity: 'legendaire', element: 'water',  atk: 16, bonusStat: 'spd_flat',  bonusValue: 10, icon: '\uD83C\uDFF9', desc: 'Fleches de maree' },
-  w_lance_corail:     { id: 'w_lance_corail',     name: 'Lance de Corail',      rarity: 'rare',       element: 'water',  atk: 11, bonusStat: 'hp_pct',    bonusValue: 8,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Durcie par les abysses' },
-  w_baton_brume:      { id: 'w_baton_brume',      name: 'Baton de Brume',       rarity: 'rare',       element: 'water',  atk: 9,  bonusStat: 'res_flat',   bonusValue: 6,  icon: '\uD83E\uDE84', desc: 'Canalise les brumes marines' },
+  w_trident_abyssal:  { id: 'w_trident_abyssal',  name: 'Trident Abyssal',     rarity: 'mythique',   element: 'water',  weaponType: 'polearm', atk: 22, bonusStat: 'atk_pct',   bonusValue: 12, icon: '\uD83D\uDD31', desc: 'Arme des profondeurs' },
+  w_epee_glaciale:    { id: 'w_epee_glaciale',    name: 'Epee Glaciale',        rarity: 'legendaire', element: 'water',  weaponType: 'blade',   atk: 18, bonusStat: 'crit_dmg',  bonusValue: 12, icon: '\u2694\uFE0F', desc: 'Glace eternelle tranchante' },
+  w_arc_tsunami:      { id: 'w_arc_tsunami',      name: 'Arc du Tsunami',       rarity: 'legendaire', element: 'water',  weaponType: 'ranged',  atk: 16, bonusStat: 'spd_flat',  bonusValue: 10, icon: '\uD83C\uDFF9', desc: 'Fleches de maree' },
+  w_lance_corail:     { id: 'w_lance_corail',     name: 'Lance de Corail',      rarity: 'rare',       element: 'water',  weaponType: 'polearm', atk: 11, bonusStat: 'hp_pct',    bonusValue: 8,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Durcie par les abysses' },
+  w_baton_brume:      { id: 'w_baton_brume',      name: 'Baton de Brume',       rarity: 'rare',       element: 'water',  weaponType: 'ranged',  atk: 9,  bonusStat: 'res_flat',   bonusValue: 6,  icon: '\uD83E\uDE84', desc: 'Canalise les brumes marines' },
 
   // Shadow (5)
-  w_faux_monarque:    { id: 'w_faux_monarque',    name: 'Faux du Monarque',     rarity: 'mythique',   element: 'shadow', atk: 28, bonusStat: 'crit_dmg',  bonusValue: 15, icon: '\u2694\uFE0F', desc: "L'arme du Roi des Ombres" },
-  w_katana_void:      { id: 'w_katana_void',      name: 'Katana du Void',       rarity: 'mythique',   element: 'shadow', atk: 24, bonusStat: 'crit_rate', bonusValue: 10, icon: '\uD83D\uDDE1\uFE0F', desc: 'Tranche la realite' },
-  w_griffe_nuit:      { id: 'w_griffe_nuit',      name: 'Griffe de la Nuit',    rarity: 'legendaire', element: 'shadow', atk: 17, bonusStat: 'spd_flat',  bonusValue: 10, icon: '\uD83D\uDDE1\uFE0F', desc: "Rapide comme l'ombre" },
-  w_masse_tenebres:   { id: 'w_masse_tenebres',   name: 'Masse des Tenebres',  rarity: 'legendaire', element: 'shadow', atk: 20, bonusStat: 'hp_pct',    bonusValue: 10, icon: '\uD83D\uDD28', desc: "Poids de l'obscurite" },
-  w_dague_ombre:      { id: 'w_dague_ombre',      name: "Dague d'Ombre",        rarity: 'rare',       element: 'shadow', atk: 10, bonusStat: 'atk_pct',   bonusValue: 6,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Lame des assassins' },
+  w_faux_monarque:    { id: 'w_faux_monarque',    name: 'Faux du Monarque',     rarity: 'mythique',   element: 'shadow', weaponType: 'polearm', atk: 28, bonusStat: 'crit_dmg',  bonusValue: 15, icon: '\u2694\uFE0F', desc: "L'arme du Roi des Ombres" },
+  w_katana_void:      { id: 'w_katana_void',      name: 'Katana du Void',       rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 24, bonusStat: 'crit_rate', bonusValue: 10, icon: '\uD83D\uDDE1\uFE0F', desc: 'Tranche la realite' },
+  w_griffe_nuit:      { id: 'w_griffe_nuit',      name: 'Griffe de la Nuit',    rarity: 'legendaire', element: 'shadow', weaponType: 'polearm', atk: 17, bonusStat: 'spd_flat',  bonusValue: 10, icon: '\uD83D\uDDE1\uFE0F', desc: "Rapide comme l'ombre" },
+  w_masse_tenebres:   { id: 'w_masse_tenebres',   name: 'Masse des Tenebres',  rarity: 'legendaire', element: 'shadow', weaponType: 'heavy',   atk: 20, bonusStat: 'hp_pct',    bonusValue: 10, icon: '\uD83D\uDD28', desc: "Poids de l'obscurite" },
+  w_dague_ombre:      { id: 'w_dague_ombre',      name: "Dague d'Ombre",        rarity: 'rare',       element: 'shadow', weaponType: 'blade',   atk: 10, bonusStat: 'atk_pct',   bonusValue: 6,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Lame des assassins' },
 
   // Neutral (3)
-  w_epee_ancienne:    { id: 'w_epee_ancienne',    name: 'Epee Ancienne',        rarity: 'legendaire', element: null,     atk: 16, bonusStat: 'atk_pct',   bonusValue: 8,  icon: '\u2694\uFE0F', desc: "Arme d'une ere oubliee" },
-  w_baguette_sage:    { id: 'w_baguette_sage',    name: 'Baguette du Sage',     rarity: 'rare',       element: null,     atk: 8,  bonusStat: 'crit_rate', bonusValue: 5,  icon: '\uD83E\uDE84', desc: 'Sagesse cristallisee' },
-  w_bouclier_hero:    { id: 'w_bouclier_hero',    name: 'Bouclier du Heros',    rarity: 'rare',       element: null,     atk: 6,  bonusStat: 'def_pct',   bonusValue: 10, icon: '\uD83D\uDEE1\uFE0F', desc: 'Protection legendaire' },
+  w_epee_ancienne:    { id: 'w_epee_ancienne',    name: 'Epee Ancienne',        rarity: 'legendaire', element: null,     weaponType: 'blade',   atk: 16, bonusStat: 'atk_pct',   bonusValue: 8,  icon: '\u2694\uFE0F', desc: "Arme d'une ere oubliee" },
+  w_baguette_sage:    { id: 'w_baguette_sage',    name: 'Baguette du Sage',     rarity: 'rare',       element: null,     weaponType: 'ranged',  atk: 8,  bonusStat: 'crit_rate', bonusValue: 5,  icon: '\uD83E\uDE84', desc: 'Sagesse cristallisee' },
+  w_bouclier_hero:    { id: 'w_bouclier_hero',    name: 'Bouclier du Heros',    rarity: 'rare',       element: null,     weaponType: 'shield',  atk: 6,  bonusStat: 'def_pct',   bonusValue: 10, icon: '\uD83D\uDEE1\uFE0F', desc: 'Protection legendaire' },
 
   // Secret — drop 1/30000 from Ragnarok
-  w_sulfuras:         { id: 'w_sulfuras',         name: 'Masse de Sulfuras',    rarity: 'mythique',   element: 'fire',   atk: 250, bonusStat: 'atk_pct', bonusValue: 25, icon: '\uD83D\uDD28', desc: '???', secret: true, passive: 'sulfuras_fury', fireRes: 50 },
+  w_sulfuras:         { id: 'w_sulfuras',         name: 'Masse de Sulfuras',    rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 250, bonusStat: 'atk_pct', bonusValue: 25, icon: '\uD83D\uDD28', desc: '???', secret: true, passive: 'sulfuras_fury', fireRes: 50 },
 };
 
 export const WEAPON_PRICES = { rare: 500, legendaire: 2000, mythique: 5000 };

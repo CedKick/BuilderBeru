@@ -202,13 +202,15 @@ export const statsAt = (base, growth, level, allocated = {}, tb = {}) => {
 // statsAtFull — wraps statsAt with eveil stars + equipment bonuses + global account bonuses
 export const statsAtFull = (base, growth, level, allocated = {}, tb = {}, equipBonuses = {}, eveilStars = 0, globalBonuses = {}) => {
   const eveilMult = 1 + eveilStars * 0.05;
+  // allStats from Talent II adds a % to all base stats
+  const allStatsMult = 1 + (tb.allStats || 0) / 100;
   const adjBase = {
-    hp: Math.floor(base.hp * eveilMult),
-    atk: Math.floor(base.atk * eveilMult),
-    def: Math.floor(base.def * eveilMult),
-    spd: Math.floor(base.spd * eveilMult),
-    crit: +(base.crit * eveilMult).toFixed(1),
-    res: +(base.res * eveilMult).toFixed(1),
+    hp: Math.floor(base.hp * eveilMult * allStatsMult),
+    atk: Math.floor(base.atk * eveilMult * allStatsMult),
+    def: Math.floor(base.def * eveilMult * allStatsMult),
+    spd: Math.floor(base.spd * eveilMult * allStatsMult),
+    crit: +(base.crit * eveilMult * allStatsMult).toFixed(1),
+    res: +(base.res * eveilMult * allStatsMult).toFixed(1),
   };
   // Merge equip % bonuses into tb (so statsAt applies them)
   const mergedTb = { ...tb };
@@ -227,11 +229,21 @@ export const statsAtFull = (base, growth, level, allocated = {}, tb = {}, equipB
   mergedTb.defPen = (mergedTb.defPen || 0) + (equipBonuses.defPen || 0);
   mergedTb.healBonus = (mergedTb.healBonus || 0) + (equipBonuses.healBonus || 0);
 
+  // Talent II: Shield weapon-type bonus — applied as extra DEF%/HP%
+  if (tb.weaponDmg_shield_def) {
+    const shieldDefBonus = tb.masterWeapons ? tb.weaponDmg_shield_def * 2 : tb.weaponDmg_shield_def;
+    mergedTb.defPercent = (mergedTb.defPercent || 0) + shieldDefBonus;
+  }
+  if (tb.weaponDmg_shield_hp) {
+    const shieldHpBonus = tb.masterWeapons ? tb.weaponDmg_shield_hp * 2 : tb.weaponDmg_shield_hp;
+    mergedTb.hpPercent = (mergedTb.hpPercent || 0) + shieldHpBonus;
+  }
+
   const stats = statsAt(adjBase, growth, level, allocated, mergedTb);
   // Add flat equipment bonuses
   stats.hp += (equipBonuses.hp_flat || 0);
   stats.atk += (equipBonuses.atk_flat || 0);
-  stats.def += (equipBonuses.def_flat || 0);
+  stats.def += (equipBonuses.def_flat || 0) + (tb.defFlat || 0);
   stats.spd += (equipBonuses.spd_flat || 0);
   // Add global account bonuses (flat, applied to all characters)
   stats.hp += (globalBonuses.hp || 0) * STAT_PER_POINT.hp;
@@ -298,10 +310,15 @@ export const getUpgradeDesc = (skill, tierIdx) => {
 export const computeAttack = (attacker, skill, defender, tb = {}) => {
   const res = { damage: 0, isCrit: false, healed: 0, buff: null, debuff: null, text: '' };
   let effAtk = getEffStat(attacker.atk, attacker.buffs, 'atk');
-  const effDef = getEffStat(defender.def, defender.buffs || [], 'def');
+  let effDef = getEffStat(defender.def, defender.buffs || [], 'def');
 
   if (tb.hasBerserk && attacker.hp < attacker.maxHp * 0.3) {
     effAtk = Math.floor(effAtk * 1.4);
+  }
+
+  // Talent II: Bastion — +DEF/RES when HP < 50%
+  if (tb.bastionDef && defender.hp < defender.maxHp * 0.5) {
+    effDef = Math.floor(effDef * (1 + (tb.bastionDef || 0) / 100));
   }
 
   if (skill.power > 0) {
@@ -309,24 +326,71 @@ export const computeAttack = (attacker, skill, defender, tb = {}) => {
     let elemMult = getElementMult(attacker.element, defender.element);
     if (tb.hasTranscendance && elemMult > 1) elemMult = 1.6;
     if (elemMult > 1 && tb.elementalAdvantageBonus) elemMult += tb.elementalAdvantageBonus / 100;
-    // DEF penetration from artifacts
+    // DEF penetration from artifacts + talents
     const defPenVal = tb.defPen || 0;
-    const adjustedDef = Math.max(0, effDef * (1 - defPenVal / 100));
-    const defFactor = 100 / (100 + Math.max(0, adjustedDef));
+    let adjustedDef = Math.max(0, effDef * (1 - defPenVal / 100));
+
     const critChance = Math.min(80, attacker.crit || 0);
     res.isCrit = Math.random() * 100 < critChance;
+
+    // Talent II: Ange de la Mort — crits ignore 50% DEF
+    if (res.isCrit && tb.critDefIgnore) {
+      adjustedDef = adjustedDef * 0.5;
+    }
+
+    const defFactor = 100 / (100 + Math.max(0, adjustedDef));
     const critMult = res.isCrit ? 1.5 + (tb.critDamage || 0) / 100 : 1;
-    const resFactor = Math.max(0.3, 1 - Math.min(70, defender.res || 0) / 100);
+
+    // Defender RES + Bastion RES bonus
+    let defenderRes = defender.res || 0;
+    if (tb.bastionRes && defender.hp < defender.maxHp * 0.5) {
+      defenderRes += (tb.bastionRes || 0);
+    }
+    const resFactor = Math.max(0.3, 1 - Math.min(70, defenderRes) / 100);
+
     const physMult = 1 + (tb.physicalDamage || 0) / 100;
     const elemDmgMult = 1 + (tb.elementalDamage || 0) / 100;
     const bossMult = defender.isBoss ? 1 + (tb.bossDamage || 0) / 100 : 1;
-    // Element-specific damage from artifact sets
+
+    // Element-specific damage from artifact sets + talent II
     let artElemMult = 1 + (tb.allDamage || 0) / 100;
-    if (attacker.element === 'fire' && tb.fireDamage) artElemMult += tb.fireDamage / 100;
-    if (attacker.element === 'water' && tb.waterDamage) artElemMult += tb.waterDamage / 100;
-    if (attacker.element === 'shadow' && tb.shadowDamage) artElemMult += tb.shadowDamage / 100;
+    const useConvergence = tb.convergenceAll;
+    if (useConvergence) {
+      // Convergence capstone: ALL element bonuses apply
+      artElemMult += (tb.fireDamage || 0) / 100;
+      artElemMult += (tb.waterDamage || 0) / 100;
+      artElemMult += (tb.shadowDamage || 0) / 100;
+      artElemMult += (tb.windDamage || 0) / 100;
+      artElemMult += (tb.earthDamage || 0) / 100;
+      artElemMult += (tb.lightDamage || 0) / 100;
+    } else {
+      // Only matching element
+      if (attacker.element === 'fire')   artElemMult += (tb.fireDamage || 0) / 100;
+      if (attacker.element === 'water')  artElemMult += (tb.waterDamage || 0) / 100;
+      if (attacker.element === 'shadow') artElemMult += (tb.shadowDamage || 0) / 100;
+      if (attacker.element === 'wind')   artElemMult += (tb.windDamage || 0) / 100;
+      if (attacker.element === 'earth')  artElemMult += (tb.earthDamage || 0) / 100;
+      if (attacker.element === 'light')  artElemMult += (tb.lightDamage || 0) / 100;
+    }
+
+    // Talent II: Weapon-type damage bonus
+    let weaponTypeMult = 1;
+    const wt = attacker.weaponType;
+    if (wt && wt !== 'shield') {
+      const wtKey = `weaponDmg_${wt}`;
+      const wtBonus = tb[wtKey] || 0;
+      weaponTypeMult += (tb.masterWeapons ? wtBonus * 2 : wtBonus) / 100;
+    }
+    // Shield special: handled as DEF/HP in stats, not as DMG mult
+
+    // Talent II: Execution — +X% DMG to targets < 30% HP
+    let executionMult = 1;
+    if (tb.executionDmg && defender.hp < defender.maxHp * 0.3) {
+      executionMult += (tb.executionDmg || 0) / 100;
+    }
+
     const variance = 0.9 + Math.random() * 0.2;
-    res.damage = Math.max(1, Math.floor(raw * elemMult * defFactor * resFactor * critMult * physMult * elemDmgMult * bossMult * artElemMult * variance));
+    res.damage = Math.max(1, Math.floor(raw * elemMult * defFactor * resFactor * critMult * physMult * elemDmgMult * bossMult * artElemMult * weaponTypeMult * executionMult * variance));
   }
   const healBonusMult = 1 + (tb.healBonus || 0) / 100;
   if (skill.healSelf) res.healed = Math.floor(attacker.maxHp * skill.healSelf / 100 * healBonusMult);
@@ -378,7 +442,24 @@ export const aiPickSkillSupport = (entity, allies) => {
 export const spdToInterval = (spd) => Math.max(500, Math.floor(3000 / (1 + spd / 50)));
 
 // ─── PVP Constants ───────────────────────────────────────────
+// ─── Talent II Bonus Merge ────────────────────────────────────
+// Merge Talent I + Talent II bonuses into a single object for statsAtFull / computeAttack
+export function mergeTalentBonuses(tb1 = {}, tb2 = {}) {
+  const merged = { ...tb1 };
+  for (const [key, val] of Object.entries(tb2)) {
+    if (typeof val === 'boolean') {
+      merged[key] = merged[key] || val;
+    } else if (typeof val === 'number') {
+      merged[key] = (merged[key] || 0) + val;
+    }
+  }
+  return merged;
+}
+
 export const PVP_DAMAGE_MULT = 0.55;  // All damage reduced in PVP (heals unaffected)
+export const PVP_HP_MULT = 3;         // All units get x3 HP in PVP (longer fights)
+export const PVP_DEF_MULT = 1.6;      // DEF is 60% more effective in PVP
+export const PVP_RES_MULT = 1.4;      // RES is 40% more effective in PVP
 export const PVP_DURATION_SEC = 90;
 export const PVP_TICK_MS = 100;
 

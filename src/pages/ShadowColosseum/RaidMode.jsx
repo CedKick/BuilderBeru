@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import shadowCoinManager from '../../components/ChibiSystem/ShadowCoinManager';
 import { computeTalentBonuses } from './talentTreeData';
+import { computeTalentBonuses2 } from './talentTree2Data';
 import {
   SPRITES, ELEMENTS, RARITY, CHIBIS,
   STAT_PER_POINT, STAT_ORDER, STAT_META, POINTS_PER_LEVEL, MAX_LEVEL,
@@ -13,6 +14,7 @@ import {
   applySkillUpgrades, computeAttack, aiPickSkill, spdToInterval,
   accountLevelFromXp, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT,
   getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
+  mergeTalentBonuses,
 } from './colosseumCore';
 import {
   HUNTERS, SUNG_SKILLS, RAID_BOSSES,
@@ -121,7 +123,9 @@ export default function RaidMode() {
     if (!chibi) return null;
     const lvData = coloData.chibiLevels[id] || { level: 1, xp: 0 };
     const allocated = coloData.statPoints[id] || {};
-    const tb = computeTalentBonuses(coloData.talentTree[id] || {});
+    const tb1 = computeTalentBonuses(coloData.talentTree[id] || {});
+    const tb2 = computeTalentBonuses2(coloData.talentTree2?.[id]);
+    const tb = mergeTalentBonuses(tb1, tb2);
     const artBonuses = computeArtifactBonuses(coloData.artifacts?.[id]);
     const wId = coloData.weapons?.[id];
     const weapBonuses = computeWeaponBonuses(wId, coloData.weaponCollection?.[wId] || 0);
@@ -182,13 +186,16 @@ export default function RaidMode() {
     if (!chibi) return null;
     const lvData = coloData.chibiLevels[id] || { level: 1, xp: 0 };
     const allocated = coloData.statPoints[id] || {};
-    const tb = computeTalentBonuses(coloData.talentTree[id] || {});
+    const tb1 = computeTalentBonuses(coloData.talentTree[id] || {});
+    const tb2 = computeTalentBonuses2(coloData.talentTree2?.[id]);
+    const tb = mergeTalentBonuses(tb1, tb2);
     const artBonuses = computeArtifactBonuses(coloData.artifacts?.[id]);
     const wId2 = coloData.weapons?.[id];
     const weapBonuses = computeWeaponBonuses(wId2, coloData.weaponCollection?.[wId2] || 0);
     const eqB = mergeEquipBonuses(artBonuses, weapBonuses);
     const evStars = HUNTERS[id] ? getHunterStars(loadRaidData(), id) : 0;
     const st = statsAtFull(chibi.base, chibi.growth, lvData.level, allocated, tb, eqB, evStars, coloData.accountBonuses);
+    const weaponType = wId2 && WEAPONS[wId2] ? WEAPONS[wId2].weaponType : null;
 
     // Hunter innate passive
     const hunterPassive = HUNTERS[id] ? (HUNTER_PASSIVE_EFFECTS[id] || null) : null;
@@ -254,7 +261,7 @@ export default function RaidMode() {
 
     return {
       id, name: chibi.name, element: chibi.element, class: chibi.class,
-      sprite: chibi.sprite, rarity: chibi.rarity,
+      sprite: chibi.sprite, rarity: chibi.rarity, weaponType,
       hp: finalHp, maxHp: finalHp,
       atk: finalAtk, def: finalDef, spd: finalSpd, crit: finalCrit, res: finalRes,
       mana, maxMana: mana, manaRegen, manaCostReduce,
