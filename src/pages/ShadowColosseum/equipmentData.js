@@ -142,8 +142,8 @@ export const RAID_ARTIFACT_SETS = {
   },
 };
 
-// All sets combined (for generation, bonuses, display)
-export const ALL_ARTIFACT_SETS = { ...ARTIFACT_SETS, ...RAID_ARTIFACT_SETS };
+// All sets combined (for generation, bonuses, display) — ARC2 added below after its definition
+export let ALL_ARTIFACT_SETS = { ...ARTIFACT_SETS, ...RAID_ARTIFACT_SETS };
 
 // Get active passives from equipped artifacts
 export function getActivePassives(equippedArtifacts) {
@@ -159,6 +159,7 @@ export function getActivePassives(equippedArtifacts) {
     if (!s) return;
     if (count >= 2 && s.passive2) passives.push({ ...s.passive2, setId, tier: 2 });
     if (count >= 4 && s.passive4) passives.push({ ...s.passive4, setId, tier: 4 });
+    if (count >= 8 && s.passive8) passives.push({ ...s.passive8, setId, tier: 8 });
   });
   return passives;
 }
@@ -458,6 +459,7 @@ export function computeArtifactBonuses(equippedArtifacts) {
     if (!setDef) return;
     if (count >= 2) Object.entries(setDef.bonus2).forEach(([k, v]) => { if (b[k] !== undefined) b[k] += v; });
     if (count >= 4) Object.entries(setDef.bonus4).forEach(([k, v]) => { if (b[k] !== undefined) b[k] += v; });
+    if (count >= 8 && setDef.bonus8) Object.entries(setDef.bonus8).forEach(([k, v]) => { if (b[k] !== undefined) b[k] += v; });
   });
 
   return b;
@@ -477,6 +479,7 @@ export function getActiveSetBonuses(equippedArtifacts) {
     if (!s) return;
     if (count >= 2) active.push({ set: s, pieces: count, bonus: s.bonus2Desc, tier: 2, hasPassive: !!s.passive2 });
     if (count >= 4) active.push({ set: s, pieces: count, bonus: s.bonus4Desc, tier: 4, hasPassive: !!s.passive4 });
+    if (count >= 8 && s.bonus8Desc) active.push({ set: s, pieces: count, bonus: s.bonus8Desc, tier: 8, hasPassive: !!s.passive8 });
   });
   return active;
 }
@@ -818,4 +821,140 @@ export function rollRaidWeaponDrop(raidTier, isFullClear = false) {
   const rarity = rarityPool[Math.floor(Math.random() * rarityPool.length)];
   const candidates = Object.values(WEAPONS).filter(w => !w.secret && w.rarity === rarity);
   return candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)].id : null;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ARC II ARTIFACT SETS (Nier Automata themed — stronger than standard)
+// ═══════════════════════════════════════════════════════════════
+
+export const ARC2_ARTIFACT_SETS = {
+  // ── Toughness (4p) — Crit offensif simple ──
+  toughness: {
+    id: 'toughness', name: 'Toughness', icon: '\uD83E\uDDF1', arc2: true,
+    color: 'text-yellow-300', bg: 'bg-yellow-500/15', border: 'border-yellow-500/30',
+    desc: 'Resistance et critiques devastatrices',
+    bonus2: { critRate: 8 }, bonus2Desc: 'CRIT Rate +8%',
+    bonus4: { critDamage: 32 }, bonus4Desc: 'CRIT DMG +32%',
+    passive2: null, passive4: null,
+  },
+
+  // ── Burning Curse (8p) — Glass cannon : plus de degats, plus fragile ──
+  burning_curse: {
+    id: 'burning_curse', name: 'Burning Curse', icon: '\uD83D\uDD25', arc2: true,
+    color: 'text-red-400', bg: 'bg-red-500/15', border: 'border-red-500/30',
+    desc: 'Malediction brulante — plus de degats, plus de risques',
+    bonus2: {}, bonus2Desc: '[Curse] Degats infliges +10%, Degats recus +20%. +0.1% DMG/tour (max 100x)',
+    bonus4: {}, bonus4Desc: '[Enhanced Curse] Degats infliges +20%, Degats recus +20%. +0.1% DMG/tour. [Rescue] Heal 25% PV si < 25% (1x)',
+    bonus8: {}, bonus8Desc: '[Burning Curse] Degats infliges +30%, Degats recus +20%. +0.2% DMG/tour (max 100x)',
+    passive2: {
+      trigger: 'onBattleStart', type: 'curse',
+      damageDealt: 0.10, damageTaken: 0.20, stackPerTurn: 0.001, maxStacks: 100,
+    },
+    passive4: {
+      trigger: 'onBattleStart', type: 'enhancedCurse',
+      damageDealt: 0.20, damageTaken: 0.20, stackPerTurn: 0.001, maxStacks: 100,
+      rescue: true, rescueThreshold: 0.25, rescueHeal: 0.25, rescueOnce: true,
+    },
+    passive8: {
+      trigger: 'onBattleStart', type: 'burningCurse',
+      damageDealt: 0.30, damageTaken: 0.20, stackPerTurn: 0.002, maxStacks: 100,
+    },
+  },
+
+  // ── Burning Greed (8p) — Break + montee crit en equipe ──
+  burning_greed: {
+    id: 'burning_greed', name: 'Burning Greed', icon: '\uD83D\uDC8E', arc2: true,
+    color: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/30',
+    desc: "L'avidite brulante — brise les armures, renforce les critiques",
+    bonus2: {}, bonus2Desc: '[Greed] Sur Break : CRIT Rate +1%/stack (max 10x, CD 2 tours)',
+    bonus4: {}, bonus4Desc: '[Enhanced Greed] Sur Break : CRIT Rate +2%/stack (max 10x, CD 1 tour)',
+    bonus8: { critRate: 15, critDamage: 30 },
+    bonus8Desc: '[Burning Greed] Break +30% sur faiblesse. Equipe : CRIT Rate +15%, CRIT DMG +30%',
+    passive2: {
+      trigger: 'onBreakHit', type: 'greed',
+      critPerStack: 1, maxStacks: 10, cooldown: 2,
+    },
+    passive4: {
+      trigger: 'onBreakHit', type: 'enhancedGreed',
+      critPerStack: 2, maxStacks: 10, cooldown: 1,
+    },
+    passive8: {
+      trigger: 'always', type: 'burningGreed',
+      breakBonus: 0.30, teamCritRate: 15, teamCritDamage: 30,
+    },
+  },
+
+  // ── Iron Will (4p) — Tank / Ultimate devastateur ──
+  iron_will: {
+    id: 'iron_will', name: 'Iron Will', icon: '\u2694\uFE0F', arc2: true,
+    color: 'text-blue-300', bg: 'bg-blue-500/15', border: 'border-blue-500/30',
+    desc: 'Volonte de fer — defense imprenable et ultimate devastateur',
+    bonus2: { defPercent: 8 }, bonus2Desc: 'DEF +8%',
+    bonus4: {}, bonus4Desc: 'Ultimate : DEF +5% par utilisation (max 5x). Degats Ultimate +50%',
+    passive2: null,
+    passive4: {
+      trigger: 'onUltimate', type: 'ironWill',
+      defPerStack: 0.05, maxStacks: 5, ultDamageBonus: 0.50,
+    },
+  },
+
+  // ── Chaotic Infamy (8p) — Basic Skill snowball + risk/reward ──
+  chaotic_infamy: {
+    id: 'chaotic_infamy', name: 'Chaotic Infamy', icon: '\uD83D\uDC79', arc2: true,
+    color: 'text-purple-400', bg: 'bg-purple-500/15', border: 'border-purple-500/30',
+    desc: 'Infamie chaotique — montee en puissance du Basic Skill',
+    bonus2: {}, bonus2Desc: '[Infamy] Par skill : Basic DMG +1.5%/stack (max 20x), Degats recus +1%/stack (max 20x)',
+    bonus4: {}, bonus4Desc: '[Enhanced Infamy] Basic DMG +2.5%/stack (max 20x), Degats recus +1%/stack. Basic : MP +5% (CD 3 tours)',
+    bonus8: {},
+    bonus8Desc: '[Chaotic Infamy] En equipe : Degats +40%. A 10 stacks : Basic + Ultimate DMG +100%. Retire Degats recus. MP +5% sur Basic (CD 3 tours)',
+    passive2: {
+      trigger: 'onSkillUse', type: 'infamy',
+      basicDmgPerStack: 0.015, damageTakenPerStack: 0.01, maxStacks: 20,
+    },
+    passive4: {
+      trigger: 'onSkillUse', type: 'enhancedInfamy',
+      basicDmgPerStack: 0.025, damageTakenPerStack: 0.01, maxStacks: 20,
+      mpRecovery: 0.05, mpCooldown: 3,
+    },
+    passive8: {
+      trigger: 'always', type: 'chaoticInfamy',
+      teamDamage: 0.40, chaoticThreshold: 10,
+      chaoticBonus: 1.00, removeDamageTaken: true,
+      mpRecovery: 0.05, mpCooldown: 3,
+    },
+  },
+};
+
+// Merge ARC2 sets into ALL_ARTIFACT_SETS (defined earlier as let)
+ALL_ARTIFACT_SETS = { ...ALL_ARTIFACT_SETS, ...ARC2_ARTIFACT_SETS };
+
+export function generateArc2Artifact(rarity) {
+  const setKeys = Object.keys(ARC2_ARTIFACT_SETS);
+  const set = setKeys[Math.floor(Math.random() * setKeys.length)];
+  const slot = SLOT_ORDER[Math.floor(Math.random() * SLOT_ORDER.length)];
+  const slotDef = ARTIFACT_SLOTS[slot];
+  const mainStatId = slotDef.mainStats[Math.floor(Math.random() * slotDef.mainStats.length)];
+
+  const subCount = RARITY_SUB_COUNT[rarity].initial;
+  const availableSubs = SUB_STAT_POOL.filter(s => s.id !== mainStatId);
+  const subs = [];
+  const usedIds = new Set();
+  for (let i = 0; i < subCount; i++) {
+    const candidates = availableSubs.filter(s => !usedIds.has(s.id));
+    if (candidates.length === 0) break;
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    usedIds.add(pick.id);
+    // ARC II artifacts roll +30% better sub-stats
+    const value = Math.floor((pick.range[0] + Math.random() * (pick.range[1] - pick.range[0] + 1)) * 1.3);
+    subs.push({ id: pick.id, value });
+  }
+
+  return {
+    uid: `art_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+    set, slot, rarity, isArc2: true,
+    mainStat: mainStatId,
+    mainValue: MAIN_STAT_VALUES[mainStatId].base,
+    level: 0,
+    subs,
+  };
 }

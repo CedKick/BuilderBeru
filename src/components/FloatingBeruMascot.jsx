@@ -132,6 +132,41 @@ const DRAG_MESSAGES = [
   "*s'accroche au viewport* NOOOON !", "C'est du drag & DROP d'ombre ca ?!",
 ];
 
+// ── SHAKE ESCALATION DIALOGUES (varied per stage) ──
+const SHAKE_STAGE1 = [
+  "He ! Du calme !", "Pourquoi tu me secoues ?!", "ARRETE de me bouger comme ca !",
+  "C'est pas un shaker a cocktail ici !", "Je vais vomir mes pixels...",
+  "Tu me confonds avec une manette ?!", "STOP. J'ai le mal de mer CSS !",
+  "Mes sprites se melangent...", "Je sens mes keyframes qui se decalent !",
+  "OULA ! Mon transform: rotate() debloque !", "T'as un probleme toi...",
+  "C'est quoi TON PROBLEME ?!", "IGRIS ! L'humain est bizarre !",
+];
+const SHAKE_STAGE2 = [
+  "OK CA SUFFIT !!! Tu veux QUOI ?!", "MES OMBRES ! ELLES SE DECROCHENT !",
+  "JE VAIS PERDRE MES HP EN VRAI LA !", "Stop stop STOP STOOOP !!!",
+  "Mon z-index va exploser !", "Tu veux que je crash ?! C'EST CA ?!",
+  "MON OVERFLOW EST EN DANGER !", "Je sens que ca va mal finir...",
+  "WARNING: beru.stability < 10% !", "*bruit de pixels qui se fissurent*",
+  "TU ME CHERCHES ?! Tu vas me TROUVER !", "JE PREVIENS : encore un peu et je PETE un plomb !",
+  "Mon DOM tremble... c'est PAS bon signe !", "Mes event listeners LACHENT !",
+];
+const SHAKE_STAGE3 = [
+  "AAAAAAAAAHHHH !!! C'EST LA FIN !!!", "ERREUR FATALE ! ERREUR FATALE !",
+  "MES PIXELS ! ILS FONDENT !! NOOOON !", "LE VIEWPORT ! IL SE DECHIRE !!!",
+  "JE VOIS LA LUMIERE... c'est un <div> blanc...", "MAYDAY MAYDAY ! BERU EN PERDITION !",
+  "CA Y EST ! TU AS CASSE LE CSS !!!", "MON ANIMATION-FILL-MODE EST... *static*",
+  "LE SHADOW DOM S'EFFONDRE !!!", "JINWOO-SAMA ! PARDONNEZ-MOI ! JE N'AI PAS PU PROTEGER LE SITE !",
+  "SYSTEM.EXIT(1) ! ABORT ! ABORT !", "TypeError: beru is not a function... beru is DEAD",
+  "10... 9... 8... 7...", "*BRUIT DE VERRE QUI SE BRISE*",
+];
+const SHAKE_PREEXPLOSION = [
+  "Tu l'auras voulu...", "Bon. C'est fini. Pour TOUT LE MONDE.",
+  "J'espere que t'es fier de toi.", "Ca va couter cher en npm install...",
+  "Adieu, monde cruel. Adieu, CSS Grid.", "self.destruct() initialise...",
+  "Souviens-toi de moi... quand le site sera MORT.",
+  "Je reviendrais... dans un autre <iframe>...",
+];
+
 const KONAMI_MESSAGE = "TU AS TROUVE LE CODE SECRET ! Le Monarque des Ombres t'observe... +1000 respect.";
 
 const EDGE_MESSAGES = [
@@ -878,6 +913,18 @@ const FloatingBeruMascot = () => {
   const toldStoriesRef = useRef([]);
   const storyActiveRef = useRef(null);
   const hasRealDestroyedRef = useRef(false);
+
+  // Shake detection refs
+  const shakeRef = useRef({
+    lastX: 0, lastY: 0,        // previous drag position
+    lastDirX: 0, lastDirY: 0,  // previous direction sign
+    reversals: 0,               // direction change count
+    stage: 0,                   // current escalation stage (0-4)
+    lastMsgTime: 0,             // debounce messages
+    shakeStart: 0,              // when shaking began
+    totalShakeTime: 0,          // accumulated shake duration
+  });
+  const [shakeStage, setShakeStage] = useState(0); // for visual effects rendering
 
   // Keep refs in sync
   useEffect(() => { moodRef.current = mood; }, [mood]);
@@ -1788,8 +1835,47 @@ const FloatingBeruMascot = () => {
       x: clientX - posRef.current.x,
       y: clientY - posRef.current.y,
     };
+    // Reset shake tracking
+    shakeRef.current = { lastX: clientX, lastY: clientY, lastDirX: 0, lastDirY: 0, reversals: 0, stage: 0, lastMsgTime: 0, shakeStart: 0, totalShakeTime: 0 };
+    setShakeStage(0);
     showBubble(randomFrom(DRAG_MESSAGES), 2000);
     setMood('excited');
+  };
+
+  // Shake explosion: 90% fake, 10% real
+  const triggerShakeExplosion = () => {
+    setIsDragging(false);
+    setShakeStage(0);
+    const isReal = !hasRealDestroyedRef.current && Math.random() < 0.1;
+    showBubble(randomFrom(SHAKE_PREEXPLOSION), 0);
+    spawnParticles(pos.x, pos.y, 12);
+
+    setTimeout(() => {
+      if (isReal) {
+        hasRealDestroyedRef.current = true;
+        triggerRealDestruction();
+      } else {
+        // Fake explosion — screen goes white, then "recovers"
+        setScreenDestroyed(true);
+        setMood('idle');
+        showBubble("...", 0);
+        setTimeout(() => {
+          setScreenDestroyed(false);
+          const msgs = [
+            "HAHA ! T'y as cru hein ? Le site va TRES bien.",
+            "FAKE ! Je suis INDESTRUCTIBLE. Enfin... presque.",
+            "LOL. T'as eu peur ? Moi aussi un peu ngl.",
+            "*respire* Ok c'etait close. ARRETE de me secouer.",
+            "Erreur 418 : Je suis une theiere, pas un punching ball.",
+            "System.out.println('lol noob') — Ca marche pas sur moi !",
+            "CTRL+Z ! CTRL+Z ! ... Ah non c'est bon en fait.",
+            "Tu croyais vraiment pouvoir me kill ? MDR. rm -rf /beru ? DENIED.",
+          ];
+          showBubble(randomFrom(msgs), 5000);
+          setMood('excited');
+        }, 2500);
+      }
+    }, 1500);
   };
 
   useEffect(() => {
@@ -1803,12 +1889,90 @@ const FloatingBeruMascot = () => {
       posRef.current = { x: newX, y: newY };
       targetRef.current = { x: newX, y: newY };
       setPos({ x: newX, y: newY });
+
+      // ── Shake detection: track direction reversals ──
+      const sk = shakeRef.current;
+      const dx = clientX - sk.lastX;
+      const dy = clientY - sk.lastY;
+      const dirX = dx > 2 ? 1 : dx < -2 ? -1 : 0;
+      const dirY = dy > 2 ? 1 : dy < -2 ? -1 : 0;
+
+      // Count reversals (direction flips)
+      if (dirX !== 0 && sk.lastDirX !== 0 && dirX !== sk.lastDirX) sk.reversals++;
+      if (dirY !== 0 && sk.lastDirY !== 0 && dirY !== sk.lastDirY) sk.reversals++;
+
+      if (dirX !== 0) sk.lastDirX = dirX;
+      if (dirY !== 0) sk.lastDirY = dirY;
+      sk.lastX = clientX;
+      sk.lastY = clientY;
+
+      // Track shake duration
+      const now = Date.now();
+      if (sk.reversals >= 4 && sk.shakeStart === 0) sk.shakeStart = now;
+      if (sk.shakeStart > 0) sk.totalShakeTime = now - sk.shakeStart;
+
+      // Determine stage from reversals + time
+      let newStage = 0;
+      if (sk.reversals >= 30 || sk.totalShakeTime > 8000) newStage = 4;
+      else if (sk.reversals >= 18 || sk.totalShakeTime > 5500) newStage = 3;
+      else if (sk.reversals >= 10 || sk.totalShakeTime > 3000) newStage = 2;
+      else if (sk.reversals >= 5) newStage = 1;
+
+      // Stage changed → react!
+      if (newStage > sk.stage) {
+        sk.stage = newStage;
+        setShakeStage(newStage);
+        const msgDebounce = 800;
+
+        if (newStage === 1 && now - sk.lastMsgTime > msgDebounce) {
+          sk.lastMsgTime = now;
+          showBubble(randomFrom(SHAKE_STAGE1), 2000);
+          setMood('excited');
+          spawnParticles(posRef.current.x, posRef.current.y, 3);
+        } else if (newStage === 2 && now - sk.lastMsgTime > msgDebounce) {
+          sk.lastMsgTime = now;
+          showBubble(randomFrom(SHAKE_STAGE2), 2500);
+          setMood('excited');
+          spawnParticles(posRef.current.x, posRef.current.y, 6);
+        } else if (newStage === 3 && now - sk.lastMsgTime > msgDebounce) {
+          sk.lastMsgTime = now;
+          showBubble(randomFrom(SHAKE_STAGE3), 3000);
+          spawnParticles(posRef.current.x, posRef.current.y, 10);
+        } else if (newStage === 4) {
+          triggerShakeExplosion();
+          return;
+        }
+      }
+      // Extra messages while shaking at stage 2+
+      else if (sk.stage >= 2 && now - sk.lastMsgTime > 2000) {
+        sk.lastMsgTime = now;
+        const pool = sk.stage === 3 ? SHAKE_STAGE3 : SHAKE_STAGE2;
+        showBubble(randomFrom(pool), 1800);
+      }
     };
 
     const handleUp = () => {
+      const wasShaking = shakeRef.current.stage;
       setIsDragging(false);
+      setShakeStage(0);
+      shakeRef.current.stage = 0;
+      shakeRef.current.reversals = 0;
+      shakeRef.current.shakeStart = 0;
+      shakeRef.current.totalShakeTime = 0;
       setMood('idle');
-      showBubble("Bon... je reste la alors.", 2000);
+      if (wasShaking >= 2) {
+        const relief = [
+          "*respire* C'est bon... c'est fini... je suis intact...",
+          "OHHH mon dieu. J'ai cru que j'allais mourir. En JAVASCRIPT.",
+          "Plus JAMAIS. Tu m'entends ? PLUS. JAMAIS.",
+          "Ok. Je vais aller me coucher. Bonne nuit. Non je suis pas en colere. Si un peu.",
+          "*tremble encore* Mes... mes keyframes... elles reviennent...",
+          "J'ai vu ma vie defiler. C'etait que du CSS.",
+        ];
+        showBubble(randomFrom(relief), 4000);
+      } else {
+        showBubble("Bon... je reste la alors.", 2000);
+      }
     };
 
     window.addEventListener('mousemove', handleMove);
@@ -1900,6 +2064,31 @@ const FloatingBeruMascot = () => {
         @keyframes beruFloat {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-8px); }
+        }
+        @keyframes beruShakeMild {
+          0%, 100% { transform: translateX(0) rotate(0deg); }
+          25% { transform: translateX(-3px) rotate(-2deg); }
+          75% { transform: translateX(3px) rotate(2deg); }
+        }
+        @keyframes beruShakeMedium {
+          0%, 100% { transform: translateX(0) rotate(0deg); }
+          20% { transform: translateX(-5px) rotate(-5deg); }
+          40% { transform: translateX(4px) rotate(4deg); }
+          60% { transform: translateX(-6px) rotate(-3deg); }
+          80% { transform: translateX(5px) rotate(5deg); }
+        }
+        @keyframes beruShakeViolent {
+          0% { transform: translate(0, 0) rotate(0deg); }
+          10% { transform: translate(-8px, 3px) rotate(-8deg); }
+          20% { transform: translate(6px, -4px) rotate(7deg); }
+          30% { transform: translate(-7px, 2px) rotate(-6deg); }
+          40% { transform: translate(8px, -3px) rotate(9deg); }
+          50% { transform: translate(-5px, 5px) rotate(-10deg); }
+          60% { transform: translate(7px, -2px) rotate(8deg); }
+          70% { transform: translate(-8px, 4px) rotate(-7deg); }
+          80% { transform: translate(6px, -5px) rotate(6deg); }
+          90% { transform: translate(-7px, 3px) rotate(-9deg); }
+          100% { transform: translate(0, 0) rotate(0deg); }
         }
         @keyframes beruSleep {
           0%, 100% { transform: translateY(0px) rotate(-5deg); }
@@ -2273,12 +2462,24 @@ const FloatingBeruMascot = () => {
               onTouchStart={handleDragStart}
               className="cursor-grab active:cursor-grabbing select-none"
               style={{
-                animation: mood === 'sleeping'
-                  ? `beruSleep 5s ease-in-out infinite`
-                  : secretMode === 'konami'
-                    ? 'beruDisco 1s linear infinite'
-                    : `beruFloat ${getFloatSpeed()} ease-in-out infinite`,
-                filter: secretMode === 'konami' ? undefined : getMoodFilter(),
+                animation: shakeStage >= 3
+                  ? 'beruShakeViolent 0.08s linear infinite'
+                  : shakeStage >= 2
+                    ? 'beruShakeMedium 0.12s linear infinite'
+                    : shakeStage >= 1
+                      ? 'beruShakeMild 0.2s linear infinite'
+                      : mood === 'sleeping'
+                        ? 'beruSleep 5s ease-in-out infinite'
+                        : secretMode === 'konami'
+                          ? 'beruDisco 1s linear infinite'
+                          : `beruFloat ${getFloatSpeed()} ease-in-out infinite`,
+                filter: shakeStage >= 3
+                  ? 'saturate(2) brightness(1.3) hue-rotate(20deg)'
+                  : shakeStage >= 2
+                    ? 'saturate(1.5) brightness(1.15) drop-shadow(0 0 8px rgba(255,50,50,0.6))'
+                    : shakeStage >= 1
+                      ? 'brightness(1.1) drop-shadow(0 0 4px rgba(255,150,0,0.4))'
+                      : secretMode === 'konami' ? undefined : getMoodFilter(),
                 transform: `scaleX(${facingLeft ? -1 : 1})`,
               }}
             >
@@ -2290,6 +2491,21 @@ const FloatingBeruMascot = () => {
                 draggable={false}
               />
             </motion.div>
+
+            {/* Shake warning indicators */}
+            {shakeStage >= 2 && (
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-lg pointer-events-none"
+                style={{ animation: 'beruShakeMild 0.15s linear infinite' }}>
+                {shakeStage >= 3 ? '\uD83D\uDCA5' : '\u26A0\uFE0F'}
+              </div>
+            )}
+            {shakeStage >= 3 && (
+              <>
+                <div className="absolute -top-2 -left-3 text-sm pointer-events-none" style={{ animation: 'particleFly 0.6s linear infinite' }}>{'\u2728'}</div>
+                <div className="absolute -top-2 -right-3 text-sm pointer-events-none" style={{ animation: 'particleFly 0.8s linear infinite 0.2s' }}>{'\uD83D\uDD25'}</div>
+                <div className="absolute -bottom-2 left-0 text-sm pointer-events-none" style={{ animation: 'particleFly 0.7s linear infinite 0.4s' }}>{'\u26A1'}</div>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

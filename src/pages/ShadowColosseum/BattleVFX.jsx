@@ -52,6 +52,7 @@ export function BattleStyles() {
       @keyframes defeatPulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
       @keyframes nodePulse { 0%,100%{box-shadow:0 0 4px rgba(251,191,36,0.3)} 50%{box-shadow:0 0 12px rgba(251,191,36,0.6)} }
       @keyframes statGlow { 0%,100%{opacity:0.5} 50%{opacity:1} }
+      @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
       @keyframes raidChibiFlash { 0%{box-shadow:0 0 0 rgba(255,255,255,0)} 30%{box-shadow:0 0 15px rgba(255,255,255,0.6)} 100%{box-shadow:0 0 0 rgba(255,255,255,0)} }
       @keyframes raidBossHit { 0%{box-shadow:0 0 0 rgba(255,0,0,0)} 30%{box-shadow:0 0 20px rgba(255,0,0,0.5)} 100%{box-shadow:0 0 0 rgba(255,0,0,0)} }
       @keyframes dmgFloatUp { 0%{opacity:1;transform:translateY(0) scale(0.6)} 20%{opacity:1;transform:translateY(-8px) scale(1.1)} 100%{opacity:0;transform:translateY(-40px) scale(0.9)} }

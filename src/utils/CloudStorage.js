@@ -308,6 +308,39 @@ class CloudStorageManager {
         self._scheduleSync(key);
       }
     };
+
+    // ─── Safety nets: never lose progression ─────────────────
+
+    // 1. beforeunload — flush pending syncs when closing browser/tab
+    //    Uses sendBeacon for reliability (fetch can be cancelled during unload)
+    window.addEventListener('beforeunload', () => {
+      if (self._syncQueue.size === 0) return;
+      const deviceId = getDeviceId();
+      for (const key of self._syncQueue) {
+        const data = self.loadLocal(key);
+        if (data !== null) {
+          navigator.sendBeacon(
+            `${API_BASE}/save`,
+            new Blob([JSON.stringify({ deviceId, key, data })], { type: 'application/json' })
+          );
+        }
+      }
+      self._syncQueue.clear();
+    });
+
+    // 2. visibilitychange — sync when user switches tab or minimizes mobile browser
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && self._initialized && self._syncQueue.size > 0) {
+        self._flushQueue();
+      }
+    });
+
+    // 3. Periodic sync every 60s — safety net
+    setInterval(() => {
+      if (self._initialized && self._syncQueue.size > 0) {
+        self._flushQueue();
+      }
+    }, 60000);
   }
 
   get isOnline() { return this._online; }

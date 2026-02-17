@@ -37,7 +37,37 @@ import {
   MAX_WEAPON_AWAKENING, WEAPON_AWAKENING_PASSIVES, rollWeaponDrop,
   RARITY_SUB_COUNT,
   computeWeaponILevel, computeArtifactILevel, computeEquipILevel,
+  ARC2_ARTIFACT_SETS, generateArc2Artifact,
 } from './equipmentData';
+import {
+  isArc2Unlocked, ARC2_STAGES, ARC2_TIER_NAMES, ARC2_STORIES,
+  ARC2_LOCKED_BERU_DIALOGUES, ARC2_BEBE_MACHINE_REACTIONS, GRIMOIRE_WEISS,
+} from './arc2Data';
+
+// ─── StoryTypewriter — char-by-char text reveal ──────────────
+const StoryTypewriter = ({ text, speaker }) => {
+  const [displayed, setDisplayed] = useState('');
+  const [done, setDone] = useState(false);
+  const speed = speaker === 'narrator' ? 28 : 22; // ms per char
+  useEffect(() => {
+    if (!text) { setDone(true); return; }
+    setDisplayed('');
+    setDone(false);
+    let i = 0;
+    const id = setInterval(() => {
+      i++;
+      setDisplayed(text.slice(0, i));
+      if (i >= text.length) { clearInterval(id); setDone(true); }
+    }, speed);
+    return () => clearInterval(id);
+  }, [text]);
+  return (
+    <p className={`text-sm leading-relaxed ${speaker === 'narrator' ? 'text-gray-400 italic' : 'text-gray-200'}`}>
+      {displayed}
+      {!done && <span className="inline-block w-0.5 h-3.5 bg-purple-400 ml-0.5 animate-pulse align-middle" />}
+    </p>
+  );
+};
 
 // Unified lookup helpers — works for both shadow chibis and hunters
 const getChibiData = (id) => CHIBIS[id] || HUNTERS[id] || null;
@@ -156,7 +186,7 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0 });
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {} });
 const loadData = () => {
   try {
     const d = { ...defaultData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) };
@@ -177,6 +207,14 @@ const loadData = () => {
     if (d.accountXp === undefined) d.accountXp = 0;
     if (!d.accountBonuses) d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
     if (d.accountAllocations === undefined) d.accountAllocations = 0;
+    // ARC II migration
+    if (d.arc2Unlocked === undefined) d.arc2Unlocked = false;
+    if (!d.arc2StagesCleared) d.arc2StagesCleared = {};
+    if (!d.arc2StoriesWatched) d.arc2StoriesWatched = {};
+    if (d.arc2ClickCount === undefined) d.arc2ClickCount = 0;
+    if (d.grimoireWeiss === undefined) d.grimoireWeiss = false;
+    if (!d.arc2Team) d.arc2Team = [null, null, null];
+    if (!d.arc2StarsRecord) d.arc2StarsRecord = {};
     // Migration: stagesCleared array → object { [id]: { maxStars } }
     if (Array.isArray(d.stagesCleared)) {
       const m = {};
@@ -207,6 +245,12 @@ export default function ShadowColosseum() {
   const [manageTarget, setManageTarget] = useState(null); // chibi ID for stats/skilltree views
   const [activeTree, setActiveTree] = useState('fury'); // talent I tree tab
   const [talentTab, setTalentTab] = useState(1); // 1 = Talent I, 2 = Talent II
+  const [t2Zoom, setT2Zoom] = useState(1);
+  const [t2Pan, setT2Pan] = useState({ x: 0, y: 0 });
+  const [t2SelectedNode, setT2SelectedNode] = useState(null);
+  const [t2Dragging, setT2Dragging] = useState(false);
+  const t2DragRef = useRef({ sx: 0, sy: 0, px: 0, py: 0 });
+  const t2PinchRef = useRef({ dist: 0, zoom: 1 });
   const [chibiRage, setChibiRage] = useState(null); // { id, level, text, anim }
   const [shopEnhTarget, setShopEnhTarget] = useState(null); // index in artifactInventory
   const [shopEnhEquipKey, setShopEnhEquipKey] = useState(null); // "chibiId|slotId"
@@ -228,6 +272,16 @@ export default function ShadowColosseum() {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [chibisCollapsed, setChibisCollapsed] = useState(false);
   const [huntersCollapsed, setHuntersCollapsed] = useState(false);
+  const [activeArc, setActiveArc] = useState(1); // 1 or 2 — tab switcher
+  // ARC II state
+  const [arc2StoryTier, setArc2StoryTier] = useState(null);
+  const [arc2StoryIdx, setArc2StoryIdx] = useState(0);
+  const [arc2SelStage, setArc2SelStage] = useState(null);
+  const [arc2Team, setArc2Team] = useState([null, null, null]);
+  const [arc2PickSlot, setArc2PickSlot] = useState(null);
+  const [arc2Star, setArc2Star] = useState(0);
+  const [arc2Battle, setArc2Battle] = useState(null); // full 3v1 battle state
+  const [arc2Filter, setArc2Filter] = useState({ element: 'all', sort: 'level' }); // team picker filters
   const autoReplayRef = useRef(false);
   const clickCountRef = useRef({});
   const clickTimerRef = useRef({});
@@ -323,6 +377,336 @@ export default function ShadowColosseum() {
   const isStageCleared = (id) => id in data.stagesCleared;
   const getMaxStars = (id) => data.stagesCleared[id]?.maxStars ?? -1;
   const isStageUnlocked = (idx) => idx === 0 || isStageCleared(STAGES[idx - 1].id);
+
+  // ─── ARC II helpers ─────────────────────────────────────────
+  const arc2Unlocked = isArc2Unlocked(data);
+  const isArc2StageCleared = (id) => id in data.arc2StagesCleared;
+  const getArc2MaxStars = (id) => data.arc2StagesCleared[id]?.maxStars ?? -1;
+  const isArc2StageUnlocked = (idx) => idx === 0 || isArc2StageCleared(ARC2_STAGES[idx - 1].id);
+
+  const handleArc2LockedClick = () => {
+    const clickCount = data.arc2ClickCount || 0;
+    const dialogueIdx = Math.min(clickCount, ARC2_LOCKED_BERU_DIALOGUES.length - 1);
+
+    // Dispatch Beru dialogue
+    window.dispatchEvent(new CustomEvent('beru-react', {
+      detail: { message: ARC2_LOCKED_BERU_DIALOGUES[dialogueIdx], mood: clickCount < 3 ? 'neutral' : clickCount < 6 ? 'suspicious' : 'panicked' },
+    }));
+
+    // Check if Bebe Machine companions are active
+    try {
+      const companions = JSON.parse(localStorage.getItem('beru_companions') || '[]');
+      const hasGirl = companions.includes('bebe_machine');
+      const hasBoy = companions.includes('bebe_machine_boy');
+
+      if (hasGirl && hasBoy && clickCount >= 3) {
+        // Pair reaction
+        const pair = ARC2_BEBE_MACHINE_REACTIONS.pair[Math.min(Math.floor((clickCount - 3) / 2), ARC2_BEBE_MACHINE_REACTIONS.pair.length - 1)];
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('beru-react', {
+            detail: { type: 'companion-react', companionId: 'bebe_machine', message: pair.girl },
+          }));
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('beru-react', {
+              detail: { type: 'companion-react', companionId: 'bebe_machine_boy', message: pair.boy },
+            }));
+          }, 1500);
+        }, 2000);
+      } else if (hasGirl && clickCount >= 2) {
+        const msgs = ARC2_BEBE_MACHINE_REACTIONS.girl;
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('beru-react', {
+            detail: { type: 'companion-react', companionId: 'bebe_machine', message: msgs[Math.min(clickCount - 2, msgs.length - 1)] },
+          }));
+        }, 2000);
+      } else if (hasBoy && clickCount >= 2) {
+        const msgs = ARC2_BEBE_MACHINE_REACTIONS.boy;
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('beru-react', {
+            detail: { type: 'companion-react', companionId: 'bebe_machine_boy', message: msgs[Math.min(clickCount - 2, msgs.length - 1)] },
+          }));
+        }, 2000);
+      }
+    } catch {}
+
+    // Increment click count
+    setData(prev => ({ ...prev, arc2ClickCount: (prev.arc2ClickCount || 0) + 1 }));
+  };
+
+  // ─── ARC II 3v1 Battle Engine ─────────────────────────────
+
+  const ARC2_POWER_SCALE = (tier) => 3 + tier * 0.5; // skill power mult: t1=3.5x, t6=6x
+
+  const buildArc2Fighter = (id) => {
+    const c = getChibiData(id);
+    if (!c) return null;
+    const { level } = getChibiLevel(id);
+    const alloc = data.statPoints[id] || {};
+    const tb = getChibiTalentBonuses(id);
+    const eqB = getChibiEquipBonuses(id);
+    const evS = getChibiEveilStars(id);
+    const fs = statsAtFull(c.base, c.growth, level, alloc, tb, eqB, evS, data.accountBonuses);
+    // Hunter passives
+    const hpb = HUNTER_PASSIVE_EFFECTS[id];
+    if (hpb) {
+      if (hpb.hpPercent) fs.hp = Math.floor(fs.hp * (1 + hpb.hpPercent / 100));
+      if (hpb.atkPercent) fs.atk = Math.floor(fs.atk * (1 + hpb.atkPercent / 100));
+      if (hpb.defPercent) fs.def = Math.floor(fs.def * (1 + hpb.defPercent / 100));
+      if (hpb.spdPercent) fs.spd = Math.floor(fs.spd * (1 + hpb.spdPercent / 100));
+      if (hpb.critFlat) fs.crit += hpb.critFlat;
+      if (hpb.resFlat) fs.res += hpb.resFlat;
+    }
+    const manaCostMult = Math.max(0.5, 1 - (fs.manaCostReduce || 0) / 100);
+    const skills = (c.skills || []).map((sk, i) => {
+      const up = applySkillUpgrades(sk, data.skillUpgrades?.[id]?.[i] || 0);
+      return { ...up, cd: 0, manaCost: Math.floor(getSkillManaCost(up) * manaCostMult) };
+    });
+    return {
+      id, name: c.name, sprite: getChibiSprite(id), element: c.element,
+      hp: fs.hp, maxHp: fs.hp, atk: fs.atk, def: fs.def,
+      spd: fs.spd, crit: Math.min(80, fs.crit), res: Math.min(70, fs.res),
+      mana: fs.mana || 100, maxMana: fs.mana || 100, manaRegen: fs.manaRegen || BASE_MANA_REGEN,
+      skills, buffs: [], alive: true, tb: { ...tb, ...eqB }, level,
+    };
+  };
+
+  const startArc2Battle = () => {
+    const stage = ARC2_STAGES[arc2SelStage];
+    if (!stage) return;
+    const fighters = arc2Team.filter(Boolean).map(id => buildArc2Fighter(id)).filter(Boolean);
+    if (fighters.length === 0) return;
+    // Save team for "Previous Team" button
+    setData(prev => ({ ...prev, arc2LastTeam: arc2Team.filter(Boolean) }));
+    const sc = getStarScaledStats(stage, arc2Star);
+    const boss = {
+      id: stage.id, name: stage.name, sprite: stage.sprite || '', element: stage.element,
+      hp: sc.hp, maxHp: sc.hp, atk: sc.atk, def: sc.def, spd: sc.spd,
+      crit: sc.crit, res: sc.res, skills: stage.skills.map(s => ({ ...s, cd: 0 })),
+      buffs: [], alive: true, mana: 999, maxMana: 999, emoji: stage.emoji,
+    };
+    // Build SPD-based turn order
+    const entities = fighters.map((_, i) => ({ type: 'team', idx: i, spd: fighters[i].spd }))
+      .concat([{ type: 'boss', spd: boss.spd }]);
+    entities.sort((a, b) => b.spd - a.spd || (a.type === 'boss' ? -1 : 1));
+    const first = entities[0];
+    setArc2Battle({
+      team: fighters, boss, turnOrder: entities, currentTurn: 0, round: 1,
+      phase: first.type === 'team' ? 'pick' : 'boss_act',
+      log: [], star: arc2Star, stageIdx: arc2SelStage, bossTier: stage.tier,
+      lastAction: null, isBoss: stage.isBoss,
+    });
+    setView('arc2_battle');
+  };
+
+  const arc2PlayerAction = (skillIdx) => {
+    setArc2Battle(prev => {
+      if (!prev || prev.phase !== 'pick') return prev;
+      try {
+        const b = JSON.parse(JSON.stringify(prev));
+        const entity = b.turnOrder[b.currentTurn];
+        if (!entity || entity.type !== 'team') return prev;
+        const fighter = b.team[entity.idx];
+        if (!fighter || !fighter.alive) return prev;
+        const skill = fighter.skills[skillIdx];
+        if (!skill || skill.cd > 0 || (skill.manaCost || 0) > (fighter.mana || 0)) return prev;
+        fighter.mana = (fighter.mana || 0) - (skill.manaCost || 0);
+        const result = computeAttack(fighter, skill, b.boss, fighter.tb || {});
+        const dmg = result.damage || 0;
+        b.boss.hp = Math.max(0, b.boss.hp - dmg);
+        if (result.healed) fighter.hp = Math.min(fighter.maxHp, fighter.hp + result.healed);
+        if (skill.buffAtk) fighter.buffs.push({ type: 'atk', val: skill.buffAtk, dur: skill.buffDur || 2 });
+        if (skill.buffDef) fighter.buffs.push({ type: 'def', val: skill.buffDef, dur: skill.buffDur || 2 });
+        if (skill.cdMax > 0) skill.cd = skill.cdMax;
+        fighter.mana = Math.min(fighter.maxMana || 100, (fighter.mana || 0) + (fighter.manaRegen || 5));
+        b.log.unshift({ msg: `${fighter.name} → ${skill.name} → ${dmg} DMG${result.isCrit ? ' CRIT!' : ''}`, type: 'player' });
+        b.lastAction = { type: 'player', idx: entity.idx, damage: dmg, crit: result.isCrit };
+        b.phase = b.boss.hp <= 0 ? 'victory' : 'advance';
+        return b;
+      } catch (e) {
+        console.error('arc2PlayerAction error:', e);
+        return prev;
+      }
+    });
+  };
+
+  const arc2BossAction = () => {
+    setArc2Battle(prev => {
+      if (!prev || prev.phase !== 'boss_act') return prev;
+      try {
+        const b = JSON.parse(JSON.stringify(prev));
+        const skill = aiPickSkill(b.boss);
+        if (!skill) return prev;
+        const aliveTeam = b.team.map((f, i) => ({ ...f, _i: i })).filter(f => f.alive);
+        if (aliveTeam.length === 0) { b.phase = 'defeat'; return b; }
+        const target = Math.random() < 0.6
+          ? aliveTeam.reduce((a, c) => a.hp < c.hp ? a : c)
+          : aliveTeam[Math.floor(Math.random() * aliveTeam.length)];
+        const tIdx = target._i;
+        const tFighter = b.team[tIdx];
+        const scaled = { ...skill, power: skill.power ? Math.floor(skill.power * ARC2_POWER_SCALE(b.bossTier)) : 0 };
+        const result = computeAttack(b.boss, scaled, tFighter);
+        const dmg = result.damage || 0;
+        tFighter.hp = Math.max(0, tFighter.hp - dmg);
+        if (tFighter.hp <= 0) tFighter.alive = false;
+        if (result.healed) b.boss.hp = Math.min(b.boss.maxHp, b.boss.hp + result.healed);
+        if (skill.buffAtk) b.boss.buffs.push({ type: 'atk', val: skill.buffAtk, dur: skill.buffDur || 2 });
+        if (skill.buffDef) b.boss.buffs.push({ type: 'def', val: skill.buffDef, dur: skill.buffDur || 2 });
+        if (skill.debuffDef) tFighter.buffs.push({ type: 'debuff_def', val: skill.debuffDef, dur: skill.debuffDur || 2 });
+        if (skill.cdMax > 0) skill.cd = skill.cdMax;
+        b.log.unshift({ msg: `${b.boss.name} → ${skill.name} → ${tFighter.name} ${dmg} DMG${result.isCrit ? ' CRIT!' : ''}${!tFighter.alive ? ' KO!' : ''}`, type: 'boss' });
+        b.lastAction = { type: 'boss', targetIdx: tIdx, damage: dmg, crit: result.isCrit, ko: !tFighter.alive };
+        b.phase = b.team.every(f => !f.alive) ? 'defeat' : 'advance';
+        return b;
+      } catch (e) {
+        console.error('arc2BossAction error:', e);
+        return prev;
+      }
+    });
+  };
+
+  const advanceArc2Turn = () => {
+    setArc2Battle(prev => {
+      if (!prev || prev.phase !== 'advance') return prev;
+      const b = JSON.parse(JSON.stringify(prev));
+      const cur = b.turnOrder[b.currentTurn];
+      if (cur) {
+        const curF = cur.type === 'team' ? b.team[cur.idx] : b.boss;
+        if (curF) {
+          curF.skills.forEach(s => { if (s.cd > 0) s.cd--; });
+          curF.buffs = (curF.buffs || []).filter(buff => { buff.dur--; return buff.dur > 0; });
+        }
+      }
+
+      let next = b.currentTurn + 1;
+      if (next >= b.turnOrder.length) {
+        b.round++;
+        const ents = [];
+        b.team.forEach((f, i) => { if (f.alive) ents.push({ type: 'team', idx: i, spd: f.spd }); });
+        if (b.boss.hp > 0) ents.push({ type: 'boss', spd: b.boss.spd });
+        ents.sort((a, c) => c.spd - a.spd || (a.type === 'boss' ? -1 : 1));
+        b.turnOrder = ents;
+        next = 0;
+      }
+      let loops = 0;
+      while (loops < b.turnOrder.length * 2) {
+        if (next >= b.turnOrder.length) {
+          b.round++;
+          const ents2 = [];
+          b.team.forEach((f, i) => { if (f.alive) ents2.push({ type: 'team', idx: i, spd: f.spd }); });
+          if (b.boss.hp > 0) ents2.push({ type: 'boss', spd: b.boss.spd });
+          ents2.sort((a, c) => c.spd - a.spd || (a.type === 'boss' ? -1 : 1));
+          b.turnOrder = ents2;
+          next = 0;
+        }
+        const e = b.turnOrder[next];
+        if (!e) break;
+        if (e.type === 'team' && !b.team[e.idx].alive) { next++; loops++; continue; }
+        break;
+      }
+      b.currentTurn = next;
+      b.lastAction = null;
+      const ne = b.turnOrder[b.currentTurn];
+      b.phase = !ne ? 'defeat' : ne.type === 'team' ? 'pick' : 'boss_act';
+      return b;
+    });
+  };
+
+  // Auto-advance + boss auto-act via effects
+  useEffect(() => {
+    if (!arc2Battle) return;
+    if (arc2Battle.phase === 'advance') {
+      const t = setTimeout(() => advanceArc2Turn(), 600);
+      return () => clearTimeout(t);
+    }
+    if (arc2Battle.phase === 'boss_act') {
+      const t = setTimeout(() => arc2BossAction(), 800);
+      return () => clearTimeout(t);
+    }
+  }, [arc2Battle]);
+
+  const handleArc2Victory = useCallback(() => {
+    if (!arc2Battle) return;
+    const stage = ARC2_STAGES[arc2Battle.stageIdx];
+    if (!stage) return;
+    const star = arc2Battle.star;
+    const rMult = getStarRewardMult(star);
+    const dropBonus = getStarDropBonus(star);
+
+    setData(prev => {
+      const d = JSON.parse(JSON.stringify(prev));
+      // XP to all team members
+      arc2Battle.team.forEach(f => {
+        const xpMult = f.alive ? 1 : 0.5;
+        const scaledXp = Math.floor(stage.xp * rMult.xp * xpMult);
+        const cl = d.chibiLevels[f.id] || { level: 1, xp: 0 };
+        cl.xp += scaledXp;
+        while (cl.level < MAX_LEVEL && cl.xp >= xpForLevel(cl.level)) { cl.xp -= xpForLevel(cl.level); cl.level++; }
+        d.chibiLevels[f.id] = cl;
+      });
+      // Coins
+      const coins = Math.floor(stage.coins * rMult.coins);
+      shadowCoinManager.addCoins(coins);
+      // Stage cleared + star record
+      if (!d.arc2StagesCleared[stage.id]) d.arc2StagesCleared[stage.id] = { maxStars: 0 };
+      if (star > (d.arc2StagesCleared[stage.id].maxStars || 0)) d.arc2StagesCleared[stage.id].maxStars = star;
+      d.stats.battles = (d.stats.battles || 0) + 1;
+      d.stats.wins = (d.stats.wins || 0) + 1;
+      // ARC II artifact drop
+      const baseDropChance = 0.08 + star * 0.03; // 8% base + 3% per star
+      let droppedArt = null;
+      const gRarity = getGuaranteedArtifactRarity(star);
+      if (gRarity) droppedArt = generateArc2Artifact(gRarity);
+      else if (Math.random() < baseDropChance) {
+        const r = Math.random() < 0.15 ? 'mythique' : Math.random() < 0.45 ? 'legendaire' : 'rare';
+        droppedArt = generateArc2Artifact(r);
+      }
+      if (droppedArt) d.artifactInventory.push(droppedArt);
+      // Store result for display
+      d._arc2Result = { coins, xp: Math.floor(stage.xp * rMult.xp), art: droppedArt, star, stageName: stage.name };
+      return d;
+    });
+    setView('arc2_result');
+    setArc2Battle(null);
+  }, [arc2Battle]);
+
+  const handleArc2Defeat = useCallback(() => {
+    if (!arc2Battle) return;
+    const stage = ARC2_STAGES[arc2Battle.stageIdx];
+    const cdMin = { 1: 30, 2: 45, 3: 60, 4: 90, 5: 120, 6: 180 };
+    setData(prev => {
+      const d = JSON.parse(JSON.stringify(prev));
+      // Apply cooldowns to all team members
+      arc2Battle.team.forEach(f => {
+        d.cooldowns[f.id] = Date.now() + (cdMin[stage?.tier || 1] || 60) * 60000;
+      });
+      d.stats.battles = (d.stats.battles || 0) + 1;
+      d._arc2Result = { defeat: true, stageName: stage?.name || '?' };
+      return d;
+    });
+    setView('arc2_result');
+    setArc2Battle(null);
+  }, [arc2Battle]);
+
+  // Trigger victory/defeat from battle phase
+  useEffect(() => {
+    if (!arc2Battle) return;
+    if (arc2Battle.phase === 'victory') { const t = setTimeout(() => handleArc2Victory(), 1200); return () => clearTimeout(t); }
+    if (arc2Battle.phase === 'defeat') { const t = setTimeout(() => handleArc2Defeat(), 1200); return () => clearTimeout(t); }
+  }, [arc2Battle]);
+
+  // ─── Flee ARC II ──────────────────────────────────────────
+  const fleeArc2 = () => {
+    if (!arc2Battle) return;
+    arc2Battle.team.forEach(f => {
+      setData(prev => ({
+        ...prev,
+        cooldowns: { ...prev.cooldowns, [f.id]: Date.now() + 3 * 60 * 1000 },
+      }));
+    });
+    setArc2Battle(null);
+    setView('hub');
+    setActiveArc(2);
+  };
 
   // ─── Stat Points Logic ─────────────────────────────────────
 
@@ -1021,6 +1405,16 @@ export default function ShadowColosseum() {
       }
     }
 
+    // Grimoire Weiss drop (1/250 sur victoire ARC I — debloque ARC II)
+    if (!data.arc2Unlocked && !data.grimoireWeiss && Math.random() < GRIMOIRE_WEISS.dropRate) {
+      setData(prev => ({ ...prev, grimoireWeiss: true, arc2Unlocked: true }));
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('beru-react', {
+          detail: { message: "ATTENDS ! C'est... le GRIMOIRE WEISS ?! Un livre qui parle ?! Il dit qu'il connait le chemin vers... Pascal ?! L'ARC II est debloque !!", mood: 'shocked' },
+        }));
+      }, 1500);
+    }
+
     // Auto-replay logic — si arme droppée, pause 4.5s pour l'animation puis reprend
     if (autoReplayRef.current) {
       setView('result');
@@ -1082,8 +1476,8 @@ export default function ShadowColosseum() {
     <div className="min-h-screen bg-[#0a0a1a] text-white pb-20">
       <BattleStyles />
 
-      {/* Fixed bottom back button for sub-views (not result/battle) */}
-      {!['hub', 'battle', 'result'].includes(view) && (
+      {/* Fixed bottom back button for sub-views (not result/battle/story) */}
+      {!['hub', 'battle', 'result', 'arc2_story'].includes(view) && (
         <div className="fixed bottom-4 left-0 right-0 flex justify-center z-50">
           <button onClick={() => setView('hub')}
             className="px-6 py-2.5 bg-gradient-to-r from-gray-700 to-gray-600 rounded-xl font-bold text-sm shadow-lg shadow-gray-900/40 hover:scale-105 transition-transform active:scale-95 border border-gray-500/30">
@@ -1580,8 +1974,47 @@ export default function ShadowColosseum() {
             );
           })()}
 
-          {/* Stages */}
-          {ownedIds.length > 0 && [1, 2, 3, 4, 5, 6].map(tier => (
+          {/* ═══ ARC TABS — ARC I / ARC II ═══ */}
+          {ownedIds.length > 0 && (
+            <div className="flex items-center gap-1.5 mb-4 p-1 bg-gray-900/60 rounded-xl border border-gray-700/30">
+              <button
+                onClick={() => { setActiveArc(1); setSelStage(null); }}
+                className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${
+                  activeArc === 1
+                    ? 'bg-gradient-to-r from-purple-600/40 to-indigo-600/40 text-purple-200 border border-purple-500/30 shadow shadow-purple-500/20'
+                    : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/40'
+                }`}
+              >
+                {'\u2694\uFE0F'} ARC I — Donjons
+                {(() => {
+                  const cleared1 = STAGES.filter(s => isStageCleared(s.id)).length;
+                  return cleared1 > 0 ? <span className="ml-1.5 text-[9px] opacity-60">{cleared1}/{STAGES.length}</span> : null;
+                })()}
+              </button>
+              <button
+                onClick={() => { if (arc2Unlocked) { setActiveArc(2); setSelStage(null); } else { handleArc2LockedClick(); } }}
+                className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wide transition-all relative ${
+                  !arc2Unlocked
+                    ? 'text-gray-600 hover:text-gray-500 hover:bg-gray-800/20'
+                    : activeArc === 2
+                      ? 'bg-gradient-to-r from-red-600/40 to-purple-600/40 text-red-200 border border-red-500/30 shadow shadow-red-500/20'
+                      : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/40'
+                }`}
+              >
+                {!arc2Unlocked ? '\uD83D\uDD12' : '\u2694\uFE0F'} ARC II {!arc2Unlocked ? '— ???' : '— Pascal'}
+                {arc2Unlocked && (() => {
+                  const cleared2 = ARC2_STAGES.filter(s => isArc2StageCleared(s.id)).length;
+                  return cleared2 > 0 ? <span className="ml-1.5 text-[9px] opacity-60">{cleared2}/{ARC2_STAGES.length}</span> : null;
+                })()}
+                {!arc2Unlocked && (data.arc2ClickCount || 0) >= 7 && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* ═══ ARC I — Donjons ═══ */}
+          {ownedIds.length > 0 && activeArc === 1 && [1, 2, 3, 4, 5, 6].map(tier => (
             <div key={tier} className="mb-4">
               <div className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">
                 Tier {tier} — {TIER_NAMES[tier]}
@@ -1704,6 +2137,90 @@ export default function ShadowColosseum() {
             </div>
           ))}
 
+          {/* ═══ ARC II — Retrouver Pascal ═══ */}
+          {ownedIds.length > 0 && activeArc === 2 && arc2Unlocked && (
+            <>
+              <div className="text-center mb-3 p-2 rounded-xl bg-gradient-to-r from-purple-900/20 to-red-900/20 border border-purple-500/20">
+                <div className="text-sm font-black bg-gradient-to-r from-purple-400 to-red-400 bg-clip-text text-transparent">
+                  {'\u2694\uFE0F'} Retrouver Pascal
+                </div>
+                <p className="text-[10px] text-gray-500 mt-0.5">Bebe Machine Boy & Girl partent a la recherche de leur aine...</p>
+              </div>
+
+              {[1, 2, 3, 4, 5, 6].map(tier => {
+                const tierStages = ARC2_STAGES.filter(s => s.tier === tier);
+                const storyWatched = data.arc2StoriesWatched[tier];
+                const prevTierBoss = tier > 1 ? ARC2_STAGES.filter(s => s.tier === tier - 1 && s.isBoss)[0] : null;
+                const tierUnlocked = tier === 1 || (prevTierBoss && isArc2StageCleared(prevTierBoss.id));
+
+                return (
+                  <div key={`a2t${tier}`} className="mb-4">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">
+                      <span>Tier {tier} — {ARC2_TIER_NAMES[tier]}</span>
+                      {tierUnlocked && ARC2_STORIES[tier]?.scenes?.length > 0 && (
+                        <button
+                          onClick={() => { setArc2StoryTier(tier); setArc2StoryIdx(0); setView('arc2_story'); }}
+                          className={`text-[9px] border rounded px-2 py-0.5 transition-all ${
+                            storyWatched
+                              ? 'text-green-400/70 bg-green-500/5 border-green-500/15 hover:bg-green-500/15'
+                              : 'text-purple-400 bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20 animate-pulse'
+                          }`}>
+                          {storyWatched ? '\u2705' : '\uD83D\uDCDC'} Story
+                        </button>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      {tierStages.map((stage) => {
+                        const globalIdx = ARC2_STAGES.indexOf(stage);
+                        const unlocked = tierUnlocked && isArc2StageUnlocked(globalIdx);
+                        const cleared = isArc2StageCleared(stage.id);
+
+                        return (
+                          <button
+                            key={stage.id}
+                            onClick={() => { if (unlocked) { setArc2SelStage(globalIdx); setArc2Team([null, null, null]); setArc2PickSlot(null); setView('arc2_team'); } }}
+                            disabled={!unlocked}
+                            className={`w-full flex items-center gap-3 p-2.5 rounded-lg border transition-all text-left ${
+                              !unlocked ? 'border-gray-800/40 bg-gray-900/20 opacity-40' :
+                              cleared ? 'border-green-600/30 bg-green-900/10 hover:border-purple-500/40' :
+                              'border-gray-700/40 bg-gray-800/30 hover:border-purple-500/40'
+                            }`}
+                          >
+                            {!unlocked ? (
+                              <span className="text-2xl w-10 text-center">{'\uD83D\uDD12'}</span>
+                            ) : stage.sprite ? (
+                              <img src={stage.sprite} alt={stage.name} className="w-10 h-10 object-contain rounded" />
+                            ) : (
+                              <span className="text-2xl w-10 text-center">{stage.emoji}</span>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm font-bold truncate">{stage.name}</span>
+                                {stage.isBoss && <span className="text-[10px] bg-red-500/30 text-red-300 px-1.5 rounded">BOSS</span>}
+                                {cleared && <span className="text-green-400 text-xs">{'\u2705'}</span>}
+                              </div>
+                              <div className="flex items-center gap-2.5 text-[11px] text-gray-400 mt-0.5">
+                                <span className={ELEMENTS[stage.element]?.color || 'text-gray-400'}>{ELEMENTS[stage.element]?.icon} {ELEMENTS[stage.element]?.name}</span>
+                                <span>PV:{(stage.hp / 1000).toFixed(0)}K</span>
+                                <span>ATK:{stage.atk}</span>
+                                <span>XP:{stage.xp}</span>
+                                <span>{'\uD83D\uDCB0'}{stage.coins}</span>
+                              </div>
+                            </div>
+                            {/* 3v1 badge */}
+                            <span className="text-[9px] font-bold bg-gradient-to-r from-red-500/30 to-purple-500/30 text-red-300 px-1.5 py-0.5 rounded border border-red-500/20">
+                              3v1
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
+
           {/* Fight Button */}
           {selChibi && selStage !== null && (
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed bottom-4 left-0 right-0 flex justify-center z-50">
@@ -1717,6 +2234,753 @@ export default function ShadowColosseum() {
           )}
         </div>
       )}
+
+      {/* ═══ ARC II STORY VIEW ═══ */}
+      {view === 'arc2_story' && arc2StoryTier && (() => {
+        const story = ARC2_STORIES[arc2StoryTier];
+        if (!story) return null;
+        const scenes = story.scenes || [];
+        const hasScenes = scenes.length > 0 && scenes.some(s => s.text || s.src);
+        const currentScene = scenes[arc2StoryIdx];
+        const isLastScene = arc2StoryIdx >= scenes.length - 1 || !hasScenes;
+
+        const SPEAKER_STYLES = {
+          narrator: { label: 'Narrateur', color: 'text-gray-400', border: 'border-gray-500/30', bg: 'bg-gray-900/90', icon: '\uD83D\uDCDC' },
+          bebe_girl: { label: 'Bebe Machine Girl', color: 'text-pink-400', border: 'border-pink-500/30', bg: 'bg-pink-950/40', icon: '\uD83C\uDF38' },
+          bebe_boy: { label: 'Bebe Machine Boy', color: 'text-cyan-400', border: 'border-cyan-500/30', bg: 'bg-cyan-950/40', icon: '\u26A1' },
+          beru: { label: 'Beru', color: 'text-purple-400', border: 'border-purple-500/30', bg: 'bg-purple-950/40', icon: '\uD83D\uDC7E' },
+        };
+
+        const advanceScene = () => {
+          if (!isLastScene) setArc2StoryIdx(arc2StoryIdx + 1);
+        };
+
+        const finishStory = () => {
+          setData(prev => ({ ...prev, arc2StoriesWatched: { ...prev.arc2StoriesWatched, [arc2StoryTier]: true } }));
+          setArc2StoryTier(null);
+          setArc2StoryIdx(0);
+          setView('hub');
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black flex flex-col">
+            {/* Ambient particles */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {[...Array(12)].map((_, i) => (
+                <div key={i} className="absolute rounded-full bg-purple-500/10"
+                  style={{
+                    width: 2 + Math.random() * 4, height: 2 + Math.random() * 4,
+                    left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%`,
+                    animation: `float ${8 + Math.random() * 12}s ease-in-out infinite ${Math.random() * 5}s`,
+                  }} />
+              ))}
+            </div>
+
+            {/* Story header */}
+            <div className="text-center pt-5 pb-2 relative z-10">
+              <div className="text-[10px] text-purple-400/50 uppercase tracking-[0.25em] mb-1">Arc II — Retrouver Pascal</div>
+              <h2 className="text-base font-black text-white/90">{story.title}</h2>
+              {/* Progress bar */}
+              <div className="mt-2 mx-auto w-48 h-0.5 bg-gray-800 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-purple-500 to-red-500"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${((arc2StoryIdx + 1) / Math.max(scenes.length, 1)) * 100}%` }}
+                  transition={{ duration: 0.4 }}
+                />
+              </div>
+            </div>
+
+            {/* Tappable story content area */}
+            <div
+              className="flex-1 flex items-center justify-center px-5 relative z-10 cursor-pointer"
+              onClick={() => { if (!isLastScene) advanceScene(); }}
+            >
+              {hasScenes && currentScene ? (
+                <motion.div
+                  key={arc2StoryIdx}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                  className="max-w-lg w-full"
+                >
+                  {/* Image scene */}
+                  {currentScene.type === 'image' && currentScene.src && (
+                    <motion.img
+                      src={currentScene.src} alt={currentScene.alt || ''}
+                      className="w-full rounded-2xl shadow-2xl shadow-purple-900/30"
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6 }}
+                    />
+                  )}
+                  {currentScene.type === 'image' && !currentScene.src && (
+                    <div className="w-full h-52 bg-gray-900/60 rounded-2xl border border-gray-700/30 flex flex-col items-center justify-center">
+                      <span className="text-4xl mb-2">{'\uD83D\uDDBC\uFE0F'}</span>
+                      <span className="text-gray-600 text-xs">{currentScene.alt || 'Image a venir...'}</span>
+                    </div>
+                  )}
+
+                  {/* Text/Dialogue scene — bubble style */}
+                  {(currentScene.type === 'text' || currentScene.type === 'dialogue') && (() => {
+                    const spk = SPEAKER_STYLES[currentScene.speaker] || SPEAKER_STYLES.narrator;
+                    return (
+                      <motion.div
+                        initial={{ opacity: 0, y: 15, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.35, ease: 'easeOut' }}
+                        className={`relative p-5 rounded-2xl ${spk.bg} border ${spk.border} shadow-lg`}
+                      >
+                        {/* Speaker badge */}
+                        {currentScene.speaker && (
+                          <div className={`flex items-center gap-1.5 mb-3 ${spk.color}`}>
+                            <span className="text-sm">{spk.icon}</span>
+                            <span className="text-[11px] font-bold uppercase tracking-wider">{spk.label}</span>
+                          </div>
+                        )}
+                        {/* Typewriter text */}
+                        {currentScene.text ? (
+                          <StoryTypewriter key={`tw-${arc2StoryIdx}`} text={currentScene.text} speaker={currentScene.speaker} />
+                        ) : (
+                          <p className="text-sm text-gray-600 italic">Texte a venir...</p>
+                        )}
+                        {/* Bubble tail */}
+                        <div className={`absolute -bottom-2 left-8 w-4 h-4 ${spk.bg} ${spk.border} border-t-0 border-l-0 rotate-45`} />
+                      </motion.div>
+                    );
+                  })()}
+                </motion.div>
+              ) : (
+                <div className="text-center">
+                  <div className="text-6xl mb-4">{'\uD83D\uDCDC'}</div>
+                  <p className="text-gray-500 text-sm">Contenu de la story a venir...</p>
+                </div>
+              )}
+            </div>
+
+            {/* Tap hint */}
+            {!isLastScene && hasScenes && (
+              <motion.div
+                className="text-center pb-1 text-[10px] text-gray-600 relative z-10"
+                animate={{ opacity: [0.3, 0.7, 0.3] }}
+                transition={{ duration: 2.5, repeat: Infinity }}
+              >
+                Touche pour continuer...
+              </motion.div>
+            )}
+
+            {/* Story controls — bottom bar */}
+            <div className="p-4 flex items-center gap-3 relative z-10">
+              <button
+                onClick={(e) => { e.stopPropagation(); if (arc2StoryIdx > 0) setArc2StoryIdx(arc2StoryIdx - 1); }}
+                disabled={arc2StoryIdx === 0}
+                className="px-3 py-2.5 rounded-xl bg-gray-800/80 text-xs text-gray-400 disabled:opacity-20 hover:bg-gray-700 transition-colors"
+              >
+                {'\u2190'}
+              </button>
+              <span className="text-[10px] text-gray-600 min-w-[40px] text-center">{hasScenes ? `${arc2StoryIdx + 1}/${scenes.length}` : ''}</span>
+
+              {!isLastScene ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); advanceScene(); }}
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600/40 to-purple-500/30 text-sm font-bold text-purple-200 hover:from-purple-600/60 hover:to-purple-500/50 transition-all active:scale-[0.98] border border-purple-500/20"
+                >
+                  Suivant {'\u2192'}
+                </button>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); finishStory(); }}
+                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-red-600 text-sm text-white font-black hover:scale-[1.02] transition-transform active:scale-[0.98] shadow-lg shadow-purple-900/40"
+                >
+                  {hasScenes ? '\u2694\uFE0F Commencer le combat' : 'Fermer'}
+                </button>
+              )}
+
+              {/* Skip button */}
+              <button
+                onClick={(e) => { e.stopPropagation(); finishStory(); }}
+                className="px-3 py-2.5 rounded-xl bg-gray-800/60 text-[10px] text-gray-500 hover:text-gray-300 hover:bg-gray-700/60 transition-colors"
+              >
+                Passer
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ═══ ARC II TEAM PICKER VIEW ═══ */}
+      {view === 'arc2_team' && arc2SelStage !== null && (() => {
+        const stage = ARC2_STAGES[arc2SelStage];
+        if (!stage) return null;
+
+        // Pool of all owned chibis + hunters
+        const allOwnedIds = [...ownedIds, ...ownedHunterIds];
+        const alreadyPicked = arc2Team.filter(Boolean);
+
+        // Element that beats the stage's element
+        const advantageElement = Object.entries(ELEMENTS).find(([, v]) => v.beats === stage.element)?.[0] || null;
+
+        // Auto-setup: pick top 3 by level, prioritize element advantage
+        const autoSetup = () => {
+          const scored = allOwnedIds.map(id => {
+            const c = getChibiData(id);
+            if (!c) return null;
+            const lv = getChibiLevel(id).level;
+            const elemBonus = c.element === advantageElement ? 500 : ELEMENTS[c.element]?.beats === stage.element ? 500 : 0;
+            const elemPenalty = ELEMENTS[stage.element]?.beats === c.element ? -200 : 0;
+            return { id, score: lv + elemBonus + elemPenalty };
+          }).filter(Boolean).sort((a, b) => b.score - a.score);
+          const top3 = scored.slice(0, 3).map(s => s.id);
+          setArc2Team([top3[0] || null, top3[1] || null, top3[2] || null]);
+          setArc2PickSlot(null);
+        };
+
+        // Load previous team
+        const lastTeam = data.arc2LastTeam || [];
+        const hasLastTeam = lastTeam.length > 0 && lastTeam.some(id => id && allOwnedIds.includes(id));
+
+        const loadPreviousTeam = () => {
+          const valid = lastTeam.map(id => (id && allOwnedIds.includes(id)) ? id : null);
+          setArc2Team([valid[0] || null, valid[1] || null, valid[2] || null]);
+          setArc2PickSlot(null);
+        };
+
+        // Filter + sort chibis in picker
+        const getFilteredChibis = () => {
+          let pool = allOwnedIds.filter(id => !alreadyPicked.includes(id));
+          // Element filter
+          if (arc2Filter.element === 'advantage') {
+            pool = pool.filter(id => { const c = getChibiData(id); return c && c.element === advantageElement; });
+          } else if (arc2Filter.element !== 'all') {
+            pool = pool.filter(id => { const c = getChibiData(id); return c && c.element === arc2Filter.element; });
+          }
+          // Sort
+          if (arc2Filter.sort === 'power') {
+            const psCache = {};
+            const getPS = (id) => {
+              if (psCache[id] !== undefined) return psCache[id];
+              const c = getChibiData(id); if (!c) return (psCache[id] = 0);
+              const lv = getChibiLevel(id).level;
+              const alloc = data.statPoints[id] || {};
+              const tb = getChibiTalentBonuses(id);
+              const eqB = getChibiEquipBonuses(id);
+              const evS = getChibiEveilStars(id);
+              const fs = statsAtFull(c.base, c.growth, lv, alloc, tb, eqB, evS, data.accountBonuses);
+              return (psCache[id] = calculatePowerScore(fs));
+            };
+            pool.sort((a, b) => getPS(b) - getPS(a));
+          } else if (arc2Filter.sort === 'element') {
+            pool.sort((a, b) => {
+              const cA = getChibiData(a), cB = getChibiData(b);
+              const sA = cA?.element === advantageElement ? 2 : ELEMENTS[stage.element]?.beats === cA?.element ? 0 : 1;
+              const sB = cB?.element === advantageElement ? 2 : ELEMENTS[stage.element]?.beats === cB?.element ? 0 : 1;
+              return sB - sA || getChibiLevel(b).level - getChibiLevel(a).level;
+            });
+          } else {
+            pool.sort((a, b) => getChibiLevel(b).level - getChibiLevel(a).level);
+          }
+          return pool;
+        };
+
+        return (
+          <div className="max-w-2xl mx-auto px-4 pt-4 pb-24">
+            {/* Header */}
+            <div className="text-center mb-4">
+              <div className="text-[10px] text-purple-400/60 uppercase tracking-widest mb-1">Arc II — {ARC2_TIER_NAMES[stage.tier]}</div>
+              <h2 className="text-lg font-black text-white">{stage.emoji} {stage.name}</h2>
+              <div className="flex items-center justify-center gap-3 text-[11px] text-gray-400 mt-1">
+                <span className={ELEMENTS[stage.element]?.color}>{ELEMENTS[stage.element]?.icon} {ELEMENTS[stage.element]?.name}</span>
+                <span>PV:{(stage.hp / 1000).toFixed(0)}K</span>
+                <span>ATK:{stage.atk}</span>
+                {stage.isBoss && <span className="text-red-400 font-bold">BOSS</span>}
+              </div>
+              {advantageElement && (
+                <div className="text-[10px] mt-1">
+                  <span className="text-gray-600">Avantage : </span>
+                  <span className={ELEMENTS[advantageElement]?.color}>{ELEMENTS[advantageElement]?.icon} {ELEMENTS[advantageElement]?.name}</span>
+                  <span className="text-green-400"> (+30%)</span>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex items-center gap-2 mb-4">
+              <button onClick={autoSetup}
+                className="flex-1 py-2 rounded-lg bg-gradient-to-r from-purple-600/20 to-indigo-600/20 border border-purple-500/30 text-[10px] font-bold text-purple-300 hover:bg-purple-500/30 transition-all active:scale-[0.98]">
+                {'\u26A1'} Auto Setup
+              </button>
+              {hasLastTeam && (
+                <button onClick={loadPreviousTeam}
+                  className="flex-1 py-2 rounded-lg bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-500/30 text-[10px] font-bold text-blue-300 hover:bg-blue-500/30 transition-all active:scale-[0.98]">
+                  {'\uD83D\uDD04'} Equipe prec.
+                </button>
+              )}
+              {alreadyPicked.length > 0 && (
+                <button onClick={() => { setArc2Team([null, null, null]); setArc2PickSlot(null); }}
+                  className="py-2 px-3 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] font-bold text-red-400 hover:bg-red-500/20 transition-all">
+                  {'\u2716'}
+                </button>
+              )}
+            </div>
+
+            {/* 3 Team Slots */}
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              {[0, 1, 2].map(slot => {
+                const chibiId = arc2Team[slot];
+                const chibi = chibiId ? getChibiData(chibiId) : null;
+                const isPickingThis = arc2PickSlot === slot;
+                const elemColor = chibi ? (ELEMENTS[chibi.element]?.color || 'text-gray-400') : '';
+
+                return (
+                  <button
+                    key={slot}
+                    onClick={() => setArc2PickSlot(isPickingThis ? null : slot)}
+                    className={`p-3 rounded-xl border text-center transition-all ${
+                      isPickingThis ? 'border-purple-400 bg-purple-500/15 ring-1 ring-purple-400/40' :
+                      chibi ? 'border-green-500/30 bg-green-900/10' :
+                      'border-gray-700/40 bg-gray-800/30 border-dashed'
+                    }`}
+                  >
+                    {chibi ? (
+                      <>
+                        <img src={getChibiSprite(chibiId)} alt={chibi.name} className="w-12 h-12 mx-auto object-contain" style={{ filter: RARITY[chibi.rarity]?.glow }} />
+                        <div className="text-[10px] font-bold mt-1 truncate">{chibi.name}</div>
+                        <div className="text-[9px] text-gray-500">Lv{getChibiLevel(chibiId).level}</div>
+                        <div className={`text-[8px] ${elemColor}`}>{ELEMENTS[chibi.element]?.icon} {ELEMENTS[chibi.element]?.name}</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-2xl mb-1">{'\u2795'}</div>
+                        <div className="text-[10px] text-gray-500">Slot {slot + 1}</div>
+                      </>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Remove button if slot has a chibi */}
+            {arc2PickSlot !== null && arc2Team[arc2PickSlot] && (
+              <button
+                onClick={() => {
+                  const newTeam = [...arc2Team];
+                  newTeam[arc2PickSlot] = null;
+                  setArc2Team(newTeam);
+                  setArc2PickSlot(null);
+                }}
+                className="w-full mb-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold hover:bg-red-500/20 transition-colors"
+              >
+                Retirer du slot {arc2PickSlot + 1}
+              </button>
+            )}
+
+            {/* Chibi picker (shown when a slot is being picked) */}
+            {arc2PickSlot !== null && (
+              <div className="mb-4">
+                <div className="text-[10px] text-gray-500 mb-2 font-bold uppercase">Choisir un combattant :</div>
+
+                {/* Filters */}
+                <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                  {/* Element filter */}
+                  {[
+                    { key: 'all', label: 'Tous', color: 'text-gray-400' },
+                    ...(advantageElement ? [{ key: 'advantage', label: `${ELEMENTS[advantageElement]?.icon} Avantage`, color: 'text-green-400' }] : []),
+                    ...Object.entries(ELEMENTS).map(([k, v]) => ({ key: k, label: `${v.icon}`, color: v.color })),
+                  ].map(opt => (
+                    <button key={opt.key} onClick={() => setArc2Filter(f => ({ ...f, element: opt.key }))}
+                      className={`px-2 py-1 rounded text-[9px] font-bold border transition-all ${
+                        arc2Filter.element === opt.key
+                          ? 'border-purple-400 bg-purple-500/20 text-white'
+                          : 'border-gray-700/30 bg-gray-800/30 hover:border-gray-600 ' + opt.color
+                      }`}>
+                      {opt.label}
+                    </button>
+                  ))}
+                  {/* Sort separator */}
+                  <span className="text-gray-700 mx-1">|</span>
+                  {/* Sort options */}
+                  {[
+                    { key: 'level', label: 'Niveau' },
+                    { key: 'power', label: 'Puissance' },
+                    { key: 'element', label: 'Element' },
+                  ].map(opt => (
+                    <button key={opt.key} onClick={() => setArc2Filter(f => ({ ...f, sort: opt.key }))}
+                      className={`px-2 py-1 rounded text-[9px] font-bold border transition-all ${
+                        arc2Filter.sort === opt.key
+                          ? 'border-yellow-400/60 bg-yellow-500/10 text-yellow-300'
+                          : 'border-gray-700/30 bg-gray-800/30 text-gray-500 hover:border-gray-600'
+                      }`}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Grid */}
+                <div className="grid grid-cols-5 gap-2 max-h-64 overflow-y-auto">
+                  {getFilteredChibis().map(id => {
+                    const c = getChibiData(id);
+                    if (!c) return null;
+                    const lv = getChibiLevel(id).level;
+                    const isAdvantage = c.element === advantageElement;
+                    const isWeak = ELEMENTS[stage.element]?.beats === c.element;
+                    const cEl = ELEMENTS[c.element];
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => {
+                          const newTeam = [...arc2Team];
+                          newTeam[arc2PickSlot] = id;
+                          setArc2Team(newTeam);
+                          setArc2PickSlot(null);
+                        }}
+                        className={`p-2 rounded-lg border transition-all text-center ${
+                          isAdvantage ? 'border-green-500/40 bg-green-900/10 hover:border-green-400/60' :
+                          isWeak ? 'border-red-500/20 bg-red-900/5 opacity-60 hover:opacity-80' :
+                          'border-gray-700/30 bg-gray-800/30 hover:border-purple-500/40'
+                        }`}
+                      >
+                        <img src={getChibiSprite(id)} alt={c.name} className="w-10 h-10 mx-auto object-contain" style={{ filter: RARITY[c.rarity]?.glow }} />
+                        <div className="text-[9px] font-bold truncate mt-1">{c.name}</div>
+                        <div className="text-[8px] text-gray-500">Lv{lv}</div>
+                        <div className={`text-[7px] ${cEl?.color || 'text-gray-500'}`}>
+                          {cEl?.icon}
+                          {isAdvantage && <span className="text-green-400 ml-0.5">+30%</span>}
+                          {isWeak && <span className="text-red-400 ml-0.5">-30%</span>}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Star selector (only if stage cleared) */}
+            {(() => {
+              const maxSt = getArc2MaxStars(stage.id);
+              if (maxSt < 0) return null;
+              const sc = getStarScaledStats(stage, arc2Star);
+              return (
+                <div className="mb-4 p-3 rounded-xl bg-gray-900/60 border border-purple-500/20">
+                  <div className="text-[10px] text-gray-500 font-bold mb-1.5">Difficulte {'\u2B50'}</div>
+                  <div className="grid grid-cols-11 gap-[3px] mb-2">
+                    {[0,1,2,3,4,5,6,7,8,9,10].map(s => {
+                      const ok = s === 0 || s <= maxSt + 1;
+                      return (
+                        <button key={s} onClick={() => { if (ok) setArc2Star(s); }} disabled={!ok}
+                          className={`aspect-square rounded text-[9px] font-bold transition-all ${
+                            arc2Star === s ? 'bg-yellow-500/20 text-yellow-300 ring-1 ring-yellow-400/60' :
+                            !ok ? 'bg-gray-800/60 text-gray-600 opacity-40' :
+                            'bg-gray-700/50 text-yellow-400 hover:bg-gray-600'
+                          }`}>
+                          {s === 0 ? '-' : s}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center justify-between text-[9px] text-gray-500">
+                    <span>PV:{(sc.hp / 1000).toFixed(0)}K ATK:{sc.atk}</span>
+                    <span>Record: {maxSt}{'\u2605'}</span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Fight & Back buttons */}
+            <div className="fixed bottom-4 left-0 right-0 flex justify-center gap-3 z-50">
+              <button
+                onClick={() => { setView('hub'); setArc2SelStage(null); setArc2Team([null, null, null]); setArc2PickSlot(null); setArc2Star(0); }}
+                className="px-5 py-2.5 bg-gray-700 rounded-xl font-bold text-sm shadow-lg hover:scale-105 transition-transform"
+              >
+                {'\u2190'} Retour
+              </button>
+              {arc2Team.filter(Boolean).length > 0 && (
+                <button
+                  onClick={startArc2Battle}
+                  className="px-8 py-2.5 bg-gradient-to-r from-purple-600 to-red-600 rounded-xl font-black text-lg shadow-xl shadow-purple-900/40 hover:scale-105 transition-transform active:scale-95"
+                >
+                  {'\u2694\uFE0F'} COMBAT 3v1 !
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ═══ ARC II 3v1 BATTLE VIEW — VS Layout ═══ */}
+      {view === 'arc2_battle' && arc2Battle && (() => {
+        const { team, boss, turnOrder, currentTurn, round, phase, log, lastAction } = arc2Battle;
+        const curEntity = turnOrder[currentTurn];
+        const isPlayerTurn = phase === 'pick' && curEntity?.type === 'team';
+        const activeChar = isPlayerTurn ? team[curEntity.idx] : null;
+        const bossElement = ELEMENTS[boss.element] || ELEMENTS.shadow;
+        const bossHpPct = boss.maxHp > 0 ? (boss.hp / boss.maxHp) * 100 : 0;
+
+        return (
+          <div className="max-w-md mx-auto px-3 pt-3 pb-6">
+            {/* Header: Turn + Turn Order + Flee */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] text-gray-500">Tour {round}</span>
+                <div className="flex items-center gap-0.5">
+                  {turnOrder.map((e, i) => {
+                    const isNow = i === currentTurn;
+                    const isDead = e.type === 'team' ? !team[e.idx].alive : boss.hp <= 0;
+                    return (
+                      <div key={i} className={`w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-bold border transition-all ${
+                        isDead ? 'bg-gray-800 border-gray-700 opacity-30' :
+                        isNow ? 'bg-yellow-500/30 border-yellow-400 ring-1 ring-yellow-400/50 scale-110' :
+                        e.type === 'boss' ? 'bg-red-500/20 border-red-500/30' :
+                        'bg-blue-500/20 border-blue-500/30'
+                      }`}>
+                        {e.type === 'boss' ? '\uD83D\uDC80' : (e.idx + 1)}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <button onClick={fleeArc2} className="text-[10px] text-gray-500 hover:text-red-400 transition-colors px-2 py-1 rounded border border-gray-700/30 hover:border-red-500/30">Fuir</button>
+            </div>
+
+            {/* ─── ARENA — VS Layout ─── */}
+            <div className="relative rounded-2xl overflow-hidden mb-3"
+              style={{ background: 'linear-gradient(to bottom, #0a0a1a 0%, #1a1030 50%, #251540 100%)', minHeight: 240 }}>
+
+              {/* Ground line */}
+              <div className="absolute bottom-[18%] left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
+
+              {/* Element indicators */}
+              <div className="absolute top-2 left-3 text-[10px]">
+                <span className="text-blue-400">{'\uD83D\uDDE1\uFE0F'} Equipe</span>
+              </div>
+              <div className="absolute top-2 right-3 text-[10px]">
+                <span className={bossElement.color}>{bossElement.icon} {bossElement.name}</span>
+              </div>
+
+              {/* VS Center */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-gray-700/30 font-black text-2xl select-none" style={{ textShadow: '0 0 20px rgba(168,85,247,0.2)' }}>
+                VS
+              </div>
+
+              {/* ─── Team Side (Left) — stacked vertically ─── */}
+              <div className="absolute left-[4%] top-[18%] bottom-[10%] flex flex-col justify-around items-center" style={{ width: '38%' }}>
+                {team.map((f, i) => {
+                  const isActive = curEntity?.type === 'team' && curEntity.idx === i;
+                  const hpPct = f.maxHp > 0 ? (f.hp / f.maxHp) * 100 : 0;
+                  const fEl = ELEMENTS[f.element] || ELEMENTS.shadow;
+                  return (
+                    <div key={i} className="relative flex items-center gap-1.5 w-full">
+                      {/* Sprite */}
+                      <div className={`relative w-12 h-12 flex-shrink-0 rounded-lg border-2 flex items-center justify-center transition-all ${
+                        !f.alive ? 'border-gray-700/40 opacity-30 grayscale' :
+                        isActive ? 'border-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.4)]' :
+                        'border-gray-600/30'
+                      }`} style={isActive ? { background: 'radial-gradient(circle, rgba(250,204,21,0.08), transparent)' } : {}}>
+                        <img src={f.sprite} alt={f.name} className="w-10 h-10 object-contain"
+                          style={{
+                            animation: !f.alive ? 'none' : isActive ? 'idleBreatheFlip 3s ease-in-out infinite' : 'idleBreatheFlip 4s ease-in-out infinite',
+                            filter: !f.alive ? 'grayscale(1)' : '',
+                          }} />
+                        {!f.alive && <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg"><span className="text-[9px] text-red-400 font-bold">KO</span></div>}
+                        {isActive && <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />}
+                      </div>
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1">
+                          <span className={`text-[9px] font-bold truncate ${isActive ? 'text-yellow-300' : f.alive ? 'text-white' : 'text-gray-600'}`}>{f.name}</span>
+                          <span className="text-[7px] text-gray-600">Lv{f.level}</span>
+                        </div>
+                        {/* HP bar */}
+                        <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mt-0.5">
+                          <div className={`h-full transition-all duration-500 rounded-full ${hpPct > 50 ? 'bg-green-500' : hpPct > 25 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                            style={{ width: `${hpPct}%` }} />
+                        </div>
+                        <div className="text-[7px] text-gray-400">{f.hp}/{f.maxHp}</div>
+                        {/* Mana bar */}
+                        <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mt-0.5">
+                          <div className="h-full bg-gradient-to-r from-violet-500 to-blue-500 rounded-full transition-all duration-300"
+                            style={{ width: `${Math.min(100, (f.mana || 0) / Math.max(1, f.maxMana || 1) * 100)}%` }} />
+                        </div>
+                        <div className="text-[7px] text-violet-400">{f.mana || 0}/{f.maxMana || 0} MP</div>
+                      </div>
+                      {/* Damage float on this char */}
+                      <AnimatePresence>
+                        {lastAction?.type === 'boss' && lastAction.targetIdx === i && lastAction.damage > 0 && (
+                          <motion.div key={`pd-${round}-${currentTurn}-${i}`} initial={{ opacity: 1, y: 0, scale: 1.2 }} animate={{ opacity: 0, y: -25 }} exit={{ opacity: 0 }} transition={{ duration: 1.2 }}
+                            className={`absolute -top-3 left-1/2 -translate-x-1/2 text-sm font-black z-10 ${lastAction.crit ? 'text-yellow-300' : 'text-red-400'}`}>
+                            -{lastAction.damage}{lastAction.ko ? ' KO!' : ''}{lastAction.crit ? '!' : ''}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* ─── Boss Side (Right) ─── */}
+              <div className="absolute right-[8%] top-1/2 -translate-y-1/2 flex flex-col items-center" style={{ width: '35%' }}>
+                {/* Boss sprite */}
+                <div className={`relative w-20 h-20 flex items-center justify-center rounded-xl border-2 ${arc2Battle.isBoss ? 'border-red-500/60' : 'border-gray-600/40'}`}
+                  style={{
+                    background: `radial-gradient(circle, ${bossElement.color === 'text-purple-400' ? 'rgba(168,85,247,0.15)' : bossElement.color === 'text-red-400' ? 'rgba(239,68,68,0.15)' : 'rgba(100,100,200,0.1)'}, transparent)`,
+                    animation: phase === 'boss_act' ? 'idleBreathe 1s ease-in-out infinite' : 'idleBreathe 3s ease-in-out infinite',
+                    boxShadow: arc2Battle.isBoss ? '0 0 20px rgba(239,68,68,0.3)' : 'none',
+                  }}>
+                  {boss.sprite ? (
+                    <img src={boss.sprite} alt={boss.name} className="w-16 h-16 object-contain"
+                      style={{ filter: arc2Battle.isBoss ? 'drop-shadow(0 0 8px rgba(239,68,68,0.5))' : '' }} />
+                  ) : (
+                    <span className="text-4xl" style={{ filter: arc2Battle.isBoss ? 'drop-shadow(0 0 8px rgba(239,68,68,0.5))' : '' }}>
+                      {boss.emoji}
+                    </span>
+                  )}
+                  {/* Boss damage float */}
+                  <AnimatePresence>
+                    {lastAction?.type === 'player' && lastAction.damage > 0 && (
+                      <motion.div key={`bd-${round}-${currentTurn}`} initial={{ opacity: 1, y: 0, scale: 1.3 }} animate={{ opacity: 0, y: -30 }} exit={{ opacity: 0 }} transition={{ duration: 1.2 }}
+                        className={`absolute -top-4 left-1/2 -translate-x-1/2 text-lg font-black z-10 ${lastAction.crit ? 'text-yellow-300' : 'text-red-400'}`}>
+                        -{lastAction.damage}{lastAction.crit ? ' CRIT!' : ''}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                {/* Boss HP */}
+                <div className="w-full mt-1.5">
+                  <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all duration-500 rounded-full" style={{ width: `${bossHpPct}%` }} />
+                  </div>
+                  <div className="text-[8px] text-center text-gray-400 mt-0.5 font-bold">
+                    {boss.name}
+                    {arc2Battle.isBoss && <span className="text-red-400 ml-1">BOSS</span>}
+                  </div>
+                  <div className="text-[7px] text-center text-red-300">{boss.hp.toLocaleString()} / {boss.maxHp.toLocaleString()}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* ─── COMBAT LOG ─── */}
+            <div className="bg-gray-900/50 rounded-lg p-2 mb-3 max-h-16 overflow-y-auto border border-gray-800/50">
+              {log.length === 0 && <div className="text-[10px] text-gray-600 text-center">Le combat commence...</div>}
+              {log.slice(0, 4).map((l, i) => (
+                <div key={i} className={`text-[10px] leading-relaxed ${
+                  i === 0 ? 'text-white font-medium' :
+                  l.type === 'boss' ? 'text-red-400/70' : 'text-green-400/70'
+                }`}>{l.msg}</div>
+              ))}
+            </div>
+
+            {/* ─── PHASE INDICATORS ─── */}
+            {phase === 'boss_act' && (
+              <div className="text-center py-2 mb-2">
+                <div className="text-sm text-red-400 font-bold animate-pulse">{boss.name} prepare son attaque...</div>
+              </div>
+            )}
+            {phase === 'advance' && <div className="text-center py-2 mb-2"><div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto" /></div>}
+            {phase === 'victory' && (
+              <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center py-4">
+                <div className="text-3xl mb-2">{'\uD83C\uDFC6'}</div>
+                <div className="text-lg font-black text-yellow-400" style={{ animation: 'victoryPulse 1.5s ease-in-out infinite' }}>VICTOIRE !</div>
+              </motion.div>
+            )}
+            {phase === 'defeat' && (
+              <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center py-4">
+                <div className="text-3xl mb-2">{'\uD83D\uDC80'}</div>
+                <div className="text-lg font-black text-red-400" style={{ animation: 'defeatPulse 1.5s ease-in-out infinite' }}>DEFAITE...</div>
+              </motion.div>
+            )}
+
+            {/* ─── SKILLS (grid 3 cols, ARC I style) ─── */}
+            {isPlayerTurn && activeChar && (
+              <div>
+                <div className="text-[10px] text-yellow-400 font-bold mb-1.5">{activeChar.name} — Choisis une attaque :</div>
+                <div className={`grid gap-2 mb-2 ${activeChar.skills.length <= 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                  {activeChar.skills.map((sk, i) => {
+                    const onCd = sk.cd > 0;
+                    const noMana = sk.manaCost > 0 && activeChar.mana < sk.manaCost;
+                    const blocked = onCd || noMana;
+                    return (
+                      <button key={i}
+                        onClick={() => !blocked && arc2PlayerAction(i)}
+                        disabled={blocked}
+                        className={`relative p-2 rounded-lg border text-center transition-all ${
+                          onCd ? 'border-gray-700/30 bg-gray-800/20 opacity-40' :
+                          noMana ? 'border-violet-700/30 bg-violet-900/20 opacity-50' :
+                          'border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 active:scale-95'
+                        }`}>
+                        <div className="text-[10px] font-bold truncate">{sk.name}</div>
+                        <div className="text-[8px] text-gray-400 mt-0.5">
+                          {sk.power > 0 ? `DMG: ${sk.power}%` : ''}
+                          {sk.buffAtk ? `${sk.power > 0 ? ' ' : ''}ATK +${sk.buffAtk}%` : ''}
+                          {sk.buffDef ? `${sk.power > 0 || sk.buffAtk ? ' ' : ''}DEF +${sk.buffDef}%` : ''}
+                          {sk.healSelf ? `${sk.power > 0 ? ' ' : ''}Soin ${sk.healSelf}%` : ''}
+                          {sk.debuffDef ? `${sk.power > 0 ? ' ' : ''}DEF -${sk.debuffDef}%` : ''}
+                        </div>
+                        {sk.manaCost > 0 && (
+                          <div className={`text-[7px] mt-0.5 ${noMana ? 'text-red-400' : 'text-violet-400'}`}>
+                            {sk.manaCost} MP
+                          </div>
+                        )}
+                        {sk.manaCost === 0 && <div className="text-[7px] mt-0.5 text-green-400/60">0 MP</div>}
+                        {onCd && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg">
+                            <span className="text-gray-400 text-xs font-bold">{sk.cd}t</span>
+                          </div>
+                        )}
+                        {!onCd && noMana && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-violet-900/40 rounded-lg">
+                            <span className="text-violet-300 text-[9px] font-bold">Mana</span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* ═══ ARC II RESULT VIEW ═══ */}
+      {view === 'arc2_result' && (() => {
+        const r = data._arc2Result;
+        if (!r) return null;
+        return (
+          <div className="max-w-md mx-auto px-4 pt-8 text-center">
+            {r.defeat ? (
+              <>
+                <div className="text-5xl mb-4">{'\uD83D\uDC80'}</div>
+                <h2 className="text-xl font-black text-red-400 mb-2">Defaite</h2>
+                <p className="text-sm text-gray-400 mb-1">Ton equipe a ete decimee par {r.stageName}.</p>
+                <p className="text-[10px] text-gray-600">Tes combattants sont en cooldown. Reviens plus fort !</p>
+              </>
+            ) : (
+              <>
+                <div className="text-5xl mb-4">{'\uD83C\uDFC6'}</div>
+                <h2 className="text-xl font-black text-yellow-400 mb-4">{r.stageName} vaincu !</h2>
+                <div className="space-y-2 text-sm text-left bg-gray-900/60 rounded-xl p-4 border border-purple-500/20">
+                  <div className="flex justify-between"><span className="text-gray-400">XP gagnes</span><span className="text-green-400 font-bold">+{r.xp}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Coins</span><span className="text-yellow-400 font-bold">{'\uD83D\uDCB0'} +{r.coins}</span></div>
+                  {r.star > 0 && <div className="flex justify-between"><span className="text-gray-400">Difficulte</span><span className="text-yellow-300">{'\u2B50'}{r.star}</span></div>}
+                  {r.art && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Artefact ARC II</span>
+                      <span className={`text-xs font-bold ${r.art.rarity === 'mythique' ? 'text-purple-400' : r.art.rarity === 'legendaire' ? 'text-yellow-400' : 'text-blue-400'}`}>
+                        {'\u2728'} {(ARC2_ARTIFACT_SETS[r.art.set] || {}).name || r.art.set} ({r.art.rarity})
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+            <button
+              onClick={() => { setView('hub'); setData(prev => { const d = { ...prev }; delete d._arc2Result; return d; }); setActiveArc(2); }}
+              className="mt-6 px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl font-bold text-sm shadow-lg hover:scale-105 transition-transform"
+            >
+              {'\u2190'} Retour au Colisee
+            </button>
+          </div>
+        );
+      })()}
 
       {/* ═══ STATS VIEW ═══ */}
       {view === 'stats' && manageTarget && (() => {
@@ -2148,154 +3412,454 @@ export default function ShadowColosseum() {
               );
             })()}
 
-            {/* ═══ TALENT II — Graph View ═══ */}
+            {/* ═══ TALENT II — Pro Graph View ═══ */}
             {talentTab === 2 && t2Unlocked && (() => {
               const t2Alloc = getChibiTalent2Alloc(id);
               const allNodes = getAllTalent2Nodes();
               const connections = getTalent2Connections();
-              // Grid unit = 40px, center at (300, 340)
-              const UNIT = 40;
-              const CX = 300;
-              const CY = 340;
+              const UNIT = 50;
+              const CX = 400;
+              const CY = 430;
+              const W = 800;
+              const H = 860;
               const toX = (gx) => CX + gx * UNIT;
               const toY = (gy) => CY + gy * UNIT;
 
+              // Curved path: S-curves following branch direction
+              const makePath = (x1, y1, x2, y2) => {
+                const dx = x2 - x1, dy = y2 - y1;
+                if (Math.abs(dx) > Math.abs(dy)) {
+                  return `M${x1},${y1} C${x1 + dx * 0.5},${y1} ${x2 - dx * 0.5},${y2} ${x2},${y2}`;
+                }
+                return `M${x1},${y1} C${x1},${y1 + dy * 0.5} ${x2},${y2 - dy * 0.5} ${x2},${y2}`;
+              };
+
+              // Touch handlers
+              const onTouchStart = (e) => {
+                if (e.touches.length === 2) {
+                  const dx = e.touches[0].clientX - e.touches[1].clientX;
+                  const dy = e.touches[0].clientY - e.touches[1].clientY;
+                  t2PinchRef.current = { dist: Math.sqrt(dx * dx + dy * dy), zoom: t2Zoom };
+                } else if (e.touches.length === 1) {
+                  setT2Dragging(true);
+                  t2DragRef.current = { sx: e.touches[0].clientX, sy: e.touches[0].clientY, px: t2Pan.x, py: t2Pan.y };
+                }
+              };
+              const onTouchMove = (e) => {
+                if (e.touches.length === 2) {
+                  const dx = e.touches[0].clientX - e.touches[1].clientX;
+                  const dy = e.touches[0].clientY - e.touches[1].clientY;
+                  const dist = Math.sqrt(dx * dx + dy * dy);
+                  setT2Zoom(Math.max(0.3, Math.min(3, t2PinchRef.current.zoom * dist / (t2PinchRef.current.dist || 1))));
+                } else if (e.touches.length === 1 && t2Dragging) {
+                  setT2Pan({ x: t2DragRef.current.px + e.touches[0].clientX - t2DragRef.current.sx, y: t2DragRef.current.py + e.touches[0].clientY - t2DragRef.current.sy });
+                }
+              };
+              const onTouchEnd = () => setT2Dragging(false);
+              const onMouseDown = (e) => { if (e.button !== 0) return; setT2Dragging(true); t2DragRef.current = { sx: e.clientX, sy: e.clientY, px: t2Pan.x, py: t2Pan.y }; };
+              const onMouseMove = (e) => { if (!t2Dragging) return; setT2Pan({ x: t2DragRef.current.px + e.clientX - t2DragRef.current.sx, y: t2DragRef.current.py + e.clientY - t2DragRef.current.sy }); };
+              const onMouseUp = () => setT2Dragging(false);
+              const onWheel = (e) => { e.stopPropagation(); setT2Zoom(z => Math.max(0.3, Math.min(3, z + (e.deltaY > 0 ? -0.12 : 0.12)))); };
+
+              // Format perRank bonuses for tooltip display
+              const STAT_LABELS = {
+                allStats: 'Toutes stats', atkPercent: 'ATK', hpPercent: 'PV', defPercent: 'DEF', spdPercent: 'SPD',
+                critRate: 'Crit Rate', critDamage: 'Crit DMG', resFlat: 'RES', defPen: 'Pen DEF',
+                elementalDamage: 'DMG Elem', fireDamage: 'DMG Feu', shadowDamage: 'DMG Ombre',
+                waterDamage: 'DMG Eau', windDamage: 'DMG Vent', earthDamage: 'DMG Terre',
+                lightDamage: 'DMG Lumiere', healBonus: 'Soins', regenPerTurn: 'Regen/tour',
+                executionDmg: 'Execution (<30%PV)', bossDamage: 'DMG Boss',
+                weaponDmg_blade: 'DMG Lames', weaponDmg_heavy: 'DMG Lourdes',
+                weaponDmg_ranged: 'DMG Distance', weaponDmg_polearm: "DMG Hast",
+                weaponDmg_shield_def: 'DEF Bouclier', weaponDmg_shield_hp: 'PV Bouclier',
+                bastionDef: 'DEF (<50%PV)', bastionRes: 'RES (<50%PV)',
+                fireRes: 'RES Feu', shadowRes: 'RES Ombre', waterRes: 'RES Eau', windRes: 'RES Vent',
+                defFlat: 'DEF flat', counterChance: 'Riposte',
+                masterWeapons: "Maitre d'Armes", convergenceAll: 'Convergence',
+                hasColossus: 'Colossus', critDefIgnore: 'Ange de la Mort',
+              };
+              const CAPSTONE_FLAGS = ['masterWeapons', 'convergenceAll', 'hasColossus', 'critDefIgnore'];
+              const formatPerRank = (perRank) => {
+                if (!perRank) return [];
+                return Object.entries(perRank).map(([k, v]) => ({
+                  key: k, label: STAT_LABELS[k] || k, val: v, isCap: CAPSTONE_FLAGS.includes(k),
+                }));
+              };
+
               return (
                 <>
-                  {/* Branch legend */}
+                  {/* Branch legend with progress bars */}
                   <div className="flex flex-wrap justify-center gap-2 mb-3">
-                    {Object.values(TALENT2_BRANCHES).map(br => (
-                      <div key={br.id} className="flex items-center gap-1 text-[9px]" style={{ color: br.color }}>
-                        <span>{br.icon}</span> <span>{br.name}</span>
-                        <span className="text-gray-500">({getBranchPts(br.id, t2Alloc)}/{Object.values(br.nodes).reduce((s, n) => s + n.maxRank, 0)})</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Graph container */}
-                  <div className="relative overflow-auto rounded-xl border border-gray-700/30 bg-[#0a0a14]" style={{ height: 720 }}>
-                    <svg width={600} height={700} className="absolute inset-0">
-                      {/* Grid dots */}
-                      {Array.from({ length: 15 }).map((_, gx) =>
-                        Array.from({ length: 18 }).map((_, gy) => (
-                          <circle key={`g${gx}_${gy}`} cx={gx * UNIT} cy={gy * UNIT} r={1} fill="rgba(255,255,255,0.03)" />
-                        ))
-                      )}
-                      {/* Connections */}
-                      {connections.map((conn, i) => {
-                        const fromNode = allNodes[conn.from];
-                        const toNode = allNodes[conn.to];
-                        if (!fromNode || !toNode) return null;
-                        const fromAllocated = (t2Alloc[conn.from] || 0) > 0;
-                        const toAllocated = (t2Alloc[conn.to] || 0) > 0;
-                        const active = fromAllocated;
-                        return (
-                          <line
-                            key={i}
-                            x1={toX(fromNode.pos.x)} y1={toY(fromNode.pos.y)}
-                            x2={toX(toNode.pos.x)} y2={toY(toNode.pos.y)}
-                            stroke={active ? conn.branchColor : '#333'}
-                            strokeWidth={active ? 2 : 1}
-                            strokeOpacity={active ? 0.7 : 0.2}
-                            strokeDasharray={active ? 'none' : '4 4'}
-                          />
-                        );
-                      })}
-                    </svg>
-
-                    {/* Root Node */}
-                    {(() => {
-                      const rk = t2Alloc.root || 0;
-                      const canUp = canAllocT2(id, 'root');
+                    {Object.values(TALENT2_BRANCHES).map(br => {
+                      const pts = getBranchPts(br.id, t2Alloc);
+                      const max = Object.values(br.nodes).reduce((s, n) => s + n.maxRank, 0);
+                      const pct = pts / max;
                       return (
-                        <button
-                          onClick={() => canUp && allocateTalent2Point(id, 'root')}
-                          className="absolute z-10 flex flex-col items-center justify-center rounded-full border-2 transition-all"
+                        <div key={br.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] transition-all"
                           style={{
-                            left: toX(0) - 28, top: toY(0) - 28, width: 56, height: 56,
-                            borderColor: rk > 0 ? '#EAB308' : canUp ? '#EAB30880' : '#444',
-                            backgroundColor: rk > 0 ? 'rgba(234,179,8,0.15)' : 'rgba(30,30,40,0.8)',
-                            boxShadow: rk > 0 ? '0 0 20px rgba(234,179,8,0.3)' : 'none',
-                            cursor: canUp ? 'pointer' : 'default',
-                          }}
-                        >
-                          <span className="text-lg">{TALENT2_ROOT.icon}</span>
-                          <span className="text-[8px] text-gray-400">{rk}/{TALENT2_ROOT.maxRank}</span>
-                        </button>
-                      );
-                    })()}
-
-                    {/* Branch Nodes */}
-                    {Object.values(TALENT2_BRANCHES).map(branch =>
-                      Object.entries(branch.nodes).map(([nodeId, node]) => {
-                        const rk = t2Alloc[nodeId] || 0;
-                        const isMaxed = rk >= node.maxRank;
-                        const canUp = canAllocT2(id, nodeId);
-                        const isCapstone = node.capstone;
-                        const nodeSize = isCapstone ? 52 : 44;
-                        const half = nodeSize / 2;
-
-                        return (
-                          <button
-                            key={nodeId}
-                            onClick={() => canUp && allocateTalent2Point(id, nodeId)}
-                            className="absolute z-10 flex flex-col items-center justify-center transition-all group"
-                            style={{
-                              left: toX(node.pos.x) - half, top: toY(node.pos.y) - half,
-                              width: nodeSize, height: nodeSize,
-                              borderRadius: isCapstone ? '12px' : '50%',
-                              border: `2px solid ${isMaxed ? branch.color : canUp ? branch.color + '80' : '#444'}`,
-                              backgroundColor: isMaxed ? branch.color + '20' : rk > 0 ? branch.color + '10' : 'rgba(20,20,30,0.8)',
-                              boxShadow: isMaxed ? `0 0 16px ${branch.color}40` : canUp ? `0 0 8px ${branch.color}20` : 'none',
-                              cursor: canUp ? 'pointer' : 'default',
-                              animation: canUp ? 'nodePulse 2s ease-in-out infinite' : 'none',
-                            }}
-                            title={`${node.name}\n${node.desc}\n${rk}/${node.maxRank}`}
-                          >
-                            <span className="text-sm leading-none">{node.icon}</span>
-                            <span className="text-[7px] leading-none mt-0.5" style={{ color: isMaxed ? branch.color : '#888' }}>
-                              {rk}/{node.maxRank}
-                            </span>
-
-                            {/* Tooltip on hover */}
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 pointer-events-none">
-                              <div className="bg-gray-900/95 border border-gray-600/50 rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-xl">
-                                <div className="text-[10px] font-bold text-white">{node.name}</div>
-                                <div className="text-[9px] text-gray-300 mt-0.5">{node.desc}</div>
-                                {node.requiredBranchPts && (
-                                  <div className="text-[8px] mt-0.5" style={{ color: branch.color }}>
-                                    Requis: {node.requiredBranchPts} pts dans {branch.name}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Lock overlay */}
-                            {rk === 0 && !canUp && (
-                              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40" style={{ borderRadius: isCapstone ? '12px' : '50%' }}>
-                                <span className="text-[10px]">{'\uD83D\uDD12'}</span>
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })
-                    )}
-
-                    {/* Branch Labels */}
-                    {Object.values(TALENT2_BRANCHES).map(branch => {
-                      const positions = { weapons: { x: -5, y: 0 }, elements: { x: 5, y: 0 }, titan: { x: 0, y: -6 }, reaper: { x: 0, y: 6 } };
-                      const p = positions[branch.id] || { x: 0, y: 0 };
-                      return (
-                        <div
-                          key={branch.id + '_label'}
-                          className="absolute text-[8px] font-bold text-center pointer-events-none"
-                          style={{ left: toX(p.x) - 40, top: toY(p.y) + 30, width: 80, color: branch.color + 'aa' }}
-                        >
-                          {branch.icon} {branch.name}
+                            borderColor: pct > 0 ? br.color + '50' : '#333',
+                            backgroundColor: pct > 0 ? br.color + '10' : 'transparent',
+                            boxShadow: pct >= 1 ? `0 0 12px ${br.color}30` : 'none',
+                          }}>
+                          <span className="text-sm">{br.icon}</span>
+                          <span className="font-bold" style={{ color: pct > 0 ? br.color : '#666' }}>{br.name}</span>
+                          <span className="font-mono" style={{ color: pct >= 1 ? br.color : '#888' }}>{pts}/{max}</span>
                         </div>
                       );
                     })}
                   </div>
+
+                  {/* Graph container — zoom/pan enabled */}
+                  <div
+                    className="relative overflow-hidden rounded-xl border border-gray-700/40 select-none"
+                    style={{
+                      height: 520,
+                      background: 'radial-gradient(ellipse at 50% 48%, #151530 0%, #0c0c1a 45%, #080812 100%)',
+                      touchAction: 'none',
+                      cursor: t2Dragging ? 'grabbing' : 'grab',
+                    }}
+                    onWheel={onWheel}
+                    onTouchStart={onTouchStart}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
+                    onMouseDown={onMouseDown}
+                    onMouseMove={onMouseMove}
+                    onMouseUp={onMouseUp}
+                    onMouseLeave={onMouseUp}
+                  >
+                    {/* Zoom controls */}
+                    <div className="absolute top-2 right-2 z-30 flex flex-col gap-1">
+                      <button onClick={(e) => { e.stopPropagation(); setT2Zoom(z => Math.min(z + 0.25, 3)); }}
+                        className="w-8 h-8 rounded-lg bg-black/60 border border-gray-600/40 text-white text-base font-bold hover:bg-gray-700/60 transition-colors flex items-center justify-center backdrop-blur-sm">+</button>
+                      <div className="w-8 h-5 flex items-center justify-center text-[8px] text-gray-500 font-mono">{Math.round(t2Zoom * 100)}%</div>
+                      <button onClick={(e) => { e.stopPropagation(); setT2Zoom(z => Math.max(z - 0.25, 0.3)); }}
+                        className="w-8 h-8 rounded-lg bg-black/60 border border-gray-600/40 text-white text-base font-bold hover:bg-gray-700/60 transition-colors flex items-center justify-center backdrop-blur-sm">{'\u2212'}</button>
+                      <button onClick={(e) => { e.stopPropagation(); setT2Zoom(1); setT2Pan({ x: 0, y: 0 }); }}
+                        className="w-8 h-6 rounded-lg bg-black/60 border border-gray-600/40 text-gray-500 text-[8px] hover:bg-gray-700/60 hover:text-gray-300 transition-colors flex items-center justify-center backdrop-blur-sm mt-1">Reset</button>
+                    </div>
+
+                    {/* Hint */}
+                    <div className="absolute bottom-2 left-2 z-30 text-[9px] text-gray-600 pointer-events-none">
+                      Scroll/pinch pour zoomer {'\u2022'} Glisser pour deplacer
+                    </div>
+
+                    {/* Zoomable / pannable layer */}
+                    <div style={{
+                      transform: `translate(${t2Pan.x}px, ${t2Pan.y}px) scale(${t2Zoom})`,
+                      transformOrigin: '50% 48%',
+                      width: W, height: H,
+                      position: 'absolute',
+                      left: '50%', marginLeft: -W / 2,
+                      top: -40,
+                      transition: t2Dragging ? 'none' : 'transform 0.15s ease-out',
+                    }}>
+                      <svg width={W} height={H} className="absolute inset-0" style={{ overflow: 'visible' }}>
+                        <defs>
+                          <filter id="t2glow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="4" result="blur" />
+                            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                          </filter>
+                          <filter id="t2glowHard" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="8" result="blur" />
+                            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                          </filter>
+                          <radialGradient id="t2centerGlow">
+                            <stop offset="0%" stopColor="rgba(234,179,8,0.08)" />
+                            <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+                          </radialGradient>
+                        </defs>
+
+                        {/* Background constellation */}
+                        {Array.from({ length: 60 }).map((_, i) => (
+                          <circle key={`s${i}`}
+                            cx={(i * 137.5 + 50) % W} cy={(i * 97.3 + 30) % H}
+                            r={((i * 7) % 12) / 10 + 0.3}
+                            fill={`rgba(255,255,255,${0.02 + ((i * 3) % 5) * 0.006})`}
+                          />
+                        ))}
+
+                        {/* Center ambient glow */}
+                        <circle cx={CX} cy={CY} r={200} fill="url(#t2centerGlow)" />
+
+                        {/* ── CONNECTIONS with curves + glow ── */}
+                        {connections.map((conn, i) => {
+                          const fn = allNodes[conn.from];
+                          const tn = allNodes[conn.to];
+                          if (!fn || !tn) return null;
+                          const x1 = toX(fn.pos.x), y1 = toY(fn.pos.y);
+                          const x2 = toX(tn.pos.x), y2 = toY(tn.pos.y);
+                          const d = makePath(x1, y1, x2, y2);
+                          const fromOk = (t2Alloc[conn.from] || 0) > 0;
+                          const toOk = (t2Alloc[conn.to] || 0) > 0;
+                          const both = fromOk && toOk;
+
+                          return (
+                            <g key={`c${i}`}>
+                              {/* Glow layer */}
+                              {fromOk && (
+                                <path d={d} fill="none" stroke={conn.branchColor}
+                                  strokeWidth={both ? 8 : 5} strokeOpacity={both ? 0.12 : 0.06}
+                                  filter="url(#t2glow)" />
+                              )}
+                              {/* Main path */}
+                              <path d={d} fill="none"
+                                stroke={fromOk ? conn.branchColor : '#1e1e2e'}
+                                strokeWidth={fromOk ? (both ? 2.5 : 1.8) : 1.2}
+                                strokeOpacity={fromOk ? (both ? 0.85 : 0.4) : 0.15}
+                                strokeDasharray={fromOk ? 'none' : '5 5'}
+                                strokeLinecap="round" />
+                              {/* Energy particle flowing along active paths */}
+                              {both && (
+                                <circle r={2.5} fill={conn.branchColor} opacity={0.8}>
+                                  <animateMotion dur={`${1.8 + (i % 4) * 0.5}s`} repeatCount="indefinite" path={d} />
+                                </circle>
+                              )}
+                            </g>
+                          );
+                        })}
+                      </svg>
+
+                      {/* ── NODES (positioned over SVG) ── */}
+
+                      {/* Root Node */}
+                      {(() => {
+                        const rk = t2Alloc.root || 0;
+                        const canUp = canAllocT2(id, 'root');
+                        const maxed = rk >= TALENT2_ROOT.maxRank;
+                        return (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); if (canUp) allocateTalent2Point(id, 'root'); setT2SelectedNode(t2SelectedNode === 'root' ? null : 'root'); }}
+                            className="absolute z-20 flex flex-col items-center justify-center rounded-full transition-all duration-200 group"
+                            style={{
+                              left: toX(0) - 36, top: toY(0) - 36, width: 72, height: 72,
+                              background: maxed
+                                ? 'radial-gradient(circle, rgba(234,179,8,0.3) 0%, rgba(234,179,8,0.05) 100%)'
+                                : rk > 0
+                                  ? 'radial-gradient(circle, rgba(234,179,8,0.15) 0%, rgba(20,20,35,0.95) 100%)'
+                                  : 'radial-gradient(circle, rgba(45,45,65,0.4) 0%, rgba(15,15,25,0.95) 100%)',
+                              border: `3px solid ${maxed ? '#EAB308' : canUp ? '#EAB30888' : '#333'}`,
+                              boxShadow: maxed
+                                ? '0 0 35px rgba(234,179,8,0.5), 0 0 15px rgba(234,179,8,0.2), inset 0 0 20px rgba(234,179,8,0.1)'
+                                : canUp ? '0 0 20px rgba(234,179,8,0.25)' : 'inset 0 0 10px rgba(0,0,0,0.3)',
+                              cursor: canUp ? 'pointer' : 'default',
+                              animation: canUp && rk === 0 ? 'nodePulse 2s ease-in-out infinite' : 'none',
+                              outline: t2SelectedNode === 'root' ? '2px solid #EAB30880' : 'none',
+                              outlineOffset: '4px',
+                            }}
+                          >
+                            {maxed && <div className="absolute -inset-2 rounded-full border-2 border-yellow-500/20" style={{ animation: 'nodePulse 3s ease-in-out infinite' }} />}
+                            <span className="text-2xl leading-none">{TALENT2_ROOT.icon}</span>
+                            <span className="text-[9px] font-mono mt-0.5" style={{ color: maxed ? '#EAB308' : '#777' }}>{rk}/{TALENT2_ROOT.maxRank}</span>
+
+                            {/* Root hover tooltip */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:block z-50 pointer-events-none"
+                              style={{ transform: `translate(-50%, 0) scale(${1 / t2Zoom})` }}>
+                              <div className="rounded-xl px-3 py-2 shadow-2xl whitespace-nowrap"
+                                style={{ backgroundColor: 'rgba(10,10,22,0.95)', border: '1px solid rgba(234,179,8,0.4)', backdropFilter: 'blur(8px)' }}>
+                                <div className="text-[11px] font-bold text-yellow-400">{TALENT2_ROOT.icon} {TALENT2_ROOT.name}</div>
+                                <div className="text-[9px] text-gray-400 mt-0.5">{TALENT2_ROOT.desc}</div>
+                                <div className="text-[9px] mt-1.5 pt-1.5 border-t border-gray-700/40 flex justify-between gap-4">
+                                  <span className="text-gray-500">Toutes stats</span>
+                                  <span style={{ color: rk > 0 ? '#EAB308' : '#666' }}>+{TALENT2_ROOT.perRank.allStats * Math.max(rk, 1)}%</span>
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })()}
+
+                      {/* Branch Nodes */}
+                      {Object.values(TALENT2_BRANCHES).map(branch =>
+                        Object.entries(branch.nodes).map(([nid, node]) => {
+                          const rk = t2Alloc[nid] || 0;
+                          const maxed = rk >= node.maxRank;
+                          const canUp = canAllocT2(id, nid);
+                          const isCap = node.capstone;
+                          const sz = isCap ? 62 : 50;
+                          const h2 = sz / 2;
+                          const sel = t2SelectedNode === nid;
+                          const pctFill = rk / node.maxRank;
+
+                          const bonuses = formatPerRank(node.perRank);
+                          return (
+                            <button key={nid}
+                              onClick={(e) => { e.stopPropagation(); if (canUp) allocateTalent2Point(id, nid); setT2SelectedNode(sel ? null : nid); }}
+                              className="absolute z-10 flex flex-col items-center justify-center transition-all duration-200 group"
+                              style={{
+                                left: toX(node.pos.x) - h2, top: toY(node.pos.y) - h2,
+                                width: sz, height: sz,
+                                borderRadius: isCap ? '16px' : '50%',
+                                border: `${isCap ? 3 : 2}px solid ${maxed ? branch.color : canUp ? branch.color + '70' : rk > 0 ? branch.color + '40' : '#2a2a3a'}`,
+                                background: maxed
+                                  ? `radial-gradient(circle, ${branch.color}35 0%, ${branch.color}08 100%)`
+                                  : rk > 0
+                                    ? `radial-gradient(circle, ${branch.color}18 0%, rgba(18,18,30,0.95) 100%)`
+                                    : 'radial-gradient(circle, rgba(30,30,45,0.4) 0%, rgba(12,12,22,0.95) 100%)',
+                                boxShadow: maxed
+                                  ? `0 0 25px ${branch.color}45, inset 0 0 15px ${branch.color}12`
+                                  : canUp ? `0 0 12px ${branch.color}20` : 'inset 0 0 8px rgba(0,0,0,0.3)',
+                                cursor: canUp ? 'pointer' : 'default',
+                                animation: canUp && rk === 0 ? 'nodePulse 2s ease-in-out infinite' : 'none',
+                                outline: sel ? `2px solid ${branch.color}80` : 'none',
+                                outlineOffset: '4px',
+                              }}
+                            >
+                              {/* Capstone outer glow ring */}
+                              {isCap && maxed && (
+                                <div className="absolute -inset-2.5 border-2"
+                                  style={{ borderRadius: '20px', borderColor: branch.color + '35', animation: 'nodePulse 3s ease-in-out infinite' }} />
+                              )}
+
+                              {/* Progress ring (partial fill) */}
+                              {rk > 0 && !maxed && !isCap && (
+                                <svg className="absolute inset-0 -rotate-90 pointer-events-none" viewBox="0 0 100 100">
+                                  <circle cx="50" cy="50" r="46" fill="none" stroke={branch.color}
+                                    strokeWidth="3" strokeDasharray={`${pctFill * 289} 289`}
+                                    strokeOpacity="0.35" strokeLinecap="round" />
+                                </svg>
+                              )}
+
+                              <span className={`leading-none ${isCap ? 'text-xl' : 'text-base'}`}>{node.icon}</span>
+                              <span className="text-[8px] font-mono mt-0.5 leading-none"
+                                style={{ color: maxed ? branch.color : rk > 0 ? '#aaa' : '#555' }}>
+                                {rk}/{node.maxRank}
+                              </span>
+
+                              {/* Lock overlay */}
+                              {rk === 0 && !canUp && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/50"
+                                  style={{ borderRadius: isCap ? '16px' : '50%' }}>
+                                  <span className="text-[10px] opacity-50">{'\uD83D\uDD12'}</span>
+                                </div>
+                              )}
+
+                              {/* Hover tooltip with bonus details */}
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:block z-50 pointer-events-none"
+                                style={{ transform: `translate(-50%, 0) scale(${1 / t2Zoom})` }}>
+                                <div className="rounded-xl px-3 py-2 shadow-2xl whitespace-nowrap min-w-[140px]"
+                                  style={{ backgroundColor: 'rgba(10,10,22,0.95)', border: `1px solid ${branch.color}40`, backdropFilter: 'blur(8px)' }}>
+                                  <div className="text-[11px] font-bold" style={{ color: branch.color }}>{node.icon} {node.name}</div>
+                                  <div className="text-[9px] text-gray-400 mt-0.5 max-w-[200px] whitespace-normal">{node.desc}</div>
+                                  {bonuses.length > 0 && (
+                                    <div className="mt-1.5 pt-1.5 border-t border-gray-700/40 space-y-0.5">
+                                      {bonuses.map(b => (
+                                        <div key={b.key} className="text-[9px] flex justify-between gap-4">
+                                          <span className="text-gray-500">{b.label}</span>
+                                          {b.isCap ? (
+                                            <span style={{ color: rk > 0 ? branch.color : '#666' }}>{rk > 0 ? '\u2713 Actif' : 'Inactif'}</span>
+                                          ) : (
+                                            <span style={{ color: rk > 0 ? branch.color : '#666' }}>
+                                              +{b.val * Math.max(rk, 1)}%
+                                              <span className="text-gray-600 ml-1">({rk}/{node.maxRank})</span>
+                                            </span>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {node.requiredBranchPts && (
+                                    <div className="text-[8px] mt-1.5 pt-1 border-t border-gray-700/30" style={{ color: branch.color + '80' }}>
+                                      Requis : {node.requiredBranchPts} pts dans {branch.name}
+                                    </div>
+                                  )}
+                                  {canUp && (
+                                    <div className="text-[8px] mt-1 text-emerald-400/80">Clic pour ameliorer</div>
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
+
+                      {/* Branch Labels */}
+                      {Object.values(TALENT2_BRANCHES).map(branch => {
+                        const lp = { weapons: { x: -5.5, y: 1.5 }, elements: { x: 5.5, y: 1.5 }, titan: { x: 3, y: -6.5 }, reaper: { x: 3, y: 6.5 } };
+                        const p = lp[branch.id] || { x: 0, y: 0 };
+                        const pts = getBranchPts(branch.id, t2Alloc);
+                        return (
+                          <div key={branch.id + '_l'}
+                            className="absolute text-[9px] font-bold pointer-events-none whitespace-nowrap text-center"
+                            style={{
+                              left: toX(p.x) - 50, top: toY(p.y), width: 100,
+                              color: pts > 0 ? branch.color + 'cc' : branch.color + '50',
+                              textShadow: pts > 0 ? `0 0 10px ${branch.color}30` : 'none',
+                            }}>
+                            {branch.icon} {branch.name}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Selected Node Detail Panel */}
+                  {t2SelectedNode && (() => {
+                    const node = allNodes[t2SelectedNode];
+                    if (!node) return null;
+                    const rk = t2Alloc[t2SelectedNode] || 0;
+                    const maxed = rk >= node.maxRank;
+                    const branch = node.branchId ? TALENT2_BRANCHES[node.branchId] : null;
+                    const col = branch ? branch.color : '#EAB308';
+                    const canUp = canAllocT2(id, t2SelectedNode);
+
+                    return (
+                      <div className="mt-3 p-3 rounded-xl border backdrop-blur-sm transition-all"
+                        style={{ borderColor: col + '40', backgroundColor: 'rgba(15,15,30,0.9)', boxShadow: `0 0 20px ${col}10` }}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full flex items-center justify-center border-2 shrink-0"
+                            style={{ borderColor: maxed ? col : col + '50', backgroundColor: col + '15', boxShadow: maxed ? `0 0 15px ${col}30` : 'none' }}>
+                            <span className="text-xl">{node.icon}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-bold" style={{ color: col }}>{node.name}</div>
+                            <div className="text-[11px] text-gray-400 mt-0.5">{node.desc}</div>
+                            {node.requiredBranchPts && (
+                              <div className="text-[9px] mt-0.5" style={{ color: col + '80' }}>
+                                Requis : {node.requiredBranchPts} pts dans {branch?.name}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-lg font-bold font-mono" style={{ color: maxed ? col : rk > 0 ? '#aaa' : '#555' }}>
+                              {rk}<span className="text-xs text-gray-600">/{node.maxRank}</span>
+                            </div>
+                          </div>
+                        </div>
+                        {/* Stat bonuses grid */}
+                        {node.perRank && (() => {
+                          const bonuses = formatPerRank(node.perRank);
+                          if (bonuses.length === 0) return null;
+                          return (
+                            <div className="mt-2.5 pt-2 border-t border-gray-700/30 grid gap-1">
+                              {bonuses.map(b => (
+                                <div key={b.key} className="flex justify-between items-center text-[10px]">
+                                  <span className="text-gray-500">{b.label}</span>
+                                  {b.isCap ? (
+                                    <span className="font-bold" style={{ color: rk > 0 ? col : '#555' }}>{rk > 0 ? '\u2713 Actif' : 'Inactif'}</span>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-gray-600 text-[9px]">+{b.val}%/rang</span>
+                                      <span className="font-bold font-mono" style={{ color: rk > 0 ? col : '#555' }}>
+                                        +{b.val * rk}%
+                                      </span>
+                                      {!maxed && <span className="text-gray-700 text-[8px]">{'\u2192'} +{b.val * node.maxRank}%</span>}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                        {canUp && (
+                          <button onClick={() => allocateTalent2Point(id, t2SelectedNode)}
+                            className="mt-2.5 w-full py-2 rounded-lg text-xs font-bold transition-all hover:brightness-110"
+                            style={{ backgroundColor: col + '20', color: col, border: `1px solid ${col}40`, boxShadow: `0 0 10px ${col}15` }}>
+                            {'\u2B06'} Ameliorer ({availTP - spentTP} PT restants)
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </>
               );
             })()}
