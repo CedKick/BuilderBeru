@@ -246,7 +246,7 @@ export default function PvpMode() {
     const deviceId = getDeviceId();
 
     try {
-      const resp = await fetch('/api/pvp/register-defense', {
+      const resp = await fetch('/api/pvp?action=register-defense', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ deviceId, displayName: displayName.trim(), teamData, powerScore }),
@@ -275,7 +275,7 @@ export default function PvpMode() {
     const deviceId = getDeviceId();
 
     try {
-      const resp = await fetch(`/api/pvp/find-opponents?deviceId=${encodeURIComponent(deviceId)}&powerScore=${powerScore}`);
+      const resp = await fetch(`/api/pvp?action=find-opponents&deviceId=${encodeURIComponent(deviceId)}&powerScore=${powerScore}`);
       const json = await resp.json();
       if (json.success) {
         setOpponents(json.opponents || []);
@@ -411,7 +411,7 @@ export default function PvpMode() {
 
       // Report result to server
       const deviceId = getDeviceId();
-      fetch('/api/pvp/report-result', {
+      fetch('/api/pvp?action=report-result', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -693,7 +693,7 @@ export default function PvpMode() {
     setLoadingRankings(true);
     try {
       const deviceId = getDeviceId();
-      const resp = await fetch(`/api/pvp/rankings?deviceId=${encodeURIComponent(deviceId)}&limit=50`);
+      const resp = await fetch(`/api/pvp?action=rankings&deviceId=${encodeURIComponent(deviceId)}&limit=50`);
       const json = await resp.json();
       if (json.success) {
         setRankings(json.rankings || []);
