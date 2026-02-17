@@ -1,7 +1,7 @@
 import { query } from '../db/neon.js';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', 'https://builderberu.com');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -11,6 +11,11 @@ export default async function handler(req, res) {
 
     if (!deviceId) {
       return res.status(400).json({ error: 'Missing deviceId' });
+    }
+
+    // Validate deviceId format
+    if (!deviceId.startsWith('dev_') || deviceId.length > 50) {
+      return res.status(403).json({ error: 'Invalid deviceId' });
     }
 
     // Load one key or all keys for this device
