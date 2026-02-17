@@ -31,11 +31,13 @@ export default function BuilderMenu({ isOpen, onClose }) {
 
   // Listen for auth-change events
   useEffect(() => {
-    const onAuthChange = () => setAuthState({ loggedIn: isLoggedIn(), user: getAuthUser() });
-    window.addEventListener('beru-react', (e) => {
-      if (e.detail?.type === 'auth-change') onAuthChange();
-    });
-    return () => window.removeEventListener('beru-react', onAuthChange);
+    const handler = (e) => {
+      if (e.detail?.type === 'auth-change') {
+        setAuthState({ loggedIn: isLoggedIn(), user: getAuthUser() });
+      }
+    };
+    window.addEventListener('beru-react', handler);
+    return () => window.removeEventListener('beru-react', handler);
   }, []);
 
   const menuSections = [
@@ -341,7 +343,11 @@ export default function BuilderMenu({ isOpen, onClose }) {
       </div>
 
       {/* Auth Modal */}
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      <AuthModal isOpen={showAuthModal} onClose={() => {
+        setShowAuthModal(false);
+        // Re-check auth state when modal closes (login may have just succeeded)
+        setAuthState({ loggedIn: isLoggedIn(), user: getAuthUser() });
+      }} />
     </>
   );
 }
