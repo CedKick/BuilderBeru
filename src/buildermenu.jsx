@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -15,12 +15,28 @@ import {
   Zap,
   BookOpen,
   Gamepad2,
-  X
+  X,
+  LogIn,
+  User,
+  LogOut,
 } from 'lucide-react';
+import { isLoggedIn, getAuthUser, logout } from './utils/auth';
+import AuthModal from './components/AuthModal';
 
 export default function BuilderMenu({ isOpen, onClose }) {
   const { t } = useTranslation();
   const location = useLocation();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authState, setAuthState] = useState(() => ({ loggedIn: isLoggedIn(), user: getAuthUser() }));
+
+  // Listen for auth-change events
+  useEffect(() => {
+    const onAuthChange = () => setAuthState({ loggedIn: isLoggedIn(), user: getAuthUser() });
+    window.addEventListener('beru-react', (e) => {
+      if (e.detail?.type === 'auth-change') onAuthChange();
+    });
+    return () => window.removeEventListener('beru-react', onAuthChange);
+  }, []);
 
   const menuSections = [
     {
@@ -278,7 +294,38 @@ export default function BuilderMenu({ isOpen, onClose }) {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-purple-500/20">
+        <div className="p-4 border-t border-purple-500/20 space-y-3">
+          {/* Auth section */}
+          {authState.loggedIn ? (
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2 min-w-0">
+                <User className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                <span className="text-xs text-white font-bold truncate max-w-[140px]">
+                  {authState.user?.username || '...'}
+                </span>
+              </div>
+              <button
+                onClick={() => { logout(); setAuthState({ loggedIn: false, user: null }); }}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-red-400 transition-colors flex-shrink-0"
+              >
+                <LogOut className="w-3 h-3" />
+                Quitter
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="w-full py-2 rounded-lg bg-gradient-to-r from-purple-600/30 to-indigo-600/30
+                         text-sm text-purple-300 font-medium
+                         hover:from-purple-500/40 hover:to-indigo-500/40
+                         transition-all border border-purple-500/20
+                         flex items-center justify-center gap-2"
+            >
+              <LogIn className="w-4 h-4" />
+              Se connecter
+            </button>
+          )}
+
           <div className="text-center">
             <p className="text-xs text-gray-500 mb-1">BuilderBeru v2.4</p>
             <a
@@ -287,11 +334,14 @@ export default function BuilderMenu({ isOpen, onClose }) {
               rel="noopener noreferrer"
               className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
             >
-              💬 Discord Community
+              Discord Community
             </a>
           </div>
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </>
   );
 }

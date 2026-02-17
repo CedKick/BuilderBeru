@@ -14,7 +14,14 @@
 
 const API_BASE = '/api/storage';
 const DEVICE_ID_KEY = 'builderberu_device_id';
+const AUTH_TOKEN_KEY = 'builderberu_auth_token';
 const TRACKED_KEYS_KEY = 'builderberu_cloud_keys';
+
+// Get auth headers if user is logged in (reads directly from localStorage to avoid circular imports)
+function _getAuthHeaders() {
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
 
 // Keys that should be synced to the cloud
 const CLOUD_KEYS = [
@@ -93,7 +100,9 @@ class CloudStorageManager {
   async loadCloud(key) {
     try {
       const deviceId = getDeviceId();
-      const resp = await fetch(`${API_BASE}/load?deviceId=${encodeURIComponent(deviceId)}&key=${encodeURIComponent(key)}`);
+      const resp = await fetch(`${API_BASE}/load?deviceId=${encodeURIComponent(deviceId)}&key=${encodeURIComponent(key)}`, {
+        headers: { ..._getAuthHeaders() },
+      });
       if (!resp.ok) return null;
       const json = await resp.json();
       if (json.success && json.data !== null) {
@@ -111,7 +120,9 @@ class CloudStorageManager {
   async loadAllCloud() {
     try {
       const deviceId = getDeviceId();
-      const resp = await fetch(`${API_BASE}/load?deviceId=${encodeURIComponent(deviceId)}`);
+      const resp = await fetch(`${API_BASE}/load?deviceId=${encodeURIComponent(deviceId)}`, {
+        headers: { ..._getAuthHeaders() },
+      });
       if (!resp.ok) return null;
       const json = await resp.json();
       if (json.success) {
@@ -192,7 +203,7 @@ class CloudStorageManager {
       const deviceId = getDeviceId();
       const resp = await fetch(`${API_BASE}/save`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ..._getAuthHeaders() },
         body: JSON.stringify({ deviceId, key, data }),
       });
 

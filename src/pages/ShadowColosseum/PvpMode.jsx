@@ -4,6 +4,8 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { isLoggedIn, authHeaders } from '../../utils/auth';
+import AuthModal from '../../components/AuthModal';
 import { computeTalentBonuses } from './talentTreeData';
 import { computeTalentBonuses2 } from './talentTree2Data';
 import {
@@ -36,12 +38,6 @@ const loadColoData = () => { try { return { ...defaultColoData(), ...JSON.parse(
 const defaultPvpData = () => ({ displayName: '', defenseTeam: [], attackTeam: [], pvpStats: { wins: 0, losses: 0, rating: 1000, bestRating: 1000 }, lastMatchAt: 0 });
 const loadPvpData = () => { try { return { ...defaultPvpData(), ...JSON.parse(localStorage.getItem(PVP_KEY)) }; } catch { return defaultPvpData(); } };
 const savePvpData = (d) => localStorage.setItem(PVP_KEY, JSON.stringify(d));
-
-const getDeviceId = () => {
-  let id = localStorage.getItem('builderberu_device_id');
-  if (!id) { id = 'dev_' + crypto.randomUUID(); localStorage.setItem('builderberu_device_id', id); }
-  return id;
-};
 
 const fmt = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(Math.floor(n));
 
@@ -78,6 +74,16 @@ const PVP_ARENAS = [
 // ═══════════════════════════════════════════════════════════════
 
 export default function PvpMode() {
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(() => isLoggedIn());
+
+  // Listen for auth changes
+  useEffect(() => {
+    const handler = (e) => { if (e.detail?.type === 'auth-change') setLoggedIn(isLoggedIn()); };
+    window.addEventListener('beru-react', handler);
+    return () => window.removeEventListener('beru-react', handler);
+  }, []);
+
   const [coloData] = useState(() => loadColoData());
   const [pvpData, setPvpData] = useState(() => loadPvpData());
   const [phase, setPhase] = useState('setup');
@@ -134,6 +140,7 @@ export default function PvpMode() {
   const [rankings, setRankings] = useState([]);
   const [rankingsTotal, setRankingsTotal] = useState(0);
   const [playerRank, setPlayerRank] = useState(null);
+  const [myPlayerId, setMyPlayerId] = useState(null);
   const [loadingRankings, setLoadingRankings] = useState(false);
 
   // ─── Pool of available chibis/hunters ────────────────────────
@@ -289,13 +296,12 @@ export default function PvpMode() {
     if (teamData.length < 6) { setRegisterMsg('Erreur: unites invalides'); return; }
 
     const powerScore = computePowerScore(defIds);
-    const deviceId = getDeviceId();
 
     try {
       const resp = await fetch('/api/pvp?action=register-defense', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deviceId, displayName: displayName.trim(), teamData, powerScore }),
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ displayName: displayName.trim(), teamData, powerScore }),
       });
       const json = await resp.json();
       if (json.success) {
@@ -318,10 +324,11 @@ export default function PvpMode() {
     setLoadingOpponents(true);
     const atkIds = [...team1, ...team2].filter(Boolean);
     const powerScore = computePowerScore(atkIds);
-    const deviceId = getDeviceId();
 
     try {
-      const resp = await fetch(`/api/pvp?action=find-opponents&deviceId=${encodeURIComponent(deviceId)}&powerScore=${powerScore}`);
+      const resp = await fetch(`/api/pvp?action=find-opponents&powerScore=${powerScore}`, {
+        headers: { ...authHeaders() },
+      });
       const json = await resp.json();
       if (json.success) {
         setOpponents(json.opponents || []);
@@ -458,13 +465,11 @@ export default function PvpMode() {
         alive: c.alive,
       })).sort((a, b) => b.damage - a.damage);
 
-      const deviceId = getDeviceId();
       fetch('/api/pvp?action=report-result', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({
-          deviceId,
-          defenderId: selectedOpponent?.deviceId,
+          defenderId: selectedOpponent?.opponentId,
           attackerWon,
           attackerAliveCount: aliveAtk.length,
           duration: Math.floor(elapsed),
@@ -738,13 +743,15 @@ export default function PvpMode() {
   const loadRankings = async () => {
     setLoadingRankings(true);
     try {
-      const deviceId = getDeviceId();
-      const resp = await fetch(`/api/pvp?action=rankings&deviceId=${encodeURIComponent(deviceId)}&limit=50`);
+      const resp = await fetch('/api/pvp?action=rankings&limit=50', {
+        headers: { ...authHeaders() },
+      });
       const json = await resp.json();
       if (json.success) {
         setRankings(json.rankings || []);
         setRankingsTotal(json.total || 0);
         setPlayerRank(json.playerRank);
+        if (json.myPlayerId) setMyPlayerId(json.myPlayerId);
       }
     } catch (err) {
       console.warn('Rankings error:', err);
@@ -840,6 +847,31 @@ export default function PvpMode() {
     const ra = { mythique: 3, legendaire: 2, rare: 1 };
     return (ra[b[1].rarity] || 0) - (ra[a[1].rarity] || 0);
   }), [allPool]);
+
+  // ─── LOGIN GATE ─────────────────────────────────────────
+  if (!loggedIn) {
+    return (
+      <div className="min-h-screen bg-[#0f0f1a] text-white flex items-center justify-center p-4">
+        <div className="text-center p-8 rounded-2xl bg-gradient-to-b from-gray-800/40 to-gray-900/40 border border-gray-700/30 max-w-sm">
+          <div className="text-4xl mb-4">{'\u2694\uFE0F'}</div>
+          <h2 className="text-lg font-black mb-2">Connexion requise</h2>
+          <p className="text-sm text-gray-400 mb-5 leading-relaxed">
+            Le PVP necessite un compte pour proteger ton identite et tes resultats.
+          </p>
+          <button onClick={() => setShowAuthModal(true)}
+            className="py-2.5 px-8 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600
+                       text-white font-bold text-sm hover:from-purple-500 hover:to-indigo-500
+                       transition-all shadow-lg shadow-purple-900/40">
+            Se connecter / S'inscrire
+          </button>
+          <Link to="/shadow-colosseum" className="block text-xs text-gray-500 mt-4 hover:text-gray-300 transition-colors">
+            &larr; Retour au Colosseum
+          </Link>
+        </div>
+        <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0f0f1a] text-white pb-20 select-none">
@@ -1233,7 +1265,7 @@ export default function PvpMode() {
 
           <div className="space-y-1 mb-4">
             {rankings.map((r, i) => {
-              const isMe = r.deviceId === getDeviceId();
+              const isMe = myPlayerId && r.playerId === myPlayerId;
               return (
                 <div key={i} className={`flex items-center gap-2 p-2 rounded-lg transition-all ${
                   isMe ? 'bg-cyan-900/20 border border-cyan-500/30' : 'bg-gray-800/20 border border-gray-700/10'

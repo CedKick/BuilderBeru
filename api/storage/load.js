@@ -1,13 +1,20 @@
 import { query } from '../db/neon.js';
+import { extractUser } from '../utils/auth.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', 'https://builderberu.com');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const { deviceId, key } = req.query;
+    let { deviceId, key } = req.query;
+
+    // If auth token present, use the user's canonical deviceId
+    const user = await extractUser(req);
+    if (user) {
+      deviceId = user.deviceId;
+    }
 
     if (!deviceId) {
       return res.status(400).json({ error: 'Missing deviceId' });
@@ -48,6 +55,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, entries });
   } catch (err) {
     console.error('Load error:', err);
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 }

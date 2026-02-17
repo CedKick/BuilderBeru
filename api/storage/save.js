@@ -1,4 +1,5 @@
 import { query } from '../db/neon.js';
+import { extractUser } from '../utils/auth.js';
 
 const ALLOWED_KEYS = [
   'builderberu_users', 'shadow_colosseum_data', 'shadow_colosseum_raid',
@@ -13,12 +14,19 @@ const MAX_SIZE = 2 * 1024 * 1024; // 2MB max per key
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', 'https://builderberu.com');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { deviceId, key, data } = req.body;
+    const { deviceId: bodyDeviceId, key, data } = req.body;
+
+    // If auth token present, use the user's canonical deviceId
+    let deviceId = bodyDeviceId;
+    const user = await extractUser(req);
+    if (user) {
+      deviceId = user.deviceId;
+    }
 
     if (!deviceId || !key || data === undefined) {
       return res.status(400).json({ error: 'Missing deviceId, key, or data' });
@@ -53,6 +61,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, size: sizeBytes });
   } catch (err) {
     console.error('Save error:', err);
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ success: false, error: 'Erreur serveur' });
   }
 }
