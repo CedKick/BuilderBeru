@@ -101,6 +101,9 @@ export async function login(username, password) {
       const proto = Storage.prototype;
       proto.setItem.call(localStorage, DEVICE_ID_KEY, data.deviceId);
     }
+    // Set login-pending flag so initialSync() knows cloud should overwrite local
+    const proto2 = Storage.prototype;
+    proto2.setItem.call(localStorage, 'builderberu_login_pending', 'true');
     // Clear all cloud-tracked keys from localStorage so cloud data wins after reload
     CLOUD_KEYS.forEach(key => localStorage.removeItem(key));
     // Hard reload — initialSync() will pull fresh data from cloud

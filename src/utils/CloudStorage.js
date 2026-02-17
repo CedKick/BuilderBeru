@@ -146,6 +146,12 @@ class CloudStorageManager {
   async initialSync() {
     if (this._initialized) return;
 
+    // Check if this reload comes from a login — cloud should ALWAYS win
+    const loginPending = localStorage.getItem('builderberu_login_pending');
+    if (loginPending) {
+      localStorage.removeItem('builderberu_login_pending');
+    }
+
     const cloudEntries = await this.loadAllCloud();
     if (!cloudEntries) {
       // Offline — just use localStorage
@@ -153,33 +159,37 @@ class CloudStorageManager {
       return;
     }
 
-    // Merge: cloud data into localStorage if local is empty or older
+    // Merge cloud data into localStorage
     for (const [key, entry] of Object.entries(cloudEntries)) {
       const localRaw = localStorage.getItem(key);
-      if (!localRaw) {
-        // Local is empty, use cloud
+      if (loginPending || !localRaw) {
+        // Login pending: cloud ALWAYS wins (cross-device sync)
+        // No local data: cloud fills the gap
         try {
           localStorage.setItem(key, JSON.stringify(entry.data));
         } catch { /* ignore quota errors during sync */ }
       }
-      // If local exists, keep local (it's the most recent from user's device)
+      // Normal reload with local data: keep local (most recent from this device)
     }
 
     // Push all tracked local keys to cloud (in case cloud is behind)
-    for (const key of CLOUD_KEYS) {
-      const localRaw = localStorage.getItem(key);
-      if (localRaw && !cloudEntries[key]) {
-        this._syncQueue.add(key);
+    // But NOT during a login — we just pulled cloud data, don't push back stale local
+    if (!loginPending) {
+      for (const key of CLOUD_KEYS) {
+        const localRaw = localStorage.getItem(key);
+        if (localRaw && !cloudEntries[key]) {
+          this._syncQueue.add(key);
+        }
+      }
+
+      // Flush queue
+      if (this._syncQueue.size > 0) {
+        this._flushQueue();
       }
     }
 
-    // Flush queue
-    if (this._syncQueue.size > 0) {
-      this._flushQueue();
-    }
-
     this._initialized = true;
-    console.log('[CloudStorage] Initial sync complete');
+    console.log('[CloudStorage] Initial sync complete', loginPending ? '(login mode — cloud wins)' : '(normal)');
   }
 
   /**
@@ -292,8 +302,9 @@ class CloudStorageManager {
           try { original(key, value); } catch {}
         }
       }
-      // Auto cloud sync for tracked keys
-      if (CLOUD_KEYS.includes(key)) {
+      // Auto cloud sync for tracked keys — but ONLY after initialSync is done
+      // This prevents pushing empty/default data to cloud during app startup
+      if (CLOUD_KEYS.includes(key) && self._initialized) {
         self._scheduleSync(key);
       }
     };
