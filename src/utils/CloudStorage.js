@@ -31,6 +31,7 @@ const CLOUD_KEYS = [
   'builderberu_easter_progress',
   'lorestory_completed',
   'hallofflame_cache',
+  'pvp_data',
 ];
 
 function getDeviceId() {

@@ -5,7 +5,7 @@ const ALLOWED_KEYS = [
   'beru_chibi_collection', 'beru_companions', 'beru_mascot_visible',
   'beruvianbeta_users', 'builderberu_shadow_coins', 'shadow_achievements',
   'builderberu_easter_eggs', 'builderberu_easter_progress',
-  'lorestory_completed', 'hallofflame_cache',
+  'lorestory_completed', 'hallofflame_cache', 'pvp_data',
 ];
 
 const MAX_SIZE = 2 * 1024 * 1024; // 2MB max per key

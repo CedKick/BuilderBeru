@@ -377,6 +377,11 @@ export const aiPickSkillSupport = (entity, allies) => {
 // ─── SPD to attack interval (for raid real-time) ─────────────
 export const spdToInterval = (spd) => Math.max(500, Math.floor(3000 / (1 + spd / 50)));
 
+// ─── PVP Constants ───────────────────────────────────────────
+export const PVP_DAMAGE_MULT = 0.55;  // All damage reduced in PVP (heals unaffected)
+export const PVP_DURATION_SEC = 90;
+export const PVP_TICK_MS = 100;
+
 // ═══════════════════════════════════════════════════════════════
 // STAR DIFFICULTY SYSTEM
 // ═══════════════════════════════════════════════════════════════

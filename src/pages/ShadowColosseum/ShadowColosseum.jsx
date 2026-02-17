@@ -1120,6 +1120,17 @@ export default function ShadowColosseum() {
             <p className="text-[10px] text-gray-500 mt-0.5">Jusqu'a 6 chibis vs Raid Boss ! Controle Sung Jinwoo au clavier !</p>
           </Link>
 
+          {/* PVP Button */}
+          <Link to="/shadow-colosseum/pvp"
+            className="block mb-4 p-3 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-900/30 to-blue-900/30 hover:from-cyan-900/50 hover:to-blue-900/50 transition-all text-center group">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-xl">{'\u2694\uFE0F'}</span>
+              <span className="font-bold text-cyan-400 group-hover:text-cyan-300">MODE PVP</span>
+              <span className="text-xs text-gray-400">— Arene Asynchrone</span>
+            </div>
+            <p className="text-[10px] text-gray-500 mt-0.5">6v6 contre les equipes des autres joueurs !</p>
+          </Link>
+
           {/* Shop & Artifacts Buttons */}
           <div className="grid grid-cols-2 gap-2 mb-4">
             <button
