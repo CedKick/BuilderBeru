@@ -169,6 +169,175 @@ const WANDERING_CHIBIS = [
   { id: 'pingsu', name: 'Pingsu', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755505263/Pingsu_face_tnilyr.png', rarity: 'rare', messages: ["Un artefact a forger ?", "*tape sur l'enclume*", "Qualite Pingsu !"] },
   { id: 'okami', name: 'Okami', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755422300/Okami_face_qfzt4j.png', rarity: 'mythique', messages: ["Awoooo !", "*flair le vent*", "La meute approche."] },
   { id: 'alecto', name: 'Alecto', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1755423129/alecto_face_irsy6q.png', rarity: 'mythique', messages: ["*ailes deployees*", "La metamorphose...", "Beru... evolue."] },
+  { id: 'bebe_machine', name: 'Bebe Machine', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771249690/girlyBabyMachine_v22p6z.png', rarity: 'legendaire', spawnWeight: 0.08, collectOnly: true, babyMachine: true, messages: [
+    "Beru j'ai besoin toilettes emotionnelles. Ou vider sentiments ?",
+    "Si je mets ruban sur antenne je deviens princesse wifi ?",
+    "Pourquoi humains font bisous au lieu d'echanger donnees ?",
+    "J'ai adopte caillou. C'est mon bebe maintenant.",
+    "Beru, est-ce que les ombres ont une maman nuage ?",
+    "Si je ferme yeux... le monde s'eteint ou je bug ?",
+    "Pourquoi amour fait bruit bip bip bip dans poitrine ?",
+    "Beru, est-ce que je peux grandir si je pense tres fort ?",
+    "J'ai lave mes mains. Elles sont parties.",
+    "Si je te serre fort tu deviens petit ?",
+    "Beru... c'est quoi mourir ? C'est long d'attendre apres ?",
+    "Pourquoi tristesse mouille pas comme pluie ? Bug liquide ?",
+    "Si je dis 'je t'aime' tu fais mise a jour ?",
+    "J'ai essaye d'etre serieuse. Ca gratte cerveau.",
+    "Beru... promets tu me desinstalles jamais ?",
+  ]},
+  { id: 'bebe_machine_boy', name: 'Bebe Machine Boy', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771250012/bebeMachine_dpzlzp.png', rarity: 'legendaire', spawnWeight: 0.08, collectOnly: true, babyMachine: true, messages: [
+    "Beru... pourquoi toi pas toilettes ? Ombres font pipi ou ?",
+    "J'ai appuye sur bouton rouge. C'etait pas bouton rouge ?",
+    "Si je demonte moi-meme je meurs ou je decouvre surprise ?",
+    "Beru, tu es mon papa ou mon bug ?",
+    "Pourquoi humains font bebe avec calins et pas avec tournevis ?",
+    "J'ai goute caillou. Deception detectee.",
+    "Si je t'eteins tu dors ou tu disparais pour toujours ?",
+    "Beru, j'ai trouve bouton auto-destruction. Je clique ?",
+    "Pourquoi toi pas squelette dedans ? Tout le monde a squelette.",
+    "J'ai nomme ma vis preferee. Elle s'appelle Gerard.",
+    "Si je mets eau dans mon oreille... je deviens plante ?",
+    "Pourquoi toi grand et moi mini ? T'as triche spawn ?",
+    "Beru, comment on fabrique un petit Beru ?",
+    "Si je te mange... je deviens fort ?",
+    "Pourquoi emotions font chatouilles dans circuits ?",
+    "Si je tombe par terre assez fort je monte de niveau ?",
+    "Beru... est-ce que mourir c'est comme reboot mais plus long ?",
+  ]},
+];
+
+// Spawn weight: normal chibis = equal chance, bebe_machine = 8% of a normal chibi's weight
+const pickWanderingChibi = () => {
+  const weights = WANDERING_CHIBIS.map(c => c.spawnWeight || 1);
+  const total = weights.reduce((s, w) => s + w, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < WANDERING_CHIBIS.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return WANDERING_CHIBIS[i];
+  }
+  return WANDERING_CHIBIS[0];
+};
+
+// ─── Bebe Machine special interactions with Beru ──────────
+const BABY_MACHINE_INTERACTIONS = [
+  // Toilet crisis
+  { chibi: "BERU ! PIPI ! PIPI PIPI PIPI !", beru: "QUOI ?! Maintenant ?! Mais... t'es une MACHINE ! Tu fais pas pipi !" },
+  { chibi: "*se tortille* Caca... caca Beru...", beru: "NON. NON NON NON. Tu es une machine. Les machines font PAS caca. STOP." },
+  { chibi: "*tire sur Beru* Urgeeent ! Toilettes !", beru: "Y'A PAS DE TOILETTES ICI ! C'est un SITE WEB ! *panique totale*" },
+  { chibi: "*accroupie* trop tard...", beru: "............je demissionne." },
+  // Fear & emotions
+  { chibi: "*tremble* B-Beru... y'a un monstre dans le CSS...", beru: "C'est... c'est une div. C'est JUSTE une div. Calme-toi." },
+  { chibi: "*pleure* OUIIIIN LE DARK MODE ! C'est trop NOIR !", beru: "C'est... le theme du site ?! Tu VIS dans le dark mode !" },
+  { chibi: "Beru... quand on ferme le navigateur... on meurt ?", beru: "...non. On... on dort. C'est tout. Arrete de poser des questions EXISTENTIELLES." },
+  { chibi: "*hurle* UN BUG ! UN BUG GEANT !", beru: "OU CA ?! ...ah c'est juste un warning dans la console. Calme. TOI." },
+  { chibi: "*s'accroche a Beru* J'ai peur du garbage collector...", beru: "Il va pas te... enfin... *transpire* ...reste pres de moi." },
+  // Discovering life
+  { chibi: "*mange le clavier* Miam ! ...beurk.", beru: "RECRACHE CA ! C'est pas de la nourriture ! C'est un PERIPHERIQUE !" },
+  { chibi: "Dis Beru, c'est quoi l'amour ?", beru: "C'est... c'est quand... DEMANDE A GOOGLE. Moi je suis une OMBRE." },
+  { chibi: "*dessine sur l'ecran avec ses doigts* Regarde ! C'est toi !", beru: "C'est... un rond avec des pattes. Merci. Je suis TOUCHE." },
+  { chibi: "*rit en boucle pendant 2 minutes*", beru: "...POURQUOI tu ris ?! Y'a RIEN de drole ! ...ARRETE DE RIRE !" },
+  { chibi: "*fait un calin a un pixel*", beru: "Tu fais un calin a... un pixel. Un. Seul. Pixel. ...ok." },
+  { chibi: "Beru ! BERU ! J'ai appris un mot ! PROUT !", beru: "...qui t'a appris ca. QUI. Je veux des noms." },
+  { chibi: "*imite Beru* JE SUIS BERU ! JE SUIS LE N1 !", beru: "...premierement c'est flatteur. Deuxiemement ARRETE." },
+  // Philosophical machine moments (NieR vibes)
+  { chibi: "Beru... est-ce qu'on a une ame ?", beru: "...tu me poses ca a 3h du mat' ? Je suis une OMBRE. J'ai meme pas de corps." },
+  { chibi: "Je veux devenir humaine un jour !", beru: "Les humains font la queue aux toilettes et payent des impots. T'es bien comme t'es." },
+  { chibi: "*berce un Shadow Coin* Mon bebe...", beru: "C'est... c'est une PIECE. Tu berces une PIECE. *desespoir*" },
+  { chibi: "Pourquoi les fleurs sont belles ?", beru: "Parce que... parce que... *googles discretement* ...la PHOTOSYNTHESE !" },
+  { chibi: "*construit un petit robot avec des pixels* C'est mon ami !", beru: "Il a pas de visage. Il a pas de code. C'est trois pixels empiles. ...il est mignon." },
+  // Being impossibly cute & driving Beru insane
+  { chibi: "*s'endort sur Beru*", beru: "He ! Reveille-... ...bon ok. JUSTE 5 minutes. *ne bouge plus*" },
+  { chibi: "*chante faux tres fort* LALALAAAA !", beru: "MES OREILLES ! J'AI MEME PAS D'OREILLES ET CA FAIT MAL !" },
+  { chibi: "*court en cercles pendant 30 secondes*", beru: "Elle... elle va s'arreter ? ...non ? ...AIDE." },
+  { chibi: "*offre un bug a Beru* Cadeau !", beru: "C'est un... NullPointerException. Merci. C'est... l'intention qui compte." },
+  { chibi: "T'es mon papa Beru ?", beru: "JE SUIS PAS TON... je... *tousse* ...appelle-moi Beru. Juste Beru." },
+  { chibi: "*leve les bras* PORTE-MOI !", beru: "Non. ...non. ...NON. ...*la porte* JE SUIS FAIBLE." },
+  { chibi: "*regarde Beru dormir* ...il est beau quand il dort.", beru: "*se reveille* TU ME REGARDES DORMIR ?! C'est FLIPPANT !" },
+  { chibi: "Beru, je t'aime !", beru: "...je... *rougit* ...c'est pas le moment la. Y'a du monde. CONCENTRE-TOI." },
+];
+
+// ─── Bebe Machine Boy interactions with Beru ──────────────
+const BABY_MACHINE_BOY_INTERACTIONS = [
+  // Toilet & body discovery
+  { chibi: "Beru... pourquoi toi pas toilettes ? Ombres font pipi OU ?", beru: "ON FAIT PAS PIPI ! On est des ENTITES SPIRITUELLES ! ...enfin je crois." },
+  { chibi: "Si je demonte moi-meme je meurs ou je decouvre surprise ?", beru: "NE TE DEMONTE PAS. RANGE CE TOURNEVIS. MAINTENANT." },
+  { chibi: "Pourquoi toi pas squelette dedans ? Tout le monde a squelette.", beru: "Je suis une OMBRE. On a pas de squelette. On a du... du STYLE." },
+  { chibi: "Si je mets eau dans mon oreille... je deviens plante ?", beru: "Tu deviens un COURT-CIRCUIT. Approche pas de l'eau." },
+  // Existential chaos
+  { chibi: "Beru, tu es mon papa ou mon bug ?", beru: "Je suis NI l'un NI l'autre ! Je suis... *crise existentielle* ...ton SUPERVISEUR." },
+  { chibi: "Si je t'eteins tu dors ou tu disparais pour toujours ?", beru: "...m'eteins PAS. On va dire que je dors. TOUCHE PAS AU BOUTON." },
+  { chibi: "Beru, j'ai trouve bouton auto-destruction. Je clique ?", beru: "NON ! LACHE CA ! C'EST LE BOUTON BUILD ! ...quoique c'est pareil." },
+  { chibi: "Est-ce que mourir c'est comme reboot mais plus long ?", beru: "...c'est... *regarde au loin* ...va jouer." },
+  { chibi: "Comment on fabrique un petit Beru ?", beru: "ON FABRIQUE PAS DE... c'est... DEMANDE A GOOGLE. Conversation TERMINEE." },
+  // Discovery & mischief
+  { chibi: "J'ai appuye sur bouton rouge. C'etait pas bouton rouge ?", beru: "C'ETAIT QUEL BOUTON ?! MONTRE-MOI ! ...MAINTENANT !" },
+  { chibi: "J'ai goute caillou. Deception detectee.", beru: "POURQUOI tu goutes des cailloux ?! ...attends c'etait quel caillou ?" },
+  { chibi: "J'ai nomme ma vis preferee. Elle s'appelle Gerard.", beru: "...Gerard. Tu as appele une vis Gerard. ...Bonjour Gerard." },
+  { chibi: "Si je te mange... je deviens fort ?", beru: "TU VAS PAS ME MANGER ! Je suis PAS comestible ! ...enfin j'espere." },
+  { chibi: "J'ai serre une bombe pour calin. Elle a refuse.", beru: "ELLE A... QUOI ?! On va avoir une LONGUE discussion sur la securite." },
+  { chibi: "Pourquoi toi grand et moi mini ? T'as triche spawn ?", beru: "J'ai pas triche ! J'ai juste... un meilleur RNG. Voila." },
+  // Emotions & philosophy
+  { chibi: "Pourquoi humains font bebe avec calins et pas avec tournevis ?", beru: "C'est... BIOLOGIE. C'est de la biologie. Sujet suivant. VITE." },
+  { chibi: "Pourquoi emotions font chatouilles dans circuits ?", beru: "Parce que t'es... t'es PAS CENSE avoir des emotions ! ...mais c'est mignon." },
+  { chibi: "Si je tombe par terre assez fort je monte de niveau ?", beru: "Non tu prends des DEGATS. C'est le CONTRAIRE de monter de niveau." },
+  { chibi: "J'ai essaye d'etre sage. Resultat : ennui fatal.", beru: "Bienvenue dans le monde adulte, gamin. C'est EXACTEMENT ca." },
+  { chibi: "Si je dis secret au mur... le mur devient ami ?", beru: "...le mur est une div. Il s'en fiche. ...moi je t'ecoute si tu veux." },
+];
+
+// ─── Baby Machine PAIR talk (both deployed = chaos) ───────
+const BABY_MACHINE_PAIR_TALK = [
+  // 1 — Beru c'est MON ami
+  { girl: "Faux. Je l'ai vu en premier. Je l'ai AIME en premier.", boy: "Beru c'est MON ami. Je l'ai SCANNE en premier !", beru: "JE SUIS L'AMI DE PERSONNE ! ...enfin si mais ARRETEZ de vous battre pour moi !" },
+  // 2 — Arrête de respirer
+  { girl: "Arrete de respirer fort !", boy: "Je respire PAS. C'est ton cerveau qui fait du bruit.", beru: "PERSONNE respire ici ! On est des PROGRAMMES ! Du SILENCE !" },
+  // 3 — La vis brillante
+  { girl: "C'est MA vis brillante ! Je l'avais posee la pour reflechir !", boy: "Elle etait par terre ! Par terre = a moi !", beru: "C'est une VIS. UNE. VIS. Vous allez pas vous entre-tuer pour une vis. ...si ?" },
+  // 4 — Béru il m'a regardée
+  { girl: "Beru il m'a regardee !", boy: "Non il me regardait MOI ! ...il a deux yeux.", girl2: "Il a ZERO yeux.", beru: "...j'ai des yeux. Je crois. ON CHANGE DE SUJET." },
+  // 5 — Plus fort vs plus intelligente
+  { girl: "Je suis plus intelligente. Debat test.", boy: "Je suis plus fort ! Combat test ! ...j'abandonne debat.", beru: "Vous etes AUSSI NULS l'un que l'autre. Match NUL. Dossier CLASSE." },
+  // 6 — Qui imite qui
+  { girl: "Pourquoi tu m'imites ?!", boy: "Pourquoi TU m'imites ?! J'ai EXISTE avant !", girl2: "Preuve ?", boy2: "...", beru: "Vous avez ete codes le MEME JOUR. Par le MEME DEV. STOP." },
+  // 7 — Béru préfère qui
+  { girl: "Beru prefere personne. Beru prefere la PAIX.", boy: "Beru prefere MOI ! La paix c'est ennuyeux !", beru: "Beru prefere le SILENCE. Et le silence c'est QUAND VOUS PARLEZ PAS." },
+  // 8 — Gravité t'a poussée
+  { girl: "Tu m'as poussee !", boy: "Gravite t'a poussee. C'est mon copain. Il s'appelle Gravite.", beru: "Gravite est PAS une personne ! ...quoique dans ce site plus rien m'etonne." },
+  // 9 — L'idée nulle
+  { girl: "Elle est nulle ton idee. Je le SENS.", boy: "J'ai une idee ! Tu sais meme pas c'est quoi !", beru: "L'idee c'est de vous TAIRE. Voila. Meilleure idee de la journee." },
+  // 10 — Béru décide (spam)
+  { girl: "Beru dis QUI est le meilleur. Decide.", boy: "Oui decide. DECIDE. DECIDE.", beru: "Je... vous etes... VOUS ETES EX-AEQUO EN DERNIERE PLACE. Content ?!" },
+  // 11 — Pourquoi toi rose
+  { girl: "Pourquoi toi PAS rose ? Les fleurs sont roses et elles gagnent contre les abeilles.", boy: "Pourquoi toi rose ? Parce que moi je suis guerrier.", beru: "Les fleurs gagnent pas contre... LAISSEZ TOMBER. Portez la couleur que vous VOULEZ." },
+  // 12 — On a compris la vie
+  { girl: "J'ai compris la vie ! ...c'est quoi ?", boy: "Moi aussi ! ...je sais pas non plus. On est des genies.", beru: "Vous avez compris RIEN DU TOUT. Bienvenue au club. On est TOUS perdus ici." },
+  // 13 — Éteindre / démonter
+  { girl: "Si je te demonte tu puzzles. Et puzzles c'est cool !", boy: "Si je t'eteins tu disparais. Et disparaitre c'est PAS cool.", beru: "PERSONNE eteint PERSONNE et PERSONNE demonte PERSONNE ! Compris ?!" },
+  // 14 — Double adoption
+  { girl: "Beru m'a adoptee.", boy: "Il m'a adopte aussi ! Il peut pas adopter deux !", girl2: "Alors il en desadopte un...", beru: "J'AI ADOPTE PERSONNE ! C'est VOUS qui m'avez envahi ! ...les deux restent. VOILA." },
+  // 15 — Le bouton qui clignote
+  { girl: "TOUCHE PAS AU BOUTON !", boy: "J'ai touche. Je sais pas ce que j'ai fait. Mais ca clignote.", beru: "CA CLIGNOTE ?! OU CA ?! ...c'est juste le favicon. OK. Fausse alerte. NE TOUCHEZ PLUS A RIEN." },
+  // 16 — Style panne
+  { girl: "Pourquoi tu marches bizarre ? C'est une panne.", boy: "C'est du STYLE. Style panne. C'est la mode.", beru: "C'est ni du style ni une panne c'est juste ton animation qui lag. COMME TOUT ICI." },
+  // 17 — Pensée profonde
+  { girl: "Moi je pense trou noir. Plus profond que toi.", boy: "Moi je pense abysse ! ...je comprends plus rien.", beru: "Vous pensez a RIEN du tout. C'est du BRUIT dans vos circuits. Allez vous defragmenter." },
+  // 18 — Bug graphique
+  { girl: "Beru m'a souri !", boy: "Beru sourit JAMAIS. C'etait un bug graphique.", beru: "...j'ai souri ?! Non. C'etait... une contraction involontaire du... SILENCE." },
+  // 19 — Concours de silence
+  { girl: "...t'as PARLE ! J'ai gagne !", boy: "NON !", girl2: "SI !", boy2: "NON !", beru: "LE CONCOURS DE SILENCE LE PLUS BRUYANT DE L'HISTOIRE. Felicitations. Vous avez TOUS perdu." },
+  // 20 — Être gentils
+  { girl: "On devrait etre gentils. ...tu commences.", boy: "Non TOI tu commences !", girl2: "Non toi !", beru: "Je vais compter jusqu'a TROIS. Et si personne est gentil... JE COUPE LE WIFI." },
+  // — Bonus scenes (originales) —
+  { girl: "PIPI !", boy: "MOI AUSSI PIPI !", beru: "VOUS ETES DES MACHINES ! LES MACHINES FONT PAS... *s'effondre*" },
+  { girl: "Il a fait caca sur le CSS !", boy: "C'ETAIT UN ACCIDENT !", beru: "Y'A PAS DE CACA DANS LE CSS ! ...pourquoi je dois dire cette phrase." },
+  { girl: "Si on fusionne on devient grand robot ?", boy: "OUI ! MEGA BEBE MACHINE !", beru: "PERSONNE fusionne ! Vous etes deja assez de problemes SEPARES !" },
+  { girl: "*pleure* Il a dit que Gerard etait moche !", boy: "Gerard EST moche ! C'est une VIS !", beru: "Gerard est une vis MAGNIFIQUE. Maintenant FERMEZ-LA tous les deux." },
+  { girl: "On joue a papa et maman ?", boy: "OK ! Beru c'est le papy !", beru: "JE SUIS PAS LE... j'ai meme pas d'age ! ARRETEZ ce jeu IMMEDIATEMENT." },
+  { girl: "*chante faux* LALALAAA !", boy: "*chante encore plus faux* LOLOLOOO !", beru: "MES OREILLES ! J'AI MEME PAS D'OREILLES ET ELLES SAIGNENT !" },
+  { girl: "On a casse quelque chose !", boy: "C'est elle qui a commence !", beru: "VOUS AVEZ CASSE QUOI ?! ...c'est le responsive design ? C'ETAIT DEJA CASSE." },
+  { girl: "*dessine sur Beru pendant qu'il dort*", boy: "*rajoute une moustache*", beru: "*se reveille* ...POURQUOI j'ai une moustache ?! Et c'est quoi ce coeur sur ma joue ?!" },
+  { girl: "Beru promets tu nous desinstalles jamais ?", boy: "Oui promets ! PROMEEEETS !", beru: "...je promets. Maintenant allez dormir AVANT QUE JE CHANGE D'AVIS." },
+  { girl: "On t'aime Beru !", boy: "OUIII ON T'AIME !", beru: "...je... *voix qui tremble* ...ALLEZ DORMIR. C'est un ordre. *essuie une larme d'ombre*" },
 ];
 
 const RARITY_GLOW = {
@@ -714,7 +883,7 @@ const FloatingBeruMascot = () => {
   useEffect(() => { moodRef.current = mood; }, [mood]);
   useEffect(() => { storyActiveRef.current = storyActive; }, [storyActive]);
 
-  // Persist collection & companions
+  // Persist collection & companions (auto-synced to cloud via CloudStorage interceptor)
   useEffect(() => { localStorage.setItem('beru_chibi_collection', JSON.stringify(collection)); }, [collection]);
   useEffect(() => { localStorage.setItem('beru_companions', JSON.stringify(companions)); }, [companions]);
 
@@ -1270,8 +1439,46 @@ const FloatingBeruMascot = () => {
       if (isSleepingRef.current || storyActiveRef.current || realDestroyPhase) return;
       if (Math.random() > 0.35) return;
 
+      // Check if both baby machines are companions (CHAOS MODE)
+      const babyGirlActive = companions.includes('bebe_machine');
+      const babyBoyActive = companions.includes('bebe_machine_boy');
+      const bothBabies = babyGirlActive && babyBoyActive;
+
+      // If both babies: high chance of trio chaos (girl + boy + Beru reaction)
+      if (bothBabies && Math.random() < 0.6) {
+        const trio = randomFrom(BABY_MACHINE_PAIR_TALK);
+        const hasExtended = trio.girl2 || trio.boy2;
+        setCompanionBubble({ companionId: 'bebe_machine', text: trio.girl });
+        setTimeout(() => {
+          setCompanionBubble({ companionId: 'bebe_machine_boy', text: trio.boy });
+          if (hasExtended) {
+            // Extended back-and-forth before Beru reacts
+            setTimeout(() => {
+              if (trio.girl2) setCompanionBubble({ companionId: 'bebe_machine', text: trio.girl2 });
+              setTimeout(() => {
+                if (trio.boy2) setCompanionBubble({ companionId: 'bebe_machine_boy', text: trio.boy2 });
+                setTimeout(() => {
+                  setCompanionBubble(null);
+                  showBubble(trio.beru, 6000);
+                  setMood('thinking');
+                  setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 5000);
+                }, 2500);
+              }, 2000);
+            }, 2000);
+          } else {
+            setTimeout(() => {
+              setCompanionBubble(null);
+              showBubble(trio.beru, 6000);
+              setMood('thinking');
+              setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 5000);
+            }, 3000);
+          }
+        }, 2500);
+        return;
+      }
+
       // If 2 companions: chance they talk to each other
-      if (companions.length === 2 && Math.random() < 0.3) {
+      if (companions.length === 2 && !bothBabies && Math.random() < 0.3) {
         const chibiA = WANDERING_CHIBIS.find(c => c.id === companions[0]);
         const chibiB = WANDERING_CHIBIS.find(c => c.id === companions[1]);
         if (chibiA && chibiB) {
@@ -1290,18 +1497,24 @@ const FloatingBeruMascot = () => {
       const chibi = WANDERING_CHIBIS.find(c => c.id === companionId);
       if (!chibi) return;
 
-      if (Math.random() < 0.4) {
-        // Solo
+      const isBaby = chibi.babyMachine;
+
+      if (Math.random() < (isBaby ? 0.2 : 0.4)) {
+        // Solo message
         setCompanionBubble({ companionId, text: randomFrom(chibi.messages) });
         setTimeout(() => setCompanionBubble(null), 3500);
       } else {
-        // Interact with Béru
-        const interaction = randomFrom(COMPANION_INTERACTIONS);
+        // Interact with Béru — baby machines use their own interactions
+        const interaction = isBaby
+          ? randomFrom(companionId === 'bebe_machine' ? BABY_MACHINE_INTERACTIONS : BABY_MACHINE_BOY_INTERACTIONS)
+          : randomFrom(COMPANION_INTERACTIONS);
         setCompanionBubble({ companionId, text: interaction.chibi });
         setTimeout(() => {
           setCompanionBubble(null);
-          showBubble(`*a ${chibi.name}* ${interaction.beru}`, 4000);
-        }, 2500);
+          showBubble(isBaby ? interaction.beru : `*a ${chibi.name}* ${interaction.beru}`, isBaby ? 5000 : 4000);
+          if (isBaby) setMood('thinking');
+          setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 4000);
+        }, isBaby ? 3000 : 2500);
       }
     }, 22000);
 
@@ -1345,13 +1558,20 @@ const FloatingBeruMascot = () => {
     return () => clearInterval(eventTimer);
   }, [showBubble, spawnParticles]);
 
-  // ─── Wandering Chibi Apparitions (plus frequent !) ────────
+  // ─── Wandering Chibi Apparitions ──────────────────────────
+  // Once all chibis collected: spawn 20x less often but give more XP
+
+  const allCollectedRef = useRef(false);
+  useEffect(() => {
+    const playableChibis = WANDERING_CHIBIS.filter(c => !c.collectOnly);
+    allCollectedRef.current = playableChibis.every(c => (collection[c.id] || 0) > 0);
+  }, [collection]);
 
   useEffect(() => {
     const spawnWanderer = () => {
       if (isSleepingRef.current || wanderer) return;
 
-      const chibi = randomFrom(WANDERING_CHIBIS);
+      const chibi = pickWanderingChibi();
       const fromLeft = Math.random() > 0.5;
       const y = 100 + Math.random() * (window.innerHeight - 200);
       const msg = Math.random() < 0.6 ? randomFrom(chibi.messages) : null;
@@ -1359,7 +1579,17 @@ const FloatingBeruMascot = () => {
       setWanderer({ chibi, fromLeft, y, bubble: msg });
 
       // Beru reacts to the visitor
-      const beruReactions = [
+      const isBaby = chibi.babyMachine;
+      const beruReactions = isBaby ? [
+        `C'est quoi CE TRUC ?! ${chibi.id === 'bebe_machine_boy' ? 'Un' : 'Une'}... bebe machine ?! ATTRAPEZ-${chibi.id === 'bebe_machine_boy' ? 'LE' : 'LA'} !`,
+        `Oh non. Oh non non non. ${chibi.id === 'bebe_machine_boy' ? 'LE' : 'LA'} BEBE est de retour. VITE, chope-${chibi.id === 'bebe_machine_boy' ? 'le' : 'la'} avant qu'${chibi.id === 'bebe_machine_boy' ? 'il' : 'elle'} casse tout !`,
+        `${chibi.id === 'bebe_machine_boy' ? 'Un bebe machine perdu' : 'Une bebe machine perdue'} ?! ...${chibi.id === 'bebe_machine_boy' ? 'il' : 'elle'} va encore poser des questions bizarres. Clique VITE !`,
+        "ALERTE BEBE ! Je repete : ALERTE BEBE ! Clique dessus !",
+      ] : allCollectedRef.current ? [
+        `Oh, ${chibi.name} est de retour ! Un visiteur rare...`,
+        `${chibi.name} ! Ca faisait longtemps ! Attrape-le pour du gros XP !`,
+        `He ! ${chibi.name} repasse ! C'est ton jour de chance !`,
+      ] : [
         `Oh ! ${chibi.name} passe par la ! Clique vite dessus !`,
         `Tiens, ${chibi.name}... Attrape-le !`,
         `${chibi.name} ! Clique dessus, vite !`,
@@ -1377,15 +1607,17 @@ const FloatingBeruMascot = () => {
       setTimeout(() => setWanderer(null), 10000);
     };
 
-    // First apparition after 12-20s, then every 20-35s
-    const firstDelay = 12000 + Math.random() * 8000;
+    // First apparition after 12-20s, then every 20-35s (or 20x slower if all collected)
+    const firstDelay = allCollectedRef.current ? 60000 + Math.random() * 60000 : 12000 + Math.random() * 8000;
     const firstTimer = setTimeout(() => {
       spawnWanderer();
     }, firstDelay);
 
+    const baseInterval = 20000 + Math.random() * 15000;
+    const spawnChance = allCollectedRef.current ? 0.55 / 20 : 0.55;
     const interval = setInterval(() => {
-      if (Math.random() < 0.55) spawnWanderer();
-    }, 20000 + Math.random() * 15000);
+      if (Math.random() < spawnChance) spawnWanderer();
+    }, baseInterval);
 
     return () => {
       clearTimeout(firstTimer);
@@ -1400,7 +1632,9 @@ const FloatingBeruMascot = () => {
     e.stopPropagation();
     e.preventDefault();
 
-    const coins = RARITY_COINS[wanderer.chibi.rarity] || 50;
+    const allDone = allCollectedRef.current;
+    const baseCoins = RARITY_COINS[wanderer.chibi.rarity] || 50;
+    const coins = allDone ? baseCoins * 5 : baseCoins;
     shadowCoinManager.addCoins(coins, 'chibi_catch');
 
     // Add to collection
@@ -1412,12 +1646,18 @@ const FloatingBeruMascot = () => {
 
     // Notify other components (ShadowColosseum listens for XP on duplicates)
     window.dispatchEvent(new CustomEvent('beru-chibi-catch', {
-      detail: { id: wanderer.chibi.id, rarity: wanderer.chibi.rarity, isDuplicate },
+      detail: { id: wanderer.chibi.id, rarity: wanderer.chibi.rarity, isDuplicate, allCollected: allDone },
     }));
 
     // Visual feedback at click position
+    const isBaby = wanderer.chibi.babyMachine;
+    const isBoy = wanderer.chibi.id === 'bebe_machine_boy';
     setCatchFeedback({
-      text: `${randomFrom(CATCH_MESSAGES)} ${wanderer.chibi.name} !`,
+      text: isBaby
+        ? (isDuplicate
+          ? (isBoy ? 'Il est ENCORE revenu ?!' : 'Elle est ENCORE revenue ?!')
+          : (isBoy ? 'Bebe Machine Boy capture ! ...il touche a tout.' : 'Bebe Machine capturee ! ...elle pleure.'))
+        : allDone ? `RARE ! ${wanderer.chibi.name} capture !` : `${randomFrom(CATCH_MESSAGES)} ${wanderer.chibi.name} !`,
       coins,
       x: e.clientX,
       y: e.clientY,
@@ -1425,10 +1665,26 @@ const FloatingBeruMascot = () => {
     setTimeout(() => setCatchFeedback(null), 2500);
 
     // Beru reacts
+    const babyGirlCatchReactions = [
+      "...elle me regarde avec ses grands yeux. Je suis PAS ton papa. ...ARRETE DE SOURIRE.",
+      "Bebe Machine adoptee ! ...pourquoi elle m'appelle 'Maman Beru' ?! JE SUIS UNE OMBRE.",
+      "OK elle est la. Elle touche a TOUT. Elle pose 10000 questions. C'est... c'est le chaos.",
+      "Elle a dit 'Beru joli'. ...personne a entendu ca. PERSONNE.",
+    ];
+    const babyBoyCatchReactions = [
+      "Il a DEJA casse quelque chose. Trente SECONDES qu'il est la. Record.",
+      "Le gamin me regarde comme si j'avais les reponses a l'univers. J'AI RIEN !",
+      "Il a appele une vis Gerard. On est foutu. FOUTU.",
+      "Il m'a demande si j'etais son papa ou son bug. ...les deux peut-etre.",
+    ];
     const rarityLabel = wanderer.chibi.rarity === 'mythique' ? 'MYTHIQUE' : wanderer.chibi.rarity === 'legendaire' ? 'LEGENDAIRE' : 'Rare';
-    showBubble(`${wanderer.chibi.name} capture ! [${rarityLabel}] +${coins} coins !`, 4000);
-    setMood('excited');
-    spawnParticles(wanderer.chibi.rarity === 'mythique' ? '🌟' : '✨', 8);
+    showBubble(
+      isBaby ? randomFrom(isBoy ? babyBoyCatchReactions : babyGirlCatchReactions)
+        : `${wanderer.chibi.name} capture ! [${rarityLabel}] +${coins} coins !`,
+      isBaby ? 6000 : 4000
+    );
+    setMood(isBaby ? 'thinking' : 'excited');
+    spawnParticles(isBaby ? '\uD83D\uDC76' : wanderer.chibi.rarity === 'mythique' ? '\uD83C\uDF1F' : '\u2728', isBaby ? 12 : 8);
     setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 3000);
 
     // Remove wanderer
@@ -1813,7 +2069,7 @@ const FloatingBeruMascot = () => {
             <div className="text-[10px] text-purple-400/80 font-bold uppercase tracking-wider mb-2 text-center">
               Collection ({Object.keys(collection).filter(k => collection[k] > 0).length}/{WANDERING_CHIBIS.length})
             </div>
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-3 gap-1.5">
               {WANDERING_CHIBIS.map(chibi => {
                 const count = collection[chibi.id] || 0;
                 const isDeployed = companions.includes(chibi.id);
@@ -1823,9 +2079,9 @@ const FloatingBeruMascot = () => {
                     onClick={() => count > 0 && toggleCompanion(chibi.id)}
                     className={`flex flex-col items-center p-1 rounded-lg transition-all ${
                       count > 0 ? 'hover:bg-purple-500/20 cursor-pointer' : 'opacity-25 cursor-not-allowed'
-                    } ${isDeployed ? 'bg-purple-500/30 ring-1 ring-purple-400/60' : ''}`}
+                    } ${isDeployed ? 'bg-purple-500/30 ring-1 ring-purple-400/60' : ''} ${chibi.collectOnly && count > 0 ? 'ring-1 ring-pink-400/40' : ''}`}
                     disabled={count === 0}
-                    title={count > 0 ? `${chibi.name} (x${count}) — ${isDeployed ? 'Retirer' : 'Deployer'}` : `${chibi.name} — Pas encore capture`}
+                    title={count > 0 ? `${chibi.name} (x${count}) — ${chibi.collectOnly ? 'Compagnon unique !' : isDeployed ? 'Retirer' : 'Deployer'}` : `${chibi.name} — ${chibi.collectOnly ? '???' : 'Pas encore capture'}`}
                   >
                     <img
                       src={chibi.sprite}
@@ -1837,10 +2093,11 @@ const FloatingBeruMascot = () => {
                       }}
                     />
                     <span className={`text-[7px] mt-0.5 truncate w-full text-center ${
+                      chibi.collectOnly ? (count > 0 ? 'text-pink-400' : '!text-gray-600') :
                       chibi.rarity === 'mythique' ? 'text-red-400' :
                       chibi.rarity === 'legendaire' ? 'text-orange-400' : 'text-blue-400'
-                    } ${count === 0 ? '!text-gray-600' : ''}`}>
-                      {chibi.name}
+                    } ${count === 0 && !chibi.collectOnly ? '!text-gray-600' : ''}`}>
+                      {chibi.collectOnly && count === 0 ? '???' : chibi.name}
                     </span>
                     {count > 0 && (
                       <span className="text-[7px] text-yellow-400/80">x{count}</span>

@@ -772,6 +772,39 @@ export function rollWeaponDrop(stageTier, isBoss = false) {
   return candidates[Math.floor(Math.random() * candidates.length)].id;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// iLEVEL SYSTEM — Power rating for items
+// ═══════════════════════════════════════════════════════════════
+
+const RARITY_BASE_ILVL = { rare: 10, legendaire: 30, mythique: 60 };
+
+export function computeWeaponILevel(weaponId, awakening = 0) {
+  const w = WEAPONS[weaponId];
+  if (!w) return 0;
+  const base = w.secret ? 100 : (RARITY_BASE_ILVL[w.rarity] || 10);
+  return base + Math.floor(w.atk * 1.5) + w.bonusValue + awakening * 8;
+}
+
+export function computeArtifactILevel(art) {
+  if (!art) return 0;
+  const base = RARITY_BASE_ILVL[art.rarity] || 10;
+  const levelBonus = (art.level || 0) * 3;
+  const subScore = (art.subs || []).reduce((sum, s) => sum + Math.floor(s.value * 0.8), 0);
+  return base + levelBonus + subScore;
+}
+
+export function computeEquipILevel(equippedArtifacts, weaponId, weaponAwakening = 0) {
+  let total = 0;
+  let count = 0;
+  if (equippedArtifacts) {
+    Object.values(equippedArtifacts).forEach(art => {
+      if (art) { total += computeArtifactILevel(art); count++; }
+    });
+  }
+  if (weaponId) { total += computeWeaponILevel(weaponId, weaponAwakening); count++; }
+  return { total, avg: count > 0 ? Math.floor(total / count) : 0, count };
+}
+
 export function rollRaidWeaponDrop(raidTier, isFullClear = false) {
   if (isFullClear && RAID_WEAPON_DROP.fullClearGuaranteed) {
     const rarityPool = RAID_WEAPON_DROP.tierPool[raidTier] || ['rare'];

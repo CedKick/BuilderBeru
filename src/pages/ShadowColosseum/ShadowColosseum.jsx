@@ -30,6 +30,7 @@ import {
   SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
   MAX_WEAPON_AWAKENING, WEAPON_AWAKENING_PASSIVES, rollWeaponDrop,
   RARITY_SUB_COUNT,
+  computeWeaponILevel, computeArtifactILevel, computeEquipILevel,
 } from './equipmentData';
 
 // Unified lookup helpers — works for both shadow chibis and hunters
@@ -214,6 +215,12 @@ export default function ShadowColosseum() {
   const [artEquipPicker, setArtEquipPicker] = useState(false);
   const [weaponDetailId, setWeaponDetailId] = useState(null);
   const [artifactSetDetail, setArtifactSetDetail] = useState(null);
+  const [rosterSort, setRosterSort] = useState('ilevel'); // 'ilevel' | 'level' | 'name'
+  const [rosterFilterElem, setRosterFilterElem] = useState(null); // element id or null
+  const [rosterFilterClass, setRosterFilterClass] = useState(null); // class id or null
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [chibisCollapsed, setChibisCollapsed] = useState(false);
+  const [huntersCollapsed, setHuntersCollapsed] = useState(false);
   const autoReplayRef = useRef(false);
   const clickCountRef = useRef({});
   const clickTimerRef = useRef({});
@@ -263,9 +270,10 @@ export default function ShadowColosseum() {
   useEffect(() => {
     const DUPE_XP = { rare: 30, legendaire: 60, mythique: 120 };
     const handler = (e) => {
-      const { id, rarity, isDuplicate } = e.detail;
+      const { id, rarity, isDuplicate, allCollected } = e.detail;
       if (isDuplicate && CHIBIS[id]) {
-        const xpBonus = DUPE_XP[rarity] || 30;
+        const baseXp = DUPE_XP[rarity] || 30;
+        const xpBonus = allCollected ? baseXp * 5 : baseXp;
         setData(prev => {
           const cur = prev.chibiLevels[id] || { level: 1, xp: 0 };
           let newXp = cur.xp + xpBonus;
@@ -279,7 +287,7 @@ export default function ShadowColosseum() {
           if (newLevel >= MAX_LEVEL) newXp = 0;
           return { ...prev, chibiLevels: { ...prev.chibiLevels, [id]: { level: newLevel, xp: newXp } } };
         });
-        setCatchToast({ id, name: CHIBIS[id].name, xp: DUPE_XP[rarity] || 30, key: Date.now() });
+        setCatchToast({ id, name: CHIBIS[id].name, xp: xpBonus, key: Date.now() });
         setTimeout(() => setCatchToast(null), 3000);
       } else if (!isDuplicate && CHIBIS[id]) {
         setCatchToast({ id, name: CHIBIS[id].name, isNew: true, key: Date.now() });
@@ -400,6 +408,22 @@ export default function ShadowColosseum() {
     return mergeEquipBonuses(artBonuses, weapBonuses);
   };
   const getChibiEveilStars = (id) => HUNTERS[id] ? getHunterStars(raidData, id) : 0;
+
+  const getChibiILevel = (id) => {
+    const c = getChibiData(id);
+    if (!c) return 0;
+    const { level } = getChibiLevel(id);
+    const alloc = data.statPoints[id] || {};
+    const tb = getChibiTalentBonuses(id);
+    const eqB = getChibiEquipBonuses(id);
+    const evStars = getChibiEveilStars(id);
+    const s = statsAtFull(c.base, c.growth, level, alloc, tb, eqB, evStars, data.accountBonuses);
+    const statScore = Math.floor(s.hp * 0.3 + s.atk * 5 + s.def * 2 + s.spd * 2 + s.crit * 4 + s.res * 2);
+    const skillScore = (c.skills || []).reduce((sum, sk) => sum + (sk.power || 0) * 0.3, 0);
+    const wId = data.weapons[id];
+    const eq = computeEquipILevel(data.artifacts[id], wId, wId ? (data.weaponCollection[wId] || 0) : 0);
+    return Math.floor(statScore + skillScore + eq.total * 0.5);
+  };
 
   const canRankUpNode = (id, treeId, nodeId) => {
     if (getAvailTalentPts(id) <= 0) return false;
@@ -1141,12 +1165,78 @@ export default function ShadowColosseum() {
             </div>
           )}
 
+          {/* Filter / Sort Bar */}
+          {(ownedIds.length > 0 || ownedHunterIds.length > 0) && (
+            <div className="mb-3 p-2 rounded-xl bg-gray-800/20 border border-gray-700/20">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[
+                  { key: 'ilevel', label: 'iLevel', icon: '\u2B50' },
+                  { key: 'level', label: 'Niveau', icon: '\uD83D\uDCC8' },
+                  { key: 'name', label: 'Nom', icon: 'A' },
+                ].map(s => (
+                  <button key={s.key} onClick={() => setRosterSort(s.key)}
+                    className={`px-1.5 py-0.5 rounded text-[10px] transition-all ${
+                      rosterSort === s.key ? 'bg-amber-500/30 text-amber-300 font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                    }`}>{s.icon} {s.label}</button>
+                ))}
+                <button onClick={() => setFiltersExpanded(!filtersExpanded)}
+                  className={`ml-auto px-1.5 py-0.5 rounded text-[10px] transition-all ${
+                    filtersExpanded || rosterFilterElem || rosterFilterClass ? 'bg-purple-500/30 text-purple-300 font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                  }`}>
+                  {'\u2699\uFE0F'} Filtres {(rosterFilterElem || rosterFilterClass) && !filtersExpanded ? '\u2022' : ''} {filtersExpanded ? '\u25B2' : '\u25BC'}
+                </button>
+              </div>
+              {filtersExpanded && (
+                <div className="mt-1.5 pt-1.5 border-t border-gray-700/20">
+                  <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                    <span className="text-[9px] text-gray-500 font-bold uppercase">Element:</span>
+                    <button onClick={() => setRosterFilterElem(null)}
+                      className={`px-1.5 py-0.5 rounded text-[10px] ${!rosterFilterElem ? 'bg-white/10 text-white font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'}`}>Tous</button>
+                    {Object.entries(ELEMENTS).map(([eId, e]) => (
+                      <button key={eId} onClick={() => setRosterFilterElem(rosterFilterElem === eId ? null : eId)}
+                        className={`px-1.5 py-0.5 rounded text-[10px] transition-all ${
+                          rosterFilterElem === eId ? `${e.color} ${e.bg || 'bg-white/10'} font-bold` : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                        }`}>{e.icon}</button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[9px] text-gray-500 font-bold uppercase">Classe:</span>
+                    <button onClick={() => setRosterFilterClass(null)}
+                      className={`px-1.5 py-0.5 rounded text-[10px] ${!rosterFilterClass ? 'bg-white/10 text-white font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'}`}>Tous</button>
+                    {['fighter', 'assassin', 'mage', 'tank', 'support'].map(cls => (
+                      <button key={cls} onClick={() => setRosterFilterClass(rosterFilterClass === cls ? null : cls)}
+                        className={`px-1.5 py-0.5 rounded text-[10px] capitalize transition-all ${
+                          rosterFilterClass === cls ? 'bg-red-500/30 text-red-300 font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                        }`}>{cls}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Your Chibis */}
-          {ownedIds.length > 0 && (
+          {ownedIds.length > 0 && (() => {
+            const sortedChibis = ownedIds
+              .filter(id => {
+                const c = getChibiData(id);
+                if (!c) return false;
+                if (rosterFilterElem && c.element !== rosterFilterElem) return false;
+                if (rosterFilterClass) return false; // chibis don't have classes
+                return true;
+              })
+              .map(id => ({ id, iLvl: getChibiILevel(id), level: (getChibiLevel(id)).level, name: getChibiData(id)?.name || '' }))
+              .sort((a, b) => rosterSort === 'ilevel' ? b.iLvl - a.iLvl : rosterSort === 'level' ? b.level - a.level : a.name.localeCompare(b.name));
+            if (sortedChibis.length === 0) return null;
+            return (
             <>
-              <div className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2">Tes Chibis</div>
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                {ownedIds.map(id => {
+              <button onClick={() => setChibisCollapsed(!chibisCollapsed)}
+                className="w-full flex items-center justify-between text-xs text-gray-400 font-bold uppercase tracking-wider mb-2 hover:text-gray-300 transition-colors">
+                <span>Tes Chibis ({sortedChibis.length})</span>
+                <span className="text-[10px] text-gray-600">{chibisCollapsed ? '\u25BC' : '\u25B2'}</span>
+              </button>
+              {!chibisCollapsed && <div className="grid grid-cols-2 gap-2 mb-3">
+                {sortedChibis.map(({ id, iLvl }) => {
                   const c = getChibiData(id);
                   const { level, xp } = getChibiLevel(id);
                   const alloc = data.statPoints[id] || {};
@@ -1178,6 +1268,7 @@ export default function ShadowColosseum() {
                             <span className={RARITY[c.rarity].color}>{RARITY[c.rarity].stars}</span>
                             <span className={ELEMENTS[c.element].color}>{ELEMENTS[c.element].icon}</span>
                             <span className="text-gray-400">Lv{level}</span>
+                            <span className="text-amber-400 font-bold ml-auto text-[10px]">iLv{iLvl}</span>
                           </div>
                         </div>
                       </div>
@@ -1217,7 +1308,7 @@ export default function ShadowColosseum() {
                     </button>
                   );
                 })}
-              </div>
+              </div>}
 
               {/* Selected Chibi Detail Panel */}
               <AnimatePresence>
@@ -1329,18 +1420,32 @@ export default function ShadowColosseum() {
                 )}
               </AnimatePresence>
             </>
-          )}
+            );
+          })()}
 
           {/* Hunter Chibis */}
-          {ownedHunterIds.length > 0 && (
+          {ownedHunterIds.length > 0 && (() => {
+            const sortedHunters = ownedHunterIds
+              .filter(id => {
+                const c = getChibiData(id);
+                if (!c) return false;
+                if (rosterFilterElem && c.element !== rosterFilterElem) return false;
+                if (rosterFilterClass && c.class !== rosterFilterClass) return false;
+                return true;
+              })
+              .map(id => ({ id, iLvl: getChibiILevel(id), level: (getChibiLevel(id)).level, name: getChibiData(id)?.name || '' }))
+              .sort((a, b) => rosterSort === 'ilevel' ? b.iLvl - a.iLvl : rosterSort === 'level' ? b.level - a.level : a.name.localeCompare(b.name));
+            if (sortedHunters.length === 0) return null;
+            return (
             <>
-              <div className="text-xs text-red-400 font-bold uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <span>{'\u2694\uFE0F'}</span> Tes Hunters <span className="text-[9px] text-gray-500 font-normal ml-1">({ownedHunterIds.length})</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                {ownedHunterIds.map(id => {
+              <button onClick={() => setHuntersCollapsed(!huntersCollapsed)}
+                className="w-full flex items-center justify-between text-xs text-red-400 font-bold uppercase tracking-wider mb-2 hover:text-red-300 transition-colors">
+                <span className="flex items-center gap-1.5">{'\u2694\uFE0F'} Tes Hunters <span className="text-[9px] text-gray-500 font-normal ml-1">({sortedHunters.length})</span></span>
+                <span className="text-[10px] text-gray-600">{huntersCollapsed ? '\u25BC' : '\u25B2'}</span>
+              </button>
+              {!huntersCollapsed && <div className="grid grid-cols-2 gap-2 mb-3">
+                {sortedHunters.map(({ id, iLvl }) => {
                   const c = getChibiData(id);
-                  if (!c) return null;
                   const { level, xp } = getChibiLevel(id);
                   const alloc = data.statPoints[id] || {};
                   const tb = getChibiTalentBonuses(id);
@@ -1364,7 +1469,10 @@ export default function ShadowColosseum() {
                       <div className="flex items-center gap-2">
                         <img src={getChibiSprite(id)} alt={c.name} className="w-10 h-10 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs font-bold truncate">{c.name}</div>
+                          <div className="flex items-center gap-1 text-xs font-bold">
+                            <span className="truncate">{c.name}</span>
+                            <span className="text-amber-400 text-[9px] ml-auto font-bold">iLv{iLvl}</span>
+                          </div>
                           <div className="flex items-center gap-1 text-[9px]">
                             <span className={RARITY[c.rarity].color}>{RARITY[c.rarity].stars}</span>
                             <span className={ELEMENTS[c.element].color}>{ELEMENTS[c.element].icon}</span>
@@ -1411,10 +1519,11 @@ export default function ShadowColosseum() {
                     </button>
                   );
                 })}
-              </div>
-              <div className="text-[9px] text-gray-600 text-center mb-3 italic">Les hunters gagnent de l'XP et montent en niveau dans les Raids.</div>
+              </div>}
+              {!huntersCollapsed && <div className="text-[9px] text-gray-600 text-center mb-3 italic">Les hunters gagnent de l'XP et montent en niveau dans les Raids.</div>}
             </>
-          )}
+            );
+          })()}
 
           {/* Stages */}
           {ownedIds.length > 0 && [1, 2, 3, 4, 5, 6].map(tier => (
@@ -2072,7 +2181,7 @@ export default function ShadowColosseum() {
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{weapon.icon}</span>
                     <div className="flex-1">
-                      <div className="text-xs font-bold text-amber-300">{weapon.name} <span className="text-yellow-400 text-[10px]">A{wAw}</span></div>
+                      <div className="text-xs font-bold text-amber-300">{weapon.name} <span className="text-yellow-400 text-[10px]">A{wAw}</span> <span className="text-amber-400/70 text-[9px]">iLv{computeWeaponILevel(weaponId, wAw)}</span></div>
                       <div className="text-[9px] text-gray-400">
                         ATK +{weapon.atk} | {MAIN_STAT_VALUES[weapon.bonusStat]?.name || weapon.bonusStat} +{weapon.bonusValue}
                       </div>
@@ -2104,7 +2213,7 @@ export default function ShadowColosseum() {
                         className="w-full flex items-center gap-2 p-1.5 rounded-lg border border-gray-700/30 bg-gray-800/20 hover:border-amber-500/40 transition-all text-left">
                         <span>{w.icon}</span>
                         <div className="flex-1 min-w-0">
-                          <div className="text-[10px] font-bold text-gray-300 truncate">{w.name} <span className="text-yellow-400">A{wAw}</span></div>
+                          <div className="text-[10px] font-bold text-gray-300 truncate">{w.name} <span className="text-yellow-400">A{wAw}</span> <span className="text-amber-400/70 text-[9px]">iLv{computeWeaponILevel(wId, wAw)}</span></div>
                           <div className="text-[10px] text-gray-500">ATK +{w.atk} | {MAIN_STAT_VALUES[w.bonusStat]?.name || w.bonusStat} +{w.bonusValue}</div>
                         </div>
                         <span className="text-[10px] text-cyan-400">Equiper</span>
@@ -2134,6 +2243,7 @@ export default function ShadowColosseum() {
                             <span className="text-sm">{slotDef.icon}</span>
                             <span className={`text-[9px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
                           </div>
+                          <div className="text-[8px] text-amber-400/70 font-bold">iLv{computeArtifactILevel(art)}</div>
                           <div className={`text-[10px] font-bold mt-0.5 ${setDef?.color || 'text-gray-300'}`}>{mainDef?.name || '?'}</div>
                           <div className="text-[10px] font-black text-white">{art.mainValue}</div>
                           <div className="mt-0.5 space-y-px">
@@ -2411,6 +2521,7 @@ export default function ShadowColosseum() {
                         <div className="flex-1 min-w-0">
                           <div className="text-[10px] font-bold text-gray-200 truncate">{w.name}
                             {owned && <span className="text-yellow-400 ml-1">A{aw}</span>}
+                            <span className="text-amber-400/60 ml-1">iLv{computeWeaponILevel(w.id, aw || 0)}</span>
                           </div>
                           <div className="text-[10px] text-gray-500">ATK +{w.atk} | {MAIN_STAT_VALUES[w.bonusStat]?.name || w.bonusStat} +{w.bonusValue}</div>
                           {w.element && <div className={`text-[9px] ${ELEMENTS[w.element]?.color || 'text-gray-400'}`}>{ELEMENTS[w.element]?.icon} {w.element}</div>}
@@ -2621,7 +2732,10 @@ export default function ShadowColosseum() {
                           <span className="text-xs">{ARTIFACT_SLOTS[art.slot]?.icon}</span>
                           <span className={`text-[10px] font-bold truncate ${setDef?.color || 'text-gray-400'}`}>{setDef?.name?.split(' ')[0] || '?'}</span>
                         </div>
-                        <div className={`text-[9px] ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>{RARITY[art.rarity]?.stars || art.rarity}</div>
+                        <div className="flex items-center gap-1">
+                          <span className={`text-[9px] ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>{RARITY[art.rarity]?.stars || art.rarity}</span>
+                          <span className="text-[8px] text-amber-400/70 font-bold ml-auto">iLv{computeArtifactILevel(art)}</span>
+                        </div>
                         <div className="text-[10px] text-gray-300">{mainDef?.icon} {mainDef?.name}: +{art.mainValue}</div>
                         <div className="text-[9px] text-gray-500">Lv {art.level}/{MAX_ARTIFACT_LEVEL} | {art.subs.length} subs</div>
                       </button>
@@ -2693,6 +2807,7 @@ export default function ShadowColosseum() {
                     <div className="flex items-center gap-2">
                       <span className={`text-[10px] ${RARITY[selArt.rarity]?.color}`}>{RARITY[selArt.rarity]?.stars} {selArt.rarity}</span>
                       <span className="text-[10px] text-gray-400">Lv {selArt.level}/{MAX_ARTIFACT_LEVEL}</span>
+                      <span className="text-[10px] text-amber-400 font-bold">iLv {computeArtifactILevel(selArt)}</span>
                     </div>
                   </div>
                 </div>
@@ -3096,8 +3211,8 @@ export default function ShadowColosseum() {
                   <span className="text-amber-300">{MAIN_STAT_VALUES[wDet.bonusStat]?.name} +{wDet.bonusValue}</span>
                   {wDet.fireRes && <span className="text-orange-400">Fire RES +{wDet.fireRes}%</span>}
                 </div>
-                {owned && <div className="text-xs mt-2 text-yellow-400 font-bold">Eveil : A{wAw}/{MAX_WEAPON_AWAKENING}</div>}
-                {!owned && <div className="text-xs mt-2 text-gray-500 italic">Non possedee</div>}
+                {owned && <div className="text-xs mt-2 flex items-center gap-3"><span className="text-yellow-400 font-bold">Eveil : A{wAw}/{MAX_WEAPON_AWAKENING}</span><span className="text-amber-400 font-bold">iLv {computeWeaponILevel(weaponDetailId, wAw)}</span></div>}
+                {!owned && <div className="text-xs mt-2 flex items-center gap-3"><span className="text-gray-500 italic">Non possedee</span><span className="text-amber-400/50">iLv {computeWeaponILevel(weaponDetailId, 0)}</span></div>}
               </div>
               {/* Awakening passives A1-A5 */}
               <div className="text-xs font-bold text-amber-400 mb-1.5">Passifs d'Eveil</div>

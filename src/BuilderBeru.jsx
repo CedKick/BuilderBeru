@@ -408,28 +408,8 @@ function useResponsive() {
   return screen;
 }
 
-// 🐉 KAISEL NETTOYAGE RADICAL - REMPLACE ta fonction migrateOldDataToNewSystem
+// Migration: only ensure builderberu_users structure exists (no destructive wipe)
 const migrateOldDataToNewSystem = () => {
-
-  // 1️⃣ IDENTIFIER ET SUPPRIMER TOUTES les anciennes clés
-  const toDelete = [];
-
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-
-    // ❌ SUPPRIMER tout sauf le nouveau système et la langue
-    if (key !== 'builderberu_users' && key !== 'i18nextLng') {
-      toDelete.push(key);
-    }
-  }
-
-  // 🗑️ SUPPRESSION MASSIVE
-  toDelete.forEach(key => {
-    localStorage.removeItem(key);
-  });
-
-
-  // 2️⃣ VÉRIFIER que le nouveau système existe
   const current = localStorage.getItem('builderberu_users');
   if (!current) {
     const cleanSystem = {
@@ -448,8 +428,6 @@ const migrateOldDataToNewSystem = () => {
     };
     localStorage.setItem('builderberu_users', JSON.stringify(cleanSystem));
   }
-
-
 };
 
 // 🛡️ PROTECTION GLOBALE - AJOUTE aussi cette fonction pour protéger PARTOUT
