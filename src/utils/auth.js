@@ -25,9 +25,14 @@ export function isLoggedIn() {
   return !!getAuthToken();
 }
 
+/**
+ * Save auth data to localStorage.
+ * Uses the Storage prototype directly to bypass any interceptors.
+ */
 export function setAuth(token, user) {
-  localStorage.setItem(AUTH_TOKEN_KEY, token);
-  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+  const proto = Storage.prototype;
+  proto.setItem.call(localStorage, AUTH_TOKEN_KEY, token);
+  proto.setItem.call(localStorage, AUTH_USER_KEY, JSON.stringify(user));
 }
 
 export function clearAuth() {
@@ -57,6 +62,7 @@ function getOrCreateDeviceId() {
 
 /**
  * Register a new account. Links the current deviceId to the account.
+ * On success: saves token + reloads page.
  */
 export async function register(username, password) {
   const deviceId = getOrCreateDeviceId();
@@ -70,14 +76,15 @@ export async function register(username, password) {
   const data = await resp.json();
   if (data.success) {
     setAuth(data.token, { userId: data.userId, username: data.username });
-    // Reload page so all components pick up auth state
-    setTimeout(() => window.location.reload(), 400);
+    // Hard reload — all components will read auth from localStorage on init
+    window.location.reload();
   }
   return data;
 }
 
 /**
  * Login to existing account. Syncs deviceId for cross-device.
+ * On success: saves token + adopts canonical deviceId + reloads page.
  */
 export async function login(username, password) {
   const resp = await fetch('/api/auth?action=login', {
@@ -89,23 +96,23 @@ export async function login(username, password) {
   const data = await resp.json();
   if (data.success) {
     setAuth(data.token, { userId: data.userId, username: data.username });
-    // Cross-device: adopt the account's canonical deviceId + pull cloud data
+    // Cross-device: adopt the account's canonical deviceId
     if (data.deviceId) {
-      localStorage.setItem(DEVICE_ID_KEY, data.deviceId);
-      await cloudStorage.resync();
+      const proto = Storage.prototype;
+      proto.setItem.call(localStorage, DEVICE_ID_KEY, data.deviceId);
     }
-    // Reload page so all components pick up auth + synced data
-    setTimeout(() => window.location.reload(), 400);
+    // Hard reload — cloud sync will happen via initialSync() in main.jsx
+    window.location.reload();
   }
   return data;
 }
 
 /**
- * Logout — clears token and user data.
+ * Logout — clears token and user data, reloads page.
  */
 export function logout() {
   clearAuth();
-  window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'auth-change', loggedIn: false } }));
+  window.location.reload();
 }
 
 /**
