@@ -182,6 +182,15 @@ class CloudStorageManager {
     console.log('[CloudStorage] Initial sync complete');
   }
 
+  /**
+   * Force re-sync after login (new deviceId).
+   * Pulls all cloud data for the canonical deviceId into localStorage.
+   */
+  async resync() {
+    this._initialized = false;
+    await this.initialSync();
+  }
+
   /** Initialize the database schema (call once on first deploy) */
   async initSchema() {
     try {

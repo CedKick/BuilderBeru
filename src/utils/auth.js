@@ -1,6 +1,8 @@
 // src/utils/auth.js — Client-side auth utility
 // Token storage, login, register, logout, authHeaders
 
+import { cloudStorage } from './CloudStorage';
+
 const AUTH_TOKEN_KEY = 'builderberu_auth_token';
 const AUTH_USER_KEY = 'builderberu_auth_user';
 const DEVICE_ID_KEY = 'builderberu_device_id';
@@ -87,9 +89,11 @@ export async function login(username, password) {
   const data = await resp.json();
   if (data.success) {
     setAuth(data.token, { userId: data.userId, username: data.username });
-    // Cross-device: adopt the account's canonical deviceId
+    // Cross-device: adopt the account's canonical deviceId + pull cloud data
     if (data.deviceId) {
       localStorage.setItem(DEVICE_ID_KEY, data.deviceId);
+      // Force re-sync to pull all cloud data for this deviceId
+      await cloudStorage.resync();
     }
     // Dispatch event
     window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'auth-change', loggedIn: true, username: data.username } }));
