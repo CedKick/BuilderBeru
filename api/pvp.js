@@ -53,7 +53,7 @@ async function handleRegisterDefense(req, res) {
 
   const { deviceId, displayName, teamData, powerScore } = req.body;
 
-  if (!deviceId || !teamData || !powerScore) {
+  if (!deviceId || !teamData || powerScore === undefined || powerScore === null) {
     return res.status(400).json({ error: 'Missing deviceId, teamData, or powerScore' });
   }
   if (!deviceId.startsWith('dev_') || deviceId.length > 50) {
