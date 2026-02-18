@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import shadowCoinManager from './ChibiSystem/ShadowCoinManager';
+import { getAuthUser } from '../utils/auth';
 
 // ═══════════════════════════════════════════════════════════════
 // L'OMBRE DE BERU V2 - "L'Ombre Libre"
@@ -882,6 +883,7 @@ const FloatingBeruMascot = () => {
   const [storyActive, setStoryActive] = useState(null); // { storyIndex, partIndex }
   const [randomEventFeedback, setRandomEventFeedback] = useState(null);
   const [realDestroyPhase, setRealDestroyPhase] = useState(null); // 1=shake, 2=static, 3=bsod, 4=reboot
+  const [bubbleImage, setBubbleImage] = useState(null); // temporary image shown near Beru
 
   // Collection & Companions
   const [collection, setCollection] = useState(() => {
@@ -1172,7 +1174,7 @@ const FloatingBeruMascot = () => {
 
   useEffect(() => {
     const handleBeruReact = (e) => {
-      const { message, mood: newMood, duration, type } = e.detail || {};
+      const { message, mood: newMood, duration, type, image } = e.detail || {};
       if (type === 'sulfuras') {
         setMood('excited');
         spawnParticles('🔥', 12);
@@ -1196,10 +1198,38 @@ const FloatingBeruMascot = () => {
         if (newMood === 'excited') spawnParticles('✨', 3);
         setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 3000);
       }
+      // Show floating image near Beru (appears then fades out)
+      if (image) {
+        setBubbleImage(image);
+        setTimeout(() => setBubbleImage(null), typeof image.duration === 'number' ? image.duration : 6000);
+      }
     };
 
     window.addEventListener('beru-react', handleBeruReact);
     return () => window.removeEventListener('beru-react', handleBeruReact);
+  }, [showBubble, spawnParticles]);
+
+  // ─── Easter Egg: "shy" user → "Salut le moine" ─────────────
+  useEffect(() => {
+    const user = getAuthUser();
+    if (!user || user.username?.toLowerCase() !== 'shy') return;
+    // Don't repeat within the same session
+    if (sessionStorage.getItem('beru_shy_greeted')) return;
+
+    const timer = setTimeout(() => {
+      sessionStorage.setItem('beru_shy_greeted', '1');
+      setMood('happy');
+      spawnParticles('🙏', 6);
+      showBubble("Salut le moine 🙏", 6000);
+      setBubbleImage({
+        src: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771440948/moine_eaz9jf.png',
+        duration: 7000,
+      });
+      setTimeout(() => setBubbleImage(null), 7000);
+      setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 5000);
+    }, 60000); // 1 minute after mount
+
+    return () => clearTimeout(timer);
   }, [showBubble, spawnParticles]);
 
   // ─── Konami Code Easter Egg ───────────────────────────────
@@ -2362,6 +2392,26 @@ const FloatingBeruMascot = () => {
                 ))}
               </>
             )}
+
+            {/* Floating Image (easter eggs, special events) */}
+            <AnimatePresence>
+              {bubbleImage && (
+                <motion.div
+                  key="beru-floating-image"
+                  initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.5, y: -20 }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-14 pointer-events-none z-50"
+                >
+                  <img
+                    src={typeof bubbleImage === 'string' ? bubbleImage : bubbleImage.src}
+                    alt=""
+                    className="w-28 h-28 md:w-36 md:h-36 rounded-xl shadow-lg shadow-purple-500/30 border border-purple-400/40 object-cover"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Speech Bubble - position-aware */}
             <AnimatePresence>
