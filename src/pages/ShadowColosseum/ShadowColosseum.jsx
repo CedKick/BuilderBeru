@@ -1687,8 +1687,17 @@ export default function ShadowColosseum() {
             <p className="text-[10px] text-gray-500 mt-0.5">6v6 contre les equipes des autres joueurs !</p>
           </Link>
 
-          {/* Shop & Artifacts Buttons */}
-          <div className="grid grid-cols-2 gap-2 mb-4">
+          {/* Codex, Shop & Artifacts Buttons */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <Link
+              to="/codex"
+              className="p-3 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-900/20 to-teal-900/20 hover:from-cyan-900/40 hover:to-teal-900/40 transition-all text-center group">
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="text-lg">{'\uD83D\uDCD6'}</span>
+                <span className="font-bold text-cyan-400 group-hover:text-cyan-300 text-sm">CODEX</span>
+              </div>
+              <p className="text-[10px] text-gray-500 mt-0.5">Encyclopedie</p>
+            </Link>
             <button
               onClick={() => setView('shop')}
               className="p-3 rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-900/20 to-yellow-900/20 hover:from-amber-900/40 hover:to-yellow-900/40 transition-all text-center group">

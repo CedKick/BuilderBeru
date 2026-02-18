@@ -150,6 +150,13 @@ export default function BuilderMenu({ isOpen, onClose }) {
           color: 'red',
           isNew: true
         },
+        {
+          path: '/codex',
+          label: 'Codex',
+          icon: BookOpen,
+          color: 'amber',
+          isNew: true
+        },
       ]
     }
   ];
