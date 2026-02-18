@@ -288,6 +288,7 @@ export default function ShadowColosseum() {
   const clickCountRef = useRef({});
   const clickTimerRef = useRef({});
   const phaseRef = useRef('idle');
+  const statHoldRef = useRef(null); // hold-to-repeat for stat +/- buttons
 
   useEffect(() => { phaseRef.current = phase; }, [phase]);
   useEffect(() => { saveData(data); }, [data]);
@@ -829,6 +830,21 @@ export default function ShadowColosseum() {
       alloc[stat] = newVal;
       return { ...prev, statPoints: { ...prev.statPoints, [id]: alloc } };
     });
+  };
+
+  // Hold-to-repeat for stat buttons: starts slow (300ms), speeds up to 50ms
+  const startStatHold = (id, stat, delta) => {
+    allocateStat(id, stat, delta); // immediate first click
+    let delay = 350;
+    const tick = () => {
+      allocateStat(id, stat, delta);
+      delay = Math.max(40, delay * 0.82);
+      statHoldRef.current = setTimeout(tick, delay);
+    };
+    statHoldRef.current = setTimeout(tick, delay);
+  };
+  const stopStatHold = () => {
+    if (statHoldRef.current) { clearTimeout(statHoldRef.current); statHoldRef.current = null; }
   };
 
   const resetStats = (id) => {
@@ -3323,15 +3339,21 @@ export default function ShadowColosseum() {
                     </div>
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => allocateStat(id, stat, -1)}
+                        onPointerDown={() => startStatHold(id, stat, -1)}
+                        onPointerUp={stopStatHold}
+                        onPointerLeave={stopStatHold}
+                        onContextMenu={e => e.preventDefault()}
                         disabled={allocated <= 0}
-                        className="w-7 h-7 rounded-lg bg-gray-700/50 text-gray-300 text-sm font-bold hover:bg-red-500/30 disabled:opacity-20 transition-colors flex items-center justify-center"
+                        className="w-7 h-7 rounded-lg bg-gray-700/50 text-gray-300 text-sm font-bold hover:bg-red-500/30 disabled:opacity-20 transition-colors flex items-center justify-center select-none"
                       >-</button>
                       <span className="text-[10px] text-gray-400 w-5 text-center font-mono">{allocated}</span>
                       <button
-                        onClick={() => allocateStat(id, stat, 1)}
+                        onPointerDown={() => startStatHold(id, stat, 1)}
+                        onPointerUp={stopStatHold}
+                        onPointerLeave={stopStatHold}
+                        onContextMenu={e => e.preventDefault()}
                         disabled={available <= 0}
-                        className="w-7 h-7 rounded-lg bg-gray-700/50 text-gray-300 text-sm font-bold hover:bg-green-500/30 disabled:opacity-20 transition-colors flex items-center justify-center"
+                        className="w-7 h-7 rounded-lg bg-gray-700/50 text-gray-300 text-sm font-bold hover:bg-green-500/30 disabled:opacity-20 transition-colors flex items-center justify-center select-none"
                       >+</button>
                     </div>
                   </div>
