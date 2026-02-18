@@ -260,6 +260,7 @@ export default function ShadowColosseum() {
   const [coinDelta, setCoinDelta] = useState(null); // { amount, key }
   const [collectionVer, setCollectionVer] = useState(0); // bump to re-read collection
   const [autoReplay, setAutoReplay] = useState(false);
+  const [autoFarmStats, setAutoFarmStats] = useState({ runs: 0, wins: 0, levels: 0, coins: 0, loots: 0, hunters: 0, weapons: 0, artifacts: 0 });
   const [weaponReveal, setWeaponReveal] = useState(null); // weapon data for epic reveal
   const [artFilter, setArtFilter] = useState({ set: null, rarity: null, slot: null });
   const [artSelected, setArtSelected] = useState(null); // index in inventory OR "eq:chibiId:slot"
@@ -446,27 +447,51 @@ export default function ShadowColosseum() {
     const eqB = getChibiEquipBonuses(id);
     const evS = getChibiEveilStars(id);
     const fs = statsAtFull(c.base, c.growth, level, alloc, tb, eqB, evS, data.accountBonuses);
-    // Hunter passives
-    const hpb = HUNTER_PASSIVE_EFFECTS[id];
-    if (hpb) {
-      if (hpb.hpPercent) fs.hp = Math.floor(fs.hp * (1 + hpb.hpPercent / 100));
-      if (hpb.atkPercent) fs.atk = Math.floor(fs.atk * (1 + hpb.atkPercent / 100));
-      if (hpb.defPercent) fs.def = Math.floor(fs.def * (1 + hpb.defPercent / 100));
-      if (hpb.spdPercent) fs.spd = Math.floor(fs.spd * (1 + hpb.spdPercent / 100));
-      if (hpb.critFlat) fs.crit += hpb.critFlat;
-      if (hpb.resFlat) fs.res += hpb.resFlat;
+
+    // Hunter passive (typed schema)
+    const hunterPassive = HUNTERS[id] ? (HUNTER_PASSIVE_EFFECTS[id] || null) : null;
+
+    // Apply permanent stat bonuses at build time
+    if (hunterPassive?.type === 'permanent' && hunterPassive.stats) {
+      if (hunterPassive.stats.hp)   fs.hp  = Math.floor(fs.hp  * (1 + hunterPassive.stats.hp / 100));
+      if (hunterPassive.stats.atk)  fs.atk = Math.floor(fs.atk * (1 + hunterPassive.stats.atk / 100));
+      if (hunterPassive.stats.def)  fs.def = Math.floor(fs.def * (1 + hunterPassive.stats.def / 100));
+      if (hunterPassive.stats.spd)  fs.spd = Math.floor(fs.spd * (1 + hunterPassive.stats.spd / 100));
+      if (hunterPassive.stats.crit) fs.crit += hunterPassive.stats.crit;
+      if (hunterPassive.stats.res)  fs.res += hunterPassive.stats.res;
     }
+
+    // Build merged talent bonuses with hunter passive injections
+    const mergedTb = { ...tb };
+    for (const [k, v] of Object.entries(eqB)) { if (v) mergedTb[k] = (mergedTb[k] || 0) + v; }
+    if (hunterPassive) {
+      if (hunterPassive.type === 'healBonus')   mergedTb.healBonus = (mergedTb.healBonus || 0) + hunterPassive.value;
+      if (hunterPassive.type === 'critDmg')     mergedTb.critDamage = (mergedTb.critDamage || 0) + hunterPassive.value;
+      if (hunterPassive.type === 'magicDmg')    mergedTb.allDamage = (mergedTb.allDamage || 0) + hunterPassive.value;
+      if (hunterPassive.type === 'vsBoss')      mergedTb.bossDamage = (mergedTb.bossDamage || 0) + (hunterPassive.stats?.atk || 0);
+      if (hunterPassive.type === 'debuffBonus') mergedTb.debuffBonus = (mergedTb.debuffBonus || 0) + hunterPassive.value;
+    }
+
     const manaCostMult = Math.max(0.5, 1 - (fs.manaCostReduce || 0) / 100);
     const skills = (c.skills || []).map((sk, i) => {
       const up = applySkillUpgrades(sk, data.skillUpgrades?.[id]?.[i] || 0);
       return { ...up, cd: 0, manaCost: Math.floor(getSkillManaCost(up) * manaCostMult) };
     });
+
+    // Initial buffs (firstTurn passive)
+    const initBuffs = [];
+    if (hunterPassive?.type === 'firstTurn' && hunterPassive.stats?.spd) {
+      initBuffs.push({ type: 'spd', val: hunterPassive.stats.spd, dur: 1 });
+    }
+
     return {
       id, name: c.name, sprite: getChibiSprite(id), element: c.element,
       hp: fs.hp, maxHp: fs.hp, atk: fs.atk, def: fs.def,
       spd: fs.spd, crit: Math.min(80, fs.crit), res: Math.min(70, fs.res),
       mana: fs.mana || 100, maxMana: fs.mana || 100, manaRegen: fs.manaRegen || BASE_MANA_REGEN,
-      skills, buffs: [], alive: true, tb: { ...tb, ...eqB }, level,
+      skills, buffs: initBuffs, alive: true, tb: mergedTb, level,
+      hunterPassive, // stored for combat-time conditional checks
+      passiveState: { sianStacks: 0 }, // stacking passives state
     };
   };
 
@@ -475,6 +500,16 @@ export default function ShadowColosseum() {
     if (!stage) return;
     const fighters = arc2Team.filter(Boolean).map(id => buildArc2Fighter(id)).filter(Boolean);
     if (fighters.length === 0) return;
+    // Apply teamDef passive (Reed): +DEF% to all team members
+    const teamDefValue = fighters.reduce((sum, f) => {
+      if (f.hunterPassive?.type === 'teamDef') return sum + (f.hunterPassive.value || 0);
+      return sum;
+    }, 0);
+    if (teamDefValue > 0) {
+      fighters.forEach(f => {
+        f.def = Math.floor(f.def * (1 + teamDefValue / 100));
+      });
+    }
     // Save team for "Previous Team" button
     setData(prev => ({ ...prev, arc2LastTeam: arc2Team.filter(Boolean) }));
     const sc = getStarScaledStats(stage, arc2Star);
@@ -510,14 +545,77 @@ export default function ShadowColosseum() {
         const skill = fighter.skills[skillIdx];
         if (!skill || skill.cd > 0 || (skill.manaCost || 0) > (fighter.mana || 0)) return prev;
         fighter.mana = (fighter.mana || 0) - (skill.manaCost || 0);
-        const result = computeAttack(fighter, skill, b.boss, fighter.tb || {});
+
+        // ─── Apply conditional hunter passives before attack ───
+        const hp = fighter.hunterPassive;
+        const savedAtk = fighter.atk;
+        const savedDef = fighter.def;
+        const savedCrit = fighter.crit;
+        const tbForAttack = { ...(fighter.tb || {}) };
+        const ps = fighter.passiveState || {};
+
+        if (hp) {
+          const hpPct = fighter.hp / fighter.maxHp * 100;
+          // lowHp: stat bonuses when HP low
+          if (hp.type === 'lowHp' && hpPct < hp.threshold && hp.stats) {
+            if (hp.stats.def) fighter.def = Math.floor(fighter.def * (1 + hp.stats.def / 100));
+            if (hp.stats.atk) fighter.atk = Math.floor(fighter.atk * (1 + hp.stats.atk / 100));
+          }
+          // highHp: stat bonuses when HP high
+          if (hp.type === 'highHp' && hpPct > hp.threshold && hp.stats) {
+            if (hp.stats.atk) fighter.atk = Math.floor(fighter.atk * (1 + hp.stats.atk / 100));
+            if (hp.stats.crit) fighter.crit = +(fighter.crit + hp.stats.crit).toFixed(1);
+          }
+          // stacking: +atk% per attack, accumulates
+          if (hp.type === 'stacking') {
+            ps.sianStacks = Math.min(hp.maxStacks || 10, (ps.sianStacks || 0) + 1);
+            const stackBonus = (hp.perStack?.atk || 0) * ps.sianStacks;
+            fighter.atk = Math.floor(fighter.atk * (1 + stackBonus / 100));
+          }
+          // vsLowHp: crit bonus vs low HP enemies
+          if (hp.type === 'vsLowHp' && (b.boss.hp / b.boss.maxHp * 100) < hp.threshold && hp.stats?.crit) {
+            fighter.crit = +(fighter.crit + hp.stats.crit).toFixed(1);
+          }
+          // vsDebuffed: atk bonus vs debuffed enemies
+          if (hp.type === 'vsDebuffed' && b.boss.buffs?.some(buf => buf.type?.startsWith('debuff')) && hp.stats?.atk) {
+            fighter.atk = Math.floor(fighter.atk * (1 + hp.stats.atk / 100));
+          }
+          // skillCd: crit bonus on high-CD skills
+          if (hp.type === 'skillCd' && (skill.cdMax || 0) >= (hp.minCd || 3) && hp.stats?.crit) {
+            fighter.crit = +(fighter.crit + hp.stats.crit).toFixed(1);
+          }
+          // aoeDmg: bonus damage (treated as allDamage for this attack)
+          if (hp.type === 'aoeDmg') {
+            tbForAttack.allDamage = (tbForAttack.allDamage || 0) + hp.value;
+          }
+          // dotDmg: bonus damage (treated as allDamage)
+          if (hp.type === 'dotDmg') {
+            tbForAttack.allDamage = (tbForAttack.allDamage || 0) + hp.value;
+          }
+        }
+
+        let result = computeAttack(fighter, skill, b.boss, tbForAttack);
+
+        // Restore saved stats after attack computation
+        fighter.atk = savedAtk;
+        fighter.def = savedDef;
+        fighter.crit = savedCrit;
+        fighter.passiveState = ps;
+
+        // defIgnore passive: extra DMG on crits (Minnie)
+        if (hp?.type === 'defIgnore' && result.isCrit && result.damage > 0) {
+          result = { ...result, damage: Math.floor(result.damage * (1 + (hp.value || 10) / 100)) };
+        }
+
         const dmg = result.damage || 0;
         b.boss.hp = Math.max(0, b.boss.hp - dmg);
         if (result.healed) fighter.hp = Math.min(fighter.maxHp, fighter.hp + result.healed);
         if (skill.buffAtk) fighter.buffs.push({ type: 'atk', val: skill.buffAtk, dur: skill.buffDur || 2 });
         if (skill.buffDef) fighter.buffs.push({ type: 'def', val: skill.buffDef, dur: skill.buffDur || 2 });
+        if (skill.debuffDef) b.boss.buffs.push({ type: 'debuff_def', val: skill.debuffDef, dur: skill.debuffDur || 2 });
         if (skill.cdMax > 0) skill.cd = skill.cdMax;
         fighter.mana = Math.min(fighter.maxMana || 100, (fighter.mana || 0) + (fighter.manaRegen || 5));
+
         b.log.unshift({ msg: `${fighter.name} → ${skill.name} → ${dmg} DMG${result.isCrit ? ' CRIT!' : ''}`, type: 'player' });
         b.lastAction = { type: 'player', idx: entity.idx, damage: dmg, crit: result.isCrit };
         b.phase = b.boss.hp <= 0 ? 'victory' : 'advance';
@@ -929,6 +1027,10 @@ export default function ShadowColosseum() {
         if (hunterPassive.type === 'magicDmg')    m.allDamage = (m.allDamage || 0) + hunterPassive.value;
         if (hunterPassive.type === 'vsBoss')      m.bossDamage = (m.bossDamage || 0) + (hunterPassive.stats?.atk || 0);
         if (hunterPassive.type === 'debuffBonus') m.debuffBonus = (m.debuffBonus || 0) + hunterPassive.value;
+        if (hunterPassive.type === 'aoeDmg')      m.allDamage = (m.allDamage || 0) + hunterPassive.value;
+        if (hunterPassive.type === 'dotDmg')      m.allDamage = (m.allDamage || 0) + hunterPassive.value;
+        if (hunterPassive.type === 'buffBonus')   m.buffBonus = (m.buffBonus || 0) + hunterPassive.value;
+        if (hunterPassive.type === 'teamDef') s.def = Math.floor(s.def * (1 + hunterPassive.value / 100));
       }
       return m;
     })();
@@ -1413,6 +1515,22 @@ export default function ShadowColosseum() {
           detail: { message: "ATTENDS ! C'est... le GRIMOIRE WEISS ?! Un livre qui parle ?! Il dit qu'il connait le chemin vers... Pascal ?! L'ARC II est debloque !!", mood: 'shocked' },
         }));
       }, 1500);
+    }
+
+    // Auto-farm stats tracking
+    if (autoReplayRef.current) {
+      const levelsGained = newLevel - level;
+      const lootCount = (hunterDrop ? 1 : 0) + (weaponDrop ? 1 : 0) + (guaranteedArtifact ? 1 : 0) + (hammerDrop ? 1 : 0);
+      setAutoFarmStats(prev => ({
+        runs: prev.runs + 1,
+        wins: prev.wins + 1,
+        levels: prev.levels + levelsGained,
+        coins: prev.coins + scaledCoins,
+        loots: prev.loots + lootCount,
+        hunters: prev.hunters + (hunterDrop ? 1 : 0),
+        weapons: prev.weapons + (weaponDrop ? 1 : 0),
+        artifacts: prev.artifacts + (guaranteedArtifact ? 1 : 0),
+      }));
     }
 
     // Auto-replay logic — si arme droppée, pause 4.5s pour l'animation puis reprend
@@ -1974,7 +2092,7 @@ export default function ShadowColosseum() {
             );
           })()}
 
-          {/* ═══ ARC TABS — ARC I / ARC II ═══ */}
+          {/* ═══ ARC TABS — ARC I / ARC II / Fiche ═══ */}
           {ownedIds.length > 0 && (
             <div className="flex items-center gap-1.5 mb-4 p-1 bg-gray-900/60 rounded-xl border border-gray-700/30">
               <button
@@ -1985,7 +2103,7 @@ export default function ShadowColosseum() {
                     : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/40'
                 }`}
               >
-                {'\u2694\uFE0F'} ARC I — Donjons
+                {'\u2694\uFE0F'} ARC I
                 {(() => {
                   const cleared1 = STAGES.filter(s => isStageCleared(s.id)).length;
                   return cleared1 > 0 ? <span className="ml-1.5 text-[9px] opacity-60">{cleared1}/{STAGES.length}</span> : null;
@@ -2001,7 +2119,7 @@ export default function ShadowColosseum() {
                       : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/40'
                 }`}
               >
-                {!arc2Unlocked ? '\uD83D\uDD12' : '\u2694\uFE0F'} ARC II {!arc2Unlocked ? '— ???' : '— Pascal'}
+                {!arc2Unlocked ? '\uD83D\uDD12' : '\u2694\uFE0F'} ARC II
                 {arc2Unlocked && (() => {
                   const cleared2 = ARC2_STAGES.filter(s => isArc2StageCleared(s.id)).length;
                   return cleared2 > 0 ? <span className="ml-1.5 text-[9px] opacity-60">{cleared2}/{ARC2_STAGES.length}</span> : null;
@@ -2009,6 +2127,12 @@ export default function ShadowColosseum() {
                 {!arc2Unlocked && (data.arc2ClickCount || 0) >= 7 && (
                   <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
                 )}
+              </button>
+              <button
+                onClick={() => setView('fiche')}
+                className="py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wide transition-all text-gray-500 hover:text-gray-300 hover:bg-gray-800/40"
+              >
+                {'\uD83D\uDCCB'} Fiche
               </button>
             </div>
           )}
@@ -2558,6 +2682,143 @@ export default function ShadowColosseum() {
                 );
               })}
             </div>
+
+            {/* ─── Team Synergy Panel ─── */}
+            {alreadyPicked.length > 0 && (() => {
+              const rd = loadRaidData();
+              const teamMembers = alreadyPicked.map(id => {
+                const c = getChibiData(id);
+                if (!c) return null;
+                const { level } = getChibiLevel(id);
+                const isHunter = !!HUNTERS[id];
+                const stars = isHunter ? getHunterStars(rd, id) : 0;
+                const hp = isHunter ? HUNTER_PASSIVE_EFFECTS[id] : null;
+                const alloc = data.statPoints[id] || {};
+                const tb = getChibiTalentBonuses(id);
+                const eqB = getChibiEquipBonuses(id);
+                const evS = getChibiEveilStars(id);
+                const fs = statsAtFull(c.base, c.growth, level, alloc, tb, eqB, evS, data.accountBonuses);
+                return { id, ...c, level, isHunter, stars, hp, fs };
+              }).filter(Boolean);
+
+              // Count elements
+              const elemCounts = {};
+              teamMembers.forEach(m => { elemCounts[m.element] = (elemCounts[m.element] || 0) + 1; });
+
+              // Collect team-wide bonuses
+              const teamBonuses = [];
+              teamMembers.forEach(m => {
+                if (!m.hp) return;
+                const desc = HUNTERS[m.id]?.passiveDesc || '';
+                if (m.hp.type === 'permanent' && m.hp.stats) {
+                  const parts = Object.entries(m.hp.stats).map(([k, v]) => `${k.toUpperCase()} +${v}%`);
+                  teamBonuses.push({ source: m.name, label: `${parts.join(', ')} (permanent)`, color: 'text-emerald-400', type: 'self' });
+                }
+                if (m.hp.type === 'teamDef') teamBonuses.push({ source: m.name, label: `DEF +${m.hp.value}% equipe`, color: 'text-teal-400', type: 'team' });
+                if (m.hp.type === 'healBonus') teamBonuses.push({ source: m.name, label: `Soin +${m.hp.value}%`, color: 'text-green-400', type: 'self' });
+                if (m.hp.type === 'critDmg') teamBonuses.push({ source: m.name, label: `CRIT DMG +${m.hp.value}%`, color: 'text-amber-400', type: 'self' });
+                if (m.hp.type === 'magicDmg') teamBonuses.push({ source: m.name, label: `DMG Magique +${m.hp.value}%`, color: 'text-indigo-400', type: 'self' });
+                if (m.hp.type === 'aoeDmg') teamBonuses.push({ source: m.name, label: `DMG AoE +${m.hp.value}%`, color: 'text-cyan-400', type: 'self' });
+                if (m.hp.type === 'dotDmg') teamBonuses.push({ source: m.name, label: `DMG DoT +${m.hp.value}%`, color: 'text-lime-400', type: 'self' });
+                if (m.hp.type === 'defIgnore') teamBonuses.push({ source: m.name, label: `Ignore DEF +${m.hp.value}% (crit)`, color: 'text-gray-300', type: 'self' });
+                if (m.hp.type === 'debuffBonus') teamBonuses.push({ source: m.name, label: `Debuff +${m.hp.value}%`, color: 'text-rose-400', type: 'self' });
+                if (m.hp.type === 'buffBonus') teamBonuses.push({ source: m.name, label: `Buff +${m.hp.value}%`, color: 'text-violet-400', type: 'self' });
+                if (m.hp.type === 'lowHp') teamBonuses.push({ source: m.name, label: `<${m.hp.threshold}% PV: ${Object.entries(m.hp.stats).map(([k,v])=>`${k.toUpperCase()}+${v}%`).join(', ')}`, color: 'text-red-400', type: 'conditional' });
+                if (m.hp.type === 'highHp') teamBonuses.push({ source: m.name, label: `>${m.hp.threshold}% PV: ${Object.entries(m.hp.stats).map(([k,v])=>`${k.toUpperCase()}+${v}%`).join(', ')}`, color: 'text-blue-400', type: 'conditional' });
+                if (m.hp.type === 'firstTurn') teamBonuses.push({ source: m.name, label: `Tour 1: ${Object.entries(m.hp.stats).map(([k,v])=>`${k.toUpperCase()}+${v}%`).join(', ')}`, color: 'text-yellow-400', type: 'conditional' });
+                if (m.hp.type === 'stacking') teamBonuses.push({ source: m.name, label: `Stack ATK +${m.hp.perStack?.atk || 0}%/attaque (max ${m.hp.maxStacks})`, color: 'text-orange-400', type: 'conditional' });
+                if (m.hp.type === 'vsBoss') teamBonuses.push({ source: m.name, label: `vs Boss: ATK +${m.hp.stats?.atk || 0}%`, color: 'text-red-300', type: 'conditional' });
+                if (m.hp.type === 'vsLowHp') teamBonuses.push({ source: m.name, label: `vs Ennemi <${m.hp.threshold}%: CRIT +${m.hp.stats?.crit || 0}`, color: 'text-pink-400', type: 'conditional' });
+                if (m.hp.type === 'vsDebuffed') teamBonuses.push({ source: m.name, label: `vs Debuff: ATK +${m.hp.stats?.atk || 0}%`, color: 'text-purple-400', type: 'conditional' });
+                if (m.hp.type === 'skillCd') teamBonuses.push({ source: m.name, label: `Skills CD${m.hp.minCd}+: CRIT +${m.hp.stats?.crit || 0}`, color: 'text-fuchsia-400', type: 'conditional' });
+              });
+
+              return (
+                <div className="mb-4 p-3 rounded-xl bg-gray-900/60 border border-purple-500/20 backdrop-blur-sm">
+                  <div className="text-[10px] text-purple-400 font-bold uppercase tracking-wider mb-2">Synergies d'equipe</div>
+
+                  {/* Element composition */}
+                  <div className="flex items-center gap-2 mb-2.5 pb-2 border-b border-gray-700/30">
+                    <span className="text-[9px] text-gray-500">Elements :</span>
+                    {Object.entries(elemCounts).map(([elem, cnt]) => (
+                      <span key={elem} className={`flex items-center gap-0.5 text-[10px] font-bold ${ELEMENTS[elem]?.color || 'text-gray-400'}`}>
+                        {ELEMENTS[elem]?.icon} {cnt > 1 ? `x${cnt}` : ''}
+                      </span>
+                    ))}
+                    {Object.keys(elemCounts).length === 1 && (
+                      <span className="text-[9px] text-emerald-400 ml-1">Mono-element!</span>
+                    )}
+                    {advantageElement && Object.keys(elemCounts).includes(advantageElement) && (
+                      <span className="text-[9px] text-green-400 ml-1">+30% avantage</span>
+                    )}
+                  </div>
+
+                  {/* Per-member stats card */}
+                  <div className="space-y-2 mb-2.5">
+                    {teamMembers.map(m => {
+                      const elemAdv = m.element === advantageElement;
+                      const elemWeak = ELEMENTS[stage.element]?.beats === m.element;
+                      return (
+                        <div key={m.id} className="flex items-start gap-2.5 p-2 rounded-lg bg-gray-800/40">
+                          <img src={getChibiSprite(m.id)} alt="" className="w-9 h-9 object-contain rounded-lg flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className="text-[11px] font-bold text-white truncate">{m.name}</span>
+                              <span className={`text-[9px] ${ELEMENTS[m.element]?.color}`}>{ELEMENTS[m.element]?.icon}</span>
+                              {m.isHunter && m.stars > 0 && <span className="text-[8px] text-yellow-400">{'★'.repeat(m.stars)}</span>}
+                              {elemAdv && <span className="text-[8px] px-1 rounded bg-green-900/50 text-green-400">+30%</span>}
+                              {elemWeak && <span className="text-[8px] px-1 rounded bg-red-900/50 text-red-400">-30%</span>}
+                            </div>
+                            {/* Stats row */}
+                            <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[9px]">
+                              <span className="text-red-400">ATK:{m.fs.atk}</span>
+                              <span className="text-green-400">HP:{m.fs.hp}</span>
+                              <span className="text-blue-400">DEF:{m.fs.def}</span>
+                              <span className="text-yellow-400">SPD:{m.fs.spd}</span>
+                              <span className="text-amber-400">CRIT:{Math.min(80, m.fs.crit).toFixed(0)}</span>
+                              <span className="text-purple-400">RES:{Math.min(70, m.fs.res).toFixed(0)}</span>
+                            </div>
+                            {/* Skills summary */}
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {(m.skills || []).map((sk, si) => {
+                                const tags = [];
+                                if (sk.power > 0) tags.push({ t: `${sk.power}%`, c: 'text-red-300' });
+                                if (sk.buffAtk) tags.push({ t: `ATK+${sk.buffAtk}`, c: 'text-green-300' });
+                                if (sk.buffDef) tags.push({ t: `DEF+${sk.buffDef}`, c: 'text-blue-300' });
+                                if (sk.healSelf) tags.push({ t: `Heal`, c: 'text-emerald-300' });
+                                if (sk.debuffDef) tags.push({ t: `DEF-${sk.debuffDef}`, c: 'text-orange-300' });
+                                return (
+                                  <span key={si} className="px-1 py-0.5 rounded bg-gray-700/50 text-[8px] text-gray-400">
+                                    {sk.name}{tags.length > 0 && <span className={`ml-0.5 ${tags[0].c}`}>{tags.map(t => t.t).join(' ')}</span>}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Team-wide bonuses */}
+                  {teamBonuses.length > 0 && (
+                    <div className="pt-2 border-t border-gray-700/30">
+                      <div className="text-[9px] text-gray-500 font-bold uppercase mb-1">Passifs actifs</div>
+                      <div className="space-y-0.5">
+                        {teamBonuses.map((b, i) => (
+                          <div key={i} className="flex items-center gap-2 text-[10px]">
+                            <span className="text-gray-500 w-20 truncate text-right">{b.source}</span>
+                            <span className={`font-medium ${b.color}`}>{b.label}</span>
+                            {b.type === 'team' && <span className="text-[8px] px-1 rounded bg-teal-900/40 text-teal-300">EQUIPE</span>}
+                            {b.type === 'conditional' && <span className="text-[8px] px-1 rounded bg-yellow-900/30 text-yellow-400">COND.</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Remove button if slot has a chibi */}
             {arc2PickSlot !== null && arc2Team[arc2PickSlot] && (
@@ -4735,16 +4996,165 @@ export default function ShadowColosseum() {
             getChibiSprite={getChibiSprite}
             getChibiData={getChibiData}
           />
-          {/* Auto toggle in battle */}
-          <div className="absolute top-1 right-2 z-20">
+          {/* Auto toggle + Farm stats HUD */}
+          <div className="absolute top-1 right-2 z-20 flex flex-col items-end gap-1">
             <button
-              onClick={() => setAutoReplay(prev => !prev)}
+              onClick={() => { const next = !autoReplay; setAutoReplay(next); if (next) setAutoFarmStats({ runs: 0, wins: 0, levels: 0, coins: 0, loots: 0, hunters: 0, weapons: 0, artifacts: 0 }); }}
               className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${autoReplay ? 'bg-green-500/90 text-white shadow-lg shadow-green-500/30 ring-1 ring-green-400/50' : 'bg-gray-700/80 text-gray-400 hover:bg-gray-600/80'}`}>
               Auto {autoReplay ? 'ON' : 'OFF'}
             </button>
+            {autoReplay && autoFarmStats.runs > 0 && (
+              <div className="px-2.5 py-1.5 rounded-lg bg-gray-900/90 border border-green-500/30 backdrop-blur-sm text-right">
+                <div className="text-[9px] text-green-400 font-bold uppercase tracking-wider mb-0.5">Auto-Farm</div>
+                <div className="text-[10px] text-white font-bold">{autoFarmStats.runs} runs</div>
+                <div className="flex flex-col gap-0 text-[9px]">
+                  {autoFarmStats.levels > 0 && <span className="text-yellow-400">+{autoFarmStats.levels} niveaux</span>}
+                  <span className="text-amber-300">+{autoFarmStats.coins.toLocaleString()} coins</span>
+                  {autoFarmStats.loots > 0 && <span className="text-purple-400">{autoFarmStats.loots} loots</span>}
+                  {autoFarmStats.hunters > 0 && <span className="text-blue-400">{autoFarmStats.hunters} hunters</span>}
+                  {autoFarmStats.weapons > 0 && <span className="text-red-400">{autoFarmStats.weapons} armes</span>}
+                  {autoFarmStats.artifacts > 0 && <span className="text-indigo-400">{autoFarmStats.artifacts} artefacts</span>}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
+
+      {/* ═══ FICHE PERSOS — Character Detail Sheet ═══ */}
+      {view === 'fiche' && (() => {
+        const rd = loadRaidData();
+        const allChars = ownedIds.map(id => {
+          const c = getChibiData(id);
+          if (!c) return null;
+          const isHunter = !!HUNTERS[id];
+          const { level } = getChibiLevel(id);
+          const stars = isHunter ? getHunterStars(rd, id) : 0;
+          const passive = isHunter ? HUNTER_PASSIVE_EFFECTS[id] : null;
+          const passiveDesc = isHunter ? HUNTERS[id]?.passiveDesc : null;
+          return { id, ...c, level, isHunter, stars, passive, passiveDesc };
+        }).filter(Boolean);
+
+        const elemColors = { fire: 'text-red-400', water: 'text-blue-400', shadow: 'text-purple-400', wind: 'text-green-400', earth: 'text-yellow-600', light: 'text-yellow-300' };
+        const elemEmoji = { fire: '\uD83D\uDD25', water: '\uD83D\uDCA7', shadow: '\uD83C\uDF11', wind: '\uD83D\uDCA8', earth: '\uD83C\uDF0D', light: '\u2728' };
+        const passiveTypeColors = {
+          permanent: 'bg-emerald-900/50 text-emerald-300', firstTurn: 'bg-yellow-900/50 text-yellow-300',
+          lowHp: 'bg-red-900/50 text-red-300', highHp: 'bg-blue-900/50 text-blue-300',
+          stacking: 'bg-orange-900/50 text-orange-300', healBonus: 'bg-green-900/50 text-green-300',
+          critDmg: 'bg-amber-900/50 text-amber-300', magicDmg: 'bg-indigo-900/50 text-indigo-300',
+          vsBoss: 'bg-red-900/50 text-red-200', vsLowHp: 'bg-pink-900/50 text-pink-300',
+          vsDebuffed: 'bg-purple-900/50 text-purple-300', defIgnore: 'bg-gray-800/50 text-gray-300',
+          aoeDmg: 'bg-cyan-900/50 text-cyan-300', dotDmg: 'bg-lime-900/50 text-lime-300',
+          teamDef: 'bg-teal-900/50 text-teal-300', buffBonus: 'bg-violet-900/50 text-violet-300',
+          skillCd: 'bg-fuchsia-900/50 text-fuchsia-300', debuffBonus: 'bg-rose-900/50 text-rose-300',
+        };
+
+        const getSkillTag = (sk) => {
+          const tags = [];
+          if (sk.power > 0) tags.push({ label: `${sk.power}% DMG`, color: 'text-red-400' });
+          if (sk.buffAtk) tags.push({ label: `ATK+${sk.buffAtk}%`, color: 'text-green-400' });
+          if (sk.buffDef) tags.push({ label: `DEF+${sk.buffDef}%`, color: 'text-blue-400' });
+          if (sk.healSelf) tags.push({ label: `Heal ${sk.healSelf}%`, color: 'text-emerald-400' });
+          if (sk.debuffDef) tags.push({ label: `DEF-${sk.debuffDef}%`, color: 'text-orange-400' });
+          if (sk.cdMax > 0) tags.push({ label: `CD:${sk.cdMax}`, color: 'text-gray-400' });
+          return tags;
+        };
+
+        return (
+          <div className="max-w-3xl mx-auto px-4 pt-4 pb-16">
+            <div className="flex items-center gap-3 mb-4">
+              <button onClick={() => setView('hub')} className="text-gray-400 hover:text-white text-sm">&larr; Retour</button>
+              <h2 className="text-lg font-black bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                Fiche des Personnages
+              </h2>
+              <span className="text-[10px] text-gray-500">{allChars.length} persos</span>
+            </div>
+
+            <div className="text-[10px] text-gray-500 mb-4 p-2 rounded-lg bg-gray-900/40 border border-gray-700/20">
+              Les <span className="text-emerald-400">passifs</span> des hunters s'appliquent automatiquement en combat.
+              Chaque <span className="text-yellow-400">etoile</span> (duplicate) augmente les stats.
+            </div>
+
+            <div className="space-y-3">
+              {allChars.map(ch => (
+                <div key={ch.id} className="p-3 rounded-xl bg-gray-900/60 border border-gray-700/30 hover:border-gray-600/50 transition-all">
+                  {/* Header */}
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <img src={getChibiSprite(ch.id)} alt="" className="w-10 h-10 object-contain rounded-lg bg-gray-800/50" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-bold text-white truncate">{ch.name}</span>
+                        <span className={`text-xs ${elemColors[ch.element] || 'text-gray-400'}`}>{elemEmoji[ch.element] || ''}</span>
+                        {ch.isHunter && <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-900/50 text-indigo-300 font-bold">HUNTER</span>}
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                        <span>Nv.{ch.level}</span>
+                        {ch.isHunter && ch.stars > 0 && (
+                          <span className="text-yellow-400">{'★'.repeat(ch.stars)}{'☆'.repeat(5 - ch.stars)}</span>
+                        )}
+                        {ch.isHunter && ch.stars === 0 && (
+                          <span className="text-gray-600">{'☆'.repeat(5)}</span>
+                        )}
+                        {ch.rarity && <span className={`${ch.rarity === 'mythique' ? 'text-amber-400' : ch.rarity === 'legendaire' ? 'text-purple-400' : 'text-blue-400'}`}>{ch.rarity}</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Skills */}
+                  <div className="mb-2">
+                    <div className="text-[9px] text-gray-500 font-bold uppercase mb-1">Skills</div>
+                    <div className="space-y-1">
+                      {(ch.skills || []).map((sk, si) => {
+                        const tags = getSkillTag(sk);
+                        return (
+                          <div key={si} className="flex items-center gap-2 text-[10px]">
+                            <span className="text-gray-300 font-medium w-28 truncate">{sk.name}</span>
+                            <div className="flex flex-wrap gap-1">
+                              {tags.map((t, ti) => (
+                                <span key={ti} className={`px-1 py-0.5 rounded bg-gray-800/60 ${t.color} text-[9px]`}>{t.label}</span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Hunter Passive */}
+                  {ch.passive && (
+                    <div className="mb-2">
+                      <div className="text-[9px] text-gray-500 font-bold uppercase mb-1">Passif</div>
+                      <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-medium ${passiveTypeColors[ch.passive.type] || 'bg-gray-800/50 text-gray-300'}`}>
+                        <span className="font-bold uppercase text-[8px] opacity-70">{ch.passive.type}</span>
+                        <span>{ch.passiveDesc}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Star Bonuses */}
+                  {ch.isHunter && (
+                    <div>
+                      <div className="text-[9px] text-gray-500 font-bold uppercase mb-1">Eveil (Duplicates)</div>
+                      <div className="flex flex-wrap gap-1">
+                        {[1, 2, 3, 4, 5].map(s => {
+                          const active = ch.stars >= s;
+                          const bonus = s * 5; // eveilMult = 1 + stars * 0.05
+                          return (
+                            <div key={s} className={`px-1.5 py-0.5 rounded text-[9px] border ${active ? 'border-yellow-500/40 bg-yellow-900/30 text-yellow-300' : 'border-gray-700/30 bg-gray-900/30 text-gray-600'}`}>
+                              <span className="font-bold">{'★'.repeat(s)}</span>
+                              <span className="ml-1">+{bonus}% stats</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ═══ RESULT VIEW ═══ */}
       {view === 'result' && result && (
@@ -4896,7 +5306,7 @@ export default function ShadowColosseum() {
                     e.preventDefault();
                     const next = !autoReplay;
                     setAutoReplay(next);
-                    if (next) { setResult(null); setBattle(null); setTimeout(() => startBattle(), 100); }
+                    if (next) { setAutoFarmStats({ runs: 0, wins: 0, levels: 0, coins: 0, loots: 0, hunters: 0, weapons: 0, artifacts: 0 }); setResult(null); setBattle(null); setTimeout(() => startBattle(), 100); }
                   }}>
                   <div className={`relative w-10 h-5 rounded-full transition-colors ${autoReplay ? 'bg-green-500' : 'bg-gray-600'}`}>
                     <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${autoReplay ? 'translate-x-5' : 'translate-x-0.5'}`} />
@@ -4905,6 +5315,30 @@ export default function ShadowColosseum() {
                     Auto
                   </span>
                 </label>
+              </div>
+            )}
+            {/* Auto-farm stats on result screen */}
+            {autoReplay && autoFarmStats.runs > 0 && (
+              <div className="w-full max-w-xs mx-auto px-3 py-2 rounded-xl bg-gray-900/80 border border-green-500/30 backdrop-blur-sm">
+                <div className="text-[10px] text-green-400 font-bold uppercase tracking-wider text-center mb-1">Auto-Farm en cours</div>
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  <div>
+                    <div className="text-sm font-black text-white">{autoFarmStats.runs}</div>
+                    <div className="text-[8px] text-gray-500">runs</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-black text-yellow-400">+{autoFarmStats.levels}</div>
+                    <div className="text-[8px] text-gray-500">niveaux</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-black text-amber-300">{autoFarmStats.coins >= 1000 ? `${(autoFarmStats.coins/1000).toFixed(1)}K` : autoFarmStats.coins}</div>
+                    <div className="text-[8px] text-gray-500">coins</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-black text-purple-400">{autoFarmStats.loots}</div>
+                    <div className="text-[8px] text-gray-500">loots</div>
+                  </div>
+                </div>
               </div>
             )}
             <button

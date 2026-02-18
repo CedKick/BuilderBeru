@@ -816,6 +816,30 @@ export const HUNTER_PASSIVE_EFFECTS = {
 
 export const getHunterPassive = (hunterId) => HUNTER_PASSIVE_EFFECTS[hunterId] || null;
 
+// ─── Star (Advancement) stat bonuses ─────────────────────────────
+// Each duplicate (star) gives cumulative % bonuses to stats.
+// Stars go from 0 (first copy) to 5 (6th copy = max).
+export const STAR_STAT_BONUSES = {
+  0: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 },
+  1: { hp: 5, atk: 3, def: 2, spd: 0, crit: 0, res: 0 },
+  2: { hp: 8, atk: 5, def: 3, spd: 2, crit: 1, res: 0 },
+  3: { hp: 12, atk: 8, def: 5, spd: 3, crit: 2, res: 1 },
+  4: { hp: 16, atk: 12, def: 8, spd: 4, crit: 3, res: 2 },
+  5: { hp: 20, atk: 15, def: 10, spd: 5, crit: 5, res: 3 },
+};
+
+// Apply star bonuses to a stats object (mutates in-place)
+export const applyStarBonuses = (stats, stars) => {
+  const bonus = STAR_STAT_BONUSES[stars] || STAR_STAT_BONUSES[0];
+  if (bonus.hp)   stats.hp  = Math.floor(stats.hp  * (1 + bonus.hp / 100));
+  if (bonus.atk)  stats.atk = Math.floor(stats.atk * (1 + bonus.atk / 100));
+  if (bonus.def)  stats.def = Math.floor(stats.def * (1 + bonus.def / 100));
+  if (bonus.spd)  stats.spd = Math.floor(stats.spd * (1 + bonus.spd / 100));
+  if (bonus.crit) stats.crit += bonus.crit;
+  if (bonus.res)  stats.res += bonus.res;
+  return stats;
+};
+
 // ─── Helper: get available pool (shadow chibis + unlocked hunters) ─
 
 export const getHunterPool = (raidData) => {

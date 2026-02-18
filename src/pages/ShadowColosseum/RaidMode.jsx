@@ -250,11 +250,15 @@ export default function RaidMode() {
       for (const [k, v] of Object.entries(eqB)) { if (v) m[k] = (m[k] || 0) + v; }
       // Inject hunter passive bonuses into talentBonuses
       if (hunterPassive) {
-        if (hunterPassive.type === 'healBonus') m.healBonus = (m.healBonus || 0) + hunterPassive.value;
-        if (hunterPassive.type === 'critDmg')   m.critDamage = (m.critDamage || 0) + hunterPassive.value;
-        if (hunterPassive.type === 'magicDmg')  m.allDamage = (m.allDamage || 0) + hunterPassive.value;
-        if (hunterPassive.type === 'vsBoss')    m.bossDamage = (m.bossDamage || 0) + (hunterPassive.stats?.atk || 0);
+        if (hunterPassive.type === 'healBonus')   m.healBonus = (m.healBonus || 0) + hunterPassive.value;
+        if (hunterPassive.type === 'critDmg')     m.critDamage = (m.critDamage || 0) + hunterPassive.value;
+        if (hunterPassive.type === 'magicDmg')    m.allDamage = (m.allDamage || 0) + hunterPassive.value;
+        if (hunterPassive.type === 'vsBoss')      m.bossDamage = (m.bossDamage || 0) + (hunterPassive.stats?.atk || 0);
         if (hunterPassive.type === 'debuffBonus') m.debuffBonus = (m.debuffBonus || 0) + hunterPassive.value;
+        if (hunterPassive.type === 'aoeDmg')      m.allDamage = (m.allDamage || 0) + hunterPassive.value;
+        if (hunterPassive.type === 'dotDmg')      m.allDamage = (m.allDamage || 0) + hunterPassive.value;
+        if (hunterPassive.type === 'buffBonus')   m.buffBonus = (m.buffBonus || 0) + hunterPassive.value;
+        if (hunterPassive.type === 'teamDef')     defMult += hunterPassive.value / 100;
       }
       return m;
     })();
@@ -1084,6 +1088,65 @@ export default function RaidMode() {
       {crossSynergy.labels.length > 0 && (
         <div className="text-center text-xs text-yellow-400">
           {crossSynergy.labels.join(' | ')}
+        </div>
+      )}
+
+      {/* ─── Team Passives Detail Panel ─── */}
+      {selectedIds.length > 0 && (
+        <div className="bg-white/5 rounded-xl p-3 border border-white/10">
+          <div className="text-[10px] text-purple-400 font-bold uppercase tracking-wider mb-2">Passifs & Stats de l'equipe</div>
+          <div className="space-y-2">
+            {selectedIds.map(id => {
+              const c = allPool[id];
+              if (!c) return null;
+              const isHunter = !!HUNTERS[id];
+              const hp = isHunter ? HUNTER_PASSIVE_EFFECTS[id] : null;
+              const passiveDesc = isHunter ? HUNTERS[id]?.passiveDesc : null;
+              const lv = getChibiLevel(id);
+              const stars = isHunter ? getHunterStars(raidData, id) : 0;
+              const fs = getChibiStats(id);
+              if (!fs) return null;
+
+              const passiveTypeColors = {
+                permanent: 'text-emerald-400', firstTurn: 'text-yellow-400', lowHp: 'text-red-400',
+                highHp: 'text-blue-400', stacking: 'text-orange-400', healBonus: 'text-green-400',
+                critDmg: 'text-amber-400', magicDmg: 'text-indigo-400', vsBoss: 'text-red-300',
+                aoeDmg: 'text-cyan-400', dotDmg: 'text-lime-400', defIgnore: 'text-gray-300',
+                teamDef: 'text-teal-400', buffBonus: 'text-violet-400', debuffBonus: 'text-rose-400',
+                vsLowHp: 'text-pink-400', vsDebuffed: 'text-purple-400', skillCd: 'text-fuchsia-400',
+              };
+
+              return (
+                <div key={id} className="flex items-start gap-2.5 p-2 rounded-lg bg-gray-800/40">
+                  <img src={c.sprite} alt="" className="w-9 h-9 object-contain rounded-lg flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-[11px] font-bold text-white truncate">{c.name}</span>
+                      <span className={`text-[9px] ${ELEMENTS[c.element]?.color}`}>{ELEMENTS[c.element]?.icon}</span>
+                      {stars > 0 && <span className="text-[8px] text-yellow-400">{'★'.repeat(stars)}</span>}
+                      <span className="text-[8px] text-gray-500">Lv{lv}</span>
+                    </div>
+                    {/* Stats row */}
+                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[9px]">
+                      <span className="text-red-400">ATK:{fs.atk}</span>
+                      <span className="text-green-400">HP:{fs.hp}</span>
+                      <span className="text-blue-400">DEF:{fs.def}</span>
+                      <span className="text-yellow-400">SPD:{fs.spd}</span>
+                      <span className="text-amber-400">CRIT:{Math.min(80, fs.crit).toFixed(0)}</span>
+                    </div>
+                    {/* Passive */}
+                    {hp && passiveDesc && (
+                      <div className={`mt-1 text-[9px] ${passiveTypeColors[hp.type] || 'text-gray-400'}`}>
+                        <span className="text-[8px] text-gray-600 uppercase mr-1">[{hp.type}]</span>
+                        {passiveDesc}
+                        {hp.type === 'teamDef' && <span className="ml-1 text-[8px] px-1 rounded bg-teal-900/40 text-teal-300">EQUIPE</span>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
