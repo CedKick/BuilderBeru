@@ -516,7 +516,7 @@ export const WEAPONS = {
   w_bouclier_hero:    { id: 'w_bouclier_hero',    name: 'Bouclier du Heros',    rarity: 'rare',       element: null,     weaponType: 'shield',  atk: 6,  bonusStat: 'def_pct',   bonusValue: 10, icon: '\uD83D\uDEE1\uFE0F', desc: 'Protection legendaire' },
 
   // Secret — drop 1/30000 from Ragnarok
-  w_sulfuras:         { id: 'w_sulfuras',         name: 'Masse de Sulfuras',    rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 250, bonusStat: 'atk_pct', bonusValue: 25, icon: '\uD83D\uDD28', desc: '???', secret: true, passive: 'sulfuras_fury', fireRes: 50 },
+  w_sulfuras:         { id: 'w_sulfuras',         name: 'Masse de Sulfuras',    rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 250, bonusStat: 'atk_pct', bonusValue: 25, icon: '\uD83D\uDD28', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771443640/WeaponSulfuras_efg3ca.png', desc: '???', secret: true, passive: 'sulfuras_fury', fireRes: 50 },
 };
 
 export const WEAPON_PRICES = { rare: 500, legendaire: 2000, mythique: 5000 };

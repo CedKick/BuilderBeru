@@ -6,7 +6,7 @@ import { WEAPONS, WEAPON_AWAKENING_PASSIVES, MAX_WEAPON_AWAKENING, getWeaponAwak
 
 // ═══════════════════════════════════════════════════════════════
 // CODEX — Encyclopedie du Shadow Colosseum
-// Onglet Weapons : toutes les armes, stats A0→A10, filtres
+// Onglet Weapons : toutes les armes, stats A0→A10, filtres, skins
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';

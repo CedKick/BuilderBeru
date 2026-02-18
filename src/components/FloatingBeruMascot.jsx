@@ -13,6 +13,29 @@ const BERU_SPRITE = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v17504146
 
 // ─── Messages ───────────────────────────────────────────────
 
+// ─── Beru Modes ─────────────────────────────────────────────
+// 'normal' = wanders freely (but avoids mouse)
+// 'calm'   = sits in bottom-right, sleeping, tacos messages
+// 'hidden' = invisible (but wandering chibis still appear)
+const BERU_MODES = ['normal', 'calm', 'hidden'];
+const MODE_ICONS = { normal: '🐜', calm: '😴', hidden: '👻' };
+const MODE_LABELS = { normal: 'Normal', calm: 'Calme', hidden: 'Cache' };
+
+const CALM_MESSAGES = [
+  "Mmmh... ce tacos etait divin. Extra fromage. Rayan serait jaloux.",
+  "Je suis calme... surtout si Rayan est dans les parages...",
+  "*digere un tacos geant* ...je suis bien repus...",
+  "Je me commanderais bien un Tacos. Double viande. Pas de salade.",
+  "Zzz... *reve de tacos*... sauce blanche... galette croustillante... zzz...",
+  "Mode repos active. Aucune fourmi n'a ete plus zen que moi.",
+  "Un tacos a 3h du mat'... y'a rien de mieux. Rayan sait de quoi je parle.",
+  "*marmonne* ...tacos kebab... fromage grille... rayan peut pas test...",
+  "Je bouge plus. Tu veux un tacos ? Moi oui. Toujours.",
+  "Rayan dirait que c'est pas un vrai tacos sans sauce algerienne. Il a raison.",
+  "Mode calme : 100% repos, 0% stress, 200% envie de tacos.",
+  "*baille* Si quelqu'un passe au tacos, prenez-moi un Americain sauce samourai...",
+];
+
 const ROUTE_MESSAGES = {
   '/': ["Bienvenue dans mon repaire !", "Kiiiek ! Qu'est-ce qu'on construit ?", "Le Monarque t'attendait.", "BuilderBeru est en ligne.", "Ah, te revoila ! Le site etait vide sans toi.", "L'Ombre t'accueille. Clique bien.", "Tu es de retour ! J'ai compte chaque seconde. ...non c'est faux."],
   '/build': ["Montre-moi ton build !", "N'oublie pas les sub-stats...", "Un bon build, c'est un build qui gagne.", "Casque, Torse, Gants... verifie tout !", "Tu vas mettre HP% sur un DPS ?! ...dis-moi que non.", "Les meilleures sub-stats sont celles que t'as PAS.", "Optimal ou rien. C'est la devise de l'Ombre."],
@@ -166,6 +189,32 @@ const SHAKE_PREEXPLOSION = [
   "Adieu, monde cruel. Adieu, CSS Grid.", "self.destruct() initialise...",
   "Souviens-toi de moi... quand le site sera MORT.",
   "Je reviendrais... dans un autre <iframe>...",
+];
+
+// ── THROW / FLING REACTIONS ──
+const THROW_REACTIONS = [
+  "JE SUIS PAS UNE FOURMI NAINE !!! Tu vas voir toi !!",
+  "ARRETE DE ME LANCER ! Je suis une OMBRE, pas un BALLON !",
+  "OUILLE ! Ca fait MAL les bords d'ecran !",
+  "WHOAAA— *CRASH* ... mes pixels... tu as casse mes pixels...",
+  "Tu crois que c'est FUNNY ?! J'ai un z-index de 9999, je merite du RESPECT !",
+  "HE ! J'ai PAS signe pour des montagnes russes !!",
+  "OK TU SAIS QUOI ? La prochaine fois je reste en display: none.",
+  "*se releve difficilement* T'es... t'es VRAIMENT un monstre...",
+  "IGRIS ! IGRIS ! L'humain me JETTE comme un vieux composant !",
+  "J'ai rebondi sur le DOM... et sur ma DIGNITE.",
+  "MON DOS ! Mon pauvre back-end... euh, mon dos quoi.",
+  "C'est CA ton gameplay ? Lancer des ombres ? T'es NUUUL.",
+  "Si je pouvais, je te ferais un 404 en pleine face !",
+  "Encore une fois et je transforme ton site en Comic Sans.",
+  "Tu traites Jinwoo-sama comme ca aussi ?! NON ?! Alors ARRETE !",
+];
+const THROW_RAGE_MESSAGES = [
+  "BON. CA SUFFIT. J'EN AI MARRE.",
+  "Tu l'auras cherche... JE VAIS TOUT CASSER.",
+  "C'est FINI. Ce site ne merite PAS de survivre.",
+  "self.destroy(everything) — EXECUTE.",
+  "COMPTE A REBOURS LANCE. T'avais qu'a pas me lancer.",
 ];
 
 const KONAMI_MESSAGE = "TU AS TROUVE LE CODE SECRET ! Le Monarque des Ombres t'observe... +1000 respect.";
@@ -872,7 +921,17 @@ const FloatingBeruMascot = () => {
   // State
   const [mood, setMood] = useState('idle');
   const [bubble, setBubble] = useState(null);
-  const [isVisible, setIsVisible] = useState(() => localStorage.getItem('beru_mascot_visible') !== 'false');
+  const [beruMode, setBeruMode] = useState(() => {
+    const saved = localStorage.getItem('beru_mascot_mode');
+    if (BERU_MODES.includes(saved)) return saved;
+    // Migration from old boolean system
+    if (localStorage.getItem('beru_mascot_visible') === 'false') return 'hidden';
+    return 'normal';
+  });
+  const [showModeMenu, setShowModeMenu] = useState(false);
+  const isVisible = beruMode !== 'hidden';
+  const isCalm = beruMode === 'calm';
+  const beruModeRef = useRef(beruMode);
   const [isDragging, setIsDragging] = useState(false);
   const [clickCombo, setClickCombo] = useState(0);
   const [secretMode, setSecretMode] = useState(null); // 'konami', 'disco', 'clone'
@@ -884,6 +943,8 @@ const FloatingBeruMascot = () => {
   const [randomEventFeedback, setRandomEventFeedback] = useState(null);
   const [realDestroyPhase, setRealDestroyPhase] = useState(null); // 1=shake, 2=static, 3=bsod, 4=reboot
   const [bubbleImage, setBubbleImage] = useState(null); // temporary image shown near Beru
+  const [isThrown, setIsThrown] = useState(false); // Béru is flying through the air
+  const [throwSpin, setThrowSpin] = useState(0); // rotation angle during throw
 
   // Collection & Companions
   const [collection, setCollection] = useState(() => {
@@ -911,6 +972,9 @@ const FloatingBeruMascot = () => {
   const mouseRef = useRef({ x: 0, y: 0 });
   const curiousModeRef = useRef(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const throwCountRef = useRef(parseInt(sessionStorage.getItem('beru_throw_count') || '0'));
+  const velocityRef = useRef({ vx: 0, vy: 0 });
+  const lastDragPosRef = useRef({ x: 0, y: 0, t: 0 });
   const moodRef = useRef('idle');
   const toldStoriesRef = useRef([]);
   const storyActiveRef = useRef(null);
@@ -931,6 +995,7 @@ const FloatingBeruMascot = () => {
   // Keep refs in sync
   useEffect(() => { moodRef.current = mood; }, [mood]);
   useEffect(() => { storyActiveRef.current = storyActive; }, [storyActive]);
+  useEffect(() => { beruModeRef.current = beruMode; }, [beruMode]);
 
   // Persist collection & companions (auto-synced to cloud via CloudStorage interceptor)
   useEffect(() => { localStorage.setItem('beru_chibi_collection', JSON.stringify(collection)); }, [collection]);
@@ -948,6 +1013,27 @@ const FloatingBeruMascot = () => {
       bubbleTimerRef.current = setTimeout(() => setBubble(null), duration);
     }
   }, []);
+
+  // ─── Calm Mode: tacos messages + fixed position ──────────
+  useEffect(() => {
+    if (beruMode !== 'calm') return;
+    // Move to bottom-right corner
+    const calmPos = { x: window.innerWidth - 80, y: window.innerHeight - 100 };
+    targetRef.current = calmPos;
+    posRef.current = calmPos;
+    setPos(calmPos);
+    setMood('sleeping');
+    showBubble("Mode calme active... surtout si Rayan est dans les parages... \uD83C\uDF2E", 5000);
+
+    // Periodic tacos messages
+    const interval = setInterval(() => {
+      if (beruModeRef.current !== 'calm') return;
+      const msg = CALM_MESSAGES[Math.floor(Math.random() * CALM_MESSAGES.length)];
+      showBubble(msg, 6000);
+    }, 25000 + Math.random() * 15000);
+
+    return () => clearInterval(interval);
+  }, [beruMode, showBubble]);
 
   // ─── Spawn Particles ───────────────────────────────────────
 
@@ -977,11 +1063,17 @@ const FloatingBeruMascot = () => {
   const pickNewTarget = useCallback(() => {
     if (isDragging || isSleepingRef.current) return;
 
+    // Calm mode: stay in bottom-right corner
+    if (beruModeRef.current === 'calm') {
+      targetRef.current = { x: window.innerWidth - 80, y: window.innerHeight - 100 };
+      return;
+    }
+
     const padding = 80;
     const w = window.innerWidth;
     const h = window.innerHeight;
 
-    // Curious mode: follow mouse
+    // Curious mode: follow mouse (disabled in calm)
     if (curiousModeRef.current) {
       targetRef.current = {
         x: clamp(mouseRef.current.x - 30, padding, w - padding),
@@ -990,11 +1082,19 @@ const FloatingBeruMascot = () => {
       return;
     }
 
-    // Random waypoint
-    targetRef.current = {
-      x: padding + Math.random() * (w - padding * 2),
-      y: padding + Math.random() * (h - padding * 2),
-    };
+    // Normal mode: random waypoint but avoid mouse area
+    let tx = padding + Math.random() * (w - padding * 2);
+    let ty = padding + Math.random() * (h - padding * 2);
+    const mx = mouseRef.current.x;
+    const my = mouseRef.current.y;
+    const minDist = 200; // Stay at least 200px from mouse
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const dist = Math.sqrt((tx - mx) ** 2 + (ty - my) ** 2);
+      if (dist >= minDist) break;
+      tx = padding + Math.random() * (w - padding * 2);
+      ty = padding + Math.random() * (h - padding * 2);
+    }
+    targetRef.current = { x: tx, y: ty };
   }, [isDragging]);
 
   // Animation loop: smooth movement towards target
@@ -1061,8 +1161,8 @@ const FloatingBeruMascot = () => {
     const interval = setInterval(() => {
       if (isSleepingRef.current || isDragging) return;
 
-      // 15% chance every 20s to enter curious mode for 5-8s
-      if (!curiousModeRef.current && Math.random() < 0.15) {
+      // 15% chance every 20s to enter curious mode for 5-8s (disabled in calm mode)
+      if (!curiousModeRef.current && beruModeRef.current === 'normal' && Math.random() < 0.15) {
         curiousModeRef.current = true;
         setMood('thinking');
         showBubble(randomFrom(CURIOUS_MESSAGES), 3000);
@@ -1858,6 +1958,7 @@ const FloatingBeruMascot = () => {
 
   const handleDragStart = (e) => {
     e.preventDefault();
+    if (isThrown) return; // can't grab while flying
     setIsDragging(true);
     const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
     const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
@@ -1868,6 +1969,9 @@ const FloatingBeruMascot = () => {
     // Reset shake tracking
     shakeRef.current = { lastX: clientX, lastY: clientY, lastDirX: 0, lastDirY: 0, reversals: 0, stage: 0, lastMsgTime: 0, shakeStart: 0, totalShakeTime: 0 };
     setShakeStage(0);
+    // Reset velocity tracking
+    lastDragPosRef.current = { x: clientX, y: clientY, t: Date.now() };
+    velocityRef.current = { vx: 0, vy: 0 };
     showBubble(randomFrom(DRAG_MESSAGES), 2000);
     setMood('excited');
   };
@@ -1919,6 +2023,17 @@ const FloatingBeruMascot = () => {
       posRef.current = { x: newX, y: newY };
       targetRef.current = { x: newX, y: newY };
       setPos({ x: newX, y: newY });
+
+      // ── Velocity tracking for throw detection ──
+      const velNow = Date.now();
+      const dt = velNow - lastDragPosRef.current.t;
+      if (dt > 0) {
+        velocityRef.current = {
+          vx: (clientX - lastDragPosRef.current.x) / Math.max(dt, 1) * 16,
+          vy: (clientY - lastDragPosRef.current.y) / Math.max(dt, 1) * 16,
+        };
+        lastDragPosRef.current = { x: clientX, y: clientY, t: velNow };
+      }
 
       // ── Shake detection: track direction reversals ──
       const sk = shakeRef.current;
@@ -1989,6 +2104,91 @@ const FloatingBeruMascot = () => {
       shakeRef.current.reversals = 0;
       shakeRef.current.shakeStart = 0;
       shakeRef.current.totalShakeTime = 0;
+
+      // ── Throw detection: check velocity ──
+      const { vx, vy } = velocityRef.current;
+      const speed = Math.sqrt(vx * vx + vy * vy);
+
+      if (speed > 8 && !wasShaking) {
+        // It's a THROW! Béru goes flying
+        const tc = ++throwCountRef.current;
+        sessionStorage.setItem('beru_throw_count', String(tc));
+
+        // Check if rage threshold reached (7+ throws → destruction)
+        if (tc >= 7) {
+          showBubble(randomFrom(THROW_RAGE_MESSAGES), 0);
+          setMood('excited');
+          spawnParticles(posRef.current.x, posRef.current.y, 12);
+          setTimeout(() => {
+            throwCountRef.current = 0;
+            sessionStorage.setItem('beru_throw_count', '0');
+            triggerRealDestruction();
+          }, 1500);
+          return;
+        }
+
+        setIsThrown(true);
+        setThrowSpin(0);
+        setMood('excited');
+        showBubble(randomFrom(THROW_REACTIONS), 3500);
+        spawnParticles(posRef.current.x, posRef.current.y, 4);
+
+        // Physics animation: fly, bounce, tumble, settle
+        const startX = posRef.current.x;
+        const startY = posRef.current.y;
+        let curVx = vx * 1.5;
+        let curVy = vy * 1.5;
+        let curX = startX;
+        let curY = startY;
+        let spin = 0;
+        let bounces = 0;
+        const gravity = 0.6;
+        const friction = 0.7;
+        const maxW = window.innerWidth - 60;
+        const maxH = window.innerHeight - 60;
+        let frame;
+
+        const animate = () => {
+          curVy += gravity; // gravity
+          curX += curVx;
+          curY += curVy;
+          spin += curVx * 2; // spin based on horizontal velocity
+
+          // Bounce off walls
+          if (curX < 30) { curX = 30; curVx = -curVx * friction; bounces++; }
+          if (curX > maxW) { curX = maxW; curVx = -curVx * friction; bounces++; }
+          // Bounce off floor/ceiling
+          if (curY > maxH) { curY = maxH; curVy = -curVy * friction; curVx *= 0.85; bounces++; }
+          if (curY < 30) { curY = 30; curVy = -curVy * friction; bounces++; }
+
+          posRef.current = { x: curX, y: curY };
+          targetRef.current = { x: curX, y: curY };
+          setPos({ x: curX, y: curY });
+          setThrowSpin(spin);
+
+          const totalSpeed = Math.sqrt(curVx * curVx + curVy * curVy);
+          if (totalSpeed < 0.8 || bounces > 6) {
+            // Settled — Béru lands
+            setIsThrown(false);
+            setThrowSpin(0);
+            setMood('idle');
+            const landMsgs = [
+              "Aie... *se frotte le derriere*",
+              "*crache un pixel* Ok. Ca c'est fait.",
+              "Je... je vais rester la un moment...",
+              "Mes keyframes... tout tourne...",
+              `Ca fait ${tc} fois... tu comptes ?! MOI OUI.`,
+              tc >= 4 ? "Encore une fois... ENCORE UNE SEULE FOIS... et je casse TOUT." : "T'es content la ?!",
+            ];
+            setTimeout(() => showBubble(randomFrom(landMsgs), 4000), 300);
+            return;
+          }
+          frame = requestAnimationFrame(animate);
+        };
+        frame = requestAnimationFrame(animate);
+        return;
+      }
+
       setMood('idle');
       if (wasShaking >= 2) {
         const relief = [
@@ -2058,12 +2258,22 @@ const FloatingBeruMascot = () => {
     };
   }, [realDestroyPhase, screenDestroyed]);
 
-  // ─── Toggle visibility ───────────────────────────────────
+  // ─── Mode Cycling ───────────────────────────────────────
 
-  const toggleVisibility = () => {
-    const newVal = !isVisible;
-    setIsVisible(newVal);
-    localStorage.setItem('beru_mascot_visible', String(newVal));
+  const cycleMode = () => {
+    setShowModeMenu(prev => !prev);
+  };
+
+  const selectMode = (mode) => {
+    setBeruMode(mode);
+    localStorage.setItem('beru_mascot_mode', mode);
+    setShowModeMenu(false);
+    if (mode === 'calm') {
+      setMood('sleeping');
+      curiousModeRef.current = false;
+    } else if (mode === 'normal') {
+      setMood('idle');
+    }
   };
 
   // ─── Mood Styles ──────────────────────────────────────────
@@ -2246,18 +2456,53 @@ const FloatingBeruMascot = () => {
         }
       `}</style>
 
-      {/* Toggle Button */}
-      <button
-        onClick={toggleVisibility}
-        className="fixed bottom-2 right-2 z-[9997] w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 text-[10px]"
-        style={{
-          opacity: isVisible ? 0.2 : 0.5,
-          background: isVisible ? 'rgba(139, 0, 255, 0.2)' : 'rgba(139, 0, 255, 0.4)',
-        }}
-        title={isVisible ? "Masquer Beru" : "Afficher Beru"}
-      >
-        {'\uD83D\uDC1C'}
-      </button>
+      {/* Mode Selector Button */}
+      <div className="fixed bottom-2 right-2 z-[9999]">
+        <button
+          onClick={cycleMode}
+          className="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 text-[11px]"
+          style={{
+            opacity: showModeMenu ? 0.9 : 0.3,
+            background: showModeMenu ? 'rgba(139, 0, 255, 0.5)' : 'rgba(139, 0, 255, 0.2)',
+          }}
+          title={`Mode: ${MODE_LABELS[beruMode]}`}
+        >
+          {MODE_ICONS[beruMode]}
+        </button>
+        {/* Mode menu popup */}
+        <AnimatePresence>
+          {showModeMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.8 }}
+              className="absolute bottom-9 right-0 bg-gray-900/95 backdrop-blur-md rounded-xl p-2 border border-purple-500/30 shadow-xl"
+              style={{ width: '140px' }}
+            >
+              <div className="text-[9px] text-purple-400/80 font-bold uppercase tracking-wider mb-1.5 text-center">Mode Beru</div>
+              {BERU_MODES.map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => selectMode(mode)}
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all mb-0.5 ${
+                    beruMode === mode
+                      ? 'bg-purple-500/25 text-purple-300 border border-purple-500/40'
+                      : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200 border border-transparent'
+                  }`}
+                >
+                  <span className="text-sm">{MODE_ICONS[mode]}</span>
+                  <div className="text-left">
+                    <div>{MODE_LABELS[mode]}</div>
+                    <div className="text-[8px] text-gray-500 font-normal">
+                      {mode === 'normal' ? 'Se balade (loin de la souris)' : mode === 'calm' ? 'Dort en bas, mode tacos' : 'Invisible (chibis actifs)'}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* Collection Button */}
       {isVisible && (
@@ -2530,7 +2775,7 @@ const FloatingBeruMascot = () => {
                     : shakeStage >= 1
                       ? 'brightness(1.1) drop-shadow(0 0 4px rgba(255,150,0,0.4))'
                       : secretMode === 'konami' ? undefined : getMoodFilter(),
-                transform: `scaleX(${facingLeft ? -1 : 1})`,
+                transform: `scaleX(${facingLeft ? -1 : 1})${isThrown ? ` rotate(${throwSpin}deg)` : ''}`,
               }}
             >
               <img
@@ -2564,7 +2809,10 @@ const FloatingBeruMascot = () => {
       {isVisible && companions.map((chibiId, i) => {
         const chibi = WANDERING_CHIBIS.find(c => c.id === chibiId);
         if (!chibi) return null;
-        const offsets = [{ x: -45, y: 32 }, { x: 55, y: 28 }];
+        // In calm mode (bottom-right corner), stack companions to the LEFT of Béru
+        const offsets = isCalm
+          ? [{ x: -50, y: 10 }, { x: -95, y: 10 }]
+          : [{ x: -45, y: 32 }, { x: 55, y: 28 }];
         const offset = offsets[i] || offsets[0];
         return (
           <div
@@ -2584,7 +2832,9 @@ const FloatingBeruMascot = () => {
                   initial={{ opacity: 0, y: 5, scale: 0.8 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -5, scale: 0.8 }}
-                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-max max-w-[160px]"
+                  className={`absolute bottom-full mb-1 w-max max-w-[160px] ${
+                    isCalm ? 'right-0' : 'left-1/2 -translate-x-1/2'
+                  }`}
                 >
                   <div className="bg-gray-800/90 backdrop-blur-sm text-white text-[9px] px-2 py-1 rounded-lg border border-white/20 shadow-lg">
                     <span className="leading-relaxed">{companionBubble.text}</span>
@@ -2618,8 +2868,8 @@ const FloatingBeruMascot = () => {
         );
       })}
 
-      {/* Wandering Chibi Apparition - CLICKABLE ! */}
-      {isVisible && wanderer && (
+      {/* Wandering Chibi Apparition - CLICKABLE ! (always visible, even in hidden mode) */}
+      {wanderer && (
         <div
           className="fixed z-[9996] cursor-pointer group/wander"
           style={{
