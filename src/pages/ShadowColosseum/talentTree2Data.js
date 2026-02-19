@@ -12,6 +12,7 @@ export const WEAPON_TYPE_NAMES = {
   heavy:   { name: 'Armes lourdes', icon: '\uD83D\uDD28' },
   ranged:  { name: 'A distance',    icon: '\uD83C\uDFF9' },
   polearm: { name: "Armes d'hast",  icon: '\uD83D\uDD31' },
+  scythe:  { name: 'Faux',          icon: '\uD83C\uDF19' },
   shield:  { name: 'Boucliers',     icon: '\uD83D\uDEE1\uFE0F' },
 };
 
@@ -78,6 +79,12 @@ export const TALENT2_BRANCHES = {
         perRank: { weaponDmg_polearm: 6 },
         pos: { x: -5.5, y: 2.5 }, requires: ['w_heavy'],
         desc: "+6% DMG (Armes d'hast) par rang",
+      },
+      w_scythe: {
+        name: 'Art de la Faux', icon: '\uD83C\uDF19', maxRank: 5,
+        perRank: { weaponDmg_scythe: 6 },
+        pos: { x: -5.5, y: 4 }, requires: ['w_heavy'],
+        desc: '+6% DMG (Faux) par rang',
       },
       w_shield: {
         name: 'Garde Impenetrable', icon: '\uD83D\uDEE1\uFE0F', maxRank: 3,
@@ -357,7 +364,7 @@ export function computeTalentBonuses2(allocation) {
     regenPerTurn: 0, healBonus: 0,
     // Weapon-type damage
     weaponDmg_blade: 0, weaponDmg_heavy: 0,
-    weaponDmg_ranged: 0, weaponDmg_polearm: 0,
+    weaponDmg_ranged: 0, weaponDmg_polearm: 0, weaponDmg_scythe: 0,
     weaponDmg_shield_def: 0, weaponDmg_shield_hp: 0,
     // Elemental damage
     elementalDamage: 0,

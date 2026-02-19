@@ -45,6 +45,7 @@ import {
   ARC2_LOCKED_BERU_DIALOGUES, ARC2_BEBE_MACHINE_REACTIONS, GRIMOIRE_WEISS,
   buildStageEnemies,
 } from './arc2Data';
+import { TALENT_SKILLS, TALENT_SKILL_COST, TALENT_SKILL_UNLOCK_LEVEL } from './talentSkillData';
 
 // ─── StoryTypewriter — char-by-char text reveal ──────────────
 const StoryTypewriter = ({ text, speaker }) => {
@@ -188,7 +189,7 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [] });
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [] });
 const loadData = () => {
   try {
     const d = { ...defaultData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) };
@@ -219,6 +220,13 @@ const loadData = () => {
     if (!d.arc2StarsRecord) d.arc2StarsRecord = {};
     if (d.ragnarokKills === undefined) d.ragnarokKills = 0;
     if (!d.ragnarokDropLog) d.ragnarokDropLog = [];
+    if (!d.talentSkills) d.talentSkills = {};
+    // Migration: respecCount old format (number) → per-tree format
+    for (const cid of Object.keys(d.respecCount || {})) {
+      if (typeof d.respecCount[cid] === 'number') {
+        d.respecCount[cid] = { talent1: d.respecCount[cid], talent2: d.respecCount[cid], talentSkill: 0 };
+      }
+    }
     // Migration: stagesCleared array → object { [id]: { maxStars } }
     if (Array.isArray(d.stagesCleared)) {
       const m = {};
@@ -248,7 +256,8 @@ export default function ShadowColosseum() {
   const [result, setResult] = useState(null);
   const [manageTarget, setManageTarget] = useState(null); // chibi ID for stats/skilltree views
   const [activeTree, setActiveTree] = useState('fury'); // talent I tree tab
-  const [talentTab, setTalentTab] = useState(1); // 1 = Talent I, 2 = Talent II
+  const [talentTab, setTalentTab] = useState(1); // 1 = Talent I, 2 = Talent II, 3 = Talent Skill
+  const [replacingSkillIdx, setReplacingSkillIdx] = useState(null); // Talent Skill replacement flow
   const [t2Zoom, setT2Zoom] = useState(1);
   const [t2Pan, setT2Pan] = useState({ x: 0, y: 0 });
   const [t2SelectedNode, setT2SelectedNode] = useState(null);
@@ -503,7 +512,10 @@ export default function ShadowColosseum() {
 
     const manaCostMult = Math.max(0.5, 1 - (fs.manaCostReduce || 0) / 100);
     const skills = (c.skills || []).map((sk, i) => {
-      const up = applySkillUpgrades(sk, data.skillUpgrades?.[id]?.[i] || 0);
+      // Check if this slot is replaced by a Talent Skill
+      const ts = data.talentSkills[id];
+      const baseSk = (ts && ts.replacedSlot === i && TALENT_SKILLS[id]?.[ts.skillIndex]) ? TALENT_SKILLS[id][ts.skillIndex] : sk;
+      const up = applySkillUpgrades(baseSk, data.skillUpgrades?.[id]?.[i] || 0);
       return { ...up, cd: 0, manaCost: Math.floor(getSkillManaCost(up) * manaCostMult) };
     });
 
@@ -1193,8 +1205,10 @@ export default function ShadowColosseum() {
     }
     return total;
   };
-  // Total spent (T1 + T2) — shared pool
-  const getSpentTalentPts = (id) => getSpentTalent1Pts(id) + getSpentTalent2Pts(data.talentTree2[id]);
+  // Talent Skill spent
+  const getSpentTalentSkillPts = (id) => data.talentSkills[id] ? TALENT_SKILL_COST : 0;
+  // Total spent (T1 + T2 + Skill) — shared pool
+  const getSpentTalentPts = (id) => getSpentTalent1Pts(id) + getSpentTalent2Pts(data.talentTree2[id]) + getSpentTalentSkillPts(id);
   const getAvailTalentPts = (id) => getTotalTalentPts(getChibiLevel(id).level) - getSpentTalentPts(id);
   const getTreePoints = (id, treeId) => {
     const tree = (data.talentTree[id] || {})[treeId] || {};
@@ -1275,23 +1289,49 @@ export default function ShadowColosseum() {
     });
   };
 
-  const resetTalents = (id) => {
-    const respecN = data.respecCount[id] || 0;
+  // Reset talents per tree (talent1, talent2, talentSkill)
+  const resetTalentTree = (id, treeType) => {
+    const respecObj = typeof data.respecCount[id] === 'object' ? data.respecCount[id] : { talent1: 0, talent2: 0, talentSkill: 0 };
+    const respecN = respecObj[treeType] || 0;
     const cost = respecN === 0 ? 0 : 100 * Math.pow(2, respecN - 1);
     const coins = shadowCoinManager.getBalance();
     if (cost > 0 && coins < cost) return false;
     if (cost > 0) shadowCoinManager.spendCoins(cost);
-    setData(prev => ({
-      ...prev,
-      talentTree: { ...prev.talentTree, [id]: {} },
-      talentTree2: { ...prev.talentTree2, [id]: {} },
-      respecCount: { ...prev.respecCount, [id]: respecN + 1 },
-    }));
+    setData(prev => {
+      const oldRespec = typeof prev.respecCount[id] === 'object' ? prev.respecCount[id] : { talent1: 0, talent2: 0, talentSkill: 0 };
+      const newRespec = { ...oldRespec, [treeType]: respecN + 1 };
+      const update = { ...prev, respecCount: { ...prev.respecCount, [id]: newRespec } };
+      if (treeType === 'talent1') update.talentTree = { ...prev.talentTree, [id]: {} };
+      if (treeType === 'talent2') update.talentTree2 = { ...prev.talentTree2, [id]: {} };
+      if (treeType === 'talentSkill') {
+        const ts = { ...prev.talentSkills };
+        delete ts[id];
+        update.talentSkills = ts;
+      }
+      return update;
+    });
     return true;
   };
-  const getRespecCost = (id) => {
-    const n = data.respecCount[id] || 0;
+  const getRespecCost = (id, treeType = 'talent1') => {
+    const respecObj = typeof data.respecCount[id] === 'object' ? data.respecCount[id] : { talent1: 0, talent2: 0, talentSkill: 0 };
+    const n = respecObj[treeType] || 0;
     return n === 0 ? 0 : 100 * Math.pow(2, n - 1);
+  };
+
+  // Talent Skill: equip a skill
+  const equipTalentSkill = (id, skillIndex, replacedSlot) => {
+    if (getAvailTalentPts(id) < TALENT_SKILL_COST && !data.talentSkills[id]) return;
+    setData(prev => ({
+      ...prev,
+      talentSkills: { ...prev.talentSkills, [id]: { skillIndex, replacedSlot } },
+    }));
+  };
+  const unequipTalentSkill = (id) => {
+    setData(prev => {
+      const ts = { ...prev.talentSkills };
+      delete ts[id];
+      return { ...prev, talentSkills: ts };
+    });
   };
 
   // ─── Start Battle ──────────────────────────────────────────
@@ -1363,7 +1403,10 @@ export default function ShadowColosseum() {
         crit: Math.min(80, s.crit), res: Math.min(70, s.res),
         mana: s.mana, maxMana: s.mana, manaRegen: s.manaRegen,
         skills: chibi.skills.map((sk, i) => {
-          const upgraded = applySkillUpgrades(sk, tree[i] || 0);
+          // Check if this slot is replaced by a Talent Skill
+          const ts = data.talentSkills[selChibi];
+          const baseSk = (ts && ts.replacedSlot === i && TALENT_SKILLS[selChibi]?.[ts.skillIndex]) ? TALENT_SKILLS[selChibi][ts.skillIndex] : sk;
+          const upgraded = applySkillUpgrades(baseSk, tree[i] || 0);
           const baseCost = getSkillManaCost(upgraded);
           const finalCost = Math.max(0, Math.floor(baseCost * (1 - costReduce / 100)));
           return { ...upgraded, cdMax: Math.max(0, upgraded.cdMax - cdReduction), cd: 0, manaCost: finalCost };
@@ -4152,14 +4195,19 @@ export default function ShadowColosseum() {
             <div className="grid grid-cols-3 gap-2 mb-4">
               {c.skills.map((skill, skillIdx) => {
                 const curLevel = tree[skillIdx] || 0;
+                // Check if this slot is replaced by a Talent Skill
+                const tsData = data.talentSkills[id];
+                const isReplaced = tsData && tsData.replacedSlot === skillIdx;
+                const displaySkill = isReplaced && TALENT_SKILLS[id]?.[tsData.skillIndex] ? TALENT_SKILLS[id][tsData.skillIndex] : skill;
                 // Show upgraded values preview
-                const upgraded = applySkillUpgrades(skill, curLevel);
+                const upgraded = applySkillUpgrades(displaySkill, curLevel);
 
                 return (
                   <div key={skillIdx} className="text-center">
                     {/* Skill Name */}
-                    <div className="p-1.5 rounded-t-lg bg-gray-800/40 border border-gray-700/30 border-b-0">
-                      <div className="text-[9px] font-bold text-white truncate">{skill.name}</div>
+                    <div className={`p-1.5 rounded-t-lg border border-b-0 ${isReplaced ? 'bg-cyan-500/10 border-cyan-500/30' : 'bg-gray-800/40 border-gray-700/30'}`}>
+                      <div className={`text-[9px] font-bold truncate ${isReplaced ? 'text-cyan-300' : 'text-white'}`}>{displaySkill.name}</div>
+                      {isReplaced && <div className="text-[8px] text-cyan-400/60">Talent Skill</div>}
                       <div className="text-[9px] text-gray-500 mt-0.5">
                         {upgraded.power > 0 ? `DMG: ${upgraded.power}%` : ''}
                         {upgraded.buffAtk ? `ATK +${upgraded.buffAtk}%` : ''}
@@ -4261,12 +4309,12 @@ export default function ShadowColosseum() {
               <div className="mt-2 px-3 py-1.5 rounded-lg bg-green-500/5 border border-green-500/20 inline-block">
                 <span className="text-sm font-bold text-green-400">{availTP}</span>
                 <span className="text-xs text-gray-400 ml-1">pts dispo</span>
-                <span className="text-[9px] text-gray-500 ml-1">(I:{spent1} + II:{spent2} / {totalTP})</span>
+                <span className="text-[9px] text-gray-500 ml-1">(I:{spent1} + II:{spent2}{data.talentSkills[id] ? ` + S:${TALENT_SKILL_COST}` : ''} / {totalTP})</span>
               </div>
             </div>
 
-            {/* Talent I / II Toggle */}
-            <div className="flex gap-2 mb-4">
+            {/* Talent I / II / Skill Toggle */}
+            <div className="flex gap-1.5 mb-4">
               <button
                 onClick={() => setTalentTab(1)}
                 className={`flex-1 py-2 rounded-lg border text-center transition-all ${
@@ -4289,6 +4337,19 @@ export default function ShadowColosseum() {
                 <span className="text-xs font-bold ml-1">Talents II</span>
                 {!t2Unlocked && <span className="text-[9px] ml-1">(Lv{TALENT2_UNLOCK_LEVEL})</span>}
                 {t2Unlocked && spent2 > 0 && <span className="text-[9px] ml-1 text-gray-400">({spent2})</span>}
+              </button>
+              <button
+                onClick={() => level >= TALENT_SKILL_UNLOCK_LEVEL && setTalentTab(3)}
+                disabled={level < TALENT_SKILL_UNLOCK_LEVEL}
+                className={`flex-1 py-2 rounded-lg border text-center transition-all ${
+                  level < TALENT_SKILL_UNLOCK_LEVEL ? 'border-gray-800/30 bg-gray-900/10 text-gray-600 cursor-not-allowed' :
+                  talentTab === 3 ? 'border-cyan-500/60 bg-cyan-500/15 text-cyan-400' : 'border-gray-700/40 bg-gray-800/20 text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                <span className="text-base">{'\uD83C\uDFAF'}</span>
+                <span className="text-xs font-bold ml-1">Talent Skill</span>
+                {level < TALENT_SKILL_UNLOCK_LEVEL && <span className="text-[9px] ml-1">(Lv{TALENT_SKILL_UNLOCK_LEVEL})</span>}
+                {level >= TALENT_SKILL_UNLOCK_LEVEL && data.talentSkills[id] && <span className="text-[9px] ml-1 text-gray-400">({TALENT_SKILL_COST})</span>}
               </button>
             </div>
 
@@ -4931,15 +4992,147 @@ export default function ShadowColosseum() {
               );
             })()}
 
-            {/* Respec Button */}
+            {/* ═══ TALENT SKILL ═══ */}
+            {talentTab === 3 && level >= TALENT_SKILL_UNLOCK_LEVEL && (() => {
+              const skillChoices = TALENT_SKILLS[id] || [];
+              const equipped = data.talentSkills[id]; // { skillIndex, replacedSlot } or undefined
+              const hasEnoughPts = availTP >= TALENT_SKILL_COST || !!equipped;
+
+              if (skillChoices.length === 0) return (
+                <div className="text-center text-gray-500 text-xs py-8">Aucun Talent Skill disponible pour ce personnage.</div>
+              );
+
+              return (
+                <div>
+                  {/* Info banner */}
+                  <div className="mb-4 p-2.5 rounded-xl bg-cyan-500/5 border border-cyan-500/20 text-center">
+                    <div className="text-[10px] text-cyan-400 font-bold">Talent Skill — {TALENT_SKILL_COST} pts</div>
+                    <div className="text-[9px] text-gray-400 mt-0.5">Choisis 1 skill unique puissant. Il remplacera un de tes 3 skills par defaut.</div>
+                    <div className="text-[9px] text-gray-500 mt-0.5">Ces skills coutent plus de mana mais sont bien plus puissants.</div>
+                  </div>
+
+                  {/* Current default skills preview */}
+                  {replacingSkillIdx !== null && (
+                    <div className="mb-4 p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/30">
+                      <div className="text-[10px] text-amber-400 font-bold mb-2 text-center">Quel skill remplacer ?</div>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {c.skills.map((sk, si) => (
+                          <button key={si}
+                            onClick={() => {
+                              equipTalentSkill(id, replacingSkillIdx, si);
+                              setReplacingSkillIdx(null);
+                            }}
+                            className="p-2 rounded-lg border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/15 transition-all text-center"
+                          >
+                            <div className="text-[10px] font-bold text-white truncate">{sk.name}</div>
+                            <div className="text-[9px] text-gray-400">
+                              {sk.power > 0 ? `DMG:${sk.power}%` : ''}
+                              {sk.buffAtk ? `ATK+${sk.buffAtk}%` : ''}
+                              {sk.buffDef ? `DEF+${sk.buffDef}%` : ''}
+                              {sk.healSelf ? `Soin ${sk.healSelf}%` : ''}
+                            </div>
+                            <div className="text-[9px] text-amber-400 mt-0.5">Remplacer</div>
+                          </button>
+                        ))}
+                      </div>
+                      <button onClick={() => setReplacingSkillIdx(null)}
+                        className="w-full text-center text-[10px] text-gray-500 hover:text-gray-300 mt-2">Annuler</button>
+                    </div>
+                  )}
+
+                  {/* Skill choices grid */}
+                  <div className="space-y-2">
+                    {skillChoices.map((ts, idx) => {
+                      const isEquipped = equipped && equipped.skillIndex === idx;
+                      return (
+                        <div key={ts.id} className={`p-3 rounded-xl border transition-all ${
+                          isEquipped ? 'border-cyan-400/60 bg-cyan-500/10' : 'border-gray-700/30 bg-gray-800/20'
+                        }`}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-sm font-bold ${isEquipped ? 'text-cyan-300' : 'text-white'}`}>{ts.name}</span>
+                                {isEquipped && <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 font-bold">EQUIPE</span>}
+                              </div>
+                              <div className="text-[10px] text-gray-400 mt-1">{ts.desc}</div>
+                              <div className="flex flex-wrap gap-2 mt-1.5">
+                                {ts.power > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">DMG {ts.power}%</span>}
+                                {ts.buffAtk > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400">ATK +{ts.buffAtk}%</span>}
+                                {ts.buffDef > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400">DEF +{ts.buffDef}%</span>}
+                                {ts.healSelf > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400">Soin {ts.healSelf}%</span>}
+                                {ts.debuffDef > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400">DEF -{ts.debuffDef}%</span>}
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400">CD {ts.cdMax}</span>
+                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400">Mana {ts.manaCost}</span>
+                              </div>
+                              {isEquipped && equipped && (
+                                <div className="text-[9px] text-cyan-400/60 mt-1.5">
+                                  Remplace : <span className="text-white">{c.skills[equipped.replacedSlot]?.name}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              {!isEquipped && (
+                                <button
+                                  onClick={() => {
+                                    if (equipped) {
+                                      // Already have a skill equipped, swap
+                                      setReplacingSkillIdx(idx);
+                                    } else if (hasEnoughPts) {
+                                      setReplacingSkillIdx(idx);
+                                    }
+                                  }}
+                                  disabled={!hasEnoughPts && !equipped}
+                                  className="px-3 py-1.5 rounded-lg text-[10px] font-bold border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 disabled:opacity-30 transition-all"
+                                >
+                                  {equipped ? 'Changer' : 'Choisir'}
+                                </button>
+                              )}
+                              {isEquipped && (
+                                <button
+                                  onClick={() => unequipTalentSkill(id)}
+                                  className="px-3 py-1.5 rounded-lg text-[10px] font-bold border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all"
+                                >
+                                  Retirer
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Respec Button — per tree */}
             <div className="mt-4 text-center">
-              <button
-                onClick={() => resetTalents(id)}
-                disabled={spentTP === 0}
-                className="text-xs text-gray-500 hover:text-red-400 disabled:opacity-30 transition-colors py-2"
-              >
-                Reinitialiser TOUS les talents {getRespecCost(id) > 0 ? `(${getRespecCost(id)} coins)` : '(gratuit)'}
-              </button>
+              {talentTab === 1 && (
+                <button
+                  onClick={() => resetTalentTree(id, 'talent1')}
+                  disabled={spent1 === 0}
+                  className="text-xs text-gray-500 hover:text-red-400 disabled:opacity-30 transition-colors py-2"
+                >
+                  Reset Talents I {getRespecCost(id, 'talent1') > 0 ? `(${getRespecCost(id, 'talent1')} coins)` : '(gratuit)'}
+                </button>
+              )}
+              {talentTab === 2 && (
+                <button
+                  onClick={() => resetTalentTree(id, 'talent2')}
+                  disabled={spent2 === 0}
+                  className="text-xs text-gray-500 hover:text-red-400 disabled:opacity-30 transition-colors py-2"
+                >
+                  Reset Talents II {getRespecCost(id, 'talent2') > 0 ? `(${getRespecCost(id, 'talent2')} coins)` : '(gratuit)'}
+                </button>
+              )}
+              {talentTab === 3 && data.talentSkills[id] && (
+                <button
+                  onClick={() => resetTalentTree(id, 'talentSkill')}
+                  className="text-xs text-gray-500 hover:text-red-400 transition-colors py-2"
+                >
+                  Reset Talent Skill {getRespecCost(id, 'talentSkill') > 0 ? `(${getRespecCost(id, 'talentSkill')} coins)` : '(gratuit)'}
+                </button>
+              )}
             </div>
           </div>
         );
@@ -5478,6 +5671,21 @@ export default function ShadowColosseum() {
           return true;
         };
 
+        // Bulk buy: buy N hammers at once
+        const buyHammerBulk = (hId, qty) => {
+          const h = HAMMERS[hId];
+          if (!h) return;
+          const totalCost = h.shopPrice * qty;
+          const affordable = Math.min(qty, Math.floor(coins / h.shopPrice));
+          if (affordable <= 0) return;
+          shadowCoinManager.spendCoins(h.shopPrice * affordable);
+          setData(prev => {
+            const newH = { ...(prev.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }) };
+            newH[hId] = (newH[hId] || 0) + affordable;
+            return { ...prev, hammers: newH };
+          });
+        };
+
         // Hold-to-buy: accelerates from 300ms to 50ms interval
         const startHammerHold = (hId) => {
           buyHammer(hId);
@@ -5529,17 +5737,28 @@ export default function ShadowColosseum() {
                 {HAMMER_ORDER.map(hId => {
                   const h = HAMMERS[hId];
                   return (
-                    <button key={hId} disabled={coins < h.shopPrice}
-                      onPointerDown={() => startHammerHold(hId)}
-                      onPointerUp={stopHammerHold}
-                      onPointerLeave={stopHammerHold}
-                      onContextMenu={(e) => e.preventDefault()}
-                      className="p-2 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/15 active:bg-amber-500/25 disabled:opacity-30 transition-all text-center select-none touch-none">
-                      <div className="text-lg">{h.icon}</div>
-                      <div className="text-[9px] font-bold text-amber-300">{h.name.replace('Marteau ', '')}</div>
-                      <div className="text-[10px] text-gray-500">Lv0-{h.maxLevel}</div>
-                      <div className="text-[9px] text-amber-400 mt-0.5">{h.shopPrice} coins</div>
-                    </button>
+                    <div key={hId} className="flex flex-col gap-1">
+                      <button disabled={coins < h.shopPrice}
+                        onPointerDown={() => startHammerHold(hId)}
+                        onPointerUp={stopHammerHold}
+                        onPointerLeave={stopHammerHold}
+                        onContextMenu={(e) => e.preventDefault()}
+                        className="p-2 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/15 active:bg-amber-500/25 disabled:opacity-30 transition-all text-center select-none touch-none">
+                        <div className="text-lg">{h.icon}</div>
+                        <div className="text-[9px] font-bold text-amber-300">{h.name.replace('Marteau ', '')}</div>
+                        <div className="text-[10px] text-gray-500">Lv0-{h.maxLevel}</div>
+                        <div className="text-[9px] text-amber-400 mt-0.5">{h.shopPrice} coins</div>
+                      </button>
+                      <div className="flex gap-0.5">
+                        {[10, 100, 1000].map(qty => (
+                          <button key={qty} onClick={() => buyHammerBulk(hId, qty)}
+                            disabled={coins < h.shopPrice}
+                            className="flex-1 py-0.5 rounded-lg text-[8px] font-bold border border-amber-500/15 bg-amber-500/5 hover:bg-amber-500/20 active:bg-amber-500/30 disabled:opacity-30 transition-all text-amber-400 select-none">
+                            x{qty}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   );
                 })}
               </div>

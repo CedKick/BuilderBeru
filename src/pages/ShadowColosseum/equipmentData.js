@@ -504,7 +504,7 @@ export const WEAPONS = {
   w_baton_brume:      { id: 'w_baton_brume',      name: 'Baton de Brume',       rarity: 'rare',       element: 'water',  weaponType: 'ranged',  atk: 9,  bonusStat: 'res_flat',   bonusValue: 6,  icon: '\uD83E\uDE84', desc: 'Canalise les brumes marines' },
 
   // Shadow (5)
-  w_faux_monarque:    { id: 'w_faux_monarque',    name: 'Faux du Monarque',     rarity: 'mythique',   element: 'shadow', weaponType: 'polearm', atk: 28, bonusStat: 'crit_dmg',  bonusValue: 15, icon: '\u2694\uFE0F', desc: "L'arme du Roi des Ombres" },
+  w_faux_monarque:    { id: 'w_faux_monarque',    name: 'Faux du Monarque',     rarity: 'mythique',   element: 'shadow', weaponType: 'scythe', atk: 28, bonusStat: 'crit_dmg',  bonusValue: 15, icon: '\u2694\uFE0F', desc: "L'arme du Roi des Ombres" },
   w_katana_void:      { id: 'w_katana_void',      name: 'Katana du Void',       rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 24, bonusStat: 'crit_rate', bonusValue: 10, icon: '\uD83D\uDDE1\uFE0F', desc: 'Tranche la realite' },
   w_griffe_nuit:      { id: 'w_griffe_nuit',      name: 'Griffe de la Nuit',    rarity: 'legendaire', element: 'shadow', weaponType: 'polearm', atk: 17, bonusStat: 'spd_flat',  bonusValue: 10, icon: '\uD83D\uDDE1\uFE0F', desc: "Rapide comme l'ombre" },
   w_masse_tenebres:   { id: 'w_masse_tenebres',   name: 'Masse des Tenebres',  rarity: 'legendaire', element: 'shadow', weaponType: 'heavy',   atk: 20, bonusStat: 'hp_pct',    bonusValue: 10, icon: '\uD83D\uDD28', desc: "Poids de l'obscurite" },

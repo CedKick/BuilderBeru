@@ -444,6 +444,34 @@ export default function RaidMode() {
         }
       });
 
+      // Random hunter drop — scales with RC and tier (always possible, no cap)
+      const tierDropMult = [0, 1, 1.5, 2, 3, 4, 5][tier] || 1;
+      const dropChance = Math.min(0.6, rc * 0.03 * tierDropMult);
+      if (Math.random() < dropChance) {
+        // Pick rarity based on tier
+        const rarityRoll = Math.random();
+        let dropRarity;
+        if (tier >= 5) dropRarity = 'mythique';
+        else if (tier >= 3) dropRarity = rarityRoll < 0.3 ? 'mythique' : 'legendaire';
+        else dropRarity = rarityRoll < 0.1 ? 'mythique' : rarityRoll < 0.4 ? 'legendaire' : 'rare';
+
+        const newCandidates = hunterIds.filter(h =>
+          HUNTERS[h].rarity === dropRarity && !alreadyOwned.has(h) && !HUNTERS[h].series
+        );
+        if (newCandidates.length > 0) {
+          const pick = newCandidates[Math.floor(Math.random() * newCandidates.length)];
+          unlockedHunters.push(pick);
+          alreadyOwned.add(pick);
+        } else {
+          // All of that rarity owned — give a duplicate for stars
+          const dupePool = hunterIds.filter(h => HUNTERS[h].rarity === dropRarity && !HUNTERS[h].series);
+          if (dupePool.length > 0) {
+            const pick = dupePool[Math.floor(Math.random() * dupePool.length)];
+            hunterDuplicates.push(pick);
+          }
+        }
+      }
+
       // Apply rewards
       shadowCoinManager.addCoins(rewards.coins, 'raid_reward');
 
@@ -1124,6 +1152,22 @@ export default function RaidMode() {
           );
         })}
       </div>
+
+      {/* Previous team button */}
+      {raidData.lastTeam && raidData.lastTeam.some(Boolean) && (
+        <div className="flex justify-center">
+          <button onClick={() => {
+            const lt = raidData.lastTeam;
+            const valid = lt.map(id => (id && allPool[id]) ? id : null);
+            setTeam1([valid[0] || null, valid[1] || null, valid[2] || null]);
+            setTeam2([valid[3] || null, valid[4] || null, valid[5] || null]);
+            setPickSlot(null);
+          }}
+            className="px-4 py-2 rounded-lg bg-purple-500/15 border border-purple-500/40 text-purple-300 text-sm font-medium hover:bg-purple-500/25 hover:border-purple-400/60 transition-all flex items-center gap-2">
+            🔄 Team precedente
+          </button>
+        </div>
+      )}
 
       {/* Cross-team synergy */}
       {crossSynergy.labels.length > 0 && (
