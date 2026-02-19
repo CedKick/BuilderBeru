@@ -515,6 +515,18 @@ export const WEAPONS = {
   w_baguette_sage:    { id: 'w_baguette_sage',    name: 'Baguette du Sage',     rarity: 'rare',       element: null,     weaponType: 'ranged',  atk: 8,  bonusStat: 'crit_rate', bonusValue: 5,  icon: '\uD83E\uDE84', desc: 'Sagesse cristallisee' },
   w_bouclier_hero:    { id: 'w_bouclier_hero',    name: 'Bouclier du Heros',    rarity: 'rare',       element: null,     weaponType: 'shield',  atk: 6,  bonusStat: 'def_pct',   bonusValue: 10, icon: '\uD83D\uDEE1\uFE0F', desc: 'Protection legendaire' },
 
+  // ── Ultime (10) — Raid Ultime exclusive drops ──
+  w_lame_eternite:    { id: 'w_lame_eternite',    name: "Lame de l'Eternite",   rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 80,  bonusStat: 'crit_rate', bonusValue: 15, icon: '\u2694\uFE0F', desc: 'Tranche a travers le temps', ultime: true },
+  w_trident_abysses:  { id: 'w_trident_abysses',  name: 'Trident des Abysses',  rarity: 'mythique',   element: 'water',  weaponType: 'polearm', atk: 75,  bonusStat: 'atk_pct',   bonusValue: 18, icon: '\uD83D\uDD31', desc: 'Forge dans les abysses', ultime: true },
+  w_arc_celeste:      { id: 'w_arc_celeste',      name: 'Arc Celeste',          rarity: 'mythique',   element: 'light',  weaponType: 'ranged',  atk: 65,  bonusStat: 'spd_flat',  bonusValue: 15, icon: '\uD83C\uDFF9', desc: 'Lumiere purificatrice', ultime: true },
+  w_hache_ragnarok:   { id: 'w_hache_ragnarok',   name: 'Hache de Ragnarok',    rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 90,  bonusStat: 'crit_dmg',  bonusValue: 20, icon: '\uFA62', desc: 'Forgee dans le feu du chaos', ultime: true },
+  w_lance_tempete:    { id: 'w_lance_tempete',     name: 'Lance de la Tempete',  rarity: 'mythique',   element: 'wind',   weaponType: 'polearm', atk: 70,  bonusStat: 'spd_flat',  bonusValue: 12, icon: '\uD83C\uDF2A\uFE0F', desc: 'Invoque la foudre', ultime: true },
+  w_katana_murasame:  { id: 'w_katana_murasame',  name: 'Murasame',             rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 85,  bonusStat: 'crit_rate', bonusValue: 12, icon: '\uD83D\uDDE1\uFE0F', desc: 'Katana maudit legendaire', ultime: true },
+  w_marteau_titan:    { id: 'w_marteau_titan',     name: 'Marteau du Titan',     rarity: 'mythique',   element: 'earth',  weaponType: 'heavy',   atk: 100, bonusStat: 'def_pct',   bonusValue: 15, icon: '\uD83D\uDD28', desc: 'Ecrase les montagnes', ultime: true },
+  w_dague_assassin:   { id: 'w_dague_assassin',    name: "Dague de l'Assassin",  rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 60,  bonusStat: 'crit_dmg',  bonusValue: 25, icon: '\uD83D\uDDE1\uFE0F', desc: 'Un coup, une vie', ultime: true },
+  w_baton_supreme:    { id: 'w_baton_supreme',     name: 'Baton Arcane Supreme', rarity: 'mythique',   element: null,     weaponType: 'ranged',  atk: 55,  bonusStat: 'hp_pct',    bonusValue: 15, icon: '\uD83E\uDE84', desc: 'Pouvoir arcanique brut', ultime: true },
+  w_epee_monarque:    { id: 'w_epee_monarque',     name: 'Epee du Monarque',     rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 120, bonusStat: 'atk_pct',   bonusValue: 20, icon: '\u2694\uFE0F', desc: "L'arme du roi des ombres", ultime: true },
+
   // Secret — drop 1/30000 from Ragnarok
   w_sulfuras:         { id: 'w_sulfuras',         name: 'Masse de Sulfuras',    rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 250, bonusStat: 'atk_pct', bonusValue: 25, icon: '\uD83D\uDD28', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771443640/WeaponSulfuras_efg3ca.png', desc: '???', secret: true, passive: 'sulfuras_fury', fireRes: 50 },
 };
@@ -662,6 +674,77 @@ export const WEAPON_AWAKENING_PASSIVES = {
     { desc: 'Tous Degats +3%', stats: { allDamage: 3 } },
   ],
   // ── SECRET ──
+  // ── ULTIME ──
+  w_lame_eternite: [
+    { desc: 'Shadow DMG +12%', stats: { shadowDamage: 12 } },
+    { desc: 'CRIT +8%', stats: { crit_rate: 8 } },
+    { desc: 'CRIT DMG +15%', stats: { crit_dmg: 15 } },
+    { desc: 'ATK +10%', stats: { atk_pct: 10 } },
+    { desc: 'Ignore 12% DEF + Tous Degats +8%', stats: { defPen: 12, allDamage: 8 } },
+  ],
+  w_trident_abysses: [
+    { desc: 'Water DMG +12%', stats: { waterDamage: 12 } },
+    { desc: 'ATK +10%', stats: { atk_pct: 10 } },
+    { desc: 'CRIT DMG +12%', stats: { crit_dmg: 12 } },
+    { desc: 'Ignore 10% DEF', stats: { defPen: 10 } },
+    { desc: 'Tous Degats +10%', stats: { allDamage: 10 } },
+  ],
+  w_arc_celeste: [
+    { desc: 'SPD +6', stats: { spd_flat: 6 } },
+    { desc: 'Tous Degats +8%', stats: { allDamage: 8 } },
+    { desc: 'CRIT +6%', stats: { crit_rate: 6 } },
+    { desc: 'ATK +8%', stats: { atk_pct: 8 } },
+    { desc: 'CRIT DMG +12%', stats: { crit_dmg: 12 } },
+  ],
+  w_hache_ragnarok: [
+    { desc: 'Fire DMG +12%', stats: { fireDamage: 12 } },
+    { desc: 'CRIT DMG +15%', stats: { crit_dmg: 15 } },
+    { desc: 'ATK +10%', stats: { atk_pct: 10 } },
+    { desc: 'Ignore 10% DEF', stats: { defPen: 10 } },
+    { desc: 'Tous Degats +10% + CRIT +5%', stats: { allDamage: 10, crit_rate: 5 } },
+  ],
+  w_lance_tempete: [
+    { desc: 'SPD +6', stats: { spd_flat: 6 } },
+    { desc: 'CRIT +6%', stats: { crit_rate: 6 } },
+    { desc: 'ATK +8%', stats: { atk_pct: 8 } },
+    { desc: 'Tous Degats +8%', stats: { allDamage: 8 } },
+    { desc: 'Ignore 8% DEF + SPD +4', stats: { defPen: 8, spd_flat: 4 } },
+  ],
+  w_katana_murasame: [
+    { desc: 'Shadow DMG +10%', stats: { shadowDamage: 10 } },
+    { desc: 'CRIT +8%', stats: { crit_rate: 8 } },
+    { desc: 'ATK +10%', stats: { atk_pct: 10 } },
+    { desc: 'CRIT DMG +15%', stats: { crit_dmg: 15 } },
+    { desc: 'Ignore 12% DEF + Tous Degats +8%', stats: { defPen: 12, allDamage: 8 } },
+  ],
+  w_marteau_titan: [
+    { desc: 'DEF +10%', stats: { def_pct: 10 } },
+    { desc: 'HP +10%', stats: { hp_pct: 10 } },
+    { desc: 'ATK +10%', stats: { atk_pct: 10 } },
+    { desc: 'Tous Degats +8%', stats: { allDamage: 8 } },
+    { desc: 'Ignore 10% DEF + RES +5', stats: { defPen: 10, res_flat: 5 } },
+  ],
+  w_dague_assassin: [
+    { desc: 'CRIT DMG +15%', stats: { crit_dmg: 15 } },
+    { desc: 'CRIT +8%', stats: { crit_rate: 8 } },
+    { desc: 'Shadow DMG +10%', stats: { shadowDamage: 10 } },
+    { desc: 'ATK +8%', stats: { atk_pct: 8 } },
+    { desc: 'Ignore 12% DEF + CRIT DMG +10%', stats: { defPen: 12, crit_dmg: 10 } },
+  ],
+  w_baton_supreme: [
+    { desc: 'HP +8%', stats: { hp_pct: 8 } },
+    { desc: 'Tous Degats +8%', stats: { allDamage: 8 } },
+    { desc: 'DEF +6%', stats: { def_pct: 6 } },
+    { desc: 'CRIT +6%', stats: { crit_rate: 6 } },
+    { desc: 'ATK +8% + RES +5', stats: { atk_pct: 8, res_flat: 5 } },
+  ],
+  w_epee_monarque: [
+    { desc: 'Shadow DMG +12%', stats: { shadowDamage: 12 } },
+    { desc: 'ATK +12%', stats: { atk_pct: 12 } },
+    { desc: 'CRIT +8%', stats: { crit_rate: 8 } },
+    { desc: 'CRIT DMG +18%', stats: { crit_dmg: 18 } },
+    { desc: 'Ignore 14% DEF + Tous Degats +10%', stats: { defPen: 14, allDamage: 10 } },
+  ],
   w_sulfuras: [
     { desc: 'Degats Feu +15%', stats: { fireDamage: 15 } },
     { desc: 'ATK +12%', stats: { atk_pct: 12 } },
@@ -756,13 +839,54 @@ export const COLOSSEUM_WEAPON_DROP = {
 };
 
 export const RAID_WEAPON_DROP = {
-  dropChance: { 1: 0.10, 2: 0.15, 3: 0.20, 4: 0.25, 5: 0.30 },
+  dropChance: { 1: 0.10, 2: 0.15, 3: 0.20, 4: 0.25, 5: 0.30, 6: 0 },
   fullClearGuaranteed: true,
   tierPool: {
     1: ['rare', 'legendaire'], 2: ['legendaire'],
-    3: ['legendaire', 'mythique'], 4: ['mythique'], 5: ['mythique'],
+    3: ['legendaire', 'mythique'], 4: ['mythique'], 5: ['mythique'], 6: ['mythique'],
   },
 };
+
+// Ultime mode: RC-scaled weapon drop (starts RC 3, chance grows with RC)
+export function rollUltimeWeaponDrop(rc) {
+  if (rc < 3) return null;
+  // Base 2% at RC 3, +1% per RC, caps at 40%
+  const chance = Math.min(0.40, 0.02 + (rc - 3) * 0.01);
+  if (Math.random() > chance) return null;
+  // 70% chance normal mythique, 30% chance ultime weapon
+  const isUltime = Math.random() < Math.min(0.60, 0.05 + rc * 0.015);
+  if (isUltime) {
+    const ultWeapons = Object.values(WEAPONS).filter(w => w.ultime);
+    return ultWeapons.length > 0 ? ultWeapons[Math.floor(Math.random() * ultWeapons.length)].id : null;
+  }
+  const mythiques = Object.values(WEAPONS).filter(w => !w.secret && !w.ultime && w.rarity === 'mythique');
+  return mythiques.length > 0 ? mythiques[Math.floor(Math.random() * mythiques.length)].id : null;
+}
+
+// Ultime mode: RC-scaled artifact drop
+export function generateUltimeArtifact(rc) {
+  // Always mythique in ultime
+  const rarity = 'mythique';
+  // 60% chance ultime set, 40% chance other sets
+  const isUltime = Math.random() < Math.min(0.80, 0.20 + rc * 0.02);
+  const setPool = isUltime ? Object.keys(ULTIME_ARTIFACT_SETS) : Object.keys(RAID_ARTIFACT_SETS);
+  const set = setPool[Math.floor(Math.random() * setPool.length)];
+  const slot = SLOT_ORDER[Math.floor(Math.random() * SLOT_ORDER.length)];
+  const slotDef = ARTIFACT_SLOTS[slot];
+  const mainStatId = slotDef.mainStats[Math.floor(Math.random() * slotDef.mainStats.length)];
+  const subCount = RARITY_SUB_COUNT[rarity].initial;
+  const availableSubs = SUB_STAT_POOL.filter(s => s.id !== mainStatId);
+  const subs = [];
+  const usedIds = new Set();
+  for (let i = 0; i < subCount; i++) {
+    const pool = availableSubs.filter(s => !usedIds.has(s.id));
+    if (pool.length === 0) break;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    usedIds.add(pick.id);
+    subs.push({ id: pick.id, value: pick.min + Math.floor(Math.random() * (pick.max - pick.min + 1)) });
+  }
+  return { set, slotId: slot, rarity, mainStat: mainStatId, mainValue: MAIN_STAT_VALUES[mainStatId]?.max || 0, subs, level: 0, uid: `ult_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
+}
 
 export function rollWeaponDrop(stageTier, isBoss = false) {
   const baseChance = COLOSSEUM_WEAPON_DROP.dropChance[stageTier] || 0.03;
@@ -925,8 +1049,61 @@ export const ARC2_ARTIFACT_SETS = {
   },
 };
 
-// Merge ARC2 sets into ALL_ARTIFACT_SETS (defined earlier as let)
-ALL_ARTIFACT_SETS = { ...ALL_ARTIFACT_SETS, ...ARC2_ARTIFACT_SETS };
+// ═══════════════════════════════════════════════════════════════
+// ULTIME ARTIFACT SETS (5 sets — Raid Ultime exclusive)
+// ═══════════════════════════════════════════════════════════════
+
+export const ULTIME_ARTIFACT_SETS = {
+  rage_eternelle: {
+    id: 'rage_eternelle', name: 'Rage Eternelle', icon: '\uD83D\uDCA2', ultime: true,
+    color: 'text-red-500', bg: 'bg-red-600/15', border: 'border-red-600/30',
+    desc: 'Puissance brute qui grandit a chaque coup',
+    bonus2: { atkPercent: 12 }, bonus2Desc: 'ATK +12%. Chaque attaque : ATK +1% (max 15 stacks)',
+    bonus4: {}, bonus4Desc: 'A 15 stacks : CRIT garanti + DMG +40%. Ignore 15% DEF',
+    passive2: { trigger: 'afterAttack', type: 'eternalRageStack', atkPerStack: 0.01, maxStacks: 15 },
+    passive4: { trigger: 'beforeAttack', type: 'eternalRageRelease', stackThreshold: 15, autoCrit: true, bonusDmg: 0.40, defIgnore: 0.15 },
+  },
+  gardien_celeste: {
+    id: 'gardien_celeste', name: 'Gardien Celeste', icon: '\uD83D\uDEE1\uFE0F', ultime: true,
+    color: 'text-cyan-400', bg: 'bg-cyan-500/15', border: 'border-cyan-500/30',
+    desc: 'Bouclier divin et protection absolue',
+    bonus2: { defPercent: 15, hpPercent: 10 }, bonus2Desc: 'DEF +15%, HP +10%. Debut combat : Bouclier 20% HP max',
+    bonus4: {}, bonus4Desc: 'Bouclier intact : +25% DMG. Bouclier brise : Heal 30% HP + DEF +20% (3 tours)',
+    passive2: { trigger: 'onBattleStart', type: 'celestialShield', shieldPct: 0.20 },
+    passive4: { trigger: 'onShieldBreak', type: 'celestialWrath', dmgWhileShield: 0.25, healOnBreak: 0.30, defBoost: 0.20, defDuration: 3 },
+  },
+  siphon_vital: {
+    id: 'siphon_vital', name: 'Siphon Vital', icon: '\uD83E\uDE78', ultime: true,
+    color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30',
+    desc: 'Drain de vie supreme — chaque coup guerit',
+    bonus2: {}, bonus2Desc: '25% chance voler 15% DMG en PV. Surcharge PV = bouclier (max 20%)',
+    bonus4: {}, bonus4Desc: 'PV > 80% : DMG +30%. PV < 30% : Lifesteal 100% pendant 2 tours (CD 10 tours)',
+    passive2: { trigger: 'afterAttack', type: 'vitalSiphon', chance: 0.25, stealPct: 0.15, overHealShield: 0.20 },
+    passive4: { trigger: 'always', type: 'vitalSurge', highHpThreshold: 0.80, highHpDmg: 0.30, lowHpThreshold: 0.30, emergencySteal: 1.0, emergencyDuration: 2, emergencyCD: 10 },
+  },
+  tempete_arcane: {
+    id: 'tempete_arcane', name: 'Tempete Arcane', icon: '\u26A1', ultime: true,
+    color: 'text-violet-400', bg: 'bg-violet-600/15', border: 'border-violet-600/30',
+    desc: 'Pouvoir arcane dechaine — skills surcharges',
+    bonus2: { manaPercent: 40, manaCostReduce: 15 }, bonus2Desc: 'Mana Max +40%, Cout -15%. Skills : DMG +2% par 10% mana restant',
+    bonus4: {}, bonus4Desc: 'Mana plein : Prochain skill x2 DMG (CD 5 tours). Regen Mana +80%',
+    passive2: { trigger: 'beforeAttack', type: 'arcaneTempest', dmgPerMana10Pct: 0.02 },
+    passive4: { trigger: 'onFullMana', type: 'arcaneOverload', dmgMult: 2.0, cooldown: 5, manaRegenBonus: 0.80 },
+  },
+  equilibre_supreme: {
+    id: 'equilibre_supreme', name: 'Equilibre Supreme', icon: '\u2696\uFE0F', ultime: true,
+    color: 'text-amber-300', bg: 'bg-amber-400/15', border: 'border-amber-400/30',
+    desc: "L'equilibre parfait — toutes les stats harmonisees",
+    bonus2: { atkPercent: 8, defPercent: 8, hpPercent: 8, critRate: 5, critDamage: 10 },
+    bonus2Desc: 'ATK +8%, DEF +8%, HP +8%, CRIT +5%, CRIT DMG +10%',
+    bonus4: {}, bonus4Desc: 'Adaptatif : la stat la plus basse recoit +25%. Tous les 5 tours : toutes stats +10% (3 tours)',
+    passive2: null,
+    passive4: { trigger: 'onBattleStart', type: 'supremeBalance', lowestStatBonus: 0.25, allStatsInterval: 5, allStatsBonus: 0.10, allStatsDuration: 3 },
+  },
+};
+
+// Merge all sets into ALL_ARTIFACT_SETS (defined earlier as let)
+ALL_ARTIFACT_SETS = { ...ALL_ARTIFACT_SETS, ...ARC2_ARTIFACT_SETS, ...ULTIME_ARTIFACT_SETS };
 
 export function generateArc2Artifact(rarity) {
   const setKeys = Object.keys(ARC2_ARTIFACT_SETS);

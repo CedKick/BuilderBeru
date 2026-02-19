@@ -27,8 +27,8 @@ import {
 } from './raidData';
 import {
   computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses, HAMMERS, HAMMER_ORDER,
-  generateRaidArtifact, generateRaidArtifactFromTier, MAX_DAILY_RAIDS, getActivePassives, RAID_ARTIFACT_SETS,
-  WEAPONS, MAIN_STAT_VALUES, rollRaidWeaponDrop, MAX_WEAPON_AWAKENING,
+  generateRaidArtifact, generateRaidArtifactFromTier, getActivePassives, RAID_ARTIFACT_SETS, ULTIME_ARTIFACT_SETS,
+  WEAPONS, MAIN_STAT_VALUES, rollRaidWeaponDrop, rollUltimeWeaponDrop, generateUltimeArtifact, MAX_WEAPON_AWAKENING,
 } from './equipmentData';
 import { BattleStyles, RaidArena } from './BattleVFX';
 
@@ -282,6 +282,7 @@ export default function RaidMode() {
     const b = boss;
     const tierData = getTierData(tier);
     const barHP = Math.floor(b.barScaling(0) * tierData.bossHPMult);
+    const isInfinite = !!tierData.infiniteBars;
     return {
       id: 'boss', name: b.name, element: b.element, isBoss: true,
       sprite: b.sprite, emoji: b.emoji,
@@ -291,7 +292,8 @@ export default function RaidMode() {
       spd: Math.floor(b.stats.spd * tierData.bossSpdMult),
       crit: b.stats.crit, res: b.stats.res,
       buffs: [],
-      currentBar: 0, totalBars: b.totalBars, barsDestroyed: 0,
+      currentBar: 0, totalBars: isInfinite ? 999999 : b.totalBars, barsDestroyed: 0,
+      infiniteBars: isInfinite,
       skills: b.skills.map(s => ({ ...s, lastUsedAt: 0 })),
       phase: b.phases[0],
       lastAttackAt: 0,
@@ -300,10 +302,7 @@ export default function RaidMode() {
   }, [boss]);
 
   const startRaid = useCallback(() => {
-    // Daily raid limit check
     const today = new Date().toISOString().slice(0, 10);
-    const currentCount = coloData.dailyRaidDate === today ? (coloData.dailyRaidCount || 0) : 0;
-    if (currentCount >= MAX_DAILY_RAIDS) return;
 
     const allBonuses1 = { ...synergy1.bonuses, crit: synergy1.bonuses.crit + crossSynergy.bonuses.crit };
     const allBonuses2 = { ...synergy2.bonuses, crit: synergy2.bonuses.crit + crossSynergy.bonuses.crit };
@@ -396,7 +395,8 @@ export default function RaidMode() {
 
     // ─── Check end conditions ────────────────────────────────
     const aliveCount = state.chibis.filter(c => c.alive).length;
-    if (remaining <= 0 || aliveCount === 0 || state.boss.barsDestroyed >= state.boss.totalBars) {
+    const endByBars = !state.boss.infiniteBars && state.boss.barsDestroyed >= state.boss.totalBars;
+    if (remaining <= 0 || aliveCount === 0 || endByBars) {
       // End raid
       clearInterval(gameLoopRef.current);
       gameLoopRef.current = null;
@@ -405,7 +405,7 @@ export default function RaidMode() {
       const tier = state.boss.tier || 1;
       const tierData = state.boss.tierData || getTierData(1);
       const rc = barsDestroyed * tierData.rcPerBar;
-      const isFullClear = barsDestroyed >= state.boss.totalBars;
+      const isFullClear = !state.boss.infiniteBars && barsDestroyed >= state.boss.totalBars;
       const totalDamage = Object.values(dpsTracker.current).reduce((s, v) => s + v, 0);
       const rewards = computeRaidRewards(rc, isFullClear, tierData);
       const endReason = remaining <= 0 ? 'timeout' : aliveCount === 0 ? 'wipe' : 'clear';
@@ -455,26 +455,42 @@ export default function RaidMode() {
         hammerDrops[hId] = (hammerDrops[hId] || 0) + 1;
       }
 
-      // Raid artifact drops — tier-aware
+      // Raid artifact drops — tier-aware (Ultime uses RC-scaled drops)
       const raidArtifactDrops = [];
-      if (rc >= tierData.artifactDrop1.rcMin) {
-        const rarity1 = getTierArtifactRarity(tierData.artifactDrop1, rc);
-        raidArtifactDrops.push(generateRaidArtifactFromTier(rarity1, tier));
-      }
-      if (tierData.artifactDrop2 && rc >= tierData.artifactDrop2.rcMin) {
-        const rarity2 = getTierArtifactRarity(tierData.artifactDrop2, rc);
-        raidArtifactDrops.push(generateRaidArtifactFromTier(rarity2, tier));
-      }
-      if (isFullClear) {
-        raidArtifactDrops.push(generateRaidArtifactFromTier(tierData.artifactDropFullClear, tier));
+      if (tier === 6) {
+        // Ultime mode: RC-scaled artifact drops — more drops at higher RC
+        if (rc >= 3) raidArtifactDrops.push(generateUltimeArtifact(rc));
+        if (rc >= 8) raidArtifactDrops.push(generateUltimeArtifact(rc));
+        if (rc >= 15) raidArtifactDrops.push(generateUltimeArtifact(rc));
+        if (rc >= 25) raidArtifactDrops.push(generateUltimeArtifact(rc));
+      } else {
+        if (rc >= tierData.artifactDrop1.rcMin) {
+          const rarity1 = getTierArtifactRarity(tierData.artifactDrop1, rc);
+          raidArtifactDrops.push(generateRaidArtifactFromTier(rarity1, tier));
+        }
+        if (tierData.artifactDrop2 && rc >= tierData.artifactDrop2.rcMin) {
+          const rarity2 = getTierArtifactRarity(tierData.artifactDrop2, rc);
+          raidArtifactDrops.push(generateRaidArtifactFromTier(rarity2, tier));
+        }
+        if (isFullClear) {
+          raidArtifactDrops.push(generateRaidArtifactFromTier(tierData.artifactDropFullClear, tier));
+        }
       }
 
-      // Weapon drops — tier-aware
+      // Weapon drops — tier-aware (Ultime uses RC-scaled drops)
       let raidWeaponDrop = null;
-      const rolledWeapon = rollRaidWeaponDrop(tier, isFullClear);
-      if (rolledWeapon) {
-        const wData = WEAPONS[rolledWeapon];
-        if (wData) raidWeaponDrop = { id: rolledWeapon, ...wData };
+      if (tier === 6) {
+        const ultWeaponId = rollUltimeWeaponDrop(rc);
+        if (ultWeaponId) {
+          const wData = WEAPONS[ultWeaponId];
+          if (wData) raidWeaponDrop = { id: ultWeaponId, ...wData };
+        }
+      } else {
+        const rolledWeapon = rollRaidWeaponDrop(tier, isFullClear);
+        if (rolledWeapon) {
+          const wData = WEAPONS[rolledWeapon];
+          if (wData) raidWeaponDrop = { id: rolledWeapon, ...wData };
+        }
       }
 
       // XP to participating chibis + save hammer drops + raid artifacts
@@ -751,15 +767,25 @@ export default function RaidMode() {
           state.boss.barsDestroyed++;
           if (state.boss.barsDestroyed < state.boss.totalBars) {
             const tierHPMult = state.boss.tierData?.bossHPMult || 1;
-            const nextBarHP = Math.floor(boss.barScaling(state.boss.barsDestroyed) * tierHPMult);
+            // Infinite bars: bar HP keeps scaling with barScaling formula (uses barIndex % cycle for the scaling function)
+            const barIdx = state.boss.infiniteBars ? state.boss.barsDestroyed % 10 : state.boss.barsDestroyed;
+            // For infinite mode, add progressive multiplier: each 10-bar cycle gets harder
+            const cycleMult = state.boss.infiniteBars ? 1 + Math.floor(state.boss.barsDestroyed / 10) * 0.5 : 1;
+            const nextBarHP = Math.floor(boss.barScaling(barIdx) * tierHPMult * cycleMult);
             state.boss.hp = nextBarHP;
             state.boss.maxHp = nextBarHP;
             logEntries.push({ text: `BARRE ${state.boss.barsDestroyed} DETRUITE ! +${state.boss.rcPerBar || 1} RC`, time: elapsed, type: 'bar_break' });
             vfxEvents.push({ id: now + Math.random() + 0.1, type: 'bar_break', timestamp: now });
 
-            // Check phase transition
-            const barsLeft = state.boss.totalBars - state.boss.barsDestroyed;
-            const newPhase = [...boss.phases].reverse().find(p => barsLeft <= p.barsRemaining);
+            // Check phase transition — infinite mode: cycle phases every 10 bars
+            let newPhase;
+            if (state.boss.infiniteBars) {
+              const cyclePos = state.boss.barsDestroyed % 10;
+              newPhase = cyclePos >= 7 ? boss.phases[2] : cyclePos >= 4 ? boss.phases[1] : boss.phases[0];
+            } else {
+              const barsLeft = state.boss.totalBars - state.boss.barsDestroyed;
+              newPhase = [...boss.phases].reverse().find(p => barsLeft <= p.barsRemaining);
+            }
             if (newPhase && newPhase.name !== state.boss.phase.name) {
               state.boss.phase = newPhase;
               logEntries.push({ text: `PHASE: ${newPhase.name} !`, time: elapsed, type: 'phase' });
@@ -993,14 +1019,26 @@ export default function RaidMode() {
         <div className="flex items-center justify-center gap-3 text-sm text-gray-400 mt-1">
           <span className={ELEMENTS[boss.element]?.color}>{ELEMENTS[boss.element]?.icon} {ELEMENTS[boss.element]?.name}</span>
           <span>|</span>
-          <span>{boss.totalBars} Barres</span>
+          <span>{currentTierData.infiniteBars ? '\u221E Barres' : `${boss.totalBars} Barres`}</span>
           <span>|</span>
-          <span>HP: {fmt(Math.floor(boss.baseHP * currentTierData.bossHPMult))} → {fmt(Math.floor(boss.barScaling(boss.totalBars - 1) * currentTierData.bossHPMult))}</span>
+          <span>HP: {fmt(Math.floor(boss.baseHP * currentTierData.bossHPMult))}{currentTierData.infiniteBars ? '+' : ` \u2192 ${fmt(Math.floor(boss.barScaling(boss.totalBars - 1) * currentTierData.bossHPMult))}`}</span>
         </div>
         <div className="flex justify-center gap-1 mt-2">
-          {Array.from({ length: boss.totalBars }).map((_, i) => (
-            <div key={i} className="w-3 h-3 rotate-45 bg-red-500/60 border border-red-400/40" />
-          ))}
+          {currentTierData.infiniteBars ? (
+            <div className="flex items-center gap-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="w-3 h-3 rotate-45 bg-red-500/60 border border-red-400/40" />
+              ))}
+              <span className="text-red-400 text-sm font-bold mx-1">{'\u221E'}</span>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i + 5} className="w-3 h-3 rotate-45 bg-red-500/60 border border-red-400/40" />
+              ))}
+            </div>
+          ) : (
+            Array.from({ length: boss.totalBars }).map((_, i) => (
+              <div key={i} className="w-3 h-3 rotate-45 bg-red-500/60 border border-red-400/40" />
+            ))
+          )}
         </div>
       </div>
 
@@ -1012,14 +1050,14 @@ export default function RaidMode() {
             const td = getTierData(tier);
             const isSelected = selectedTier === tier;
             const tierBest = raidData.raidStats?.tierBestRC?.[tier] || 0;
-            const isCleared = tierBest >= td.maxRC;
+            const isCleared = !td.infiniteBars && tierBest >= td.maxRC;
             return (
               <button key={tier} onClick={() => setSelectedTier(tier)}
                 className={`flex flex-col items-center px-3 py-2 rounded-lg border-2 transition-all ${
                   isSelected ? `${td.borderColor} bg-gradient-to-r ${td.bgGradient} scale-105` : 'border-white/20 bg-white/5 hover:border-white/40'
                 }`}>
                 <span className={`text-sm font-bold ${td.nameColor}`}>{td.name}</span>
-                <span className="text-[10px] text-gray-400">RC x{td.rcPerBar}</span>
+                <span className="text-[10px] text-gray-400">{td.infiniteBars ? 'RC \u221E' : `RC x${td.rcPerBar}`}</span>
                 {isCleared && <span className="text-[10px] text-green-400">Clear</span>}
                 {tierBest > 0 && !isCleared && <span className="text-[9px] text-gray-500">Best: {tierBest}</span>}
               </button>
@@ -1029,13 +1067,16 @@ export default function RaidMode() {
         {/* Tier details */}
         <div className="mt-3 p-2 rounded-lg bg-black/20 border border-white/10">
           <div className="grid grid-cols-4 gap-2 text-[10px] text-center">
-            <div className="text-gray-400">RC Max<br/><span className="text-white font-bold text-xs">{currentTierData.maxRC}</span></div>
+            <div className="text-gray-400">RC Max<br/><span className="text-white font-bold text-xs">{currentTierData.infiniteBars ? '\u221E' : currentTierData.maxRC}</span></div>
             <div className="text-gray-400">Coins<br/><span className="text-yellow-400 font-bold text-xs">x{currentTierData.coinMult}</span></div>
             <div className="text-gray-400">HP Boss<br/><span className="text-red-400 font-bold text-xs">x{currentTierData.bossHPMult}</span></div>
             <div className="text-gray-400">XP<br/><span className="text-green-400 font-bold text-xs">x{currentTierData.xpMult}</span></div>
           </div>
         </div>
-        {(raidData.unlockedTier || 1) < MAX_RAID_TIER && selectedTier === (raidData.unlockedTier || 1) && (
+        {currentTierData.infiniteBars && (
+          <div className="mt-2 text-center text-[10px] text-red-300 font-bold">RC illimite — Detruis un max de barres en 180s !</div>
+        )}
+        {!currentTierData.infiniteBars && (raidData.unlockedTier || 1) < MAX_RAID_TIER && selectedTier === (raidData.unlockedTier || 1) && (
           <div className="mt-2 text-center text-[10px] text-amber-400">Clear complet (10/10) pour debloquer Tier {(raidData.unlockedTier || 1) + 1}</div>
         )}
       </div>
@@ -1170,18 +1211,6 @@ export default function RaidMode() {
         </motion.div>
       )}
 
-      {/* Daily raid counter */}
-      {(() => {
-        const today = new Date().toISOString().slice(0, 10);
-        const count = coloData.dailyRaidDate === today ? (coloData.dailyRaidCount || 0) : 0;
-        const remaining = MAX_DAILY_RAIDS - count;
-        return (
-          <div className={`text-center text-sm font-bold ${remaining > 3 ? 'text-emerald-400' : remaining > 0 ? 'text-amber-400' : 'text-red-400'}`}>
-            Tentatives : {remaining}/{MAX_DAILY_RAIDS} restantes aujourd'hui
-          </div>
-        );
-      })()}
-
       {/* Launch button */}
       <div className="flex justify-center gap-3">
         <Link to="/shadow-colosseum"
@@ -1189,7 +1218,7 @@ export default function RaidMode() {
           Retour
         </Link>
         <button onClick={startRaid}
-          disabled={selectedIds.length === 0 || (() => { const today = new Date().toISOString().slice(0, 10); return coloData.dailyRaidDate === today && (coloData.dailyRaidCount || 0) >= MAX_DAILY_RAIDS; })()}
+          disabled={selectedIds.length === 0}
           className="px-8 py-3 rounded-xl font-bold text-lg bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95">
           LANCER LE RAID
         </button>
@@ -1227,7 +1256,7 @@ export default function RaidMode() {
             {isFullClear ? 'VICTOIRE TOTALE !' : endReason === 'wipe' ? 'EQUIPE ELIMINEE' : 'TEMPS ECOULE'}
           </h2>
           <div className="flex justify-center gap-6 text-lg">
-            <span className="text-orange-400">RC: <b>{rc}</b> <span className="text-xs text-gray-400">({barsDestroyed}/10 barres)</span></span>
+            <span className="text-orange-400">RC: <b>{rc}</b> <span className="text-xs text-gray-400">({barsDestroyed}{resTierData?.infiniteBars ? '' : '/10'} barres)</span></span>
             <span className="text-blue-400">DMG: <b>{fmt(totalDamage)}</b></span>
             <span className="text-gray-400">{min}:{sec.toString().padStart(2, '0')}</span>
           </div>
@@ -1243,7 +1272,7 @@ export default function RaidMode() {
               Tier {tierUnlocked}: {getTierData(tierUnlocked).name}
             </div>
             <div className="text-xs text-gray-400 mt-1">
-              RC Max: {getTierData(tierUnlocked).maxRC} | Boss HP: x{getTierData(tierUnlocked).bossHPMult} | Coins: x{getTierData(tierUnlocked).coinMult}
+              RC Max: {getTierData(tierUnlocked).infiniteBars ? '\u221E' : getTierData(tierUnlocked).maxRC} | Boss HP: x{getTierData(tierUnlocked).bossHPMult} | Coins: x{getTierData(tierUnlocked).coinMult}
             </div>
           </motion.div>
         )}

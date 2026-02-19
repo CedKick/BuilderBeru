@@ -595,9 +595,21 @@ export const RAID_TIERS = {
     artifactDrop2: { rcMin: 50000, rarities: ['mythique'], thresholds: [50000] },
     artifactDropFullClear: 'mythique',
   },
+  6: {
+    id: 6, name: 'Ultime',
+    nameColor: 'text-red-300', bgGradient: 'from-red-900/50 to-orange-900/50',
+    borderColor: 'border-red-500/40', emoji: '',
+    rcPerBar: 1, maxRC: Infinity, infiniteBars: true,
+    bossHPMult: 300.0, bossAtkMult: 5.5, bossDefMult: 4.5, bossSpdMult: 2.0,
+    coinMult: 40.0, xpMult: 12.0,
+    hammerTiers: ['marteau_celeste'], hammerCountBase: 10, hammerCountPerRC: 0.03,
+    artifactDrop1: { rcMin: 5, rarities: ['mythique'], thresholds: [5] },
+    artifactDrop2: { rcMin: 15, rarities: ['mythique'], thresholds: [15] },
+    artifactDropFullClear: 'mythique',
+  },
 };
 
-export const MAX_RAID_TIER = 5;
+export const MAX_RAID_TIER = 6;
 export const getTierData = (tierId) => RAID_TIERS[tierId] || RAID_TIERS[1];
 
 // Helper: determine artifact rarity from RC thresholds

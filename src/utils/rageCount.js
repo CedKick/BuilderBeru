@@ -173,9 +173,23 @@ const RC_THRESHOLDS_FATCHNA = [
   { rc: 81, damage: 44300000000 }
 ];
 
+// Growth factor for RC extrapolation beyond table (≈5% per RC, matches observed pattern)
+const RC_GROWTH_FACTOR = 1.05;
+
 export const calculateRCFromTotal = (totalDamage, boss = 'ant_queen') => {
-  const thresholds = boss === 'ant_queen' ? RC_THRESHOLDS_ANT_QUEEN : [];
-  
+  const thresholds = boss === 'ant_queen' ? RC_THRESHOLDS_ANT_QUEEN
+    : boss === 'fatchna' ? RC_THRESHOLDS_FATCHNA : [];
+  if (!thresholds.length) return 0;
+
+  const last = thresholds[thresholds.length - 1];
+
+  // Beyond table: extrapolate with 5% growth per RC (infinite scaling)
+  if (totalDamage >= last.damage) {
+    const extraRC = Math.floor(Math.log(totalDamage / last.damage) / Math.log(RC_GROWTH_FACTOR));
+    return last.rc + extraRC;
+  }
+
+  // Within table
   let rageCount = 0;
   for (let i = thresholds.length - 1; i >= 0; i--) {
     if (totalDamage >= thresholds[i].damage) {
@@ -183,6 +197,17 @@ export const calculateRCFromTotal = (totalDamage, boss = 'ant_queen') => {
       break;
     }
   }
-  
   return rageCount;
+};
+
+// Get the damage threshold needed for a given RC (used for UI display)
+export const getDamageForRC = (rc, boss = 'ant_queen') => {
+  const thresholds = boss === 'ant_queen' ? RC_THRESHOLDS_ANT_QUEEN
+    : boss === 'fatchna' ? RC_THRESHOLDS_FATCHNA : [];
+  if (!thresholds.length) return 0;
+  const entry = thresholds.find(t => t.rc === rc);
+  if (entry) return entry.damage;
+  const last = thresholds[thresholds.length - 1];
+  if (rc > last.rc) return Math.floor(last.damage * Math.pow(RC_GROWTH_FACTOR, rc - last.rc));
+  return 0;
 };

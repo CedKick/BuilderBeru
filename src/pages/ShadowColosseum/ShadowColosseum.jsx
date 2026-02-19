@@ -186,7 +186,7 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {} });
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [] });
 const loadData = () => {
   try {
     const d = { ...defaultData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) };
@@ -215,6 +215,8 @@ const loadData = () => {
     if (d.grimoireWeiss === undefined) d.grimoireWeiss = false;
     if (!d.arc2Team) d.arc2Team = [null, null, null];
     if (!d.arc2StarsRecord) d.arc2StarsRecord = {};
+    if (d.ragnarokKills === undefined) d.ragnarokKills = 0;
+    if (!d.ragnarokDropLog) d.ragnarokDropLog = [];
     // Migration: stagesCleared array → object { [id]: { maxStars } }
     if (Array.isArray(d.stagesCleared)) {
       const m = {};
@@ -267,6 +269,7 @@ export default function ShadowColosseum() {
   const [artEquipPicker, setArtEquipPicker] = useState(false);
   const [weaponDetailId, setWeaponDetailId] = useState(null);
   const [artifactSetDetail, setArtifactSetDetail] = useState(null);
+  const [ragnarokHistoryOpen, setRagnarokHistoryOpen] = useState(false);
   const [eqInvFilter, setEqInvFilter] = useState({ slot: null, set: null }); // filters for equipment view inventory
   const [rosterSort, setRosterSort] = useState('ilevel'); // 'ilevel' | 'level' | 'name'
   const [rosterFilterElem, setRosterFilterElem] = useState(null); // element id or null
@@ -1494,6 +1497,12 @@ export default function ShadowColosseum() {
       const newHammers = { ...(prev.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }) };
       if (hammerDrop) newHammers[hammerDrop] = (newHammers[hammerDrop] || 0) + 1;
       if (extraHammer) newHammers[extraHammer] = (newHammers[extraHammer] || 0) + 1;
+      // Ragnarok kill tracking
+      const isRagnarok = stage.id === 'ragnarok';
+      const newRagKills = isRagnarok ? (prev.ragnarokKills || 0) + 1 : (prev.ragnarokKills || 0);
+      const newRagLog = (isRagnarok && weaponDrop)
+        ? [...(prev.ragnarokDropLog || []), { weaponId: weaponDrop.id, name: weaponDrop.name, rarity: weaponDrop.rarity, icon: weaponDrop.icon, sprite: weaponDrop.sprite || null, killNumber: newRagKills, date: Date.now() }]
+        : (prev.ragnarokDropLog || []);
       return {
         ...prev,
         chibiLevels: { ...prev.chibiLevels, [selChibi]: { level: newLevel, xp: newXp } },
@@ -1501,6 +1510,8 @@ export default function ShadowColosseum() {
         stats: { battles: prev.stats.battles + 1, wins: prev.stats.wins + 1 },
         hammers: newHammers,
         accountXp: newAccountXp,
+        ragnarokKills: newRagKills,
+        ragnarokDropLog: newRagLog,
         weaponCollection: (() => {
           if (!weaponDrop) return prev.weaponCollection;
           const wc = { ...prev.weaponCollection };
@@ -2205,6 +2216,12 @@ export default function ShadowColosseum() {
                             {stage.isBoss && <span className="text-[10px] bg-red-500/30 text-red-300 px-1.5 rounded">BOSS</span>}
                             {cleared && <span className="text-green-400 text-xs">{'\u2705'}</span>}
                             {maxSt > 0 && <span className="text-[10px] text-yellow-400">{'\u2B50'}{maxSt}</span>}
+                            {stage.id === 'ragnarok' && (data.ragnarokKills || 0) > 0 && (
+                              <span className="text-[10px] bg-orange-500/20 text-orange-300 px-1.5 rounded cursor-pointer hover:bg-orange-500/40 transition-colors"
+                                onClick={(e) => { e.stopPropagation(); setRagnarokHistoryOpen(true); }}>
+                                {'\u2620\uFE0F'}{data.ragnarokKills} kills
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-2.5 text-[11px] text-gray-400 mt-0.5">
                             <span className={ELEMENTS[stage.element].color}>{ELEMENTS[stage.element].icon} {ELEMENTS[stage.element].name}</span>
@@ -5223,6 +5240,31 @@ export default function ShadowColosseum() {
                 </div>
               </div>
             )}
+            {/* Ragnarok Tracker — persistent kill counter & Sulfuras hunt */}
+            {STAGES[selStage]?.id === 'ragnarok' && (
+              <div className="mt-1 px-2.5 py-2 rounded-lg bg-gradient-to-b from-orange-900/40 to-red-900/40 border border-orange-500/30 backdrop-blur-sm cursor-pointer hover:border-orange-400/50 transition-colors"
+                onClick={() => setRagnarokHistoryOpen(true)}>
+                <div className="text-[9px] text-orange-400 font-bold uppercase tracking-wider mb-1">{'\u2604\uFE0F'} Ragnarok</div>
+                <div className="flex items-center gap-2 text-[10px]">
+                  <span className="text-red-300 font-bold">{'\u2620\uFE0F'} {data.ragnarokKills || 0} kills</span>
+                  <span className="text-gray-600">|</span>
+                  <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {(data.ragnarokDropLog || []).length} drops</span>
+                </div>
+                <div className="mt-1 flex items-center gap-1.5">
+                  {data.weaponCollection?.['w_sulfuras'] !== undefined ? (
+                    <>
+                      <img src={WEAPONS.w_sulfuras?.sprite} alt="Sulfuras" className="w-4 h-4 object-contain" />
+                      <span className="text-[9px] text-orange-300 font-bold">Sulfuras obtenue !</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-[10px] opacity-40">{'\uD83D\uDD28'}</span>
+                      <span className="text-[9px] text-gray-500">{data.ragnarokKills > 0 ? `${data.ragnarokKills} kills sans Sulfuras` : 'Chasse en cours...'}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -5549,6 +5591,51 @@ export default function ShadowColosseum() {
                 </div>
               </div>
             )}
+            {/* Ragnarok persistent tracker on result screen */}
+            {STAGES[selStage]?.id === 'ragnarok' && (
+              <div className="w-full max-w-xs mx-auto px-3 py-2.5 rounded-xl bg-gradient-to-r from-orange-900/30 to-red-900/30 border border-orange-500/30 backdrop-blur-sm cursor-pointer hover:border-orange-400/50 transition-colors"
+                onClick={() => setRagnarokHistoryOpen(true)}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] text-orange-400 font-bold uppercase tracking-wider">{'\u2604\uFE0F'} Ragnarok Tracker</span>
+                  <span className="text-[9px] text-gray-500">Clic pour l'historique</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <div className="text-sm font-black text-red-400">{data.ragnarokKills || 0}</div>
+                    <div className="text-[8px] text-gray-500">kills total</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-black text-amber-300">{(data.ragnarokDropLog || []).length}</div>
+                    <div className="text-[8px] text-gray-500">armes drop</div>
+                  </div>
+                  <div>
+                    {data.weaponCollection?.['w_sulfuras'] !== undefined ? (
+                      <>
+                        <div className="text-sm font-black text-orange-400">{'\uD83D\uDD28'}</div>
+                        <div className="text-[8px] text-orange-300 font-bold">Sulfuras !</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-sm font-black text-gray-600">0</div>
+                        <div className="text-[8px] text-gray-500">sulfuras</div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                {!data.weaponCollection?.['w_sulfuras'] && (data.ragnarokKills || 0) > 0 && (
+                  <div className="mt-1.5">
+                    <div className="flex justify-between text-[8px] text-gray-500 mb-0.5">
+                      <span>Proba cumulee</span>
+                      <span>{Math.min(99.99, (1 - Math.pow(1 - 1/10000, data.ragnarokKills)) * 100).toFixed(2)}%</span>
+                    </div>
+                    <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-orange-600 to-red-500 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, (1 - Math.pow(1 - 1/10000, data.ragnarokKills)) * 100)}%` }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <button
               onClick={() => { setAutoReplay(false); setView('hub'); setBattle(null); setResult(null); }}
               className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl font-bold text-sm shadow-lg hover:scale-105 transition-transform"
@@ -5631,6 +5718,127 @@ export default function ShadowColosseum() {
           </motion.div>
         </div>
       )}
+
+      {/* ═══ RAGNAROK HISTORY MODAL ═══ */}
+      {ragnarokHistoryOpen && (() => {
+        const kills = data.ragnarokKills || 0;
+        const log = data.ragnarokDropLog || [];
+        const sulfurasCount = log.filter(d => d.weaponId === 'w_sulfuras').length;
+        const hasSulfuras = data.weaponCollection?.['w_sulfuras'] !== undefined;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setRagnarokHistoryOpen(false)}>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              className="bg-gray-900/95 border border-orange-500/40 rounded-2xl p-5 max-w-md w-full max-h-[80vh] overflow-y-auto"
+              onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <img src={SPRITES.ragnarok} alt="Ragnarok" className="w-12 h-12 object-contain" />
+                  <div>
+                    <h3 className="text-lg font-black text-orange-300">{'\u2604\uFE0F'} Ragnarok</h3>
+                    <div className="text-[10px] text-gray-400">Tier 6 — Domaine du Monarque</div>
+                  </div>
+                </div>
+                <button onClick={() => setRagnarokHistoryOpen(false)} className="text-gray-500 hover:text-white text-xl">&times;</button>
+              </div>
+
+              {/* Kill counter */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="bg-red-900/20 border border-red-500/20 rounded-xl p-3 text-center">
+                  <div className="text-2xl font-black text-red-400">{kills}</div>
+                  <div className="text-[10px] text-red-300/60 mt-0.5">Kills total</div>
+                </div>
+                <div className="bg-amber-900/20 border border-amber-500/20 rounded-xl p-3 text-center">
+                  <div className="text-2xl font-black text-amber-400">{log.length}</div>
+                  <div className="text-[10px] text-amber-300/60 mt-0.5">Armes drop</div>
+                </div>
+                <div className={`border rounded-xl p-3 text-center ${hasSulfuras ? 'bg-orange-900/30 border-orange-400/40' : 'bg-gray-800/30 border-gray-700/20'}`}>
+                  <div className={`text-2xl font-black ${hasSulfuras ? 'text-orange-400' : 'text-gray-600'}`}>{sulfurasCount}</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">{'\uD83D\uDD28'} Sulfuras</div>
+                </div>
+              </div>
+
+              {/* Sulfuras pity counter */}
+              <div className={`mb-4 p-3 rounded-xl border ${hasSulfuras ? 'bg-gradient-to-r from-orange-900/20 to-red-900/20 border-orange-500/30' : 'bg-gray-800/20 border-gray-700/20'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  {hasSulfuras ? (
+                    <img src={WEAPONS.w_sulfuras?.sprite} alt="Sulfuras" className="w-8 h-8 object-contain" />
+                  ) : (
+                    <span className="text-2xl opacity-30">{'\uD83D\uDD28'}</span>
+                  )}
+                  <div>
+                    <div className={`text-sm font-bold ${hasSulfuras ? 'text-orange-300' : 'text-gray-500'}`}>
+                      Masse de Sulfuras
+                    </div>
+                    <div className="text-[10px] text-gray-400">
+                      {hasSulfuras
+                        ? `Obtenue au kill #${log.find(d => d.weaponId === 'w_sulfuras')?.killNumber || '?'}`
+                        : kills > 0
+                          ? `${kills} kills sans Sulfuras... (drop : 1/10 000)`
+                          : 'Pas encore de kills'
+                      }
+                    </div>
+                  </div>
+                </div>
+                {!hasSulfuras && kills > 0 && (
+                  <div className="mt-2">
+                    <div className="flex justify-between text-[9px] text-gray-500 mb-0.5">
+                      <span>Probabilite cumulee</span>
+                      <span>{Math.min(99.99, (1 - Math.pow(1 - 1/10000, kills)) * 100).toFixed(2)}%</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-orange-600 to-red-500 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, (1 - Math.pow(1 - 1/10000, kills)) * 100)}%` }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Drop history */}
+              <div className="mb-2">
+                <div className="text-xs font-bold text-gray-300 mb-2">{'\uD83D\uDCDC'} Historique des drops</div>
+                {log.length === 0 ? (
+                  <div className="text-center py-6 text-gray-600 text-sm italic">Aucune arme droppee pour l'instant</div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {[...log].reverse().map((entry, i) => {
+                      const isSulfuras = entry.weaponId === 'w_sulfuras';
+                      const wData = WEAPONS[entry.weaponId];
+                      const dateStr = entry.date ? new Date(entry.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '?';
+                      return (
+                        <div key={i} className={`flex items-center gap-2.5 p-2 rounded-lg border transition-colors cursor-pointer hover:bg-gray-800/40 ${
+                          isSulfuras ? 'border-orange-500/40 bg-orange-900/10' :
+                          entry.rarity === 'mythique' ? 'border-purple-500/20 bg-purple-900/5' :
+                          entry.rarity === 'legendaire' ? 'border-yellow-500/20 bg-yellow-900/5' :
+                          'border-gray-700/20 bg-gray-800/10'
+                        }`} onClick={() => { setRagnarokHistoryOpen(false); isSulfuras ? setWeaponReveal({ ...wData, isNew: false }) : setWeaponDetailId(entry.weaponId); }}>
+                          <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                            {entry.sprite || wData?.sprite ? (
+                              <img src={entry.sprite || wData?.sprite} alt={entry.name} className="w-8 h-8 object-contain" />
+                            ) : (
+                              <span className="text-lg">{entry.icon || wData?.icon || '?'}</span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-xs font-bold truncate ${isSulfuras ? 'text-orange-300' : 'text-white'}`}>{entry.name || wData?.name}</div>
+                            <div className="text-[9px] text-gray-500">Kill #{entry.killNumber} — {dateStr}</div>
+                          </div>
+                          <div className={`text-[9px] px-1.5 py-0.5 rounded ${
+                            isSulfuras ? 'bg-orange-500/20 text-orange-300' :
+                            entry.rarity === 'mythique' ? 'bg-purple-500/20 text-purple-300' :
+                            entry.rarity === 'legendaire' ? 'bg-yellow-500/20 text-yellow-300' :
+                            'bg-gray-700/30 text-gray-400'
+                          }`}>{entry.rarity}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        );
+      })()}
 
       {/* ═══ WEAPON DETAIL VIEW ═══ */}
       {weaponDetailId && (() => {

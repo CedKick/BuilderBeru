@@ -587,7 +587,7 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
             {b.phase && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300">{b.phase.name}</span>}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400">RC: {b.barsDestroyed}</span>
+            <span className="text-xs text-gray-400">RC: {b.infiniteBars ? b.barsDestroyed : b.barsDestroyed * (b.rcPerBar || 1)}</span>
             <span className={`text-base font-mono font-bold ${timer < 30 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
               {timerMin}:{timerSec.toString().padStart(2, '0')}
             </span>
@@ -598,12 +598,22 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
         </div>
 
         {/* Bar diamonds */}
-        <div className="flex gap-1 mb-1 justify-center">
-          {Array.from({ length: b.totalBars }).map((_, i) => (
-            <div key={i} className={`w-2.5 h-2.5 rotate-45 border transition-all ${
-              i < b.barsDestroyed ? 'bg-gray-700 border-gray-600' : `${BAR_COLORS[i % BAR_COLORS.length]} border-white/30`
-            }`} />
-          ))}
+        <div className="flex gap-1 mb-1 justify-center items-center">
+          {b.infiniteBars ? (
+            <>
+              <span className="text-[10px] text-red-300 font-bold mr-1">{b.barsDestroyed}</span>
+              {Array.from({ length: Math.min(10, Math.max(1, 10 - (b.barsDestroyed % 10))) }).map((_, i) => (
+                <div key={i} className={`w-2.5 h-2.5 rotate-45 border transition-all ${BAR_COLORS[(b.barsDestroyed + i) % BAR_COLORS.length]} border-white/30`} />
+              ))}
+              <span className="text-red-400 text-sm font-bold mx-0.5">{'\u221E'}</span>
+            </>
+          ) : (
+            Array.from({ length: b.totalBars }).map((_, i) => (
+              <div key={i} className={`w-2.5 h-2.5 rotate-45 border transition-all ${
+                i < b.barsDestroyed ? 'bg-gray-700 border-gray-600' : `${BAR_COLORS[i % BAR_COLORS.length]} border-white/30`
+              }`} />
+            ))
+          )}
         </div>
 
         {/* HP bar */}
@@ -611,7 +621,7 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
           <motion.div className={`h-full ${barColor} rounded-full`}
             animate={{ width: `${barPct}%` }} transition={{ duration: 0.15 }} />
           <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow">
-            {fmt(b.hp)} / {fmt(b.maxHp)} (Barre {b.barsDestroyed + 1}/{b.totalBars})
+            {fmt(b.hp)} / {fmt(b.maxHp)} {b.infiniteBars ? `(Barre ${b.barsDestroyed + 1})` : `(Barre ${b.barsDestroyed + 1}/${b.totalBars})`}
           </div>
         </div>
       </div>

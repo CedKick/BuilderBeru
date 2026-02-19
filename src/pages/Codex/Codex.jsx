@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Search, Swords, BookOpen, ArrowLeft, Users, Shield } from 'lucide-react';
 import { WEAPONS, WEAPON_AWAKENING_PASSIVES, MAX_WEAPON_AWAKENING, getWeaponAwakeningBonuses, computeWeaponBonuses,
-  ARTIFACT_SETS, RAID_ARTIFACT_SETS, ARC2_ARTIFACT_SETS, ALL_ARTIFACT_SETS,
+  ARTIFACT_SETS, RAID_ARTIFACT_SETS, ARC2_ARTIFACT_SETS, ULTIME_ARTIFACT_SETS, ALL_ARTIFACT_SETS,
   ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL, RARITY_SUB_COUNT,
 } from '../ShadowColosseum/equipmentData';
 import { CHIBIS, SPRITES, ELEMENTS, RARITY } from '../ShadowColosseum/colosseumCore';
@@ -191,6 +191,7 @@ export default function Codex() {
     Object.values(ARTIFACT_SETS).forEach(s => list.push({ ...s, source: 'base' }));
     Object.values(RAID_ARTIFACT_SETS).forEach(s => list.push({ ...s, source: 'raid' }));
     Object.values(ARC2_ARTIFACT_SETS).forEach(s => list.push({ ...s, source: 'arc2' }));
+    Object.values(ULTIME_ARTIFACT_SETS).forEach(s => list.push({ ...s, source: 'ultime' }));
     return list;
   }, []);
 
@@ -554,6 +555,7 @@ export default function Codex() {
                     <span className="text-[10px]">{eCfg.icon}</span>
                     <span className="text-[10px]">{tCfg.icon}</span>
                     {w.secret && <span className="text-[9px] text-red-500 font-bold ml-auto">SECRET</span>}
+                    {w.ultime && <span className="text-[9px] text-red-300 font-bold ml-auto">ULTIME</span>}
                   </div>
                   {isOwned && <div className="mt-1 text-[9px] font-bold text-purple-400">A{aw}</div>}
                   {!isOwned && <div className="absolute inset-0 rounded-xl bg-black/20 pointer-events-none" />}
@@ -599,6 +601,7 @@ export default function Codex() {
                             </div>
                             <p className="text-[11px] text-gray-500 mt-1.5 italic">{w.desc}</p>
                             {w.secret && <div className="text-[10px] text-red-400 font-bold mt-1">SECRET — Drop 1/10,000 sur Ragnarok</div>}
+                            {w.ultime && <div className="text-[10px] text-red-300 font-bold mt-1">ULTIME — Drop exclusif en Raid Ultime (RC 3+)</div>}
                             {!isOwned && <div className="text-[10px] text-gray-600 font-bold mt-1">Non obtenu</div>}
                           </div>
                         </div>
@@ -704,17 +707,18 @@ export default function Codex() {
               <option value="base">Colosseum (Base)</option>
               <option value="raid">Raid</option>
               <option value="arc2">ARC II</option>
+              <option value="ultime">Ultime</option>
             </select>
           </div>
 
           <div className="text-[10px] text-gray-600 mb-3">{filteredSets.length} set{filteredSets.length > 1 ? 's' : ''} d'artefacts</div>
 
           {/* Sets by source */}
-          {['base', 'raid', 'arc2'].map(src => {
+          {['base', 'raid', 'arc2', 'ultime'].map(src => {
             const srcSets = filteredSets.filter(s => s.source === src);
             if (srcSets.length === 0) return null;
-            const srcLabel = { base: 'Sets Colosseum', raid: 'Sets Raid (Exclusifs)', arc2: 'Sets ARC II' }[src];
-            const srcColor = { base: 'text-blue-400', raid: 'text-pink-400', arc2: 'text-amber-400' }[src];
+            const srcLabel = { base: 'Sets Colosseum', raid: 'Sets Raid (Exclusifs)', arc2: 'Sets ARC II', ultime: 'Sets Ultime' }[src];
+            const srcColor = { base: 'text-blue-400', raid: 'text-pink-400', arc2: 'text-amber-400', ultime: 'text-red-400' }[src];
             return (
               <div key={src} className="mb-6">
                 <div className={`text-xs font-bold uppercase tracking-wider mb-3 ${srcColor}`}>{srcLabel}</div>
@@ -802,8 +806,8 @@ export default function Codex() {
                   {(() => {
                     const s = selectedSet;
                     const count = setCount[s.id] || 0;
-                    const srcLabel = { base: 'Colosseum', raid: 'Raid', arc2: 'ARC II' }[s.source];
-                    const srcColor = { base: 'text-blue-400 bg-blue-500/15 border-blue-500/30', raid: 'text-pink-400 bg-pink-500/15 border-pink-500/30', arc2: 'text-amber-400 bg-amber-500/15 border-amber-500/30' }[s.source];
+                    const srcLabel = { base: 'Colosseum', raid: 'Raid', arc2: 'ARC II', ultime: 'Ultime' }[s.source];
+                    const srcColor = { base: 'text-blue-400 bg-blue-500/15 border-blue-500/30', raid: 'text-pink-400 bg-pink-500/15 border-pink-500/30', arc2: 'text-amber-400 bg-amber-500/15 border-amber-500/30', ultime: 'text-red-400 bg-red-500/15 border-red-500/30' }[s.source];
 
                     return (
                       <>
@@ -854,6 +858,11 @@ export default function Codex() {
                           {s.source === 'arc2' && (
                             <div className="text-[11px] text-gray-300">
                               {'\uD83D\uDD25'} Drop en victoire Colosseum <span className="text-amber-400 font-bold">ARC II</span>. Sub-stats +30% superieures aux sets classiques.
+                            </div>
+                          )}
+                          {s.source === 'ultime' && (
+                            <div className="text-[11px] text-gray-300">
+                              {'\uD83D\uDCA0'} Drop exclusif en mode <span className="text-red-400 font-bold">Raid Ultime</span> (RC 3+). Taux de drop augmente avec le RC. Sets les plus puissants du jeu.
                             </div>
                           )}
                         </div>
