@@ -270,6 +270,7 @@ export default function ShadowColosseum() {
   const [artSelected, setArtSelected] = useState(null); // index in inventory OR "eq:chibiId:slot"
   const [artEquipPicker, setArtEquipPicker] = useState(false);
   const [weaponDetailId, setWeaponDetailId] = useState(null);
+  const [weaponFilter, setWeaponFilter] = useState({ element: null, sort: 'ilevel' }); // filter for weapon lists
   const [artifactSetDetail, setArtifactSetDetail] = useState(null);
   const [ragnarokHistoryOpen, setRagnarokHistoryOpen] = useState(false);
   const [eqInvFilter, setEqInvFilter] = useState({ slot: null, set: null }); // filters for equipment view inventory
@@ -300,6 +301,7 @@ export default function ShadowColosseum() {
   const [enemyTooltip, setEnemyTooltip] = useState(null); // enemy index for stats tooltip
   const [tooltipPinned, setTooltipPinned] = useState(false); // click-pinned tooltip stays on mouse leave
   const tooltipTimerRef = useRef(null); // long-press timer for mobile tooltip
+  const hammerHoldRef = useRef(null); // hold-to-buy timer for hammer shop
 
   // Skin-aware sprite helper — returns active skin sprite or default
   const getSprite = (id) => HUNTER_SKINS[id] ? getHunterSprite(id, data) : getChibiSprite(id);
@@ -5040,31 +5042,75 @@ export default function ShadowColosseum() {
               {/* Available weapons from collection */}
               {(() => {
                 const equippedSet = new Set(Object.values(data.weapons).filter(Boolean));
-                const available = Object.keys(data.weaponCollection).filter(wId => wId !== weaponId && !equippedSet.has(wId));
+                let available = Object.keys(data.weaponCollection).filter(wId => wId !== weaponId && !equippedSet.has(wId) && WEAPONS[wId]);
                 if (available.length === 0) return null;
+                // Filter by element
+                if (weaponFilter.element) available = available.filter(wId => (WEAPONS[wId].element || 'neutral') === weaponFilter.element);
+                // Sort
+                available.sort((a, b) => {
+                  const wA = WEAPONS[a], wB = WEAPONS[b];
+                  const ilA = computeWeaponILevel(a, data.weaponCollection[a] || 0);
+                  const ilB = computeWeaponILevel(b, data.weaponCollection[b] || 0);
+                  if (weaponFilter.sort === 'atk') return wB.atk - wA.atk;
+                  if (weaponFilter.sort === 'name') return wA.name.localeCompare(wB.name);
+                  return ilB - ilA; // default: ilevel desc
+                });
+                // Collect element options
+                const elemOpts = new Set();
+                Object.keys(data.weaponCollection).filter(wId => wId !== weaponId && !equippedSet.has(wId) && WEAPONS[wId]).forEach(wId => elemOpts.add(WEAPONS[wId].element || 'neutral'));
                 return (
-                <div className="mt-2 space-y-1">
-                  <div className="text-[9px] text-gray-500">Armes disponibles :</div>
+                <div className="mt-2">
+                  {/* Filters */}
+                  <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                    <span className="text-[9px] text-gray-500">Filtrer :</span>
+                    <button onClick={() => setWeaponFilter(f => ({ ...f, element: null }))}
+                      className={`text-[9px] px-1.5 py-0.5 rounded ${!weaponFilter.element ? 'bg-purple-500/30 text-purple-300' : 'bg-gray-700/30 text-gray-500'}`}>Tous</button>
+                    {[...elemOpts].map(el => {
+                      const e = ELEMENTS[el];
+                      return (
+                        <button key={el} onClick={() => setWeaponFilter(f => ({ ...f, element: f.element === el ? null : el }))}
+                          className={`text-[9px] px-1.5 py-0.5 rounded ${weaponFilter.element === el ? 'bg-purple-500/30 text-purple-300' : 'bg-gray-700/30 text-gray-500'}`}>
+                          {e?.icon || ''} {e?.name || 'Neutre'}
+                        </button>
+                      );
+                    })}
+                    <span className="text-[9px] text-gray-600 ml-1">|</span>
+                    {[['ilevel', 'iLvl'], ['atk', 'ATK'], ['name', 'Nom']].map(([k, label]) => (
+                      <button key={k} onClick={() => setWeaponFilter(f => ({ ...f, sort: k }))}
+                        className={`text-[9px] px-1.5 py-0.5 rounded ${weaponFilter.sort === k ? 'bg-amber-500/30 text-amber-300' : 'bg-gray-700/30 text-gray-500'}`}>{label}</button>
+                    ))}
+                  </div>
+                  <div className="text-[9px] text-gray-500 mb-1">Armes disponibles ({available.length}) :</div>
+                  <div className="space-y-1 max-h-60 overflow-y-auto">
                   {available.map(wId => {
                     const w = WEAPONS[wId];
-                    if (!w) return null;
                     const wAw = data.weaponCollection[wId] || 0;
+                    const el = ELEMENTS[w.element];
                     return (
-                      <button key={wId} onClick={() => equipWeapon(wId)}
-                        className="w-full flex items-center gap-2 p-1.5 rounded-lg border border-gray-700/30 bg-gray-800/20 hover:border-amber-500/40 transition-all text-left">
-                        {w.sprite ? (
-                          <img src={w.sprite} alt={w.name} className="w-6 h-6 object-contain" draggable={false} />
-                        ) : (
-                          <span>{w.icon}</span>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[10px] font-bold text-gray-300 truncate">{w.name} <span className="text-yellow-400">A{wAw}</span> <span className="text-amber-400/70 text-[9px]">iLv{computeWeaponILevel(wId, wAw)}</span></div>
-                          <div className="text-[10px] text-gray-500">ATK +{w.atk} | {MAIN_STAT_VALUES[w.bonusStat]?.name || w.bonusStat} +{w.bonusValue}</div>
-                        </div>
-                        <span className="text-[10px] text-cyan-400">Equiper</span>
-                      </button>
+                      <div key={wId} className="w-full flex items-center gap-2 p-1.5 rounded-lg border border-gray-700/30 bg-gray-800/20 hover:border-amber-500/40 transition-all text-left">
+                        <button onClick={() => equipWeapon(wId)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
+                          {w.sprite ? (
+                            <img src={w.sprite} alt={w.name} className="w-6 h-6 object-contain" draggable={false} />
+                          ) : (
+                            <span>{w.icon}</span>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[10px] font-bold text-gray-300 truncate">
+                              {w.name} <span className="text-yellow-400">A{wAw}</span> <span className="text-amber-400/70 text-[9px]">iLv{computeWeaponILevel(wId, wAw)}</span>
+                            </div>
+                            <div className="text-[10px] text-gray-500">
+                              ATK +{w.atk} | {MAIN_STAT_VALUES[w.bonusStat]?.name || w.bonusStat} +{w.bonusValue}
+                              {el && <span className={`ml-1 ${el.color}`}>{el.icon}</span>}
+                              {!w.element && <span className="ml-1 text-gray-600">-</span>}
+                            </div>
+                          </div>
+                        </button>
+                        <button onClick={() => setWeaponDetailId(wId)} className="text-[10px] text-blue-400 hover:text-blue-300 px-1" title="Details">i</button>
+                        <button onClick={() => equipWeapon(wId)} className="text-[10px] text-cyan-400 hover:text-cyan-300">Equiper</button>
+                      </div>
                     );
                   })}
+                  </div>
                 </div>
                 );
               })()}
@@ -5433,7 +5479,6 @@ export default function ShadowColosseum() {
         };
 
         // Hold-to-buy: accelerates from 300ms to 50ms interval
-        const hammerHoldRef = React.useRef(null);
         const startHammerHold = (hId) => {
           buyHammer(hId);
           let delay = 300;
@@ -5518,8 +5563,32 @@ export default function ShadowColosseum() {
             {/* Armory Section */}
             <div className="mb-5">
               <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">{'\u2694\uFE0F'} Armurerie</div>
+              {/* Weapon filters */}
+              <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                <button onClick={() => setWeaponFilter(f => ({ ...f, element: null }))}
+                  className={`text-[9px] px-1.5 py-0.5 rounded ${!weaponFilter.element ? 'bg-purple-500/30 text-purple-300' : 'bg-gray-700/30 text-gray-500'}`}>Tous</button>
+                {['fire', 'water', 'shadow', 'wind', 'earth', 'light', 'neutral'].map(el => {
+                  const e = ELEMENTS[el];
+                  return (
+                    <button key={el} onClick={() => setWeaponFilter(f => ({ ...f, element: f.element === el ? null : el }))}
+                      className={`text-[9px] px-1.5 py-0.5 rounded ${weaponFilter.element === el ? 'bg-purple-500/30 text-purple-300' : 'bg-gray-700/30 text-gray-500'}`}>
+                      {e?.icon || '-'} {e?.name || 'Neutre'}
+                    </button>
+                  );
+                })}
+                <span className="text-[9px] text-gray-600">|</span>
+                {[['ilevel', 'iLvl'], ['atk', 'ATK'], ['name', 'Nom']].map(([k, label]) => (
+                  <button key={k} onClick={() => setWeaponFilter(f => ({ ...f, sort: k }))}
+                    className={`text-[9px] px-1.5 py-0.5 rounded ${weaponFilter.sort === k ? 'bg-amber-500/30 text-amber-300' : 'bg-gray-700/30 text-gray-500'}`}>{label}</button>
+                ))}
+              </div>
               <div className="grid grid-cols-2 gap-1.5 max-h-72 overflow-y-auto">
-                {Object.values(WEAPONS).filter(w => !w.secret).map(w => {
+                {Object.values(WEAPONS).filter(w => !w.secret && (!weaponFilter.element || (w.element || 'neutral') === weaponFilter.element))
+                  .sort((a, b) => {
+                    if (weaponFilter.sort === 'atk') return b.atk - a.atk;
+                    if (weaponFilter.sort === 'name') return a.name.localeCompare(b.name);
+                    return computeWeaponILevel(b.id, ownedWeapons[b.id] || 0) - computeWeaponILevel(a.id, ownedWeapons[a.id] || 0);
+                  }).map(w => {
                   const aw = ownedWeapons[w.id];
                   const owned = aw !== undefined;
                   const maxed = owned && aw >= MAX_WEAPON_AWAKENING;
@@ -5543,10 +5612,12 @@ export default function ShadowColosseum() {
                             {owned && <span className="text-yellow-400 ml-1">A{aw}</span>}
                             <span className="text-amber-400/60 ml-1">iLv{computeWeaponILevel(w.id, aw || 0)}</span>
                           </div>
-                          <div className="text-[10px] text-gray-500">ATK +{w.atk} | {MAIN_STAT_VALUES[w.bonusStat]?.name || w.bonusStat} +{w.bonusValue}</div>
-                          {w.element && <div className={`text-[9px] ${ELEMENTS[w.element]?.color || 'text-gray-400'}`}>{ELEMENTS[w.element]?.icon} {w.element}</div>}
+                          <div className="text-[10px] text-gray-500">
+                            ATK +{w.atk} | {MAIN_STAT_VALUES[w.bonusStat]?.name || w.bonusStat} +{w.bonusValue}
+                            {w.element ? <span className={`ml-1 ${ELEMENTS[w.element]?.color || 'text-gray-400'}`}> {ELEMENTS[w.element]?.icon} {ELEMENTS[w.element]?.name}</span> : <span className="ml-1 text-gray-600">Neutre</span>}
+                          </div>
                         </div>
-                        <span onClick={(e) => { e.stopPropagation(); setWeaponDetailId(w.id); }} className="text-xs text-blue-400 cursor-pointer hover:text-blue-300">{'i'}</span>
+                        <span onClick={(e) => { e.stopPropagation(); setWeaponDetailId(w.id); }} className="text-xs text-blue-400 cursor-pointer hover:text-blue-300" title="Voir details">{'i'}</span>
                       </div>
                       <div className="mt-1 text-[9px] text-right">
                         {maxed ? <span className="text-yellow-400">MAX A{MAX_WEAPON_AWAKENING}</span> :
