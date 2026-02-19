@@ -767,7 +767,7 @@ export default function Codex() {
                         {w.passive === 'katana_v_chaos' && (
                           <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 mb-4">
                             <div className="text-[10px] text-emerald-400 font-bold uppercase mb-1">Passive Unique — Lame Veneneuse</div>
-                            <div className="text-[11px] text-emerald-300">Chaque attaque empoisonne l'ennemi (3% ATK/stack/tour, max 10 stacks). 30% de chance par coup de declencher un buff aleatoire : +10% toutes stats (permanent) / Bouclier Divin (absorbe 1 coup) / Puissance x6 au prochain coup.</div>
+                            <div className="text-[11px] text-emerald-300">Chaque attaque empoisonne l'ennemi (3% ATK/stack/tour, max 10 stacks). 30% de chance par coup de declencher un buff aleatoire : +10% toutes stats permanent cumulable (Solo) / +5% toutes stats permanent cumulable (Raid) / Bouclier Divin (absorbe 1 coup) / Puissance x6 au prochain coup.</div>
                           </div>
                         )}
 

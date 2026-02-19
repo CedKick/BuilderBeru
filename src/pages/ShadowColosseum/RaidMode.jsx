@@ -29,6 +29,7 @@ import {
   computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses, HAMMERS, HAMMER_ORDER,
   generateRaidArtifact, generateRaidArtifactFromTier, getActivePassives, RAID_ARTIFACT_SETS, ULTIME_ARTIFACT_SETS,
   WEAPONS, MAIN_STAT_VALUES, rollRaidWeaponDrop, rollUltimeWeaponDrop, generateUltimeArtifact, MAX_WEAPON_AWAKENING,
+  KATANA_V_BUFF_CHANCE, KATANA_V_DOT_PCT, KATANA_V_DOT_MAX_STACKS,
 } from './equipmentData';
 import { BattleStyles, RaidArena } from './BattleVFX';
 import { isLoggedIn, authHeaders } from '../../utils/auth';
@@ -287,7 +288,10 @@ export default function RaidMode() {
       atk: finalAtk, def: finalDef, spd: finalSpd, crit: finalCrit, res: finalRes,
       mana, maxMana: mana, manaRegen, manaCostReduce,
       skills, buffs: [], passives,
-      passiveState: { flammeStacks: 0, martyrHealed: false, echoCounter: 0, sianStacks: 0 },
+      passiveState: {
+        flammeStacks: 0, martyrHealed: false, echoCounter: 0, sianStacks: 0,
+        ...(wId && WEAPONS[wId]?.passive === 'katana_v_chaos' ? { katanaVState: { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1 } } : {}),
+      },
       talentBonuses: mergedTb,
       hunterPassive,
       lastAttackAt: 0, attackInterval: spdToInterval(finalSpd),
@@ -829,6 +833,41 @@ export default function RaidMode() {
         result = { ...result, damage: Math.floor(result.damage * (1 + chibi.passiveState.shadowPactRaidBoost)) };
       }
 
+      // Katana V (Raid): +5% all stats permanent (cumulable), DoT, shield, x6 DMG
+      const kvs = chibi.passiveState.katanaVState;
+      if (kvs) {
+        // Apply nextDmgMult if active
+        if (kvs.nextDmgMult > 1 && result.damage > 0) {
+          result = { ...result, damage: Math.floor(result.damage * kvs.nextDmgMult) };
+          kvs.nextDmgMult = 1;
+        }
+        // Apply allStatBuff
+        if (kvs.allStatBuff > 0 && result.damage > 0) {
+          result = { ...result, damage: Math.floor(result.damage * (1 + kvs.allStatBuff / 100)) };
+        }
+        // Add DoT stack
+        if (kvs.dots < KATANA_V_DOT_MAX_STACKS) kvs.dots++;
+        // DoT tick on boss
+        if (kvs.dots > 0) {
+          const dotDmg = Math.max(1, Math.floor(chibi.atk * KATANA_V_DOT_PCT * kvs.dots));
+          state.boss.hp -= dotDmg;
+          dpsTracker.current[chibi.id] = (dpsTracker.current[chibi.id] || 0) + dotDmg;
+        }
+        // 30% chance for random buff (+5% stats in raid)
+        if (Math.random() < KATANA_V_BUFF_CHANCE) {
+          const roll = Math.random();
+          if (roll < 0.33) {
+            kvs.allStatBuff += 5;
+            logEntries.push({ text: `${chibi.name} : Benediction +5% stats ! (total +${kvs.allStatBuff}%)`, time: elapsed, type: 'buff' });
+          } else if (roll < 0.66) {
+            kvs.shield = true;
+          } else {
+            kvs.nextDmgMult = 6;
+            logEntries.push({ text: `${chibi.name} : Puissance x6 prochain coup !`, time: elapsed, type: 'buff' });
+          }
+        }
+      }
+
       // Restore original stats
       chibi.atk = origAtk;
       chibi.crit = origCrit;
@@ -953,6 +992,12 @@ export default function RaidMode() {
             return;
           }
           const dmg = computeAttack(state.boss, bSkill, target);
+          // Katana V shield: absorb hit entirely
+          if (target.passiveState?.katanaVState?.shield && dmg.damage > 0) {
+            target.passiveState.katanaVState.shield = false;
+            logEntries.push({ text: `${target.name} : Bouclier Divin absorbe le coup !`, time: elapsed, type: 'buff' });
+            return dmg;
+          }
           target.hp -= dmg.damage;
           // Reset flamme stacks when hit
           if (target.passiveState?.flammeStacks > 0) target.passiveState.flammeStacks = 0;

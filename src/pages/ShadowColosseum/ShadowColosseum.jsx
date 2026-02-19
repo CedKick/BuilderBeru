@@ -193,7 +193,7 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [], monarchKills: 0, monarchDropLog: [] });
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [], monarchKills: 0, monarchDropLog: [], lootBoostMs: 0 });
 const loadData = () => {
   try {
     const d = { ...defaultData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) };
@@ -229,6 +229,7 @@ const loadData = () => {
     if (!d.zephyrDropLog) d.zephyrDropLog = [];
     if (d.monarchKills === undefined) d.monarchKills = 0;
     if (!d.monarchDropLog) d.monarchDropLog = [];
+    if (d.lootBoostMs === undefined) d.lootBoostMs = 0;
     if (!d.talentSkills) d.talentSkills = {};
     // Migration: respecCount old format (number) → per-tree format
     for (const cid of Object.keys(d.respecCount || {})) {
@@ -346,6 +347,8 @@ export default function ShadowColosseum() {
   const [tooltipPinned, setTooltipPinned] = useState(false); // click-pinned tooltip stays on mouse leave
   const tooltipTimerRef = useRef(null); // long-press timer for mobile tooltip
   const hammerHoldRef = useRef(null); // hold-to-buy timer for hammer shop
+  const lootBoostStartRef = useRef(null); // tracks battle start time for loot boost timer
+  const lastBeruTauntRef = useRef(0); // timestamp of last Beru taunt to avoid spam
   const [dropLog, setDropLog] = useState([]);
   const [showDropLog, setShowDropLog] = useState(false);
   const [hasNewDrops, setHasNewDrops] = useState(false);
@@ -1404,11 +1407,19 @@ export default function ShadowColosseum() {
 
   // ─── Start Battle ──────────────────────────────────────────
 
+  const LOOT_BOOST_BOSSES = ['ragnarok', 'zephyr', 'supreme_monarch'];
+
   const startBattle = () => {
     if (!selChibi || selStage === null || isCooldown(selChibi)) return;
     const chibi = getChibiData(selChibi);
     if (!chibi) return;
     const stage = STAGES[selStage];
+    // Loot boost timer: start tracking if boost active and boss is eligible
+    if (data.lootBoostMs > 0 && LOOT_BOOST_BOSSES.includes(stage.id)) {
+      lootBoostStartRef.current = Date.now();
+    } else {
+      lootBoostStartRef.current = null;
+    }
     const { level } = getChibiLevel(selChibi);
     const alloc = data.statPoints[selChibi] || {};
     const tb = getChibiTalentBonuses(selChibi);
@@ -1915,6 +1926,12 @@ export default function ShadowColosseum() {
 
   const handleVictory = useCallback(() => {
     setPhase('done');
+    // Loot boost: deduct elapsed time
+    if (lootBoostStartRef.current) {
+      const elapsed = Date.now() - lootBoostStartRef.current;
+      lootBoostStartRef.current = null;
+      setData(prev => ({ ...prev, lootBoostMs: Math.max(0, (prev.lootBoostMs || 0) - elapsed) }));
+    }
     const stage = STAGES[selStage];
     const currentStar = battle?.starLevel || 0;
 
@@ -1992,21 +2009,23 @@ export default function ShadowColosseum() {
       const isNew = data.weaponCollection[rolledWeaponId] === undefined;
       weaponDrop = { id: rolledWeaponId, ...WEAPONS[rolledWeaponId], isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection[rolledWeaponId] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
-    if (!weaponDrop && stage.id === 'ragnarok' && Math.random() < 1 / 10000) {
+    // Loot boost: x2 drop rate for secret weapons only
+    const lootMult = (data.lootBoostMs > 0) ? 2 : 1;
+    if (!weaponDrop && stage.id === 'ragnarok' && Math.random() < (1 / 10000) * lootMult) {
       const isNew = data.weaponCollection['w_sulfuras'] === undefined;
       weaponDrop = { id: 'w_sulfuras', ...WEAPONS.w_sulfuras, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_sulfuras'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
-    if (!weaponDrop && stage.id === 'zephyr' && Math.random() < 1 / 50000000) {
+    if (!weaponDrop && stage.id === 'zephyr' && Math.random() < (1 / 50000000) * lootMult) {
       const isNew = data.weaponCollection['w_raeshalare'] === undefined;
       weaponDrop = { id: 'w_raeshalare', ...WEAPONS.w_raeshalare, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_raeshalare'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
     // Katana Z: 1/50,000 from Monarque Supreme
-    if (!weaponDrop && stage.id === 'supreme_monarch' && Math.random() < 1 / 50000) {
+    if (!weaponDrop && stage.id === 'supreme_monarch' && Math.random() < (1 / 50000) * lootMult) {
       const isNew = data.weaponCollection['w_katana_z'] === undefined;
       weaponDrop = { id: 'w_katana_z', ...WEAPONS.w_katana_z, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_katana_z'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
     // Katana V: 1/50,000 from Monarque Supreme
-    if (!weaponDrop && stage.id === 'supreme_monarch' && Math.random() < 1 / 50000) {
+    if (!weaponDrop && stage.id === 'supreme_monarch' && Math.random() < (1 / 50000) * lootMult) {
       const isNew = data.weaponCollection['w_katana_v'] === undefined;
       weaponDrop = { id: 'w_katana_v', ...WEAPONS.w_katana_v, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_katana_v'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
@@ -2084,7 +2103,6 @@ export default function ShadowColosseum() {
     // Weapon drop reveal + Beru reaction
     if (weaponDrop) {
       setWeaponReveal(weaponDrop);
-      // Auto-dismiss le reveal après 4s pour ne pas bloquer le farm
       setTimeout(() => setWeaponReveal(null), 4000);
       if (weaponDrop.id === 'w_sulfuras') {
         logLegendaryDrop('weapon', 'w_sulfuras', 'Masse de Sulfuras', 'secret', weaponDrop.newAwakening || 0);
@@ -2098,8 +2116,69 @@ export default function ShadowColosseum() {
       } else if (weaponDrop.id === 'w_katana_v') {
         logLegendaryDrop('weapon', 'w_katana_v', 'Katana V', 'secret', weaponDrop.newAwakening || 0);
         try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: "KATANA V ?! L'arme du CHAOS !! Poison, bouclier, puissance... cette lame est DIVINE !!" } })); } catch (e) {}
-      } else if (weaponDrop.rarity === 'mythique') {
-        try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: `Wow ! ${weaponDrop.name} ! Une arme mythique, la classe !` } })); } catch (e) {}
+      }
+    }
+
+    // ─── Beru taunts when farming secret weapon bosses (no secret drop) ───
+    // 8% chance, minimum 2min cooldown between taunts to avoid spam during auto-farm
+    const isSecretDrop = weaponDrop && ['w_sulfuras', 'w_raeshalare', 'w_katana_z', 'w_katana_v'].includes(weaponDrop.id);
+    const tauntCooldownOk = Date.now() - lastBeruTauntRef.current > 120000;
+    if (!isSecretDrop && tauntCooldownOk && Math.random() < 0.08) {
+      const beruTaunt = (() => {
+        const kills = stage.id === 'ragnarok' ? (data.ragnarokKills || 0) + 1
+          : stage.id === 'supreme_monarch' ? (data.monarchKills || 0) + 1
+          : stage.id === 'zephyr' ? (data.zephyrKills || 0) + 1 : 0;
+        if (kills === 0) return null;
+
+        const weaponName = stage.id === 'ragnarok' ? 'Sulfuras'
+          : stage.id === 'zephyr' ? "Rae'shalare"
+          : 'un Katana';
+        const dropRate = stage.id === 'ragnarok' ? '1/10 000'
+          : stage.id === 'zephyr' ? '1/50 000 000'
+          : '1/50 000';
+        const cumul = stage.id === 'ragnarok' ? (1 - Math.pow(1 - 1/10000, kills)) * 100
+          : stage.id === 'zephyr' ? (1 - Math.pow(1 - 1/50000000, kills)) * 100
+          : (1 - Math.pow(1 - 2/50000, kills)) * 100;
+
+        // Pool of taunts — randomly picked
+        const taunts = [
+          // Mocking stats
+          `${kills} kills et toujours rien ? Hahaha ! T'as ${cumul.toFixed(2)}% de chance cumulee... c'est beau l'espoir !`,
+          `Run numero ${kills}... Tu sais que ${dropRate} ca veut dire que c'est presque IMPOSSIBLE hein ? Mais continue, j'adore te regarder souffrir.`,
+          kills > 100 ? `${kills} runs... A ce rythme tu vas avoir des cheveux blancs avant d'avoir ${weaponName}. Courage !` : null,
+          kills > 50 ? `T'es a ${kills} kills la... statistiquement tu devrais avoir honte. Mais bon, les maths c'est pas ton truc.` : null,
+          kills > 200 ? `${kills} tentatives ?? Tu bats des records la ! Record de malchance je veux dire...` : null,
+          kills > 500 ? `OK ${kills} kills je commence a avoir de la peine pour toi... non j'rigole HAHAHA` : null,
+
+          // Probability jokes
+          `Tu as plus de chances de te faire frapper par une meteorite que de drop ${weaponName}. Juste pour info.`,
+          `Fun fact : avec un taux de ${dropRate}, tu aurais plus de chance de gagner au loto. Mais tu farm quand meme. Respect.`,
+          `${dropRate} de chance... c'est comme trouver une aiguille dans une botte de foin. Sauf que la botte fait 10km.`,
+          `Statistiquement, il te faudrait encore ${Math.max(1, Math.ceil(1 / (stage.id === 'ragnarok' ? 1/10000 : stage.id === 'zephyr' ? 1/50000000 : 1/50000) - kills))} runs en moyenne. Bonne chance !`,
+          stage.id === 'zephyr' ? "1 chance sur 50 MILLIONS... t'as plus de chances de rencontrer un alien. Mais je crois en toi ! Non j'deconne." : null,
+
+          // Fake-outs
+          `ATTENDS... C'EST... non rien c'est juste un caillou. Desole, fausse alerte.`,
+          `OH MON DIEU ${weaponName.toUpperCase()} EST... ah non pardon. J'ai cru voir un truc briller. C'etait le soleil.`,
+          `J'ai failli crier ! Pendant une seconde j'ai cru que... non laisse tomber. Continue a farm.`,
+          `*plisse les yeux* Hmm on dirait que... non. Toujours rien. T'as l'habitude de toute facon.`,
+          `STOP STOP STOP ! Le drop est... nope. Hehe. Je t'ai eu hein ?`,
+
+          // General mockery
+          `Encore un run pour rien. Tu sais, y'a des gens qui ont une vie en dehors du farm...`,
+          `C'est beau la perseverance. Ou la folie. C'est la meme chose a ce stade.`,
+          `Allez encore un ! Et un autre ! Et un autre ! Et un au... bon t'as compris.`,
+          `Tu veux un conseil ? Arrete de farmer et va boire un verre. ${weaponName} sera toujours la demain. Ou pas.`,
+          kills > 30 ? `Au bout de ${kills} runs, t'es officiellement plus tetu qu'un ane. Et c'est un compliment.` : null,
+        ];
+
+        const valid = taunts.filter(Boolean);
+        return valid[Math.floor(Math.random() * valid.length)];
+      })();
+
+      if (beruTaunt) {
+        lastBeruTauntRef.current = Date.now();
+        try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'taunt', message: beruTaunt } })); } catch (e) {}
       }
     }
 
@@ -2148,6 +2227,12 @@ export default function ShadowColosseum() {
 
   const handleDefeat = useCallback(() => {
     setPhase('done');
+    // Loot boost: deduct elapsed time
+    if (lootBoostStartRef.current) {
+      const elapsed = Date.now() - lootBoostStartRef.current;
+      lootBoostStartRef.current = null;
+      setData(prev => ({ ...prev, lootBoostMs: Math.max(0, (prev.lootBoostMs || 0) - elapsed) }));
+    }
     setData(prev => ({
       ...prev,
       stats: { ...prev.stats, battles: prev.stats.battles + 1 },
@@ -2833,6 +2918,9 @@ export default function ShadowColosseum() {
                                 onClick={(e) => { e.stopPropagation(); setMonarchHistoryOpen(true); }}>
                                 {'\u2620\uFE0F'}{data.monarchKills} kills
                               </span>
+                            )}
+                            {data.lootBoostMs > 0 && ['ragnarok', 'zephyr', 'supreme_monarch'].includes(stage.id) && (
+                              <span className="text-[9px] bg-red-500/20 text-red-400 px-1.5 rounded font-bold animate-pulse">{'\uD83D\uDD34'} x2</span>
                             )}
                           </div>
                           <div className="flex items-center gap-2.5 text-[11px] text-gray-400 mt-0.5">
@@ -6170,27 +6258,69 @@ export default function ShadowColosseum() {
               </div>
             </div>
 
-            {/* Red Hammer Shop — Locked */}
-            <div className="mb-5 relative">
-              <div className="absolute inset-0 bg-gray-900/70 backdrop-blur-[2px] rounded-xl z-10 flex flex-col items-center justify-center">
-                <div className="text-3xl mb-2">{'\uD83D\uDD12'}</div>
-                <div className="text-red-400 font-black text-sm">Boutique Marteaux Rouges</div>
-                <div className="text-gray-500 text-[10px] mt-1">En construction...</div>
-                <div className="text-gray-600 text-[9px] mt-0.5">Echange tes marteaux rouges contre des armes exclusives</div>
-              </div>
-              <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/5 opacity-40">
-                <div className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-2">{'\uD83D\uDD34'} Forge Rouge</div>
-                <div className="grid grid-cols-3 gap-2">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="p-3 rounded-lg border border-red-500/10 bg-red-900/10 text-center">
-                      <div className="text-2xl text-gray-700">{'?'}</div>
-                      <div className="text-[9px] text-gray-700 mt-1">???</div>
-                      <div className="text-[8px] text-gray-700 mt-0.5">{'\uD83D\uDD34'} ??? marteaux</div>
+            {/* Red Hammer Shop — Forge Rouge */}
+            {(() => {
+              const redHammers = hammers.marteau_rouge || 0;
+              const boostMs = data.lootBoostMs || 0;
+              const boostCost = 75;
+              const canBuyBoost = redHammers >= boostCost;
+
+              const fmtBoostTime = (ms) => {
+                const h = Math.floor(ms / 3600000);
+                const m = Math.floor((ms % 3600000) / 60000);
+                const s = Math.floor((ms % 60000) / 1000);
+                return h > 0 ? `${h}h${String(m).padStart(2,'0')}m` : `${m}m${String(s).padStart(2,'0')}s`;
+              };
+
+              const buyLootBoost = () => {
+                if (!canBuyBoost) return;
+                setData(prev => {
+                  const newH = { ...prev.hammers };
+                  newH.marteau_rouge = (newH.marteau_rouge || 0) - boostCost;
+                  return { ...prev, hammers: newH, lootBoostMs: (prev.lootBoostMs || 0) + 3600000 };
+                });
+              };
+
+              return (
+                <div className="mb-5">
+                  <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-[10px] text-red-400 font-bold uppercase tracking-wider">{'\uD83D\uDD34'} Forge Rouge</div>
+                      <div className="text-[10px] text-red-300 font-bold">{'\uD83D\uDD34'} {redHammers} marteaux</div>
                     </div>
-                  ))}
+
+                    {/* Boost Loot x2 */}
+                    <div className={`p-3 rounded-xl border ${boostMs > 0 ? 'border-green-500/40 bg-green-500/5' : 'border-red-500/20 bg-red-900/10'} transition-all`}>
+                      <div className="flex items-center gap-3">
+                        <div className="text-3xl">{'\u2728'}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-black text-red-300">Boost Loot x2</div>
+                          <div className="text-[10px] text-gray-400 mt-0.5">Double les chances de drop des armes secretes pendant 1h</div>
+                          <div className="text-[9px] text-gray-500 mt-0.5">Sulfuras, Rae'shalare, Katana Z, Katana V</div>
+                          <div className="text-[8px] text-gray-600 mt-0.5 italic">Le timer ne s'ecoule que pendant les combats de boss eligibles</div>
+                        </div>
+                      </div>
+
+                      {boostMs > 0 && (
+                        <div className="mt-2 px-2 py-1 rounded-lg bg-green-500/10 border border-green-500/30 text-center">
+                          <div className="text-[10px] text-green-400 font-bold">Actif — {fmtBoostTime(boostMs)} restant</div>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={buyLootBoost}
+                        disabled={!canBuyBoost}
+                        className={`mt-2 w-full py-2 rounded-lg text-xs font-bold transition-all ${canBuyBoost
+                          ? 'bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 hover:text-red-200'
+                          : 'bg-gray-800/40 border border-gray-700/20 text-gray-600 cursor-not-allowed'}`}
+                      >
+                        {'\uD83D\uDD34'} {boostCost} marteaux rouges — Acheter (+1h)
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Artifacts link */}
             <div className="mb-4 text-center">
@@ -6604,6 +6734,12 @@ export default function ShadowColosseum() {
                   {autoFarmStats.weapons > 0 && <span className="text-red-400">{autoFarmStats.weapons} armes</span>}
                   {autoFarmStats.artifacts > 0 && <span className="text-indigo-400">{autoFarmStats.artifacts} artefacts</span>}
                 </div>
+              </div>
+            )}
+            {/* Loot Boost x2 indicator */}
+            {data.lootBoostMs > 0 && ['ragnarok', 'zephyr', 'supreme_monarch'].includes(STAGES[selStage]?.id) && (
+              <div className="mt-1 px-2.5 py-1 rounded-lg bg-red-500/20 border border-red-500/40 backdrop-blur-sm animate-pulse">
+                <div className="text-[10px] text-red-400 font-bold">{'\uD83D\uDD34'} LOOT x2</div>
               </div>
             )}
             {/* Ragnarok Tracker — persistent kill counter & Sulfuras hunt */}
@@ -7216,7 +7352,7 @@ export default function ShadowColosseum() {
                 {weaponReveal.id === 'w_sulfuras' && <div className="text-red-400 text-xs">Passive : Sulfuras Fury — +{SULFURAS_STACK_PER_TURN}% DMG/tour (max +{SULFURAS_STACK_MAX}%)</div>}
                 {weaponReveal.id === 'w_raeshalare' && <div className="text-purple-400 text-xs">Passive : Murmure de la Mort — 10% de chance/tour : +100% ATK pendant 5T (max x3)</div>}
                 {weaponReveal.id === 'w_katana_z' && <div className="text-cyan-400 text-xs">Passive : Tranchant Eternel — +5% ATK/coup (50% persist) + Contre-attaque 200% (50%)</div>}
-                {weaponReveal.id === 'w_katana_v' && <div className="text-emerald-400 text-xs">Passive : Lame Veneneuse — DoT 3%/stack + Buff aleatoire (30%) : +10% stats / Bouclier / DMG x6</div>}
+                {weaponReveal.id === 'w_katana_v' && <div className="text-emerald-400 text-xs">Passive : Lame Veneneuse — DoT 3%/stack + Buff aleatoire (30%) : +10% stats cumulable (Solo) / +5% stats cumulable (Raid) / Bouclier / DMG x6</div>}
                 {weaponReveal.fireRes && <div className="text-orange-500 text-xs">{'\uD83D\uDD25'} Fire RES +{weaponReveal.fireRes}%</div>}
                 {weaponReveal.darkRes && <div className="text-purple-500 text-xs">{'\uD83C\uDF11'} Dark RES +{weaponReveal.darkRes}%</div>}
                 {weaponReveal.isNew ? (

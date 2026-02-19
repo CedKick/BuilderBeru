@@ -773,20 +773,20 @@ export const WEAPON_AWAKENING_PASSIVES = {
     { desc: 'ATK +15%', stats: { atk_pct: 15 } },
     { desc: 'SPD +10', stats: { spd_flat: 10 } },
     { desc: 'CRIT +12%', stats: { crit_rate: 12 } },
-    { desc: 'Degats Ombre +15%', stats: { shadowDamage: 15 } },
+    { desc: 'Degats Eau +12%', stats: { waterDamage: 12 } },
     { desc: 'Ignore 15% DEF + Tous Degats +12%', stats: { defPen: 15, allDamage: 12 } },
   ],
   w_katana_v: [
     { desc: 'CRIT DMG +18%', stats: { crit_dmg: 18 } },
     { desc: 'ATK +12%', stats: { atk_pct: 12 } },
     { desc: 'CRIT +10%', stats: { crit_rate: 10 } },
-    { desc: 'Degats Ombre +12%', stats: { shadowDamage: 12 } },
+    { desc: 'Degats Lumiere +12%', stats: { lightDamage: 12 } },
     { desc: 'Ignore 12% DEF + Tous Degats +10%', stats: { defPen: 12, allDamage: 10 } },
   ],
 };
 
 export function getWeaponAwakeningBonuses(weaponId, awakening = 0) {
-  const b = { atk_pct: 0, def_pct: 0, hp_pct: 0, crit_rate: 0, crit_dmg: 0, spd_flat: 0, res_flat: 0, fireDamage: 0, waterDamage: 0, shadowDamage: 0, allDamage: 0, defPen: 0 };
+  const b = { atk_pct: 0, def_pct: 0, hp_pct: 0, crit_rate: 0, crit_dmg: 0, spd_flat: 0, res_flat: 0, fireDamage: 0, waterDamage: 0, shadowDamage: 0, lightDamage: 0, allDamage: 0, defPen: 0 };
   if (!weaponId || awakening <= 0) return b;
   const passives = WEAPON_AWAKENING_PASSIVES[weaponId] || [];
   for (let i = 0; i < Math.min(awakening, AW_PASSIVE_CAP); i++) {
@@ -802,7 +802,7 @@ export function getWeaponAwakeningBonuses(weaponId, awakening = 0) {
 }
 
 export function computeWeaponBonuses(weaponId, awakening = 0) {
-  const b = { atk_flat: 0, atk_pct: 0, def_pct: 0, hp_pct: 0, spd_flat: 0, crit_rate: 0, crit_dmg: 0, res_flat: 0, fireDamage: 0, waterDamage: 0, shadowDamage: 0, allDamage: 0, defPen: 0 };
+  const b = { atk_flat: 0, atk_pct: 0, def_pct: 0, hp_pct: 0, spd_flat: 0, crit_rate: 0, crit_dmg: 0, res_flat: 0, fireDamage: 0, waterDamage: 0, shadowDamage: 0, lightDamage: 0, allDamage: 0, defPen: 0 };
   if (!weaponId) return b;
   const w = WEAPONS[weaponId];
   if (!w) return b;
