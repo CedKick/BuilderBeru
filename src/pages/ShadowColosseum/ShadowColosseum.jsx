@@ -33,7 +33,7 @@ import {
   WEAPONS, WEAPON_PRICES, FORGE_COSTS, ENHANCE_COST, SELL_RATIO, MAX_ARTIFACT_LEVEL,
   generateArtifact, enhanceArtifact, computeArtifactBonuses, computeWeaponBonuses,
   mergeEquipBonuses, getActiveSetBonuses, getActivePassives, MAX_EVEIL_STARS, STAGE_HUNTER_DROP,
-  HAMMERS, HAMMER_ORDER, getRequiredHammer, rollHammerDrop,
+  HAMMERS, HAMMER_ORDER, getRequiredHammer, rollHammerDrop, RED_HAMMER_BY_RARITY, RED_HAMMER_ULTIME,
   SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
   MAX_WEAPON_AWAKENING, WEAPON_AWAKENING_PASSIVES, rollWeaponDrop,
   RARITY_SUB_COUNT,
@@ -190,7 +190,7 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [] });
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [] });
 const loadData = () => {
   try {
     const d = { ...defaultData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) };
@@ -207,7 +207,8 @@ const loadData = () => {
     if (!d.weaponCollection || typeof d.weaponCollection !== 'object') d.weaponCollection = {};
     // Also ensure equipped weapons are in collection
     Object.values(d.weapons).forEach(wId => { if (wId && d.weaponCollection[wId] === undefined) d.weaponCollection[wId] = 0; });
-    if (!d.hammers) d.hammers = { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 };
+    if (!d.hammers) d.hammers = { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 };
+    if (d.hammers.marteau_rouge === undefined) d.hammers.marteau_rouge = 0;
     if (d.accountXp === undefined) d.accountXp = 0;
     if (!d.accountBonuses) d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
     if (d.accountAllocations === undefined) d.accountAllocations = 0;
@@ -335,6 +336,7 @@ export default function ShadowColosseum() {
   const [atkAnim, setAtkAnim] = useState(null); // { idx, frames, frame } for 2-frame attack animation
   const [hoveredEnemy, setHoveredEnemy] = useState(null); // enemy index for damage preview
   const [enemyTooltip, setEnemyTooltip] = useState(null); // enemy index for stats tooltip
+  const [statTooltip, setStatTooltip] = useState(null); // stat key for detail tooltip
   const [tooltipPinned, setTooltipPinned] = useState(false); // click-pinned tooltip stays on mouse leave
   const tooltipTimerRef = useRef(null); // long-press timer for mobile tooltip
   const hammerHoldRef = useRef(null); // hold-to-buy timer for hammer shop
@@ -1056,10 +1058,17 @@ export default function ShadowColosseum() {
       // Hammers
       if (hammerDrop) d.hammers[hammerDrop] = (d.hammers[hammerDrop] || 0) + 1;
       if (extraHammer) d.hammers[extraHammer] = (d.hammers[extraHammer] || 0) + 1;
-      // Weapon collection
+      // Weapon collection — if already A10, give red hammers instead
       if (weaponDrop) {
         if (d.weaponCollection[weaponDrop.id] !== undefined) {
-          d.weaponCollection[weaponDrop.id] = Math.min(d.weaponCollection[weaponDrop.id] + 1, MAX_WEAPON_AWAKENING);
+          if (d.weaponCollection[weaponDrop.id] >= MAX_WEAPON_AWAKENING) {
+            const w = WEAPONS[weaponDrop.id];
+            const qty = (w && (w.ultime || w.secret)) ? RED_HAMMER_ULTIME : (RED_HAMMER_BY_RARITY[w?.rarity] || 1);
+            d.hammers.marteau_rouge = (d.hammers.marteau_rouge || 0) + qty;
+            weaponDrop._redHammers = qty; // flag for UI
+          } else {
+            d.weaponCollection[weaponDrop.id] = Math.min(d.weaponCollection[weaponDrop.id] + 1, MAX_WEAPON_AWAKENING);
+          }
         } else {
           d.weaponCollection[weaponDrop.id] = 0;
         }
@@ -1876,7 +1885,7 @@ export default function ShadowColosseum() {
     const isNewStarRecord = currentStar > prevMaxStars;
 
     setData(prev => {
-      const newHammers = { ...(prev.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }) };
+      const newHammers = { ...(prev.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }) };
       if (hammerDrop) newHammers[hammerDrop] = (newHammers[hammerDrop] || 0) + 1;
       if (extraHammer) newHammers[extraHammer] = (newHammers[extraHammer] || 0) + 1;
       // Ragnarok kill tracking
@@ -1905,8 +1914,19 @@ export default function ShadowColosseum() {
         weaponCollection: (() => {
           if (!weaponDrop) return prev.weaponCollection;
           const wc = { ...prev.weaponCollection };
-          if (wc[weaponDrop.id] !== undefined) wc[weaponDrop.id] = Math.min(wc[weaponDrop.id] + 1, MAX_WEAPON_AWAKENING);
-          else wc[weaponDrop.id] = 0;
+          if (wc[weaponDrop.id] !== undefined) {
+            if (wc[weaponDrop.id] >= MAX_WEAPON_AWAKENING) {
+              // Already A10 — give red hammers instead
+              const w = WEAPONS[weaponDrop.id];
+              const qty = (w && (w.ultime || w.secret)) ? RED_HAMMER_ULTIME : (RED_HAMMER_BY_RARITY[w?.rarity] || 1);
+              newHammers.marteau_rouge = (newHammers.marteau_rouge || 0) + qty;
+              weaponDrop._redHammers = qty; // flag for UI
+            } else {
+              wc[weaponDrop.id] = Math.min(wc[weaponDrop.id] + 1, MAX_WEAPON_AWAKENING);
+            }
+          } else {
+            wc[weaponDrop.id] = 0;
+          }
           return wc;
         })(),
         artifactInventory: [...prev.artifactInventory, ...(guaranteedArtifact ? [guaranteedArtifact] : []), ...(pacteDrop ? [pacteDrop] : [])],
@@ -2390,10 +2410,17 @@ export default function ShadowColosseum() {
                                 const isPct = stat === 'crit' || stat === 'res';
                                 const m = STAT_META[stat];
                                 return (
-                                  <div key={stat} className="flex items-center gap-1.5 bg-gray-800/30 rounded-md px-2 py-1.5">
-                                    <span className="text-xs">{m.icon}</span>
-                                    <span className={`text-[11px] font-bold ${m.color}`}>{m.name}</span>
-                                    <span className="text-xs text-white ml-auto font-bold">{s[stat]}{isPct ? '%' : ''}</span>
+                                  <div key={stat} className="relative">
+                                    <div className="flex items-center gap-1.5 bg-gray-800/30 rounded-md px-2 py-1.5 cursor-pointer"
+                                      onClick={() => setStatTooltip(statTooltip === stat ? null : stat)}>
+                                      <span className="text-xs">{m.icon}</span>
+                                      <span className={`text-[11px] font-bold ${m.color}`}>{m.name}</span>
+                                      {m.detail && <span className="text-[8px] text-gray-600 hover:text-purple-400">?</span>}
+                                      <span className="text-xs text-white ml-auto font-bold">{s[stat]}{isPct ? '%' : ''}</span>
+                                    </div>
+                                    {statTooltip === stat && m.detail && (
+                                      <div className="absolute z-20 left-0 right-0 mt-0.5 p-2 rounded-lg bg-[#1a1a2e] border border-purple-500/30 text-[10px] text-purple-200 leading-relaxed shadow-xl">{m.detail}</div>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -4037,8 +4064,8 @@ export default function ShadowColosseum() {
                   {r.weaponDrop && (
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Arme</span>
-                      <span className={`text-xs font-bold ${r.weaponDrop.rarity === 'mythique' ? 'text-red-400' : r.weaponDrop.rarity === 'legendaire' ? 'text-orange-400' : 'text-blue-400'}`}>
-                        {'\u2694\uFE0F'} {r.weaponDrop.name}
+                      <span className={`text-xs font-bold ${r.weaponDrop._redHammers ? 'text-red-400' : r.weaponDrop.rarity === 'mythique' ? 'text-red-400' : r.weaponDrop.rarity === 'legendaire' ? 'text-orange-400' : 'text-blue-400'}`}>
+                        {r.weaponDrop._redHammers ? `\uD83D\uDD34 ${r.weaponDrop.name} → +${r.weaponDrop._redHammers} Marteau${r.weaponDrop._redHammers > 1 ? 'x' : ''} Rouge${r.weaponDrop._redHammers > 1 ? 's' : ''}` : `\u2694\uFE0F ${r.weaponDrop.name}`}
                       </span>
                     </div>
                   )}
@@ -4195,7 +4222,12 @@ export default function ShadowColosseum() {
                     <span className="text-base w-6 text-center">{m.icon}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className={`text-xs font-bold ${m.color}`}>{m.name}</span>
+                        <span className={`text-xs font-bold ${m.color} flex items-center gap-1`}>{m.name}
+                          {m.detail && (
+                            <span onClick={(e) => { e.stopPropagation(); setStatTooltip(statTooltip === stat ? null : stat); }}
+                              className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-gray-700/60 text-[8px] text-gray-400 cursor-pointer hover:bg-purple-500/30 hover:text-purple-300 transition-all">?</span>
+                          )}
+                        </span>
                         <div className="text-right">
                           <span className="text-sm font-bold text-white">{totalVal}{isPct ? '%' : ''}</span>
                           {bonusVal > 0 && (
@@ -4206,6 +4238,9 @@ export default function ShadowColosseum() {
                         </div>
                       </div>
                       <div className="text-[10px] text-gray-500 mt-0.5">{m.desc}</div>
+                      {statTooltip === stat && m.detail && (
+                        <div className="mt-1 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-[10px] text-purple-200 leading-relaxed">{m.detail}</div>
+                      )}
                       {/* Allocation bar */}
                       <div className="mt-1 w-full h-1 bg-gray-800 rounded-full overflow-hidden">
                         <div className={`h-full rounded-full transition-all duration-300 ${m.color.replace('text-', 'bg-')}`}
@@ -5753,7 +5788,7 @@ export default function ShadowColosseum() {
       {/* ═══ SHOP VIEW ═══ */}
       {view === 'shop' && (() => {
         const coins = shadowCoinManager.getBalance();
-        const hammers = data.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 };
+        const hammers = data.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 };
 
         const forgeArtifact = (rarity) => {
           const cost = FORGE_COSTS[rarity];
@@ -5784,7 +5819,7 @@ export default function ShadowColosseum() {
           if (!h || coins < h.shopPrice) return false;
           shadowCoinManager.spendCoins(h.shopPrice);
           setData(prev => {
-            const newH = { ...(prev.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }) };
+            const newH = { ...(prev.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }) };
             newH[hId] = (newH[hId] || 0) + 1;
             return { ...prev, hammers: newH };
           });
@@ -5800,7 +5835,7 @@ export default function ShadowColosseum() {
           if (affordable <= 0) return;
           shadowCoinManager.spendCoins(h.shopPrice * affordable);
           setData(prev => {
-            const newH = { ...(prev.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }) };
+            const newH = { ...(prev.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }) };
             newH[hId] = (newH[hId] || 0) + affordable;
             return { ...prev, hammers: newH };
           });
@@ -5847,6 +5882,12 @@ export default function ShadowColosseum() {
                     </div>
                   );
                 })}
+                {/* Red Hammer */}
+                <div className="text-center border-l border-gray-700/30 pl-4">
+                  <div className="text-xl">{'\uD83D\uDD34'}</div>
+                  <div className="text-[9px] text-red-400 font-bold">Rouge</div>
+                  <div className={`text-sm font-bold ${(hammers.marteau_rouge || 0) > 0 ? 'text-red-400' : 'text-gray-600'}`}>{hammers.marteau_rouge || 0}</div>
+                </div>
               </div>
             </div>
 
@@ -5969,6 +6010,28 @@ export default function ShadowColosseum() {
               </div>
             </div>
 
+            {/* Red Hammer Shop — Locked */}
+            <div className="mb-5 relative">
+              <div className="absolute inset-0 bg-gray-900/70 backdrop-blur-[2px] rounded-xl z-10 flex flex-col items-center justify-center">
+                <div className="text-3xl mb-2">{'\uD83D\uDD12'}</div>
+                <div className="text-red-400 font-black text-sm">Boutique Marteaux Rouges</div>
+                <div className="text-gray-500 text-[10px] mt-1">En construction...</div>
+                <div className="text-gray-600 text-[9px] mt-0.5">Echange tes marteaux rouges contre des armes exclusives</div>
+              </div>
+              <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/5 opacity-40">
+                <div className="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-2">{'\uD83D\uDD34'} Forge Rouge</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="p-3 rounded-lg border border-red-500/10 bg-red-900/10 text-center">
+                      <div className="text-2xl text-gray-700">{'?'}</div>
+                      <div className="text-[9px] text-gray-700 mt-1">???</div>
+                      <div className="text-[8px] text-gray-700 mt-0.5">{'\uD83D\uDD34'} ??? marteaux</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {/* Artifacts link */}
             <div className="mb-4 text-center">
               <button onClick={() => { setView('artifacts'); setArtSelected(null); setArtFilter({ set: null, rarity: null, slot: null }); }}
@@ -5983,7 +6046,7 @@ export default function ShadowColosseum() {
       {/* ═══ ARTIFACTS VIEW ═══ */}
       {view === 'artifacts' && (() => {
         const coins = shadowCoinManager.getBalance();
-        const hammers = data.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 };
+        const hammers = data.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 };
         const inv = data.artifactInventory || [];
 
         // Collect all sets present in inventory + equipped for filter options
@@ -6675,7 +6738,9 @@ export default function ShadowColosseum() {
                   ) : result.weaponDrop.icon}</div>
                   <div className="text-white font-black text-sm mt-1">{result.weaponDrop.name}</div>
                   <div className="text-orange-400 text-[10px] mt-0.5">ATK +{result.weaponDrop.atk} | {MAIN_STAT_VALUES[result.weaponDrop.bonusStat]?.name} +{result.weaponDrop.bonusValue}</div>
-                  {result.weaponDrop.isNew ? (
+                  {result.weaponDrop._redHammers ? (
+                    <div className="text-red-400 text-xs mt-1 font-bold">{'\uD83D\uDD34'} Deja A10 ! +{result.weaponDrop._redHammers} Marteau{result.weaponDrop._redHammers > 1 ? 'x' : ''} Rouge{result.weaponDrop._redHammers > 1 ? 's' : ''}</div>
+                  ) : result.weaponDrop.isNew ? (
                     <div className="text-green-400 text-xs mt-1">Nouvelle arme !</div>
                   ) : (
                     <div className="text-yellow-400 text-xs mt-1">Eveil A{result.weaponDrop.newAwakening - 1} {'\u2192'} A{result.weaponDrop.newAwakening}</div>

@@ -55,13 +55,13 @@ export const RARITY = {
 export const STAT_PER_POINT = { hp: 8, atk: 1.5, def: 1.5, spd: 1, crit: 0.8, res: 0.8, mana: 4 };
 export const STAT_ORDER = ['hp', 'atk', 'def', 'spd', 'crit', 'res', 'mana'];
 export const STAT_META = {
-  hp:   { name: 'PV',   icon: '\u2764\uFE0F', color: 'text-green-400',   desc: 'Points de Vie' },
-  atk:  { name: 'ATK',  icon: '\u2694\uFE0F', color: 'text-red-400',     desc: "Puissance d'attaque" },
-  def:  { name: 'DEF',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-blue-400', desc: 'Resistance physique' },
-  spd:  { name: 'SPD',  icon: '\uD83D\uDCA8', color: 'text-emerald-400', desc: 'Vitesse' },
-  crit: { name: 'CRIT', icon: '\uD83C\uDFAF', color: 'text-yellow-400', desc: 'Chance de coup critique' },
-  res:  { name: 'RES',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-cyan-400',    desc: 'Reduction des degats' },
-  mana: { name: 'MANA', icon: '\uD83D\uDCA0', color: 'text-violet-400',  desc: 'Points de mana' },
+  hp:   { name: 'PV',   icon: '\u2764\uFE0F', color: 'text-green-400',   desc: 'Points de Vie', detail: 'Determine la survie du combattant. A 0 PV, le combattant est K.O.' },
+  atk:  { name: 'ATK',  icon: '\u2694\uFE0F', color: 'text-red-400',     desc: "Puissance d'attaque", detail: 'Augmente les degats infliges. Formule : ATK x (Power du skill / 100). Multiplie par les bonus elementaires, crit, etc.' },
+  def:  { name: 'DEF',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-blue-400', desc: 'Resistance physique', detail: 'Reduit les degats recus. Formule : 100 / (100 + DEF). Ex: 100 DEF = -50% degats, 200 DEF = -66%.' },
+  spd:  { name: 'SPD',  icon: '\uD83D\uDCA8', color: 'text-emerald-400', desc: 'Vitesse', detail: 'Determine la frequence d\'attaque. Plus la SPD est haute, plus le combattant attaque souvent. Affecte aussi la vitesse de dash en combat.' },
+  crit: { name: 'CRIT', icon: '\uD83C\uDFAF', color: 'text-yellow-400', desc: 'Chance de coup critique', detail: 'Chance en % d\'infliger un coup critique (x1.5 degats de base + bonus CRIT DMG). Cap : 100%. La RES ennemie reduit le crit de 0.5% par point. Surcap utile : ex. 120% CRIT - 20 RES ennemi (10%) = 110% → cap a 100%.' },
+  res:  { name: 'RES',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-cyan-400',    desc: 'Resistance elementaire + anti-crit', detail: 'Double usage : (1) Reduit les degats recus de 1% par point (cap 70%). (2) Reduit le crit rate ennemi de 0.5% par point. Ex: 40 RES = -40% degats et -20% crit ennemi.' },
+  mana: { name: 'MANA', icon: '\uD83D\uDCA0', color: 'text-violet-400',  desc: 'Points de mana', detail: 'Necessaire pour lancer des skills. Regen de base : 8/tick. Mana max = 50 + PV/4 + RES*2. Sans mana, le combattant ne peut que attendre.' },
 };
 
 // ─── Mana System ────────────────────────────────────────────
@@ -357,7 +357,10 @@ export const computeAttack = (attacker, skill, defender, tb = {}) => {
     const defPenVal = tb.defPen || 0;
     let adjustedDef = Math.max(0, effDef * (1 - defPenVal / 100));
 
-    const critChance = Math.min(80, attacker.crit || 0);
+    // Crit resistance: defender RES reduces crit chance (0.5% per RES point)
+    // Overcap allowed: 120 crit - 10 resist = 110 → capped to 100
+    const critResist = (defender.res || 0) * 0.5;
+    const critChance = Math.min(100, Math.max(0, (attacker.crit || 0) - critResist));
     res.isCrit = Math.random() * 100 < critChance;
 
     // Talent II: Ange de la Mort — crits ignore 50% DEF
@@ -520,7 +523,7 @@ export const computeDamagePreview = (attacker, skill, defender, tb = {}) => {
     max: Math.max(1, Math.floor(baseDmg * 1.1)),
     critMin: Math.max(1, Math.floor(baseDmgCrit * 0.9)),
     critMax: Math.max(1, Math.floor(baseDmgCrit * 1.1)),
-    critChance: Math.min(80, attacker.crit || 0),
+    critChance: Math.min(100, Math.max(0, (attacker.crit || 0) - (defender.res || 0) * 0.5)),
     elementAdvantage: elemMult > 1,
   };
 };

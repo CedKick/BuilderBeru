@@ -6,7 +6,7 @@ import { WEAPONS, WEAPON_AWAKENING_PASSIVES, MAX_WEAPON_AWAKENING, getWeaponAwak
   ARTIFACT_SETS, RAID_ARTIFACT_SETS, ARC2_ARTIFACT_SETS, ULTIME_ARTIFACT_SETS, ALL_ARTIFACT_SETS,
   ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL, RARITY_SUB_COUNT,
 } from '../ShadowColosseum/equipmentData';
-import { CHIBIS, SPRITES, ELEMENTS, RARITY } from '../ShadowColosseum/colosseumCore';
+import { CHIBIS, SPRITES, ELEMENTS, RARITY, STAT_META } from '../ShadowColosseum/colosseumCore';
 import { HUNTERS, HUNTER_PASSIVE_EFFECTS, getHunterStars } from '../ShadowColosseum/raidData';
 
 // ═══════════════════════════════════════════════════════════════
@@ -15,7 +15,7 @@ import { HUNTERS, HUNTER_PASSIVE_EFFECTS, getHunterStars } from '../ShadowColoss
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const RAID_KEY = 'raid_data';
+const RAID_KEY = 'shadow_colosseum_raid';
 
 const WEAPON_SPRITES = {
   w_sulfuras: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771443640/WeaponSulfuras_efg3ca.png',
@@ -132,6 +132,7 @@ export default function Codex() {
   // ─── Artifact state ───
   const [aFilterSource, setAFilterSource] = useState('all');
   const [selectedSet, setSelectedSet] = useState(null);
+  const [codexStatTooltip, setCodexStatTooltip] = useState(null);
 
   // ─── Load save data ───
   const [weaponCollection, setWeaponCollection] = useState({});
@@ -463,20 +464,22 @@ export default function Codex() {
                         <div className="mb-4">
                           <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Stats Lv{fViewLevel}</div>
                           <div className="grid grid-cols-3 gap-2">
-                            {[
-                              { k: 'hp',   label: 'PV',   color: 'text-red-400',    icon: '\u2764\uFE0F' },
-                              { k: 'atk',  label: 'ATK',  color: 'text-orange-400', icon: '\u2694\uFE0F' },
-                              { k: 'def',  label: 'DEF',  color: 'text-blue-400',   icon: '\uD83D\uDEE1\uFE0F' },
-                              { k: 'spd',  label: 'SPD',  color: 'text-green-400',  icon: '\uD83D\uDCA8' },
-                              { k: 'crit', label: 'CRIT', color: 'text-yellow-400', icon: '\uD83C\uDFAF' },
-                              { k: 'res',  label: 'RES',  color: 'text-cyan-400',   icon: '\uD83D\uDEE1\uFE0F' },
-                            ].map(s => (
-                              <div key={s.k} className="p-2 rounded-lg bg-gray-800/40 border border-gray-700/20">
-                                <div className="text-[9px] text-gray-500">{s.icon} {s.label}</div>
-                                <div className={`text-sm font-black ${s.color}`}>{fStats[s.k]}{s.k === 'crit' || s.k === 'res' ? '%' : ''}</div>
-                                <div className="text-[8px] text-gray-600">+{f.growth[s.k]}/lv</div>
-                              </div>
-                            ))}
+                            {['hp', 'atk', 'def', 'spd', 'crit', 'res'].map(k => {
+                              const sm = STAT_META[k];
+                              return (
+                                <div key={k} className="relative p-2 rounded-lg bg-gray-800/40 border border-gray-700/20 cursor-pointer"
+                                  onClick={() => setCodexStatTooltip(codexStatTooltip === k ? null : k)}>
+                                  <div className="text-[9px] text-gray-500 flex items-center gap-1">{sm.icon} {sm.name}
+                                    {sm.detail && <span className="text-[7px] text-gray-600 hover:text-purple-400">?</span>}
+                                  </div>
+                                  <div className={`text-sm font-black ${sm.color}`}>{fStats[k]}{k === 'crit' || k === 'res' ? '%' : ''}</div>
+                                  <div className="text-[8px] text-gray-600">+{f.growth[k]}/lv</div>
+                                  {codexStatTooltip === k && sm.detail && (
+                                    <div className="absolute z-20 left-0 right-0 top-full mt-1 p-2 rounded-lg bg-[#1a1a2e] border border-purple-500/30 text-[10px] text-purple-200 leading-relaxed shadow-xl">{sm.detail}</div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
 

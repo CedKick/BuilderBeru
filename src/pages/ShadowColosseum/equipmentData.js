@@ -297,9 +297,14 @@ export const HAMMERS = {
   marteau_forge:   { id: 'marteau_forge',   name: 'Marteau de Forge',   icon: '\uD83D\uDD28', rarity: 'common',    maxLevel: 10, shopPrice: 100,  desc: 'Ameliore un artefact (Lv0-10)' },
   marteau_runique: { id: 'marteau_runique', name: 'Marteau Runique',    icon: '\uD83D\uDD2E', rarity: 'rare',      maxLevel: 15, shopPrice: 300,  desc: 'Ameliore un artefact (Lv0-15)' },
   marteau_celeste: { id: 'marteau_celeste', name: 'Marteau Celeste',    icon: '\u2728',       rarity: 'epic',      maxLevel: 20, shopPrice: 800,  desc: 'Ameliore un artefact (Lv0-20)' },
+  marteau_rouge:   { id: 'marteau_rouge',   name: 'Marteau Rouge',      icon: '\uD83D\uDD34', rarity: 'legendary', desc: 'Monnaie echangeable contre des armes exclusives' },
 };
 
 export const HAMMER_ORDER = ['marteau_forge', 'marteau_runique', 'marteau_celeste'];
+
+// Red hammer reward when dropping a weapon already at A10
+export const RED_HAMMER_BY_RARITY = { rare: 1, legendaire: 2, mythique: 3 };
+export const RED_HAMMER_ULTIME = 5;   // ultime or secret weapons give 5
 
 // Which hammer can be used at which level range
 export const getRequiredHammer = (level) => {
