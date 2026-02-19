@@ -333,6 +333,17 @@ export default function RaidMode() {
         c.atk = Math.floor(c.atk * (1 + (martyrAura.selfAtkMult || -0.30)));
         chibis.forEach(ally => { if (ally.id !== c.id) ally.atk = Math.floor(ally.atk * (1 + (martyrAura.allyAtkBonus || 0.15))); });
       }
+      // Shadow Pact: self ATK -50%, teammates ATK +150%
+      const shadowPact = c.passives?.find(p => p.type === 'shadowPact');
+      if (shadowPact) {
+        c.atk = Math.floor(c.atk * (1 + (shadowPact.selfAtkMult || -0.50)));
+        chibis.forEach(ally => { if (ally.id !== c.id) ally.atk = Math.floor(ally.atk * (1 + (shadowPact.allyAtkBoost || 1.50))); });
+      }
+      // Shadow Pact Raid (4p): +25% total DMG for ALL chibis in raid
+      const shadowPactRaid = c.passives?.find(p => p.type === 'shadowPactRaid');
+      if (shadowPactRaid) {
+        chibis.forEach(ally => { ally.passiveState.shadowPactRaidBoost = (ally.passiveState.shadowPactRaidBoost || 0) + (shadowPactRaid.raidDmgBoost || 0.25); });
+      }
       // Commander DEF: all allies +10% DEF
       const cmdDef = c.passives?.find(p => p.type === 'commanderDef');
       if (cmdDef) chibis.forEach(ally => { ally.def = Math.floor(ally.def * 1.10); });
@@ -777,6 +788,11 @@ export default function RaidMode() {
       if (flammeRelease && (chibi.passiveState.flammeStacks || 0) >= 10 && result.damage > 0) {
         result = { ...result, damage: Math.floor(result.damage * 1.5), isCrit: true };
         chibi.passiveState.flammeStacks = 0;
+      }
+
+      // Shadow Pact Raid: +25% total DMG if any chibi has 4p passive
+      if (result.damage > 0 && chibi.passiveState.shadowPactRaidBoost) {
+        result = { ...result, damage: Math.floor(result.damage * (1 + chibi.passiveState.shadowPactRaidBoost)) };
       }
 
       // Restore original stats

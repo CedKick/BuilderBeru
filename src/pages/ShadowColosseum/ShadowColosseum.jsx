@@ -38,7 +38,7 @@ import {
   MAX_WEAPON_AWAKENING, WEAPON_AWAKENING_PASSIVES, rollWeaponDrop,
   RARITY_SUB_COUNT,
   computeWeaponILevel, computeArtifactILevel, computeEquipILevel,
-  ARC2_ARTIFACT_SETS, generateArc2Artifact,
+  ARC2_ARTIFACT_SETS, generateArc2Artifact, generateSetArtifact,
 } from './equipmentData';
 import {
   isArc2Unlocked, ARC2_STAGES, ARC2_TIER_NAMES, ARC2_STORIES,
@@ -189,7 +189,7 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [] });
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [] });
 const loadData = () => {
   try {
     const d = { ...defaultData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) };
@@ -220,6 +220,8 @@ const loadData = () => {
     if (!d.arc2StarsRecord) d.arc2StarsRecord = {};
     if (d.ragnarokKills === undefined) d.ragnarokKills = 0;
     if (!d.ragnarokDropLog) d.ragnarokDropLog = [];
+    if (d.zephyrKills === undefined) d.zephyrKills = 0;
+    if (!d.zephyrDropLog) d.zephyrDropLog = [];
     if (!d.talentSkills) d.talentSkills = {};
     // Migration: respecCount old format (number) → per-tree format
     for (const cid of Object.keys(d.respecCount || {})) {
@@ -1102,13 +1104,8 @@ export default function ShadowColosseum() {
   const handleArc2Defeat = useCallback(() => {
     if (!arc2Battle) return;
     const stage = ARC2_STAGES[arc2Battle.stageIdx];
-    const cdMin = { 1: 30, 2: 45, 3: 60, 4: 90, 5: 120, 6: 180 };
     setData(prev => {
       const d = JSON.parse(JSON.stringify(prev));
-      // Apply cooldowns to all team members
-      arc2Battle.team.forEach(f => {
-        d.cooldowns[f.id] = Date.now() + (cdMin[stage?.tier || 1] || 60) * 60000;
-      });
       d.stats.battles = (d.stats.battles || 0) + 1;
       d._arc2Result = { defeat: true, stageName: stage?.name || '?' };
       return d;
@@ -1127,12 +1124,6 @@ export default function ShadowColosseum() {
   // ─── Flee ARC II ──────────────────────────────────────────
   const fleeArc2 = () => {
     if (!arc2Battle) return;
-    arc2Battle.team.forEach(f => {
-      setData(prev => ({
-        ...prev,
-        cooldowns: { ...prev.cooldowns, [f.id]: Date.now() + 3 * 60 * 1000 },
-      }));
-    });
     setArc2Battle(null);
     setView('hub');
     setActiveArc(2);
@@ -1459,6 +1450,10 @@ export default function ShadowColosseum() {
         const wId = data.weapons[selChibi];
         return wId && WEAPONS[wId]?.passive === 'sulfuras_fury' ? 0 : undefined;
       })(),
+      shadowSilence: (() => {
+        const wId = data.weapons[selChibi];
+        return wId && WEAPONS[wId]?.passive === 'shadow_silence' ? [] : undefined;
+      })(),
       turn: 1, log: [],
     });
     setPhase('idle');
@@ -1519,6 +1514,15 @@ export default function ShadowColosseum() {
     // Sulfuras stacking passive: +33% dmg per turn, max +100%
     if (battle.sulfurasStacks !== undefined) {
       atkMult += battle.sulfurasStacks / 100;
+    }
+
+    // Shadow Silence (Rae'shalare): active stacks give +100% ATK each
+    if (battle.shadowSilence !== undefined) {
+      const activeStacks = battle.shadowSilence.filter(s => s > 0).length;
+      if (activeStacks > 0) {
+        atkMult += activeStacks * 1.0;
+        log.push({ text: `Murmure de la Mort x${activeStacks} ! ATK +${activeStacks * 100}%`, type: 'info', id: Date.now() - 0.15 });
+      }
     }
 
     // Temporarily modify player for this attack
@@ -1701,8 +1705,18 @@ export default function ShadowColosseum() {
         newSulfurasStacks = Math.min(SULFURAS_STACK_MAX, newSulfurasStacks + SULFURAS_STACK_PER_TURN);
       }
 
+      // Shadow Silence (Rae'shalare): decrement existing stacks, 10% chance to proc new +100% ATK for 5T (max 3 stacks)
+      let newShadowSilence = battle.shadowSilence;
+      if (newShadowSilence !== undefined) {
+        newShadowSilence = newShadowSilence.map(t => t - 1).filter(t => t > 0);
+        if (newShadowSilence.length < 3 && Math.random() < 0.10) {
+          newShadowSilence.push(5);
+          log.push({ text: `Murmure de la Mort proc ! +100% ATK pendant 5 tours (x${newShadowSilence.length}/3)`, type: 'buff', id: Date.now() + 1.6 });
+        }
+      }
+
       setDmgPopup(dmgToPlayer > 0 ? { target: 'player', value: dmgToPlayer, isCrit: eRes.isCrit } : null);
-      setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, immortelUsed, colossusUsed, passiveState: ps, sulfurasStacks: newSulfurasStacks, turn: prev.turn + 1, log: log.slice(-10) }));
+      setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, immortelUsed, colossusUsed, passiveState: ps, sulfurasStacks: newSulfurasStacks, shadowSilence: newShadowSilence, turn: prev.turn + 1, log: log.slice(-10) }));
 
       if (enemy.hp <= 0) {
         setTimeout(() => handleVictory(), 1200);
@@ -1844,6 +1858,16 @@ export default function ShadowColosseum() {
       const isNew = data.weaponCollection['w_sulfuras'] === undefined;
       weaponDrop = { id: 'w_sulfuras', ...WEAPONS.w_sulfuras, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_sulfuras'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
+    if (!weaponDrop && stage.id === 'zephyr' && Math.random() < 1 / 5000) {
+      const isNew = data.weaponCollection['w_raeshalare'] === undefined;
+      weaponDrop = { id: 'w_raeshalare', ...WEAPONS.w_raeshalare, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_raeshalare'] || 0) + 1, MAX_WEAPON_AWAKENING) };
+    }
+
+    // Pacte des Ombres artifact drop — Zephyr Ultime at star >= 10 (1/250)
+    let pacteDrop = null;
+    if (stage.id === 'zephyr' && currentStar >= 10 && Math.random() < 1 / 250) {
+      pacteDrop = generateSetArtifact('pacte_ombres');
+    }
 
     // Star tracking
     const prevMaxStars = getMaxStars(stage.id);
@@ -1860,6 +1884,12 @@ export default function ShadowColosseum() {
       const newRagLog = (isRagnarok && weaponDrop)
         ? [...(prev.ragnarokDropLog || []), { weaponId: weaponDrop.id, name: weaponDrop.name, rarity: weaponDrop.rarity, icon: weaponDrop.icon, sprite: weaponDrop.sprite || null, killNumber: newRagKills, date: Date.now() }]
         : (prev.ragnarokDropLog || []);
+      // Zephyr kill tracking
+      const isZephyr = stage.id === 'zephyr';
+      const newZephKills = isZephyr ? (prev.zephyrKills || 0) + 1 : (prev.zephyrKills || 0);
+      const newZephLog = (isZephyr && weaponDrop)
+        ? [...(prev.zephyrDropLog || []), { weaponId: weaponDrop.id, name: weaponDrop.name, rarity: weaponDrop.rarity, icon: weaponDrop.icon, sprite: weaponDrop.sprite || null, killNumber: newZephKills, date: Date.now() }]
+        : (prev.zephyrDropLog || []);
       return {
         ...prev,
         chibiLevels: { ...prev.chibiLevels, [selChibi]: { level: newLevel, xp: newXp } },
@@ -1869,6 +1899,8 @@ export default function ShadowColosseum() {
         accountXp: newAccountXp,
         ragnarokKills: newRagKills,
         ragnarokDropLog: newRagLog,
+        zephyrKills: newZephKills,
+        zephyrDropLog: newZephLog,
         weaponCollection: (() => {
           if (!weaponDrop) return prev.weaponCollection;
           const wc = { ...prev.weaponCollection };
@@ -1876,11 +1908,11 @@ export default function ShadowColosseum() {
           else wc[weaponDrop.id] = 0;
           return wc;
         })(),
-        artifactInventory: guaranteedArtifact ? [...prev.artifactInventory, guaranteedArtifact] : prev.artifactInventory,
+        artifactInventory: [...prev.artifactInventory, ...(guaranteedArtifact ? [guaranteedArtifact] : []), ...(pacteDrop ? [pacteDrop] : [])],
       };
     });
     if (newAllocations > 0) setPendingAlloc(newAllocations);
-    setResult({ won: true, xp: scaledXp, coins: scaledCoins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrop, hammerDrop: hammerDrop || extraHammer, weaponDrop, guaranteedArtifact, starLevel: currentStar, isNewStarRecord, newMaxStars, accountXpGain, accountLevelUp: newAccLvl > prevAccLvl ? newAccLvl : null, accountAllocations: newAllocations });
+    setResult({ won: true, xp: scaledXp, coins: scaledCoins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrop, hammerDrop: hammerDrop || extraHammer, weaponDrop, guaranteedArtifact, pacteDrop, starLevel: currentStar, isNewStarRecord, newMaxStars, accountXpGain, accountLevelUp: newAccLvl > prevAccLvl ? newAccLvl : null, accountAllocations: newAllocations });
 
     // Weapon drop reveal + Beru reaction
     if (weaponDrop) {
@@ -1889,6 +1921,8 @@ export default function ShadowColosseum() {
       setTimeout(() => setWeaponReveal(null), 4000);
       if (weaponDrop.id === 'w_sulfuras') {
         try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'sulfuras', message: "OOOH MON DIEU !! LA MASSE DE SULFURAS !!! C'est... c'est REEL ?! Tu l'as eu ! TU L'AS VRAIMENT EU ! Je pleure des larmes de fourmi !!" } })); } catch (e) {}
+      } else if (weaponDrop.id === 'w_raeshalare') {
+        try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: "RAE'SHALARE ?! Le Murmure de la Mort !! Cette arme est LEGENDAIRE ! Les ombres murmurent ton nom maintenant... INCROYABLE !!" } })); } catch (e) {}
       } else if (weaponDrop.rarity === 'mythique') {
         try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: `Wow ! ${weaponDrop.name} ! Une arme mythique, la classe !` } })); } catch (e) {}
       }
@@ -1939,24 +1973,17 @@ export default function ShadowColosseum() {
 
   const handleDefeat = useCallback(() => {
     setPhase('done');
-    const stage = STAGES[selStage];
-    const cooldownMs = TIER_COOLDOWN_MIN[stage.tier] * 60 * 1000;
     setData(prev => ({
       ...prev,
-      cooldowns: { ...prev.cooldowns, [selChibi]: Date.now() + cooldownMs },
       stats: { ...prev.stats, battles: prev.stats.battles + 1 },
     }));
-    setResult({ won: false, cooldownMin: TIER_COOLDOWN_MIN[stage.tier] });
+    setResult({ won: false });
     setView('result');
   }, [selChibi, selStage]);
 
   // ─── Flee ──────────────────────────────────────────────────
 
   const flee = () => {
-    setData(prev => ({
-      ...prev,
-      cooldowns: { ...prev.cooldowns, [selChibi]: Date.now() + 5 * 60 * 1000 },
-    }));
     setBattle(null);
     setView('hub');
   };
@@ -2612,6 +2639,11 @@ export default function ShadowColosseum() {
                               <span className="text-[10px] bg-orange-500/20 text-orange-300 px-1.5 rounded cursor-pointer hover:bg-orange-500/40 transition-colors"
                                 onClick={(e) => { e.stopPropagation(); setRagnarokHistoryOpen(true); }}>
                                 {'\u2620\uFE0F'}{data.ragnarokKills} kills
+                              </span>
+                            )}
+                            {stage.id === 'zephyr' && (data.zephyrKills || 0) > 0 && (
+                              <span className="text-[10px] bg-teal-500/20 text-teal-300 px-1.5 rounded">
+                                {'\u2620\uFE0F'}{data.zephyrKills} kills
                               </span>
                             )}
                           </div>
@@ -3984,7 +4016,7 @@ export default function ShadowColosseum() {
                 <div className="text-5xl mb-4">{'\uD83D\uDC80'}</div>
                 <h2 className="text-xl font-black text-red-400 mb-2">Defaite</h2>
                 <p className="text-sm text-gray-400 mb-1">Ton equipe a ete decimee par {r.stageName}.</p>
-                <p className="text-[10px] text-gray-600">Tes combattants sont en cooldown. Reviens plus fort !</p>
+                <p className="text-[10px] text-gray-600">Ameliore ton equipe et retente ta chance !</p>
               </>
             ) : (
               <>
@@ -6374,6 +6406,40 @@ export default function ShadowColosseum() {
                 </div>
               </div>
             )}
+            {/* Zephyr Tracker — persistent kill counter & Rae'shalare hunt */}
+            {STAGES[selStage]?.id === 'zephyr' && (
+              <div className="mt-1 px-2.5 py-2 rounded-lg bg-gradient-to-b from-teal-900/40 to-cyan-900/40 border border-teal-500/30 backdrop-blur-sm">
+                <div className="text-[9px] text-teal-400 font-bold uppercase tracking-wider mb-1">{'\uD83C\uDF2C\uFE0F'} Zephyr Ultime</div>
+                <div className="flex items-center gap-2 text-[10px]">
+                  <span className="text-teal-300 font-bold">{'\u2620\uFE0F'} {data.zephyrKills || 0} kills</span>
+                  <span className="text-gray-600">|</span>
+                  <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {(data.zephyrDropLog || []).length} drops</span>
+                </div>
+                <div className="mt-1 flex items-center gap-1.5">
+                  {data.weaponCollection?.['w_raeshalare'] !== undefined ? (
+                    <>
+                      <span className="text-sm">{'\uD83C\uDFF9'}</span>
+                      <span className="text-[9px] text-teal-300 font-bold">Rae'shalare obtenue !</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-[10px] opacity-40">{'\uD83C\uDFF9'}</span>
+                      <span className="text-[9px] text-gray-500">{data.zephyrKills > 0 ? `${data.zephyrKills} kills sans Rae'shalare` : 'Chasse en cours...'}</span>
+                    </>
+                  )}
+                </div>
+                {!data.weaponCollection?.['w_raeshalare'] && (data.zephyrKills || 0) > 0 && (
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <span className="text-[9px] text-gray-500">Chance cumulee :</span>
+                    <span className="text-[9px] text-teal-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - 1/5000, data.zephyrKills)) * 100).toFixed(2)}%</span>
+                    <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-teal-500 to-cyan-400 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, (1 - Math.pow(1 - 1/5000, data.zephyrKills)) * 100)}%` }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -6621,6 +6687,14 @@ export default function ShadowColosseum() {
                   <div className="text-[9px] text-gray-400 mt-0.5">{ARTIFACT_SETS[result.guaranteedArtifact.setId]?.name || 'Artefact'} — {ARTIFACT_SLOTS[result.guaranteedArtifact.slotId]?.name || result.guaranteedArtifact.slotId}</div>
                 </motion.div>
               )}
+              {result.pacteDrop && (
+                <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 1.3, type: 'spring' }}
+                  className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border-2 border-purple-500/50 rounded-xl p-3 mb-4 text-center">
+                  <div className="text-lg font-black text-purple-300">{'\uD83C\uDF11'} Pacte des Ombres !</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">Artefact mythique — {ARTIFACT_SLOTS[result.pacteDrop.slotId]?.name || result.pacteDrop.slotId}</div>
+                  <div className="text-[9px] text-purple-400 mt-1">Set ultra-rare obtenu sur Zephyr Ultime !</div>
+                </motion.div>
+              )}
               {/* Account XP */}
               <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.3 }}
                 className="mb-6">
@@ -6644,14 +6718,22 @@ export default function ShadowColosseum() {
               <h2 className="text-3xl font-black text-red-400 mb-2">DEFAITE...</h2>
               <p className="text-gray-300 text-sm mb-4">{getChibiData(selChibi)?.name} est KO.</p>
               <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 mb-6">
-                <div className="text-red-400 text-sm font-bold">{'\u23F3'} Cooldown : {result.cooldownMin} minutes</div>
+                <div className="text-red-400 text-sm font-bold">Tu peux retenter immediatement !</div>
                 <div className="text-gray-400 text-[10px] mt-1">
-                  {getChibiData(selChibi)?.name} ne peut plus combattre pendant {result.cooldownMin}min.
+                  Ameliore tes stats ou change de strategie.
                 </div>
               </div>
             </motion.div>
           )}
           <div className="flex flex-col items-center gap-4 mt-2">
+            {!result.won && (
+              <button
+                onClick={() => { setResult(null); setBattle(null); setTimeout(() => startBattle(), 50); }}
+                className="px-5 py-2.5 bg-gradient-to-r from-red-600 to-orange-600 rounded-xl font-bold text-sm shadow-lg hover:scale-105 transition-transform"
+              >
+                {'⚔️'} Retenter
+              </button>
+            )}
             {result.won && (
               <div className="flex items-center justify-center gap-3">
                 <button
@@ -6815,7 +6897,9 @@ export default function ShadowColosseum() {
                 className="space-y-2">
                 <div className="text-orange-300 text-sm font-bold">ATK +{weaponReveal.atk} | {MAIN_STAT_VALUES[weaponReveal.bonusStat]?.name} +{weaponReveal.bonusValue}</div>
                 {weaponReveal.id === 'w_sulfuras' && <div className="text-red-400 text-xs">Passive : Sulfuras Fury — +{SULFURAS_STACK_PER_TURN}% DMG/tour (max +{SULFURAS_STACK_MAX}%)</div>}
+                {weaponReveal.id === 'w_raeshalare' && <div className="text-purple-400 text-xs">Passive : Murmure de la Mort — 10% de chance/tour : +100% ATK pendant 5T (max x3)</div>}
                 {weaponReveal.fireRes && <div className="text-orange-500 text-xs">{'\uD83D\uDD25'} Fire RES +{weaponReveal.fireRes}%</div>}
+                {weaponReveal.darkRes && <div className="text-purple-500 text-xs">{'\uD83C\uDF11'} Dark RES +{weaponReveal.darkRes}%</div>}
                 {weaponReveal.isNew ? (
                   <div className="text-green-400 text-xs font-bold">Nouvelle arme !</div>
                 ) : weaponReveal.newAwakening !== undefined && (

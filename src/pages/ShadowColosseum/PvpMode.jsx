@@ -405,6 +405,11 @@ export default function PvpMode() {
         c.atk = Math.floor(c.atk * (1 + (martyrAura.selfAtkMult || -0.30)));
         units.forEach(ally => { if (ally.id !== c.id) ally.atk = Math.floor(ally.atk * (1 + (martyrAura.allyAtkBonus || 0.15))); });
       }
+      const shadowPact = c.passives?.find(p => p.type === 'shadowPact');
+      if (shadowPact) {
+        c.atk = Math.floor(c.atk * (1 + (shadowPact.selfAtkMult || -0.50)));
+        units.forEach(ally => { if (ally.id !== c.id) ally.atk = Math.floor(ally.atk * (1 + (shadowPact.allyAtkBoost || 1.50))); });
+      }
       const cmdDef = c.passives?.find(p => p.type === 'commanderDef');
       if (cmdDef) units.forEach(ally => { ally.def = Math.floor(ally.def * 1.10); });
     });

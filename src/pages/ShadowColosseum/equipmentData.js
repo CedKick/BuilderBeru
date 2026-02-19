@@ -527,8 +527,10 @@ export const WEAPONS = {
   w_baton_supreme:    { id: 'w_baton_supreme',     name: 'Baton Arcane Supreme', rarity: 'mythique',   element: null,     weaponType: 'ranged',  atk: 55,  bonusStat: 'hp_pct',    bonusValue: 15, icon: '\uD83E\uDE84', desc: 'Pouvoir arcanique brut', ultime: true },
   w_epee_monarque:    { id: 'w_epee_monarque',     name: 'Epee du Monarque',     rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 120, bonusStat: 'atk_pct',   bonusValue: 20, icon: '\u2694\uFE0F', desc: "L'arme du roi des ombres", ultime: true },
 
-  // Secret — drop 1/30000 from Ragnarok
-  w_sulfuras:         { id: 'w_sulfuras',         name: 'Masse de Sulfuras',    rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 250, bonusStat: 'atk_pct', bonusValue: 25, icon: '\uD83D\uDD28', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771443640/WeaponSulfuras_efg3ca.png', desc: '???', secret: true, passive: 'sulfuras_fury', fireRes: 50 },
+  // Secret — drop 1/10000 from Ragnarok
+  w_sulfuras:         { id: 'w_sulfuras',         name: 'Masse de Sulfuras',    rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 250, bonusStat: 'atk_pct', bonusValue: 25, icon: '\uD83D\uDD28', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771443640/WeaponSulfuras_efg3ca.png', desc: '???', secret: true, passive: 'sulfuras_fury', fireRes: 50, dropSource: 'Ragnarok', dropRate: '1/10,000' },
+  // Secret — drop 1/5000 from Zephyr Ultime
+  w_raeshalare:       { id: 'w_raeshalare',       name: "Rae'shalare, Murmure de la Mort", rarity: 'mythique', element: 'shadow', weaponType: 'ranged', atk: 200, bonusStat: 'crit_dmg', bonusValue: 25, icon: '\uD83C\uDFF9', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771525011/arc_d4t23d.png', desc: 'Tire une fleche gemissante qui inflige des degats d\'Ombre et reduit les ennemis au silence', secret: true, passive: 'shadow_silence', darkRes: 50, dropSource: 'Zephyr Ultime', dropRate: '1/5,000' },
 };
 
 export const WEAPON_PRICES = { rare: 500, legendaire: 2000, mythique: 5000 };
@@ -752,6 +754,13 @@ export const WEAPON_AWAKENING_PASSIVES = {
     { desc: 'CRIT DMG +20%', stats: { crit_dmg: 20 } },
     { desc: 'Ignore 15% DEF + Tous Degats +10%', stats: { defPen: 15, allDamage: 10 } },
   ],
+  w_raeshalare: [
+    { desc: 'Degats Ombre +12%', stats: { shadowDamage: 12 } },
+    { desc: 'CRIT DMG +15%', stats: { crit_dmg: 15 } },
+    { desc: 'ATK +10%', stats: { atk_pct: 10 } },
+    { desc: 'CRIT DMG +18%', stats: { crit_dmg: 18 } },
+    { desc: 'Ignore 12% DEF + Tous Degats +10%', stats: { defPen: 12, allDamage: 10 } },
+  ],
 };
 
 export function getWeaponAwakeningBonuses(weaponId, awakening = 0) {
@@ -778,6 +787,7 @@ export function computeWeaponBonuses(weaponId, awakening = 0) {
   b.atk_flat += w.atk;
   if (b[w.bonusStat] !== undefined) b[w.bonusStat] += w.bonusValue;
   if (w.fireRes) b.res_flat += w.fireRes;
+  if (w.darkRes) b.res_flat += w.darkRes;
   if (awakening > 0) {
     const awB = getWeaponAwakeningBonuses(weaponId, awakening);
     Object.entries(awB).forEach(([k, v]) => { if (b[k] !== undefined) b[k] += v; });
@@ -886,6 +896,26 @@ export function generateUltimeArtifact(rc) {
     subs.push({ id: pick.id, value: pick.min + Math.floor(Math.random() * (pick.max - pick.min + 1)) });
   }
   return { set, slotId: slot, rarity, mainStat: mainStatId, mainValue: MAIN_STAT_VALUES[mainStatId]?.max || 0, subs, level: 0, uid: `ult_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
+}
+
+// Generate a specific-set mythique artifact (used for secret drops like Pacte des Ombres)
+export function generateSetArtifact(setId) {
+  const rarity = 'mythique';
+  const slot = SLOT_ORDER[Math.floor(Math.random() * SLOT_ORDER.length)];
+  const slotDef = ARTIFACT_SLOTS[slot];
+  const mainStatId = slotDef.mainStats[Math.floor(Math.random() * slotDef.mainStats.length)];
+  const subCount = RARITY_SUB_COUNT[rarity].initial;
+  const availableSubs = SUB_STAT_POOL.filter(s => s.id !== mainStatId);
+  const subs = [];
+  const usedIds = new Set();
+  for (let i = 0; i < subCount; i++) {
+    const pool = availableSubs.filter(s => !usedIds.has(s.id));
+    if (pool.length === 0) break;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    usedIds.add(pick.id);
+    subs.push({ id: pick.id, value: pick.min + Math.floor(Math.random() * (pick.max - pick.min + 1)) });
+  }
+  return { set: setId, slotId: slot, rarity, mainStat: mainStatId, mainValue: MAIN_STAT_VALUES[mainStatId]?.max || 0, subs, level: 0, uid: `pact_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
 }
 
 export function rollWeaponDrop(stageTier, isBoss = false) {
@@ -1099,6 +1129,15 @@ export const ULTIME_ARTIFACT_SETS = {
     bonus4: {}, bonus4Desc: 'Adaptatif : la stat la plus basse recoit +25%. Tous les 5 tours : toutes stats +10% (3 tours)',
     passive2: null,
     passive4: { trigger: 'onBattleStart', type: 'supremeBalance', lowestStatBonus: 0.25, allStatsInterval: 5, allStatsBonus: 0.10, allStatsDuration: 3 },
+  },
+  pacte_ombres: {
+    id: 'pacte_ombres', name: 'Pacte des Ombres', icon: '\uD83C\uDF11', ultime: true,
+    color: 'text-purple-300', bg: 'bg-purple-800/20', border: 'border-purple-600/40',
+    desc: 'Sacrifice personnel pour la puissance de ses allies',
+    bonus2: {}, bonus2Desc: 'ATK -50% (soi-meme). ATK +150% pour les coequipiers (meme team)',
+    bonus4: {}, bonus4Desc: 'Degats totaux +25% pour tout le raid (les 2 teams)',
+    passive2: { trigger: 'onBattleStart', type: 'shadowPact', selfAtkMult: -0.50, allyAtkBoost: 1.50 },
+    passive4: { trigger: 'always', type: 'shadowPactRaid', raidDmgBoost: 0.25 },
   },
 };
 

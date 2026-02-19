@@ -672,7 +672,7 @@ export default function Codex() {
                               <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-800/60 border border-gray-700/30 text-gray-400 font-bold">iLv {iLevel}</span>
                             </div>
                             <p className="text-[11px] text-gray-500 mt-1.5 italic">{w.desc}</p>
-                            {w.secret && <div className="text-[10px] text-red-400 font-bold mt-1">SECRET — Drop 1/10,000 sur Ragnarok</div>}
+                            {w.secret && <div className="text-[10px] text-red-400 font-bold mt-1">SECRET — Drop {w.dropRate || '1/10,000'} sur {w.dropSource || 'Ragnarok'}</div>}
                             {w.ultime && <div className="text-[10px] text-red-300 font-bold mt-1">ULTIME — Drop exclusif en Raid Ultime (RC 3+)</div>}
                             {!isOwned && <div className="text-[10px] text-gray-600 font-bold mt-1">Non obtenu</div>}
                           </div>
@@ -747,6 +747,12 @@ export default function Codex() {
                           <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 mb-4">
                             <div className="text-[10px] text-red-400 font-bold uppercase mb-1">Passive Unique — Sulfuras Fury</div>
                             <div className="text-[11px] text-red-300">+33% DMG par tour (cumulable, max +100%). La puissance augmente a chaque tour de combat.</div>
+                          </div>
+                        )}
+                        {w.passive === 'shadow_silence' && (
+                          <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 mb-4">
+                            <div className="text-[10px] text-purple-400 font-bold uppercase mb-1">Passive Unique — Murmure de la Mort</div>
+                            <div className="text-[11px] text-purple-300">10% de chance par tour d'obtenir +100% ATK pendant 5 tours. Cumulable jusqu'a 3 fois (max +300% ATK).</div>
                           </div>
                         )}
 
