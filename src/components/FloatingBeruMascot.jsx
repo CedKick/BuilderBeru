@@ -1041,6 +1041,8 @@ const FloatingBeruMascot = () => {
   });
   const [showCollection, setShowCollection] = useState(false);
   const [companionBubble, setCompanionBubble] = useState(null); // { companionId, text }
+  const [chatHistory, setChatHistory] = useState([]); // [{ id, sender, text, time }]
+  const [showChatHistory, setShowChatHistory] = useState(false);
 
   // Refs
   const afkTimerRef = useRef(null);
@@ -1083,6 +1085,27 @@ const FloatingBeruMascot = () => {
   useEffect(() => { localStorage.setItem('beru_chibi_collection', JSON.stringify(collection)); }, [collection]);
   useEffect(() => { localStorage.setItem('beru_companions', JSON.stringify(companions)); }, [companions]);
 
+  // ─── Chat History ──────────────────────────────────────────
+
+  const pushChatMessage = useCallback((sender, text) => {
+    if (!text) return;
+    const now = Date.now();
+    setChatHistory(prev => {
+      // Purge messages older than 5 min, then append
+      const cutoff = now - 300000;
+      const fresh = prev.filter(m => m.time > cutoff);
+      return [...fresh, { id: now + Math.random(), sender, text, time: now }];
+    });
+  }, []);
+
+  // Log companion messages to chat history
+  useEffect(() => {
+    if (companionBubble?.text) {
+      const chibi = WANDERING_CHIBIS.find(c => c.id === companionBubble.companionId);
+      pushChatMessage(chibi?.name || companionBubble.companionId, companionBubble.text);
+    }
+  }, [companionBubble, pushChatMessage]);
+
   // ─── Bubble ─────────────────────────────────────────────────
 
   const showBubble = useCallback((message, duration = 4000) => {
@@ -1091,10 +1114,11 @@ const FloatingBeruMascot = () => {
     if (bubbleTimerRef.current) clearTimeout(bubbleTimerRef.current);
     bubbleTimerRef.current = null;
     setBubble(message);
+    pushChatMessage('Beru', message);
     if (duration > 0) {
       bubbleTimerRef.current = setTimeout(() => setBubble(null), duration);
     }
-  }, []);
+  }, [pushChatMessage]);
 
   // ─── Calm Mode: tacos messages + fixed position ──────────
   useEffect(() => {
@@ -2869,6 +2893,17 @@ const FloatingBeruMascot = () => {
               />
             </motion.div>
 
+            {/* Chat history button */}
+            {chatHistory.length > 0 && !isDragging && !shakeStage && (
+              <div
+                className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gray-800/90 border border-purple-500/40 flex items-center justify-center cursor-pointer hover:bg-purple-500/30 hover:border-purple-400/60 transition-all z-10"
+                onClick={(e) => { e.stopPropagation(); setShowChatHistory(prev => !prev); }}
+                title="Historique des messages"
+              >
+                <span className="text-[8px] text-purple-300 font-bold leading-none">...</span>
+              </div>
+            )}
+
             {/* Shake warning indicators */}
             {shakeStage >= 2 && (
               <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-lg pointer-events-none"
@@ -2949,6 +2984,56 @@ const FloatingBeruMascot = () => {
           </div>
         );
       })}
+
+      {/* ═══ CHAT HISTORY PANEL ═══ */}
+      <AnimatePresence>
+        {showChatHistory && isVisible && (() => {
+          const now = Date.now();
+          const cutoff = now - 300000;
+          const messages = chatHistory.filter(m => m.time > cutoff);
+          if (messages.length === 0) {
+            setTimeout(() => setShowChatHistory(false), 0);
+            return null;
+          }
+          const nearRight = posRef.current.x > window.innerWidth - 260;
+          return (
+            <motion.div
+              key="chat-history"
+              initial={{ opacity: 0, y: 10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.9 }}
+              className="fixed z-[10001]"
+              style={{
+                left: nearRight ? posRef.current.x - 210 : posRef.current.x + 20,
+                top: Math.max(10, posRef.current.y - 200),
+              }}
+            >
+              <div className="w-[220px] max-h-[240px] rounded-xl bg-gray-900/95 backdrop-blur-md border border-purple-500/30 shadow-xl shadow-purple-900/20 overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-1.5 border-b border-purple-500/20">
+                  <span className="text-[9px] text-purple-400 font-bold uppercase tracking-wider">Historique</span>
+                  <button onClick={() => setShowChatHistory(false)} className="text-gray-500 hover:text-white text-xs leading-none">x</button>
+                </div>
+                <div className="overflow-y-auto max-h-[200px] px-2 py-1.5 space-y-1.5 scrollbar-thin">
+                  {messages.map(m => {
+                    const ago = Math.floor((now - m.time) / 1000);
+                    const agoStr = ago < 60 ? `${ago}s` : `${Math.floor(ago / 60)}m`;
+                    const isBeru = m.sender === 'Beru';
+                    return (
+                      <div key={m.id} className="flex gap-1.5 items-start">
+                        <div className={`text-[8px] font-bold mt-0.5 shrink-0 ${isBeru ? 'text-purple-400' : 'text-cyan-400'}`}>
+                          {m.sender}
+                        </div>
+                        <div className="text-[9px] text-gray-300 leading-tight flex-1 min-w-0">{m.text}</div>
+                        <div className="text-[7px] text-gray-600 shrink-0 mt-0.5">{agoStr}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
 
       {/* Wandering Chibi Apparition - CLICKABLE ! (always visible, even in hidden mode) */}
       {wanderer && (

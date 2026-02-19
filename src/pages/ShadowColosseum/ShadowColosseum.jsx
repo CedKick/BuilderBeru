@@ -2920,7 +2920,7 @@ export default function ShadowColosseum() {
                               </span>
                             )}
                             {data.lootBoostMs > 0 && ['ragnarok', 'zephyr', 'supreme_monarch'].includes(stage.id) && (
-                              <span className="text-[9px] bg-red-500/20 text-red-400 px-1.5 rounded font-bold animate-pulse">{'\uD83D\uDD34'} x2</span>
+                              <span className="text-[9px] bg-red-500/20 text-red-400 px-1.5 rounded font-bold animate-pulse">{'\uD83D\uDD34'} x2 {(() => { const ms = data.lootBoostMs; const h = Math.floor(ms/3600000); const m = Math.floor((ms%3600000)/60000); return h > 0 ? `${h}h${String(m).padStart(2,'0')}m` : `${m}m`; })()}</span>
                             )}
                           </div>
                           <div className="flex items-center gap-2.5 text-[11px] text-gray-400 mt-0.5">
@@ -6740,6 +6740,7 @@ export default function ShadowColosseum() {
             {data.lootBoostMs > 0 && ['ragnarok', 'zephyr', 'supreme_monarch'].includes(STAGES[selStage]?.id) && (
               <div className="mt-1 px-2.5 py-1 rounded-lg bg-red-500/20 border border-red-500/40 backdrop-blur-sm animate-pulse">
                 <div className="text-[10px] text-red-400 font-bold">{'\uD83D\uDD34'} LOOT x2</div>
+                <div className="text-[9px] text-red-300/70 text-center">{(() => { const ms = data.lootBoostMs; const h = Math.floor(ms/3600000); const m = Math.floor((ms%3600000)/60000); const s = Math.floor((ms%60000)/1000); return h > 0 ? `${h}h${String(m).padStart(2,'0')}m` : `${m}m${String(s).padStart(2,'0')}s`; })()}</div>
               </div>
             )}
             {/* Ragnarok Tracker — persistent kill counter & Sulfuras hunt */}
