@@ -68,6 +68,12 @@ export function BattleStyles() {
       @keyframes projectileFly { 0%{transform:translateX(0) translateY(0) scale(0.6);opacity:0} 8%{opacity:1;transform:translateX(15px) translateY(-5px) scale(1)} 85%{opacity:1;transform:translateX(calc(var(--proj-dist,140px) - 20px)) translateY(-8px) scale(1)} 100%{opacity:0;transform:translateX(var(--proj-dist,140px)) translateY(0) scale(1.3)} }
       @keyframes projectileImpact { 0%{opacity:1;transform:scale(0.3)} 40%{opacity:0.8;transform:scale(1.8)} 100%{opacity:0;transform:scale(2.5)} }
       @keyframes projectileTrail { 0%{opacity:0.6;width:30px} 100%{opacity:0;width:0} }
+      @keyframes projectileSpin { 0%{transform:rotate(0deg)} 100%{transform:rotate(720deg)} }
+      @keyframes projectileWobble { 0%{transform:rotate(20deg)} 20%{transform:rotate(34deg)} 40%{transform:rotate(10deg)} 60%{transform:rotate(32deg)} 80%{transform:rotate(12deg)} 100%{transform:rotate(20deg)} }
+      @keyframes explosionGrow { 0%{transform:scale(0);opacity:0} 10%{transform:scale(1.2);opacity:1} 30%{transform:scale(2);opacity:0.9} 60%{transform:scale(2.5);opacity:0.6} 100%{transform:scale(3);opacity:0} }
+      @keyframes explosionFlash { 0%{opacity:0} 8%{opacity:0.6} 25%{opacity:0.3} 100%{opacity:0} }
+      @keyframes screenShake { 0%,100%{transform:translate(0)} 10%{transform:translate(-8px,4px)} 20%{transform:translate(6px,-6px)} 30%{transform:translate(-4px,2px)} 40%{transform:translate(4px,-4px)} 50%{transform:translate(-2px,3px)} 60%{transform:translate(5px,-2px)} 70%{transform:translate(-3px,5px)} 80%{transform:translate(2px,-3px)} }
+      @keyframes meguminCast { 0%{filter:brightness(1) drop-shadow(0 0 0 transparent)} 20%{filter:brightness(1.8) drop-shadow(0 0 20px rgba(239,68,68,0.8))} 50%{filter:brightness(1.5) drop-shadow(0 0 30px rgba(249,115,22,0.9))} 100%{filter:brightness(1) drop-shadow(0 0 0 transparent)} }
     `}</style>
   );
 }
@@ -162,8 +168,17 @@ const WEAPON_PROJECTILES = {
     width: 40, height: 40,
     trailColor: 'rgba(168,85,247,0.5)',
     impactColor: 'rgba(168,85,247,0.6)',
-    rotation: -15,
+    rotation: 20,
     duration: 0.45,
+  },
+  sulfuras_fury: {
+    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771531420/braiseSulfuras_i44osa.png',
+    width: 38, height: 38,
+    trailColor: 'rgba(239,68,68,0.6)',
+    impactColor: 'rgba(249,115,22,0.7)',
+    rotation: 0,
+    duration: 0.5,
+    spin: true,
   },
 };
 
@@ -173,23 +188,26 @@ function WeaponProjectile({ weaponPassive, active, distance, reversed }) {
 
   const dir = reversed ? -1 : 1;
   const dist = (distance || 140) * dir;
+  const kf = `projFlyArc_${weaponPassive}`;
 
   return (
     <div className="absolute inset-0 pointer-events-none z-25 overflow-visible">
+      <style>{`@keyframes ${kf}{0%{transform:translateX(0) translateY(0) scale(0.7);opacity:0}8%{opacity:1;transform:translateX(${15*dir}px) translateY(-5px) scale(1)}85%{opacity:1;transform:translateX(${dist-20*dir}px) translateY(-8px) scale(1)}100%{opacity:0;transform:translateX(${dist}px) translateY(0) scale(1.2)}}`}</style>
       {/* Projectile sprite */}
       <div className="absolute" style={{
         left: reversed ? 'auto' : '15%',
         right: reversed ? '15%' : 'auto',
-        top: '42%',
-        '--proj-dist': `${dist}px`,
-        animation: `projectileFly ${config.duration}s ease-in forwards`,
+        top: '52%',
+        animation: `${kf} ${config.duration}s ease-in forwards`,
       }}>
         <img src={config.sprite} alt=""
           className="pointer-events-none"
           style={{
             width: config.width, height: config.height,
-            transform: `rotate(${config.rotation * dir}deg) ${reversed ? 'scaleX(-1)' : ''}`,
             filter: `drop-shadow(0 0 8px ${config.trailColor})`,
+            animation: config.spin
+              ? `projectileSpin ${config.duration}s linear forwards`
+              : `projectileWobble ${config.duration}s ease-in-out forwards`,
           }} />
       </div>
       {/* Impact flash at target */}
@@ -487,14 +505,22 @@ const CHIBI_POSITIONS = [
   { left: '22%', top: '62%' },
 ];
 
-function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg, dps, weaponPassive }) {
+const MEGUMIN_CAST_SPRITE = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771534768/SkillExplosionMegumin_dio1zw.png';
+
+function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg, dps, weaponPassive, attackInterval, isCasting }) {
   const hpPct = chibi.maxHp > 0 ? chibi.hp / chibi.maxHp : 0;
   const hpColor = hpPct > 0.5 ? '#22c55e' : hpPct > 0.2 ? '#eab308' : '#ef4444';
 
+  // Dash speed scales with attackInterval: fast chibis dash faster
+  // Base: 0.5s dash for 1500ms interval. Clamp between 0.2s and 0.6s
+  const dashDur = Math.max(0.2, Math.min(0.6, (attackInterval || 1500) / 3000));
+  // Idle breathing speed: fast chibis breathe faster
+  const idleDur = Math.max(1.5, Math.min(3, (attackInterval || 1500) / 600));
+
   const anim = !chibi.alive ? 'arenaKO 0.6s ease-out forwards' :
-    isAttacking ? 'arenaDashRight 0.5s ease-in-out' :
+    isAttacking ? `arenaDashRight ${dashDur}s ease-in-out` :
     isHit ? 'arenaHitChib 0.35s ease-out' :
-    'arenaIdleChib 2.5s ease-in-out infinite';
+    `arenaIdleChib ${idleDur}s ease-in-out infinite`;
 
   return (
     <div className="absolute flex flex-col items-center pointer-events-none" style={{ left: pos.left, top: pos.top, zIndex: isAttacking ? 20 : 10 }}>
@@ -510,10 +536,10 @@ function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg, dps,
       )}
       {/* Sprite */}
       <div className="relative">
-        <img src={chibi.sprite} alt={chibi.name}
+        <img src={isCasting ? MEGUMIN_CAST_SPRITE : chibi.sprite} alt={chibi.name}
           className="w-12 h-12 object-contain"
           style={{
-            animation: anim,
+            animation: isCasting ? 'meguminCast 2s ease-out forwards' : anim,
             filter: !chibi.alive ? 'grayscale(1) brightness(0.3)' :
               isHealing ? 'brightness(1.4) drop-shadow(0 0 6px rgba(34,197,94,0.7))' :
               chibi.rarity ? (RARITY[chibi.rarity]?.glow || '') : '',
@@ -537,19 +563,7 @@ function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg, dps,
             -{dmg}
           </div>
         )}
-        {/* Weapon projectile on attack */}
-        {isAttacking && weaponPassive && WEAPON_PROJECTILES[weaponPassive] && (
-          <div className="absolute left-full top-1/2 -translate-y-1/2" style={{ width: 200, height: 40 }}>
-            <img src={WEAPON_PROJECTILES[weaponPassive].sprite} alt=""
-              style={{
-                width: 28, height: 28,
-                transform: `rotate(${WEAPON_PROJECTILES[weaponPassive].rotation}deg)`,
-                filter: `drop-shadow(0 0 6px ${WEAPON_PROJECTILES[weaponPassive].trailColor})`,
-                animation: `projectileFly ${WEAPON_PROJECTILES[weaponPassive].duration}s ease-in forwards`,
-                '--proj-dist': '120px',
-              }} />
-          </div>
-        )}
+        {/* Weapon projectile rendered at arena level — see RaidArena */}
         {/* Ground shadow */}
         {chibi.alive && (
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-2 rounded-full bg-black/30"
@@ -578,13 +592,66 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
   const timerSec = Math.floor(timer % 60);
   const now = Date.now();
 
+  // ─── Refs ───
+  const arenaRef = useRef(null);
+  const projectilesRef = useRef([]);
+  const seenVfxRef = useRef(new Set());
+
   // Derive VFX state from queue
   const recentVFX = vfxQueue.filter(v => now - v.timestamp < 500);
+
+  // Build per-chibi attack interval map for animation speed
+  const chibiIntervalMap = useMemo(() => {
+    const map = {};
+    chibis.forEach(c => { map[c.id] = c.attackInterval || 1500; });
+    return map;
+  }, [chibis]);
+
   const chibiAttacking = useMemo(() => {
     const set = new Set();
     recentVFX.filter(v => v.type === 'chibi_attack' && now - v.timestamp < 400).forEach(v => set.add(v.sourceId));
     return set;
   }, [recentVFX, now]);
+
+  // Megumin EXPLOSION event (persists 1.5s for VFX)
+  const meguminExplosion = vfxQueue.find(v => v.type === 'megumin_explosion' && now - v.timestamp < 1500);
+  const meguminCasting = vfxQueue.find(v => v.type === 'megumin_explosion' && now - v.timestamp < 2000);
+
+  // Spawn new projectiles from VFX events (each event creates one projectile)
+  recentVFX.forEach(v => {
+    if (v.type === 'chibi_attack' && !seenVfxRef.current.has(v.id)) {
+      seenVfxRef.current.add(v.id);
+      const wp = chibiWeapons?.[v.sourceId];
+      if (wp && WEAPON_PROJECTILES[wp]) {
+        const idx = chibis.findIndex(c => c.id === v.sourceId);
+        if (idx >= 0) {
+          projectilesRef.current.push({
+            key: `${v.id}_${Math.random()}`,
+            sourceId: v.sourceId,
+            chibiIdx: idx,
+            weapon: wp,
+            spawnedAt: now,
+          });
+        }
+      }
+    }
+  });
+  // Cleanup old seen VFX IDs (keep last 2s)
+  if (seenVfxRef.current.size > 200) {
+    const cutoff = now - 2000;
+    recentVFX.forEach(v => { if (v.timestamp < cutoff) seenVfxRef.current.delete(v.id); });
+  }
+  // Remove expired projectiles (lived longer than their flight duration + buffer)
+  projectilesRef.current = projectilesRef.current.filter(p => {
+    const config = WEAPON_PROJECTILES[p.weapon];
+    const pos = CHIBI_POSITIONS[p.chibiIdx] || CHIBI_POSITIONS[0];
+    const arenaW = arenaRef.current?.offsetWidth || 700;
+    const startPct = parseFloat(pos.left) / 100;
+    const dist = Math.round(arenaW * (0.88 - startPct));
+    const dur = 0.5 + dist / 900;
+    return now - p.spawnedAt < dur * 1000 + 200; // flight duration + 200ms buffer
+  });
+  const activeProjectiles = projectilesRef.current;
   const chibiHit = useMemo(() => {
     const map = new Map();
     recentVFX.filter(v => v.type === 'boss_attack' && now - v.timestamp < 400).forEach(v => {
@@ -718,8 +785,13 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
       </div>
 
       {/* ═══════ VISUAL BATTLE ARENA ═══════ */}
-      <div className="relative rounded-2xl overflow-hidden border border-white/10"
-        style={{ height: 280 }}>
+      {/* Fullscreen explosion flash */}
+      {meguminExplosion && (
+        <div className="fixed inset-0 pointer-events-none z-50"
+          style={{ background: 'radial-gradient(circle at 70% 50%, rgba(249,115,22,0.5), rgba(239,68,68,0.3), transparent 70%)', animation: 'explosionFlash 1.5s ease-out forwards' }} />
+      )}
+      <div ref={arenaRef} className="relative" style={{ height: 280, animation: meguminExplosion ? 'screenShake 0.6s ease-out' : 'none' }}>
+      <div className="absolute inset-0 rounded-2xl overflow-hidden border border-white/10">
 
         {/* Arena background image */}
         <img src={arenaBgRef.current} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ filter: 'brightness(0.6)' }} />
@@ -742,6 +814,8 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
               dmg={chibiHit.get(c.id)}
               dps={dps}
               weaponPassive={chibiWeapons?.[c.id] || null}
+              attackInterval={chibiIntervalMap[c.id]}
+              isCasting={meguminCasting && meguminCasting.sourceId === c.id}
             />
           );
         })}
@@ -794,6 +868,14 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
                   style={{ background: 'radial-gradient(circle, rgba(249,115,22,0.8), rgba(239,68,68,0.4), transparent)', animation: 'barBreakExplode 0.8s ease-out forwards' }} />
               </div>
             )}
+
+            {/* MEGUMIN EXPLOSION on boss */}
+            {meguminExplosion && (
+              <div className="absolute pointer-events-none flex items-center justify-center" style={{ top: '-60%', left: '-50%', width: '200%', height: '200%', zIndex: 50 }}>
+                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771534341/Explosion_cbnuhl.png" alt="EXPLOSION"
+                  style={{ width: 180, height: 180, animation: 'explosionGrow 1.5s ease-out forwards', imageRendering: 'auto' }} />
+              </div>
+            )}
           </div>
         </div>
 
@@ -806,7 +888,38 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
         <div className="absolute bottom-2 right-3 text-[9px] text-gray-600/40 italic select-none pointer-events-none">
           Shadow Colosseum — Raid Zone
         </div>
-      </div>
+      </div>{/* end overflow-hidden inner */}
+
+      {/* ─── WEAPON PROJECTILES (persistent, outside overflow-hidden) ─── */}
+      {activeProjectiles.map(p => {
+        const config = WEAPON_PROJECTILES[p.weapon];
+        if (!config) return null;
+        const pos = CHIBI_POSITIONS[p.chibiIdx] || CHIBI_POSITIONS[0];
+        const arenaW = arenaRef.current?.offsetWidth || 700;
+        const startPct = parseFloat(pos.left) / 100;
+        const dist = Math.round(arenaW * (0.88 - startPct));
+        const dur = 0.5 + dist / 900;
+        const kf = `pf_${p.key.replace(/[^a-zA-Z0-9]/g, '')}`;
+        return (
+          <div key={p.key} className="absolute pointer-events-none" style={{ left: pos.left, top: pos.top, zIndex: 40 }}>
+            <style>{`@keyframes ${kf}{0%{transform:translateX(0) translateY(0) scale(0.7);opacity:0}8%{opacity:1;transform:translateX(20px) translateY(-5px) scale(1)}85%{opacity:1;transform:translateX(${dist-25}px) translateY(-10px) scale(1)}100%{opacity:0;transform:translateX(${dist}px) translateY(0) scale(1.2)}}`}</style>
+            <div style={{
+              animation: `${kf} ${dur}s ease-in forwards`,
+              marginLeft: 48,
+            }}>
+              <img src={config.sprite} alt=""
+                style={{
+                  width: config.width, height: config.height,
+                  filter: `drop-shadow(0 0 8px ${config.trailColor})`,
+                  animation: config.spin
+                    ? `projectileSpin ${dur}s linear forwards`
+                    : `projectileWobble ${dur}s ease-in-out forwards`,
+                }} />
+            </div>
+          </div>
+        );
+      })}
+      </div>{/* end arenaRef wrapper */}
 
       {/* ─── TEAM HP SUMMARY (compact bar under arena) ─── */}
       <div className="grid grid-cols-6 gap-1">

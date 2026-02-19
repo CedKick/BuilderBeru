@@ -4,7 +4,8 @@
 // ─── Hunter Chibi Sprites (from characters.js icons) ─────────
 
 const S = {
-  // FIRE (11)
+  // FIRE (12)
+  h_megumin:   'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771533719/Megumin_yymsbq.png',
   h_yuqi:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1756403437/yuki_dqefqm.png',
   h_kanae:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606320/icons/build-18.png',
   h_stark:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1761820683/stark_portrait_ag5teg.png',
@@ -179,6 +180,20 @@ export const HUNTERS = {
       { name: 'Pyrotechnie', power: 170, cdMax: 3 },
       { name: 'Flamme Dansante', power: 130, cdMax: 2 },
     ],
+  },
+
+  // ─── SPECIAL ────────────────────────────────────────────
+  h_megumin: {
+    name: 'Megumin', element: 'fire', rarity: 'legendaire', class: 'mage',
+    sprite: S.h_megumin, passiveDesc: '+10% ATK/DEF/SPD a toute l\'equipe',
+    base:   { hp: 180, atk: 68, def: 8, spd: 28, crit: 20, res: 10 },
+    growth: { hp: 6, atk: 5.0, def: 0.4, spd: 1.2, crit: 0.5, res: 0.35 },
+    skills: [
+      { name: 'Boule de Feu', power: 110, cdMax: 0, manaCost: 5 },
+      { name: 'Brasier Infernal', power: 240, cdMax: 3, manaCost: 25, debuffDef: 15, debuffDur: 2 },
+      { name: 'EXPLOSION!!!', power: 5000, cdMax: 6, consumeAllMana: true, manaCost: 9999 },
+    ],
+    special: true,
   },
 
   // ─── WATER ──────────────────────────────────────────── (12)
@@ -844,6 +859,7 @@ export const HUNTER_PASSIVE_EFFECTS = {
   h_yoo:       { type: 'skillCd', minCd: 3, stats: { crit: 10 } },
   h_gina:      { type: 'healBonus', value: 15 },
   h_song:      { type: 'vsBoss', stats: { atk: 10 } },
+  h_megumin:   { type: 'teamAura', stats: { atk: 10, def: 10, spd: 10 } },
   // ── WATER ──
   h_chae_in:   { type: 'permanent', stats: { atk: 10, spd: 10 } },
   h_frieren:   { type: 'magicDmg', value: 25 },

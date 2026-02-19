@@ -95,6 +95,16 @@ export default function RaidMode() {
   const startTimeRef = useRef(0);
   const pausedRef = useRef(false);
 
+  // ─── Chibi weapon passives for VFX ─────────────────────────
+  const chibiWeaponsMap = useMemo(() => {
+    const map = {};
+    (battleState?.chibis || []).forEach(c => {
+      const wId = coloData.weapons?.[c.id];
+      if (wId && WEAPONS[wId]?.passive) map[c.id] = WEAPONS[wId].passive;
+    });
+    return map;
+  }, [battleState?.chibis, coloData.weapons]);
+
   // ─── Boss data ─────────────────────────────────────────────
   const boss = RAID_BOSSES[bossId];
 
@@ -445,14 +455,14 @@ export default function RaidMode() {
       HUNTER_UNLOCK_THRESHOLDS.forEach(threshold => {
         if (newRC >= threshold.rc && oldRC < threshold.rc) {
           const candidates = hunterIds.filter(h =>
-            HUNTERS[h].rarity === threshold.rarity && !alreadyOwned.has(h) && !HUNTERS[h].series
+            HUNTERS[h].rarity === threshold.rarity && !alreadyOwned.has(h) && !HUNTERS[h].series && !HUNTERS[h].special
           );
           if (candidates.length > 0) {
             const pick = candidates[Math.floor(Math.random() * candidates.length)];
             unlockedHunters.push(pick);
             alreadyOwned.add(pick);
           } else {
-            const dupePool = hunterIds.filter(h => HUNTERS[h].rarity === threshold.rarity && !HUNTERS[h].series);
+            const dupePool = hunterIds.filter(h => HUNTERS[h].rarity === threshold.rarity && !HUNTERS[h].series && !HUNTERS[h].special);
             if (dupePool.length > 0) {
               const pick = dupePool[Math.floor(Math.random() * dupePool.length)];
               hunterDuplicates.push(pick);
@@ -473,7 +483,7 @@ export default function RaidMode() {
         else dropRarity = rarityRoll < 0.1 ? 'mythique' : rarityRoll < 0.4 ? 'legendaire' : 'rare';
 
         const newCandidates = hunterIds.filter(h =>
-          HUNTERS[h].rarity === dropRarity && !alreadyOwned.has(h) && !HUNTERS[h].series
+          HUNTERS[h].rarity === dropRarity && !alreadyOwned.has(h) && !HUNTERS[h].series && !HUNTERS[h].special
         );
         if (newCandidates.length > 0) {
           const pick = newCandidates[Math.floor(Math.random() * newCandidates.length)];
@@ -481,12 +491,18 @@ export default function RaidMode() {
           alreadyOwned.add(pick);
         } else {
           // All of that rarity owned — give a duplicate for stars
-          const dupePool = hunterIds.filter(h => HUNTERS[h].rarity === dropRarity && !HUNTERS[h].series);
+          const dupePool = hunterIds.filter(h => HUNTERS[h].rarity === dropRarity && !HUNTERS[h].series && !HUNTERS[h].special);
           if (dupePool.length > 0) {
             const pick = dupePool[Math.floor(Math.random() * dupePool.length)];
             hunterDuplicates.push(pick);
           }
         }
+      }
+
+      // Special drop: Megumin — tier 5 (Divin) & 6 (Ultime), 1/100
+      if ((tier === 5 || tier === 6) && !alreadyOwned.has('h_megumin') && Math.random() < 1 / 100) {
+        unlockedHunters.push('h_megumin');
+        alreadyOwned.add('h_megumin');
       }
 
       // Apply rewards
@@ -738,14 +754,23 @@ export default function RaidMode() {
       // AI picks a skill considering mana
       const availSkills = chibi.skills.filter(s => {
         if ((s.cd || 0) > 0) return false;
+        // consumeAllMana skills: available only when mana >= 80% maxMana
+        if (s.consumeAllMana) return (chibi.mana || 0) >= (chibi.maxMana || 1) * 0.8;
         const cost = chibi.passiveState?.echoFreeMana ? 0 : (s.manaCost || 0);
         return (chibi.mana || 999) >= cost;
       });
-      const entityForAI = { ...chibi, skills: availSkills.length > 0 ? availSkills.map(s => ({ ...s, cd: 0 })) : [{ ...chibi.skills[0], cd: 0 }] };
+      // If no skill affordable (e.g. Megumin out of mana), skip turn
+      if (availSkills.length === 0) {
+        chibi.lastAttackAt = now;
+        return;
+      }
+      const entityForAI = { ...chibi, skills: availSkills.map(s => ({ ...s, cd: 0 })) };
       const skill = aiPickSkill(entityForAI);
 
       // Consume mana
-      if (chibi.maxMana > 0 && skill.manaCost > 0) {
+      if (skill.consumeAllMana) {
+        chibi.mana = 0; // drain ALL mana
+      } else if (chibi.maxMana > 0 && skill.manaCost > 0) {
         const actualCost = chibi.passiveState?.echoFreeMana ? 0 : skill.manaCost;
         chibi.mana = Math.max(0, (chibi.mana || 0) - actualCost);
         if (chibi.passiveState?.echoFreeMana) chibi.passiveState.echoFreeMana = false;
@@ -869,7 +894,20 @@ export default function RaidMode() {
 
       chibi.lastAttackAt = now;
       logEntries.push({ text: result.text, time: elapsed, type: result.isCrit ? 'crit' : 'normal' });
-      vfxEvents.push({ id: now + Math.random(), type: 'chibi_attack', sourceId: chibi.id, element: chibi.element, damage: result.damage, isCrit: result.isCrit, timestamp: now });
+      vfxEvents.push({ id: now + Math.random(), type: 'chibi_attack', sourceId: chibi.id, element: chibi.element, damage: result.damage, isCrit: result.isCrit, timestamp: now, attackInterval: chibi.attackInterval });
+
+      // ── MEGUMIN EXPLOSION — special VFX + sound + Beru reaction ──
+      if (skill.consumeAllMana) {
+        vfxEvents.push({ id: now + Math.random() + 0.01, type: 'megumin_explosion', sourceId: chibi.id, damage: result.damage, isCrit: result.isCrit, timestamp: now });
+        try { const sfx = new Audio('https://res.cloudinary.com/dbg7m8qjd/video/upload/v1771534482/ExposionMegumin_wpz0qo.mp3'); sfx.volume = 0.5; sfx.play().catch(() => {}); } catch {}
+        window.dispatchEvent(new CustomEvent('beru-react', {
+          detail: {
+            message: ["WAAAH !! C'est quoi cette EXPLOSION ?!", "BERU A PEUR !! TROP DE FEU !!", "Megumin est FOLLE !! Ca va tout detruire !!", "EXPLOSION !! BERU SE CACHE !!"][Math.floor(Math.random() * 4)],
+            mood: 'panicked',
+          },
+        }));
+      }
+
       stateChanged = true;
     });
 
@@ -1511,14 +1549,7 @@ export default function RaidMode() {
               onSungSkill={(key) => window.dispatchEvent(new KeyboardEvent('keydown', { key }))}
               phase={phase}
               dpsData={dpsTracker.current}
-              chibiWeapons={useMemo(() => {
-                const map = {};
-                (battleState?.chibis || []).forEach(c => {
-                  const wId = coloData.weapons?.[c.id];
-                  if (wId && WEAPONS[wId]?.passive) map[c.id] = WEAPONS[wId].passive;
-                });
-                return map;
-              }, [battleState?.chibis, coloData.weapons])}
+              chibiWeapons={chibiWeaponsMap}
             />
           )}
           {phase === 'result' && renderResult()}
