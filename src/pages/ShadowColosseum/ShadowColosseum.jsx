@@ -956,6 +956,7 @@ export default function ShadowColosseum() {
         const [pickId, pickData] = hunterCandidates[Math.floor(Math.random() * hunterCandidates.length)];
         const rd = loadRaidData();
         const res = addHunterOrDuplicate(rd, pickId);
+        rd.hunterCollection = res.collection;
         saveRaidData(rd);
         hunterDrop = { id: pickId, name: pickData.name, rarity: pickData.rarity, isDuplicate: res.isDuplicate, newStars: res.newStars };
       }
@@ -976,6 +977,7 @@ export default function ShadowColosseum() {
       if (nierId && HUNTERS[nierId]) {
         const rd = loadRaidData();
         const res = addHunterOrDuplicate(rd, nierId);
+        rd.hunterCollection = res.collection;
         saveRaidData(rd);
         nierDrop = { id: nierId, name: HUNTERS[nierId].name, rarity: HUNTERS[nierId].rarity, series: 'nier', isDuplicate: res.isDuplicate, newStars: res.newStars };
       }
@@ -1042,7 +1044,8 @@ export default function ShadowColosseum() {
         const rd = loadRaidData();
         const owned = (rd.hunterCollection || []).map(e => typeof e === 'string' ? e : e.id);
         if (!owned.includes(skinDrop.hunterId)) {
-          addHunterOrDuplicate(rd, skinDrop.hunterId);
+          const skinRes = addHunterOrDuplicate(rd, skinDrop.hunterId);
+          rd.hunterCollection = skinRes.collection;
           saveRaidData(rd);
           skinDrop.autoUnlockedHunter = true;
         }
@@ -1745,13 +1748,14 @@ export default function ShadowColosseum() {
     if (Math.random() < hunterChance) {
       const tierPool = STAGE_HUNTER_DROP.tierPool[stage.tier] || ['rare'];
       const dropRarity = tierPool[Math.floor(Math.random() * tierPool.length)];
-      const hunterCandidates = Object.values(HUNTERS).filter(h => h.rarity === dropRarity);
+      const hunterCandidates = Object.entries(HUNTERS).filter(([, h]) => h.rarity === dropRarity && !h.series);
       if (hunterCandidates.length > 0) {
-        const pick = hunterCandidates[Math.floor(Math.random() * hunterCandidates.length)];
+        const [pickId, pickData] = hunterCandidates[Math.floor(Math.random() * hunterCandidates.length)];
         const rd = loadRaidData();
-        const res = addHunterOrDuplicate(rd, pick.id);
+        const res = addHunterOrDuplicate(rd, pickId);
+        rd.hunterCollection = res.collection;
         saveRaidData(rd);
-        hunterDrop = { id: pick.id, name: pick.name, rarity: pick.rarity, isDuplicate: res.isDuplicate, newStars: res.newStars };
+        hunterDrop = { id: pickId, name: pickData.name, rarity: pickData.rarity, isDuplicate: res.isDuplicate, newStars: res.newStars };
       }
     }
 
@@ -1999,6 +2003,17 @@ export default function ShadowColosseum() {
               <span className="text-xs text-gray-400">— Arene Asynchrone</span>
             </div>
             <p className="text-[10px] text-gray-500 mt-0.5">6v6 contre les equipes des autres joueurs !</p>
+          </Link>
+
+          {/* PVE Ranking Button */}
+          <Link to="/shadow-colosseum/pve-ranking"
+            className="block mb-4 p-3 rounded-xl border border-yellow-500/30 bg-gradient-to-r from-yellow-900/30 to-amber-900/30 hover:from-yellow-900/50 hover:to-amber-900/50 transition-all text-center group">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-xl">{'\uD83C\uDFC6'}</span>
+              <span className="font-bold text-yellow-400 group-hover:text-yellow-300">RANK PVE</span>
+              <span className="text-xs text-gray-400">— Classement iLevel</span>
+            </div>
+            <p className="text-[10px] text-gray-500 mt-0.5">Top 100 des meilleurs hunters par iLevel !</p>
           </Link>
 
           {/* Codex, Shop & Artifacts Buttons */}
@@ -5407,13 +5422,31 @@ export default function ShadowColosseum() {
 
         const buyHammer = (hId) => {
           const h = HAMMERS[hId];
-          if (!h || coins < h.shopPrice) return;
+          if (!h || coins < h.shopPrice) return false;
           shadowCoinManager.spendCoins(h.shopPrice);
           setData(prev => {
             const newH = { ...(prev.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }) };
             newH[hId] = (newH[hId] || 0) + 1;
             return { ...prev, hammers: newH };
           });
+          return true;
+        };
+
+        // Hold-to-buy: accelerates from 300ms to 50ms interval
+        const hammerHoldRef = React.useRef(null);
+        const startHammerHold = (hId) => {
+          buyHammer(hId);
+          let delay = 300;
+          const tick = () => {
+            const ok = buyHammer(hId);
+            if (!ok) { stopHammerHold(); return; }
+            delay = Math.max(50, delay * 0.85);
+            hammerHoldRef.current = setTimeout(tick, delay);
+          };
+          hammerHoldRef.current = setTimeout(tick, delay);
+        };
+        const stopHammerHold = () => {
+          if (hammerHoldRef.current) { clearTimeout(hammerHoldRef.current); hammerHoldRef.current = null; }
         };
 
         const ownedWeapons = data.weaponCollection;
@@ -5451,8 +5484,12 @@ export default function ShadowColosseum() {
                 {HAMMER_ORDER.map(hId => {
                   const h = HAMMERS[hId];
                   return (
-                    <button key={hId} onClick={() => buyHammer(hId)} disabled={coins < h.shopPrice}
-                      className="p-2 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/15 disabled:opacity-30 transition-all text-center">
+                    <button key={hId} disabled={coins < h.shopPrice}
+                      onPointerDown={() => startHammerHold(hId)}
+                      onPointerUp={stopHammerHold}
+                      onPointerLeave={stopHammerHold}
+                      onContextMenu={(e) => e.preventDefault()}
+                      className="p-2 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/15 active:bg-amber-500/25 disabled:opacity-30 transition-all text-center select-none touch-none">
                       <div className="text-lg">{h.icon}</div>
                       <div className="text-[9px] font-bold text-amber-300">{h.name.replace('Marteau ', '')}</div>
                       <div className="text-[10px] text-gray-500">Lv0-{h.maxLevel}</div>

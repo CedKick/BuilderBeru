@@ -428,14 +428,14 @@ export default function RaidMode() {
       HUNTER_UNLOCK_THRESHOLDS.forEach(threshold => {
         if (newRC >= threshold.rc && oldRC < threshold.rc) {
           const candidates = hunterIds.filter(h =>
-            HUNTERS[h].rarity === threshold.rarity && !alreadyOwned.has(h)
+            HUNTERS[h].rarity === threshold.rarity && !alreadyOwned.has(h) && !HUNTERS[h].series
           );
           if (candidates.length > 0) {
             const pick = candidates[Math.floor(Math.random() * candidates.length)];
             unlockedHunters.push(pick);
             alreadyOwned.add(pick);
           } else {
-            const dupePool = hunterIds.filter(h => HUNTERS[h].rarity === threshold.rarity);
+            const dupePool = hunterIds.filter(h => HUNTERS[h].rarity === threshold.rarity && !HUNTERS[h].series);
             if (dupePool.length > 0) {
               const pick = dupePool[Math.floor(Math.random() * dupePool.length)];
               hunterDuplicates.push(pick);

@@ -30,6 +30,7 @@ const LoreStory = React.lazy(() => import('./pages/LoreStory/LoreStory.jsx'));
 const ShadowColosseum = React.lazy(() => import('./pages/ShadowColosseum/ShadowColosseum.jsx'));
 const RaidMode = React.lazy(() => import('./pages/ShadowColosseum/RaidMode.jsx'));
 const PvpMode = React.lazy(() => import('./pages/ShadowColosseum/PvpMode.jsx'));
+const PveRanking = React.lazy(() => import('./pages/ShadowColosseum/PveRanking.jsx'));
 const Codex = React.lazy(() => import('./pages/Codex/Codex.jsx'));
 
 // Loading fallback
@@ -68,6 +69,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="/shadow-colosseum" element={<ShadowColosseum />} />
               <Route path="/shadow-colosseum/raid" element={<RaidMode />} />
               <Route path="/shadow-colosseum/pvp" element={<PvpMode />} />
+              <Route path="/shadow-colosseum/pve-ranking" element={<PveRanking />} />
               <Route path="/codex" element={<Codex />} />
             </Routes>
           </Suspense>
