@@ -31,6 +31,7 @@ import {
   WEAPONS, MAIN_STAT_VALUES, rollRaidWeaponDrop, rollUltimeWeaponDrop, generateUltimeArtifact, MAX_WEAPON_AWAKENING,
 } from './equipmentData';
 import { BattleStyles, RaidArena } from './BattleVFX';
+import { isLoggedIn, authHeaders } from '../../utils/auth';
 
 // ─── Colosseum shared save (chibi levels, stat points, skill tree, talents) ──
 const SAVE_KEY = 'shadow_colosseum_data';
@@ -503,6 +504,14 @@ export default function RaidMode() {
       if ((tier === 5 || tier === 6) && !alreadyOwned.has('h_megumin') && Math.random() < 1 / 100) {
         unlockedHunters.push('h_megumin');
         alreadyOwned.add('h_megumin');
+        // Log legendary drop
+        if (isLoggedIn()) {
+          fetch('/api/drop-log?action=submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeaders() },
+            body: JSON.stringify({ itemType: 'hunter', itemId: 'h_megumin', itemName: 'Megumin', itemRarity: 'legendaire' }),
+          }).catch(() => {});
+        }
       }
 
       // Apply rewards

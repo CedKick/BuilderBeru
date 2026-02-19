@@ -46,6 +46,7 @@ import {
   buildStageEnemies,
 } from './arc2Data';
 import { TALENT_SKILLS, TALENT_SKILL_COST, TALENT_SKILL_UNLOCK_LEVEL } from './talentSkillData';
+import { isLoggedIn, authHeaders } from '../../utils/auth';
 
 // ─── StoryTypewriter — char-by-char text reveal ──────────────
 const StoryTypewriter = ({ text, speaker }) => {
@@ -340,6 +341,42 @@ export default function ShadowColosseum() {
   const [tooltipPinned, setTooltipPinned] = useState(false); // click-pinned tooltip stays on mouse leave
   const tooltipTimerRef = useRef(null); // long-press timer for mobile tooltip
   const hammerHoldRef = useRef(null); // hold-to-buy timer for hammer shop
+  const [dropLog, setDropLog] = useState([]);
+  const [showDropLog, setShowDropLog] = useState(false);
+  const [hasNewDrops, setHasNewDrops] = useState(false);
+  const lastDropCheckRef = useRef(0);
+
+  // Fire-and-forget legendary drop logger
+  const logLegendaryDrop = (itemType, itemId, itemName, itemRarity, awakening = 0) => {
+    if (!isLoggedIn()) return;
+    fetch('/api/drop-log?action=submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ itemType, itemId, itemName, itemRarity, awakening }),
+    }).catch(() => {});
+  };
+
+  // Fetch recent legendary drops
+  const fetchDropLog = () => {
+    fetch('/api/drop-log?action=recent')
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && d.drops) {
+          const prev = dropLog.length;
+          setDropLog(d.drops);
+          if (prev > 0 && d.drops.length > prev) setHasNewDrops(true);
+          lastDropCheckRef.current = Date.now();
+        }
+      })
+      .catch(() => {});
+  };
+
+  // Fetch drop log on mount + poll every 60s
+  useEffect(() => {
+    fetchDropLog();
+    const iv = setInterval(fetchDropLog, 60000);
+    return () => clearInterval(iv);
+  }, []);
 
   // Skin-aware sprite helper — returns active skin sprite or default
   const getSprite = (id) => HUNTER_SKINS[id] ? getHunterSprite(id, data) : getChibiSprite(id);
@@ -1023,6 +1060,7 @@ export default function ShadowColosseum() {
         rd.hunterCollection = res.collection;
         saveRaidData(rd);
         nierDrop = { id: nierId, name: HUNTERS[nierId].name, rarity: HUNTERS[nierId].rarity, series: 'nier', isDuplicate: res.isDuplicate, newStars: res.newStars };
+        if (!res.isDuplicate) logLegendaryDrop('hunter', nierId, HUNTERS[nierId].name, HUNTERS[nierId].rarity);
       }
     }
     // Skin drop (stage/tier based)
@@ -1941,8 +1979,10 @@ export default function ShadowColosseum() {
       // Auto-dismiss le reveal après 4s pour ne pas bloquer le farm
       setTimeout(() => setWeaponReveal(null), 4000);
       if (weaponDrop.id === 'w_sulfuras') {
+        logLegendaryDrop('weapon', 'w_sulfuras', 'Masse de Sulfuras', 'secret', weaponDrop.newAwakening || 0);
         try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'sulfuras', message: "OOOH MON DIEU !! LA MASSE DE SULFURAS !!! C'est... c'est REEL ?! Tu l'as eu ! TU L'AS VRAIMENT EU ! Je pleure des larmes de fourmi !!" } })); } catch (e) {}
       } else if (weaponDrop.id === 'w_raeshalare') {
+        logLegendaryDrop('weapon', 'w_raeshalare', "Arc Rae'shalare", 'secret', weaponDrop.newAwakening || 0);
         try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: "RAE'SHALARE ?! Le Murmure de la Mort !! Cette arme est LEGENDAIRE ! Les ombres murmurent ton nom maintenant... INCROYABLE !!" } })); } catch (e) {}
       } else if (weaponDrop.rarity === 'mythique') {
         try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: `Wow ! ${weaponDrop.name} ! Une arme mythique, la classe !` } })); } catch (e) {}
@@ -7281,6 +7321,66 @@ export default function ShadowColosseum() {
         className="fixed top-4 right-4 z-40 w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 border-2 border-indigo-400/50 shadow-lg shadow-indigo-500/30 flex items-center justify-center text-lg hover:scale-110 active:scale-95 transition-transform"
         title="Comment jouer ?"
       >?</button>
+
+      {/* ═══ DROP LOG BELL (below ?) ═══ */}
+      <button
+        onClick={() => { setShowDropLog(true); setHasNewDrops(false); fetchDropLog(); }}
+        className="fixed top-16 right-4 z-40 w-10 h-10 rounded-full bg-gradient-to-br from-amber-600 to-orange-600 border-2 border-amber-400/50 shadow-lg shadow-amber-500/30 flex items-center justify-center text-lg hover:scale-110 active:scale-95 transition-transform"
+        title="Drops legendaires"
+      >
+        {'\uD83D\uDD14'}
+        {hasNewDrops && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 border border-red-300 animate-pulse" />}
+      </button>
+
+      {/* ═══ DROP LOG MODAL ═══ */}
+      <AnimatePresence>
+        {showDropLog && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowDropLog(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.85, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.85, y: 30 }}
+              className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-2xl border border-amber-500/40 bg-[#0f0f2a] p-5 shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-black bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">{'\uD83D\uDD14'} Drops Legendaires</h2>
+                <button onClick={() => setShowDropLog(false)} className="text-gray-500 hover:text-white text-xl transition-colors">&times;</button>
+              </div>
+              {dropLog.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-6">Aucun drop legendaire enregistre pour le moment.</p>
+              ) : (
+                <div className="space-y-2">
+                  {dropLog.map((drop) => {
+                    const isWeapon = drop.itemType === 'weapon';
+                    const icon = isWeapon ? (drop.itemId === 'w_sulfuras' ? '\u2694\uFE0F' : '\uD83C\uDFF9') : '\uD83D\uDC64';
+                    const awakeLabel = isWeapon && drop.awakening > 0 ? ` A${drop.awakening}` : '';
+                    const date = new Date(drop.createdAt);
+                    const timeStr = date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                    return (
+                      <div key={drop.id} className="flex items-center gap-3 p-2 rounded-lg bg-white/5 border border-white/10">
+                        <span className="text-2xl">{icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-bold text-amber-300 truncate">{drop.username}</div>
+                          <div className="text-xs text-gray-300 truncate">{drop.itemName}{awakeLabel}</div>
+                          <div className="text-[10px] text-gray-500">{timeStr}</div>
+                        </div>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                          drop.itemRarity === 'secret' ? 'bg-red-500/20 text-red-300' :
+                          drop.itemRarity === 'legendaire' ? 'bg-amber-500/20 text-amber-300' :
+                          'bg-purple-500/20 text-purple-300'
+                        }`}>{drop.itemRarity || 'rare'}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ═══ TUTORIAL MODAL ═══ */}
       <AnimatePresence>
