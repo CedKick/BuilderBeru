@@ -32,6 +32,7 @@ export const SPRITES = {
   colossus: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771160331/Colossus_xok08m.png',
   archdemon: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771160758/Archdemon_hiem7r.png',
   ragnarok: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771161413/Ragnarok_liihbd.png',
+  zephyr: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771528815/ZephyrUltime_xdxvjd.png',
 };
 
 // ─── Elements ────────────────────────────────────────────────

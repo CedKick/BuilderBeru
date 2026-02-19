@@ -1511,6 +1511,14 @@ export default function RaidMode() {
               onSungSkill={(key) => window.dispatchEvent(new KeyboardEvent('keydown', { key }))}
               phase={phase}
               dpsData={dpsTracker.current}
+              chibiWeapons={useMemo(() => {
+                const map = {};
+                (battleState?.chibis || []).forEach(c => {
+                  const wId = coloData.weapons?.[c.id];
+                  if (wId && WEAPONS[wId]?.passive) map[c.id] = WEAPONS[wId].passive;
+                });
+                return map;
+              }, [battleState?.chibis, coloData.weapons])}
             />
           )}
           {phase === 'result' && renderResult()}

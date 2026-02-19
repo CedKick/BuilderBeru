@@ -174,6 +174,7 @@ const STAGES = [
     hp: 1000, atk: 120, def: 38, spd: 38, crit: 22, res: 12, xp: 320, coins: 550,
     skills: [{ name: 'Extinction', power: 120, cdMax: 0 }, { name: 'Jugement de Feu', power: 300, cdMax: 3 }, { name: 'Apocalypse', power: 380, cdMax: 5 }] },
   { id: 'zephyr', name: 'Zephyr Ultime', tier: 6, element: 'wind', emoji: '\uD83C\uDF2C\uFE0F',
+    sprite: SPRITES.zephyr, spriteSize: 'lg',
     hp: 850, atk: 100, def: 35, spd: 60, crit: 30, res: 10, xp: 310, coins: 520,
     skills: [{ name: 'Tranchant Celeste', power: 110, cdMax: 0 }, { name: 'Tornade Divine', power: 290, cdMax: 3 }] },
   { id: 'supreme_monarch', name: 'Monarque Supreme', tier: 6, element: 'shadow', emoji: '\uD83D\uDC51', isBoss: true,
@@ -6359,6 +6360,7 @@ export default function ShadowColosseum() {
             onFlee={flee}
             getChibiSprite={getChibiSprite}
             getChibiData={getChibiData}
+            weaponPassive={selChibi && data.weapons[selChibi] ? WEAPONS[data.weapons[selChibi]]?.passive : null}
           />
           {/* Auto toggle + Farm stats HUD */}
           <div className="absolute top-1 right-2 z-20 flex flex-col items-end gap-1">

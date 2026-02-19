@@ -65,6 +65,9 @@ export function BattleStyles() {
       @keyframes arenaHitBoss { 0%,100%{transform:translateX(0)} 15%{transform:translateX(6px)} 30%{transform:translateX(-6px)} 50%{transform:translateX(3px)} 70%{transform:translateX(-3px)} }
       @keyframes arenaKO { 0%{opacity:1;filter:brightness(1)} 30%{opacity:0.8;filter:brightness(2)} 100%{opacity:0.25;filter:brightness(0.4) grayscale(1)} }
       @keyframes arenaShadow { 0%,100%{transform:scaleX(1);opacity:0.25} 50%{transform:scaleX(0.85);opacity:0.15} }
+      @keyframes projectileFly { 0%{transform:translateX(0) translateY(0) scale(0.6);opacity:0} 8%{opacity:1;transform:translateX(15px) translateY(-5px) scale(1)} 85%{opacity:1;transform:translateX(calc(var(--proj-dist,140px) - 20px)) translateY(-8px) scale(1)} 100%{opacity:0;transform:translateX(var(--proj-dist,140px)) translateY(0) scale(1.3)} }
+      @keyframes projectileImpact { 0%{opacity:1;transform:scale(0.3)} 40%{opacity:0.8;transform:scale(1.8)} 100%{opacity:0;transform:scale(2.5)} }
+      @keyframes projectileTrail { 0%{opacity:0.6;width:30px} 100%{opacity:0;width:0} }
     `}</style>
   );
 }
@@ -150,6 +153,60 @@ function ScreenFlash({ color, active }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// WEAPON PROJECTILE — Animated sprite flying from attacker to target
+// ═══════════════════════════════════════════════════════════════
+
+const WEAPON_PROJECTILES = {
+  shadow_silence: {
+    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771529868/flecheMurmure_a88leg.png',
+    width: 40, height: 40,
+    trailColor: 'rgba(168,85,247,0.5)',
+    impactColor: 'rgba(168,85,247,0.6)',
+    rotation: -15,
+    duration: 0.45,
+  },
+};
+
+function WeaponProjectile({ weaponPassive, active, distance, reversed }) {
+  const config = WEAPON_PROJECTILES[weaponPassive];
+  if (!config || !active) return null;
+
+  const dir = reversed ? -1 : 1;
+  const dist = (distance || 140) * dir;
+
+  return (
+    <div className="absolute inset-0 pointer-events-none z-25 overflow-visible">
+      {/* Projectile sprite */}
+      <div className="absolute" style={{
+        left: reversed ? 'auto' : '15%',
+        right: reversed ? '15%' : 'auto',
+        top: '42%',
+        '--proj-dist': `${dist}px`,
+        animation: `projectileFly ${config.duration}s ease-in forwards`,
+      }}>
+        <img src={config.sprite} alt=""
+          className="pointer-events-none"
+          style={{
+            width: config.width, height: config.height,
+            transform: `rotate(${config.rotation * dir}deg) ${reversed ? 'scaleX(-1)' : ''}`,
+            filter: `drop-shadow(0 0 8px ${config.trailColor})`,
+          }} />
+      </div>
+      {/* Impact flash at target */}
+      <div className="absolute" style={{
+        left: reversed ? '15%' : 'auto',
+        right: reversed ? 'auto' : '15%',
+        top: '38%',
+        width: 50, height: 50,
+        background: `radial-gradient(circle, ${config.impactColor}, transparent)`,
+        animation: `projectileImpact ${config.duration + 0.15}s ease-out ${config.duration * 0.7}s forwards`,
+        opacity: 0,
+      }} />
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 // HP BAR (shared)
 // ═══════════════════════════════════════════════════════════════
 
@@ -170,7 +227,7 @@ function HpBar({ hp, maxHp, height = 'h-2', showText = false }) {
 // BATTLE ARENA — Turn-Based Stage Combat (Animated)
 // ═══════════════════════════════════════════════════════════════
 
-export function BattleArena({ battle, phase, dmgPopup, stageEmoji, stageSprite, stageSpriteSize, stageElement, onSkillUse, onFlee, getChibiSprite, getChibiData }) {
+export function BattleArena({ battle, phase, dmgPopup, stageEmoji, stageSprite, stageSpriteSize, stageElement, onSkillUse, onFlee, getChibiSprite, getChibiData, weaponPassive }) {
   if (!battle) return null;
   const { player, enemy } = battle;
   const playerData = getChibiData(player.id);
@@ -215,6 +272,11 @@ export function BattleArena({ battle, phase, dmgPopup, stageEmoji, stageSprite, 
 
         {/* Ground line */}
         <div className="absolute bottom-[30%] left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
+
+        {/* Weapon projectile — player attacks */}
+        {weaponPassive && WEAPON_PROJECTILES[weaponPassive] && (
+          <WeaponProjectile weaponPassive={weaponPassive} active={phase === 'player_atk'} distance={160} reversed={false} />
+        )}
 
         {/* Player Side (Left) */}
         <div className="absolute left-[12%] bottom-[30%] flex flex-col items-center" style={{ transform: 'translateY(50%)' }}>
@@ -425,7 +487,7 @@ const CHIBI_POSITIONS = [
   { left: '22%', top: '62%' },
 ];
 
-function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg, dps }) {
+function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg, dps, weaponPassive }) {
   const hpPct = chibi.maxHp > 0 ? chibi.hp / chibi.maxHp : 0;
   const hpColor = hpPct > 0.5 ? '#22c55e' : hpPct > 0.2 ? '#eab308' : '#ef4444';
 
@@ -475,6 +537,19 @@ function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg, dps 
             -{dmg}
           </div>
         )}
+        {/* Weapon projectile on attack */}
+        {isAttacking && weaponPassive && WEAPON_PROJECTILES[weaponPassive] && (
+          <div className="absolute left-full top-1/2 -translate-y-1/2" style={{ width: 200, height: 40 }}>
+            <img src={WEAPON_PROJECTILES[weaponPassive].sprite} alt=""
+              style={{
+                width: 28, height: 28,
+                transform: `rotate(${WEAPON_PROJECTILES[weaponPassive].rotation}deg)`,
+                filter: `drop-shadow(0 0 6px ${WEAPON_PROJECTILES[weaponPassive].trailColor})`,
+                animation: `projectileFly ${WEAPON_PROJECTILES[weaponPassive].duration}s ease-in forwards`,
+                '--proj-dist': '120px',
+              }} />
+          </div>
+        )}
         {/* Ground shadow */}
         {chibi.alive && (
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-2 rounded-full bg-black/30"
@@ -494,7 +569,7 @@ function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg, dps 
 // RAID ARENA — Visual Battle Arena (Animated)
 // ═══════════════════════════════════════════════════════════════
 
-export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldowns, activeSungBuffs, combatLog, onTogglePause, onSungSkill, phase, dpsData }) {
+export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldowns, activeSungBuffs, combatLog, onTogglePause, onSungSkill, phase, dpsData, chibiWeapons }) {
   if (!battleState) return null;
   const { chibis, boss: b } = battleState;
   const barPct = b.maxHp > 0 ? (b.hp / b.maxHp * 100) : 0;
@@ -666,6 +741,7 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
               isHealing={healEvents.has(c.id)}
               dmg={chibiHit.get(c.id)}
               dps={dps}
+              weaponPassive={chibiWeapons?.[c.id] || null}
             />
           );
         })}
