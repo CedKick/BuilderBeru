@@ -309,6 +309,15 @@ export default function ShadowColosseum() {
   const [arc2StoryTier, setArc2StoryTier] = useState(null);
   const [arc2StoryIdx, setArc2StoryIdx] = useState(0);
   const [arc2SelStage, setArc2SelStage] = useState(null);
+  const storyMusicRef = useRef(null);
+  const stopStoryMusic = () => {
+    if (storyMusicRef.current) {
+      storyMusicRef.current.pause();
+      storyMusicRef.current.currentTime = 0;
+      storyMusicRef.current = null;
+    }
+  };
+  useEffect(() => { if (view !== 'arc2_story') stopStoryMusic(); }, [view]);
   const [arc2Team, setArc2Team] = useState([null, null, null]);
   const [arc2PickSlot, setArc2PickSlot] = useState(null);
   const [arc2Star, setArc2Star] = useState(0);
@@ -2819,11 +2828,21 @@ export default function ShadowColosseum() {
         };
 
         const finishStory = () => {
+          stopStoryMusic();
           setData(prev => ({ ...prev, arc2StoriesWatched: { ...prev.arc2StoriesWatched, [arc2StoryTier]: true } }));
           setArc2StoryTier(null);
           setArc2StoryIdx(0);
           setView('hub');
         };
+
+        // Start music if story has one and not already playing
+        if (story.music && !storyMusicRef.current) {
+          const audio = new Audio(story.music);
+          audio.loop = true;
+          audio.volume = 0.35;
+          audio.play().catch(() => {});
+          storyMusicRef.current = audio;
+        }
 
         return (
           <div className="fixed inset-0 z-50 bg-black flex flex-col">
@@ -7060,14 +7079,16 @@ export default function ShadowColosseum() {
       {accountLevelUpPending > 0 && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
           <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            className="bg-[#12122a] border border-indigo-500/40 rounded-2xl p-5 max-w-sm w-full shadow-2xl">
-            <div className="text-center mb-4">
-              <div className="text-4xl mb-2">{'\uD83C\uDFC5'}</div>
-              <h3 className="text-xl font-black text-indigo-300">Niveau Compte !</h3>
-              <p className="text-sm text-gray-400 mt-1">Choisis une stat a booster (+{ACCOUNT_BONUS_AMOUNT} pts par allocation)</p>
-              <p className="text-[10px] text-amber-400 mt-1 font-bold">{accountLevelUpPending} allocation{accountLevelUpPending > 1 ? 's' : ''} en attente</p>
+            className="bg-[#12122a] border border-indigo-500/40 rounded-2xl p-5 w-full max-w-md shadow-2xl">
+            <div className="text-center mb-3">
+              <div className="text-3xl mb-1">{'\uD83C\uDFC5'}</div>
+              <h3 className="text-lg font-black text-indigo-300">Niveau Compte</h3>
+              <p className="text-[11px] text-gray-400">+{ACCOUNT_BONUS_AMOUNT} pts par allocation</p>
+              <div className="inline-block mt-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30">
+                <span className="text-xs font-black text-amber-400">{accountLevelUpPending} allocation{accountLevelUpPending > 1 ? 's' : ''} restante{accountLevelUpPending > 1 ? 's' : ''}</span>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
               {STAT_ORDER.map(statKey => {
                 const meta = STAT_META[statKey];
                 const currentVal = (data.accountBonuses || {})[statKey] || 0;
@@ -7083,24 +7104,14 @@ export default function ShadowColosseum() {
                   }));
                 };
                 return (
-                  <div key={statKey} className="p-3 rounded-xl border border-gray-700/40 bg-gray-800/30">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-lg">{meta.icon}</span>
-                      <div className="flex-1">
-                        <div className="text-sm font-bold text-white">{meta.name}</div>
-                        <div className="text-[9px] text-gray-500">{meta.desc}</div>
-                      </div>
-                      <span className="text-green-400 font-bold text-sm">+{currentVal}</span>
-                    </div>
-                    <div className="flex gap-1">
+                  <div key={statKey} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.06] hover:border-indigo-500/30 transition-all">
+                    <span className="text-base w-6 text-center">{meta.icon}</span>
+                    <span className="text-xs font-bold text-white w-12">{meta.name}</span>
+                    <span className="text-xs font-black text-green-400 w-14 text-right">{currentVal > 0 ? `+${currentVal}` : '—'}</span>
+                    <div className="flex gap-1 flex-1 justify-end">
                       {[1, 10, 100, 1000].map(n => (
                         <button key={n} onClick={() => allocN(n)}
-                          disabled={pendingRef.current <= 0}
-                          className={`flex-1 py-1 rounded text-[10px] font-bold transition-all ${
-                            pendingRef.current <= 0
-                              ? 'bg-gray-800/50 text-gray-600 cursor-not-allowed'
-                              : 'bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/40 hover:text-white'
-                          }`}>
+                          className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/40 hover:text-white hover:border-indigo-400/60 transition-all active:scale-95">
                           +{n}
                         </button>
                       ))}

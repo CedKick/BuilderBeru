@@ -328,7 +328,7 @@ export const ARC2_STORIES = {
       { type: 'dialogue', speaker: 'beru',
         text: "Bon joueur... c'est a toi. On compte sur toi. Ces deux-la comptent sur toi. Pascal... compte sur toi. Choisis ton equipe de 3. Ca va pas etre une promenade de sante." },
     ],
-    music: null,
+    music: 'https://res.cloudinary.com/dbg7m8qjd/video/upload/v1771499910/OSTReplicant_jfru6g.mp3',
   },
   2: {
     title: 'Chapitre 2 : La Foret Silencieuse',
