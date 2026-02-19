@@ -289,8 +289,10 @@ export default function ShadowColosseum() {
   const clickTimerRef = useRef({});
   const phaseRef = useRef('idle');
   const statHoldRef = useRef(null); // hold-to-repeat for stat +/- buttons
+  const enhanceHoldRef = useRef(null); // hold-to-repeat for artifact enhance button
 
   useEffect(() => { phaseRef.current = phase; }, [phase]);
+  useEffect(() => () => { if (enhanceHoldRef.current) clearTimeout(enhanceHoldRef.current); }, []);
   useEffect(() => { saveData(data); }, [data]);
   useEffect(() => { autoReplayRef.current = autoReplay; }, [autoReplay]);
   useEffect(() => {
@@ -5118,8 +5120,19 @@ export default function ShadowColosseum() {
                       Desequiper
                     </button>
                   )}
-                  <button onClick={doEnhance} disabled={!canEnhance}
-                    className="flex-1 py-1.5 rounded-lg bg-cyan-600/30 text-cyan-300 text-[10px] font-bold hover:bg-cyan-600/50 disabled:opacity-30 transition-colors">
+                  <button
+                    onPointerDown={() => {
+                      if (!canEnhance) return;
+                      doEnhance();
+                      let delay = 350;
+                      const tick = () => { doEnhance(); delay = Math.max(40, delay * 0.82); enhanceHoldRef.current = setTimeout(tick, delay); };
+                      enhanceHoldRef.current = setTimeout(tick, delay);
+                    }}
+                    onPointerUp={() => { if (enhanceHoldRef.current) { clearTimeout(enhanceHoldRef.current); enhanceHoldRef.current = null; } }}
+                    onPointerLeave={() => { if (enhanceHoldRef.current) { clearTimeout(enhanceHoldRef.current); enhanceHoldRef.current = null; } }}
+                    onContextMenu={e => e.preventDefault()}
+                    disabled={!canEnhance}
+                    className="flex-1 py-1.5 rounded-lg bg-cyan-600/30 text-cyan-300 text-[10px] font-bold hover:bg-cyan-600/50 disabled:opacity-30 transition-colors select-none">
                     {'\uD83D\uDD28'} +1 ({bestHammer ? HAMMERS[bestHammer].icon : '?'} {coinCost}c)
                   </button>
                   {!isEquipped && (
