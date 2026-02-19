@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ELEMENTS, RARITY } from './colosseumCore';
-import { SUNG_SKILLS } from './raidData';
+import { SUNG_SKILLS, RAID_DURATION_SEC } from './raidData';
 
 // ═══════════════════════════════════════════════════════════════
 // ELEMENT VFX CONFIG
@@ -425,7 +425,7 @@ const CHIBI_POSITIONS = [
   { left: '22%', top: '62%' },
 ];
 
-function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg }) {
+function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg, dps }) {
   const hpPct = chibi.maxHp > 0 ? chibi.hp / chibi.maxHp : 0;
   const hpColor = hpPct > 0.5 ? '#22c55e' : hpPct > 0.2 ? '#eab308' : '#ef4444';
 
@@ -437,9 +437,15 @@ function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg }) {
   return (
     <div className="absolute flex flex-col items-center pointer-events-none" style={{ left: pos.left, top: pos.top, zIndex: isAttacking ? 20 : 10 }}>
       {/* Name tag */}
-      <div className="text-[9px] font-bold text-white/80 mb-0.5 whitespace-nowrap drop-shadow-lg" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
+      <div className="text-[9px] font-bold text-white/80 whitespace-nowrap drop-shadow-lg" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
         {chibi.name}
       </div>
+      {/* Live DPS */}
+      {dps > 0 && (
+        <div className="text-[8px] font-bold text-yellow-400/90 whitespace-nowrap mb-0.5" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.9)' }}>
+          {dps >= 1e9 ? `${(dps / 1e9).toFixed(1)}B` : dps >= 1e6 ? `${(dps / 1e6).toFixed(1)}M` : dps >= 1e3 ? `${(dps / 1e3).toFixed(1)}K` : Math.floor(dps)}/s
+        </div>
+      )}
       {/* Sprite */}
       <div className="relative">
         <img src={chibi.sprite} alt={chibi.name}
@@ -488,7 +494,7 @@ function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg }) {
 // RAID ARENA — Visual Battle Arena (Animated)
 // ═══════════════════════════════════════════════════════════════
 
-export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldowns, activeSungBuffs, combatLog, onTogglePause, onSungSkill, phase }) {
+export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldowns, activeSungBuffs, combatLog, onTogglePause, onSungSkill, phase, dpsData }) {
   if (!battleState) return null;
   const { chibis, boss: b } = battleState;
   const barPct = b.maxHp > 0 ? (b.hp / b.maxHp * 100) : 0;
@@ -533,6 +539,16 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
     bossIsAttacking ? 'arenaDashLeft 0.5s ease-in-out' :
     bossHit ? 'arenaHitBoss 0.35s ease-out' :
     'arenaIdleBoss 3s ease-in-out infinite';
+
+  // Random arena background (picked once per mount)
+  const arenaBgRef = useRef(null);
+  if (!arenaBgRef.current) {
+    const ARENA_MAPS = [
+      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771328568/pvpArena2_hqeqzb.png',
+      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771328568/pvpArena1_wfxqmk.png',
+    ];
+    arenaBgRef.current = ARENA_MAPS[Math.floor(Math.random() * ARENA_MAPS.length)];
+  }
 
   return (
     <div className="space-y-2 relative">
@@ -628,48 +644,31 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
 
       {/* ═══════ VISUAL BATTLE ARENA ═══════ */}
       <div className="relative rounded-2xl overflow-hidden border border-white/10"
-        style={{
-          height: 280,
-          background: 'linear-gradient(180deg, #0c0c20 0%, #151530 30%, #1a1235 60%, #201828 100%)',
-        }}>
+        style={{ height: 280 }}>
 
-        {/* Ground plane — perspective floor */}
-        <div className="absolute bottom-0 left-0 right-0" style={{ height: '35%' }}>
-          <div className="w-full h-full" style={{
-            background: 'linear-gradient(180deg, rgba(60,30,80,0.3) 0%, rgba(40,20,60,0.5) 50%, rgba(30,15,45,0.7) 100%)',
-            borderTop: '1px solid rgba(168,85,247,0.15)',
-          }} />
-          {/* Ground lines for depth */}
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/15 to-transparent" />
-          <div className="absolute top-[40%] left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/8 to-transparent" />
-          <div className="absolute top-[70%] left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/5 to-transparent" />
-        </div>
-
-        {/* Atmospheric particles */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="absolute w-1 h-1 rounded-full bg-purple-400/20"
-              style={{
-                left: `${10 + i * 16}%`,
-                top: `${20 + (i % 3) * 25}%`,
-                animation: `healSparkle ${3 + i * 0.5}s ease-in-out infinite`,
-                animationDelay: `${i * 0.7}s`,
-              }} />
-          ))}
-        </div>
+        {/* Arena background image */}
+        <img src={arenaBgRef.current} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ filter: 'brightness(0.6)' }} />
+        {/* Dark overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30" />
 
         {/* ─── CHIBI SPRITES (left side) ─── */}
-        {chibis.map((c, idx) => (
-          <ArenaChibiSprite
-            key={c.id}
-            chibi={c}
-            pos={CHIBI_POSITIONS[idx] || CHIBI_POSITIONS[0]}
-            isAttacking={chibiAttacking.has(c.id)}
-            isHit={chibiHit.has(c.id) || bossAoe}
-            isHealing={healEvents.has(c.id)}
-            dmg={chibiHit.get(c.id)}
-          />
-        ))}
+        {chibis.map((c, idx) => {
+          const elapsed = Math.max(1, RAID_DURATION_SEC - timer);
+          const totalDmg = dpsData?.[c.id] || 0;
+          const dps = totalDmg / elapsed;
+          return (
+            <ArenaChibiSprite
+              key={c.id}
+              chibi={c}
+              pos={CHIBI_POSITIONS[idx] || CHIBI_POSITIONS[0]}
+              isAttacking={chibiAttacking.has(c.id)}
+              isHit={chibiHit.has(c.id) || bossAoe}
+              isHealing={healEvents.has(c.id)}
+              dmg={chibiHit.get(c.id)}
+              dps={dps}
+            />
+          );
+        })}
 
         {/* ─── BOSS SPRITE (right side) ─── */}
         <div className="absolute flex flex-col items-center" style={{ right: '8%', top: '15%', zIndex: bossIsAttacking ? 20 : 10 }}>
@@ -762,29 +761,55 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
             const onCD = cdEnd > now;
             const cdRemain = onCD ? Math.ceil((cdEnd - now) / 1000) : 0;
             const isActive = activeSungBuffs.some(sb => sb.id === skill.id && sb.expiresAt > now);
+            const eff = skill.effect;
+            const tooltipLines = [skill.desc];
+            if (eff.type === 'buff') {
+              tooltipLines.push(`${eff.stat?.toUpperCase()} +${eff.value}%`);
+              if (eff.stat2) tooltipLines.push(`${eff.stat2?.toUpperCase()} +${eff.value2}%`);
+              tooltipLines.push(`Duree : ${skill.durationSec}s`);
+            } else if (eff.type === 'debuff') {
+              tooltipLines.push(`Boss ${eff.stat?.toUpperCase()} -${eff.value}%`);
+              tooltipLines.push(`Duree : ${skill.durationSec}s`);
+            } else if (eff.type === 'heal') {
+              tooltipLines.push(`Soin : ${eff.value}% PV max`);
+            }
+            tooltipLines.push(`Cooldown : ${skill.cdSec}s`);
 
             return (
-              <button key={skill.id}
-                onClick={() => !onCD && phase === 'battle' && onSungSkill(skill.key)}
-                disabled={onCD}
-                className={`relative flex flex-col items-center p-1.5 rounded-lg border transition-all min-w-[52px] ${
-                  isActive ? 'border-yellow-400/60 bg-yellow-500/20 scale-105' :
-                  onCD ? 'border-gray-600 bg-gray-800/50 opacity-60' :
-                  'border-white/20 bg-white/5 hover:border-purple-400/60 hover:bg-purple-500/10'
-                }`}
-                style={isActive ? { animation: 'buffAura 2s ease-in-out infinite' } : {}}>
-                <span className="text-base">{skill.icon}</span>
-                <span className="text-[8px] text-white/80">{skill.name}</span>
-                <span className="text-[7px] text-gray-400">[{skill.key.toUpperCase()}{skill.altKey ? `/${skill.altKey.toUpperCase()}` : ''}]</span>
-                {onCD && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
-                    <span className="text-xs font-bold text-red-400">{cdRemain}s</span>
-                  </div>
-                )}
-                {isActive && (
-                  <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
-                )}
-              </button>
+              <div key={skill.id} className="relative group">
+                <button
+                  onClick={() => !onCD && phase === 'battle' && onSungSkill(skill.key)}
+                  disabled={onCD}
+                  className={`relative flex flex-col items-center p-1.5 rounded-lg border transition-all min-w-[52px] ${
+                    isActive ? 'border-yellow-400/60 bg-yellow-500/20 scale-105' :
+                    onCD ? 'border-gray-600 bg-gray-800/50 opacity-60' :
+                    'border-white/20 bg-white/5 hover:border-purple-400/60 hover:bg-purple-500/10'
+                  }`}
+                  style={isActive ? { animation: 'buffAura 2s ease-in-out infinite' } : {}}>
+                  <span className="text-base">{skill.icon}</span>
+                  <span className="text-[8px] text-white/80">{skill.name}</span>
+                  <span className="text-[7px] text-gray-400">[{skill.key.toUpperCase()}{skill.altKey ? `/${skill.altKey.toUpperCase()}` : ''}]</span>
+                  {onCD && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+                      <span className="text-xs font-bold text-red-400">{cdRemain}s</span>
+                    </div>
+                  )}
+                  {isActive && (
+                    <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+                  )}
+                </button>
+                {/* Tooltip on hover */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg bg-gray-900/95 border border-purple-500/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50 whitespace-nowrap"
+                  style={{ minWidth: 160 }}>
+                  <div className="text-[10px] font-bold text-white mb-1">{skill.icon} {skill.name}</div>
+                  {tooltipLines.map((line, i) => (
+                    <div key={i} className={`text-[9px] ${i === 0 ? 'text-gray-300 mb-1' : line.includes('+') ? 'text-green-400' : line.includes('-') ? 'text-red-400' : line.startsWith('Soin') ? 'text-green-400' : 'text-gray-400'}`}>
+                      {line}
+                    </div>
+                  ))}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900/95" />
+                </div>
+              </div>
             );
           })}
         </div>

@@ -1,5 +1,5 @@
-// raidData.js — Hunter Chibis (ALL Fire/Water/Dark), Raid Bosses, Sung Jinwoo Skills & Synergies
-// Mode Raid pour Shadow Colosseum — 35 Hunters
+// raidData.js — Hunter Chibis (ALL Fire/Water/Dark + Nier Collab), Raid Bosses, Sung Jinwoo Skills & Synergies
+// Mode Raid pour Shadow Colosseum — 36 Hunters
 
 // ─── Hunter Chibi Sprites (from characters.js icons) ─────────
 
@@ -42,6 +42,13 @@ const S = {
   h_son:       'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934305/Son_Portrait_vmup4f.png',
   h_hwang:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606314/icons/build-16.png',
   h_kang:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606322/icons/build-19.png',
+  // NIER AUTOMATA (collab)
+  h_2b:        'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771499926/2B_vly2pt.png',
+  h_pascal:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771500784/Pascal_xfuwum.png',
+  h_a2:        'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771503623/A2_a0cyk9.png',
+  h_a2_atk1:   'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771503621/A2_ATK_houugg.png',
+  h_a2_atk2:   'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771503620/A2_ATK2_roqlzl.png',
+  h_a2_bunny:  'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771503620/A2_BUNNY_zkdqad.png',
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -443,6 +450,45 @@ export const HUNTERS = {
       { name: 'Soin Brut', power: 0, cdMax: 4, healSelf: 20 },
     ],
   },
+
+  // ═══ NIER AUTOMATA — Collab Hunters (tier 6 boss drops only) ═══
+
+  h_2b: {
+    name: '2B', element: 'shadow', rarity: 'mythique', class: 'fighter',
+    series: 'nier', sprite: S.h_2b, passiveDesc: 'DMG +15% vs cibles debuff',
+    base:   { hp: 460, atk: 55, def: 26, spd: 38, crit: 20, res: 10 },
+    growth: { hp: 15, atk: 4.0, def: 1.4, spd: 1.8, crit: 0.6, res: 0.4 },
+    skills: [
+      { name: 'Frappe Vertueuse', power: 115, cdMax: 0, manaCost: 0 },
+      { name: 'Mode B — Offensive', power: 215, cdMax: 3, buffAtk: 30, buffDur: 2, manaCost: 30 },
+      { name: 'Pod Programme R011', power: 160, cdMax: 2, debuffDef: 25, debuffDur: 2, manaCost: 15 },
+    ],
+  },
+
+  h_pascal: {
+    name: 'Pascal', element: 'water', rarity: 'mythique', class: 'support',
+    series: 'nier', sprite: S.h_pascal, passiveDesc: 'Aura: allies +10% RES au combat',
+    base:   { hp: 440, atk: 30, def: 28, spd: 32, crit: 8, res: 16 },
+    growth: { hp: 13, atk: 2.4, def: 1.6, spd: 1.4, crit: 0.4, res: 0.5 },
+    skills: [
+      { name: 'Parole Apaisante', power: 85, cdMax: 0, manaCost: 0 },
+      { name: 'Protocole Pacifiste', power: 0, cdMax: 2, healSelf: 25, buffDef: 25, buffDur: 2, manaCost: 20 },
+      { name: 'Philosophie des Machines', power: 150, cdMax: 4, buffAtk: 20, buffDef: 15, buffDur: 2, manaCost: 35 },
+    ],
+  },
+
+  h_a2: {
+    name: 'A2', element: 'fire', rarity: 'mythique', class: 'fighter',
+    series: 'nier', sprite: S.h_a2, passiveDesc: 'Berserk: +20% ATK +15% SPD sous 50% HP',
+    base:   { hp: 430, atk: 55, def: 20, spd: 34, crit: 22, res: 6 },
+    growth: { hp: 14, atk: 4.2, def: 1.0, spd: 1.6, crit: 0.7, res: 0.3 },
+    skills: [
+      { name: 'Frappe Sauvage', power: 110, cdMax: 0, manaCost: 0 },
+      { name: 'Lame Sanguinaire', power: 175, cdMax: 2, debuffDef: 20, debuffDur: 2, manaCost: 15 },
+      { name: 'Mode Berserk', power: 250, cdMax: 3, buffAtk: 30, buffDur: 2, selfDamage: 15, manaCost: 30,
+        atkFrames: [S.h_a2_atk1, S.h_a2_atk2] },
+    ],
+  },
 };
 
 // ─── Sung Jinwoo — 5 Skills Clavier ──────────────────────────
@@ -824,9 +870,82 @@ export const HUNTER_PASSIVE_EFFECTS = {
   h_son:       { type: 'permanent', stats: { res: 15 } },
   h_isla:      { type: 'healBonus', value: 10 },
   h_hwang:     { type: 'permanent', stats: { def: 10 } },
+  // ── NIER AUTOMATA ──
+  h_2b:        { type: 'vsDebuffed', stats: { atk: 15 } },
+  h_pascal:    { type: 'teamAura', stats: { res: 10 } },
+  h_a2:        { type: 'lowHp', threshold: 50, stats: { atk: 20, spd: 15 } },
 };
 
 export const getHunterPassive = (hunterId) => HUNTER_PASSIVE_EFFECTS[hunterId] || null;
+
+// ─── Nier Automata — Special Drop System ─────────────────────────
+// Each Nier hunter has its own drop config (stage/tier, chance)
+// stageId = specific stage only | tier = any stage in that tier
+export const NIER_HUNTERS = ['h_2b', 'h_pascal', 'h_a2'];
+export const NIER_DROP_CONFIGS = {
+  h_2b:     { stageId: 'a2_eve',           tier: 6, isBossOnly: true,  baseChance: 0.0035, perStarBonus: 0.0001 }, // 0.35%
+  h_pascal: { stageId: 'a2_roi_machines',  tier: 5, isBossOnly: true,  baseChance: 0.006,  perStarBonus: 0.0001 }, // 0.60%
+  h_a2:     {                              tier: 4, isBossOnly: false, baseChance: 0.009,  perStarBonus: 0.0001 }, // 0.90%
+};
+// Legacy alias for backward compat
+export const NIER_DROP_CONFIG = NIER_DROP_CONFIGS.h_2b;
+
+export function rollNierHunterDrop(stageId, stageTier, isBoss, star = 0) {
+  for (const id of NIER_HUNTERS) {
+    const cfg = NIER_DROP_CONFIGS[id];
+    // Skip if config requires boss stage and this isn't one
+    if (cfg.isBossOnly && !isBoss) continue;
+    // Match by specific stageId if defined, otherwise match by tier
+    const stageMatch = cfg.stageId ? (cfg.stageId === stageId) : (cfg.tier === stageTier);
+    if (!stageMatch) continue;
+    const chance = cfg.baseChance + star * cfg.perStarBonus;
+    if (Math.random() < chance) return id;
+  }
+  return null;
+}
+
+// ─── Hunter Skins System ─────────────────────────────────────────
+// Each hunter can have alternate skins. 'default' is always owned.
+// Skins can drop from specific stages or be unlocked via events.
+// If a skin drops and the hunter isn't owned → auto-unlock hunter + skin.
+
+export const HUNTER_SKINS = {
+  h_2b: [
+    { id: 'default', name: '2B', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771499926/2B_vly2pt.png' },
+    { id: 'pink', name: '2B Rose', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771500244/2B_PINK_rvidyt.png',
+      dropChance: 0.0005, stageId: 'a2_eve' },
+  ],
+  h_a2: [
+    { id: 'default', name: 'A2', sprite: S.h_a2 },
+    { id: 'bunny', name: 'A2 Bunny', sprite: S.h_a2_bunny,
+      dropChance: 0.005, tier: 4 },
+  ],
+};
+
+export function rollSkinDrop(stageId, stageTier) {
+  const drops = [];
+  for (const [hunterId, skins] of Object.entries(HUNTER_SKINS)) {
+    for (const skin of skins) {
+      if (skin.id === 'default') continue;
+      // Match by stageId or tier
+      const match = skin.stageId ? (skin.stageId === stageId) : skin.tier ? (skin.tier === stageTier) : true;
+      if (!match) continue;
+      if (skin.dropChance && Math.random() < skin.dropChance) {
+        drops.push({ hunterId, skinId: skin.id, skinName: skin.name, sprite: skin.sprite });
+      }
+    }
+  }
+  return drops.length > 0 ? drops[0] : null;
+}
+
+export function getHunterSprite(hunterId, data) {
+  const activeSkin = data?.activeSkin?.[hunterId];
+  if (activeSkin && HUNTER_SKINS[hunterId]) {
+    const skin = HUNTER_SKINS[hunterId].find(s => s.id === activeSkin);
+    if (skin) return skin.sprite;
+  }
+  return HUNTERS[hunterId]?.sprite || '';
+}
 
 // ─── Star (Advancement) stat bonuses ─────────────────────────────
 // Each duplicate (star) gives cumulative % bonuses to stats.

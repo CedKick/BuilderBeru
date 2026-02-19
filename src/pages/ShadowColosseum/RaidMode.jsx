@@ -1443,6 +1443,7 @@ export default function RaidMode() {
               onTogglePause={togglePause}
               onSungSkill={(key) => window.dispatchEvent(new KeyboardEvent('keydown', { key }))}
               phase={phase}
+              dpsData={dpsTracker.current}
             />
           )}
           {phase === 'result' && renderResult()}

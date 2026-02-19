@@ -46,115 +46,161 @@ export const ARC2_TIER_COOLDOWN_MIN = { 1: 30, 2: 45, 3: 60, 4: 90, 5: 120, 6: 1
 // ATK: 500+ minimum
 // Theme: machines/androides Nier Automata
 
+// Stats buffed: HP x5, ATK x2.2 (rebalance Feb 19 2026 — combat longevity + threat)
 export const ARC2_STAGES = [
   // ═══ Tier 1 — Usine Desaffectee ═══
   { id: 'a2_drone', name: 'Drone de Combat', arc: 2, tier: 1, element: 'wind', emoji: '\uD83E\uDD16',
-    sprite: '', // placeholder
-    hp: 20000, atk: 500, def: 200, spd: 45, crit: 12, res: 8, xp: 400, coins: 600,
-    skills: [{ name: 'Tir Laser', power: 110, cdMax: 0 }, { name: 'Salve de Missiles', power: 200, cdMax: 3 }] },
+    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771504806/dronesCombat_rucjlg.png',
+    hp: 130000, atk: 1375, def: 200, spd: 45, crit: 12, res: 11, xp: 400, coins: 600,
+    skills: [{ name: 'Tir Laser', power: 110, cdMax: 0 }, { name: 'Salve de Missiles', power: 200, cdMax: 3, debuffSpd: 15, debuffDur: 2 }] },
   { id: 'a2_goliath_petit', name: 'Petit Goliath', arc: 2, tier: 1, element: 'earth', emoji: '\uD83E\uDD16',
-    sprite: '',
-    hp: 28000, atk: 550, def: 350, spd: 20, crit: 5, res: 15, xp: 450, coins: 650,
-    skills: [{ name: 'Poing Hydraulique', power: 105, cdMax: 0 }, { name: 'Seisme Mecanique', power: 190, cdMax: 3 }] },
+    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771506560/MiniGoliath_betej3.png',
+    hp: 182000, atk: 1514, def: 350, spd: 20, crit: 5, res: 21, xp: 450, coins: 650,
+    skills: [{ name: 'Poing Hydraulique', power: 105, cdMax: 0 }, { name: 'Seisme Mecanique', power: 190, cdMax: 3 }, { name: 'Reparation', power: 0, cdMax: 4, healAlly: 20, buffDur: 2 }] },
   { id: 'a2_machine_folle', name: 'Machine Folle', arc: 2, tier: 1, element: 'fire', emoji: '\uD83E\uDD16',
-    sprite: '',
-    hp: 22000, atk: 600, def: 180, spd: 55, crit: 20, res: 5, xp: 420, coins: 620,
-    skills: [{ name: 'Autodestruction', power: 130, cdMax: 0 }, { name: 'Surchauffe', power: 250, cdMax: 3, buffAtk: 40, buffDur: 2 }] },
+    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771509138/MachineFolle_fge0pn.png',
+    hp: 143000, atk: 1650, def: 180, spd: 55, crit: 20, res: 7, xp: 420, coins: 620,
+    skills: [{ name: 'Autodestruction', power: 130, cdMax: 0, poison: 3, poisonDur: 2 }, { name: 'Surchauffe', power: 250, cdMax: 3, buffAtk: 40, buffDur: 2 }] },
   { id: 'a2_gardien_usine', name: "Gardien de l'Usine", arc: 2, tier: 1, element: 'shadow', emoji: '\uD83E\uDD16', isBoss: true,
-    sprite: '',
-    hp: 35000, atk: 650, def: 300, spd: 30, crit: 10, res: 12, xp: 800, coins: 1200,
-    skills: [{ name: 'Frappe Industrielle', power: 110, cdMax: 0 }, { name: 'Bouclier d\'Acier', power: 0, cdMax: 3, buffDef: 80, buffDur: 3 }, { name: 'Protocole d\'Elimination', power: 280, cdMax: 5 }] },
+    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771509800/GardienDesMachines_sfixar.png',
+    hp: 227500, atk: 1789, def: 300, spd: 30, crit: 10, res: 17, xp: 800, coins: 1200,
+    skills: [{ name: 'Frappe Industrielle', power: 110, cdMax: 0, debuffAtk: 15, debuffDur: 2 }, { name: 'Bouclier d\'Acier', power: 0, cdMax: 3, buffDef: 80, buffDur: 3 }, { name: 'Protocole d\'Elimination', power: 280, cdMax: 5 }] },
 
   // ═══ Tier 2 — Foret des Machines ═══
   { id: 'a2_machine_lierre', name: 'Machine-Lierre', arc: 2, tier: 2, element: 'earth', emoji: '\uD83C\uDF3F',
-    sprite: '',
-    hp: 30000, atk: 580, def: 280, spd: 30, crit: 8, res: 18, xp: 550, coins: 800,
-    skills: [{ name: 'Racine Mecanique', power: 105, cdMax: 0 }, { name: 'Etreinte Vegetale', power: 0, cdMax: 3, debuffDef: 40, debuffDur: 2 }] },
+    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771511204/LierreMachine_f2p5bd.png',
+    hp: 195000, atk: 1595, def: 280, spd: 30, crit: 8, res: 25, xp: 550, coins: 800,
+    skills: [{ name: 'Racine Mecanique', power: 105, cdMax: 0 }, { name: 'Etreinte Vegetale', power: 0, cdMax: 3, debuffDef: 40, debuffDur: 2 }, { name: 'Seve Parasitaire', power: 80, cdMax: 4, antiHeal: true, antiHealDur: 2 }] },
   { id: 'a2_cerf_machine', name: 'Cerf-Machine', arc: 2, tier: 2, element: 'wind', emoji: '\uD83E\uDD8C',
-    sprite: '',
-    hp: 26000, atk: 620, def: 220, spd: 60, crit: 18, res: 8, xp: 580, coins: 850,
+    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771510859/CerfMachine_nuodo5.png',
+    hp: 169000, atk: 1705, def: 220, spd: 60, crit: 18, res: 11, xp: 580, coins: 850,
     skills: [{ name: 'Charge Eclair', power: 115, cdMax: 0 }, { name: 'Ruade Sonique', power: 220, cdMax: 2 }] },
   { id: 'a2_champignon', name: 'Champignon Sentient', arc: 2, tier: 2, element: 'shadow', emoji: '\uD83C\uDF44',
-    sprite: '',
-    hp: 32000, atk: 540, def: 250, spd: 25, crit: 10, res: 22, xp: 560, coins: 820,
-    skills: [{ name: 'Spore Toxique', power: 100, cdMax: 0 }, { name: 'Brouillard Mortel', power: 180, cdMax: 3, debuffDef: 30, debuffDur: 3 }] },
+    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771512275/ChampignonSentient_mzylvl.png',
+    hp: 208000, atk: 1485, def: 250, spd: 25, crit: 10, res: 31, xp: 560, coins: 820,
+    skills: [{ name: 'Spore Toxique', power: 100, cdMax: 0, poison: 4, poisonDur: 3 }, { name: 'Brouillard Mortel', power: 180, cdMax: 3, debuffDef: 30, debuffDur: 3 }] },
   { id: 'a2_roi_foret', name: 'Roi de la Foret', arc: 2, tier: 2, element: 'earth', emoji: '\uD83C\uDF33', isBoss: true,
     sprite: '',
-    hp: 50000, atk: 700, def: 380, spd: 22, crit: 12, res: 20, xp: 1100, coins: 1600,
-    skills: [{ name: 'Colere Sylvestre', power: 110, cdMax: 0 }, { name: 'Muraille Vivante', power: 0, cdMax: 3, buffDef: 100, buffDur: 3 }, { name: 'Jugement de la Nature', power: 300, cdMax: 5 }] },
+    hp: 325000, atk: 1925, def: 380, spd: 22, crit: 12, res: 28, xp: 1100, coins: 1600,
+    skills: [{ name: 'Colere Sylvestre', power: 110, cdMax: 0 }, { name: 'Muraille Vivante', power: 0, cdMax: 3, buffDef: 100, buffDur: 3 }, { name: 'Benediction Sylvestre', power: 0, cdMax: 4, buffAllyAtk: 40, buffAllyDef: 30, buffDur: 2 }, { name: 'Jugement de la Nature', power: 300, cdMax: 5 }] },
 
   // ═══ Tier 3 — Cite en Ruines ═══
   { id: 'a2_android_errant', name: 'Androide Errant', arc: 2, tier: 3, element: 'shadow', emoji: '\uD83E\uDD16',
     sprite: '',
-    hp: 38000, atk: 700, def: 300, spd: 42, crit: 15, res: 12, xp: 700, coins: 1000,
-    skills: [{ name: 'Lame Programmee', power: 112, cdMax: 0 }, { name: 'Protocole Berserker', power: 250, cdMax: 3, buffAtk: 50, buffDur: 2 }] },
+    hp: 247000, atk: 1925, def: 300, spd: 42, crit: 15, res: 17, xp: 700, coins: 1000,
+    skills: [{ name: 'Lame Programmee', power: 112, cdMax: 0, debuffAtk: 20, debuffDur: 2 }, { name: 'Protocole Berserker', power: 250, cdMax: 3, buffAtk: 50, buffDur: 2 }] },
   { id: 'a2_tank_rouille', name: 'Tank Rouille', arc: 2, tier: 3, element: 'fire', emoji: '\uD83D\uDE9C',
     sprite: '',
-    hp: 45000, atk: 650, def: 450, spd: 15, crit: 5, res: 25, xp: 720, coins: 1050,
-    skills: [{ name: 'Canon Thermique', power: 108, cdMax: 0 }, { name: 'Blindage', power: 0, cdMax: 3, buffDef: 120, buffDur: 3 }] },
+    hp: 292500, atk: 1789, def: 450, spd: 15, crit: 5, res: 35, xp: 720, coins: 1050,
+    skills: [{ name: 'Canon Thermique', power: 108, cdMax: 0, debuffSpd: 20, debuffDur: 2 }, { name: 'Blindage', power: 0, cdMax: 3, buffDef: 120, buffDur: 3 }] },
   { id: 'a2_sniper', name: 'Sniper Optique', arc: 2, tier: 3, element: 'wind', emoji: '\uD83C\uDFAF',
     sprite: '',
-    hp: 30000, atk: 850, def: 200, spd: 55, crit: 30, res: 5, xp: 750, coins: 1100,
+    hp: 195000, atk: 2339, def: 200, spd: 55, crit: 30, res: 7, xp: 750, coins: 1100,
     skills: [{ name: 'Tir de Precision', power: 120, cdMax: 0 }, { name: 'Tir Mortel', power: 350, cdMax: 4 }] },
   { id: 'a2_simone', name: 'Beaute Obsedante', arc: 2, tier: 3, element: 'shadow', emoji: '\uD83C\uDFAD', isBoss: true,
     sprite: '',
-    hp: 65000, atk: 750, def: 320, spd: 38, crit: 18, res: 15, xp: 1500, coins: 2200,
-    skills: [{ name: 'Chant Hypnotique', power: 100, cdMax: 0, debuffDef: 20, debuffDur: 2 }, { name: 'Amour Destructeur', power: 280, cdMax: 3 }, { name: 'Metamorphose', power: 0, cdMax: 5, buffAtk: 80, buffDur: 3 }] },
+    hp: 422500, atk: 2064, def: 320, spd: 38, crit: 18, res: 21, xp: 1500, coins: 2200,
+    skills: [{ name: 'Chant Hypnotique', power: 100, cdMax: 0, debuffDef: 20, debuffDur: 2 }, { name: 'Amour Destructeur', power: 280, cdMax: 3, antiHeal: true, antiHealDur: 2 }, { name: 'Metamorphose', power: 0, cdMax: 5, buffAtk: 80, buffDur: 3 }] },
 
   // ═══ Tier 4 — Tour de Guet ═══
   { id: 'a2_sentinelle', name: 'Sentinelle Celeste', arc: 2, tier: 4, element: 'wind', emoji: '\uD83D\uDC41\uFE0F',
     sprite: '',
-    hp: 48000, atk: 800, def: 350, spd: 48, crit: 20, res: 15, xp: 900, coins: 1300,
-    skills: [{ name: 'Rayon Detecteur', power: 110, cdMax: 0 }, { name: 'Tir Orbital', power: 280, cdMax: 3 }] },
+    hp: 312000, atk: 2200, def: 350, spd: 48, crit: 20, res: 21, xp: 900, coins: 1300,
+    skills: [{ name: 'Rayon Detecteur', power: 110, cdMax: 0 }, { name: 'Tir Orbital', power: 280, cdMax: 3 }, { name: 'Signal de Soin', power: 0, cdMax: 4, healAlly: 25, buffDur: 2 }] },
   { id: 'a2_goliath', name: 'Goliath Blinde', arc: 2, tier: 4, element: 'earth', emoji: '\uD83E\uDD16',
     sprite: '',
-    hp: 60000, atk: 750, def: 500, spd: 18, crit: 8, res: 28, xp: 950, coins: 1400,
-    skills: [{ name: 'Ecrasement Total', power: 115, cdMax: 0 }, { name: 'Onde de Choc', power: 260, cdMax: 3 }] },
+    hp: 390000, atk: 2064, def: 500, spd: 18, crit: 8, res: 39, xp: 950, coins: 1400,
+    skills: [{ name: 'Ecrasement Total', power: 115, cdMax: 0 }, { name: 'Onde de Choc', power: 260, cdMax: 3 }, { name: 'Protocole Soins', power: 0, cdMax: 4, healAlly: 20, buffDur: 2 }] },
   { id: 'a2_assassin', name: 'Assassin YoRHa', arc: 2, tier: 4, element: 'shadow', emoji: '\u2620\uFE0F',
     sprite: '',
-    hp: 40000, atk: 950, def: 250, spd: 65, crit: 35, res: 8, xp: 920, coins: 1350,
+    hp: 260000, atk: 2614, def: 250, spd: 65, crit: 35, res: 11, xp: 920, coins: 1350,
     skills: [{ name: 'Lame Noire', power: 125, cdMax: 0 }, { name: 'Execution', power: 380, cdMax: 4 }] },
   { id: 'a2_grun', name: 'Grun — Le Leviathan', arc: 2, tier: 4, element: 'water', emoji: '\uD83D\uDC33', isBoss: true,
     sprite: '',
-    hp: 85000, atk: 850, def: 400, spd: 25, crit: 12, res: 22, xp: 2000, coins: 3000,
-    skills: [{ name: 'Raz de Maree', power: 110, cdMax: 0 }, { name: 'Plongee Abyssale', power: 0, cdMax: 3, buffDef: 100, buffDur: 3 }, { name: 'Colere du Leviathan', power: 350, cdMax: 5 }] },
+    hp: 552500, atk: 2339, def: 400, spd: 25, crit: 12, res: 31, xp: 2000, coins: 3000,
+    skills: [{ name: 'Raz de Maree', power: 110, cdMax: 0, debuffSpd: 25, debuffDur: 2 }, { name: 'Plongee Abyssale', power: 0, cdMax: 3, buffDef: 100, buffDur: 3 }, { name: 'Colere du Leviathan', power: 350, cdMax: 5 }] },
 
   // ═══ Tier 5 — Royaume de Pascal ═══
   { id: 'a2_enfant_machine', name: 'Enfant-Machine', arc: 2, tier: 5, element: 'light', emoji: '\uD83E\uDDF8',
     sprite: '',
-    hp: 55000, atk: 850, def: 380, spd: 40, crit: 15, res: 18, xp: 1100, coins: 1600,
-    skills: [{ name: 'Cri Innocent', power: 105, cdMax: 0, debuffDef: 25, debuffDur: 2 }, { name: 'Larme de Lumiere', power: 240, cdMax: 3 }] },
+    hp: 357500, atk: 2339, def: 380, spd: 40, crit: 15, res: 25, xp: 1100, coins: 1600,
+    skills: [{ name: 'Cri Innocent', power: 105, cdMax: 0, debuffDef: 25, debuffDur: 2 }, { name: 'Larme de Lumiere', power: 240, cdMax: 3, poison: 5, poisonDur: 3 }] },
   { id: 'a2_protecteur', name: 'Protecteur du Village', arc: 2, tier: 5, element: 'earth', emoji: '\uD83D\uDEE1\uFE0F',
     sprite: '',
-    hp: 70000, atk: 780, def: 550, spd: 22, crit: 8, res: 30, xp: 1200, coins: 1800,
+    hp: 455000, atk: 2145, def: 550, spd: 22, crit: 8, res: 42, xp: 1200, coins: 1800,
     skills: [{ name: 'Garde Eternelle', power: 100, cdMax: 0 }, { name: 'Mur de Fer', power: 0, cdMax: 3, buffDef: 150, buffDur: 3 }] },
   { id: 'a2_philosophe', name: 'Machine Philosophe', arc: 2, tier: 5, element: 'shadow', emoji: '\uD83D\uDCDA',
     sprite: '',
-    hp: 50000, atk: 900, def: 300, spd: 50, crit: 22, res: 15, xp: 1150, coins: 1700,
+    hp: 325000, atk: 2475, def: 300, spd: 50, crit: 22, res: 21, xp: 1150, coins: 1700,
     skills: [{ name: 'Pensee Mortelle', power: 115, cdMax: 0 }, { name: 'Doute Existentiel', power: 0, cdMax: 3, debuffDef: 50, debuffDur: 2 }, { name: 'Conclusion Logique', power: 320, cdMax: 4 }] },
   { id: 'a2_roi_machines', name: 'Roi des Machines', arc: 2, tier: 5, element: 'fire', emoji: '\uD83D\uDC51', isBoss: true,
     sprite: '',
-    hp: 110000, atk: 950, def: 450, spd: 30, crit: 15, res: 22, xp: 2500, coins: 4000,
-    skills: [{ name: 'Decret Royal', power: 110, cdMax: 0 }, { name: 'Flamme Souveraine', power: 300, cdMax: 3 }, { name: 'Fin du Monde', power: 400, cdMax: 5 }] },
+    hp: 715000, atk: 2614, def: 450, spd: 30, crit: 15, res: 31, xp: 2500, coins: 4000,
+    skills: [{ name: 'Decret Royal', power: 110, cdMax: 0, debuffAtk: 25, debuffDur: 2 }, { name: 'Flamme Souveraine', power: 300, cdMax: 3, buffSpd: 30, buffDur: 2 }, { name: 'Fin du Monde', power: 400, cdMax: 5 }] },
 
   // ═══ Tier 6 — Memoire du Monde ═══
   { id: 'a2_ko_shi', name: 'Ko-Shi', arc: 2, tier: 6, element: 'fire', emoji: '\u2604\uFE0F',
     sprite: '',
-    hp: 70000, atk: 1000, def: 400, spd: 50, crit: 25, res: 15, xp: 1500, coins: 2200,
-    skills: [{ name: 'Lance de Feu', power: 120, cdMax: 0 }, { name: 'Eruption Mecanique', power: 320, cdMax: 3 }] },
+    hp: 455000, atk: 2750, def: 400, spd: 50, crit: 25, res: 21, xp: 1500, coins: 2200,
+    skills: [{ name: 'Lance de Feu', power: 120, cdMax: 0 }, { name: 'Eruption Mecanique', power: 320, cdMax: 3 }, { name: 'Flamme Fraternelle', power: 0, cdMax: 4, buffAllyAtk: 50, buffDur: 2 }] },
   { id: 'a2_ro_shi', name: 'Ro-Shi', arc: 2, tier: 6, element: 'earth', emoji: '\uD83E\uDEA8',
     sprite: '',
-    hp: 80000, atk: 900, def: 600, spd: 25, crit: 10, res: 30, xp: 1500, coins: 2200,
-    skills: [{ name: 'Poing de Titan', power: 115, cdMax: 0 }, { name: 'Armure Ultime', power: 0, cdMax: 3, buffDef: 150, buffDur: 3 }] },
+    hp: 520000, atk: 2475, def: 600, spd: 25, crit: 10, res: 42, xp: 1500, coins: 2200,
+    skills: [{ name: 'Poing de Titan', power: 115, cdMax: 0 }, { name: 'Armure Ultime', power: 0, cdMax: 3, buffDef: 150, buffDur: 3 }, { name: 'Lien de Titan', power: 0, cdMax: 4, buffAllyDef: 40, buffDur: 2 }] },
   { id: 'a2_adam', name: 'Adam — La Conscience', arc: 2, tier: 6, element: 'light', emoji: '\u2728',
     sprite: '',
-    hp: 90000, atk: 1100, def: 350, spd: 60, crit: 30, res: 12, xp: 2000, coins: 3000,
-    skills: [{ name: 'Eveil', power: 125, cdMax: 0 }, { name: 'Curiosite Infinie', power: 350, cdMax: 3, buffAtk: 60, buffDur: 2 }, { name: 'Humanite', power: 420, cdMax: 5 }] },
+    hp: 585000, atk: 3025, def: 350, spd: 60, crit: 30, res: 17, xp: 2000, coins: 3000,
+    skills: [{ name: 'Eveil', power: 125, cdMax: 0, antiHeal: true, antiHealDur: 2 }, { name: 'Curiosite Infinie', power: 350, cdMax: 3, buffAtk: 60, buffDur: 2, debuffSpd: 20, debuffDur: 2 }, { name: 'Humanite', power: 420, cdMax: 5 }] },
   { id: 'a2_eve', name: 'Eve — La Rage', arc: 2, tier: 6, element: 'shadow', emoji: '\uD83D\uDD25', isBoss: true,
     sprite: '',
-    hp: 150000, atk: 1200, def: 500, spd: 45, crit: 22, res: 20, xp: 4000, coins: 6000,
-    skills: [{ name: 'Colere Primitive', power: 120, cdMax: 0 }, { name: 'Lien Fraternel', power: 0, cdMax: 3, buffAtk: 100, buffDur: 3 }, { name: 'Aneantissement Final', power: 500, cdMax: 5 }] },
+    hp: 975000, atk: 3300, def: 500, spd: 45, crit: 22, res: 28, xp: 4000, coins: 6000,
+    skills: [{ name: 'Colere Primitive', power: 120, cdMax: 0, debuffAtk: 20, debuffDur: 2 }, { name: 'Lien Fraternel', power: 0, cdMax: 3, buffAtk: 100, buffDur: 3 }, { name: 'Aneantissement Final', power: 500, cdMax: 5, poison: 8, poisonDur: 3 }] },
 ];
+
+// ─── Multi-enemy encounter builder ──────────────────────────
+// Crescendo: Tier 1=2, Tier 2=2-3, Tier 3=3, Tier 4=3-4, Tier 5=4, Tier 6=4-5
+const ENEMY_COUNT = {
+  1: { normal: 2, boss: 2 },
+  2: { normal: 2, boss: 3 },
+  3: { normal: 3, boss: 3 },
+  4: { normal: 3, boss: 4 },
+  5: { normal: 4, boss: 4 },
+  6: { normal: 4, boss: 5 },
+};
+
+export function buildStageEnemies(stage) {
+  const tier = stage.tier;
+  const counts = ENEMY_COUNT[tier] || { normal: 2, boss: 2 };
+  const totalEnemies = stage.isBoss ? counts.boss : counts.normal;
+
+  // Main enemy = the stage itself (already has buffed stats)
+  const main = { ...stage, isMain: true };
+
+  // Pick sbires from other stages of the same tier
+  const sameTier = ARC2_STAGES.filter(s => s.tier === tier && s.id !== stage.id && !s.isBoss);
+  const sbiresNeeded = totalEnemies - 1;
+  const sbires = [];
+  const sbireMult = 0.55; // sbires have 55% stats of their base
+
+  for (let i = 0; i < sbiresNeeded; i++) {
+    const src = sameTier[i % sameTier.length];
+    sbires.push({
+      ...src,
+      id: `${src.id}_s${i}`,
+      name: `${src.name} (Sbire)`,
+      hp: Math.floor(src.hp * sbireMult),
+      atk: Math.floor(src.atk * sbireMult),
+      def: Math.floor(src.def * sbireMult),
+      res: Math.floor(src.res * sbireMult),
+      spd: Math.max(5, Math.floor(src.spd * 0.8)),
+      crit: Math.max(1, Math.floor(src.crit * 0.7)),
+      isMain: false,
+      isBoss: false,
+    });
+  }
+
+  return [main, ...sbires];
+}
 
 // ─── Beru Dialogues — ARC II Locked (escalating) ─────────────
 

@@ -438,6 +438,145 @@ export const aiPickSkillSupport = (entity, allies) => {
   return { skill: aiPickSkill(entity), healTarget: null };
 };
 
+// ─── Buff/Debuff Icons ───────────────────────────────────────
+export const BUFF_ICONS = {
+  atk:      { pos: '\u2694\uFE0F\u25B2', neg: '\u2694\uFE0F\u25BC', posColor: 'text-red-400', negColor: 'text-red-800' },
+  def:      { pos: '\uD83D\uDEE1\uFE0F\u25B2', neg: '\uD83D\uDEE1\uFE0F\u25BC', posColor: 'text-blue-400', negColor: 'text-blue-800' },
+  spd:      { pos: '\uD83D\uDCA8\u25B2', neg: '\uD83D\uDCA8\u25BC', posColor: 'text-green-400', negColor: 'text-green-800' },
+  poison:   { icon: '\u2620\uFE0F', color: 'text-green-500' },
+  antiHeal: { icon: '\uD83D\uDEAB', color: 'text-pink-500' },
+};
+
+// ─── Deterministic Damage Preview ────────────────────────────
+export const computeDamagePreview = (attacker, skill, defender, tb = {}) => {
+  if (!skill || skill.power <= 0) return null;
+  let effAtk = getEffStat(attacker.atk, attacker.buffs, 'atk');
+  let effDef = getEffStat(defender.def, defender.buffs || [], 'def');
+  if (tb.hasBerserk && attacker.hp < attacker.maxHp * 0.3) effAtk = Math.floor(effAtk * 1.4);
+  if (tb.bastionDef && defender.hp < defender.maxHp * 0.5) effDef = Math.floor(effDef * (1 + (tb.bastionDef || 0) / 100));
+
+  const raw = effAtk * (skill.power / 100);
+  let elemMult = getElementMult(attacker.element, defender.element);
+  if (tb.hasTranscendance && elemMult > 1) elemMult = 1.6;
+  if (elemMult > 1 && tb.elementalAdvantageBonus) elemMult += tb.elementalAdvantageBonus / 100;
+
+  const defPenVal = tb.defPen || 0;
+  const adjustedDef = Math.max(0, effDef * (1 - defPenVal / 100));
+  const defFactor = 100 / (100 + Math.max(0, adjustedDef));
+  let adjustedDefCrit = adjustedDef;
+  if (tb.critDefIgnore) adjustedDefCrit *= 0.5;
+  const defFactorCrit = 100 / (100 + Math.max(0, adjustedDefCrit));
+  const critMult = 1.5 + (tb.critDamage || 0) / 100;
+
+  let defenderRes = defender.res || 0;
+  if (tb.bastionRes && defender.hp < defender.maxHp * 0.5) defenderRes += (tb.bastionRes || 0);
+  const resFactor = Math.max(0.3, 1 - Math.min(70, defenderRes) / 100);
+
+  const physMult = 1 + (tb.physicalDamage || 0) / 100;
+  const elemDmgMult = 1 + (tb.elementalDamage || 0) / 100;
+  const bossMult = defender.isBoss ? 1 + (tb.bossDamage || 0) / 100 : 1;
+  let artElemMult = 1 + (tb.allDamage || 0) / 100;
+  if (tb.convergenceAll) {
+    artElemMult += (tb.fireDamage || 0) / 100 + (tb.waterDamage || 0) / 100 + (tb.shadowDamage || 0) / 100 + (tb.windDamage || 0) / 100 + (tb.earthDamage || 0) / 100 + (tb.lightDamage || 0) / 100;
+  } else {
+    const elemKey = attacker.element + 'Damage';
+    artElemMult += (tb[elemKey] || 0) / 100;
+  }
+  let executionMult = 1;
+  if (tb.executionDmg && defender.hp < defender.maxHp * 0.3) executionMult += (tb.executionDmg || 0) / 100;
+
+  const baseDmg = raw * elemMult * defFactor * resFactor * physMult * elemDmgMult * bossMult * artElemMult * executionMult;
+  const baseDmgCrit = raw * elemMult * defFactorCrit * resFactor * critMult * physMult * elemDmgMult * bossMult * artElemMult * executionMult;
+
+  return {
+    min: Math.max(1, Math.floor(baseDmg * 0.9)),
+    max: Math.max(1, Math.floor(baseDmg * 1.1)),
+    critMin: Math.max(1, Math.floor(baseDmgCrit * 0.9)),
+    critMax: Math.max(1, Math.floor(baseDmgCrit * 1.1)),
+    critChance: Math.min(80, attacker.crit || 0),
+    elementAdvantage: elemMult > 1,
+  };
+};
+
+// ─── ARC II Smart Enemy AI ───────────────────────────────────
+export const inferEnemyRole = (enemy) => {
+  const hasHeal = enemy.skills.some(s => s.healAlly || s.healSelf);
+  const hasBuff = enemy.skills.some(s => s.buffAllyAtk || s.buffAllyDef);
+  const hasDebuff = enemy.skills.some(s => s.debuffAtk || s.debuffSpd || s.antiHeal || s.poison);
+  if (hasHeal || hasBuff) return 'support';
+  if (hasDebuff) return 'debuffer';
+  return 'attacker';
+};
+
+export const aiPickSkillArc2 = (enemy, allEnemies, allPlayers) => {
+  const avail = enemy.skills.filter(s => s.cd === 0);
+  if (avail.length === 0) return { skill: enemy.skills[0], target: null, targetType: 'self' };
+
+  const role = inferEnemyRole(enemy);
+  const aliveAllies = allEnemies.filter(e => e.alive && e !== enemy);
+  const alivePlayers = allPlayers.filter(f => f.alive);
+  if (alivePlayers.length === 0) return { skill: avail[0], target: null, targetType: 'self' };
+
+  // ═══ SUPPORT ═══
+  if (role === 'support') {
+    const lowestAlly = [...aliveAllies].sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
+    if (lowestAlly && lowestAlly.hp / lowestAlly.maxHp < 0.6) {
+      const healSkill = avail.find(s => s.healAlly);
+      if (healSkill) return { skill: healSkill, target: lowestAlly, targetType: 'ally' };
+    }
+    const boss = aliveAllies.find(e => e.isBoss || e.isMain);
+    const buffTarget = boss || aliveAllies[0];
+    if (buffTarget && !buffTarget.buffs.some(b => b.stat === 'atk' && b.value > 0)) {
+      const buffSkill = avail.find(s => s.buffAllyAtk || s.buffAllyDef);
+      if (buffSkill && Math.random() < 0.7) return { skill: buffSkill, target: buffTarget, targetType: 'ally' };
+    }
+  }
+
+  // ═══ DEBUFFER ═══
+  if (role === 'debuffer') {
+    const antiHealSkill = avail.find(s => s.antiHeal);
+    if (antiHealSkill) {
+      const target = [...alivePlayers].sort((a, b) => b.hp - a.hp)[0];
+      if (target && !target.buffs.some(b => b.type === 'antiHeal')) return { skill: antiHealSkill, target, targetType: 'player' };
+    }
+    const debuffAtkSkill = avail.find(s => s.debuffAtk);
+    if (debuffAtkSkill) {
+      const target = [...alivePlayers].sort((a, b) => b.atk - a.atk)[0];
+      if (target && !target.buffs.some(b => b.stat === 'atk' && b.value < 0)) return { skill: debuffAtkSkill, target, targetType: 'player' };
+    }
+    const poisonSkill = avail.find(s => s.poison);
+    if (poisonSkill) {
+      const target = alivePlayers.find(p => !p.buffs.some(b => b.type === 'poison'));
+      if (target) return { skill: poisonSkill, target, targetType: 'player' };
+    }
+    const debuffSpdSkill = avail.find(s => s.debuffSpd);
+    if (debuffSpdSkill) {
+      const target = [...alivePlayers].sort((a, b) => b.spd - a.spd)[0];
+      if (target && !target.buffs.some(b => b.stat === 'spd' && b.value < 0)) return { skill: debuffSpdSkill, target, targetType: 'player' };
+    }
+  }
+
+  // ═══ ATTACKER / fallback ═══
+  if (enemy.hp < enemy.maxHp * 0.35) {
+    const heal = avail.find(s => s.healSelf);
+    if (heal) return { skill: heal, target: null, targetType: 'self' };
+  }
+  if (!enemy.buffs.some(b => b.value > 0)) {
+    const buff = avail.find(s => s.buffAtk || s.buffDef || s.buffSpd);
+    if (buff && Math.random() < 0.5) return { skill: buff, target: null, targetType: 'self' };
+  }
+  const attacks = avail.filter(s => s.power > 0).sort((a, b) => b.power - a.power);
+  if (attacks.length > 0) {
+    const skill = Math.random() < 0.7 ? attacks[0] : attacks[Math.floor(Math.random() * attacks.length)];
+    const target = Math.random() < 0.6
+      ? alivePlayers.reduce((a, c) => a.hp < c.hp ? a : c)
+      : alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
+    return { skill, target, targetType: 'player' };
+  }
+  const fallSkill = avail[0] || enemy.skills[0];
+  return { skill: fallSkill, target: alivePlayers[0], targetType: 'player' };
+};
+
 // ─── SPD to attack interval (for raid real-time) ─────────────
 export const spdToInterval = (spd) => Math.max(500, Math.floor(3000 / (1 + spd / 50)));
 

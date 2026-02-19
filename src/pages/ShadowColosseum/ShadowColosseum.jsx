@@ -23,8 +23,9 @@ import {
   getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
   getStarScaledStats, getStarRewardMult, getStarDropBonus, getGuaranteedArtifactRarity,
   calculatePowerScore, getDifficultyRating,
+  BUFF_ICONS, computeDamagePreview, aiPickSkillArc2,
 } from './colosseumCore';
-import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS } from './raidData';
+import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS, rollNierHunterDrop, NIER_DROP_CONFIG, NIER_DROP_CONFIGS, HUNTER_SKINS, rollSkinDrop, getHunterSprite } from './raidData';
 import { BattleStyles, BattleArena } from './BattleVFX';
 import {
   ARTIFACT_SETS, ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL,
@@ -42,6 +43,7 @@ import {
 import {
   isArc2Unlocked, ARC2_STAGES, ARC2_TIER_NAMES, ARC2_STORIES,
   ARC2_LOCKED_BERU_DIALOGUES, ARC2_BEBE_MACHINE_REACTIONS, GRIMOIRE_WEISS,
+  buildStageEnemies,
 } from './arc2Data';
 
 // ─── StoryTypewriter — char-by-char text reveal ──────────────
@@ -293,10 +295,28 @@ export default function ShadowColosseum() {
   const phaseRef = useRef('idle');
   const statHoldRef = useRef(null); // hold-to-repeat for stat +/- buttons
   const enhanceHoldRef = useRef(null); // hold-to-repeat for artifact enhance button
+  const [atkAnim, setAtkAnim] = useState(null); // { idx, frames, frame } for 2-frame attack animation
+  const [hoveredEnemy, setHoveredEnemy] = useState(null); // enemy index for damage preview
+  const [enemyTooltip, setEnemyTooltip] = useState(null); // enemy index for stats tooltip
+  const [tooltipPinned, setTooltipPinned] = useState(false); // click-pinned tooltip stays on mouse leave
+  const tooltipTimerRef = useRef(null); // long-press timer for mobile tooltip
+
+  // Skin-aware sprite helper — returns active skin sprite or default
+  const getSprite = (id) => HUNTER_SKINS[id] ? getHunterSprite(id, data) : getChibiSprite(id);
 
   useEffect(() => { phaseRef.current = phase; }, [phase]);
   useEffect(() => () => { if (enhanceHoldRef.current) clearTimeout(enhanceHoldRef.current); }, []);
   useEffect(() => { saveData(data); }, [data]);
+
+  // 2-frame attack animation: triggered when lastAction has atkFrames
+  useEffect(() => {
+    const la = arc2Battle?.lastAction;
+    if (!la?.atkFrames || la.type !== 'player') return;
+    setAtkAnim({ idx: la.idx, frames: la.atkFrames, frame: 0 });
+    const t1 = setTimeout(() => setAtkAnim(prev => prev ? { ...prev, frame: 1 } : null), 200);
+    const t2 = setTimeout(() => setAtkAnim(null), 450);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [arc2Battle?.lastAction]);
   useEffect(() => { autoReplayRef.current = autoReplay; }, [autoReplay]);
   useEffect(() => {
     document.title = 'Shadow Colosseum - Chibi Battle RPG | BuilderBeru';
@@ -492,7 +512,7 @@ export default function ShadowColosseum() {
     }
 
     return {
-      id, name: c.name, sprite: getChibiSprite(id), element: c.element,
+      id, name: c.name, sprite: getSprite(id), element: c.element,
       hp: fs.hp, maxHp: fs.hp, atk: fs.atk, def: fs.def,
       spd: fs.spd, crit: Math.min(80, fs.crit), res: Math.min(70, fs.res),
       mana: fs.mana || 100, maxMana: fs.mana || 100, manaRegen: fs.manaRegen || BASE_MANA_REGEN,
@@ -517,214 +537,394 @@ export default function ShadowColosseum() {
         f.def = Math.floor(f.def * (1 + teamDefValue / 100));
       });
     }
+    // Apply teamAura passives (Pascal): permanent stat buffs to all allies
+    fighters.forEach(f => {
+      if (f.hunterPassive?.type === 'teamAura' && f.hunterPassive.stats) {
+        const stats = f.hunterPassive.stats;
+        fighters.forEach(ally => {
+          Object.entries(stats).forEach(([stat, pct]) => {
+            ally.buffs.push({ stat, value: pct / 100, dur: 999 });
+          });
+        });
+      }
+    });
     // Save team for "Previous Team" button
     setData(prev => ({ ...prev, arc2LastTeam: arc2Team.filter(Boolean) }));
-    const sc = getStarScaledStats(stage, arc2Star);
-    const boss = {
-      id: stage.id, name: stage.name, sprite: stage.sprite || '', element: stage.element,
-      hp: sc.hp, maxHp: sc.hp, atk: sc.atk, def: sc.def, spd: sc.spd,
-      crit: sc.crit, res: sc.res, skills: stage.skills.map(s => ({ ...s, cd: 0 })),
-      buffs: [], alive: true, mana: 999, maxMana: 999, emoji: stage.emoji,
-    };
-    // Build SPD-based turn order
+    // Build multi-enemy encounter
+    const stageEnemies = buildStageEnemies(stage);
+    const enemies = stageEnemies.map(e => {
+      const sc = getStarScaledStats(e, arc2Star);
+      return {
+        id: e.id, name: e.name, sprite: e.sprite || '', element: e.element,
+        hp: sc.hp, maxHp: sc.hp, atk: sc.atk, def: sc.def, spd: sc.spd,
+        crit: sc.crit, res: sc.res, skills: e.skills.map(s => ({ ...s, cd: 0 })),
+        buffs: [], alive: true, mana: 999, maxMana: 999, emoji: e.emoji,
+        isMain: e.isMain, isBoss: !!e.isBoss,
+      };
+    });
+    // Build SPD-based turn order (team + all enemies)
     const entities = fighters.map((_, i) => ({ type: 'team', idx: i, spd: fighters[i].spd }))
-      .concat([{ type: 'boss', spd: boss.spd }]);
-    entities.sort((a, b) => b.spd - a.spd || (a.type === 'boss' ? -1 : 1));
+      .concat(enemies.map((e, i) => ({ type: 'enemy', idx: i, spd: e.spd })));
+    entities.sort((a, b) => b.spd - a.spd || (a.type === 'enemy' ? -1 : 1));
     const first = entities[0];
     setArc2Battle({
-      team: fighters, boss, turnOrder: entities, currentTurn: 0, round: 1,
-      phase: first.type === 'team' ? 'pick' : 'boss_act',
+      team: fighters, enemies, turnOrder: entities, currentTurn: 0, round: 1,
+      phase: first.type === 'team' ? 'pick' : 'enemy_act',
       log: [], star: arc2Star, stageIdx: arc2SelStage, bossTier: stage.tier,
       lastAction: null, isBoss: stage.isBoss,
+      pendingSkill: null,
     });
     setView('arc2_battle');
   };
 
-  const arc2PlayerAction = (skillIdx) => {
+  // ─── Step 1: Player selects a skill ─────────────────────────
+  const arc2SelectSkill = (skillIdx) => {
     setArc2Battle(prev => {
       if (!prev || prev.phase !== 'pick') return prev;
+      const b = JSON.parse(JSON.stringify(prev));
+      const entity = b.turnOrder[b.currentTurn];
+      if (!entity || entity.type !== 'team') return prev;
+      const fighter = b.team[entity.idx];
+      if (!fighter || !fighter.alive) return prev;
+      const skill = fighter.skills[skillIdx];
+      if (!skill || skill.cd > 0 || (skill.manaCost || 0) > (fighter.mana || 0)) return prev;
+
+      const isPureSupport = skill.power === 0 && (skill.buffAtk || skill.buffDef || skill.healSelf);
+      b.pendingSkill = skillIdx;
+
+      if (isPureSupport) {
+        // Buff/heal: choose an ally
+        b.phase = 'pick_ally';
+      } else {
+        // Attack: choose an enemy (auto-target if only 1 alive)
+        const aliveEnemies = b.enemies.filter(e => e.alive);
+        if (aliveEnemies.length === 1) {
+          const targetIdx = b.enemies.findIndex(e => e.alive);
+          return arc2ExecuteAttack(b, entity.idx, skillIdx, targetIdx);
+        }
+        b.phase = 'pick_target';
+      }
+      return b;
+    });
+  };
+
+  // ─── Cancel target/ally selection ──────────────────────────
+  const arc2CancelSelection = () => {
+    setArc2Battle(prev => {
+      if (!prev || (prev.phase !== 'pick_target' && prev.phase !== 'pick_ally')) return prev;
+      return { ...prev, phase: 'pick', pendingSkill: null };
+    });
+  };
+
+  // ─── Step 2a: Player picks an enemy target ────────────────
+  const arc2ConfirmTarget = (targetIdx) => {
+    setArc2Battle(prev => {
+      if (!prev || prev.phase !== 'pick_target' || prev.pendingSkill == null) return prev;
+      try {
+        const b = JSON.parse(JSON.stringify(prev));
+        if (!b.enemies[targetIdx]?.alive) return prev;
+        const entity = b.turnOrder[b.currentTurn];
+        return arc2ExecuteAttack(b, entity.idx, b.pendingSkill, targetIdx);
+      } catch (e) {
+        console.error('arc2ConfirmTarget error:', e);
+        return prev;
+      }
+    });
+  };
+
+  // ─── Step 2b: Player picks an ally for buff/heal ──────────
+  const arc2ConfirmAlly = (allyIdx) => {
+    setArc2Battle(prev => {
+      if (!prev || prev.phase !== 'pick_ally' || prev.pendingSkill == null) return prev;
       try {
         const b = JSON.parse(JSON.stringify(prev));
         const entity = b.turnOrder[b.currentTurn];
         if (!entity || entity.type !== 'team') return prev;
         const fighter = b.team[entity.idx];
         if (!fighter || !fighter.alive) return prev;
-        const skill = fighter.skills[skillIdx];
-        if (!skill || skill.cd > 0 || (skill.manaCost || 0) > (fighter.mana || 0)) return prev;
+        const skill = fighter.skills[b.pendingSkill];
+        if (!skill) return prev;
+        const ally = b.team[allyIdx];
+        if (!ally || !ally.alive) return prev;
+
+        // Deduct mana
         fighter.mana = (fighter.mana || 0) - (skill.manaCost || 0);
-
-        // ─── Apply conditional hunter passives before attack ───
-        const hp = fighter.hunterPassive;
-        const savedAtk = fighter.atk;
-        const savedDef = fighter.def;
-        const savedCrit = fighter.crit;
-        const tbForAttack = { ...(fighter.tb || {}) };
-        const ps = fighter.passiveState || {};
-
-        if (hp) {
-          const hpPct = fighter.hp / fighter.maxHp * 100;
-          // lowHp: stat bonuses when HP low
-          if (hp.type === 'lowHp' && hpPct < hp.threshold && hp.stats) {
-            if (hp.stats.def) fighter.def = Math.floor(fighter.def * (1 + hp.stats.def / 100));
-            if (hp.stats.atk) fighter.atk = Math.floor(fighter.atk * (1 + hp.stats.atk / 100));
-          }
-          // highHp: stat bonuses when HP high
-          if (hp.type === 'highHp' && hpPct > hp.threshold && hp.stats) {
-            if (hp.stats.atk) fighter.atk = Math.floor(fighter.atk * (1 + hp.stats.atk / 100));
-            if (hp.stats.crit) fighter.crit = +(fighter.crit + hp.stats.crit).toFixed(1);
-          }
-          // stacking: +atk% per attack, accumulates
-          if (hp.type === 'stacking') {
-            ps.sianStacks = Math.min(hp.maxStacks || 10, (ps.sianStacks || 0) + 1);
-            const stackBonus = (hp.perStack?.atk || 0) * ps.sianStacks;
-            fighter.atk = Math.floor(fighter.atk * (1 + stackBonus / 100));
-          }
-          // vsLowHp: crit bonus vs low HP enemies
-          if (hp.type === 'vsLowHp' && (b.boss.hp / b.boss.maxHp * 100) < hp.threshold && hp.stats?.crit) {
-            fighter.crit = +(fighter.crit + hp.stats.crit).toFixed(1);
-          }
-          // vsDebuffed: atk bonus vs debuffed enemies
-          if (hp.type === 'vsDebuffed' && b.boss.buffs?.some(buf => buf.type?.startsWith('debuff')) && hp.stats?.atk) {
-            fighter.atk = Math.floor(fighter.atk * (1 + hp.stats.atk / 100));
-          }
-          // skillCd: crit bonus on high-CD skills
-          if (hp.type === 'skillCd' && (skill.cdMax || 0) >= (hp.minCd || 3) && hp.stats?.crit) {
-            fighter.crit = +(fighter.crit + hp.stats.crit).toFixed(1);
-          }
-          // aoeDmg: bonus damage (treated as allDamage for this attack)
-          if (hp.type === 'aoeDmg') {
-            tbForAttack.allDamage = (tbForAttack.allDamage || 0) + hp.value;
-          }
-          // dotDmg: bonus damage (treated as allDamage)
-          if (hp.type === 'dotDmg') {
-            tbForAttack.allDamage = (tbForAttack.allDamage || 0) + hp.value;
-          }
+        // Apply buff/heal to chosen ally
+        if (skill.buffAtk) ally.buffs.push({ stat: 'atk', value: skill.buffAtk / 100, dur: skill.buffDur || 2 });
+        if (skill.buffDef) ally.buffs.push({ stat: 'def', value: skill.buffDef / 100, dur: skill.buffDur || 2 });
+        const isAntiHealed = ally.buffs.some(bf => bf.type === 'antiHeal');
+        if (skill.healSelf && !isAntiHealed) {
+          ally.hp = Math.min(ally.maxHp, ally.hp + Math.floor(ally.maxHp * skill.healSelf / 100));
+        } else if (skill.healSelf && isAntiHealed) {
+          b.log.unshift({ msg: `🚫 Soin bloque sur ${ally.name} ! (Anti-Heal)`, type: 'player' });
         }
-
-        let result = computeAttack(fighter, skill, b.boss, tbForAttack);
-
-        // Restore saved stats after attack computation
-        fighter.atk = savedAtk;
-        fighter.def = savedDef;
-        fighter.crit = savedCrit;
-        fighter.passiveState = ps;
-
-        // defIgnore passive: extra DMG on crits (Minnie)
-        if (hp?.type === 'defIgnore' && result.isCrit && result.damage > 0) {
-          result = { ...result, damage: Math.floor(result.damage * (1 + (hp.value || 10) / 100)) };
-        }
-
-        const dmg = result.damage || 0;
-        b.boss.hp = Math.max(0, b.boss.hp - dmg);
-        if (result.healed) fighter.hp = Math.min(fighter.maxHp, fighter.hp + result.healed);
-        if (skill.buffAtk) fighter.buffs.push({ type: 'atk', val: skill.buffAtk, dur: skill.buffDur || 2 });
-        if (skill.buffDef) fighter.buffs.push({ type: 'def', val: skill.buffDef, dur: skill.buffDur || 2 });
-        if (skill.debuffDef) b.boss.buffs.push({ type: 'debuff_def', val: skill.debuffDef, dur: skill.debuffDur || 2 });
         if (skill.cdMax > 0) skill.cd = skill.cdMax;
         fighter.mana = Math.min(fighter.maxMana || 100, (fighter.mana || 0) + (fighter.manaRegen || 5));
 
-        b.log.unshift({ msg: `${fighter.name} → ${skill.name} → ${dmg} DMG${result.isCrit ? ' CRIT!' : ''}`, type: 'player' });
-        b.lastAction = { type: 'player', idx: entity.idx, damage: dmg, crit: result.isCrit };
-        b.phase = b.boss.hp <= 0 ? 'victory' : 'advance';
+        const effectText = skill.healSelf ? `Soin ${ally.name}` : `Buff ${ally.name}`;
+        b.log.unshift({ msg: `${fighter.name} → ${skill.name} → ${effectText}`, type: 'player' });
+        b.lastAction = { type: 'support', idx: entity.idx, allyIdx, skillName: skill.name };
+        b.pendingSkill = null;
+        b.phase = 'advance';
         return b;
       } catch (e) {
-        console.error('arc2PlayerAction error:', e);
+        console.error('arc2ConfirmAlly error:', e);
         return prev;
       }
     });
   };
 
-  const arc2BossAction = () => {
+  // ─── Execute attack on an enemy ────────────────────────────
+  function arc2ExecuteAttack(b, fighterIdx, skillIdx, targetIdx) {
+    const fighter = b.team[fighterIdx];
+    const skill = fighter.skills[skillIdx];
+    const enemy = b.enemies[targetIdx];
+    fighter.mana = (fighter.mana || 0) - (skill.manaCost || 0);
+
+    // ─── Apply conditional hunter passives before attack ───
+    const hp = fighter.hunterPassive;
+    const savedAtk = fighter.atk;
+    const savedDef = fighter.def;
+    const savedCrit = fighter.crit;
+    const tbForAttack = { ...(fighter.tb || {}) };
+    const ps = fighter.passiveState || {};
+
+    if (hp) {
+      const hpPct = fighter.hp / fighter.maxHp * 100;
+      if (hp.type === 'lowHp' && hpPct < hp.threshold && hp.stats) {
+        if (hp.stats.def) fighter.def = Math.floor(fighter.def * (1 + hp.stats.def / 100));
+        if (hp.stats.atk) fighter.atk = Math.floor(fighter.atk * (1 + hp.stats.atk / 100));
+      }
+      if (hp.type === 'highHp' && hpPct > hp.threshold && hp.stats) {
+        if (hp.stats.atk) fighter.atk = Math.floor(fighter.atk * (1 + hp.stats.atk / 100));
+        if (hp.stats.crit) fighter.crit = +(fighter.crit + hp.stats.crit).toFixed(1);
+      }
+      if (hp.type === 'stacking') {
+        ps.sianStacks = Math.min(hp.maxStacks || 10, (ps.sianStacks || 0) + 1);
+        const stackBonus = (hp.perStack?.atk || 0) * ps.sianStacks;
+        fighter.atk = Math.floor(fighter.atk * (1 + stackBonus / 100));
+      }
+      if (hp.type === 'vsLowHp' && (enemy.hp / enemy.maxHp * 100) < hp.threshold && hp.stats?.crit) {
+        fighter.crit = +(fighter.crit + hp.stats.crit).toFixed(1);
+      }
+      if (hp.type === 'vsDebuffed' && enemy.buffs?.some(buf => buf.value < 0) && hp.stats?.atk) {
+        fighter.atk = Math.floor(fighter.atk * (1 + hp.stats.atk / 100));
+      }
+      if (hp.type === 'skillCd' && (skill.cdMax || 0) >= (hp.minCd || 3) && hp.stats?.crit) {
+        fighter.crit = +(fighter.crit + hp.stats.crit).toFixed(1);
+      }
+      if (hp.type === 'aoeDmg') tbForAttack.allDamage = (tbForAttack.allDamage || 0) + hp.value;
+      if (hp.type === 'dotDmg') tbForAttack.allDamage = (tbForAttack.allDamage || 0) + hp.value;
+    }
+
+    let result = computeAttack(fighter, skill, enemy, tbForAttack);
+    fighter.atk = savedAtk;
+    fighter.def = savedDef;
+    fighter.crit = savedCrit;
+    fighter.passiveState = ps;
+
+    if (hp?.type === 'defIgnore' && result.isCrit && result.damage > 0) {
+      result = { ...result, damage: Math.floor(result.damage * (1 + (hp.value || 10) / 100)) };
+    }
+
+    const dmg = result.damage || 0;
+    enemy.hp = Math.max(0, enemy.hp - dmg);
+    if (enemy.hp <= 0) enemy.alive = false;
+    // Heal blocked by antiHeal debuff
+    const isAntiHealed = fighter.buffs.some(bf => bf.type === 'antiHeal');
+    if (result.healed && !isAntiHealed) {
+      fighter.hp = Math.min(fighter.maxHp, fighter.hp + result.healed);
+    } else if (result.healed && isAntiHealed) {
+      b.log.unshift({ msg: `🚫 Soin bloque sur ${fighter.name} ! (Anti-Heal)`, type: 'player' });
+    }
+    // Self-buff on attack combo (attack + buff skills)
+    if (skill.buffAtk) fighter.buffs.push({ stat: 'atk', value: skill.buffAtk / 100, dur: skill.buffDur || 2 });
+    if (skill.buffDef) fighter.buffs.push({ stat: 'def', value: skill.buffDef / 100, dur: skill.buffDur || 2 });
+    if (skill.debuffDef) enemy.buffs.push({ stat: 'def', value: -(skill.debuffDef / 100), dur: skill.debuffDur || 2 });
+    // Berserker selfDamage: skill costs % of max HP to use
+    let selfDmg = 0;
+    if (skill.selfDamage && skill.selfDamage > 0) {
+      selfDmg = Math.floor(fighter.maxHp * skill.selfDamage / 100);
+      fighter.hp = Math.max(1, fighter.hp - selfDmg); // never kills self
+    }
+    if (skill.cdMax > 0) skill.cd = skill.cdMax;
+    fighter.mana = Math.min(fighter.maxMana || 100, (fighter.mana || 0) + (fighter.manaRegen || 5));
+
+    const selfDmgLog = selfDmg > 0 ? ` (-${selfDmg} HP!)` : '';
+    b.log.unshift({ msg: `${fighter.name} → ${skill.name} → ${enemy.name} ${dmg} DMG${result.isCrit ? ' CRIT!' : ''}${!enemy.alive ? ' KO!' : ''}${selfDmgLog}`, type: 'player' });
+    b.lastAction = { type: 'player', idx: fighterIdx, targetEnemyIdx: targetIdx, damage: dmg, crit: result.isCrit, ko: !enemy.alive, selfDmg, atkFrames: skill.atkFrames || null };
+    b.pendingSkill = null;
+    b.phase = b.enemies.every(e => !e.alive) ? 'victory' : 'advance';
+    return b;
+  }
+
+  // ─── Enemy turn (each enemy acts individually) ─────────────
+  const arc2EnemyAction = () => {
     setArc2Battle(prev => {
-      if (!prev || prev.phase !== 'boss_act') return prev;
+      if (!prev || prev.phase !== 'enemy_act') return prev;
       try {
         const b = JSON.parse(JSON.stringify(prev));
-        const skill = aiPickSkill(b.boss);
-        if (!skill) return prev;
+        const entity = b.turnOrder[b.currentTurn];
+        if (!entity || entity.type !== 'enemy') return prev;
+        const enemy = b.enemies[entity.idx];
+        if (!enemy || !enemy.alive) { b.phase = 'advance'; return b; }
+
+        const aiResult = aiPickSkillArc2(enemy, b.enemies, b.team);
+        const skill = aiResult.skill;
+        if (!skill) { b.phase = 'advance'; return b; }
+
+        // ═══ ALLY TARGET (heal/buff an ally enemy) ═══
+        if (aiResult.targetType === 'ally' && aiResult.target) {
+          const allyEnemy = b.enemies.find(e => e.id === aiResult.target.id && e.alive);
+          if (allyEnemy) {
+            if (skill.healAlly) {
+              const healAmt = Math.floor(allyEnemy.maxHp * skill.healAlly / 100);
+              allyEnemy.hp = Math.min(allyEnemy.maxHp, allyEnemy.hp + healAmt);
+              b.log.unshift({ msg: `${enemy.name} → ${skill.name} → Soin ${allyEnemy.name} +${healAmt} PV`, type: 'enemy' });
+            }
+            if (skill.buffAllyAtk) allyEnemy.buffs.push({ stat: 'atk', value: skill.buffAllyAtk / 100, dur: skill.buffDur || 2 });
+            if (skill.buffAllyDef) allyEnemy.buffs.push({ stat: 'def', value: skill.buffAllyDef / 100, dur: skill.buffDur || 2 });
+            if ((skill.buffAllyAtk || skill.buffAllyDef) && !skill.healAlly) {
+              b.log.unshift({ msg: `${enemy.name} → ${skill.name} → Buff ${allyEnemy.name}`, type: 'enemy' });
+            }
+            if (skill.cdMax > 0) skill.cd = skill.cdMax;
+            b.lastAction = { type: 'enemy_support', enemyIdx: entity.idx, allyName: allyEnemy.name, skillName: skill.name };
+            b.phase = 'advance';
+            return b;
+          }
+        }
+
+        // ═══ SELF TARGET (self-buff/self-heal) ═══
+        if (aiResult.targetType === 'self') {
+          if (skill.healSelf) enemy.hp = Math.min(enemy.maxHp, enemy.hp + Math.floor(enemy.maxHp * skill.healSelf / 100));
+          if (skill.buffAtk) enemy.buffs.push({ stat: 'atk', value: skill.buffAtk / 100, dur: skill.buffDur || 2 });
+          if (skill.buffDef) enemy.buffs.push({ stat: 'def', value: skill.buffDef / 100, dur: skill.buffDur || 2 });
+          if (skill.buffSpd) enemy.buffs.push({ stat: 'spd', value: skill.buffSpd / 100, dur: skill.buffDur || 2 });
+          if (skill.cdMax > 0) skill.cd = skill.cdMax;
+          b.log.unshift({ msg: `${enemy.name} → ${skill.name} (self)`, type: 'enemy' });
+          b.lastAction = { type: 'enemy_self', enemyIdx: entity.idx, skillName: skill.name };
+          b.phase = 'advance';
+          return b;
+        }
+
+        // ═══ PLAYER TARGET (attack + debuffs) ═══
         const aliveTeam = b.team.map((f, i) => ({ ...f, _i: i })).filter(f => f.alive);
         if (aliveTeam.length === 0) { b.phase = 'defeat'; return b; }
-        const target = Math.random() < 0.6
-          ? aliveTeam.reduce((a, c) => a.hp < c.hp ? a : c)
-          : aliveTeam[Math.floor(Math.random() * aliveTeam.length)];
-        const tIdx = target._i;
+
+        // AI picks target or we fall back
+        let tIdx;
+        if (aiResult.target) {
+          const match = aliveTeam.find(f => f.id === aiResult.target.id || f.name === aiResult.target.name);
+          tIdx = match ? match._i : aliveTeam[0]._i;
+        } else {
+          const pick = Math.random() < 0.6
+            ? aliveTeam.reduce((a, c) => a.hp < c.hp ? a : c)
+            : aliveTeam[Math.floor(Math.random() * aliveTeam.length)];
+          tIdx = pick._i;
+        }
         const tFighter = b.team[tIdx];
         const scaled = { ...skill, power: skill.power ? Math.floor(skill.power * ARC2_POWER_SCALE(b.bossTier)) : 0 };
-        const result = computeAttack(b.boss, scaled, tFighter);
+        const result = computeAttack(enemy, scaled, tFighter);
         const dmg = result.damage || 0;
         tFighter.hp = Math.max(0, tFighter.hp - dmg);
         if (tFighter.hp <= 0) tFighter.alive = false;
-        if (result.healed) b.boss.hp = Math.min(b.boss.maxHp, b.boss.hp + result.healed);
-        if (skill.buffAtk) b.boss.buffs.push({ type: 'atk', val: skill.buffAtk, dur: skill.buffDur || 2 });
-        if (skill.buffDef) b.boss.buffs.push({ type: 'def', val: skill.buffDef, dur: skill.buffDur || 2 });
-        if (skill.debuffDef) tFighter.buffs.push({ type: 'debuff_def', val: skill.debuffDef, dur: skill.debuffDur || 2 });
+        if (result.healed) enemy.hp = Math.min(enemy.maxHp, enemy.hp + result.healed);
+        // ─── Standard buffs/debuffs ───
+        if (skill.buffAtk) enemy.buffs.push({ stat: 'atk', value: skill.buffAtk / 100, dur: skill.buffDur || 2 });
+        if (skill.buffDef) enemy.buffs.push({ stat: 'def', value: skill.buffDef / 100, dur: skill.buffDur || 2 });
+        if (skill.debuffDef) tFighter.buffs.push({ stat: 'def', value: -(skill.debuffDef / 100), dur: skill.debuffDur || 2 });
+        // ─── New debuffs ───
+        if (skill.debuffAtk) tFighter.buffs.push({ stat: 'atk', value: -(skill.debuffAtk / 100), dur: skill.debuffDur || 2 });
+        if (skill.debuffSpd) tFighter.buffs.push({ stat: 'spd', value: -(skill.debuffSpd / 100), dur: skill.debuffDur || 2 });
+        if (skill.poison) tFighter.buffs.push({ type: 'poison', value: skill.poison / 100, dur: skill.poisonDur || 3 });
+        if (skill.antiHeal) tFighter.buffs.push({ type: 'antiHeal', dur: skill.antiHealDur || 2 });
         if (skill.cdMax > 0) skill.cd = skill.cdMax;
-        b.log.unshift({ msg: `${b.boss.name} → ${skill.name} → ${tFighter.name} ${dmg} DMG${result.isCrit ? ' CRIT!' : ''}${!tFighter.alive ? ' KO!' : ''}`, type: 'boss' });
-        b.lastAction = { type: 'boss', targetIdx: tIdx, damage: dmg, crit: result.isCrit, ko: !tFighter.alive };
+
+        const extraEffects = [];
+        if (skill.debuffAtk) extraEffects.push('ATK↓');
+        if (skill.debuffSpd) extraEffects.push('SPD↓');
+        if (skill.poison) extraEffects.push('☠️Poison');
+        if (skill.antiHeal) extraEffects.push('🚫Soin');
+        const effectsStr = extraEffects.length > 0 ? ` [${extraEffects.join(', ')}]` : '';
+        b.log.unshift({ msg: `${enemy.name} → ${skill.name} → ${tFighter.name} ${dmg} DMG${result.isCrit ? ' CRIT!' : ''}${!tFighter.alive ? ' KO!' : ''}${effectsStr}`, type: 'enemy' });
+        b.lastAction = { type: 'enemy', enemyIdx: entity.idx, targetIdx: tIdx, damage: dmg, crit: result.isCrit, ko: !tFighter.alive };
         b.phase = b.team.every(f => !f.alive) ? 'defeat' : 'advance';
         return b;
       } catch (e) {
-        console.error('arc2BossAction error:', e);
+        console.error('arc2EnemyAction error:', e);
         return prev;
       }
     });
   };
 
+  // ─── Advance to next turn ──────────────────────────────────
   const advanceArc2Turn = () => {
     setArc2Battle(prev => {
       if (!prev || prev.phase !== 'advance') return prev;
       const b = JSON.parse(JSON.stringify(prev));
       const cur = b.turnOrder[b.currentTurn];
       if (cur) {
-        const curF = cur.type === 'team' ? b.team[cur.idx] : b.boss;
-        if (curF) {
+        const curF = cur.type === 'team' ? b.team[cur.idx] : b.enemies[cur.idx];
+        if (curF && curF.alive) {
+          // ─── Poison / Burn DoT ───
+          const poisonBuffs = (curF.buffs || []).filter(bf => bf.type === 'poison');
+          poisonBuffs.forEach(p => {
+            const dot = Math.floor(curF.maxHp * (p.value || 0.05));
+            curF.hp = Math.max(1, curF.hp - dot); // poison never kills
+            b.log.unshift({ msg: `☠️ ${curF.name} subit ${dot} degats de poison`, type: cur.type === 'team' ? 'enemy' : 'player' });
+          });
+          // ─── Cooldown tick ───
           curF.skills.forEach(s => { if (s.cd > 0) s.cd--; });
-          curF.buffs = (curF.buffs || []).filter(buff => { buff.dur--; return buff.dur > 0; });
+          // ─── Buff duration tick (skip permanent aura buffs dur:999) ───
+          curF.buffs = (curF.buffs || []).filter(buff => { if (buff.dur >= 999) return true; buff.dur--; return buff.dur > 0; });
         }
       }
+
+      const rebuildTurnOrder = () => {
+        const ents = [];
+        b.team.forEach((f, i) => { if (f.alive) ents.push({ type: 'team', idx: i, spd: getEffStat(f.spd, f.buffs || [], 'spd') }); });
+        b.enemies.forEach((e, i) => { if (e.alive) ents.push({ type: 'enemy', idx: i, spd: getEffStat(e.spd, e.buffs || [], 'spd') }); });
+        ents.sort((a, c) => c.spd - a.spd || (a.type === 'enemy' ? -1 : 1));
+        return ents;
+      };
 
       let next = b.currentTurn + 1;
       if (next >= b.turnOrder.length) {
         b.round++;
-        const ents = [];
-        b.team.forEach((f, i) => { if (f.alive) ents.push({ type: 'team', idx: i, spd: f.spd }); });
-        if (b.boss.hp > 0) ents.push({ type: 'boss', spd: b.boss.spd });
-        ents.sort((a, c) => c.spd - a.spd || (a.type === 'boss' ? -1 : 1));
-        b.turnOrder = ents;
+        b.turnOrder = rebuildTurnOrder();
         next = 0;
       }
       let loops = 0;
       while (loops < b.turnOrder.length * 2) {
         if (next >= b.turnOrder.length) {
           b.round++;
-          const ents2 = [];
-          b.team.forEach((f, i) => { if (f.alive) ents2.push({ type: 'team', idx: i, spd: f.spd }); });
-          if (b.boss.hp > 0) ents2.push({ type: 'boss', spd: b.boss.spd });
-          ents2.sort((a, c) => c.spd - a.spd || (a.type === 'boss' ? -1 : 1));
-          b.turnOrder = ents2;
+          b.turnOrder = rebuildTurnOrder();
           next = 0;
         }
         const e = b.turnOrder[next];
         if (!e) break;
         if (e.type === 'team' && !b.team[e.idx].alive) { next++; loops++; continue; }
+        if (e.type === 'enemy' && !b.enemies[e.idx].alive) { next++; loops++; continue; }
         break;
       }
       b.currentTurn = next;
       b.lastAction = null;
+      b.pendingSkill = null;
       const ne = b.turnOrder[b.currentTurn];
-      b.phase = !ne ? 'defeat' : ne.type === 'team' ? 'pick' : 'boss_act';
+      b.phase = !ne ? 'defeat' : ne.type === 'team' ? 'pick' : 'enemy_act';
       return b;
     });
   };
 
-  // Auto-advance + boss auto-act via effects
+  // Auto-advance + enemy auto-act via effects
   useEffect(() => {
     if (!arc2Battle) return;
     if (arc2Battle.phase === 'advance') {
       const t = setTimeout(() => advanceArc2Turn(), 600);
       return () => clearTimeout(t);
     }
-    if (arc2Battle.phase === 'boss_act') {
-      const t = setTimeout(() => arc2BossAction(), 800);
+    if (arc2Battle.phase === 'enemy_act') {
+      const t = setTimeout(() => arc2EnemyAction(), 800);
       return () => clearTimeout(t);
     }
   }, [arc2Battle]);
@@ -736,6 +936,56 @@ export default function ShadowColosseum() {
     const star = arc2Battle.star;
     const rMult = getStarRewardMult(star);
     const dropBonus = getStarDropBonus(star);
+
+    // Pre-compute drops outside setData (need side effects like saveRaidData)
+    // Hammer drop
+    const hammerDrop = rollHammerDrop(stage.tier, !!stage.isBoss);
+    let extraHammer = null;
+    if (!hammerDrop && dropBonus.hammerPct > 0 && Math.random() * 100 < dropBonus.hammerPct) {
+      extraHammer = rollHammerDrop(stage.tier, !!stage.isBoss);
+    }
+    // Hunter drop (ARC II = +50% higher base chance) — excludes Nier collab hunters
+    let hunterDrop = null;
+    const baseHunterChance = (stage.isBoss ? STAGE_HUNTER_DROP.dropChance.boss : STAGE_HUNTER_DROP.dropChance.normal) * 1.5;
+    const hunterChance = baseHunterChance + dropBonus.hunterPct / 100;
+    if (Math.random() < hunterChance) {
+      const tierPool = STAGE_HUNTER_DROP.tierPool[stage.tier] || ['rare'];
+      const dropRarity = tierPool[Math.floor(Math.random() * tierPool.length)];
+      const hunterCandidates = Object.entries(HUNTERS).filter(([, h]) => h.rarity === dropRarity && !h.series);
+      if (hunterCandidates.length > 0) {
+        const [pickId, pickData] = hunterCandidates[Math.floor(Math.random() * hunterCandidates.length)];
+        const rd = loadRaidData();
+        const res = addHunterOrDuplicate(rd, pickId);
+        saveRaidData(rd);
+        hunterDrop = { id: pickId, name: pickData.name, rarity: pickData.rarity, isDuplicate: res.isDuplicate, newStars: res.newStars };
+      }
+    }
+    // Weapon drop
+    let weaponDrop = null;
+    const rolledWeaponId = rollWeaponDrop(stage.tier, !!stage.isBoss);
+    if (rolledWeaponId && WEAPONS[rolledWeaponId]) {
+      weaponDrop = { id: rolledWeaponId, ...WEAPONS[rolledWeaponId] };
+    }
+    // Nier Automata special drop — per-hunter stage/tier config
+    let nierDrop = null;
+    const hasNierOnStage = Object.values(NIER_DROP_CONFIGS).some(c =>
+      c.stageId ? c.stageId === stage.id : c.tier === stage.tier
+    );
+    if (hasNierOnStage) {
+      const nierId = rollNierHunterDrop(stage.id, stage.tier, !!stage.isBoss, star);
+      if (nierId && HUNTERS[nierId]) {
+        const rd = loadRaidData();
+        const res = addHunterOrDuplicate(rd, nierId);
+        saveRaidData(rd);
+        nierDrop = { id: nierId, name: HUNTERS[nierId].name, rarity: HUNTERS[nierId].rarity, series: 'nier', isDuplicate: res.isDuplicate, newStars: res.newStars };
+      }
+    }
+    // Skin drop (stage/tier based)
+    let skinDrop = null;
+    const rolledSkin = rollSkinDrop(stage.id, stage.tier);
+    if (rolledSkin) {
+      skinDrop = rolledSkin;
+    }
 
     setData(prev => {
       const d = JSON.parse(JSON.stringify(prev));
@@ -751,11 +1001,26 @@ export default function ShadowColosseum() {
       // Coins
       const coins = Math.floor(stage.coins * rMult.coins);
       shadowCoinManager.addCoins(coins);
+      // Account XP
+      const baseAccountXp = 20 + stage.tier * 12 + (stage.isBoss ? 25 : 0);
+      const accountXpGain = Math.floor(baseAccountXp * rMult.accountXp);
+      d.accountXp = (d.accountXp || 0) + accountXpGain;
       // Stage cleared + star record
       if (!d.arc2StagesCleared[stage.id]) d.arc2StagesCleared[stage.id] = { maxStars: 0 };
       if (star > (d.arc2StagesCleared[stage.id].maxStars || 0)) d.arc2StagesCleared[stage.id].maxStars = star;
       d.stats.battles = (d.stats.battles || 0) + 1;
       d.stats.wins = (d.stats.wins || 0) + 1;
+      // Hammers
+      if (hammerDrop) d.hammers[hammerDrop] = (d.hammers[hammerDrop] || 0) + 1;
+      if (extraHammer) d.hammers[extraHammer] = (d.hammers[extraHammer] || 0) + 1;
+      // Weapon collection
+      if (weaponDrop) {
+        if (d.weaponCollection[weaponDrop.id] !== undefined) {
+          d.weaponCollection[weaponDrop.id] = Math.min(d.weaponCollection[weaponDrop.id] + 1, MAX_WEAPON_AWAKENING);
+        } else {
+          d.weaponCollection[weaponDrop.id] = 0;
+        }
+      }
       // ARC II artifact drop
       const baseDropChance = 0.08 + star * 0.03; // 8% base + 3% per star
       let droppedArt = null;
@@ -766,8 +1031,27 @@ export default function ShadowColosseum() {
         droppedArt = generateArc2Artifact(r);
       }
       if (droppedArt) d.artifactInventory.push(droppedArt);
+      // Skin drop handling
+      if (skinDrop) {
+        if (!d.ownedSkins) d.ownedSkins = {};
+        if (!d.ownedSkins[skinDrop.hunterId]) d.ownedSkins[skinDrop.hunterId] = ['default'];
+        if (!d.ownedSkins[skinDrop.hunterId].includes(skinDrop.skinId)) {
+          d.ownedSkins[skinDrop.hunterId].push(skinDrop.skinId);
+        }
+        // Auto-unlock hunter if not owned
+        const rd = loadRaidData();
+        const owned = (rd.hunterCollection || []).map(e => typeof e === 'string' ? e : e.id);
+        if (!owned.includes(skinDrop.hunterId)) {
+          addHunterOrDuplicate(rd, skinDrop.hunterId);
+          saveRaidData(rd);
+          skinDrop.autoUnlockedHunter = true;
+        }
+      }
       // Store result for display
-      d._arc2Result = { coins, xp: Math.floor(stage.xp * rMult.xp), art: droppedArt, star, stageName: stage.name };
+      d._arc2Result = {
+        coins, xp: Math.floor(stage.xp * rMult.xp), art: droppedArt, star, stageName: stage.name,
+        accountXpGain, hammerDrop: hammerDrop || extraHammer, hunterDrop, weaponDrop, nierDrop, skinDrop,
+      };
       return d;
     });
     setView('arc2_result');
@@ -1867,7 +2151,7 @@ export default function ShadowColosseum() {
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <img src={getChibiSprite(id)} alt={c.name} className="w-12 h-12 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
+                        <img src={getSprite(id)} alt={c.name} className="w-12 h-12 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-bold truncate">{c.name}</div>
                           <div className="flex items-center gap-1 text-[11px]">
@@ -1928,7 +2212,7 @@ export default function ShadowColosseum() {
                   >
                     <div className="p-4 rounded-xl border border-purple-500/30 bg-purple-500/5">
                       <div className="flex items-center gap-3 mb-3">
-                        <img src={getChibiSprite(selChibi)} alt="" className="w-14 h-14 object-contain" style={{ filter: RARITY[getChibiData(selChibi).rarity].glow }} />
+                        <img src={getSprite(selChibi)} alt="" className="w-14 h-14 object-contain" style={{ filter: RARITY[getChibiData(selChibi).rarity].glow }} />
                         <div className="flex-1">
                           <div className="text-base font-bold">{getChibiData(selChibi).name}</div>
                           <div className="text-xs text-gray-400">
@@ -2073,7 +2357,7 @@ export default function ShadowColosseum() {
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <img src={getChibiSprite(id)} alt={c.name} className="w-10 h-10 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
+                        <img src={getSprite(id)} alt={c.name} className="w-10 h-10 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1 text-xs font-bold">
                             <span className="truncate">{c.name}</span>
@@ -2321,9 +2605,12 @@ export default function ShadowColosseum() {
                 const storyWatched = data.arc2StoriesWatched[tier];
                 const prevTierBoss = tier > 1 ? ARC2_STAGES.filter(s => s.tier === tier - 1 && s.isBoss)[0] : null;
                 const tierUnlocked = tier === 1 || (prevTierBoss && isArc2StageCleared(prevTierBoss.id));
+                const tierMap = { 1: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771507737/mapTier1ARCII_q1mgs8.png' }[tier];
 
                 return (
-                  <div key={`a2t${tier}`} className="mb-4">
+                  <div key={`a2t${tier}`} className="mb-4 relative rounded-xl overflow-hidden" style={tierMap ? { background: `linear-gradient(to bottom, rgba(15,15,26,0.75), rgba(15,15,26,0.92))` } : {}}>
+                    {tierMap && <img src={tierMap} alt={ARC2_TIER_NAMES[tier]} className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none" />}
+                    <div className="relative p-2">
                     <div className="flex items-center gap-2 text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">
                       <span>Tier {tier} — {ARC2_TIER_NAMES[tier]}</span>
                       {tierUnlocked && ARC2_STORIES[tier]?.scenes?.length > 0 && (
@@ -2376,13 +2663,21 @@ export default function ShadowColosseum() {
                                 <span>{'\uD83D\uDCB0'}{stage.coins}</span>
                               </div>
                             </div>
-                            {/* 3v1 badge */}
-                            <span className="text-[9px] font-bold bg-gradient-to-r from-red-500/30 to-purple-500/30 text-red-300 px-1.5 py-0.5 rounded border border-red-500/20">
-                              3v1
-                            </span>
+                            {/* 3vN badge — enemy count from buildStageEnemies */}
+                            {(() => {
+                              const ec = { 1: { n: 2, b: 2 }, 2: { n: 2, b: 3 }, 3: { n: 3, b: 3 }, 4: { n: 3, b: 4 }, 5: { n: 4, b: 4 }, 6: { n: 4, b: 5 } };
+                              const cnt = ec[stage.tier] || { n: 2, b: 2 };
+                              const enemyCount = stage.isBoss ? cnt.b : cnt.n;
+                              return (
+                                <span className="text-[9px] font-bold bg-gradient-to-r from-red-500/30 to-purple-500/30 text-red-300 px-1.5 py-0.5 rounded border border-red-500/20">
+                                  3v{enemyCount}
+                                </span>
+                              );
+                            })()}
                           </button>
                         );
                       })}
+                    </div>
                     </div>
                   </div>
                 );
@@ -2945,7 +3240,7 @@ export default function ShadowColosseum() {
                           'border-gray-700/30 bg-gray-800/30 hover:border-purple-500/40'
                         }`}
                       >
-                        <img src={getChibiSprite(id)} alt={c.name} className="w-10 h-10 mx-auto object-contain" style={{ filter: RARITY[c.rarity]?.glow }} />
+                        <img src={getSprite(id)} alt={c.name} className="w-10 h-10 mx-auto object-contain" style={{ filter: RARITY[c.rarity]?.glow }} />
                         <div className="text-[9px] font-bold truncate mt-1">{c.name}</div>
                         <div className="text-[8px] text-gray-500">Lv{lv}</div>
                         <div className={`text-[7px] ${cEl?.color || 'text-gray-500'}`}>
@@ -3012,14 +3307,77 @@ export default function ShadowColosseum() {
         );
       })()}
 
-      {/* ═══ ARC II 3v1 BATTLE VIEW — VS Layout ═══ */}
+      {/* ═══ ARC II MULTI-ENEMY BATTLE VIEW ═══ */}
       {view === 'arc2_battle' && arc2Battle && (() => {
-        const { team, boss, turnOrder, currentTurn, round, phase, log, lastAction } = arc2Battle;
+        const { team, enemies, turnOrder, currentTurn, round, phase, log, lastAction, pendingSkill } = arc2Battle;
         const curEntity = turnOrder[currentTurn];
         const isPlayerTurn = phase === 'pick' && curEntity?.type === 'team';
-        const activeChar = isPlayerTurn ? team[curEntity.idx] : null;
-        const bossElement = ELEMENTS[boss.element] || ELEMENTS.shadow;
-        const bossHpPct = boss.maxHp > 0 ? (boss.hp / boss.maxHp) * 100 : 0;
+        const isPickTarget = phase === 'pick_target';
+        const isPickAlly = phase === 'pick_ally';
+        const activeChar = (isPlayerTurn || isPickTarget || isPickAlly) ? team[curEntity?.idx] : null;
+        const aliveEnemies = enemies.filter(e => e.alive);
+        const mainEnemy = enemies.find(e => e.isMain) || enemies[0];
+        const mainEl = ELEMENTS[mainEnemy?.element] || ELEMENTS.shadow;
+
+        // ─── BuffBadges helper — compact (arena inline) or detailed (tooltip panel) ───
+        const BuffBadges = ({ buffs, detailed }) => {
+          if (!buffs || buffs.length === 0) return null;
+          const getBuffLabel = (bf) => {
+            if (bf.type === 'poison') return `Poison: ${Math.round((bf.value || 0.05) * 100)}% PV/tour (${bf.dur}t)`;
+            if (bf.type === 'antiHeal') return `Anti-Heal: soins bloques (${bf.dur}t)`;
+            const statName = { atk: 'ATK', def: 'DEF', spd: 'SPD' }[bf.stat] || bf.stat;
+            const sign = bf.value > 0 ? '+' : '';
+            const durTxt = bf.dur >= 999 ? 'permanent' : `${bf.dur}t`;
+            return `${statName} ${sign}${Math.round(bf.value * 100)}% (${durTxt})`;
+          };
+          if (detailed) {
+            return (
+              <div className="flex flex-col gap-0.5">
+                {buffs.map((bf, i) => {
+                  const label = getBuffLabel(bf);
+                  const isPoison = bf.type === 'poison';
+                  const isAntiHeal = bf.type === 'antiHeal';
+                  const icon = !isPoison && !isAntiHeal ? BUFF_ICONS[bf.stat] : null;
+                  const isPos = bf.value > 0;
+                  const colorClass = isPoison ? 'text-green-400' : isAntiHeal ? 'text-pink-400' : icon ? (isPos ? icon.posColor : icon.negColor) : 'text-gray-400';
+                  const emoji = isPoison ? '☠️' : isAntiHeal ? '🚫' : icon ? (isPos ? icon.pos : icon.neg) : '?';
+                  return (
+                    <div key={i} className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${isPos || isPoison || isAntiHeal ? (isPoison || isAntiHeal || !isPos ? 'bg-red-900/30' : 'bg-green-900/30') : 'bg-red-900/30'}`}>
+                      <span className="text-[10px]">{emoji}</span>
+                      <span className={`text-[9px] font-medium ${colorClass}`}>{label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          }
+          return (
+            <div className="flex flex-wrap gap-0.5 mt-0.5">
+              {buffs.map((bf, i) => {
+                const label = getBuffLabel(bf);
+                if (bf.type === 'poison') return <span key={i} className="text-[7px] text-green-500 cursor-help" title={label}>☠️<sub>{bf.dur}</sub></span>;
+                if (bf.type === 'antiHeal') return <span key={i} className="text-[7px] text-pink-500 cursor-help" title={label}>🚫<sub>{bf.dur >= 999 ? '' : bf.dur}</sub></span>;
+                const icon = BUFF_ICONS[bf.stat];
+                if (!icon) return null;
+                const isPos = bf.value > 0;
+                if (bf.dur >= 999) return <span key={i} className={`text-[7px] ${isPos ? icon.posColor : icon.negColor} cursor-help`} title={label}>{isPos ? icon.pos : icon.neg}</span>;
+                return <span key={i} className={`text-[7px] ${isPos ? icon.posColor : icon.negColor} cursor-help`} title={label}>{isPos ? icon.pos : icon.neg}<sub>{bf.dur}</sub></span>;
+              })}
+            </div>
+          );
+        };
+
+        // ─── Damage preview for pick_target ───
+        const previewData = (isPickTarget && activeChar && pendingSkill != null) ? (() => {
+          const skill = activeChar.skills[pendingSkill];
+          if (!skill || skill.power <= 0) return {};
+          const previews = {};
+          enemies.forEach((en, ei) => {
+            if (!en.alive) return;
+            previews[ei] = computeDamagePreview(activeChar, skill, en, activeChar.tb || {});
+          });
+          return previews;
+        })() : {};
 
         return (
           <div className="max-w-md mx-auto px-3 pt-3 pb-6">
@@ -3030,15 +3388,15 @@ export default function ShadowColosseum() {
                 <div className="flex items-center gap-0.5">
                   {turnOrder.map((e, i) => {
                     const isNow = i === currentTurn;
-                    const isDead = e.type === 'team' ? !team[e.idx].alive : boss.hp <= 0;
+                    const isDead = e.type === 'team' ? !team[e.idx]?.alive : !enemies[e.idx]?.alive;
                     return (
                       <div key={i} className={`w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-bold border transition-all ${
                         isDead ? 'bg-gray-800 border-gray-700 opacity-30' :
                         isNow ? 'bg-yellow-500/30 border-yellow-400 ring-1 ring-yellow-400/50 scale-110' :
-                        e.type === 'boss' ? 'bg-red-500/20 border-red-500/30' :
+                        e.type === 'enemy' ? 'bg-red-500/20 border-red-500/30' :
                         'bg-blue-500/20 border-blue-500/30'
                       }`}>
-                        {e.type === 'boss' ? '\uD83D\uDC80' : (e.idx + 1)}
+                        {e.type === 'enemy' ? (enemies[e.idx]?.isMain ? '\uD83D\uDC80' : `E${e.idx+1}`) : (e.idx + 1)}
                       </div>
                     );
                   })}
@@ -3049,17 +3407,17 @@ export default function ShadowColosseum() {
 
             {/* ─── ARENA — VS Layout ─── */}
             <div className="relative rounded-2xl overflow-hidden mb-3"
-              style={{ background: 'linear-gradient(to bottom, #0a0a1a 0%, #1a1030 50%, #251540 100%)', minHeight: 240 }}>
+              style={{ background: 'linear-gradient(to bottom, #0a0a1a 0%, #1a1030 50%, #251540 100%)', minHeight: 260 }}>
 
               {/* Ground line */}
-              <div className="absolute bottom-[18%] left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
+              <div className="absolute bottom-[14%] left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
 
               {/* Element indicators */}
               <div className="absolute top-2 left-3 text-[10px]">
                 <span className="text-blue-400">{'\uD83D\uDDE1\uFE0F'} Equipe</span>
               </div>
               <div className="absolute top-2 right-3 text-[10px]">
-                <span className={bossElement.color}>{bossElement.icon} {bossElement.name}</span>
+                <span className={mainEl.color}>{mainEl.icon} x{aliveEnemies.length}</span>
               </div>
 
               {/* VS Center */}
@@ -3067,27 +3425,49 @@ export default function ShadowColosseum() {
                 VS
               </div>
 
+              {/* Phase overlay messages */}
+              {isPickTarget && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[120%] z-20">
+                  <div className="bg-red-500/20 border border-red-500/50 rounded-lg px-3 py-1 text-[11px] text-red-300 font-bold animate-pulse whitespace-nowrap">
+                    {'\uD83C\uDFAF'} Choisis un ennemi !
+                  </div>
+                </div>
+              )}
+              {isPickAlly && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[120%] z-20">
+                  <div className="bg-green-500/20 border border-green-500/50 rounded-lg px-3 py-1 text-[11px] text-green-300 font-bold animate-pulse whitespace-nowrap">
+                    {'\uD83D\uDC9A'} Choisis un alli{'\u00e9'} !
+                  </div>
+                </div>
+              )}
+
               {/* ─── Team Side (Left) — stacked vertically ─── */}
-              <div className="absolute left-[4%] top-[18%] bottom-[10%] flex flex-col justify-around items-center" style={{ width: '38%' }}>
+              <div className="absolute left-[4%] top-[15%] bottom-[8%] flex flex-col justify-around items-center" style={{ width: '38%' }}>
                 {team.map((f, i) => {
                   const isActive = curEntity?.type === 'team' && curEntity.idx === i;
                   const hpPct = f.maxHp > 0 ? (f.hp / f.maxHp) * 100 : 0;
-                  const fEl = ELEMENTS[f.element] || ELEMENTS.shadow;
+                  const canPickAlly = isPickAlly && f.alive;
                   return (
-                    <div key={i} className="relative flex items-center gap-1.5 w-full">
+                    <div key={i}
+                      onClick={() => { if (canPickAlly) arc2ConfirmAlly(i); else if (f.alive) { const key = `ally_${i}`; if (enemyTooltip === key) { setEnemyTooltip(null); setTooltipPinned(false); } else { setEnemyTooltip(key); setTooltipPinned(true); } } }}
+                      onMouseLeave={() => { if (!tooltipPinned && enemyTooltip === `ally_${i}`) setEnemyTooltip(null); }}
+                      className={`relative flex items-center gap-1.5 w-full cursor-pointer`}>
                       {/* Sprite */}
                       <div className={`relative w-12 h-12 flex-shrink-0 rounded-lg border-2 flex items-center justify-center transition-all ${
                         !f.alive ? 'border-gray-700/40 opacity-30 grayscale' :
+                        canPickAlly ? 'border-green-400 shadow-[0_0_12px_rgba(74,222,128,0.4)] hover:scale-105' :
                         isActive ? 'border-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.4)]' :
                         'border-gray-600/30'
-                      }`} style={isActive ? { background: 'radial-gradient(circle, rgba(250,204,21,0.08), transparent)' } : {}}>
-                        <img src={f.sprite} alt={f.name} className="w-10 h-10 object-contain"
+                      }`} style={canPickAlly ? { background: 'radial-gradient(circle, rgba(74,222,128,0.08), transparent)' } : isActive ? { background: 'radial-gradient(circle, rgba(250,204,21,0.08), transparent)' } : {}}>
+                        <img src={atkAnim?.idx === i ? atkAnim.frames[atkAnim.frame] : f.sprite} alt={f.name} className="w-10 h-10 object-contain"
                           style={{
-                            animation: !f.alive ? 'none' : isActive ? 'idleBreatheFlip 3s ease-in-out infinite' : 'idleBreatheFlip 4s ease-in-out infinite',
-                            filter: !f.alive ? 'grayscale(1)' : '',
+                            animation: atkAnim?.idx === i ? 'none' : !f.alive ? 'none' : isActive ? 'idleBreatheFlip 3s ease-in-out infinite' : 'idleBreatheFlip 4s ease-in-out infinite',
+                            filter: !f.alive ? 'grayscale(1)' : atkAnim?.idx === i ? 'drop-shadow(0 0 8px rgba(239,68,68,0.8))' : '',
+                            transition: 'filter 0.15s',
                           }} />
                         {!f.alive && <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg"><span className="text-[9px] text-red-400 font-bold">KO</span></div>}
-                        {isActive && <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />}
+                        {isActive && !isPickAlly && <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />}
+                        {canPickAlly && <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />}
                       </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
@@ -3107,13 +3487,23 @@ export default function ShadowColosseum() {
                             style={{ width: `${Math.min(100, (f.mana || 0) / Math.max(1, f.maxMana || 1) * 100)}%` }} />
                         </div>
                         <div className="text-[7px] text-violet-400">{f.mana || 0}/{f.maxMana || 0} MP</div>
+                        <BuffBadges buffs={f.buffs} />
                       </div>
-                      {/* Damage float on this char */}
+                      {/* Damage float on this char (from enemy attack) */}
                       <AnimatePresence>
-                        {lastAction?.type === 'boss' && lastAction.targetIdx === i && lastAction.damage > 0 && (
+                        {lastAction?.type === 'enemy' && lastAction.targetIdx === i && lastAction.damage > 0 && (
                           <motion.div key={`pd-${round}-${currentTurn}-${i}`} initial={{ opacity: 1, y: 0, scale: 1.2 }} animate={{ opacity: 0, y: -25 }} exit={{ opacity: 0 }} transition={{ duration: 1.2 }}
                             className={`absolute -top-3 left-1/2 -translate-x-1/2 text-sm font-black z-10 ${lastAction.crit ? 'text-yellow-300' : 'text-red-400'}`}>
                             -{lastAction.damage}{lastAction.ko ? ' KO!' : ''}{lastAction.crit ? '!' : ''}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                      {/* Berserker selfDamage float */}
+                      <AnimatePresence>
+                        {lastAction?.type === 'player' && lastAction.idx === i && lastAction.selfDmg > 0 && (
+                          <motion.div key={`sd-${round}-${currentTurn}-${i}`} initial={{ opacity: 1, y: 5, scale: 1 }} animate={{ opacity: 0, y: -15 }} exit={{ opacity: 0 }} transition={{ duration: 1.5 }}
+                            className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-bold z-10 text-orange-400">
+                            -{lastAction.selfDmg} HP!
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -3122,46 +3512,248 @@ export default function ShadowColosseum() {
                 })}
               </div>
 
-              {/* ─── Boss Side (Right) ─── */}
-              <div className="absolute right-[8%] top-1/2 -translate-y-1/2 flex flex-col items-center" style={{ width: '35%' }}>
-                {/* Boss sprite */}
-                <div className={`relative w-20 h-20 flex items-center justify-center rounded-xl border-2 ${arc2Battle.isBoss ? 'border-red-500/60' : 'border-gray-600/40'}`}
-                  style={{
-                    background: `radial-gradient(circle, ${bossElement.color === 'text-purple-400' ? 'rgba(168,85,247,0.15)' : bossElement.color === 'text-red-400' ? 'rgba(239,68,68,0.15)' : 'rgba(100,100,200,0.1)'}, transparent)`,
-                    animation: phase === 'boss_act' ? 'idleBreathe 1s ease-in-out infinite' : 'idleBreathe 3s ease-in-out infinite',
-                    boxShadow: arc2Battle.isBoss ? '0 0 20px rgba(239,68,68,0.3)' : 'none',
-                  }}>
-                  {boss.sprite ? (
-                    <img src={boss.sprite} alt={boss.name} className="w-16 h-16 object-contain"
-                      style={{ filter: arc2Battle.isBoss ? 'drop-shadow(0 0 8px rgba(239,68,68,0.5))' : '' }} />
-                  ) : (
-                    <span className="text-4xl" style={{ filter: arc2Battle.isBoss ? 'drop-shadow(0 0 8px rgba(239,68,68,0.5))' : '' }}>
-                      {boss.emoji}
-                    </span>
-                  )}
-                  {/* Boss damage float */}
-                  <AnimatePresence>
-                    {lastAction?.type === 'player' && lastAction.damage > 0 && (
-                      <motion.div key={`bd-${round}-${currentTurn}`} initial={{ opacity: 1, y: 0, scale: 1.3 }} animate={{ opacity: 0, y: -30 }} exit={{ opacity: 0 }} transition={{ duration: 1.2 }}
-                        className={`absolute -top-4 left-1/2 -translate-x-1/2 text-lg font-black z-10 ${lastAction.crit ? 'text-yellow-300' : 'text-red-400'}`}>
-                        -{lastAction.damage}{lastAction.crit ? ' CRIT!' : ''}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                {/* Boss HP */}
-                <div className="w-full mt-1.5">
-                  <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all duration-500 rounded-full" style={{ width: `${bossHpPct}%` }} />
-                  </div>
-                  <div className="text-[8px] text-center text-gray-400 mt-0.5 font-bold">
-                    {boss.name}
-                    {arc2Battle.isBoss && <span className="text-red-400 ml-1">BOSS</span>}
-                  </div>
-                  <div className="text-[7px] text-center text-red-300">{boss.hp.toLocaleString()} / {boss.maxHp.toLocaleString()}</div>
-                </div>
+              {/* ─── Enemies Side (Right) — multi-enemy grid ─── */}
+              <div className="absolute right-[4%] top-[12%] bottom-[6%] flex flex-col justify-around items-center" style={{ width: '42%' }}>
+                {enemies.map((en, ei) => {
+                  const enEl = ELEMENTS[en.element] || ELEMENTS.shadow;
+                  const enHpPct = en.maxHp > 0 ? (en.hp / en.maxHp) * 100 : 0;
+                  const canTarget = isPickTarget && en.alive;
+                  const isActing = curEntity?.type === 'enemy' && curEntity.idx === ei;
+                  const preview = previewData[ei];
+                  const previewPct = preview ? Math.min(100, ((preview.min + preview.max) / 2) / en.maxHp * 100) : 0;
+                  return (
+                    <div key={ei}
+                      onClick={() => { if (canTarget) arc2ConfirmTarget(ei); else if (en.alive) { if (enemyTooltip === ei && tooltipPinned) { setEnemyTooltip(null); setTooltipPinned(false); } else { setEnemyTooltip(ei); setTooltipPinned(true); } } }}
+                      onMouseEnter={() => { if (canTarget) setHoveredEnemy(ei); else if (en.alive && !isPickTarget && !tooltipPinned) setEnemyTooltip(ei); }}
+                      onMouseLeave={() => { setHoveredEnemy(null); if (!tooltipPinned) setEnemyTooltip(null); if (tooltipTimerRef.current) { clearTimeout(tooltipTimerRef.current); tooltipTimerRef.current = null; } }}
+                      onTouchStart={() => { if (!canTarget && en.alive) tooltipTimerRef.current = setTimeout(() => { setEnemyTooltip(ei); setTooltipPinned(true); }, 500); }}
+                      onTouchEnd={() => { if (tooltipTimerRef.current) { clearTimeout(tooltipTimerRef.current); tooltipTimerRef.current = null; } }}
+                      className="relative flex items-center gap-1.5 w-full cursor-pointer">
+                      {/* Enemy sprite */}
+                      <div className={`relative flex-shrink-0 rounded-lg border-2 flex items-center justify-center transition-all ${
+                        en.isMain ? 'w-14 h-14' : 'w-11 h-11'
+                      } ${
+                        !en.alive ? 'border-gray-700/40 opacity-30 grayscale' :
+                        canTarget ? 'border-red-400 shadow-[0_0_12px_rgba(248,113,113,0.5)] hover:scale-105' :
+                        isActing ? 'border-orange-400 shadow-[0_0_12px_rgba(251,146,60,0.4)]' :
+                        en.isMain ? 'border-red-500/60' : 'border-gray-600/40'
+                      }`} style={{
+                        background: canTarget ? 'radial-gradient(circle, rgba(248,113,113,0.15), transparent)' :
+                          `radial-gradient(circle, ${enEl.color === 'text-purple-400' ? 'rgba(168,85,247,0.12)' : enEl.color === 'text-red-400' ? 'rgba(239,68,68,0.12)' : 'rgba(100,100,200,0.08)'}, transparent)`,
+                        animation: !en.alive ? 'none' : isActing ? 'idleBreathe 1s ease-in-out infinite' : 'idleBreathe 3s ease-in-out infinite',
+                        boxShadow: en.isMain && en.alive ? '0 0 15px rgba(239,68,68,0.25)' : 'none',
+                      }}>
+                        {en.sprite ? (
+                          <img src={en.sprite} alt={en.name} className={`${en.isMain ? 'w-11 h-11' : 'w-8 h-8'} object-contain`}
+                            style={{ filter: en.isMain ? 'drop-shadow(0 0 6px rgba(239,68,68,0.4))' : '' }} />
+                        ) : (
+                          <span className={en.isMain ? 'text-3xl' : 'text-xl'}
+                            style={{ filter: en.isMain ? 'drop-shadow(0 0 6px rgba(239,68,68,0.4))' : '' }}>
+                            {en.emoji}
+                          </span>
+                        )}
+                        {!en.alive && <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg"><span className="text-[8px] text-red-400 font-bold">KO</span></div>}
+                        {canTarget && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full animate-pulse" />}
+                      </div>
+                      {/* Enemy info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1">
+                          <span className={`text-[8px] font-bold truncate ${!en.alive ? 'text-gray-600' : en.isMain ? 'text-red-300' : 'text-gray-300'}`}>{en.name}</span>
+                          {en.isMain && en.alive && <span className="text-[6px] bg-red-500/30 text-red-300 px-1 rounded font-bold">BOSS</span>}
+                        </div>
+                        {/* HP bar with damage preview overlay */}
+                        <div className="relative w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mt-0.5">
+                          <div className="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all duration-500 rounded-full" style={{ width: `${enHpPct}%` }} />
+                          {isPickTarget && preview && en.alive && (
+                            <div className="absolute top-0 h-full bg-yellow-400/40 rounded-full transition-all duration-300"
+                              style={{ right: `${100 - enHpPct}%`, width: `${Math.min(enHpPct, previewPct)}%` }} />
+                          )}
+                        </div>
+                        <div className="text-[7px] text-red-300">{en.hp.toLocaleString()}/{en.maxHp.toLocaleString()}</div>
+                        {/* Damage preview text (always shown on mobile during pick_target) */}
+                        {isPickTarget && preview && en.alive && (
+                          <div className="text-[6px] text-yellow-300/80 leading-tight">
+                            ~{preview.min}-{preview.max} {preview.critChance > 0 && <span className="text-orange-300">| CRIT: {preview.critMin}-{preview.critMax}</span>}
+                            {preview.elementAdvantage && <span className="text-green-300 ml-0.5">★</span>}
+                          </div>
+                        )}
+                        <BuffBadges buffs={en.buffs} />
+                      </div>
+                      {/* Player damage float on this enemy */}
+                      <AnimatePresence>
+                        {lastAction?.type === 'player' && lastAction.targetEnemyIdx === ei && lastAction.damage > 0 && (
+                          <motion.div key={`ed-${round}-${currentTurn}-${ei}`} initial={{ opacity: 1, y: 0, scale: 1.3 }} animate={{ opacity: 0, y: -30 }} exit={{ opacity: 0 }} transition={{ duration: 1.2 }}
+                            className={`absolute -top-3 left-1/2 -translate-x-1/2 text-sm font-black z-10 ${lastAction.crit ? 'text-yellow-300' : 'text-red-400'}`}>
+                            -{lastAction.damage}{lastAction.crit ? ' CRIT!' : ''}{lastAction.ko ? ' KO!' : ''}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                      {/* Tooltip rendered outside arena below */}
+                    </div>
+                  );
+                })}
               </div>
             </div>
+
+            {/* ─── TOOLTIP PANEL (outside arena to avoid overflow clip) ─── */}
+            <AnimatePresence>
+              {enemyTooltip !== null && (() => {
+                // Enemy tooltip
+                const isAlly = typeof enemyTooltip === 'string' && enemyTooltip.startsWith('ally_');
+                if (isAlly) {
+                  const allyIdx = parseInt(enemyTooltip.split('_')[1]);
+                  const f = team[allyIdx];
+                  if (!f || !f.alive) return null;
+                  const fEl = ELEMENTS[f.element] || ELEMENTS.shadow;
+                  const getSkillDesc = (sk) => {
+                    const parts = [];
+                    if (sk.power > 0) parts.push(`DMG ${sk.power}%`);
+                    if (sk.buffAtk) parts.push(`ATK +${sk.buffAtk}%`);
+                    if (sk.buffDef) parts.push(`DEF +${sk.buffDef}%`);
+                    if (sk.buffSpd) parts.push(`SPD +${sk.buffSpd}%`);
+                    if (sk.healSelf) parts.push(`Soin ${sk.healSelf}%`);
+                    if (sk.debuffDef) parts.push(`DEF -${sk.debuffDef}%`);
+                    if (sk.selfDamage) parts.push(`Cout ${sk.selfDamage}% PV`);
+                    return parts.join(' | ') || 'Effet';
+                  };
+                  const effAtk = getEffStat(f.atk, f.buffs, 'atk');
+                  const effDef = getEffStat(f.def, f.buffs, 'def');
+                  const effSpd = getEffStat(f.spd, f.buffs || [], 'spd');
+                  const atkChanged = effAtk !== f.atk;
+                  const defChanged = effDef !== f.def;
+                  const spdChanged = effSpd !== f.spd;
+                  return (
+                    <motion.div key="ally-tip" initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }}
+                      className="bg-gray-900 border-2 border-blue-500/50 rounded-xl p-3 mb-2 shadow-2xl relative"
+                      onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => { setEnemyTooltip(null); setTooltipPinned(false); }} className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-white text-xs transition-colors">&times;</button>
+                      <div className="flex items-center gap-2 mb-2">
+                        <img src={f.sprite} alt={f.name} className="w-10 h-10 object-contain" />
+                        <div>
+                          <div className="text-xs font-bold text-white">{f.name} <span className="text-gray-500 font-normal">Lv{f.level}</span></div>
+                          <div className="text-[9px] text-gray-400">{fEl.icon} {fEl.name}</div>
+                        </div>
+                      </div>
+                      {/* HP / Mana bars */}
+                      <div className="mb-2">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-[9px] text-green-400 font-bold w-6">PV</span>
+                          <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${(f.hp / f.maxHp) > 0.5 ? 'bg-green-500' : (f.hp / f.maxHp) > 0.25 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${(f.hp / f.maxHp) * 100}%` }} />
+                          </div>
+                          <span className="text-[9px] text-green-300 font-medium w-20 text-right">{f.hp.toLocaleString()}/{f.maxHp.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] text-violet-400 font-bold w-6">MP</span>
+                          <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-violet-500 to-blue-500 rounded-full" style={{ width: `${Math.min(100, (f.mana || 0) / Math.max(1, f.maxMana || 1) * 100)}%` }} />
+                          </div>
+                          <span className="text-[9px] text-violet-300 font-medium w-20 text-right">{f.mana || 0}/{f.maxMana || 0}</span>
+                        </div>
+                      </div>
+                      {/* Stats grid — show base→eff when buffed/debuffed */}
+                      <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-[9px] mb-2 bg-gray-800/50 rounded-lg p-1.5">
+                        <span className={atkChanged ? (effAtk > f.atk ? 'text-green-300 font-bold' : 'text-red-300 font-bold') : 'text-red-400'}>ATK {atkChanged ? <><s className="text-gray-600">{f.atk}</s> {effAtk}</> : effAtk}</span>
+                        <span className={defChanged ? (effDef > f.def ? 'text-green-300 font-bold' : 'text-red-300 font-bold') : 'text-blue-400'}>DEF {defChanged ? <><s className="text-gray-600">{f.def}</s> {effDef}</> : effDef}</span>
+                        <span className={spdChanged ? (effSpd > f.spd ? 'text-green-300 font-bold' : 'text-red-300 font-bold') : 'text-emerald-400'}>SPD {spdChanged ? <><s className="text-gray-600">{f.spd}</s> {effSpd}</> : effSpd}</span>
+                        <span className="text-yellow-400">CRIT {f.crit}</span>
+                        <span className="text-cyan-400">RES {f.res}</span>
+                      </div>
+                      {/* Buffs/Debuffs — detailed mode */}
+                      {f.buffs?.length > 0 && (
+                        <div className="mb-2">
+                          <div className="text-[8px] text-gray-500 uppercase tracking-wider mb-1 font-bold">Effets actifs</div>
+                          <BuffBadges buffs={f.buffs} detailed />
+                        </div>
+                      )}
+                      {/* Skills */}
+                      <div className="text-[9px] border-t border-gray-700/50 pt-1.5">
+                        <div className="text-[8px] text-gray-500 uppercase tracking-wider mb-1 font-bold">Skills</div>
+                        {f.skills.map((sk, si) => (
+                          <div key={si} className={`flex items-center justify-between gap-1 py-0.5 ${sk.cd > 0 ? 'opacity-40' : ''}`}>
+                            <span className="text-gray-200 font-medium">{sk.name}</span>
+                            <span className="text-gray-400 text-[8px] flex-shrink-0">{getSkillDesc(sk)}{sk.manaCost > 0 ? ` | ${sk.manaCost}MP` : ''}{sk.cd > 0 ? ` (CD ${sk.cd}t)` : ''}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  );
+                } else {
+                  const en = enemies[enemyTooltip];
+                  if (!en || !en.alive) return null;
+                  const enEl = ELEMENTS[en.element] || ELEMENTS.shadow;
+                  const getEnemySkillDesc = (sk) => {
+                    const parts = [];
+                    if (sk.power > 0) parts.push(`DMG ${sk.power}%`);
+                    if (sk.buffAtk) parts.push(`ATK +${sk.buffAtk}%`);
+                    if (sk.buffDef) parts.push(`DEF +${sk.buffDef}%`);
+                    if (sk.buffSpd) parts.push(`SPD +${sk.buffSpd}%`);
+                    if (sk.buffAllyAtk) parts.push(`Allie ATK +${sk.buffAllyAtk}%`);
+                    if (sk.buffAllyDef) parts.push(`Allie DEF +${sk.buffAllyDef}%`);
+                    if (sk.healSelf) parts.push(`Soin ${sk.healSelf}%`);
+                    if (sk.healAlly) parts.push(`Soin allie ${sk.healAlly}%`);
+                    if (sk.debuffDef) parts.push(`DEF -${sk.debuffDef}%`);
+                    if (sk.debuffAtk) parts.push(`ATK -${sk.debuffAtk}%`);
+                    if (sk.debuffSpd) parts.push(`SPD -${sk.debuffSpd}%`);
+                    if (sk.poison) parts.push(`Poison ${sk.poison}%`);
+                    if (sk.antiHeal) parts.push('Anti-Heal');
+                    return parts.join(' | ') || 'Attaque';
+                  };
+                  const eEffAtk = getEffStat(en.atk, en.buffs, 'atk');
+                  const eEffDef = getEffStat(en.def, en.buffs, 'def');
+                  const eEffSpd = getEffStat(en.spd, en.buffs || [], 'spd');
+                  const eAtkChanged = eEffAtk !== en.atk;
+                  const eDefChanged = eEffDef !== en.def;
+                  const eSpdChanged = eEffSpd !== en.spd;
+                  return (
+                    <motion.div key="enemy-tip" initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }}
+                      className="bg-gray-900 border-2 border-red-500/50 rounded-xl p-3 mb-2 shadow-2xl relative">
+                      <button onClick={() => { setEnemyTooltip(null); setTooltipPinned(false); }} className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-white text-xs transition-colors">&times;</button>
+                      <div className="flex items-center gap-2 mb-2">
+                        {en.sprite ? <img src={en.sprite} alt={en.name} className="w-10 h-10 object-contain" /> : <span className="text-xl">{en.emoji}</span>}
+                        <div>
+                          <div className="text-xs font-bold text-white">{en.name} {en.isMain && <span className="text-[8px] bg-red-500/30 text-red-300 px-1.5 rounded font-bold ml-1">BOSS</span>}</div>
+                          <div className="text-[9px] text-gray-400">{enEl.icon} {enEl.name}</div>
+                        </div>
+                      </div>
+                      {/* HP bar */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[9px] text-red-400 font-bold w-6">PV</span>
+                        <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-red-500 rounded-full" style={{ width: `${(en.hp / en.maxHp) * 100}%` }} />
+                        </div>
+                        <span className="text-[9px] text-red-300 font-medium w-24 text-right">{en.hp.toLocaleString()}/{en.maxHp.toLocaleString()}</span>
+                      </div>
+                      {/* Stats grid */}
+                      <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-[9px] mb-2 bg-gray-800/50 rounded-lg p-1.5">
+                        <span className={eAtkChanged ? (eEffAtk > en.atk ? 'text-green-300 font-bold' : 'text-red-300 font-bold') : 'text-red-400'}>ATK {eAtkChanged ? <><s className="text-gray-600">{en.atk}</s> {eEffAtk}</> : eEffAtk}</span>
+                        <span className={eDefChanged ? (eEffDef > en.def ? 'text-green-300 font-bold' : 'text-red-300 font-bold') : 'text-blue-400'}>DEF {eDefChanged ? <><s className="text-gray-600">{en.def}</s> {eEffDef}</> : eEffDef}</span>
+                        <span className={eSpdChanged ? (eEffSpd > en.spd ? 'text-green-300 font-bold' : 'text-red-300 font-bold') : 'text-emerald-400'}>SPD {eSpdChanged ? <><s className="text-gray-600">{en.spd}</s> {eEffSpd}</> : eEffSpd}</span>
+                        <span className="text-yellow-400">CRIT {en.crit}</span>
+                        <span className="text-cyan-400">RES {en.res}</span>
+                      </div>
+                      {/* Buffs/Debuffs — detailed */}
+                      {en.buffs?.length > 0 && (
+                        <div className="mb-2">
+                          <div className="text-[8px] text-gray-500 uppercase tracking-wider mb-1 font-bold">Effets actifs</div>
+                          <BuffBadges buffs={en.buffs} detailed />
+                        </div>
+                      )}
+                      {/* Skills */}
+                      <div className="text-[9px] border-t border-gray-700/50 pt-1.5">
+                        <div className="text-[8px] text-gray-500 uppercase tracking-wider mb-1 font-bold">Skills</div>
+                        {en.skills.map((sk, si) => (
+                          <div key={si} className={`flex items-center justify-between gap-1 py-0.5 ${sk.cd > 0 ? 'opacity-40' : ''}`}>
+                            <span className="text-gray-200 font-medium">{sk.name}</span>
+                            <span className="text-gray-400 text-[8px] flex-shrink-0">{getEnemySkillDesc(sk)}{sk.cd > 0 ? ` (CD ${sk.cd}t)` : ''}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  );
+                }
+              })()}
+            </AnimatePresence>
 
             {/* ─── COMBAT LOG ─── */}
             <div className="bg-gray-900/50 rounded-lg p-2 mb-3 max-h-16 overflow-y-auto border border-gray-800/50">
@@ -3169,17 +3761,20 @@ export default function ShadowColosseum() {
               {log.slice(0, 4).map((l, i) => (
                 <div key={i} className={`text-[10px] leading-relaxed ${
                   i === 0 ? 'text-white font-medium' :
-                  l.type === 'boss' ? 'text-red-400/70' : 'text-green-400/70'
+                  l.type === 'enemy' ? 'text-red-400/70' : 'text-green-400/70'
                 }`}>{l.msg}</div>
               ))}
             </div>
 
             {/* ─── PHASE INDICATORS ─── */}
-            {phase === 'boss_act' && (
-              <div className="text-center py-2 mb-2">
-                <div className="text-sm text-red-400 font-bold animate-pulse">{boss.name} prepare son attaque...</div>
-              </div>
-            )}
+            {phase === 'enemy_act' && (() => {
+              const actingEnemy = curEntity?.type === 'enemy' ? enemies[curEntity.idx] : null;
+              return (
+                <div className="text-center py-2 mb-2">
+                  <div className="text-sm text-red-400 font-bold animate-pulse">{actingEnemy?.name || 'Ennemi'} pr{'\u00e9'}pare son attaque...</div>
+                </div>
+              );
+            })()}
             {phase === 'advance' && <div className="text-center py-2 mb-2"><div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto" /></div>}
             {phase === 'victory' && (
               <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center py-4">
@@ -3194,7 +3789,7 @@ export default function ShadowColosseum() {
               </motion.div>
             )}
 
-            {/* ─── SKILLS (grid 3 cols, ARC I style) ─── */}
+            {/* ─── SKILLS ─── */}
             {isPlayerTurn && activeChar && (
               <div>
                 <div className="text-[10px] text-yellow-400 font-bold mb-1.5">{activeChar.name} — Choisis une attaque :</div>
@@ -3203,13 +3798,15 @@ export default function ShadowColosseum() {
                     const onCd = sk.cd > 0;
                     const noMana = sk.manaCost > 0 && activeChar.mana < sk.manaCost;
                     const blocked = onCd || noMana;
+                    const isPureSupport = sk.power === 0 && (sk.buffAtk || sk.buffDef || sk.healSelf);
                     return (
                       <button key={i}
-                        onClick={() => !blocked && arc2PlayerAction(i)}
+                        onClick={() => !blocked && arc2SelectSkill(i)}
                         disabled={blocked}
                         className={`relative p-2 rounded-lg border text-center transition-all ${
                           onCd ? 'border-gray-700/30 bg-gray-800/20 opacity-40' :
                           noMana ? 'border-violet-700/30 bg-violet-900/20 opacity-50' :
+                          isPureSupport ? 'border-green-500/40 bg-green-500/10 hover:bg-green-500/20 active:scale-95' :
                           'border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 active:scale-95'
                         }`}>
                         <div className="text-[10px] font-bold truncate">{sk.name}</div>
@@ -3220,12 +3817,13 @@ export default function ShadowColosseum() {
                           {sk.healSelf ? `${sk.power > 0 ? ' ' : ''}Soin ${sk.healSelf}%` : ''}
                           {sk.debuffDef ? `${sk.power > 0 ? ' ' : ''}DEF -${sk.debuffDef}%` : ''}
                         </div>
+                        {isPureSupport && <div className="text-[7px] mt-0.5 text-green-400/80">{'\uD83D\uDC9A'} Alli{'\u00e9'}</div>}
                         {sk.manaCost > 0 && (
                           <div className={`text-[7px] mt-0.5 ${noMana ? 'text-red-400' : 'text-violet-400'}`}>
                             {sk.manaCost} MP
                           </div>
                         )}
-                        {sk.manaCost === 0 && <div className="text-[7px] mt-0.5 text-green-400/60">0 MP</div>}
+                        {sk.manaCost === 0 && !isPureSupport && <div className="text-[7px] mt-0.5 text-green-400/60">0 MP</div>}
                         {onCd && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg">
                             <span className="text-gray-400 text-xs font-bold">{sk.cd}t</span>
@@ -3240,6 +3838,17 @@ export default function ShadowColosseum() {
                     );
                   })}
                 </div>
+              </div>
+            )}
+
+            {/* ─── Cancel button for target/ally selection ─── */}
+            {(isPickTarget || isPickAlly) && (
+              <div className="text-center mb-2">
+                <div className="text-[10px] text-gray-400 mb-1.5">{activeChar?.name} — {activeChar?.skills[pendingSkill]?.name}</div>
+                <button onClick={arc2CancelSelection}
+                  className="px-4 py-1.5 bg-gray-800 border border-gray-600/40 rounded-lg text-[10px] text-gray-300 hover:bg-gray-700 hover:text-white transition-all active:scale-95">
+                  {'\u2715'} Annuler
+                </button>
               </div>
             )}
           </div>
@@ -3264,15 +3873,60 @@ export default function ShadowColosseum() {
                 <div className="text-5xl mb-4">{'\uD83C\uDFC6'}</div>
                 <h2 className="text-xl font-black text-yellow-400 mb-4">{r.stageName} vaincu !</h2>
                 <div className="space-y-2 text-sm text-left bg-gray-900/60 rounded-xl p-4 border border-purple-500/20">
-                  <div className="flex justify-between"><span className="text-gray-400">XP gagnes</span><span className="text-green-400 font-bold">+{r.xp}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">XP gagn{'\u00e9'}s</span><span className="text-green-400 font-bold">+{r.xp}</span></div>
                   <div className="flex justify-between"><span className="text-gray-400">Coins</span><span className="text-yellow-400 font-bold">{'\uD83D\uDCB0'} +{r.coins}</span></div>
-                  {r.star > 0 && <div className="flex justify-between"><span className="text-gray-400">Difficulte</span><span className="text-yellow-300">{'\u2B50'}{r.star}</span></div>}
+                  {r.accountXpGain > 0 && <div className="flex justify-between"><span className="text-gray-400">XP Compte</span><span className="text-cyan-400 font-bold">+{r.accountXpGain}</span></div>}
+                  {r.star > 0 && <div className="flex justify-between"><span className="text-gray-400">Difficult{'\u00e9'}</span><span className="text-yellow-300">{'\u2B50'}{r.star}</span></div>}
+                  {r.hammerDrop && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Marteau</span>
+                      <span className="text-orange-400 font-bold text-xs">{'\uD83D\uDD28'} {r.hammerDrop.replace(/_/g, ' ')}</span>
+                    </div>
+                  )}
+                  {r.weaponDrop && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Arme</span>
+                      <span className={`text-xs font-bold ${r.weaponDrop.rarity === 'mythique' ? 'text-red-400' : r.weaponDrop.rarity === 'legendaire' ? 'text-orange-400' : 'text-blue-400'}`}>
+                        {'\u2694\uFE0F'} {r.weaponDrop.name}
+                      </span>
+                    </div>
+                  )}
+                  {r.hunterDrop && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Hunter</span>
+                      <span className={`text-xs font-bold ${r.hunterDrop.rarity === 'mythique' ? 'text-purple-400' : r.hunterDrop.rarity === 'legendaire' ? 'text-yellow-400' : 'text-blue-400'}`}>
+                        {'\uD83C\uDF1F'} {r.hunterDrop.name} {r.hunterDrop.isDuplicate ? '(Dupe)' : '(Nouveau !)'}
+                      </span>
+                    </div>
+                  )}
                   {r.art && (
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Artefact ARC II</span>
                       <span className={`text-xs font-bold ${r.art.rarity === 'mythique' ? 'text-purple-400' : r.art.rarity === 'legendaire' ? 'text-yellow-400' : 'text-blue-400'}`}>
                         {'\u2728'} {(ARC2_ARTIFACT_SETS[r.art.set] || {}).name || r.art.set} ({r.art.rarity})
                       </span>
+                    </div>
+                  )}
+                  {r.nierDrop && (
+                    <div className="mt-2 p-2 rounded-lg border border-red-500/40 bg-gradient-to-r from-red-900/30 to-black/40">
+                      <div className="flex justify-between items-center">
+                        <span className="text-red-300 font-bold text-xs">{'\uD83D\uDDA4'} NieR:Automata</span>
+                        <span className="text-white font-black text-xs" style={{ textShadow: '0 0 8px rgba(239,68,68,0.6)' }}>
+                          {r.nierDrop.name} {r.nierDrop.isDuplicate ? '(Dupe)' : '(NOUVEAU !)'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {r.skinDrop && (
+                    <div className="mt-2 p-2 rounded-lg border border-pink-500/50 bg-gradient-to-r from-pink-900/30 to-purple-900/30" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>
+                      <div className="flex items-center gap-2">
+                        <img src={r.skinDrop.sprite} alt={r.skinDrop.skinName} className="w-10 h-10 rounded-lg border border-pink-400/40 object-contain" />
+                        <div>
+                          <div className="text-pink-300 font-black text-xs">{'\uD83C\uDFA8'} SKIN RARE !</div>
+                          <div className="text-white text-[10px]">{r.skinDrop.skinName}</div>
+                          {r.skinDrop.autoUnlockedHunter && <div className="text-green-400 text-[9px]">+ Hunter d{'\u00e9'}bloqu{'\u00e9'} !</div>}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -3304,12 +3958,53 @@ export default function ShadowColosseum() {
 
             {/* Header */}
             <div className="text-center mb-5">
-              <img src={getChibiSprite(id)} alt={c.name} className="w-16 h-16 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
+              <img src={getSprite(id)} alt={c.name} className="w-16 h-16 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
               <div className="text-[10px] text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon} {ELEMENTS[c.element].name}
                 {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter]</span>}
               </div>
+              {/* Skin Selector */}
+              {HUNTER_SKINS[id] && (() => {
+                const owned = data.ownedSkins?.[id] || ['default'];
+                const active = data.activeSkin?.[id] || 'default';
+                return (
+                  <div className="mt-3 p-2 rounded-xl bg-purple-500/5 border border-purple-500/20">
+                    <div className="text-[9px] text-purple-400 font-bold mb-2">{'\uD83C\uDFA8'} Skins</div>
+                    <div className="flex justify-center gap-2 flex-wrap">
+                      {HUNTER_SKINS[id].map(skin => {
+                        const isOwned = owned.includes(skin.id);
+                        const isActive = active === skin.id;
+                        return (
+                          <button key={skin.id}
+                            onClick={() => {
+                              if (!isOwned) return;
+                              setData(prev => {
+                                const d = JSON.parse(JSON.stringify(prev));
+                                if (!d.activeSkin) d.activeSkin = {};
+                                d.activeSkin[id] = skin.id;
+                                return d;
+                              });
+                            }}
+                            disabled={!isOwned}
+                            className={`relative p-1 rounded-lg border-2 transition-all ${
+                              isActive ? 'border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.4)] bg-purple-500/10' :
+                              isOwned ? 'border-gray-600/50 hover:border-purple-400/50 bg-gray-800/30' :
+                              'border-gray-700/30 opacity-30 grayscale bg-gray-900/30'
+                            }`}
+                            title={isOwned ? skin.name : `${skin.name} (non obtenu)`}
+                          >
+                            <img src={skin.sprite} alt={skin.name} className="w-10 h-10 object-contain" />
+                            {!isOwned && <div className="absolute inset-0 flex items-center justify-center"><span className="text-sm">{'\uD83D\uDD12'}</span></div>}
+                            {isActive && <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-400 rounded-full border border-purple-900" />}
+                            <div className={`text-[7px] mt-0.5 truncate max-w-[48px] ${isActive ? 'text-purple-300' : 'text-gray-500'}`}>{skin.name}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Points Summary */}
@@ -3420,7 +4115,7 @@ export default function ShadowColosseum() {
 
             {/* Header */}
             <div className="text-center mb-5">
-              <img src={getChibiSprite(id)} alt={c.name} className="w-16 h-16 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
+              <img src={getSprite(id)} alt={c.name} className="w-16 h-16 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
               <div className="text-[10px] text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon} {ELEMENTS[c.element].name}
