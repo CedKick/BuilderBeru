@@ -536,6 +536,9 @@ export const WEAPONS = {
   w_sulfuras:         { id: 'w_sulfuras',         name: 'Masse de Sulfuras',    rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 250, bonusStat: 'atk_pct', bonusValue: 25, icon: '\uD83D\uDD28', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771443640/WeaponSulfuras_efg3ca.png', desc: '???', secret: true, passive: 'sulfuras_fury', fireRes: 50, dropSource: 'Ragnarok', dropRate: '1/10,000' },
   // Secret — drop 1/5000 from Zephyr Ultime
   w_raeshalare:       { id: 'w_raeshalare',       name: "Rae'shalare, Murmure de la Mort", rarity: 'mythique', element: 'shadow', weaponType: 'ranged', atk: 200, bonusStat: 'crit_dmg', bonusValue: 25, icon: '\uD83C\uDFF9', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771525011/arc_d4t23d.png', desc: 'Tire une fleche gemissante qui inflige des degats d\'Ombre et reduit les ennemis au silence', secret: true, passive: 'shadow_silence', darkRes: 50, dropSource: 'Zephyr Ultime', dropRate: '1/5,000' },
+  // Secret — drop 1/50000 from Monarque Supreme
+  w_katana_z:         { id: 'w_katana_z',         name: 'Katana Z',             rarity: 'mythique',   element: 'water', weaponType: 'blade',  atk: 260, bonusStat: 'spd_flat', bonusValue: 15, icon: '\u2694\uFE0F', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771539184/KatanaZ_pgth96.png', desc: 'Katana de vitesse absolue. Chaque coup renforce son porteur.', secret: true, passive: 'katana_z_fury', darkRes: 40, dropSource: 'Monarque Supreme', dropRate: '1/50,000' },
+  w_katana_v:         { id: 'w_katana_v',         name: 'Katana V',             rarity: 'mythique',   element: 'light', weaponType: 'blade',  atk: 240, bonusStat: 'crit_dmg', bonusValue: 20, icon: '\u2694\uFE0F', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771539430/KatanaV_zv4oke.png', desc: 'Katana du chaos. Empoisonne, buff et protege.', secret: true, passive: 'katana_v_chaos', darkRes: 35, dropSource: 'Monarque Supreme', dropRate: '1/50,000' },
 };
 
 export const WEAPON_PRICES = { rare: 500, legendaire: 2000, mythique: 5000 };
@@ -766,6 +769,20 @@ export const WEAPON_AWAKENING_PASSIVES = {
     { desc: 'CRIT DMG +18%', stats: { crit_dmg: 18 } },
     { desc: 'Ignore 12% DEF + Tous Degats +10%', stats: { defPen: 12, allDamage: 10 } },
   ],
+  w_katana_z: [
+    { desc: 'ATK +15%', stats: { atk_pct: 15 } },
+    { desc: 'SPD +10', stats: { spd_flat: 10 } },
+    { desc: 'CRIT +12%', stats: { crit_rate: 12 } },
+    { desc: 'Degats Ombre +15%', stats: { shadowDamage: 15 } },
+    { desc: 'Ignore 15% DEF + Tous Degats +12%', stats: { defPen: 15, allDamage: 12 } },
+  ],
+  w_katana_v: [
+    { desc: 'CRIT DMG +18%', stats: { crit_dmg: 18 } },
+    { desc: 'ATK +12%', stats: { atk_pct: 12 } },
+    { desc: 'CRIT +10%', stats: { crit_rate: 10 } },
+    { desc: 'Degats Ombre +12%', stats: { shadowDamage: 12 } },
+    { desc: 'Ignore 12% DEF + Tous Degats +10%', stats: { defPen: 12, allDamage: 10 } },
+  ],
 };
 
 export function getWeaponAwakeningBonuses(weaponId, awakening = 0) {
@@ -803,6 +820,17 @@ export function computeWeaponBonuses(weaponId, awakening = 0) {
 // Sulfuras stacking passive: +33% dmg per turn (max +100%)
 export const SULFURAS_STACK_PER_TURN = 33;
 export const SULFURAS_STACK_MAX = 100;
+
+// Katana Z passives
+export const KATANA_Z_ATK_PER_HIT = 5;           // +5% ATK par coup
+export const KATANA_Z_STACK_PERSIST_CHANCE = 0.5; // 50% chance de rester entre tours
+export const KATANA_Z_COUNTER_CHANCE = 0.5;       // 50% contre-attaque quand touche
+export const KATANA_Z_COUNTER_MULT = 2.0;         // 200% ATK du joueur
+
+// Katana V passives
+export const KATANA_V_DOT_PCT = 0.03;             // 3% ATK du joueur par stack par tour
+export const KATANA_V_DOT_MAX_STACKS = 10;        // max 10 stacks de DoT
+export const KATANA_V_BUFF_CHANCE = 0.30;          // 30% chance de buff par coup
 
 // ═══════════════════════════════════════════════════════════════
 // MERGE EQUIPMENT BONUSES

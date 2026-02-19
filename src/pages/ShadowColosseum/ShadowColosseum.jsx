@@ -35,6 +35,8 @@ import {
   mergeEquipBonuses, getActiveSetBonuses, getActivePassives, MAX_EVEIL_STARS, STAGE_HUNTER_DROP,
   HAMMERS, HAMMER_ORDER, getRequiredHammer, rollHammerDrop, RED_HAMMER_BY_RARITY, RED_HAMMER_ULTIME,
   SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
+  KATANA_Z_ATK_PER_HIT, KATANA_Z_STACK_PERSIST_CHANCE, KATANA_Z_COUNTER_CHANCE, KATANA_Z_COUNTER_MULT,
+  KATANA_V_DOT_PCT, KATANA_V_DOT_MAX_STACKS, KATANA_V_BUFF_CHANCE,
   MAX_WEAPON_AWAKENING, WEAPON_AWAKENING_PASSIVES, rollWeaponDrop,
   RARITY_SUB_COUNT,
   computeWeaponILevel, computeArtifactILevel, computeEquipILevel,
@@ -191,7 +193,7 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [] });
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [], monarchKills: 0, monarchDropLog: [] });
 const loadData = () => {
   try {
     const d = { ...defaultData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) };
@@ -225,6 +227,8 @@ const loadData = () => {
     if (!d.ragnarokDropLog) d.ragnarokDropLog = [];
     if (d.zephyrKills === undefined) d.zephyrKills = 0;
     if (!d.zephyrDropLog) d.zephyrDropLog = [];
+    if (d.monarchKills === undefined) d.monarchKills = 0;
+    if (!d.monarchDropLog) d.monarchDropLog = [];
     if (!d.talentSkills) d.talentSkills = {};
     // Migration: respecCount old format (number) → per-tree format
     for (const cid of Object.keys(d.respecCount || {})) {
@@ -302,6 +306,7 @@ export default function ShadowColosseum() {
   const [weaponFilter, setWeaponFilter] = useState({ element: null, sort: 'ilevel' }); // filter for weapon lists
   const [artifactSetDetail, setArtifactSetDetail] = useState(null);
   const [ragnarokHistoryOpen, setRagnarokHistoryOpen] = useState(false);
+  const [monarchHistoryOpen, setMonarchHistoryOpen] = useState(false);
   const [eqInvFilter, setEqInvFilter] = useState({ slot: null, set: null }); // filters for equipment view inventory
   const [rosterSort, setRosterSort] = useState('ilevel'); // 'ilevel' | 'level' | 'name'
   const [rosterFilterElem, setRosterFilterElem] = useState(null); // element id or null
@@ -1502,6 +1507,16 @@ export default function ShadowColosseum() {
         const wId = data.weapons[selChibi];
         return wId && WEAPONS[wId]?.passive === 'shadow_silence' ? [] : undefined;
       })(),
+      katanaZStacks: (() => {
+        const wId = data.weapons[selChibi];
+        return wId && WEAPONS[wId]?.passive === 'katana_z_fury' ? 0 : undefined;
+      })(),
+      katanaVState: (() => {
+        const wId = data.weapons[selChibi];
+        return wId && WEAPONS[wId]?.passive === 'katana_v_chaos'
+          ? { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1 }
+          : undefined;
+      })(),
       turn: 1, log: [],
     });
     setPhase('idle');
@@ -1571,6 +1586,23 @@ export default function ShadowColosseum() {
         atkMult += activeStacks * 1.0;
         log.push({ text: `Murmure de la Mort x${activeStacks} ! ATK +${activeStacks * 100}%`, type: 'info', id: Date.now() - 0.15 });
       }
+    }
+
+    // Katana Z: accumulated +5% ATK per stack
+    if (battle.katanaZStacks !== undefined && battle.katanaZStacks > 0) {
+      atkMult += battle.katanaZStacks * KATANA_Z_ATK_PER_HIT / 100;
+      log.push({ text: `Tranchant Eternel x${battle.katanaZStacks} ! ATK +${battle.katanaZStacks * KATANA_Z_ATK_PER_HIT}%`, type: 'info', id: Date.now() - 0.12 });
+    }
+
+    // Katana V: x6 damage on next hit if buffed
+    if (battle.katanaVState !== undefined && battle.katanaVState.nextDmgMult > 1) {
+      atkMult *= battle.katanaVState.nextDmgMult;
+      log.push({ text: `Benediction Chaotique ! DMG x${battle.katanaVState.nextDmgMult} !`, type: 'buff', id: Date.now() - 0.11 });
+    }
+
+    // Katana V: permanent all stats buff
+    if (battle.katanaVState !== undefined && battle.katanaVState.allStatBuff > 0) {
+      atkMult += battle.katanaVState.allStatBuff / 100;
     }
 
     // Temporarily modify player for this attack
@@ -1649,6 +1681,32 @@ export default function ShadowColosseum() {
       }
     });
 
+    // Katana Z: add 1 ATK stack after each hit
+    let newKatanaZStacks = battle.katanaZStacks;
+    if (newKatanaZStacks !== undefined) {
+      newKatanaZStacks = (newKatanaZStacks || 0) + 1;
+    }
+
+    // Katana V: add DoT stack + roll buff
+    let newKatanaVState = battle.katanaVState ? { ...battle.katanaVState } : undefined;
+    if (newKatanaVState !== undefined) {
+      if (newKatanaVState.nextDmgMult > 1) newKatanaVState.nextDmgMult = 1;
+      if (newKatanaVState.dots < KATANA_V_DOT_MAX_STACKS) newKatanaVState.dots++;
+      if (Math.random() < KATANA_V_BUFF_CHANCE) {
+        const roll = Math.random();
+        if (roll < 0.33) {
+          newKatanaVState.allStatBuff += 10;
+          log.push({ text: `Benediction : +10% toutes stats ! (total +${newKatanaVState.allStatBuff}%)`, type: 'buff', id: Date.now() + 0.07 });
+        } else if (roll < 0.66) {
+          newKatanaVState.shield = true;
+          log.push({ text: `Benediction : Bouclier Divin ! Prochain coup = 0 degats !`, type: 'buff', id: Date.now() + 0.07 });
+        } else {
+          newKatanaVState.nextDmgMult = 6;
+          log.push({ text: `Benediction : Puissance x6 au prochain coup !`, type: 'buff', id: Date.now() + 0.07 });
+        }
+      }
+    }
+
     // Regen per turn (after player action)
     if (tb.regenPerTurn > 0) {
       const regen = Math.floor(player.maxHp * tb.regenPerTurn / 100);
@@ -1665,7 +1723,7 @@ export default function ShadowColosseum() {
     setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, passiveState: ps, log: log.slice(-10) }));
 
     if (enemy.hp <= 0) {
-      setTimeout(() => handleVictory(), 1200);
+      setTimeout(() => handleVictory(), autoReplayRef.current ? 600 : 1200);
       return;
     }
 
@@ -1703,6 +1761,13 @@ export default function ShadowColosseum() {
         }
       }
 
+      // Katana V shield: absorb next hit entirely
+      if (newKatanaVState?.shield && !dodged && dmgToPlayer > 0) {
+        dmgToPlayer = 0;
+        newKatanaVState.shield = false;
+        log.push({ text: `Bouclier Divin absorbe le coup !`, type: 'buff', id: Date.now() + 0.9 });
+      }
+
       player.hp = Math.max(0, player.hp - dmgToPlayer);
 
       // Immortel: survive one fatal blow with 1 HP
@@ -1730,6 +1795,15 @@ export default function ShadowColosseum() {
           const riposteDmg = Math.max(1, Math.floor(getEffStat(player.atk, player.buffs, 'atk') * 0.5));
           enemy.hp = Math.max(0, enemy.hp - riposteDmg);
           log.push({ text: `${player.name} contre-attaque ! -${riposteDmg} PV`, type: 'player', id: Date.now() + 1.1 });
+        }
+      }
+
+      // Katana Z: 50% chance to counter with 200% player ATK
+      if (!dodged && newKatanaZStacks !== undefined && eRes.damage > 0 && player.hp > 0) {
+        if (Math.random() < KATANA_Z_COUNTER_CHANCE) {
+          const counterDmg = Math.max(1, Math.floor(getEffStat(player.atk, player.buffs, 'atk') * KATANA_Z_COUNTER_MULT));
+          enemy.hp = Math.max(0, enemy.hp - counterDmg);
+          log.push({ text: `Katana Z contre-attaque ! -${counterDmg} PV !`, type: 'player', id: Date.now() + 1.2 });
         }
       }
 
@@ -1763,19 +1837,35 @@ export default function ShadowColosseum() {
         }
       }
 
+      // Katana Z: each stack has 50% chance to persist
+      if (newKatanaZStacks !== undefined && newKatanaZStacks > 0) {
+        let surviving = 0;
+        for (let i = 0; i < newKatanaZStacks; i++) {
+          if (Math.random() < KATANA_Z_STACK_PERSIST_CHANCE) surviving++;
+        }
+        newKatanaZStacks = surviving;
+      }
+
+      // Katana V: DoT tick on enemy
+      if (newKatanaVState !== undefined && newKatanaVState.dots > 0) {
+        const dotDmg = Math.max(1, Math.floor(getEffStat(player.atk, player.buffs, 'atk') * KATANA_V_DOT_PCT * newKatanaVState.dots));
+        enemy.hp = Math.max(0, enemy.hp - dotDmg);
+        log.push({ text: `Lame Veneneuse x${newKatanaVState.dots} ! -${dotDmg} PV !`, type: 'player', id: Date.now() + 1.7 });
+      }
+
       setDmgPopup(dmgToPlayer > 0 ? { target: 'player', value: dmgToPlayer, isCrit: eRes.isCrit } : null);
-      setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, immortelUsed, colossusUsed, passiveState: ps, sulfurasStacks: newSulfurasStacks, shadowSilence: newShadowSilence, turn: prev.turn + 1, log: log.slice(-10) }));
+      setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, immortelUsed, colossusUsed, passiveState: ps, sulfurasStacks: newSulfurasStacks, shadowSilence: newShadowSilence, katanaZStacks: newKatanaZStacks, katanaVState: newKatanaVState, turn: prev.turn + 1, log: log.slice(-10) }));
 
       if (enemy.hp <= 0) {
-        setTimeout(() => handleVictory(), 1200);
+        setTimeout(() => handleVictory(), autoReplayRef.current ? 600 : 1200);
         return;
       }
       if (player.hp <= 0) {
-        setTimeout(() => handleDefeat(), 1200);
+        setTimeout(() => handleDefeat(), autoReplayRef.current ? 600 : 1200);
         return;
       }
-      setTimeout(() => { setPhase('idle'); setDmgPopup(null); }, 800);
-    }, 1200);
+      setTimeout(() => { setPhase('idle'); setDmgPopup(null); }, autoReplayRef.current ? 400 : 800);
+    }, autoReplayRef.current ? 600 : 1200);
   }, [battle]);
 
   // ─── Auto-combat AI ────────────────────────────────────────
@@ -1817,7 +1907,7 @@ export default function ShadowColosseum() {
       if (autoReplayRef.current && phaseRef.current === 'idle' && battle) {
         executeRound(pickBestSkill());
       }
-    }, 600);
+    }, 300);
     return () => clearTimeout(timer);
   }, [phase, battle, view, pickBestSkill, executeRound]);
 
@@ -1906,9 +1996,19 @@ export default function ShadowColosseum() {
       const isNew = data.weaponCollection['w_sulfuras'] === undefined;
       weaponDrop = { id: 'w_sulfuras', ...WEAPONS.w_sulfuras, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_sulfuras'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
-    if (!weaponDrop && stage.id === 'zephyr' && Math.random() < 1 / 5000) {
+    if (!weaponDrop && stage.id === 'zephyr' && Math.random() < 1 / 50000000) {
       const isNew = data.weaponCollection['w_raeshalare'] === undefined;
       weaponDrop = { id: 'w_raeshalare', ...WEAPONS.w_raeshalare, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_raeshalare'] || 0) + 1, MAX_WEAPON_AWAKENING) };
+    }
+    // Katana Z: 1/50,000 from Monarque Supreme
+    if (!weaponDrop && stage.id === 'supreme_monarch' && Math.random() < 1 / 50000) {
+      const isNew = data.weaponCollection['w_katana_z'] === undefined;
+      weaponDrop = { id: 'w_katana_z', ...WEAPONS.w_katana_z, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_katana_z'] || 0) + 1, MAX_WEAPON_AWAKENING) };
+    }
+    // Katana V: 1/50,000 from Monarque Supreme
+    if (!weaponDrop && stage.id === 'supreme_monarch' && Math.random() < 1 / 50000) {
+      const isNew = data.weaponCollection['w_katana_v'] === undefined;
+      weaponDrop = { id: 'w_katana_v', ...WEAPONS.w_katana_v, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_katana_v'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
 
     // Pacte des Ombres artifact drop — Zephyr Ultime at star >= 10 (1/250)
@@ -1938,6 +2038,12 @@ export default function ShadowColosseum() {
       const newZephLog = (isZephyr && weaponDrop)
         ? [...(prev.zephyrDropLog || []), { weaponId: weaponDrop.id, name: weaponDrop.name, rarity: weaponDrop.rarity, icon: weaponDrop.icon, sprite: weaponDrop.sprite || null, killNumber: newZephKills, date: Date.now() }]
         : (prev.zephyrDropLog || []);
+      // Monarch Supreme kill tracking
+      const isMonarch = stage.id === 'supreme_monarch';
+      const newMonarchKills = isMonarch ? (prev.monarchKills || 0) + 1 : (prev.monarchKills || 0);
+      const newMonarchLog = (isMonarch && weaponDrop)
+        ? [...(prev.monarchDropLog || []), { weaponId: weaponDrop.id, name: weaponDrop.name, rarity: weaponDrop.rarity, icon: weaponDrop.icon, sprite: weaponDrop.sprite || null, killNumber: newMonarchKills, date: Date.now() }]
+        : (prev.monarchDropLog || []);
       return {
         ...prev,
         chibiLevels: { ...prev.chibiLevels, [selChibi]: { level: newLevel, xp: newXp } },
@@ -1949,6 +2055,8 @@ export default function ShadowColosseum() {
         ragnarokDropLog: newRagLog,
         zephyrKills: newZephKills,
         zephyrDropLog: newZephLog,
+        monarchKills: newMonarchKills,
+        monarchDropLog: newMonarchLog,
         weaponCollection: (() => {
           if (!weaponDrop) return prev.weaponCollection;
           const wc = { ...prev.weaponCollection };
@@ -1984,6 +2092,12 @@ export default function ShadowColosseum() {
       } else if (weaponDrop.id === 'w_raeshalare') {
         logLegendaryDrop('weapon', 'w_raeshalare', "Arc Rae'shalare", 'secret', weaponDrop.newAwakening || 0);
         try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: "RAE'SHALARE ?! Le Murmure de la Mort !! Cette arme est LEGENDAIRE ! Les ombres murmurent ton nom maintenant... INCROYABLE !!" } })); } catch (e) {}
+      } else if (weaponDrop.id === 'w_katana_z') {
+        logLegendaryDrop('weapon', 'w_katana_z', 'Katana Z', 'secret', weaponDrop.newAwakening || 0);
+        try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: "LE KATANA Z !! L'arme de vitesse ULTIME !! Chaque coup te rend plus fort... INCROYABLE !!" } })); } catch (e) {}
+      } else if (weaponDrop.id === 'w_katana_v') {
+        logLegendaryDrop('weapon', 'w_katana_v', 'Katana V', 'secret', weaponDrop.newAwakening || 0);
+        try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: "KATANA V ?! L'arme du CHAOS !! Poison, bouclier, puissance... cette lame est DIVINE !!" } })); } catch (e) {}
       } else if (weaponDrop.rarity === 'mythique') {
         try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: `Wow ! ${weaponDrop.name} ! Une arme mythique, la classe !` } })); } catch (e) {}
       }
@@ -2018,7 +2132,7 @@ export default function ShadowColosseum() {
     // Auto-replay logic — si arme droppée, pause 4.5s pour l'animation puis reprend
     if (autoReplayRef.current) {
       setView('result');
-      const delay = weaponDrop ? 4500 : 1500;
+      const delay = weaponDrop ? 2250 : 750;
       setTimeout(() => {
         if (autoReplayRef.current) {
           setResult(null); setBattle(null);
@@ -2712,6 +2826,12 @@ export default function ShadowColosseum() {
                             {stage.id === 'zephyr' && (data.zephyrKills || 0) > 0 && (
                               <span className="text-[10px] bg-teal-500/20 text-teal-300 px-1.5 rounded">
                                 {'\u2620\uFE0F'}{data.zephyrKills} kills
+                              </span>
+                            )}
+                            {stage.id === 'supreme_monarch' && (data.monarchKills || 0) > 0 && (
+                              <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 rounded cursor-pointer hover:bg-purple-500/40 transition-colors"
+                                onClick={(e) => { e.stopPropagation(); setMonarchHistoryOpen(true); }}>
+                                {'\u2620\uFE0F'}{data.monarchKills} kills
                               </span>
                             )}
                           </div>
@@ -6500,7 +6620,7 @@ export default function ShadowColosseum() {
                   {data.weaponCollection?.['w_sulfuras'] !== undefined ? (
                     <>
                       <img src={WEAPONS.w_sulfuras?.sprite} alt="Sulfuras" className="w-4 h-4 object-contain" />
-                      <span className="text-[9px] text-orange-300 font-bold">Sulfuras obtenue !</span>
+                      <span className="text-[9px] text-orange-300 font-bold">Sulfuras obtenue ! (x{(data.ragnarokDropLog || []).filter(d => d.weaponId === 'w_sulfuras').length} drops, A{data.weaponCollection['w_sulfuras']})</span>
                     </>
                   ) : (
                     <>
@@ -6509,6 +6629,16 @@ export default function ShadowColosseum() {
                     </>
                   )}
                 </div>
+                {(data.ragnarokKills || 0) > 0 && (
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <span className="text-[9px] text-gray-500">Chance cumulee :</span>
+                    <span className="text-[9px] text-orange-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - 1/10000, data.ragnarokKills)) * 100).toFixed(2)}%</span>
+                    <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-orange-600 to-red-500 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, (1 - Math.pow(1 - 1/10000, data.ragnarokKills)) * 100)}%` }} />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {/* Zephyr Tracker — persistent kill counter & Rae'shalare hunt */}
@@ -6524,7 +6654,7 @@ export default function ShadowColosseum() {
                   {data.weaponCollection?.['w_raeshalare'] !== undefined ? (
                     <>
                       <span className="text-sm">{'\uD83C\uDFF9'}</span>
-                      <span className="text-[9px] text-teal-300 font-bold">Rae'shalare obtenue !</span>
+                      <span className="text-[9px] text-teal-300 font-bold">Rae'shalare obtenue ! (x{(data.zephyrDropLog || []).filter(d => d.weaponId === 'w_raeshalare').length} drops, A{data.weaponCollection['w_raeshalare']})</span>
                     </>
                   ) : (
                     <>
@@ -6533,13 +6663,57 @@ export default function ShadowColosseum() {
                     </>
                   )}
                 </div>
-                {!data.weaponCollection?.['w_raeshalare'] && (data.zephyrKills || 0) > 0 && (
+                {(data.zephyrKills || 0) > 0 && (
                   <div className="mt-1.5 flex items-center gap-1.5">
                     <span className="text-[9px] text-gray-500">Chance cumulee :</span>
                     <span className="text-[9px] text-teal-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - 1/5000, data.zephyrKills)) * 100).toFixed(2)}%</span>
                     <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
                       <div className="h-full bg-gradient-to-r from-teal-500 to-cyan-400 rounded-full transition-all"
                         style={{ width: `${Math.min(100, (1 - Math.pow(1 - 1/5000, data.zephyrKills)) * 100)}%` }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* Monarque Supreme Tracker — Katana Z & V hunt */}
+            {STAGES[selStage]?.id === 'supreme_monarch' && (
+              <div className="mt-1 px-2.5 py-2 rounded-lg bg-gradient-to-b from-purple-900/40 to-indigo-900/40 border border-purple-500/30 backdrop-blur-sm cursor-pointer hover:border-purple-400/50 transition-colors"
+                onClick={() => setMonarchHistoryOpen(true)}>
+                <div className="text-[9px] text-purple-400 font-bold uppercase tracking-wider mb-1">{'\uD83D\uDC51'} Monarque Supreme</div>
+                <div className="flex items-center gap-2 text-[10px]">
+                  <span className="text-purple-300 font-bold">{'\u2620\uFE0F'} {data.monarchKills || 0} kills</span>
+                  <span className="text-gray-600">|</span>
+                  <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {(data.monarchDropLog || []).length} drops</span>
+                </div>
+                <div className="mt-1 space-y-0.5">
+                  {['w_katana_z', 'w_katana_v'].map(wId => {
+                    const has = data.weaponCollection?.[wId] !== undefined;
+                    const count = (data.monarchDropLog || []).filter(d => d.weaponId === wId).length;
+                    const w = WEAPONS[wId];
+                    return (
+                      <div key={wId} className="flex items-center gap-1.5">
+                        {has ? (
+                          <>
+                            <img src={w?.sprite} alt={w?.name} className="w-4 h-4 object-contain" />
+                            <span className="text-[9px] text-purple-300 font-bold">{w?.name} obtenu ! (x{count} drops, A{data.weaponCollection[wId]})</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-[10px] opacity-40">{'\u2694\uFE0F'}</span>
+                            <span className="text-[9px] text-gray-500">{w?.name} — 1/50 000</span>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {(data.monarchKills || 0) > 0 && (
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <span className="text-[9px] text-gray-500">Chance cumulee (chaque) :</span>
+                    <span className="text-[9px] text-purple-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - 1/50000, data.monarchKills)) * 100).toFixed(2)}%</span>
+                    <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-purple-600 to-indigo-500 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, (1 - Math.pow(1 - 1/50000, data.monarchKills)) * 100)}%` }} />
                     </div>
                   </div>
                 )}
@@ -6934,6 +7108,42 @@ export default function ShadowColosseum() {
                 )}
               </div>
             )}
+            {/* Monarque Supreme persistent tracker on result screen */}
+            {STAGES[selStage]?.id === 'supreme_monarch' && (
+              <div className="w-full max-w-xs mx-auto px-3 py-2.5 rounded-xl bg-gradient-to-r from-purple-900/30 to-indigo-900/30 border border-purple-500/30 backdrop-blur-sm cursor-pointer hover:border-purple-400/50 transition-colors"
+                onClick={() => setMonarchHistoryOpen(true)}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] text-purple-400 font-bold uppercase tracking-wider">{'\uD83D\uDC51'} Monarque Supreme</span>
+                  <span className="text-[9px] text-gray-500">Clic pour l'historique</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <div className="text-sm font-black text-purple-400">{data.monarchKills || 0}</div>
+                    <div className="text-[8px] text-gray-500">kills total</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-black text-amber-300">{(data.monarchDropLog || []).length}</div>
+                    <div className="text-[8px] text-gray-500">armes drop</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-black text-purple-300">{(data.monarchDropLog || []).filter(d => d.weaponId === 'w_katana_z' || d.weaponId === 'w_katana_v').length}</div>
+                    <div className="text-[8px] text-gray-500">katanas</div>
+                  </div>
+                </div>
+                {(data.monarchKills || 0) > 0 && (
+                  <div className="mt-1.5">
+                    <div className="flex justify-between text-[8px] text-gray-500 mb-0.5">
+                      <span>Proba cumulee (chaque katana)</span>
+                      <span>{Math.min(99.99, (1 - Math.pow(1 - 1/50000, data.monarchKills)) * 100).toFixed(2)}%</span>
+                    </div>
+                    <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-purple-600 to-indigo-500 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, (1 - Math.pow(1 - 1/50000, data.monarchKills)) * 100)}%` }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <button
               onClick={() => { setAutoReplay(false); setView('hub'); setBattle(null); setResult(null); }}
               className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl font-bold text-sm shadow-lg hover:scale-105 transition-transform"
@@ -7005,6 +7215,8 @@ export default function ShadowColosseum() {
                 <div className="text-orange-300 text-sm font-bold">ATK +{weaponReveal.atk} | {MAIN_STAT_VALUES[weaponReveal.bonusStat]?.name} +{weaponReveal.bonusValue}</div>
                 {weaponReveal.id === 'w_sulfuras' && <div className="text-red-400 text-xs">Passive : Sulfuras Fury — +{SULFURAS_STACK_PER_TURN}% DMG/tour (max +{SULFURAS_STACK_MAX}%)</div>}
                 {weaponReveal.id === 'w_raeshalare' && <div className="text-purple-400 text-xs">Passive : Murmure de la Mort — 10% de chance/tour : +100% ATK pendant 5T (max x3)</div>}
+                {weaponReveal.id === 'w_katana_z' && <div className="text-cyan-400 text-xs">Passive : Tranchant Eternel — +5% ATK/coup (50% persist) + Contre-attaque 200% (50%)</div>}
+                {weaponReveal.id === 'w_katana_v' && <div className="text-emerald-400 text-xs">Passive : Lame Veneneuse — DoT 3%/stack + Buff aleatoire (30%) : +10% stats / Bouclier / DMG x6</div>}
                 {weaponReveal.fireRes && <div className="text-orange-500 text-xs">{'\uD83D\uDD25'} Fire RES +{weaponReveal.fireRes}%</div>}
                 {weaponReveal.darkRes && <div className="text-purple-500 text-xs">{'\uD83C\uDF11'} Dark RES +{weaponReveal.darkRes}%</div>}
                 {weaponReveal.isNew ? (
@@ -7072,7 +7284,7 @@ export default function ShadowColosseum() {
                     </div>
                     <div className="text-[10px] text-gray-400">
                       {hasSulfuras
-                        ? `Obtenue au kill #${log.find(d => d.weaponId === 'w_sulfuras')?.killNumber || '?'}`
+                        ? `x${sulfurasCount} drops — A${data.weaponCollection['w_sulfuras']} (1er drop au kill #${log.find(d => d.weaponId === 'w_sulfuras')?.killNumber || '?'})`
                         : kills > 0
                           ? `${kills} kills sans Sulfuras... (drop : 1/10 000)`
                           : 'Pas encore de kills'
@@ -7125,6 +7337,136 @@ export default function ShadowColosseum() {
                           </div>
                           <div className={`text-[9px] px-1.5 py-0.5 rounded ${
                             isSulfuras ? 'bg-orange-500/20 text-orange-300' :
+                            entry.rarity === 'mythique' ? 'bg-purple-500/20 text-purple-300' :
+                            entry.rarity === 'legendaire' ? 'bg-yellow-500/20 text-yellow-300' :
+                            'bg-gray-700/30 text-gray-400'
+                          }`}>{entry.rarity}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        );
+      })()}
+
+      {/* ═══ MONARCH SUPREME HISTORY MODAL ═══ */}
+      {monarchHistoryOpen && (() => {
+        const kills = data.monarchKills || 0;
+        const log = data.monarchDropLog || [];
+        const katanaZCount = log.filter(d => d.weaponId === 'w_katana_z').length;
+        const katanaVCount = log.filter(d => d.weaponId === 'w_katana_v').length;
+        const hasZ = data.weaponCollection?.['w_katana_z'] !== undefined;
+        const hasV = data.weaponCollection?.['w_katana_v'] !== undefined;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setMonarchHistoryOpen(false)}>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              className="bg-gray-900/95 border border-purple-500/40 rounded-2xl p-5 max-w-md w-full max-h-[80vh] overflow-y-auto"
+              onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-black text-purple-300">{'\uD83D\uDC51'} Monarque Supreme</h3>
+                  <div className="text-[10px] text-gray-400">Tier 6 — Domaine du Monarque</div>
+                </div>
+                <button onClick={() => setMonarchHistoryOpen(false)} className="text-gray-500 hover:text-white text-xl">&times;</button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="bg-purple-900/20 border border-purple-500/20 rounded-xl p-3 text-center">
+                  <div className="text-2xl font-black text-purple-400">{kills}</div>
+                  <div className="text-[10px] text-purple-300/60 mt-0.5">Kills total</div>
+                </div>
+                <div className="bg-amber-900/20 border border-amber-500/20 rounded-xl p-3 text-center">
+                  <div className="text-2xl font-black text-amber-400">{log.length}</div>
+                  <div className="text-[10px] text-amber-300/60 mt-0.5">Armes drop</div>
+                </div>
+                <div className="bg-indigo-900/20 border border-indigo-500/20 rounded-xl p-3 text-center">
+                  <div className="text-2xl font-black text-indigo-400">{katanaZCount + katanaVCount}</div>
+                  <div className="text-[10px] text-indigo-300/60 mt-0.5">Katanas</div>
+                </div>
+              </div>
+
+              {/* Katana Z tracker */}
+              <div className={`mb-3 p-3 rounded-xl border ${hasZ ? 'bg-gradient-to-r from-cyan-900/20 to-blue-900/20 border-cyan-500/30' : 'bg-gray-800/20 border-gray-700/20'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  {hasZ ? (
+                    <img src={WEAPONS.w_katana_z?.sprite} alt="Katana Z" className="w-8 h-8 object-contain" />
+                  ) : (
+                    <span className="text-2xl opacity-30">{'\u2694\uFE0F'}</span>
+                  )}
+                  <div>
+                    <div className={`text-sm font-bold ${hasZ ? 'text-cyan-300' : 'text-gray-500'}`}>Katana Z</div>
+                    <div className="text-[10px] text-gray-400">
+                      {hasZ ? `x${katanaZCount} drops — A${data.weaponCollection['w_katana_z']}` : kills > 0 ? `${kills} kills sans Katana Z (1/50 000)` : 'Pas encore de kills'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Katana V tracker */}
+              <div className={`mb-3 p-3 rounded-xl border ${hasV ? 'bg-gradient-to-r from-emerald-900/20 to-green-900/20 border-emerald-500/30' : 'bg-gray-800/20 border-gray-700/20'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  {hasV ? (
+                    <img src={WEAPONS.w_katana_v?.sprite} alt="Katana V" className="w-8 h-8 object-contain" />
+                  ) : (
+                    <span className="text-2xl opacity-30">{'\u2694\uFE0F'}</span>
+                  )}
+                  <div>
+                    <div className={`text-sm font-bold ${hasV ? 'text-emerald-300' : 'text-gray-500'}`}>Katana V</div>
+                    <div className="text-[10px] text-gray-400">
+                      {hasV ? `x${katanaVCount} drops — A${data.weaponCollection['w_katana_v']}` : kills > 0 ? `${kills} kills sans Katana V (1/50 000)` : 'Pas encore de kills'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cumulative chance */}
+              {kills > 0 && (
+                <div className="mb-4 p-3 rounded-xl border border-purple-500/20 bg-purple-900/10">
+                  <div className="flex justify-between text-[9px] text-gray-500 mb-0.5">
+                    <span>Probabilite cumulee (chaque katana)</span>
+                    <span>{Math.min(99.99, (1 - Math.pow(1 - 1/50000, kills)) * 100).toFixed(2)}%</span>
+                  </div>
+                  <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-purple-600 to-indigo-500 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, (1 - Math.pow(1 - 1/50000, kills)) * 100)}%` }} />
+                  </div>
+                </div>
+              )}
+
+              {/* Drop history */}
+              <div className="mb-2">
+                <div className="text-xs font-bold text-gray-300 mb-2">{'\uD83D\uDCDC'} Historique des drops</div>
+                {log.length === 0 ? (
+                  <div className="text-center py-6 text-gray-600 text-sm italic">Aucune arme droppee pour l'instant</div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {[...log].reverse().map((entry, i) => {
+                      const isKatana = entry.weaponId === 'w_katana_z' || entry.weaponId === 'w_katana_v';
+                      const wData = WEAPONS[entry.weaponId];
+                      const dateStr = entry.date ? new Date(entry.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '?';
+                      return (
+                        <div key={i} className={`flex items-center gap-2.5 p-2 rounded-lg border transition-colors cursor-pointer hover:bg-gray-800/40 ${
+                          isKatana ? 'border-purple-500/40 bg-purple-900/10' :
+                          entry.rarity === 'mythique' ? 'border-purple-500/20 bg-purple-900/5' :
+                          entry.rarity === 'legendaire' ? 'border-yellow-500/20 bg-yellow-900/5' :
+                          'border-gray-700/20 bg-gray-800/10'
+                        }`} onClick={() => { setMonarchHistoryOpen(false); isKatana ? setWeaponReveal({ ...wData, isNew: false }) : setWeaponDetailId(entry.weaponId); }}>
+                          <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                            {entry.sprite || wData?.sprite ? (
+                              <img src={entry.sprite || wData?.sprite} alt={entry.name} className="w-8 h-8 object-contain" />
+                            ) : (
+                              <span className="text-lg">{entry.icon || wData?.icon || '?'}</span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-xs font-bold truncate ${isKatana ? 'text-purple-300' : 'text-white'}`}>{entry.name || wData?.name}</div>
+                            <div className="text-[9px] text-gray-500">Kill #{entry.killNumber} — {dateStr}</div>
+                          </div>
+                          <div className={`text-[9px] px-1.5 py-0.5 rounded ${
+                            isKatana ? 'bg-purple-500/20 text-purple-300' :
                             entry.rarity === 'mythique' ? 'bg-purple-500/20 text-purple-300' :
                             entry.rarity === 'legendaire' ? 'bg-yellow-500/20 text-yellow-300' :
                             'bg-gray-700/30 text-gray-400'
@@ -7355,7 +7697,7 @@ export default function ShadowColosseum() {
                 <div className="space-y-2">
                   {dropLog.map((drop) => {
                     const isWeapon = drop.itemType === 'weapon';
-                    const icon = isWeapon ? (drop.itemId === 'w_sulfuras' ? '\u2694\uFE0F' : '\uD83C\uDFF9') : '\uD83D\uDC64';
+                    const icon = isWeapon ? (drop.itemId === 'w_sulfuras' ? '\uD83D\uDD28' : (drop.itemId === 'w_katana_z' || drop.itemId === 'w_katana_v') ? '\u2694\uFE0F' : '\uD83C\uDFF9') : '\uD83D\uDC64';
                     const awakeLabel = isWeapon && drop.awakening > 0 ? ` A${drop.awakening}` : '';
                     const date = new Date(drop.createdAt);
                     const timeStr = date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });

@@ -758,6 +758,18 @@ export default function Codex() {
                             <div className="text-[11px] text-purple-300">10% de chance par tour d'obtenir +100% ATK pendant 5 tours. Cumulable jusqu'a 3 fois (max +300% ATK).</div>
                           </div>
                         )}
+                        {w.passive === 'katana_z_fury' && (
+                          <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/30 mb-4">
+                            <div className="text-[10px] text-cyan-400 font-bold uppercase mb-1">Passive Unique — Tranchant Eternel</div>
+                            <div className="text-[11px] text-cyan-300">Chaque attaque octroie +5% ATK (cumulable). En fin de tour, chaque stack a 50% de chance de persister. 50% de chance de contre-attaquer les coups ennemis pour 200% de l'ATK du porteur.</div>
+                          </div>
+                        )}
+                        {w.passive === 'katana_v_chaos' && (
+                          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 mb-4">
+                            <div className="text-[10px] text-emerald-400 font-bold uppercase mb-1">Passive Unique — Lame Veneneuse</div>
+                            <div className="text-[11px] text-emerald-300">Chaque attaque empoisonne l'ennemi (3% ATK/stack/tour, max 10 stacks). 30% de chance par coup de declencher un buff aleatoire : +10% toutes stats (permanent) / Bouclier Divin (absorbe 1 coup) / Puissance x6 au prochain coup.</div>
+                          </div>
+                        )}
 
                         <button onClick={() => setSelectedWeapon(null)}
                           className="w-full py-2 rounded-xl bg-gray-800/60 border border-gray-700/30 text-sm font-bold text-gray-400 hover:text-white hover:border-purple-500/40 transition-all">
