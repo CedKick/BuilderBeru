@@ -82,8 +82,28 @@ export const ACCOUNT_XP_FOR_LEVEL = (lvl) => {
   const over = lvl - 10000;
   return base + Math.floor(over * over * 0.5);
 };
-export const ACCOUNT_BONUS_INTERVAL = 10;
+export const ACCOUNT_BONUS_INTERVAL = 10; // kept for backward compat display
 export const ACCOUNT_BONUS_AMOUNT = 10;
+
+// Progressive allocation count: fewer allocations at high levels
+// Lv 1-1000: every 10 levels, Lv 1001-5000: every 25, Lv 5001-10000: every 50, Lv 10001+: every 100
+export function accountAllocationsAtLevel(level) {
+  if (level <= 1000) return Math.floor(level / 10);
+  let allocs = 100; // lv 1-1000
+  if (level <= 5000) return allocs + Math.floor((level - 1000) / 25);
+  allocs += Math.floor(4000 / 25); // lv 1001-5000 = 160
+  if (level <= 10000) return allocs + Math.floor((level - 5000) / 50);
+  allocs += Math.floor(5000 / 50); // lv 5001-10000 = 100
+  return allocs + Math.floor((level - 10000) / 100);
+}
+
+// Next level that grants an allocation (for display)
+export function nextAllocationLevel(level) {
+  if (level < 1000) return (Math.floor(level / 10) + 1) * 10;
+  if (level < 5000) return 1000 + (Math.floor((level - 1000) / 25) + 1) * 25;
+  if (level < 10000) return 5000 + (Math.floor((level - 5000) / 50) + 1) * 50;
+  return 10000 + (Math.floor((level - 10000) / 100) + 1) * 100;
+}
 export function accountLevelFromXp(totalXp) {
   let lvl = 0, spent = 0;
   while (true) {

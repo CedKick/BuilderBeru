@@ -19,7 +19,7 @@ import {
   TIER_NAMES_SKILL, TIER_COSTS, SP_INTERVAL, MAX_LEVEL,
   statsAt, statsAtFull, xpForLevel, getElementMult, getEffStat,
   applySkillUpgrades, getUpgradeDesc, computeAttack, aiPickSkill, mergeTalentBonuses,
-  ACCOUNT_XP_FOR_LEVEL, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT, accountLevelFromXp,
+  ACCOUNT_XP_FOR_LEVEL, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT, accountLevelFromXp, accountAllocationsAtLevel, nextAllocationLevel,
   getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
   getStarScaledStats, getStarRewardMult, getStarDropBonus, getGuaranteedArtifactRarity,
   calculatePowerScore, getDifficultyRating,
@@ -235,6 +235,12 @@ const loadData = () => {
     } else if (!d.stagesCleared || typeof d.stagesCleared !== 'object') {
       d.stagesCleared = {};
     }
+    // Migration V1: forced account bonus reset (scaling rebalance)
+    if (!d.accountResetV1) {
+      d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
+      d.accountAllocations = 0;
+      d.accountResetV1 = true;
+    }
     return d;
   } catch { return defaultData(); }
 };
@@ -268,6 +274,15 @@ export default function ShadowColosseum() {
   const [shopEnhTarget, setShopEnhTarget] = useState(null); // index in artifactInventory
   const [shopEnhEquipKey, setShopEnhEquipKey] = useState(null); // "chibiId|slotId"
   const [accountLevelUpPending, setAccountLevelUpPending] = useState(0); // number of pending allocations
+  const pendingRef = useRef(0);
+  const setPendingAlloc = (v) => {
+    if (typeof v === 'function') {
+      setAccountLevelUpPending(prev => { const n = v(prev); pendingRef.current = n; return n; });
+    } else {
+      pendingRef.current = v;
+      setAccountLevelUpPending(v);
+    }
+  };
   const [showTutorial, setShowTutorial] = useState(false);
   const [coinDisplay, setCoinDisplay] = useState(shadowCoinManager.getBalance());
   const [coinDelta, setCoinDelta] = useState(null); // { amount, key }
@@ -1773,8 +1788,8 @@ export default function ShadowColosseum() {
     const newAccountXp = prevAccountXp + accountXpGain;
     const prevAccLvl = accountLevelFromXp(prevAccountXp).level;
     const newAccLvl = accountLevelFromXp(newAccountXp).level;
-    const prevMilestones = Math.floor(prevAccLvl / ACCOUNT_BONUS_INTERVAL);
-    const newMilestones = Math.floor(newAccLvl / ACCOUNT_BONUS_INTERVAL);
+    const prevMilestones = accountAllocationsAtLevel(prevAccLvl);
+    const newMilestones = accountAllocationsAtLevel(newAccLvl);
     const newAllocations = newMilestones - prevMilestones;
 
     // Hammer drop (star bonus on base chance)
@@ -1855,7 +1870,7 @@ export default function ShadowColosseum() {
         artifactInventory: guaranteedArtifact ? [...prev.artifactInventory, guaranteedArtifact] : prev.artifactInventory,
       };
     });
-    if (newAllocations > 0) setAccountLevelUpPending(newAllocations);
+    if (newAllocations > 0) setPendingAlloc(newAllocations);
     setResult({ won: true, xp: scaledXp, coins: scaledCoins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrop, hammerDrop: hammerDrop || extraHammer, weaponDrop, guaranteedArtifact, starLevel: currentStar, isNewStarRecord, newMaxStars, accountXpGain, accountLevelUp: newAccLvl > prevAccLvl ? newAccLvl : null, accountAllocations: newAllocations });
 
     // Weapon drop reveal + Beru reaction
@@ -1987,7 +2002,7 @@ export default function ShadowColosseum() {
           {(() => {
             const acc = accountLevelFromXp(data.accountXp || 0);
             const totalBonusAllocated = Object.values(data.accountBonuses || {}).reduce((s, v) => s + v, 0);
-            const totalBonusEarned = Math.floor(acc.level / ACCOUNT_BONUS_INTERVAL) * ACCOUNT_BONUS_AMOUNT;
+            const totalBonusEarned = accountAllocationsAtLevel(acc.level) * ACCOUNT_BONUS_AMOUNT;
             const pendingPoints = totalBonusEarned - totalBonusAllocated;
             const ab = data.accountBonuses || {};
             const hasAnyBonus = Object.values(ab).some(v => v > 0);
@@ -2016,14 +2031,13 @@ export default function ShadowColosseum() {
                     </div>
                     <button onClick={() => {
                       if (!confirm('Reset tous les points de compte ? Tu pourras les re-distribuer.')) return;
-                      const totalAllocated = Object.values(data.accountBonuses || {}).reduce((s, v) => s + v, 0);
-                      const allocCount = Math.ceil(totalAllocated / ACCOUNT_BONUS_AMOUNT);
+                      const allocCount = accountAllocationsAtLevel(acc.level);
                       setData(prev => ({
                         ...prev,
                         accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 },
                         accountAllocations: 0,
                       }));
-                      setAccountLevelUpPending(allocCount);
+                      setPendingAlloc(allocCount);
                     }} className="text-[9px] text-red-400 hover:text-red-300 px-1.5 py-0.5 rounded border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 transition-all whitespace-nowrap" title="Redistribuer les points">
                       Reset
                     </button>
@@ -2031,13 +2045,13 @@ export default function ShadowColosseum() {
                 )}
                 {pendingPoints > 0 && (
                   <button
-                    onClick={() => setAccountLevelUpPending(Math.ceil(pendingPoints / ACCOUNT_BONUS_AMOUNT))}
+                    onClick={() => setPendingAlloc(Math.ceil(pendingPoints / ACCOUNT_BONUS_AMOUNT))}
                     className="mt-1.5 w-full text-center text-[10px] font-bold text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 rounded-lg py-1 hover:bg-yellow-500/20 transition-all animate-pulse">
                     {'\u2B50'} {pendingPoints} points de stats a attribuer !
                   </button>
                 )}
                 <div className="text-[10px] text-gray-600 mt-1 text-center">
-                  Prochain bonus : Lv {(Math.floor(acc.level / ACCOUNT_BONUS_INTERVAL) + 1) * ACCOUNT_BONUS_INTERVAL} (+{ACCOUNT_BONUS_AMOUNT} pts d'une stat au choix)
+                  Prochain bonus : Lv {nextAllocationLevel(acc.level)} (+{ACCOUNT_BONUS_AMOUNT} pts d'une stat au choix)
                 </div>
               </div>
             );
@@ -7050,58 +7064,48 @@ export default function ShadowColosseum() {
             <div className="text-center mb-4">
               <div className="text-4xl mb-2">{'\uD83C\uDFC5'}</div>
               <h3 className="text-xl font-black text-indigo-300">Niveau Compte !</h3>
-              <p className="text-sm text-gray-400 mt-1">Choisis une stat a booster de <span className="text-yellow-400 font-bold">+{ACCOUNT_BONUS_AMOUNT}</span> pts</p>
-              <p className="text-[10px] text-gray-500">Ce bonus s'applique a TOUS tes personnages — maintiens appuye pour aller vite !</p>
-              {accountLevelUpPending > 1 && (
-                <p className="text-[10px] text-amber-400 mt-1">{accountLevelUpPending} allocations en attente</p>
-              )}
+              <p className="text-sm text-gray-400 mt-1">Choisis une stat a booster (+{ACCOUNT_BONUS_AMOUNT} pts par allocation)</p>
+              <p className="text-[10px] text-amber-400 mt-1 font-bold">{accountLevelUpPending} allocation{accountLevelUpPending > 1 ? 's' : ''} en attente</p>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {STAT_ORDER.map(statKey => {
                 const meta = STAT_META[statKey];
                 const currentVal = (data.accountBonuses || {})[statKey] || 0;
-                const allocOne = () => {
+                const allocN = (n) => {
+                  const actual = Math.min(n, pendingRef.current);
+                  if (actual <= 0) return;
+                  pendingRef.current -= actual;
+                  setAccountLevelUpPending(pendingRef.current);
                   setData(prev => ({
                     ...prev,
-                    accountBonuses: { ...prev.accountBonuses, [statKey]: (prev.accountBonuses[statKey] || 0) + ACCOUNT_BONUS_AMOUNT },
-                    accountAllocations: (prev.accountAllocations || 0) + 1,
+                    accountBonuses: { ...prev.accountBonuses, [statKey]: (prev.accountBonuses[statKey] || 0) + ACCOUNT_BONUS_AMOUNT * actual },
+                    accountAllocations: (prev.accountAllocations || 0) + actual,
                   }));
-                  setAccountLevelUpPending(p => p - 1);
                 };
-                let holdTimer = null;
-                let holdSpeed = 200;
-                const startHold = () => {
-                  allocOne();
-                  holdSpeed = 200;
-                  const tick = () => {
-                    holdTimer = setTimeout(() => {
-                      allocOne();
-                      if (holdSpeed > 40) holdSpeed = Math.max(40, holdSpeed - 20);
-                      tick();
-                    }, holdSpeed);
-                  };
-                  tick();
-                };
-                const stopHold = () => { if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; } };
                 return (
-                  <button key={statKey}
-                    onMouseDown={startHold} onMouseUp={stopHold} onMouseLeave={stopHold}
-                    onTouchStart={startHold} onTouchEnd={stopHold}
-                    className={`p-3 rounded-xl border border-gray-700/40 bg-gray-800/30 hover:border-indigo-500/60 hover:bg-indigo-500/10 transition-all text-left group select-none`}>
-                    <div className="flex items-center gap-2">
+                  <div key={statKey} className="p-3 rounded-xl border border-gray-700/40 bg-gray-800/30">
+                    <div className="flex items-center gap-2 mb-1.5">
                       <span className="text-lg">{meta.icon}</span>
-                      <div>
-                        <div className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors">{meta.name}</div>
+                      <div className="flex-1">
+                        <div className="text-sm font-bold text-white">{meta.name}</div>
                         <div className="text-[9px] text-gray-500">{meta.desc}</div>
                       </div>
+                      <span className="text-green-400 font-bold text-sm">+{currentVal}</span>
                     </div>
-                    <div className="mt-1 text-[10px]">
-                      <span className="text-gray-400">Actuel : </span>
-                      <span className="text-green-400 font-bold">+{currentVal}</span>
-                      <span className="text-gray-500 mx-1">{'\u2192'}</span>
-                      <span className="text-yellow-400 font-bold">+{currentVal + ACCOUNT_BONUS_AMOUNT}</span>
+                    <div className="flex gap-1">
+                      {[1, 10, 100, 1000].map(n => (
+                        <button key={n} onClick={() => allocN(n)}
+                          disabled={pendingRef.current <= 0}
+                          className={`flex-1 py-1 rounded text-[10px] font-bold transition-all ${
+                            pendingRef.current <= 0
+                              ? 'bg-gray-800/50 text-gray-600 cursor-not-allowed'
+                              : 'bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/40 hover:text-white'
+                          }`}>
+                          +{n}
+                        </button>
+                      ))}
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
