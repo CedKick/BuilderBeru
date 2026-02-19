@@ -7,7 +7,7 @@ import { WEAPONS, WEAPON_AWAKENING_PASSIVES, MAX_WEAPON_AWAKENING, getWeaponAwak
   ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL, RARITY_SUB_COUNT,
 } from '../ShadowColosseum/equipmentData';
 import { CHIBIS, SPRITES, ELEMENTS, RARITY } from '../ShadowColosseum/colosseumCore';
-import { HUNTERS, HUNTER_PASSIVE_EFFECTS } from '../ShadowColosseum/raidData';
+import { HUNTERS, HUNTER_PASSIVE_EFFECTS, getHunterStars } from '../ShadowColosseum/raidData';
 
 // ═══════════════════════════════════════════════════════════════
 // CODEX — Encyclopedie du Shadow Colosseum
@@ -63,6 +63,27 @@ const CLASS_CONFIG = {
 const RARITY_ORDER = { mythique: 3, legendaire: 2, rare: 1 };
 const ELEMENT_ORDER = { fire: 0, water: 1, wind: 2, earth: 3, shadow: 4, light: 5, null: 6 };
 
+const PASSIVE_TYPE_COLORS = {
+  permanent: 'bg-emerald-900/50 text-emerald-300', firstTurn: 'bg-yellow-900/50 text-yellow-300',
+  lowHp: 'bg-red-900/50 text-red-300', highHp: 'bg-blue-900/50 text-blue-300',
+  stacking: 'bg-orange-900/50 text-orange-300', healBonus: 'bg-green-900/50 text-green-300',
+  critDmg: 'bg-amber-900/50 text-amber-300', magicDmg: 'bg-indigo-900/50 text-indigo-300',
+  vsBoss: 'bg-red-900/50 text-red-200', vsLowHp: 'bg-pink-900/50 text-pink-300',
+  vsDebuffed: 'bg-purple-900/50 text-purple-300', defIgnore: 'bg-gray-800/50 text-gray-300',
+  aoeDmg: 'bg-cyan-900/50 text-cyan-300', dotDmg: 'bg-lime-900/50 text-lime-300',
+  teamDef: 'bg-teal-900/50 text-teal-300', buffBonus: 'bg-violet-900/50 text-violet-300',
+  skillCd: 'bg-fuchsia-900/50 text-fuchsia-300', debuffBonus: 'bg-rose-900/50 text-rose-300',
+  teamAura: 'bg-indigo-900/50 text-indigo-300',
+};
+
+const PASSIVE_TYPE_LABELS = {
+  permanent: 'Permanent', firstTurn: '1er Tour', lowHp: 'PV Bas', highHp: 'PV Haut',
+  stacking: 'Cumulable', healBonus: 'Soin+', critDmg: 'Crit DMG', magicDmg: 'Magie',
+  vsBoss: 'vs Boss', vsLowHp: 'vs PV Bas', vsDebuffed: 'vs Debuff', defIgnore: 'Ignore DEF',
+  aoeDmg: 'AOE', dotDmg: 'DOT', teamDef: 'Equipe DEF', buffBonus: 'Buff+',
+  skillCd: 'Reduc CD', debuffBonus: 'Debuff+', teamAura: 'Aura Equipe',
+};
+
 function computeWeaponILevel(weapon, awakening) {
   const rarityBase = { rare: 10, legendaire: 25, mythique: 50 };
   return (rarityBase[weapon.rarity] || 10) + (awakening * 5);
@@ -116,6 +137,7 @@ export default function Codex() {
   const [weaponCollection, setWeaponCollection] = useState({});
   const [ownedChibis, setOwnedChibis] = useState(new Set());
   const [ownedHunters, setOwnedHunters] = useState(new Set());
+  const [raidDataRef, setRaidDataRef] = useState(null);
   const [artifactInventory, setArtifactInventory] = useState([]);
 
   useEffect(() => {
@@ -135,6 +157,7 @@ export default function Codex() {
       const raw = localStorage.getItem(RAID_KEY);
       if (raw) {
         const d = JSON.parse(raw);
+        setRaidDataRef(d);
         const hunters = new Set();
         (d.hunterCollection || []).forEach(e => {
           hunters.add(typeof e === 'string' ? e : e.id);
@@ -351,6 +374,16 @@ export default function Codex() {
                     <span className={`text-[9px] ${rCfg.color}`}>{RARITY[f.rarity]?.stars}</span>
                     {cCfg && <span className={`text-[9px] ml-auto ${cCfg.color}`}>{cCfg.label}</span>}
                   </div>
+                  {/* Eveil stars for hunters */}
+                  {f.type === 'hunter' && isOwn && raidDataRef && (() => {
+                    const stars = getHunterStars(raidDataRef, f.id);
+                    return stars > 0 ? (
+                      <div className="mt-0.5 text-[9px]">
+                        <span className="text-yellow-400">{'★'.repeat(stars)}</span>
+                        <span className="text-gray-600">{'☆'.repeat(5 - stars)}</span>
+                      </div>
+                    ) : null;
+                  })()}
 
                   {!isOwn && <div className="absolute inset-0 rounded-xl bg-black/20 pointer-events-none" />}
                 </motion.button>
@@ -373,6 +406,7 @@ export default function Codex() {
                     const cCfg = f.class ? CLASS_CONFIG[f.class] : null;
                     const isOwn = isFighterOwned(f);
                     const passive = HUNTER_PASSIVE_EFFECTS[f.id];
+                    const evStars = (f.type === 'hunter' && raidDataRef) ? getHunterStars(raidDataRef, f.id) : 0;
 
                     return (
                       <>
@@ -395,6 +429,14 @@ export default function Codex() {
                               <span className={`text-[10px] px-2 py-0.5 rounded-full ${rCfg.bg} ${rCfg.color} ${rCfg.border} border font-bold`}>{rCfg.label}</span>
                               {cCfg && <span className={`text-[10px] px-2 py-0.5 rounded-full bg-gray-800/60 border border-gray-700/30 font-bold ${cCfg.color}`}>{cCfg.icon} {cCfg.label}</span>}
                             </div>
+                            {/* Eveil stars + passive preview */}
+                            {f.type === 'hunter' && isOwn && (
+                              <div className="mt-1.5">
+                                <span className="text-yellow-400 text-sm">{'★'.repeat(evStars)}</span>
+                                <span className="text-gray-600 text-sm">{'☆'.repeat(5 - evStars)}</span>
+                                {evStars > 0 && <span className="text-[10px] text-yellow-300 ml-1.5 font-bold">+{evStars * 5}% stats</span>}
+                              </div>
+                            )}
                             {f.passiveDesc && <p className="text-[11px] text-amber-300 mt-1.5 italic">{f.passiveDesc}</p>}
                             {!isOwn && <div className="text-[10px] text-gray-600 font-bold mt-1">Non obtenu</div>}
                           </div>
@@ -466,6 +508,36 @@ export default function Codex() {
                             ))}
                           </div>
                         </div>
+
+                        {/* Hunter Passive */}
+                        {f.type === 'hunter' && passive && f.passiveDesc && (
+                          <div className="mb-4">
+                            <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Passif</div>
+                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-medium ${PASSIVE_TYPE_COLORS[passive.type] || 'bg-gray-800/50 text-gray-300'}`}>
+                              <span className="font-bold uppercase text-[8px] opacity-70 px-1 py-0.5 rounded bg-black/20">{PASSIVE_TYPE_LABELS[passive.type] || passive.type}</span>
+                              <span>{f.passiveDesc}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Eveil Breakdown (Hunters) */}
+                        {f.type === 'hunter' && (
+                          <div className="mb-4">
+                            <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Eveil (Doublons)</div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {[1, 2, 3, 4, 5].map(s => {
+                                const active = evStars >= s;
+                                return (
+                                  <div key={s} className={`px-2 py-1 rounded-lg text-[10px] border ${active ? 'border-yellow-500/40 bg-yellow-900/30 text-yellow-300' : 'border-gray-700/30 bg-gray-900/30 text-gray-600'}`}>
+                                    <span className="font-bold">{'★'.repeat(s)}</span>
+                                    <span className="ml-1">+{s * 5}% stats</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="text-[9px] text-gray-600 mt-1.5">Chaque doublon octroie +5% a toutes les stats (PV, ATK, DEF, SPD, CRIT, RES)</div>
+                          </div>
+                        )}
 
                         {/* Where to obtain */}
                         <div className="mb-4 p-3 rounded-xl bg-gray-800/30 border border-gray-700/20">

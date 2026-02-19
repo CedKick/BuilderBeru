@@ -2279,6 +2279,16 @@ export default function ShadowColosseum() {
                             Lv{getChibiLevel(selChibi).level} {RARITY[getChibiData(selChibi).rarity].stars} {ELEMENTS[getChibiData(selChibi).element].icon}
                             {HUNTERS[selChibi] && <span className="ml-1 text-red-400">[Hunter]</span>}
                           </div>
+                          {HUNTERS[selChibi] && (() => {
+                            const _es = getChibiEveilStars(selChibi);
+                            return (
+                              <div className="text-[10px] mt-0.5">
+                                <span className="text-yellow-400">{'★'.repeat(_es)}</span>
+                                <span className="text-gray-600">{'☆'.repeat(5 - _es)}</span>
+                                {_es > 0 && <span className="text-yellow-300 ml-1 font-bold">+{_es * 5}% stats</span>}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                       {/* 6 Stats */}
@@ -4024,6 +4034,16 @@ export default function ShadowColosseum() {
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon} {ELEMENTS[c.element].name}
                 {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter]</span>}
               </div>
+              {HUNTERS[id] && (() => {
+                const _es = getChibiEveilStars(id);
+                return (
+                  <div className="text-[10px] mt-0.5">
+                    <span className="text-yellow-400">{'★'.repeat(_es)}</span>
+                    <span className="text-gray-600">{'☆'.repeat(5 - _es)}</span>
+                    {_es > 0 && <span className="text-yellow-300 ml-1 font-bold">+{_es * 5}%</span>}
+                  </div>
+                );
+              })()}
               {/* Skin Selector */}
               {HUNTER_SKINS[id] && (() => {
                 const owned = data.ownedSkins?.[id] || ['default'];
@@ -4181,6 +4201,15 @@ export default function ShadowColosseum() {
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon} {ELEMENTS[c.element].name}
                 {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter]</span>}
               </div>
+              {HUNTERS[id] && (() => {
+                const _es = getChibiEveilStars(id);
+                return _es > 0 ? (
+                  <div className="text-[10px] mt-0.5">
+                    <span className="text-yellow-400">{'★'.repeat(_es)}</span>
+                    <span className="text-yellow-300 ml-1 font-bold">+{_es * 5}%</span>
+                  </div>
+                ) : null;
+              })()}
             </div>
 
             {/* SP Summary */}
@@ -4305,7 +4334,17 @@ export default function ShadowColosseum() {
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
               <div className="text-[10px] text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon}
+                {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter]</span>}
               </div>
+              {HUNTERS[id] && (() => {
+                const _es = getChibiEveilStars(id);
+                return _es > 0 ? (
+                  <div className="text-[10px] mt-0.5">
+                    <span className="text-yellow-400">{'★'.repeat(_es)}</span>
+                    <span className="text-yellow-300 ml-1 font-bold">+{_es * 5}%</span>
+                  </div>
+                ) : null;
+              })()}
               <div className="mt-2 px-3 py-1.5 rounded-lg bg-green-500/5 border border-green-500/20 inline-block">
                 <span className="text-sm font-bold text-green-400">{availTP}</span>
                 <span className="text-xs text-gray-400 ml-1">pts dispo</span>

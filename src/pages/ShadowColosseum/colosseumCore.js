@@ -75,7 +75,13 @@ export const POINTS_PER_LEVEL = 2;
 export const MAX_LEVEL = 140;
 
 // ─── Account Level System ───────────────────────────────────
-export const ACCOUNT_XP_FOR_LEVEL = (lvl) => 80 + lvl * 25;
+export const ACCOUNT_XP_FOR_LEVEL = (lvl) => {
+  const base = 80 + lvl * 25;
+  if (lvl <= 10000) return base;
+  // Quadratic wall after 10k — gets exponentially harder
+  const over = lvl - 10000;
+  return base + Math.floor(over * over * 0.5);
+};
 export const ACCOUNT_BONUS_INTERVAL = 10;
 export const ACCOUNT_BONUS_AMOUNT = 10;
 export function accountLevelFromXp(totalXp) {
