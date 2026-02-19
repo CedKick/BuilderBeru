@@ -444,10 +444,10 @@ export default function RaidMode() {
         }
       });
 
-      // Random hunter drop — scales with RC and tier (always possible, no cap)
+      // Random hunter drop — scales with RC and tier (minimum 3 RC for any loot)
       const tierDropMult = [0, 1, 1.5, 2, 3, 4, 5][tier] || 1;
       const dropChance = Math.min(0.6, rc * 0.03 * tierDropMult);
-      if (Math.random() < dropChance) {
+      if (rc >= 3 && Math.random() < dropChance) {
         // Pick rarity based on tier
         const rarityRoll = Math.random();
         let dropRarity;
@@ -475,9 +475,9 @@ export default function RaidMode() {
       // Apply rewards
       shadowCoinManager.addCoins(rewards.coins, 'raid_reward');
 
-      // Hammer drops — tier-aware
+      // Hammer drops — tier-aware (minimum 3 RC for any loot)
       const hammerDrops = {};
-      const hammerCount = Math.floor(tierData.hammerCountBase + rc * tierData.hammerCountPerRC + (isFullClear ? 2 : 0));
+      const hammerCount = rc >= 3 ? Math.floor(tierData.hammerCountBase + rc * tierData.hammerCountPerRC + (isFullClear ? 2 : 0)) : 0;
       for (let i = 0; i < hammerCount; i++) {
         const hId = tierData.hammerTiers[Math.floor(Math.random() * tierData.hammerTiers.length)];
         hammerDrops[hId] = (hammerDrops[hId] || 0) + 1;
@@ -1289,15 +1289,16 @@ export default function RaidMode() {
           className={`text-center p-6 rounded-2xl border ${
             isFullClear ? 'bg-gradient-to-r from-yellow-900/40 to-orange-900/40 border-yellow-500/30' :
             endReason === 'wipe' ? 'bg-gradient-to-r from-red-900/40 to-gray-900/40 border-red-500/30' :
+            tier === 6 && endReason === 'timeout' ? 'bg-gradient-to-r from-red-900/40 to-orange-900/40 border-orange-500/30' :
             'bg-gradient-to-r from-blue-900/40 to-purple-900/40 border-blue-500/30'
           }`}>
           {/* Tier badge */}
           <div className={`inline-block px-3 py-1 rounded-lg mb-2 border ${resTd.borderColor} bg-gradient-to-r ${resTd.bgGradient}`}>
             <span className={`text-sm font-bold ${resTd.nameColor}`}>Tier {tier}: {resTd.name}</span>
           </div>
-          <div className="text-4xl mb-2">{isFullClear ? '\uD83C\uDFC6' : endReason === 'wipe' ? '\uD83D\uDC80' : '\u23F1\uFE0F'}</div>
+          <div className="text-4xl mb-2">{isFullClear ? '\uD83C\uDFC6' : endReason === 'wipe' ? '\uD83D\uDC80' : tier === 6 ? '\uD83D\uDD25' : '\u23F1\uFE0F'}</div>
           <h2 className="text-2xl font-bold mb-1">
-            {isFullClear ? 'VICTOIRE TOTALE !' : endReason === 'wipe' ? 'EQUIPE ELIMINEE' : 'TEMPS ECOULE'}
+            {isFullClear ? 'VICTOIRE TOTALE !' : endReason === 'wipe' ? 'EQUIPE ELIMINEE' : tier === 6 ? 'RAID ULTIME TERMINE !' : 'TEMPS ECOULE'}
           </h2>
           <div className="flex justify-center gap-6 text-lg">
             <span className="text-orange-400">RC: <b>{rc}</b> <span className="text-xs text-gray-400">({barsDestroyed}{resTierData?.infiniteBars ? '' : '/10'} barres)</span></span>

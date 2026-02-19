@@ -2006,12 +2006,27 @@ export default function ShadowColosseum() {
                     style={{ width: `${Math.min(100, (acc.xpInLevel / acc.xpForNext) * 100)}%` }} />
                 </div>
                 {hasAnyBonus && (
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
-                    {STAT_ORDER.filter(k => ab[k] > 0).map(k => (
-                      <span key={k} className="text-[10px] text-gray-400">
-                        {STAT_META[k].icon} {STAT_META[k].name} <span className="text-green-400 font-bold">+{ab[k]}</span>
-                      </span>
-                    ))}
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 flex-1">
+                      {STAT_ORDER.filter(k => ab[k] > 0).map(k => (
+                        <span key={k} className="text-[10px] text-gray-400">
+                          {STAT_META[k].icon} {STAT_META[k].name} <span className="text-green-400 font-bold">+{ab[k]}</span>
+                        </span>
+                      ))}
+                    </div>
+                    <button onClick={() => {
+                      if (!confirm('Reset tous les points de compte ? Tu pourras les re-distribuer.')) return;
+                      const totalAllocated = Object.values(data.accountBonuses || {}).reduce((s, v) => s + v, 0);
+                      const allocCount = Math.ceil(totalAllocated / ACCOUNT_BONUS_AMOUNT);
+                      setData(prev => ({
+                        ...prev,
+                        accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 },
+                        accountAllocations: 0,
+                      }));
+                      setAccountLevelUpPending(allocCount);
+                    }} className="text-[9px] text-red-400 hover:text-red-300 px-1.5 py-0.5 rounded border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 transition-all whitespace-nowrap" title="Redistribuer les points">
+                      Reset
+                    </button>
                   </div>
                 )}
                 {pendingPoints > 0 && (
@@ -7036,7 +7051,7 @@ export default function ShadowColosseum() {
               <div className="text-4xl mb-2">{'\uD83C\uDFC5'}</div>
               <h3 className="text-xl font-black text-indigo-300">Niveau Compte !</h3>
               <p className="text-sm text-gray-400 mt-1">Choisis une stat a booster de <span className="text-yellow-400 font-bold">+{ACCOUNT_BONUS_AMOUNT}</span> pts</p>
-              <p className="text-[10px] text-gray-500">Ce bonus s'applique a TOUS tes personnages (y compris Sung)</p>
+              <p className="text-[10px] text-gray-500">Ce bonus s'applique a TOUS tes personnages — maintiens appuye pour aller vite !</p>
               {accountLevelUpPending > 1 && (
                 <p className="text-[10px] text-amber-400 mt-1">{accountLevelUpPending} allocations en attente</p>
               )}
@@ -7045,17 +7060,34 @@ export default function ShadowColosseum() {
               {STAT_ORDER.map(statKey => {
                 const meta = STAT_META[statKey];
                 const currentVal = (data.accountBonuses || {})[statKey] || 0;
+                const allocOne = () => {
+                  setData(prev => ({
+                    ...prev,
+                    accountBonuses: { ...prev.accountBonuses, [statKey]: (prev.accountBonuses[statKey] || 0) + ACCOUNT_BONUS_AMOUNT },
+                    accountAllocations: (prev.accountAllocations || 0) + 1,
+                  }));
+                  setAccountLevelUpPending(p => p - 1);
+                };
+                let holdTimer = null;
+                let holdSpeed = 200;
+                const startHold = () => {
+                  allocOne();
+                  holdSpeed = 200;
+                  const tick = () => {
+                    holdTimer = setTimeout(() => {
+                      allocOne();
+                      if (holdSpeed > 40) holdSpeed = Math.max(40, holdSpeed - 20);
+                      tick();
+                    }, holdSpeed);
+                  };
+                  tick();
+                };
+                const stopHold = () => { if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; } };
                 return (
                   <button key={statKey}
-                    onClick={() => {
-                      setData(prev => ({
-                        ...prev,
-                        accountBonuses: { ...prev.accountBonuses, [statKey]: (prev.accountBonuses[statKey] || 0) + ACCOUNT_BONUS_AMOUNT },
-                        accountAllocations: (prev.accountAllocations || 0) + 1,
-                      }));
-                      setAccountLevelUpPending(p => p - 1);
-                    }}
-                    className={`p-3 rounded-xl border border-gray-700/40 bg-gray-800/30 hover:border-indigo-500/60 hover:bg-indigo-500/10 transition-all text-left group`}>
+                    onMouseDown={startHold} onMouseUp={stopHold} onMouseLeave={stopHold}
+                    onTouchStart={startHold} onTouchEnd={stopHold}
+                    className={`p-3 rounded-xl border border-gray-700/40 bg-gray-800/30 hover:border-indigo-500/60 hover:bg-indigo-500/10 transition-all text-left group select-none`}>
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{meta.icon}</span>
                       <div>
