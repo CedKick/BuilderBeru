@@ -18,6 +18,18 @@ export default function SharedStatsPanel({ entity, weapon = null, logs, onClose 
   const avgDamage = totalHits > 0 ? totalDamage / totalHits : 0;
   const avgCritDamage = critHits > 0 ? (logs?.totalCritDamage || 0) / critHits : 0;
 
+  // Calculate effective ATK including weapon passive bonuses
+  const getEffectiveAtk = () => {
+    if (isBoss || !entity.passiveState) return null;
+    let mult = 1;
+    if (entity.passiveState.katanaZStacks > 0) mult += entity.passiveState.katanaZStacks * 5 / 100;
+    if (entity.passiveState.shadowSilence) mult += entity.passiveState.shadowSilence.filter(s => s > 0).length;
+    if (entity.passiveState.katanaVState?.allStatBuff > 0) mult += entity.passiveState.katanaVState.allStatBuff / 100;
+    if (mult <= 1) return null;
+    return Math.floor(entity.atk * mult);
+  };
+  const effectiveAtk = getEffectiveAtk();
+
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-[#0f0f1a] border-2 border-purple-400 rounded-2xl p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto">
@@ -58,7 +70,7 @@ export default function SharedStatsPanel({ entity, weapon = null, logs, onClose 
           <div className="grid grid-cols-2 gap-3">
             <StatRow icon={<Heart className="w-4 h-4 text-red-400" />} label="HP" value={formatDamage(entity.hp) + ' / ' + formatDamage(entity.maxHp)} />
             <StatRow icon={<Droplet className="w-4 h-4 text-blue-400" />} label="Mana" value={entity.maxMana > 0 ? formatNumber(Math.floor(entity.mana)) + ' / ' + formatNumber(entity.maxMana) : 'N/A'} />
-            <StatRow icon={<SwordIcon className="w-4 h-4 text-red-400" />} label="ATK" value={formatNumber(Math.floor(entity.atk))} />
+            <StatRow icon={<SwordIcon className="w-4 h-4 text-red-400" />} label="ATK" value={formatNumber(Math.floor(entity.atk))} effectiveValue={effectiveAtk ? formatNumber(effectiveAtk) : null} />
             <StatRow icon={<Shield className="w-4 h-4 text-blue-400" />} label="DEF" value={formatNumber(Math.floor(entity.def))} />
             <StatRow icon={<Zap className="w-4 h-4 text-yellow-400" />} label="SPD" value={formatNumber(Math.floor(entity.spd))} />
             <StatRow icon={<Target className="w-4 h-4 text-orange-400" />} label="CRIT" value={formatPercent(entity.crit)} />
@@ -185,14 +197,19 @@ export default function SharedStatsPanel({ entity, weapon = null, logs, onClose 
   );
 }
 
-function StatRow({ icon, label, value }) {
+function StatRow({ icon, label, value, effectiveValue }) {
   return (
     <div className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10">
       <div className="flex items-center gap-2">
         {icon}
         <span className="text-xs text-gray-400 font-bold">{label}</span>
       </div>
-      <span className="text-sm text-white font-bold">{value}</span>
+      <div className="text-right">
+        <span className="text-sm text-white font-bold">{value}</span>
+        {effectiveValue && (
+          <span className="text-xs text-green-400 ml-1">({effectiveValue})</span>
+        )}
+      </div>
     </div>
   );
 }

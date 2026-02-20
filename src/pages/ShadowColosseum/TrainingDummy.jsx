@@ -171,6 +171,7 @@ export default function TrainingDummy() {
   const startTimeRef = useRef(0);
   const timerRef = useRef(0);
   const lastDpsSnapshotRef = useRef(0);
+  const dpsWindowTracker = useRef({}); // damage since last snapshot for rolling DPS
   const pauseTimeRef = useRef(0);
 
   const [isPaused, setIsPaused] = useState(false);
@@ -604,6 +605,9 @@ export default function TrainingDummy() {
     detailedLogsRef.current = initialLogs;
     setDpsHistory([]);
     lastDpsSnapshotRef.current = 0;
+    dpsWindowTracker.current = {};
+    fighters.forEach(f => { dpsWindowTracker.current[f.id] = 0; });
+    dpsWindowTracker.current['training_dummy'] = 0;
 
     const duration = 180;
     timerRef.current = duration;
@@ -789,6 +793,7 @@ export default function TrainingDummy() {
       if (result.damage > 0) {
         state.dummy.hp = Math.max(0, state.dummy.hp - result.damage);
         dpsTracker.current[fighter.id] = (dpsTracker.current[fighter.id] || 0) + result.damage;
+        dpsWindowTracker.current[fighter.id] = (dpsWindowTracker.current[fighter.id] || 0) + result.damage;
 
         // Track detailed logs
         if (!detailedLogsRef.current[fighter.id]) detailedLogsRef.current[fighter.id] = {};
@@ -991,6 +996,7 @@ export default function TrainingDummy() {
             const counterDmg = Math.floor(getEffStat(target.atk, target.buffs, 'atk') * KATANA_Z_COUNTER_MULT);
             state.dummy.hp = Math.max(0, state.dummy.hp - counterDmg);
             dpsTracker.current[target.id] = (dpsTracker.current[target.id] || 0) + counterDmg;
+            dpsWindowTracker.current[target.id] = (dpsWindowTracker.current[target.id] || 0) + counterDmg;
             logEntries.push({
               text: `${target.name}: Katana Z contre-attaque ! -${fmt(counterDmg)} PV !`,
               time: elapsed,
@@ -1052,15 +1058,18 @@ export default function TrainingDummy() {
       });
     });
 
-    // ─── DPS History Snapshot (every 2 seconds) ──────────────
+    // ─── DPS History Snapshot (every 2 seconds) — rolling window ──
     if (elapsed - lastDpsSnapshotRef.current >= 2) {
+      const windowDuration = elapsed - lastDpsSnapshotRef.current;
       const snapshot = { time: elapsed };
       state.fighters.forEach(f => {
-        const fLog = detailedLogsRef.current[f.id];
-        snapshot[f.id] = fLog ? (fLog.dps || 0) : 0;
+        const windowDmg = dpsWindowTracker.current[f.id] || 0;
+        snapshot[f.id] = windowDuration > 0 ? windowDmg / windowDuration : 0;
+        dpsWindowTracker.current[f.id] = 0; // reset window
       });
-      const dLog = detailedLogsRef.current['training_dummy'];
-      snapshot['dummy'] = dLog ? (dLog.dps || 0) : 0;
+      const dummyWindowDmg = dpsWindowTracker.current['training_dummy'] || 0;
+      snapshot['dummy'] = windowDuration > 0 ? dummyWindowDmg / windowDuration : 0;
+      dpsWindowTracker.current['training_dummy'] = 0;
 
       setDpsHistory(prev => [...prev, snapshot]);
       lastDpsSnapshotRef.current = elapsed;

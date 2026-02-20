@@ -99,6 +99,7 @@ export default function RaidMode() {
   const sungCDRef = useRef({});
   const sungBuffsRef = useRef([]);
   const dpsTracker = useRef({});
+  const dpsWindowTracker = useRef({}); // damage since last snapshot for rolling DPS
   const startTimeRef = useRef(0);
   const pausedRef = useRef(false);
 
@@ -451,7 +452,9 @@ export default function RaidMode() {
     setTimer(RAID_DURATION_SEC);
     timerRef.current = RAID_DURATION_SEC;
     dpsTracker.current = {};
-    chibis.forEach(c => { dpsTracker.current[c.id] = 0; });
+    dpsWindowTracker.current = {};
+    chibis.forEach(c => { dpsTracker.current[c.id] = 0; dpsWindowTracker.current[c.id] = 0; });
+    dpsWindowTracker.current['boss'] = 0;
 
     // Initialize detailed logs
     const initialLogs = {};
@@ -990,6 +993,7 @@ export default function RaidMode() {
           const dotDmg = Math.max(1, Math.floor(chibi.atk * KATANA_V_DOT_PCT * kvs.dots));
           state.boss.hp -= dotDmg;
           dpsTracker.current[chibi.id] = (dpsTracker.current[chibi.id] || 0) + dotDmg;
+          dpsWindowTracker.current[chibi.id] = (dpsWindowTracker.current[chibi.id] || 0) + dotDmg;
         }
         // 30% chance for random buff (+5% stats in raid)
         if (Math.random() < KATANA_V_BUFF_CHANCE) {
@@ -1035,6 +1039,7 @@ export default function RaidMode() {
       if (result.damage > 0) {
         state.boss.hp -= result.damage;
         dpsTracker.current[chibi.id] = (dpsTracker.current[chibi.id] || 0) + result.damage;
+        dpsWindowTracker.current[chibi.id] = (dpsWindowTracker.current[chibi.id] || 0) + result.damage;
 
         // Track detailed logs
         const cLog = detailedLogsRef.current[chibi.id];
@@ -1282,6 +1287,7 @@ export default function RaidMode() {
               const counterDmg = Math.floor(target.atk * (counterP.powerMult || 0.8));
               state.boss.hp -= counterDmg;
               dpsTracker.current[target.id] = (dpsTracker.current[target.id] || 0) + counterDmg;
+              dpsWindowTracker.current[target.id] = (dpsWindowTracker.current[target.id] || 0) + counterDmg;
               logEntries.push({ text: `${target.name} contre-attaque ! -${counterDmg}`, time: elapsed, type: 'crit' });
             }
             return;
@@ -1343,6 +1349,7 @@ export default function RaidMode() {
               const counterDmg = Math.max(1, Math.floor(target.atk * KATANA_Z_COUNTER_MULT));
               state.boss.hp -= counterDmg;
               dpsTracker.current[target.id] = (dpsTracker.current[target.id] || 0) + counterDmg;
+              dpsWindowTracker.current[target.id] = (dpsWindowTracker.current[target.id] || 0) + counterDmg;
               logEntries.push({ text: `${target.name} : Katana Z contre-attaque ! -${counterDmg}`, time: elapsed, type: 'crit' });
             }
             // Stack persistence: each stack has 50% chance to survive
@@ -1426,15 +1433,18 @@ export default function RaidMode() {
       setVfxQueue(prev => [...prev.filter(v => now - v.timestamp < 800).slice(-20), ...vfxEvents]);
     }
 
-    // DPS snapshot every 2 seconds
+    // DPS snapshot every 2 seconds — rolling window
     if (elapsed - lastDpsSnapshotRef.current >= 2) {
+      const windowDuration = elapsed - lastDpsSnapshotRef.current;
       const snapshot = { time: elapsed };
       state.chibis.forEach(c => {
-        const cLog = detailedLogsRef.current[c.id];
-        snapshot[c.id] = cLog?.dps || 0;
+        const windowDmg = dpsWindowTracker.current[c.id] || 0;
+        snapshot[c.id] = windowDuration > 0 ? windowDmg / windowDuration : 0;
+        dpsWindowTracker.current[c.id] = 0; // reset window
       });
-      snapshot['boss'] = detailedLogsRef.current['boss']?.dps || 0;
-      console.log('📈 DPS Snapshot @', elapsed.toFixed(1), 's:', snapshot);
+      const bossWindowDmg = dpsWindowTracker.current['boss'] || 0;
+      snapshot['boss'] = windowDuration > 0 ? bossWindowDmg / windowDuration : 0;
+      dpsWindowTracker.current['boss'] = 0;
       setDpsHistory(prev => [...prev, snapshot]);
       setDetailedLogs({ ...detailedLogsRef.current });
       lastDpsSnapshotRef.current = elapsed;
