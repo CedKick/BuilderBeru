@@ -398,6 +398,22 @@ export default function ShadowColosseum() {
     return () => clearInterval(iv);
   }, []);
 
+  // Play epic sound for secret weapon drops
+  useEffect(() => {
+    if (!weaponReveal) return;
+    const isSecret = ['w_sulfuras', 'w_raeshalare', 'w_katana_z', 'w_katana_v'].includes(weaponReveal.id);
+    if (!isSecret) return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc1 = ctx.createOscillator(); const osc2 = ctx.createOscillator(); const gain = ctx.createGain();
+      osc1.type = 'sawtooth'; osc2.type = 'sine'; osc1.frequency.setValueAtTime(220, ctx.currentTime); osc2.frequency.setValueAtTime(440, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.5);
+      osc1.connect(gain); osc2.connect(gain); gain.connect(ctx.destination);
+      osc1.start(); osc2.start(); osc1.stop(ctx.currentTime + 1.5); osc2.stop(ctx.currentTime + 1.5);
+      setTimeout(() => { const osc3 = ctx.createOscillator(); const g2 = ctx.createGain(); osc3.type = 'triangle'; osc3.frequency.setValueAtTime(330, ctx.currentTime); g2.gain.setValueAtTime(0.2, ctx.currentTime); g2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2); osc3.connect(g2); g2.connect(ctx.destination); osc3.start(); osc3.stop(ctx.currentTime + 2); }, 200);
+    } catch (e) {}
+  }, [weaponReveal]);
+
   // Skin-aware sprite helper — returns active skin sprite or default
   const getSprite = (id) => HUNTER_SKINS[id] ? getHunterSprite(id, data) : getChibiSprite(id);
 
@@ -2117,8 +2133,9 @@ export default function ShadowColosseum() {
 
     // Weapon drop reveal + Beru reaction
     if (weaponDrop) {
+      const isSecret = ['w_sulfuras', 'w_raeshalare', 'w_katana_z', 'w_katana_v'].includes(weaponDrop.id);
       setWeaponReveal(weaponDrop);
-      setTimeout(() => setWeaponReveal(null), 4000);
+      setTimeout(() => setWeaponReveal(null), isSecret ? 5500 : 2000);
       if (weaponDrop.id === 'w_sulfuras') {
         logLegendaryDrop('weapon', 'w_sulfuras', 'Masse de Sulfuras', 'secret', weaponDrop.newAwakening || 0);
         try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'sulfuras', message: "OOOH MON DIEU !! LA MASSE DE SULFURAS !!! C'est... c'est REEL ?! Tu l'as eu ! TU L'AS VRAIMENT EU ! Je pleure des larmes de fourmi !!" } })); } catch (e) {}
@@ -7314,81 +7331,47 @@ export default function ShadowColosseum() {
       )}
 
       {/* ═══ SULFURAS EPIC REVEAL ═══ */}
-      {weaponReveal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={() => setWeaponReveal(null)}>
-          {/* Background flash */}
-          <motion.div className="absolute inset-0"
-            initial={{ background: 'rgba(0,0,0,0)' }}
-            animate={{ background: ['rgba(255,165,0,0.6)', 'rgba(0,0,0,0.92)', 'rgba(0,0,0,0.92)'] }}
-            transition={{ duration: 1.5, times: [0, 0.3, 1] }} />
-          {/* Radial glow behind weapon */}
-          <motion.div className="absolute w-80 h-80 rounded-full"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: [0, 1.5, 1.2], opacity: [0, 0.8, 0.4] }}
-            transition={{ duration: 2, delay: 0.3 }}
-            style={{ background: 'radial-gradient(circle, rgba(251,146,60,0.5) 0%, rgba(220,38,38,0.2) 50%, transparent 70%)' }} />
-          {/* Spinning rays */}
-          <motion.div className="absolute w-96 h-96"
-            initial={{ rotate: 0, opacity: 0 }}
-            animate={{ rotate: 360, opacity: [0, 0.6, 0.3] }}
-            transition={{ rotate: { duration: 20, repeat: Infinity, ease: 'linear' }, opacity: { duration: 2, delay: 0.5 } }}
-            style={{ background: 'conic-gradient(from 0deg, transparent, rgba(251,146,60,0.3), transparent, rgba(220,38,38,0.2), transparent, rgba(251,146,60,0.3), transparent)' }} />
-          {/* Floating particles */}
-          {[...Array(30)].map((_, i) => (
-            <motion.div key={i} className="absolute text-xl pointer-events-none"
-              initial={{ x: 0, y: 0, opacity: 0, scale: 0 }}
-              animate={{ x: (Math.random() - 0.5) * 500, y: (Math.random() - 0.5) * 500, opacity: [0, 1, 0], scale: [0, 1.5, 0] }}
-              transition={{ duration: 2 + Math.random() * 2, delay: 0.5 + Math.random() * 1.5, repeat: Infinity, repeatDelay: Math.random() * 3 }}>
-              {['🔥', '✨', '⭐', '💫', '🔨', '💥'][i % 6]}
-            </motion.div>
-          ))}
-          {/* Main content */}
-          <motion.div className="relative z-10 text-center"
-            initial={{ scale: 0, opacity: 0, y: 50 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            transition={{ delay: 0.8, type: 'spring', stiffness: 150, damping: 12 }}>
-            {/* Screen shake effect */}
-            <motion.div
-              animate={{ x: [0, -5, 5, -3, 3, 0], y: [0, 3, -3, 2, -2, 0] }}
-              transition={{ duration: 0.5, delay: 0.8, repeat: 3 }}>
-              <div className="text-orange-400 font-black text-xs tracking-[0.3em] uppercase mb-2"
-                style={{ textShadow: '0 0 20px rgba(251,146,60,0.8)' }}>Drop Legendaire</div>
-              <motion.div className="text-7xl mb-4"
-                initial={{ rotateY: 0 }}
-                animate={{ rotateY: [0, 360] }}
-                transition={{ duration: 2, delay: 1.2, repeat: Infinity, repeatDelay: 3 }}>
-                {weaponReveal.sprite ? (
-                  <img src={weaponReveal.sprite} alt={weaponReveal.name} className="w-24 h-24 object-contain mx-auto" draggable={false} />
-                ) : weaponReveal.icon}
-              </motion.div>
-              <motion.h2
-                className="text-3xl font-black mb-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.5 }}
-                style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444, #f59e0b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 0 10px rgba(251,146,60,0.6))' }}>
-                {weaponReveal.name}
-              </motion.h2>
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }}
-                className="space-y-2">
-                <div className="text-orange-300 text-sm font-bold">ATK +{weaponReveal.atk} | {MAIN_STAT_VALUES[weaponReveal.bonusStat]?.name} +{weaponReveal.bonusValue}</div>
-                {weaponReveal.id === 'w_sulfuras' && <div className="text-red-400 text-xs">Passive : Sulfuras Fury — +{SULFURAS_STACK_PER_TURN}% DMG/tour (max +{SULFURAS_STACK_MAX}%)</div>}
-                {weaponReveal.id === 'w_raeshalare' && <div className="text-purple-400 text-xs">Passive : Murmure de la Mort — 10% de chance/tour : +100% ATK pendant 5T (max x3)</div>}
-                {weaponReveal.id === 'w_katana_z' && <div className="text-cyan-400 text-xs">Passive : Tranchant Eternel — +5% ATK/coup (50% persist) + Contre-attaque 200% (50%)</div>}
-                {weaponReveal.id === 'w_katana_v' && <div className="text-emerald-400 text-xs">Passive : Lame Veneneuse — DoT 3%/stack + Buff aleatoire (30%) : +10% stats cumulable (Solo) / +5% stats cumulable (Raid) / Bouclier / DMG x6</div>}
-                {weaponReveal.fireRes && <div className="text-orange-500 text-xs">{'\uD83D\uDD25'} Fire RES +{weaponReveal.fireRes}%</div>}
-                {weaponReveal.darkRes && <div className="text-purple-500 text-xs">{'\uD83C\uDF11'} Dark RES +{weaponReveal.darkRes}%</div>}
-                {weaponReveal.isNew ? (
-                  <div className="text-green-400 text-xs font-bold">Nouvelle arme !</div>
-                ) : weaponReveal.newAwakening !== undefined && (
-                  <div className="text-yellow-400 text-xs font-bold">Eveil A{weaponReveal.newAwakening - 1} {'\u2192'} A{weaponReveal.newAwakening}</div>
-                )}
-                <div className="mt-4 text-gray-400 text-[10px] italic animate-pulse">Clique pour fermer</div>
+      {weaponReveal && (() => {
+        const isSecret = ['w_sulfuras', 'w_raeshalare', 'w_katana_z', 'w_katana_v'].includes(weaponReveal.id);
+        return isSecret ? (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={() => setWeaponReveal(null)}>
+            <motion.div className="absolute inset-0" initial={{ background: 'rgba(0,0,0,0)' }} animate={{ background: ['rgba(220,38,38,0.7)', 'rgba(0,0,0,0.95)', 'rgba(0,0,0,0.95)'] }} transition={{ duration: 2, times: [0, 0.2, 1] }} />
+            <motion.div className="absolute w-96 h-96 rounded-full" initial={{ scale: 0, opacity: 0 }} animate={{ scale: [0, 2, 1.5], opacity: [0, 1, 0.5] }} transition={{ duration: 2.5, delay: 0.2 }} style={{ background: 'radial-gradient(circle, rgba(239,68,68,0.6) 0%, rgba(251,146,60,0.3) 40%, transparent 70%)' }} />
+            <motion.div className="absolute w-[500px] h-[500px]" initial={{ rotate: 0, opacity: 0 }} animate={{ rotate: 360, opacity: [0, 0.8, 0.4] }} transition={{ rotate: { duration: 15, repeat: Infinity, ease: 'linear' }, opacity: { duration: 2.5, delay: 0.3 } }} style={{ background: 'conic-gradient(from 0deg, transparent, rgba(239,68,68,0.5), transparent, rgba(251,146,60,0.4), transparent, rgba(220,38,38,0.5), transparent)' }} />
+            {[...Array(50)].map((_, i) => <motion.div key={i} className="absolute text-2xl pointer-events-none" initial={{ x: 0, y: 0, opacity: 0, scale: 0 }} animate={{ x: (Math.random() - 0.5) * 600, y: (Math.random() - 0.5) * 600, opacity: [0, 1, 0], scale: [0, 2, 0], rotate: Math.random() * 360 }} transition={{ duration: 3 + Math.random() * 2, delay: 0.3 + Math.random() * 2, repeat: Infinity, repeatDelay: Math.random() * 4 }}>{['🔥', '✨', '⭐', '💫', '⚡', '💥', '🌟'][i % 7]}</motion.div>)}
+            <motion.div className="relative z-10 text-center" initial={{ scale: 0, opacity: 0, y: 100 }} animate={{ scale: 1, opacity: 1, y: 0 }} transition={{ delay: 0.5, type: 'spring', stiffness: 200, damping: 15 }}>
+              <motion.div animate={{ x: [0, -8, 8, -5, 5, 0], y: [0, 5, -5, 3, -3, 0] }} transition={{ duration: 0.6, delay: 0.5, repeat: 5 }}>
+                <div className="text-red-400 font-black text-sm tracking-[0.4em] uppercase mb-3" style={{ textShadow: '0 0 30px rgba(239,68,68,1), 0 0 60px rgba(239,68,68,0.5)' }}>SECRET WEAPON</div>
+                <motion.div className="mb-5" initial={{ rotateY: 0, scale: 1 }} animate={{ rotateY: [0, 180, 360], scale: [1, 1.3, 1] }} transition={{ duration: 3, delay: 0.8, repeat: Infinity, repeatDelay: 2 }}>
+                  {weaponReveal.sprite ? <img src={weaponReveal.sprite} alt={weaponReveal.name} className="w-32 h-32 object-contain mx-auto drop-shadow-[0_0_30px_rgba(239,68,68,0.8)]" draggable={false} /> : <span className="text-8xl drop-shadow-[0_0_30px_rgba(239,68,68,0.8)]">{weaponReveal.icon}</span>}
+                </motion.div>
+                <motion.h2 className="text-4xl font-black mb-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.5 }} style={{ background: 'linear-gradient(135deg, #ef4444, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 0 20px rgba(239,68,68,0.8))' }}>{weaponReveal.name}</motion.h2>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.5 }} className="space-y-2">
+                  <div className="text-orange-300 text-base font-bold">ATK +{weaponReveal.atk} | {MAIN_STAT_VALUES[weaponReveal.bonusStat]?.name} +{weaponReveal.bonusValue}</div>
+                  {weaponReveal.id === 'w_sulfuras' && <div className="text-red-400 text-sm">Passive : Sulfuras Fury — +{SULFURAS_STACK_PER_TURN}% DMG/tour (max +{SULFURAS_STACK_MAX}%)</div>}
+                  {weaponReveal.id === 'w_raeshalare' && <div className="text-purple-400 text-sm">Passive : Murmure de la Mort — 10% de chance/tour : +100% ATK pendant 5T (max x3)</div>}
+                  {weaponReveal.id === 'w_katana_z' && <div className="text-cyan-400 text-sm">Passive : Tranchant Eternel — +5% ATK/coup (50% persist) + Contre-attaque 200% (50%)</div>}
+                  {weaponReveal.id === 'w_katana_v' && <div className="text-emerald-400 text-sm">Passive : Lame Veneneuse — DoT 3%/stack + Buff aleatoire (30%) : +10% stats cumulable (Solo) / +5% stats cumulable (Raid) / Bouclier / DMG x6</div>}
+                  {weaponReveal.isNew ? <div className="text-green-400 text-sm font-bold">Nouvelle arme !</div> : weaponReveal.newAwakening !== undefined && <div className="text-yellow-400 text-sm font-bold">Eveil A{weaponReveal.newAwakening - 1} → A{weaponReveal.newAwakening}</div>}
+                  <div className="mt-5 text-gray-400 text-xs italic animate-pulse">Clique pour fermer</div>
+                </motion.div>
               </motion.div>
             </motion.div>
-          </motion.div>
-        </div>
-      )}
+          </div>
+        ) : (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={() => setWeaponReveal(null)}>
+            <motion.div className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} style={{ background: 'rgba(0,0,0,0.85)' }} />
+            <motion.div className="relative z-10 text-center bg-gradient-to-b from-purple-900/40 to-indigo-900/40 border border-purple-500/30 rounded-xl p-6" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+              <div className="text-purple-400 font-bold text-xs tracking-wider uppercase mb-2">Drop</div>
+              <div className="mb-3">{weaponReveal.sprite ? <img src={weaponReveal.sprite} alt={weaponReveal.name} className="w-20 h-20 object-contain mx-auto" draggable={false} /> : <span className="text-5xl">{weaponReveal.icon}</span>}</div>
+              <h2 className="text-xl font-black text-orange-300 mb-2">{weaponReveal.name}</h2>
+              <div className="text-orange-200 text-xs">ATK +{weaponReveal.atk} | {MAIN_STAT_VALUES[weaponReveal.bonusStat]?.name} +{weaponReveal.bonusValue}</div>
+              {weaponReveal.isNew ? <div className="text-green-400 text-xs font-bold mt-2">Nouvelle arme !</div> : weaponReveal.newAwakening !== undefined && <div className="text-yellow-400 text-xs font-bold mt-2">Eveil A{weaponReveal.newAwakening - 1} → A{weaponReveal.newAwakening}</div>}
+              <div className="mt-3 text-gray-400 text-[10px] italic">Clique pour fermer</div>
+            </motion.div>
+          </div>
+        );
+      })()}
 
       {/* ═══ RAGNAROK HISTORY MODAL ═══ */}
       {ragnarokHistoryOpen && (() => {
