@@ -380,8 +380,7 @@ export default function Codex() {
                     const stars = getHunterStars(raidDataRef, f.id);
                     return stars > 0 ? (
                       <div className="mt-0.5 text-[9px]">
-                        <span className="text-yellow-400">{'★'.repeat(stars)}</span>
-                        <span className="text-gray-600">{'☆'.repeat(5 - stars)}</span>
+                        <span className="text-yellow-400 font-bold">A{stars}</span>
                       </div>
                     ) : null;
                   })()}
@@ -430,12 +429,10 @@ export default function Codex() {
                               <span className={`text-[10px] px-2 py-0.5 rounded-full ${rCfg.bg} ${rCfg.color} ${rCfg.border} border font-bold`}>{rCfg.label}</span>
                               {cCfg && <span className={`text-[10px] px-2 py-0.5 rounded-full bg-gray-800/60 border border-gray-700/30 font-bold ${cCfg.color}`}>{cCfg.icon} {cCfg.label}</span>}
                             </div>
-                            {/* Eveil stars + passive preview */}
-                            {f.type === 'hunter' && isOwn && (
+                            {/* Awakening */}
+                            {f.type === 'hunter' && isOwn && evStars > 0 && (
                               <div className="mt-1.5">
-                                <span className="text-yellow-400 text-sm">{'★'.repeat(evStars)}</span>
-                                <span className="text-gray-600 text-sm">{'☆'.repeat(5 - evStars)}</span>
-                                {evStars > 0 && <span className="text-[10px] text-yellow-300 ml-1.5 font-bold">+{evStars * 5}% stats</span>}
+                                <span className="text-yellow-400 text-sm font-bold">A{evStars}</span>
                               </div>
                             )}
                             {f.passiveDesc && <p className="text-[11px] text-amber-300 mt-1.5 italic">{f.passiveDesc}</p>}
@@ -524,21 +521,21 @@ export default function Codex() {
                         )}
 
                         {/* Eveil Breakdown (Hunters) */}
-                        {f.type === 'hunter' && (
+                        {f.type === 'hunter' && evStars > 0 && (
                           <div className="mb-4">
-                            <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Eveil (Doublons)</div>
-                            <div className="flex flex-wrap gap-1.5">
-                              {[1, 2, 3, 4, 5].map(s => {
-                                const active = evStars >= s;
-                                return (
-                                  <div key={s} className={`px-2 py-1 rounded-lg text-[10px] border ${active ? 'border-yellow-500/40 bg-yellow-900/30 text-yellow-300' : 'border-gray-700/30 bg-gray-900/30 text-gray-600'}`}>
-                                    <span className="font-bold">{'★'.repeat(s)}</span>
-                                    <span className="ml-1">+{s * 5}% stats</span>
-                                  </div>
-                                );
-                              })}
+                            <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Awakening</div>
+                            <div className="px-2 py-1 rounded-lg text-[11px] border border-yellow-500/40 bg-yellow-900/30 text-yellow-300 inline-block">
+                              <span className="font-bold">A{evStars}</span>
+                              <span className="ml-2 text-gray-400">
+                                {evStars <= 5
+                                  ? `Bonus fixes appliqués`
+                                  : `+${Math.floor(evStars / 5) - 1}% HP/ATK/DEF (paliers)`
+                                }
+                              </span>
                             </div>
-                            <div className="text-[9px] text-gray-600 mt-1.5">Chaque doublon octroie +5% a toutes les stats (PV, ATK, DEF, SPD, CRIT, RES)</div>
+                            <div className="text-[9px] text-gray-600 mt-1.5">
+                              A1-A5 : bonus progressifs • Après A5 : +1% HP/ATK/DEF tous les 5 niveaux (max A200)
+                            </div>
                           </div>
                         )}
 
