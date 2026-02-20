@@ -441,6 +441,11 @@ export default function AdminMailSender() {
             <div className="mb-6">
               <label className="block text-sm font-semibold text-gray-300 mb-2">
                 Armes
+                {selectedWeapons.length > 0 && (
+                  <span className="ml-2 text-xs bg-amber-500 text-white px-2 py-1 rounded-full font-bold">
+                    {selectedWeapons.length} ajoutée{selectedWeapons.length > 1 ? 's' : ''}
+                  </span>
+                )}
               </label>
 
               {/* Add weapon */}
@@ -480,38 +485,54 @@ export default function AdminMailSender() {
                 </button>
               </div>
 
+              {/* Empty state */}
+              {selectedWeapons.length === 0 && (
+                <div className="text-center py-4 bg-white/5 rounded-lg border border-dashed border-gray-600">
+                  <p className="text-gray-500 text-sm">
+                    Aucune arme ajoutée. Sélectionnez une arme et cliquez sur "Ajouter".
+                  </p>
+                </div>
+              )}
+
               {/* Selected weapons list */}
               {selectedWeapons.length > 0 && (
-                <div className="space-y-2">
-                  {selectedWeapons.map((weapon) => (
-                    <div
-                      key={weapon.id}
-                      className="flex items-center gap-3 bg-white/5 border border-amber-500/30 rounded-lg p-3"
-                    >
-                      <div className="flex-1">
-                        <div className="text-amber-300 font-semibold">
-                          {getWeaponName(weapon.id)}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-400">Awaken:</span>
-                        <input
-                          type="number"
-                          value={weapon.awakening}
-                          onChange={(e) => updateWeaponAwakening(weapon.id, parseInt(e.target.value) || 0)}
-                          min="0"
-                          max="10"
-                          className="w-16 bg-white/10 border border-white/20 rounded px-2 py-1 text-white text-center"
-                        />
-                      </div>
-                      <button
-                        onClick={() => removeWeapon(weapon.id)}
-                        className="text-red-400 hover:text-red-300 p-2 hover:bg-red-500/10 rounded transition-colors"
+                <div className="bg-amber-500/10 border-2 border-amber-500/50 rounded-lg p-4">
+                  <div className="text-sm font-bold text-amber-400 mb-3 flex items-center gap-2">
+                    <Check size={16} />
+                    Armes qui seront envoyées :
+                  </div>
+                  <div className="space-y-2">
+                    {selectedWeapons.map((weapon) => (
+                      <div
+                        key={weapon.id}
+                        className="flex items-center gap-3 bg-black/30 border border-amber-500/30 rounded-lg p-3"
                       >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex-1">
+                          <div className="text-amber-300 font-bold text-lg">
+                            {getWeaponName(weapon.id)}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-300 font-semibold">Awakening:</span>
+                          <input
+                            type="number"
+                            value={weapon.awakening}
+                            onChange={(e) => updateWeaponAwakening(weapon.id, parseInt(e.target.value) || 0)}
+                            min="0"
+                            max="10"
+                            className="w-20 bg-white/10 border border-amber-500/50 rounded px-2 py-1 text-white text-center font-bold"
+                          />
+                        </div>
+                        <button
+                          onClick={() => removeWeapon(weapon.id)}
+                          className="text-red-400 hover:text-red-300 p-2 hover:bg-red-500/20 rounded transition-colors"
+                          title="Retirer cette arme"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
