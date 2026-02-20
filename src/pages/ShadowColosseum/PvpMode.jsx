@@ -25,6 +25,9 @@ import {
 import {
   computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses,
   getActivePassives, WEAPONS, computeEquipILevel,
+  KATANA_Z_ATK_PER_HIT, KATANA_Z_STACK_PERSIST_CHANCE, KATANA_Z_COUNTER_CHANCE, KATANA_Z_COUNTER_MULT,
+  KATANA_V_DOT_PCT, KATANA_V_DOT_MAX_STACKS, KATANA_V_BUFF_CHANCE,
+  SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
 } from './equipmentData';
 import { BattleStyles } from './BattleVFX';
 
@@ -227,7 +230,22 @@ export default function PvpMode() {
       atk: atk2, def: def2, spd: spd2, crit: crit2, res: res2,
       mana: st.mana || 0, maxMana: st.mana || 0, manaRegen: st.manaRegen || 0, manaCostReduce: st.manaCostReduce || 0,
       skills, buffs: [], passives,
-      passiveState: { flammeStacks: 0, martyrHealed: false, echoCounter: 0, sianStacks: 0 },
+      passiveState: {
+        flammeStacks: 0, martyrHealed: false, echoCounter: 0, sianStacks: 0,
+        ...(wId && WEAPONS[wId]?.passive === 'sulfuras_fury' ? { sulfurasStacks: 0 } : {}),
+        ...(wId && WEAPONS[wId]?.passive === 'shadow_silence' ? { shadowSilence: [] } : {}),
+        ...(wId && WEAPONS[wId]?.passive === 'katana_z_fury' ? { katanaZStacks: 0 } : {}),
+        ...(wId && WEAPONS[wId]?.passive === 'katana_v_chaos' ? { katanaVState: { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1 } } : {}),
+        // ULTIME passive state
+        eternalRageStacks: 0,
+        celestialShield: 0,
+        celestialShieldBroken: false,
+        vitalOverhealShield: 0,
+        vitalEmergencyCD: 0,
+        vitalEmergencyActive: 0,
+        arcaneOverloadCD: 0,
+        supremeAllStatsCounter: 0,
+      },
       talentBonuses: mergedTb,
       hunterPassive,
       lastAttackAt: 0, attackInterval: spdToInterval(spd2),
@@ -426,6 +444,28 @@ export default function PvpMode() {
         c.buffs.push({ stat: 'spd', value: c.hunterPassive.stats.spd / 100, turns: 1 });
       }
     });
+    // ULTIME artifact passives: onBattleStart
+    units.forEach(c => {
+      const ap = c.passives || [];
+      ap.forEach(p => {
+        // Celestial Shield: 20% max HP shield — individual
+        if (p.type === 'celestialShield' && c.passiveState) {
+          c.passiveState.celestialShield = Math.floor(c.maxHp * (p.shieldPct || 0.20));
+        }
+        // Equilibre Supreme: boost lowest stat +25% — individual
+        if (p.type === 'supremeBalance' && c.passiveState) {
+          const stats = { atk: c.atk, def: c.def, spd: c.spd };
+          const lowest = Object.entries(stats).sort((a, b) => a[1] - b[1])[0];
+          if (lowest) c[lowest[0]] += Math.floor(lowest[1] * (p.lowestStatBonus || 0.25));
+          c.passiveState.supremeAllStatsInterval = p.allStatsInterval || 5;
+          c.passiveState.supremeAllStatsBonus = p.allStatsBonus || 0.10;
+        }
+        // Shadow Pact Raid: +25% DMG for all units — RAID/TEAM-wide
+        if (p.type === 'shadowPactRaid') {
+          units.forEach(ally => { ally.passiveState.shadowPactRaidBoost = (ally.passiveState?.shadowPactRaidBoost || 0) + (p.raidDmgBoost || 0.25); });
+        }
+      });
+    });
   }
 
   // ─── Game tick ────────────────────────────────────────────────
@@ -537,7 +577,13 @@ export default function PvpMode() {
         const lowest = aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
         if (lowest && (lowest.hp / lowest.maxHp) < 0.75) {
           const healBonus = unit.talentBonuses?.healBonus || 0;
-          const healAmt = Math.floor(lowest.maxHp * 0.15 * (1 + healBonus / 100));
+          let healAmt = Math.floor(lowest.maxHp * 0.15 * (1 + healBonus / 100));
+          // healCrit passive (Chaines du Destin 4p) — individual
+          const healCritP = unit.passives?.find(p => p.type === 'healCrit');
+          if (healCritP) {
+            healAmt = Math.floor(healAmt * (1 + (healCritP.healBoostPct || 0.30)));
+            if (Math.random() < (healCritP.critChance || 0.10)) { healAmt *= 2; }
+          }
           lowest.hp = Math.min(lowest.maxHp, lowest.hp + healAmt);
           unit.lastAttackAt = now;
           logEntries.push({ text: `${unit.name} soigne ${lowest.name} +${healAmt}`, time: elapsed, type: 'heal' });
@@ -578,6 +624,57 @@ export default function PvpMode() {
         unit.atk = Math.floor(unit.atk * (1 + (unit.passiveState.sianStacks * (hp.perStack?.atk || 0)) / 100));
       }
 
+      // ─── Weapon passives: ATK buff ───
+      if (unit.passiveState.sulfurasStacks !== undefined && unit.passiveState.sulfurasStacks > 0) {
+        unit.atk = Math.floor(unit.atk * (1 + unit.passiveState.sulfurasStacks / 100));
+      }
+      if (unit.passiveState.shadowSilence !== undefined) {
+        const activeStacks = unit.passiveState.shadowSilence.filter(s => s > 0).length;
+        if (activeStacks > 0) unit.atk = Math.floor(unit.atk * (1 + activeStacks * 1.0));
+      }
+      if (unit.passiveState.katanaZStacks !== undefined && unit.passiveState.katanaZStacks > 0) {
+        unit.atk = Math.floor(unit.atk * (1 + unit.passiveState.katanaZStacks * KATANA_Z_ATK_PER_HIT / 100));
+      }
+      if (unit.passiveState.katanaVState?.nextDmgMult > 1) {
+        unit.atk = Math.floor(unit.atk * unit.passiveState.katanaVState.nextDmgMult);
+      }
+      if (unit.passiveState.katanaVState?.allStatBuff > 0) {
+        unit.atk = Math.floor(unit.atk * (1 + unit.passiveState.katanaVState.allStatBuff / 100));
+      }
+
+      // ─── ULTIME artifact passives: beforeAttack ───
+      // Eternal Rage: +1% ATK per stack — individual
+      const eRageP = unit.passives?.find(p => p.type === 'eternalRageStack');
+      if (eRageP && unit.passiveState.eternalRageStacks > 0) {
+        unit.atk = Math.floor(unit.atk * (1 + unit.passiveState.eternalRageStacks * (eRageP.atkPerStack || 0.01)));
+      }
+      // Celestial Guardian: shield intact → +25% DMG — individual
+      const celWrathP = unit.passives?.find(p => p.type === 'celestialWrath');
+      if (celWrathP && unit.passiveState.celestialShield > 0) {
+        unit.atk = Math.floor(unit.atk * (1 + (celWrathP.dmgWhileShield || 0.25)));
+      }
+      // Siphon Vital: HP > 80% → +30% DMG — individual
+      const vSurgeP = unit.passives?.find(p => p.type === 'vitalSurge');
+      if (vSurgeP && (unit.hp / unit.maxHp) > (vSurgeP.highHpThreshold || 0.80)) {
+        unit.atk = Math.floor(unit.atk * (1 + (vSurgeP.highHpDmg || 0.30)));
+      }
+      // Arcane Tempest: +2% DMG per 10% mana remaining — individual
+      const arcaneTempP = unit.passives?.find(p => p.type === 'arcaneTempest');
+      if (arcaneTempP && unit.maxMana > 0) {
+        const manaPct10 = Math.floor((unit.mana / unit.maxMana) * 10);
+        unit.atk = Math.floor(unit.atk * (1 + manaPct10 * (arcaneTempP.dmgPerMana10Pct || 0.02)));
+      }
+      // Arcane Overload: consume charge → x2 DMG — individual
+      if (unit.passiveState?.arcaneOverloadReady) {
+        unit.atk = Math.floor(unit.atk * 2);
+        unit.passiveState.arcaneOverloadReady = false;
+        logEntries.push({ text: `${unit.name} — Surcharge Arcanique ! DMG x2`, time: elapsed, type: 'passive' });
+      }
+      // Shadow Pact Raid: +25% DMG — individual
+      if (unit.passiveState?.shadowPactRaidBoost) {
+        unit.atk = Math.floor(unit.atk * (1 + unit.passiveState.shadowPactRaidBoost));
+      }
+
       let result = computeAttack(unit, skill, target, unit.talentBonuses || {});
 
       // Apply PVP damage reduction (heals unaffected)
@@ -596,6 +693,7 @@ export default function PvpMode() {
       const lastStand = unit.passives?.find(p => p.type === 'lastStand');
       if (lastStand && (unit.hp / unit.maxHp) < 0.25 && result.damage > 0) {
         result = { ...result, damage: Math.floor(result.damage * 1.5), isCrit: true };
+        logEntries.push({ text: `${unit.name} — Dernier Rempart ! CRIT garanti`, time: elapsed, type: 'passive' });
       }
 
       // Passive: Inner Flame stacking
@@ -608,6 +706,7 @@ export default function PvpMode() {
       if (flammeRelease && (unit.passiveState.flammeStacks || 0) >= 10 && result.damage > 0) {
         result = { ...result, damage: Math.floor(result.damage * 1.5), isCrit: true };
         unit.passiveState.flammeStacks = 0;
+        logEntries.push({ text: `${unit.name} — Flamme Interieure DECHAINEE ! CRIT +50%`, time: elapsed, type: 'passive' });
       }
 
       // Passive: Dodge (Voile de l'Ombre) — check on target
@@ -635,7 +734,31 @@ export default function PvpMode() {
 
       // Apply damage
       if (result.damage > 0) {
-        target.hp -= result.damage;
+        let dmg = result.damage;
+        // ─── ULTIME: Celestial Shield absorbs damage — individual ───
+        if (target.passiveState?.celestialShield > 0) {
+          const absorbed = Math.min(dmg, target.passiveState.celestialShield);
+          target.passiveState.celestialShield -= absorbed;
+          dmg -= absorbed;
+          if (target.passiveState.celestialShield <= 0 && !target.passiveState.celestialShieldBroken) {
+            target.passiveState.celestialShieldBroken = true;
+            const celShieldP = target.passives?.find(p => p.type === 'celestialShield');
+            if (celShieldP) {
+              const onBreakHeal = Math.floor(target.maxHp * (celShieldP.onBreakHeal || 0.30));
+              target.hp = Math.min(target.maxHp, target.hp + onBreakHeal);
+              target.passiveState.celestialDefBoostTurns = celShieldP.defBoostTurns || 3;
+              target.def = Math.floor(target.def * (1 + (celShieldP.defBoostPct || 0.20)));
+              logEntries.push({ text: `${target.name} — Bouclier Celeste brise ! +${onBreakHeal} PV + DEF +20%`, time: elapsed, type: 'passive' });
+            }
+          }
+        }
+        // ─── ULTIME: Vital Overheal Shield absorbs remaining — individual ───
+        if (target.passiveState?.vitalOverhealShield > 0 && dmg > 0) {
+          const absorbed = Math.min(dmg, target.passiveState.vitalOverhealShield);
+          target.passiveState.vitalOverhealShield -= absorbed;
+          dmg -= absorbed;
+        }
+        target.hp -= dmg;
 
         if (dpsTracker.current[unit.id] !== undefined) {
           dpsTracker.current[unit.id] += result.damage;
@@ -649,6 +772,99 @@ export default function PvpMode() {
         if (unit.passives?.find(p => p.type === 'lifesteal') && Math.random() < 0.15) {
           const heal = Math.floor(result.damage * 0.12);
           unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+          logEntries.push({ text: `${unit.name} — Vol de vie ! +${heal} PV`, time: elapsed, type: 'heal' });
+        }
+
+        // ─── Weapon passives: post-attack stack building ───
+        if (unit.passiveState.katanaZStacks !== undefined) unit.passiveState.katanaZStacks++;
+        if (unit.passiveState.sulfurasStacks !== undefined) {
+          unit.passiveState.sulfurasStacks = Math.min(SULFURAS_STACK_MAX, unit.passiveState.sulfurasStacks + SULFURAS_STACK_PER_TURN);
+        }
+        if (unit.passiveState.shadowSilence !== undefined) {
+          unit.passiveState.shadowSilence = unit.passiveState.shadowSilence.map(t => t - 1).filter(t => t > 0);
+          if (unit.passiveState.shadowSilence.length < 3 && Math.random() < 0.10) {
+            unit.passiveState.shadowSilence.push(5);
+          }
+        }
+        if (unit.passiveState.katanaVState) {
+          if (unit.passiveState.katanaVState.nextDmgMult > 1) unit.passiveState.katanaVState.nextDmgMult = 1;
+          if (unit.passiveState.katanaVState.dots < KATANA_V_DOT_MAX_STACKS) unit.passiveState.katanaVState.dots++;
+          // DoT on target
+          if (unit.passiveState.katanaVState.dots > 0 && target.alive) {
+            const dotDmg = Math.max(1, Math.floor(unit.atk * KATANA_V_DOT_PCT * unit.passiveState.katanaVState.dots));
+            target.hp -= dotDmg;
+            if (target.hp <= 0) { target.hp = 0; target.alive = false; }
+          }
+          if (Math.random() < KATANA_V_BUFF_CHANCE) {
+            const roll = Math.random();
+            if (roll < 0.33) unit.passiveState.katanaVState.allStatBuff += 10;
+            else if (roll < 0.66) unit.passiveState.katanaVState.shield = true;
+            else unit.passiveState.katanaVState.nextDmgMult = 6;
+          }
+        }
+
+        // ─── ULTIME artifact passives: afterAttack ───
+        // Eternal Rage: +1 stack per attack — individual
+        const eRagePostP = unit.passives?.find(p => p.type === 'eternalRageStack');
+        if (eRagePostP) {
+          unit.passiveState.eternalRageStacks = Math.min(eRagePostP.maxStacks || 15, (unit.passiveState.eternalRageStacks || 0) + 1);
+        }
+        // Eternal Rage Release: at max stacks → auto-crit + reset — individual
+        const eRageReleaseP = unit.passives?.find(p => p.type === 'eternalRageRelease');
+        if (eRageReleaseP && unit.passiveState.eternalRageStacks >= (eRagePostP?.maxStacks || 15)) {
+          unit.passiveState.eternalRageStacks = 0;
+          logEntries.push({ text: `${unit.name} — Rage Eternelle LIBEREE ! x15 stacks`, time: elapsed, type: 'passive' });
+        }
+        // Vital Siphon: lifesteal + overheal → shield — individual
+        const vSiphonP = unit.passives?.find(p => p.type === 'vitalSiphon');
+        if (vSiphonP && result.damage > 0) {
+          const siphonHeal = Math.floor(result.damage * (vSiphonP.lifestealPct || 0.15));
+          const newHp = unit.hp + siphonHeal;
+          if (newHp > unit.maxHp) {
+            const overheal = newHp - unit.maxHp;
+            unit.hp = unit.maxHp;
+            unit.passiveState.vitalOverhealShield = Math.min(
+              Math.floor(unit.maxHp * (vSiphonP.maxShieldPct || 0.20)),
+              (unit.passiveState.vitalOverhealShield || 0) + overheal
+            );
+            logEntries.push({ text: `${unit.name} — Siphon Vital ! +${siphonHeal} PV (bouclier +${overheal})`, time: elapsed, type: 'heal' });
+          } else {
+            unit.hp = newHp;
+            logEntries.push({ text: `${unit.name} — Siphon Vital ! +${siphonHeal} PV`, time: elapsed, type: 'heal' });
+          }
+        }
+        // Arcane Overload: full mana → charge next x2 — individual
+        const arcOverP = unit.passives?.find(p => p.type === 'arcaneOverload');
+        if (arcOverP && unit.maxMana > 0 && unit.mana >= unit.maxMana && (unit.passiveState.arcaneOverloadCD || 0) <= 0) {
+          unit.passiveState.arcaneOverloadReady = true;
+          unit.mana = 0;
+          unit.passiveState.arcaneOverloadCD = arcOverP.cooldown || 8;
+        }
+        if (unit.passiveState.arcaneOverloadCD > 0) unit.passiveState.arcaneOverloadCD--;
+        // Supreme Balance: every N attacks → +10% all stats — individual
+        const supBalP = unit.passives?.find(p => p.type === 'supremeBalance');
+        if (supBalP) {
+          unit.passiveState.supremeAllStatsCounter = (unit.passiveState.supremeAllStatsCounter || 0) + 1;
+          if (unit.passiveState.supremeAllStatsCounter >= (unit.passiveState.supremeAllStatsInterval || 5)) {
+            unit.passiveState.supremeAllStatsCounter = 0;
+            const bonus = unit.passiveState.supremeAllStatsBonus || 0.10;
+            unit.atk = Math.floor(unit.atk * (1 + bonus));
+            unit.def = Math.floor(unit.def * (1 + bonus));
+            unit.spd = Math.floor(unit.spd * (1 + bonus));
+            logEntries.push({ text: `${unit.name} — Equilibre Supreme ! Stats +${Math.round(bonus * 100)}%`, time: elapsed, type: 'passive' });
+          }
+        }
+        // Vital Emergency CD tick
+        if (unit.passiveState.vitalEmergencyCD > 0) unit.passiveState.vitalEmergencyCD--;
+
+        // ─── ULTIME: Vital Emergency — target drops below 30% HP ───
+        const targetVSurge = target.passives?.find(p => p.type === 'vitalSurge');
+        if (targetVSurge?.emergencyHeal && target.alive && (target.hp / target.maxHp) < 0.30 && (target.passiveState?.vitalEmergencyCD || 0) <= 0) {
+          const eHeal = Math.floor(target.maxHp * targetVSurge.emergencyHeal);
+          target.hp = Math.min(target.maxHp, target.hp + eHeal);
+          target.passiveState.vitalEmergencyActive = 1;
+          target.passiveState.vitalEmergencyCD = targetVSurge.emergencyCD || 10;
+          logEntries.push({ text: `${target.name} — Urgence Vitale ! +${eHeal} PV`, time: elapsed, type: 'passive' });
         }
 
         if (target.hp <= 0) {
@@ -660,7 +876,14 @@ export default function PvpMode() {
       }
 
       if (result.healed > 0) {
-        unit.hp = Math.min(unit.maxHp, unit.hp + result.healed);
+        let healAmt = result.healed;
+        // healCrit passive (Chaines du Destin 4p) — individual
+        const hcP = unit.passives?.find(p => p.type === 'healCrit');
+        if (hcP) {
+          healAmt = Math.floor(healAmt * (1 + (hcP.healBoostPct || 0.30)));
+          if (Math.random() < (hcP.critChance || 0.10)) { healAmt *= 2; }
+        }
+        unit.hp = Math.min(unit.maxHp, unit.hp + healAmt);
         addVfx('heal', { targetId: unit.id });
       }
 

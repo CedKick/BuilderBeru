@@ -112,9 +112,18 @@ export default function SharedStatsPanel({ entity, weapon = null, logs, onClose 
                 <div className="p-2 rounded-lg bg-orange-600/10 border border-orange-500/20">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-white">Sulfuras Fury</span>
-                    <span className="text-sm text-orange-300">x{entity.passiveState.sulfurasStacks} stacks</span>
+                    <span className="text-sm text-orange-300">+{entity.passiveState.sulfurasStacks}%</span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">+{entity.passiveState.sulfurasStacks * 3}% DMG</p>
+                  <p className="text-xs text-gray-400 mt-1">+{entity.passiveState.sulfurasStacks}% DMG (max 100%)</p>
+                </div>
+              )}
+              {entity.passiveState.shadowSilence !== undefined && (
+                <div className="p-2 rounded-lg bg-indigo-600/10 border border-indigo-500/20">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-white">Murmure de la Mort (Rae'shalare)</span>
+                    <span className="text-sm text-indigo-300">x{entity.passiveState.shadowSilence.filter(s => s > 0).length}/3</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">+{entity.passiveState.shadowSilence.filter(s => s > 0).length * 100}% ATK</p>
                 </div>
               )}
               {entity.passiveState.flammeStacks !== undefined && entity.passiveState.flammeStacks > 0 && (

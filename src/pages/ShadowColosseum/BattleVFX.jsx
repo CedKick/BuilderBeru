@@ -476,6 +476,15 @@ export function BattleArena({ battle, phase, dmgPopup, stageEmoji, stageSprite, 
           );
         })}
       </div>
+      {/* Pass turn button when all skills are blocked */}
+      {phase === 'idle' && player.skills.every(sk => sk.cd > 0 || ((sk.manaCost || 0) > 0 && player.mana < sk.manaCost && !battle.passiveState?.echoFreeMana)) && (
+        <button
+          onClick={() => onSkillUse(-1)}
+          className="w-full py-2 mb-2 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 active:scale-95 transition-all text-center">
+          <div className="text-[10px] font-bold text-amber-400">Passer le tour</div>
+          <div className="text-[8px] text-amber-400/60">MP +{player.manaRegen || 5}</div>
+        </button>
+      )}
     </div>
   );
 }

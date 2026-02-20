@@ -30,6 +30,8 @@ import {
   generateRaidArtifact, generateRaidArtifactFromTier, getActivePassives, RAID_ARTIFACT_SETS, ULTIME_ARTIFACT_SETS,
   WEAPONS, MAIN_STAT_VALUES, rollRaidWeaponDrop, rollUltimeWeaponDrop, generateUltimeArtifact, MAX_WEAPON_AWAKENING,
   KATANA_V_BUFF_CHANCE, KATANA_V_DOT_PCT, KATANA_V_DOT_MAX_STACKS,
+  KATANA_Z_ATK_PER_HIT, KATANA_Z_STACK_PERSIST_CHANCE, KATANA_Z_COUNTER_CHANCE, KATANA_Z_COUNTER_MULT,
+  SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
 } from './equipmentData';
 import { BattleStyles, RaidArena } from './BattleVFX';
 import { isLoggedIn, authHeaders } from '../../utils/auth';
@@ -299,7 +301,21 @@ export default function RaidMode() {
       skills, buffs: [], passives,
       passiveState: {
         flammeStacks: 0, martyrHealed: false, echoCounter: 0, sianStacks: 0,
+        ...(wId2 && WEAPONS[wId2]?.passive === 'sulfuras_fury' ? { sulfurasStacks: 0 } : {}),
+        ...(wId2 && WEAPONS[wId2]?.passive === 'shadow_silence' ? { shadowSilence: [] } : {}),
+        ...(wId2 && WEAPONS[wId2]?.passive === 'katana_z_fury' ? { katanaZStacks: 0 } : {}),
         ...(wId2 && WEAPONS[wId2]?.passive === 'katana_v_chaos' ? { katanaVState: { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1 } } : {}),
+        // ULTIME artifact passive state
+        eternalRageStacks: 0,     // Rage Eternelle: ATK stacking
+        celestialShield: 0,       // Gardien Celeste: shield HP
+        celestialShieldBroken: false,
+        celestialDefBoostTurns: 0,
+        vitalOverhealShield: 0,   // Siphon Vital: overheal shield
+        vitalEmergencyCD: 0,      // Siphon Vital: emergency lifesteal cooldown
+        vitalEmergencyActive: 0,  // Siphon Vital: emergency lifesteal remaining turns
+        arcaneOverloadCD: 0,      // Tempete Arcane: overload cooldown
+        supremeAllStatsCounter: 0,// Equilibre Supreme: counter for all-stats buff
+        supremeAllStatsBuff: 0,   // Equilibre Supreme: active all-stats buff turns
       },
       talentBonuses: mergedTb,
       hunterPassive,
@@ -391,6 +407,30 @@ export default function RaidMode() {
       if (c.hunterPassive?.type === 'firstTurn' && c.hunterPassive.stats?.spd) {
         c.buffs.push({ stat: 'spd', value: c.hunterPassive.stats.spd / 100, turns: 1 });
       }
+    });
+
+    // ─── ULTIME artifact set passives: onBattleStart ───
+    chibis.forEach(c => {
+      const ap = c.passives || [];
+      const ps = c.passiveState;
+      ap.forEach(p => {
+        // Gardien Celeste (2p): Shield = 20% max HP at battle start — individual
+        if (p.type === 'celestialShield') {
+          ps.celestialShield = Math.floor(c.maxHp * (p.shieldPct || 0.20));
+        }
+        // Equilibre Supreme (4p): find lowest stat and boost +25% — individual
+        if (p.type === 'supremeBalance') {
+          const stats = { atk: c.atk, def: c.def, spd: c.spd };
+          const lowest = Object.entries(stats).sort((a, b) => a[1] - b[1])[0];
+          if (lowest) {
+            const boost = Math.floor(lowest[1] * (p.lowestStatBonus || 0.25));
+            c[lowest[0]] = c[lowest[0]] + boost;
+          }
+          ps.supremeAllStatsInterval = p.allStatsInterval || 5;
+          ps.supremeAllStatsBonus = p.allStatsBonus || 0.10;
+          ps.supremeAllStatsDuration = p.allStatsDuration || 3;
+        }
+      });
     });
 
     // Increment daily raid count + save tier preference
@@ -777,6 +817,45 @@ export default function RaidMode() {
         }
       }
 
+      // Sulfuras: apply accumulated DMG bonus
+      if (chibi.passiveState.sulfurasStacks !== undefined && chibi.passiveState.sulfurasStacks > 0) {
+        chibi.atk = Math.floor(chibi.atk * (1 + chibi.passiveState.sulfurasStacks / 100));
+      }
+
+      // Shadow Silence (Rae'shalare): +100% ATK per active stack
+      if (chibi.passiveState.shadowSilence !== undefined) {
+        const activeStacks = chibi.passiveState.shadowSilence.filter(s => s > 0).length;
+        if (activeStacks > 0) {
+          chibi.atk = Math.floor(chibi.atk * (1 + activeStacks * 1.0));
+        }
+      }
+
+      // Katana Z: apply ATK buff from stacks before damage calc
+      if (chibi.passiveState.katanaZStacks !== undefined && chibi.passiveState.katanaZStacks > 0) {
+        chibi.atk = Math.floor(chibi.atk * (1 + chibi.passiveState.katanaZStacks * KATANA_Z_ATK_PER_HIT / 100));
+      }
+
+      // ── ULTIME Artifact Passives: beforeAttack ──
+      // Rage Eternelle (2p): +1% ATK per stack — individual
+      if (chibi.passiveState.eternalRageStacks > 0) {
+        const ragePassive = chibi.passives?.find(p => p.type === 'eternalRageStack');
+        if (ragePassive) {
+          chibi.atk = Math.floor(chibi.atk * (1 + chibi.passiveState.eternalRageStacks * (ragePassive.atkPerStack || 0.01)));
+        }
+      }
+      // Gardien Celeste (4p): shield intact → +25% DMG — individual
+      if (chibi.passiveState.celestialShield > 0) {
+        const celWrath = chibi.passives?.find(p => p.type === 'celestialWrath');
+        if (celWrath) {
+          chibi.atk = Math.floor(chibi.atk * (1 + (celWrath.dmgWhileShield || 0.25)));
+        }
+      }
+      // Siphon Vital (4p): HP > 80% → +30% DMG — individual
+      const vitalSurge = chibi.passives?.find(p => p.type === 'vitalSurge');
+      if (vitalSurge && (chibi.hp / chibi.maxHp) > (vitalSurge.highHpThreshold || 0.80)) {
+        chibi.atk = Math.floor(chibi.atk * (1 + (vitalSurge.highHpDmg || 0.30)));
+      }
+
       // Temporarily modify boss DEF
       const origBossDef = state.boss.def;
       state.boss.def = Math.floor(origBossDef * (1 - bossDebuffs.def / 100));
@@ -787,7 +866,16 @@ export default function RaidMode() {
         const lowestAlly = aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
         if (lowestAlly && (lowestAlly.hp / lowestAlly.maxHp) < 0.75) {
           const healBonus = (chibi.talentBonuses?.healBonus || 0);
-          const healAmt = Math.floor(lowestAlly.maxHp * 0.15 * (1 + healBonus / 100));
+          let healAmt = Math.floor(lowestAlly.maxHp * 0.15 * (1 + healBonus / 100));
+          // healCrit (Chaines du Destin 4p): +30% heal, 10% chance crit heal x2
+          const healCritP = chibi.passives?.find(p => p.type === 'healCrit');
+          if (healCritP) {
+            healAmt = Math.floor(healAmt * (1 + (healCritP.healBoostPct || 0.30)));
+            if (Math.random() < (healCritP.critChance || 0.10)) {
+              healAmt *= 2;
+              logEntries.push({ text: `${chibi.name} : SOIN CRITIQUE x2 !`, time: elapsed, type: 'heal' });
+            }
+          }
           lowestAlly.hp = Math.min(lowestAlly.maxHp, lowestAlly.hp + healAmt);
           chibi.lastAttackAt = now;
           // Restore stats before return
@@ -862,6 +950,7 @@ export default function RaidMode() {
       const lastStand = chibi.passives?.find(p => p.type === 'lastStand');
       if (lastStand && (chibi.hp / chibi.maxHp) < 0.25 && result.damage > 0) {
         result = { ...result, damage: Math.floor(result.damage * 1.5), isCrit: true };
+        logEntries.push({ text: `${chibi.name} : Dernier Rempart ! CRIT garanti`, time: elapsed, type: 'buff' });
       }
 
       // ── Passive: Inner Flame — +3% DMG per stack (max 10), at 10 stacks auto-crit +50%
@@ -874,6 +963,7 @@ export default function RaidMode() {
       if (flammeRelease && (chibi.passiveState.flammeStacks || 0) >= 10 && result.damage > 0) {
         result = { ...result, damage: Math.floor(result.damage * 1.5), isCrit: true };
         chibi.passiveState.flammeStacks = 0;
+        logEntries.push({ text: `${chibi.name} : Flamme Interieure DECHAINEE ! CRIT +50%`, time: elapsed, type: 'buff' });
       }
 
       // Shadow Pact Raid: +25% total DMG if any chibi has 4p passive
@@ -968,6 +1058,97 @@ export default function RaidMode() {
         if (chibi.passives?.find(p => p.type === 'lifesteal') && Math.random() < 0.15) {
           const heal = Math.floor(result.damage * 0.12);
           chibi.hp = Math.min(chibi.maxHp, chibi.hp + heal);
+          logEntries.push({ text: `${chibi.name} : Vol de vie ! +${heal} PV`, time: elapsed, type: 'heal' });
+        }
+
+        // Katana Z: +1 stack after each hit
+        if (chibi.passiveState.katanaZStacks !== undefined) {
+          chibi.passiveState.katanaZStacks++;
+        }
+
+        // Sulfuras: +33% DMG per attack cycle (max 100%)
+        if (chibi.passiveState.sulfurasStacks !== undefined) {
+          chibi.passiveState.sulfurasStacks = Math.min(SULFURAS_STACK_MAX, chibi.passiveState.sulfurasStacks + SULFURAS_STACK_PER_TURN);
+        }
+
+        // Shadow Silence: decay existing stacks, 10% chance to proc new +100% ATK (max 3)
+        if (chibi.passiveState.shadowSilence !== undefined) {
+          chibi.passiveState.shadowSilence = chibi.passiveState.shadowSilence.map(t => t - 1).filter(t => t > 0);
+          if (chibi.passiveState.shadowSilence.length < 3 && Math.random() < 0.10) {
+            chibi.passiveState.shadowSilence.push(5);
+          }
+        }
+
+        // ── ULTIME Artifact Passives: afterAttack ──
+        // Rage Eternelle (2p): +1% ATK per attack (max 15 stacks) — individual
+        const eternalRage = chibi.passives?.find(p => p.type === 'eternalRageStack');
+        if (eternalRage) {
+          const ps = chibi.passiveState;
+          if (ps.eternalRageStacks < (eternalRage.maxStacks || 15)) {
+            ps.eternalRageStacks++;
+          }
+        }
+        // Rage Eternelle (4p): at 15 stacks → auto-crit + bonus DMG — individual
+        const eternalRelease = chibi.passives?.find(p => p.type === 'eternalRageRelease');
+        if (eternalRelease && chibi.passiveState.eternalRageStacks >= (eternalRelease.stackThreshold || 15)) {
+          const bonusMult = 1 + (eternalRelease.bonusDmg || 0.40);
+          result = { ...result, damage: Math.floor(result.damage * bonusMult), isCrit: true };
+          chibi.passiveState.eternalRageStacks = 0;
+          logEntries.push({ text: `${chibi.name} : Rage Eternelle LIBEREE ! x15 stacks`, time: elapsed, type: 'buff' });
+        }
+
+        // Siphon Vital (2p): 25% chance lifesteal 15% DMG, overheal = shield — individual
+        const vitalSiphon = chibi.passives?.find(p => p.type === 'vitalSiphon');
+        if (vitalSiphon && result.damage > 0 && Math.random() < (vitalSiphon.chance || 0.25)) {
+          const steal = Math.floor(result.damage * (vitalSiphon.stealPct || 0.15));
+          const newHp = chibi.hp + steal;
+          if (newHp > chibi.maxHp) {
+            const overheal = newHp - chibi.maxHp;
+            chibi.hp = chibi.maxHp;
+            chibi.passiveState.vitalOverhealShield = Math.min(
+              Math.floor(chibi.maxHp * (vitalSiphon.overHealShield || 0.20)),
+              (chibi.passiveState.vitalOverhealShield || 0) + overheal
+            );
+            logEntries.push({ text: `${chibi.name} : Siphon Vital ! +${steal} PV (bouclier +${overheal})`, time: elapsed, type: 'heal' });
+          } else {
+            chibi.hp = newHp;
+            logEntries.push({ text: `${chibi.name} : Siphon Vital ! +${steal} PV`, time: elapsed, type: 'heal' });
+          }
+        }
+
+        // Tempete Arcane (2p): +2% DMG per 10% mana remaining — individual
+        const arcaneTempest = chibi.passives?.find(p => p.type === 'arcaneTempest');
+        if (arcaneTempest && result.damage > 0 && chibi.maxMana > 0) {
+          const manaPct10 = Math.floor((chibi.mana / chibi.maxMana) * 10);
+          const arcaneBonus = manaPct10 * (arcaneTempest.dmgPerMana10Pct || 0.02);
+          if (arcaneBonus > 0) {
+            result = { ...result, damage: Math.floor(result.damage * (1 + arcaneBonus)) };
+          }
+        }
+
+        // Tempete Arcane (4p): if mana was full → x2 DMG (cooldown 5 attacks) — individual
+        const arcaneOverload = chibi.passives?.find(p => p.type === 'arcaneOverload');
+        if (arcaneOverload) {
+          if (chibi.passiveState.arcaneOverloadCD > 0) chibi.passiveState.arcaneOverloadCD--;
+          if (chibi.passiveState.arcaneOverloadCD <= 0 && chibi.mana >= chibi.maxMana * 0.95) {
+            result = { ...result, damage: Math.floor(result.damage * (arcaneOverload.dmgMult || 2.0)) };
+            chibi.passiveState.arcaneOverloadCD = arcaneOverload.cooldown || 5;
+            logEntries.push({ text: `${chibi.name} : Arcane Overload ! DMG x${arcaneOverload.dmgMult || 2} !`, time: elapsed, type: 'buff' });
+          }
+        }
+
+        // Equilibre Supreme (4p): counter for all-stats buff every 5 attacks — individual
+        if (chibi.passiveState.supremeAllStatsInterval) {
+          chibi.passiveState.supremeAllStatsCounter = (chibi.passiveState.supremeAllStatsCounter || 0) + 1;
+          if (chibi.passiveState.supremeAllStatsCounter >= chibi.passiveState.supremeAllStatsInterval) {
+            chibi.passiveState.supremeAllStatsCounter = 0;
+            chibi.passiveState.supremeAllStatsBuff = chibi.passiveState.supremeAllStatsDuration || 3;
+            chibi.buffs.push(
+              { stat: 'atk', value: chibi.passiveState.supremeAllStatsBonus || 0.10, turns: 30 },
+              { stat: 'def', value: chibi.passiveState.supremeAllStatsBonus || 0.10, turns: 30 }
+            );
+            logEntries.push({ text: `${chibi.name} : Equilibre Supreme ! Stats +${Math.round((chibi.passiveState.supremeAllStatsBonus || 0.10) * 100)}% !`, time: elapsed, type: 'buff' });
+          }
         }
 
         // Check bar break
@@ -1005,7 +1186,24 @@ export default function RaidMode() {
 
       // Heal self
       if (result.healed > 0) {
-        chibi.hp = Math.min(chibi.maxHp, chibi.hp + result.healed);
+        let healAmt = result.healed;
+        // healCrit (Chaines du Destin 4p): +30% heal, 10% chance crit heal x2
+        const healCritP = chibi.passives?.find(p => p.type === 'healCrit');
+        if (healCritP) {
+          healAmt = Math.floor(healAmt * (1 + (healCritP.healBoostPct || 0.30)));
+          if (Math.random() < (healCritP.critChance || 0.10)) {
+            healAmt *= 2;
+            logEntries.push({ text: `${chibi.name} : SOIN CRITIQUE x2 !`, time: elapsed, type: 'heal' });
+          }
+        }
+        // Siphon Vital emergency lifesteal: 100% for N attacks
+        if (chibi.passiveState.vitalEmergencyActive > 0 && result.damage > 0) {
+          const emergencyHeal = result.damage; // 100% lifesteal
+          healAmt += emergencyHeal;
+          chibi.passiveState.vitalEmergencyActive--;
+        }
+        if (chibi.passiveState.vitalEmergencyCD > 0) chibi.passiveState.vitalEmergencyCD--;
+        chibi.hp = Math.min(chibi.maxHp, chibi.hp + healAmt);
       }
 
       // Apply buff/debuff
@@ -1078,10 +1276,10 @@ export default function RaidMode() {
           const dodgeP = target.passives?.find(p => p.type === 'dodge');
           if (dodgeP && Math.random() < 0.12) {
             logEntries.push({ text: `${target.name} esquive !`, time: elapsed, type: 'dodge' });
-            // Counter on dodge
-            const counterP = target.passives?.find(p => p.type === 'shadowCounter');
+            // Counter on dodge (Voile de l'Ombre 4p)
+            const counterP = target.passives?.find(p => p.type === 'counter');
             if (counterP) {
-              const counterDmg = Math.floor(target.atk * 0.8);
+              const counterDmg = Math.floor(target.atk * (counterP.powerMult || 0.8));
               state.boss.hp -= counterDmg;
               dpsTracker.current[target.id] = (dpsTracker.current[target.id] || 0) + counterDmg;
               logEntries.push({ text: `${target.name} contre-attaque ! -${counterDmg}`, time: elapsed, type: 'crit' });
@@ -1095,9 +1293,68 @@ export default function RaidMode() {
             logEntries.push({ text: `${target.name} : Bouclier Divin absorbe le coup !`, time: elapsed, type: 'buff' });
             return dmg;
           }
-          target.hp -= dmg.damage;
+          let actualDmg = dmg.damage;
+          // Gardien Celeste: shield absorbs damage first — individual
+          if (target.passiveState?.celestialShield > 0 && actualDmg > 0) {
+            if (actualDmg <= target.passiveState.celestialShield) {
+              target.passiveState.celestialShield -= actualDmg;
+              actualDmg = 0;
+            } else {
+              actualDmg -= target.passiveState.celestialShield;
+              target.passiveState.celestialShield = 0;
+              // Shield broken → heal 30% HP + DEF +20% for 3 attacks — individual
+              if (!target.passiveState.celestialShieldBroken) {
+                target.passiveState.celestialShieldBroken = true;
+                const celWrath = target.passives?.find(p => p.type === 'celestialWrath');
+                if (celWrath) {
+                  const healAmt = Math.floor(target.maxHp * (celWrath.healOnBreak || 0.30));
+                  target.hp = Math.min(target.maxHp, target.hp + healAmt);
+                  target.buffs.push({ stat: 'def', value: celWrath.defBoost || 0.20, turns: 30 });
+                  logEntries.push({ text: `${target.name} : Gardien Celeste brise ! Heal +${healAmt} + DEF +${Math.round((celWrath.defBoost || 0.20) * 100)}% !`, time: elapsed, type: 'buff' });
+                }
+              }
+            }
+          }
+          // Siphon Vital: overheal shield absorbs remaining damage — individual
+          if (target.passiveState?.vitalOverhealShield > 0 && actualDmg > 0) {
+            if (actualDmg <= target.passiveState.vitalOverhealShield) {
+              target.passiveState.vitalOverhealShield -= actualDmg;
+              actualDmg = 0;
+            } else {
+              actualDmg -= target.passiveState.vitalOverhealShield;
+              target.passiveState.vitalOverhealShield = 0;
+            }
+          }
+          // Siphon Vital (4p): HP < 30% → emergency 100% lifesteal for 2 attacks — individual
+          const vSurge = target.passives?.find(p => p.type === 'vitalSurge');
+          if (vSurge && target.passiveState.vitalEmergencyCD <= 0 && target.hp > 0 && (target.hp / target.maxHp) < (vSurge.lowHpThreshold || 0.30)) {
+            target.passiveState.vitalEmergencyActive = vSurge.emergencyDuration || 2;
+            target.passiveState.vitalEmergencyCD = vSurge.emergencyCD || 10;
+            logEntries.push({ text: `${target.name} : Siphon Vital mode urgence ! Lifesteal 100% pendant ${target.passiveState.vitalEmergencyActive} attaques !`, time: elapsed, type: 'buff' });
+          }
+          target.hp -= actualDmg;
           // Reset flamme stacks when hit
           if (target.passiveState?.flammeStacks > 0) target.passiveState.flammeStacks = 0;
+
+          // Katana Z: counter-attack (50% chance) + stack persistence (50% per stack)
+          if (target.passiveState?.katanaZStacks !== undefined && actualDmg > 0 && target.hp > 0) {
+            // Counter-attack
+            if (Math.random() < KATANA_Z_COUNTER_CHANCE) {
+              const counterDmg = Math.max(1, Math.floor(target.atk * KATANA_Z_COUNTER_MULT));
+              state.boss.hp -= counterDmg;
+              dpsTracker.current[target.id] = (dpsTracker.current[target.id] || 0) + counterDmg;
+              logEntries.push({ text: `${target.name} : Katana Z contre-attaque ! -${counterDmg}`, time: elapsed, type: 'crit' });
+            }
+            // Stack persistence: each stack has 50% chance to survive
+            if (target.passiveState.katanaZStacks > 0) {
+              let surviving = 0;
+              for (let i = 0; i < target.passiveState.katanaZStacks; i++) {
+                if (Math.random() < KATANA_Z_STACK_PERSIST_CHANCE) surviving++;
+              }
+              target.passiveState.katanaZStacks = surviving;
+            }
+          }
+
           if (target.hp <= 0) { target.hp = 0; target.alive = false; }
           return dmg;
         };

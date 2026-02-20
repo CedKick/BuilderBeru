@@ -19,7 +19,7 @@ import {
   KATANA_Z_ATK_PER_HIT, KATANA_Z_STACK_PERSIST_CHANCE, KATANA_Z_COUNTER_CHANCE, KATANA_Z_COUNTER_MULT,
   KATANA_V_DOT_PCT, KATANA_V_DOT_MAX_STACKS, KATANA_V_BUFF_CHANCE,
   SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
-  computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses,
+  computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses, getActivePassives,
 } from './equipmentData';
 
 import { TALENT_TREES, computeTalentBonuses } from './talentTreeData';
@@ -443,7 +443,26 @@ export default function TrainingDummy() {
         ? { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1 }
         : undefined,
       sulfurasStacks: weaponId && WEAPONS[weaponId]?.passive === 'sulfuras_fury' ? 0 : undefined,
+      shadowSilence: weaponId && WEAPONS[weaponId]?.passive === 'shadow_silence' ? [] : undefined,
+      // Raid artifact passive state
+      flammeStacks: 0,
+      echoCounter: 0,
+      echoFreeMana: false,
+      martyrHealed: false,
+      sianStacks: 0,
+      // ULTIME artifact passive state
+      eternalRageStacks: 0,
+      celestialShield: 0,
+      celestialShieldBroken: false,
+      vitalOverhealShield: 0,
+      vitalEmergencyCD: 0,
+      vitalEmergencyActive: 0,
+      arcaneOverloadCD: 0,
+      supremeAllStatsCounter: 0,
     };
+
+    // Artifact set passives
+    const artPassives = getActivePassives(coloData.artifacts?.[entityId]);
 
     return {
       id: entityId,
@@ -462,7 +481,7 @@ export default function TrainingDummy() {
       manaRegen,
       skills: Array.isArray(skills) ? skills.map(s => ({ ...s, cd: 0 })) : [],
       buffs: [],
-      passives: [],
+      passives: artPassives,
       passiveState,
       hunterPassive,
       talentBonuses: mergedTB,
@@ -512,6 +531,43 @@ export default function TrainingDummy() {
     const dummy = buildDummy();
 
     const state = { fighters, dummy };
+
+    // ─── Apply artifact set passives: onBattleStart ───
+    fighters.forEach(f => {
+      const ap = f.passives || [];
+      ap.forEach(p => {
+        // Celestial Shield: 20% max HP shield — individual
+        if (p.type === 'celestialShield') {
+          f.passiveState.celestialShield = Math.floor(f.maxHp * (p.shieldPct || 0.20));
+        }
+        // Equilibre Supreme: boost lowest stat +25% — individual
+        if (p.type === 'supremeBalance') {
+          const stats = { atk: f.atk, def: f.def, spd: f.spd };
+          const lowest = Object.entries(stats).sort((a, b) => a[1] - b[1])[0];
+          if (lowest) {
+            f[lowest[0]] += Math.floor(lowest[1] * (p.lowestStatBonus || 0.25));
+          }
+          f.passiveState.supremeAllStatsInterval = p.allStatsInterval || 5;
+          f.passiveState.supremeAllStatsBonus = p.allStatsBonus || 0.10;
+        }
+        // Martyr Aura: self ATK -30%, allies ATK +15% — RAID-wide
+        if (p.type === 'martyrAura') {
+          f.atk = Math.floor(f.atk * (1 + (p.selfAtkMult || -0.30)));
+          fighters.forEach(ally => {
+            if (ally.id !== f.id) ally.atk = Math.floor(ally.atk * (1 + (p.allyAtkBonus || 0.15)));
+          });
+        }
+        // Commander DEF: all allies +10% DEF — RAID-wide
+        if (p.type === 'commanderDef') {
+          fighters.forEach(ally => { ally.def = Math.floor(ally.def * (1 + (p.allyDefBonus || 0.10))); });
+        }
+        // Commander Crit: all allies +20 CRIT for ~30s — RAID-wide
+        if (p.type === 'commanderCrit') {
+          fighters.forEach(ally => { ally.buffs.push({ stat: 'crit', value: p.allyCritBonus || 20, turns: 30 }); });
+        }
+      });
+    });
+
     battleRef.current = state;
     setBattleState(state);
 
@@ -656,15 +712,78 @@ export default function TrainingDummy() {
         atkMult += fighter.passiveState.sulfurasStacks / 100;
       }
 
+      // ═══ ARTIFACT PASSIVE MULTIPLIERS (beforeAttack) ═══
+      const artP = fighter.passives || [];
+      let forceCrit = false;
+      let bonusCritDmg = 0;
+      let bonusDefIgnore = 0;
+
+      // Desperate Fury: +0.8% DMG per 1% HP missing
+      const furyP = artP.find(p => p.type === 'desperateFury');
+      if (furyP) {
+        const missingPct = 1 - fighter.hp / fighter.maxHp;
+        atkMult += missingPct * (furyP.dmgPerMissingPct || 0.008) * 100;
+      }
+      // Last Stand: <25% HP → auto-crit + ignore DEF
+      const lastStandP = artP.find(p => p.type === 'lastStand');
+      if (lastStandP && (fighter.hp / fighter.maxHp) < (lastStandP.hpThreshold || 0.25)) {
+        forceCrit = true;
+        bonusDefIgnore += (lastStandP.defIgnore || 0.25);
+        logEntries.push({ text: `${fighter.name}: Dernier Rempart ! CRIT garanti + DEF ignoree`, time: elapsed, type: 'buff' });
+      }
+      // Inner Flame Release: at 10 stacks → auto-crit +50% CRIT DMG
+      const flammeReleaseP = artP.find(p => p.type === 'innerFlameRelease');
+      if (flammeReleaseP && (fighter.passiveState.flammeStacks || 0) >= (flammeReleaseP.stackThreshold || 10)) {
+        forceCrit = true;
+        bonusCritDmg += (flammeReleaseP.bonusCritDmg || 0.50);
+        fighter.passiveState.flammeStacks = 0;
+        logEntries.push({ text: `${fighter.name}: Flamme Interieure DECHAINEE ! CRIT +50%`, time: elapsed, type: 'buff' });
+      }
+      // Eternal Rage (2p): +1% ATK per stack
+      const eRageP = artP.find(p => p.type === 'eternalRageStack');
+      if (eRageP && fighter.passiveState.eternalRageStacks > 0) {
+        atkMult += fighter.passiveState.eternalRageStacks * (eRageP.atkPerStack || 0.01);
+      }
+      // Eternal Rage (4p): at max stacks → auto-crit + bonus DMG
+      const eReleaseP = artP.find(p => p.type === 'eternalRageRelease');
+      if (eReleaseP && fighter.passiveState.eternalRageStacks >= (eReleaseP.stackThreshold || 15)) {
+        forceCrit = true;
+        atkMult += (eReleaseP.bonusDmg || 0.40);
+        bonusDefIgnore += (eReleaseP.defIgnore || 0.15);
+        logEntries.push({ text: `${fighter.name}: Rage Eternelle LIBEREE ! x${fighter.passiveState.eternalRageStacks} stacks`, time: elapsed, type: 'buff' });
+      }
+      // Gardien Celeste (4p): shield intact → +25% DMG
+      const celWrathP = artP.find(p => p.type === 'celestialWrath');
+      if (celWrathP && fighter.passiveState.celestialShield > 0) {
+        atkMult += (celWrathP.dmgWhileShield || 0.25);
+      }
+      // Siphon Vital (4p): HP > 80% → +30% DMG
+      const vSurgeP = artP.find(p => p.type === 'vitalSurge');
+      if (vSurgeP && (fighter.hp / fighter.maxHp) > (vSurgeP.highHpThreshold || 0.80)) {
+        atkMult += (vSurgeP.highHpDmg || 0.30);
+      }
+      // Tempete Arcane (2p): +2% DMG per 10% mana remaining
+      const arcaneTempP = artP.find(p => p.type === 'arcaneTempest');
+      if (arcaneTempP && fighter.maxMana > 0) {
+        const manaPct10 = Math.floor((fighter.mana / fighter.maxMana) * 10);
+        atkMult += manaPct10 * (arcaneTempP.dmgPerMana10Pct || 0.02);
+      }
+
       // Temporarily boost ATK
       const origAtk = fighter.atk;
+      const origCrit = fighter.crit;
       fighter.atk = Math.floor(fighter.atk * atkMult);
+      if (forceCrit) fighter.crit = 100;
+      const tbForAttack = { ...(fighter.talentBonuses || {}) };
+      if (bonusCritDmg > 0) tbForAttack.critDamage = (tbForAttack.critDamage || 0) + bonusCritDmg * 100;
+      if (bonusDefIgnore > 0) tbForAttack.defPen = (tbForAttack.defPen || 0) + bonusDefIgnore * 100;
 
       // Compute attack
-      const result = computeAttack(fighter, skill, state.dummy, fighter.talentBonuses || {});
+      let result = computeAttack(fighter, skill, state.dummy, tbForAttack);
 
-      // Restore ATK
+      // Restore ATK/CRIT
       fighter.atk = origAtk;
+      fighter.crit = origCrit;
 
       // Apply damage
       if (result.damage > 0) {
@@ -756,6 +875,87 @@ export default function TrainingDummy() {
       if (fighter.passiveState.sulfurasStacks !== undefined) {
         if (fighter.passiveState.sulfurasStacks < SULFURAS_STACK_MAX) {
           fighter.passiveState.sulfurasStacks += SULFURAS_STACK_PER_TURN;
+        }
+      }
+
+      // ═══ ARTIFACT PASSIVE EFFECTS AFTER ATTACK ═══
+      // Inner Flame: +1 stack per attack (max 10)
+      const flammeStackP = artP.find(p => p.type === 'innerFlameStack');
+      if (flammeStackP) {
+        fighter.passiveState.flammeStacks = Math.min(
+          flammeStackP.maxStacks || 10,
+          (fighter.passiveState.flammeStacks || 0) + 1
+        );
+      }
+      // Lifesteal: 15% chance steal 12% DMG as HP
+      const lifestealP = artP.find(p => p.type === 'lifesteal');
+      if (lifestealP && result.damage > 0 && Math.random() < (lifestealP.chance || 0.15)) {
+        const heal = Math.floor(result.damage * (lifestealP.stealPct || 0.12));
+        fighter.hp = Math.min(fighter.maxHp, fighter.hp + heal);
+        logEntries.push({ text: `${fighter.name}: Vol de vie ! +${heal} PV`, time: elapsed, type: 'heal' });
+      }
+      // Echo CD: 20% chance -1 CD on a random skill
+      const echoCDP = artP.find(p => p.type === 'echoCD');
+      if (echoCDP && Math.random() < (echoCDP.chance || 0.20)) {
+        const cdSkills = fighter.skills.filter(s => (s.cd || 0) > 0);
+        if (cdSkills.length > 0) {
+          cdSkills[Math.floor(Math.random() * cdSkills.length)].cd--;
+        }
+      }
+      // Echo Free Mana: every 3 attacks, next skill = 0 mana
+      const echoFreeP = artP.find(p => p.type === 'echoFreeMana');
+      if (echoFreeP) {
+        fighter.passiveState.echoCounter = (fighter.passiveState.echoCounter || 0) + 1;
+        if (fighter.passiveState.echoCounter >= (echoFreeP.interval || 3)) {
+          fighter.passiveState.echoCounter = 0;
+          fighter.passiveState.echoFreeMana = true;
+        }
+      }
+      // Eternal Rage: +1 stack per attack
+      if (eRageP) {
+        fighter.passiveState.eternalRageStacks = Math.min(
+          eRageP.maxStacks || 15,
+          (fighter.passiveState.eternalRageStacks || 0) + 1
+        );
+      }
+      // Siphon Vital: 25% chance lifesteal 15%, overheal = shield
+      const vitalSiphonP = artP.find(p => p.type === 'vitalSiphon');
+      if (vitalSiphonP && result.damage > 0 && Math.random() < (vitalSiphonP.chance || 0.25)) {
+        const steal = Math.floor(result.damage * (vitalSiphonP.stealPct || 0.15));
+        const newHp = fighter.hp + steal;
+        if (newHp > fighter.maxHp) {
+          const overheal = newHp - fighter.maxHp;
+          fighter.hp = fighter.maxHp;
+          fighter.passiveState.vitalOverhealShield = Math.min(
+            Math.floor(fighter.maxHp * (vitalSiphonP.overHealShield || 0.20)),
+            (fighter.passiveState.vitalOverhealShield || 0) + overheal
+          );
+          logEntries.push({ text: `${fighter.name}: Siphon Vital ! +${steal} PV (bouclier +${overheal})`, time: elapsed, type: 'heal' });
+        } else {
+          fighter.hp = newHp;
+          logEntries.push({ text: `${fighter.name}: Siphon Vital ! +${steal} PV`, time: elapsed, type: 'heal' });
+        }
+      }
+      // Arcane Overload: mana full → x2 DMG (cooldown)
+      const arcaneOverP = artP.find(p => p.type === 'arcaneOverload');
+      if (arcaneOverP) {
+        if (fighter.passiveState.arcaneOverloadCD > 0) fighter.passiveState.arcaneOverloadCD--;
+        if (fighter.passiveState.arcaneOverloadCD <= 0 && fighter.mana >= fighter.maxMana * 0.95 && result.damage > 0) {
+          result = { ...result, damage: Math.floor(result.damage * (arcaneOverP.dmgMult || 2.0)) };
+          fighter.passiveState.arcaneOverloadCD = arcaneOverP.cooldown || 5;
+          logEntries.push({ text: `${fighter.name}: Arcane Overload ! DMG x${arcaneOverP.dmgMult || 2} !`, time: elapsed, type: 'buff' });
+        }
+      }
+      // Supreme Balance: every N attacks → +10% all stats — individual
+      if (fighter.passiveState.supremeAllStatsInterval) {
+        fighter.passiveState.supremeAllStatsCounter = (fighter.passiveState.supremeAllStatsCounter || 0) + 1;
+        if (fighter.passiveState.supremeAllStatsCounter >= fighter.passiveState.supremeAllStatsInterval) {
+          fighter.passiveState.supremeAllStatsCounter = 0;
+          const bonus = fighter.passiveState.supremeAllStatsBonus || 0.10;
+          fighter.atk = Math.floor(fighter.atk * (1 + bonus));
+          fighter.def = Math.floor(fighter.def * (1 + bonus));
+          fighter.spd = Math.floor(fighter.spd * (1 + bonus));
+          logEntries.push({ text: `${fighter.name}: Equilibre Supreme ! Stats +${Math.round(bonus * 100)}%`, time: elapsed, type: 'buff' });
         }
       }
 
@@ -1037,6 +1237,15 @@ export default function TrainingDummy() {
       atkDetails.push(`  ├─ Sulfuras: +${bonus}% DMG`);
     }
 
+    // Shadow Silence (Rae'shalare): +100% ATK per active stack
+    if (fighter.passiveState.shadowSilence !== undefined) {
+      const activeStacks = fighter.passiveState.shadowSilence.filter(s => s > 0).length;
+      if (activeStacks > 0) {
+        atkMult += activeStacks * 1.0;
+        atkDetails.push(`  ├─ Murmure de la Mort: x${activeStacks} stacks = +${activeStacks * 100}% ATK`);
+      }
+    }
+
     if (atkDetails.length > 0) {
       log.push({ text: `📊 Multiplicateurs d'ATK:`, type: 'buff', id: Date.now() + 0.25 });
       atkDetails.forEach((detail, i) => {
@@ -1142,6 +1351,15 @@ export default function TrainingDummy() {
       if (fighter.passiveState.sulfurasStacks < SULFURAS_STACK_MAX) {
         fighter.passiveState.sulfurasStacks += SULFURAS_STACK_PER_TURN;
         log.push({ text: `  ├─ Sulfuras: +${SULFURAS_STACK_PER_TURN}% DMG → ${fighter.passiveState.sulfurasStacks}%`, type: 'buff', id: Date.now() + 0.77 });
+      }
+    }
+
+    // Shadow Silence (Rae'shalare): decay stacks, 10% chance to proc new +100% ATK (max 3)
+    if (fighter.passiveState.shadowSilence !== undefined) {
+      fighter.passiveState.shadowSilence = fighter.passiveState.shadowSilence.map(t => t - 1).filter(t => t > 0);
+      if (fighter.passiveState.shadowSilence.length < 3 && Math.random() < 0.10) {
+        fighter.passiveState.shadowSilence.push(5);
+        log.push({ text: `  ├─ Murmure de la Mort proc ! +100% ATK pendant 5 tours (x${fighter.passiveState.shadowSilence.length}/3)`, type: 'buff', id: Date.now() + 0.775 });
       }
     }
 

@@ -698,6 +698,13 @@ export default function ShadowColosseum() {
       initBuffs.push({ type: 'spd', val: hunterPassive.stats.spd, dur: 1 });
     }
 
+    // Weapon passive state
+    const wId = data.weapons[id];
+    const weaponPassive = wId && WEAPONS[wId] ? WEAPONS[wId].passive : null;
+
+    // Artifact set passives (ARC II / Raid / Ultime)
+    const artPassives = getActivePassives(data.artifacts?.[id]);
+
     return {
       id, name: c.name, sprite: getSprite(id), element: c.element,
       hp: fs.hp, maxHp: fs.hp, atk: fs.atk, def: fs.def,
@@ -705,7 +712,35 @@ export default function ShadowColosseum() {
       mana: fs.mana || 100, maxMana: fs.mana || 100, manaRegen: fs.manaRegen || BASE_MANA_REGEN,
       skills, buffs: initBuffs, alive: true, tb: mergedTb, level,
       hunterPassive, // stored for combat-time conditional checks
-      passiveState: { sianStacks: 0 }, // stacking passives state
+      artPassives, // artifact set passives for combat
+      passiveState: {
+        sianStacks: 0,
+        ...(weaponPassive === 'sulfuras_fury' ? { sulfurasStacks: 0 } : {}),
+        ...(weaponPassive === 'shadow_silence' ? { shadowSilence: [] } : {}),
+        ...(weaponPassive === 'katana_z_fury' ? { katanaZStacks: 0 } : {}),
+        ...(weaponPassive === 'katana_v_chaos' ? { katanaVState: { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1 } } : {}),
+        // Artifact passive state
+        curseStacks: 0,           // Burning Curse: stacking DMG per turn
+        curseDmgDealt: 0,         // Burning Curse: base dmg dealt bonus
+        curseDmgTaken: 0,         // Burning Curse: dmg taken penalty
+        curseStackPerTurn: 0,     // Burning Curse: per-turn increment
+        curseRescueUsed: false,   // Enhanced Curse: one-time rescue heal
+        curseRescue: null,        // Enhanced Curse: rescue config
+        greedStacks: 0,           // Burning Greed: CRIT stacks on break
+        greedCritPer: 0,          // Burning Greed: crit per stack
+        greedMaxStacks: 10,       // Burning Greed: max stacks
+        greedCooldown: 0,         // Burning Greed: current cooldown counter
+        greedCooldownMax: 0,      // Burning Greed: cooldown in turns
+        ironWillStacks: 0,        // Iron Will: DEF stacks on ultimate
+        ironWillUltBonus: 0,      // Iron Will: ult damage bonus
+        infamyStacks: 0,          // Chaotic Infamy: basic DMG stacking
+        infamyBasicDmgPer: 0,     // Chaotic Infamy: basic dmg per stack
+        infamyDmgTakenPer: 0,     // Chaotic Infamy: dmg taken per stack
+        infamyMaxStacks: 20,      // Chaotic Infamy: max stacks
+        infamyMpCooldown: 0,      // Chaotic Infamy: MP recovery cooldown
+        infamyMpCooldownMax: 0,   // Chaotic Infamy: MP recovery cd max
+        infamyMpRecovery: 0,      // Chaotic Infamy: MP recovery %
+      },
     };
   };
 
@@ -735,6 +770,70 @@ export default function ShadowColosseum() {
         });
       }
     });
+    // ─── Apply ARC II artifact set passives (onBattleStart + team buffs) ───
+    fighters.forEach(f => {
+      const ap = f.artPassives || [];
+      const ps = f.passiveState;
+      ap.forEach(p => {
+        // ── Burning Curse (2p/4p/8p): glass cannon — individual ──
+        if (p.type === 'curse' || p.type === 'enhancedCurse' || p.type === 'burningCurse') {
+          ps.curseDmgDealt = p.damageDealt || 0;
+          ps.curseDmgTaken = p.damageTaken || 0;
+          ps.curseStackPerTurn = p.stackPerTurn || 0;
+          ps.curseStacks = 0;
+          if (p.rescue) {
+            ps.curseRescue = { threshold: p.rescueThreshold, heal: p.rescueHeal };
+            ps.curseRescueUsed = false;
+          }
+        }
+        // ── Burning Greed (2p/4p): CRIT on break — individual ──
+        if (p.type === 'greed' || p.type === 'enhancedGreed') {
+          ps.greedCritPer = p.critPerStack || 1;
+          ps.greedMaxStacks = p.maxStacks || 10;
+          ps.greedCooldownMax = p.cooldown || 2;
+          ps.greedCooldown = 0;
+          ps.greedStacks = 0;
+        }
+        // ── Burning Greed (8p): team CRIT + Break bonus — TEAM ──
+        if (p.type === 'burningGreed') {
+          fighters.forEach(ally => {
+            ally.crit = Math.min(80, ally.crit + (p.teamCritRate || 0));
+            ally.tb = { ...ally.tb, critDamage: (ally.tb.critDamage || 0) + (p.teamCritDamage || 0) };
+          });
+          ps.breakBonus = p.breakBonus || 0;
+        }
+        // ── Iron Will (4p): DEF + Ult DMG on ultimate — individual ──
+        if (p.type === 'ironWill') {
+          ps.ironWillStacks = 0;
+          ps.ironWillUltBonus = p.ultDamageBonus || 0.50;
+          ps.ironWillDefPerStack = p.defPerStack || 0.05;
+          ps.ironWillMaxStacks = p.maxStacks || 5;
+        }
+        // ── Chaotic Infamy (2p/4p): Basic DMG stacking — individual ──
+        if (p.type === 'infamy' || p.type === 'enhancedInfamy') {
+          ps.infamyBasicDmgPer = p.basicDmgPerStack || 0.015;
+          ps.infamyDmgTakenPer = p.damageTakenPerStack || 0.01;
+          ps.infamyMaxStacks = p.maxStacks || 20;
+          ps.infamyMpRecovery = p.mpRecovery || 0;
+          ps.infamyMpCooldownMax = p.mpCooldown || 0;
+          ps.infamyMpCooldown = 0;
+          ps.infamyStacks = 0;
+        }
+        // ── Chaotic Infamy (8p): team DMG + enhanced stacking — TEAM ──
+        if (p.type === 'chaoticInfamy') {
+          fighters.forEach(ally => {
+            ally.tb = { ...ally.tb, allDamage: (ally.tb.allDamage || 0) + (p.teamDamage || 0) * 100 };
+          });
+          ps.chaoticThreshold = p.chaoticThreshold || 10;
+          ps.chaoticBonus = p.chaoticBonus || 1.00;
+          ps.removeDamageTaken = p.removeDamageTaken || false;
+          ps.infamyMpRecovery = p.mpRecovery || 0;
+          ps.infamyMpCooldownMax = p.mpCooldown || 0;
+          ps.infamyMpCooldown = 0;
+        }
+      });
+    });
+
     // Save team for "Previous Team" button
     setData(prev => ({ ...prev, arc2LastTeam: arc2Team.filter(Boolean) }));
     // Build multi-enemy encounter
@@ -800,6 +899,25 @@ export default function ShadowColosseum() {
     setArc2Battle(prev => {
       if (!prev || (prev.phase !== 'pick_target' && prev.phase !== 'pick_ally')) return prev;
       return { ...prev, phase: 'pick', pendingSkill: null };
+    });
+  };
+
+  // ─── Pass turn (all skills on CD / no mana) ──────────────
+  const arc2PassTurn = () => {
+    setArc2Battle(prev => {
+      if (!prev || prev.phase !== 'pick') return prev;
+      const b = JSON.parse(JSON.stringify(prev));
+      const entity = b.turnOrder[b.currentTurn];
+      if (!entity || entity.type !== 'team') return prev;
+      const fighter = b.team[entity.idx];
+      if (!fighter || !fighter.alive) return prev;
+      // Mana regen on pass
+      fighter.mana = Math.min(fighter.maxMana || 100, (fighter.mana || 0) + (fighter.manaRegen || 5));
+      b.log.unshift({ msg: `${fighter.name} passe son tour (MP +${fighter.manaRegen || 5})`, type: 'player' });
+      b.lastAction = { type: 'pass', idx: entity.idx };
+      b.pendingSkill = null;
+      b.phase = 'advance';
+      return b;
     });
   };
 
@@ -904,6 +1022,54 @@ export default function ShadowColosseum() {
       if (hp.type === 'dotDmg') tbForAttack.allDamage = (tbForAttack.allDamage || 0) + hp.value;
     }
 
+    // ─── Weapon passives: ATK buff before damage calc ───
+    // Sulfuras: accumulated DMG bonus
+    if (ps.sulfurasStacks !== undefined && ps.sulfurasStacks > 0) {
+      fighter.atk = Math.floor(fighter.atk * (1 + ps.sulfurasStacks / 100));
+    }
+    // Shadow Silence (Rae'shalare): +100% ATK per active stack
+    if (ps.shadowSilence !== undefined) {
+      const activeStacks = ps.shadowSilence.filter(s => s > 0).length;
+      if (activeStacks > 0) fighter.atk = Math.floor(fighter.atk * (1 + activeStacks * 1.0));
+    }
+    // Katana Z: +5% ATK per stack
+    if (ps.katanaZStacks !== undefined && ps.katanaZStacks > 0) {
+      fighter.atk = Math.floor(fighter.atk * (1 + ps.katanaZStacks * KATANA_Z_ATK_PER_HIT / 100));
+    }
+    // Katana V: x6 DMG multiplier + allStatBuff
+    if (ps.katanaVState?.nextDmgMult > 1) {
+      fighter.atk = Math.floor(fighter.atk * ps.katanaVState.nextDmgMult);
+    }
+    if (ps.katanaVState?.allStatBuff > 0) {
+      fighter.atk = Math.floor(fighter.atk * (1 + ps.katanaVState.allStatBuff / 100));
+    }
+
+    // ─── Artifact passives: beforeAttack ───
+    // Burning Curse: +DMG dealt bonus + stacking
+    if (ps.curseDmgDealt > 0) {
+      const curseBonus = ps.curseDmgDealt + (ps.curseStacks * ps.curseStackPerTurn);
+      fighter.atk = Math.floor(fighter.atk * (1 + curseBonus));
+    }
+    // Chaotic Infamy: Basic skill DMG bonus from stacks
+    if (ps.infamyStacks > 0 && ps.infamyBasicDmgPer > 0) {
+      const infamyBonus = ps.infamyStacks * ps.infamyBasicDmgPer;
+      fighter.atk = Math.floor(fighter.atk * (1 + infamyBonus));
+    }
+    // Chaotic Infamy 8p: at threshold stacks, Basic + Ultimate DMG +100%
+    if (ps.chaoticBonus && ps.infamyStacks >= (ps.chaoticThreshold || 10)) {
+      fighter.atk = Math.floor(fighter.atk * (1 + ps.chaoticBonus));
+      b.log.unshift({ msg: `${fighter.name} : Chaotic Infamy ! DMG +${Math.round(ps.chaoticBonus * 100)}% !`, type: 'player' });
+    }
+    // Burning Greed: CRIT bonus from stacks (individual)
+    if (ps.greedStacks > 0 && ps.greedCritPer > 0) {
+      fighter.crit = Math.min(80, fighter.crit + ps.greedStacks * ps.greedCritPer);
+    }
+    // Iron Will: Ultimate DMG bonus
+    if (ps.ironWillUltBonus > 0 && skill.cdMax >= 4) {
+      fighter.atk = Math.floor(fighter.atk * (1 + ps.ironWillUltBonus));
+      b.log.unshift({ msg: `${fighter.name} : Iron Will ! Ultimate DMG +${Math.round(ps.ironWillUltBonus * 100)}% !`, type: 'player' });
+    }
+
     let result = computeAttack(fighter, skill, enemy, tbForAttack);
     fighter.atk = savedAtk;
     fighter.def = savedDef;
@@ -917,6 +1083,96 @@ export default function ShadowColosseum() {
     const dmg = result.damage || 0;
     enemy.hp = Math.max(0, enemy.hp - dmg);
     if (enemy.hp <= 0) enemy.alive = false;
+
+    // ─── Weapon passives: post-attack stack building ───
+    // Sulfuras: +33% per turn (max 100%)
+    if (ps.sulfurasStacks !== undefined) {
+      ps.sulfurasStacks = Math.min(SULFURAS_STACK_MAX, ps.sulfurasStacks + SULFURAS_STACK_PER_TURN);
+    }
+    // Shadow Silence: decay + 10% proc chance
+    if (ps.shadowSilence !== undefined) {
+      ps.shadowSilence = ps.shadowSilence.map(t => t - 1).filter(t => t > 0);
+      if (ps.shadowSilence.length < 3 && Math.random() < 0.10) {
+        ps.shadowSilence.push(5);
+        b.log.unshift({ msg: `${fighter.name} : Murmure de la Mort proc ! +100% ATK (x${ps.shadowSilence.length}/3)`, type: 'player' });
+      }
+    }
+    // Katana Z: +1 stack
+    if (ps.katanaZStacks !== undefined) {
+      ps.katanaZStacks++;
+    }
+    // Katana V: consume x6, DoT, buff roll
+    if (ps.katanaVState) {
+      if (ps.katanaVState.nextDmgMult > 1) ps.katanaVState.nextDmgMult = 1;
+      if (ps.katanaVState.dots < KATANA_V_DOT_MAX_STACKS) ps.katanaVState.dots++;
+      // DoT damage to target
+      if (ps.katanaVState.dots > 0 && enemy.alive) {
+        const dotDmg = Math.max(1, Math.floor(fighter.atk * KATANA_V_DOT_PCT * ps.katanaVState.dots));
+        enemy.hp = Math.max(0, enemy.hp - dotDmg);
+        if (enemy.hp <= 0) enemy.alive = false;
+      }
+      // 30% chance buff roll
+      if (Math.random() < KATANA_V_BUFF_CHANCE) {
+        const roll = Math.random();
+        if (roll < 0.33) {
+          ps.katanaVState.allStatBuff += 10;
+          b.log.unshift({ msg: `${fighter.name} : Katana V Benediction +10% stats (total +${ps.katanaVState.allStatBuff}%)`, type: 'player' });
+        } else if (roll < 0.66) {
+          ps.katanaVState.shield = true;
+        } else {
+          ps.katanaVState.nextDmgMult = 6;
+          b.log.unshift({ msg: `${fighter.name} : Katana V Puissance x6 prochain coup !`, type: 'player' });
+        }
+      }
+    }
+
+    // ─── Artifact passives: afterAttack ───
+    // Burning Curse: increment stacking counter per turn
+    if (ps.curseStackPerTurn > 0) {
+      ps.curseStacks++;
+    }
+    // Burning Curse rescue: heal 25% HP if below threshold (once)
+    if (ps.curseRescue && !ps.curseRescueUsed && (fighter.hp / fighter.maxHp) < ps.curseRescue.threshold) {
+      const rescueHeal = Math.floor(fighter.maxHp * ps.curseRescue.heal);
+      fighter.hp = Math.min(fighter.maxHp, fighter.hp + rescueHeal);
+      ps.curseRescueUsed = true;
+      b.log.unshift({ msg: `${fighter.name} : Rescue ! +${rescueHeal} PV !`, type: 'player' });
+    }
+    // Chaotic Infamy: +1 stack per skill use
+    if (ps.infamyBasicDmgPer > 0) {
+      ps.infamyStacks = Math.min(ps.infamyMaxStacks, ps.infamyStacks + 1);
+      // MP recovery on basic skill (with cooldown)
+      if (ps.infamyMpRecovery > 0 && skill.cdMax === 0 && ps.infamyMpCooldown <= 0) {
+        const mpGain = Math.floor(fighter.maxMana * ps.infamyMpRecovery);
+        fighter.mana = Math.min(fighter.maxMana, (fighter.mana || 0) + mpGain);
+        ps.infamyMpCooldown = ps.infamyMpCooldownMax;
+        b.log.unshift({ msg: `${fighter.name} : Infamy MP +${mpGain} !`, type: 'player' });
+      }
+      if (ps.infamyMpCooldown > 0) ps.infamyMpCooldown--;
+    }
+    // Chaotic Infamy 8p: remove damage taken penalty
+    if (ps.removeDamageTaken && ps.infamyDmgTakenPer > 0) {
+      ps.infamyDmgTakenPer = 0;
+    }
+    // Burning Greed: decrement cooldown + on break (element advantage hit), stack CRIT
+    if (ps.greedCooldown > 0) ps.greedCooldown--;
+    if (ps.greedCritPer > 0 && ps.greedCooldown <= 0) {
+      const elemMult = getElementMult(fighter.element, enemy.element);
+      if (elemMult > 1 && dmg > 0) {
+        ps.greedStacks = Math.min(ps.greedMaxStacks, ps.greedStacks + 1);
+        ps.greedCooldown = ps.greedCooldownMax;
+        b.log.unshift({ msg: `${fighter.name} : Greed ! CRIT +${ps.greedCritPer}% (x${ps.greedStacks}) !`, type: 'player' });
+      }
+    }
+    // Iron Will: on ultimate use, +DEF% stack
+    if (ps.ironWillDefPerStack > 0 && skill.cdMax >= 4) {
+      if (ps.ironWillStacks < (ps.ironWillMaxStacks || 5)) {
+        ps.ironWillStacks++;
+        fighter.def = Math.floor(fighter.def * (1 + ps.ironWillDefPerStack));
+        b.log.unshift({ msg: `${fighter.name} : Iron Will DEF +${Math.round(ps.ironWillDefPerStack * 100)}% ! (x${ps.ironWillStacks})`, type: 'player' });
+      }
+    }
+
     // Heal blocked by antiHeal debuff
     const isAntiHealed = fighter.buffs.some(bf => bf.type === 'antiHeal');
     if (result.healed && !isAntiHealed) {
@@ -1011,9 +1267,52 @@ export default function ShadowColosseum() {
         }
         const tFighter = b.team[tIdx];
         const scaled = { ...skill, power: skill.power ? Math.floor(skill.power * ARC2_POWER_SCALE(b.bossTier)) : 0 };
+        // Katana V shield: absorb hit entirely
+        if (tFighter.passiveState?.katanaVState?.shield) {
+          tFighter.passiveState.katanaVState.shield = false;
+          b.log.unshift({ msg: `${tFighter.name} : Bouclier Divin absorbe le coup !`, type: 'player' });
+          if (skill.cdMax > 0) skill.cd = skill.cdMax;
+          b.lastAction = { type: 'enemy', enemyIdx: entity.idx, targetIdx: tIdx, damage: 0, crit: false, ko: false };
+          b.phase = 'advance';
+          return b;
+        }
+
         const result = computeAttack(enemy, scaled, tFighter);
-        const dmg = result.damage || 0;
+        let dmg = result.damage || 0;
+        // Burning Curse / Chaotic Infamy: increased damage taken
+        const tPs = tFighter.passiveState || {};
+        if (tPs.curseDmgTaken > 0) {
+          dmg = Math.floor(dmg * (1 + tPs.curseDmgTaken));
+        }
+        if (tPs.infamyDmgTakenPer > 0 && tPs.infamyStacks > 0) {
+          dmg = Math.floor(dmg * (1 + tPs.infamyStacks * tPs.infamyDmgTakenPer));
+        }
         tFighter.hp = Math.max(0, tFighter.hp - dmg);
+        // Burning Curse rescue: heal if below threshold (once)
+        if (tPs.curseRescue && !tPs.curseRescueUsed && tFighter.hp > 0 && (tFighter.hp / tFighter.maxHp) < tPs.curseRescue.threshold) {
+          const rescueHeal = Math.floor(tFighter.maxHp * tPs.curseRescue.heal);
+          tFighter.hp = Math.min(tFighter.maxHp, tFighter.hp + rescueHeal);
+          tPs.curseRescueUsed = true;
+          b.log.unshift({ msg: `${tFighter.name} : Rescue ! +${rescueHeal} PV !`, type: 'player' });
+        }
+
+        // Katana Z: counter-attack (50%) + stack persistence (50% per stack)
+        if (tFighter.passiveState?.katanaZStacks !== undefined && dmg > 0 && tFighter.hp > 0) {
+          if (Math.random() < KATANA_Z_COUNTER_CHANCE) {
+            const counterDmg = Math.max(1, Math.floor(tFighter.atk * KATANA_Z_COUNTER_MULT));
+            enemy.hp = Math.max(0, enemy.hp - counterDmg);
+            if (enemy.hp <= 0) enemy.alive = false;
+            b.log.unshift({ msg: `${tFighter.name} : Katana Z contre-attaque ! -${counterDmg}`, type: 'player' });
+          }
+          if (tFighter.passiveState.katanaZStacks > 0) {
+            let surviving = 0;
+            for (let i = 0; i < tFighter.passiveState.katanaZStacks; i++) {
+              if (Math.random() < KATANA_Z_STACK_PERSIST_CHANCE) surviving++;
+            }
+            tFighter.passiveState.katanaZStacks = surviving;
+          }
+        }
+
         if (tFighter.hp <= 0) tFighter.alive = false;
         if (result.healed) enemy.hp = Math.min(enemy.maxHp, enemy.hp + result.healed);
         // ─── Standard buffs/debuffs ───
@@ -1770,6 +2069,52 @@ export default function ShadowColosseum() {
     let immortelUsed = battle.immortelUsed || false;
     let colossusUsed = battle.colossusUsed || false;
     const log = [...battle.log];
+
+    // ─── Pass turn (skillIdx === -1) ───
+    if (skillIdx === -1) {
+      player.mana = Math.min(player.maxMana || 100, (player.mana || 0) + (player.manaRegen || 5));
+      log.push({ text: `${player.name || 'Joueur'} passe son tour (MP +${player.manaRegen || 5})`, type: 'info', id: Date.now() });
+      setPhase('player_atk');
+      setDmgPopup(null);
+      // Skip player attack, jump to enemy turn after delay
+      setTimeout(() => {
+        setPhase('enemy_atk');
+        const eSkill = aiPickSkill(enemy);
+        const eRes = computeAttack(enemy, eSkill, player);
+        let dmgToPlayer = eRes.damage;
+        let dodged = false;
+        passives.forEach(p => {
+          if (p.trigger === 'onHit' && p.type === 'dodge' && Math.random() < p.chance) {
+            dodged = true;
+            log.push({ text: `${player.name} esquive l'attaque !`, type: 'info', id: Date.now() + 0.9 });
+          }
+        });
+        if (dodged) {
+          dmgToPlayer = 0;
+          passives.forEach(p => {
+            if (p.trigger === 'onDodge' && p.type === 'counter') {
+              const counterDmg = Math.max(1, Math.floor(getEffStat(player.atk, player.buffs, 'atk') * p.powerMult));
+              enemy.hp = Math.max(0, enemy.hp - counterDmg);
+              log.push({ text: `Contre-attaque ! -${counterDmg} PV`, type: 'player', id: Date.now() + 0.95 });
+            }
+          });
+        } else if (dmgToPlayer > 0) {
+          player.hp = Math.max(0, player.hp - dmgToPlayer);
+        }
+        if (eRes.healed) enemy.hp = Math.min(enemy.maxHp, enemy.hp + eRes.healed);
+        player.skills.forEach(s => { if (s.cd > 0) s.cd--; });
+        enemy.skills.forEach(s => { if (s.cd > 0) s.cd--; });
+        player.buffs = player.buffs.map(b => ({ ...b, turns: b.turns - 1 })).filter(b => b.turns > 0);
+        enemy.buffs = enemy.buffs.map(b => ({ ...b, turns: b.turns - 1 })).filter(b => b.turns > 0);
+        setDmgPopup(dmgToPlayer > 0 ? { target: 'player', value: dmgToPlayer, isCrit: eRes.isCrit } : null);
+        setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, immortelUsed, colossusUsed, passiveState: ps, turn: prev.turn + 1, log: log.slice(-10) }));
+        if (enemy.hp <= 0) { setTimeout(() => handleVictory(), autoReplayRef.current ? 600 : 1200); return; }
+        if (player.hp <= 0) { setTimeout(() => handleDefeat(), autoReplayRef.current ? 600 : 1200); return; }
+        setTimeout(() => { setPhase('idle'); setDmgPopup(null); }, autoReplayRef.current ? 400 : 800);
+      }, autoReplayRef.current ? 600 : 1200);
+      return;
+    }
+
     const playerSkill = player.skills[skillIdx];
 
     // Check mana
@@ -2107,6 +2452,9 @@ export default function ShadowColosseum() {
     if (!battle) return 0;
     const p = battle.player;
     const e = battle.enemy;
+    // If all skills blocked → pass turn
+    const allBlocked = p.skills.every(sk => sk.cd > 0 || ((sk.manaCost || 0) > 0 && p.mana < (sk.manaCost || 0)));
+    if (allBlocked) return -1;
     let bestIdx = 0;
     let bestScore = -Infinity;
     p.skills.forEach((sk, i) => {
@@ -4502,6 +4850,15 @@ export default function ShadowColosseum() {
                     );
                   })}
                 </div>
+                {/* Pass turn button when all skills are blocked */}
+                {activeChar.skills.every(sk => sk.cd > 0 || (sk.manaCost > 0 && activeChar.mana < sk.manaCost)) && (
+                  <button
+                    onClick={arc2PassTurn}
+                    className="w-full py-2 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 active:scale-95 transition-all text-center">
+                    <div className="text-[10px] font-bold text-amber-400">Passer le tour</div>
+                    <div className="text-[8px] text-amber-400/60">MP +{activeChar.manaRegen || 5}</div>
+                  </button>
+                )}
               </div>
             )}
 
