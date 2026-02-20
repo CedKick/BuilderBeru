@@ -38,7 +38,7 @@ export default function AdminMailSender() {
 
   // Weapon form
   const [weaponFormId, setWeaponFormId] = useState('');
-  const [weaponFormAwakening, setWeaponFormAwakening] = useState(0);
+  const [weaponFormAwakening, setWeaponFormAwakening] = useState(1);
 
   // UI
   const [showPreview, setShowPreview] = useState(false);
@@ -69,7 +69,12 @@ export default function AdminMailSender() {
   };
 
   const addWeapon = (weaponId, awakening) => {
-    if (!weaponId) return;
+    console.log('addWeapon called:', { weaponId, awakening });
+
+    if (!weaponId) {
+      console.log('No weaponId provided');
+      return;
+    }
 
     // Check if weapon already added
     if (selectedWeapons.find(w => w.id === weaponId)) {
@@ -77,7 +82,13 @@ export default function AdminMailSender() {
       return;
     }
 
-    setSelectedWeapons(prev => [...prev, { id: weaponId, awakening: awakening || 0 }]);
+    const newWeapon = { id: weaponId, awakening: awakening || 1 };
+    console.log('Adding weapon:', newWeapon);
+    setSelectedWeapons(prev => {
+      const updated = [...prev, newWeapon];
+      console.log('Updated selectedWeapons:', updated);
+      return updated;
+    });
   };
 
   const removeWeapon = (weaponId) => {
@@ -466,20 +477,37 @@ export default function AdminMailSender() {
                     </option>
                   ))}
                 </select>
-                <input
-                  type="number"
-                  value={weaponFormAwakening}
-                  onChange={(e) => setWeaponFormAwakening(parseInt(e.target.value) || 0)}
-                  min="0"
-                  max="10"
-                  placeholder="Awaken"
-                  className="w-24 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-amber-500"
-                />
+
+                {/* Awakening controls */}
+                <div className="flex items-center gap-1 bg-white/10 border border-white/20 rounded-lg px-2">
+                  <button
+                    onClick={() => setWeaponFormAwakening(Math.max(0, weaponFormAwakening - 1))}
+                    className="text-white hover:text-amber-400 p-1"
+                    title="Diminuer"
+                  >
+                    <span className="text-xl">−</span>
+                  </button>
+                  <span className="text-white font-bold w-12 text-center">
+                    A{weaponFormAwakening}
+                  </span>
+                  <button
+                    onClick={() => setWeaponFormAwakening(Math.min(10, weaponFormAwakening + 1))}
+                    className="text-white hover:text-amber-400 p-1"
+                    title="Augmenter"
+                  >
+                    <span className="text-xl">+</span>
+                  </button>
+                </div>
+
                 <button
                   onClick={() => {
+                    if (!weaponFormId) {
+                      alert('Veuillez selectionner une arme');
+                      return;
+                    }
                     addWeapon(weaponFormId, weaponFormAwakening);
                     setWeaponFormId('');
-                    setWeaponFormAwakening(0);
+                    setWeaponFormAwakening(1);
                   }}
                   className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 >
