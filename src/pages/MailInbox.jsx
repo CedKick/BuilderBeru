@@ -526,7 +526,7 @@ export default function MailInbox() {
                             {mailTypeInfo.icon} {mailTypeInfo.label}
                           </span>
                           {!mail.read && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500 text-white font-bold">
                               NOUVEAU
                             </span>
                           )}
