@@ -93,13 +93,6 @@ export default function BuilderMenu({ isOpen, onClose }) {
           icon: Wrench,
           color: 'blue'
         },
-        {
-          path: '/mail',
-          label: t('menu.mail', 'Courrier'),
-          icon: Mail,
-          color: 'amber',
-          badge: unreadMailCount > 0 ? unreadMailCount : null
-        },
       ]
     },
     {
@@ -186,6 +179,14 @@ export default function BuilderMenu({ isOpen, onClose }) {
           icon: Gamepad2,
           color: 'red',
           isNew: true
+        },
+        {
+          path: '/mail',
+          label: t('menu.mail', 'Courrier'),
+          icon: Mail,
+          color: 'amber',
+          badge: unreadMailCount > 0 ? unreadMailCount : null,
+          isSubItem: true
         },
         {
           path: '/codex',
@@ -315,6 +316,7 @@ export default function BuilderMenu({ isOpen, onClose }) {
                           : `text-gray-300 ${colorClass}`
                         }
                         ${item.isSpecial ? 'special-item border-yellow-500/30' : ''}
+                        ${item.isSubItem ? 'ml-6 text-sm' : ''}
                       `}
                     >
                       <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-purple-400' : ''}`} />
