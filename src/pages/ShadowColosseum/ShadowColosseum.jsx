@@ -8297,10 +8297,14 @@ export default function ShadowColosseum() {
       {/* ═══ MAIL BUTTON (below bell) ═══ */}
       <button
         onClick={() => navigate('/mail')}
-        className="fixed top-28 right-4 z-40 w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 border-2 border-purple-400/50 shadow-lg shadow-purple-500/30 flex items-center justify-center text-lg hover:scale-110 active:scale-95 transition-transform"
+        className="fixed top-28 right-4 z-40 w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 border-2 border-purple-400/50 shadow-lg shadow-purple-500/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
         title="Courrier"
       >
-        📧
+        <img
+          src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771602450/logoMail_du0dp8.png"
+          alt="Mail"
+          className="w-6 h-6"
+        />
         {unreadMailCount > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 border border-red-300 text-[10px] font-bold text-white flex items-center justify-center px-1">
             {unreadMailCount > 99 ? '99+' : unreadMailCount}
