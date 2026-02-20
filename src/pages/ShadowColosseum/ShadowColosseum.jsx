@@ -2822,13 +2822,11 @@ export default function ShadowColosseum() {
                           </div>
                           {HUNTERS[selChibi] && (() => {
                             const _es = getChibiEveilStars(selChibi);
-                            return (
+                            return _es > 0 ? (
                               <div className="text-[10px] mt-0.5">
-                                <span className="text-yellow-400">{'★'.repeat(_es)}</span>
-                                <span className="text-gray-600">{'☆'.repeat(5 - _es)}</span>
-                                {_es > 0 && <span className="text-yellow-300 ml-1 font-bold">+{_es * 5}% stats</span>}
+                                <span className="text-yellow-400 font-bold">A{_es}</span>
                               </div>
-                            );
+                            ) : null;
                           })()}
                         </div>
                       </div>
@@ -3745,7 +3743,7 @@ export default function ShadowColosseum() {
                             <div className="flex items-center gap-1.5 mb-0.5">
                               <span className="text-[11px] font-bold text-white truncate">{m.name}</span>
                               <span className={`text-[9px] ${ELEMENTS[m.element]?.color}`}>{ELEMENTS[m.element]?.icon}</span>
-                              {m.isHunter && m.stars > 0 && <span className="text-[8px] text-yellow-400">{'★'.repeat(m.stars)}</span>}
+                              {m.isHunter && m.stars > 0 && <span className="text-[8px] text-yellow-400 font-bold">A{m.stars}</span>}
                               {elemAdv && <span className="text-[8px] px-1 rounded bg-green-900/50 text-green-400">+30%</span>}
                               {elemWeak && <span className="text-[8px] px-1 rounded bg-red-900/50 text-red-400">-30%</span>}
                             </div>
@@ -4614,13 +4612,11 @@ export default function ShadowColosseum() {
               </div>
               {HUNTERS[id] && (() => {
                 const _es = getChibiEveilStars(id);
-                return (
+                return _es > 0 ? (
                   <div className="text-[10px] mt-0.5">
-                    <span className="text-yellow-400">{'★'.repeat(_es)}</span>
-                    <span className="text-gray-600">{'☆'.repeat(5 - _es)}</span>
-                    {_es > 0 && <span className="text-yellow-300 ml-1 font-bold">+{_es * 5}%</span>}
+                    <span className="text-yellow-400 font-bold">A{_es}</span>
                   </div>
-                );
+                ) : null;
               })()}
               {/* Skin Selector */}
               {HUNTER_SKINS[id] && (() => {
@@ -4791,8 +4787,7 @@ export default function ShadowColosseum() {
                 const _es = getChibiEveilStars(id);
                 return _es > 0 ? (
                   <div className="text-[10px] mt-0.5">
-                    <span className="text-yellow-400">{'★'.repeat(_es)}</span>
-                    <span className="text-yellow-300 ml-1 font-bold">+{_es * 5}%</span>
+                    <span className="text-yellow-400 font-bold">A{_es}</span>
                   </div>
                 ) : null;
               })()}
@@ -4926,8 +4921,7 @@ export default function ShadowColosseum() {
                 const _es = getChibiEveilStars(id);
                 return _es > 0 ? (
                   <div className="text-[10px] mt-0.5">
-                    <span className="text-yellow-400">{'★'.repeat(_es)}</span>
-                    <span className="text-yellow-300 ml-1 font-bold">+{_es * 5}%</span>
+                    <span className="text-yellow-400 font-bold">A{_es}</span>
                   </div>
                 ) : null;
               })()}
@@ -7487,21 +7481,18 @@ export default function ShadowColosseum() {
                     </div>
                   )}
 
-                  {/* Star Bonuses */}
-                  {ch.isHunter && (
+                  {/* Awakening info */}
+                  {ch.isHunter && ch.stars > 0 && (
                     <div>
-                      <div className="text-[9px] text-gray-500 font-bold uppercase mb-1">Eveil (Duplicates)</div>
-                      <div className="flex flex-wrap gap-1">
-                        {[1, 2, 3, 4, 5].map(s => {
-                          const active = ch.stars >= s;
-                          const bonus = s * 5; // eveilMult = 1 + stars * 0.05
-                          return (
-                            <div key={s} className={`px-1.5 py-0.5 rounded text-[9px] border ${active ? 'border-yellow-500/40 bg-yellow-900/30 text-yellow-300' : 'border-gray-700/30 bg-gray-900/30 text-gray-600'}`}>
-                              <span className="font-bold">{'★'.repeat(s)}</span>
-                              <span className="ml-1">+{bonus}% stats</span>
-                            </div>
-                          );
-                        })}
+                      <div className="text-[9px] text-gray-500 font-bold uppercase mb-1">Awakening</div>
+                      <div className="px-2 py-1 rounded text-[10px] border border-yellow-500/40 bg-yellow-900/30 text-yellow-300 inline-block">
+                        <span className="font-bold">A{ch.stars}</span>
+                        <span className="ml-2 text-gray-400">
+                          {ch.stars <= 5
+                            ? `Bonus fixes appliqués`
+                            : `+${Math.floor(ch.stars / 5) - 1}% HP/ATK/DEF (paliers)`
+                          }
+                        </span>
                       </div>
                     </div>
                   )}
