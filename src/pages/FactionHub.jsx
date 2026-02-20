@@ -1,5 +1,5 @@
 // FactionHub.jsx - Système de Factions (Vox Cordis vs Replicant)
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -62,6 +62,7 @@ export default function FactionHub() {
       icon: '💙',
       mascot: '🛡️', // Placeholder until chibi ready
       bgImage: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771599084/VCBGround_vekobq.jpg',
+      music: 'https://res.cloudinary.com/dbg7m8qjd/video/upload/v1771600792/Suzume_a8mpy1.mp3',
       motto: '"Le cœur entend ce que l\'univers murmure."',
       lore: [
         {
@@ -108,6 +109,7 @@ export default function FactionHub() {
       icon: '🔴',
       mascot: '⚔️', // Placeholder until chibi ready
       bgImage: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771599142/RPBground_dgqvzj.jpg',
+      music: 'https://res.cloudinary.com/dbg7m8qjd/video/upload/v1771499910/OSTReplicant_jfru6g.mp3',
       motto: '"Nous ne sommes pas nés. Nous avons continué."',
       lore: [
         {
@@ -527,6 +529,39 @@ function FactionCard({ faction, onJoin }) {
   const [isHovered, setIsHovered] = useState(false);
   const [showLore, setShowLore] = useState(false);
   const [loreChapter, setLoreChapter] = useState(0);
+  const audioRef = useRef(null);
+
+  // Initialize audio
+  useEffect(() => {
+    if (faction.music) {
+      audioRef.current = new Audio(faction.music);
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.4; // 40% volume
+    }
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, [faction.music]);
+
+  // Handle music playback on hover and lore reading
+  useEffect(() => {
+    if (!audioRef.current) return;
+
+    if (isHovered || showLore) {
+      // Play music when hovering or reading lore
+      audioRef.current.play().catch(err => {
+        console.log('Audio play prevented:', err);
+      });
+    } else {
+      // Pause music only when not hovering AND not reading lore
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0; // Reset to start
+    }
+  }, [isHovered, showLore]);
 
   if (showLore) {
     return (
@@ -534,7 +569,10 @@ function FactionCard({ faction, onJoin }) {
         faction={faction}
         chapter={loreChapter}
         onChapterChange={setLoreChapter}
-        onClose={() => setShowLore(false)}
+        onClose={() => {
+          setShowLore(false);
+          setLoreChapter(0);
+        }}
         onJoin={() => onJoin(faction.id)}
       />
     );
