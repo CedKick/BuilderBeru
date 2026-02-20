@@ -469,10 +469,13 @@ export default function AdminMailSender() {
                   value={weaponFormId}
                   onChange={(e) => setWeaponFormId(e.target.value)}
                   className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-amber-500"
+                  style={{
+                    colorScheme: 'dark'
+                  }}
                 >
-                  <option value="">Selectionner une arme</option>
+                  <option value="" style={{ backgroundColor: '#1a1a2a', color: '#9ca3af' }}>Selectionner une arme</option>
                   {Object.entries(WEAPONS).map(([id, weapon]) => (
-                    <option key={id} value={id}>
+                    <option key={id} value={id} style={{ backgroundColor: '#1a1a2a', color: 'white' }}>
                       {weapon.name} ({weapon.rarity})
                     </option>
                   ))}
