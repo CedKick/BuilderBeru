@@ -19,12 +19,7 @@ const MAIL_TYPES = {
 };
 
 // ── Béru Chibi Dissuasion System ──
-const BERU_SPRITES = {
-  idle: 'https://res.cloudinary.com/dkfkbvarj/image/upload/beru_face_w2rdyn.png',
-  angry: 'https://res.cloudinary.com/dkfkbvarj/image/upload/BeruAngry_zkblsv.png',
-  left: 'https://res.cloudinary.com/dkfkbvarj/image/upload/beru_left_bvtyba.png',
-  right: 'https://res.cloudinary.com/dkfkbvarj/image/upload/beru_right_ofwvy5.png',
-};
+const BERU_SPRITE = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png';
 
 const BERU_DISSUASION_LINES = [
   // Phase 1 — Gentle
@@ -114,9 +109,7 @@ function BeruChibiDissuasion({ containerRef }) {
   }, [isChasing, targetPos]);
 
   const currentLine = BERU_DISSUASION_LINES[lineIndex];
-  const spriteUrl = isChasing
-    ? (facingRight ? BERU_SPRITES.right : BERU_SPRITES.left)
-    : BERU_SPRITES[currentLine.sprite];
+  const isAngry = currentLine.sprite === 'angry';
 
   return (
     <div
@@ -141,14 +134,18 @@ function BeruChibiDissuasion({ containerRef }) {
 
       {/* Béru sprite */}
       <img
-        src={spriteUrl}
+        src={BERU_SPRITE}
         alt="Béru"
-        className="w-16 h-16 object-contain drop-shadow-lg"
+        className="w-14 h-14 md:w-[72px] md:h-[72px] object-contain"
         style={{
           animation: currentLine.shake ? 'beruShake 0.3s infinite' : (isChasing ? 'beruBounce 0.5s infinite' : 'beruFloat 2s ease-in-out infinite'),
-          imageRendering: 'pixelated',
-          filter: 'drop-shadow(0 0 8px rgba(168, 85, 247, 0.5))',
+          imageRendering: 'auto',
+          filter: isAngry
+            ? 'saturate(1.5) brightness(1.15) drop-shadow(0 0 8px rgba(255,50,50,0.6))'
+            : 'drop-shadow(0 0 8px rgba(168, 85, 247, 0.5))',
+          transform: `scaleX(${facingRight ? 1 : -1})`,
         }}
+        draggable={false}
       />
     </div>
   );
