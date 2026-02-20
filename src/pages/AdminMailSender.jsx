@@ -23,10 +23,20 @@ const HAMMER_TYPES = [
   { id: 'marteau_rouge', label: 'Marteau Rouge' },
 ];
 
+const FRAGMENT_TYPES = [
+  { id: 'fragment_sulfuras', name: 'Fragment de Sulfuras', icon: '🔥' },
+  { id: 'fragment_raeshalare', name: "Fragment de Rae'shalare", icon: '🌀' },
+  { id: 'fragment_katana_z', name: 'Fragment de Katana Z', icon: '⚡' },
+  { id: 'fragment_katana_v', name: 'Fragment de Katana V', icon: '💚' },
+];
+
 export default function AdminMailSender() {
   const navigate = useNavigate();
   const [isBroadcast, setIsBroadcast] = useState(false);
-  const [recipientUsername, setRecipientUsername] = useState('');
+  const [recipients, setRecipients] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [subject, setSubject] = useState('');
   const [mailType, setMailType] = useState('system');
   const [message, setMessage] = useState('');
@@ -34,6 +44,7 @@ export default function AdminMailSender() {
   // Rewards
   const [selectedWeapons, setSelectedWeapons] = useState([]);
   const [hammers, setHammers] = useState({});
+  const [fragments, setFragments] = useState({});
   const [coins, setCoins] = useState(0);
 
   // Weapon form
@@ -43,6 +54,7 @@ export default function AdminMailSender() {
   // UI
   const [showPreview, setShowPreview] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendProgress, setSendProgress] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
@@ -57,13 +69,17 @@ export default function AdminMailSender() {
 
   const resetForm = () => {
     setIsBroadcast(false);
-    setRecipientUsername('');
+    setRecipients([]);
+    setSearchQuery('');
+    setSearchResults([]);
     setSubject('');
     setMailType('system');
     setMessage('');
     setSelectedWeapons([]);
     setHammers({});
+    setFragments({});
     setCoins(0);
+    setSendProgress(null);
     setShowPreview(false);
     setError(null);
   };
@@ -112,6 +128,58 @@ export default function AdminMailSender() {
     }
   };
 
+  const updateFragment = (fragmentId, amount) => {
+    const value = Math.max(0, parseInt(amount) || 0);
+    if (value === 0) {
+      const newFragments = { ...fragments };
+      delete newFragments[fragmentId];
+      setFragments(newFragments);
+    } else {
+      setFragments(prev => ({ ...prev, [fragmentId]: value }));
+    }
+  };
+
+  // User search with debounce
+  const searchTimeoutRef = { current: null };
+  const searchUsers = async (term) => {
+    setSearchQuery(term);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+
+    if (!term || term.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const resp = await fetch(`/api/mail?action=search-users&q=${encodeURIComponent(term)}`, {
+          headers: authHeaders(),
+        });
+        const data = await resp.json();
+        if (data.success) {
+          setSearchResults(data.users || []);
+        }
+      } catch (err) {
+        console.error('User search failed:', err);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+  };
+
+  const addRecipient = (username) => {
+    if (!recipients.includes(username)) {
+      setRecipients(prev => [...prev, username]);
+    }
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const removeRecipient = (username) => {
+    setRecipients(prev => prev.filter(r => r !== username));
+  };
+
   const validateForm = () => {
     if (!subject.trim()) {
       return 'Le sujet est requis';
@@ -125,8 +193,8 @@ export default function AdminMailSender() {
     if (message.length > 2000) {
       return 'Le message ne peut pas depasser 2000 caracteres';
     }
-    if (!isBroadcast && !recipientUsername.trim()) {
-      return 'Le destinataire est requis (ou cochez Diffusion)';
+    if (!isBroadcast && recipients.length === 0) {
+      return 'Au moins un destinataire est requis (ou cochez Diffusion)';
     }
     return null;
   };
@@ -140,6 +208,10 @@ export default function AdminMailSender() {
 
     if (Object.keys(hammers).length > 0) {
       rewards.hammers = hammers;
+    }
+
+    if (Object.keys(fragments).length > 0) {
+      rewards.fragments = fragments;
     }
 
     if (coins > 0) {
@@ -162,40 +234,62 @@ export default function AdminMailSender() {
 
     try {
       const rewards = buildRewardsObject();
+      const targetList = isBroadcast ? [null] : recipients;
+      const total = targetList.length;
+      let sent = 0;
+      let failed = 0;
 
-      const resp = await fetch('/api/mail?action=send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders(),
-        },
-        body: JSON.stringify({
-          recipientUsername: isBroadcast ? null : recipientUsername.trim(),
-          subject: subject.trim(),
-          message: message.trim(),
-          mailType,
-          rewards,
-        }),
-      });
+      if (total > 1) setSendProgress({ sent: 0, total });
 
-      const data = await resp.json();
+      for (const recipient of targetList) {
+        try {
+          const resp = await fetch('/api/mail?action=send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...authHeaders(),
+            },
+            body: JSON.stringify({
+              recipientUsername: recipient,
+              subject: subject.trim(),
+              message: message.trim(),
+              mailType,
+              rewards,
+            }),
+          });
 
-      if (data.success) {
-        setSuccess(`\u2705 Message envoye avec succes ${isBroadcast ? 'a tous les joueurs' : 'a ' + recipientUsername} !`);
-        resetForm();
+          const data = await resp.json();
+          if (data.success) {
+            sent++;
+          } else {
+            failed++;
+          }
+        } catch {
+          failed++;
+        }
 
-        // Notify to update mail badges
-        window.dispatchEvent(new CustomEvent('beru-react', {
-          detail: { type: 'mail-update' }
-        }));
-      } else {
-        setError(data.message || 'Erreur lors de l\'envoi');
+        if (total > 1) setSendProgress({ sent: sent + failed, total });
       }
+
+      if (isBroadcast) {
+        setSuccess(`\u2705 Message envoye a tous les joueurs !`);
+      } else if (failed === 0) {
+        setSuccess(`\u2705 Message envoye a ${sent} joueur${sent > 1 ? 's' : ''} !`);
+      } else {
+        setSuccess(`\u2705 ${sent} envoye${sent > 1 ? 's' : ''}, ${failed} echec${failed > 1 ? 's' : ''}`);
+      }
+
+      resetForm();
+
+      window.dispatchEvent(new CustomEvent('beru-react', {
+        detail: { type: 'mail-update' }
+      }));
     } catch (err) {
       console.error('Failed to send mail:', err);
       setError('Impossible d\'envoyer le message. Verifiez votre connexion.');
     } finally {
       setSending(false);
+      setSendProgress(null);
     }
   };
 
@@ -238,7 +332,7 @@ export default function AdminMailSender() {
 
             {/* Recipient */}
             <div className="mb-4 text-sm text-gray-400">
-              Destinataire: {isBroadcast ? 'Tous les joueurs' : recipientUsername}
+              Destinataire{recipients.length > 1 ? 's' : ''}: {isBroadcast ? 'Tous les joueurs' : recipients.join(', ')}
             </div>
 
             {/* Subject */}
@@ -280,6 +374,22 @@ export default function AdminMailSender() {
                           {type.replace('marteau_', '').replace('_', ' ')}: {amt}
                         </li>
                       ))}
+                    </ul>
+                  </div>
+                )}
+
+                {rewards.fragments && Object.keys(rewards.fragments).length > 0 && (
+                  <div className="mb-3">
+                    <div className="text-xs text-gray-400 mb-1">Fragments:</div>
+                    <ul className="list-disc list-inside text-orange-300 text-sm space-y-1">
+                      {Object.entries(rewards.fragments).map(([fragId, amt]) => {
+                        const frag = FRAGMENT_TYPES.find(f => f.id === fragId);
+                        return (
+                          <li key={fragId}>
+                            {frag ? `${frag.icon} ${frag.name}` : fragId}: {amt}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 )}
@@ -371,7 +481,14 @@ export default function AdminMailSender() {
               <input
                 type="checkbox"
                 checked={isBroadcast}
-                onChange={(e) => setIsBroadcast(e.target.checked)}
+                onChange={(e) => {
+                  setIsBroadcast(e.target.checked);
+                  if (e.target.checked) {
+                    setRecipients([]);
+                    setSearchQuery('');
+                    setSearchResults([]);
+                  }
+                }}
                 className="w-4 h-4 accent-purple-500"
               />
               <span className="text-sm font-semibold text-purple-400">
@@ -382,15 +499,73 @@ export default function AdminMailSender() {
             {!isBroadcast && (
               <div>
                 <label className="block text-sm font-semibold text-gray-300 mb-2">
-                  Destinataire (username)
+                  Destinataires
+                  {recipients.length > 0 && (
+                    <span className="ml-2 text-xs bg-purple-500 text-white px-2 py-0.5 rounded-full font-bold">
+                      {recipients.length} selectionne{recipients.length > 1 ? 's' : ''}
+                    </span>
+                  )}
                 </label>
-                <input
-                  type="text"
-                  value={recipientUsername}
-                  onChange={(e) => setRecipientUsername(e.target.value)}
-                  placeholder="Ex: Shunryu"
-                  className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
-                />
+
+                {/* Selected recipients chips */}
+                {recipients.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {recipients.map(username => (
+                      <span
+                        key={username}
+                        className="inline-flex items-center gap-1 bg-purple-500/20 border border-purple-500/40 text-purple-300 px-3 py-1 rounded-full text-sm"
+                      >
+                        {username}
+                        <button
+                          onClick={() => removeRecipient(username)}
+                          className="ml-1 hover:text-red-400 transition-colors"
+                        >
+                          <X size={14} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Search input with autocomplete */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => searchUsers(e.target.value)}
+                    placeholder="Rechercher un joueur..."
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                  />
+                  {searchLoading && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
+                    </div>
+                  )}
+
+                  {/* Search results dropdown */}
+                  {searchResults.length > 0 && (
+                    <div className="absolute z-20 mt-1 w-full bg-[#1a1a2e] border border-white/20 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                      {searchResults.map(user => (
+                        <button
+                          key={user.username}
+                          onClick={() => addRecipient(user.username)}
+                          disabled={recipients.includes(user.username)}
+                          className={`w-full text-left px-4 py-2 hover:bg-purple-500/20 transition-colors flex items-center justify-between ${
+                            recipients.includes(user.username) ? 'opacity-40' : ''
+                          }`}
+                        >
+                          <span className="text-white">{user.username}</span>
+                          {user.display_name && user.display_name !== user.username && (
+                            <span className="text-xs text-gray-500">{user.display_name}</span>
+                          )}
+                          {recipients.includes(user.username) && (
+                            <Check size={14} className="text-green-400" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -601,6 +776,30 @@ export default function AdminMailSender() {
               </div>
             </div>
 
+            {/* Fragments */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Fragments d'armes
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {FRAGMENT_TYPES.map(frag => (
+                  <div key={frag.id} className="flex items-center gap-2">
+                    <label className="flex-1 text-sm text-gray-400">
+                      {frag.icon} {frag.name}
+                    </label>
+                    <input
+                      type="number"
+                      value={fragments[frag.id] || ''}
+                      onChange={(e) => updateFragment(frag.id, e.target.value)}
+                      min="0"
+                      placeholder="0"
+                      className="w-24 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-center focus:outline-none focus:border-orange-500"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Coins */}
             <div>
               <label className="block text-sm font-semibold text-gray-300 mb-2">
@@ -635,12 +834,12 @@ export default function AdminMailSender() {
               {sending ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Envoi...
+                  {sendProgress ? `Envoi ${sendProgress.sent}/${sendProgress.total}...` : 'Envoi...'}
                 </>
               ) : (
                 <>
                   <Send size={20} />
-                  Envoyer
+                  Envoyer{!isBroadcast && recipients.length > 1 ? ` (${recipients.length})` : ''}
                 </>
               )}
             </button>

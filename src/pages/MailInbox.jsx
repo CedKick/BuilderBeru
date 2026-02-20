@@ -146,6 +146,14 @@ export default function MailInbox() {
       });
     }
 
+    // Fragments
+    if (rewards.fragments && typeof rewards.fragments === 'object') {
+      if (!data.fragments) data.fragments = {};
+      Object.entries(rewards.fragments).forEach(([fragId, amt]) => {
+        data.fragments[fragId] = (data.fragments[fragId] || 0) + amt;
+      });
+    }
+
     // Coins
     if (rewards.coins && typeof rewards.coins === 'number') {
       shadowCoinManager.addCoins(rewards.coins, 'mail-reward');
@@ -213,6 +221,14 @@ export default function MailInbox() {
           Object.entries(rewards.hammers).forEach(([type, amt]) => {
             const hammerName = type.replace('marteau_', '').replace('_', ' ');
             message += `  • ${hammerName}: ${amt}\n`;
+          });
+        }
+
+        if (rewards.fragments && Object.keys(rewards.fragments).length > 0) {
+          message += '\n🧩 FRAGMENTS :\n';
+          Object.entries(rewards.fragments).forEach(([fragId, amt]) => {
+            const frag = FRAGMENT_NAMES[fragId];
+            message += `  • ${frag ? `${frag.icon} ${frag.name}` : fragId}: ${amt}\n`;
           });
         }
 
@@ -289,6 +305,13 @@ export default function MailInbox() {
     return WEAPONS[weaponId]?.name || weaponId;
   };
 
+  const FRAGMENT_NAMES = {
+    fragment_sulfuras: { name: 'Fragment de Sulfuras', icon: '🔥' },
+    fragment_raeshalare: { name: "Fragment de Rae'shalare", icon: '🌀' },
+    fragment_katana_z: { name: 'Fragment de Katana Z', icon: '⚡' },
+    fragment_katana_v: { name: 'Fragment de Katana V', icon: '💚' },
+  };
+
   const renderRewardsPreview = (rewards) => {
     if (!rewards) return null;
 
@@ -308,6 +331,15 @@ export default function MailInbox() {
       items.push(
         <span key="hammers" className="text-blue-400">
           \uD83D\uDD28 {totalHammers} marteau{totalHammers > 1 ? 'x' : ''}
+        </span>
+      );
+    }
+
+    if (rewards.fragments && Object.keys(rewards.fragments).length > 0) {
+      const totalFragments = Object.values(rewards.fragments).reduce((sum, val) => sum + val, 0);
+      items.push(
+        <span key="fragments" className="text-orange-400">
+          🧩 {totalFragments} fragment{totalFragments > 1 ? 's' : ''}
         </span>
       );
     }
@@ -367,6 +399,22 @@ export default function MailInbox() {
                     {type.replace('marteau_', '').replace('_', ' ')}: {amt}
                   </li>
                 ))}
+              </ul>
+            </div>
+          )}
+
+          {rewards.fragments && Object.keys(rewards.fragments).length > 0 && (
+            <div>
+              <div className="text-gray-400 mb-1">Fragments:</div>
+              <ul className="list-disc list-inside text-orange-300 space-y-0.5">
+                {Object.entries(rewards.fragments).map(([fragId, amt]) => {
+                  const frag = FRAGMENT_NAMES[fragId];
+                  return (
+                    <li key={fragId}>
+                      {frag ? `${frag.icon} ${frag.name}` : fragId}: {amt}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
@@ -493,6 +541,7 @@ export default function MailInbox() {
                 const hasRewards = mail.rewards && (
                   (mail.rewards.weapons && mail.rewards.weapons.length > 0) ||
                   (mail.rewards.hammers && Object.keys(mail.rewards.hammers).length > 0) ||
+                  (mail.rewards.fragments && Object.keys(mail.rewards.fragments).length > 0) ||
                   mail.rewards.coins
                 );
 

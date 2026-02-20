@@ -87,6 +87,20 @@ async function handleSend(req, res) {
     if (rewards.hammers && typeof rewards.hammers !== 'object') {
       return res.status(400).json({ error: 'rewards.hammers must be object' });
     }
+    if (rewards.fragments && typeof rewards.fragments !== 'object') {
+      return res.status(400).json({ error: 'rewards.fragments must be object' });
+    }
+    if (rewards.fragments) {
+      const validFragments = ['fragment_sulfuras', 'fragment_raeshalare', 'fragment_katana_z', 'fragment_katana_v'];
+      for (const key of Object.keys(rewards.fragments)) {
+        if (!validFragments.includes(key)) {
+          return res.status(400).json({ error: `Invalid fragment type: ${key}` });
+        }
+        if (typeof rewards.fragments[key] !== 'number' || rewards.fragments[key] < 1) {
+          return res.status(400).json({ error: `Invalid fragment quantity for ${key}` });
+        }
+      }
+    }
     if (rewards.coins !== undefined && typeof rewards.coins !== 'number') {
       return res.status(400).json({ error: 'rewards.coins must be number' });
     }
@@ -336,6 +350,35 @@ async function handleDelete(req, res) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// SEARCH-USERS — Search registered users (admin only)
+// ═══════════════════════════════════════════════════════════════
+
+async function handleSearchUsers(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+
+  const user = await extractUser(req);
+  if (!user) return res.status(401).json({ error: 'Authentication required' });
+  if (user.username.toLowerCase() !== 'kly') {
+    return res.status(403).json({ error: 'Forbidden: Admin only' });
+  }
+
+  const q = (req.query.q || '').trim().toLowerCase();
+  if (!q || q.length < 2) {
+    return res.status(200).json({ success: true, users: [] });
+  }
+
+  const result = await query(
+    `SELECT username, display_name FROM users WHERE username_lower LIKE $1 ORDER BY username_lower LIMIT 10`,
+    [`%${q}%`]
+  );
+
+  return res.status(200).json({
+    success: true,
+    users: result.rows
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════════════
 
@@ -364,6 +407,8 @@ export default async function handler(req, res) {
         return await handleMarkRead(req, res);
       case 'delete':
         return await handleDelete(req, res);
+      case 'search-users':
+        return await handleSearchUsers(req, res);
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }
