@@ -224,6 +224,9 @@ export default function FactionHub() {
       if (data.success) {
         alert(data.message);
         loadFactionStatus();
+
+        // Notify AppLayout about faction change
+        window.dispatchEvent(new CustomEvent('faction-update'));
       } else {
         alert(`Erreur: ${data.message}`);
       }
@@ -304,6 +307,9 @@ export default function FactionHub() {
         // Reload faction status
         setShowChangeFactionModal(false);
         loadFactionStatus();
+
+        // Notify AppLayout about faction change
+        window.dispatchEvent(new CustomEvent('faction-update'));
       } else {
         alert(`Erreur: ${data.message}`);
       }

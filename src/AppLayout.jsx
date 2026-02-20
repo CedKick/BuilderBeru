@@ -2,14 +2,48 @@ import React, { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import BuilderMenu from './buildermenu';
 import FloatingBeruMascot from './components/FloatingBeruMascot';
+import FloatingDaijin from './components/FloatingDaijin';
 import AchievementToast from './components/AchievementToast';
 import shadowAchievementManager from './utils/ShadowAchievementManager';
+import { isLoggedIn } from './utils/auth';
 
 export default function AppLayout({ children }) {
   const [showMenu, setShowMenu] = useState(false);
+  const [userFaction, setUserFaction] = useState(null);
+  const [showMascotPanel, setShowMascotPanel] = useState(false);
 
   // Initialiser le systeme d'achievements
   useEffect(() => { shadowAchievementManager.init(); }, []);
+
+  // Fetch user faction status
+  useEffect(() => {
+    const fetchFaction = async () => {
+      if (!isLoggedIn()) return;
+
+      try {
+        const token = localStorage.getItem('builderberu_auth_token');
+        const resp = await fetch('/api/factions?action=status', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await resp.json();
+
+        if (data.success && data.inFaction) {
+          setUserFaction(data.faction.id);
+        }
+      } catch (err) {
+        console.log('Could not fetch faction:', err);
+      }
+    };
+
+    fetchFaction();
+
+    // Listen for faction changes
+    const handleFactionChange = () => fetchFaction();
+    window.addEventListener('faction-update', handleFactionChange);
+    return () => window.removeEventListener('faction-update', handleFactionChange);
+  }, []);
 
   // Fermer le menu avec la touche Escape
   useEffect(() => {
@@ -92,11 +126,105 @@ export default function AppLayout({ children }) {
         {children}
       </main>
 
+      {/* Mascot Control Panel */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+        {/* Toggle Panel Button */}
+        <button
+          onClick={() => setShowMascotPanel(!showMascotPanel)}
+          className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-600 to-orange-600 border-2 border-amber-400/50 shadow-lg shadow-amber-500/30 flex items-center justify-center text-lg hover:scale-110 active:scale-95 transition-transform"
+          title="Mascottes"
+        >
+          🎭
+        </button>
+
+        {/* Mascot Panel */}
+        {showMascotPanel && (
+          <div className="absolute top-12 right-0 bg-[#0f0f1a] border-2 border-purple-400/50 rounded-xl p-3 shadow-2xl min-w-[200px]">
+            <div className="text-xs font-bold text-purple-300 mb-2">Mascottes</div>
+            <div className="space-y-2">
+              {/* Béru (always available) */}
+              <MascotToggleButton
+                name="Béru"
+                icon="🐜"
+                storageKey="beru_mode"
+              />
+
+              {/* Daijin (only for Vox Cordis members) */}
+              {userFaction === 'vox_cordis' && (
+                <MascotToggleButton
+                  name="Daijin"
+                  icon="🐱"
+                  storageKey="daijin_mode"
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* L'Ombre de Béru - Mascotte Flottante */}
       <FloatingBeruMascot />
+
+      {/* Daijin - Mascotte de Vox Cordis */}
+      {userFaction === 'vox_cordis' && (
+        <FloatingDaijin
+          isHovering={false}
+          hasFaction={true}
+        />
+      )}
 
       {/* Shadow Achievements - Toast Notification */}
       <AchievementToast />
     </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MASCOT TOGGLE BUTTON COMPONENT
+// ═══════════════════════════════════════════════════════════════
+
+function MascotToggleButton({ name, icon, storageKey }) {
+  const [mode, setMode] = useState(() => {
+    return localStorage.getItem(storageKey) || 'normal';
+  });
+
+  const modes = ['normal', 'calm', 'hidden'];
+  const modeLabels = {
+    normal: 'Normal',
+    calm: name === 'Béru' ? 'Calme' : 'Zen',
+    hidden: 'Caché'
+  };
+  const modeIcons = {
+    normal: icon,
+    calm: '😌',
+    hidden: '👻'
+  };
+
+  const cycleMode = () => {
+    const currentIndex = modes.indexOf(mode);
+    const nextMode = modes[(currentIndex + 1) % modes.length];
+    setMode(nextMode);
+    localStorage.setItem(storageKey, nextMode);
+
+    // Trigger re-render of mascot
+    window.dispatchEvent(new CustomEvent('beru-react', {
+      detail: { type: 'mascot-mode-change', mascot: name, mode: nextMode }
+    }));
+  };
+
+  return (
+    <button
+      onClick={cycleMode}
+      className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all text-left"
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-lg">{modeIcons[mode]}</span>
+        <div>
+          <div className="text-xs font-bold text-white">{name}</div>
+          <div className="text-[10px] text-gray-400">{modeLabels[mode]}</div>
+        </div>
+      </div>
+      <div className="text-[10px] text-purple-400">↻</div>
+    </button>
   );
 }
