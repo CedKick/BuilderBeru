@@ -109,6 +109,57 @@ async function handleSend(req, res) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// SELF-REWARD — Send reward to self (for forged weapons, etc.)
+// ═══════════════════════════════════════════════════════════════
+
+async function handleSelfReward(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  // Auth check (any logged-in user can send self-rewards)
+  const user = await extractUser(req);
+  if (!user) return res.status(401).json({ error: 'Authentication required' });
+
+  const { subject, message, mailType = 'reward', rewards } = req.body;
+
+  // Validation
+  if (!subject || typeof subject !== 'string' || subject.length > 100) {
+    return res.status(400).json({ error: 'Invalid subject (max 100 chars)' });
+  }
+  if (!message || typeof message !== 'string' || message.length > 2000) {
+    return res.status(400).json({ error: 'Invalid message (max 2000 chars)' });
+  }
+  if (!rewards) {
+    return res.status(400).json({ error: 'Rewards required for self-reward' });
+  }
+
+  // Validate rewards structure
+  if (rewards.weapons && !Array.isArray(rewards.weapons)) {
+    return res.status(400).json({ error: 'rewards.weapons must be array' });
+  }
+  if (rewards.hammers && typeof rewards.hammers !== 'object') {
+    return res.status(400).json({ error: 'rewards.hammers must be object' });
+  }
+  if (rewards.coins !== undefined && typeof rewards.coins !== 'number') {
+    return res.status(400).json({ error: 'rewards.coins must be number' });
+  }
+
+  const rewardsJson = JSON.stringify(rewards);
+
+  // Insert mail to self
+  const result = await query(
+    `INSERT INTO player_mail (recipient_username, sender, subject, message, mail_type, rewards)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id`,
+    [user.username, 'Forge Mystique', subject, message, mailType, rewardsJson]
+  );
+
+  return res.status(200).json({
+    success: true,
+    mailId: result.rows[0].id
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // INBOX — Get user's mail (personal + broadcasts)
 // ═══════════════════════════════════════════════════════════════
 
@@ -303,6 +354,8 @@ export default async function handler(req, res) {
         return await handleInit(req, res);
       case 'send':
         return await handleSend(req, res);
+      case 'self-reward':
+        return await handleSelfReward(req, res);
       case 'inbox':
         return await handleInbox(req, res);
       case 'claim':

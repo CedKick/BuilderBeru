@@ -6543,19 +6543,50 @@ export default function ShadowColosseum() {
               const frags = data.fragments || { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0 };
               const weapons = data.collection || [];
 
-              const forgeWeapon = (fragmentId, weaponId) => {
+              const forgeWeapon = async (fragmentId, weaponId) => {
                 if ((frags[fragmentId] || 0) < 10) return;
-                if (weapons.includes(weaponId)) return; // Already have weapon
+                if (!isLoggedIn()) {
+                  showToast('❌ Connexion requise pour forger', '#ef4444');
+                  return;
+                }
 
+                // Deduct fragments
                 setData(prev => {
                   const newFrags = { ...prev.fragments };
                   newFrags[fragmentId] = (newFrags[fragmentId] || 0) - 10;
-                  const newCollection = [...(prev.collection || []), weaponId];
-                  return { ...prev, fragments: newFrags, collection: newCollection };
+                  return { ...prev, fragments: newFrags };
                 });
 
-                // Show success toast
-                showToast(`🎉 Arme forgée: ${WEAPONS[weaponId]?.name || weaponId}!`, '#fbbf24');
+                // Send weapon via mail system
+                try {
+                  const weaponData = forgeItems.find(i => i.weaponId === weaponId);
+                  const response = await fetch('/api/mail?action=self-reward', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                    body: JSON.stringify({
+                      subject: `Arme forgée: ${weaponData?.name || weaponId}`,
+                      message: `Félicitations ! Vous avez forgé une arme légendaire.\n\nVotre ${weaponData?.name || weaponId} vous attend dans votre boîte de réception.\n\n⚒️ Forge Mystique`,
+                      mailType: 'reward',
+                      rewards: {
+                        weapons: [{ id: weaponId, awakening: 0 }]
+                      }
+                    })
+                  });
+
+                  const data = await response.json();
+                  if (data.success) {
+                    showToast(`📬 ${weaponData?.name || weaponId} envoyée par mail!`, '#fbbf24');
+                    // Trigger mail update event
+                    window.dispatchEvent(new CustomEvent('beru-react', {
+                      detail: { type: 'mail-update' }
+                    }));
+                  } else {
+                    showToast(`❌ Erreur: ${data.error || 'Inconnu'}`, '#ef4444');
+                  }
+                } catch (err) {
+                  console.error('Forge error:', err);
+                  showToast('❌ Erreur lors de la forge', '#ef4444');
+                }
               };
 
               const forgeItems = [
@@ -6576,8 +6607,7 @@ export default function ShadowColosseum() {
                     <div className="grid grid-cols-1 gap-2">
                       {forgeItems.map(item => {
                         const count = frags[item.fragmentId] || 0;
-                        const hasWeapon = weapons.includes(item.weaponId);
-                        const canForge = count >= 10 && !hasWeapon;
+                        const canForge = count >= 10;
 
                         return (
                           <div key={item.fragmentId} className={`p-2 rounded-lg border ${canForge ? 'border-orange-500/40 bg-orange-500/10' : 'border-gray-700/30 bg-gray-900/20'} transition-all`}>
@@ -6596,11 +6626,9 @@ export default function ShadowColosseum() {
                                 disabled={!canForge}
                                 className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${canForge
                                   ? 'bg-orange-500/30 border border-orange-500/50 text-orange-200 hover:bg-orange-500/40'
-                                  : hasWeapon
-                                  ? 'bg-green-500/20 border border-green-500/30 text-green-400 cursor-default'
                                   : 'bg-gray-800/40 border border-gray-700/20 text-gray-600 cursor-not-allowed'}`}
                               >
-                                {hasWeapon ? '✓ Possédé' : canForge ? '⚒️ Forger' : '🔒 Locked'}
+                                {canForge ? '⚒️ Forger' : '🔒 Locked'}
                               </button>
                             </div>
                           </div>
