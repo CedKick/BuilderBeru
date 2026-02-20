@@ -193,7 +193,7 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [], monarchKills: 0, monarchDropLog: [], lootBoostMs: 0 });
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, fragments: { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [], monarchKills: 0, monarchDropLog: [], lootBoostMs: 0 });
 const loadData = () => {
   try {
     const d = { ...defaultData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) };
@@ -230,7 +230,26 @@ const loadData = () => {
     if (d.monarchKills === undefined) d.monarchKills = 0;
     if (!d.monarchDropLog) d.monarchDropLog = [];
     if (d.lootBoostMs === undefined) d.lootBoostMs = 0;
+    if (!d.fragments) d.fragments = { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0 };
     if (!d.talentSkills) d.talentSkills = {};
+    // Migration: add locked field to artifacts
+    d.artifactInventory = (d.artifactInventory || []).map(art => ({
+      ...art,
+      locked: art.locked ?? false
+    }));
+    // Also migrate equipped artifacts
+    if (d.artifacts) {
+      Object.keys(d.artifacts).forEach(chibiId => {
+        Object.keys(d.artifacts[chibiId] || {}).forEach(slotId => {
+          if (d.artifacts[chibiId][slotId]) {
+            d.artifacts[chibiId][slotId] = {
+              ...d.artifacts[chibiId][slotId],
+              locked: d.artifacts[chibiId][slotId].locked ?? false
+            };
+          }
+        });
+      });
+    }
     // Migration: respecCount old format (number) → per-tree format
     for (const cid of Object.keys(d.respecCount || {})) {
       if (typeof d.respecCount[cid] === 'number') {
@@ -303,6 +322,14 @@ export default function ShadowColosseum() {
   const [artFilter, setArtFilter] = useState({ set: null, rarity: null, slot: null });
   const [artSelected, setArtSelected] = useState(null); // index in inventory OR "eq:chibiId:slot"
   const [artEquipPicker, setArtEquipPicker] = useState(false);
+  const [cleanupExpanded, setCleanupExpanded] = useState(false);
+  const [cleanupConfig, setCleanupConfig] = useState({
+    protectedSets: new Set(),    // Sets à ne PAS supprimer
+    keepPerSet: 10,              // Garder top X par set
+    includeHighLevel: false,     // Inclure Lv15+ dans nettoyage (risqué)
+    includeMythic10: false       // Inclure Mythique Lv10+ (risqué)
+  });
+  const [cleanupPreview, setCleanupPreview] = useState(null);
   const [weaponDetailId, setWeaponDetailId] = useState(null);
   const [weaponFilter, setWeaponFilter] = useState({ element: null, sort: 'ilevel' }); // filter for weapon lists
   const [artifactSetDetail, setArtifactSetDetail] = useState(null);
@@ -1436,6 +1463,101 @@ export default function ShadowColosseum() {
     });
   };
 
+  // ═══════════════════════════════════════════════════════════════
+  // ARTIFACT CLEANUP UTILITIES
+  // ═══════════════════════════════════════════════════════════════
+
+  const isArtifactEquipped = (uid) => {
+    return Object.values(data.artifacts || {}).some(slots =>
+      Object.values(slots).some(art => art?.uid === uid)
+    );
+  };
+
+  const isArtifactProtected = (art, config) => {
+    // Toujours protégé
+    if (art.locked) return true;
+    if (isArtifactEquipped(art.uid)) return true;
+
+    // Auto-protect sauf si override activé
+    if (!config.includeHighLevel && art.level >= 15) return true;
+    if (!config.includeMythic10 && art.rarity === 'mythique' && art.level >= 10) return true;
+
+    return false;
+  };
+
+  const computeCleanupPreview = (config) => {
+    const inv = data.artifactInventory || [];
+    const { protectedSets, keepPerSet } = config;
+
+    const bySet = {};
+    inv.forEach(art => {
+      if (!bySet[art.set]) bySet[art.set] = [];
+      bySet[art.set].push(art);
+    });
+
+    const toDelete = [];
+    const toKeep = [];
+
+    Object.entries(bySet).forEach(([setId, artifacts]) => {
+      if (protectedSets.has(setId)) {
+        toKeep.push(...artifacts);
+        return;
+      }
+
+      const deletable = artifacts.filter(art => !isArtifactProtected(art, config));
+      const protectedArts = artifacts.filter(art => isArtifactProtected(art, config));
+
+      deletable.sort((a, b) => computeArtifactILevel(b) - computeArtifactILevel(a));
+
+      toKeep.push(...protectedArts, ...deletable.slice(0, keepPerSet));
+      toDelete.push(...deletable.slice(keepPerSet));
+    });
+
+    // Stats
+    const rarityBreakdown = { rare: 0, legendaire: 0, mythique: 0 };
+    let totalCoins = 0;
+    toDelete.forEach(art => {
+      rarityBreakdown[art.rarity] = (rarityBreakdown[art.rarity] || 0) + 1;
+      totalCoins += Math.floor((FORGE_COSTS[art.rarity] || 200) * SELL_RATIO);
+    });
+
+    const setBreakdown = {};
+    toDelete.forEach(art => {
+      if (!setBreakdown[art.set]) setBreakdown[art.set] = 0;
+      setBreakdown[art.set]++;
+    });
+
+    return {
+      toDelete,
+      toKeep,
+      totalDelete: toDelete.length,
+      totalKeep: toKeep.length,
+      rarityBreakdown,
+      totalCoins,
+      setBreakdown
+    };
+  };
+
+  const executeCleanup = () => {
+    if (!cleanupPreview || cleanupPreview.totalDelete === 0) return;
+
+    const deleteUids = new Set(cleanupPreview.toDelete.map(a => a.uid));
+
+    setData(prev => ({
+      ...prev,
+      artifactInventory: prev.artifactInventory.filter(art => !deleteUids.has(art.uid))
+    }));
+
+    shadowCoinManager.addCoins(cleanupPreview.totalCoins, 'mass_cleanup');
+
+    toast.success(
+      `✨ Nettoyage terminé! ${cleanupPreview.totalDelete} artefacts vendus pour ${cleanupPreview.totalCoins} coins`,
+      { position: 'top-center', autoClose: 3000, style: { background: '#1a1a2e', color: '#10b981' } }
+    );
+
+    setCleanupPreview(null);
+  };
+
   // ─── Start Battle ──────────────────────────────────────────
 
   const LOOT_BOOST_BOSSES = ['ragnarok', 'zephyr', 'supreme_monarch'];
@@ -2046,7 +2168,7 @@ export default function ShadowColosseum() {
       const isNew = data.weaponCollection['w_sulfuras'] === undefined;
       weaponDrop = { id: 'w_sulfuras', ...WEAPONS.w_sulfuras, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_sulfuras'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
-    if (!weaponDrop && stage.id === 'zephyr' && Math.random() < (1 / 50000000) * lootMult) {
+    if (!weaponDrop && stage.id === 'zephyr' && Math.random() < (1 / 5000) * lootMult) {
       const isNew = data.weaponCollection['w_raeshalare'] === undefined;
       weaponDrop = { id: 'w_raeshalare', ...WEAPONS.w_raeshalare, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_raeshalare'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
@@ -2059,6 +2181,14 @@ export default function ShadowColosseum() {
     if (!weaponDrop && stage.id === 'supreme_monarch' && Math.random() < (1 / 50000) * lootMult) {
       const isNew = data.weaponCollection['w_katana_v'] === undefined;
       weaponDrop = { id: 'w_katana_v', ...WEAPONS.w_katana_v, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_katana_v'] || 0) + 1, MAX_WEAPON_AWAKENING) };
+    }
+
+    // Fragment drops (mercy system) — 1% chance per kill
+    let fragmentDrop = null;
+    if (stage.id === 'ragnarok' && Math.random() < 0.01) fragmentDrop = 'fragment_sulfuras';
+    if (stage.id === 'zephyr' && Math.random() < 0.01) fragmentDrop = 'fragment_raeshalare';
+    if (stage.id === 'supreme_monarch' && Math.random() < 0.01) {
+      fragmentDrop = Math.random() < 0.5 ? 'fragment_katana_z' : 'fragment_katana_v';
     }
 
     // Pacte des Ombres artifact drop — Zephyr Ultime at star >= 10 (1/250)
@@ -2076,6 +2206,8 @@ export default function ShadowColosseum() {
       const newHammers = { ...(prev.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }) };
       if (hammerDrop) newHammers[hammerDrop] = (newHammers[hammerDrop] || 0) + 1;
       if (extraHammer) newHammers[extraHammer] = (newHammers[extraHammer] || 0) + 1;
+      const newFragments = { ...(prev.fragments || { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0 }) };
+      if (fragmentDrop) newFragments[fragmentDrop] = (newFragments[fragmentDrop] || 0) + 1;
       // Ragnarok kill tracking
       const isRagnarok = stage.id === 'ragnarok';
       const newRagKills = isRagnarok ? (prev.ragnarokKills || 0) + 1 : (prev.ragnarokKills || 0);
@@ -2100,6 +2232,7 @@ export default function ShadowColosseum() {
         stagesCleared: { ...prev.stagesCleared, [stage.id]: { maxStars: Math.max((prev.stagesCleared[stage.id]?.maxStars ?? -1), currentStar) } },
         stats: { battles: prev.stats.battles + 1, wins: prev.stats.wins + 1 },
         hammers: newHammers,
+        fragments: newFragments,
         accountXp: newAccountXp,
         ragnarokKills: newRagKills,
         ragnarokDropLog: newRagLog,
@@ -2129,7 +2262,7 @@ export default function ShadowColosseum() {
       };
     });
     if (newAllocations > 0) setPendingAlloc(newAllocations);
-    setResult({ won: true, xp: scaledXp, coins: scaledCoins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrop, hammerDrop: hammerDrop || extraHammer, weaponDrop, guaranteedArtifact, pacteDrop, starLevel: currentStar, isNewStarRecord, newMaxStars, accountXpGain, accountLevelUp: newAccLvl > prevAccLvl ? newAccLvl : null, accountAllocations: newAllocations });
+    setResult({ won: true, xp: scaledXp, coins: scaledCoins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrop, hammerDrop: hammerDrop || extraHammer, weaponDrop, fragmentDrop, guaranteedArtifact, pacteDrop, starLevel: currentStar, isNewStarRecord, newMaxStars, accountXpGain, accountLevelUp: newAccLvl > prevAccLvl ? newAccLvl : null, accountAllocations: newAllocations });
 
     // Weapon drop reveal + Beru reaction
     if (weaponDrop) {
@@ -2169,7 +2302,7 @@ export default function ShadowColosseum() {
           : stage.id === 'zephyr' ? '1/50 000 000'
           : '1/50 000';
         const cumul = stage.id === 'ragnarok' ? (1 - Math.pow(1 - 1/10000, kills)) * 100
-          : stage.id === 'zephyr' ? (1 - Math.pow(1 - 1/50000000, kills)) * 100
+          : stage.id === 'zephyr' ? (1 - Math.pow(1 - 1/5000, kills)) * 100
           : (1 - Math.pow(1 - 2/50000, kills)) * 100;
 
         // Pool of taunts — randomly picked
@@ -2186,7 +2319,7 @@ export default function ShadowColosseum() {
           `Tu as plus de chances de te faire frapper par une meteorite que de drop ${weaponName}. Juste pour info.`,
           `Fun fact : avec un taux de ${dropRate}, tu aurais plus de chance de gagner au loto. Mais tu farm quand meme. Respect.`,
           `${dropRate} de chance... c'est comme trouver une aiguille dans une botte de foin. Sauf que la botte fait 10km.`,
-          `Statistiquement, il te faudrait encore ${Math.max(1, Math.ceil(1 / (stage.id === 'ragnarok' ? 1/10000 : stage.id === 'zephyr' ? 1/50000000 : 1/50000) - kills))} runs en moyenne. Bonne chance !`,
+          `Statistiquement, il te faudrait encore ${Math.max(1, Math.ceil(1 / (stage.id === 'ragnarok' ? 1/10000 : stage.id === 'zephyr' ? 1/5000 : 1/50000) - kills))} runs en moyenne. Bonne chance !`,
           stage.id === 'zephyr' ? "1 chance sur 50 MILLIONS... t'as plus de chances de rencontrer un alien. Mais je crois en toi ! Non j'deconne." : null,
 
           // Fake-outs
@@ -6362,6 +6495,84 @@ export default function ShadowColosseum() {
               );
             })()}
 
+            {/* Fragment Forge — Exchange 10 fragments for weapon */}
+            {(() => {
+              const frags = data.fragments || { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0 };
+              const weapons = data.collection || [];
+
+              const forgeWeapon = (fragmentId, weaponId) => {
+                if ((frags[fragmentId] || 0) < 10) return;
+                if (weapons.includes(weaponId)) return; // Already have weapon
+
+                setData(prev => {
+                  const newFrags = { ...prev.fragments };
+                  newFrags[fragmentId] = (newFrags[fragmentId] || 0) - 10;
+                  const newCollection = [...(prev.collection || []), weaponId];
+                  return { ...prev, fragments: newFrags, collection: newCollection };
+                });
+
+                // Show success toast
+                toast.success(`🎉 Arme forgée: ${WEAPONS[weaponId]?.name || weaponId}!`, {
+                  position: 'top-center',
+                  autoClose: 3000,
+                  style: { background: '#1a1a2e', color: '#fbbf24' }
+                });
+              };
+
+              const forgeItems = [
+                { fragmentId: 'fragment_sulfuras', weaponId: 'sulfuras', icon: '🔥', name: 'Masse de Sulfuras' },
+                { fragmentId: 'fragment_raeshalare', weaponId: 'raeshalare', icon: '🌀', name: "Arc Rae'shalare" },
+                { fragmentId: 'fragment_katana_z', weaponId: 'katana_z', icon: '⚡', name: 'Katana Z' },
+                { fragmentId: 'fragment_katana_v', weaponId: 'katana_v', icon: '💚', name: 'Katana V' },
+              ];
+
+              return (
+                <div className="mb-5">
+                  <div className="p-4 rounded-xl border border-orange-500/30 bg-orange-500/5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="text-[10px] text-orange-400 font-bold uppercase tracking-wider">⚒️ Forge Mystique</div>
+                      <div className="text-[9px] text-orange-300/60">10 fragments = 1 arme</div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2">
+                      {forgeItems.map(item => {
+                        const count = frags[item.fragmentId] || 0;
+                        const hasWeapon = weapons.includes(item.weaponId);
+                        const canForge = count >= 10 && !hasWeapon;
+
+                        return (
+                          <div key={item.fragmentId} className={`p-2 rounded-lg border ${canForge ? 'border-orange-500/40 bg-orange-500/10' : 'border-gray-700/30 bg-gray-900/20'} transition-all`}>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <div className="text-xl">{item.icon}</div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-[11px] font-bold text-orange-300">{item.name}</div>
+                                  <div className={`text-[10px] font-bold ${count >= 10 ? 'text-green-400' : 'text-gray-500'}`}>
+                                    Fragments: {count}/10
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => forgeWeapon(item.fragmentId, item.weaponId)}
+                                disabled={!canForge}
+                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${canForge
+                                  ? 'bg-orange-500/30 border border-orange-500/50 text-orange-200 hover:bg-orange-500/40'
+                                  : hasWeapon
+                                  ? 'bg-green-500/20 border border-green-500/30 text-green-400 cursor-default'
+                                  : 'bg-gray-800/40 border border-gray-700/20 text-gray-600 cursor-not-allowed'}`}
+                              >
+                                {hasWeapon ? '✓ Possédé' : canForge ? '⚒️ Forger' : '🔒 Locked'}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Artifacts link */}
             <div className="mb-4 text-center">
               <button onClick={() => { setView('artifacts'); setArtSelected(null); setArtFilter({ set: null, rarity: null, slot: null }); }}
@@ -6433,7 +6644,7 @@ export default function ShadowColosseum() {
         };
 
         const doSell = () => {
-          if (!selArt || isEquipped) return;
+          if (!selArt || isEquipped || selArt.locked) return;
           const sellPrice = Math.floor((FORGE_COSTS[selArt.rarity] || 200) * SELL_RATIO);
           shadowCoinManager.addCoins(sellPrice, 'artifact_sell');
           setData(prev => {
@@ -6532,6 +6743,173 @@ export default function ShadowColosseum() {
               )}
             </div>
 
+            {/* ═══ CLEANUP SECTION ═══ */}
+            <div className="mb-4">
+              <button
+                onClick={() => setCleanupExpanded(prev => !prev)}
+                className="w-full flex items-center justify-between p-3 rounded-xl border border-yellow-500/30 bg-yellow-500/5 hover:bg-yellow-500/10 transition-all"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{'\u26A1'}</span>
+                  <span className="text-sm font-bold text-yellow-300">Nettoyage d'Inventaire</span>
+                  <span className="text-[10px] text-gray-500">({inv.length} artefacts)</span>
+                </div>
+                <span className={`text-gray-400 transition-transform ${cleanupExpanded ? 'rotate-180' : ''}`}>{'\u25BC'}</span>
+              </button>
+
+              {cleanupExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  className="mt-2 p-3 rounded-xl border border-yellow-500/20 bg-gray-900/40 space-y-3"
+                >
+                  {/* Keep per set slider */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] text-gray-400">Garder par set</span>
+                      <span className="text-sm font-bold text-yellow-300">{cleanupConfig.keepPerSet}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="5"
+                      max="20"
+                      step="1"
+                      value={cleanupConfig.keepPerSet}
+                      onChange={e => setCleanupConfig(prev => ({ ...prev, keepPerSet: parseInt(e.target.value) }))}
+                      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-500"
+                    />
+                    <div className="flex justify-between text-[9px] text-gray-600 mt-0.5">
+                      <span>Minimal (5)</span>
+                      <span>Balanced (10)</span>
+                      <span>Hoarder (20)</span>
+                    </div>
+                  </div>
+
+                  {/* Protected sets */}
+                  <div>
+                    <div className="text-[10px] text-gray-400 mb-1">Sets protégés (ne seront pas supprimés)</div>
+                    <div className="flex flex-wrap gap-1">
+                      {Object.values(ALL_ARTIFACT_SETS).map(set => {
+                        const isProtected = cleanupConfig.protectedSets.has(set.id);
+                        return (
+                          <button
+                            key={set.id}
+                            onClick={() => {
+                              setCleanupConfig(prev => {
+                                const newProtected = new Set(prev.protectedSets);
+                                if (isProtected) newProtected.delete(set.id);
+                                else newProtected.add(set.id);
+                                return { ...prev, protectedSets: newProtected };
+                              });
+                            }}
+                            className={`px-2 py-1 rounded text-[9px] font-bold transition-all ${
+                              isProtected
+                                ? `${set.color} ${set.bg} ring-1 ring-current`
+                                : 'text-gray-600 bg-gray-800/30 hover:bg-gray-700/30'
+                            }`}
+                          >
+                            {set.icon} {set.name.split(' ')[0]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Override options */}
+                  <div className="space-y-1">
+                    <label className="flex items-center gap-2 text-[10px] text-gray-400 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={cleanupConfig.includeHighLevel}
+                        onChange={e => setCleanupConfig(prev => ({ ...prev, includeHighLevel: e.target.checked }))}
+                        className="accent-red-500"
+                      />
+                      <span>Inclure artefacts Lv15+ ({'\u26A0\uFE0F'} risqué)</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-[10px] text-gray-400 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={cleanupConfig.includeMythic10}
+                        onChange={e => setCleanupConfig(prev => ({ ...prev, includeMythic10: e.target.checked }))}
+                        className="accent-red-500"
+                      />
+                      <span>Inclure Mythiques Lv10+ ({'\u26A0\uFE0F'} risqué)</span>
+                    </label>
+                  </div>
+
+                  {/* Preview button */}
+                  <button
+                    onClick={() => setCleanupPreview(computeCleanupPreview(cleanupConfig))}
+                    className="w-full py-2 rounded-lg bg-blue-600/30 text-blue-300 text-[11px] font-bold hover:bg-blue-600/50 transition-colors"
+                  >
+                    {'\uD83D\uDD0D'} Prévisualiser le nettoyage
+                  </button>
+
+                  {/* Preview panel */}
+                  {cleanupPreview && (
+                    <motion.div
+                      initial={{ y: 10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      className="p-3 rounded-lg border border-purple-500/30 bg-purple-500/10"
+                    >
+                      <div className="text-[11px] font-bold text-purple-300 mb-2">{'\uD83D\uDCCA'} Aperçu du nettoyage</div>
+
+                      {cleanupPreview.totalDelete === 0 ? (
+                        <div className="text-[10px] text-gray-400">Aucun artefact à supprimer avec ces paramètres.</div>
+                      ) : (
+                        <>
+                          {/* Summary */}
+                          <div className="grid grid-cols-2 gap-2 mb-2 text-[10px]">
+                            <div className="p-2 rounded bg-red-500/10 border border-red-500/20">
+                              <div className="text-red-400 font-bold">À supprimer</div>
+                              <div className="text-xl font-black text-red-300">{cleanupPreview.totalDelete}</div>
+                            </div>
+                            <div className="p-2 rounded bg-green-500/10 border border-green-500/20">
+                              <div className="text-green-400 font-bold">À garder</div>
+                              <div className="text-xl font-black text-green-300">{cleanupPreview.totalKeep}</div>
+                            </div>
+                          </div>
+
+                          {/* Breakdown by rarity */}
+                          <div className="mb-2 p-2 rounded bg-gray-800/30 border border-gray-700/20">
+                            <div className="text-[9px] text-gray-400 mb-1">Par rareté:</div>
+                            <div className="flex gap-2 text-[10px]">
+                              {cleanupPreview.rarityBreakdown.rare > 0 && (
+                                <span className="text-blue-400">{cleanupPreview.rarityBreakdown.rare} Rare</span>
+                              )}
+                              {cleanupPreview.rarityBreakdown.legendaire > 0 && (
+                                <span className="text-orange-400">{cleanupPreview.rarityBreakdown.legendaire} Légendaire</span>
+                              )}
+                              {cleanupPreview.rarityBreakdown.mythique > 0 && (
+                                <span className="text-red-400">{cleanupPreview.rarityBreakdown.mythique} Mythique</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Expected coins */}
+                          <div className="mb-2 p-2 rounded bg-yellow-500/10 border border-yellow-500/20 text-center">
+                            <div className="text-[9px] text-yellow-400/70">Revenus attendus</div>
+                            <div className="text-lg font-black text-yellow-300">{'\uD83E\uDE99'} {cleanupPreview.totalCoins} coins</div>
+                          </div>
+
+                          {/* Execute button */}
+                          <button
+                            onClick={executeCleanup}
+                            className="w-full py-2 rounded-lg bg-red-600/30 text-red-300 text-[11px] font-bold hover:bg-red-600/50 transition-colors border border-red-500/30"
+                          >
+                            {'\uD83D\uDDD1\uFE0F'} NETTOYER L'INVENTAIRE ({cleanupPreview.totalDelete} artefacts)
+                          </button>
+                          <div className="text-[8px] text-gray-500 text-center mt-1">
+                            {'\u26A0\uFE0F'} Cette action est irréversible!
+                          </div>
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                </motion.div>
+              )}
+            </div>
+
             {/* Inventory Grid */}
             <div className="mb-5">
               <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Inventaire ({filtered.length})</div>
@@ -6547,10 +6925,26 @@ export default function ShadowColosseum() {
                     const selected = artSelected === idx;
                     return (
                       <button key={art.uid || idx} onClick={() => { setArtSelected(selected ? null : idx); setArtEquipPicker(false); }}
-                        className={`p-1.5 rounded-lg border text-left transition-all ${
+                        className={`relative p-1.5 rounded-lg border text-left transition-all ${
                           selected ? 'border-purple-400 bg-purple-500/15 ring-1 ring-purple-400/40' :
                           `${setDef?.border || 'border-gray-700/30'} ${setDef?.bg || 'bg-gray-800/10'} hover:border-gray-500/40`
                         }`}>
+                        {/* Lock button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setData(prev => ({
+                              ...prev,
+                              artifactInventory: prev.artifactInventory.map((a, i) =>
+                                i === idx ? { ...a, locked: !a.locked } : a
+                              )
+                            }));
+                          }}
+                          className="absolute top-0.5 right-0.5 text-xs z-10 hover:scale-110 transition-transform"
+                        >
+                          {art.locked ? '\uD83D\uDD12' : '\uD83D\uDD13'}
+                        </button>
+
                         <div className="flex items-center gap-1 mb-0.5">
                           <span className="text-xs">{ARTIFACT_SLOTS[art.slot]?.icon}</span>
                           <span className={`text-[10px] font-bold truncate ${setDef?.color || 'text-gray-400'}`}>{setDef?.name?.split(' ')[0] || '?'}</span>
@@ -6597,10 +6991,14 @@ export default function ShadowColosseum() {
                           const setDef = ALL_ARTIFACT_SETS[art.set];
                           return (
                             <button key={sId} onClick={() => { setArtSelected(selected ? null : eqKey); setArtEquipPicker(false); }}
-                              className={`p-1 rounded-lg border text-center transition-all ${
+                              className={`relative p-1 rounded-lg border text-center transition-all ${
                                 selected ? 'border-purple-400 bg-purple-500/15' :
                                 `${setDef?.border || 'border-gray-700/30'} ${setDef?.bg || 'bg-gray-800/10'} hover:border-gray-500/40`
                               }`}>
+                              {/* Lock indicator */}
+                              {art.locked && (
+                                <span className="absolute top-0 right-0 text-[8px]">{'\uD83D\uDD12'}</span>
+                              )}
                               <div className="text-[10px]">{ARTIFACT_SLOTS[sId]?.icon}</div>
                               <div className={`text-[9px] font-bold truncate ${setDef?.color || 'text-gray-400'}`}>{setDef?.name?.split(' ')[0] || '?'}</div>
                               <div className="text-[9px] text-gray-500">Lv{art.level}</div>
@@ -6660,6 +7058,39 @@ export default function ShadowColosseum() {
 
                 {/* Actions */}
                 <div className="flex gap-2">
+                  {/* Lock toggle */}
+                  <button
+                    onClick={() => {
+                      if (isEquipped) {
+                        const [, cId, sId] = artSelected.split(':');
+                        setData(prev => ({
+                          ...prev,
+                          artifacts: {
+                            ...prev.artifacts,
+                            [cId]: {
+                              ...prev.artifacts[cId],
+                              [sId]: { ...prev.artifacts[cId][sId], locked: !prev.artifacts[cId][sId].locked }
+                            }
+                          }
+                        }));
+                      } else {
+                        setData(prev => ({
+                          ...prev,
+                          artifactInventory: prev.artifactInventory.map((a, i) =>
+                            i === artSelected ? { ...a, locked: !a.locked } : a
+                          )
+                        }));
+                      }
+                    }}
+                    className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-colors ${
+                      selArt.locked
+                        ? 'bg-yellow-600/30 text-yellow-300 hover:bg-yellow-600/50'
+                        : 'bg-gray-600/30 text-gray-400 hover:bg-gray-600/50'
+                    }`}
+                  >
+                    {selArt.locked ? '\uD83D\uDD12 Verrouillé' : '\uD83D\uDD13 Déverrouiller'}
+                  </button>
+
                   {!isEquipped && (
                     <button onClick={() => setArtEquipPicker(prev => !prev)}
                       className="flex-1 py-1.5 rounded-lg bg-indigo-600/30 text-indigo-300 text-[10px] font-bold hover:bg-indigo-600/50 transition-colors">
@@ -6688,9 +7119,13 @@ export default function ShadowColosseum() {
                     {'\uD83D\uDD28'} +1 ({bestHammer ? HAMMERS[bestHammer].icon : '?'} {coinCost}c)
                   </button>
                   {!isEquipped && (
-                    <button onClick={doSell}
-                      className="py-1.5 px-2 rounded-lg bg-red-600/20 text-red-400 text-[10px] font-bold hover:bg-red-600/40 transition-colors">
-                      Vendre ({Math.floor((FORGE_COSTS[selArt.rarity] || 200) * SELL_RATIO)}c)
+                    <button onClick={doSell} disabled={selArt.locked}
+                      className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-colors ${
+                        selArt.locked
+                          ? 'bg-gray-800/40 text-gray-600 cursor-not-allowed'
+                          : 'bg-red-600/20 text-red-400 hover:bg-red-600/40'
+                      }`}>
+                      {selArt.locked ? '\uD83D\uDD12 Verrouillé' : `Vendre (${Math.floor((FORGE_COSTS[selArt.rarity] || 200) * SELL_RATIO)}c)`}
                     </button>
                   )}
                 </div>
@@ -7095,6 +7530,16 @@ export default function ShadowColosseum() {
                     <span className="text-xl">{HAMMERS[result.hammerDrop]?.icon || '\uD83D\uDD28'}</span>
                     <span className="text-sm font-bold text-amber-300">{HAMMERS[result.hammerDrop]?.name || 'Marteau'}</span>
                     <span className="text-xs text-amber-400">+1</span>
+                  </div>
+                </motion.div>
+              )}
+              {result.fragmentDrop && (
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.05 }}
+                  className="bg-gradient-to-r from-red-600/15 to-pink-600/15 border border-red-500/40 rounded-xl p-2 mb-4">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-xl">{HAMMERS[result.fragmentDrop]?.icon || '\u2728'}</span>
+                    <span className="text-sm font-bold text-red-300">{HAMMERS[result.fragmentDrop]?.name || 'Fragment'}</span>
+                    <span className="text-xs text-red-400">+1 ({data.fragments[result.fragmentDrop] || 0}/10)</span>
                   </div>
                 </motion.div>
               )}
