@@ -253,37 +253,26 @@ async function handleClaim(req, res) {
   const { mailId } = req.body;
   if (!mailId) return res.status(400).json({ error: 'Missing mailId' });
 
-  // Get mail and verify ownership
-  const mailResult = await query(
-    `SELECT id, recipient_username, rewards, claimed
-     FROM player_mail
-     WHERE id = $1 AND (recipient_username = $2 OR recipient_username IS NULL)`,
+  // Atomic claim: SELECT + UPDATE in one query to prevent race condition
+  const result = await query(
+    `UPDATE player_mail
+     SET claimed = true
+     WHERE id = $1
+       AND (recipient_username = $2 OR recipient_username IS NULL)
+       AND claimed = false
+       AND rewards IS NOT NULL
+     RETURNING rewards`,
     [mailId, user.username]
   );
 
-  if (mailResult.rows.length === 0) {
-    return res.status(404).json({ error: 'Mail not found' });
+  if (result.rows.length === 0) {
+    return res.status(400).json({ error: 'Mail not found, already claimed, or no rewards' });
   }
 
-  const mail = mailResult.rows[0];
+  const rewards = typeof result.rows[0].rewards === 'string'
+    ? JSON.parse(result.rows[0].rewards)
+    : result.rows[0].rewards;
 
-  if (mail.claimed) {
-    return res.status(400).json({ error: 'Rewards already claimed' });
-  }
-
-  if (!mail.rewards) {
-    return res.status(400).json({ error: 'No rewards to claim' });
-  }
-
-  const rewards = typeof mail.rewards === 'string' ? JSON.parse(mail.rewards) : mail.rewards;
-
-  // Mark as claimed
-  await query(
-    `UPDATE player_mail SET claimed = true WHERE id = $1`,
-    [mailId]
-  );
-
-  // Return rewards to frontend for processing
   return res.status(200).json({
     success: true,
     rewards: rewards
