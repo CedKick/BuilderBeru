@@ -2185,9 +2185,9 @@ export default function ShadowColosseum() {
 
     // Fragment drops (mercy system) — 1% chance per kill
     let fragmentDrop = null;
-    if (stage.id === 'ragnarok' && Math.random() < 0.01) fragmentDrop = 'fragment_sulfuras';
-    if (stage.id === 'zephyr' && Math.random() < 0.01) fragmentDrop = 'fragment_raeshalare';
-    if (stage.id === 'supreme_monarch' && Math.random() < 0.01) {
+    if (stage.id === 'ragnarok' && Math.random() < 0.005) fragmentDrop = 'fragment_sulfuras';
+    if (stage.id === 'zephyr' && Math.random() < 0.008) fragmentDrop = 'fragment_raeshalare';
+    if (stage.id === 'supreme_monarch' && Math.random() < 0.001) {
       fragmentDrop = Math.random() < 0.5 ? 'fragment_katana_z' : 'fragment_katana_v';
     }
 
