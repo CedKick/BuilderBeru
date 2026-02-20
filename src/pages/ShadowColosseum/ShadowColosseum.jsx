@@ -4228,8 +4228,7 @@ export default function ShadowColosseum() {
             {phase === 'advance' && <div className="text-center py-2 mb-2"><div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto" /></div>}
             {phase === 'victory' && (
               <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center py-4">
-                <div className="text-3xl mb-2">{'\uD83C\uDFC6'}</div>
-                <div className="text-lg font-black text-yellow-400" style={{ animation: 'victoryPulse 1.5s ease-in-out infinite' }}>VICTOIRE !</div>
+                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771551432/Victory_hcur2y.png" alt="Victory" className="w-32 mx-auto mb-1 drop-shadow-[0_0_12px_rgba(234,179,8,0.5)]" style={{ animation: 'victoryPulse 1.5s ease-in-out infinite' }} />
               </motion.div>
             )}
             {phase === 'defeat' && (
@@ -7024,8 +7023,7 @@ export default function ShadowColosseum() {
         <div className="max-w-xl mx-auto px-4 pt-12 text-center">
           {result.won ? (
             <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200 }}>
-              <div className="text-6xl mb-4" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>{'\uD83C\uDFC6'}</div>
-              <h2 className="text-3xl font-black text-yellow-400 mb-2">VICTOIRE !</h2>
+              <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771551432/Victory_hcur2y.png" alt="Victory" className="w-48 mx-auto mb-2 drop-shadow-[0_0_16px_rgba(234,179,8,0.5)]" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }} />
               {result.starLevel > 0 && (
                 <div className="mb-2">
                   <div className="flex items-center justify-center gap-0.5">
