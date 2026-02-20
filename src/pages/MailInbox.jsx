@@ -166,7 +166,33 @@ export default function MailInbox() {
           m.id === mailId ? { ...m, claimed: true } : m
         ));
 
-        alert('\u2705 Recompenses reclamees avec succes !');
+        // Build detailed success message
+        let message = '\u2705 Recompenses reclamees avec succes !\n\nVous avez recu :\n';
+
+        if (rewards.weapons && rewards.weapons.length > 0) {
+          message += '\n\uD83D\uDDE1\uFE0F ARMES :\n';
+          rewards.weapons.forEach(w => {
+            const weaponName = getWeaponName(w.id);
+            const awakening = w.awakening > 0 ? ` +${w.awakening}` : '';
+            message += `  • ${weaponName}${awakening}\n`;
+          });
+        }
+
+        if (rewards.hammers && Object.keys(rewards.hammers).length > 0) {
+          message += '\n\uD83D\uDD28 MARTEAUX :\n';
+          Object.entries(rewards.hammers).forEach(([type, amt]) => {
+            const hammerName = type.replace('marteau_', '').replace('_', ' ');
+            message += `  • ${hammerName}: ${amt}\n`;
+          });
+        }
+
+        if (rewards.coins) {
+          message += `\n\uD83E\uDE99 ${rewards.coins} Shadow Coins\n`;
+        }
+
+        message += '\n\u27A1\uFE0F Rendez-vous dans Shadow Colosseum pour utiliser vos nouvelles armes !';
+
+        alert(message);
       } else {
         alert('\u274C ' + (data.message || 'Erreur lors de la reclamation'));
       }
