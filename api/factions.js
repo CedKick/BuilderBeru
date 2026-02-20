@@ -1,10 +1,8 @@
 // api/factions.js
 // Backend API for faction system (Vox Cordis vs Replicant)
 
-import { neon } from '@neondatabase/serverless';
+import { query } from './_db/neon.js';
 import { extractUser } from './_utils/auth.js';
-
-const sql = neon(process.env.DATABASE_URL);
 
 // ═══════════════════════════════════════════════════════════════
 // FACTION CONSTANTS
@@ -91,7 +89,7 @@ async function handleInit(req, res) {
     return res.status(403).json({ success: false, message: 'Admin only' });
   }
 
-  await sql`
+  await query(`
     CREATE TABLE IF NOT EXISTS player_factions (
       username VARCHAR(20) PRIMARY KEY,
       faction VARCHAR(20) NOT NULL,
@@ -99,18 +97,18 @@ async function handleInit(req, res) {
       points_spent INT DEFAULT 0,
       joined_at TIMESTAMPTZ DEFAULT NOW()
     )
-  `;
+  `);
 
-  await sql`
+  await query(`
     CREATE TABLE IF NOT EXISTS faction_buffs (
       faction VARCHAR(20) NOT NULL,
       buff_id VARCHAR(50) NOT NULL,
       level INT DEFAULT 0,
       PRIMARY KEY (faction, buff_id)
     )
-  `;
+  `);
 
-  await sql`
+  await query(`
     CREATE TABLE IF NOT EXISTS faction_weekly (
       week INT NOT NULL,
       faction VARCHAR(20) NOT NULL,
@@ -119,16 +117,17 @@ async function handleInit(req, res) {
       winner BOOLEAN DEFAULT FALSE,
       PRIMARY KEY (week, faction)
     )
-  `;
+  `);
 
   // Initialize buffs for both factions
   for (const factionId of Object.keys(FACTIONS)) {
     for (const buffId of Object.keys(FACTION_BUFFS)) {
-      await sql`
-        INSERT INTO faction_buffs (faction, buff_id, level)
-        VALUES (${factionId}, ${buffId}, 0)
-        ON CONFLICT (faction, buff_id) DO NOTHING
-      `;
+      await query(
+        `INSERT INTO faction_buffs (faction, buff_id, level)
+         VALUES ($1, $2, 0)
+         ON CONFLICT (faction, buff_id) DO NOTHING`,
+        [factionId, buffId]
+      );
     }
   }
 
@@ -147,18 +146,19 @@ async function handleJoin(req, res) {
   }
 
   // Check if already in a faction
-  const existing = await sql`
-    SELECT faction FROM player_factions WHERE username = ${user.username}
-  `;
+  const existing = await query(
+    'SELECT faction FROM player_factions WHERE username = $1',
+    [user.username]
+  );
 
-  if (existing.length > 0) {
+  if (existing.rows.length > 0) {
     return res.status(400).json({ success: false, message: 'Already in a faction' });
   }
 
-  await sql`
-    INSERT INTO player_factions (username, faction, contribution_points, points_spent)
-    VALUES (${user.username}, ${faction}, 0, 0)
-  `;
+  await query(
+    'INSERT INTO player_factions (username, faction, contribution_points, points_spent) VALUES ($1, $2, 0, 0)',
+    [user.username, faction]
+  );
 
   return res.json({ success: true, faction, message: `Joined ${FACTIONS[faction].name}!` });
 }
@@ -169,26 +169,26 @@ async function handleStatus(req, res) {
   const user = await extractUser(req);
   if (!user) return res.status(401).json({ success: false, message: 'Authentication required' });
 
-  const playerData = await sql`
-    SELECT faction, contribution_points, points_spent, joined_at
-    FROM player_factions
-    WHERE username = ${user.username}
-  `;
+  const playerData = await query(
+    'SELECT faction, contribution_points, points_spent, joined_at FROM player_factions WHERE username = $1',
+    [user.username]
+  );
 
-  if (playerData.length === 0) {
+  if (playerData.rows.length === 0) {
     return res.json({ success: true, inFaction: false });
   }
 
-  const player = playerData[0];
+  const player = playerData.rows[0];
   const faction = FACTIONS[player.faction];
 
   // Get faction buffs
-  const buffs = await sql`
-    SELECT buff_id, level FROM faction_buffs WHERE faction = ${player.faction}
-  `;
+  const buffs = await query(
+    'SELECT buff_id, level FROM faction_buffs WHERE faction = $1',
+    [player.faction]
+  );
 
   const buffsMap = {};
-  buffs.forEach(b => {
+  buffs.rows.forEach(b => {
     buffsMap[b.buff_id] = b.level;
   });
 
@@ -217,11 +217,10 @@ async function handleContribute(req, res) {
 
   const { targetUsername, points } = req.body;
 
-  await sql`
-    UPDATE player_factions
-    SET contribution_points = contribution_points + ${points}
-    WHERE username = ${targetUsername}
-  `;
+  await query(
+    'UPDATE player_factions SET contribution_points = contribution_points + $1 WHERE username = $2',
+    [points, targetUsername]
+  );
 
   return res.json({ success: true, message: `Added ${points} points to ${targetUsername}` });
 }
@@ -239,15 +238,16 @@ async function handleUpgradeBuff(req, res) {
   }
 
   // Get player faction
-  const playerData = await sql`
-    SELECT faction, contribution_points, points_spent FROM player_factions WHERE username = ${user.username}
-  `;
+  const playerData = await query(
+    'SELECT faction, contribution_points, points_spent FROM player_factions WHERE username = $1',
+    [user.username]
+  );
 
-  if (playerData.length === 0) {
+  if (playerData.rows.length === 0) {
     return res.status(400).json({ success: false, message: 'Not in a faction' });
   }
 
-  const player = playerData[0];
+  const player = playerData.rows[0];
   const pointsAvailable = player.contribution_points - player.points_spent;
 
   if (pointsAvailable < buffConfig.costPerLevel) {
@@ -255,28 +255,27 @@ async function handleUpgradeBuff(req, res) {
   }
 
   // Get current buff level
-  const buffData = await sql`
-    SELECT level FROM faction_buffs WHERE faction = ${player.faction} AND buff_id = ${buffId}
-  `;
+  const buffData = await query(
+    'SELECT level FROM faction_buffs WHERE faction = $1 AND buff_id = $2',
+    [player.faction, buffId]
+  );
 
-  const currentLevel = buffData[0]?.level || 0;
+  const currentLevel = buffData.rows[0]?.level || 0;
   if (currentLevel >= buffConfig.maxLevel) {
     return res.status(400).json({ success: false, message: 'Buff already at max level' });
   }
 
   // Upgrade buff
-  await sql`
-    UPDATE faction_buffs
-    SET level = level + 1
-    WHERE faction = ${player.faction} AND buff_id = ${buffId}
-  `;
+  await query(
+    'UPDATE faction_buffs SET level = level + 1 WHERE faction = $1 AND buff_id = $2',
+    [player.faction, buffId]
+  );
 
   // Deduct points
-  await sql`
-    UPDATE player_factions
-    SET points_spent = points_spent + ${buffConfig.costPerLevel}
-    WHERE username = ${user.username}
-  `;
+  await query(
+    'UPDATE player_factions SET points_spent = points_spent + $1 WHERE username = $2',
+    [buffConfig.costPerLevel, user.username]
+  );
 
   return res.json({
     success: true,
@@ -303,43 +302,41 @@ async function handleShopBuy(req, res) {
 async function handleWeeklyStats(req, res) {
   const currentWeek = getCurrentWeek();
 
-  const stats = await sql`
-    SELECT faction, total_points_unspent, total_members, winner
-    FROM faction_weekly
-    WHERE week = ${currentWeek}
-  `;
+  const stats = await query(
+    'SELECT faction, total_points_unspent, total_members, winner FROM faction_weekly WHERE week = $1',
+    [currentWeek]
+  );
 
   // If no data for this week, compute it
-  if (stats.length === 0) {
+  if (stats.rows.length === 0) {
     for (const factionId of Object.keys(FACTIONS)) {
-      const members = await sql`
-        SELECT COUNT(*) as count, SUM(contribution_points - points_spent) as unspent
-        FROM player_factions
-        WHERE faction = ${factionId}
-      `;
+      const members = await query(
+        'SELECT COUNT(*) as count, SUM(contribution_points - points_spent) as unspent FROM player_factions WHERE faction = $1',
+        [factionId]
+      );
 
-      const count = members[0]?.count || 0;
-      const unspent = members[0]?.unspent || 0;
+      const count = parseInt(members.rows[0]?.count) || 0;
+      const unspent = parseInt(members.rows[0]?.unspent) || 0;
 
-      await sql`
-        INSERT INTO faction_weekly (week, faction, total_points_unspent, total_members)
-        VALUES (${currentWeek}, ${factionId}, ${unspent}, ${count})
-        ON CONFLICT (week, faction) DO UPDATE
-        SET total_points_unspent = ${unspent}, total_members = ${count}
-      `;
+      await query(
+        `INSERT INTO faction_weekly (week, faction, total_points_unspent, total_members)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (week, faction) DO UPDATE
+         SET total_points_unspent = $3, total_members = $4`,
+        [currentWeek, factionId, unspent, count]
+      );
     }
 
     // Re-fetch
-    const newStats = await sql`
-      SELECT faction, total_points_unspent, total_members, winner
-      FROM faction_weekly
-      WHERE week = ${currentWeek}
-    `;
+    const newStats = await query(
+      'SELECT faction, total_points_unspent, total_members, winner FROM faction_weekly WHERE week = $1',
+      [currentWeek]
+    );
 
-    return res.json({ success: true, week: currentWeek, factions: newStats });
+    return res.json({ success: true, week: currentWeek, factions: newStats.rows });
   }
 
-  return res.json({ success: true, week: currentWeek, factions: stats });
+  return res.json({ success: true, week: currentWeek, factions: stats.rows });
 }
 
 // ─── CHANGE FACTION: Switch to a different faction (costs coins + loses points) ─
@@ -356,15 +353,16 @@ async function handleChangeFaction(req, res) {
   }
 
   // Get current faction
-  const playerData = await sql`
-    SELECT faction, contribution_points, points_spent FROM player_factions WHERE username = ${user.username}
-  `;
+  const playerData = await query(
+    'SELECT faction, contribution_points, points_spent FROM player_factions WHERE username = $1',
+    [user.username]
+  );
 
-  if (playerData.length === 0) {
+  if (playerData.rows.length === 0) {
     return res.status(400).json({ success: false, message: 'Not in a faction yet' });
   }
 
-  const currentFaction = playerData[0].faction;
+  const currentFaction = playerData.rows[0].faction;
 
   // Check if trying to change to same faction
   if (currentFaction === newFaction) {
@@ -372,14 +370,10 @@ async function handleChangeFaction(req, res) {
   }
 
   // Change faction and reset points
-  await sql`
-    UPDATE player_factions
-    SET
-      faction = ${newFaction},
-      contribution_points = 0,
-      points_spent = 0
-    WHERE username = ${user.username}
-  `;
+  await query(
+    'UPDATE player_factions SET faction = $1, contribution_points = 0, points_spent = 0 WHERE username = $2',
+    [newFaction, user.username]
+  );
 
   return res.json({
     success: true,
