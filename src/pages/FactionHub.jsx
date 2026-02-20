@@ -19,6 +19,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import shadowCoinManager from '../components/ChibiSystem/ShadowCoinManager';
+import FloatingDaijin from '../components/FloatingDaijin';
 
 // Auth helpers
 const isLoggedIn = () => {
@@ -47,6 +48,7 @@ export default function FactionHub() {
   const [activeTab, setActiveTab] = useState('buffs'); // buffs, shop, weekly
   const [weeklyStats, setWeeklyStats] = useState(null);
   const [showChangeFactionModal, setShowChangeFactionModal] = useState(false);
+  const [hoveringVoxCordis, setHoveringVoxCordis] = useState(false);
 
   const FACTION_CHANGE_COST = 5000; // Shadow Coins
 
@@ -368,6 +370,7 @@ export default function FactionHub() {
             <FactionCard
               faction={FACTIONS.vox_cordis}
               onJoin={joinFaction}
+              onHoverChange={setHoveringVoxCordis}
             />
 
             {/* Replicant */}
@@ -377,6 +380,16 @@ export default function FactionHub() {
             />
           </div>
         </div>
+
+        {/* Daijin mascot for Vox Cordis */}
+        <AnimatePresence>
+          {hoveringVoxCordis && (
+            <FloatingDaijin
+              isHovering={hoveringVoxCordis}
+              hasFaction={factionData?.faction?.id === 'vox_cordis'}
+            />
+          )}
+        </AnimatePresence>
       </div>
     );
   }
@@ -504,6 +517,14 @@ export default function FactionHub() {
         </AnimatePresence>
       </div>
 
+      {/* Daijin mascot for Vox Cordis members */}
+      {currentFaction.id === 'vox_cordis' && (
+        <FloatingDaijin
+          isHovering={false}
+          hasFaction={true}
+        />
+      )}
+
       {/* Change Faction Modal */}
       <AnimatePresence>
         {showChangeFactionModal && (
@@ -525,11 +546,18 @@ export default function FactionHub() {
 // FACTION SELECTION CARD
 // ═══════════════════════════════════════════════════════════════
 
-function FactionCard({ faction, onJoin }) {
+function FactionCard({ faction, onJoin, onHoverChange }) {
   const [isHovered, setIsHovered] = useState(false);
   const [showLore, setShowLore] = useState(false);
   const [loreChapter, setLoreChapter] = useState(0);
   const audioRef = useRef(null);
+
+  // Notifier le parent du changement de hover
+  useEffect(() => {
+    if (onHoverChange) {
+      onHoverChange(isHovered || showLore);
+    }
+  }, [isHovered, showLore, onHoverChange]);
 
   // Initialize audio
   useEffect(() => {
