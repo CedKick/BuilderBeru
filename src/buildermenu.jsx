@@ -16,6 +16,7 @@ import {
   BookOpen,
   Gamepad2,
   Mail,
+  Target,
   X,
   LogIn,
   User,
@@ -188,6 +189,13 @@ export default function BuilderMenu({ isOpen, onClose }) {
           isNew: true
         },
         {
+          path: '/training-dummy',
+          label: 'Mannequin d\'Entraînement',
+          icon: Target,
+          color: 'orange',
+          isNew: true
+        },
+        {
           path: '/mail',
           label: t('menu.mail', 'Courrier'),
           icon: Mail,
@@ -298,7 +306,8 @@ export default function BuilderMenu({ isOpen, onClose }) {
         </div>
 
         {/* Menu items avec scroll */}
-        <nav className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-6">
+        <nav className="flex-1 overflow-y-auto scrollbar-thin p-4 flex flex-col justify-center">
+          <div className="space-y-6">
           {menuSections.map((section, sectionIdx) => (
             <div key={sectionIdx}>
               <h3 className="text-xs font-semibold text-purple-300 uppercase tracking-wider mb-3 px-2">
@@ -326,7 +335,13 @@ export default function BuilderMenu({ isOpen, onClose }) {
                         ${item.isSubItem ? 'ml-6 text-sm' : ''}
                       `}
                     >
-                      <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-purple-400' : ''}`} />
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        isActive
+                          ? 'bg-purple-600/30'
+                          : 'bg-white/5 group-hover:bg-white/10'
+                      } transition-all`}>
+                        <Icon className={`w-5 h-5 ${isActive ? 'text-purple-400' : ''}`} />
+                      </div>
                       <span className="font-medium flex-1 truncate">{item.label}</span>
 
                       {/* Badge NEW */}
@@ -361,6 +376,7 @@ export default function BuilderMenu({ isOpen, onClose }) {
               </div>
             </div>
           ))}
+          </div>
         </nav>
 
         {/* Footer */}

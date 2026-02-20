@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import BuilderMenu from './buildermenu';
 import FloatingBeruMascot from './components/FloatingBeruMascot';
 import FloatingDaijin from './components/FloatingDaijin';
 import FloatingPod042 from './components/FloatingPod042';
+import FloatingShortcuts from './components/FloatingShortcuts';
 import AchievementToast from './components/AchievementToast';
 import shadowAchievementManager from './utils/ShadowAchievementManager';
 import { isLoggedIn } from './utils/auth';
 
 export default function AppLayout({ children }) {
+  const location = useLocation();
   const [showMenu, setShowMenu] = useState(false);
   const [userFaction, setUserFaction] = useState(null);
   const [showMascotPanel, setShowMascotPanel] = useState(false);
@@ -146,50 +149,38 @@ export default function AppLayout({ children }) {
         {children}
       </main>
 
-      {/* Mascot Control Panel */}
-      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-        {/* Toggle Panel Button */}
-        <button
-          onClick={() => setShowMascotPanel(!showMascotPanel)}
-          className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-600 to-orange-600 border-2 border-amber-400/50 shadow-lg shadow-amber-500/30 flex items-center justify-center text-lg hover:scale-110 active:scale-95 transition-transform"
-          title="Mascottes"
-        >
-          🎭
-        </button>
+      {/* Mascot Panel (hidden when on Shadow Colosseum - shown in FloatingShortcuts) */}
+      {showMascotPanel && (
+        <div className="fixed top-4 right-4 z-50 bg-[#0f0f1a] border-2 border-purple-400/50 rounded-xl p-3 shadow-2xl min-w-[200px]">
+          <div className="text-xs font-bold text-purple-300 mb-2">Mascottes</div>
+          <div className="space-y-2">
+            {/* Béru (always available) */}
+            <MascotToggleButton
+              name="Béru"
+              icon="🐜"
+              storageKey="beru_mode"
+            />
 
-        {/* Mascot Panel */}
-        {showMascotPanel && (
-          <div className="absolute top-12 right-0 bg-[#0f0f1a] border-2 border-purple-400/50 rounded-xl p-3 shadow-2xl min-w-[200px]">
-            <div className="text-xs font-bold text-purple-300 mb-2">Mascottes</div>
-            <div className="space-y-2">
-              {/* Béru (always available) */}
+            {/* Daijin (only for Vox Cordis members) */}
+            {userFaction === 'vox_cordis' && (
               <MascotToggleButton
-                name="Béru"
-                icon="🐜"
-                storageKey="beru_mode"
+                name="Daijin"
+                icon="🐱"
+                storageKey="daijin_mode"
               />
+            )}
 
-              {/* Daijin (only for Vox Cordis members) */}
-              {userFaction === 'vox_cordis' && (
-                <MascotToggleButton
-                  name="Daijin"
-                  icon="🐱"
-                  storageKey="daijin_mode"
-                />
-              )}
-
-              {/* Pod 042 (only for Replicant members) */}
-              {userFaction === 'replicant' && (
-                <MascotToggleButton
-                  name="Pod 042"
-                  icon="🤖"
-                  storageKey="pod042_mode"
-                />
-              )}
-            </div>
+            {/* Pod 042 (only for Replicant members) */}
+            {userFaction === 'replicant' && (
+              <MascotToggleButton
+                name="Pod 042"
+                icon="🤖"
+                storageKey="pod042_mode"
+              />
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* L'Ombre de Béru - Mascotte Flottante */}
       <FloatingBeruMascot />
@@ -208,6 +199,11 @@ export default function AppLayout({ children }) {
           isHovering={false}
           hasFaction={true}
         />
+      )}
+
+      {/* Floating Shortcuts - Only on Shadow Colosseum */}
+      {location.pathname === '/shadow-colosseum' && (
+        <FloatingShortcuts onMascotClick={() => setShowMascotPanel(!showMascotPanel)} />
       )}
 
       {/* Shadow Achievements - Toast Notification */}

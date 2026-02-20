@@ -33,6 +33,8 @@ import {
 } from './equipmentData';
 import { BattleStyles, RaidArena } from './BattleVFX';
 import { isLoggedIn, authHeaders } from '../../utils/auth';
+import SharedDPSGraph from './SharedBattleComponents/SharedDPSGraph';
+import SharedCombatLogs from './SharedBattleComponents/SharedCombatLogs';
 
 // ─── Colosseum shared save (chibi levels, stat points, skill tree, talents) ──
 const SAVE_KEY = 'shadow_colosseum_data';
@@ -86,6 +88,7 @@ export default function RaidMode() {
 
   // ─── Result state ──────────────────────────────────────────
   const [resultData, setResultData] = useState(null);
+  const [showDetailedStats, setShowDetailedStats] = useState(false);
 
   // ─── Refs for game loop ────────────────────────────────────
   const gameLoopRef = useRef(null);
@@ -96,6 +99,12 @@ export default function RaidMode() {
   const dpsTracker = useRef({});
   const startTimeRef = useRef(0);
   const pausedRef = useRef(false);
+
+  // ─── New: Detailed logs & DPS history ──────────────────────
+  const [dpsHistory, setDpsHistory] = useState([]);
+  const [detailedLogs, setDetailedLogs] = useState({});
+  const detailedLogsRef = useRef({});
+  const lastDpsSnapshotRef = useRef(0);
 
   // ─── Chibi weapon passives for VFX ─────────────────────────
   const chibiWeaponsMap = useMemo(() => {
@@ -403,6 +412,45 @@ export default function RaidMode() {
     timerRef.current = RAID_DURATION_SEC;
     dpsTracker.current = {};
     chibis.forEach(c => { dpsTracker.current[c.id] = 0; });
+
+    // Initialize detailed logs
+    const initialLogs = {};
+    chibis.forEach(c => {
+      initialLogs[c.id] = {
+        totalDamage: 0,
+        damageTaken: 0,
+        totalHits: 0,
+        critHits: 0,
+        totalCritDamage: 0,
+        maxCrit: 0,
+        skillsUsed: 0,
+        dps: 0,
+        buffActivations: [],
+        passiveProcs: [],
+      };
+    });
+    initialLogs['boss'] = {
+      totalDamage: 0,
+      damageTaken: 0,
+      totalHits: 0,
+      critHits: 0,
+      totalCritDamage: 0,
+      maxCrit: 0,
+      skillsUsed: 0,
+      dps: 0,
+      buffActivations: [],
+      passiveProcs: [],
+    };
+    detailedLogsRef.current = initialLogs;
+    setDetailedLogs(initialLogs);
+
+    // Initial DPS snapshot at time 0
+    const initialSnapshot = { time: 0 };
+    chibis.forEach(c => { initialSnapshot[c.id] = 0; });
+    initialSnapshot['boss'] = 0;
+    setDpsHistory([initialSnapshot]);
+    lastDpsSnapshotRef.current = 0;
+
     startTimeRef.current = Date.now();
     pausedRef.current = false;
     setIsPaused(false);
@@ -856,14 +904,33 @@ export default function RaidMode() {
         // 30% chance for random buff (+5% stats in raid)
         if (Math.random() < KATANA_V_BUFF_CHANCE) {
           const roll = Math.random();
+          const cLog = detailedLogsRef.current[chibi.id];
           if (roll < 0.33) {
             kvs.allStatBuff += 5;
-            logEntries.push({ text: `${chibi.name} : Benediction +5% stats ! (total +${kvs.allStatBuff}%)`, time: elapsed, type: 'buff' });
+            logEntries.push({ text: `${chibi.name} : Benediction +5% stats ! (total +${kvs.allStatBuff}%)`, time: elapsed, type: 'buff', element: chibi.element, passive: 'Katana V' });
+            if (cLog) {
+              cLog.buffActivations.push({
+                name: 'Katana V - Bénédiction Divine',
+                value: `+${kvs.allStatBuff}% all stats`,
+              });
+            }
           } else if (roll < 0.66) {
             kvs.shield = true;
+            if (cLog) {
+              cLog.buffActivations.push({
+                name: 'Katana V - Bouclier Divin',
+                value: 'Absorbe 1 coup',
+              });
+            }
           } else {
             kvs.nextDmgMult = 6;
-            logEntries.push({ text: `${chibi.name} : Puissance x6 prochain coup !`, time: elapsed, type: 'buff' });
+            logEntries.push({ text: `${chibi.name} : Puissance x6 prochain coup !`, time: elapsed, type: 'buff', element: chibi.element, passive: 'Katana V' });
+            if (cLog) {
+              cLog.buffActivations.push({
+                name: 'Katana V - Puissance Divine',
+                value: 'x6 DMG prochain coup',
+              });
+            }
           }
         }
       }
@@ -878,6 +945,24 @@ export default function RaidMode() {
       if (result.damage > 0) {
         state.boss.hp -= result.damage;
         dpsTracker.current[chibi.id] = (dpsTracker.current[chibi.id] || 0) + result.damage;
+
+        // Track detailed logs
+        const cLog = detailedLogsRef.current[chibi.id];
+        if (cLog) {
+          cLog.totalDamage = (cLog.totalDamage || 0) + result.damage;
+          cLog.totalHits = (cLog.totalHits || 0) + 1;
+          cLog.skillsUsed = (cLog.skillsUsed || 0) + 1;
+          if (result.isCrit) {
+            cLog.critHits = (cLog.critHits || 0) + 1;
+            cLog.totalCritDamage = (cLog.totalCritDamage || 0) + result.damage;
+            cLog.maxCrit = Math.max(cLog.maxCrit || 0, result.damage);
+          }
+          cLog.dps = elapsed > 0 ? cLog.totalDamage / elapsed : 0;
+        }
+        const bossLog = detailedLogsRef.current['boss'];
+        if (bossLog) {
+          bossLog.damageTaken = (bossLog.damageTaken || 0) + result.damage;
+        }
 
         // ── Passive: Lifesteal — 15% chance to steal 12% DMG as HP
         if (chibi.passives?.find(p => p.type === 'lifesteal') && Math.random() < 0.15) {
@@ -941,7 +1026,19 @@ export default function RaidMode() {
       });
 
       chibi.lastAttackAt = now;
-      logEntries.push({ text: result.text, time: elapsed, type: result.isCrit ? 'crit' : 'normal' });
+
+      // Add element multiplier info to log
+      const elemMult = getElementMult(chibi.element, state.boss.element);
+      let elemText = '';
+      if (elemMult > 1) elemText = ' \uD83D\uDCA5 Super efficace !';
+      else if (elemMult < 1) elemText = ' \uD83D\uDEE1\uFE0F Peu efficace...';
+
+      logEntries.push({
+        text: result.text + elemText,
+        time: elapsed,
+        type: result.isCrit ? 'crit' : 'normal',
+        element: chibi.element,
+      });
       vfxEvents.push({ id: now + Math.random(), type: 'chibi_attack', sourceId: chibi.id, element: chibi.element, damage: result.damage, isCrit: result.isCrit, timestamp: now, attackInterval: chibi.attackInterval });
 
       // ── MEGUMIN EXPLOSION — special VFX + sound + Beru reaction ──
@@ -1022,7 +1119,19 @@ export default function RaidMode() {
         } else {
           const target = alive[Math.floor(Math.random() * alive.length)];
           const dmg = applyBossDmgToTarget(target, bossSkill);
-          logEntries.push({ text: `${state.boss.name} → ${target.name}: ${bossSkill.name} -${dmg?.damage || 0} PV${!target.alive ? ' K.O. !' : ''}`, time: elapsed, type: 'boss' });
+
+          // Boss element advantage
+          const bossElemMult = getElementMult(state.boss.element, target.element);
+          let bossElemText = '';
+          if (bossElemMult > 1) bossElemText = ' \uD83D\uDCA5';
+          else if (bossElemMult < 1) bossElemText = ' \uD83D\uDEE1\uFE0F';
+
+          logEntries.push({
+            text: `${state.boss.name} → ${target.name}: ${bossSkill.name} -${dmg?.damage || 0} PV${bossElemText}${!target.alive ? ' K.O. !' : ''}`,
+            time: elapsed,
+            type: 'boss',
+            element: state.boss.element,
+          });
           vfxEvents.push({ id: now + Math.random() + 0.5, type: 'boss_attack', targetId: target.id, damage: dmg?.damage || 0, timestamp: now });
         }
 
@@ -1052,12 +1161,26 @@ export default function RaidMode() {
     }
 
     if (logEntries.length > 0) {
-      setCombatLog(prev => [...prev.slice(-30), ...logEntries]);
+      setCombatLog(prev => [...prev, ...logEntries]); // Keep ALL logs (local storage only)
     }
 
     // Push VFX events
     if (vfxEvents.length > 0) {
       setVfxQueue(prev => [...prev.filter(v => now - v.timestamp < 800).slice(-20), ...vfxEvents]);
+    }
+
+    // DPS snapshot every 2 seconds
+    if (elapsed - lastDpsSnapshotRef.current >= 2) {
+      const snapshot = { time: elapsed };
+      state.chibis.forEach(c => {
+        const cLog = detailedLogsRef.current[c.id];
+        snapshot[c.id] = cLog?.dps || 0;
+      });
+      snapshot['boss'] = detailedLogsRef.current['boss']?.dps || 0;
+      console.log('📈 DPS Snapshot @', elapsed.toFixed(1), 's:', snapshot);
+      setDpsHistory(prev => [...prev, snapshot]);
+      setDetailedLogs({ ...detailedLogsRef.current });
+      lastDpsSnapshotRef.current = elapsed;
     }
 
     setTimer(remaining);
@@ -1105,7 +1228,7 @@ export default function RaidMode() {
           });
           setBattleState({ ...state });
         }
-        setCombatLog(prev => [...prev.slice(-30), {
+        setCombatLog(prev => [...prev, {
           text: `Sung Jinwoo: ${skill.name} ! Soin ${skill.effect.value}% PV !`,
           time: timerRef.current, type: 'sung',
         }]);
@@ -1116,7 +1239,7 @@ export default function RaidMode() {
           effect: skill.effect,
           expiresAt: now + skill.durationSec * 1000,
         });
-        setCombatLog(prev => [...prev.slice(-30), {
+        setCombatLog(prev => [...prev, {
           text: `Sung Jinwoo: ${skill.name} ! ${skill.desc}`,
           time: timerRef.current, type: 'sung',
         }]);
@@ -1512,6 +1635,16 @@ export default function RaidMode() {
               </div>
             ))}
           </div>
+
+          {/* View Detailed Stats Button */}
+          <div className="flex justify-center mt-3">
+            <button
+              onClick={() => setShowDetailedStats(true)}
+              className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-sm transition-all border border-purple-400/30 flex items-center gap-2"
+            >
+              📊 Voir les stats détaillées
+            </button>
+          </div>
         </div>
 
         {/* Hunter Unlocks */}
@@ -1565,6 +1698,49 @@ export default function RaidMode() {
             Relancer le Raid
           </button>
         </div>
+
+        {/* Detailed Stats Modal */}
+        {showDetailedStats && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowDetailedStats(false)}>
+            <div className="bg-[#0f0f1a] border-2 border-purple-400 rounded-2xl p-4 max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-purple-300">📊 Statistiques Détaillées du Raid</h2>
+                <button
+                  onClick={() => setShowDetailedStats(false)}
+                  className="p-2 rounded-lg bg-red-600/20 border border-red-500/30 hover:bg-red-600/30 transition-all text-red-300 font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* DPS Graph in modal */}
+              <div className="mb-4">
+                <SharedDPSGraph
+                  dpsHistory={dpsHistory}
+                  fighters={dpsBreakdown.map(d => ({
+                    id: d.id,
+                    name: d.name,
+                    sprite: d.sprite,
+                    element: d.element,
+                  }))}
+                  bossData={{ id: 'boss', name: boss.name, sprite: boss.sprite }}
+                />
+              </div>
+
+              <SharedCombatLogs
+                combatLog={combatLog}
+                detailedLogs={detailedLogs}
+                fighters={dpsBreakdown.map(d => ({
+                  id: d.id,
+                  name: d.name,
+                  sprite: d.sprite,
+                  element: d.element,
+                }))}
+                boss={{ id: 'boss', name: boss.name, sprite: boss.sprite }}
+              />
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -1591,20 +1767,41 @@ export default function RaidMode() {
         <motion.div key={phase} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
           {phase === 'setup' && renderSetup()}
           {phase === 'battle' && (
-            <RaidArena
-              battleState={battleState}
-              vfxQueue={vfxQueue}
-              timer={timer}
-              isPaused={isPaused}
-              sungCooldowns={sungCooldowns}
-              activeSungBuffs={activeSungBuffs}
-              combatLog={combatLog}
-              onTogglePause={togglePause}
-              onSungSkill={(key) => window.dispatchEvent(new KeyboardEvent('keydown', { key }))}
-              phase={phase}
-              dpsData={dpsTracker.current}
-              chibiWeapons={chibiWeaponsMap}
-            />
+            <>
+              <RaidArena
+                battleState={battleState}
+                vfxQueue={vfxQueue}
+                timer={timer}
+                isPaused={isPaused}
+                sungCooldowns={sungCooldowns}
+                activeSungBuffs={activeSungBuffs}
+                combatLog={combatLog}
+                onTogglePause={togglePause}
+                onSungSkill={(key) => window.dispatchEvent(new KeyboardEvent('keydown', { key }))}
+                phase={phase}
+                dpsData={dpsTracker.current}
+                chibiWeapons={chibiWeaponsMap}
+              />
+
+              {/* DPS Graph */}
+              <div className="mt-6">
+                <SharedDPSGraph
+                  dpsHistory={dpsHistory}
+                  fighters={battleState?.chibis || []}
+                  bossData={battleState?.boss ? { id: 'boss', name: battleState.boss.name } : null}
+                />
+              </div>
+
+              {/* Combat Logs */}
+              <div className="mt-6">
+                <SharedCombatLogs
+                  combatLog={combatLog}
+                  detailedLogs={detailedLogs}
+                  fighters={battleState?.chibis || []}
+                  boss={battleState?.boss}
+                />
+              </div>
+            </>
           )}
           {phase === 'result' && renderResult()}
         </motion.div>
