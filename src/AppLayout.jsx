@@ -3,6 +3,7 @@ import { Menu } from 'lucide-react';
 import BuilderMenu from './buildermenu';
 import FloatingBeruMascot from './components/FloatingBeruMascot';
 import FloatingDaijin from './components/FloatingDaijin';
+import FloatingPod042 from './components/FloatingPod042';
 import AchievementToast from './components/AchievementToast';
 import shadowAchievementManager from './utils/ShadowAchievementManager';
 import { isLoggedIn } from './utils/auth';
@@ -157,6 +158,15 @@ export default function AppLayout({ children }) {
                   storageKey="daijin_mode"
                 />
               )}
+
+              {/* Pod 042 (only for Replicant members) */}
+              {userFaction === 'replicant' && (
+                <MascotToggleButton
+                  name="Pod 042"
+                  icon="🤖"
+                  storageKey="pod042_mode"
+                />
+              )}
             </div>
           </div>
         )}
@@ -168,6 +178,14 @@ export default function AppLayout({ children }) {
       {/* Daijin - Mascotte de Vox Cordis */}
       {userFaction === 'vox_cordis' && (
         <FloatingDaijin
+          isHovering={false}
+          hasFaction={true}
+        />
+      )}
+
+      {/* Pod 042 - Unité de Support Replicant */}
+      {userFaction === 'replicant' && (
+        <FloatingPod042
           isHovering={false}
           hasFaction={true}
         />
@@ -190,9 +208,9 @@ function MascotToggleButton({ name, icon, storageKey }) {
 
   const modes = ['normal', 'calm', 'hidden'];
   const modeLabels = {
-    normal: 'Normal',
-    calm: name === 'Béru' ? 'Calme' : 'Zen',
-    hidden: 'Caché'
+    normal: name === 'Pod 042' ? 'Actif' : 'Normal',
+    calm: name === 'Béru' ? 'Calme' : name === 'Pod 042' ? 'Veille' : 'Zen',
+    hidden: name === 'Pod 042' ? 'Désactivé' : 'Caché'
   };
   const modeIcons = {
     normal: icon,

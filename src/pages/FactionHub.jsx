@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import shadowCoinManager from '../components/ChibiSystem/ShadowCoinManager';
 import FloatingDaijin from '../components/FloatingDaijin';
+import FloatingPod042 from '../components/FloatingPod042';
 
 // Auth helpers
 const isLoggedIn = () => {
@@ -49,6 +50,7 @@ export default function FactionHub() {
   const [weeklyStats, setWeeklyStats] = useState(null);
   const [showChangeFactionModal, setShowChangeFactionModal] = useState(false);
   const [hoveringVoxCordis, setHoveringVoxCordis] = useState(false);
+  const [hoveringReplicant, setHoveringReplicant] = useState(false);
 
   const FACTION_CHANGE_COST = 5000; // Shadow Coins
 
@@ -383,6 +385,7 @@ export default function FactionHub() {
             <FactionCard
               faction={FACTIONS.replicant}
               onJoin={joinFaction}
+              onHoverChange={setHoveringReplicant}
             />
           </div>
         </div>
@@ -393,6 +396,16 @@ export default function FactionHub() {
             <FloatingDaijin
               isHovering={hoveringVoxCordis}
               hasFaction={factionData?.faction?.id === 'vox_cordis'}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Pod 042 mascot for Replicant */}
+        <AnimatePresence>
+          {hoveringReplicant && (
+            <FloatingPod042
+              isHovering={hoveringReplicant}
+              hasFaction={factionData?.faction?.id === 'replicant'}
             />
           )}
         </AnimatePresence>
@@ -526,6 +539,14 @@ export default function FactionHub() {
       {/* Daijin mascot for Vox Cordis members */}
       {currentFaction.id === 'vox_cordis' && (
         <FloatingDaijin
+          isHovering={false}
+          hasFaction={true}
+        />
+      )}
+
+      {/* Pod 042 mascot for Replicant members */}
+      {currentFaction.id === 'replicant' && (
+        <FloatingPod042
           isHovering={false}
           hasFaction={true}
         />
