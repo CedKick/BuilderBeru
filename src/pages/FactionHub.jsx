@@ -24,18 +24,13 @@ import FloatingPod042 from '../components/FloatingPod042';
 
 // Auth helpers
 const isLoggedIn = () => {
-  const user = localStorage.getItem('builderberu_users');
-  return !!user;
-};
-
-const getAuthUser = () => {
-  const user = localStorage.getItem('builderberu_users');
-  return user ? JSON.parse(user) : null;
+  const token = localStorage.getItem('builderberu_auth_token');
+  return !!token;
 };
 
 const authHeaders = () => {
-  const user = getAuthUser();
-  return user?.token ? { Authorization: `Bearer ${user.token}` } : {};
+  const token = localStorage.getItem('builderberu_auth_token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 // ═══════════════════════════════════════════════════════════════
