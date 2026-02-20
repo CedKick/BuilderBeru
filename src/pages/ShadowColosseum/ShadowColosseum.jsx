@@ -1467,6 +1467,34 @@ export default function ShadowColosseum() {
   // ARTIFACT CLEANUP UTILITIES
   // ═══════════════════════════════════════════════════════════════
 
+  const showToast = (message, color = '#10b981') => {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a2e;
+      color: ${color};
+      padding: 12px 20px;
+      border-radius: 8px;
+      border: 1px solid ${color};
+      font-size: 14px;
+      z-index: 99999;
+      max-width: 90vw;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  };
+
   const isArtifactEquipped = (uid) => {
     return Object.values(data.artifacts || {}).some(slots =>
       Object.values(slots).some(art => art?.uid === uid)
@@ -1550,10 +1578,7 @@ export default function ShadowColosseum() {
 
     shadowCoinManager.addCoins(cleanupPreview.totalCoins, 'mass_cleanup');
 
-    toast.success(
-      `✨ Nettoyage terminé! ${cleanupPreview.totalDelete} artefacts vendus pour ${cleanupPreview.totalCoins} coins`,
-      { position: 'top-center', autoClose: 3000, style: { background: '#1a1a2e', color: '#10b981' } }
-    );
+    showToast(`✨ Nettoyage terminé! ${cleanupPreview.totalDelete} artefacts vendus pour ${cleanupPreview.totalCoins} coins`, '#10b981');
 
     setCleanupPreview(null);
   };
@@ -6512,11 +6537,7 @@ export default function ShadowColosseum() {
                 });
 
                 // Show success toast
-                toast.success(`🎉 Arme forgée: ${WEAPONS[weaponId]?.name || weaponId}!`, {
-                  position: 'top-center',
-                  autoClose: 3000,
-                  style: { background: '#1a1a2e', color: '#fbbf24' }
-                });
+                showToast(`🎉 Arme forgée: ${WEAPONS[weaponId]?.name || weaponId}!`, '#fbbf24');
               };
 
               const forgeItems = [
