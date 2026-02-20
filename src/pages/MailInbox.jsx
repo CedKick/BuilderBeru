@@ -52,7 +52,7 @@ export default function MailInbox() {
       const data = await resp.json();
 
       if (data.success) {
-        setMails(data.mails || []);
+        setMails(data.mail || []);
         setUnreadCount(data.unreadCount || 0);
       } else {
         setError(data.message || 'Erreur lors du chargement du courrier');
@@ -418,7 +418,7 @@ export default function MailInbox() {
             ) : (
               mails.map((mail) => {
                 const isExpanded = expandedIds.has(mail.id);
-                const mailTypeInfo = MAIL_TYPES[mail.mail_type] || MAIL_TYPES.system;
+                const mailTypeInfo = MAIL_TYPES[mail.mailType] || MAIL_TYPES.system;
                 const hasRewards = mail.rewards && (
                   (mail.rewards.weapons && mail.rewards.weapons.length > 0) ||
                   (mail.rewards.hammers && Object.keys(mail.rewards.hammers).length > 0) ||
@@ -468,8 +468,8 @@ export default function MailInbox() {
 
                         {/* Sender and date */}
                         <div className="text-xs text-gray-400 mb-2">
-                          De: {mail.sender || 'system'} • {formatDate(mail.created_at)}
-                          {!mail.recipient_username && (
+                          De: {mail.sender || 'system'} • {formatDate(mail.createdAt)}
+                          {!mail.recipientUsername && (
                             <span className="ml-2 text-purple-400">[\u2733 Diffusion]</span>
                           )}
                         </div>
@@ -479,11 +479,11 @@ export default function MailInbox() {
                       </div>
 
                       {/* Delete button */}
-                      {mail.recipient_username && (
+                      {mail.recipientUsername && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            deleteMail(mail.id, mail.recipient_username);
+                            deleteMail(mail.id, mail.recipientUsername);
                           }}
                           className="text-red-400 hover:text-red-300 p-2 hover:bg-red-500/10 rounded transition-colors flex-shrink-0"
                           title="Supprimer"
