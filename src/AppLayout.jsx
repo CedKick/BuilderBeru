@@ -71,6 +71,25 @@ export default function AppLayout({ children }) {
 
   return (
     <div className="relative min-h-screen bg-[#0f0f1a] text-white">
+      {/* Faction Background */}
+      {userFaction && (
+        <div
+          className="fixed inset-0 z-0 pointer-events-none"
+          style={{
+            backgroundImage: userFaction === 'vox_cordis'
+              ? 'url(https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771599084/VCBGround_vekobq.jpg)'
+              : userFaction === 'replicant'
+              ? 'url(https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771599142/RPBground_dgqvzj.jpg)'
+              : 'none',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            opacity: 0.08,
+            filter: 'blur(2px)',
+          }}
+        />
+      )}
+
       <style jsx="true">{`
         @keyframes fadeIn {
           from { opacity: 0; }
