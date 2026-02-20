@@ -3,7 +3,7 @@
 // Fais combattre tes chibis captures, monte de niveaux, bats des boss !
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import shadowCoinManager from '../../components/ChibiSystem/ShadowCoinManager';
@@ -384,6 +384,7 @@ export default function ShadowColosseum() {
   const lastDropCheckRef = useRef(0);
   const [unreadMailCount, setUnreadMailCount] = useState(0);
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Fire-and-forget legendary drop logger
   const logLegendaryDrop = (itemType, itemId, itemName, itemRarity, awakening = 0) => {
@@ -457,6 +458,17 @@ export default function ShadowColosseum() {
     };
     window.addEventListener('beru-react', handler);
     return () => window.removeEventListener('beru-react', handler);
+  }, []);
+
+  // Auto-open drop log if navigated with ?droplog=1
+  useEffect(() => {
+    if (searchParams.get('droplog') === '1') {
+      setShowDropLog(true);
+      setHasNewDrops(false);
+      fetchDropLog();
+      searchParams.delete('droplog');
+      setSearchParams(searchParams, { replace: true });
+    }
   }, []);
 
   // Fetch mail count on mount + listen for updates

@@ -1,9 +1,9 @@
 // src/pages/MailInbox.jsx
 // Complete inbox component with filters, expand/collapse, rewards claiming, and delete functionality
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Inbox, Gift, Trash2, ChevronDown, ChevronUp, Check, X, ArrowLeft } from 'lucide-react';
+import { Mail, Inbox, Gift, Trash2, ChevronDown, ChevronUp, Check, X, ArrowLeft, MessageCircle, Send } from 'lucide-react';
 import { isLoggedIn, authHeaders, getAuthUser } from '../utils/auth';
 import shadowCoinManager from '../components/ChibiSystem/ShadowCoinManager';
 import { WEAPONS } from './ShadowColosseum/equipmentData';
@@ -15,7 +15,144 @@ const MAIL_TYPES = {
   reward: { label: 'Recompense', color: 'bg-yellow-500', icon: '\uD83C\uDFC6' },
   personal: { label: 'Personnel', color: 'bg-purple-500', icon: '\uD83D\uDC8C' },
   faction: { label: 'Faction', color: 'bg-orange-500', icon: '\u2694\uFE0F' },
+  support: { label: 'Support', color: 'bg-pink-500', icon: '\uD83D\uDCE8' },
 };
+
+// ── Béru Chibi Dissuasion System ──
+const BERU_SPRITES = {
+  idle: 'https://res.cloudinary.com/dkfkbvarj/image/upload/beru_face_w2rdyn.png',
+  angry: 'https://res.cloudinary.com/dkfkbvarj/image/upload/BeruAngry_zkblsv.png',
+  left: 'https://res.cloudinary.com/dkfkbvarj/image/upload/beru_left_bvtyba.png',
+  right: 'https://res.cloudinary.com/dkfkbvarj/image/upload/beru_right_ofwvy5.png',
+};
+
+const BERU_DISSUASION_LINES = [
+  // Phase 1 — Gentle
+  { text: "Hey, tu fais quoi la...?", sprite: 'idle', shake: false },
+  { text: "Non non non, fais pas ca !", sprite: 'idle', shake: false },
+  { text: "Le Monarque est TRES occupe tu sais...", sprite: 'idle', shake: false },
+  { text: "Il est en train de manger des tacos la, derange pas !", sprite: 'idle', shake: true },
+  // Phase 2 — Threatening
+  { text: "Tu sais ce qui arrive a ceux qui derangent le Monarque ?", sprite: 'angry', shake: true },
+  { text: "Il va baisser tes taux de drop a 0.001%...", sprite: 'angry', shake: true },
+  { text: "Ton prochain SSR sera dans 847 pulls, t'es prevenu.", sprite: 'angry', shake: false },
+  { text: "Moi j'ai essaye une fois... il m'a transforme en mob de tutoriel.", sprite: 'idle', shake: false },
+  // Phase 3 — Desperate
+  { text: "OK STOP. Je te donne un taco si tu fermes ce formulaire.", sprite: 'angry', shake: true },
+  { text: "Tu veux VRAIMENT que tes artefacts roll que du flat DEF ??", sprite: 'angry', shake: true },
+  { text: "PITIE, je serai ton ami, lache ce clavier !", sprite: 'idle', shake: true },
+  { text: "Le dernier joueur qui a envoye un ticket... on l'a jamais revu.", sprite: 'angry', shake: false },
+  // Phase 4 — Panic
+  { text: "BON OK. Si t'insistes, je vais pas pouvoir t'empecher...", sprite: 'idle', shake: false },
+  { text: "...mais sache que j'ai fait pipi dans ton cafe ce matin.", sprite: 'angry', shake: true },
+  { text: "T'auras meme plus de tacos au self du donjon.", sprite: 'angry', shake: true },
+  { text: "Tout ca pour un ticket support... quelle tragedie.", sprite: 'idle', shake: false },
+];
+
+function BeruChibiDissuasion({ containerRef }) {
+  const [lineIndex, setLineIndex] = useState(0);
+  const [beruPos, setBeruPos] = useState({ x: 50, y: 80 });
+  const [targetPos, setTargetPos] = useState({ x: 50, y: 80 });
+  const [isChasing, setIsChasing] = useState(false);
+  const [showBubble, setShowBubble] = useState(true);
+  const [facingRight, setFacingRight] = useState(true);
+  const animRef = useRef(null);
+  const lineTimerRef = useRef(null);
+
+  // Cycle through dissuasion lines
+  useEffect(() => {
+    lineTimerRef.current = setInterval(() => {
+      setLineIndex(prev => {
+        const next = prev + 1;
+        if (next >= BERU_DISSUASION_LINES.length) return 0;
+        return next;
+      });
+      setShowBubble(true);
+    }, 4000);
+    return () => clearInterval(lineTimerRef.current);
+  }, []);
+
+  // Track mouse within the modal container
+  const handleMouseMove = useCallback((e) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setTargetPos({ x: Math.max(5, Math.min(85, x)), y: Math.max(5, Math.min(85, y)) });
+  }, [containerRef]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    container.addEventListener('mousemove', handleMouseMove);
+    return () => container.removeEventListener('mousemove', handleMouseMove);
+  }, [containerRef, handleMouseMove]);
+
+  // Start chasing mouse after line 4
+  useEffect(() => {
+    if (lineIndex >= 4) setIsChasing(true);
+  }, [lineIndex]);
+
+  // Smooth follow animation
+  useEffect(() => {
+    if (!isChasing) return;
+    const animate = () => {
+      setBeruPos(prev => {
+        const dx = targetPos.x - prev.x;
+        const dy = targetPos.y - prev.y;
+        if (dx > 2) setFacingRight(true);
+        else if (dx < -2) setFacingRight(false);
+        return {
+          x: prev.x + dx * 0.06,
+          y: prev.y + dy * 0.06,
+        };
+      });
+      animRef.current = requestAnimationFrame(animate);
+    };
+    animRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animRef.current);
+  }, [isChasing, targetPos]);
+
+  const currentLine = BERU_DISSUASION_LINES[lineIndex];
+  const spriteUrl = isChasing
+    ? (facingRight ? BERU_SPRITES.right : BERU_SPRITES.left)
+    : BERU_SPRITES[currentLine.sprite];
+
+  return (
+    <div
+      className="absolute pointer-events-none z-10"
+      style={{
+        left: `${beruPos.x}%`,
+        top: `${beruPos.y}%`,
+        transform: 'translate(-50%, -50%)',
+        transition: isChasing ? 'none' : 'left 0.8s ease, top 0.8s ease',
+      }}
+    >
+      {/* Speech bubble */}
+      {showBubble && (
+        <div
+          className="absolute -top-16 left-1/2 -translate-x-1/2 bg-white text-gray-900 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shadow-lg border-2 border-purple-400"
+          style={{ animation: 'beruBubblePop 0.3s ease-out' }}
+        >
+          {currentLine.text}
+          <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r-2 border-b-2 border-purple-400 rotate-45" />
+        </div>
+      )}
+
+      {/* Béru sprite */}
+      <img
+        src={spriteUrl}
+        alt="Béru"
+        className="w-16 h-16 object-contain drop-shadow-lg"
+        style={{
+          animation: currentLine.shake ? 'beruShake 0.3s infinite' : (isChasing ? 'beruBounce 0.5s infinite' : 'beruFloat 2s ease-in-out infinite'),
+          imageRendering: 'pixelated',
+          filter: 'drop-shadow(0 0 8px rgba(168, 85, 247, 0.5))',
+        }}
+      />
+    </div>
+  );
+}
 
 export default function MailInbox() {
   const navigate = useNavigate();
@@ -26,6 +163,15 @@ export default function MailInbox() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [claimingId, setClaimingId] = useState(null);
+
+  // Support contact form
+  const [showSupportForm, setShowSupportForm] = useState(false);
+  const [supportSubject, setSupportSubject] = useState('');
+  const [supportMessage, setSupportMessage] = useState('');
+  const [supportSending, setSupportSending] = useState(false);
+  const [supportError, setSupportError] = useState(null);
+  const [supportSuccess, setSupportSuccess] = useState(null);
+  const supportModalRef = useRef(null);
 
   // Auth check
   useEffect(() => {
@@ -285,6 +431,49 @@ export default function MailInbox() {
     }
   };
 
+  const sendSupportMessage = async () => {
+    if (!supportSubject.trim() || !supportMessage.trim()) {
+      setSupportError('Sujet et message requis');
+      return;
+    }
+
+    setSupportSending(true);
+    setSupportError(null);
+    setSupportSuccess(null);
+
+    try {
+      const resp = await fetch('/api/mail?action=contact-support', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders(),
+        },
+        body: JSON.stringify({
+          subject: supportSubject.trim(),
+          message: supportMessage.trim(),
+        }),
+      });
+
+      const data = await resp.json();
+      if (data.success) {
+        setSupportSuccess('Message envoye au support !');
+        setSupportSubject('');
+        setSupportMessage('');
+        setTimeout(() => {
+          setShowSupportForm(false);
+          setSupportSuccess(null);
+        }, 2000);
+      } else {
+        setSupportError(data.error || 'Erreur lors de l\'envoi');
+      }
+    } catch (err) {
+      console.error('Support message failed:', err);
+      setSupportError('Impossible d\'envoyer. Verifiez votre connexion.');
+    } finally {
+      setSupportSending(false);
+    }
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -502,7 +691,142 @@ export default function MailInbox() {
             <Gift size={16} className="inline mr-2" />
             Recompenses
           </button>
+
+          {/* Contact Support button */}
+          <button
+            onClick={() => {
+              setShowSupportForm(true);
+              setSupportError(null);
+              setSupportSuccess(null);
+            }}
+            className="ml-auto px-4 py-2 rounded-lg font-semibold bg-gradient-to-r from-pink-500 to-rose-500 text-white hover:from-pink-600 hover:to-rose-600 transition-all flex items-center gap-2"
+          >
+            <MessageCircle size={16} />
+            Contacter le Support
+          </button>
         </div>
+
+        {/* Support Form Modal */}
+        {showSupportForm && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+            <div ref={supportModalRef} className="bg-[#0f0f1a] border border-white/20 rounded-lg max-w-lg w-full relative overflow-hidden">
+              {/* Béru Chibi Dissuasion */}
+              <BeruChibiDissuasion containerRef={supportModalRef} />
+
+              {/* Header */}
+              <div className="p-6 border-b border-white/10 flex items-center justify-between relative z-20">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <MessageCircle size={22} className="text-pink-400" />
+                  Contacter le Support
+                </h2>
+                <button
+                  onClick={() => setShowSupportForm(false)}
+                  className="text-gray-400 hover:text-white p-2 hover:bg-white/10 rounded transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-4 relative z-20">
+                <p className="text-sm text-gray-400">
+                  Envoyez un message a l'equipe. Limite : 1 message par jour.
+                </p>
+
+                {supportSuccess && (
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-green-400 text-sm flex items-center gap-2">
+                    <Check size={16} />
+                    {supportSuccess}
+                  </div>
+                )}
+
+                {supportError && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm flex items-center gap-2">
+                    <X size={16} />
+                    {supportError}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-1">
+                    Sujet <span className="text-red-400">*</span>
+                    <span className="text-xs text-gray-500 ml-2">({supportSubject.length}/80)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={supportSubject}
+                    onChange={(e) => setSupportSubject(e.target.value.slice(0, 80))}
+                    placeholder="Ex: Bug dans la forge, Suggestion..."
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-pink-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-1">
+                    Message <span className="text-red-400">*</span>
+                    <span className="text-xs text-gray-500 ml-2">({supportMessage.length}/1000)</span>
+                  </label>
+                  <textarea
+                    value={supportMessage}
+                    onChange={(e) => setSupportMessage(e.target.value.slice(0, 1000))}
+                    placeholder="Decrivez votre probleme ou suggestion..."
+                    rows={5}
+                    className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-pink-500 resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-white/10 flex gap-3 relative z-20">
+                <button
+                  onClick={() => setShowSupportForm(false)}
+                  className="flex-1 bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-6 rounded-lg transition-all"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={sendSupportMessage}
+                  disabled={supportSending || !supportSubject.trim() || !supportMessage.trim()}
+                  className="flex-1 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2"
+                >
+                  {supportSending ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      Envoi...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={18} />
+                      Envoyer
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Béru Chibi Animations */}
+              <style>{`
+                @keyframes beruShake {
+                  0%, 100% { transform: rotate(0deg); }
+                  25% { transform: rotate(-12deg); }
+                  75% { transform: rotate(12deg); }
+                }
+                @keyframes beruFloat {
+                  0%, 100% { transform: translateY(0); }
+                  50% { transform: translateY(-6px); }
+                }
+                @keyframes beruBounce {
+                  0%, 100% { transform: translateY(0); }
+                  50% { transform: translateY(-10px); }
+                }
+                @keyframes beruBubblePop {
+                  0% { transform: translateX(-50%) scale(0.5); opacity: 0; }
+                  70% { transform: translateX(-50%) scale(1.1); }
+                  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+                }
+              `}</style>
+            </div>
+          </div>
+        )}
 
         {/* Loading */}
         {loading && (

@@ -69,6 +69,14 @@ export default function BuilderMenu({ isOpen, onClose }) {
     if (isOpen && authState.loggedIn) fetchUnreadCount();
   }, [isOpen, authState.loggedIn]);
 
+  // Poll for new mail every 2 minutes
+  useEffect(() => {
+    if (!authState.loggedIn) return;
+    fetchUnreadCount();
+    const iv = setInterval(fetchUnreadCount, 120000);
+    return () => clearInterval(iv);
+  }, [authState.loggedIn]);
+
   // Listen for mail-update events
   useEffect(() => {
     const handler = (e) => {

@@ -62,7 +62,7 @@ async function handleSend(req, res) {
   if (!message || typeof message !== 'string' || message.length > 2000) {
     return res.status(400).json({ error: 'Invalid message (max 2000 chars)' });
   }
-  const validTypes = ['admin', 'system', 'update', 'reward', 'personal', 'faction'];
+  const validTypes = ['admin', 'system', 'update', 'reward', 'personal', 'faction', 'support'];
   if (!mailType || !validTypes.includes(mailType)) {
     return res.status(400).json({ error: 'Invalid mailType' });
   }
@@ -339,6 +339,50 @@ async function handleDelete(req, res) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// CONTACT-SUPPORT — Players can send 1 message per day to admin
+// ═══════════════════════════════════════════════════════════════
+
+async function handleContactSupport(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const user = await extractUser(req);
+  if (!user) return res.status(401).json({ error: 'Authentication required' });
+
+  const { subject, message } = req.body;
+
+  if (!subject || typeof subject !== 'string' || subject.trim().length === 0 || subject.length > 80) {
+    return res.status(400).json({ error: 'Sujet requis (max 80 caracteres)' });
+  }
+  if (!message || typeof message !== 'string' || message.trim().length === 0 || message.length > 1000) {
+    return res.status(400).json({ error: 'Message requis (max 1000 caracteres)' });
+  }
+
+  // Rate limit: 1 message per day per user
+  const recentCheck = await query(
+    `SELECT id FROM player_mail
+     WHERE sender = $1 AND mail_type = 'support'
+     AND created_at > NOW() - INTERVAL '24 hours'
+     LIMIT 1`,
+    [user.username]
+  );
+
+  if (recentCheck.rows.length > 0) {
+    return res.status(429).json({ error: 'Vous avez deja envoye un message au support aujourd\'hui. Reessayez demain.' });
+  }
+
+  // Send mail to kly with [Bureau Des Plaintes] prefix
+  const fullSubject = `[Bureau Des Plaintes] ${subject.trim()}`;
+
+  await query(
+    `INSERT INTO player_mail (recipient_username, sender, subject, message, mail_type)
+     VALUES ($1, $2, $3, $4, $5)`,
+    ['kly', user.username, fullSubject.slice(0, 100), message.trim(), 'support']
+  );
+
+  return res.status(200).json({ success: true });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // SEARCH-USERS — Search registered users (admin only)
 // ═══════════════════════════════════════════════════════════════
 
@@ -398,6 +442,8 @@ export default async function handler(req, res) {
         return await handleDelete(req, res);
       case 'search-users':
         return await handleSearchUsers(req, res);
+      case 'contact-support':
+        return await handleContactSupport(req, res);
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }
