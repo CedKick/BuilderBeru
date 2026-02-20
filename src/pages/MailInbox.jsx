@@ -115,11 +115,22 @@ export default function MailInbox() {
     const SAVE_KEY = 'shadow_colosseum_data';
     let data = JSON.parse(localStorage.getItem(SAVE_KEY) || '{"weaponCollection":{},"hammers":{}}');
 
-    // Weapons
+    // Weapons (with A10 → Red Hammer conversion)
     if (rewards.weapons && Array.isArray(rewards.weapons)) {
       if (!data.weaponCollection) data.weaponCollection = {};
+      if (!data.hammers) data.hammers = {};
+
       rewards.weapons.forEach(w => {
-        data.weaponCollection[w.id] = w.awakening || 0;
+        const currentAwakening = data.weaponCollection[w.id];
+
+        // Si l'arme est déjà A10, convertir en marteau rouge
+        if (currentAwakening === 10) {
+          // Conversion : 1 arme dupe A10 = 1 marteau rouge
+          data.hammers.marteau_rouge = (data.hammers.marteau_rouge || 0) + 1;
+        } else {
+          // Sinon, ajouter/update l'arme
+          data.weaponCollection[w.id] = w.awakening || 0;
+        }
       });
     }
 
@@ -167,14 +178,23 @@ export default function MailInbox() {
         ));
 
         // Build detailed success message
+        const SAVE_KEY = 'shadow_colosseum_data';
+        let data = JSON.parse(localStorage.getItem(SAVE_KEY) || '{"weaponCollection":{},"hammers":{}}');
         let message = '\u2705 Recompenses reclamees avec succes !\n\nVous avez recu :\n';
 
         if (rewards.weapons && rewards.weapons.length > 0) {
           message += '\n\uD83D\uDDE1\uFE0F ARMES :\n';
           rewards.weapons.forEach(w => {
             const weaponName = getWeaponName(w.id);
-            const awakening = w.awakening > 0 ? ` +${w.awakening}` : '';
-            message += `  • ${weaponName}${awakening}\n`;
+            const currentAwakening = data.weaponCollection[w.id];
+
+            // Check if converted to red hammer
+            if (currentAwakening === 10) {
+              message += `  • ${weaponName} → \uD83D\uDD28 Marteau Rouge (deja A10)\n`;
+            } else {
+              const awakening = w.awakening > 0 ? ` +${w.awakening}` : '';
+              message += `  • ${weaponName}${awakening}\n`;
+            }
           });
         }
 

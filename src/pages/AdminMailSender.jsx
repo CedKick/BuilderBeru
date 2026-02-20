@@ -36,6 +36,10 @@ export default function AdminMailSender() {
   const [hammers, setHammers] = useState({});
   const [coins, setCoins] = useState(0);
 
+  // Weapon form
+  const [weaponFormId, setWeaponFormId] = useState('');
+  const [weaponFormAwakening, setWeaponFormAwakening] = useState(0);
+
   // UI
   const [showPreview, setShowPreview] = useState(false);
   const [sending, setSending] = useState(false);
@@ -451,7 +455,8 @@ export default function AdminMailSender() {
               {/* Add weapon */}
               <div className="flex gap-2 mb-3">
                 <select
-                  id="weaponSelect"
+                  value={weaponFormId}
+                  onChange={(e) => setWeaponFormId(e.target.value)}
                   className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-amber-500"
                 >
                   <option value="">Selectionner une arme</option>
@@ -463,20 +468,18 @@ export default function AdminMailSender() {
                 </select>
                 <input
                   type="number"
-                  id="awakenInput"
+                  value={weaponFormAwakening}
+                  onChange={(e) => setWeaponFormAwakening(parseInt(e.target.value) || 0)}
                   min="0"
                   max="10"
-                  defaultValue="0"
                   placeholder="Awaken"
                   className="w-24 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-amber-500"
                 />
                 <button
                   onClick={() => {
-                    const select = document.getElementById('weaponSelect');
-                    const input = document.getElementById('awakenInput');
-                    addWeapon(select.value, parseInt(input.value) || 0);
-                    select.value = '';
-                    input.value = '0';
+                    addWeapon(weaponFormId, weaponFormAwakening);
+                    setWeaponFormId('');
+                    setWeaponFormAwakening(0);
                   }}
                   className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 >
