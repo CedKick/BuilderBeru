@@ -1003,6 +1003,7 @@ const FloatingBeruMascot = () => {
   // State
   const [mood, setMood] = useState('idle');
   const [bubble, setBubble] = useState(null);
+  const [isAdminMessage, setIsAdminMessage] = useState(false);
   const [beruMode, setBeruMode] = useState(() => {
     const saved = localStorage.getItem('beru_mascot_mode');
     if (BERU_MODES.includes(saved)) return saved;
@@ -1108,17 +1109,22 @@ const FloatingBeruMascot = () => {
 
   // ─── Bubble ─────────────────────────────────────────────────
 
-  const showBubble = useCallback((message, duration = 4000) => {
-    // Don't let timed bubbles overwrite an active story
+  const showBubble = useCallback((message, duration = 4000, isAdmin = false) => {
+    // Don't let timed bubbles overwrite an active story or admin message
     if (storyActiveRef.current && duration > 0) return;
+    if (isAdminMessage && !isAdmin) return; // Block normal messages if admin message is active
     if (bubbleTimerRef.current) clearTimeout(bubbleTimerRef.current);
     bubbleTimerRef.current = null;
     setBubble(message);
+    setIsAdminMessage(isAdmin);
     pushChatMessage('Beru', message);
-    if (duration > 0) {
-      bubbleTimerRef.current = setTimeout(() => setBubble(null), duration);
+    if (duration > 0 && !isAdmin) {
+      bubbleTimerRef.current = setTimeout(() => {
+        setBubble(null);
+        setIsAdminMessage(false);
+      }, duration);
     }
-  }, [pushChatMessage]);
+  }, [pushChatMessage, isAdminMessage]);
 
   // ─── Calm Mode: tacos messages + fixed position ──────────
   useEffect(() => {
@@ -1380,7 +1386,7 @@ const FloatingBeruMascot = () => {
 
   useEffect(() => {
     const handleBeruReact = (e) => {
-      const { message, mood: newMood, duration, type, image } = e.detail || {};
+      const { message, mood: newMood, duration, type, image, isAdmin } = e.detail || {};
       if (type === 'sulfuras') {
         setMood('excited');
         spawnParticles('🔥', 12);
@@ -1398,7 +1404,7 @@ const FloatingBeruMascot = () => {
         setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 27000);
         return;
       }
-      if (message) showBubble(message, duration || 4000);
+      if (message) showBubble(message, duration || 4000, isAdmin);
       if (newMood) {
         setMood(newMood);
         if (newMood === 'excited') spawnParticles('✨', 3);
@@ -1434,10 +1440,11 @@ const FloatingBeruMascot = () => {
                   detail: {
                     message: msg.message,
                     mood: msg.mood || 'normal',
-                    duration: 8000
+                    duration: 0, // No timeout - must click to dismiss
+                    isAdmin: true
                   }
                 }));
-              }, idx * 8000);
+              }, idx * 12000); // 12s between admin messages (longer)
             });
 
             // Update last seen
@@ -2836,19 +2843,40 @@ const FloatingBeruMascot = () => {
                     className={`absolute bottom-full ${alignClass} mb-2 w-max max-w-[200px] md:max-w-[250px]`}
                   >
                     <div
-                      onClick={(e) => { if (isStory) { e.stopPropagation(); advanceStory(); } }}
+                      onClick={(e) => {
+                        if (isStory) { e.stopPropagation(); advanceStory(); }
+                        if (isAdminMessage) { e.stopPropagation(); setBubble(null); setIsAdminMessage(false); }
+                      }}
                       className={`relative backdrop-blur-sm text-white text-[11px] md:text-xs px-3 py-2 rounded-xl shadow-lg ${
                       isStory
                         ? 'bg-indigo-950/95 border border-indigo-400/50 shadow-indigo-900/40 max-w-[260px] md:max-w-[320px] cursor-pointer'
-                        : 'bg-gray-900/95 border border-purple-500/40 shadow-purple-900/30'
+                        : isAdminMessage
+                          ? 'bg-red-950/95 border-2 border-red-500/80 shadow-red-900/60 max-w-[260px] md:max-w-[320px] cursor-pointer animate-pulse'
+                          : 'bg-gray-900/95 border border-purple-500/40 shadow-purple-900/30'
                     }`}>
+                      {isAdminMessage && (
+                        <div className="mb-1 text-[9px] text-red-300/90 font-bold flex items-center gap-1">
+                          <span>📢</span> MESSAGE ADMIN
+                        </div>
+                      )}
                       <span className="leading-relaxed">{displayText}</span>
                       {isStory && (
                         <div className="mt-1.5 text-[9px] text-indigo-300/70 italic text-right">
                           {storyActive.partIndex + 1}/{BERU_STORIES[storyActive.storyIndex].parts.length} — clique pour la suite...
                         </div>
                       )}
-                      <div className={`absolute -bottom-1.5 ${arrowClass} w-3 h-3 rotate-45 ${isStory ? 'bg-indigo-950/95 border-r border-b border-indigo-400/50' : 'bg-gray-900/95 border-r border-b border-purple-500/40'}`} />
+                      {isAdminMessage && (
+                        <div className="mt-1.5 text-[9px] text-red-300/70 italic text-right">
+                          Clique pour fermer...
+                        </div>
+                      )}
+                      <div className={`absolute -bottom-1.5 ${arrowClass} w-3 h-3 rotate-45 ${
+                        isStory
+                          ? 'bg-indigo-950/95 border-r border-b border-indigo-400/50'
+                          : isAdminMessage
+                            ? 'bg-red-950/95 border-r border-b border-red-500/80'
+                            : 'bg-gray-900/95 border-r border-b border-purple-500/40'
+                      }`} />
                     </div>
                   </motion.div>
                 );
