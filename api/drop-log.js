@@ -57,6 +57,7 @@ async function handleRecent(req, res) {
   const result = await query(
     `SELECT id, username, item_type, item_id, item_name, item_rarity, awakening, created_at
      FROM legendary_drops
+     WHERE created_at > NOW() - INTERVAL '3 days'
      ORDER BY created_at DESC
      LIMIT 50`
   );

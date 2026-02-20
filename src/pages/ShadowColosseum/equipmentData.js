@@ -504,7 +504,7 @@ export const WEAPONS = {
   // Water (5)
   w_trident_abyssal:  { id: 'w_trident_abyssal',  name: 'Trident Abyssal',     rarity: 'mythique',   element: 'water',  weaponType: 'polearm', atk: 22, bonusStat: 'atk_pct',   bonusValue: 12, icon: '\uD83D\uDD31', desc: 'Arme des profondeurs', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771548200/TridentAbyssal_sdvheh.png' },
   w_epee_glaciale:    { id: 'w_epee_glaciale',    name: 'Epee Glaciale',        rarity: 'legendaire', element: 'water',  weaponType: 'blade',   atk: 18, bonusStat: 'crit_dmg',  bonusValue: 12, icon: '\u2694\uFE0F', desc: 'Glace eternelle tranchante' },
-  w_arc_tsunami:      { id: 'w_arc_tsunami',      name: 'Arc du Tsunami',       rarity: 'legendaire', element: 'water',  weaponType: 'ranged',  atk: 16, bonusStat: 'spd_flat',  bonusValue: 10, icon: '\uD83C\uDFF9', desc: 'Fleches de maree' },
+  w_arc_tsunami:      { id: 'w_arc_tsunami',      name: 'Arc du Tsunami',       rarity: 'legendaire', element: 'water',  weaponType: 'ranged',  atk: 16, bonusStat: 'spd_flat',  bonusValue: 10, icon: '\uD83C\uDFF9', desc: 'Fleches de maree', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771549492/ArcTsunami_c2u6zk.png' },
   w_lance_corail:     { id: 'w_lance_corail',     name: 'Lance de Corail',      rarity: 'rare',       element: 'water',  weaponType: 'polearm', atk: 11, bonusStat: 'hp_pct',    bonusValue: 8,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Durcie par les abysses' },
   w_baton_brume:      { id: 'w_baton_brume',      name: 'Baton de Brume',       rarity: 'rare',       element: 'water',  weaponType: 'ranged',  atk: 9,  bonusStat: 'res_flat',   bonusValue: 6,  icon: '\uD83E\uDE84', desc: 'Canalise les brumes marines' },
 
@@ -516,7 +516,7 @@ export const WEAPONS = {
   w_dague_ombre:      { id: 'w_dague_ombre',      name: "Dague d'Ombre",        rarity: 'rare',       element: 'shadow', weaponType: 'blade',   atk: 10, bonusStat: 'atk_pct',   bonusValue: 6,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Lame des assassins' },
 
   // Neutral (3)
-  w_epee_ancienne:    { id: 'w_epee_ancienne',    name: 'Epee Ancienne',        rarity: 'legendaire', element: null,     weaponType: 'blade',   atk: 16, bonusStat: 'atk_pct',   bonusValue: 8,  icon: '\u2694\uFE0F', desc: "Arme d'une ere oubliee" },
+  w_epee_ancienne:    { id: 'w_epee_ancienne',    name: 'Epee Ancienne',        rarity: 'legendaire', element: null,     weaponType: 'blade',   atk: 16, bonusStat: 'atk_pct',   bonusValue: 8,  icon: '\u2694\uFE0F', desc: "Arme d'une ere oubliee", sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771548878/EpeeAncienne_wsdywo.png' },
   w_baguette_sage:    { id: 'w_baguette_sage',    name: 'Baguette du Sage',     rarity: 'rare',       element: null,     weaponType: 'ranged',  atk: 8,  bonusStat: 'crit_rate', bonusValue: 5,  icon: '\uD83E\uDE84', desc: 'Sagesse cristallisee' },
   w_bouclier_hero:    { id: 'w_bouclier_hero',    name: 'Bouclier du Heros',    rarity: 'rare',       element: null,     weaponType: 'shield',  atk: 6,  bonusStat: 'def_pct',   bonusValue: 10, icon: '\uD83D\uDEE1\uFE0F', desc: 'Protection legendaire' },
 

@@ -352,6 +352,7 @@ export default function ShadowColosseum() {
   const [dropLog, setDropLog] = useState([]);
   const [showDropLog, setShowDropLog] = useState(false);
   const [hasNewDrops, setHasNewDrops] = useState(false);
+  const [dropToast, setDropToast] = useState(null); // { username, itemName, itemRarity }
   const lastDropCheckRef = useRef(0);
 
   // Fire-and-forget legendary drop logger
@@ -365,14 +366,25 @@ export default function ShadowColosseum() {
   };
 
   // Fetch recent legendary drops
+  const lastKnownDropIdRef = useRef(0);
   const fetchDropLog = () => {
     fetch('/api/drop-log?action=recent')
       .then(r => r.json())
       .then(d => {
         if (d.success && d.drops) {
-          const prev = dropLog.length;
-          setDropLog(d.drops);
-          if (prev > 0 && d.drops.length > prev) setHasNewDrops(true);
+          // Filter to last 3 days only
+          const threeDaysAgo = Date.now() - 3 * 24 * 3600000;
+          const filtered = d.drops.filter(dr => new Date(dr.createdAt).getTime() > threeDaysAgo);
+          // Detect truly new drops since last check
+          const newestId = filtered.length > 0 ? filtered[0].id : 0;
+          if (lastKnownDropIdRef.current > 0 && newestId > lastKnownDropIdRef.current) {
+            setHasNewDrops(true);
+            const newest = filtered[0];
+            setDropToast({ username: newest.username, itemName: newest.itemName, itemRarity: newest.itemRarity });
+            setTimeout(() => setDropToast(null), 5000);
+          }
+          lastKnownDropIdRef.current = newestId;
+          setDropLog(filtered);
           lastDropCheckRef.current = Date.now();
         }
       })
@@ -7822,6 +7834,29 @@ export default function ShadowColosseum() {
         {'\uD83D\uDD14'}
         {hasNewDrops && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 border border-red-300 animate-pulse" />}
       </button>
+
+      {/* ═══ DROP TOAST NOTIFICATION ═══ */}
+      <AnimatePresence>
+        {dropToast && (
+          <motion.div
+            initial={{ x: 300, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 300, opacity: 0 }}
+            transition={{ type: 'spring', damping: 20 }}
+            className="fixed top-28 right-4 z-50 cursor-pointer"
+            onClick={() => { setDropToast(null); setShowDropLog(true); setHasNewDrops(false); fetchDropLog(); }}
+          >
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600/90 border border-red-400/60 shadow-lg shadow-red-500/40 backdrop-blur-sm">
+              <span className="text-lg animate-bounce">{'\uD83D\uDD14'}</span>
+              <div>
+                <div className="text-[11px] text-red-100 font-bold">{dropToast.username} a obtenu :</div>
+                <div className="text-[13px] text-white font-black">{dropToast.itemName}</div>
+              </div>
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ml-1 ${
+                dropToast.itemRarity === 'secret' ? 'bg-red-900/60 text-red-200' : 'bg-amber-900/60 text-amber-200'
+              }`}>{dropToast.itemRarity}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ═══ DROP LOG MODAL ═══ */}
       <AnimatePresence>
