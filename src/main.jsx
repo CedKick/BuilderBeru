@@ -32,6 +32,8 @@ const RaidMode = React.lazy(() => import('./pages/ShadowColosseum/RaidMode.jsx')
 const PvpMode = React.lazy(() => import('./pages/ShadowColosseum/PvpMode.jsx'));
 const PveRanking = React.lazy(() => import('./pages/ShadowColosseum/PveRanking.jsx'));
 const Codex = React.lazy(() => import('./pages/Codex/Codex.jsx'));
+const MailInbox = React.lazy(() => import('./pages/MailInbox.jsx'));
+const AdminMailSender = React.lazy(() => import('./pages/AdminMailSender.jsx'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -71,6 +73,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="/shadow-colosseum/pvp" element={<PvpMode />} />
               <Route path="/shadow-colosseum/pve-ranking" element={<PveRanking />} />
               <Route path="/codex" element={<Codex />} />
+              <Route path="/mail" element={<MailInbox />} />
+              <Route path="/admin/mail" element={<AdminMailSender />} />
             </Routes>
           </Suspense>
         </AppLayout>

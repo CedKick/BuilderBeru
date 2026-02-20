@@ -15,12 +15,13 @@ import {
   Zap,
   BookOpen,
   Gamepad2,
+  Mail,
   X,
   LogIn,
   User,
   LogOut,
 } from 'lucide-react';
-import { isLoggedIn, getAuthUser, logout } from './utils/auth';
+import { isLoggedIn, getAuthUser, logout, authHeaders } from './utils/auth';
 import AuthModal from './components/AuthModal';
 
 export default function BuilderMenu({ isOpen, onClose }) {
@@ -28,6 +29,7 @@ export default function BuilderMenu({ isOpen, onClose }) {
   const location = useLocation();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authState, setAuthState] = useState(() => ({ loggedIn: isLoggedIn(), user: getAuthUser() }));
+  const [unreadMailCount, setUnreadMailCount] = useState(0);
 
   // Re-check auth state every time sidebar opens
   useEffect(() => {
@@ -42,6 +44,34 @@ export default function BuilderMenu({ isOpen, onClose }) {
       if (e.detail?.type === 'auth-change') {
         setAuthState({ loggedIn: isLoggedIn(), user: getAuthUser() });
       }
+    };
+    window.addEventListener('beru-react', handler);
+    return () => window.removeEventListener('beru-react', handler);
+  }, []);
+
+  // Fetch unread mail count
+  const fetchUnreadCount = async () => {
+    if (!isLoggedIn()) return;
+    try {
+      const resp = await fetch('/api/mail?action=inbox&filter=unread&limit=1', {
+        headers: authHeaders()
+      });
+      const data = await resp.json();
+      if (data.success) setUnreadMailCount(data.unreadCount || 0);
+    } catch (err) {
+      console.error('Failed to fetch unread mail count:', err);
+    }
+  };
+
+  // Fetch unread count when sidebar opens and auth changes
+  useEffect(() => {
+    if (isOpen && authState.loggedIn) fetchUnreadCount();
+  }, [isOpen, authState.loggedIn]);
+
+  // Listen for mail-update events
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.detail?.type === 'mail-update') fetchUnreadCount();
     };
     window.addEventListener('beru-react', handler);
     return () => window.removeEventListener('beru-react', handler);
@@ -62,6 +92,13 @@ export default function BuilderMenu({ isOpen, onClose }) {
           label: t('home.menu.build'),
           icon: Wrench,
           color: 'blue'
+        },
+        {
+          path: '/mail',
+          label: t('menu.mail', 'Courrier'),
+          icon: Mail,
+          color: 'amber',
+          badge: unreadMailCount > 0 ? unreadMailCount : null
         },
       ]
     },
@@ -288,6 +325,14 @@ export default function BuilderMenu({ isOpen, onClose }) {
                         <span className="text-[10px] font-bold bg-gradient-to-r from-pink-500 to-purple-500
                                        text-white px-2 py-0.5 rounded-full animate-pulse">
                           NEW
+                        </span>
+                      )}
+
+                      {/* Badge notification pour mails non lus */}
+                      {item.badge && (
+                        <span className="text-[10px] font-bold bg-gradient-to-r from-amber-500 to-orange-500
+                                       text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                          {item.badge > 99 ? '99+' : item.badge}
                         </span>
                       )}
 
