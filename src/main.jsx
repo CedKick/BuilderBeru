@@ -34,6 +34,7 @@ const PveRanking = React.lazy(() => import('./pages/ShadowColosseum/PveRanking.j
 const Codex = React.lazy(() => import('./pages/Codex/Codex.jsx'));
 const MailInbox = React.lazy(() => import('./pages/MailInbox.jsx'));
 const AdminMailSender = React.lazy(() => import('./pages/AdminMailSender.jsx'));
+const FactionHub = React.lazy(() => import('./pages/FactionHub.jsx'));
 
 // Loading fallback
 const PageLoader = () => (
@@ -75,6 +76,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="/codex" element={<Codex />} />
               <Route path="/mail" element={<MailInbox />} />
               <Route path="/admin/mail" element={<AdminMailSender />} />
+              <Route path="/faction" element={<FactionHub />} />
             </Routes>
           </Suspense>
         </AppLayout>

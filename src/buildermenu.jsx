@@ -181,6 +181,13 @@ export default function BuilderMenu({ isOpen, onClose }) {
           isNew: true
         },
         {
+          path: '/faction',
+          label: 'Factions',
+          icon: Shield,
+          color: 'cyan',
+          isNew: true
+        },
+        {
           path: '/mail',
           label: t('menu.mail', 'Courrier'),
           icon: Mail,

@@ -8300,12 +8300,21 @@ export default function ShadowColosseum() {
         className="fixed top-28 right-4 z-40 w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 border-2 border-purple-400/50 shadow-lg shadow-purple-500/30 flex items-center justify-center text-lg hover:scale-110 active:scale-95 transition-transform"
         title="Courrier"
       >
-        <Mail size={20} className="text-white" />
+        📧
         {unreadMailCount > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 border border-red-300 text-[10px] font-bold text-white flex items-center justify-center px-1">
             {unreadMailCount > 99 ? '99+' : unreadMailCount}
           </span>
         )}
+      </button>
+
+      {/* ═══ FACTION BUTTON (below mail) ═══ */}
+      <button
+        onClick={() => navigate('/faction')}
+        className="fixed top-40 right-4 z-40 w-10 h-10 rounded-full bg-gradient-to-br from-cyan-600 to-blue-600 border-2 border-cyan-400/50 shadow-lg shadow-cyan-500/30 flex items-center justify-center text-lg hover:scale-110 active:scale-95 transition-transform"
+        title="Factions"
+      >
+        🛡️
       </button>
 
       {/* ═══ DROP TOAST NOTIFICATION ═══ */}
