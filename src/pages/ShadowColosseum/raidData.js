@@ -965,7 +965,7 @@ export function getHunterSprite(hunterId, data) {
 
 // ─── Star (Advancement) stat bonuses ─────────────────────────────
 // Each duplicate (star) gives cumulative % bonuses to stats.
-// Stars go from 0 (first copy) to 5 (6th copy = max).
+// A0-A5 use fixed bonuses, after A5 every 5 levels = +1% HP/ATK/DEF (max A200)
 export const STAR_STAT_BONUSES = {
   0: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 },
   1: { hp: 5, atk: 3, def: 2, spd: 0, crit: 0, res: 0 },
@@ -975,9 +975,31 @@ export const STAR_STAT_BONUSES = {
   5: { hp: 20, atk: 15, def: 10, spd: 5, crit: 5, res: 3 },
 };
 
+// Compute dynamic star bonuses (A0-A5 use table, after A5 every 5 levels = +1% HP/ATK/DEF)
+const computeStarBonuses = (stars) => {
+  if (stars <= 5) {
+    return STAR_STAT_BONUSES[stars] || STAR_STAT_BONUSES[0];
+  }
+
+  // After A5: every 5 awakening levels gives +1% HP/ATK/DEF
+  // A10 = +1%, A15 = +2%, A20 = +3%, etc.
+  const baseBonus = STAR_STAT_BONUSES[5];
+  const extraTiers = Math.floor(stars / 5) - 1; // -1 because A5 is already in base
+  const extraBonus = extraTiers * 1; // +1% per tier
+
+  return {
+    hp: baseBonus.hp + extraBonus,
+    atk: baseBonus.atk + extraBonus,
+    def: baseBonus.def + extraBonus,
+    spd: baseBonus.spd,
+    crit: baseBonus.crit,
+    res: baseBonus.res,
+  };
+};
+
 // Apply star bonuses to a stats object (mutates in-place)
 export const applyStarBonuses = (stats, stars) => {
-  const bonus = STAR_STAT_BONUSES[stars] || STAR_STAT_BONUSES[0];
+  const bonus = computeStarBonuses(stars);
   if (bonus.hp)   stats.hp  = Math.floor(stats.hp  * (1 + bonus.hp / 100));
   if (bonus.atk)  stats.atk = Math.floor(stats.atk * (1 + bonus.atk / 100));
   if (bonus.def)  stats.def = Math.floor(stats.def * (1 + bonus.def / 100));
@@ -1015,7 +1037,7 @@ export const addHunterOrDuplicate = (raidData, hunterId) => {
   );
   const idx = collection.findIndex(e => e.id === hunterId);
   if (idx >= 0) {
-    if (collection[idx].stars < 5) collection[idx].stars++;
+    if (collection[idx].stars < 200) collection[idx].stars++; // Max A200
     return { collection, isDuplicate: true, newStars: collection[idx].stars };
   }
   collection.push({ id: hunterId, stars: 0 });

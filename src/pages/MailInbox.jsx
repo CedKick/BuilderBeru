@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Inbox, Gift, Trash2, ChevronDown, ChevronUp, Check, X } from 'lucide-react';
+import { Mail, Inbox, Gift, Trash2, ChevronDown, ChevronUp, Check, X, ArrowLeft } from 'lucide-react';
 import { isLoggedIn, authHeaders, getAuthUser } from '../utils/auth';
 import shadowCoinManager from '../components/ChibiSystem/ShadowCoinManager';
 import { WEAPONS } from './ShadowColosseum/equipmentData';
@@ -115,21 +115,25 @@ export default function MailInbox() {
     const SAVE_KEY = 'shadow_colosseum_data';
     let data = JSON.parse(localStorage.getItem(SAVE_KEY) || '{"weaponCollection":{},"hammers":{}}');
 
-    // Weapons (with A10 → Red Hammer conversion)
+    // Weapons (quantity → awakening progression + A10 → 5 Red Hammers)
     if (rewards.weapons && Array.isArray(rewards.weapons)) {
       if (!data.weaponCollection) data.weaponCollection = {};
       if (!data.hammers) data.hammers = {};
 
       rewards.weapons.forEach(w => {
-        const currentAwakening = data.weaponCollection[w.id];
+        const quantity = w.quantity || 1;
 
-        // Si l'arme est déjà A10, convertir en marteau rouge
-        if (currentAwakening === 10) {
-          // Conversion : 1 arme dupe A10 = 1 marteau rouge
-          data.hammers.marteau_rouge = (data.hammers.marteau_rouge || 0) + 1;
-        } else {
-          // Sinon, ajouter/update l'arme
-          data.weaponCollection[w.id] = w.awakening || 0;
+        // Apply each copy one by one
+        for (let i = 0; i < quantity; i++) {
+          const currentAwakening = data.weaponCollection[w.id] || 0;
+
+          if (currentAwakening >= 10) {
+            // Already A10 → convert to 5 red hammers per copy
+            data.hammers.marteau_rouge = (data.hammers.marteau_rouge || 0) + 5;
+          } else {
+            // Increment awakening by 1
+            data.weaponCollection[w.id] = currentAwakening + 1;
+          }
         }
       });
     }
@@ -186,14 +190,20 @@ export default function MailInbox() {
           message += '\n\uD83D\uDDE1\uFE0F ARMES :\n';
           rewards.weapons.forEach(w => {
             const weaponName = getWeaponName(w.id);
-            const currentAwakening = data.weaponCollection[w.id];
+            const quantity = w.quantity || 1;
+            const finalAwakening = data.weaponCollection[w.id];
 
-            // Check if converted to red hammer
-            if (currentAwakening === 10) {
-              message += `  • ${weaponName} → \uD83D\uDD28 Marteau Rouge (deja A10)\n`;
+            if (finalAwakening === 10 || finalAwakening === undefined) {
+              // If A10, some copies became red hammers
+              const redHammersGained = quantity * 5;
+              if (quantity > 1) {
+                message += `  • ${weaponName} x${quantity} → A${finalAwakening || 10} (+${redHammersGained} \uD83D\uDD28 Marteaux Rouges)\n`;
+              } else {
+                message += `  • ${weaponName} → A${finalAwakening || 10}\n`;
+              }
             } else {
-              const awakening = w.awakening > 0 ? ` +${w.awakening}` : '';
-              message += `  • ${weaponName}${awakening}\n`;
+              // Normal awakening progression
+              message += `  • ${weaponName} → A${finalAwakening} (${quantity > 1 ? `+${quantity} awakening` : '+1 awakening'})\n`;
             }
           });
         }
@@ -285,9 +295,10 @@ export default function MailInbox() {
     const items = [];
 
     if (rewards.weapons && rewards.weapons.length > 0) {
+      const totalWeapons = rewards.weapons.reduce((sum, w) => sum + (w.quantity || 1), 0);
       items.push(
         <span key="weapons" className="text-amber-400">
-          \uD83D\uDDE1\uFE0F {rewards.weapons.length} arme{rewards.weapons.length > 1 ? 's' : ''}
+          \uD83D\uDDE1\uFE0F {totalWeapons} exemplaire{totalWeapons > 1 ? 's' : ''}
         </span>
       );
     }
@@ -336,7 +347,11 @@ export default function MailInbox() {
                 {rewards.weapons.map((w, i) => (
                   <li key={i}>
                     {getWeaponName(w.id)}
-                    {w.awakening > 0 && <span className="text-xs text-amber-500"> +{w.awakening}</span>}
+                    {w.quantity > 1 ? (
+                      <span className="text-xs text-amber-500"> x{w.quantity} exemplaires (+{w.quantity} awakening)</span>
+                    ) : (
+                      <span className="text-xs text-gray-400"> (1 exemplaire)</span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -376,6 +391,16 @@ export default function MailInbox() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
+          <div className="flex items-center gap-4 mb-2">
+            <button
+              onClick={() => navigate('/shadow-colosseum')}
+              className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-500/50 rounded-lg transition-all group"
+              title="Retour au Shadow Colosseum"
+            >
+              <ArrowLeft size={18} className="group-hover:text-purple-400 transition-colors" />
+              <span className="text-sm text-gray-400 group-hover:text-purple-300 transition-colors">Shadow Colosseum</span>
+            </button>
+          </div>
           <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500 flex items-center gap-3">
             <Mail size={32} />
             Courrier

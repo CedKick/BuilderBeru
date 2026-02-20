@@ -854,7 +854,7 @@ export function mergeEquipBonuses(artifactBonuses, weaponBonuses) {
 // EVEIL (AWAKENING) CONSTANTS
 // ═══════════════════════════════════════════════════════════════
 
-export const MAX_EVEIL_STARS = 5;
+export const MAX_EVEIL_STARS = 200; // Unlimited awakening up to A200
 export const EVEIL_STAT_BONUS_PER_STAR = 5; // +5% all base stats per star
 
 // ═══════════════════════════════════════════════════════════════

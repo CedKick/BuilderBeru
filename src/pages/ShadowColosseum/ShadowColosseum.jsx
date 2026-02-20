@@ -3,7 +3,8 @@
 // Fais combattre tes chibis captures, monte de niveaux, bats des boss !
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import shadowCoinManager from '../../components/ChibiSystem/ShadowCoinManager';
 import { TALENT_TREES, computeTalentBonuses, getTreeMaxPoints, getNodeDesc } from './talentTreeData';
@@ -381,6 +382,8 @@ export default function ShadowColosseum() {
   const [hasNewDrops, setHasNewDrops] = useState(false);
   const [dropToast, setDropToast] = useState(null); // { username, itemName, itemRarity }
   const lastDropCheckRef = useRef(0);
+  const [unreadMailCount, setUnreadMailCount] = useState(0);
+  const navigate = useNavigate();
 
   // Fire-and-forget legendary drop logger
   const logLegendaryDrop = (itemType, itemId, itemName, itemRarity, awakening = 0) => {
@@ -418,11 +421,34 @@ export default function ShadowColosseum() {
       .catch(() => {});
   };
 
+  // Fetch unread mail count
+  const fetchUnreadMailCount = () => {
+    if (!isLoggedIn()) return;
+    fetch('/api/mail?action=inbox&filter=unread&limit=1', {
+      headers: authHeaders()
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) setUnreadMailCount(d.unreadCount || 0);
+      })
+      .catch(() => {});
+  };
+
   // Fetch drop log on mount + poll every 60s
   useEffect(() => {
     fetchDropLog();
     const iv = setInterval(fetchDropLog, 60000);
     return () => clearInterval(iv);
+  }, []);
+
+  // Fetch mail count on mount + listen for updates
+  useEffect(() => {
+    if (isLoggedIn()) fetchUnreadMailCount();
+    const handler = (e) => {
+      if (e.detail?.type === 'mail-update') fetchUnreadMailCount();
+    };
+    window.addEventListener('beru-react', handler);
+    return () => window.removeEventListener('beru-react', handler);
   }, []);
 
   // Play epic sound for secret weapon drops
@@ -2962,10 +2988,8 @@ export default function ShadowColosseum() {
                             <span className="text-red-400/60 text-[10px]">{c.class}</span>
                           </div>
                           {evStars > 0 && (
-                            <div className="text-[9px] mt-0.5" style={evStars >= MAX_EVEIL_STARS ? { animation: 'statGlow 2s ease-in-out infinite' } : {}}>
-                              {Array.from({ length: MAX_EVEIL_STARS }).map((_, i) => (
-                                <span key={i} className={i < evStars ? 'text-yellow-400' : 'text-gray-600'}>{'\u2605'}</span>
-                              ))}
+                            <div className="text-[9px] mt-0.5 text-yellow-400 font-bold">
+                              A{evStars}
                             </div>
                           )}
                         </div>
@@ -7407,7 +7431,7 @@ export default function ShadowColosseum() {
 
             <div className="text-[10px] text-gray-500 mb-4 p-2 rounded-lg bg-gray-900/40 border border-gray-700/20">
               Les <span className="text-emerald-400">passifs</span> des hunters s'appliquent automatiquement en combat.
-              Chaque <span className="text-yellow-400">etoile</span> (duplicate) augmente les stats.
+              L'<span className="text-yellow-400">awakening</span> (A0-A200) augmente les stats à chaque duplicate (+1% HP/ATK/DEF tous les 5 niveaux après A5).
             </div>
 
             <div className="space-y-3">
@@ -7425,10 +7449,7 @@ export default function ShadowColosseum() {
                       <div className="flex items-center gap-2 text-[10px] text-gray-500">
                         <span>Nv.{ch.level}</span>
                         {ch.isHunter && ch.stars > 0 && (
-                          <span className="text-yellow-400">{'★'.repeat(ch.stars)}{'☆'.repeat(5 - ch.stars)}</span>
-                        )}
-                        {ch.isHunter && ch.stars === 0 && (
-                          <span className="text-gray-600">{'☆'.repeat(5)}</span>
+                          <span className="text-yellow-400 font-bold">A{ch.stars}</span>
                         )}
                         {ch.rarity && <span className={`${ch.rarity === 'mythique' ? 'text-amber-400' : ch.rarity === 'legendaire' ? 'text-purple-400' : 'text-blue-400'}`}>{ch.rarity}</span>}
                       </div>
@@ -7578,7 +7599,7 @@ export default function ShadowColosseum() {
                     </div>
                   </div>
                   {result.hunterDrop.isDuplicate ? (
-                    <div className="text-yellow-400 text-xs mt-1">Doublon ! Eveil {'\u2605'}{result.hunterDrop.newStars}/{MAX_EVEIL_STARS}</div>
+                    <div className="text-yellow-400 text-xs mt-1">Doublon ! Eveil A{result.hunterDrop.newStars}</div>
                   ) : (
                     <div className="text-green-400 text-xs mt-1">Nouveau hunter debloque !</div>
                   )}
@@ -8280,6 +8301,20 @@ export default function ShadowColosseum() {
       >
         {'\uD83D\uDD14'}
         {hasNewDrops && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 border border-red-300 animate-pulse" />}
+      </button>
+
+      {/* ═══ MAIL BUTTON (below bell) ═══ */}
+      <button
+        onClick={() => navigate('/mail')}
+        className="fixed top-28 right-4 z-40 w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 border-2 border-purple-400/50 shadow-lg shadow-purple-500/30 flex items-center justify-center text-lg hover:scale-110 active:scale-95 transition-transform"
+        title="Courrier"
+      >
+        <Mail size={20} className="text-white" />
+        {unreadMailCount > 0 && (
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-red-500 border border-red-300 text-[10px] font-bold text-white flex items-center justify-center px-1">
+            {unreadMailCount > 99 ? '99+' : unreadMailCount}
+          </span>
+        )}
       </button>
 
       {/* ═══ DROP TOAST NOTIFICATION ═══ */}

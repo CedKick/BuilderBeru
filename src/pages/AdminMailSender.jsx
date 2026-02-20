@@ -38,7 +38,7 @@ export default function AdminMailSender() {
 
   // Weapon form
   const [weaponFormId, setWeaponFormId] = useState('');
-  const [weaponFormAwakening, setWeaponFormAwakening] = useState(1);
+  const [weaponFormQuantity, setWeaponFormQuantity] = useState(1);
 
   // UI
   const [showPreview, setShowPreview] = useState(false);
@@ -68,8 +68,8 @@ export default function AdminMailSender() {
     setError(null);
   };
 
-  const addWeapon = (weaponId, awakening) => {
-    console.log('addWeapon called:', { weaponId, awakening });
+  const addWeapon = (weaponId, quantity) => {
+    console.log('addWeapon called:', { weaponId, quantity });
 
     if (!weaponId) {
       console.log('No weaponId provided');
@@ -82,7 +82,7 @@ export default function AdminMailSender() {
       return;
     }
 
-    const newWeapon = { id: weaponId, awakening: awakening || 1 };
+    const newWeapon = { id: weaponId, quantity: quantity || 1 };
     console.log('Adding weapon:', newWeapon);
     setSelectedWeapons(prev => {
       const updated = [...prev, newWeapon];
@@ -95,9 +95,9 @@ export default function AdminMailSender() {
     setSelectedWeapons(prev => prev.filter(w => w.id !== weaponId));
   };
 
-  const updateWeaponAwakening = (weaponId, awakening) => {
+  const updateWeaponQuantity = (weaponId, quantity) => {
     setSelectedWeapons(prev => prev.map(w =>
-      w.id === weaponId ? { ...w, awakening: Math.max(0, Math.min(10, awakening)) } : w
+      w.id === weaponId ? { ...w, quantity: Math.max(1, quantity) } : w
     ));
   };
 
@@ -263,7 +263,8 @@ export default function AdminMailSender() {
                       {rewards.weapons.map((w, i) => (
                         <li key={i}>
                           {getWeaponName(w.id)}
-                          {w.awakening > 0 && <span className="text-xs text-amber-500"> +{w.awakening}</span>}
+                          {w.quantity > 1 && <span className="text-xs text-amber-500"> x{w.quantity}</span>}
+                          {w.quantity === 1 && <span className="text-xs text-gray-500"> (1 exemplaire)</span>}
                         </li>
                       ))}
                     </ul>
@@ -481,20 +482,20 @@ export default function AdminMailSender() {
                   ))}
                 </select>
 
-                {/* Awakening controls */}
+                {/* Quantity controls */}
                 <div className="flex items-center gap-1 bg-white/10 border border-white/20 rounded-lg px-2">
                   <button
-                    onClick={() => setWeaponFormAwakening(Math.max(0, weaponFormAwakening - 1))}
+                    onClick={() => setWeaponFormQuantity(Math.max(1, weaponFormQuantity - 1))}
                     className="text-white hover:text-amber-400 p-1"
                     title="Diminuer"
                   >
                     <span className="text-xl">−</span>
                   </button>
                   <span className="text-white font-bold w-12 text-center">
-                    A{weaponFormAwakening}
+                    {weaponFormQuantity}x
                   </span>
                   <button
-                    onClick={() => setWeaponFormAwakening(Math.min(10, weaponFormAwakening + 1))}
+                    onClick={() => setWeaponFormQuantity(weaponFormQuantity + 1)}
                     className="text-white hover:text-amber-400 p-1"
                     title="Augmenter"
                   >
@@ -508,9 +509,9 @@ export default function AdminMailSender() {
                       alert('Veuillez selectionner une arme');
                       return;
                     }
-                    addWeapon(weaponFormId, weaponFormAwakening);
+                    addWeapon(weaponFormId, weaponFormQuantity);
                     setWeaponFormId('');
-                    setWeaponFormAwakening(1);
+                    setWeaponFormQuantity(1);
                   }}
                   className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
                 >
@@ -545,15 +546,20 @@ export default function AdminMailSender() {
                           <div className="text-amber-300 font-bold text-lg">
                             {getWeaponName(weapon.id)}
                           </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {weapon.quantity === 1
+                              ? '1 exemplaire → +1 awakening pour le joueur'
+                              : `${weapon.quantity} exemplaires → +${weapon.quantity} awakening`
+                            }
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-300 font-semibold">Awakening:</span>
+                          <span className="text-sm text-gray-300 font-semibold">Quantité:</span>
                           <input
                             type="number"
-                            value={weapon.awakening}
-                            onChange={(e) => updateWeaponAwakening(weapon.id, parseInt(e.target.value) || 0)}
-                            min="0"
-                            max="10"
+                            value={weapon.quantity}
+                            onChange={(e) => updateWeaponQuantity(weapon.id, parseInt(e.target.value) || 1)}
+                            min="1"
                             className="w-20 bg-white/10 border border-amber-500/50 rounded px-2 py-1 text-white text-center font-bold"
                           />
                         </div>
