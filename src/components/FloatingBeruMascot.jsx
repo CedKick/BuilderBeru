@@ -1387,6 +1387,26 @@ const FloatingBeruMascot = () => {
   useEffect(() => {
     const handleBeruReact = (e) => {
       const { message, mood: newMood, duration, type, image, isAdmin } = e.detail || {};
+      // ── Storage Alert: critical — save failed
+      if (type === 'storage-alert') {
+        setMood('excited');
+        spawnParticles('🚨', 8);
+        showBubble(message || "STOCKAGE PLEIN ! Sauvegarde impossible !", 15000);
+        setTimeout(() => spawnParticles('⚠️', 6), 2000);
+        setTimeout(() => {
+          showBubble("Supprime des vieux builds ou vide ta collection pour liberer de l'espace !", 10000);
+        }, 16000);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 28000);
+        return;
+      }
+      // ── Storage Warning: approaching limit
+      if (type === 'storage-warning') {
+        setMood('thinking');
+        spawnParticles('⚠️', 4);
+        showBubble(message, duration || 12000);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 14000);
+        return;
+      }
       if (type === 'sulfuras') {
         setMood('excited');
         spawnParticles('🔥', 12);

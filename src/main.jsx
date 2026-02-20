@@ -6,6 +6,65 @@ import './index.css';
 import './i18n/i18n';
 import { cloudStorage } from './utils/CloudStorage';
 
+// ── localStorage Guardian — detect quota errors & warn via Béru ──
+(() => {
+  const _origSetItem = Storage.prototype.setItem;
+  let lastAlertTime = 0;
+
+  Storage.prototype.setItem = function(key, value) {
+    try {
+      _origSetItem.call(this, key, value);
+    } catch (e) {
+      if (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014) {
+        const now = Date.now();
+        // Throttle: max 1 alert per 30 seconds
+        if (now - lastAlertTime > 30000) {
+          lastAlertTime = now;
+          console.error('[Storage Guardian] QuotaExceededError on key:', key);
+          window.dispatchEvent(new CustomEvent('beru-react', {
+            detail: {
+              type: 'storage-alert',
+              message: "ALERTE STOCKAGE PLEIN ! Ta sauvegarde n'a pas pu etre enregistree ! Vide ton inventaire ou supprime des donnees avant de perdre ta progression !",
+              mood: 'excited',
+              duration: 15000,
+            }
+          }));
+        }
+      }
+      throw e; // Re-throw so callers can handle it too
+    }
+  };
+
+  // Proactive check: warn when localStorage usage > 80%
+  const checkStorageUsage = () => {
+    try {
+      let totalSize = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        totalSize += (key.length + (localStorage.getItem(key) || '').length) * 2; // UTF-16
+      }
+      const usageMB = totalSize / (1024 * 1024);
+      const limitMB = 5; // Most browsers = 5MB
+      const usagePercent = (usageMB / limitMB) * 100;
+
+      if (usagePercent > 80) {
+        window.dispatchEvent(new CustomEvent('beru-react', {
+          detail: {
+            type: 'storage-warning',
+            message: `Attention ! Ton stockage est a ${Math.round(usagePercent)}% (${usageMB.toFixed(1)}MB/${limitMB}MB). Pense a faire du menage pour eviter de perdre des donnees !`,
+            mood: 'thinking',
+            duration: 12000,
+          }
+        }));
+      }
+    } catch (e) { /* silent */ }
+  };
+
+  // Check on startup + every 5 minutes
+  setTimeout(checkStorageUsage, 5000);
+  setInterval(checkStorageUsage, 300000);
+})();
+
 // Cloud sync on app startup (non-blocking)
 cloudStorage.initialSync().catch(() => {});
 
