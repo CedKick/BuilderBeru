@@ -12,7 +12,7 @@ async function handleInit(req, res) {
   // Only kly can init
   const user = await extractUser(req);
   if (!user) return res.status(401).json({ error: 'Authentication required' });
-  if (user.username !== 'kly') return res.status(403).json({ error: 'Forbidden: Admin only' });
+  if (user.username.toLowerCase() !== 'kly') return res.status(403).json({ error: 'Forbidden: Admin only' });
 
   await query(`
     CREATE TABLE IF NOT EXISTS admin_messages (
@@ -38,7 +38,7 @@ async function handleSend(req, res) {
   // Auth check
   const user = await extractUser(req);
   if (!user) return res.status(401).json({ error: 'Authentication required' });
-  if (user.username !== 'kly') return res.status(403).json({ error: 'Forbidden: Admin only' });
+  if (user.username.toLowerCase() !== 'kly') return res.status(403).json({ error: 'Forbidden: Admin only' });
 
   // Validate body
   const { message, mood } = req.body;
