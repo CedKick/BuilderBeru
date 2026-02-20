@@ -226,7 +226,16 @@ export default function FloatingPod042({
         initial={{ opacity: 0, scale: 0 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0 }}
-        className="fixed z-[9999] pointer-events-none select-none"
+        drag
+        dragMomentum={false}
+        dragElastic={0.1}
+        onDragEnd={(e, info) => {
+          setPosition({
+            x: Math.max(0, Math.min(window.innerWidth - 100, position.x + info.offset.x)),
+            y: Math.max(0, Math.min(window.innerHeight - 100, position.y + info.offset.y))
+          });
+        }}
+        className="fixed z-[9999] cursor-grab active:cursor-grabbing select-none"
         style={{
           left: position.x,
           top: position.y,
