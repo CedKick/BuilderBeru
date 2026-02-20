@@ -290,7 +290,7 @@ export default function RaidMode() {
       skills, buffs: [], passives,
       passiveState: {
         flammeStacks: 0, martyrHealed: false, echoCounter: 0, sianStacks: 0,
-        ...(wId && WEAPONS[wId]?.passive === 'katana_v_chaos' ? { katanaVState: { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1 } } : {}),
+        ...(wId2 && WEAPONS[wId2]?.passive === 'katana_v_chaos' ? { katanaVState: { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1 } } : {}),
       },
       talentBonuses: mergedTb,
       hunterPassive,

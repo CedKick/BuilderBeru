@@ -1415,6 +1415,47 @@ const FloatingBeruMascot = () => {
     return () => window.removeEventListener('beru-react', handleBeruReact);
   }, [showBubble, spawnParticles]);
 
+  // ─── Admin Messages Polling ─────────────────────────────────
+  useEffect(() => {
+    const pollAdminMessages = async () => {
+      try {
+        const resp = await fetch('/api/beru-messages?action=recent');
+        const data = await resp.json();
+
+        if (data.success && data.messages?.length > 0) {
+          const lastSeenId = parseInt(localStorage.getItem('beru_last_admin_message_id') || '0', 10);
+          const newMessages = data.messages.filter(m => m.id > lastSeenId);
+
+          if (newMessages.length > 0) {
+            // Display sequentially (reverse pour oldest first)
+            newMessages.reverse().forEach((msg, idx) => {
+              setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('beru-react', {
+                  detail: {
+                    message: msg.message,
+                    mood: msg.mood || 'normal',
+                    duration: 8000
+                  }
+                }));
+              }, idx * 8000);
+            });
+
+            // Update last seen
+            const newestId = Math.max(...data.messages.map(m => m.id));
+            localStorage.setItem('beru_last_admin_message_id', newestId.toString());
+          }
+        }
+      } catch (err) {
+        console.error('Admin message poll error:', err);
+        // Silent fail, continue polling
+      }
+    };
+
+    pollAdminMessages(); // Poll initial
+    const interval = setInterval(pollAdminMessages, 30000); // 30s
+    return () => clearInterval(interval);
+  }, []);
+
   // ─── Easter Egg: "shy" user → "Salut le moine" ─────────────
   useEffect(() => {
     const user = getAuthUser();
