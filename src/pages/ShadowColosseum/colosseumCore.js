@@ -58,7 +58,7 @@ export const STAT_META = {
   hp:   { name: 'PV',   icon: '\u2764\uFE0F', color: 'text-green-400',   desc: 'Points de Vie', detail: 'Determine la survie du combattant. A 0 PV, le combattant est K.O.' },
   atk:  { name: 'ATK',  icon: '\u2694\uFE0F', color: 'text-red-400',     desc: "Puissance d'attaque", detail: 'Augmente les degats infliges. Formule : ATK x (Power du skill / 100). Multiplie par les bonus elementaires, crit, etc.' },
   def:  { name: 'DEF',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-blue-400', desc: 'Resistance physique', detail: 'Reduit les degats recus. Formule : 100 / (100 + DEF). Ex: 100 DEF = -50% degats, 200 DEF = -66%.' },
-  spd:  { name: 'SPD',  icon: '\uD83D\uDCA8', color: 'text-emerald-400', desc: 'Vitesse', detail: 'Determine la frequence d\'attaque. Plus la SPD est haute, plus le combattant attaque souvent. Affecte aussi la vitesse de dash en combat.' },
+  spd:  { name: 'SPD',  icon: '\uD83D\uDCA8', color: 'text-emerald-400', desc: 'Vitesse', detail: 'Determine l\'ordre des tours et les tours bonus. SPD >= 1.5x l\'ennemi le + rapide = +1 tour bonus. SPD >= 2x = +2 tours bonus (max). Augmente aussi la regen mana (+1 mana par 15 SPD).' },
   crit: { name: 'CRIT', icon: '\uD83C\uDFAF', color: 'text-yellow-400', desc: 'Chance de coup critique', detail: 'Chance en % d\'infliger un coup critique (x1.5 degats de base + bonus CRIT DMG). Cap : 100%. La RES ennemie reduit le crit de 0.5% par point. Surcap utile : ex. 120% CRIT - 20 RES ennemi (10%) = 110% → cap a 100%.' },
   res:  { name: 'RES',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-cyan-400',    desc: 'Resistance elementaire + anti-crit', detail: 'Double usage : (1) Reduit les degats recus de 1% par point (cap 70%). (2) Reduit le crit rate ennemi de 0.5% par point. Ex: 40 RES = -40% degats et -20% crit ennemi.' },
   mana: { name: 'MANA', icon: '\uD83D\uDCA0', color: 'text-violet-400',  desc: 'Points de mana', detail: 'Necessaire pour lancer des skills. Regen de base : 8/tick. Mana max = 50 + PV/4 + RES*2. Sans mana, le combattant ne peut que attendre.' },
@@ -301,6 +301,34 @@ export const getElementMult = (atkElem, defElem) => {
 export const getEffStat = (base, buffs, stat) => {
   const mult = buffs.filter(b => b.stat === stat).reduce((s, b) => s + b.value, 0);
   return Math.max(1, Math.floor(base * (1 + mult)));
+};
+
+// ─── SPD-based Turn Order with Extra Turns ──────────────────
+// If a combatant's SPD >= 1.5x the fastest opponent → +1 extra turn
+// If a combatant's SPD >= 2.0x the fastest opponent → +2 extra turns (cap)
+// Extra turns are interleaved at lower priority (0.65x and 0.35x SPD)
+export const buildSpdTurnOrder = (rawEntries) => {
+  const teamEntries = rawEntries.filter(e => e.type === 'team');
+  const enemyEntries = rawEntries.filter(e => e.type === 'enemy');
+  const maxEnemySpd = enemyEntries.length > 0 ? Math.max(...enemyEntries.map(e => e.spd)) : 0;
+  const maxTeamSpd = teamEntries.length > 0 ? Math.max(...teamEntries.map(e => e.spd)) : 0;
+
+  const result = [];
+  rawEntries.forEach(entry => {
+    const compareSpd = entry.type === 'team' ? maxEnemySpd : maxTeamSpd;
+    const ratio = compareSpd > 0 ? entry.spd / compareSpd : 1;
+    const extra = ratio >= 2.0 ? 2 : ratio >= 1.5 ? 1 : 0;
+    result.push({ ...entry, isExtra: false });
+    if (extra >= 1) result.push({ ...entry, isExtra: true, _prio: entry.spd * 0.65 });
+    if (extra >= 2) result.push({ ...entry, isExtra: true, _prio: entry.spd * 0.35 });
+  });
+
+  result.sort((a, b) => {
+    const pa = a.isExtra ? a._prio : a.spd;
+    const pb = b.isExtra ? b._prio : b.spd;
+    return pb - pa || (a.type === 'enemy' ? -1 : 1);
+  });
+  return result;
 };
 
 export const applySkillUpgrades = (skill, upgradeLevel) => {

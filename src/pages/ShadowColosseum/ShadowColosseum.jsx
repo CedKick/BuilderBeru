@@ -17,7 +17,7 @@ import {
   SPRITES, ELEMENTS, RARITY, CHIBIS,
   STAT_PER_POINT, STAT_ORDER, STAT_META, POINTS_PER_LEVEL,
   TIER_NAMES_SKILL, TIER_COSTS, SP_INTERVAL, MAX_LEVEL,
-  statsAt, statsAtFull, xpForLevel, getElementMult, getEffStat,
+  statsAt, statsAtFull, xpForLevel, getElementMult, getEffStat, buildSpdTurnOrder,
   applySkillUpgrades, getUpgradeDesc, computeAttack, aiPickSkill, mergeTalentBonuses,
   ACCOUNT_XP_FOR_LEVEL, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT, accountLevelFromXp, accountAllocationsAtLevel, nextAllocationLevel,
   getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
@@ -650,10 +650,10 @@ export default function ShadowColosseum() {
         isMain: e.isMain, isBoss: !!e.isBoss,
       };
     });
-    // Build SPD-based turn order (team + all enemies)
-    const entities = fighters.map((_, i) => ({ type: 'team', idx: i, spd: fighters[i].spd }))
+    // Build SPD-based turn order with extra turns for fast combatants
+    const rawEntities = fighters.map((_, i) => ({ type: 'team', idx: i, spd: fighters[i].spd }))
       .concat(enemies.map((e, i) => ({ type: 'enemy', idx: i, spd: e.spd })));
-    entities.sort((a, b) => b.spd - a.spd || (a.type === 'enemy' ? -1 : 1));
+    const entities = buildSpdTurnOrder(rawEntities);
     const first = entities[0];
     setArc2Battle({
       team: fighters, enemies, turnOrder: entities, currentTurn: 0, round: 1,
@@ -969,11 +969,10 @@ export default function ShadowColosseum() {
       }
 
       const rebuildTurnOrder = () => {
-        const ents = [];
-        b.team.forEach((f, i) => { if (f.alive) ents.push({ type: 'team', idx: i, spd: getEffStat(f.spd, f.buffs || [], 'spd') }); });
-        b.enemies.forEach((e, i) => { if (e.alive) ents.push({ type: 'enemy', idx: i, spd: getEffStat(e.spd, e.buffs || [], 'spd') }); });
-        ents.sort((a, c) => c.spd - a.spd || (a.type === 'enemy' ? -1 : 1));
-        return ents;
+        const raw = [];
+        b.team.forEach((f, i) => { if (f.alive) raw.push({ type: 'team', idx: i, spd: getEffStat(f.spd, f.buffs || [], 'spd') }); });
+        b.enemies.forEach((e, i) => { if (e.alive) raw.push({ type: 'enemy', idx: i, spd: getEffStat(e.spd, e.buffs || [], 'spd') }); });
+        return buildSpdTurnOrder(raw);
       };
 
       let next = b.currentTurn + 1;
@@ -999,6 +998,10 @@ export default function ShadowColosseum() {
       b.lastAction = null;
       b.pendingSkill = null;
       const ne = b.turnOrder[b.currentTurn];
+      if (ne?.isExtra) {
+        const extraName = ne.type === 'team' ? b.team[ne.idx]?.name : b.enemies[ne.idx]?.name;
+        b.log.unshift({ msg: `\u26A1 Tour bonus ! ${extraName || ''} (SPD)`, type: ne.type === 'team' ? 'player' : 'enemy' });
+      }
       b.phase = !ne ? 'defeat' : ne.type === 'team' ? 'pick' : 'enemy_act';
       return b;
     });
@@ -3816,12 +3819,14 @@ export default function ShadowColosseum() {
                     const isNow = i === currentTurn;
                     const isDead = e.type === 'team' ? !team[e.idx]?.alive : !enemies[e.idx]?.alive;
                     return (
-                      <div key={i} className={`w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-bold border transition-all ${
+                      <div key={i} className={`relative w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-bold border transition-all ${
                         isDead ? 'bg-gray-800 border-gray-700 opacity-30' :
                         isNow ? 'bg-yellow-500/30 border-yellow-400 ring-1 ring-yellow-400/50 scale-110' :
+                        e.isExtra ? (e.type === 'enemy' ? 'bg-red-500/10 border-red-500/20 border-dashed' : 'bg-emerald-500/10 border-emerald-500/20 border-dashed') :
                         e.type === 'enemy' ? 'bg-red-500/20 border-red-500/30' :
                         'bg-blue-500/20 border-blue-500/30'
                       }`}>
+                        {e.isExtra && !isDead && <span className="absolute -top-1.5 -right-1 text-[6px]">{'\u26A1'}</span>}
                         {e.type === 'enemy' ? (enemies[e.idx]?.isMain ? '\uD83D\uDC80' : `E${e.idx+1}`) : (e.idx + 1)}
                       </div>
                     );
@@ -3852,6 +3857,13 @@ export default function ShadowColosseum() {
               </div>
 
               {/* Phase overlay messages */}
+              {isPlayerTurn && curEntity?.isExtra && (
+                <div className="absolute top-[8%] left-1/2 -translate-x-1/2 z-20">
+                  <div className="bg-emerald-500/20 border border-emerald-400/50 rounded-lg px-3 py-1 text-[11px] text-emerald-300 font-bold animate-pulse whitespace-nowrap">
+                    {'\u26A1'} TOUR BONUS
+                  </div>
+                </div>
+              )}
               {isPickTarget && (
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[120%] z-20">
                   <div className="bg-red-500/20 border border-red-500/50 rounded-lg px-3 py-1 text-[11px] text-red-300 font-bold animate-pulse whitespace-nowrap">
