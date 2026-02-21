@@ -493,16 +493,27 @@
     function updateProfileDisplay() {
       const el = document.getElementById('profileDisplay');
       const profile = loadProfile();
-      if (!profile) { el.innerHTML = '<span style="color:#666;font-size:9px">No profile</span>'; return; }
+      if (!profile) { el.innerHTML = '<span style="color:#666;font-size:10px">Connecte-toi pour cr\u00e9er ton profil</span>'; return; }
       const needed = xpForLevel(profile.level + 1);
       const xpPct = needed > 0 ? Math.min(100, (profile.xp / needed) * 100) : 100;
+      const lvColor = profile.level >= 40 ? '#f59e0b' : profile.level >= 20 ? '#a78bfa' : '#38bdf8';
       el.innerHTML =
-        '<div style="font-size:11px;font-weight:bold;color:#a78bfa">Lv.' + profile.level + ' ' + profile.username + '</div>' +
-        '<div style="height:6px;background:#1a1a2e;border-radius:3px;overflow:hidden;margin:2px 0">' +
+        '<div style="background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(30,30,60,0.4));border:1px solid #7c3aed44;border-radius:8px;padding:8px 10px;margin-bottom:6px">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
+        '<div style="font-size:20px;font-weight:bold;color:' + lvColor + ';text-shadow:0 0 8px ' + lvColor + '55">Lv.' + profile.level + '</div>' +
+        '<div style="font-size:13px;color:#e2e8f0;font-weight:600">' + profile.username + '</div>' +
+        '</div>' +
+        '<div style="height:8px;background:#1a1a2e;border-radius:4px;overflow:hidden;margin:4px 0;border:1px solid #333">' +
         '<div style="height:100%;width:' + xpPct + '%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:3px;transition:width 0.3s"></div></div>' +
-        '<div style="font-size:8px;color:#888">XP: ' + profile.xp + ' / ' + needed + ' | ' +
-        'W: ' + profile.victories + ' L: ' + profile.defeats +
-        (profile.bestTime ? ' | Best: ' + Math.floor(profile.bestTime / 60) + ':' + String(Math.floor(profile.bestTime % 60)).padStart(2, '0') : '') + '</div>';
+        '<div style="font-size:9px;color:#94a3b8;display:flex;justify-content:space-between">' +
+        '<span>XP: ' + profile.xp + ' / ' + needed + '</span>' +
+        '<span style="color:#a78bfa">' + Math.round(xpPct) + '%</span></div>' +
+        '<div style="font-size:9px;color:#64748b;margin-top:3px">' +
+        '\u2694 ' + profile.gamesPlayed + ' games | ' +
+        '<span style="color:#10b981">\u2714 ' + profile.victories + 'W</span> ' +
+        '<span style="color:#ef4444">\u2716 ' + profile.defeats + 'L</span>' +
+        (profile.bestTime ? ' | \u23F1 ' + Math.floor(profile.bestTime / 60) + ':' + String(Math.floor(profile.bestTime % 60)).padStart(2, '0') : '') +
+        '</div></div>';
     }
 
     // Initialize profile display
@@ -538,6 +549,9 @@
         document.getElementById('btnJoin').disabled = false;
         document.getElementById('btnBrowse').disabled = false;
         refreshRoomList(); // Auto-fetch room list on connect
+        // Create profile on connect if doesn't exist
+        getOrCreateProfile(username);
+        updateProfileDisplay();
       };
       ws.onmessage = (e) => handleMessage(JSON.parse(e.data));
       ws.onclose = () => {
