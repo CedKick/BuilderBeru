@@ -59,6 +59,10 @@ export class Player {
     this.invulnerable = false;
     this.invulnTimer = 0;
 
+    // Tank Endurance (only used by tank class)
+    this.maxEndurance = playerClass === 'tank' ? 100 : 0;
+    this.endurance = this.maxEndurance;
+
     // Buffs/Debuffs
     this.buffs = [];
     // Each buff: { type, stacks, dur, tickTimer, value, source }
@@ -96,6 +100,14 @@ export class Player {
     // Block damage reduction (tank)
     if (this.blocking && this.skills.secondary?.type === 'block') {
       damage *= (1 - this.skills.secondary.damageReduction);
+      // Tank endurance cost on hit while blocking (15-30 per hit)
+      if (this.maxEndurance > 0) {
+        const enduranceCost = 15 + Math.floor(Math.random() * 16); // 15-30
+        this.endurance = Math.max(0, this.endurance - enduranceCost);
+        if (this.endurance <= 0) {
+          this.blocking = false; // Force unblock when out of endurance
+        }
+      }
     }
 
     // Defense reduction

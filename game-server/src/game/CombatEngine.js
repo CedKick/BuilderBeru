@@ -35,6 +35,8 @@ export class CombatEngine {
 
     switch (skill.type) {
       case 'block':
+        // Tank blocks with endurance, not mana
+        if (player.maxEndurance > 0 && player.endurance <= 0) return; // No endurance
         player.blocking = true;
         // Blocking is continuous - will be released by 'stop_secondary' input
         break;
@@ -296,6 +298,11 @@ export class CombatEngine {
             // Mana on hit (basic attacks restore mana)
             if (skill.isBasic && PLAYER.MANA_ON_HIT > 0) {
               player.mana = Math.min(player.maxMana, player.mana + PLAYER.MANA_ON_HIT);
+            }
+
+            // Tank: +5 endurance on auto-attack hit
+            if (skill.isBasic && player.maxEndurance > 0) {
+              player.endurance = Math.min(player.maxEndurance, player.endurance + 5);
             }
 
             this.gs.addEvent({
@@ -788,15 +795,29 @@ export class CombatEngine {
     const regen = PLAYER.MANA_REGEN_RATE + (player.res * 0.05);
     player.mana = Math.min(player.maxMana, player.mana + regen * dt);
 
-    // Blocking costs mana
-    if (player.blocking && player.skills.secondary?.type === 'block') {
+    // Tank endurance system
+    if (player.maxEndurance > 0) {
+      if (player.blocking) {
+        // Blocking drains 20 endurance per second
+        player.endurance -= 20 * dt;
+        if (player.endurance <= 0) {
+          player.endurance = 0;
+          player.blocking = false;
+        }
+        // Generate aggro while blocking
+        this.gs.addAggro(player.id, AGGRO.BLOCK_AGGRO_PER_SEC * dt * player.aggroMult);
+      } else {
+        // Passive endurance regen: +1 per second
+        player.endurance = Math.min(player.maxEndurance, player.endurance + 1 * dt);
+      }
+    } else if (player.blocking && player.skills.secondary?.type === 'block') {
+      // Non-tank blocking (fallback, uses mana) — shouldn't happen currently
       const cost = (player.skills.secondary.manaCost || 5) * dt;
       player.mana -= cost;
       if (player.mana <= 0) {
         player.mana = 0;
         player.blocking = false;
       }
-      // Generate aggro while blocking
       this.gs.addAggro(player.id, AGGRO.BLOCK_AGGRO_PER_SEC * dt * player.aggroMult);
     }
   }
