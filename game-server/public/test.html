@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Manaya Raid - Test Client</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0f0f1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+    #app { display: flex; height: 100vh; }
+    #sidebar { width: 320px; padding: 10px; background: #1a1a2e; overflow-y: auto; flex-shrink: 0; border-right: 1px solid #2a2a4e; }
+    #game { flex: 1; position: relative; }
+    canvas { display: block; cursor: crosshair; }
+
+    h2 { color: #a78bfa; margin-bottom: 6px; font-size: 15px; }
+    h3 { color: #7c3aed; margin: 6px 0 3px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    button {
+      background: #7c3aed; color: white; border: none; padding: 5px 12px;
+      border-radius: 5px; cursor: pointer; margin: 2px; font-size: 11px; transition: background 0.15s;
+    }
+    button:hover { background: #6d28d9; }
+    button:disabled { background: #4a4a5e; cursor: not-allowed; }
+    button.danger { background: #ef4444; }
+    button.success { background: #10b981; }
+    input, select {
+      background: #2a2a3e; color: #e2e8f0; border: 1px solid #4a4a5e;
+      padding: 4px 7px; border-radius: 4px; margin: 2px; font-size: 11px; width: calc(100% - 4px);
+    }
+    label { font-size: 10px; color: #888; display: block; margin-top: 3px; }
+    .inline-row { display: flex; gap: 4px; align-items: center; }
+    .inline-row > * { flex: 1; }
+
+    #log {
+      height: 120px; overflow-y: auto; background: #0a0a15; padding: 5px;
+      border-radius: 4px; font-size: 9px; font-family: monospace; margin-top: 4px;
+    }
+    .log-entry { margin: 1px 0; line-height: 1.2; }
+    .log-entry.event { color: #a78bfa; }
+    .log-entry.error { color: #ef4444; }
+    .log-entry.info { color: #38bdf8; }
+    .log-entry.damage { color: #f97316; }
+    .log-entry.heal { color: #10b981; }
+    .log-entry.hunter { color: #c084fc; }
+
+    #status { padding: 5px 7px; background: #2a2a3e; border-radius: 4px; margin-bottom: 4px; font-size: 10px; }
+    .room-players { font-size: 10px; color: #ccc; margin: 3px 0; }
+    .room-players .ready { color: #10b981; }
+    .room-players .not-ready { color: #888; }
+
+    /* ── Boss HP Bar ── */
+    .boss-hud {
+      position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+      width: 600px; pointer-events: none; z-index: 10;
+    }
+    .boss-hud-name { text-align: center; font-weight: bold; font-size: 16px; text-shadow: 0 0 12px rgba(239,68,68,0.6); margin-bottom: 2px; }
+    .boss-bar-outer { position: relative; height: 30px; background: #111; border-radius: 5px; border: 2px solid #444; overflow: hidden; }
+    .boss-bar-bg { position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.3; }
+    .boss-bar-fill { position: absolute; top: 0; left: 0; bottom: 0; transition: width 0.08s linear; border-radius: 3px; }
+    .boss-bar-text { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #fff; font-weight: bold; text-shadow: 0 0 4px #000; }
+    .boss-bar-info { text-align: center; color: #aaa; font-size: 11px; margin-top: 2px; }
+    .boss-shield-bar { height: 8px; background: #111; border-radius: 4px; margin-top: 2px; overflow: hidden; display: none; }
+    .boss-shield-fill { height: 100%; background: linear-gradient(90deg, #38bdf8, #818cf8); transition: width 0.1s; }
+    .boss-rage-info { text-align: center; font-size: 11px; margin-top: 1px; }
+
+    /* ── Player HP/Mana (BOTTOM of screen) ── */
+    .player-hud {
+      position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%);
+      width: 420px; pointer-events: none; z-index: 10;
+    }
+    .player-hud-name { text-align: center; font-size: 11px; color: #ccc; margin-bottom: 2px; }
+    .player-hp-outer { position: relative; height: 22px; background: #1a1a1a; border-radius: 4px; border: 1px solid #333; overflow: hidden; margin-bottom: 3px; }
+    .player-hp-fill { position: absolute; top: 0; left: 0; bottom: 0; transition: width 0.1s; border-radius: 3px; }
+    .player-hp-text { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; font-weight: bold; text-shadow: 0 0 3px #000; }
+    .player-mana-outer { position: relative; height: 10px; background: #1a1a1a; border-radius: 3px; border: 1px solid #222; overflow: hidden; }
+    .player-mana-fill { position: absolute; top: 0; left: 0; bottom: 0; background: #3b82f6; transition: width 0.1s; border-radius: 2px; }
+    .player-mana-text { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 8px; color: #ccc; }
+
+    /* ── Skill Bar (bigger) ── */
+    .skill-bar {
+      position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 5px; z-index: 10; pointer-events: none;
+    }
+    .skill-slot {
+      width: 62px; height: 62px; background: rgba(0,0,0,0.8);
+      border: 2px solid #444; border-radius: 8px; position: relative;
+      display: flex; align-items: center; justify-content: center; flex-direction: column;
+    }
+    .skill-slot.active { border-color: #a78bfa; box-shadow: 0 0 10px rgba(167,139,250,0.5); }
+    .skill-slot .key-label { position: absolute; top: 2px; left: 4px; font-size: 11px; color: #aaa; font-weight: bold; }
+    .skill-slot .skill-name { font-size: 8px; color: #bbb; text-align: center; margin-top: 10px; line-height: 1.1; }
+    .skill-slot .cd-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); transition: height 0.05s linear; border-radius: 0 0 6px 6px; }
+    .skill-slot .cd-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 18px; color: #fff; font-weight: bold; text-shadow: 0 0 5px #000; }
+    .skill-sep { width: 2px; height: 62px; background: #333; border-radius: 1px; }
+
+    /* ── Hunter Slots ── */
+    .hunter-bar {
+      position: absolute; bottom: 84px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 6px; z-index: 10; pointer-events: none;
+    }
+    .hunter-slot {
+      width: 48px; height: 48px; background: rgba(0,0,0,0.8);
+      border: 2px solid #7c3aed; border-radius: 50%; position: relative;
+      display: flex; align-items: center; justify-content: center; flex-direction: column;
+    }
+    .hunter-slot.on-cd { border-color: #555; opacity: 0.6; }
+    .hunter-slot .h-key { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #a78bfa; font-weight: bold; background: #1a1a2e; padding: 0 4px; border-radius: 3px; }
+    .hunter-slot .h-name { font-size: 7px; color: #ccc; text-align: center; }
+    .hunter-slot .h-cd { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 15px; color: #fff; font-weight: bold; text-shadow: 0 0 5px #000; }
+
+    /* ── DPS Meter (bigger) ── */
+    .dps-panel {
+      position: absolute; top: 90px; right: 10px; width: 230px;
+      background: rgba(0,0,0,0.75); border-radius: 8px; padding: 8px 10px;
+      z-index: 10; pointer-events: none; border: 1px solid #333;
+    }
+    .dps-title { font-size: 12px; color: #999; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 1px; }
+    .dps-row { display: flex; align-items: center; gap: 5px; margin: 3px 0; font-size: 12px; }
+    .dps-color { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dps-name { flex: 1; color: #ddd; white-space: nowrap; overflow: hidden; }
+    .dps-val { color: #fff; font-weight: bold; font-family: monospace; flex-shrink: 0; font-size: 13px; }
+    .dps-bar-bg { flex: 2; height: 8px; background: #222; border-radius: 4px; overflow: hidden; }
+    .dps-bar-fill { height: 100%; border-radius: 4px; transition: width 0.2s; }
+
+    /* ── Buff/Debuff ── */
+    .buff-display {
+      position: absolute; bottom: 168px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 4px; z-index: 10; pointer-events: none;
+    }
+    .buff-icon {
+      width: 32px; height: 32px; background: rgba(0,0,0,0.75);
+      border-radius: 5px; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; position: relative;
+    }
+    .buff-icon.positive { border: 2px solid #10b981; }
+    .buff-icon.negative { border: 2px solid #ef4444; }
+    .buff-icon .buff-dur { position: absolute; bottom: -3px; right: -3px; font-size: 9px; color: #fff; background: #333; border-radius: 2px; padding: 0 3px; }
+    .buff-icon .buff-stacks { position: absolute; top: -3px; right: -3px; font-size: 9px; color: #fff; background: #7c3aed; border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; }
+
+    /* ── Timer ── */
+    .game-timer { position: absolute; top: 12px; right: 14px; z-index: 10; font-size: 24px; font-weight: bold; pointer-events: none; text-shadow: 0 0 8px #000; }
+
+    /* ── Simulation Panel ── */
+    .sim-panel { background: #1a1a2e; border: 2px solid #f59e0b; border-radius: 6px; padding: 6px; margin-top: 6px; }
+    .sim-panel h3 { color: #f59e0b; }
+    .sim-panel button { font-size: 10px; padding: 3px 8px; background: #b45309; }
+    .sim-panel button:hover { background: #d97706; }
+    .sim-toggle { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .sim-toggle input[type="checkbox"] { accent-color: #f59e0b; }
+    .sim-toggle label { font-size: 11px; color: #f59e0b; cursor: pointer; margin: 0; }
+
+    /* ── Controls ── */
+    .controls-info { font-size: 9px; color: #555; margin-top: 4px; line-height: 1.4; }
+    .controls-info kbd { background: #333; padding: 1px 3px; border-radius: 2px; font-size: 8px; border: 1px solid #555; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="sidebar">
+      <h2>Manaya Raid</h2>
+      <div id="status">Disconnected</div>
+
+      <h3>Connection</h3>
+      <div class="inline-row">
+        <input id="username" placeholder="Username" value="Player1" />
+      </div>
+      <div class="inline-row">
+        <button onclick="connect()" id="btnConnect">Connect</button>
+        <button onclick="disconnect()" class="danger" id="btnDisconnect" disabled>Disconnect</button>
+      </div>
+
+      <h3>Room</h3>
+      <div class="inline-row">
+        <button onclick="createRoom()" id="btnCreate" disabled>Create</button>
+        <input id="roomCode" placeholder="Code" style="width:80px" />
+        <button onclick="joinRoom()" id="btnJoin" disabled>Join</button>
+      </div>
+
+      <h3>Class & Difficulty</h3>
+      <div class="inline-row">
+        <select id="classSelect" onchange="selectClass()">
+          <option value="">-- Classe --</option>
+          <option value="tank">Tank</option>
+          <option value="healer">Healer</option>
+          <option value="dps_cac">DPS CAC</option>
+          <option value="dps_range">DPS Distance</option>
+        </select>
+        <select id="diffSelect" onchange="selectDifficulty()">
+          <option value="NORMAL">Normal</option>
+          <option value="HARD">Hard</option>
+          <option value="NIGHTMARE">Nightmare</option>
+        </select>
+      </div>
+
+      <h3>Main Hunter</h3>
+      <select id="mainHunterSelect" onchange="selectHunters()"><option value="">-- Choisir --</option></select>
+
+      <h3>Support Hunters</h3>
+      <select id="support1" onchange="selectHunters()"><option value="">-- Slot 1 --</option></select>
+      <select id="support2" onchange="selectHunters()"><option value="">-- Slot 2 --</option></select>
+      <select id="support3" onchange="selectHunters()"><option value="">-- Slot 3 --</option></select>
+      <label>Level: <input id="hunterLevel" type="number" value="30" min="1" max="100" style="width:50px;display:inline" onchange="selectHunters()" /></label>
+
+      <div style="margin-top:4px">
+        <button onclick="toggleReady()" id="btnReady" disabled class="success">Ready</button>
+      </div>
+      <div id="roomPlayers" class="room-players"></div>
+
+      <div class="sim-panel" id="simPanel">
+        <h3>Simulation Mode</h3>
+        <div class="sim-toggle">
+          <input type="checkbox" id="simToggle" onchange="toggleSimulation()" />
+          <label for="simToggle">Training Mode (God Mode)</label>
+        </div>
+        <div id="simControls" style="display:none">
+          <label>Set Boss HP %</label>
+          <div class="inline-row">
+            <button onclick="simSetBossHp(90)">90%</button>
+            <button onclick="simSetBossHp(75)">75%</button>
+            <button onclick="simSetBossHp(50)">50%</button>
+            <button onclick="simSetBossHp(30)">30%</button>
+            <button onclick="simSetBossHp(20)">20%</button>
+            <button onclick="simSetBossHp(8)">8%</button>
+          </div>
+          <div class="inline-row" style="margin-top:3px">
+            <button onclick="simFullHeal()">Full Heal</button>
+            <button onclick="simKillAdds()">Kill Adds</button>
+            <button onclick="simSpawnAdds()">Spawn Adds</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls-info">
+        <h3>Controls</h3>
+        <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> Move | <kbd>Space</kbd> Dodge<br>
+        <kbd>LMB</kbd> Basic | <kbd>RMB</kbd> Secondary<br>
+        <kbd>A</kbd> Skill 1 | <kbd>E</kbd> Skill 2 | <kbd>R</kbd> Ultimate<br>
+        <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> Summon Hunter
+      </div>
+
+      <h3>Log</h3>
+      <div id="log"></div>
+    </div>
+
+    <div id="game">
+      <canvas id="canvas"></canvas>
+
+      <div class="boss-hud" id="bossHud" style="display:none">
+        <div class="boss-hud-name" id="bossName">MANAYA</div>
+        <div class="boss-bar-outer">
+          <div class="boss-bar-bg" id="bossBg"></div>
+          <div class="boss-bar-fill" id="bossFill"></div>
+          <div class="boss-bar-text" id="bossText"></div>
+        </div>
+        <div class="boss-bar-info" id="bossInfo"></div>
+        <div class="boss-shield-bar" id="shieldBar"><div class="boss-shield-fill" id="shieldFill"></div></div>
+        <div class="boss-rage-info" id="bossRageInfo"></div>
+      </div>
+
+      <div class="game-timer" id="gameTimer"></div>
+
+      <div class="dps-panel" id="dpsPanel" style="display:none">
+        <div class="dps-title">DPS Meter</div>
+        <div id="dpsContent"></div>
+      </div>
+
+      <div class="buff-display" id="buffDisplay"></div>
+
+      <!-- Player HP/Mana at bottom -->
+      <div class="player-hud" id="playerHud" style="display:none">
+        <div class="player-hud-name" id="playerHudName"></div>
+        <div class="player-hp-outer">
+          <div class="player-hp-fill" id="playerHpFill"></div>
+          <div class="player-hp-text" id="playerHpText"></div>
+        </div>
+        <div class="player-mana-outer">
+          <div class="player-mana-fill" id="playerManaFill"></div>
+          <div class="player-mana-text" id="playerManaText"></div>
+        </div>
+      </div>
+
+      <div class="hunter-bar" id="hunterBar" style="display:none"></div>
+      <div class="skill-bar" id="skillBar" style="display:none"></div>
+    </div>
+  </div>
+
+  <script>
+    // ── Hunter Data ──
+    const HUNTER_LIST = {
+      h_kanae:     { name: 'Tawata Kanae', element: 'fire', class: 'assassin', rarity: 'mythique' },
+      h_stark:     { name: 'Stark', element: 'fire', class: 'tank', rarity: 'mythique' },
+      h_fern:      { name: 'Fern', element: 'fire', class: 'mage', rarity: 'legendaire' },
+      h_choi:      { name: 'Choi Jong-In', element: 'fire', class: 'mage', rarity: 'mythique' },
+      h_megumin:   { name: 'Megumin', element: 'fire', class: 'mage', rarity: 'mythique' },
+      h_chae_in:   { name: 'Cha Hae-In', element: 'water', class: 'assassin', rarity: 'mythique' },
+      h_frieren:   { name: 'Frieren', element: 'water', class: 'mage', rarity: 'mythique' },
+      h_alicia:    { name: 'Alicia Blanche', element: 'water', class: 'assassin', rarity: 'legendaire' },
+      h_seo:       { name: 'Seo Jiwoo', element: 'water', class: 'support', rarity: 'legendaire' },
+      h_kurisu:    { name: 'Kurisu Makise', element: 'water', class: 'mage', rarity: 'mythique' },
+      h_ilhwan:    { name: 'Ilhwan', element: 'shadow', class: 'assassin', rarity: 'mythique' },
+      h_silverbaek:{ name: 'Baek Yoonho', element: 'shadow', class: 'fighter', rarity: 'mythique' },
+      h_kaneki:    { name: 'Ken Kaneki', element: 'shadow', class: 'fighter', rarity: 'mythique' },
+      h_saber:     { name: 'Saber', element: 'shadow', class: 'fighter', rarity: 'mythique' },
+      h_guts:      { name: 'Guts', element: 'shadow', class: 'fighter', rarity: 'mythique' },
+      h_2b:        { name: '2B', element: 'shadow', class: 'assassin', rarity: 'mythique' },
+    };
+
+    const ELEMENT_ICONS = { fire: '\u{1F525}', water: '\u{1F4A7}', shadow: '\u{1F31F}' };
+    const CLASS_COLORS = { tank: '#3b82f6', healer: '#10b981', dps_cac: '#ef4444', dps_range: '#f59e0b' };
+    const CLASS_LABELS = { tank: 'Tank', healer: 'Healer', dps_cac: 'DPS CAC', dps_range: 'DPS Range' };
+    const BAR_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899'];
+    const HP_BARS = 150;
+
+    // ── Boss Sprite ──
+    const bossImg = new Image();
+    bossImg.src = '/manayaBoss.png';
+    let bossImgLoaded = false;
+    bossImg.onload = () => { bossImgLoaded = true; };
+    const BOSS_SPRITE_SIZE = 140;
+
+    // ── Player Sprites (Sung) ──
+    const playerIdleImg = new Image();
+    playerIdleImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771687526/Sung_eztua4.png';
+    let playerIdleLoaded = false;
+    playerIdleImg.onload = () => { playerIdleLoaded = true; };
+
+    const playerAtkImg = new Image();
+    playerAtkImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771692299/SungAtk_sq1inu.png';
+    let playerAtkLoaded = false;
+    playerAtkImg.onload = () => { playerAtkLoaded = true; };
+
+    // ── Arena Map ──
+    const arenaMapImg = new Image();
+    arenaMapImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771694314/mapManaya_gjdwpd.jpg';
+    let arenaMapLoaded = false;
+    arenaMapImg.onload = () => { arenaMapLoaded = true; };
+
+    const PLAYER_SPRITE_SIZE = 56;
+    let playerAttackTimers = {}; // playerId -> timestamp of last attack
+
+    // ── Screen Shake ──
+    let screenShake = { x: 0, y: 0, intensity: 0, decay: 0.92 };
+
+    function triggerScreenShake(intensity) {
+      screenShake.intensity = Math.max(screenShake.intensity, intensity);
+    }
+
+    // ── Particles ──
+    let particles = [];
+    function spawnParticles(x, y, color, count, speed, size) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const spd = speed * (0.5 + Math.random() * 0.5);
+        particles.push({
+          x, y, vx: Math.cos(angle) * spd, vy: Math.sin(angle) * spd,
+          size: size * (0.5 + Math.random() * 0.5), color, alpha: 1, life: 0.5 + Math.random() * 0.5, age: 0,
+        });
+      }
+    }
+
+    // ── Floating Damage Numbers ──
+    let floatingNumbers = []; // { x, y, text, color, alpha, vy, age }
+
+    function addFloatingNumber(x, y, amount, crit, isHeal) {
+      const color = isHeal ? '#10b981' : (crit ? '#ffd700' : '#ffffff');
+      const size = crit ? 22 : (isHeal ? 16 : 18);
+      const prefix = isHeal ? '+' : '';
+      floatingNumbers.push({
+        x: x + (Math.random() - 0.5) * 40,
+        y: y - 30,
+        text: prefix + formatNum(amount),
+        color, size, alpha: 1, vy: -60, age: 0, maxAge: 1.2,
+        bold: crit,
+      });
+    }
+
+    // ── Populate hunter dropdowns ──
+    function populateHunterDropdowns() {
+      const selects = ['mainHunterSelect', 'support1', 'support2', 'support3'];
+      for (const selId of selects) {
+        const sel = document.getElementById(selId);
+        const firstOpt = sel.options[0];
+        sel.innerHTML = '';
+        sel.appendChild(firstOpt);
+        for (const element of ['fire', 'water', 'shadow']) {
+          const group = document.createElement('optgroup');
+          group.label = ELEMENT_ICONS[element] + ' ' + element.charAt(0).toUpperCase() + element.slice(1);
+          for (const [id, h] of Object.entries(HUNTER_LIST)) {
+            if (h.element !== element) continue;
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = ELEMENT_ICONS[h.element] + ' ' + h.name;
+            group.appendChild(opt);
+          }
+          sel.appendChild(group);
+        }
+      }
+    }
+    populateHunterDropdowns();
+
+    // ── State ──
+    let ws = null, myId = null, gameState = null, roomInfo = null, inRoom = false;
+    let keys = {}, mouseAngle = 0, lastAimSent = 0, gameStartTime = 0;
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+      const gameDiv = document.getElementById('game');
+      canvas.width = gameDiv.clientWidth;
+      canvas.height = gameDiv.clientHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // ── Connection ──
+    function connect() {
+      const username = document.getElementById('username').value || 'Player';
+      const host = location.hostname;
+      const port = location.port || 3001;
+      ws = new WebSocket('ws://' + host + ':' + port + '/ws?username=' + encodeURIComponent(username));
+      ws.onopen = () => {
+        log('Connected!', 'info');
+        document.getElementById('status').textContent = 'Connected';
+        document.getElementById('btnConnect').disabled = true;
+        document.getElementById('btnDisconnect').disabled = false;
+        document.getElementById('btnCreate').disabled = false;
+        document.getElementById('btnJoin').disabled = false;
+      };
+      ws.onmessage = (e) => handleMessage(JSON.parse(e.data));
+      ws.onclose = () => {
+        log('Disconnected', 'error');
+        document.getElementById('status').textContent = 'Disconnected';
+        document.getElementById('btnConnect').disabled = false;
+        document.getElementById('btnDisconnect').disabled = true;
+        document.getElementById('btnCreate').disabled = true;
+        document.getElementById('btnJoin').disabled = true;
+        document.getElementById('btnReady').disabled = true;
+        ws = null; myId = null; inRoom = false; gameState = null; roomInfo = null;
+      };
+    }
+    function disconnect() { if (ws) ws.close(); }
+    function send(msg) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg)); }
+
+    // ── Room Actions ──
+    function createRoom() { send({ type: 'create_room' }); }
+    function joinRoom() { send({ type: 'join_room', code: document.getElementById('roomCode').value }); }
+    function selectClass() {
+      const cls = document.getElementById('classSelect').value;
+      if (cls && inRoom) { send({ type: 'select_class', class: cls }); log('Class: ' + CLASS_LABELS[cls], 'info'); }
+    }
+    function selectDifficulty() { if (inRoom) send({ type: 'select_difficulty', difficulty: document.getElementById('diffSelect').value }); }
+    function toggleSimulation() {
+      const enabled = document.getElementById('simToggle').checked;
+      document.getElementById('simControls').style.display = enabled ? 'block' : 'none';
+      if (inRoom) send({ type: 'set_simulation', enabled });
+    }
+    function simSetBossHp(pct) { send({ type: 'input', input: { type: 'sim_set_boss_hp', percent: pct } }); }
+    function simFullHeal() { send({ type: 'input', input: { type: 'sim_full_heal' } }); }
+    function simKillAdds() { send({ type: 'input', input: { type: 'sim_kill_adds' } }); }
+    function simSpawnAdds() { send({ type: 'input', input: { type: 'sim_spawn_adds', adds: [{ type: 'minion' }, { type: 'elite' }] } }); }
+    function selectHunters() {
+      if (!inRoom) return;
+      send({
+        type: 'select_hunters',
+        mainHunter: document.getElementById('mainHunterSelect').value || null,
+        supportHunters: [
+          document.getElementById('support1').value || null,
+          document.getElementById('support2').value || null,
+          document.getElementById('support3').value || null,
+        ],
+        hunterLevel: parseInt(document.getElementById('hunterLevel').value) || 30,
+        hunterStars: 0,
+      });
+    }
+    function toggleReady() {
+      const cls = document.getElementById('classSelect').value;
+      if (cls && inRoom) send({ type: 'select_class', class: cls });
+      selectHunters();
+      send({ type: 'player_ready' });
+    }
+    function onJoinedRoom() {
+      inRoom = true;
+      document.getElementById('btnReady').disabled = false;
+      const cls = document.getElementById('classSelect').value;
+      if (cls) { send({ type: 'select_class', class: cls }); }
+      selectHunters();
+    }
+    function updateRoomDisplay() {
+      if (!roomInfo) { document.getElementById('roomPlayers').innerHTML = ''; return; }
+      const html = roomInfo.players.map(p => {
+        const cls = CLASS_LABELS[p.class] || '???';
+        const readyCls = p.ready ? 'ready' : 'not-ready';
+        const isMe = p.id === myId ? ' *' : '';
+        const hunter = p.mainHunter ? (' [' + (HUNTER_LIST[p.mainHunter]?.name || p.mainHunter) + ']') : '';
+        return '<div class="' + readyCls + '">' + p.username + isMe + ' - ' + cls + hunter + (p.ready ? ' \u2713' : '') + '</div>';
+      }).join('');
+      document.getElementById('roomPlayers').innerHTML = html;
+    }
+
+    // ── Message Handler ──
+    function handleMessage(msg) {
+      switch (msg.type) {
+        case 'connected': myId = msg.id; log('ID: ' + myId, 'info'); break;
+        case 'room_created':
+          roomInfo = msg.room; document.getElementById('roomCode').value = msg.code;
+          log('Room: ' + msg.code, 'info'); onJoinedRoom(); updateRoomDisplay(); break;
+        case 'room_joined':
+          roomInfo = msg.room; document.getElementById('roomCode').value = msg.room.code;
+          log('Joined: ' + msg.room.code, 'info'); onJoinedRoom(); updateRoomDisplay(); break;
+        case 'player_joined': log(msg.player.username + ' joined', 'info'); roomInfo = msg.room; updateRoomDisplay(); break;
+        case 'player_left': log('Player left', 'info'); roomInfo = msg.room; updateRoomDisplay(); break;
+        case 'class_selected': case 'difficulty_changed': case 'ready_changed': case 'hunters_selected':
+          roomInfo = msg.room; updateRoomDisplay(); break;
+        case 'countdown_start': case 'countdown_tick': log('Starting in ' + msg.seconds + '...', 'event'); break;
+        case 'countdown_cancelled': log('Countdown cancelled', 'info'); break;
+
+        case 'game_start':
+          log('FIGHT!', 'event'); gameStartTime = Date.now();
+          document.getElementById('bossHud').style.display = 'block';
+          document.getElementById('dpsPanel').style.display = 'block';
+          document.getElementById('hunterBar').style.display = 'flex';
+          document.getElementById('skillBar').style.display = 'flex';
+          document.getElementById('playerHud').style.display = 'block';
+          break;
+
+        case 'state': gameState = msg; updateHUD(); break;
+
+        // ── Damage events → floating numbers + particles + shake ──
+        case 'damage':
+          if (msg.amount > 0 && gameState) {
+            const boss = gameState.boss;
+            if (msg.target && msg.target.startsWith('boss')) {
+              addFloatingNumber(boss.x, boss.y, msg.amount, msg.crit, false);
+              if (msg.crit) spawnParticles(boss.x, boss.y, '#ffd700', 6, 120, 4);
+              else spawnParticles(boss.x, boss.y, '#fff', 3, 80, 3);
+              playerAttackTimers[msg.source] = Date.now(); // Trigger attack anim
+            } else if (msg.target && msg.target.startsWith('add_')) {
+              // Damage TO add
+              const add = (gameState.adds || []).find(a => a.id === msg.target);
+              if (add) {
+                addFloatingNumber(add.x, add.y, msg.amount, msg.crit, false);
+                spawnParticles(add.x, add.y, '#ff6b6b', 4, 80, 3);
+              }
+              playerAttackTimers[msg.source] = Date.now();
+            } else {
+              const p = (gameState.players || []).find(pl => pl.id === msg.target);
+              if (p) {
+                addFloatingNumber(p.x, p.y, msg.amount, msg.crit, false);
+                if (msg.amount > 2000) triggerScreenShake(Math.min(12, msg.amount / 500));
+                spawnParticles(p.x, p.y, '#ef4444', 4, 100, 3);
+              }
+            }
+            if (msg.source === myId) log((msg.skill || 'Hit') + ': ' + msg.amount + (msg.crit ? ' CRIT!' : ''), 'damage');
+            else if (msg.target === myId) log((msg.skill || 'Hit') + ': -' + msg.amount, 'error');
+          }
+          break;
+
+        case 'heal':
+          if (msg.amount > 0 && gameState) {
+            const p = (gameState.players || []).find(pl => pl.id === msg.target);
+            if (p) addFloatingNumber(p.x, p.y, msg.amount, false, true);
+          }
+          log('Heal: +' + msg.amount, 'heal');
+          break;
+
+        case 'hunter_summon':
+          if (gameState && gameState.boss) addFloatingNumber(gameState.boss.x, gameState.boss.y, msg.amount, msg.crit, false);
+          log(msg.hunterName + ' - ' + msg.skillName + ': ' + msg.amount + (msg.crit ? ' CRIT!' : ''), 'hunter');
+          break;
+
+        case 'summon_failed': if (msg.player === myId) log('Summon: ' + msg.reason, 'error'); break;
+        case 'dot_tick':
+          if (gameState && msg.amount > 0) {
+            const pt = (gameState.players || []).find(pl => pl.id === msg.target);
+            if (pt) addFloatingNumber(pt.x, pt.y, msg.amount, false, false);
+          }
+          if (msg.target === myId) log('Poison x' + (msg.stacks || 1) + ': -' + msg.amount, 'error');
+          break;
+        case 'boss_message': log(msg.text, 'event'); break;
+        case 'boss_enrage': log('BOSS ENRAGED!', 'error'); break;
+        case 'boss_rage_stack': log(msg.message, 'error'); break;
+        case 'phase_change': log('Phase ' + msg.phase, 'event'); break;
+        case 'shield_activated': log('Shield: ' + Math.round(msg.shieldHp) + ' HP', 'event'); break;
+        case 'shield_timer': log('Shield: ' + msg.remaining + 's left!', 'error'); break;
+        case 'debuff_marker':
+          if (msg.target === myId) log('VOTRE MARQUEUR: ' + msg.color.toUpperCase() + ' - Allez dans la zone ' + msg.color + ' !', 'error');
+          break;
+        case 'cleanse': log('Cleanse!', 'heal'); break;
+        case 'add_spawn': log(msg.name + ' appeared!', 'error'); break;
+        case 'add_killed': log('Add killed!', 'damage'); break;
+        case 'simulation_changed': log('Simulation: ' + (msg.simulation ? 'ON' : 'OFF'), 'info'); break;
+
+        case 'game_end':
+          if (msg.result.victory) {
+            const time = msg.result.time ? ' in ' + Math.floor(msg.result.time) + 's' : '';
+            log('VICTORY!' + time, 'heal');
+          } else {
+            log('DEFEAT: ' + msg.result.reason, 'error');
+          }
+          if (msg.result.stats) {
+            for (const s of msg.result.stats) log('  ' + s.username + ': DMG=' + formatNum(s.damageDealt) + ' Heal=' + formatNum(s.healingDone), 'info');
+          }
+          break;
+
+        case 'room_reset':
+          roomInfo = msg.room; gameState = null; floatingNumbers = [];
+          document.getElementById('bossHud').style.display = 'none';
+          document.getElementById('dpsPanel').style.display = 'none';
+          document.getElementById('hunterBar').style.display = 'none';
+          document.getElementById('skillBar').style.display = 'none';
+          document.getElementById('playerHud').style.display = 'none';
+          document.getElementById('buffDisplay').innerHTML = '';
+          updateRoomDisplay();
+          log('Room reset', 'info');
+          break;
+
+        case 'events_batch':
+          for (const evt of msg.events) handleMessage(evt);
+          break;
+
+        case 'error': log('Error: ' + msg.message, 'error'); break;
+      }
+    }
+
+    // ── HUD Updates ──
+    function updateHUD() {
+      if (!gameState) return;
+      const boss = gameState.boss;
+      const me = gameState.players.find(p => p.id === myId);
+
+      // ── Boss HP Bar ──
+      if (boss) {
+        const hpPerBar = boss.maxHp / HP_BARS;
+        const currentBar = Math.max(0, Math.ceil(boss.hp / hpPerBar));
+        const remainder = boss.hp % hpPerBar;
+        const barProgress = currentBar > 0 ? (remainder === 0 && boss.hp > 0 ? 1 : remainder / hpPerBar) : 0;
+        const colorIdx = (currentBar - 1) % BAR_COLORS.length;
+        const color = currentBar > 0 ? BAR_COLORS[Math.max(0, colorIdx)] : '#333';
+        const nextColor = currentBar > 1 ? BAR_COLORS[(currentBar - 2) % BAR_COLORS.length] : '#111';
+
+        let nameText = boss.enraged ? 'MANAYA ENRAGED' : 'MANAYA';
+        nameText += ' - Phase ' + boss.phase;
+        if (boss.speedStacks > 0) nameText += ' \u26A1x' + boss.speedStacks;
+        document.getElementById('bossName').textContent = nameText;
+        document.getElementById('bossName').style.color = boss.enraged ? '#ff4444' : '#ef4444';
+        document.getElementById('bossBg').style.background = nextColor;
+        document.getElementById('bossFill').style.width = (barProgress * 100) + '%';
+        document.getElementById('bossFill').style.background = color;
+        document.getElementById('bossText').textContent = currentBar + ' / ' + HP_BARS;
+        const hpPctBoss = boss.maxHp > 0 ? ((boss.hp / boss.maxHp) * 100).toFixed(1) : '0.0';
+        document.getElementById('bossInfo').textContent = hpPctBoss + '% — ' + Math.round(boss.hp).toLocaleString() + ' / ' + Math.round(boss.maxHp).toLocaleString() + ' HP';
+
+        const shieldBarEl = document.getElementById('shieldBar');
+        if (boss.shielded) {
+          shieldBarEl.style.display = 'block';
+          document.getElementById('shieldFill').style.width = ((boss.shieldHp / boss.shieldMaxHp) * 100) + '%';
+        } else { shieldBarEl.style.display = 'none'; }
+
+        // Rage buff indicator
+        const rageEl = document.getElementById('bossRageInfo');
+        if (boss.rageBuff > 0) {
+          rageEl.textContent = '\u{1F525} RAGE x' + boss.rageBuff + (boss.rageBuff >= 3 ? ' — DMG \u00D73!' : ' — DISPEL!');
+          rageEl.style.color = boss.rageBuff >= 3 ? '#ff4444' : '#f97316';
+        } else { rageEl.textContent = ''; }
+      }
+
+      // ── Timer ──
+      if (gameState.timer !== undefined) {
+        const totalSec = Math.max(0, gameState.timer);
+        const min = Math.floor(totalSec / 60);
+        const sec = Math.floor(totalSec % 60);
+        const timerEl = document.getElementById('gameTimer');
+        timerEl.textContent = min + ':' + String(sec).padStart(2, '0');
+        timerEl.style.color = totalSec < 60 ? '#ef4444' : '#ccc';
+      }
+
+      // ── Player HP/Mana Bar (bottom) ──
+      if (me) {
+        const hpPct = me.alive ? (me.hp / me.maxHp) : 0;
+        const hpColor = hpPct > 0.5 ? '#10b981' : hpPct > 0.25 ? '#f59e0b' : '#ef4444';
+        document.getElementById('playerHpFill').style.width = (hpPct * 100) + '%';
+        document.getElementById('playerHpFill').style.background = hpColor;
+        document.getElementById('playerHpText').textContent = Math.round(me.hp) + ' / ' + me.maxHp;
+        document.getElementById('playerManaFill').style.width = ((me.mana / me.maxMana) * 100) + '%';
+        document.getElementById('playerManaText').textContent = Math.round(me.mana) + ' / ' + me.maxMana;
+        const mainH = me.mainHunter ? HUNTER_LIST[me.mainHunter]?.name : null;
+        document.getElementById('playerHudName').textContent = (mainH || me.username || 'YOU') + ' [' + (CLASS_LABELS[me.class] || '?') + ']';
+      }
+
+      // ── DPS Meter ──
+      if (gameState.players) {
+        const elapsed = Math.max(1, (Date.now() - gameStartTime) / 1000);
+        const sorted = [...gameState.players].filter(p => p.stats).sort((a, b) => b.stats.damageDealt - a.stats.damageDealt);
+        const maxDmg = sorted.length > 0 ? Math.max(1, sorted[0].stats.damageDealt) : 1;
+        let dpsHtml = '';
+        for (const p of sorted) {
+          const dps = Math.round(p.stats.damageDealt / elapsed);
+          const pct = (p.stats.damageDealt / maxDmg) * 100;
+          const color = CLASS_COLORS[p.class] || '#888';
+          const isMe = p.id === myId;
+          const name = p.username || (isMe ? 'YOU' : p.id.substring(0, 5));
+          dpsHtml += '<div class="dps-row"><div class="dps-color" style="background:' + color + '"></div>' +
+            '<div class="dps-name">' + (isMe ? '* ' : '') + name + '</div>' +
+            '<div class="dps-bar-bg"><div class="dps-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+            '<div class="dps-val">' + formatNum(dps) + '</div></div>';
+        }
+        if (me && me.stats) {
+          dpsHtml += '<div style="margin-top:5px;border-top:1px solid #333;padding-top:4px;font-size:11px;color:#999">' +
+            'Total DMG: ' + formatNum(me.stats.damageDealt) + '<br>' +
+            'Heal: ' + formatNum(me.stats.healingDone) + ' | Deaths: ' + me.stats.deaths + '</div>';
+        }
+        document.getElementById('dpsContent').innerHTML = dpsHtml;
+      }
+
+      if (me) {
+        updateSkillBar(me);
+        updateHunterBar(me);
+        updateBuffDisplay(me);
+      }
+    }
+
+    function updateSkillBar(me) {
+      const skills = [
+        { key: 'LMB', cd: me.cooldowns?.basic || 0, maxCd: 0.5, name: 'Basic' },
+        { key: 'RMB', cd: me.cooldowns?.secondary || 0, maxCd: 1.5, name: 'Secondary' },
+        { key: 'A', cd: me.cooldowns?.skillA || 0, maxCd: 12, name: 'Skill A' },
+        { key: 'E', cd: me.cooldowns?.skillB || 0, maxCd: 15, name: 'Skill E' },
+        { key: 'R', cd: me.cooldowns?.ultimate || 0, maxCd: 60, name: 'Ultimate' },
+        { key: 'SPC', cd: me.dodgeCooldown || 0, maxCd: 3, name: 'Dodge' },
+      ];
+      let html = '';
+      for (let i = 0; i < skills.length; i++) {
+        const s = skills[i];
+        const onCd = s.cd > 0;
+        const cdPct = onCd ? Math.min(100, (s.cd / Math.max(s.maxCd, s.cd)) * 100) : 0;
+        html += '<div class="skill-slot' + (onCd ? '' : ' active') + '">' +
+          '<span class="key-label">' + s.key + '</span>' +
+          '<span class="skill-name">' + s.name + '</span>' +
+          (onCd ? '<div class="cd-overlay" style="height:' + cdPct + '%"></div><span class="cd-text">' + s.cd.toFixed(1) + '</span>' : '') +
+          '</div>';
+        if (i === 1 || i === 4) html += '<div class="skill-sep"></div>';
+      }
+      document.getElementById('skillBar').innerHTML = html;
+    }
+
+    function updateHunterBar(me) {
+      const hunters = me.supportHunters || [null, null, null];
+      const cds = me.hunterCooldowns || [0, 0, 0];
+      let html = '';
+      for (let i = 0; i < 3; i++) {
+        const hId = hunters[i];
+        const hInfo = hId ? HUNTER_LIST[hId] : null;
+        const hName = hInfo ? hInfo.name.split(' ').pop() : '---';
+        const cd = cds[i] || 0;
+        const onCd = cd > 0;
+        const icon = hInfo ? (ELEMENT_ICONS[hInfo.element] || '') : '';
+        html += '<div class="hunter-slot' + (onCd ? ' on-cd' : '') + '">' +
+          '<span class="h-key">' + (i + 1) + '</span>' +
+          (onCd ? '<span class="h-cd">' + Math.ceil(cd) + '</span>' :
+            '<span class="h-name">' + icon + '<br>' + hName + '</span>') +
+          '</div>';
+      }
+      document.getElementById('hunterBar').innerHTML = html;
+    }
+
+    function updateBuffDisplay(me) {
+      if (!me.buffs || me.buffs.length === 0) { document.getElementById('buffDisplay').innerHTML = ''; return; }
+      const BUFF_ICONS = {
+        poison: { icon: '\u2620', neg: true },
+        atk_up: { icon: '\u2694', neg: false },
+        shield: { icon: '\u{1F6E1}', neg: false },
+        speed_up: { icon: '\u26A1', neg: false },
+        speed_down: { icon: '\u{1F422}', neg: true },
+      };
+      let html = '';
+      for (const b of me.buffs) {
+        const info = BUFF_ICONS[b.type] || { icon: '?', neg: true };
+        html += '<div class="buff-icon ' + (info.neg ? 'negative' : 'positive') + '">' +
+          info.icon + '<span class="buff-dur">' + parseFloat(b.dur).toFixed(0) + '</span>' +
+          (b.stacks > 1 ? '<span class="buff-stacks">' + b.stacks + '</span>' : '') +
+          '</div>';
+      }
+      document.getElementById('buffDisplay').innerHTML = html;
+    }
+
+    function formatNum(n) {
+      if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+      if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+      return Math.round(n).toString();
+    }
+
+    // ── Input ──
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+      const key = e.key.toLowerCase();
+      keys[key] = true;
+      if (['z','q','s','d','arrowup','arrowleft','arrowdown','arrowright'].includes(key)) { e.preventDefault(); sendMovement(); }
+      if (e.key === ' ') {
+        e.preventDefault();
+        // Dodge backward (opposite aim) when not moving, forward (aim direction) when moving
+        const moving = keys['z'] || keys['s'] || keys['q'] || keys['d'] || keys['arrowup'] || keys['arrowdown'] || keys['arrowleft'] || keys['arrowright'];
+        const dodgeAngle = moving ? mouseAngle : mouseAngle + Math.PI;
+        send({ type: 'input', input: { type: 'dodge', angle: dodgeAngle } });
+      }
+      if (key === 'a') send({ type: 'input', input: { type: 'skill', skill: 'skillA', angle: mouseAngle } });
+      if (key === 'e') send({ type: 'input', input: { type: 'skill', skill: 'skillB', angle: mouseAngle } });
+      if (key === 'r') send({ type: 'input', input: { type: 'skill', skill: 'ultimate', angle: mouseAngle } });
+      if (key === '1') send({ type: 'input', input: { type: 'summon', slot: 0 } });
+      if (key === '2') send({ type: 'input', input: { type: 'summon', slot: 1 } });
+      if (key === '3') send({ type: 'input', input: { type: 'summon', slot: 2 } });
+    });
+    document.addEventListener('keyup', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+      keys[e.key.toLowerCase()] = false; sendMovement();
+    });
+    canvas.addEventListener('mousemove', (e) => {
+      if (!gameState || !myId) return;
+      const me = gameState.players.find(p => p.id === myId);
+      if (!me) return;
+      const scale = Math.min(canvas.width / 1600, canvas.height / 1200);
+      const offsetX = (canvas.width - 1600 * scale) / 2;
+      const offsetY = (canvas.height - 1200 * scale) / 2;
+      mouseAngle = Math.atan2((e.offsetY - offsetY) / scale - me.y, (e.offsetX - offsetX) / scale - me.x);
+      const now = Date.now();
+      if (now - lastAimSent > 100) { send({ type: 'input', input: { type: 'aim', angle: mouseAngle } }); lastAimSent = now; }
+    });
+    canvas.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      if (e.button === 0) send({ type: 'input', input: { type: 'attack_basic', angle: mouseAngle } });
+      else if (e.button === 2) send({ type: 'input', input: { type: 'attack_secondary', angle: mouseAngle } });
+    });
+    canvas.addEventListener('mouseup', (e) => { if (e.button === 2) send({ type: 'input', input: { type: 'stop_secondary' } }); });
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    function sendMovement() {
+      let x = 0, y = 0;
+      if (keys['z'] || keys['arrowup']) y -= 1;
+      if (keys['s'] || keys['arrowdown']) y += 1;
+      if (keys['q'] || keys['arrowleft']) x -= 1;
+      if (keys['d'] || keys['arrowright']) x += 1;
+      if (x === 0 && y === 0) send({ type: 'input', input: { type: 'stop' } });
+      else send({ type: 'input', input: { type: 'move', x, y } });
+    }
+
+    // ── Canvas Rendering ──
+    let lastFrameTime = Date.now();
+
+    function render() {
+      const now = Date.now();
+      const frameDt = (now - lastFrameTime) / 1000;
+      lastFrameTime = now;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!gameState) {
+        ctx.fillStyle = '#888'; ctx.font = '18px Segoe UI'; ctx.textAlign = 'center';
+        if (roomInfo) {
+          ctx.fillText('Room: ' + roomInfo.code + ' (' + roomInfo.players.length + ' players)', canvas.width/2, canvas.height/2 - 80);
+          ctx.font = '14px Segoe UI';
+          roomInfo.players.forEach((p, i) => {
+            ctx.fillStyle = p.ready ? '#10b981' : '#888';
+            ctx.fillText(p.username + ' [' + (CLASS_LABELS[p.class] || '???') + ']' + (p.ready ? ' READY' : ''), canvas.width/2, canvas.height/2 - 40 + i * 30);
+          });
+        } else if (myId) { ctx.fillText('Create or join a room', canvas.width/2, canvas.height/2); }
+        else { ctx.fillText('Click "Connect" to start', canvas.width/2, canvas.height/2); }
+        requestAnimationFrame(render); return;
+      }
+
+      // ── Screen Shake ──
+      if (screenShake.intensity > 0.5) {
+        screenShake.x = (Math.random() - 0.5) * screenShake.intensity * 2;
+        screenShake.y = (Math.random() - 0.5) * screenShake.intensity * 2;
+        screenShake.intensity *= screenShake.decay;
+      } else {
+        screenShake.x = 0; screenShake.y = 0; screenShake.intensity = 0;
+      }
+
+      const scale = Math.min(canvas.width / 1600, canvas.height / 1200);
+      const ox = (canvas.width - 1600 * scale) / 2 + screenShake.x;
+      const oy = (canvas.height - 1200 * scale) / 2 + screenShake.y;
+      ctx.save(); ctx.translate(ox, oy); ctx.scale(scale, scale);
+
+      // Arena (map background)
+      if (arenaMapLoaded) {
+        ctx.drawImage(arenaMapImg, 0, 0, 1600, 1200);
+        // Darken slightly for better visibility
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.fillRect(0, 0, 1600, 1200);
+      } else {
+        ctx.fillStyle = '#12121e'; ctx.fillRect(0, 0, 1600, 1200);
+        ctx.strokeStyle = '#1a1a30'; ctx.lineWidth = 1;
+        for (let x = 0; x < 1600; x += 100) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 1200); ctx.stroke(); }
+        for (let y = 0; y < 1200; y += 100) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1600, y); ctx.stroke(); }
+      }
+      // Arena border
+      ctx.strokeStyle = '#2a2a4e'; ctx.lineWidth = 3; ctx.strokeRect(20, 20, 1560, 1160);
+
+      // AoE Zones
+      for (const zone of (gameState.aoeZones || [])) drawAoeZone(zone);
+
+      // Projectiles with trails/glow
+      for (const proj of (gameState.projectiles || [])) {
+        ctx.save();
+        const isBoss = proj.type === 'boss_projectile';
+        const pColor = isBoss ? '#ef4444' : '#a78bfa';
+        // Outer glow
+        const glowGrad = ctx.createRadialGradient(proj.x, proj.y, 0, proj.x, proj.y, (proj.radius || 6) * 2.5);
+        glowGrad.addColorStop(0, pColor + '66');
+        glowGrad.addColorStop(1, pColor + '00');
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath(); ctx.arc(proj.x, proj.y, (proj.radius || 6) * 2.5, 0, Math.PI * 2); ctx.fill();
+        // Core
+        ctx.fillStyle = pColor;
+        ctx.shadowColor = pColor; ctx.shadowBlur = 12;
+        ctx.beginPath(); ctx.arc(proj.x, proj.y, proj.radius || 6, 0, Math.PI * 2); ctx.fill();
+        // Bright center
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(proj.x, proj.y, (proj.radius || 6) * 0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+
+      // Boss
+      if (gameState.boss && gameState.boss.hp > 0) drawBoss(gameState.boss);
+
+      // Adds
+      for (const add of (gameState.adds || [])) drawAdd(add);
+
+      // Players
+      for (const p of (gameState.players || [])) drawPlayer(p);
+
+      // Particles
+      drawParticles(frameDt);
+
+      // Aggro meters
+      drawAggroMeters();
+      // Floating damage numbers
+      drawFloatingNumbers(frameDt);
+
+      // Simulation indicator
+      if (gameState.simulation) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(245,158,11,0.15)';
+        ctx.fillRect(0, 0, 1600, 40);
+        ctx.fillStyle = '#f59e0b'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('SIMULATION MODE - GOD MODE ACTIVE', 800, 28);
+        ctx.restore();
+      }
+
+      ctx.restore();
+      requestAnimationFrame(render);
+    }
+
+    function drawAoeZone(zone) {
+      const progress = 1 - (parseFloat(zone.ttl) / zone.maxTtl);
+
+      if (zone.type === 'cone_telegraph') {
+        // Draw actual cone/sector shape
+        const alpha = 0.12 + progress * 0.35;
+        const halfCone = (zone.coneAngle || Math.PI / 2) / 2;
+        ctx.fillStyle = 'rgba(239,68,68,' + alpha + ')';
+        ctx.strokeStyle = 'rgba(239,68,68,' + (0.4 + progress * 0.4) + ')'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(zone.x, zone.y);
+        ctx.arc(zone.x, zone.y, zone.radius, (zone.angle || 0) - halfCone, (zone.angle || 0) + halfCone);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+      } else if (zone.type.includes('telegraph') && zone.type !== 'laser_telegraph' && zone.type !== 'donut_telegraph') {
+        const alpha = 0.12 + progress * 0.35;
+        ctx.fillStyle = 'rgba(239,68,68,' + alpha + ')';
+        ctx.strokeStyle = 'rgba(239,68,68,' + (0.4 + progress * 0.4) + ')'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,255,255,' + (progress * 0.3) + ')';
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius * (1 - progress), 0, Math.PI * 2); ctx.stroke();
+      } else if (zone.type === 'donut_telegraph') {
+        // Ring danger zone
+        const alpha = 0.1 + progress * 0.3;
+        ctx.fillStyle = 'rgba(239,68,68,' + alpha + ')';
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill();
+        // Cut out inner safe zone
+        ctx.save(); ctx.globalCompositeOperation = 'destination-out';
+        ctx.fillStyle = 'rgba(0,0,0,1)';
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.innerRadius || 130, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        // Draw ring borders
+        ctx.strokeStyle = 'rgba(239,68,68,' + (0.5 + progress * 0.5) + ')'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.innerRadius || 130, 0, Math.PI * 2); ctx.stroke();
+      } else if (zone.type === 'donut_safe') {
+        // Safe inner zone (green outline)
+        ctx.strokeStyle = 'rgba(16,185,129,' + (0.3 + progress * 0.5) + ')'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = 'rgba(16,185,129,0.05)';
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill();
+      } else if (zone.type === 'donut_explosion') {
+        ctx.save();
+        ctx.fillStyle = 'rgba(255,80,40,0.6)';
+        ctx.shadowColor = '#ff4444'; ctx.shadowBlur = 20;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill();
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.fillStyle = 'rgba(0,0,0,1)';
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.innerRadius || 130, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      } else if (zone.type === 'dive_telegraph') {
+        ctx.save();
+        const pulse = 0.3 + 0.3 * Math.sin(Date.now() / 100);
+        ctx.strokeStyle = 'rgba(255,100,100,' + pulse + ')'; ctx.lineWidth = 3;
+        ctx.setLineDash([8, 8]);
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#ef4444'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('\u{1F3AF}', zone.x, zone.y + 6);
+        ctx.restore();
+      } else if (zone.type === 'poison_follow') {
+        ctx.fillStyle = 'rgba(16,185,129,0.12)';
+        ctx.strokeStyle = 'rgba(16,185,129,0.5)'; ctx.lineWidth = 2;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.setLineDash([]);
+      } else if (zone.type === 'laser_telegraph') {
+        const endX = zone.x + Math.cos(zone.angle) * zone.radius;
+        const endY = zone.y + Math.sin(zone.angle) * zone.radius;
+        ctx.strokeStyle = 'rgba(239,68,68,' + (0.2 + progress * 0.4) + ')';
+        ctx.lineWidth = (zone.lineWidth || 30) * 0.6;
+        ctx.setLineDash([10, 10]);
+        ctx.beginPath(); ctx.moveTo(zone.x, zone.y); ctx.lineTo(endX, endY); ctx.stroke();
+        ctx.setLineDash([]);
+      } else if (zone.type === 'circle_explosion') {
+        ctx.save();
+        ctx.fillStyle = 'rgba(255,100,50,0.7)';
+        ctx.shadowColor = '#ff4444'; ctx.shadowBlur = 20;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      } else if (zone.type === 'laser') {
+        const endX = zone.x + Math.cos(zone.angle) * zone.radius;
+        const endY = zone.y + Math.sin(zone.angle) * zone.radius;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(239,68,68,0.3)'; ctx.lineWidth = (zone.lineWidth || 40) + 20;
+        ctx.beginPath(); ctx.moveTo(zone.x, zone.y); ctx.lineTo(endX, endY); ctx.stroke();
+        ctx.strokeStyle = zone.active ? 'rgba(255,100,100,0.9)' : 'rgba(239,68,68,0.4)';
+        ctx.lineWidth = zone.lineWidth || 40;
+        ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 15;
+        ctx.beginPath(); ctx.moveTo(zone.x, zone.y); ctx.lineTo(endX, endY); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,200,200,0.6)'; ctx.lineWidth = (zone.lineWidth || 40) * 0.3;
+        ctx.beginPath(); ctx.moveTo(zone.x, zone.y); ctx.lineTo(endX, endY); ctx.stroke();
+        ctx.restore();
+      } else if (zone.type === 'poison_cloud') {
+        const pulse = 0.1 + 0.05 * Math.sin(Date.now() / 500);
+        ctx.fillStyle = 'rgba(16,185,129,' + pulse + ')';
+        ctx.strokeStyle = 'rgba(16,185,129,0.3)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = 'rgba(16,185,129,0.5)'; ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('\u2620', zone.x, zone.y + 5);
+      } else if (zone.type.includes('judgment_zone')) {
+        const color = zone.type.includes('red') ? '239,68,68' : zone.type.includes('blue') ? '59,130,246' : '34,197,94';
+        const label = zone.type.includes('red') ? 'RED' : zone.type.includes('blue') ? 'BLUE' : 'GREEN';
+        ctx.fillStyle = 'rgba(' + color + ',0.2)';
+        ctx.strokeStyle = 'rgba(' + color + ',0.8)'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = 'rgb(' + color + ')';
+        ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(label, zone.x, zone.y + 8);
+      } else if (zone.type === 'trap') {
+        ctx.fillStyle = 'rgba(245,158,11,0.2)';
+        ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      }
+    }
+
+    function drawBoss(boss) {
+      ctx.save();
+      const size = BOSS_SPRITE_SIZE;
+      const halfSize = size / 2;
+
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.beginPath(); ctx.ellipse(boss.x, boss.y + halfSize * 0.6, halfSize * 0.85, halfSize * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+
+      if (boss.enraged) {
+        const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 150);
+        const auraR = halfSize + 20 + pulse * 10;
+        const auraGrad = ctx.createRadialGradient(boss.x, boss.y, halfSize * 0.5, boss.x, boss.y, auraR);
+        auraGrad.addColorStop(0, 'rgba(255,0,0,0)');
+        auraGrad.addColorStop(0.6, 'rgba(255,30,0,' + (0.15 + pulse * 0.1) + ')');
+        auraGrad.addColorStop(1, 'rgba(255,0,0,0)');
+        ctx.fillStyle = auraGrad;
+        ctx.beginPath(); ctx.arc(boss.x, boss.y, auraR, 0, Math.PI * 2); ctx.fill();
+      }
+
+      if (bossImgLoaded) {
+        ctx.save();
+        ctx.translate(boss.x, boss.y);
+        ctx.rotate(boss.rotation + Math.PI / 2);
+        if (boss.enraged) { ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 25; }
+        else { ctx.shadowColor = 'rgba(155,109,255,0.3)'; ctx.shadowBlur = 12; }
+        ctx.drawImage(bossImg, -halfSize, -halfSize, size, size);
+        if (boss.enraged) {
+          ctx.globalCompositeOperation = 'source-atop';
+          ctx.fillStyle = 'rgba(255,0,0,' + (0.15 + 0.1 * Math.sin(Date.now() / 200)) + ')';
+          ctx.fillRect(-halfSize, -halfSize, size, size);
+          ctx.globalCompositeOperation = 'source-over';
+        }
+        ctx.restore();
+      } else {
+        const grad = ctx.createRadialGradient(boss.x, boss.y, 10, boss.x, boss.y, 50);
+        if (boss.enraged) { grad.addColorStop(0, '#ff4444'); grad.addColorStop(1, '#8b0000'); }
+        else { grad.addColorStop(0, '#9b6dff'); grad.addColorStop(1, '#4c1d95'); }
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(boss.x, boss.y, 50, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // Facing arrow
+      const a = boss.rotation;
+      ctx.fillStyle = boss.enraged ? '#ff4444' : '#a78bfa'; ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      ctx.moveTo(boss.x + Math.cos(a) * (halfSize + 24), boss.y + Math.sin(a) * (halfSize + 24));
+      ctx.lineTo(boss.x + Math.cos(a + 0.25) * (halfSize + 12), boss.y + Math.sin(a + 0.25) * (halfSize + 12));
+      ctx.lineTo(boss.x + Math.cos(a - 0.25) * (halfSize + 12), boss.y + Math.sin(a - 0.25) * (halfSize + 12));
+      ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+
+      // Shield ring
+      if (boss.shielded) {
+        const sp = 0.7 + 0.3 * Math.sin(Date.now() / 300);
+        ctx.strokeStyle = 'rgba(56,189,248,' + sp + ')'; ctx.lineWidth = 4;
+        ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 15;
+        ctx.beginPath(); ctx.arc(boss.x, boss.y, halfSize + 8, 0, Math.PI * 2); ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      // Cast bar
+      if (boss.casting && boss.casting.duration > 0) {
+        const pct = boss.casting.progress / boss.casting.duration;
+        const cr = halfSize + 16;
+        ctx.strokeStyle = 'rgba(255,136,0,0.15)'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(boss.x, boss.y, cr, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = '#ff8800'; ctx.lineWidth = 4;
+        ctx.shadowColor = '#ff8800'; ctx.shadowBlur = 8;
+        ctx.beginPath(); ctx.arc(boss.x, boss.y, cr, -Math.PI / 2, -Math.PI / 2 + pct * Math.PI * 2); ctx.stroke();
+        ctx.shadowBlur = 0;
+        if (boss.casting.name) {
+          ctx.fillStyle = '#ff8800'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText(boss.casting.name, boss.x, boss.y - halfSize - 22);
+        }
+      }
+
+      // Rage stacks indicator
+      if (boss.rageBuff > 0) {
+        ctx.fillStyle = boss.rageBuff >= 3 ? '#ff0000' : '#ff8800';
+        ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('\u{1F525}x' + boss.rageBuff, boss.x, boss.y + halfSize + 20);
+      }
+
+      ctx.restore();
+    }
+
+    function drawPlayer(p) {
+      const isMe = p.id === myId;
+      const color = CLASS_COLORS[p.class] || '#888';
+      ctx.save();
+
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath(); ctx.ellipse(p.x, p.y + 14, 20, 8, 0, 0, Math.PI * 2); ctx.fill();
+
+      // ── DEATH ANIMATION ──
+      if (!p.alive) {
+        const pulse = 0.4 + 0.3 * Math.sin(Date.now() / 300);
+
+        // Faded ghost sprite
+        ctx.globalAlpha = 0.25;
+        if (playerIdleLoaded) {
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.filter = 'grayscale(100%)';
+          ctx.drawImage(playerIdleImg, -PLAYER_SPRITE_SIZE/2, -PLAYER_SPRITE_SIZE/2, PLAYER_SPRITE_SIZE, PLAYER_SPRITE_SIZE);
+          ctx.filter = 'none';
+          ctx.restore();
+        } else {
+          ctx.fillStyle = '#333';
+          ctx.beginPath(); ctx.arc(p.x, p.y, 18, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        // Big red DEAD text with glow
+        ctx.save();
+        ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 15;
+        ctx.fillStyle = 'rgba(255,50,50,' + pulse + ')';
+        ctx.font = 'bold 24px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('DEAD', p.x, p.y + 8);
+        ctx.restore();
+
+        // Skull
+        ctx.fillStyle = 'rgba(255,255,255,' + (pulse * 0.6) + ')';
+        ctx.font = '18px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('\u2620', p.x, p.y - 18);
+
+        // Name faded
+        ctx.fillStyle = '#666'; ctx.font = '10px sans-serif';
+        ctx.fillText(p.username || 'DEAD', p.x, p.y + 40);
+
+        ctx.restore(); return;
+      }
+
+      // ── ALIVE PLAYER ──
+      if (p.dodging) {
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.beginPath(); ctx.arc(p.x, p.y, 30, 0, Math.PI * 2); ctx.fill();
+      }
+      if (p.invulnerable) {
+        const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 150);
+        ctx.strokeStyle = 'rgba(255,215,0,' + pulse + ')'; ctx.lineWidth = 3;
+        ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 15;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 28, 0, Math.PI * 2); ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+      if (p.blocking) {
+        ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 26, p.aimAngle - 0.8, p.aimAngle + 0.8); ctx.stroke();
+      }
+
+      // Determine if attacking (attack sprite for 300ms after attack)
+      const lastAtk = playerAttackTimers[p.id] || 0;
+      const isAttacking = (Date.now() - lastAtk) < 300;
+
+      // Draw sprite (all classes use Sung sprite for now)
+      const spriteImg = isAttacking && playerAtkLoaded ? playerAtkImg : (playerIdleLoaded ? playerIdleImg : null);
+      if (spriteImg) {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        // Flip sprite based on aim direction (both idle AND attack)
+        const facingLeft = Math.abs(p.aimAngle) > Math.PI / 2;
+        if (facingLeft) ctx.scale(-1, 1);
+        // Dodge transparency
+        if (p.dodging) ctx.globalAlpha = 0.5;
+        // Slightly bigger during attack for emphasis
+        const sprSize = isAttacking ? PLAYER_SPRITE_SIZE * 1.15 : PLAYER_SPRITE_SIZE;
+        // Class color tint glow
+        ctx.shadowColor = color; ctx.shadowBlur = isMe ? 10 : 5;
+        ctx.drawImage(spriteImg, -sprSize/2, -sprSize/2, sprSize, sprSize);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      } else {
+        // Fallback circle if sprites not loaded
+        const pg = ctx.createRadialGradient(p.x - 3, p.y - 3, 3, p.x, p.y, 18);
+        pg.addColorStop(0, color); pg.addColorStop(1, color + '88');
+        ctx.fillStyle = pg;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 18, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // Self indicator ring
+      if (isMe) {
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(p.x, p.y, 24, 0, Math.PI * 2); ctx.stroke();
+      }
+
+      // Aim line
+      ctx.strokeStyle = isMe ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(p.x + Math.cos(p.aimAngle) * 20, p.y + Math.sin(p.aimAngle) * 20);
+      ctx.lineTo(p.x + Math.cos(p.aimAngle) * 40, p.y + Math.sin(p.aimAngle) * 40);
+      ctx.stroke();
+
+      // Small HP bar above OTHER players
+      if (!isMe) {
+        const bw = 44, bh = 5, by = p.y - 32;
+        ctx.fillStyle = '#111'; ctx.fillRect(p.x - bw/2, by, bw, bh);
+        const hpPct = p.hp / p.maxHp;
+        ctx.fillStyle = hpPct > 0.5 ? '#10b981' : hpPct > 0.25 ? '#f59e0b' : '#ef4444';
+        ctx.fillRect(p.x - bw/2, by, bw * hpPct, bh);
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
+        ctx.strokeRect(p.x - bw/2, by, bw, bh);
+      }
+
+      // Class icon + Name
+      ctx.fillStyle = isMe ? '#fff' : '#bbb';
+      ctx.font = (isMe ? 'bold ' : '') + '10px sans-serif'; ctx.textAlign = 'center';
+      const classIcon = { tank: '\u{1F6E1}', healer: '\u{1F49A}', dps_cac: '\u2694\uFE0F', dps_range: '\u{1F3AF}' };
+      const icon = classIcon[p.class] || '';
+      const mainH = p.mainHunter ? HUNTER_LIST[p.mainHunter]?.name : null;
+      ctx.fillText(icon + ' ' + (mainH || p.username || (isMe ? 'YOU' : p.id.substring(0, 5))), p.x, p.y + 38);
+
+      ctx.restore();
+    }
+
+    // ── Draw Add (minion/elite) ──
+    function drawAdd(add) {
+      ctx.save();
+
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath(); ctx.ellipse(add.x, add.y + add.radius * 0.7, add.radius * 0.8, add.radius * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+
+      // Body glow
+      const isElite = add.type === 'elite';
+      const isCaster = add.type === 'caster';
+      if (isElite) {
+        ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 12;
+      } else if (isCaster) {
+        ctx.shadowColor = '#7c3aed'; ctx.shadowBlur = 10;
+      }
+
+      // Body
+      const grad = ctx.createRadialGradient(add.x, add.y, 3, add.x, add.y, add.radius);
+      grad.addColorStop(0, add.color); grad.addColorStop(1, add.color + '66');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(add.x, add.y, add.radius, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Elite crown / Caster symbol
+      if (isElite) {
+        ctx.fillStyle = '#ffd700'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('\u{1F451}', add.x, add.y - add.radius - 4);
+      } else if (isCaster) {
+        ctx.fillStyle = '#c084fc'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('\u{1F52E}', add.x, add.y - add.radius - 4);
+      }
+
+      // Eyes (facing direction)
+      const eyeX1 = add.x + Math.cos(add.rotation - 0.3) * (add.radius * 0.5);
+      const eyeY1 = add.y + Math.sin(add.rotation - 0.3) * (add.radius * 0.5);
+      const eyeX2 = add.x + Math.cos(add.rotation + 0.3) * (add.radius * 0.5);
+      const eyeY2 = add.y + Math.sin(add.rotation + 0.3) * (add.radius * 0.5);
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(eyeX1, eyeY1, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(eyeX2, eyeY2, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.arc(eyeX1 + Math.cos(add.rotation) * 1.5, eyeY1 + Math.sin(add.rotation) * 1.5, 1.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(eyeX2 + Math.cos(add.rotation) * 1.5, eyeY2 + Math.sin(add.rotation) * 1.5, 1.5, 0, Math.PI * 2); ctx.fill();
+
+      // HP bar
+      const bw = add.radius * 2.2, bh = 4, by = add.y - add.radius - 8;
+      ctx.fillStyle = '#111'; ctx.fillRect(add.x - bw/2, by, bw, bh);
+      const hpPct = add.hp / add.maxHp;
+      ctx.fillStyle = isElite ? '#dc2626' : isCaster ? '#7c3aed' : '#ef4444';
+      ctx.fillRect(add.x - bw/2, by, bw * hpPct, bh);
+
+      // Name
+      ctx.fillStyle = '#999'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(add.name, add.x, add.y + add.radius + 14);
+
+      ctx.restore();
+    }
+
+    function drawParticles(dt) {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.age += dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vx *= 0.96;
+        p.vy *= 0.96;
+        p.alpha = Math.max(0, 1 - p.age / p.life);
+
+        if (p.age >= p.life) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * (1 - p.age / p.life * 0.5), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function drawAggroMeters() {
+      const entries = Object.entries(gameState.aggro || {}).sort((a, b) => b[1] - a[1]);
+      if (entries.length === 0) return;
+      const maxAggro = Math.max(1, entries[0][1]);
+      const sx = 1350, sy = 1080 - entries.length * 20;
+
+      ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'left';
+      ctx.fillStyle = '#777'; ctx.fillText('AGGRO', sx, sy - 6);
+
+      entries.forEach(([pid, aggro], i) => {
+        const player = (gameState.players || []).find(p => p.id === pid);
+        const color = CLASS_COLORS[player?.class] || '#888';
+        const w = 120 * (aggro / maxAggro);
+        const y = sy + i * 20;
+        ctx.fillStyle = '#1a1a1a'; ctx.fillRect(sx, y, 120, 14);
+        ctx.fillStyle = color + 'aa'; ctx.fillRect(sx, y, w, 14);
+        ctx.fillStyle = '#ddd'; ctx.font = '11px sans-serif';
+        ctx.fillText((pid === myId ? '* ' : '') + formatNum(aggro), sx + 125, y + 11);
+      });
+    }
+
+    function drawFloatingNumbers(dt) {
+      for (let i = floatingNumbers.length - 1; i >= 0; i--) {
+        const fn = floatingNumbers[i];
+        fn.age += dt;
+        fn.y += fn.vy * dt;
+        fn.vy *= 0.95; // Slow down
+        fn.alpha = Math.max(0, 1 - fn.age / fn.maxAge);
+
+        if (fn.age >= fn.maxAge) {
+          floatingNumbers.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = fn.alpha;
+        ctx.fillStyle = fn.color;
+        ctx.font = (fn.bold ? 'bold ' : '') + fn.size + 'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#000'; ctx.shadowBlur = 4;
+        ctx.fillText(fn.text, fn.x, fn.y);
+        ctx.restore();
+      }
+    }
+
+    requestAnimationFrame(render);
+
+    // ── Log ──
+    function log(text, cls = '') {
+      const div = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry ' + cls;
+      entry.textContent = text;
+      div.appendChild(entry);
+      div.scrollTop = div.scrollHeight;
+      while (div.children.length > 150) div.removeChild(div.firstChild);
+    }
+  </script>
+</body>
+</html>
