@@ -3934,7 +3934,7 @@ export default function ShadowColosseum() {
           {/* Boss Selection */}
           <div className="space-y-4">
             <a
-              href={`http://159.223.225.71:3002/test${(() => { try { const u = JSON.parse(localStorage.getItem('builderberu_auth_user')); const rd = JSON.parse(localStorage.getItem('shadow_colosseum_data')); const rc = JSON.parse(localStorage.getItem('manaya_raid_character') || '{}'); const params = []; if (u?.username) params.push('user=' + encodeURIComponent(u.username)); const hunters = (rd?.hunterCollection || []).map(e => typeof e === 'string' ? e : e.id).filter(Boolean); if (hunters.length > 0) params.push('hunters=' + hunters.join(',')); const accLvl = accountLevelFromXp(rd?.accountXp || 0).level; if (accLvl > 0) params.push('hlvl=' + accLvl); if (rc.preferredClass) params.push('class=' + rc.preferredClass); if (rc.statPoints) params.push('sp=' + encodeURIComponent(JSON.stringify(rc.statPoints))); return params.length > 0 ? '?' + params.join('&') : ''; } catch { return ''; } })()}`}
+              href={`http://159.223.225.71:3002/test${(() => { try { const u = JSON.parse(localStorage.getItem('builderberu_auth_user')); const rd = JSON.parse(localStorage.getItem('shadow_colosseum_data')); const rc = JSON.parse(localStorage.getItem('manaya_raid_character') || '{}'); const params = []; if (u?.username) params.push('user=' + encodeURIComponent(u.username)); const hunters = (rd?.hunterCollection || []).map(e => typeof e === 'string' ? e : e.id).filter(Boolean); if (hunters.length > 0) params.push('hunters=' + hunters.join(',')); const raidLvl = rc.raidLevel || 1; if (raidLvl > 0) params.push('hlvl=' + raidLvl); if (rc.preferredClass) params.push('class=' + rc.preferredClass); if (rc.statPoints) params.push('sp=' + encodeURIComponent(JSON.stringify(rc.statPoints))); return params.length > 0 ? '?' + params.join('&') : ''; } catch { return ''; } })()}`}
               target="_blank"
               rel="noopener noreferrer"
               className="block p-4 rounded-xl border border-emerald-500/30 bg-gradient-to-r from-emerald-900/20 to-teal-900/20 hover:from-emerald-900/40 hover:to-teal-900/40 transition-all group cursor-pointer"
@@ -3980,18 +3980,20 @@ export default function ShadowColosseum() {
           {(() => {
             const authUser = (() => { try { return JSON.parse(localStorage.getItem('builderberu_auth_user')); } catch { return null; } })();
             const username = authUser?.username || 'Joueur';
-            const accInfo = accountLevelFromXp(data.accountXp || 0);
-            const accLvl = accInfo.level;
-            const xpPct = accInfo.xpForNext > 0 ? Math.min(100, Math.round(accInfo.xpInLevel / accInfo.xpForNext * 100)) : 100;
-            const lvColor = accLvl >= 40 ? '#f59e0b' : accLvl >= 20 ? '#a78bfa' : '#38bdf8';
 
             // Raid character data (stored locally on builderberu.com)
             const RAID_CHAR_KEY = 'manaya_raid_character';
             const raidChar = (() => { try { return JSON.parse(localStorage.getItem(RAID_CHAR_KEY)) || {}; } catch { return {}; } })();
+            const raidLvl = raidChar.raidLevel || 1;
+            const raidXp = raidChar.raidXp || 0;
+            const xpForNext = Math.floor(500 * Math.pow(raidLvl + 1, 1.5));
+            const xpPct = xpForNext > 0 ? Math.min(100, Math.round(raidXp / xpForNext * 100)) : 100;
+            const lvColor = raidLvl >= 40 ? '#f59e0b' : raidLvl >= 20 ? '#a78bfa' : '#38bdf8';
+
             const preferredClass = raidChar.preferredClass || 'dps_cac';
             const raidStatPoints = raidChar.statPoints || { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
-            // 2 stat points per account level
-            const totalPoints = accLvl * 2;
+            // 3 stat points per raid level (same as game server)
+            const totalPoints = Math.max(0, (raidLvl - 1)) * 3;
             const usedPoints = Object.values(raidStatPoints).reduce((s, v) => s + v, 0);
             const freePoints = Math.max(0, totalPoints - usedPoints);
 
@@ -4024,14 +4026,14 @@ export default function ShadowColosseum() {
                 ],
               },
               dps_cac: {
-                label: 'DPS CAC', icon: '\u2694\uFE0F', color: '#ef4444', desc: 'ATK++, Combo, Execution',
-                role: 'Le combattant de melee. Degats explosifs au corps a corps avec combos rapides.',
+                label: 'DPS CAC', icon: '\u2694\uFE0F', color: '#ef4444', desc: 'ATK++, Rage, Execution',
+                role: 'Le combattant de melee. Utilise la RAGE (barre rouge, max 100) qui monte avec les attaques de base.',
                 skills: [
-                  { key: 'LMB', name: 'Combo de Lames', desc: 'Combo 3 coups rapide au corps a corps', cd: '0.35s' },
-                  { key: 'RMB', name: 'Frappe Lourde', desc: 'Coup puissant en cone (380 puissance)', cd: '1s' },
-                  { key: 'A', name: 'Tempete de Lames', desc: 'AoE autour de soi (550 puissance)', cd: '7s' },
-                  { key: 'E', name: 'Dash Offensif', desc: 'Dash + degats sur la trajectoire', cd: '5s' },
-                  { key: 'R', name: 'Execution', desc: 'Coup unique devastateur (1200) + bonus si boss < 50% HP', cd: '40s' },
+                  { key: 'LMB', name: 'Combo de Lames', desc: 'Combo 3 coups rapide, +10 rage/coup', cd: '0.35s' },
+                  { key: 'RMB', name: 'Frappe Lourde', desc: 'Coup puissant en cone (15 rage)', cd: '1s' },
+                  { key: 'A', name: 'Tempete de Lames', desc: 'AoE autour de soi (40 rage)', cd: '7s' },
+                  { key: 'E', name: 'Dash Offensif', desc: 'Dash + degats sur la trajectoire (25 rage)', cd: '5s' },
+                  { key: 'R', name: 'Execution', desc: 'Coup devastateur (80 rage) + bonus si boss < 50% HP', cd: '40s' },
                 ],
               },
               dps_range: {
@@ -4061,7 +4063,7 @@ export default function ShadowColosseum() {
                 {/* Profile Header */}
                 <div className="flex items-center gap-3 mb-4">
                   <div className="text-2xl font-black" style={{ color: lvColor, textShadow: `0 0 10px ${lvColor}55` }}>
-                    Lv.{accLvl}
+                    Lv.{raidLvl}
                   </div>
                   <div className="flex-1">
                     <div className="text-sm font-bold text-white">{username}</div>
@@ -4069,7 +4071,7 @@ export default function ShadowColosseum() {
                       <div className="h-full bg-gradient-to-r from-purple-600 to-violet-400 rounded-full transition-all" style={{ width: `${xpPct}%` }} />
                     </div>
                     <div className="flex justify-between text-[9px] text-gray-500 mt-0.5">
-                      <span>XP: {accInfo.xpInLevel} / {accInfo.xpForNext}</span>
+                      <span>Raid XP: {raidXp} / {xpForNext}</span>
                       <span className="text-purple-400">{xpPct}%</span>
                     </div>
                   </div>
@@ -4120,7 +4122,7 @@ export default function ShadowColosseum() {
                 {/* Stat Points Allocation */}
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-1.5">
-                    <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Stats Raid (2 pts/lvl)</div>
+                    <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Stats Raid (3 pts/lvl)</div>
                     <div className={`text-[10px] font-bold ${freePoints > 0 ? 'text-yellow-400' : 'text-gray-500'}`}>
                       {freePoints > 0 ? `${freePoints} pts dispo` : `${usedPoints}/${totalPoints} pts`}
                     </div>

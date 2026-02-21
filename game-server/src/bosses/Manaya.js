@@ -49,10 +49,11 @@ export class Manaya extends BossBase {
       this._patternDonut(),
       this._patternPoisonCircle(),
 
-      // Phase 3+ (75-50%) — Death Ball + Dive + Waves
+      // Phase 3+ (75-50%) — Death Ball + Dive + Waves + Leap Slam
       this._patternDeathBall(),
       this._patternDive(),
       this._patternWaves(),
+      this._patternLeapSlam(),
 
       // Phase 4+ (50-30%) — Laser + Double Circle
       this._patternLaser(),
@@ -970,6 +971,128 @@ export class Manaya extends BossBase {
             x: boss.x, y: boss.y, radius: data.outerRadius, innerRadius: data.outerInner,
             ttl: 0.4, maxTtl: 0.4, active: true, source: boss.id,
           });
+          return true;
+        }
+        return false;
+      },
+    };
+  }
+
+  // ──────────────────────────
+  // PATTERN: Leap Slam (levitate → charge → knockback)
+  // Manaya rises up, leaps to highest aggro target, slams down
+  // knocking all nearby players back
+  // ──────────────────────────
+  _patternLeapSlam() {
+    return {
+      name: 'Saut Dévastateur',
+      phase: 3, weight: 3, cooldown: 18, globalCooldown: 3.0,
+      telegraphTime: 1.5, castTime: 0, recoveryTime: 1.5,
+
+      onStart: (boss, gs, data) => {
+        // Target highest aggro alive player
+        const aggroEntries = [...gs.aggro.entries()].sort((a, b) => b[1] - a[1]);
+        const targetId = aggroEntries.find(([id]) => {
+          const p = gs.players.find(pl => pl.id === id);
+          return p && p.alive;
+        })?.[0];
+        data.target = gs.players.find(p => p.id === targetId) || gs.getAlivePlayers()[0];
+
+        if (data.target) {
+          data.targetPos = { x: data.target.x, y: data.target.y };
+          data.startPos = { x: boss.x, y: boss.y };
+          data.leaping = false;
+          data.leapTime = 0;
+          data.leapDuration = 0.5;
+          data.riseTime = 0;
+          data.rising = true;
+          data.impactRadius = 200;
+          data.knockbackForce = 350;
+
+          gs.addEvent({ type: 'boss_message', text: '🦅 Manaya se soulève...' });
+
+          // Big warning circle on target
+          gs.addAoeZone({
+            id: `leap_tel_${Date.now()}`, type: 'circle_telegraph',
+            x: data.targetPos.x, y: data.targetPos.y, radius: data.impactRadius,
+            ttl: 2.0, maxTtl: 2.0, active: false, source: boss.id,
+          });
+        }
+      },
+
+      onExecute: (boss, gs, data) => {
+        if (!data.target) return;
+        // Update target position to where they are NOW
+        if (data.target.alive) {
+          data.targetPos = { x: data.target.x, y: data.target.y };
+        }
+        data.rising = false;
+        data.leaping = true;
+        data.leapTime = 0;
+        data.startPos = { x: boss.x, y: boss.y };
+        // Boss becomes briefly invulnerable during leap
+        boss._leapInvuln = true;
+      },
+
+      onUpdate: (boss, gs, data, dt) => {
+        if (!data.target) return true;
+
+        // Rising phase (slight upward drift effect via server — client can add visual)
+        if (data.rising) {
+          data.riseTime += dt;
+          if (data.riseTime >= 0.5) {
+            data.rising = false;
+          }
+          return false;
+        }
+
+        if (!data.leaping) return true;
+
+        data.leapTime += dt;
+        const t = Math.min(1, data.leapTime / data.leapDuration);
+
+        // Lerp boss to target with arc
+        boss.x = data.startPos.x + (data.targetPos.x - data.startPos.x) * t;
+        boss.y = data.startPos.y + (data.targetPos.y - data.startPos.y) * t;
+
+        // At impact
+        if (t >= 1) {
+          boss._leapInvuln = false;
+          const soloMult = gs.playerCount <= 1 ? (BOSS_CFG.SOLO_MECHANIC_MULT || 0.4) : 1.0;
+
+          for (const player of gs.getAlivePlayers()) {
+            const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
+            if (dist < data.impactRadius + player.radius) {
+              // Damage
+              const dmg = boss.atk * 3.5 * soloMult;
+              const actual = player.takeDamage(dmg, boss);
+              if (actual > 0) {
+                gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Saut Dévastateur' });
+              }
+
+              // Knockback: push player away from impact point
+              const angle = Math.atan2(player.y - boss.y, player.x - boss.x);
+              const kbDist = data.knockbackForce * (1 - dist / (data.impactRadius + player.radius));
+              player.x += Math.cos(angle) * kbDist;
+              player.y += Math.sin(angle) * kbDist;
+              player.clampPosition();
+            }
+          }
+
+          // Impact explosion visual
+          gs.addAoeZone({
+            id: `leap_impact_${Date.now()}`, type: 'circle_explosion',
+            x: boss.x, y: boss.y, radius: data.impactRadius,
+            ttl: 0.4, maxTtl: 0.4, active: true, source: boss.id,
+          });
+          // Speed down debuff on hit players
+          for (const player of gs.getAlivePlayers()) {
+            const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
+            if (dist < data.impactRadius + player.radius + data.knockbackForce) {
+              player.addBuff({ type: 'speed_down', dur: 2, value: 0.3, source: 'boss' });
+            }
+          }
+
           return true;
         }
         return false;

@@ -84,9 +84,10 @@ export class PhysicsEngine {
             owner.stats.damageDealt += actual;
             gs.addAggro(owner.id, actual * 1.0 * owner.aggroMult);
 
-            // Mana on hit for basic projectile attacks
-            if (proj.isBasic && PLAYER.MANA_ON_HIT > 0) {
-              owner.mana = Math.min(owner.maxMana, owner.mana + PLAYER.MANA_ON_HIT);
+            // Mana/Rage on hit for basic projectile attacks
+            if (proj.isBasic) {
+              const gain = owner.useRage ? 10 : PLAYER.MANA_ON_HIT;
+              if (gain > 0) owner.mana = Math.min(owner.maxMana, owner.mana + gain);
             }
 
             gs.addEvent({

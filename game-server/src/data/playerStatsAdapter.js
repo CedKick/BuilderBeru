@@ -11,7 +11,7 @@ import { HUNTERS, hunterStatsAtLevel } from './hunterData.js';
 const CLASS_OVERLAY = {
   tank:      { hpMult: 1.4, atkMult: 0.7, defMult: 1.8, spdMult: 0.85, mana: 300, aggroMult: 3.0, color: '#3b82f6' },
   healer:    { hpMult: 1.0, atkMult: 0.6, defMult: 1.2, spdMult: 1.0,  mana: 600, aggroMult: 0.7, color: '#10b981' },
-  dps_cac:   { hpMult: 1.1, atkMult: 1.3, defMult: 1.0, spdMult: 1.1,  mana: 400, aggroMult: 1.0, color: '#ef4444' },
+  dps_cac:   { hpMult: 1.1, atkMult: 1.3, defMult: 1.0, spdMult: 1.1,  mana: 100, aggroMult: 1.0, color: '#ef4444', useRage: true },
   dps_range: { hpMult: 0.95, atkMult: 1.1, defMult: 0.9, spdMult: 1.15, mana: 450, aggroMult: 1.0, color: '#f59e0b' },
 };
 

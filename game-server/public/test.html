@@ -1246,8 +1246,11 @@
         document.getElementById('playerHpFill').style.width = (hpPct * 100) + '%';
         document.getElementById('playerHpFill').style.background = hpColor;
         document.getElementById('playerHpText').textContent = Math.round(me.hp) + ' / ' + me.maxHp;
-        document.getElementById('playerManaFill').style.width = ((me.mana / me.maxMana) * 100) + '%';
-        document.getElementById('playerManaText').textContent = Math.round(me.mana) + ' / ' + me.maxMana;
+        const isRage = me.useRage;
+        const manaPct = (me.mana / me.maxMana) * 100;
+        document.getElementById('playerManaFill').style.width = manaPct + '%';
+        document.getElementById('playerManaFill').style.background = isRage ? '#ef4444' : '#3b82f6';
+        document.getElementById('playerManaText').textContent = (isRage ? 'RAGE ' : '') + Math.round(me.mana) + ' / ' + me.maxMana;
         const mainH = me.mainHunter ? HUNTER_LIST[me.mainHunter]?.name : null;
         document.getElementById('playerHudName').textContent = (mainH || me.username || 'YOU') + ' [' + (CLASS_LABELS[me.class] || '?') + ']';
 
@@ -1344,7 +1347,9 @@
         else if (!hasMana && s.manaCost > 0) stateClass = ' no-mana';
         else stateClass = ' ready';
 
-        const manaText = s.manaCost > 0 ? '<span style="font-size:7px;color:' + (hasMana ? '#3b82f6' : '#ef4444') + '">' + s.manaCost + ' MP</span>' : '';
+        const rscLabel = me.useRage ? 'RG' : 'MP';
+        const rscColor = me.useRage ? (hasMana ? '#ef4444' : '#991b1b') : (hasMana ? '#3b82f6' : '#ef4444');
+        const manaText = s.manaCost > 0 ? '<span style="font-size:7px;color:' + rscColor + '">' + s.manaCost + ' ' + rscLabel + '</span>' : '';
         html += '<div class="skill-slot' + stateClass + '">' +
           '<span class="key-label">' + s.key + '</span>' +
           '<span class="skill-name">' + s.name + '</span>' + manaText +
@@ -1432,7 +1437,7 @@
           '<div class="pm-name">' + name + '</div>' +
           '<div class="pm-hp-outer"><div class="pm-hp-fill" style="width:' + (hpPct * 100) + '%;background:' + hpColor + '"></div>' +
           '<div class="pm-hp-text">' + Math.round(p.hp) + ' / ' + p.maxHp + '</div></div>' +
-          '<div class="pm-mana-outer"><div class="pm-mana-fill" style="width:' + manaPct + '%"></div></div>' +
+          '<div class="pm-mana-outer"><div class="pm-mana-fill" style="width:' + manaPct + '%;background:' + (p.useRage ? '#ef4444' : '#3b82f6') + '"></div></div>' +
           (buffsHtml ? '<div class="pm-buffs">' + buffsHtml + '</div>' : '') +
           '</div></div>';
       }

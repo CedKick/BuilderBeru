@@ -30,7 +30,7 @@ export const CLASS_STATS = {
   dps_cac: {
     label: 'DPS CAC',
     hp: 20000,
-    mana: 500,
+    mana: 100,       // Rage: max 100, starts at 0, builds from basic attacks
     atk: 800,
     def: 120,
     spd: 200,
@@ -38,6 +38,7 @@ export const CLASS_STATS = {
     res: 15,
     aggroMult: 1.0,
     color: '#ef4444',
+    useRage: true,
   },
   dps_range: {
     label: 'DPS Distance',
@@ -166,6 +167,7 @@ export const CLASS_SKILLS = {
       cooldown: 0.35,
       manaCost: 0,
       isBasic: true,
+      rageGain: 10,     // +10 rage per basic hit
     },
     secondary: {
       name: 'Frappe lourde',
@@ -174,7 +176,7 @@ export const CLASS_SKILLS = {
       hitbox: 'cone',
       coneAngle: 45,
       cooldown: 1.0,
-      manaCost: 12,
+      manaCost: 15,     // 15 rage
     },
     skillA: {
       name: 'Tempête de lames',
@@ -182,7 +184,7 @@ export const CLASS_SKILLS = {
       type: 'aoe_self',
       range: 130,
       cooldown: 7,
-      manaCost: 45,
+      manaCost: 40,     // 40 rage
     },
     skillB: {
       name: 'Dash Offensif',
@@ -192,7 +194,7 @@ export const CLASS_SKILLS = {
       hitbox: 'line',
       lineWidth: 50,
       cooldown: 5,
-      manaCost: 25,
+      manaCost: 25,     // 25 rage
     },
     ultimate: {
       name: 'Exécution',
@@ -200,7 +202,7 @@ export const CLASS_SKILLS = {
       type: 'single_target',
       range: 110,
       cooldown: 40,
-      manaCost: 100,
+      manaCost: 80,     // 80 rage
       bonusVsLowHp: 0.5,
     },
   },

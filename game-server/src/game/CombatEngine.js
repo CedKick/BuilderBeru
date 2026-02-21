@@ -473,9 +473,10 @@ export class CombatEngine {
               this.gs.addAggro(player.id, aggroAmount);
             }
 
-            // Mana on hit (basic attacks restore mana)
-            if (skill.isBasic && PLAYER.MANA_ON_HIT > 0) {
-              player.mana = Math.min(player.maxMana, player.mana + PLAYER.MANA_ON_HIT);
+            // Mana/Rage on hit (basic attacks restore resource)
+            if (skill.isBasic) {
+              const gain = player.useRage ? (skill.rageGain || 10) : PLAYER.MANA_ON_HIT;
+              if (gain > 0) player.mana = Math.min(player.maxMana, player.mana + gain);
             }
 
             // Tank: +5 endurance on auto-attack hit
@@ -970,6 +971,8 @@ export class CombatEngine {
 
   regenMana(player, dt) {
     if (!player.alive) return;
+    // DPS CAC uses rage: no passive regen, only gains from basic attacks
+    if (player.useRage) return;
     const regen = PLAYER.MANA_REGEN_RATE + (player.res * 0.05);
     player.mana = Math.min(player.maxMana, player.mana + regen * dt);
 

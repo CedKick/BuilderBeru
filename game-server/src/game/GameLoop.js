@@ -326,6 +326,7 @@ export class GameLoop {
         maxHp: p.maxHp,
         mana: Math.round(p.mana),
         maxMana: p.maxMana,
+        useRage: p.useRage || false,
         endurance: Math.round(p.endurance),
         maxEndurance: p.maxEndurance,
         alive: p.alive,
