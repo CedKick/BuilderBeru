@@ -157,6 +157,12 @@
     /* ── Controls ── */
     .controls-info { font-size: 9px; color: #555; margin-top: 4px; line-height: 1.4; }
     .controls-info kbd { background: #333; padding: 1px 3px; border-radius: 2px; font-size: 8px; border: 1px solid #555; }
+
+    /* ── Death ── */
+    @keyframes deathPulse { 0%,100% { opacity: 0.7; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.05); } }
+    #game.dead-filter canvas { filter: grayscale(70%) brightness(0.6); transition: filter 0.5s; }
+    #game.dead-filter .player-hud { opacity: 0.3; }
+    #game.dead-filter .skill-bar { opacity: 0.2; }
   </style>
 </head>
 <body>
@@ -293,6 +299,16 @@
 
       <div class="hunter-bar" id="hunterBar" style="display:none"></div>
       <div class="skill-bar" id="skillBar" style="display:none"></div>
+
+      <!-- Death Overlay -->
+      <div id="deathOverlay" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;z-index:50;pointer-events:none">
+        <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5)"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+          <div style="font-size:64px;font-weight:900;color:#ef4444;text-shadow:0 0 30px #ef4444,0 0 60px #991b1b;letter-spacing:8px;animation:deathPulse 1.5s ease-in-out infinite">MORT</div>
+          <div id="deathRezMsg" style="margin-top:16px;font-size:16px;color:#94a3b8;text-shadow:0 0 5px #000"></div>
+          <div style="margin-top:8px;font-size:12px;color:#64748b" id="deathTimer"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -707,6 +723,14 @@
           }
           if (msg.target === myId) log('Poison x' + (msg.stacks || 1) + ': -' + msg.amount, 'error');
           break;
+        case 'resurrect':
+          log(msg.source === myId ? 'Vous avez ressuscit\u00e9 ' + (msg.target === myId ? 'vous-m\u00eame?!' : 'un alli\u00e9') :
+              (msg.target === myId ? 'Vous avez \u00e9t\u00e9 ressuscit\u00e9 !' : 'Un alli\u00e9 a \u00e9t\u00e9 ressuscit\u00e9'), 'heal');
+          if (msg.target === myId) {
+            // Rez flash effect
+            screenShake.intensity = 5;
+          }
+          break;
         case 'boss_message': log(msg.text, 'event'); break;
         case 'boss_enrage': log('BOSS ENRAGED!', 'error'); break;
         case 'boss_rage_stack': log(msg.message, 'error'); break;
@@ -869,6 +893,25 @@
           document.getElementById('playerEnduranceText').textContent = Math.round(me.endurance) + ' / ' + me.maxEndurance + ' END';
         } else {
           enduranceOuter.style.display = 'none';
+        }
+
+        // ── Death Overlay ──
+        const gameDiv = document.getElementById('game');
+        const deathOverlay = document.getElementById('deathOverlay');
+        if (!me.alive) {
+          gameDiv.classList.add('dead-filter');
+          deathOverlay.style.display = 'block';
+          // Check if a healer is alive for rez hope
+          const healerAlive = gameState.players.some(p => p.class === 'healer' && p.alive && p.id !== myId);
+          const rezMsg = document.getElementById('deathRezMsg');
+          if (healerAlive) {
+            rezMsg.innerHTML = '<span style="color:#10b981">Un Healer est en vie !</span><br>En attente de R\u00e9surrection Divine...';
+          } else {
+            rezMsg.innerHTML = '<span style="color:#ef4444">Aucun Healer en vie...</span>';
+          }
+        } else {
+          gameDiv.classList.remove('dead-filter');
+          deathOverlay.style.display = 'none';
         }
       }
 
