@@ -180,6 +180,15 @@ const WEAPON_PROJECTILES = {
     duration: 0.5,
     spin: true,
   },
+  guldan_halo: {
+    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771638364/projectileGuldan_ii184b.png',
+    width: 36, height: 36,
+    trailColor: 'rgba(34,197,94,0.5)',
+    impactColor: 'rgba(74,222,128,0.6)',
+    rotation: 0,
+    duration: 0.5,
+    spin: true,
+  },
 };
 
 function WeaponProjectile({ weaponPassive, active, distance, reversed }) {

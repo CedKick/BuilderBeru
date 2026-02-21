@@ -612,6 +612,15 @@ export default function RaidMode() {
       // Apply rewards
       shadowCoinManager.addCoins(rewards.coins, 'raid_reward');
 
+      // Faction contribution: +5 points for any raid
+      if (isLoggedIn()) {
+        fetch('/api/factions?action=activity-reward', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: JSON.stringify({ activity: 'raid' }),
+        }).catch(() => {});
+      }
+
       // Hammer drops — tier-aware (minimum 3 RC for any loot)
       const hammerDrops = {};
       const hammerCount = rc >= 3 ? Math.floor(tierData.hammerCountBase + rc * tierData.hammerCountPerRC + (isFullClear ? 2 : 0)) : 0;

@@ -72,6 +72,7 @@ export default async function handler(req, res) {
       case 'shop-buy': return await handleShopBuy(req, res);
       case 'weekly-stats': return await handleWeeklyStats(req, res);
       case 'change-faction': return await handleChangeFaction(req, res);
+      case 'activity-reward': return await handleActivityReward(req, res);
       default:
         return res.status(400).json({ success: false, message: 'Invalid action' });
     }
@@ -225,6 +226,31 @@ async function handleContribute(req, res) {
   return res.json({ success: true, message: `Added ${points} points to ${targetUsername}` });
 }
 
+// ─── ACTIVITY REWARD: Award contribution points for completing activities ─
+
+const ACTIVITY_POINTS = { arc: 1, raid: 5 };
+
+async function handleActivityReward(req, res) {
+  const user = await extractUser(req);
+  if (!user) return res.status(401).json({ success: false, message: 'Authentication required' });
+
+  const { activity } = req.body;
+  const points = ACTIVITY_POINTS[activity];
+  if (!points) return res.status(400).json({ success: false, message: 'Invalid activity' });
+
+  const result = await query(
+    'UPDATE player_factions SET contribution_points = contribution_points + $1 WHERE username = $2 RETURNING contribution_points, points_spent',
+    [points, user.username]
+  );
+
+  if (result.rows.length === 0) {
+    return res.json({ success: false, message: 'Not in a faction' });
+  }
+
+  const row = result.rows[0];
+  return res.json({ success: true, points, total: row.contribution_points, available: row.contribution_points - row.points_spent });
+}
+
 // ─── UPGRADE BUFF: Spend points to upgrade faction buff ───────
 
 async function handleUpgradeBuff(req, res) {
@@ -302,39 +328,29 @@ async function handleShopBuy(req, res) {
 async function handleWeeklyStats(req, res) {
   const currentWeek = getCurrentWeek();
 
+  // Always recompute live member counts & unspent points from player_factions
+  for (const factionId of Object.keys(FACTIONS)) {
+    const members = await query(
+      'SELECT COUNT(*) as count, SUM(contribution_points - points_spent) as unspent FROM player_factions WHERE faction = $1',
+      [factionId]
+    );
+
+    const count = parseInt(members.rows[0]?.count) || 0;
+    const unspent = parseInt(members.rows[0]?.unspent) || 0;
+
+    await query(
+      `INSERT INTO faction_weekly (week, faction, total_points_unspent, total_members)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (week, faction) DO UPDATE
+       SET total_points_unspent = $3, total_members = $4`,
+      [currentWeek, factionId, unspent, count]
+    );
+  }
+
   const stats = await query(
     'SELECT faction, total_points_unspent, total_members, winner FROM faction_weekly WHERE week = $1',
     [currentWeek]
   );
-
-  // If no data for this week, compute it
-  if (stats.rows.length === 0) {
-    for (const factionId of Object.keys(FACTIONS)) {
-      const members = await query(
-        'SELECT COUNT(*) as count, SUM(contribution_points - points_spent) as unspent FROM player_factions WHERE faction = $1',
-        [factionId]
-      );
-
-      const count = parseInt(members.rows[0]?.count) || 0;
-      const unspent = parseInt(members.rows[0]?.unspent) || 0;
-
-      await query(
-        `INSERT INTO faction_weekly (week, faction, total_points_unspent, total_members)
-         VALUES ($1, $2, $3, $4)
-         ON CONFLICT (week, faction) DO UPDATE
-         SET total_points_unspent = $3, total_members = $4`,
-        [currentWeek, factionId, unspent, count]
-      );
-    }
-
-    // Re-fetch
-    const newStats = await query(
-      'SELECT faction, total_points_unspent, total_members, winner FROM faction_weekly WHERE week = $1',
-      [currentWeek]
-    );
-
-    return res.json({ success: true, week: currentWeek, factions: newStats.rows });
-  }
 
   return res.json({ success: true, week: currentWeek, factions: stats.rows });
 }

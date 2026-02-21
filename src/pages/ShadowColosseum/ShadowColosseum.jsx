@@ -38,6 +38,7 @@ import {
   SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
   KATANA_Z_ATK_PER_HIT, KATANA_Z_STACK_PERSIST_CHANCE, KATANA_Z_COUNTER_CHANCE, KATANA_Z_COUNTER_MULT,
   KATANA_V_DOT_PCT, KATANA_V_DOT_MAX_STACKS, KATANA_V_BUFF_CHANCE,
+  GULDAN_HEAL_PER_STACK, GULDAN_STUN_CHANCE, GULDAN_DEF_PER_HIT, GULDAN_ATK_PER_HIT, GULDAN_SPD_CHANCE, GULDAN_SPD_BOOST, GULDAN_SPD_MAX_STACKS,
   MAX_WEAPON_AWAKENING, WEAPON_AWAKENING_PASSIVES, rollWeaponDrop,
   RARITY_SUB_COUNT,
   computeWeaponILevel, computeArtifactILevel, computeEquipILevel,
@@ -195,7 +196,7 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, fragments: { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [], monarchKills: 0, monarchDropLog: [], lootBoostMs: 0 });
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, fragments: { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [], monarchKills: 0, monarchDropLog: [], archDemonKills: 0, archDemonDropLog: [], lootBoostMs: 0 });
 const loadData = () => {
   try {
     const d = { ...defaultData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) };
@@ -422,6 +423,16 @@ export default function ShadowColosseum() {
     }).catch(() => {});
   };
 
+  // Fire-and-forget faction contribution reward
+  const rewardFactionPoints = (activity) => {
+    if (!isLoggedIn()) return;
+    fetch('/api/factions?action=activity-reward', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ activity }),
+    }).catch(() => {});
+  };
+
   // Fetch recent legendary drops
   const lastKnownDropIdRef = useRef(0);
   const fetchDropLog = () => {
@@ -510,7 +521,7 @@ export default function ShadowColosseum() {
   // Play epic sound for secret weapon drops
   useEffect(() => {
     if (!weaponReveal) return;
-    const isSecret = ['w_sulfuras', 'w_raeshalare', 'w_katana_z', 'w_katana_v'].includes(weaponReveal.id);
+    const isSecret = ['w_sulfuras', 'w_raeshalare', 'w_katana_z', 'w_katana_v', 'w_guldan'].includes(weaponReveal.id);
     if (!isSecret) return;
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -757,6 +768,7 @@ export default function ShadowColosseum() {
         ...(weaponPassive === 'shadow_silence' ? { shadowSilence: [] } : {}),
         ...(weaponPassive === 'katana_z_fury' ? { katanaZStacks: 0 } : {}),
         ...(weaponPassive === 'katana_v_chaos' ? { katanaVState: { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1 } } : {}),
+        ...(weaponPassive === 'guldan_halo' ? { guldanState: { healStacks: 0, defBonus: 0, atkBonus: 0, spdStacks: 0, divinUsed: false } } : {}),
         // Artifact passive state
         curseStacks: 0,           // Burning Curse: stacking DMG per turn
         curseDmgDealt: 0,         // Burning Curse: base dmg dealt bonus
@@ -1081,6 +1093,12 @@ export default function ShadowColosseum() {
     if (ps.katanaVState?.allStatBuff > 0) {
       fighter.atk = Math.floor(fighter.atk * (1 + ps.katanaVState.allStatBuff / 100));
     }
+    // Gul'dan Halo Eternelle: ATK + DEF bonuses
+    if (ps.guldanState) {
+      if (ps.guldanState.atkBonus > 0) fighter.atk = Math.floor(fighter.atk * (1 + ps.guldanState.atkBonus));
+      if (ps.guldanState.defBonus > 0) fighter.def = Math.floor(fighter.def * (1 + ps.guldanState.defBonus));
+      if (ps.guldanState.spdStacks > 0) fighter.atk = Math.floor(fighter.atk * (1 + ps.guldanState.spdStacks * GULDAN_SPD_BOOST * 0.1));
+    }
 
     // ─── Artifact passives: beforeAttack ───
     // Burning Curse: +DMG dealt bonus + stacking
@@ -1160,6 +1178,43 @@ export default function ShadowColosseum() {
         } else {
           ps.katanaVState.nextDmgMult = 6;
           b.log.unshift({ msg: `${fighter.name} : Katana V Puissance x6 prochain coup !`, type: 'player' });
+        }
+      }
+    }
+    // Gul'dan Halo Eternelle: post-attack stacking
+    if (ps.guldanState && dmg > 0) {
+      ps.guldanState.healStacks = (ps.guldanState.healStacks || 0) + 1;
+      // Heal based on stacks
+      const healAmt = Math.floor(dmg * GULDAN_HEAL_PER_STACK * ps.guldanState.healStacks);
+      if (healAmt > 0) {
+        fighter.hp = Math.min(fighter.maxHp, fighter.hp + healAmt);
+        b.log.unshift({ msg: `${fighter.name} : Halo x${ps.guldanState.healStacks} +${healAmt} PV`, type: 'player' });
+      }
+      // Stack bonuses
+      ps.guldanState.defBonus = (ps.guldanState.defBonus || 0) + GULDAN_DEF_PER_HIT;
+      ps.guldanState.atkBonus = (ps.guldanState.atkBonus || 0) + GULDAN_ATK_PER_HIT;
+      // SPD stack
+      if (ps.guldanState.spdStacks < GULDAN_SPD_MAX_STACKS && Math.random() < GULDAN_SPD_CHANCE) {
+        ps.guldanState.spdStacks++;
+      }
+      // Stun chance per heal stack
+      let stunProcs = 0;
+      for (let i = 0; i < ps.guldanState.healStacks; i++) {
+        if (Math.random() < GULDAN_STUN_CHANCE) stunProcs++;
+      }
+      if (stunProcs > 0 && enemy.alive) {
+        enemy.buffs = enemy.buffs || [];
+        enemy.buffs.push({ type: 'spd', val: -999, turns: 1 });
+        b.log.unshift({ msg: `${fighter.name} : Halo Stun ! (${stunProcs} procs)`, type: 'player' });
+      }
+      // Halo Divin: resurrect first dead ally (once per combat)
+      if (!ps.guldanState.divinUsed) {
+        const deadAlly = b.team.find((f, i) => i !== fighterIdx && f && !f.alive);
+        if (deadAlly) {
+          deadAlly.alive = true;
+          deadAlly.hp = Math.floor(deadAlly.maxHp * 0.5);
+          ps.guldanState.divinUsed = true;
+          b.log.unshift({ msg: `${fighter.name} : HALO DIVIN ! ${deadAlly.name} ressuscite a 50% PV !`, type: 'player' });
         }
       }
     }
@@ -1531,6 +1586,7 @@ export default function ShadowColosseum() {
       // Coins
       const coins = Math.floor(stage.coins * rMult.coins);
       shadowCoinManager.addCoins(coins);
+      rewardFactionPoints('arc');
       // Account XP
       const baseAccountXp = 20 + stage.tier * 12 + (stage.isBoss ? 25 : 0);
       const accountXpGain = Math.floor(baseAccountXp * rMult.accountXp);
@@ -2077,6 +2133,10 @@ export default function ShadowColosseum() {
         const wId = data.weapons[selChibi];
         return wId && WEAPONS[wId]?.passive === 'shadow_silence' ? [] : undefined;
       })(),
+      guldanState: (() => {
+        const wId = data.weapons[selChibi];
+        return wId && WEAPONS[wId]?.passive === 'guldan_halo' ? { healStacks: 0, defBonus: 0, atkBonus: 0, spdStacks: 0, divinUsed: false } : undefined;
+      })(),
       katanaZStacks: (() => {
         const wId = data.weapons[selChibi];
         return wId && WEAPONS[wId]?.passive === 'katana_z_fury' ? 0 : undefined;
@@ -2221,6 +2281,17 @@ export default function ShadowColosseum() {
       atkMult += battle.katanaVState.allStatBuff / 100;
     }
 
+    // Gul'dan Halo Eternelle: ATK buff from stacks + DEF buff
+    if (battle.guldanState !== undefined) {
+      if (battle.guldanState.atkBonus > 0) {
+        atkMult += battle.guldanState.atkBonus;
+      }
+      // SPD stacks: multiply attack speed (represented as extra damage here)
+      if (battle.guldanState.spdStacks > 0) {
+        atkMult += battle.guldanState.spdStacks * GULDAN_SPD_BOOST * 0.1; // SPD stacks → DMG boost
+      }
+    }
+
     // Temporarily modify player for this attack
     const savedAtk = player.atk;
     const savedCrit = player.crit;
@@ -2257,6 +2328,11 @@ export default function ShadowColosseum() {
       if (hp.type === 'skillCd' && (playerSkill.cdMax || 0) >= (hp.minCd || 3) && hp.stats?.crit) {
         player.crit = +(player.crit + hp.stats.crit).toFixed(1);
       }
+    }
+
+    // Gul'dan Halo Eternelle: permanent DEF bonus per hit
+    if (battle.guldanState !== undefined && battle.guldanState.defBonus > 0) {
+      player.def = Math.floor(player.def * (1 + battle.guldanState.defBonus));
     }
 
     setPhase('player_atk');
@@ -2320,6 +2396,28 @@ export default function ShadowColosseum() {
           newKatanaVState.nextDmgMult = 6;
           log.push({ text: `Benediction : Puissance x6 au prochain coup !`, type: 'buff', id: Date.now() + 0.07 });
         }
+      }
+    }
+
+    // Gul'dan Halo Eternelle: post-attack stacking effects
+    let newGuldanState = battle.guldanState ? { ...battle.guldanState } : undefined;
+    if (newGuldanState !== undefined && pRes.damage > 0) {
+      // +1 heal stack per attack
+      newGuldanState.healStacks = (newGuldanState.healStacks || 0) + 1;
+      // Heal based on stacks: 10% of damage dealt per stack
+      const healAmt = Math.floor(pRes.damage * GULDAN_HEAL_PER_STACK * newGuldanState.healStacks);
+      if (healAmt > 0) {
+        player.hp = Math.min(player.maxHp, player.hp + healAmt);
+        log.push({ text: `Halo Eternel x${newGuldanState.healStacks} ! +${healAmt} PV`, type: 'buff', id: Date.now() + 0.071 });
+      }
+      // +2% DEF per attack (permanent in fight)
+      newGuldanState.defBonus = (newGuldanState.defBonus || 0) + GULDAN_DEF_PER_HIT;
+      // +0.2% ATK per hit (stackable)
+      newGuldanState.atkBonus = (newGuldanState.atkBonus || 0) + GULDAN_ATK_PER_HIT;
+      // 50% chance to gain SPD stack (max 3)
+      if (newGuldanState.spdStacks < GULDAN_SPD_MAX_STACKS && Math.random() < GULDAN_SPD_CHANCE) {
+        newGuldanState.spdStacks++;
+        log.push({ text: `Halo Celeste ! Vitesse +${newGuldanState.spdStacks * 200}% (${newGuldanState.spdStacks}/${GULDAN_SPD_MAX_STACKS})`, type: 'buff', id: Date.now() + 0.072 });
       }
     }
 
@@ -2469,8 +2567,20 @@ export default function ShadowColosseum() {
         log.push({ text: `Lame Veneneuse x${newKatanaVState.dots} ! -${dotDmg} PV !`, type: 'player', id: Date.now() + 1.7 });
       }
 
+      // Gul'dan Halo Eternelle: end of turn — each heal stack has 50% stun chance
+      if (newGuldanState !== undefined && newGuldanState.healStacks > 0) {
+        let stunProcs = 0;
+        for (let i = 0; i < newGuldanState.healStacks; i++) {
+          if (Math.random() < GULDAN_STUN_CHANCE) stunProcs++;
+        }
+        if (stunProcs > 0 && enemy.hp > 0) {
+          enemy.buffs.push({ type: 'spd', val: -999, turns: 1 }); // stun = skip next turn
+          log.push({ text: `Halo Eternel : Etourdissement ! (${stunProcs}/${newGuldanState.healStacks} procs)`, type: 'buff', id: Date.now() + 1.75 });
+        }
+      }
+
       setDmgPopup(dmgToPlayer > 0 ? { target: 'player', value: dmgToPlayer, isCrit: eRes.isCrit } : null);
-      setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, immortelUsed, colossusUsed, passiveState: ps, sulfurasStacks: newSulfurasStacks, shadowSilence: newShadowSilence, katanaZStacks: newKatanaZStacks, katanaVState: newKatanaVState, turn: prev.turn + 1, log: log.slice(-10) }));
+      setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, immortelUsed, colossusUsed, passiveState: ps, sulfurasStacks: newSulfurasStacks, shadowSilence: newShadowSilence, katanaZStacks: newKatanaZStacks, katanaVState: newKatanaVState, guldanState: newGuldanState, turn: prev.turn + 1, log: log.slice(-10) }));
 
       if (enemy.hp <= 0) {
         setTimeout(() => handleVictory(), autoReplayRef.current ? 600 : 1200);
@@ -2566,6 +2676,7 @@ export default function ShadowColosseum() {
     if (newLevel >= MAX_LEVEL) newXp = 0;
 
     shadowCoinManager.addCoins(scaledCoins, 'colosseum_victory');
+    rewardFactionPoints('arc');
 
     // Account XP (scaled)
     const baseAccountXp = 15 + stage.tier * 10 + (stage.isBoss ? 20 : 0);
@@ -2637,6 +2748,16 @@ export default function ShadowColosseum() {
       const isNew = data.weaponCollection['w_katana_v'] === undefined;
       weaponDrop = { id: 'w_katana_v', ...WEAPONS.w_katana_v, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_katana_v'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
+    // Baton de Gul'dan: 1/80,000 from Archdemon (cumulative pity: +0.001% per kill without drop)
+    if (!weaponDrop && stage.id === 'archdemon') {
+      const pityKills = data.archDemonKills || 0;
+      const baseRate = 1 / 80000;
+      const pityBonus = pityKills * 0.00001; // +0.001% per kill
+      if (Math.random() < (baseRate + pityBonus) * lootMult) {
+        const isNew = data.weaponCollection['w_guldan'] === undefined;
+        weaponDrop = { id: 'w_guldan', ...WEAPONS.w_guldan, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_guldan'] || 0) + 1, MAX_WEAPON_AWAKENING) };
+      }
+    }
 
     // Fragment drops (mercy system) — 1% chance per kill
     let fragmentDrop = null;
@@ -2645,6 +2766,7 @@ export default function ShadowColosseum() {
     if (stage.id === 'supreme_monarch' && Math.random() < 0.001) {
       fragmentDrop = Math.random() < 0.5 ? 'fragment_katana_z' : 'fragment_katana_v';
     }
+    if (stage.id === 'archdemon' && Math.random() < 0.003) fragmentDrop = 'fragment_guldan';
 
     // Pacte des Ombres artifact drop — Zephyr Ultime at star >= 10 (1/250)
     let pacteDrop = null;
@@ -2661,7 +2783,7 @@ export default function ShadowColosseum() {
       const newHammers = { ...(prev.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }) };
       if (hammerDrop) newHammers[hammerDrop] = (newHammers[hammerDrop] || 0) + 1;
       if (extraHammer) newHammers[extraHammer] = (newHammers[extraHammer] || 0) + 1;
-      const newFragments = { ...(prev.fragments || { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0 }) };
+      const newFragments = { ...(prev.fragments || { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 }) };
       if (fragmentDrop) newFragments[fragmentDrop] = (newFragments[fragmentDrop] || 0) + 1;
       // Ragnarok kill tracking
       const isRagnarok = stage.id === 'ragnarok';
@@ -2681,6 +2803,12 @@ export default function ShadowColosseum() {
       const newMonarchLog = (isMonarch && weaponDrop)
         ? [...(prev.monarchDropLog || []), { weaponId: weaponDrop.id, name: weaponDrop.name, rarity: weaponDrop.rarity, icon: weaponDrop.icon, sprite: weaponDrop.sprite || null, killNumber: newMonarchKills, date: Date.now() }]
         : (prev.monarchDropLog || []);
+      // Archdemon kill tracking
+      const isArchDemon = stage.id === 'archdemon';
+      const newArchDemonKills = isArchDemon ? (prev.archDemonKills || 0) + 1 : (prev.archDemonKills || 0);
+      const newArchDemonLog = (isArchDemon && weaponDrop)
+        ? [...(prev.archDemonDropLog || []), { weaponId: weaponDrop.id, name: weaponDrop.name, rarity: weaponDrop.rarity, icon: weaponDrop.icon, sprite: weaponDrop.sprite || null, killNumber: newArchDemonKills, date: Date.now() }]
+        : (prev.archDemonDropLog || []);
       return {
         ...prev,
         chibiLevels: { ...prev.chibiLevels, [selChibi]: { level: newLevel, xp: newXp } },
@@ -2695,6 +2823,8 @@ export default function ShadowColosseum() {
         zephyrDropLog: newZephLog,
         monarchKills: newMonarchKills,
         monarchDropLog: newMonarchLog,
+        archDemonKills: newArchDemonKills,
+        archDemonDropLog: newArchDemonLog,
         weaponCollection: (() => {
           if (!weaponDrop) return prev.weaponCollection;
           const wc = { ...prev.weaponCollection };
@@ -2721,7 +2851,7 @@ export default function ShadowColosseum() {
 
     // Weapon drop reveal + Beru reaction
     if (weaponDrop) {
-      const isSecret = ['w_sulfuras', 'w_raeshalare', 'w_katana_z', 'w_katana_v'].includes(weaponDrop.id);
+      const isSecret = ['w_sulfuras', 'w_raeshalare', 'w_katana_z', 'w_katana_v', 'w_guldan'].includes(weaponDrop.id);
       setWeaponReveal(weaponDrop);
       setTimeout(() => setWeaponReveal(null), isSecret ? 5500 : 2000);
       if (weaponDrop.id === 'w_sulfuras') {
@@ -2736,28 +2866,35 @@ export default function ShadowColosseum() {
       } else if (weaponDrop.id === 'w_katana_v') {
         logLegendaryDrop('weapon', 'w_katana_v', 'Katana V', 'secret', weaponDrop.newAwakening || 0);
         try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: "KATANA V ?! L'arme du CHAOS !! Poison, bouclier, puissance... cette lame est DIVINE !!" } })); } catch (e) {}
+      } else if (weaponDrop.id === 'w_guldan') {
+        logLegendaryDrop('weapon', 'w_guldan', "Baton de Gul'dan", 'secret', weaponDrop.newAwakening || 0);
+        try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: "LE BATON DE GUL'DAN !! 1/80 000 !! Le Halo Eternel brille autour de toi... Tu es INVINCIBLE maintenant !!" } })); } catch (e) {}
       }
     }
 
     // ─── Beru taunts when farming secret weapon bosses (no secret drop) ───
     // 8% chance, minimum 2min cooldown between taunts to avoid spam during auto-farm
-    const isSecretDrop = weaponDrop && ['w_sulfuras', 'w_raeshalare', 'w_katana_z', 'w_katana_v'].includes(weaponDrop.id);
+    const isSecretDrop = weaponDrop && ['w_sulfuras', 'w_raeshalare', 'w_katana_z', 'w_katana_v', 'w_guldan'].includes(weaponDrop.id);
     const tauntCooldownOk = Date.now() - lastBeruTauntRef.current > 120000;
     if (!isSecretDrop && tauntCooldownOk && Math.random() < 0.08) {
       const beruTaunt = (() => {
         const kills = stage.id === 'ragnarok' ? (data.ragnarokKills || 0) + 1
           : stage.id === 'supreme_monarch' ? (data.monarchKills || 0) + 1
-          : stage.id === 'zephyr' ? (data.zephyrKills || 0) + 1 : 0;
+          : stage.id === 'zephyr' ? (data.zephyrKills || 0) + 1
+          : stage.id === 'archdemon' ? (data.archDemonKills || 0) + 1 : 0;
         if (kills === 0) return null;
 
         const weaponName = stage.id === 'ragnarok' ? 'Sulfuras'
           : stage.id === 'zephyr' ? "Rae'shalare"
+          : stage.id === 'archdemon' ? "le Baton de Gul'dan"
           : 'un Katana';
         const dropRate = stage.id === 'ragnarok' ? '1/10 000'
           : stage.id === 'zephyr' ? '1/50 000 000'
+          : stage.id === 'archdemon' ? '1/80 000'
           : '1/50 000';
         const cumul = stage.id === 'ragnarok' ? (1 - Math.pow(1 - 1/10000, kills)) * 100
           : stage.id === 'zephyr' ? (1 - Math.pow(1 - 1/5000, kills)) * 100
+          : stage.id === 'archdemon' ? (1 - Math.pow(1 - 1/80000, kills)) * 100
           : (1 - Math.pow(1 - 2/50000, kills)) * 100;
 
         // Pool of taunts — randomly picked
@@ -7017,7 +7154,7 @@ export default function ShadowColosseum() {
 
             {/* Fragment Forge — Exchange 10 fragments for weapon */}
             {(() => {
-              const frags = data.fragments || { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0 };
+              const frags = data.fragments || { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 };
               const weapons = data.collection || [];
 
               const forgeWeapon = async (fragmentId, weaponId) => {
@@ -7071,6 +7208,7 @@ export default function ShadowColosseum() {
                 { fragmentId: 'fragment_raeshalare', weaponId: 'raeshalare', icon: '🌀', name: "Arc Rae'shalare" },
                 { fragmentId: 'fragment_katana_z', weaponId: 'katana_z', icon: '⚡', name: 'Katana Z' },
                 { fragmentId: 'fragment_katana_v', weaponId: 'katana_v', icon: '💚', name: 'Katana V' },
+                { fragmentId: 'fragment_guldan', weaponId: 'w_guldan', icon: '🪄', name: "Baton de Gul'dan" },
               ];
 
               return (
@@ -8315,7 +8453,7 @@ export default function ShadowColosseum() {
 
       {/* ═══ SULFURAS EPIC REVEAL ═══ */}
       {weaponReveal && (() => {
-        const isSecret = ['w_sulfuras', 'w_raeshalare', 'w_katana_z', 'w_katana_v'].includes(weaponReveal.id);
+        const isSecret = ['w_sulfuras', 'w_raeshalare', 'w_katana_z', 'w_katana_v', 'w_guldan'].includes(weaponReveal.id);
         return isSecret ? (
           <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={() => setWeaponReveal(null)}>
             <motion.div className="absolute inset-0" initial={{ background: 'rgba(0,0,0,0)' }} animate={{ background: ['rgba(220,38,38,0.7)', 'rgba(0,0,0,0.95)', 'rgba(0,0,0,0.95)'] }} transition={{ duration: 2, times: [0, 0.2, 1] }} />

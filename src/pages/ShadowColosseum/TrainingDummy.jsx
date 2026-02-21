@@ -19,6 +19,7 @@ import {
   KATANA_Z_ATK_PER_HIT, KATANA_Z_STACK_PERSIST_CHANCE, KATANA_Z_COUNTER_CHANCE, KATANA_Z_COUNTER_MULT,
   KATANA_V_DOT_PCT, KATANA_V_DOT_MAX_STACKS, KATANA_V_BUFF_CHANCE,
   SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
+  GULDAN_HEAL_PER_STACK, GULDAN_STUN_CHANCE, GULDAN_DEF_PER_HIT, GULDAN_ATK_PER_HIT, GULDAN_SPD_CHANCE, GULDAN_SPD_BOOST, GULDAN_SPD_MAX_STACKS,
   computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses, getActivePassives,
 } from './equipmentData';
 
@@ -214,7 +215,7 @@ export default function TrainingDummy() {
       weapons: {},
       weaponCollection: {},
       hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 },
-      fragments: { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0 },
+      fragments: { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 },
       accountXp: 0,
       accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 },
       accountAllocations: 0,
@@ -445,6 +446,9 @@ export default function TrainingDummy() {
         : undefined,
       sulfurasStacks: weaponId && WEAPONS[weaponId]?.passive === 'sulfuras_fury' ? 0 : undefined,
       shadowSilence: weaponId && WEAPONS[weaponId]?.passive === 'shadow_silence' ? [] : undefined,
+      guldanState: weaponId && WEAPONS[weaponId]?.passive === 'guldan_halo'
+        ? { healStacks: 0, defBonus: 0, atkBonus: 0, spdStacks: 0, divinUsed: false }
+        : undefined,
       // Raid artifact passive state
       flammeStacks: 0,
       echoCounter: 0,
@@ -716,6 +720,14 @@ export default function TrainingDummy() {
         atkMult += fighter.passiveState.sulfurasStacks / 100;
       }
 
+      // Gul'dan Halo Eternelle
+      if (fighter.passiveState.guldanState) {
+        const gs = fighter.passiveState.guldanState;
+        if (gs.atkBonus > 0) atkMult += gs.atkBonus;
+        if (gs.spdStacks > 0) atkMult += gs.spdStacks * GULDAN_SPD_BOOST * 0.1;
+        if (gs.defBonus > 0) fighter.def = Math.floor(fighter.def * (1 + gs.defBonus));
+      }
+
       // ═══ ARTIFACT PASSIVE MULTIPLIERS (beforeAttack) ═══
       const artP = fighter.passives || [];
       let forceCrit = false;
@@ -881,6 +893,18 @@ export default function TrainingDummy() {
         if (fighter.passiveState.sulfurasStacks < SULFURAS_STACK_MAX) {
           fighter.passiveState.sulfurasStacks += SULFURAS_STACK_PER_TURN;
         }
+      }
+
+      // Gul'dan Halo Eternelle: post-attack stacking
+      if (fighter.passiveState.guldanState && result.damage > 0) {
+        const gs = fighter.passiveState.guldanState;
+        gs.healStacks = (gs.healStacks || 0) + 1;
+        const healAmt = Math.floor(result.damage * GULDAN_HEAL_PER_STACK * gs.healStacks);
+        if (healAmt > 0) fighter.hp = Math.min(fighter.maxHp, fighter.hp + healAmt);
+        gs.defBonus = (gs.defBonus || 0) + GULDAN_DEF_PER_HIT;
+        gs.atkBonus = (gs.atkBonus || 0) + GULDAN_ATK_PER_HIT;
+        if (gs.spdStacks < GULDAN_SPD_MAX_STACKS && Math.random() < GULDAN_SPD_CHANCE) gs.spdStacks++;
+        logEntries.push({ text: `${fighter.name}: Halo x${gs.healStacks} +${healAmt} PV`, time: elapsed, type: 'buff' });
       }
 
       // ═══ ARTIFACT PASSIVE EFFECTS AFTER ATTACK ═══
@@ -1370,6 +1394,18 @@ export default function TrainingDummy() {
         fighter.passiveState.shadowSilence.push(5);
         log.push({ text: `  ├─ Murmure de la Mort proc ! +100% ATK pendant 5 tours (x${fighter.passiveState.shadowSilence.length}/3)`, type: 'buff', id: Date.now() + 0.775 });
       }
+    }
+
+    // Gul'dan Halo Eternelle: post-attack stacking (detailed mode)
+    if (fighter.passiveState.guldanState && result.damage > 0) {
+      const gs = fighter.passiveState.guldanState;
+      gs.healStacks = (gs.healStacks || 0) + 1;
+      const healAmt = Math.floor(result.damage * GULDAN_HEAL_PER_STACK * gs.healStacks);
+      if (healAmt > 0) fighter.hp = Math.min(fighter.maxHp, fighter.hp + healAmt);
+      gs.defBonus = (gs.defBonus || 0) + GULDAN_DEF_PER_HIT;
+      gs.atkBonus = (gs.atkBonus || 0) + GULDAN_ATK_PER_HIT;
+      if (gs.spdStacks < GULDAN_SPD_MAX_STACKS && Math.random() < GULDAN_SPD_CHANCE) gs.spdStacks++;
+      log.push({ text: `  ├─ Halo x${gs.healStacks}: +${healAmt} PV, DEF +${Math.round(gs.defBonus * 100)}%, ATK +${(gs.atkBonus * 100).toFixed(1)}%`, type: 'buff', id: Date.now() + 0.78 });
     }
 
     // Mana regen

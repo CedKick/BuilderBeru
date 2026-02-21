@@ -304,6 +304,7 @@ export const HAMMERS = {
   fragment_raeshalare: { id: 'fragment_raeshalare', name: "Fragment de Rae'shalare", icon: '\uD83C\uDF00', rarity: 'secret', desc: "10 fragments forgent l'Arc Rae'shalare" },
   fragment_katana_z:   { id: 'fragment_katana_z',   name: 'Fragment de Katana Z',   icon: '\u26A1',       rarity: 'secret', desc: '10 fragments forgent le Katana Z' },
   fragment_katana_v:   { id: 'fragment_katana_v',   name: 'Fragment de Katana V',   icon: '\uD83D\uDC9A', rarity: 'secret', desc: '10 fragments forgent le Katana V' },
+  fragment_guldan:     { id: 'fragment_guldan',     name: "Fragment de Gul'dan",    icon: '\uD83C\uDF00', rarity: 'secret', desc: "10 fragments forgent le Baton de Gul'dan" },
 };
 
 export const HAMMER_ORDER = ['marteau_forge', 'marteau_runique', 'marteau_celeste'];
@@ -545,6 +546,8 @@ export const WEAPONS = {
   // Secret — drop 1/50000 from Monarque Supreme
   w_katana_z:         { id: 'w_katana_z',         name: 'Katana Z',             rarity: 'mythique',   element: 'water', weaponType: 'blade',  atk: 260, bonusStat: 'spd_flat', bonusValue: 15, icon: '\u2694\uFE0F', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771539184/KatanaZ_pgth96.png', desc: 'Katana de vitesse absolue. Chaque coup renforce son porteur.', secret: true, passive: 'katana_z_fury', darkRes: 40, dropSource: 'Monarque Supreme', dropRate: '1/50,000' },
   w_katana_v:         { id: 'w_katana_v',         name: 'Katana V',             rarity: 'mythique',   element: 'light', weaponType: 'blade',  atk: 240, bonusStat: 'crit_dmg', bonusValue: 20, icon: '\u2694\uFE0F', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771539430/KatanaV_zv4oke.png', desc: 'Katana du chaos. Empoisonne, buff et protege.', secret: true, passive: 'katana_v_chaos', darkRes: 35, dropSource: 'Monarque Supreme', dropRate: '1/50,000' },
+  // Secret — drop 1/80,000 from Archdemon (cumulative pity)
+  w_guldan:            { id: 'w_guldan',            name: "Baton de Gul'dan",      rarity: 'mythique',   element: 'wind',  weaponType: 'staff',  atk: 100, bonusStat: 'spd_flat', bonusValue: 20, baseDef: 50, windRes: 10, icon: '\uD83E\uDE84', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771638363/batonGuldan_vuu7ez.png', projectile: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771638364/projectileGuldan_ii184b.png', desc: "Baton maudit du demon Gul'dan. Un halo eternel protege et renforce son porteur.", secret: true, passive: 'guldan_halo', dropSource: 'Archdemon', dropRate: '1/80,000' },
 };
 
 export const WEAPON_PRICES = { rare: 500, legendaire: 2000, mythique: 5000 };
@@ -789,10 +792,17 @@ export const WEAPON_AWAKENING_PASSIVES = {
     { desc: 'Degats Lumiere +12%', stats: { lightDamage: 12 } },
     { desc: 'Ignore 12% DEF + Tous Degats +10%', stats: { defPen: 12, allDamage: 10 } },
   ],
+  w_guldan: [
+    { desc: 'DEF +25%', stats: { def_pct: 25 } },
+    { desc: 'SPD +35', stats: { spd_flat: 35 } },
+    { desc: 'RES +18', stats: { res_flat: 18 } },
+    { desc: 'Degats Vent +15%', stats: { windDamage: 15 } },
+    { desc: 'Ignore 20% DEF + RES +15 + Tous Degats +5%', stats: { defPen: 20, res_flat: 15, allDamage: 5 } },
+  ],
 };
 
 export function getWeaponAwakeningBonuses(weaponId, awakening = 0) {
-  const b = { atk_pct: 0, def_pct: 0, hp_pct: 0, crit_rate: 0, crit_dmg: 0, spd_flat: 0, res_flat: 0, fireDamage: 0, waterDamage: 0, shadowDamage: 0, lightDamage: 0, allDamage: 0, defPen: 0 };
+  const b = { atk_pct: 0, def_pct: 0, hp_pct: 0, crit_rate: 0, crit_dmg: 0, spd_flat: 0, res_flat: 0, fireDamage: 0, waterDamage: 0, shadowDamage: 0, windDamage: 0, lightDamage: 0, allDamage: 0, defPen: 0 };
   if (!weaponId || awakening <= 0) return b;
   const passives = WEAPON_AWAKENING_PASSIVES[weaponId] || [];
   for (let i = 0; i < Math.min(awakening, AW_PASSIVE_CAP); i++) {
@@ -808,7 +818,7 @@ export function getWeaponAwakeningBonuses(weaponId, awakening = 0) {
 }
 
 export function computeWeaponBonuses(weaponId, awakening = 0) {
-  const b = { atk_flat: 0, atk_pct: 0, def_pct: 0, hp_pct: 0, spd_flat: 0, crit_rate: 0, crit_dmg: 0, res_flat: 0, fireDamage: 0, waterDamage: 0, shadowDamage: 0, lightDamage: 0, allDamage: 0, defPen: 0 };
+  const b = { atk_flat: 0, atk_pct: 0, def_flat: 0, def_pct: 0, hp_pct: 0, spd_flat: 0, crit_rate: 0, crit_dmg: 0, res_flat: 0, fireDamage: 0, waterDamage: 0, shadowDamage: 0, windDamage: 0, lightDamage: 0, allDamage: 0, defPen: 0 };
   if (!weaponId) return b;
   const w = WEAPONS[weaponId];
   if (!w) return b;
@@ -816,6 +826,8 @@ export function computeWeaponBonuses(weaponId, awakening = 0) {
   if (b[w.bonusStat] !== undefined) b[w.bonusStat] += w.bonusValue;
   if (w.fireRes) b.res_flat += w.fireRes;
   if (w.darkRes) b.res_flat += w.darkRes;
+  if (w.baseDef) b.def_flat += w.baseDef;
+  if (w.windRes) b.res_flat += w.windRes;
   if (awakening > 0) {
     const awB = getWeaponAwakeningBonuses(weaponId, awakening);
     Object.entries(awB).forEach(([k, v]) => { if (b[k] !== undefined) b[k] += v; });
@@ -837,6 +849,15 @@ export const KATANA_Z_COUNTER_MULT = 2.0;         // 200% ATK du joueur
 export const KATANA_V_DOT_PCT = 0.03;             // 3% ATK du joueur par stack par tour
 export const KATANA_V_DOT_MAX_STACKS = 10;        // max 10 stacks de DoT
 export const KATANA_V_BUFF_CHANCE = 0.30;          // 30% chance de buff par coup
+
+// Baton de Gul'dan passives — Halo Eternelle
+export const GULDAN_HEAL_PER_STACK = 0.10;         // +10% heal per stack (% of damage dealt)
+export const GULDAN_STUN_CHANCE = 0.50;            // 50% stun chance per stack end of turn
+export const GULDAN_DEF_PER_HIT = 0.02;            // +2% DEF per attack (permanent in fight)
+export const GULDAN_ATK_PER_HIT = 0.002;           // +0.2% ATK per hit (stackable)
+export const GULDAN_SPD_CHANCE = 0.50;             // 50% chance to boost attack speed
+export const GULDAN_SPD_BOOST = 2.0;               // +200% SPD boost per stack
+export const GULDAN_SPD_MAX_STACKS = 3;            // max 3 SPD stacks
 
 // ═══════════════════════════════════════════════════════════════
 // MERGE EQUIPMENT BONUSES
