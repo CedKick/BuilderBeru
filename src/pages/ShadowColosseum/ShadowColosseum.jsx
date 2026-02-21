@@ -357,6 +357,15 @@ export default function ShadowColosseum() {
     }
   };
   useEffect(() => { if (view !== 'arc2_story') stopStoryMusic(); }, [view]);
+
+  // Scroll detail panel into view when a chibi is selected
+  useEffect(() => {
+    if (selChibi && detailPanelRef.current) {
+      setTimeout(() => {
+        detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 300);
+    }
+  }, [selChibi]);
   const [arc2Team, setArc2Team] = useState([null, null, null]);
   const [arc2PickSlot, setArc2PickSlot] = useState(null);
   const [arc2Star, setArc2Star] = useState(0);
@@ -372,6 +381,8 @@ export default function ShadowColosseum() {
   const [hoveredEnemy, setHoveredEnemy] = useState(null); // enemy index for damage preview
   const [enemyTooltip, setEnemyTooltip] = useState(null); // enemy index for stats tooltip
   const [statTooltip, setStatTooltip] = useState(null); // stat key for detail tooltip
+  const hubScrollRef = useRef(0); // save scroll position when navigating to sub-views
+  const detailPanelRef = useRef(null); // ref for scrollIntoView on chibi selection
   const [tooltipPinned, setTooltipPinned] = useState(false); // click-pinned tooltip stays on mouse leave
   const tooltipTimerRef = useRef(null); // long-press timer for mobile tooltip
   const hammerHoldRef = useRef(null); // hold-to-buy timer for hammer shop
@@ -2854,6 +2865,163 @@ export default function ShadowColosseum() {
     );
   };
 
+  // Save scroll position before navigating to sub-view
+  const goToSubView = (targetView, chibiId) => {
+    hubScrollRef.current = window.scrollY;
+    setManageTarget(chibiId);
+    setView(targetView);
+  };
+
+  // Restore scroll position when returning to hub
+  const backToHub = () => {
+    setView('hub');
+    requestAnimationFrame(() => {
+      setTimeout(() => window.scrollTo(0, hubScrollRef.current), 50);
+    });
+  };
+
+  // Render inline detail panel for a selected chibi/hunter (used in both grids)
+  const renderChibiDetailPanel = (id) => {
+    const cd = getChibiData(id);
+    if (!cd) return null;
+    const wId = data.weapons[id];
+    const weapon = wId ? WEAPONS[wId] : null;
+    const weaponAwk = wId ? (data.weaponCollection[wId] || 0) : 0;
+    return (
+      <motion.div
+        key={`detail-${id}`}
+        initial={{ height: 0, opacity: 0 }}
+        animate={{ height: 'auto', opacity: 1 }}
+        exit={{ height: 0, opacity: 0 }}
+        transition={{ duration: 0.25 }}
+        className="col-span-2 overflow-hidden"
+        ref={detailPanelRef}
+      >
+        <div className="p-4 rounded-xl border border-purple-500/30 bg-purple-500/5 mt-2">
+          <div className="flex items-center gap-3 mb-3">
+            <img src={getSprite(id)} alt="" className="w-14 h-14 object-contain" style={{ filter: RARITY[cd.rarity].glow }} />
+            <div className="flex-1">
+              <div className="text-base font-bold">{cd.name}</div>
+              <div className="text-xs text-gray-400">
+                Lv{getChibiLevel(id).level} {RARITY[cd.rarity].stars} {ELEMENTS[cd.element].icon}
+                {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter]</span>}
+              </div>
+              {HUNTERS[id] && (() => {
+                const _es = getChibiEveilStars(id);
+                return _es > 0 ? (
+                  <div className="text-[10px] mt-0.5">
+                    <span className="text-yellow-400 font-bold">A{_es}</span>
+                  </div>
+                ) : null;
+              })()}
+            </div>
+            {/* Equipped Weapon */}
+            {weapon && (
+              <div className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg bg-gray-800/40 border border-gray-700/30">
+                {weapon.sprite ? (
+                  <img src={weapon.sprite} alt={weapon.name} className="w-10 h-10 object-contain drop-shadow-[0_0_4px_rgba(251,191,36,0.3)]" draggable={false} />
+                ) : (
+                  <span className="text-2xl">{weapon.icon}</span>
+                )}
+                <div className="text-[9px] text-amber-400 font-bold">A{weaponAwk}</div>
+              </div>
+            )}
+          </div>
+          {/* 6 Stats + Derived */}
+          {(() => {
+            const selData = getChibiData(id);
+            const alloc = data.statPoints[id] || {};
+            const tbDetail = getChibiTalentBonuses(id);
+            const eqBDetail = getChibiEquipBonuses(id);
+            const evStars = getChibiEveilStars(id);
+            const s = statsAtFull(selData.base, selData.growth, getChibiLevel(id).level, alloc, tbDetail, eqBDetail, evStars, data.accountBonuses);
+            const derived = { ...tbDetail };
+            for (const [k, v] of Object.entries(eqBDetail)) { if (v) derived[k] = (derived[k] || 0) + v; }
+            const totalCritDmg = 150 + (derived.critDamage || 0);
+            const derivedLines = [
+              { key: '_critDmgTotal', name: 'CRIT DMG', icon: '\uD83D\uDCA5', color: 'text-orange-400', suffix: '%', value: totalCritDmg },
+              { key: 'physicalDamage', name: 'DMG Physique', icon: '\u2694\uFE0F', color: 'text-red-300', suffix: '%' },
+              { key: 'elementalDamage', name: 'DMG Elementaire', icon: '\uD83C\uDF00', color: 'text-purple-300', suffix: '%' },
+              { key: 'fireDamage', name: 'DMG Feu', icon: '\uD83D\uDD25', color: 'text-orange-400', suffix: '%' },
+              { key: 'waterDamage', name: 'DMG Eau', icon: '\uD83D\uDCA7', color: 'text-cyan-400', suffix: '%' },
+              { key: 'shadowDamage', name: 'DMG Ombre', icon: '\uD83C\uDF11', color: 'text-purple-400', suffix: '%' },
+              { key: 'allDamage', name: 'Tous DMG', icon: '\u2728', color: 'text-emerald-400', suffix: '%' },
+              { key: 'bossDamage', name: 'DMG Boss', icon: '\uD83D\uDC1C', color: 'text-red-400', suffix: '%' },
+              { key: 'defPen', name: 'DEF PEN', icon: '\uD83D\uDDE1\uFE0F', color: 'text-yellow-300', suffix: '%' },
+              { key: 'healBonus', name: 'Soins', icon: '\uD83D\uDC9A', color: 'text-green-400', suffix: '%' },
+              { key: 'cooldownReduction', name: 'Reduc. CD', icon: '\u231B', color: 'text-blue-300', suffix: '' },
+              { key: 'elementalAdvantageBonus', name: 'Avantage Elem.', icon: '\uD83C\uDF1F', color: 'text-yellow-400', suffix: '%' },
+            ].filter(d => d.value !== undefined || (derived[d.key] || 0) > 0);
+            return (
+              <>
+                <div className="grid grid-cols-3 gap-1.5 mb-2">
+                  {STAT_ORDER.map(stat => {
+                    const isPct = stat === 'crit' || stat === 'res';
+                    const m = STAT_META[stat];
+                    return (
+                      <div key={stat} className="relative">
+                        <div className="flex items-center gap-1.5 bg-gray-800/30 rounded-md px-2 py-1.5 cursor-pointer"
+                          onClick={() => setStatTooltip(statTooltip === stat ? null : stat)}>
+                          <span className="text-xs">{m.icon}</span>
+                          <span className={`text-[11px] font-bold ${m.color}`}>{m.name}</span>
+                          {m.detail && <span className="text-[8px] text-gray-600 hover:text-purple-400">?</span>}
+                          <span className="text-xs text-white ml-auto font-bold">{s[stat]}{isPct ? '%' : ''}</span>
+                        </div>
+                        {statTooltip === stat && m.detail && (
+                          <div className="absolute z-20 left-0 right-0 mt-0.5 p-2 rounded-lg bg-[#1a1a2e] border border-purple-500/30 text-[10px] text-purple-200 leading-relaxed shadow-xl">{m.detail}</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {derivedLines.length > 0 && (
+                  <div className="grid grid-cols-2 gap-1 mb-3">
+                    {derivedLines.map(d => (
+                      <div key={d.key} className="flex items-center gap-1 bg-gray-800/20 rounded-md px-2 py-1">
+                        <span className="text-[11px]">{d.icon}</span>
+                        <span className={`text-[10px] ${d.color}`}>{d.name}</span>
+                        <span className={`text-[11px] ml-auto font-bold ${d.color}`}>{d.value !== undefined ? d.value : `+${derived[d.key]}`}{d.suffix}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            );
+          })()}
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); goToSubView('stats', id); }}
+              className="flex-1 py-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-400 text-sm font-bold hover:bg-amber-500/20 transition-colors"
+            >
+              {'\uD83D\uDCCA'} Stats {getAvailStatPts(id) > 0 && <span className="ml-1 px-1 rounded bg-amber-500/30 text-[10px]">{getAvailStatPts(id)}</span>}
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); goToSubView('skilltree', id); }}
+              className="flex-1 py-2.5 rounded-lg border border-purple-500/40 bg-purple-500/10 text-purple-400 text-sm font-bold hover:bg-purple-500/20 transition-colors"
+            >
+              {'\uD83C\uDF33'} Skills {getAvailSP(id) > 0 && <span className="ml-1 px-1 rounded bg-purple-500/30 text-[10px]">{getAvailSP(id)}</span>}
+            </button>
+            {getChibiLevel(id).level >= 10 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); goToSubView('talents', id); }}
+                className="flex-1 py-2.5 rounded-lg border border-green-500/40 bg-green-500/10 text-green-400 text-sm font-bold hover:bg-green-500/20 transition-colors"
+              >
+                {'\u2728'} Talents {getAvailTalentPts(id) > 0 && <span className="ml-1 px-1 rounded bg-green-500/30 text-[10px]">{getAvailTalentPts(id)}</span>}
+              </button>
+            )}
+            <button
+              onClick={(e) => { e.stopPropagation(); goToSubView('equipment', id); }}
+              className="flex-1 py-2.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-400 text-sm font-bold hover:bg-cyan-500/20 transition-colors"
+            >
+              {'\uD83D\uDEE1\uFE0F'} Equip
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
   // ═══════════════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════════════
@@ -2865,7 +3033,7 @@ export default function ShadowColosseum() {
       {/* Fixed bottom back button for sub-views (not result/battle/story) */}
       {!['hub', 'battle', 'result', 'arc2_story'].includes(view) && (
         <div className="fixed bottom-4 left-0 right-0 flex justify-center z-50">
-          <button onClick={() => setView('hub')}
+          <button onClick={() => backToHub()}
             className="px-6 py-2.5 bg-gradient-to-r from-gray-700 to-gray-600 rounded-xl font-bold text-sm shadow-lg shadow-gray-900/40 hover:scale-105 transition-transform active:scale-95 border border-gray-500/30">
             {'\u2190'} Menu
           </button>
@@ -3118,191 +3286,82 @@ export default function ShadowColosseum() {
                   const availSP = getAvailSP(id);
                   const availTP = getAvailTalentPts(id);
                   const hasUnspent = availPts > 0 || availSP > 0 || availTP > 0;
+                  const _wId = data.weapons[id];
+                  const _weapon = _wId ? WEAPONS[_wId] : null;
+                  const _weaponAwk = _wId ? (data.weaponCollection[_wId] || 0) : 0;
                   return (
-                    <button
-                      key={id}
-                      onClick={() => !onCd && setSelChibi(selected ? null : id)}
-                      disabled={onCd}
-                      className={`relative p-2 rounded-xl border transition-all text-left ${
-                        selected ? 'border-purple-400 bg-purple-500/15 ring-1 ring-purple-400/50' :
-                        onCd ? 'border-red-500/30 bg-red-900/10 opacity-60' :
-                        'border-gray-700/40 bg-gray-800/30 hover:border-purple-500/40'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <img src={getSprite(id)} alt={c.name} className="w-12 h-12 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-bold truncate">{c.name}</div>
-                          <div className="flex items-center gap-1 text-[11px]">
-                            <span className={RARITY[c.rarity].color}>{RARITY[c.rarity].stars}</span>
-                            <span className={ELEMENTS[c.element].color}>{ELEMENTS[c.element].icon}</span>
-                            <span className="text-gray-400">Lv{level}</span>
-                            <span className="text-amber-400 font-bold ml-auto text-[10px]">iLv{iLvl}</span>
+                    <React.Fragment key={id}>
+                      <button
+                        onClick={() => !onCd && setSelChibi(selected ? null : id)}
+                        disabled={onCd}
+                        className={`relative p-2 rounded-xl border transition-all text-left ${
+                          selected ? 'border-purple-400 bg-purple-500/15 ring-1 ring-purple-400/50' :
+                          onCd ? 'border-red-500/30 bg-red-900/10 opacity-60' :
+                          'border-gray-700/40 bg-gray-800/30 hover:border-purple-500/40'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <img src={getSprite(id)} alt={c.name} className="w-12 h-12 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-bold truncate">{c.name}</div>
+                            <div className="flex items-center gap-1 text-[11px]">
+                              <span className={RARITY[c.rarity].color}>{RARITY[c.rarity].stars}</span>
+                              <span className={ELEMENTS[c.element].color}>{ELEMENTS[c.element].icon}</span>
+                              <span className="text-gray-400">Lv{level}</span>
+                              <span className="text-amber-400 font-bold ml-auto text-[10px]">iLv{iLvl}</span>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                      <div className="mt-1.5 grid grid-cols-3 gap-x-3 gap-y-0.5 text-[10px] text-gray-400">
-                        <span>PV:{s.hp}</span><span>ATK:{s.atk}</span><span>DEF:{s.def}</span>
-                        <span>SPD:{s.spd}</span><span>CRT:{s.crit}%</span><span>RES:{s.res}%</span>
-                      </div>
-                      {level < MAX_LEVEL && (
-                        <div className="mt-1 w-full h-1 bg-gray-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500/60 rounded-full" style={{ width: `${(xp / xpForLevel(level)) * 100}%` }} />
-                        </div>
-                      )}
-                      {hasUnspent && !onCd && (
-                        <div className="absolute -top-1 -right-1 flex gap-0.5">
-                          {availPts > 0 && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
-                              {availPts} PTS
-                            </span>
-                          )}
-                          {availSP > 0 && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/80 text-white" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
-                              {availSP} SP
-                            </span>
-                          )}
-                          {availTP > 0 && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
-                              {availTP} TP
-                            </span>
+                          {_weapon && (
+                            <div className="flex flex-col items-center gap-0.5 shrink-0">
+                              {_weapon.sprite ? (
+                                <img src={_weapon.sprite} alt={_weapon.name} className="w-7 h-7 object-contain" draggable={false} />
+                              ) : (
+                                <span className="text-base">{_weapon.icon}</span>
+                              )}
+                              <span className="text-[8px] text-amber-400 font-bold">A{_weaponAwk}</span>
+                            </div>
                           )}
                         </div>
-                      )}
-                      {onCd && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
-                          <span className="text-red-400 text-[10px] font-bold">{'\u23F3'} {cooldownMin(id)}min</span>
+                        <div className="mt-1.5 grid grid-cols-3 gap-x-3 gap-y-0.5 text-[10px] text-gray-400">
+                          <span>PV:{s.hp}</span><span>ATK:{s.atk}</span><span>DEF:{s.def}</span>
+                          <span>SPD:{s.spd}</span><span>CRT:{s.crit}%</span><span>RES:{s.res}%</span>
                         </div>
-                      )}
-                    </button>
+                        {level < MAX_LEVEL && (
+                          <div className="mt-1 w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500/60 rounded-full" style={{ width: `${(xp / xpForLevel(level)) * 100}%` }} />
+                          </div>
+                        )}
+                        {hasUnspent && !onCd && (
+                          <div className="absolute -top-1 -right-1 flex gap-0.5">
+                            {availPts > 0 && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                                {availPts} PTS
+                              </span>
+                            )}
+                            {availSP > 0 && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/80 text-white" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                                {availSP} SP
+                              </span>
+                            )}
+                            {availTP > 0 && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                                {availTP} TP
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {onCd && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
+                            <span className="text-red-400 text-[10px] font-bold">{'\u23F3'} {cooldownMin(id)}min</span>
+                          </div>
+                        )}
+                      </button>
+                      {/* Inline Detail Panel — appears right below the selected chibi */}
+                      {selected && renderChibiDetailPanel(id)}
+                    </React.Fragment>
                   );
                 })}
               </div>}
-
-              {/* Selected Chibi Detail Panel */}
-              <AnimatePresence>
-                {selChibi && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="overflow-hidden mb-4"
-                  >
-                    <div className="p-4 rounded-xl border border-purple-500/30 bg-purple-500/5">
-                      <div className="flex items-center gap-3 mb-3">
-                        <img src={getSprite(selChibi)} alt="" className="w-14 h-14 object-contain" style={{ filter: RARITY[getChibiData(selChibi).rarity].glow }} />
-                        <div className="flex-1">
-                          <div className="text-base font-bold">{getChibiData(selChibi).name}</div>
-                          <div className="text-xs text-gray-400">
-                            Lv{getChibiLevel(selChibi).level} {RARITY[getChibiData(selChibi).rarity].stars} {ELEMENTS[getChibiData(selChibi).element].icon}
-                            {HUNTERS[selChibi] && <span className="ml-1 text-red-400">[Hunter]</span>}
-                          </div>
-                          {HUNTERS[selChibi] && (() => {
-                            const _es = getChibiEveilStars(selChibi);
-                            return _es > 0 ? (
-                              <div className="text-[10px] mt-0.5">
-                                <span className="text-yellow-400 font-bold">A{_es}</span>
-                              </div>
-                            ) : null;
-                          })()}
-                        </div>
-                      </div>
-                      {/* 6 Stats */}
-                      {(() => {
-                        const selData = getChibiData(selChibi);
-                        const alloc = data.statPoints[selChibi] || {};
-                        const tbDetail = getChibiTalentBonuses(selChibi);
-                        const eqBDetail = getChibiEquipBonuses(selChibi);
-                        const evStars = getChibiEveilStars(selChibi);
-                        const s = statsAtFull(selData.base, selData.growth, getChibiLevel(selChibi).level, alloc, tbDetail, eqBDetail, evStars, data.accountBonuses);
-                        // Merge talent + equip for derived stats
-                        const derived = { ...tbDetail };
-                        for (const [k, v] of Object.entries(eqBDetail)) { if (v) derived[k] = (derived[k] || 0) + v; }
-                        const totalCritDmg = 150 + (derived.critDamage || 0);
-                        const derivedLines = [
-                          { key: '_critDmgTotal', name: 'CRIT DMG', icon: '\uD83D\uDCA5', color: 'text-orange-400', suffix: '%', value: totalCritDmg },
-                          { key: 'physicalDamage', name: 'DMG Physique', icon: '\u2694\uFE0F', color: 'text-red-300', suffix: '%' },
-                          { key: 'elementalDamage', name: 'DMG Elementaire', icon: '\uD83C\uDF00', color: 'text-purple-300', suffix: '%' },
-                          { key: 'fireDamage', name: 'DMG Feu', icon: '\uD83D\uDD25', color: 'text-orange-400', suffix: '%' },
-                          { key: 'waterDamage', name: 'DMG Eau', icon: '\uD83D\uDCA7', color: 'text-cyan-400', suffix: '%' },
-                          { key: 'shadowDamage', name: 'DMG Ombre', icon: '\uD83C\uDF11', color: 'text-purple-400', suffix: '%' },
-                          { key: 'allDamage', name: 'Tous DMG', icon: '\u2728', color: 'text-emerald-400', suffix: '%' },
-                          { key: 'bossDamage', name: 'DMG Boss', icon: '\uD83D\uDC1C', color: 'text-red-400', suffix: '%' },
-                          { key: 'defPen', name: 'DEF PEN', icon: '\uD83D\uDDE1\uFE0F', color: 'text-yellow-300', suffix: '%' },
-                          { key: 'healBonus', name: 'Soins', icon: '\uD83D\uDC9A', color: 'text-green-400', suffix: '%' },
-                          { key: 'cooldownReduction', name: 'Reduc. CD', icon: '\u231B', color: 'text-blue-300', suffix: '' },
-                          { key: 'elementalAdvantageBonus', name: 'Avantage Elem.', icon: '\uD83C\uDF1F', color: 'text-yellow-400', suffix: '%' },
-                        ].filter(d => d.value !== undefined || (derived[d.key] || 0) > 0);
-                        return (
-                          <>
-                            <div className="grid grid-cols-3 gap-1.5 mb-2">
-                              {STAT_ORDER.map(stat => {
-                                const isPct = stat === 'crit' || stat === 'res';
-                                const m = STAT_META[stat];
-                                return (
-                                  <div key={stat} className="relative">
-                                    <div className="flex items-center gap-1.5 bg-gray-800/30 rounded-md px-2 py-1.5 cursor-pointer"
-                                      onClick={() => setStatTooltip(statTooltip === stat ? null : stat)}>
-                                      <span className="text-xs">{m.icon}</span>
-                                      <span className={`text-[11px] font-bold ${m.color}`}>{m.name}</span>
-                                      {m.detail && <span className="text-[8px] text-gray-600 hover:text-purple-400">?</span>}
-                                      <span className="text-xs text-white ml-auto font-bold">{s[stat]}{isPct ? '%' : ''}</span>
-                                    </div>
-                                    {statTooltip === stat && m.detail && (
-                                      <div className="absolute z-20 left-0 right-0 mt-0.5 p-2 rounded-lg bg-[#1a1a2e] border border-purple-500/30 text-[10px] text-purple-200 leading-relaxed shadow-xl">{m.detail}</div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            {derivedLines.length > 0 && (
-                              <div className="grid grid-cols-2 gap-1 mb-3">
-                                {derivedLines.map(d => (
-                                  <div key={d.key} className="flex items-center gap-1 bg-gray-800/20 rounded-md px-2 py-1">
-                                    <span className="text-[11px]">{d.icon}</span>
-                                    <span className={`text-[10px] ${d.color}`}>{d.name}</span>
-                                    <span className={`text-[11px] ml-auto font-bold ${d.color}`}>{d.value !== undefined ? d.value : `+${derived[d.key]}`}{d.suffix}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()}
-                      {/* Action Buttons */}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setManageTarget(selChibi); setView('stats'); }}
-                          className="flex-1 py-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-400 text-sm font-bold hover:bg-amber-500/20 transition-colors"
-                        >
-                          {'\uD83D\uDCCA'} Stats {getAvailStatPts(selChibi) > 0 && <span className="ml-1 px-1 rounded bg-amber-500/30 text-[10px]">{getAvailStatPts(selChibi)}</span>}
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setManageTarget(selChibi); setView('skilltree'); }}
-                          className="flex-1 py-2.5 rounded-lg border border-purple-500/40 bg-purple-500/10 text-purple-400 text-sm font-bold hover:bg-purple-500/20 transition-colors"
-                        >
-                          {'\uD83C\uDF33'} Skills {getAvailSP(selChibi) > 0 && <span className="ml-1 px-1 rounded bg-purple-500/30 text-[10px]">{getAvailSP(selChibi)}</span>}
-                        </button>
-                        {getChibiLevel(selChibi).level >= 10 && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setManageTarget(selChibi); setView('talents'); }}
-                            className="flex-1 py-2.5 rounded-lg border border-green-500/40 bg-green-500/10 text-green-400 text-sm font-bold hover:bg-green-500/20 transition-colors"
-                          >
-                            {'\u2728'} Talents {getAvailTalentPts(selChibi) > 0 && <span className="ml-1 px-1 rounded bg-green-500/30 text-[10px]">{getAvailTalentPts(selChibi)}</span>}
-                          </button>
-                        )}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setManageTarget(selChibi); setView('equipment'); }}
-                          className="flex-1 py-2.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-400 text-sm font-bold hover:bg-cyan-500/20 transition-colors"
-                        >
-                          {'\uD83D\uDEE1\uFE0F'} Equip
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </>
             );
           })()}
@@ -3341,64 +3400,80 @@ export default function ShadowColosseum() {
                   const availSP = getAvailSP(id);
                   const availTP = getAvailTalentPts(id);
                   const hasUnspent = availPts > 0 || availSP > 0 || availTP > 0;
+                  const _wId = data.weapons[id];
+                  const _weapon = _wId ? WEAPONS[_wId] : null;
+                  const _weaponAwk = _wId ? (data.weaponCollection[_wId] || 0) : 0;
                   return (
-                    <button
-                      key={id}
-                      onClick={() => setSelChibi(selected ? null : id)}
-                      className={`relative p-2 rounded-xl border transition-all text-left ${
-                        selected ? 'border-red-400 bg-red-500/15 ring-1 ring-red-400/50' :
-                        'border-gray-700/40 bg-gray-800/30 hover:border-red-500/40'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <img src={getSprite(id)} alt={c.name} className="w-10 h-10 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1 text-xs font-bold">
-                            <span className="truncate">{c.name}</span>
-                            <span className="text-amber-400 text-[9px] ml-auto font-bold">iLv{iLvl}</span>
+                    <React.Fragment key={id}>
+                      <button
+                        onClick={() => setSelChibi(selected ? null : id)}
+                        className={`relative p-2 rounded-xl border transition-all text-left ${
+                          selected ? 'border-red-400 bg-red-500/15 ring-1 ring-red-400/50' :
+                          'border-gray-700/40 bg-gray-800/30 hover:border-red-500/40'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <img src={getSprite(id)} alt={c.name} className="w-10 h-10 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1 text-xs font-bold">
+                              <span className="truncate">{c.name}</span>
+                              <span className="text-amber-400 text-[9px] ml-auto font-bold">iLv{iLvl}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-[9px]">
+                              <span className={RARITY[c.rarity].color}>{RARITY[c.rarity].stars}</span>
+                              <span className={ELEMENTS[c.element].color}>{ELEMENTS[c.element].icon}</span>
+                              <span className="text-gray-400">Lv{level}</span>
+                              <span className="text-red-400/60 text-[10px]">{c.class}</span>
+                            </div>
+                            {evStars > 0 && (
+                              <div className="text-[9px] mt-0.5 text-yellow-400 font-bold">
+                                A{evStars}
+                              </div>
+                            )}
                           </div>
-                          <div className="flex items-center gap-1 text-[9px]">
-                            <span className={RARITY[c.rarity].color}>{RARITY[c.rarity].stars}</span>
-                            <span className={ELEMENTS[c.element].color}>{ELEMENTS[c.element].icon}</span>
-                            <span className="text-gray-400">Lv{level}</span>
-                            <span className="text-red-400/60 text-[10px]">{c.class}</span>
-                          </div>
-                          {evStars > 0 && (
-                            <div className="text-[9px] mt-0.5 text-yellow-400 font-bold">
-                              A{evStars}
+                          {_weapon && (
+                            <div className="flex flex-col items-center gap-0.5 shrink-0">
+                              {_weapon.sprite ? (
+                                <img src={_weapon.sprite} alt={_weapon.name} className="w-7 h-7 object-contain" draggable={false} />
+                              ) : (
+                                <span className="text-base">{_weapon.icon}</span>
+                              )}
+                              <span className="text-[8px] text-amber-400 font-bold">A{_weaponAwk}</span>
                             </div>
                           )}
                         </div>
-                      </div>
-                      <div className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-0.5 text-[10px] text-gray-400">
-                        <span>PV:{s.hp}</span><span>ATK:{s.atk}</span><span>DEF:{s.def}</span>
-                        <span>SPD:{s.spd}</span><span>CRT:{s.crit}%</span><span>RES:{s.res}%</span>
-                      </div>
-                      {level < MAX_LEVEL && (
-                        <div className="mt-1 w-full h-1 bg-gray-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-red-500/60 rounded-full" style={{ width: `${(xp / xpForLevel(level)) * 100}%` }} />
+                        <div className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-0.5 text-[10px] text-gray-400">
+                          <span>PV:{s.hp}</span><span>ATK:{s.atk}</span><span>DEF:{s.def}</span>
+                          <span>SPD:{s.spd}</span><span>CRT:{s.crit}%</span><span>RES:{s.res}%</span>
                         </div>
-                      )}
-                      {hasUnspent && (
-                        <div className="absolute -top-1 -right-1 flex gap-0.5">
-                          {availPts > 0 && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
-                              {availPts} PTS
-                            </span>
-                          )}
-                          {availSP > 0 && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/80 text-white" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
-                              {availSP} SP
-                            </span>
-                          )}
-                          {availTP > 0 && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
-                              {availTP} TP
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </button>
+                        {level < MAX_LEVEL && (
+                          <div className="mt-1 w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-red-500/60 rounded-full" style={{ width: `${(xp / xpForLevel(level)) * 100}%` }} />
+                          </div>
+                        )}
+                        {hasUnspent && (
+                          <div className="absolute -top-1 -right-1 flex gap-0.5">
+                            {availPts > 0 && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                                {availPts} PTS
+                              </span>
+                            )}
+                            {availSP > 0 && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/80 text-white" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                                {availSP} SP
+                              </span>
+                            )}
+                            {availTP > 0 && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                                {availTP} TP
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </button>
+                      {/* Inline Detail Panel — appears right below the selected hunter */}
+                      {selected && renderChibiDetailPanel(id)}
+                    </React.Fragment>
                   );
                 })}
               </div>}

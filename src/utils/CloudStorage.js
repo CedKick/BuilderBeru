@@ -59,6 +59,7 @@ class CloudStorageManager {
     this._initialized = false;
     this._online = true;
     this._syncQueue = new Set();
+    this._cloudSizes = {}; // Track cloud data sizes to prevent corruption
   }
 
   /** Save data to localStorage + schedule cloud sync */
@@ -161,15 +162,29 @@ class CloudStorageManager {
 
     // Merge cloud data into localStorage
     for (const [key, entry] of Object.entries(cloudEntries)) {
+      // Track cloud sizes for anti-corruption checks
+      const cloudJson = JSON.stringify(entry.data);
+      this._cloudSizes[key] = cloudJson.length;
+
       const localRaw = localStorage.getItem(key);
       if (loginPending || !localRaw) {
         // Login pending: cloud ALWAYS wins (cross-device sync)
         // No local data: cloud fills the gap
         try {
-          localStorage.setItem(key, JSON.stringify(entry.data));
+          localStorage.setItem(key, cloudJson);
         } catch { /* ignore quota errors during sync */ }
+      } else {
+        // Normal reload: if local data is suspiciously smaller than cloud,
+        // cloud wins (likely corruption from cache clear)
+        const localSize = localRaw.length;
+        const cloudSize = cloudJson.length;
+        if (cloudSize > 200 && localSize < cloudSize * 0.3) {
+          console.warn(`[CloudStorage] Local data for "${key}" is suspiciously small (${localSize}B vs cloud ${cloudSize}B) — restoring from cloud`);
+          try {
+            localStorage.setItem(key, cloudJson);
+          } catch { /* ignore quota errors */ }
+        }
       }
-      // Normal reload with local data: keep local (most recent from this device)
     }
 
     // Push all tracked local keys to cloud (in case cloud is behind)
@@ -219,6 +234,14 @@ class CloudStorageManager {
       const data = this.loadLocal(key);
       if (data === null) return false;
 
+      // Anti-corruption: refuse to overwrite cloud with much smaller data
+      const localSize = JSON.stringify(data).length;
+      const cloudSize = this._cloudSizes[key] || 0;
+      if (cloudSize > 200 && localSize < cloudSize * 0.3) {
+        console.warn(`[CloudStorage] BLOCKED sync for "${key}": local (${localSize}B) is much smaller than cloud (${cloudSize}B) — possible data corruption`);
+        return false;
+      }
+
       const deviceId = getDeviceId();
       const resp = await fetch(`${API_BASE}/save`, {
         method: 'POST',
@@ -229,6 +252,8 @@ class CloudStorageManager {
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const json = await resp.json();
       this._online = true;
+      // Update tracked cloud size after successful sync
+      this._cloudSizes[key] = localSize;
       return json.success;
     } catch (err) {
       console.warn('[CloudStorage] Sync failed for', key, err.message);
@@ -319,6 +344,13 @@ class CloudStorageManager {
       for (const key of self._syncQueue) {
         const data = self.loadLocal(key);
         if (data !== null) {
+          // Anti-corruption: don't beacon corrupted data
+          const localSize = JSON.stringify(data).length;
+          const cloudSize = self._cloudSizes[key] || 0;
+          if (cloudSize > 200 && localSize < cloudSize * 0.3) {
+            console.warn(`[CloudStorage] BLOCKED beacon for "${key}": possible corruption`);
+            continue;
+          }
           navigator.sendBeacon(
             `${API_BASE}/save`,
             new Blob([JSON.stringify({ deviceId, key, data })], { type: 'application/json' })
