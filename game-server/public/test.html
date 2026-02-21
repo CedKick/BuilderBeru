@@ -417,29 +417,9 @@
       });
     }
 
-    // ── Populate hunter dropdowns ──
-    function populateHunterDropdowns() {
-      const selects = ['mainHunterSelect', 'support1', 'support2', 'support3'];
-      for (const selId of selects) {
-        const sel = document.getElementById(selId);
-        const firstOpt = sel.options[0];
-        sel.innerHTML = '';
-        sel.appendChild(firstOpt);
-        for (const element of ['fire', 'water', 'shadow']) {
-          const group = document.createElement('optgroup');
-          group.label = ELEMENT_ICONS[element] + ' ' + element.charAt(0).toUpperCase() + element.slice(1);
-          for (const [id, h] of Object.entries(HUNTER_LIST)) {
-            if (h.element !== element) continue;
-            const opt = document.createElement('option');
-            opt.value = id;
-            opt.textContent = ELEMENT_ICONS[h.element] + ' ' + h.name;
-            group.appendChild(opt);
-          }
-          sel.appendChild(group);
-        }
-      }
-    }
-    populateHunterDropdowns();
+    // ── State (must be declared before auto-login uses them) ──
+    let ws = null, myId = null, gameState = null, roomInfo = null, inRoom = false;
+    let keys = {}, mouseAngle = 0, lastAimSent = 0, gameStartTime = 0;
 
     // ── Auto-login from URL params ──
     const urlParams = new URLSearchParams(window.location.search);
@@ -612,10 +592,6 @@
 
     // Initialize profile display
     updateProfileDisplay();
-
-    // ── State ──
-    let ws = null, myId = null, gameState = null, roomInfo = null, inRoom = false;
-    let keys = {}, mouseAngle = 0, lastAimSent = 0, gameStartTime = 0;
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
