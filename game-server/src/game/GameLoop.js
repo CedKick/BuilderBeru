@@ -241,7 +241,7 @@ export class GameLoop {
   _endGame(result) {
     this.stop();
     this._flushEvents();
-    this._broadcastEvent({ type: 'game_end', result });
+    // game_end is broadcast by RoomManager._onGameEnd — don't double-send
     if (this.onEnd) this.onEnd(result);
   }
 

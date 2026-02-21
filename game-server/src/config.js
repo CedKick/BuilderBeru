@@ -31,9 +31,9 @@ export const PLAYER = {
   RADIUS: 20,                      // Hitbox radius
   BASE_SPEED: 145,                 // Pixels per second (slower, more tactical)
   DODGE_SPEED: 420,                // Pixels per second during dodge
-  DODGE_DURATION: 0.4,             // Seconds of dodge roll
+  DODGE_DURATION: 0.6,             // Seconds of dodge roll
   DODGE_COOLDOWN: 3.0,             // Seconds between dodges
-  DODGE_IFRAMES: 0.35,             // Seconds of invincibility during dodge
+  DODGE_IFRAMES: 1.0,              // 1 second of invincibility during dodge
   MANA_REGEN_RATE: 1.5,            // Passive mana per second
   MANA_ON_HIT: 8,                  // Mana restored per basic attack hit
 };

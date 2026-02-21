@@ -376,7 +376,7 @@ export class Manaya extends BossBase {
         for (const player of gs.getAlivePlayers()) {
           const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
           if (dist < 250 + player.radius) {
-            const dmg = boss.atk * 8.0 * soloMult; // Very high damage
+            const dmg = 99999 * soloMult; // ONE SHOT
             const actual = player.takeDamage(dmg, boss);
             if (actual > 0) {
               gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Sphère de Mort' });
@@ -543,9 +543,9 @@ export class Manaya extends BossBase {
         data.laserZoneId = `laser_${Date.now()}`;
         gs.addAoeZone({
           id: data.laserZoneId, type: 'laser',
-          x: boss.x, y: boss.y, radius: 800, angle: data.angle, lineWidth: 45,
+          x: boss.x, y: boss.y, radius: 800, angle: data.angle, lineWidth: 60,
           ttl: data.duration + 0.5, maxTtl: data.duration + 0.5, active: true,
-          source: boss.id, damagePerTick: boss.atk * 3.0,
+          source: boss.id, damagePerTick: boss.atk * 8.0, // Near one-shot per tick
           tickInterval: 0.2, _tickTimer: 0,
         });
       },
@@ -778,7 +778,7 @@ export class Manaya extends BossBase {
         for (const player of gs.getAlivePlayers()) {
           const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
           if (dist < data.innerRadius + player.radius) {
-            const dmg = boss.atk * 4.0 * soloMult;
+            const dmg = 99999 * soloMult; // ONE SHOT
             const actual = player.takeDamage(dmg, boss);
             if (actual > 0) {
               gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Double Impact (intérieur)' });
@@ -807,7 +807,7 @@ export class Manaya extends BossBase {
             const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
             // Hit if in outer ring (between outerInner and outerRadius)
             if (dist >= data.outerInner && dist < data.outerRadius + player.radius) {
-              const dmg = boss.atk * 4.5 * soloMult;
+              const dmg = 99999 * soloMult; // ONE SHOT
               const actual = player.takeDamage(dmg, boss);
               if (actual > 0) {
                 gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Double Impact (extérieur)' });

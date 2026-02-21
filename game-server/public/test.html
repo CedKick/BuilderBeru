@@ -163,6 +163,42 @@
     #game.dead-filter canvas { filter: grayscale(70%) brightness(0.6); transition: filter 0.5s; }
     #game.dead-filter .player-hud { opacity: 0.3; }
     #game.dead-filter .skill-bar { opacity: 0.2; }
+
+    /* ── Game End Overlay ── */
+    @keyframes gameEndSlideIn { from { opacity: 0; transform: translate(-50%,-50%) scale(0.8); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
+    @keyframes xpBarFill { from { width: 0; } }
+    @keyframes victoryGlow { 0%,100% { text-shadow: 0 0 20px #10b981, 0 0 40px #10b981; } 50% { text-shadow: 0 0 40px #10b981, 0 0 80px #10b981, 0 0 120px #059669; } }
+    @keyframes defeatGlow { 0%,100% { text-shadow: 0 0 20px #ef4444, 0 0 40px #ef4444; } 50% { text-shadow: 0 0 40px #ef4444, 0 0 80px #ef4444, 0 0 120px #991b1b; } }
+    #gameEndOverlay {
+      display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 60;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+    }
+    .game-end-panel {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+      border: 2px solid #333; border-radius: 12px; padding: 24px 32px; min-width: 500px; max-width: 700px;
+      animation: gameEndSlideIn 0.5s ease-out;
+      box-shadow: 0 0 40px rgba(0,0,0,0.5);
+    }
+    .game-end-title {
+      text-align: center; font-size: 42px; font-weight: 900; letter-spacing: 6px; margin-bottom: 4px;
+    }
+    .game-end-title.victory { color: #10b981; animation: victoryGlow 2s ease-in-out infinite; }
+    .game-end-title.defeat { color: #ef4444; animation: defeatGlow 2s ease-in-out infinite; }
+    .game-end-subtitle { text-align: center; font-size: 13px; color: #94a3b8; margin-bottom: 16px; }
+    .game-end-stats { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    .game-end-stats th { font-size: 10px; color: #64748b; text-transform: uppercase; text-align: left; padding: 4px 8px; border-bottom: 1px solid #333; }
+    .game-end-stats td { font-size: 12px; padding: 6px 8px; border-bottom: 1px solid #1e293b; }
+    .game-end-stats tr.me td { color: #a78bfa; font-weight: bold; }
+    .game-end-xp {
+      text-align: center; margin-top: 12px; padding: 12px; border-radius: 8px;
+      background: linear-gradient(90deg, rgba(124,58,237,0.1), rgba(167,139,250,0.15), rgba(124,58,237,0.1));
+      border: 1px solid rgba(124,58,237,0.3);
+    }
+    .game-end-xp-amount { font-size: 28px; font-weight: 900; color: #a78bfa; }
+    .game-end-xp-bar { height: 8px; background: #1e293b; border-radius: 4px; margin-top: 8px; overflow: hidden; }
+    .game-end-xp-bar-fill { height: 100%; background: linear-gradient(90deg, #7c3aed, #a78bfa); border-radius: 4px; animation: xpBarFill 1.5s ease-out; }
+    .game-end-timer { text-align: center; font-size: 11px; color: #64748b; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -305,6 +341,37 @@
           <div style="font-size:64px;font-weight:900;color:#ef4444;text-shadow:0 0 30px #ef4444,0 0 60px #991b1b;letter-spacing:8px;animation:deathPulse 1.5s ease-in-out infinite">MORT</div>
           <div id="deathRezMsg" style="margin-top:16px;font-size:16px;color:#94a3b8;text-shadow:0 0 5px #000"></div>
           <div style="margin-top:8px;font-size:12px;color:#64748b" id="deathTimer"></div>
+        </div>
+      </div>
+
+      <!-- Game End Results Overlay -->
+      <div id="gameEndOverlay">
+        <div class="game-end-panel">
+          <div id="gameEndTitle" class="game-end-title"></div>
+          <div id="gameEndSubtitle" class="game-end-subtitle"></div>
+          <table class="game-end-stats">
+            <thead>
+              <tr>
+                <th>Joueur</th>
+                <th>Classe</th>
+                <th>Dégâts</th>
+                <th>Soins</th>
+                <th>Reçus</th>
+                <th>Morts</th>
+                <th>XP</th>
+              </tr>
+            </thead>
+            <tbody id="gameEndStatsBody"></tbody>
+          </table>
+          <div id="gameEndXpSection" class="game-end-xp">
+            <div style="font-size:11px;color:#94a3b8;margin-bottom:4px">XP GAGNÉE</div>
+            <div id="gameEndXpAmount" class="game-end-xp-amount"></div>
+            <div id="gameEndLevelInfo" style="font-size:11px;color:#64748b;margin-top:4px"></div>
+            <div class="game-end-xp-bar">
+              <div id="gameEndXpBarFill" class="game-end-xp-bar-fill"></div>
+            </div>
+          </div>
+          <div id="gameEndTimer" class="game-end-timer"></div>
         </div>
       </div>
     </div>
@@ -794,27 +861,107 @@
         case 'add_killed': log('Add killed!', 'damage'); break;
         case 'simulation_changed': log('Simulation: ' + (msg.simulation ? 'ON' : 'OFF'), 'info'); break;
 
-        case 'game_end':
-          if (msg.result.victory) {
-            const time = msg.result.time ? ' in ' + Math.floor(msg.result.time) + 's' : '';
-            log('VICTORY!' + time, 'heal');
+        case 'game_end': {
+          // Hide death overlay if showing
+          document.getElementById('deathOverlay').style.display = 'none';
+          document.getElementById('game').classList.remove('dead-filter');
+
+          const victory = msg.result.victory;
+          const clearTime = msg.result.time ? Math.floor(msg.result.time) : null;
+
+          // Log as before
+          if (victory) {
+            log('VICTOIRE!' + (clearTime ? ' en ' + clearTime + 's' : ''), 'heal');
           } else {
-            log('DEFEAT: ' + msg.result.reason, 'error');
+            log('DEFAITE: ' + msg.result.reason, 'error');
           }
+
+          // Apply XP
+          let myXp = 0, profileAfter = null;
           if (msg.result.stats) {
-            for (const s of msg.result.stats) {
-              const xpText = s.xpReward ? ' +' + s.xpReward + ' XP' : '';
-              log('  ' + s.username + ': DMG=' + formatNum(s.damageDealt) + ' Heal=' + formatNum(s.healingDone) + xpText, 'info');
-            }
-            // Apply XP to own profile
             const myStats = msg.result.stats.find(s => s.id === myId);
             if (myStats && myStats.xpReward > 0) {
               const cls = document.getElementById('classSelect').value;
-              addXpToProfile(myStats.xpReward, msg.result.victory, cls, msg.result.time || null);
-              log('+' + myStats.xpReward + ' XP earned!', 'heal');
+              profileAfter = addXpToProfile(myStats.xpReward, victory, cls, clearTime);
+              myXp = myStats.xpReward;
+              log('+' + myXp + ' XP !', 'heal');
             }
           }
+
+          // ── Show Game End Overlay ──
+          const overlay = document.getElementById('gameEndOverlay');
+          const titleEl = document.getElementById('gameEndTitle');
+          const subtitleEl = document.getElementById('gameEndSubtitle');
+          const tbody = document.getElementById('gameEndStatsBody');
+          const xpAmountEl = document.getElementById('gameEndXpAmount');
+          const xpBarFillEl = document.getElementById('gameEndXpBarFill');
+          const levelInfoEl = document.getElementById('gameEndLevelInfo');
+          const timerEl = document.getElementById('gameEndTimer');
+
+          titleEl.textContent = victory ? 'VICTOIRE' : 'DEFAITE';
+          titleEl.className = 'game-end-title ' + (victory ? 'victory' : 'defeat');
+
+          if (victory && clearTime) {
+            const min = Math.floor(clearTime / 60);
+            const sec = clearTime % 60;
+            subtitleEl.textContent = 'Manaya vaincue en ' + (min > 0 ? min + 'min ' : '') + sec + 's';
+          } else if (!victory) {
+            const reasons = { party_wipe: 'Toute l\'équipe est tombée', enrage_timer: 'Temps écoulé' };
+            subtitleEl.textContent = reasons[msg.result.reason] || msg.result.reason;
+          } else {
+            subtitleEl.textContent = '';
+          }
+
+          // Stats table
+          tbody.innerHTML = '';
+          if (msg.result.stats) {
+            // Sort by damage dealt (descending)
+            const sorted = [...msg.result.stats].sort((a, b) => b.damageDealt - a.damageDealt);
+            for (const s of sorted) {
+              const isMe = s.id === myId;
+              const classColors = { tank: '#3b82f6', healer: '#10b981', dps_cac: '#ef4444', dps_range: '#f59e0b' };
+              const tr = document.createElement('tr');
+              if (isMe) tr.className = 'me';
+              tr.innerHTML =
+                '<td>' + (isMe ? '\u2b50 ' : '') + s.username + '</td>' +
+                '<td style="color:' + (classColors[s.class] || '#888') + '">' + (CLASS_LABELS[s.class] || '?') + '</td>' +
+                '<td style="color:#f97316">' + formatNum(s.damageDealt) + '</td>' +
+                '<td style="color:#10b981">' + formatNum(s.healingDone) + '</td>' +
+                '<td style="color:#ef4444">' + formatNum(s.damageTaken) + '</td>' +
+                '<td>' + s.deaths + '</td>' +
+                '<td style="color:#a78bfa;font-weight:bold">+' + (s.xpReward || 0) + '</td>';
+              tbody.appendChild(tr);
+            }
+          }
+
+          // XP section
+          xpAmountEl.textContent = '+' + myXp + ' XP';
+          if (profileAfter) {
+            const needed = xpForLevel(profileAfter.level + 1);
+            const xpPct = needed > 0 ? Math.min(100, (profileAfter.xp / needed) * 100) : 100;
+            levelInfoEl.textContent = 'Niveau ' + profileAfter.level + ' — ' + profileAfter.xp + ' / ' + needed + ' XP';
+            xpBarFillEl.style.width = xpPct + '%';
+          } else {
+            levelInfoEl.textContent = myXp > 0 ? '' : 'Simulation — Pas d\'XP';
+            xpBarFillEl.style.width = '0%';
+          }
+
+          // Countdown timer (room resets in 10s)
+          let countdown = 10;
+          timerEl.textContent = 'Retour au lobby dans ' + countdown + 's...';
+          const countdownInterval = setInterval(() => {
+            countdown--;
+            if (countdown <= 0) {
+              clearInterval(countdownInterval);
+              timerEl.textContent = 'Retour au lobby...';
+            } else {
+              timerEl.textContent = 'Retour au lobby dans ' + countdown + 's...';
+            }
+          }, 1000);
+
+          overlay.style.display = 'block';
           break;
+        }
 
         case 'room_reset':
           roomInfo = msg.room; gameState = null; floatingNumbers = [];
@@ -824,8 +971,11 @@
           document.getElementById('skillBar').style.display = 'none';
           document.getElementById('playerHud').style.display = 'none';
           document.getElementById('buffDisplay').innerHTML = '';
+          document.getElementById('gameEndOverlay').style.display = 'none';
+          document.getElementById('deathOverlay').style.display = 'none';
+          document.getElementById('game').classList.remove('dead-filter');
           updateRoomDisplay();
-          log('Room reset', 'info');
+          log('Room reset — Prêt pour un nouveau combat !', 'info');
           break;
 
         case 'events_batch':
@@ -1312,9 +1462,9 @@
       } else if (zone.type === 'laser_telegraph') {
         const endX = zone.x + Math.cos(zone.angle) * zone.radius;
         const endY = zone.y + Math.sin(zone.angle) * zone.radius;
-        ctx.strokeStyle = 'rgba(239,68,68,' + (0.2 + progress * 0.4) + ')';
+        ctx.strokeStyle = 'rgba(234,179,8,' + (0.2 + progress * 0.5) + ')';
         ctx.lineWidth = (zone.lineWidth || 30) * 0.6;
-        ctx.setLineDash([10, 10]);
+        ctx.setLineDash([15, 8]);
         ctx.beginPath(); ctx.moveTo(zone.x, zone.y); ctx.lineTo(endX, endY); ctx.stroke();
         ctx.setLineDash([]);
       } else if (zone.type === 'circle_explosion') {
@@ -1326,15 +1476,27 @@
       } else if (zone.type === 'laser') {
         const endX = zone.x + Math.cos(zone.angle) * zone.radius;
         const endY = zone.y + Math.sin(zone.angle) * zone.radius;
+        const lw = zone.lineWidth || 60;
+        const perp = zone.angle + Math.PI / 2;
         ctx.save();
-        ctx.strokeStyle = 'rgba(239,68,68,0.3)'; ctx.lineWidth = (zone.lineWidth || 40) + 20;
-        ctx.beginPath(); ctx.moveTo(zone.x, zone.y); ctx.lineTo(endX, endY); ctx.stroke();
-        ctx.strokeStyle = zone.active ? 'rgba(255,100,100,0.9)' : 'rgba(239,68,68,0.4)';
-        ctx.lineWidth = zone.lineWidth || 40;
-        ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 15;
-        ctx.beginPath(); ctx.moveTo(zone.x, zone.y); ctx.lineTo(endX, endY); ctx.stroke();
-        ctx.strokeStyle = 'rgba(255,200,200,0.6)'; ctx.lineWidth = (zone.lineWidth || 40) * 0.3;
-        ctx.beginPath(); ctx.moveTo(zone.x, zone.y); ctx.lineTo(endX, endY); ctx.stroke();
+        ctx.shadowColor = '#eab308'; ctx.shadowBlur = 20;
+        // Multiple yellow beams with gaps (3 beams, 2 gaps)
+        const beamOffsets = [-lw * 0.4, 0, lw * 0.4];
+        const beamWidth = lw * 0.22;
+        for (const off of beamOffsets) {
+          const ox = Math.cos(perp) * off;
+          const oy = Math.sin(perp) * off;
+          // Outer glow
+          ctx.strokeStyle = 'rgba(234,179,8,0.2)'; ctx.lineWidth = beamWidth + 8;
+          ctx.beginPath(); ctx.moveTo(zone.x + ox, zone.y + oy); ctx.lineTo(endX + ox, endY + oy); ctx.stroke();
+          // Core beam
+          ctx.strokeStyle = zone.active ? 'rgba(250,204,21,0.9)' : 'rgba(234,179,8,0.4)';
+          ctx.lineWidth = beamWidth;
+          ctx.beginPath(); ctx.moveTo(zone.x + ox, zone.y + oy); ctx.lineTo(endX + ox, endY + oy); ctx.stroke();
+          // White hot center
+          ctx.strokeStyle = 'rgba(255,255,200,0.6)'; ctx.lineWidth = beamWidth * 0.3;
+          ctx.beginPath(); ctx.moveTo(zone.x + ox, zone.y + oy); ctx.lineTo(endX + ox, endY + oy); ctx.stroke();
+        }
         ctx.restore();
       } else if (zone.type === 'poison_cloud') {
         const pulse = 0.1 + 0.05 * Math.sin(Date.now() / 500);
