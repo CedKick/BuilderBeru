@@ -188,8 +188,8 @@ export class CombatEngine {
     player.stats.damageDealt += actual;
     this.gs.addAggro(player.id, actual * AGGRO.DAMAGE_TO_AGGRO * player.aggroMult);
 
-    // Set cooldown
-    player.hunterCooldowns[slot] = HUNTER_CFG.SUMMON_COOLDOWN_BASE + (hunterSkill.cdMax || 0) * HUNTER_CFG.SUMMON_COOLDOWN_PER_CD;
+    // Set cooldown (fixed 30s)
+    player.hunterCooldowns[slot] = HUNTER_CFG.SUMMON_COOLDOWN;
 
     this.gs.addEvent({
       type: 'hunter_summon',

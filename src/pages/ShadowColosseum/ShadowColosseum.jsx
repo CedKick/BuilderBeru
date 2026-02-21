@@ -3875,7 +3875,7 @@ export default function ShadowColosseum() {
           {/* Boss Selection */}
           <div className="space-y-4">
             <a
-              href={`http://159.223.225.71:3002/test${(() => { try { const u = JSON.parse(localStorage.getItem('builderberu_auth_user')); return u?.username ? '?user=' + encodeURIComponent(u.username) : ''; } catch { return ''; } })()}`}
+              href={`http://159.223.225.71:3002/test${(() => { try { const u = JSON.parse(localStorage.getItem('builderberu_auth_user')); const rd = JSON.parse(localStorage.getItem('shadow_colosseum_data')); const user = u?.username ? '?user=' + encodeURIComponent(u.username) : ''; const hunters = (rd?.hunterCollection || []).map(e => typeof e === 'string' ? e : e.id).filter(Boolean); const hParam = hunters.length > 0 ? (user ? '&' : '?') + 'hunters=' + hunters.join(',') : ''; const lvl = rd?.level ? (user || hParam ? '&' : '?') + 'hlvl=' + rd.level : ''; return user + hParam + lvl; } catch { return ''; } })()}`}
               target="_blank"
               rel="noopener noreferrer"
               className="block p-4 rounded-xl border border-emerald-500/30 bg-gradient-to-r from-emerald-900/20 to-teal-900/20 hover:from-emerald-900/40 hover:to-teal-900/40 transition-all group cursor-pointer"

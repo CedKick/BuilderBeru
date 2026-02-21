@@ -172,13 +172,15 @@
       <div id="profileDisplay" style="margin-bottom:4px"></div>
       <div id="status">Disconnected</div>
 
-      <h3>Connection</h3>
-      <div class="inline-row">
-        <input id="username" placeholder="Username" value="Player1" />
-      </div>
-      <div class="inline-row">
-        <button onclick="connect()" id="btnConnect">Connect</button>
-        <button onclick="disconnect()" class="danger" id="btnDisconnect" disabled>Disconnect</button>
+      <input id="username" type="hidden" value="Player1" />
+      <div id="connectionSection">
+        <h3>Connection</h3>
+        <div class="inline-row">
+          <input id="usernameVisible" placeholder="Username" value="Player1" oninput="document.getElementById('username').value=this.value" />
+        </div>
+        <div class="inline-row">
+          <button onclick="connect()" id="btnConnect">Connect</button>
+        </div>
       </div>
 
       <h3>Room</h3>
@@ -206,14 +208,10 @@
         </select>
       </div>
 
-      <h3>Main Hunter</h3>
-      <select id="mainHunterSelect" onchange="selectHunters()"><option value="">-- Choisir --</option></select>
-
-      <h3>Support Hunters</h3>
-      <select id="support1" onchange="selectHunters()"><option value="">-- Slot 1 --</option></select>
-      <select id="support2" onchange="selectHunters()"><option value="">-- Slot 2 --</option></select>
-      <select id="support3" onchange="selectHunters()"><option value="">-- Slot 3 --</option></select>
-      <label>Level: <input id="hunterLevel" type="number" value="30" min="1" max="100" style="width:50px;display:inline" onchange="selectHunters()" /></label>
+      <h3>Hunters (3 max)</h3>
+      <div id="hunterSelection" style="max-height:200px;overflow-y:auto;background:#111;border-radius:6px;padding:4px;margin-bottom:4px"></div>
+      <div id="hunterSelected" style="font-size:10px;color:#a78bfa;margin-bottom:4px"></div>
+      <input id="hunterLevel" type="hidden" value="30" />
 
       <div style="margin-top:4px">
         <button onclick="toggleReady()" id="btnReady" disabled class="success">Ready</button>
@@ -448,9 +446,89 @@
     const autoUser = urlParams.get('user');
     if (autoUser) {
       document.getElementById('username').value = autoUser;
+      document.getElementById('usernameVisible').value = autoUser;
       // Auto-connect after a short delay
       setTimeout(() => connect(), 300);
     }
+
+    // ── Hunter Box (owned hunters from ShadowColosseum) ──
+    // Passed via URL param ?hunters=h_kanae,h_chae_in,...
+    // Falls back to all hunters if no box data
+    const hunterBoxParam = urlParams.get('hunters');
+    let ownedHunters = [];
+    if (hunterBoxParam) {
+      ownedHunters = hunterBoxParam.split(',').filter(id => HUNTER_LIST[id]);
+    }
+    // If no box data, give all hunters (dev mode)
+    if (ownedHunters.length === 0) {
+      ownedHunters = Object.keys(HUNTER_LIST);
+    }
+
+    // Hunter level from URL or default
+    const hunterLvlParam = urlParams.get('hlvl');
+    if (hunterLvlParam) document.getElementById('hunterLevel').value = hunterLvlParam;
+
+    // ── Hunter Selection UI (pick 3, no duplicates) ──
+    let selectedHunters = [null, null, null];
+    let selectedCount = 0;
+
+    function buildHunterSelectionUI() {
+      const container = document.getElementById('hunterSelection');
+      const ELEM_COLORS = { fire: '#ef4444', water: '#3b82f6', shadow: '#a855f7', dark: '#a855f7' };
+      let html = '';
+      for (const hId of ownedHunters) {
+        const h = HUNTER_LIST[hId];
+        if (!h) continue;
+        const isSelected = selectedHunters.includes(hId);
+        const elemColor = ELEM_COLORS[h.element] || '#888';
+        const icon = ELEMENT_ICONS[h.element] || '';
+        html += '<div class="hunter-pick' + (isSelected ? ' picked' : '') + '" data-hid="' + hId + '" onclick="toggleHunterPick(\'' + hId + '\')" ' +
+          'style="display:flex;align-items:center;gap:6px;padding:4px 6px;margin:2px 0;border-radius:4px;cursor:pointer;' +
+          'background:' + (isSelected ? 'rgba(124,58,237,0.25)' : 'rgba(0,0,0,0.3)') + ';' +
+          'border:1px solid ' + (isSelected ? '#7c3aed' : '#333') + '">' +
+          '<span style="font-size:12px">' + icon + '</span>' +
+          '<span style="font-size:11px;color:' + (isSelected ? '#e2e8f0' : '#94a3b8') + '">' + h.name + '</span>' +
+          '<span style="font-size:8px;color:' + elemColor + ';margin-left:auto">' + (h.rarity === 'mythique' ? '\u2605' : '\u2606') + '</span>' +
+          (isSelected ? '<span style="font-size:9px;color:#10b981;font-weight:bold">\u2714</span>' : '') +
+          '</div>';
+      }
+      container.innerHTML = html;
+      updateHunterSelectedDisplay();
+    }
+
+    function toggleHunterPick(hId) {
+      const idx = selectedHunters.indexOf(hId);
+      if (idx >= 0) {
+        // Deselect
+        selectedHunters[idx] = null;
+        selectedCount--;
+      } else if (selectedCount < 3) {
+        // Select into first empty slot
+        const emptySlot = selectedHunters.indexOf(null);
+        if (emptySlot >= 0) {
+          selectedHunters[emptySlot] = hId;
+          selectedCount++;
+        }
+      }
+      buildHunterSelectionUI();
+      // Auto-apply when 3 selected
+      if (selectedCount === 3 || selectedCount > 0) {
+        selectHunters();
+      }
+    }
+
+    function updateHunterSelectedDisplay() {
+      const el = document.getElementById('hunterSelected');
+      const names = selectedHunters.filter(Boolean).map(id => HUNTER_LIST[id]?.name || id);
+      if (names.length === 0) {
+        el.textContent = 'Choisis 3 hunters pour le combat';
+      } else {
+        el.innerHTML = '<span style="color:#10b981">' + names.length + '/3</span> ' + names.join(', ');
+      }
+    }
+
+    // Build UI on load
+    buildHunterSelectionUI();
 
     // ── Player Profile (localStorage) ──
     const PROFILE_KEY = 'manaya_raid_profile';
@@ -559,8 +637,8 @@
       ws.onopen = () => {
         log('Connected!', 'info');
         document.getElementById('status').textContent = 'Connected';
-        document.getElementById('btnConnect').disabled = true;
-        document.getElementById('btnDisconnect').disabled = false;
+        // Hide connection section once connected
+        document.getElementById('connectionSection').style.display = 'none';
         document.getElementById('btnCreate').disabled = false;
         document.getElementById('btnJoin').disabled = false;
         document.getElementById('btnBrowse').disabled = false;
@@ -573,8 +651,7 @@
       ws.onclose = () => {
         log('Disconnected', 'error');
         document.getElementById('status').textContent = 'Disconnected';
-        document.getElementById('btnConnect').disabled = false;
-        document.getElementById('btnDisconnect').disabled = true;
+        document.getElementById('connectionSection').style.display = 'block';
         document.getElementById('btnCreate').disabled = true;
         document.getElementById('btnJoin').disabled = true;
         document.getElementById('btnReady').disabled = true;
@@ -609,12 +686,8 @@
       if (!inRoom) return;
       send({
         type: 'select_hunters',
-        mainHunter: document.getElementById('mainHunterSelect').value || null,
-        supportHunters: [
-          document.getElementById('support1').value || null,
-          document.getElementById('support2').value || null,
-          document.getElementById('support3').value || null,
-        ],
+        mainHunter: null,
+        supportHunters: [...selectedHunters],
         hunterLevel: parseInt(document.getElementById('hunterLevel').value) || 30,
         hunterStars: 0,
       });

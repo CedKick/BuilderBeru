@@ -70,9 +70,8 @@ export const COMBAT = {
 };
 
 export const HUNTER = {
-  SUMMON_RANGE: 400,             // Max distance to hit boss with summon
-  SUMMON_COOLDOWN_BASE: 15,      // Base cooldown in seconds
-  SUMMON_COOLDOWN_PER_CD: 3,     // Extra seconds per skill cdMax
+  SUMMON_RANGE: 600,             // Max distance to hit boss with summon
+  SUMMON_COOLDOWN: 30,           // Fixed 30s cooldown for all hunter summons
 };
 
 export const ADDS = {
