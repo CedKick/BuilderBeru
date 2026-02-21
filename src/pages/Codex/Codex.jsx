@@ -778,7 +778,7 @@ export default function Codex() {
                               <div><span className="text-green-400 font-bold">Etourdissement :</span> En fin de tour, chaque stack de Halo a 50% de chance d'etourdir l'ennemi (skip son tour).</div>
                               <div><span className="text-green-400 font-bold">Halo Divin :</span> Ressuscite automatiquement le premier allie mort a 50% PV (1 fois par combat, ARC II uniquement).</div>
                             </div>
-                            <div className="mt-2 text-[9px] text-gray-500 italic">Drop : Archdemon (1/80 000 + pity system). Fragments : 0.3% par kill.</div>
+                            <div className="mt-2 text-[9px] text-gray-500 italic">Drop : Archdemon (1/10 000). Fragments : 0.3% par kill.</div>
                           </div>
                         )}
 

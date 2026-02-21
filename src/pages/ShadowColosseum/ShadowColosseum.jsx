@@ -3277,8 +3277,8 @@ export default function ShadowColosseum() {
       const isNew = data.weaponCollection['w_katana_v'] === undefined;
       weaponDrop = { id: 'w_katana_v', ...WEAPONS.w_katana_v, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_katana_v'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
-    // Baton de Gul'dan: 1/80,000 from Archdemon (flat rate, no pity)
-    if (!weaponDrop && stage.id === 'archdemon' && Math.random() < (1 / 80000) * lootMult) {
+    // Baton de Gul'dan: 1/10,000 from Archdemon (flat rate, no pity)
+    if (!weaponDrop && stage.id === 'archdemon' && Math.random() < (1 / 10000) * lootMult) {
       const isNew = data.weaponCollection['w_guldan'] === undefined;
       weaponDrop = { id: 'w_guldan', ...WEAPONS.w_guldan, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_guldan'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
@@ -3392,7 +3392,7 @@ export default function ShadowColosseum() {
         try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: "KATANA V ?! L'arme du CHAOS !! Poison, bouclier, puissance... cette lame est DIVINE !!" } })); } catch (e) {}
       } else if (weaponDrop.id === 'w_guldan') {
         logLegendaryDrop('weapon', 'w_guldan', "Baton de Gul'dan", 'secret', weaponDrop.newAwakening || 0);
-        try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: "LE BATON DE GUL'DAN !! 1/80 000 !! Le Halo Eternel brille autour de toi... Tu es INVINCIBLE maintenant !!" } })); } catch (e) {}
+        try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: "LE BATON DE GUL'DAN !! 1/10 000 !! Le Halo Eternel brille autour de toi... Tu es INVINCIBLE maintenant !!" } })); } catch (e) {}
       }
     }
 
@@ -3414,11 +3414,11 @@ export default function ShadowColosseum() {
           : 'un Katana';
         const dropRate = stage.id === 'ragnarok' ? '1/10 000'
           : stage.id === 'zephyr' ? '1/50 000 000'
-          : stage.id === 'archdemon' ? '1/80 000'
+          : stage.id === 'archdemon' ? '1/10 000'
           : '1/50 000';
         const cumul = stage.id === 'ragnarok' ? (1 - Math.pow(1 - 1/10000, kills)) * 100
           : stage.id === 'zephyr' ? (1 - Math.pow(1 - 1/5000, kills)) * 100
-          : stage.id === 'archdemon' ? (1 - Math.pow(1 - 1/80000, kills)) * 100
+          : stage.id === 'archdemon' ? (1 - Math.pow(1 - 1/10000, kills)) * 100
           : (1 - Math.pow(1 - 2/50000, kills)) * 100;
 
         // Pool of taunts — randomly picked
@@ -9167,8 +9167,8 @@ export default function ShadowColosseum() {
                 {(data.archDemonKills || 0) > 0 && (
                   <div className="mt-1 flex items-center gap-1.5">
                     <span className="text-[9px] text-gray-500">Taux :</span>
-                    <span className="text-[9px] text-green-400 font-bold">1/80 000</span>
-                    <span className="text-[8px] text-gray-600">({(1/80000 * 100).toFixed(5)}% par kill)</span>
+                    <span className="text-[9px] text-green-400 font-bold">1/10 000</span>
+                    <span className="text-[8px] text-gray-600">({(1/10000 * 100).toFixed(3)}% par kill)</span>
                   </div>
                 )}
                 {/* Fragment counter */}
