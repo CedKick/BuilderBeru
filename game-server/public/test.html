@@ -1497,16 +1497,8 @@
       if (spriteImg) {
         ctx.save();
         ctx.translate(p.x, p.y);
-        // Flip sprite based on aim direction
-        const facingLeft = Math.abs(p.aimAngle) > Math.PI / 2;
-        if (facingLeft) ctx.scale(-1, 1);
-        // Tilt sprite slightly towards aim direction during attack (max ±20°)
-        if (isAttacking && !p.blocking) {
-          let tilt = p.aimAngle;
-          if (facingLeft) tilt = Math.PI - tilt; // adjust for flipped context
-          tilt = Math.max(-0.35, Math.min(0.35, tilt)); // clamp to ±20°
-          ctx.rotate(tilt);
-        }
+        // Full 360° rotation: sprite faces down by default, rotate to match aim direction
+        ctx.rotate(p.aimAngle - Math.PI / 2);
         // Dodge transparency
         if (p.dodging) ctx.globalAlpha = 0.5;
         // Slightly bigger during attack for emphasis
