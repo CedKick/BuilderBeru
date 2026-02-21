@@ -353,6 +353,11 @@
     let tankAtkLoaded = false;
     tankAtkImg.onload = () => { tankAtkLoaded = true; };
 
+    const tankBlockImg = new Image();
+    tankBlockImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771702659/TankBlock_zfgfuq.png';
+    let tankBlockLoaded = false;
+    tankBlockImg.onload = () => { tankBlockLoaded = true; };
+
     // ── Arena Map ──
     const arenaMapImg = new Image();
     arenaMapImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771694314/mapManaya_gjdwpd.jpg';
@@ -1463,23 +1468,35 @@
 
       // Draw sprite (per-class sprites)
       let spriteImg = null;
-      if (p.class === 'tank') {
-        spriteImg = isAttacking && tankAtkLoaded ? tankAtkImg : (tankIdleLoaded ? tankIdleImg : null);
-        // Blocking uses idle pose for tank
-        if (p.blocking && tankIdleLoaded) spriteImg = tankIdleImg;
+      let isTank = p.class === 'tank';
+      if (isTank) {
+        if (p.blocking && tankBlockLoaded) {
+          spriteImg = tankBlockImg;
+        } else if (isAttacking && tankAtkLoaded) {
+          spriteImg = tankAtkImg;
+        } else {
+          spriteImg = tankIdleLoaded ? tankIdleImg : null;
+        }
       } else {
         spriteImg = isAttacking && playerAtkLoaded ? playerAtkImg : (playerIdleLoaded ? playerIdleImg : null);
       }
       if (spriteImg) {
         ctx.save();
         ctx.translate(p.x, p.y);
-        // Flip sprite based on aim direction (both idle AND attack)
+        // Flip sprite based on aim direction
         const facingLeft = Math.abs(p.aimAngle) > Math.PI / 2;
         if (facingLeft) ctx.scale(-1, 1);
+        // Tilt sprite slightly towards aim direction during attack (max ±20°)
+        if (isAttacking && !p.blocking) {
+          let tilt = p.aimAngle;
+          if (facingLeft) tilt = Math.PI - tilt; // adjust for flipped context
+          tilt = Math.max(-0.35, Math.min(0.35, tilt)); // clamp to ±20°
+          ctx.rotate(tilt);
+        }
         // Dodge transparency
         if (p.dodging) ctx.globalAlpha = 0.5;
         // Slightly bigger during attack for emphasis
-        const sprSize = isAttacking ? PLAYER_SPRITE_SIZE * 1.15 : PLAYER_SPRITE_SIZE;
+        const sprSize = isAttacking && !p.blocking ? PLAYER_SPRITE_SIZE * 1.15 : PLAYER_SPRITE_SIZE;
         // Class color tint glow
         ctx.shadowColor = color; ctx.shadowBlur = isMe ? 10 : 5;
         ctx.drawImage(spriteImg, -sprSize/2, -sprSize/2, sprSize, sprSize);
