@@ -38,8 +38,9 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Serve test client
-  if (req.url === '/test') {
+  // Serve test client (supports query params like /test?user=xxx)
+  const urlPath = req.url.split('?')[0];
+  if (urlPath === '/test' || urlPath === '/test.html') {
     const htmlPath = path.join(__dirname, '..', 'public', 'test.html');
     fs.readFile(htmlPath, 'utf8', (err, html) => {
       if (err) {
