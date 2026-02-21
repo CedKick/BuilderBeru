@@ -547,7 +547,7 @@ export const WEAPONS = {
   w_katana_z:         { id: 'w_katana_z',         name: 'Katana Z',             rarity: 'mythique',   element: 'water', weaponType: 'blade',  atk: 260, bonusStat: 'spd_flat', bonusValue: 15, icon: '\u2694\uFE0F', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771539184/KatanaZ_pgth96.png', desc: 'Katana de vitesse absolue. Chaque coup renforce son porteur.', secret: true, passive: 'katana_z_fury', darkRes: 40, dropSource: 'Monarque Supreme', dropRate: '1/50,000' },
   w_katana_v:         { id: 'w_katana_v',         name: 'Katana V',             rarity: 'mythique',   element: 'light', weaponType: 'blade',  atk: 240, bonusStat: 'crit_dmg', bonusValue: 20, icon: '\u2694\uFE0F', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771539430/KatanaV_zv4oke.png', desc: 'Katana du chaos. Empoisonne, buff et protege.', secret: true, passive: 'katana_v_chaos', darkRes: 35, dropSource: 'Monarque Supreme', dropRate: '1/50,000' },
   // Secret — drop 1/80,000 from Archdemon (cumulative pity)
-  w_guldan:            { id: 'w_guldan',            name: "Baton de Gul'dan",      rarity: 'mythique',   element: 'wind',  weaponType: 'staff',  atk: 100, bonusStat: 'spd_flat', bonusValue: 20, baseDef: 50, windRes: 10, icon: '\uD83E\uDE84', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771638363/batonGuldan_vuu7ez.png', projectile: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771638364/projectileGuldan_ii184b.png', desc: "Baton maudit du demon Gul'dan. Un halo eternel protege et renforce son porteur.", secret: true, passive: 'guldan_halo', dropSource: 'Archdemon', dropRate: '1/80,000' },
+  w_guldan:            { id: 'w_guldan',            name: "Baton de Gul'dan",      rarity: 'mythique',   element: 'wind',  weaponType: 'staff',  atk: 180, bonusStat: 'spd_flat', bonusValue: 20, baseDef: 50, windRes: 10, icon: '\uD83E\uDE84', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771638363/batonGuldan_vuu7ez.png', projectile: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771638364/projectileGuldan_ii184b.png', desc: "Baton maudit du demon Gul'dan. Un halo eternel protege et renforce son porteur.", secret: true, passive: 'guldan_halo', dropSource: 'Archdemon', dropRate: '1/80,000' },
 };
 
 export const WEAPON_PRICES = { rare: 500, legendaire: 2000, mythique: 5000 };
@@ -854,7 +854,7 @@ export const KATANA_V_BUFF_CHANCE = 0.30;          // 30% chance de buff par cou
 export const GULDAN_HEAL_PER_STACK = 0.10;         // +10% heal per stack (% of damage dealt)
 export const GULDAN_STUN_CHANCE = 0.50;            // 50% stun chance per stack end of turn
 export const GULDAN_DEF_PER_HIT = 0.02;            // +2% DEF per attack (permanent in fight)
-export const GULDAN_ATK_PER_HIT = 0.002;           // +0.2% ATK per hit (stackable)
+export const GULDAN_ATK_PER_HIT = 0.015;           // +1.5% ATK per hit (stackable)
 export const GULDAN_SPD_CHANCE = 0.50;             // 50% chance to boost attack speed
 export const GULDAN_SPD_BOOST = 2.0;               // +200% SPD boost per stack
 export const GULDAN_SPD_MAX_STACKS = 3;            // max 3 SPD stacks

@@ -773,7 +773,7 @@ export default function Codex() {
                             <div className="text-[10px] text-green-400 font-bold uppercase mb-1">Passive Unique — Halo Eternel</div>
                             <div className="text-[11px] text-green-300 space-y-1">
                               <div><span className="text-green-400 font-bold">Halo de Soin :</span> Chaque attaque ajoute un stack de Halo. Soigne {'{'}10% des degats infliges x nombre de stacks{'}'} a chaque coup. Le soin augmente exponentiellement au fil du combat.</div>
-                              <div><span className="text-green-400 font-bold">Renforcement :</span> +2% DEF et +0.2% ATK par attaque (permanent, cumulable tout le combat).</div>
+                              <div><span className="text-green-400 font-bold">Renforcement :</span> +2% DEF et +1.5% ATK par attaque (permanent, cumulable tout le combat).</div>
                               <div><span className="text-green-400 font-bold">Halo Celeste :</span> 50% de chance par attaque de gagner un stack de vitesse (+200% SPD/stack, max 3 stacks).</div>
                               <div><span className="text-green-400 font-bold">Etourdissement :</span> En fin de tour, chaque stack de Halo a 50% de chance d'etourdir l'ennemi (skip son tour).</div>
                               <div><span className="text-green-400 font-bold">Halo Divin :</span> Ressuscite automatiquement le premier allie mort a 50% PV (1 fois par combat, ARC II uniquement).</div>
