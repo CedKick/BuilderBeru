@@ -3,6 +3,24 @@ import { hunterStatsAtLevel, getHunterSummonSkill } from '../data/hunterData.js'
 
 let nextProjectileId = 1;
 
+// ── Auto-attack Combo Constants ──
+// 3-hit combo cycle for melee (cone) classes: Tank, DPS CAC
+// Ranged classes (projectile) keep simple rapid fire
+const COMBO = {
+  // Step timings: attack animation duration
+  ATK1_DURATION: 0.2,   // Attack 1 animation
+  ATK2_DURATION: 0.2,   // Attack 2 animation
+  ATK3_DURATION: 0.3,   // Attack 3 animation (slower, heavier)
+  // Gap between attacks (from end of previous animation to start of next)
+  GAP1: 0.2,            // Gap after ATK1 before ATK2 (total 0.4s from ATK1 start)
+  GAP2: 0.6,            // Gap after ATK2 before ATK3 (total 0.8s from ATK2 start)
+  RECOVERY: 0.5,        // Recovery after ATK3 before combo resets
+  // Damage multipliers (applied to base skill power)
+  ATK1_MULT: 1.00,      // 100% power
+  ATK2_MULT: 1.20,      // 120% power
+  ATK3_MULT: 1.25,      // 125% power
+};
+
 export class CombatEngine {
   constructor(gameState) {
     this.gs = gameState;
@@ -10,6 +28,22 @@ export class CombatEngine {
 
   // ── Player Actions ──
 
+  startBasicAttack(player, angle) {
+    // Called when player presses/holds left click
+    player.comboActive = true;
+    player.aimAngle = angle;
+    // If idle, start combo immediately
+    if (player.comboStep === 0) {
+      this._startComboStep(player, 1, angle);
+    }
+  }
+
+  stopBasicAttack(player) {
+    // Called when player releases left click
+    player.comboActive = false;
+  }
+
+  // Legacy single-click basic attack (for ranged / projectile classes)
   basicAttack(player, angle) {
     if (player.cooldowns.basic > 0) return;
     if (player.dodging || player.casting) return;
@@ -24,6 +58,150 @@ export class CombatEngine {
       this._fireProjectile(player, skill, angle);
     } else if (skill.hitbox === 'cone') {
       this._coneAttack(player, skill, angle);
+    }
+  }
+
+  // ── Combo System Update (called every tick) ──
+
+  updateCombo(player, dt) {
+    if (!player.alive) {
+      player.comboStep = 0;
+      player.comboTimer = 0;
+      player.comboActive = false;
+      return;
+    }
+
+    // Ranged classes (projectile hitbox) don't use combo — they use rapid fire
+    if (player.skills.basic.hitbox === 'projectile') {
+      if (player.comboActive && !player.dodging && !player.casting) {
+        // Auto-fire basic attack while holding
+        if (player.cooldowns.basic <= 0) {
+          this.basicAttack(player, player.aimAngle);
+        }
+      }
+      return;
+    }
+
+    // Melee combo system (cone hitbox — Tank, DPS CAC)
+    if (player.comboStep === 0) return; // Idle, no combo in progress
+    if (player.dodging || player.casting) {
+      // Cancel combo on dodge/cast
+      player.comboStep = 0;
+      player.comboTimer = 0;
+      player.comboLocked = false;
+      return;
+    }
+
+    // Block cancels combo during gaps (not during attack animation)
+    if (player.blocking && !player.comboLocked) {
+      player.comboStep = 0;
+      player.comboTimer = 0;
+      return;
+    }
+
+    player.comboTimer += dt;
+
+    switch (player.comboStep) {
+      case 1: // ATK1 animation
+        if (player.comboTimer >= COMBO.ATK1_DURATION) {
+          player.comboLocked = false;
+          player.comboStep = 2; // Enter gap1
+          player.comboTimer = 0;
+        }
+        break;
+
+      case 2: // Gap after ATK1
+        if (player.comboTimer >= COMBO.GAP1) {
+          if (player.comboActive && !player.blocking) {
+            // Continue to ATK2
+            this._startComboStep(player, 3, player.aimAngle);
+          } else {
+            // Combo dropped or block cancelled
+            player.comboStep = 0;
+            player.comboTimer = 0;
+          }
+        }
+        break;
+
+      case 3: // ATK2 animation
+        if (player.comboTimer >= COMBO.ATK2_DURATION) {
+          player.comboLocked = false;
+          player.comboStep = 4; // Enter gap2
+          player.comboTimer = 0;
+        }
+        break;
+
+      case 4: // Gap after ATK2
+        if (player.comboTimer >= COMBO.GAP2) {
+          if (player.comboActive && !player.blocking) {
+            // Continue to ATK3
+            this._startComboStep(player, 5, player.aimAngle);
+          } else {
+            // Cancel block — combo resets, player can restart from ATK1
+            player.comboStep = 0;
+            player.comboTimer = 0;
+          }
+        }
+        break;
+
+      case 5: // ATK3 animation
+        if (player.comboTimer >= COMBO.ATK3_DURATION) {
+          player.comboLocked = false;
+          player.comboStep = 6; // Enter recovery
+          player.comboTimer = 0;
+        }
+        break;
+
+      case 6: // Recovery after ATK3
+        if (player.comboTimer >= COMBO.RECOVERY) {
+          // Full combo completed, restart if still holding
+          if (player.comboActive && !player.blocking) {
+            this._startComboStep(player, 1, player.aimAngle);
+          } else {
+            player.comboStep = 0;
+            player.comboTimer = 0;
+          }
+        }
+        break;
+    }
+  }
+
+  _startComboStep(player, step, angle) {
+    if (player.dodging || player.casting || !player.alive) return;
+
+    const skill = player.skills.basic;
+    let powerMult;
+    let stepName;
+
+    switch (step) {
+      case 1:
+        powerMult = COMBO.ATK1_MULT;
+        stepName = `${skill.name} I`;
+        break;
+      case 3:
+        powerMult = COMBO.ATK2_MULT;
+        stepName = `${skill.name} II`;
+        break;
+      case 5:
+        powerMult = COMBO.ATK3_MULT;
+        stepName = `${skill.name} III`;
+        break;
+      default:
+        return;
+    }
+
+    player.comboStep = step;
+    player.comboTimer = 0;
+    player.comboLocked = true; // Can't cancel during animation
+    player.aimAngle = angle;
+
+    // Execute the attack with modified power
+    const modifiedSkill = { ...skill, power: Math.round(skill.power * powerMult), name: stepName };
+
+    if (skill.hitbox === 'cone') {
+      this._coneAttack(player, modifiedSkill, angle);
+    } else if (skill.hitbox === 'projectile') {
+      this._fireProjectile(player, modifiedSkill, angle);
     }
   }
 

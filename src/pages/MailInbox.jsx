@@ -269,14 +269,15 @@ export default function MailInbox() {
 
         // Apply each copy one by one
         for (let i = 0; i < quantity; i++) {
-          const currentAwakening = data.weaponCollection[w.id] || 0;
-
-          if (currentAwakening >= 10) {
+          if (data.weaponCollection[w.id] === undefined) {
+            // First time: add weapon at A0
+            data.weaponCollection[w.id] = 0;
+          } else if (data.weaponCollection[w.id] >= 10) {
             // Already A10 → convert to 5 red hammers per copy
             data.hammers.marteau_rouge = (data.hammers.marteau_rouge || 0) + 5;
           } else {
-            // Increment awakening by 1
-            data.weaponCollection[w.id] = currentAwakening + 1;
+            // Duplicate: increment awakening by 1
+            data.weaponCollection[w.id] += 1;
           }
         }
       });

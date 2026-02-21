@@ -53,6 +53,18 @@ export class BossBase {
     this._burstMaxDuration = 1.2; // 1.2s of speed boost
     this._burstSpeedMult = 2.5;  // 2.5x speed during burst
 
+    // Movement AI: pause-based movement (not constant chase)
+    this._moveState = 'idle';    // 'idle' | 'walking' | 'pausing' | 'leaping'
+    this._moveTimer = 0;
+    this._pauseDuration = 0;     // How long to pause
+    this._walkDuration = 0;      // How long to walk towards target
+    this._leapTarget = null;     // Target position for leap
+    this._leapStartPos = null;   // Start position of leap
+    this._leapTimer = 0;
+    this._leapDuration = 0.4;    // Duration of leap animation
+    this._aggroSwitchTimer = 0;  // Timer for random aggro switch
+    this._aggroSwitchCooldown = 12; // Min seconds between random aggro switches
+
     // Internal timers
     this._autoAttackTimer = 0;
     this._autoAttackInterval = 2.0;
@@ -102,9 +114,19 @@ export class BossBase {
     }
 
     // Update target (highest aggro)
-    const target = gameState.getHighestAggroPlayer();
-    if (target) {
-      this.targetId = target.id;
+    const aggroTarget = gameState.getHighestAggroPlayer();
+    if (aggroTarget) {
+      this.targetId = aggroTarget.id;
+    }
+
+    // Random aggro switch to DPS (not continuous chase)
+    this._aggroSwitchTimer += dt;
+    if (this._aggroSwitchTimer >= this._aggroSwitchCooldown && !this.currentPattern && this.phase >= 2) {
+      const switchChance = 0.01 * this.phase; // Higher chance in later phases
+      if (Math.random() < switchChance) {
+        this._tryRandomAggroSwitch(gameState);
+        this._aggroSwitchTimer = 0;
+      }
     }
 
     // Pattern cooldown
@@ -130,10 +152,127 @@ export class BossBase {
       }
     }
 
-    // Default: move towards target and auto-attack
-    if (target) {
-      this._moveTowards(target, dt, spdMult);
-      this._autoAttack(dt * spdMult, target, gameState);
+    // Movement AI: pause-based (not constant chase)
+    const currentTarget = gameState.getPlayer(this.targetId) || aggroTarget;
+    if (currentTarget && currentTarget.alive) {
+      this._updateMovementAI(currentTarget, dt, spdMult, gameState);
+      this._autoAttack(dt * spdMult, currentTarget, gameState);
+    }
+  }
+
+  // ── Random Aggro Switch ──
+  _tryRandomAggroSwitch(gameState) {
+    const alivePlayers = gameState.getAlivePlayers();
+    if (alivePlayers.length <= 1) return;
+
+    // Filter to non-tank DPS players
+    const dpsPlayers = alivePlayers.filter(p => p.class !== 'tank' && p.class !== 'healer');
+    if (dpsPlayers.length === 0) return;
+
+    // Pick random DPS
+    const target = dpsPlayers[Math.floor(Math.random() * dpsPlayers.length)];
+
+    // Leap to that player
+    this._startLeap(target, gameState);
+  }
+
+  _startLeap(target, gameState) {
+    this._moveState = 'leaping';
+    this._leapTarget = { x: target.x, y: target.y };
+    this._leapStartPos = { x: this.x, y: this.y };
+    this._leapTimer = 0;
+    this._leapDuration = 0.5;
+    this.targetId = target.id;
+
+    gameState.addEvent({
+      type: 'boss_message',
+      text: `Manaya cible ${target.username || target.id.substring(0, 5)} !`,
+    });
+  }
+
+  // ── Pause-Based Movement AI ──
+  _updateMovementAI(target, dt, spdMult, gameState) {
+    // Handle leap (jump to DPS)
+    if (this._moveState === 'leaping') {
+      this._leapTimer += dt;
+      const t = Math.min(1, this._leapTimer / this._leapDuration);
+
+      // Ease-out interpolation
+      const ease = 1 - Math.pow(1 - t, 2);
+      this.x = this._leapStartPos.x + (this._leapTarget.x - this._leapStartPos.x) * ease;
+      this.y = this._leapStartPos.y + (this._leapTarget.y - this._leapStartPos.y) * ease;
+
+      // Face target
+      this.rotation = Math.atan2(this._leapTarget.y - this.y, this._leapTarget.x - this.x);
+
+      if (t >= 1) {
+        // Land — pause after leap
+        this._moveState = 'pausing';
+        this._moveTimer = 0;
+        this._pauseDuration = 1.0 + Math.random() * 1.5; // 1-2.5s pause after leap
+      }
+      return;
+    }
+
+    const dx = target.x - this.x;
+    const dy = target.y - this.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    // Face the target
+    this.rotation = Math.atan2(dy, dx);
+
+    switch (this._moveState) {
+      case 'idle':
+        // Decide: walk or pause
+        if (dist > 120) {
+          // Too far, start walking
+          this._moveState = 'walking';
+          this._moveTimer = 0;
+          this._walkDuration = 1.5 + Math.random() * 2.0; // Walk 1.5-3.5s
+        } else {
+          // Close enough, pause
+          this._moveState = 'pausing';
+          this._moveTimer = 0;
+          this._pauseDuration = 0.8 + Math.random() * 1.5; // Pause 0.8-2.3s
+        }
+        break;
+
+      case 'walking':
+        this._moveTimer += dt;
+        // Move towards target
+        if (dist > 80) {
+          const speed = (this.spd * 0.8) * spdMult;
+          const moveX = (dx / dist) * speed * dt;
+          const moveY = (dy / dist) * speed * dt;
+          this.x += moveX;
+          this.y += moveY;
+        }
+        // Stop walking after duration or if close enough
+        if (this._moveTimer >= this._walkDuration || dist <= 80) {
+          this._moveState = 'pausing';
+          this._moveTimer = 0;
+          this._pauseDuration = 0.6 + Math.random() * 1.2; // Pause 0.6-1.8s
+        }
+        break;
+
+      case 'pausing':
+        this._moveTimer += dt;
+        if (this._moveTimer >= this._pauseDuration) {
+          // If target is far, walk. If close, maybe pause again or idle.
+          if (dist > 200) {
+            this._moveState = 'walking';
+            this._moveTimer = 0;
+            this._walkDuration = 1.0 + Math.random() * 2.0;
+          } else {
+            this._moveState = 'idle';
+            this._moveTimer = 0;
+          }
+        }
+        break;
+
+      default:
+        this._moveState = 'idle';
+        this._moveTimer = 0;
     }
   }
 
@@ -311,24 +450,18 @@ export class BossBase {
     }
   }
 
-  // ── Movement ──
+  // ── Movement (legacy — now handled by _updateMovementAI) ──
 
   _moveTowards(target, dt, spdMult) {
     const dx = target.x - this.x;
     const dy = target.y - this.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
-
-    // Face the target
     this.rotation = Math.atan2(dy, dx);
-
-    // Move if too far
-    const desiredRange = 80; // Stay at melee range
+    const desiredRange = 80;
     if (dist > desiredRange) {
       const speed = (this.spd * 0.8) * spdMult;
-      const moveX = (dx / dist) * speed * dt;
-      const moveY = (dy / dist) * speed * dt;
-      this.x += moveX;
-      this.y += moveY;
+      this.x += (dx / dist) * speed * dt;
+      this.y += (dy / dist) * speed * dt;
     }
   }
 

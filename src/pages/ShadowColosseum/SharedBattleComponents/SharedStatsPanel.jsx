@@ -124,9 +124,9 @@ export default function SharedStatsPanel({ entity, weapon = null, logs, onClose 
                 <div className="p-2 rounded-lg bg-orange-600/10 border border-orange-500/20">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-white">Sulfuras Fury</span>
-                    <span className="text-sm text-orange-300">+{entity.passiveState.sulfurasStacks}%</span>
+                    <span className="text-sm text-orange-300">x{entity.passiveState.sulfurasStacks}/3</span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">+{entity.passiveState.sulfurasStacks}% DMG (max 100%)</p>
+                  <p className="text-xs text-gray-400 mt-1">+{Math.round(entity.passiveState.sulfurasStacks / 3 * 100)}% DMG (max 100%)</p>
                 </div>
               )}
               {entity.passiveState.shadowSilence !== undefined && (

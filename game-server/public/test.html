@@ -254,6 +254,13 @@
       </div>
       <div id="roomPlayers" class="room-players"></div>
 
+      <div id="statsPanel" style="background:#1a1a2e;border:1px solid #7c3aed44;border-radius:6px;padding:6px;margin-top:4px;display:none">
+        <h3 style="color:#a78bfa">Player Stats</h3>
+        <div id="statPointsRemaining" style="font-size:10px;color:#f59e0b;margin-bottom:4px"></div>
+        <div id="statAllocUI"></div>
+        <button onclick="resetStatPoints()" style="width:100%;margin-top:4px;background:#ef4444;font-size:9px;padding:3px">Reset Stats</button>
+      </div>
+
       <div class="sim-panel" id="simPanel">
         <h3>Simulation Mode</h3>
         <div class="sim-toggle">
@@ -281,7 +288,8 @@
       <div class="controls-info">
         <h3>Controls</h3>
         <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> Move | <kbd>Space</kbd> Dodge<br>
-        <kbd>LMB</kbd> Basic | <kbd>RMB</kbd> Secondary<br>
+        <kbd>Hold LMB</kbd> Auto-Attack Combo | <kbd>RMB</kbd> Block/Secondary<br>
+        <span style="color:#f59e0b;font-size:8px">Cancel Block: ATK1+2 → RMB → repeat = + DPS</span><br>
         <kbd>A</kbd> Skill 1 | <kbd>E</kbd> Skill 2 | <kbd>R</kbd> Ultimate<br>
         <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> Summon Hunter
       </div>
@@ -629,6 +637,7 @@
       }
       saveProfile(profile);
       updateProfileDisplay();
+      updateStatsPanel();
       return profile;
     }
     function updateProfileDisplay() {
@@ -657,8 +666,70 @@
         '</div></div>';
     }
 
+    // ── Stat Allocation System ──
+    const STAT_POINTS_PER_LEVEL = 3;
+    const STAT_NAMES = { hp: 'HP', atk: 'ATK', def: 'DEF', spd: 'SPD', crit: 'CRIT', res: 'RES' };
+    const STAT_COLORS = { hp: '#10b981', atk: '#ef4444', def: '#3b82f6', spd: '#f59e0b', crit: '#f97316', res: '#8b5cf6' };
+    const STAT_PER_POINT = { hp: 150, atk: 3, def: 4, spd: 2, crit: 0.8, res: 1.5 };
+
+    function getStatPoints(profile) {
+      if (!profile) return { allocated: {}, free: 0 };
+      const totalPoints = Math.max(0, (profile.level - 1)) * STAT_POINTS_PER_LEVEL;
+      const allocated = profile.allocatedStats || { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
+      const used = Object.values(allocated).reduce((s, v) => s + v, 0);
+      return { allocated, free: totalPoints - used, total: totalPoints };
+    }
+
+    function allocateStat(stat) {
+      const profile = loadProfile();
+      if (!profile) return;
+      const { free } = getStatPoints(profile);
+      if (free <= 0) return;
+      if (!profile.allocatedStats) profile.allocatedStats = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
+      profile.allocatedStats[stat] = (profile.allocatedStats[stat] || 0) + 1;
+      saveProfile(profile);
+      updateStatsPanel();
+      updateProfileDisplay();
+    }
+
+    function resetStatPoints() {
+      const profile = loadProfile();
+      if (!profile) return;
+      profile.allocatedStats = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
+      saveProfile(profile);
+      updateStatsPanel();
+      updateProfileDisplay();
+    }
+
+    function updateStatsPanel() {
+      const profile = loadProfile();
+      const panel = document.getElementById('statsPanel');
+      const ui = document.getElementById('statAllocUI');
+      const remaining = document.getElementById('statPointsRemaining');
+      if (!profile || profile.level <= 1) { panel.style.display = 'none'; return; }
+      panel.style.display = 'block';
+
+      const { allocated, free, total } = getStatPoints(profile);
+      remaining.innerHTML = 'Points: <span style="color:#10b981;font-weight:bold">' + free + '</span> / ' + total + ' disponibles';
+
+      let html = '';
+      for (const [stat, label] of Object.entries(STAT_NAMES)) {
+        const pts = allocated[stat] || 0;
+        const bonus = Math.round(pts * STAT_PER_POINT[stat] * 10) / 10;
+        const color = STAT_COLORS[stat];
+        html += '<div style="display:flex;align-items:center;gap:4px;margin:2px 0;font-size:10px">' +
+          '<span style="color:' + color + ';width:35px;font-weight:bold">' + label + '</span>' +
+          '<span style="color:#94a3b8;width:30px;text-align:right">' + pts + '</span>' +
+          '<span style="color:#555;font-size:8px;width:55px">(+' + bonus + ')</span>' +
+          '<button onclick="allocateStat(\'' + stat + '\')" style="padding:1px 6px;font-size:9px;' + (free > 0 ? '' : 'opacity:0.3;pointer-events:none') + '">+</button>' +
+          '</div>';
+      }
+      ui.innerHTML = html;
+    }
+
     // Initialize profile display
     updateProfileDisplay();
+    updateStatsPanel();
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
@@ -739,7 +810,22 @@
       const cls = document.getElementById('classSelect').value;
       if (cls && inRoom) send({ type: 'select_class', class: cls });
       selectHunters();
+      // Sync profile stats before ready
+      syncProfileToServer();
       send({ type: 'player_ready' });
+    }
+    function syncProfileToServer() {
+      const profile = loadProfile();
+      if (!profile) return;
+      const { allocated } = getStatPoints(profile);
+      send({
+        type: 'sync_profile',
+        data: {
+          level: profile.level,
+          statPoints: allocated,
+          equippedHunters: selectedHunters.filter(Boolean),
+        },
+      });
     }
     function onJoinedRoom() {
       inRoom = true;
@@ -747,15 +833,19 @@
       const cls = document.getElementById('classSelect').value;
       if (cls) { send({ type: 'select_class', class: cls }); }
       selectHunters();
+      syncProfileToServer();
+      updateStatsPanel();
     }
     function updateRoomDisplay() {
       if (!roomInfo) { document.getElementById('roomPlayers').innerHTML = ''; return; }
+      const profile = loadProfile();
       const html = roomInfo.players.map(p => {
         const cls = CLASS_LABELS[p.class] || '???';
         const readyCls = p.ready ? 'ready' : 'not-ready';
-        const isMe = p.id === myId ? ' *' : '';
+        const isMe = p.id === myId;
+        const lvl = isMe && profile ? ' Lv.' + profile.level : '';
         const hunter = p.mainHunter ? (' [' + (HUNTER_LIST[p.mainHunter]?.name || p.mainHunter) + ']') : '';
-        return '<div class="' + readyCls + '">' + p.username + isMe + ' - ' + cls + hunter + (p.ready ? ' \u2713' : '') + '</div>';
+        return '<div class="' + readyCls + '">' + p.username + (isMe ? ' *' : '') + lvl + ' - ' + cls + hunter + (p.ready ? ' \u2713' : '') + '</div>';
       }).join('');
       document.getElementById('roomPlayers').innerHTML = html;
     }
@@ -1270,10 +1360,21 @@
     });
     canvas.addEventListener('mousedown', (e) => {
       e.preventDefault();
-      if (e.button === 0) send({ type: 'input', input: { type: 'attack_basic', angle: mouseAngle } });
-      else if (e.button === 2) send({ type: 'input', input: { type: 'attack_secondary', angle: mouseAngle } });
+      if (e.button === 0) {
+        // Hold left click = start auto-attack combo
+        send({ type: 'input', input: { type: 'start_basic', angle: mouseAngle } });
+      } else if (e.button === 2) {
+        send({ type: 'input', input: { type: 'attack_secondary', angle: mouseAngle } });
+      }
     });
-    canvas.addEventListener('mouseup', (e) => { if (e.button === 2) send({ type: 'input', input: { type: 'stop_secondary' } }); });
+    canvas.addEventListener('mouseup', (e) => {
+      if (e.button === 0) {
+        // Release left click = stop auto-attack combo
+        send({ type: 'input', input: { type: 'stop_basic' } });
+      } else if (e.button === 2) {
+        send({ type: 'input', input: { type: 'stop_secondary' } });
+      }
+    });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
     function sendMovement() {

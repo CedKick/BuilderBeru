@@ -829,9 +829,9 @@ export default function RaidMode() {
         }
       }
 
-      // Sulfuras: apply accumulated DMG bonus
+      // Sulfuras: +33% per stack, 3 stacks max = +100%
       if (chibi.passiveState.sulfurasStacks !== undefined && chibi.passiveState.sulfurasStacks > 0) {
-        chibi.atk = Math.floor(chibi.atk * (1 + chibi.passiveState.sulfurasStacks / 100));
+        chibi.atk = Math.floor(chibi.atk * (1 + chibi.passiveState.sulfurasStacks / 3));
       }
 
       // Shadow Silence (Rae'shalare): +100% ATK per active stack
@@ -922,6 +922,8 @@ export default function RaidMode() {
       });
       // If no skill affordable (e.g. Megumin out of mana), skip turn
       if (availSkills.length === 0) {
+        chibi.atk = origAtk; chibi.crit = origCrit; chibi.def = origDef;
+        state.boss.def = origBossDef;
         chibi.lastAttackAt = now;
         return;
       }

@@ -1320,9 +1320,9 @@ export default function ShadowColosseum() {
     }
 
     // ─── Weapon passives: ATK buff before damage calc ───
-    // Sulfuras: accumulated DMG bonus
+    // Sulfuras: +33% per stack, 3 stacks max = +100%
     if (ps.sulfurasStacks !== undefined && ps.sulfurasStacks > 0) {
-      fighter.atk = Math.floor(fighter.atk * (1 + ps.sulfurasStacks / 100));
+      fighter.atk = Math.floor(fighter.atk * (1 + ps.sulfurasStacks / 3));
     }
     // Shadow Silence (Rae'shalare): +100% ATK per active stack
     if (ps.shadowSilence !== undefined) {
@@ -2866,9 +2866,9 @@ export default function ShadowColosseum() {
       }
     });
 
-    // Sulfuras stacking passive: +33% dmg per turn, max +100%
+    // Sulfuras stacking passive: +33% per stack, 3 stacks max = +100%
     if (battle.sulfurasStacks !== undefined) {
-      atkMult += battle.sulfurasStacks / 100;
+      atkMult += battle.sulfurasStacks / 3;
     }
 
     // Shadow Silence (Rae'shalare): active stacks give +100% ATK each
@@ -8234,10 +8234,10 @@ export default function ShadowColosseum() {
               };
 
               const forgeItems = [
-                { fragmentId: 'fragment_sulfuras', weaponId: 'sulfuras', icon: '🔥', name: 'Masse de Sulfuras' },
-                { fragmentId: 'fragment_raeshalare', weaponId: 'raeshalare', icon: '🌀', name: "Arc Rae'shalare" },
-                { fragmentId: 'fragment_katana_z', weaponId: 'katana_z', icon: '⚡', name: 'Katana Z' },
-                { fragmentId: 'fragment_katana_v', weaponId: 'katana_v', icon: '💚', name: 'Katana V' },
+                { fragmentId: 'fragment_sulfuras', weaponId: 'w_sulfuras', icon: '🔥', name: 'Masse de Sulfuras' },
+                { fragmentId: 'fragment_raeshalare', weaponId: 'w_raeshalare', icon: '🌀', name: "Arc Rae'shalare" },
+                { fragmentId: 'fragment_katana_z', weaponId: 'w_katana_z', icon: '⚡', name: 'Katana Z' },
+                { fragmentId: 'fragment_katana_v', weaponId: 'w_katana_v', icon: '💚', name: 'Katana V' },
                 { fragmentId: 'fragment_guldan', weaponId: 'w_guldan', icon: '🪄', name: "Baton de Gul'dan" },
               ];
 
@@ -9946,7 +9946,7 @@ export default function ShadowColosseum() {
                 <motion.h2 className="text-4xl font-black mb-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.5 }} style={{ background: 'linear-gradient(135deg, #ef4444, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 0 20px rgba(239,68,68,0.8))' }}>{weaponReveal.name}</motion.h2>
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.5 }} className="space-y-2">
                   <div className="text-orange-300 text-base font-bold">ATK +{weaponReveal.atk} | {MAIN_STAT_VALUES[weaponReveal.bonusStat]?.name} +{weaponReveal.bonusValue}</div>
-                  {weaponReveal.id === 'w_sulfuras' && <div className="text-red-400 text-sm">Passive : Sulfuras Fury — +{SULFURAS_STACK_PER_TURN}% DMG/tour (max +{SULFURAS_STACK_MAX}%)</div>}
+                  {weaponReveal.id === 'w_sulfuras' && <div className="text-red-400 text-sm">Passive : Sulfuras Fury — +33% DMG/stack ({SULFURAS_STACK_MAX} stacks max = +100%)</div>}
                   {weaponReveal.id === 'w_raeshalare' && <div className="text-purple-400 text-sm">Passive : Murmure de la Mort — 10% de chance/tour : +100% ATK pendant 5T (max x3)</div>}
                   {weaponReveal.id === 'w_katana_z' && <div className="text-cyan-400 text-sm">Passive : Tranchant Eternel — +5% ATK/coup (50% persist) + Contre-attaque 200% (50%)</div>}
                   {weaponReveal.id === 'w_katana_v' && <div className="text-emerald-400 text-sm">Passive : Lame Veneneuse — DoT 3%/stack + Buff aleatoire (30%) : +10% stats cumulable (Solo) / +5% stats cumulable (Raid) / Bouclier / DMG x6</div>}

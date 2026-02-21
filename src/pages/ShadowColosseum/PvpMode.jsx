@@ -614,6 +614,11 @@ export default function PvpMode() {
         if (unit.passiveState?.echoFreeMana) unit.passiveState.echoFreeMana = false;
       }
 
+      // Save original stats (restored after computeAttack)
+      const origAtk = unit.atk;
+      const origCrit = unit.crit;
+      const origDef = unit.def;
+
       // Conditional hunter passives
       const hp = unit.hunterPassive;
       if (hp?.type === 'lowHp' && (unit.hp / unit.maxHp * 100) < hp.threshold && hp.stats) {
@@ -625,8 +630,9 @@ export default function PvpMode() {
       }
 
       // ─── Weapon passives: ATK buff ───
+      // Sulfuras: +33% per stack, 3 stacks max = +100%
       if (unit.passiveState.sulfurasStacks !== undefined && unit.passiveState.sulfurasStacks > 0) {
-        unit.atk = Math.floor(unit.atk * (1 + unit.passiveState.sulfurasStacks / 100));
+        unit.atk = Math.floor(unit.atk * (1 + unit.passiveState.sulfurasStacks / 3));
       }
       if (unit.passiveState.shadowSilence !== undefined) {
         const activeStacks = unit.passiveState.shadowSilence.filter(s => s > 0).length;
@@ -676,6 +682,11 @@ export default function PvpMode() {
       }
 
       let result = computeAttack(unit, skill, target, unit.talentBonuses || {});
+
+      // Restore original stats
+      unit.atk = origAtk;
+      unit.crit = origCrit;
+      unit.def = origDef;
 
       // Apply PVP damage reduction (heals unaffected)
       if (result.damage > 0) {

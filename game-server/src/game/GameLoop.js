@@ -79,10 +79,11 @@ export class GameLoop {
     // 1. Process all queued inputs
     this._processInputs();
 
-    // 2. Update players (movement, cooldowns, buffs, dodge)
+    // 2. Update players (movement, cooldowns, buffs, dodge, combo)
     for (const player of gs.players) {
       if (!player.alive) continue;
       this.physics.updatePlayer(player, dt);
+      this.combat.updateCombo(player, dt);
       this.combat.updatePlayerCooldowns(player, dt);
       this.combat.updatePlayerBuffs(player, dt);
       this.combat.regenMana(player, dt);
@@ -154,7 +155,20 @@ export class GameLoop {
           break;
 
         case 'attack_basic':
-          this.combat.basicAttack(player, input.angle);
+          // Legacy single click — still triggers combo start for melee
+          if (player.skills.basic.hitbox === 'cone') {
+            this.combat.startBasicAttack(player, input.angle);
+          } else {
+            this.combat.basicAttack(player, input.angle);
+          }
+          break;
+
+        case 'start_basic':
+          this.combat.startBasicAttack(player, input.angle);
+          break;
+
+        case 'stop_basic':
+          this.combat.stopBasicAttack(player);
           break;
 
         case 'attack_secondary':
@@ -323,6 +337,7 @@ export class GameLoop {
         aimAngle: p.aimAngle,
         buffs: p.buffs.map(b => ({ type: b.type, stacks: b.stacks, dur: +b.dur.toFixed(1) })),
         casting: p.casting ? { skill: p.casting.skill, timer: +p.casting.timer.toFixed(1) } : null,
+        comboStep: p.comboStep || 0,
         cooldowns: {
           basic: +p.cooldowns.basic.toFixed(1),
           secondary: +p.cooldowns.secondary.toFixed(1),
@@ -359,6 +374,8 @@ export class GameLoop {
         rageBuff: gs.boss.rageBuff,
         speedStacks: gs.boss.speedStacks,
         bursting: gs.boss._burstActive || false,
+        leaping: gs.boss._moveState === 'leaping',
+        moveState: gs.boss._moveState || 'idle',
       },
       simulation: gs.simulation,
       adds: gs.adds.filter(a => a.alive).map(a => ({

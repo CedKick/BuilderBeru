@@ -43,6 +43,7 @@ export class Manaya extends BossBase {
       this._patternCone(),
       this._patternTailSweep(),
       this._patternClaw(),
+      this._patternBreath(),
 
       // Phase 2+ (90-75%) — Donut + Poison
       this._patternDonut(),
@@ -239,8 +240,90 @@ export class Manaya extends BossBase {
   }
 
   // ──────────────────────────
-  // PATTERN: Donut AoE
-  // Safe close to boss OR very far. Ring expanding outward.
+  // PATTERN: Breath (sustained frontal cone, multi-tick)
+  // Wide cone, long range, deals damage over 2s with 4 ticks
+  // ──────────────────────────
+  _patternBreath() {
+    return {
+      name: 'Souffle Corrompu',
+      phase: 1, weight: 2, cooldown: 8, globalCooldown: 2.0,
+      telegraphTime: 1.2, castTime: 0, recoveryTime: 0.8,
+
+      onStart: (boss, gs, data) => {
+        const target = gs.getHighestAggroPlayer();
+        data.angle = target ? Math.atan2(target.y - boss.y, target.x - boss.x) : boss.rotation;
+        data.range = 280;
+        data.coneAngle = Math.PI * 0.7; // ~126 degrees wide cone
+        data.duration = 2.0;
+        data.elapsed = 0;
+        data.tickInterval = 0.5;
+        data.tickTimer = 0;
+        data.breathStarted = false;
+
+        // Telegraph
+        gs.addAoeZone({
+          id: `breath_tel_${Date.now()}`, type: 'cone_telegraph',
+          x: boss.x, y: boss.y, radius: data.range, angle: data.angle, coneAngle: data.coneAngle,
+          ttl: 1.2, maxTtl: 1.2, active: false, source: boss.id,
+        });
+        gs.addEvent({ type: 'boss_message', text: '🔥 Souffle Corrompu !' });
+      },
+
+      onExecute: (boss, gs, data) => {
+        data.breathStarted = true;
+        data.elapsed = 0;
+        data.tickTimer = 0;
+
+        // Active breath zone (visual)
+        data.breathZoneId = `breath_active_${Date.now()}`;
+        gs.addAoeZone({
+          id: data.breathZoneId, type: 'cone_telegraph',
+          x: boss.x, y: boss.y, radius: data.range, angle: data.angle, coneAngle: data.coneAngle,
+          ttl: data.duration + 0.5, maxTtl: data.duration + 0.5, active: true, source: boss.id,
+        });
+      },
+
+      onUpdate: (boss, gs, data, dt) => {
+        if (!data.breathStarted) return true;
+        data.elapsed += dt;
+        data.tickTimer += dt;
+
+        // Update zone position to follow boss
+        const zone = gs.aoeZones.find(z => z.id === data.breathZoneId);
+        if (zone) {
+          zone.x = boss.x;
+          zone.y = boss.y;
+          zone.angle = data.angle;
+        }
+
+        // Tick damage every 0.5s
+        if (data.tickTimer >= data.tickInterval) {
+          data.tickTimer -= data.tickInterval;
+
+          for (const player of gs.getAlivePlayers()) {
+            if (this._isInCone(boss, player, data.angle, data.range, data.coneAngle)) {
+              const dmg = boss.atk * 2.0;
+              const actual = player.takeDamage(dmg, boss);
+              if (actual > 0) {
+                gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Souffle Corrompu' });
+              }
+            }
+          }
+        }
+
+        if (data.elapsed >= data.duration) {
+          if (zone) zone.ttl = 0.2; // Fade out quickly
+          return true; // Done
+        }
+        return false;
+      },
+    };
+  }
+
+  // ──────────────────────────
+  // PATTERN: Donut AoE → Outer Expansion + Laser if close
+  // Phase 1: Orange ring (stay close or very far)
+  // Phase 2: Larger outer ring (stay close or dodge back in) + laser punishes close range
   // ──────────────────────────
   _patternDonut() {
     return {
@@ -253,6 +336,9 @@ export class Manaya extends BossBase {
         data.ringInner = 130;  // Ring starts at 130
         data.ringOuter = 350;  // Ring ends at 350
         data.outerSafe = 360;  // Safe if beyond 360
+        data.phase2 = false;   // Second ring not yet triggered
+        data.phase2Timer = 0;
+        data.phase2Done = false;
         // Inner safe zone telegraph (green)
         gs.addAoeZone({
           id: `donut_safe_${Date.now()}`, type: 'donut_safe',
@@ -265,7 +351,7 @@ export class Manaya extends BossBase {
           x: boss.x, y: boss.y, radius: data.ringOuter, innerRadius: data.ringInner,
           ttl: 1.8, maxTtl: 1.8, active: false, source: boss.id,
         });
-        gs.addEvent({ type: 'boss_message', text: '⚠️ Anneau Destructeur - Collez-vous à elle ou éloignez-vous !' });
+        gs.addEvent({ type: 'boss_message', text: '⚠️ Anneau Destructeur - Éloignez-vous !' });
       },
 
       onExecute: (boss, gs, data) => {
@@ -287,6 +373,73 @@ export class Manaya extends BossBase {
           x: boss.x, y: boss.y, radius: data.ringOuter, innerRadius: data.ringInner,
           ttl: 0.4, maxTtl: 0.4, active: true, source: boss.id,
         });
+        // Trigger phase 2: outer ring + close-range laser
+        data.phase2 = true;
+        data.phase2Timer = 0;
+        // Telegraph the outer ring (larger, further out)
+        data.outerRingInner = 370;
+        data.outerRingOuter = 550;
+        gs.addAoeZone({
+          id: `donut_outer_tel_${Date.now()}`, type: 'donut_telegraph',
+          x: boss.x, y: boss.y, radius: data.outerRingOuter, innerRadius: data.outerRingInner,
+          ttl: 1.5, maxTtl: 1.5, active: false, source: boss.id,
+        });
+        // Telegraph the inner laser danger zone (close = laser)
+        gs.addAoeZone({
+          id: `donut_laser_warn_${Date.now()}`, type: 'circle_telegraph',
+          x: boss.x, y: boss.y, radius: 160,
+          ttl: 1.5, maxTtl: 1.5, active: false, source: boss.id,
+        });
+        gs.addEvent({ type: 'boss_message', text: '⚠️ Deuxième anneau ! Ne restez pas près d\'elle !' });
+      },
+
+      onUpdate: (boss, gs, data, dt) => {
+        if (!data.phase2) return true;
+        data.phase2Timer += dt;
+
+        // After 1.2s, outer ring detonates + laser on close targets
+        if (data.phase2Timer >= 1.2 && !data.phase2Done) {
+          data.phase2Done = true;
+          const soloMult = gs.playerCount <= 1 ? (BOSS_CFG.SOLO_MECHANIC_MULT || 0.4) : 1.0;
+
+          for (const player of gs.getAlivePlayers()) {
+            const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
+
+            // Outer ring damage (370-550 range)
+            if (dist >= data.outerRingInner && dist < data.outerRingOuter + player.radius) {
+              const dmg = boss.atk * 5.0 * soloMult;
+              const actual = player.takeDamage(dmg, boss);
+              if (actual > 0) {
+                gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Anneau Extérieur' });
+              }
+            }
+
+            // Laser punishment for being too close (within 160px)
+            if (dist < 160 + player.radius) {
+              const dmg = boss.atk * 8.0 * soloMult;
+              const actual = player.takeDamage(dmg, boss);
+              if (actual > 0) {
+                gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Laser Piège' });
+              }
+            }
+          }
+
+          // Visual explosions
+          gs.addAoeZone({
+            id: `donut_outer_exp_${Date.now()}`, type: 'donut_explosion',
+            x: boss.x, y: boss.y, radius: data.outerRingOuter, innerRadius: data.outerRingInner,
+            ttl: 0.4, maxTtl: 0.4, active: true, source: boss.id,
+          });
+          gs.addAoeZone({
+            id: `donut_laser_exp_${Date.now()}`, type: 'circle_explosion',
+            x: boss.x, y: boss.y, radius: 160,
+            ttl: 0.4, maxTtl: 0.4, active: true, source: boss.id,
+          });
+
+          return true; // Done
+        }
+
+        return false; // Still waiting
       },
     };
   }

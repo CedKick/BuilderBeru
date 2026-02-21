@@ -70,6 +70,12 @@ export class Player {
     // Hunter summon cooldowns
     this.hunterCooldowns = [0, 0, 0];
 
+    // Auto-attack combo system (3-hit cycle)
+    this.comboStep = 0;        // 0=idle, 1=atk1 animating, 2=gap1, 3=atk2 animating, 4=gap2, 5=atk3 animating
+    this.comboTimer = 0;       // Timer within current step
+    this.comboActive = false;  // True while holding attack
+    this.comboLocked = false;  // True during attack animation (can't cancel)
+
     // Combat stats tracking
     this.stats = {
       damageDealt: 0,

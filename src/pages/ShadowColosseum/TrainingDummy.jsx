@@ -715,9 +715,9 @@ export default function TrainingDummy() {
         atkMult += fighter.passiveState.katanaVState.allStatBuff / 100;
       }
 
-      // Sulfuras stacks
+      // Sulfuras: +33% per stack, 3 stacks max = +100%
       if (fighter.passiveState.sulfurasStacks !== undefined && fighter.passiveState.sulfurasStacks > 0) {
-        atkMult += fighter.passiveState.sulfurasStacks / 100;
+        atkMult += fighter.passiveState.sulfurasStacks / 3;
       }
 
       // Gul'dan Halo Eternelle
@@ -1263,11 +1263,11 @@ export default function TrainingDummy() {
       atkDetails.push(`  ├─ Katana V "Benediction": +${bonus}% stats`);
     }
 
-    // Sulfuras stacks
+    // Sulfuras stacks (+33% per stack, 3 stacks max = +100%)
     if (fighter.passiveState.sulfurasStacks !== undefined && fighter.passiveState.sulfurasStacks > 0) {
-      const bonus = fighter.passiveState.sulfurasStacks;
-      atkMult += bonus / 100;
-      atkDetails.push(`  ├─ Sulfuras: +${bonus}% DMG`);
+      const stacks = fighter.passiveState.sulfurasStacks;
+      atkMult += stacks / 3;
+      atkDetails.push(`  ├─ Sulfuras: x${stacks}/${SULFURAS_STACK_MAX} (+${Math.round(stacks / 3 * 100)}% DMG)`);
     }
 
     // Shadow Silence (Rae'shalare): +100% ATK per active stack
@@ -1383,7 +1383,7 @@ export default function TrainingDummy() {
     if (fighter.passiveState.sulfurasStacks !== undefined) {
       if (fighter.passiveState.sulfurasStacks < SULFURAS_STACK_MAX) {
         fighter.passiveState.sulfurasStacks += SULFURAS_STACK_PER_TURN;
-        log.push({ text: `  ├─ Sulfuras: +${SULFURAS_STACK_PER_TURN}% DMG → ${fighter.passiveState.sulfurasStacks}%`, type: 'buff', id: Date.now() + 0.77 });
+        log.push({ text: `  ├─ Sulfuras: stack ${fighter.passiveState.sulfurasStacks}/${SULFURAS_STACK_MAX} (+${Math.round(fighter.passiveState.sulfurasStacks / 3 * 100)}% DMG)`, type: 'buff', id: Date.now() + 0.77 });
       }
     }
 

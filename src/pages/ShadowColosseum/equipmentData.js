@@ -835,9 +835,9 @@ export function computeWeaponBonuses(weaponId, awakening = 0) {
   return b;
 }
 
-// Sulfuras stacking passive: +33% dmg per turn (max +100%)
-export const SULFURAS_STACK_PER_TURN = 33;
-export const SULFURAS_STACK_MAX = 100;
+// Sulfuras stacking passive: +33% dmg per stack, 3 stacks max (+100%)
+export const SULFURAS_STACK_PER_TURN = 1;
+export const SULFURAS_STACK_MAX = 3;
 
 // Katana Z passives
 export const KATANA_Z_ATK_PER_HIT = 5;           // +5% ATK par coup
