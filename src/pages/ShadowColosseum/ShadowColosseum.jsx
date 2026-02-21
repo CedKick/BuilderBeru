@@ -4001,10 +4001,50 @@ export default function ShadowColosseum() {
             };
 
             const classInfo = {
-              tank: { label: 'Tank', icon: '\uD83D\uDEE1\uFE0F', color: '#3b82f6', desc: 'HP++, DEF++, Provocation' },
-              healer: { label: 'Healer', icon: '\uD83D\uDC9A', color: '#10b981', desc: 'Soins, Mana++, Resurrection' },
-              dps_cac: { label: 'DPS CAC', icon: '\u2694\uFE0F', color: '#ef4444', desc: 'ATK++, Combo, Execution' },
-              dps_range: { label: 'DPS Distance', icon: '\uD83C\uDFF9', color: '#f59e0b', desc: 'ATK+, Range++, Barrage' },
+              tank: {
+                label: 'Tank', icon: '\uD83D\uDEE1\uFE0F', color: '#3b82f6', desc: 'HP++, DEF++, Provocation',
+                role: 'Le protecteur du groupe. Attire l\'aggro du boss et encaisse les coups pour les autres.',
+                skills: [
+                  { key: 'LMB', name: 'Frappe de Bouclier', desc: 'Attaque au corps a corps + aggro bonus', cd: '0.5s' },
+                  { key: 'RMB', name: 'Bloquer', desc: 'Reduit 75% des degats recus, consomme Endurance', cd: 'Maintenu' },
+                  { key: 'A', name: 'Provocation', desc: 'Force le boss a vous cibler pendant 5s', cd: '10s' },
+                  { key: 'E', name: 'Bouclier Sacre', desc: 'Bouclier de zone (3000 HP) pour les allies proches', cd: '18s' },
+                  { key: 'R', name: 'Forteresse', desc: 'Invulnerable pendant 4s + mega aggro', cd: '50s' },
+                ],
+              },
+              healer: {
+                label: 'Healer', icon: '\uD83D\uDC9A', color: '#10b981', desc: 'Soins, Mana++, Resurrection',
+                role: 'Le soigneur vital du groupe. Maintient l\'equipe en vie et purifie les debuffs du boss.',
+                skills: [
+                  { key: 'LMB', name: 'Trait de Lumiere', desc: 'Projectile a distance (portee 450)', cd: '0.5s' },
+                  { key: 'RMB', name: 'Cercle de Soin', desc: 'Zone de soin au sol pendant 2s (800 puissance)', cd: '2.5s' },
+                  { key: 'A', name: 'Soin de Zone', desc: 'Soin AoE instantane sur les allies proches', cd: '8s' },
+                  { key: 'E', name: 'Purification', desc: 'Retire tous les debuffs + dispel Rage du boss', cd: '12s' },
+                  { key: 'R', name: 'Resurrection Divine', desc: 'Ressuscite un allie mort avec 60% HP', cd: '75s' },
+                ],
+              },
+              dps_cac: {
+                label: 'DPS CAC', icon: '\u2694\uFE0F', color: '#ef4444', desc: 'ATK++, Combo, Execution',
+                role: 'Le combattant de melee. Degats explosifs au corps a corps avec combos rapides.',
+                skills: [
+                  { key: 'LMB', name: 'Combo de Lames', desc: 'Combo 3 coups rapide au corps a corps', cd: '0.35s' },
+                  { key: 'RMB', name: 'Frappe Lourde', desc: 'Coup puissant en cone (380 puissance)', cd: '1s' },
+                  { key: 'A', name: 'Tempete de Lames', desc: 'AoE autour de soi (550 puissance)', cd: '7s' },
+                  { key: 'E', name: 'Dash Offensif', desc: 'Dash + degats sur la trajectoire', cd: '5s' },
+                  { key: 'R', name: 'Execution', desc: 'Coup unique devastateur (1200) + bonus si boss < 50% HP', cd: '40s' },
+                ],
+              },
+              dps_range: {
+                label: 'DPS Distance', icon: '\uD83C\uDFF9', color: '#f59e0b', desc: 'ATK+, Range++, Barrage',
+                role: 'Le tireur de longue portee. Degats constants a distance, pieges et pluie de projectiles.',
+                skills: [
+                  { key: 'LMB', name: 'Tir Rapide', desc: 'Projectile rapide (portee 550)', cd: '0.4s' },
+                  { key: 'RMB', name: 'Tir Charge', desc: 'Projectile perforant puissant (portee 650)', cd: '1.2s' },
+                  { key: 'A', name: 'Pluie de Fleches', desc: 'AoE ciblee a distance avec delai', cd: '8s' },
+                  { key: 'E', name: 'Piege Explosif', desc: 'Pose un piege explosif (12s duree)', cd: '10s' },
+                  { key: 'R', name: 'Barrage', desc: '12 tirs rapides en cone pendant 3s', cd: '40s' },
+                ],
+              },
             };
 
             const statLabels = { hp: 'PV', atk: 'ATK', def: 'DEF', spd: 'SPD', crit: 'CRIT', res: 'RES' };
@@ -4053,6 +4093,28 @@ export default function ShadowColosseum() {
                       </button>
                     ))}
                   </div>
+                  {/* Selected Class Description */}
+                  {classInfo[preferredClass] && (
+                    <div className="mt-2 p-3 rounded-lg border bg-gray-900/40" style={{ borderColor: classInfo[preferredClass].color + '33' }}>
+                      <div className="text-[10px] text-gray-400 mb-2 italic">{classInfo[preferredClass].role}</div>
+                      <div className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mb-1.5">Competences</div>
+                      <div className="space-y-1">
+                        {classInfo[preferredClass].skills.map((sk, i) => (
+                          <div key={i} className="flex items-start gap-2 text-[10px]">
+                            <span className="px-1 py-0.5 rounded text-[8px] font-bold bg-gray-700/60 text-gray-300 flex-shrink-0 w-7 text-center">{sk.key}</span>
+                            <div className="flex-1 min-w-0">
+                              <span className="font-bold" style={{ color: classInfo[preferredClass].color }}>{sk.name}</span>
+                              <span className="text-gray-500 ml-1">- {sk.desc}</span>
+                            </div>
+                            <span className="text-gray-600 text-[8px] flex-shrink-0">{sk.cd}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-2 text-[9px] text-gray-600">
+                        <span className="font-bold">Controles :</span> ZQSD Deplacement | Espace Esquive | 1/2/3 Invoquer Hunter
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Stat Points Allocation */}

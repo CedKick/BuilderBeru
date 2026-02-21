@@ -529,8 +529,7 @@ export class Manaya extends BossBase {
         for (const player of gs.getAlivePlayers()) {
           const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
           if (dist < 250 + player.radius) {
-            const dmg = 99999 * soloMult; // ONE SHOT
-            const actual = player.takeDamage(dmg, boss);
+            const actual = player.takeTrueDamage(999999, boss); // TRUE ONESHOT (bypasses block/def)
             if (actual > 0) {
               gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Sphère de Mort' });
             }
@@ -931,8 +930,7 @@ export class Manaya extends BossBase {
         for (const player of gs.getAlivePlayers()) {
           const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
           if (dist < data.innerRadius + player.radius) {
-            const dmg = 99999 * soloMult; // ONE SHOT
-            const actual = player.takeDamage(dmg, boss);
+            const actual = player.takeTrueDamage(999999, boss); // TRUE ONESHOT
             if (actual > 0) {
               gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Double Impact (intérieur)' });
             }
@@ -960,8 +958,7 @@ export class Manaya extends BossBase {
             const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
             // Hit if in outer ring (between outerInner and outerRadius)
             if (dist >= data.outerInner && dist < data.outerRadius + player.radius) {
-              const dmg = 99999 * soloMult; // ONE SHOT
-              const actual = player.takeDamage(dmg, boss);
+              const actual = player.takeTrueDamage(999999, boss); // TRUE ONESHOT
               if (actual > 0) {
                 gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Double Impact (extérieur)' });
               }

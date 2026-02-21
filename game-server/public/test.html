@@ -142,6 +142,30 @@
 
     @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 
+    /* ── Party HUD (top-left) ── */
+    .party-hud {
+      position: absolute; top: 10px; left: 10px; z-index: 10; pointer-events: none;
+      display: flex; flex-direction: column; gap: 4px; min-width: 180px;
+    }
+    .party-member {
+      display: flex; align-items: center; gap: 6px; padding: 4px 8px;
+      background: rgba(0,0,0,0.7); border-radius: 6px; border: 1px solid #333;
+    }
+    .party-member.dead { opacity: 0.4; }
+    .party-member.is-me { border-color: #a78bfa; }
+    .party-member .pm-class-icon { font-size: 14px; flex-shrink: 0; }
+    .party-member .pm-info { flex: 1; min-width: 0; }
+    .party-member .pm-name { font-size: 9px; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .party-member .pm-hp-outer { height: 10px; background: #1a1a1a; border-radius: 3px; overflow: hidden; margin-top: 2px; position: relative; }
+    .party-member .pm-hp-fill { height: 100%; border-radius: 2px; transition: width 0.1s; }
+    .party-member .pm-hp-text { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 7px; color: #fff; font-weight: bold; text-shadow: 0 0 2px #000; }
+    .party-member .pm-mana-outer { height: 4px; background: #1a1a1a; border-radius: 2px; overflow: hidden; margin-top: 1px; }
+    .party-member .pm-mana-fill { height: 100%; background: #3b82f6; border-radius: 2px; transition: width 0.1s; }
+    .party-member .pm-buffs { display: flex; gap: 2px; margin-top: 2px; flex-wrap: wrap; }
+    .party-member .pm-buff { width: 14px; height: 14px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 8px; }
+    .party-member .pm-buff.pos { background: rgba(16,185,129,0.3); border: 1px solid #10b981; }
+    .party-member .pm-buff.neg { background: rgba(239,68,68,0.3); border: 1px solid #ef4444; }
+
     /* ── Timer ── */
     .game-timer { position: absolute; top: 12px; right: 14px; z-index: 10; font-size: 24px; font-weight: bold; pointer-events: none; text-shadow: 0 0 8px #000; }
 
@@ -262,10 +286,10 @@
       </div>
 
       <div class="sim-panel" id="simPanel">
-        <h3>Simulation Mode</h3>
+        <h3>Mode Entrainement</h3>
         <div class="sim-toggle">
           <input type="checkbox" id="simToggle" onchange="toggleSimulation()" />
-          <label for="simToggle">Training Mode (God Mode)</label>
+          <label for="simToggle">God Mode (invincible, pour tester les patterns)</label>
         </div>
         <div id="simControls" style="display:none">
           <label>Set Boss HP %</label>
@@ -313,6 +337,7 @@
         <div class="boss-rage-info" id="bossRageInfo"></div>
       </div>
 
+      <div class="party-hud" id="partyHud" style="display:none"></div>
       <div class="game-timer" id="gameTimer"></div>
 
       <div class="dps-panel" id="dpsPanel" style="display:none">
@@ -535,8 +560,10 @@
     }
 
     // Auto-load stat points from URL (JSON encoded)
+    // These come from builderberu.com character sheet and should be auto-applied
     let autoStatPoints = null;
     try { const spParam = urlParams.get('sp'); if (spParam) autoStatPoints = JSON.parse(spParam); } catch {}
+    let autoStatPointsApplied = false;
 
     // ── Hunter Selection UI (pick 3, no duplicates) ──
     let selectedHunters = [null, null, null];
@@ -615,7 +642,21 @@
     }
     function getOrCreateProfile(username) {
       let p = loadProfile();
-      if (p && p.username === username) return p;
+      if (p && p.username === username) {
+        // Auto-apply builderberu stat points from URL (only once per session)
+        if (autoStatPoints && !autoStatPointsApplied) {
+          autoStatPointsApplied = true;
+          if (!p.allocatedStats) p.allocatedStats = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
+          for (const [stat, val] of Object.entries(autoStatPoints)) {
+            if (typeof val === 'number' && val > 0 && STAT_NAMES[stat]) {
+              p.allocatedStats[stat] = val;
+            }
+          }
+          saveProfile(p);
+          updateStatsPanel();
+        }
+        return p;
+      }
       // New profile
       p = {
         username, level: 1, xp: 0, totalXp: 0,
@@ -623,6 +664,16 @@
         classStats: { tank: { gp: 0, w: 0 }, healer: { gp: 0, w: 0 }, dps_cac: { gp: 0, w: 0 }, dps_range: { gp: 0, w: 0 } },
         bestTime: null, createdAt: Date.now(),
       };
+      // Auto-apply builderberu stat points on new profile too
+      if (autoStatPoints) {
+        autoStatPointsApplied = true;
+        p.allocatedStats = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
+        for (const [stat, val] of Object.entries(autoStatPoints)) {
+          if (typeof val === 'number' && val > 0 && STAT_NAMES[stat]) {
+            p.allocatedStats[stat] = val;
+          }
+        }
+      }
       saveProfile(p);
       return p;
     }
@@ -896,6 +947,7 @@
           document.getElementById('hunterBar').style.display = 'flex';
           document.getElementById('skillBar').style.display = 'flex';
           document.getElementById('playerHud').style.display = 'block';
+          document.getElementById('partyHud').style.display = 'flex';
           // Start battle music
           battleMusic.currentTime = 0;
           battleMusic.play().catch(() => {});
@@ -1264,6 +1316,7 @@
         updateHunterBar(me);
         updateBuffDisplay(me);
       }
+      updatePartyHud();
     }
 
     function updateSkillBar(me) {
@@ -1345,6 +1398,45 @@
           '</div>';
       }
       document.getElementById('buffDisplay').innerHTML = html;
+    }
+
+    function updatePartyHud() {
+      if (!gameState || !gameState.players) return;
+      const classIcon = { tank: '\u{1F6E1}', healer: '\u{1F49A}', dps_cac: '\u2694\uFE0F', dps_range: '\u{1F3AF}' };
+      const BUFF_ICONS = {
+        poison: '\u2620', atk_up: '\u2694', shield: '\u{1F6E1}', speed_up: '\u26A1', speed_down: '\u{1F422}',
+        invuln: '\u2728', taunt: '\u{1F4E2}', def_up: '\u{1F6E1}',
+      };
+      let html = '';
+      for (const p of gameState.players) {
+        const isMe = p.id === myId;
+        const hpPct = p.alive ? (p.hp / p.maxHp) : 0;
+        const hpColor = hpPct > 0.5 ? '#10b981' : hpPct > 0.25 ? '#f59e0b' : '#ef4444';
+        const manaPct = p.maxMana > 0 ? (p.mana / p.maxMana) * 100 : 0;
+        const mainH = p.mainHunter ? HUNTER_LIST[p.mainHunter]?.name : null;
+        const name = mainH || p.username || (isMe ? 'YOU' : p.id.substring(0, 5));
+
+        // Buffs/debuffs mini icons
+        let buffsHtml = '';
+        if (p.buffs && p.buffs.length > 0) {
+          for (const b of p.buffs) {
+            const icon = BUFF_ICONS[b.type] || '?';
+            const isNeg = b.type === 'poison' || b.type === 'speed_down' || b.type.startsWith('debuff_');
+            buffsHtml += '<div class="pm-buff ' + (isNeg ? 'neg' : 'pos') + '" title="' + b.type + (b.stacks > 1 ? ' x' + b.stacks : '') + '">' + icon + '</div>';
+          }
+        }
+
+        html += '<div class="party-member' + (!p.alive ? ' dead' : '') + (isMe ? ' is-me' : '') + '">' +
+          '<div class="pm-class-icon">' + (classIcon[p.class] || '?') + '</div>' +
+          '<div class="pm-info">' +
+          '<div class="pm-name">' + name + '</div>' +
+          '<div class="pm-hp-outer"><div class="pm-hp-fill" style="width:' + (hpPct * 100) + '%;background:' + hpColor + '"></div>' +
+          '<div class="pm-hp-text">' + Math.round(p.hp) + ' / ' + p.maxHp + '</div></div>' +
+          '<div class="pm-mana-outer"><div class="pm-mana-fill" style="width:' + manaPct + '%"></div></div>' +
+          (buffsHtml ? '<div class="pm-buffs">' + buffsHtml + '</div>' : '') +
+          '</div></div>';
+      }
+      document.getElementById('partyHud').innerHTML = html;
     }
 
     function formatNum(n) {
@@ -1733,6 +1825,7 @@
         ctx.save();
         ctx.translate(boss.x, boss.y);
         ctx.rotate(boss.rotation + Math.PI / 2);
+        ctx.scale(-1, 1); // Flip sprite horizontally (Manaya faces correct direction)
         if (boss.enraged) { ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 25; }
         else { ctx.shadowColor = 'rgba(155,109,255,0.3)'; ctx.shadowBlur = 12; }
         ctx.drawImage(bossImg, -halfSize, -halfSize, size, size);
@@ -1932,6 +2025,46 @@
       const icon = classIcon[p.class] || '';
       const mainH = p.mainHunter ? HUNTER_LIST[p.mainHunter]?.name : null;
       ctx.fillText(icon + ' ' + (mainH || p.username || (isMe ? 'YOU' : p.id.substring(0, 5))), p.x, p.y + 38);
+
+      // ── Buff/Debuff icons under sprite ──
+      if (p.buffs && p.buffs.length > 0) {
+        const BUFF_DRAW = {
+          poison: { icon: '\u2620', neg: true },
+          atk_up: { icon: '\u2694', neg: false },
+          shield: { icon: '\u{1F6E1}', neg: false },
+          speed_up: { icon: '\u26A1', neg: false },
+          speed_down: { icon: '\u{1F422}', neg: true },
+          invuln: { icon: '\u2728', neg: false },
+          taunt: { icon: '\u{1F4E2}', neg: false },
+        };
+        const buffCount = p.buffs.length;
+        const bSize = 16;
+        const bGap = 3;
+        const totalW = buffCount * bSize + (buffCount - 1) * bGap;
+        let bx = p.x - totalW / 2;
+        const by = p.y + 44;
+        for (const b of p.buffs) {
+          const info = BUFF_DRAW[b.type] || { icon: '?', neg: true };
+          // Background pill
+          ctx.fillStyle = info.neg ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.35)';
+          ctx.beginPath();
+          ctx.roundRect(bx - 1, by - 1, bSize + 2, bSize + 2, 3);
+          ctx.fill();
+          ctx.strokeStyle = info.neg ? '#ef4444' : '#10b981';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          // Icon
+          ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText(info.icon, bx + bSize / 2, by + bSize - 3);
+          // Stack count
+          if (b.stacks > 1) {
+            ctx.fillStyle = info.neg ? '#ff6666' : '#6ee7b7';
+            ctx.font = 'bold 8px sans-serif';
+            ctx.fillText('x' + b.stacks, bx + bSize + 1, by + 5);
+          }
+          bx += bSize + bGap;
+        }
+      }
 
       ctx.restore();
     }

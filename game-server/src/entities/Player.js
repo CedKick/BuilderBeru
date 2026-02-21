@@ -97,6 +97,17 @@ export class Player {
     return speed;
   }
 
+  // True damage: bypasses block and defense (oneshot mechanics like Death Ball)
+  takeTrueDamage(rawDamage, source) {
+    if (!this.alive || this.invulnerable) return 0;
+    if (this.dodging && this.dodgeTimer < PLAYER.DODGE_IFRAMES) return 0;
+    const damage = Math.max(1, Math.round(rawDamage));
+    this.hp -= damage;
+    this.stats.damageTaken += damage;
+    if (this.hp <= 0) { this.hp = 0; this.alive = false; this.stats.deaths++; }
+    return damage;
+  }
+
   takeDamage(rawDamage, source) {
     if (!this.alive || this.invulnerable) return 0;
     if (this.dodging && this.dodgeTimer < PLAYER.DODGE_IFRAMES) return 0;
