@@ -7,6 +7,7 @@ import { Mail, Inbox, Gift, Trash2, ChevronDown, ChevronUp, Check, X, ArrowLeft,
 import { isLoggedIn, authHeaders, getAuthUser } from '../utils/auth';
 import shadowCoinManager from '../components/ChibiSystem/ShadowCoinManager';
 import { WEAPONS } from './ShadowColosseum/equipmentData';
+import { HUNTERS } from './ShadowColosseum/raidData';
 
 const MAIL_TYPES = {
   admin: { label: 'Admin', color: 'bg-red-500', icon: '\uD83D\uDEE1\uFE0F' },
@@ -297,6 +298,24 @@ export default function MailInbox() {
       });
     }
 
+    // Hunters (add to raid collection or increase stars)
+    if (rewards.hunters && Array.isArray(rewards.hunters)) {
+      const RAID_KEY = 'shadow_colosseum_raid';
+      let raidData = JSON.parse(localStorage.getItem(RAID_KEY) || '{}');
+      if (!raidData.hunterCollection) raidData.hunterCollection = [];
+
+      rewards.hunters.forEach(h => {
+        const existing = raidData.hunterCollection.find(c => c.id === h.id);
+        if (existing) {
+          existing.stars = (existing.stars || 0) + (h.stars || 0);
+        } else {
+          raidData.hunterCollection.push({ id: h.id, stars: h.stars || 0 });
+        }
+      });
+
+      localStorage.setItem(RAID_KEY, JSON.stringify(raidData));
+    }
+
     // Coins
     if (rewards.coins && typeof rewards.coins === 'number') {
       shadowCoinManager.addCoins(rewards.coins, 'mail-reward');
@@ -375,11 +394,19 @@ export default function MailInbox() {
           });
         }
 
+        if (rewards.hunters && rewards.hunters.length > 0) {
+          message += '\n\uD83E\uDDB8 HUNTERS :\n';
+          rewards.hunters.forEach(h => {
+            const hunterName = HUNTERS[h.id]?.name || h.id;
+            message += `  \u2022 ${hunterName} ${h.stars}★\n`;
+          });
+        }
+
         if (rewards.coins) {
           message += `\n\uD83E\uDE99 ${rewards.coins} Shadow Coins\n`;
         }
 
-        message += '\n\u27A1\uFE0F Rendez-vous dans Shadow Colosseum pour utiliser vos nouvelles armes !';
+        message += '\n\u27A1\uFE0F Rendez-vous dans Shadow Colosseum pour utiliser vos nouvelles recompenses !';
 
         alert(message);
       } else {
@@ -512,6 +539,14 @@ export default function MailInbox() {
       );
     }
 
+    if (rewards.hunters && rewards.hunters.length > 0) {
+      items.push(
+        <span key="hunters" className="text-cyan-400">
+          \uD83E\uDDB8 {rewards.hunters.length} hunter{rewards.hunters.length > 1 ? 's' : ''}
+        </span>
+      );
+    }
+
     if (rewards.hammers && Object.keys(rewards.hammers).length > 0) {
       const totalHammers = Object.values(rewards.hammers).reduce((sum, val) => sum + val, 0);
       items.push(
@@ -570,6 +605,20 @@ export default function MailInbox() {
                     ) : (
                       <span className="text-xs text-gray-400"> (1 exemplaire)</span>
                     )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {rewards.hunters && rewards.hunters.length > 0 && (
+            <div>
+              <div className="text-gray-400 mb-1">Hunters:</div>
+              <ul className="list-disc list-inside text-cyan-300 space-y-0.5">
+                {rewards.hunters.map((h, i) => (
+                  <li key={i}>
+                    {HUNTERS[h.id]?.name || h.id}
+                    <span className="text-yellow-400 ml-1">{h.stars}★</span>
                   </li>
                 ))}
               </ul>
@@ -861,6 +910,7 @@ export default function MailInbox() {
                 const mailTypeInfo = MAIL_TYPES[mail.mailType] || MAIL_TYPES.system;
                 const hasRewards = mail.rewards && (
                   (mail.rewards.weapons && mail.rewards.weapons.length > 0) ||
+                  (mail.rewards.hunters && mail.rewards.hunters.length > 0) ||
                   (mail.rewards.hammers && Object.keys(mail.rewards.hammers).length > 0) ||
                   (mail.rewards.fragments && Object.keys(mail.rewards.fragments).length > 0) ||
                   mail.rewards.coins

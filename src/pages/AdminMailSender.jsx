@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { Send, Plus, Trash2, Eye, X, Check, Shield } from 'lucide-react';
 import { isLoggedIn, authHeaders, getAuthUser } from '../utils/auth';
 import { WEAPONS } from './ShadowColosseum/equipmentData';
+import { HUNTERS } from './ShadowColosseum/raidData';
 
 const MAIL_TYPES = [
   { value: 'admin', label: 'Admin', color: 'bg-red-500' },
@@ -43,6 +44,7 @@ export default function AdminMailSender() {
 
   // Rewards
   const [selectedWeapons, setSelectedWeapons] = useState([]);
+  const [selectedHunters, setSelectedHunters] = useState([]);
   const [hammers, setHammers] = useState({});
   const [fragments, setFragments] = useState({});
   const [coins, setCoins] = useState(0);
@@ -50,6 +52,10 @@ export default function AdminMailSender() {
   // Weapon form
   const [weaponFormId, setWeaponFormId] = useState('');
   const [weaponFormQuantity, setWeaponFormQuantity] = useState(1);
+
+  // Hunter form
+  const [hunterFormId, setHunterFormId] = useState('');
+  const [hunterFormStars, setHunterFormStars] = useState(0);
 
   // UI
   const [showPreview, setShowPreview] = useState(false);
@@ -76,6 +82,7 @@ export default function AdminMailSender() {
     setMailType('system');
     setMessage('');
     setSelectedWeapons([]);
+    setSelectedHunters([]);
     setHammers({});
     setFragments({});
     setCoins(0);
@@ -137,6 +144,23 @@ export default function AdminMailSender() {
     } else {
       setFragments(prev => ({ ...prev, [fragmentId]: value }));
     }
+  };
+
+  const addHunter = (hunterId, stars) => {
+    if (!hunterId) return;
+    if (selectedHunters.find(h => h.id === hunterId)) {
+      alert('Ce hunter a deja ete ajoute');
+      return;
+    }
+    setSelectedHunters(prev => [...prev, { id: hunterId, stars: stars || 0 }]);
+  };
+
+  const removeHunter = (hunterId) => {
+    setSelectedHunters(prev => prev.filter(h => h.id !== hunterId));
+  };
+
+  const getHunterName = (hunterId) => {
+    return HUNTERS[hunterId]?.name || hunterId;
   };
 
   // User search with debounce
@@ -204,6 +228,10 @@ export default function AdminMailSender() {
 
     if (selectedWeapons.length > 0) {
       rewards.weapons = selectedWeapons;
+    }
+
+    if (selectedHunters.length > 0) {
+      rewards.hunters = selectedHunters;
     }
 
     if (Object.keys(hammers).length > 0) {
@@ -359,6 +387,20 @@ export default function AdminMailSender() {
                           {getWeaponName(w.id)}
                           {w.quantity > 1 && <span className="text-xs text-amber-500"> x{w.quantity}</span>}
                           {w.quantity === 1 && <span className="text-xs text-gray-500"> (1 exemplaire)</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {rewards.hunters && rewards.hunters.length > 0 && (
+                  <div className="mb-3">
+                    <div className="text-xs text-gray-400 mb-1">Hunters:</div>
+                    <ul className="list-disc list-inside text-cyan-300 text-sm space-y-1">
+                      {rewards.hunters.map((h, i) => (
+                        <li key={i}>
+                          {getHunterName(h.id)}
+                          <span className="text-yellow-400 ml-1">{h.stars}★</span>
                         </li>
                       ))}
                     </ul>
@@ -742,6 +784,113 @@ export default function AdminMailSender() {
                           onClick={() => removeWeapon(weapon.id)}
                           className="text-red-400 hover:text-red-300 p-2 hover:bg-red-500/20 rounded transition-colors"
                           title="Retirer cette arme"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Hunters */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Hunters (doublons)
+                {selectedHunters.length > 0 && (
+                  <span className="ml-2 text-xs bg-cyan-500 text-white px-2 py-1 rounded-full font-bold">
+                    {selectedHunters.length} ajoute{selectedHunters.length > 1 ? 's' : ''}
+                  </span>
+                )}
+              </label>
+
+              {/* Add hunter */}
+              <div className="flex gap-2 mb-3">
+                <select
+                  value={hunterFormId}
+                  onChange={(e) => setHunterFormId(e.target.value)}
+                  className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                  style={{ colorScheme: 'dark' }}
+                >
+                  <option value="" style={{ backgroundColor: '#1a1a2a', color: '#9ca3af' }}>Selectionner un hunter</option>
+                  {Object.entries(HUNTERS).map(([id, hunter]) => (
+                    <option key={id} value={id} style={{ backgroundColor: '#1a1a2a', color: 'white' }}>
+                      {hunter.name} ({hunter.element} - {hunter.rarity})
+                    </option>
+                  ))}
+                </select>
+
+                {/* Stars controls */}
+                <div className="flex items-center gap-1 bg-white/10 border border-white/20 rounded-lg px-2">
+                  <button
+                    onClick={() => setHunterFormStars(Math.max(0, hunterFormStars - 1))}
+                    className="text-white hover:text-cyan-400 p-1"
+                  >
+                    <span className="text-xl">-</span>
+                  </button>
+                  <span className="text-yellow-400 font-bold w-12 text-center">
+                    {hunterFormStars}★
+                  </span>
+                  <button
+                    onClick={() => setHunterFormStars(Math.min(65, hunterFormStars + 1))}
+                    className="text-white hover:text-cyan-400 p-1"
+                  >
+                    <span className="text-xl">+</span>
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => {
+                    if (!hunterFormId) {
+                      alert('Veuillez selectionner un hunter');
+                      return;
+                    }
+                    addHunter(hunterFormId, hunterFormStars);
+                    setHunterFormId('');
+                    setHunterFormStars(0);
+                  }}
+                  className="bg-cyan-500 hover:bg-cyan-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <Plus size={20} />
+                  Ajouter
+                </button>
+              </div>
+
+              {/* Empty state */}
+              {selectedHunters.length === 0 && (
+                <div className="text-center py-4 bg-white/5 rounded-lg border border-dashed border-gray-600">
+                  <p className="text-gray-500 text-sm">
+                    Aucun hunter ajoute. Les doublons augmentent les etoiles du joueur.
+                  </p>
+                </div>
+              )}
+
+              {/* Selected hunters list */}
+              {selectedHunters.length > 0 && (
+                <div className="bg-cyan-500/10 border-2 border-cyan-500/50 rounded-lg p-4">
+                  <div className="text-sm font-bold text-cyan-400 mb-3 flex items-center gap-2">
+                    <Check size={16} />
+                    Hunters qui seront envoyes :
+                  </div>
+                  <div className="space-y-2">
+                    {selectedHunters.map((hunter) => (
+                      <div
+                        key={hunter.id}
+                        className="flex items-center gap-3 bg-black/30 border border-cyan-500/30 rounded-lg p-3"
+                      >
+                        <div className="flex-1">
+                          <div className="text-cyan-300 font-bold text-lg">
+                            {getHunterName(hunter.id)}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {hunter.stars > 0 ? `${hunter.stars}★ — ajoute au joueur ou +${hunter.stars} etoiles` : 'Ajoute au joueur (0★)'}
+                          </div>
+                        </div>
+                        <div className="text-yellow-400 font-bold">{hunter.stars}★</div>
+                        <button
+                          onClick={() => removeHunter(hunter.id)}
+                          className="text-red-400 hover:text-red-300 p-2 hover:bg-red-500/20 rounded transition-colors"
                         >
                           <Trash2 size={18} />
                         </button>

@@ -101,6 +101,19 @@ async function handleSend(req, res) {
         }
       }
     }
+    if (rewards.hunters && !Array.isArray(rewards.hunters)) {
+      return res.status(400).json({ error: 'rewards.hunters must be array' });
+    }
+    if (rewards.hunters) {
+      for (const h of rewards.hunters) {
+        if (!h.id || typeof h.id !== 'string') {
+          return res.status(400).json({ error: 'Each hunter must have a string id' });
+        }
+        if (h.stars !== undefined && (typeof h.stars !== 'number' || h.stars < 0)) {
+          return res.status(400).json({ error: `Invalid stars for hunter ${h.id}` });
+        }
+      }
+    }
     if (rewards.coins !== undefined && typeof rewards.coins !== 'number') {
       return res.status(400).json({ error: 'rewards.coins must be number' });
     }
