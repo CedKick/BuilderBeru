@@ -11,6 +11,9 @@ const POD_SPRITE = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v177160413
 
 // ─── Pod 042 Modes ──────────────────────────────────────────
 const POD_MODES = ['normal', 'calm', 'hidden'];
+const POD_MODE_ICONS = { normal: '🤖', calm: '💤', hidden: '👁️‍🗨️' };
+const POD_MODE_LABELS = { normal: 'Normal', calm: 'Veille', hidden: 'Caché' };
+const POD_MODE_DESC = { normal: 'Pod 042 patrouille', calm: 'Mode économie', hidden: 'Désactiver Pod' };
 
 // ─── Messages de Pod 042 ────────────────────────────────────
 const POD_MESSAGES = {
@@ -77,6 +80,12 @@ export default function FloatingPod042({
   const [isThrown, setIsThrown] = useState(false);
   const [throwSpin, setThrowSpin] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [showModeMenu, setShowModeMenu] = useState(false);
+
+  const selectMode = (newMode) => {
+    setMode(newMode);
+    setShowModeMenu(false);
+  };
 
   const mouseRef = useRef({ x: 0, y: 0 });
   const targetRef = useRef({ x: 150, y: 150 });
@@ -299,51 +308,95 @@ export default function FloatingPod042({
     };
   }, [isDragging]);
 
-  if (mode === 'hidden') return null;
-
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, scale: 0 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0 }}
-        onMouseDown={handleDragStart}
-        onTouchStart={handleDragStart}
-        className="fixed z-[9999] cursor-grab active:cursor-grabbing select-none"
-        style={{
-          left: position.x,
-          top: position.y,
-          transform: isThrown ? `rotate(${throwSpin}deg)` : undefined,
-        }}
-      >
-        <img
-          src={POD_SPRITE}
-          alt="Pod 042"
-          className="w-16 h-16 object-contain drop-shadow-lg"
-          draggable={false}
-        />
-        <div className="absolute inset-0 bg-red-500/20 rounded-full blur-xl animate-pulse" />
-      </motion.div>
-
-      <AnimatePresence>
-        {showMessage && (
+      {/* ─── Mascot visuel (caché si mode hidden) ─── */}
+      {mode !== 'hidden' && (
+        <>
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.8 }}
-            className="fixed z-[10000] max-w-xs pointer-events-none"
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            onMouseDown={handleDragStart}
+            onTouchStart={handleDragStart}
+            className="fixed z-[9999] cursor-grab active:cursor-grabbing select-none"
             style={{
-              left: position.x + 70,
-              top: position.y - 10,
+              left: position.x,
+              top: position.y,
+              transform: isThrown ? `rotate(${throwSpin}deg)` : undefined,
             }}
           >
-            <div className="px-4 py-2 rounded-xl border-2 shadow-lg backdrop-blur-sm font-mono bg-red-950/90 border-red-500/50 text-red-100">
-              <p className="text-xs font-medium leading-relaxed whitespace-pre-line">{message}</p>
-              <div className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px] border-r-red-500/50" />
-            </div>
+            <img
+              src={POD_SPRITE}
+              alt="Pod 042"
+              className="w-16 h-16 object-contain drop-shadow-lg"
+              draggable={false}
+            />
+            <div className="absolute inset-0 bg-red-500/20 rounded-full blur-xl animate-pulse" />
           </motion.div>
-        )}
-      </AnimatePresence>
+
+          <AnimatePresence>
+            {showMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.8 }}
+                className="fixed z-[10000] max-w-xs pointer-events-none"
+                style={{
+                  left: position.x + 70,
+                  top: position.y - 10,
+                }}
+              >
+                <div className="px-4 py-2 rounded-xl border-2 shadow-lg backdrop-blur-sm font-mono bg-red-950/90 border-red-500/50 text-red-100">
+                  <p className="text-xs font-medium leading-relaxed whitespace-pre-line">{message}</p>
+                  <div className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px] border-r-red-500/50" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
+
+      {/* ─── Mode selector (TOUJOURS visible) ─── */}
+      <div className="fixed bottom-2 left-12 z-[10001]">
+        <button
+          onClick={() => setShowModeMenu(!showModeMenu)}
+          className="w-8 h-8 rounded-full bg-red-950/80 border border-red-500/40 flex items-center justify-center text-sm hover:bg-red-900/90 hover:border-red-400/60 transition-all shadow-lg backdrop-blur-sm"
+          title={`Pod 042 : ${POD_MODE_LABELS[mode]}`}
+        >
+          {POD_MODE_ICONS[mode]}
+        </button>
+
+        <AnimatePresence>
+          {showModeMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.9 }}
+              className="absolute bottom-10 left-0 bg-red-950/95 border border-red-500/40 rounded-xl p-2 shadow-2xl backdrop-blur-md min-w-[160px]"
+            >
+              <p className="text-[10px] text-red-300/60 font-mono px-2 pb-1 border-b border-red-500/20 mb-1">POD 042</p>
+              {POD_MODES.map((m) => (
+                <button
+                  key={m}
+                  onClick={() => selectMode(m)}
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-all text-xs ${
+                    mode === m
+                      ? 'bg-red-500/30 text-red-100'
+                      : 'hover:bg-red-500/15 text-red-300/80'
+                  }`}
+                >
+                  <span>{POD_MODE_ICONS[m]}</span>
+                  <div>
+                    <p className="font-medium">{POD_MODE_LABELS[m]}</p>
+                    <p className="text-[9px] opacity-60">{POD_MODE_DESC[m]}</p>
+                  </div>
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </>
   );
 }

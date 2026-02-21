@@ -3277,15 +3277,10 @@ export default function ShadowColosseum() {
       const isNew = data.weaponCollection['w_katana_v'] === undefined;
       weaponDrop = { id: 'w_katana_v', ...WEAPONS.w_katana_v, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_katana_v'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
-    // Baton de Gul'dan: 1/80,000 from Archdemon (cumulative pity: +0.001% per kill without drop)
-    if (!weaponDrop && stage.id === 'archdemon') {
-      const pityKills = data.archDemonKills || 0;
-      const baseRate = 1 / 80000;
-      const pityBonus = pityKills * 0.00001; // +0.001% per kill
-      if (Math.random() < (baseRate + pityBonus) * lootMult) {
-        const isNew = data.weaponCollection['w_guldan'] === undefined;
-        weaponDrop = { id: 'w_guldan', ...WEAPONS.w_guldan, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_guldan'] || 0) + 1, MAX_WEAPON_AWAKENING) };
-      }
+    // Baton de Gul'dan: 1/80,000 from Archdemon (flat rate, no pity)
+    if (!weaponDrop && stage.id === 'archdemon' && Math.random() < (1 / 80000) * lootMult) {
+      const isNew = data.weaponCollection['w_guldan'] === undefined;
+      weaponDrop = { id: 'w_guldan', ...WEAPONS.w_guldan, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_guldan'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
 
     // Fragment drops (mercy system) — 1% chance per kill
@@ -9164,24 +9159,16 @@ export default function ShadowColosseum() {
                   ) : (
                     <>
                       <span className="text-[10px] opacity-40">{'\uD83E\uDE84'}</span>
-                      <span className="text-[9px] text-gray-500">{(data.archDemonKills || 0) > 0 ? `${data.archDemonKills} kills sans Baton de Gul'dan` : 'Chasse en cours...'}</span>
+                      <span className="text-[9px] text-gray-500">{(data.archDemonKills || 0) > 0 ? `${data.archDemonKills} kills` : 'Chasse en cours...'}</span>
                     </>
                   )}
                 </div>
                 {/* Pity system info */}
                 {(data.archDemonKills || 0) > 0 && (
-                  <div className="mt-1.5 space-y-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[9px] text-gray-500">Chance cumulee :</span>
-                      <span className="text-[9px] text-green-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - (1/80000 + (data.archDemonKills || 0) * 0.00001), 1)) * 100).toFixed(4)}%</span>
-                      <span className="text-[8px] text-gray-600">(pity: +{((data.archDemonKills || 0) * 0.001).toFixed(3)}%)</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-green-600 to-emerald-400 rounded-full transition-all"
-                          style={{ width: `${Math.min(100, (1 - Math.pow(1 - 1/80000, data.archDemonKills)) * 100 * 50)}%` }} />
-                      </div>
-                    </div>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <span className="text-[9px] text-gray-500">Taux :</span>
+                    <span className="text-[9px] text-green-400 font-bold">1/80 000</span>
+                    <span className="text-[8px] text-gray-600">({(1/80000 * 100).toFixed(5)}% par kill)</span>
                   </div>
                 )}
                 {/* Fragment counter */}

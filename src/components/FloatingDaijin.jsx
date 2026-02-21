@@ -10,6 +10,9 @@ const DAIJIN_SPRITE = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v177160
 
 // ─── Daijin Modes ──────────────────────────────────────────
 const DAIJIN_MODES = ['normal', 'calm', 'hidden'];
+const DAIJIN_MODE_ICONS = { normal: '🐱', calm: '😴', hidden: '👻' };
+const DAIJIN_MODE_LABELS = { normal: 'Normal', calm: 'Calme', hidden: 'Cache' };
+const DAIJIN_MODE_DESC = { normal: 'Se balade librement', calm: 'Medite tranquillement', hidden: 'Invisible' };
 
 // ─── Messages de Daijin ────────────────────────────────────
 const DAIJIN_MESSAGES = {
@@ -83,6 +86,7 @@ export default function FloatingDaijin({
   const [isThrown, setIsThrown] = useState(false);
   const [throwSpin, setThrowSpin] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [showModeMenu, setShowModeMenu] = useState(false);
 
   const mouseRef = useRef({ x: 0, y: 0 });
   const targetRef = useRef({ x: 100, y: 100 });
@@ -305,51 +309,103 @@ export default function FloatingDaijin({
     };
   }, [isDragging]);
 
-  if (mode === 'hidden') return null;
+  const selectMode = (m) => {
+    setMode(m);
+    setShowModeMenu(false);
+  };
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, scale: 0 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0 }}
-        onMouseDown={handleDragStart}
-        onTouchStart={handleDragStart}
-        className="fixed z-[9999] cursor-grab active:cursor-grabbing select-none"
-        style={{
-          left: position.x,
-          top: position.y,
-          transform: isThrown ? `rotate(${throwSpin}deg)` : undefined,
-        }}
-      >
-        <img
-          src={DAIJIN_SPRITE}
-          alt="Daijin"
-          className="w-16 h-16 object-contain drop-shadow-lg"
-          draggable={false}
-        />
-        <div className="absolute inset-0 bg-blue-400/20 rounded-full blur-xl animate-pulse" />
-      </motion.div>
-
-      <AnimatePresence>
-        {showMessage && (
+      {mode !== 'hidden' && (
+        <>
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.8 }}
-            className="fixed z-[10000] max-w-xs pointer-events-none"
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            onMouseDown={handleDragStart}
+            onTouchStart={handleDragStart}
+            className="fixed z-[9999] cursor-grab active:cursor-grabbing select-none"
             style={{
-              left: position.x + 70,
-              top: position.y - 10,
+              left: position.x,
+              top: position.y,
+              transform: isThrown ? `rotate(${throwSpin}deg)` : undefined,
             }}
           >
-            <div className="px-4 py-2 rounded-xl border-2 shadow-lg backdrop-blur-sm bg-blue-900/90 border-blue-400/50 text-blue-100">
-              <p className="text-xs font-medium leading-relaxed whitespace-pre-line">{message}</p>
-              <div className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px] border-r-blue-400/50" />
-            </div>
+            <img
+              src={DAIJIN_SPRITE}
+              alt="Daijin"
+              className="w-16 h-16 object-contain drop-shadow-lg"
+              draggable={false}
+            />
+            <div className="absolute inset-0 bg-blue-400/20 rounded-full blur-xl animate-pulse" />
           </motion.div>
-        )}
-      </AnimatePresence>
+
+          <AnimatePresence>
+            {showMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.8 }}
+                className="fixed z-[10000] max-w-xs pointer-events-none"
+                style={{
+                  left: position.x + 70,
+                  top: position.y - 10,
+                }}
+              >
+                <div className="px-4 py-2 rounded-xl border-2 shadow-lg backdrop-blur-sm bg-blue-900/90 border-blue-400/50 text-blue-100">
+                  <p className="text-xs font-medium leading-relaxed whitespace-pre-line">{message}</p>
+                  <div className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px] border-r-blue-400/50" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
+
+      {/* Mode Selector Button */}
+      <div className="fixed bottom-2 left-[40px] z-[9999]">
+        <button
+          onClick={() => setShowModeMenu(prev => !prev)}
+          className="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 text-[11px]"
+          style={{
+            opacity: showModeMenu ? 0.9 : 0.3,
+            background: showModeMenu ? 'rgba(59, 130, 246, 0.5)' : 'rgba(59, 130, 246, 0.2)',
+          }}
+          title={`Daijin: ${DAIJIN_MODE_LABELS[mode]}`}
+        >
+          {DAIJIN_MODE_ICONS[mode]}
+        </button>
+        <AnimatePresence>
+          {showModeMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.8 }}
+              className="absolute bottom-9 left-0 bg-gray-900/95 backdrop-blur-md rounded-xl p-2 border border-blue-500/30 shadow-xl"
+              style={{ width: '150px' }}
+            >
+              <div className="text-[9px] text-blue-400/80 font-bold uppercase tracking-wider mb-1.5 text-center">Mode Daijin</div>
+              {DAIJIN_MODES.map(m => (
+                <button
+                  key={m}
+                  onClick={() => selectMode(m)}
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all mb-0.5 ${
+                    mode === m
+                      ? 'bg-blue-500/25 text-blue-300 border border-blue-500/40'
+                      : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200 border border-transparent'
+                  }`}
+                >
+                  <span className="text-sm">{DAIJIN_MODE_ICONS[m]}</span>
+                  <div className="text-left">
+                    <div>{DAIJIN_MODE_LABELS[m]}</div>
+                    <div className="text-[8px] text-gray-500 font-normal">{DAIJIN_MODE_DESC[m]}</div>
+                  </div>
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </>
   );
 }
