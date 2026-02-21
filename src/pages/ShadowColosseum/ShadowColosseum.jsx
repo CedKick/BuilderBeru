@@ -387,7 +387,8 @@ const loadData = () => {
     if (d.monarchKills === undefined) d.monarchKills = 0;
     if (!d.monarchDropLog) d.monarchDropLog = [];
     if (d.lootBoostMs === undefined) d.lootBoostMs = 0;
-    if (!d.fragments) d.fragments = { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0 };
+    if (!d.fragments) d.fragments = { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 };
+    if (d.fragments && d.fragments.fragment_guldan === undefined) d.fragments.fragment_guldan = 0;
     if (!d.talentSkills) d.talentSkills = {};
     // Migration: add locked field to artifacts
     d.artifactInventory = (d.artifactInventory || []).map(art => ({
@@ -9028,6 +9029,15 @@ export default function ShadowColosseum() {
                     </div>
                   </div>
                 )}
+                {/* Fragment counter */}
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <span className="text-[9px] text-gray-500">Fragments :</span>
+                  <span className="text-[9px] text-orange-300 font-bold">{'\uD83D\uDD25'} {(data.fragments?.fragment_sulfuras || 0)}/10</span>
+                  <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-orange-500 to-red-400 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, (data.fragments?.fragment_sulfuras || 0) * 10)}%` }} />
+                  </div>
+                </div>
               </div>
             )}
             {/* Zephyr Tracker — persistent kill counter & Rae'shalare hunt */}
@@ -9062,6 +9072,15 @@ export default function ShadowColosseum() {
                     </div>
                   </div>
                 )}
+                {/* Fragment counter */}
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <span className="text-[9px] text-gray-500">Fragments :</span>
+                  <span className="text-[9px] text-teal-300 font-bold">{'\uD83C\uDF00'} {(data.fragments?.fragment_raeshalare || 0)}/10</span>
+                  <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-teal-500 to-cyan-400 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, (data.fragments?.fragment_raeshalare || 0) * 10)}%` }} />
+                  </div>
+                </div>
               </div>
             )}
             {/* Monarque Supreme Tracker — Katana Z & V hunt */}
@@ -9106,6 +9125,74 @@ export default function ShadowColosseum() {
                     </div>
                   </div>
                 )}
+                {/* Fragment counters — Katana Z & V */}
+                <div className="mt-1.5 space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] text-gray-500">Fragments :</span>
+                    <span className="text-[9px] text-blue-300 font-bold">{'\u26A1'} Katana Z {(data.fragments?.fragment_katana_z || 0)}/10</span>
+                    <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, (data.fragments?.fragment_katana_z || 0) * 10)}%` }} />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] text-transparent">Fragments :</span>
+                    <span className="text-[9px] text-emerald-300 font-bold">{'\uD83D\uDC9A'} Katana V {(data.fragments?.fragment_katana_v || 0)}/10</span>
+                    <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, (data.fragments?.fragment_katana_v || 0) * 10)}%` }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Archdemon Tracker — persistent kill counter & Baton de Gul'dan hunt */}
+            {STAGES[selStage]?.id === 'archdemon' && (
+              <div className="mt-1 px-2.5 py-2 rounded-lg bg-gradient-to-b from-green-900/40 to-emerald-900/40 border border-green-500/30 backdrop-blur-sm">
+                <div className="text-[9px] text-green-400 font-bold uppercase tracking-wider mb-1">{'\uD83D\uDE08'} Archdemon</div>
+                <div className="flex items-center gap-2 text-[10px]">
+                  <span className="text-green-300 font-bold">{'\u2620\uFE0F'} {data.archDemonKills || 0} kills</span>
+                  <span className="text-gray-600">|</span>
+                  <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {(data.archDemonDropLog || []).length} drops</span>
+                </div>
+                <div className="mt-1 flex items-center gap-1.5">
+                  {data.weaponCollection?.['w_guldan'] !== undefined ? (
+                    <>
+                      <img src={WEAPONS.w_guldan?.sprite} alt="Baton de Gul'dan" className="w-4 h-4 object-contain" />
+                      <span className="text-[9px] text-green-300 font-bold">Baton de Gul'dan obtenu ! (x{(data.archDemonDropLog || []).filter(d => d.weaponId === 'w_guldan').length} drops, A{data.weaponCollection['w_guldan']})</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-[10px] opacity-40">{'\uD83E\uDE84'}</span>
+                      <span className="text-[9px] text-gray-500">{(data.archDemonKills || 0) > 0 ? `${data.archDemonKills} kills sans Baton de Gul'dan` : 'Chasse en cours...'}</span>
+                    </>
+                  )}
+                </div>
+                {/* Pity system info */}
+                {(data.archDemonKills || 0) > 0 && (
+                  <div className="mt-1.5 space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] text-gray-500">Chance cumulee :</span>
+                      <span className="text-[9px] text-green-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - (1/80000 + (data.archDemonKills || 0) * 0.00001), 1)) * 100).toFixed(4)}%</span>
+                      <span className="text-[8px] text-gray-600">(pity: +{((data.archDemonKills || 0) * 0.001).toFixed(3)}%)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-green-600 to-emerald-400 rounded-full transition-all"
+                          style={{ width: `${Math.min(100, (1 - Math.pow(1 - 1/80000, data.archDemonKills)) * 100 * 50)}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* Fragment counter */}
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <span className="text-[9px] text-gray-500">Fragments :</span>
+                  <span className="text-[9px] text-green-300 font-bold">{'\uD83E\uDE84'} {(data.fragments?.fragment_guldan || 0)}/10</span>
+                  <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, (data.fragments?.fragment_guldan || 0) * 10)}%` }} />
+                  </div>
+                </div>
               </div>
             )}
           </div>

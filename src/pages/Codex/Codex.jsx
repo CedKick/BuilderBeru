@@ -19,6 +19,7 @@ const RAID_KEY = 'shadow_colosseum_raid';
 
 const WEAPON_SPRITES = {
   w_sulfuras: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771443640/WeaponSulfuras_efg3ca.png',
+  w_guldan: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771638363/batonGuldan_vuu7ez.png',
 };
 
 const ELEMENT_CONFIG = {
@@ -765,6 +766,19 @@ export default function Codex() {
                           <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 mb-4">
                             <div className="text-[10px] text-emerald-400 font-bold uppercase mb-1">Passive Unique — Lame Veneneuse</div>
                             <div className="text-[11px] text-emerald-300">Chaque attaque empoisonne l'ennemi (3% ATK/stack/tour, max 10 stacks). 30% de chance par coup de declencher un buff aleatoire : +10% toutes stats permanent cumulable (Solo) / +5% toutes stats permanent cumulable (Raid) / Bouclier Divin (absorbe 1 coup) / Puissance x6 au prochain coup.</div>
+                          </div>
+                        )}
+                        {w.passive === 'guldan_halo' && (
+                          <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/30 mb-4">
+                            <div className="text-[10px] text-green-400 font-bold uppercase mb-1">Passive Unique — Halo Eternel</div>
+                            <div className="text-[11px] text-green-300 space-y-1">
+                              <div><span className="text-green-400 font-bold">Halo de Soin :</span> Chaque attaque ajoute un stack de Halo. Soigne {'{'}10% des degats infliges x nombre de stacks{'}'} a chaque coup. Le soin augmente exponentiellement au fil du combat.</div>
+                              <div><span className="text-green-400 font-bold">Renforcement :</span> +2% DEF et +0.2% ATK par attaque (permanent, cumulable tout le combat).</div>
+                              <div><span className="text-green-400 font-bold">Halo Celeste :</span> 50% de chance par attaque de gagner un stack de vitesse (+200% SPD/stack, max 3 stacks).</div>
+                              <div><span className="text-green-400 font-bold">Etourdissement :</span> En fin de tour, chaque stack de Halo a 50% de chance d'etourdir l'ennemi (skip son tour).</div>
+                              <div><span className="text-green-400 font-bold">Halo Divin :</span> Ressuscite automatiquement le premier allie mort a 50% PV (1 fois par combat, ARC II uniquement).</div>
+                            </div>
+                            <div className="mt-2 text-[9px] text-gray-500 italic">Drop : Archdemon (1/80 000 + pity system). Fragments : 0.3% par kill.</div>
                           </div>
                         )}
 
