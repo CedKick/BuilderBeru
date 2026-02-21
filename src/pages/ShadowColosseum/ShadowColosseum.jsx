@@ -154,6 +154,88 @@ const AI_DEFAULT_MAINS = {
   collier: 'atk_pct', bracelet: 'atk_pct', anneau: 'crit_rate', boucles: 'atk_pct',
 };
 
+// ─── Beru Advisor Constants ──────────────────────────────────
+
+const ELEMENT_SET_MAP = { fire: 'flamme_maudite', water: 'maree_eternelle', shadow: 'ombre_souveraine' };
+
+const CLASS_SET_TIERS = {
+  assassin: {
+    S: ['infamie_chaotique', 'ELEMENT_SET'],
+    A: ['expertise_bestiale', 'fureur_desespoir', 'flamme_interieure'],
+    B: ['eclat_angelique', 'voile_ombre'],
+    C: ['volonte_de_fer', 'benediction_celeste'],
+  },
+  fighter: {
+    S: ['infamie_chaotique', 'ELEMENT_SET'],
+    A: ['expertise_bestiale', 'fureur_desespoir', 'flamme_interieure'],
+    B: ['chaines_destin', 'aura_commandeur'],
+    C: ['benediction_celeste', 'source_arcanique'],
+  },
+  mage: {
+    S: ['ELEMENT_SET', 'infamie_chaotique'],
+    A: ['expertise_bestiale', 'echo_temporel', 'source_arcanique'],
+    B: ['eclat_angelique', 'flamme_interieure'],
+    C: ['volonte_de_fer', 'chaines_destin'],
+  },
+  tank: {
+    S: ['volonte_de_fer', 'chaines_destin'],
+    A: ['aura_commandeur', 'benediction_celeste'],
+    B: ['sacrifice_martyr', 'voile_ombre'],
+    C: ['infamie_chaotique', 'expertise_bestiale'],
+  },
+  support: {
+    S: ['benediction_celeste', 'echo_temporel'],
+    A: ['aura_commandeur', 'volonte_de_fer', 'source_arcanique'],
+    B: ['sacrifice_martyr', 'chaines_destin'],
+    C: ['infamie_chaotique', 'fureur_desespoir'],
+  },
+};
+
+const CLASS_IDEAL_STATS = {
+  assassin: {
+    mainStats: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_dmg', bottes: 'spd_flat', collier: 'atk_pct', bracelet: 'atk_pct', anneau: 'crit_rate', boucles: 'atk_pct' },
+    goodSubs: ['crit_dmg', 'crit_rate', 'atk_pct', 'spd_flat', 'atk_flat'],
+    badSubs: ['hp_flat', 'def_flat', 'res_flat'],
+  },
+  fighter: {
+    mainStats: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_rate', bottes: 'spd_flat', collier: 'atk_pct', bracelet: 'atk_pct', anneau: 'crit_dmg', boucles: 'atk_pct' },
+    goodSubs: ['atk_pct', 'crit_rate', 'crit_dmg', 'atk_flat', 'hp_pct'],
+    badSubs: ['res_flat', 'def_flat'],
+  },
+  mage: {
+    mainStats: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_dmg', bottes: 'spd_flat', collier: 'atk_pct', bracelet: 'atk_pct', anneau: 'crit_rate', boucles: 'atk_pct' },
+    goodSubs: ['atk_pct', 'crit_dmg', 'crit_rate', 'spd_flat', 'atk_flat'],
+    badSubs: ['hp_flat', 'def_flat', 'def_pct'],
+  },
+  tank: {
+    mainStats: { casque: 'hp_pct', plastron: 'atk_flat', gants: 'crit_rate', bottes: 'def_pct', collier: 'hp_pct', bracelet: 'def_pct', anneau: 'res_flat', boucles: 'hp_pct' },
+    goodSubs: ['hp_pct', 'def_pct', 'res_flat', 'hp_flat', 'def_flat'],
+    badSubs: ['crit_dmg', 'atk_pct', 'atk_flat'],
+  },
+  support: {
+    mainStats: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_rate', bottes: 'spd_flat', collier: 'hp_pct', bracelet: 'def_pct', anneau: 'res_flat', boucles: 'hp_pct' },
+    goodSubs: ['hp_pct', 'spd_flat', 'res_flat', 'def_pct', 'hp_flat'],
+    badSubs: ['crit_dmg', 'atk_flat'],
+  },
+};
+
+const BERU_ADVICE_DIALOGUES = {
+  analyzing: ["Laisse Beru analyser... *ajuste lunettes*", "Hmm, voyons voir ce que t'as...", "Beru Expert Mode : ON ! Analysons tout ca..."],
+  gradeS: ["Chef d'oeuvre ! Meme moi j'aurais pas fait mieux ! ...ok peut-etre.", "PERFECTION ! T'es un GENIE de l'equipement ! Beru approuve !"],
+  gradeA: ["Pas mal ! Quelques tweaks et c'est du tier S. Fais confiance a Beru.", "Presque parfait ! Plus qu'un ou deux ajustements !"],
+  gradeB: ["Mouais... y'a du boulot. Mais t'inquiete, Beru est la.", "C'est... acceptable. Mais on peut LARGEMENT mieux faire."],
+  gradeC: ["C'est... euh... comment dire poliment... DESASTREUX.", "Beru a mal aux yeux en voyant cet equipement..."],
+  gradeD: ["RIEN equipe ?! Tu comptais farmer a mains nues ?! XPTDR", "C'est le NEANT ! Equipe-toi d'abord et reviens voir Beru !"],
+  badArtifact: [
+    "C'est QUOI ca sur {slot} ?! {issue} ! JETTE-MOI CA !",
+    "{slot} : {issue}. Serieusement ? En 2026 ? Beru est desespere.",
+  ],
+  betterAvailable: [
+    "J'ai trouve MIEUX dans ton inventaire pour {slot} ! +{gain} pts, allez hop !",
+    "Attends... t'as un artefact MEILLEUR qui prend la poussiere ! {slot} -> +{gain} pts !",
+  ],
+};
+
 // ─── Stages ──────────────────────────────────────────────────
 
 const STAGES = [
@@ -439,6 +521,7 @@ export default function ShadowColosseum() {
   const [artifactSetDetail, setArtifactSetDetail] = useState(null);
   const [ragnarokHistoryOpen, setRagnarokHistoryOpen] = useState(false);
   const [monarchHistoryOpen, setMonarchHistoryOpen] = useState(false);
+  const [beruAdvice, setBeruAdvice] = useState(null); // Beru Advisor analysis result
   const [eqInvFilter, setEqInvFilter] = useState({ slot: null, set: null }); // filters for equipment view inventory
   const [rosterSort, setRosterSort] = useState('ilevel'); // 'ilevel' | 'level' | 'name'
   const [rosterFilterElem, setRosterFilterElem] = useState(null); // element id or null
@@ -2324,6 +2407,145 @@ export default function ShadowColosseum() {
     showToast(`${scoutResults.junked.length} artefacts vendus pour ${totalCoins} coins !`, '#10b981');
     beruSay(`${totalCoins} coins recuperes ! C'est pas grand-chose mais c'est du travail honnete ! ...enfin presque.`, 'happy');
     setScoutResults(prev => ({ ...prev, junked: [], junkSold: true }));
+  };
+
+  // ─── Beru Advisor: analyzeEquipment ────────────────────────
+
+  const analyzeEquipment = (hunterId, equipped, inventory) => {
+    const h = HUNTERS[hunterId];
+    if (!h) return null;
+    const hClass = h.class || 'fighter';
+    const hElement = h.element || 'fire';
+    const role = ['assassin', 'fighter', 'mage'].includes(hClass) ? 'DPS' : hClass === 'tank' ? 'Tank' : 'Support';
+    const idealStats = CLASS_IDEAL_STATS[hClass] || CLASS_IDEAL_STATS.fighter;
+    const tiers = CLASS_SET_TIERS[hClass] || CLASS_SET_TIERS.fighter;
+
+    // Resolve ELEMENT_SET placeholders
+    const resolveSet = (sid) => sid === 'ELEMENT_SET' ? ELEMENT_SET_MAP[hElement] : sid;
+    const resolvedTiers = {};
+    for (const tier of ['S', 'A', 'B', 'C']) {
+      resolvedTiers[tier] = (tiers[tier] || []).map(resolveSet).filter(Boolean);
+    }
+
+    const getSetTier = (setId) => {
+      for (const tier of ['S', 'A', 'B', 'C']) {
+        if (resolvedTiers[tier].includes(setId)) return tier;
+      }
+      return 'B'; // default neutral
+    };
+
+    // Enhanced scoring function
+    const scoreArtifact = (art, slot) => {
+      let score = 0;
+      score += art.rarity === 'mythique' ? 30 : art.rarity === 'legendaire' ? 15 : 0;
+      score += art.level * 2;
+      // Main stat match
+      const idealMain = idealStats.mainStats[slot || art.slot];
+      if (idealMain === art.mainStat) score += 30;
+      else if (['atk_pct', 'hp_pct', 'crit_rate', 'crit_dmg'].includes(art.mainStat)) score += 10;
+      else score -= 10;
+      // Set tier
+      const st = getSetTier(art.set);
+      score += st === 'S' ? 25 : st === 'A' ? 15 : st === 'B' ? 5 : -10;
+      // Sub-stats
+      art.subs.forEach(sub => {
+        if (idealStats.goodSubs.includes(sub.id)) score += 8;
+        else if (idealStats.badSubs.includes(sub.id)) score -= 5;
+        score += sub.value * 0.3;
+      });
+      // iLevel
+      score += computeArtifactILevel(art) * 0.5;
+      return Math.round(score);
+    };
+
+    // Analyze current sets
+    const setCounts = {};
+    Object.values(equipped).forEach(art => {
+      if (art?.set) setCounts[art.set] = (setCounts[art.set] || 0) + 1;
+    });
+    const currentSetAnalysis = Object.entries(setCounts).map(([setId, count]) => {
+      const tier = getSetTier(setId);
+      const verdict = tier === 'S' ? 'parfait' : tier === 'A' ? 'ok' : 'mauvais';
+      return { setId, count, tier, verdict };
+    });
+
+    // Analyze each slot
+    const slotAdvice = SLOT_ORDER.map(slot => {
+      const current = equipped[slot] || null;
+      const currentScore = current ? scoreArtifact(current, slot) : 0;
+      const currentIssues = [];
+
+      if (current) {
+        const idealMain = idealStats.mainStats[slot];
+        if (idealMain && current.mainStat !== idealMain) {
+          const cur = MAIN_STAT_VALUES[current.mainStat]?.name || current.mainStat;
+          const ideal = MAIN_STAT_VALUES[idealMain]?.name || idealMain;
+          currentIssues.push(`Main stat non optimale (${cur} au lieu de ${ideal})`);
+        }
+        if (getSetTier(current.set) === 'C') {
+          currentIssues.push(`Set pas adapte pour un ${hClass}`);
+        }
+        current.subs.forEach(sub => {
+          if (idealStats.badSubs.includes(sub.id)) {
+            const subName = SUB_STAT_POOL.find(s => s.id === sub.id)?.name || sub.id;
+            currentIssues.push(`Sub ${subName} inutile pour un ${hClass}`);
+          }
+        });
+        if (current.level === 0) {
+          currentIssues.push('Artefact pas monte (Lv0)');
+        }
+      }
+
+      // Find best in inventory for this slot
+      const candidates = inventory.filter(a => a.slot === slot);
+      let bestInInventory = null;
+      let bestScore = 0;
+      candidates.forEach(a => {
+        const s = scoreArtifact(a, slot);
+        if (s > bestScore) { bestScore = s; bestInInventory = a; }
+      });
+
+      const upgrade = bestInInventory && bestScore > currentScore;
+      return {
+        slot, current, currentScore, currentIssues,
+        bestInInventory: upgrade ? bestInInventory : null,
+        bestScore: upgrade ? bestScore : 0,
+        upgrade: !!upgrade,
+        upgradeGain: upgrade ? bestScore - currentScore : 0,
+      };
+    });
+
+    // Overall grade
+    const totalSlots = SLOT_ORDER.length;
+    const equippedSlots = SLOT_ORDER.filter(s => equipped[s]).length;
+    if (equippedSlots === 0) {
+      return {
+        hunterClass: hClass, hunterElement: hElement, role,
+        recommendedSets: { S: resolvedTiers.S, A: resolvedTiers.A },
+        currentSetAnalysis, slotAdvice,
+        overallGrade: 'D',
+        summary: randomPick(BERU_ADVICE_DIALOGUES.gradeD),
+      };
+    }
+
+    const avgScore = slotAdvice.reduce((sum, sa) => sum + sa.currentScore, 0) / totalSlots;
+    const totalIssues = slotAdvice.reduce((sum, sa) => sum + sa.currentIssues.length, 0);
+    const sSetCount = currentSetAnalysis.filter(s => s.tier === 'S').reduce((sum, s) => sum + s.count, 0);
+
+    let grade;
+    if (avgScore >= 70 && totalIssues <= 2 && sSetCount >= 4) grade = 'S';
+    else if (avgScore >= 50 && totalIssues <= 5) grade = 'A';
+    else if (avgScore >= 30 && totalIssues <= 10) grade = 'B';
+    else grade = 'C';
+
+    const gradeDialogues = { S: 'gradeS', A: 'gradeA', B: 'gradeB', C: 'gradeC' };
+    return {
+      hunterClass: hClass, hunterElement: hElement, role,
+      recommendedSets: { S: resolvedTiers.S, A: resolvedTiers.A },
+      currentSetAnalysis, slotAdvice,
+      overallGrade: grade,
+      summary: randomPick(BERU_ADVICE_DIALOGUES[gradeDialogues[grade]]),
+    };
   };
 
   // ─── Start Battle ──────────────────────────────────────────
@@ -6962,6 +7184,127 @@ export default function ShadowColosseum() {
                 <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                   Inventaire ({data.artifactInventory.length})
                 </div>
+                <div className="flex items-center gap-1.5">
+                {/* Conseil Beru button */}
+                {HUNTERS[id] && (
+                  <button
+                    onClick={() => {
+                      beruSay(randomPick(BERU_ADVICE_DIALOGUES.analyzing), 'thinking');
+                      setTimeout(() => {
+                        const result = analyzeEquipment(id, equipped, data.artifactInventory);
+                        setBeruAdvice(result);
+                        if (result) {
+                          beruSay(result.summary, result.overallGrade === 'S' || result.overallGrade === 'A' ? 'happy' : result.overallGrade === 'D' ? 'angry' : 'normal');
+                          // Report bad artifacts
+                          const worstSlot = result.slotAdvice.find(sa => sa.currentIssues.length >= 2 && sa.current);
+                          if (worstSlot) {
+                            const slotName = ARTIFACT_SLOTS[worstSlot.slot]?.name || worstSlot.slot;
+                            setTimeout(() => {
+                              const msg = randomPick(BERU_ADVICE_DIALOGUES.badArtifact)
+                                .replace('{slot}', slotName)
+                                .replace('{issue}', worstSlot.currentIssues[0]);
+                              beruSay(msg, 'angry');
+                            }, 2500);
+                          }
+                          // Report upgrades available
+                          const bestUpgrade = result.slotAdvice.filter(sa => sa.upgrade).sort((a, b) => b.upgradeGain - a.upgradeGain)[0];
+                          if (bestUpgrade) {
+                            const slotName = ARTIFACT_SLOTS[bestUpgrade.slot]?.name || bestUpgrade.slot;
+                            setTimeout(() => {
+                              const msg = randomPick(BERU_ADVICE_DIALOGUES.betterAvailable)
+                                .replace('{slot}', slotName)
+                                .replace('{gain}', bestUpgrade.upgradeGain);
+                              beruSay(msg, 'happy');
+                            }, 5000);
+                          }
+                        }
+                      }, 600);
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-600/30 to-yellow-600/30 border border-amber-500/30 text-[10px] font-bold text-amber-300 hover:from-amber-600/50 hover:to-yellow-600/50 transition-all"
+                  >
+                    {'\uD83D\uDCA1'} Conseil Beru
+                  </button>
+                )}
+                {/* Max +20 all equipped */}
+                {Object.values(equipped).some(a => a && a.level < MAX_ARTIFACT_LEVEL) && (
+                  <button
+                    onClick={() => {
+                      const BERU_MARKUP = 1.20; // Beru surcharge 20%
+                      const artsToEnhance = SLOT_ORDER.map(s => equipped[s]).filter(a => a && a.level < MAX_ARTIFACT_LEVEL);
+                      if (artsToEnhance.length === 0) return;
+
+                      // Calculate total cost
+                      let totalCoinCost = 0;
+                      const hammersNeeded = { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 };
+                      artsToEnhance.forEach(art => {
+                        for (let lvl = art.level; lvl < MAX_ARTIFACT_LEVEL; lvl++) {
+                          totalCoinCost += ENHANCE_COST(lvl);
+                          // Use cheapest valid hammer for each level
+                          const valid = getRequiredHammer(lvl);
+                          hammersNeeded[valid[0]] = (hammersNeeded[valid[0]] || 0) + 1;
+                        }
+                      });
+
+                      // Add Beru markup
+                      totalCoinCost = Math.ceil(totalCoinCost * BERU_MARKUP);
+
+                      // Check which hammers we need to buy
+                      const currentHammers = { ...(data.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }) };
+                      let hammerBuyCost = 0;
+                      const hammersToBuy = {};
+                      for (const [hId, needed] of Object.entries(hammersNeeded)) {
+                        const have = currentHammers[hId] || 0;
+                        const deficit = Math.max(0, needed - have);
+                        if (deficit > 0) {
+                          hammersToBuy[hId] = deficit;
+                          hammerBuyCost += deficit * Math.ceil(HAMMERS[hId].shopPrice * BERU_MARKUP);
+                        }
+                      }
+
+                      const grandTotal = totalCoinCost + hammerBuyCost;
+                      const balance = shadowCoinManager.getBalance();
+                      if (balance < grandTotal) {
+                        beruSay(`T'as ${balance} coins mais il faut ${grandTotal} coins (Beru facture +20% hein). Reviens quand t'es riche !`, 'angry');
+                        return;
+                      }
+
+                      // Confirm via Beru
+                      beruSay(`Max +20 pour ${artsToEnhance.length} artefacts ! Ca coute ${grandTotal} coins (${totalCoinCost} enhance + ${hammerBuyCost} marteaux). Tarif Beru, service premium !`, 'thinking');
+
+                      // Execute: buy missing hammers, enhance all
+                      shadowCoinManager.spendCoins(grandTotal, 'beru_max_enhance');
+
+                      setData(prev => {
+                        const newHammers = { ...(prev.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }) };
+                        // Add bought hammers
+                        for (const [hId, qty] of Object.entries(hammersToBuy)) {
+                          newHammers[hId] = (newHammers[hId] || 0) + qty;
+                        }
+                        // Enhance all equipped artifacts to +20
+                        const newEquipped = { ...(prev.artifacts[id] || {}) };
+                        SLOT_ORDER.forEach(slotId => {
+                          if (!newEquipped[slotId] || newEquipped[slotId].level >= MAX_ARTIFACT_LEVEL) return;
+                          let art = newEquipped[slotId];
+                          while (art.level < MAX_ARTIFACT_LEVEL) {
+                            // Consume hammer
+                            const valid = getRequiredHammer(art.level);
+                            newHammers[valid[0]] = Math.max(0, (newHammers[valid[0]] || 0) - 1);
+                            art = enhanceArtifact(art);
+                          }
+                          newEquipped[slotId] = art;
+                        });
+                        return { ...prev, artifacts: { ...prev.artifacts, [id]: newEquipped }, hammers: newHammers };
+                      });
+
+                      setTimeout(() => {
+                        beruSay(`BOOM ! ${artsToEnhance.length} artefacts au MAX ! Service Beru, rapide et... pas tres economique. Mais EFFICACE !`, 'happy');
+                      }, 800);
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-600/30 to-pink-600/30 border border-purple-500/30 text-[10px] font-bold text-purple-300 hover:from-purple-600/50 hover:to-pink-600/50 transition-all"
+                  >
+                    {'\uD83D\uDD28'} Max +20
+                  </button>
+                )}
                 {/* Auto-equip button */}
                 {data.artifactInventory.length > 0 && (
                   <button
@@ -7048,7 +7391,164 @@ export default function ShadowColosseum() {
                     {'\u2728'} Auto-Equip
                   </button>
                 )}
+                </div>
               </div>
+
+              {/* Beru Advisor Panel */}
+              {beruAdvice && HUNTERS[id] && (() => {
+                const gradeColors = { S: 'text-yellow-400', A: 'text-green-400', B: 'text-blue-400', C: 'text-red-400', D: 'text-gray-500' };
+                const gradeBg = { S: 'from-yellow-600/20 to-amber-600/20 border-yellow-500/40', A: 'from-green-600/20 to-emerald-600/20 border-green-500/40', B: 'from-blue-600/20 to-cyan-600/20 border-blue-500/40', C: 'from-red-600/20 to-rose-600/20 border-red-500/40', D: 'from-gray-600/20 to-gray-700/20 border-gray-500/40' };
+                const hunterName = HUNTERS[id]?.name || id;
+                const advice = beruAdvice;
+                return (
+                  <div className={`mb-4 p-3 rounded-xl bg-gradient-to-br ${gradeBg[advice.overallGrade]} border`}>
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">{'\uD83D\uDCA1'}</span>
+                        <span className="text-[11px] font-bold text-gray-200">Analyse de {hunterName}</span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-700/40 text-gray-400">{advice.hunterClass} / {advice.role}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xl font-black ${gradeColors[advice.overallGrade]}`}>{advice.overallGrade}</span>
+                        <button onClick={() => setBeruAdvice(null)} className="text-gray-500 hover:text-gray-300 text-xs">✕</button>
+                      </div>
+                    </div>
+
+                    {/* Recommended Sets */}
+                    <div className="mb-2 space-y-1">
+                      {advice.recommendedSets.S.length > 0 && (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="text-[9px] text-green-400 font-bold w-14">Tier S :</span>
+                          {advice.recommendedSets.S.map(sId => {
+                            const setDef = ALL_ARTIFACT_SETS[sId];
+                            return setDef ? (
+                              <span key={sId} className={`text-[9px] px-1.5 py-0.5 rounded ${setDef.bg} ${setDef.color} border ${setDef.border}`}>
+                                {setDef.icon} {setDef.name}
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
+                      {advice.recommendedSets.A.length > 0 && (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="text-[9px] text-blue-400 font-bold w-14">Tier A :</span>
+                          {advice.recommendedSets.A.map(sId => {
+                            const setDef = ALL_ARTIFACT_SETS[sId];
+                            return setDef ? (
+                              <span key={sId} className={`text-[9px] px-1.5 py-0.5 rounded ${setDef.bg} ${setDef.color} border ${setDef.border}`}>
+                                {setDef.icon} {setDef.name}
+                              </span>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
+                      {/* Current sets verdict */}
+                      {advice.currentSetAnalysis.length > 0 && (
+                        <div className="flex items-center gap-1 flex-wrap mt-1">
+                          <span className="text-[9px] text-gray-400 font-bold w-14">Actuel :</span>
+                          {advice.currentSetAnalysis.map((sa, i) => {
+                            const setDef = ALL_ARTIFACT_SETS[sa.setId];
+                            const verdictColor = sa.verdict === 'parfait' ? 'text-green-400' : sa.verdict === 'ok' ? 'text-blue-400' : 'text-red-400';
+                            return (
+                              <span key={i} className={`text-[9px] px-1.5 py-0.5 rounded bg-gray-800/40 border border-gray-700/30`}>
+                                <span className={setDef?.color || 'text-gray-400'}>{setDef?.icon || '?'} {setDef?.name || sa.setId}</span>
+                                <span className="text-gray-500"> x{sa.count}</span>
+                                <span className={`ml-1 ${verdictColor}`}>({sa.verdict})</span>
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Slot Analysis (8 mini-cards) */}
+                    <div className="grid grid-cols-4 gap-1.5 mb-2">
+                      {advice.slotAdvice.map(sa => {
+                        const slotDef = ARTIFACT_SLOTS[sa.slot];
+                        const hasIssues = sa.currentIssues.length > 0;
+                        const hasUpgrade = sa.upgrade;
+                        return (
+                          <div key={sa.slot} className={`p-1.5 rounded-lg border ${hasIssues ? 'border-red-500/30 bg-red-500/5' : hasUpgrade ? 'border-green-500/30 bg-green-500/5' : 'border-gray-700/30 bg-gray-800/20'}`}>
+                            <div className="flex items-center gap-0.5 mb-0.5">
+                              <span className="text-[10px]">{slotDef?.icon}</span>
+                              <span className="text-[8px] text-gray-400 truncate">{slotDef?.name}</span>
+                            </div>
+                            {sa.current ? (
+                              <>
+                                <div className="text-[9px] text-gray-300 font-bold">{sa.currentScore} pts</div>
+                                {hasIssues && sa.currentIssues.slice(0, 2).map((issue, i) => (
+                                  <div key={i} className="text-[8px] text-red-400 truncate" title={issue}>
+                                    {'\u26A0'} {issue.length > 22 ? issue.slice(0, 20) + '...' : issue}
+                                  </div>
+                                ))}
+                                {hasUpgrade && (
+                                  <div className="mt-0.5">
+                                    <div className="text-[8px] text-green-400 font-bold">Mieux dispo! (+{sa.upgradeGain})</div>
+                                    <button
+                                      onClick={() => {
+                                        const bestArt = sa.bestInInventory;
+                                        if (!bestArt) return;
+                                        setData(prev => {
+                                          const prevEquipped = { ...(prev.artifacts[id] || {}) };
+                                          let inv = [...prev.artifactInventory];
+                                          // Unequip current → inventory
+                                          if (prevEquipped[sa.slot]) inv.push(prevEquipped[sa.slot]);
+                                          // Remove best from inventory
+                                          inv = inv.filter(a => a.uid !== bestArt.uid);
+                                          prevEquipped[sa.slot] = bestArt;
+                                          return { ...prev, artifacts: { ...prev.artifacts, [id]: prevEquipped }, artifactInventory: inv };
+                                        });
+                                        // Refresh advice after swap
+                                        setTimeout(() => {
+                                          setBeruAdvice(prev => {
+                                            if (!prev) return null;
+                                            return analyzeEquipment(id, { ...(data.artifacts[id] || {}), [sa.slot]: bestArt }, data.artifactInventory.filter(a => a.uid !== bestArt.uid));
+                                          });
+                                        }, 100);
+                                        beruSay(`${slotDef?.name || sa.slot} ameliore ! +${sa.upgradeGain} pts, Beru approuve !`, 'happy');
+                                      }}
+                                      className="w-full text-[8px] px-1 py-0.5 rounded bg-green-600/20 text-green-300 hover:bg-green-600/40 border border-green-500/30 transition-all font-bold"
+                                    >
+                                      Equiper
+                                    </button>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="text-[8px] text-gray-600">Vide</div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Problematic artifacts summary */}
+                    {advice.slotAdvice.some(sa => sa.currentIssues.length >= 2) && (
+                      <div className="mb-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                        <div className="text-[9px] text-red-400 font-bold mb-1">{'\u26A0'} Artefacts problematiques</div>
+                        {advice.slotAdvice.filter(sa => sa.currentIssues.length >= 2).map(sa => (
+                          <div key={sa.slot} className="text-[8px] text-red-300/80 mb-0.5">
+                            <span className="font-bold">{ARTIFACT_SLOTS[sa.slot]?.icon} {ARTIFACT_SLOTS[sa.slot]?.name} :</span>{' '}
+                            {sa.currentIssues.join(' | ')}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Beru Summary */}
+                    <div className="p-2 rounded-lg bg-gray-800/30 border border-gray-700/20">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{advice.overallGrade === 'S' ? '\uD83D\uDC51' : advice.overallGrade === 'A' ? '\u2728' : advice.overallGrade === 'B' ? '\uD83D\uDCAA' : advice.overallGrade === 'C' ? '\uD83D\uDE2D' : '\uD83D\uDC80'}</span>
+                        <div>
+                          <div className="text-[10px] text-gray-300 italic">"{advice.summary}"</div>
+                          <div className="text-[8px] text-gray-500 mt-0.5">— Beru, Expert en Artefacts</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Filters */}
               {data.artifactInventory.length > 0 && (
