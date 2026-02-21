@@ -915,8 +915,10 @@ export default function RaidMode() {
       // AI picks a skill considering mana
       const availSkills = chibi.skills.filter(s => {
         if ((s.cd || 0) > 0) return false;
-        // consumeAllMana skills: available only when mana >= 80% maxMana
-        if (s.consumeAllMana) return (chibi.mana || 0) >= (chibi.maxMana || 1) * 0.8;
+        // manaThreshold skills (Megumin EXPLOSION): available if mana >= threshold% maxMana OR mana >= manaCost
+        if (s.manaThreshold) return (chibi.mana || 0) >= (chibi.maxMana || 1) * s.manaThreshold || (chibi.mana || 0) >= (s.manaCost || 0);
+        // consumeHalfMana: always available (no mana cost to check, just needs some mana)
+        if (s.consumeHalfMana) return (chibi.mana || 0) > 0;
         const cost = chibi.passiveState?.echoFreeMana ? 0 : (s.manaCost || 0);
         return (chibi.mana || 999) >= cost;
       });
@@ -930,9 +932,12 @@ export default function RaidMode() {
       const entityForAI = { ...chibi, skills: availSkills.map(s => ({ ...s, cd: 0 })) };
       const skill = aiPickSkill(entityForAI);
 
+      // Save mana before consumption (for manaScaling calculation)
+      const manaBeforeConsume = chibi.mana || 0;
+
       // Consume mana
-      if (skill.consumeAllMana) {
-        chibi.mana = 0; // drain ALL mana
+      if (skill.consumeHalfMana) {
+        chibi.mana = Math.floor((chibi.mana || 0) / 2); // consume 50% of current mana
       } else if (chibi.maxMana > 0 && skill.manaCost > 0) {
         const actualCost = chibi.passiveState?.echoFreeMana ? 0 : skill.manaCost;
         chibi.mana = Math.max(0, (chibi.mana || 0) - actualCost);
@@ -945,7 +950,12 @@ export default function RaidMode() {
         chibi.crit = +(chibi.crit + hp.stats.crit).toFixed(1);
       }
 
-      let result = computeAttack(chibi, skill, state.boss, chibi.talentBonuses || {});
+      // Megumin manaScaling: power = mana (before consumption) × multiplier
+      const skillForAttack = skill.manaScaling
+        ? { ...skill, power: Math.floor(manaBeforeConsume * skill.manaScaling) }
+        : skill;
+
+      let result = computeAttack(chibi, skillForAttack, state.boss, chibi.talentBonuses || {});
       chibi.crit = preSkillCrit; // restore after compute
 
       // Hunter passive: defIgnore (Minnie) — extra DMG on crits (simulated as DEF ignore)
@@ -1045,6 +1055,13 @@ export default function RaidMode() {
       chibi.crit = origCrit;
       chibi.def = origDef;
       state.boss.def = origBossDef;
+
+      // Megumin manaRestore: restore X% of max mana after attack
+      if (skill.manaRestore && chibi.maxMana > 0) {
+        const restored = Math.floor(chibi.maxMana * skill.manaRestore / 100);
+        chibi.mana = Math.min(chibi.maxMana, (chibi.mana || 0) + restored);
+        logEntries.push({ text: `${chibi.name} restaure ${restored} mana !`, time: elapsed, type: 'heal' });
+      }
 
       // Apply damage to boss
       if (result.damage > 0) {

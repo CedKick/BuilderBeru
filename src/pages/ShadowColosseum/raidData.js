@@ -206,9 +206,9 @@ export const HUNTERS = {
     base:   { hp: 180, atk: 68, def: 8, spd: 28, crit: 20, res: 10 },
     growth: { hp: 6, atk: 5.0, def: 0.4, spd: 1.2, crit: 0.5, res: 0.35 },
     skills: [
-      { name: 'Boule de Feu', power: 110, cdMax: 0, manaCost: 5 },
-      { name: 'Brasier Infernal', power: 240, cdMax: 3, manaCost: 25, debuffDef: 15, debuffDur: 2 },
-      { name: 'EXPLOSION!!!', power: 5000, cdMax: 6, consumeAllMana: true, manaCost: 9999 },
+      { name: 'Flamme Écarlate', power: 120, cdMax: 0, manaCost: 0, manaRestore: 25 },
+      { name: 'Détonation de Mana', power: 100, cdMax: 4, manaCost: 0, manaScaling: 10, consumeHalfMana: true },
+      { name: 'EXPLOSION!!!', power: 3000, cdMax: 6, manaCost: 1200, manaThreshold: 0.9 },
     ],
     special: true,
   },

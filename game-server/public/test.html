@@ -492,6 +492,11 @@
       });
     }
 
+    // ── Battle Music ──
+    const battleMusic = new Audio('https://res.cloudinary.com/dbg7m8qjd/video/upload/v1771713175/NierManaya_lknb5x.mp3');
+    battleMusic.loop = true;
+    battleMusic.volume = 0.35;
+
     // ── State (must be declared before auto-login uses them) ──
     let ws = null, myId = null, gameState = null, roomInfo = null, inRoom = false;
     let keys = {}, mouseAngle = 0, lastAimSent = 0, gameStartTime = 0;
@@ -522,6 +527,16 @@
     // Hunter level from URL or default
     const hunterLvlParam = urlParams.get('hlvl');
     if (hunterLvlParam) document.getElementById('hunterLevel').value = hunterLvlParam;
+
+    // Auto-select class from URL
+    const autoClass = urlParams.get('class');
+    if (autoClass && document.getElementById('classSelect')) {
+      document.getElementById('classSelect').value = autoClass;
+    }
+
+    // Auto-load stat points from URL (JSON encoded)
+    let autoStatPoints = null;
+    try { const spParam = urlParams.get('sp'); if (spParam) autoStatPoints = JSON.parse(spParam); } catch {}
 
     // ── Hunter Selection UI (pick 3, no duplicates) ──
     let selectedHunters = [null, null, null];
@@ -818,11 +833,18 @@
       const profile = loadProfile();
       if (!profile) return;
       const { allocated } = getStatPoints(profile);
+      // Merge builderberu.com stat bonuses (from URL) with game server stat points
+      const mergedStats = { ...allocated };
+      if (autoStatPoints) {
+        for (const [stat, val] of Object.entries(autoStatPoints)) {
+          if (typeof val === 'number' && val > 0) mergedStats[stat] = (mergedStats[stat] || 0) + val;
+        }
+      }
       send({
         type: 'sync_profile',
         data: {
           level: profile.level,
-          statPoints: allocated,
+          statPoints: mergedStats,
           equippedHunters: selectedHunters.filter(Boolean),
         },
       });
@@ -874,6 +896,9 @@
           document.getElementById('hunterBar').style.display = 'flex';
           document.getElementById('skillBar').style.display = 'flex';
           document.getElementById('playerHud').style.display = 'block';
+          // Start battle music
+          battleMusic.currentTime = 0;
+          battleMusic.play().catch(() => {});
           break;
 
         case 'state': gameState = msg; updateHUD(); break;
@@ -952,6 +977,11 @@
         case 'simulation_changed': log('Simulation: ' + (msg.simulation ? 'ON' : 'OFF'), 'info'); break;
 
         case 'game_end': {
+          // Fade out battle music
+          const fadeOut = setInterval(() => {
+            if (battleMusic.volume > 0.05) battleMusic.volume = Math.max(0, battleMusic.volume - 0.05);
+            else { clearInterval(fadeOut); battleMusic.pause(); battleMusic.volume = 0.35; }
+          }, 100);
           // Hide death overlay if showing
           document.getElementById('deathOverlay').style.display = 'none';
           document.getElementById('game').classList.remove('dead-filter');

@@ -322,4 +322,13 @@ export const TALENT_SKILLS = {
     { id: 'ts_mayuri_2', name: 'Horloge du Destin', power: 0, cdMax: 6, manaCost: 75, grantExtraTurn: true, grantFreeCast: true, buffAtk: 100, buffDur: 1, desc: 'Remonte le temps pour un allie — rejoue avec ATK +100%, 0 CD, 0 mana' },
     { id: 'ts_mayuri_3', name: 'Priere de la Starlighter', power: 0, cdMax: 5, manaCost: 55, buffAtk: 50, buffDef: 30, buffDur: 3, desc: 'Benediction d\'etoile — buff ATK et DEF massif sur un allie' },
   ],
+
+  // ─── SPECIAL — Megumin (Konosuba) ────────────────────────────
+
+  h_megumin: [
+    { id: 'ts_megumin_1', name: 'Flamme du Néant', power: 180, cdMax: 0, manaCost: 0, manaRestore: 40, buffAtk: 20, buffDur: 2, desc: 'Flamme noire qui restaure 40% de mana et booste l\'ATK' },
+    { id: 'ts_megumin_2', name: 'Nova Arcanique', power: 100, cdMax: 3, manaCost: 0, manaScaling: 15, consumeHalfMana: true, debuffDef: 25, debuffDur: 2, desc: 'Mana restante ×15 = puissance ! Consomme 50% mana et brise les DEF' },
+    { id: 'ts_megumin_3', name: 'MEGA EXPLOSION!!!', power: 5000, cdMax: 5, manaCost: 1200, manaThreshold: 0.9, grantExtraTurn: true, desc: 'L\'explosion ultime ! 5000% + rejoue immédiatement' },
+  ],
+
 };

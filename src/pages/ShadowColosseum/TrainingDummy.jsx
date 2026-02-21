@@ -680,17 +680,25 @@ export default function TrainingDummy() {
       }
 
       // Pick skill
-      const availSkills = fighter.skills.filter(
-        s => (s.cd || 0) <= 0 && (fighter.mana || 999) >= (s.manaCost || 0)
-      );
+      const availSkills = fighter.skills.filter(s => {
+        if ((s.cd || 0) > 0) return false;
+        if (s.consumeHalfMana) return (fighter.mana || 0) > 0;
+        if (s.manaThreshold) return (fighter.mana || 0) >= (fighter.maxMana || 1) * s.manaThreshold || (fighter.mana || 0) >= (s.manaCost || 0);
+        return (fighter.mana || 999) >= (s.manaCost || 0);
+      });
       if (availSkills.length === 0) {
         fighter.lastAttackAt = now;
         return;
       }
       const skill = availSkills[0];
 
+      // Save mana before consumption (for manaScaling)
+      const manaBeforeConsume = fighter.mana || 0;
+
       // Consume mana
-      if (fighter.maxMana > 0 && skill.manaCost > 0) {
+      if (skill.consumeHalfMana) {
+        fighter.mana = Math.floor((fighter.mana || 0) / 2);
+      } else if (fighter.maxMana > 0 && skill.manaCost > 0) {
         fighter.mana = Math.max(0, fighter.mana - skill.manaCost);
       }
 
@@ -794,12 +802,24 @@ export default function TrainingDummy() {
       if (bonusCritDmg > 0) tbForAttack.critDamage = (tbForAttack.critDamage || 0) + bonusCritDmg * 100;
       if (bonusDefIgnore > 0) tbForAttack.defPen = (tbForAttack.defPen || 0) + bonusDefIgnore * 100;
 
+      // Megumin manaScaling: power = mana (before consumption) × multiplier
+      const skillForAttack = skill.manaScaling
+        ? { ...skill, power: Math.floor(manaBeforeConsume * skill.manaScaling) }
+        : skill;
+
       // Compute attack
-      let result = computeAttack(fighter, skill, state.dummy, tbForAttack);
+      let result = computeAttack(fighter, skillForAttack, state.dummy, tbForAttack);
 
       // Restore ATK/CRIT
       fighter.atk = origAtk;
       fighter.crit = origCrit;
+
+      // Megumin manaRestore: restore X% of max mana after attack
+      if (skill.manaRestore && fighter.maxMana > 0) {
+        const restored = Math.floor(fighter.maxMana * skill.manaRestore / 100);
+        fighter.mana = Math.min(fighter.maxMana, (fighter.mana || 0) + restored);
+        logEntries.push({ text: `${fighter.name} restaure ${restored} mana !`, time: elapsed, type: 'heal' });
+      }
 
       // Apply damage
       if (result.damage > 0) {
@@ -1222,17 +1242,26 @@ export default function TrainingDummy() {
     log.push({ text: '', type: 'system', id: Date.now() + 0.02 });
 
     // Check mana
-    const manaCost = skill.manaCost || 0;
-    if (fighter.mana < manaCost) {
-      log.push({ text: `❌ ${fighter.name}: Pas assez de mana ! (${fmt(fighter.mana)}/${fmt(manaCost)})`, type: 'info', id: Date.now() + 0.1 });
+    let manaOk = false;
+    if (skill.consumeHalfMana) manaOk = (fighter.mana || 0) > 0;
+    else if (skill.manaThreshold) manaOk = (fighter.mana || 0) >= (fighter.maxMana || 1) * skill.manaThreshold || (fighter.mana || 0) >= (skill.manaCost || 0);
+    else manaOk = (fighter.mana || 0) >= (skill.manaCost || 0);
+    if (!manaOk) {
+      log.push({ text: `❌ ${fighter.name}: Pas assez de mana ! (${fmt(fighter.mana)}/${fmt(skill.manaCost || 0)})`, type: 'info', id: Date.now() + 0.1 });
       setBattle(prev => ({ ...prev, log: log.slice(-50) }));
       return;
     }
 
+    // Save mana before consumption (for manaScaling)
+    const manaBeforeConsumeManual = fighter.mana || 0;
+
     // Consume mana
-    if (manaCost > 0) {
-      fighter.mana = Math.max(0, fighter.mana - manaCost);
-      log.push({ text: `💙 ${fighter.name}: Mana consommée: -${fmt(manaCost)} (${fmt(fighter.mana)}/${fmt(fighter.maxMana)})`, type: 'info', id: Date.now() + 0.15 });
+    if (skill.consumeHalfMana) {
+      fighter.mana = Math.floor((fighter.mana || 0) / 2);
+      log.push({ text: `💙 ${fighter.name}: Mana consommée: 50% (${fmt(fighter.mana)}/${fmt(fighter.maxMana)})`, type: 'info', id: Date.now() + 0.15 });
+    } else if ((skill.manaCost || 0) > 0) {
+      fighter.mana = Math.max(0, fighter.mana - skill.manaCost);
+      log.push({ text: `💙 ${fighter.name}: Mana consommée: -${fmt(skill.manaCost)} (${fmt(fighter.mana)}/${fmt(fighter.maxMana)})`, type: 'info', id: Date.now() + 0.15 });
     }
 
     // ═══ PLAYER ATTACK ═══
@@ -1297,12 +1326,17 @@ export default function TrainingDummy() {
       log.push({ text: `💪 ATK boosté: ${fmt(savedAtk)} → ${fmt(boostedAtk)}`, type: 'buff', id: Date.now() + 0.35 });
     }
 
+    // Megumin manaScaling: power = mana (before consumption) × multiplier
+    const skillForManual = skill.manaScaling
+      ? { ...skill, power: Math.floor(manaBeforeConsumeManual * skill.manaScaling) }
+      : skill;
+
     // Compute attack with detailed breakdown
-    const result = computeAttack(fighter, skill, dummy, fighter.talentBonuses || {});
+    const result = computeAttack(fighter, skillForManual, dummy, fighter.talentBonuses || {});
 
     // Log attack breakdown
     log.push({ text: `🎲 Calcul des dégâts:`, type: 'normal', id: Date.now() + 0.4 });
-    log.push({ text: `  ├─ Puissance du skill: ${skill.power}%`, type: 'normal', id: Date.now() + 0.41 });
+    log.push({ text: `  ├─ Puissance du skill: ${skillForManual.power}%`, type: 'normal', id: Date.now() + 0.41 });
     log.push({ text: `  ├─ ATK attaquant: ${fmt(boostedAtk)}`, type: 'normal', id: Date.now() + 0.42 });
     log.push({ text: `  ├─ DEF cible: ${fmt(dummy.def)}`, type: 'normal', id: Date.now() + 0.43 });
     log.push({ text: `  ├─ RES cible: ${fmt(dummy.res)}%`, type: 'normal', id: Date.now() + 0.44 });
@@ -1317,6 +1351,13 @@ export default function TrainingDummy() {
 
     // Restore ATK
     fighter.atk = savedAtk;
+
+    // Megumin manaRestore: restore X% of max mana after attack
+    if (skill.manaRestore && fighter.maxMana > 0) {
+      const restored = Math.floor(fighter.maxMana * skill.manaRestore / 100);
+      fighter.mana = Math.min(fighter.maxMana, (fighter.mana || 0) + restored);
+      log.push({ text: `✨ ${fighter.name} restaure ${restored} mana ! (${fmt(fighter.mana)}/${fmt(fighter.maxMana)})`, type: 'heal', id: Date.now() + 0.52 });
+    }
 
     // Apply damage
     dummy.hp = Math.max(0, dummy.hp - result.damage);
@@ -2193,7 +2234,10 @@ export default function TrainingDummy() {
               <div className="text-xs text-gray-400 mb-2 text-center">Compétences:</div>
               <div className="space-y-2">
                 {activeFighter.skills.map((skill, idx) => {
-                  const canUse = !isAnimating && skill.cd <= 0 && activeFighter.mana >= (skill.manaCost || 0);
+                  const manaCheck = skill.consumeHalfMana ? (activeFighter.mana || 0) > 0
+                    : skill.manaThreshold ? ((activeFighter.mana || 0) >= (activeFighter.maxMana || 1) * skill.manaThreshold || (activeFighter.mana || 0) >= (skill.manaCost || 0))
+                    : activeFighter.mana >= (skill.manaCost || 0);
+                  const canUse = !isAnimating && skill.cd <= 0 && manaCheck;
                   return (
                     <button
                       key={idx}
@@ -2212,8 +2256,15 @@ export default function TrainingDummy() {
                         )}
                       </div>
                       <div className="text-xs text-gray-400 space-y-0.5">
-                        <div>Puissance: {skill.power}%</div>
-                        {skill.manaCost > 0 && (
+                        <div>Puissance: {skill.manaScaling ? `${Math.floor((activeFighter.mana || 0) * skill.manaScaling)}%` : `${skill.power}%`}</div>
+                        {skill.consumeHalfMana && <div className="text-orange-400">Consomme 50% Mana</div>}
+                        {skill.manaRestore && <div className="text-cyan-400">Restaure {skill.manaRestore}% Mana</div>}
+                        {skill.manaThreshold && (
+                          <div className={manaCheck ? 'text-blue-400' : 'text-red-400'}>
+                            Mana: {skill.manaCost} ({Math.round(skill.manaThreshold * 100)}% min)
+                          </div>
+                        )}
+                        {!skill.consumeHalfMana && !skill.manaThreshold && skill.manaCost > 0 && (
                           <div className={activeFighter.mana >= skill.manaCost ? 'text-blue-400' : 'text-red-400'}>
                             Mana: {skill.manaCost}
                           </div>

@@ -1127,7 +1127,13 @@ export default function ShadowColosseum() {
       const fighter = b.team[entity.idx];
       if (!fighter || !fighter.alive) return prev;
       const skill = fighter.skills[skillIdx];
-      if (!skill || skill.cd > 0 || (!fighter.freeCast && (skill.manaCost || 0) > (fighter.mana || 0))) return prev;
+      // Skill availability: check CD, mana threshold, half-mana, or normal cost
+      const manaOk = fighter.freeCast || skill.consumeHalfMana
+        ? true
+        : skill.manaThreshold
+          ? ((fighter.mana || 0) >= (fighter.maxMana || 1) * skill.manaThreshold || (fighter.mana || 0) >= (skill.manaCost || 0))
+          : (fighter.mana || 0) >= (skill.manaCost || 0);
+      if (!skill || skill.cd > 0 || !manaOk) return prev;
 
       const isPureSupport = skill.power === 0 && (skill.buffAtk || skill.buffDef || skill.healSelf || skill.grantExtraTurn);
       b.pendingSkill = skillIdx;
@@ -1255,8 +1261,12 @@ export default function ShadowColosseum() {
     const skill = fighter.skills[skillIdx];
     const enemy = b.enemies[targetIdx];
     const isFreeCast = !!fighter.freeCast;
+    // Save mana before consumption (for manaScaling)
+    const manaBeforeConsume = fighter.mana || 0;
     if (isFreeCast) {
       fighter.freeCast = false;
+    } else if (skill.consumeHalfMana) {
+      fighter.mana = Math.floor((fighter.mana || 0) / 2);
     } else {
       fighter.mana = (fighter.mana || 0) - (skill.manaCost || 0);
     }
@@ -1373,7 +1383,12 @@ export default function ShadowColosseum() {
       b.log.unshift({ msg: `${fighter.name} : Iron Will ! Ultimate DMG +${Math.round(ps.ironWillUltBonus * 100)}% !`, type: 'player' });
     }
 
-    let result = computeAttack(fighter, skill, enemy, tbForAttack);
+    // Megumin manaScaling: power = mana (before consumption) × multiplier
+    const skillForAttack = skill.manaScaling
+      ? { ...skill, power: Math.floor(manaBeforeConsume * skill.manaScaling) }
+      : skill;
+
+    let result = computeAttack(fighter, skillForAttack, enemy, tbForAttack);
     fighter.atk = savedAtk;
     fighter.def = savedDef;
     fighter.crit = savedCrit;
@@ -1381,6 +1396,13 @@ export default function ShadowColosseum() {
 
     if (hp?.type === 'defIgnore' && result.isCrit && result.damage > 0) {
       result = { ...result, damage: Math.floor(result.damage * (1 + (hp.value || 10) / 100)) };
+    }
+
+    // Megumin manaRestore: restore X% of max mana after attack
+    if (skill.manaRestore && fighter.maxMana > 0) {
+      const restored = Math.floor(fighter.maxMana * skill.manaRestore / 100);
+      fighter.mana = Math.min(fighter.maxMana, (fighter.mana || 0) + restored);
+      b.log.unshift({ msg: `${fighter.name} restaure ${restored} mana !`, type: 'player' });
     }
 
     const dmg = result.damage || 0;
@@ -2832,16 +2854,30 @@ export default function ShadowColosseum() {
 
     // Check mana (free cast from Mayuri buff skips cost)
     const isFreeCastArc1 = !!battle.freeCast;
-    const manaCost = isFreeCastArc1 ? 0 : ps.echoFreeMana ? 0 : (playerSkill.manaCost || 0);
-    if (player.mana < manaCost) {
-      log.push({ text: `Pas assez de mana ! (${player.mana}/${manaCost})`, type: 'info', id: Date.now() });
+    let manaOkArc1 = isFreeCastArc1 || ps.echoFreeMana;
+    if (!manaOkArc1) {
+      if (playerSkill.consumeHalfMana) manaOkArc1 = true;
+      else if (playerSkill.manaThreshold) manaOkArc1 = (player.mana || 0) >= (player.maxMana || 1) * playerSkill.manaThreshold || (player.mana || 0) >= (playerSkill.manaCost || 0);
+      else manaOkArc1 = (player.mana || 0) >= (playerSkill.manaCost || 0);
+    }
+    if (!manaOkArc1) {
+      log.push({ text: `Pas assez de mana ! (${player.mana}/${playerSkill.manaCost || 0})`, type: 'info', id: Date.now() });
       setBattle(prev => ({ ...prev, log: log.slice(-10) }));
       return;
     }
     if (ps.echoFreeMana) ps.echoFreeMana = false;
 
+    // Save mana before consumption (for manaScaling)
+    const manaBeforeConsumeArc1 = player.mana || 0;
+
     // Consume mana
-    player.mana = Math.max(0, player.mana - manaCost);
+    if (isFreeCastArc1) { /* free cast, no cost */ }
+    else if (playerSkill.consumeHalfMana) {
+      player.mana = Math.floor((player.mana || 0) / 2);
+    } else {
+      const manaCost = playerSkill.manaCost || 0;
+      player.mana = Math.max(0, player.mana - manaCost);
+    }
 
     // ─── PASSIVE: beforeAttack ─────────────────
     let atkMult = 1;
@@ -2974,7 +3010,11 @@ export default function ShadowColosseum() {
     }
 
     setPhase('player_atk');
-    let pRes = computeAttack(player, playerSkill, enemy, tbForAttack);
+    // Megumin manaScaling: power = mana (before consumption) × multiplier
+    const skillForAttackArc1 = playerSkill.manaScaling
+      ? { ...playerSkill, power: Math.floor(manaBeforeConsumeArc1 * playerSkill.manaScaling) }
+      : playerSkill;
+    let pRes = computeAttack(player, skillForAttackArc1, enemy, tbForAttack);
     player.atk = savedAtk;
     player.crit = savedCrit;
     player.def = savedDef;
@@ -2982,6 +3022,13 @@ export default function ShadowColosseum() {
     // Hunter passive: defIgnore (Minnie) — extra DMG on crits
     if (hp?.type === 'defIgnore' && pRes.isCrit && pRes.damage > 0) {
       pRes = { ...pRes, damage: Math.floor(pRes.damage * (1 + (hp.value || 10) / 100)) };
+    }
+
+    // Megumin manaRestore: restore X% of max mana after attack
+    if (playerSkill.manaRestore && player.maxMana > 0) {
+      const restored = Math.floor(player.maxMana * playerSkill.manaRestore / 100);
+      player.mana = Math.min(player.maxMana, (player.mana || 0) + restored);
+      log.push({ text: `${player.name} restaure ${restored} mana !`, type: 'info', id: Date.now() - 0.02 });
     }
 
     enemy.hp = Math.max(0, enemy.hp - pRes.damage);
@@ -3256,15 +3303,27 @@ export default function ShadowColosseum() {
     const p = battle.player;
     const e = battle.enemy;
     // If all skills blocked → pass turn
-    const allBlocked = p.skills.every(sk => sk.cd > 0 || ((sk.manaCost || 0) > 0 && p.mana < (sk.manaCost || 0)));
+    const allBlocked = p.skills.every(sk => {
+      if (sk.cd > 0) return true;
+      if (sk.consumeHalfMana) return false;
+      if (sk.manaThreshold) return !((p.mana || 0) >= (p.maxMana || 1) * sk.manaThreshold || (p.mana || 0) >= (sk.manaCost || 0));
+      return (sk.manaCost || 0) > 0 && p.mana < (sk.manaCost || 0);
+    });
     if (allBlocked) return -1;
     let bestIdx = 0;
     let bestScore = -Infinity;
     p.skills.forEach((sk, i) => {
       if (sk.cd > 0) return;
-      const cost = sk.manaCost || 0;
-      if (p.mana < cost) return;
-      let score = (sk.power || 100) * (sk.hits || 1);
+      // Mana availability check
+      if (sk.consumeHalfMana) { /* always available */ }
+      else if (sk.manaThreshold) {
+        if (!((p.mana || 0) >= (p.maxMana || 1) * sk.manaThreshold || (p.mana || 0) >= (sk.manaCost || 0))) return;
+      } else {
+        const cost = sk.manaCost || 0;
+        if (p.mana < cost) return;
+      }
+      // manaScaling: estimate real power for AI scoring
+      let score = (sk.manaScaling ? (p.mana || 0) * sk.manaScaling : (sk.power || 100)) * (sk.hits || 1);
       // Prefer finishing blows
       const estDmg = Math.floor(p.atk * (sk.power || 100) / 100 * (sk.hits || 1));
       if (estDmg >= e.hp) score += 5000;
@@ -3875,7 +3934,7 @@ export default function ShadowColosseum() {
           {/* Boss Selection */}
           <div className="space-y-4">
             <a
-              href={`http://159.223.225.71:3002/test${(() => { try { const u = JSON.parse(localStorage.getItem('builderberu_auth_user')); const rd = JSON.parse(localStorage.getItem('shadow_colosseum_data')); const user = u?.username ? '?user=' + encodeURIComponent(u.username) : ''; const hunters = (rd?.hunterCollection || []).map(e => typeof e === 'string' ? e : e.id).filter(Boolean); const hParam = hunters.length > 0 ? (user ? '&' : '?') + 'hunters=' + hunters.join(',') : ''; const lvl = rd?.level ? (user || hParam ? '&' : '?') + 'hlvl=' + rd.level : ''; return user + hParam + lvl; } catch { return ''; } })()}`}
+              href={`http://159.223.225.71:3002/test${(() => { try { const u = JSON.parse(localStorage.getItem('builderberu_auth_user')); const rd = JSON.parse(localStorage.getItem('shadow_colosseum_data')); const rc = JSON.parse(localStorage.getItem('manaya_raid_character') || '{}'); const params = []; if (u?.username) params.push('user=' + encodeURIComponent(u.username)); const hunters = (rd?.hunterCollection || []).map(e => typeof e === 'string' ? e : e.id).filter(Boolean); if (hunters.length > 0) params.push('hunters=' + hunters.join(',')); const accLvl = accountLevelFromXp(rd?.accountXp || 0).level; if (accLvl > 0) params.push('hlvl=' + accLvl); if (rc.preferredClass) params.push('class=' + rc.preferredClass); if (rc.statPoints) params.push('sp=' + encodeURIComponent(JSON.stringify(rc.statPoints))); return params.length > 0 ? '?' + params.join('&') : ''; } catch { return ''; } })()}`}
               target="_blank"
               rel="noopener noreferrer"
               className="block p-4 rounded-xl border border-emerald-500/30 bg-gradient-to-r from-emerald-900/20 to-teal-900/20 hover:from-emerald-900/40 hover:to-teal-900/40 transition-all group cursor-pointer"
@@ -3916,6 +3975,147 @@ export default function ShadowColosseum() {
               </div>
             </div>
           </div>
+
+          {/* ═══ CHARACTER SHEET ═══ */}
+          {(() => {
+            const authUser = (() => { try { return JSON.parse(localStorage.getItem('builderberu_auth_user')); } catch { return null; } })();
+            const username = authUser?.username || 'Joueur';
+            const accInfo = accountLevelFromXp(data.accountXp || 0);
+            const accLvl = accInfo.level;
+            const xpPct = accInfo.xpForNext > 0 ? Math.min(100, Math.round(accInfo.xpInLevel / accInfo.xpForNext * 100)) : 100;
+            const lvColor = accLvl >= 40 ? '#f59e0b' : accLvl >= 20 ? '#a78bfa' : '#38bdf8';
+
+            // Raid character data (stored locally on builderberu.com)
+            const RAID_CHAR_KEY = 'manaya_raid_character';
+            const raidChar = (() => { try { return JSON.parse(localStorage.getItem(RAID_CHAR_KEY)) || {}; } catch { return {}; } })();
+            const preferredClass = raidChar.preferredClass || 'dps_cac';
+            const raidStatPoints = raidChar.statPoints || { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
+            // 2 stat points per account level
+            const totalPoints = accLvl * 2;
+            const usedPoints = Object.values(raidStatPoints).reduce((s, v) => s + v, 0);
+            const freePoints = Math.max(0, totalPoints - usedPoints);
+
+            const saveRaidChar = (updates) => {
+              const current = (() => { try { return JSON.parse(localStorage.getItem(RAID_CHAR_KEY)) || {}; } catch { return {}; } })();
+              localStorage.setItem(RAID_CHAR_KEY, JSON.stringify({ ...current, ...updates }));
+            };
+
+            const classInfo = {
+              tank: { label: 'Tank', icon: '\uD83D\uDEE1\uFE0F', color: '#3b82f6', desc: 'HP++, DEF++, Provocation' },
+              healer: { label: 'Healer', icon: '\uD83D\uDC9A', color: '#10b981', desc: 'Soins, Mana++, Resurrection' },
+              dps_cac: { label: 'DPS CAC', icon: '\u2694\uFE0F', color: '#ef4444', desc: 'ATK++, Combo, Execution' },
+              dps_range: { label: 'DPS Distance', icon: '\uD83C\uDFF9', color: '#f59e0b', desc: 'ATK+, Range++, Barrage' },
+            };
+
+            const statLabels = { hp: 'PV', atk: 'ATK', def: 'DEF', spd: 'SPD', crit: 'CRIT', res: 'RES' };
+            const statColors = { hp: '#ef4444', atk: '#f97316', def: '#3b82f6', spd: '#22c55e', crit: '#eab308', res: '#a78bfa' };
+            const STAT_PER_POINT = { hp: 8, atk: 1.5, def: 1.5, spd: 1, crit: 0.8, res: 0.8 };
+
+            // Hunter count
+            const hunterCount = ownedHunterIds.length;
+
+            return (
+              <div className="mt-6 p-4 rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-900/20 to-indigo-900/20">
+                <h3 className="text-sm font-bold text-purple-400 mb-3">{'\uD83D\uDCCB'} Ma Fiche de Personnage</h3>
+
+                {/* Profile Header */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="text-2xl font-black" style={{ color: lvColor, textShadow: `0 0 10px ${lvColor}55` }}>
+                    Lv.{accLvl}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold text-white">{username}</div>
+                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden mt-1 border border-gray-700">
+                      <div className="h-full bg-gradient-to-r from-purple-600 to-violet-400 rounded-full transition-all" style={{ width: `${xpPct}%` }} />
+                    </div>
+                    <div className="flex justify-between text-[9px] text-gray-500 mt-0.5">
+                      <span>XP: {accInfo.xpInLevel} / {accInfo.xpForNext}</span>
+                      <span className="text-purple-400">{xpPct}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Class Selector */}
+                <div className="mb-4">
+                  <div className="text-[10px] text-gray-400 font-bold mb-1.5 uppercase tracking-wider">Classe preferee</div>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {Object.entries(classInfo).map(([key, ci]) => (
+                      <button key={key}
+                        onClick={() => { saveRaidChar({ preferredClass: key }); setData(prev => ({ ...prev })); }}
+                        className={`p-2 rounded-lg border text-center transition-all ${
+                          preferredClass === key
+                            ? 'border-opacity-60 bg-opacity-20 scale-[1.02]'
+                            : 'border-gray-700/30 bg-gray-800/20 opacity-60 hover:opacity-80'
+                        }`}
+                        style={preferredClass === key ? { borderColor: ci.color + '66', background: ci.color + '15' } : {}}>
+                        <div className="text-lg">{ci.icon}</div>
+                        <div className="text-[9px] font-bold mt-0.5" style={{ color: preferredClass === key ? ci.color : '#94a3b8' }}>{ci.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Stat Points Allocation */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Stats Raid (2 pts/lvl)</div>
+                    <div className={`text-[10px] font-bold ${freePoints > 0 ? 'text-yellow-400' : 'text-gray-500'}`}>
+                      {freePoints > 0 ? `${freePoints} pts dispo` : `${usedPoints}/${totalPoints} pts`}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {Object.entries(statLabels).map(([stat, label]) => {
+                      const pts = raidStatPoints[stat] || 0;
+                      const bonus = Math.floor(pts * STAT_PER_POINT[stat]);
+                      return (
+                        <div key={stat} className="flex items-center gap-1 bg-gray-800/40 rounded-lg px-2 py-1.5 border border-gray-700/30">
+                          <div className="flex-1">
+                            <div className="text-[9px] font-bold" style={{ color: statColors[stat] }}>{label}</div>
+                            <div className="text-[8px] text-gray-500">+{bonus}</div>
+                          </div>
+                          <div className="flex items-center gap-0.5">
+                            <button
+                              onClick={() => {
+                                if (pts <= 0) return;
+                                const newPts = { ...raidStatPoints, [stat]: pts - 1 };
+                                saveRaidChar({ statPoints: newPts });
+                                setData(prev => ({ ...prev }));
+                              }}
+                              disabled={pts <= 0}
+                              className="w-5 h-5 rounded bg-red-500/20 text-red-400 text-[10px] font-bold hover:bg-red-500/30 disabled:opacity-30 flex items-center justify-center">
+                              -
+                            </button>
+                            <span className="text-[10px] font-bold text-white w-5 text-center">{pts}</span>
+                            <button
+                              onClick={() => {
+                                if (freePoints <= 0) return;
+                                const newPts = { ...raidStatPoints, [stat]: pts + 1 };
+                                saveRaidChar({ statPoints: newPts });
+                                setData(prev => ({ ...prev }));
+                              }}
+                              disabled={freePoints <= 0}
+                              className="w-5 h-5 rounded bg-green-500/20 text-green-400 text-[10px] font-bold hover:bg-green-500/30 disabled:opacity-30 flex items-center justify-center">
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Hunters Summary */}
+                <div className="flex items-center justify-between bg-gray-800/30 rounded-lg px-3 py-2 border border-gray-700/20">
+                  <div className="text-[10px] text-gray-400">
+                    <span className="text-purple-400 font-bold">{hunterCount}</span> hunters debloques
+                  </div>
+                  <div className="text-[10px] text-gray-500">
+                    {data.stats?.wins || 0}W / {(data.stats?.battles || 0) - (data.stats?.wins || 0)}L
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -5601,13 +5801,16 @@ export default function ShadowColosseum() {
                   const fEl = ELEMENTS[f.element] || ELEMENTS.shadow;
                   const getSkillDesc = (sk) => {
                     const parts = [];
-                    if (sk.power > 0) parts.push(`DMG ${sk.power}%`);
+                    if (sk.manaScaling) parts.push(`DMG Mana×${sk.manaScaling}`);
+                    else if (sk.power > 0) parts.push(`DMG ${sk.power}%`);
                     if (sk.buffAtk) parts.push(`ATK +${sk.buffAtk}%`);
                     if (sk.buffDef) parts.push(`DEF +${sk.buffDef}%`);
                     if (sk.buffSpd) parts.push(`SPD +${sk.buffSpd}%`);
                     if (sk.healSelf) parts.push(`Soin ${sk.healSelf}%`);
                     if (sk.debuffDef) parts.push(`DEF -${sk.debuffDef}%`);
                     if (sk.selfDamage) parts.push(`Cout ${sk.selfDamage}% PV`);
+                    if (sk.manaRestore) parts.push(`+${sk.manaRestore}% MP`);
+                    if (sk.consumeHalfMana) parts.push(`-50% MP`);
                     return parts.join(' | ') || 'Effet';
                   };
                   const effAtk = getEffStat(f.atk, f.buffs, 'atk');
@@ -5789,7 +5992,9 @@ export default function ShadowColosseum() {
                 <div className={`grid gap-2 mb-2 ${activeChar.skills.length <= 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
                   {activeChar.skills.map((sk, i) => {
                     const onCd = sk.cd > 0;
-                    const noMana = sk.manaCost > 0 && activeChar.mana < sk.manaCost;
+                    const noMana = sk.consumeHalfMana ? false
+                      : sk.manaThreshold ? !((activeChar.mana || 0) >= (activeChar.maxMana || 1) * sk.manaThreshold || (activeChar.mana || 0) >= (sk.manaCost || 0))
+                      : sk.manaCost > 0 && activeChar.mana < sk.manaCost;
                     const blocked = onCd || noMana;
                     const isPureSupport = sk.power === 0 && (sk.buffAtk || sk.buffDef || sk.healSelf);
                     return (
@@ -5804,19 +6009,30 @@ export default function ShadowColosseum() {
                         }`}>
                         <div className="text-[10px] font-bold truncate">{sk.name}</div>
                         <div className="text-[8px] text-gray-400 mt-0.5">
-                          {sk.power > 0 ? `DMG: ${sk.power}%` : ''}
-                          {sk.buffAtk ? `${sk.power > 0 ? ' ' : ''}ATK +${sk.buffAtk}%` : ''}
-                          {sk.buffDef ? `${sk.power > 0 || sk.buffAtk ? ' ' : ''}DEF +${sk.buffDef}%` : ''}
-                          {sk.healSelf ? `${sk.power > 0 ? ' ' : ''}Soin ${sk.healSelf}%` : ''}
-                          {sk.debuffDef ? `${sk.power > 0 ? ' ' : ''}DEF -${sk.debuffDef}%` : ''}
+                          {sk.manaScaling ? `DMG: ${Math.floor((activeChar.mana || 0) * sk.manaScaling)}%` : sk.power > 0 ? `DMG: ${sk.power}%` : ''}
+                          {sk.buffAtk ? `${sk.power > 0 || sk.manaScaling ? ' ' : ''}ATK +${sk.buffAtk}%` : ''}
+                          {sk.buffDef ? `${sk.power > 0 || sk.buffAtk || sk.manaScaling ? ' ' : ''}DEF +${sk.buffDef}%` : ''}
+                          {sk.healSelf ? `${sk.power > 0 || sk.manaScaling ? ' ' : ''}Soin ${sk.healSelf}%` : ''}
+                          {sk.debuffDef ? `${sk.power > 0 || sk.manaScaling ? ' ' : ''}DEF -${sk.debuffDef}%` : ''}
                         </div>
                         {isPureSupport && <div className="text-[7px] mt-0.5 text-green-400/80">{'\uD83D\uDC9A'} Alli{'\u00e9'}</div>}
-                        {sk.manaCost > 0 && (
+                        {sk.consumeHalfMana && (
+                          <div className="text-[7px] mt-0.5 text-orange-400">50% Mana</div>
+                        )}
+                        {sk.manaRestore && (
+                          <div className="text-[7px] mt-0.5 text-cyan-400">+{sk.manaRestore}% MP</div>
+                        )}
+                        {sk.manaThreshold && (
+                          <div className={`text-[7px] mt-0.5 ${noMana ? 'text-red-400' : 'text-violet-400'}`}>
+                            {sk.manaCost} MP ({Math.round(sk.manaThreshold * 100)}%)
+                          </div>
+                        )}
+                        {!sk.consumeHalfMana && !sk.manaThreshold && sk.manaCost > 0 && (
                           <div className={`text-[7px] mt-0.5 ${noMana ? 'text-red-400' : 'text-violet-400'}`}>
                             {sk.manaCost} MP
                           </div>
                         )}
-                        {sk.manaCost === 0 && !isPureSupport && <div className="text-[7px] mt-0.5 text-green-400/60">0 MP</div>}
+                        {!sk.consumeHalfMana && !sk.manaThreshold && !sk.manaRestore && sk.manaCost === 0 && !isPureSupport && <div className="text-[7px] mt-0.5 text-green-400/60">0 MP</div>}
                         {onCd && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg">
                             <span className="text-gray-400 text-xs font-bold">{sk.cd}t</span>
@@ -5832,7 +6048,12 @@ export default function ShadowColosseum() {
                   })}
                 </div>
                 {/* Pass turn button when all skills are blocked */}
-                {activeChar.skills.every(sk => sk.cd > 0 || (sk.manaCost > 0 && activeChar.mana < sk.manaCost)) && (
+                {activeChar.skills.every(sk => {
+                  if (sk.cd > 0) return true;
+                  if (sk.consumeHalfMana) return false;
+                  if (sk.manaThreshold) return !((activeChar.mana || 0) >= (activeChar.maxMana || 1) * sk.manaThreshold || (activeChar.mana || 0) >= (sk.manaCost || 0));
+                  return sk.manaCost > 0 && activeChar.mana < sk.manaCost;
+                }) && (
                   <button
                     onClick={arc2PassTurn}
                     className="w-full py-2 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 active:scale-95 transition-all text-center">

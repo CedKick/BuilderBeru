@@ -601,14 +601,21 @@ export default function PvpMode() {
       // Pick skill (AI)
       const availSkills = unit.skills.filter(s => {
         if ((s.cd || 0) > 0) return false;
+        if (s.consumeHalfMana) return (unit.mana || 0) > 0;
+        if (s.manaThreshold) return (unit.mana || 0) >= (unit.maxMana || 1) * s.manaThreshold || (unit.mana || 0) >= (s.manaCost || 0);
         const cost = unit.passiveState?.echoFreeMana ? 0 : (s.manaCost || 0);
         return (unit.mana || 999) >= cost;
       });
       const entityForAI = { ...unit, skills: availSkills.length > 0 ? availSkills.map(s => ({ ...s, cd: 0 })) : [{ ...unit.skills[0], cd: 0 }] };
       const skill = aiPickSkill(entityForAI);
 
+      // Save mana before consumption (for manaScaling)
+      const manaBeforeConsume = unit.mana || 0;
+
       // Consume mana
-      if (unit.maxMana > 0 && skill.manaCost > 0) {
+      if (skill.consumeHalfMana) {
+        unit.mana = Math.floor((unit.mana || 0) / 2);
+      } else if (unit.maxMana > 0 && skill.manaCost > 0) {
         const actualCost = unit.passiveState?.echoFreeMana ? 0 : skill.manaCost;
         unit.mana = Math.max(0, (unit.mana || 0) - actualCost);
         if (unit.passiveState?.echoFreeMana) unit.passiveState.echoFreeMana = false;
@@ -681,12 +688,24 @@ export default function PvpMode() {
         unit.atk = Math.floor(unit.atk * (1 + unit.passiveState.shadowPactRaidBoost));
       }
 
-      let result = computeAttack(unit, skill, target, unit.talentBonuses || {});
+      // Megumin manaScaling: power = mana (before consumption) × multiplier
+      const skillForAttack = skill.manaScaling
+        ? { ...skill, power: Math.floor(manaBeforeConsume * skill.manaScaling) }
+        : skill;
+
+      let result = computeAttack(unit, skillForAttack, target, unit.talentBonuses || {});
 
       // Restore original stats
       unit.atk = origAtk;
       unit.crit = origCrit;
       unit.def = origDef;
+
+      // Megumin manaRestore: restore X% of max mana after attack
+      if (skill.manaRestore && unit.maxMana > 0) {
+        const restored = Math.floor(unit.maxMana * skill.manaRestore / 100);
+        unit.mana = Math.min(unit.maxMana, (unit.mana || 0) + restored);
+        logEntries.push({ text: `${unit.name} restaure ${restored} mana !`, time: elapsed, type: 'heal' });
+      }
 
       // Apply PVP damage reduction (heals unaffected)
       if (result.damage > 0) {
