@@ -531,6 +531,8 @@ export default function ShadowColosseum() {
   const [chibisCollapsed, setChibisCollapsed] = useState(false);
   const [huntersCollapsed, setHuntersCollapsed] = useState(false);
   const [activeArc, setActiveArc] = useState(1); // 1 or 2 — tab switcher
+  // Faction buffs (fetched from server)
+  const [factionBuffs, setFactionBuffs] = useState(null); // { loot_sulfuras: 3, stats_hp: 5, ... } or null if not in faction
   // ARC II state
   const [arc2StoryTier, setArc2StoryTier] = useState(null);
   const [arc2StoryIdx, setArc2StoryIdx] = useState(0);
@@ -688,6 +690,32 @@ export default function ShadowColosseum() {
     window.addEventListener('beru-react', handler);
     return () => window.removeEventListener('beru-react', handler);
   }, []);
+
+  // Fetch faction buffs on mount (for loot & stat bonuses)
+  useEffect(() => {
+    if (!isLoggedIn()) return;
+    (async () => {
+      try {
+        const resp = await fetch('/api/factions?action=status', { headers: authHeaders() });
+        const d = await resp.json();
+        if (d.success && d.inFaction && d.buffs) {
+          setFactionBuffs(d.buffs);
+        }
+      } catch (e) { /* silently fail — buffs stay null */ }
+    })();
+  }, []);
+
+  // Helper: get faction loot multiplier for a specific weapon buff
+  const getFactionLootMult = (buffId) => {
+    if (!factionBuffs || !factionBuffs[buffId]) return 1;
+    return 1 + factionBuffs[buffId] * 0.05; // +5% per level
+  };
+
+  // Helper: get faction stat bonus (HP/ATK/DEF) as multiplier
+  const getFactionStatMult = (statBuffId) => {
+    if (!factionBuffs || !factionBuffs[statBuffId]) return 1;
+    return 1 + factionBuffs[statBuffId] * 0.01; // +1% per level
+  };
 
   // Play epic sound for secret weapon drops
   useEffect(() => {
@@ -891,6 +919,11 @@ export default function ShadowColosseum() {
       if (hunterPassive.stats.crit) fs.crit += hunterPassive.stats.crit;
       if (hunterPassive.stats.res)  fs.res += hunterPassive.stats.res;
     }
+
+    // Apply faction stat buffs (HP/ATK/DEF)
+    fs.hp  = Math.floor(fs.hp  * getFactionStatMult('stats_hp'));
+    fs.atk = Math.floor(fs.atk * getFactionStatMult('stats_atk'));
+    fs.def = Math.floor(fs.def * getFactionStatMult('stats_def'));
 
     // Build merged talent bonuses with hunter passive injections
     const mergedTb = { ...tb };
@@ -2551,7 +2584,7 @@ export default function ShadowColosseum() {
 
   // ─── Start Battle ──────────────────────────────────────────
 
-  const LOOT_BOOST_BOSSES = ['ragnarok', 'zephyr', 'supreme_monarch'];
+  const LOOT_BOOST_BOSSES = ['ragnarok', 'zephyr', 'supreme_monarch', 'archdemon'];
 
   const startBattle = () => {
     if (!selChibi || selStage === null || isCooldown(selChibi)) return;
@@ -2584,6 +2617,11 @@ export default function ShadowColosseum() {
       if (hunterPassive.stats.crit) s.crit = +(s.crit + hunterPassive.stats.crit).toFixed(1);
       if (hunterPassive.stats.res)  s.res  = +(s.res + hunterPassive.stats.res).toFixed(1);
     }
+
+    // Apply faction stat buffs (HP/ATK/DEF)
+    s.hp  = Math.floor(s.hp  * getFactionStatMult('stats_hp'));
+    s.atk = Math.floor(s.atk * getFactionStatMult('stats_atk'));
+    s.def = Math.floor(s.def * getFactionStatMult('stats_def'));
 
     // Apply cooldown reduction from talents
     const cdReduction = Math.floor(tb.cooldownReduction || 0);
@@ -3259,26 +3297,26 @@ export default function ShadowColosseum() {
     }
     // Loot boost: x2 drop rate for secret weapons only
     const lootMult = (data.lootBoostMs > 0) ? 2 : 1;
-    if (!weaponDrop && stage.id === 'ragnarok' && Math.random() < (1 / 10000) * lootMult) {
+    if (!weaponDrop && stage.id === 'ragnarok' && Math.random() < (1 / 10000) * lootMult * getFactionLootMult('loot_sulfuras')) {
       const isNew = data.weaponCollection['w_sulfuras'] === undefined;
       weaponDrop = { id: 'w_sulfuras', ...WEAPONS.w_sulfuras, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_sulfuras'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
-    if (!weaponDrop && stage.id === 'zephyr' && Math.random() < (1 / 5000) * lootMult) {
+    if (!weaponDrop && stage.id === 'zephyr' && Math.random() < (1 / 5000) * lootMult * getFactionLootMult('loot_raeshalare')) {
       const isNew = data.weaponCollection['w_raeshalare'] === undefined;
       weaponDrop = { id: 'w_raeshalare', ...WEAPONS.w_raeshalare, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_raeshalare'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
     // Katana Z: 1/50,000 from Monarque Supreme
-    if (!weaponDrop && stage.id === 'supreme_monarch' && Math.random() < (1 / 50000) * lootMult) {
+    if (!weaponDrop && stage.id === 'supreme_monarch' && Math.random() < (1 / 50000) * lootMult * getFactionLootMult('loot_katana_z')) {
       const isNew = data.weaponCollection['w_katana_z'] === undefined;
       weaponDrop = { id: 'w_katana_z', ...WEAPONS.w_katana_z, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_katana_z'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
     // Katana V: 1/50,000 from Monarque Supreme
-    if (!weaponDrop && stage.id === 'supreme_monarch' && Math.random() < (1 / 50000) * lootMult) {
+    if (!weaponDrop && stage.id === 'supreme_monarch' && Math.random() < (1 / 50000) * lootMult * getFactionLootMult('loot_katana_v')) {
       const isNew = data.weaponCollection['w_katana_v'] === undefined;
       weaponDrop = { id: 'w_katana_v', ...WEAPONS.w_katana_v, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_katana_v'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
     // Baton de Gul'dan: 1/10,000 from Archdemon (flat rate, no pity)
-    if (!weaponDrop && stage.id === 'archdemon' && Math.random() < (1 / 10000) * lootMult) {
+    if (!weaponDrop && stage.id === 'archdemon' && Math.random() < (1 / 10000) * lootMult * getFactionLootMult('loot_guldan')) {
       const isNew = data.weaponCollection['w_guldan'] === undefined;
       weaponDrop = { id: 'w_guldan', ...WEAPONS.w_guldan, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_guldan'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
@@ -3412,14 +3450,13 @@ export default function ShadowColosseum() {
           : stage.id === 'zephyr' ? "Rae'shalare"
           : stage.id === 'archdemon' ? "le Baton de Gul'dan"
           : 'un Katana';
-        const dropRate = stage.id === 'ragnarok' ? '1/10 000'
-          : stage.id === 'zephyr' ? '1/50 000 000'
-          : stage.id === 'archdemon' ? '1/10 000'
-          : '1/50 000';
-        const cumul = stage.id === 'ragnarok' ? (1 - Math.pow(1 - 1/10000, kills)) * 100
-          : stage.id === 'zephyr' ? (1 - Math.pow(1 - 1/5000, kills)) * 100
-          : stage.id === 'archdemon' ? (1 - Math.pow(1 - 1/10000, kills)) * 100
-          : (1 - Math.pow(1 - 2/50000, kills)) * 100;
+        const lm = data.lootBoostMs > 0 ? 2 : 1;
+        const effRate = stage.id === 'ragnarok' ? (1/10000) * lm * getFactionLootMult('loot_sulfuras')
+          : stage.id === 'zephyr' ? (1/5000) * lm * getFactionLootMult('loot_raeshalare')
+          : stage.id === 'archdemon' ? (1/10000) * lm * getFactionLootMult('loot_guldan')
+          : (1/50000) * lm * Math.max(getFactionLootMult('loot_katana_z'), getFactionLootMult('loot_katana_v'));
+        const dropRate = `1/${Math.round(1 / effRate).toLocaleString()}`;
+        const cumul = (1 - Math.pow(1 - effRate, kills)) * 100;
 
         // Pool of taunts — randomly picked
         const taunts = [
@@ -3435,7 +3472,7 @@ export default function ShadowColosseum() {
           `Tu as plus de chances de te faire frapper par une meteorite que de drop ${weaponName}. Juste pour info.`,
           `Fun fact : avec un taux de ${dropRate}, tu aurais plus de chance de gagner au loto. Mais tu farm quand meme. Respect.`,
           `${dropRate} de chance... c'est comme trouver une aiguille dans une botte de foin. Sauf que la botte fait 10km.`,
-          `Statistiquement, il te faudrait encore ${Math.max(1, Math.ceil(1 / (stage.id === 'ragnarok' ? 1/10000 : stage.id === 'zephyr' ? 1/5000 : 1/50000) - kills))} runs en moyenne. Bonne chance !`,
+          `Statistiquement, il te faudrait encore ${Math.max(1, Math.ceil(1 / effRate - kills))} runs en moyenne. Bonne chance !`,
           stage.id === 'zephyr' ? "1 chance sur 50 MILLIONS... t'as plus de chances de rencontrer un alien. Mais je crois en toi ! Non j'deconne." : null,
 
           // Fake-outs
@@ -4260,7 +4297,7 @@ export default function ShadowColosseum() {
                                 {'\u2620\uFE0F'}{data.monarchKills} kills
                               </span>
                             )}
-                            {data.lootBoostMs > 0 && ['ragnarok', 'zephyr', 'supreme_monarch'].includes(stage.id) && (
+                            {data.lootBoostMs > 0 && LOOT_BOOST_BOSSES.includes(stage.id) && (
                               <span className="text-[9px] bg-red-500/20 text-red-400 px-1.5 rounded font-bold animate-pulse">{'\uD83D\uDD34'} x2 {(() => { const ms = data.lootBoostMs; const h = Math.floor(ms/3600000); const m = Math.floor((ms%3600000)/60000); return h > 0 ? `${h}h${String(m).padStart(2,'0')}m` : `${m}m`; })()}</span>
                             )}
                           </div>
@@ -8985,7 +9022,7 @@ export default function ShadowColosseum() {
               </div>
             )}
             {/* Loot Boost x2 indicator */}
-            {data.lootBoostMs > 0 && ['ragnarok', 'zephyr', 'supreme_monarch'].includes(STAGES[selStage]?.id) && (
+            {data.lootBoostMs > 0 && LOOT_BOOST_BOSSES.includes(STAGES[selStage]?.id) && (
               <div className="mt-1 px-2.5 py-1 rounded-lg bg-red-500/20 border border-red-500/40 backdrop-blur-sm animate-pulse">
                 <div className="text-[10px] text-red-400 font-bold">{'\uD83D\uDD34'} LOOT x2</div>
                 <div className="text-[9px] text-red-300/70 text-center">{(() => { const ms = data.lootBoostMs; const h = Math.floor(ms/3600000); const m = Math.floor((ms%3600000)/60000); const s = Math.floor((ms%60000)/1000); return h > 0 ? `${h}h${String(m).padStart(2,'0')}m` : `${m}m${String(s).padStart(2,'0')}s`; })()}</div>
@@ -9014,16 +9051,33 @@ export default function ShadowColosseum() {
                     </>
                   )}
                 </div>
-                {(data.ragnarokKills || 0) > 0 && (
-                  <div className="mt-1.5 flex items-center gap-1.5">
-                    <span className="text-[9px] text-gray-500">Chance cumulee :</span>
-                    <span className="text-[9px] text-orange-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - 1/10000, data.ragnarokKills)) * 100).toFixed(2)}%</span>
-                    <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-orange-600 to-red-500 rounded-full transition-all"
-                        style={{ width: `${Math.min(100, (1 - Math.pow(1 - 1/10000, data.ragnarokKills)) * 100)}%` }} />
-                    </div>
-                  </div>
-                )}
+                {(() => {
+                  const base = 1/10000;
+                  const lm = data.lootBoostMs > 0 ? 2 : 1;
+                  const fm = getFactionLootMult('loot_sulfuras');
+                  const eff = base * lm * fm;
+                  const effRate = Math.round(1 / eff);
+                  return (
+                    <>
+                      <div className="mt-1 flex items-center gap-1 flex-wrap">
+                        <span className="text-[9px] text-gray-500">Taux :</span>
+                        <span className="text-[9px] text-orange-400 font-bold">1/{effRate.toLocaleString()}</span>
+                        <span className="text-[8px] text-gray-600">({(eff * 100).toFixed(3)}%)</span>
+                        {(lm > 1 || fm > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2 Loot' : ''}{lm > 1 && fm > 1 ? ' + ' : ''}{fm > 1 ? `Faction x${fm.toFixed(1)}` : ''}</span>}
+                      </div>
+                      {(data.ragnarokKills || 0) > 0 && (
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <span className="text-[9px] text-gray-500">Chance cumulee :</span>
+                          <span className="text-[9px] text-orange-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - eff, data.ragnarokKills)) * 100).toFixed(2)}%</span>
+                          <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-orange-600 to-red-500 rounded-full transition-all"
+                              style={{ width: `${Math.min(100, (1 - Math.pow(1 - eff, data.ragnarokKills)) * 100)}%` }} />
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
                 {/* Fragment counter */}
                 <div className="mt-1.5 flex items-center gap-1.5">
                   <span className="text-[9px] text-gray-500">Fragments :</span>
@@ -9057,16 +9111,33 @@ export default function ShadowColosseum() {
                     </>
                   )}
                 </div>
-                {(data.zephyrKills || 0) > 0 && (
-                  <div className="mt-1.5 flex items-center gap-1.5">
-                    <span className="text-[9px] text-gray-500">Chance cumulee :</span>
-                    <span className="text-[9px] text-teal-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - 1/5000, data.zephyrKills)) * 100).toFixed(2)}%</span>
-                    <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-teal-500 to-cyan-400 rounded-full transition-all"
-                        style={{ width: `${Math.min(100, (1 - Math.pow(1 - 1/5000, data.zephyrKills)) * 100)}%` }} />
-                    </div>
-                  </div>
-                )}
+                {(() => {
+                  const base = 1/5000;
+                  const lm = data.lootBoostMs > 0 ? 2 : 1;
+                  const fm = getFactionLootMult('loot_raeshalare');
+                  const eff = base * lm * fm;
+                  const effRate = Math.round(1 / eff);
+                  return (
+                    <>
+                      <div className="mt-1 flex items-center gap-1 flex-wrap">
+                        <span className="text-[9px] text-gray-500">Taux :</span>
+                        <span className="text-[9px] text-teal-400 font-bold">1/{effRate.toLocaleString()}</span>
+                        <span className="text-[8px] text-gray-600">({(eff * 100).toFixed(3)}%)</span>
+                        {(lm > 1 || fm > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2 Loot' : ''}{lm > 1 && fm > 1 ? ' + ' : ''}{fm > 1 ? `Faction x${fm.toFixed(1)}` : ''}</span>}
+                      </div>
+                      {(data.zephyrKills || 0) > 0 && (
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <span className="text-[9px] text-gray-500">Chance cumulee :</span>
+                          <span className="text-[9px] text-teal-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - eff, data.zephyrKills)) * 100).toFixed(2)}%</span>
+                          <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-teal-500 to-cyan-400 rounded-full transition-all"
+                              style={{ width: `${Math.min(100, (1 - Math.pow(1 - eff, data.zephyrKills)) * 100)}%` }} />
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
                 {/* Fragment counter */}
                 <div className="mt-1.5 flex items-center gap-1.5">
                   <span className="text-[9px] text-gray-500">Fragments :</span>
@@ -9093,6 +9164,8 @@ export default function ShadowColosseum() {
                     const has = data.weaponCollection?.[wId] !== undefined;
                     const count = (data.monarchDropLog || []).filter(d => d.weaponId === wId).length;
                     const w = WEAPONS[wId];
+                    const buffId = wId === 'w_katana_z' ? 'loot_katana_z' : 'loot_katana_v';
+                    const eff = (1/50000) * (data.lootBoostMs > 0 ? 2 : 1) * getFactionLootMult(buffId);
                     return (
                       <div key={wId} className="flex items-center gap-1.5">
                         {has ? (
@@ -9103,23 +9176,42 @@ export default function ShadowColosseum() {
                         ) : (
                           <>
                             <span className="text-[10px] opacity-40">{'\u2694\uFE0F'}</span>
-                            <span className="text-[9px] text-gray-500">{w?.name} — 1/50 000</span>
+                            <span className="text-[9px] text-gray-500">{w?.name} — 1/{Math.round(1/eff).toLocaleString()}</span>
                           </>
                         )}
                       </div>
                     );
                   })}
                 </div>
-                {(data.monarchKills || 0) > 0 && (
-                  <div className="mt-1.5 flex items-center gap-1.5">
-                    <span className="text-[9px] text-gray-500">Chance cumulee (chaque) :</span>
-                    <span className="text-[9px] text-purple-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - 1/50000, data.monarchKills)) * 100).toFixed(2)}%</span>
-                    <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-purple-600 to-indigo-500 rounded-full transition-all"
-                        style={{ width: `${Math.min(100, (1 - Math.pow(1 - 1/50000, data.monarchKills)) * 100)}%` }} />
-                    </div>
-                  </div>
-                )}
+                {(() => {
+                  const base = 1/50000;
+                  const lm = data.lootBoostMs > 0 ? 2 : 1;
+                  const fmZ = getFactionLootMult('loot_katana_z');
+                  const fmV = getFactionLootMult('loot_katana_v');
+                  const effZ = base * lm * fmZ;
+                  const effV = base * lm * fmV;
+                  const bestEff = Math.max(effZ, effV);
+                  const effRate = Math.round(1 / bestEff);
+                  return (
+                    <>
+                      <div className="mt-1 flex items-center gap-1 flex-wrap">
+                        <span className="text-[9px] text-gray-500">Taux (chaque) :</span>
+                        <span className="text-[9px] text-purple-400 font-bold">~1/{effRate.toLocaleString()}</span>
+                        {(lm > 1 || fmZ > 1 || fmV > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2 Loot' : ''}{lm > 1 && (fmZ > 1 || fmV > 1) ? ' + ' : ''}{fmZ > 1 ? `Z x${fmZ.toFixed(1)}` : ''}{fmZ > 1 && fmV > 1 ? ', ' : ''}{fmV > 1 ? `V x${fmV.toFixed(1)}` : ''}</span>}
+                      </div>
+                      {(data.monarchKills || 0) > 0 && (
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <span className="text-[9px] text-gray-500">Chance cumulee :</span>
+                          <span className="text-[9px] text-purple-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - bestEff, data.monarchKills)) * 100).toFixed(2)}%</span>
+                          <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-purple-600 to-indigo-500 rounded-full transition-all"
+                              style={{ width: `${Math.min(100, (1 - Math.pow(1 - bestEff, data.monarchKills)) * 100)}%` }} />
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
                 {/* Fragment counters — Katana Z & V */}
                 <div className="mt-1.5 space-y-1">
                   <div className="flex items-center gap-1.5">
@@ -9163,14 +9255,33 @@ export default function ShadowColosseum() {
                     </>
                   )}
                 </div>
-                {/* Pity system info */}
-                {(data.archDemonKills || 0) > 0 && (
-                  <div className="mt-1 flex items-center gap-1.5">
-                    <span className="text-[9px] text-gray-500">Taux :</span>
-                    <span className="text-[9px] text-green-400 font-bold">1/10 000</span>
-                    <span className="text-[8px] text-gray-600">({(1/10000 * 100).toFixed(3)}% par kill)</span>
-                  </div>
-                )}
+                {(() => {
+                  const base = 1/10000;
+                  const lm = data.lootBoostMs > 0 ? 2 : 1;
+                  const fm = getFactionLootMult('loot_guldan');
+                  const eff = base * lm * fm;
+                  const effRate = Math.round(1 / eff);
+                  return (
+                    <>
+                      <div className="mt-1 flex items-center gap-1 flex-wrap">
+                        <span className="text-[9px] text-gray-500">Taux :</span>
+                        <span className="text-[9px] text-green-400 font-bold">1/{effRate.toLocaleString()}</span>
+                        <span className="text-[8px] text-gray-600">({(eff * 100).toFixed(3)}%)</span>
+                        {(lm > 1 || fm > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2 Loot' : ''}{lm > 1 && fm > 1 ? ' + ' : ''}{fm > 1 ? `Faction x${fm.toFixed(1)}` : ''}</span>}
+                      </div>
+                      {(data.archDemonKills || 0) > 0 && (
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <span className="text-[9px] text-gray-500">Chance cumulee :</span>
+                          <span className="text-[9px] text-green-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - eff, data.archDemonKills)) * 100).toFixed(2)}%</span>
+                          <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-green-600 to-emerald-400 rounded-full transition-all"
+                              style={{ width: `${Math.min(100, (1 - Math.pow(1 - eff, data.archDemonKills)) * 100)}%` }} />
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
                 {/* Fragment counter */}
                 <div className="mt-1.5 flex items-center gap-1.5">
                   <span className="text-[9px] text-gray-500">Fragments :</span>
@@ -9560,18 +9671,21 @@ export default function ShadowColosseum() {
                     )}
                   </div>
                 </div>
-                {!data.weaponCollection?.['w_sulfuras'] && (data.ragnarokKills || 0) > 0 && (
-                  <div className="mt-1.5">
-                    <div className="flex justify-between text-[8px] text-gray-500 mb-0.5">
-                      <span>Proba cumulee</span>
-                      <span>{Math.min(99.99, (1 - Math.pow(1 - 1/10000, data.ragnarokKills)) * 100).toFixed(2)}%</span>
+                {!data.weaponCollection?.['w_sulfuras'] && (data.ragnarokKills || 0) > 0 && (() => {
+                  const eff = (1/10000) * (data.lootBoostMs > 0 ? 2 : 1) * getFactionLootMult('loot_sulfuras');
+                  return (
+                    <div className="mt-1.5">
+                      <div className="flex justify-between text-[8px] text-gray-500 mb-0.5">
+                        <span>Proba cumulee (1/{Math.round(1/eff).toLocaleString()})</span>
+                        <span>{Math.min(99.99, (1 - Math.pow(1 - eff, data.ragnarokKills)) * 100).toFixed(2)}%</span>
+                      </div>
+                      <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-orange-600 to-red-500 rounded-full transition-all"
+                          style={{ width: `${Math.min(100, (1 - Math.pow(1 - eff, data.ragnarokKills)) * 100)}%` }} />
+                      </div>
                     </div>
-                    <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-orange-600 to-red-500 rounded-full transition-all"
-                        style={{ width: `${Math.min(100, (1 - Math.pow(1 - 1/10000, data.ragnarokKills)) * 100)}%` }} />
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             )}
             {/* Monarque Supreme persistent tracker on result screen */}
@@ -9596,18 +9710,21 @@ export default function ShadowColosseum() {
                     <div className="text-[8px] text-gray-500">katanas</div>
                   </div>
                 </div>
-                {(data.monarchKills || 0) > 0 && (
-                  <div className="mt-1.5">
-                    <div className="flex justify-between text-[8px] text-gray-500 mb-0.5">
-                      <span>Proba cumulee (chaque katana)</span>
-                      <span>{Math.min(99.99, (1 - Math.pow(1 - 1/50000, data.monarchKills)) * 100).toFixed(2)}%</span>
+                {(data.monarchKills || 0) > 0 && (() => {
+                  const eff = (1/50000) * (data.lootBoostMs > 0 ? 2 : 1) * Math.max(getFactionLootMult('loot_katana_z'), getFactionLootMult('loot_katana_v'));
+                  return (
+                    <div className="mt-1.5">
+                      <div className="flex justify-between text-[8px] text-gray-500 mb-0.5">
+                        <span>Proba cumulee (1/{Math.round(1/eff).toLocaleString()})</span>
+                        <span>{Math.min(99.99, (1 - Math.pow(1 - eff, data.monarchKills)) * 100).toFixed(2)}%</span>
+                      </div>
+                      <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-purple-600 to-indigo-500 rounded-full transition-all"
+                          style={{ width: `${Math.min(100, (1 - Math.pow(1 - eff, data.monarchKills)) * 100)}%` }} />
+                      </div>
                     </div>
-                    <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-purple-600 to-indigo-500 rounded-full transition-all"
-                        style={{ width: `${Math.min(100, (1 - Math.pow(1 - 1/50000, data.monarchKills)) * 100)}%` }} />
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             )}
             <button

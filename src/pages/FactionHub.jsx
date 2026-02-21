@@ -148,10 +148,11 @@ export default function FactionHub() {
   };
 
   const FACTION_BUFFS = {
-    loot_sulfuras: { name: 'Loot Sulfuras', description: '+% drop rate Sulfuras', maxLevel: 10, costPerLevel: 100, icon: '🔥' },
-    loot_raeshalare: { name: 'Loot Raeshalare', description: '+% drop rate Raeshalare', maxLevel: 10, costPerLevel: 100, icon: '🏹' },
-    loot_katana_z: { name: 'Loot Katana Z', description: '+% drop rate Katana Z', maxLevel: 10, costPerLevel: 100, icon: '⚡' },
-    loot_katana_v: { name: 'Loot Katana V', description: '+% drop rate Katana V', maxLevel: 10, costPerLevel: 100, icon: '🌊' },
+    loot_sulfuras: { name: 'Loot Sulfuras', description: '+5% drop rate Sulfuras par niv', maxLevel: 10, costPerLevel: 100, icon: '🔥' },
+    loot_raeshalare: { name: 'Loot Raeshalare', description: '+5% drop rate Raeshalare par niv', maxLevel: 10, costPerLevel: 100, icon: '🏹' },
+    loot_katana_z: { name: 'Loot Katana Z', description: '+5% drop rate Katana Z par niv', maxLevel: 10, costPerLevel: 100, icon: '⚡' },
+    loot_katana_v: { name: 'Loot Katana V', description: '+5% drop rate Katana V par niv', maxLevel: 10, costPerLevel: 100, icon: '🌊' },
+    loot_guldan: { name: "Loot Gul'dan", description: "+5% drop rate Baton de Gul'dan par niv", maxLevel: 10, costPerLevel: 100, icon: '🪄' },
     stats_hp: { name: 'HP Bonus', description: '+1% HP par niveau', maxLevel: 20, costPerLevel: 150, icon: '❤️' },
     stats_atk: { name: 'ATK Bonus', description: '+1% ATK par niveau', maxLevel: 20, costPerLevel: 150, icon: '⚔️' },
     stats_def: { name: 'DEF Bonus', description: '+1% DEF par niveau', maxLevel: 20, costPerLevel: 150, icon: '🛡️' },
