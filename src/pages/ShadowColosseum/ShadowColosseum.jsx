@@ -50,6 +50,7 @@ import {
 } from './arc2Data';
 import { TALENT_SKILLS, TALENT_SKILL_COST, TALENT_SKILL_UNLOCK_LEVEL } from './talentSkillData';
 import { isLoggedIn, authHeaders } from '../../utils/auth';
+import { cloudStorage } from '../../utils/CloudStorage';
 
 // ─── StoryTypewriter — char-by-char text reveal ──────────────
 const StoryTypewriter = ({ text, speaker }) => {
@@ -283,6 +284,20 @@ const saveData = (d) => localStorage.setItem(SAVE_KEY, JSON.stringify(d));
 export default function ShadowColosseum() {
   const [view, setView] = useState('hub'); // hub, stats, skilltree, talents, battle, result
   const [data, setData] = useState(loadData);
+  const [cloudReady, setCloudReady] = useState(cloudStorage._initialized);
+
+  // After cloud sync completes, reload data (protects against CTRL+SHIFT+R / cache clear)
+  useEffect(() => {
+    if (cloudReady) return;
+    let cancelled = false;
+    cloudStorage.whenReady().then(() => {
+      if (cancelled) return;
+      setCloudReady(true);
+      setData(loadData());
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   const [selChibi, setSelChibi] = useState(null);
   const [selStage, setSelStage] = useState(null);
   const [selectedStar, setSelectedStar] = useState(0);

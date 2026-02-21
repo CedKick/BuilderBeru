@@ -60,6 +60,19 @@ class CloudStorageManager {
     this._online = true;
     this._syncQueue = new Set();
     this._cloudSizes = {}; // Track cloud data sizes to prevent corruption
+    this._readyPromise = null;
+    this._readyResolve = null;
+  }
+
+  /** Returns a promise that resolves when initialSync is complete */
+  whenReady() {
+    if (this._initialized) return Promise.resolve();
+    if (!this._readyPromise) {
+      this._readyPromise = new Promise(resolve => {
+        this._readyResolve = resolve;
+      });
+    }
+    return this._readyPromise;
   }
 
   /** Save data to localStorage + schedule cloud sync */
@@ -157,6 +170,7 @@ class CloudStorageManager {
     if (!cloudEntries) {
       // Offline — just use localStorage
       this._initialized = true;
+      if (this._readyResolve) this._readyResolve();
       return;
     }
 
@@ -204,6 +218,7 @@ class CloudStorageManager {
     }
 
     this._initialized = true;
+    if (this._readyResolve) this._readyResolve();
     console.log('[CloudStorage] Initial sync complete', loginPending ? '(login mode — cloud wins)' : '(normal)');
   }
 
