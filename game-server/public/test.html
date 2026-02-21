@@ -84,6 +84,8 @@
       border: 2px solid #444; border-radius: 8px; position: relative;
       display: flex; align-items: center; justify-content: center; flex-direction: column;
     }
+    .skill-slot.ready { border-color: #eab308; box-shadow: 0 0 10px rgba(234,179,8,0.5); background: rgba(234,179,8,0.08); }
+    .skill-slot.no-mana { border-color: #555; opacity: 0.5; }
     .skill-slot.active { border-color: #a78bfa; box-shadow: 0 0 10px rgba(167,139,250,0.5); }
     .skill-slot .key-label { position: absolute; top: 2px; left: 4px; font-size: 11px; color: #aaa; font-weight: bold; }
     .skill-slot .skill-name { font-size: 8px; color: #bbb; text-align: center; margin-top: 10px; line-height: 1.1; }
@@ -135,6 +137,8 @@
     .buff-icon .buff-dur { position: absolute; bottom: -3px; right: -3px; font-size: 9px; color: #fff; background: #333; border-radius: 2px; padding: 0 3px; }
     .buff-icon .buff-stacks { position: absolute; top: -3px; right: -3px; font-size: 9px; color: #fff; background: #7c3aed; border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; }
 
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+
     /* ── Timer ── */
     .game-timer { position: absolute; top: 12px; right: 14px; z-index: 10; font-size: 24px; font-weight: bold; pointer-events: none; text-shadow: 0 0 8px #000; }
 
@@ -156,6 +160,7 @@
   <div id="app">
     <div id="sidebar">
       <h2>Manaya Raid</h2>
+      <div id="profileDisplay" style="margin-bottom:4px"></div>
       <div id="status">Disconnected</div>
 
       <h3>Connection</h3>
@@ -173,6 +178,8 @@
         <input id="roomCode" placeholder="Code" style="width:80px" />
         <button onclick="joinRoom()" id="btnJoin" disabled>Join</button>
       </div>
+      <button onclick="refreshRoomList()" id="btnBrowse" disabled style="width:calc(100% - 4px);margin-top:4px;background:#2563eb">Browse Rooms</button>
+      <div id="roomList" style="margin-top:4px;max-height:150px;overflow-y:auto"></div>
 
       <h3>Class & Difficulty</h3>
       <div class="inline-row">
@@ -314,7 +321,7 @@
     bossImg.src = '/manayaBoss.png';
     let bossImgLoaded = false;
     bossImg.onload = () => { bossImgLoaded = true; };
-    const BOSS_SPRITE_SIZE = 140;
+    const BOSS_SPRITE_SIZE = 210; // x1.5 bigger
 
     // ── Player Sprites (Sung) ──
     const playerIdleImg = new Image();
@@ -396,6 +403,87 @@
     }
     populateHunterDropdowns();
 
+    // ── Auto-login from URL params ──
+    const urlParams = new URLSearchParams(window.location.search);
+    const autoUser = urlParams.get('user');
+    if (autoUser) {
+      document.getElementById('username').value = autoUser;
+      // Auto-connect after a short delay
+      setTimeout(() => connect(), 300);
+    }
+
+    // ── Player Profile (localStorage) ──
+    const PROFILE_KEY = 'manaya_raid_profile';
+    function xpForLevel(level) { return level <= 1 ? 0 : Math.floor(500 * Math.pow(level, 1.5)); }
+    function loadProfile() {
+      try {
+        const data = JSON.parse(localStorage.getItem(PROFILE_KEY));
+        if (data && data.level) return data;
+      } catch {}
+      return null;
+    }
+    function saveProfile(profile) {
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    }
+    function getOrCreateProfile(username) {
+      let p = loadProfile();
+      if (p && p.username === username) return p;
+      // New profile
+      p = {
+        username, level: 1, xp: 0, totalXp: 0,
+        gamesPlayed: 0, victories: 0, defeats: 0,
+        classStats: { tank: { gp: 0, w: 0 }, healer: { gp: 0, w: 0 }, dps_cac: { gp: 0, w: 0 }, dps_range: { gp: 0, w: 0 } },
+        bestTime: null, createdAt: Date.now(),
+      };
+      saveProfile(p);
+      return p;
+    }
+    function addXpToProfile(xpReward, victory, cls, clearTime) {
+      const username = document.getElementById('username').value || 'Player';
+      const profile = getOrCreateProfile(username);
+      profile.gamesPlayed++;
+      if (victory) profile.victories++;
+      else profile.defeats++;
+      if (cls && profile.classStats[cls]) {
+        profile.classStats[cls].gp++;
+        if (victory) profile.classStats[cls].w++;
+      }
+      if (victory && clearTime && (!profile.bestTime || clearTime < profile.bestTime)) {
+        profile.bestTime = Math.round(clearTime);
+      }
+      profile.xp += xpReward;
+      profile.totalXp += xpReward;
+      // Level up check
+      while (profile.level < 50) {
+        const needed = xpForLevel(profile.level + 1);
+        if (profile.xp >= needed) {
+          profile.xp -= needed;
+          profile.level++;
+          log('LEVEL UP! Level ' + profile.level + ' !', 'heal');
+        } else break;
+      }
+      saveProfile(profile);
+      updateProfileDisplay();
+      return profile;
+    }
+    function updateProfileDisplay() {
+      const el = document.getElementById('profileDisplay');
+      const profile = loadProfile();
+      if (!profile) { el.innerHTML = '<span style="color:#666;font-size:9px">No profile</span>'; return; }
+      const needed = xpForLevel(profile.level + 1);
+      const xpPct = needed > 0 ? Math.min(100, (profile.xp / needed) * 100) : 100;
+      el.innerHTML =
+        '<div style="font-size:11px;font-weight:bold;color:#a78bfa">Lv.' + profile.level + ' ' + profile.username + '</div>' +
+        '<div style="height:6px;background:#1a1a2e;border-radius:3px;overflow:hidden;margin:2px 0">' +
+        '<div style="height:100%;width:' + xpPct + '%;background:linear-gradient(90deg,#7c3aed,#a78bfa);border-radius:3px;transition:width 0.3s"></div></div>' +
+        '<div style="font-size:8px;color:#888">XP: ' + profile.xp + ' / ' + needed + ' | ' +
+        'W: ' + profile.victories + ' L: ' + profile.defeats +
+        (profile.bestTime ? ' | Best: ' + Math.floor(profile.bestTime / 60) + ':' + String(Math.floor(profile.bestTime % 60)).padStart(2, '0') : '') + '</div>';
+    }
+
+    // Initialize profile display
+    updateProfileDisplay();
+
     // ── State ──
     let ws = null, myId = null, gameState = null, roomInfo = null, inRoom = false;
     let keys = {}, mouseAngle = 0, lastAimSent = 0, gameStartTime = 0;
@@ -424,6 +512,8 @@
         document.getElementById('btnDisconnect').disabled = false;
         document.getElementById('btnCreate').disabled = false;
         document.getElementById('btnJoin').disabled = false;
+        document.getElementById('btnBrowse').disabled = false;
+        refreshRoomList(); // Auto-fetch room list on connect
       };
       ws.onmessage = (e) => handleMessage(JSON.parse(e.data));
       ws.onclose = () => {
@@ -434,6 +524,8 @@
         document.getElementById('btnCreate').disabled = true;
         document.getElementById('btnJoin').disabled = true;
         document.getElementById('btnReady').disabled = true;
+        document.getElementById('btnBrowse').disabled = true;
+        document.getElementById('roomList').innerHTML = '';
         ws = null; myId = null; inRoom = false; gameState = null; roomInfo = null;
       };
     }
@@ -443,6 +535,8 @@
     // ── Room Actions ──
     function createRoom() { send({ type: 'create_room' }); }
     function joinRoom() { send({ type: 'join_room', code: document.getElementById('roomCode').value }); }
+    function refreshRoomList() { send({ type: 'list_rooms' }); }
+    function joinRoomByCode(code) { document.getElementById('roomCode').value = code; joinRoom(); }
     function selectClass() {
       const cls = document.getElementById('classSelect').value;
       if (cls && inRoom) { send({ type: 'select_class', class: cls }); log('Class: ' + CLASS_LABELS[cls], 'info'); }
@@ -597,7 +691,17 @@
             log('DEFEAT: ' + msg.result.reason, 'error');
           }
           if (msg.result.stats) {
-            for (const s of msg.result.stats) log('  ' + s.username + ': DMG=' + formatNum(s.damageDealt) + ' Heal=' + formatNum(s.healingDone), 'info');
+            for (const s of msg.result.stats) {
+              const xpText = s.xpReward ? ' +' + s.xpReward + ' XP' : '';
+              log('  ' + s.username + ': DMG=' + formatNum(s.damageDealt) + ' Heal=' + formatNum(s.healingDone) + xpText, 'info');
+            }
+            // Apply XP to own profile
+            const myStats = msg.result.stats.find(s => s.id === myId);
+            if (myStats && myStats.xpReward > 0) {
+              const cls = document.getElementById('classSelect').value;
+              addXpToProfile(myStats.xpReward, msg.result.victory, cls, msg.result.time || null);
+              log('+' + myStats.xpReward + ' XP earned!', 'heal');
+            }
           }
           break;
 
@@ -617,8 +721,37 @@
           for (const evt of msg.events) handleMessage(evt);
           break;
 
+        case 'room_list':
+          renderRoomList(msg.rooms);
+          break;
+
         case 'error': log('Error: ' + msg.message, 'error'); break;
       }
+    }
+
+    function renderRoomList(rooms) {
+      const el = document.getElementById('roomList');
+      if (!rooms || rooms.length === 0) {
+        el.innerHTML = '<div style="font-size:10px;color:#666;padding:4px;text-align:center">No rooms available. Create one!</div>';
+        return;
+      }
+      let html = '';
+      for (const r of rooms) {
+        const stateColors = { waiting: '#10b981', countdown: '#f59e0b', playing: '#ef4444', finished: '#6b7280' };
+        const stateLabels = { waiting: 'Waiting', countdown: 'Starting...', playing: 'In Game', finished: 'Ended' };
+        const canJoin = r.state === 'waiting' && r.playerCount < r.maxPlayers;
+        const playerList = r.players.map(p => (CLASS_LABELS[p.class] || '?')).join(', ');
+        html += '<div style="background:#1a1a2e;border:1px solid #333;border-radius:4px;padding:5px;margin-bottom:3px;font-size:10px">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center">' +
+          '<span style="font-weight:bold;color:#a78bfa">' + r.code + '</span>' +
+          '<span style="color:' + (stateColors[r.state] || '#888') + ';font-size:9px">' + (stateLabels[r.state] || r.state) + '</span>' +
+          '</div>' +
+          '<div style="color:#888;font-size:9px">' + r.host + ' | ' + r.difficulty + ' | ' + r.playerCount + '/' + r.maxPlayers + '</div>' +
+          '<div style="color:#666;font-size:9px">' + (playerList || 'No class selected') + '</div>' +
+          (canJoin ? '<button onclick="joinRoomByCode(\'' + r.code + '\')" style="margin-top:3px;font-size:9px;padding:2px 8px;background:#10b981">Join</button>' : '') +
+          '</div>';
+      }
+      el.innerHTML = html;
     }
 
     // ── HUD Updates ──
@@ -719,22 +852,34 @@
     }
 
     function updateSkillBar(me) {
-      const skills = [
-        { key: 'LMB', cd: me.cooldowns?.basic || 0, maxCd: 0.5, name: 'Basic' },
-        { key: 'RMB', cd: me.cooldowns?.secondary || 0, maxCd: 1.5, name: 'Secondary' },
-        { key: 'A', cd: me.cooldowns?.skillA || 0, maxCd: 12, name: 'Skill A' },
-        { key: 'E', cd: me.cooldowns?.skillB || 0, maxCd: 15, name: 'Skill E' },
-        { key: 'R', cd: me.cooldowns?.ultimate || 0, maxCd: 60, name: 'Ultimate' },
-        { key: 'SPC', cd: me.dodgeCooldown || 0, maxCd: 3, name: 'Dodge' },
-      ];
+      const skillKeys = ['basic', 'secondary', 'skillA', 'skillB', 'ultimate'];
+      const keyLabels = ['LMB', 'RMB', 'A', 'E', 'R'];
+      const skills = skillKeys.map((sk, i) => ({
+        key: keyLabels[i],
+        cd: me.cooldowns?.[sk] || 0,
+        maxCd: me.skills?.[sk]?.cooldown || 1,
+        name: me.skills?.[sk]?.name || sk,
+        manaCost: me.skills?.[sk]?.manaCost || 0,
+      }));
+      // Add dodge
+      skills.push({ key: 'SPC', cd: me.dodgeCooldown || 0, maxCd: 3, name: 'Esquive', manaCost: 0 });
+
       let html = '';
       for (let i = 0; i < skills.length; i++) {
         const s = skills[i];
-        const onCd = s.cd > 0;
+        const onCd = s.cd > 0.05;
+        const hasMana = me.mana >= s.manaCost;
         const cdPct = onCd ? Math.min(100, (s.cd / Math.max(s.maxCd, s.cd)) * 100) : 0;
-        html += '<div class="skill-slot' + (onCd ? '' : ' active') + '">' +
+        // State class: on cd = default dark, ready = yellow glow, no mana = grayed
+        let stateClass = '';
+        if (onCd) stateClass = '';
+        else if (!hasMana && s.manaCost > 0) stateClass = ' no-mana';
+        else stateClass = ' ready';
+
+        const manaText = s.manaCost > 0 ? '<span style="font-size:7px;color:' + (hasMana ? '#3b82f6' : '#ef4444') + '">' + s.manaCost + ' MP</span>' : '';
+        html += '<div class="skill-slot' + stateClass + '">' +
           '<span class="key-label">' + s.key + '</span>' +
-          '<span class="skill-name">' + s.name + '</span>' +
+          '<span class="skill-name">' + s.name + '</span>' + manaText +
           (onCd ? '<div class="cd-overlay" style="height:' + cdPct + '%"></div><span class="cd-text">' + s.cd.toFixed(1) + '</span>' : '') +
           '</div>';
         if (i === 1 || i === 4) html += '<div class="skill-sep"></div>';
@@ -765,18 +910,23 @@
     function updateBuffDisplay(me) {
       if (!me.buffs || me.buffs.length === 0) { document.getElementById('buffDisplay').innerHTML = ''; return; }
       const BUFF_ICONS = {
-        poison: { icon: '\u2620', neg: true },
-        atk_up: { icon: '\u2694', neg: false },
-        shield: { icon: '\u{1F6E1}', neg: false },
-        speed_up: { icon: '\u26A1', neg: false },
-        speed_down: { icon: '\u{1F422}', neg: true },
+        poison: { icon: '\u2620', neg: true, color: '#10b981', label: 'Poison' },
+        atk_up: { icon: '\u2694', neg: false, color: '#ef4444', label: 'ATK+' },
+        shield: { icon: '\u{1F6E1}', neg: false, color: '#38bdf8', label: 'Shield' },
+        speed_up: { icon: '\u26A1', neg: false, color: '#f59e0b', label: 'SPD+' },
+        speed_down: { icon: '\u{1F422}', neg: true, color: '#6b7280', label: 'Slow' },
       };
       let html = '';
       for (const b of me.buffs) {
-        const info = BUFF_ICONS[b.type] || { icon: '?', neg: true };
-        html += '<div class="buff-icon ' + (info.neg ? 'negative' : 'positive') + '">' +
-          info.icon + '<span class="buff-dur">' + parseFloat(b.dur).toFixed(0) + '</span>' +
-          (b.stacks > 1 ? '<span class="buff-stacks">' + b.stacks + '</span>' : '') +
+        const info = BUFF_ICONS[b.type] || { icon: '?', neg: true, color: '#888', label: b.type };
+        const isPoison = b.type === 'poison';
+        // Poison: pulsing red border when high stacks
+        const pulseStyle = isPoison && b.stacks >= 3 ? 'animation:pulse 0.5s ease-in-out infinite;' : '';
+        const borderStyle = isPoison ? 'border-color:' + (b.stacks >= 5 ? '#ff0000' : b.stacks >= 3 ? '#f97316' : '#10b981') + ';' : '';
+        html += '<div class="buff-icon ' + (info.neg ? 'negative' : 'positive') + '" style="' + pulseStyle + borderStyle + '">' +
+          '<span style="font-size:16px">' + info.icon + '</span>' +
+          '<span class="buff-dur">' + parseFloat(b.dur).toFixed(0) + '</span>' +
+          (b.stacks > 1 ? '<span class="buff-stacks" style="background:' + (isPoison ? (b.stacks >= 5 ? '#ff0000' : '#f97316') : '#7c3aed') + '">' + b.stacks + '</span>' : '') +
           '</div>';
       }
       document.getElementById('buffDisplay').innerHTML = html;
@@ -1061,6 +1211,45 @@
         ctx.fillStyle = 'rgba(245,158,11,0.2)';
         ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      } else if (zone.type === 'heal_zone') {
+        // Green healing circle on the ground
+        const pulse = 0.15 + 0.1 * Math.sin(Date.now() / 250);
+        const fadeOut = Math.min(1, zone.ttl / 0.5); // Fade out in last 0.5s
+        ctx.save();
+        ctx.globalAlpha = fadeOut;
+        // Outer glow
+        const glowGrad = ctx.createRadialGradient(zone.x, zone.y, zone.radius * 0.5, zone.x, zone.y, zone.radius * 1.2);
+        glowGrad.addColorStop(0, 'rgba(16,185,129,' + (pulse + 0.05) + ')');
+        glowGrad.addColorStop(1, 'rgba(16,185,129,0)');
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius * 1.2, 0, Math.PI * 2); ctx.fill();
+        // Inner fill
+        ctx.fillStyle = 'rgba(16,185,129,' + pulse + ')';
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill();
+        // Border ring
+        ctx.strokeStyle = 'rgba(16,185,129,' + (0.5 + pulse) + ')'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.stroke();
+        // Cross icon in center
+        ctx.fillStyle = 'rgba(16,185,129,' + (0.6 + pulse) + ')';
+        ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('+', zone.x, zone.y + 7);
+        // Sparkle particles
+        const sparkTime = Date.now() / 1000;
+        for (let i = 0; i < 4; i++) {
+          const sa = sparkTime * 2 + i * Math.PI / 2;
+          const sr = zone.radius * 0.6;
+          const sx = zone.x + Math.cos(sa) * sr;
+          const sy = zone.y + Math.sin(sa) * sr - 5;
+          ctx.fillStyle = 'rgba(200,255,220,' + (0.4 + 0.3 * Math.sin(sa * 3)) + ')';
+          ctx.beginPath(); ctx.arc(sx, sy, 2, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore();
+      } else if (zone.type === 'player_aoe_telegraph') {
+        // Player-placed AoE (like rain of arrows)
+        const alpha = 0.1 + progress * 0.2;
+        ctx.fillStyle = 'rgba(167,139,250,' + alpha + ')';
+        ctx.strokeStyle = 'rgba(167,139,250,' + (0.3 + progress * 0.4) + ')'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       }
     }
 
@@ -1081,6 +1270,25 @@
         auraGrad.addColorStop(1, 'rgba(255,0,0,0)');
         ctx.fillStyle = auraGrad;
         ctx.beginPath(); ctx.arc(boss.x, boss.y, auraR, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // Acceleration burst aura (yellow-orange speed lines)
+      if (boss.bursting) {
+        const bPulse = 0.6 + 0.4 * Math.sin(Date.now() / 80);
+        const burstR = halfSize + 30;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(245,158,11,' + bPulse + ')'; ctx.lineWidth = 3;
+        // Speed lines radiating outward
+        for (let i = 0; i < 8; i++) {
+          const a = boss.rotation + Math.PI + (i * Math.PI / 4) + (Date.now() / 200);
+          const r1 = halfSize + 5;
+          const r2 = burstR + 15 * Math.sin(Date.now() / 100 + i);
+          ctx.beginPath();
+          ctx.moveTo(boss.x + Math.cos(a) * r1, boss.y + Math.sin(a) * r1);
+          ctx.lineTo(boss.x + Math.cos(a) * r2, boss.y + Math.sin(a) * r2);
+          ctx.stroke();
+        }
+        ctx.restore();
       }
 
       if (bossImgLoaded) {

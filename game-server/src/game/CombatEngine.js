@@ -45,6 +45,12 @@ export class CombatEngine {
         this._healNearestAlly(player, skill);
         break;
 
+      case 'heal_zone':
+        if (!player.useMana(skill.manaCost)) return;
+        player.cooldowns.secondary = skill.cooldown;
+        this._placeHealZone(player, skill, angle);
+        break;
+
       default:
         // Attack-type secondary (charged shot, heavy strike, etc.)
         if (skill.manaCost > 0 && !player.useMana(skill.manaCost)) return;
@@ -252,6 +258,7 @@ export class CombatEngine {
       angle,
       power: skill.power,
       piercing: skill.piercing || false,
+      isBasic: skill.isBasic || false,
       alive: true,
       ttl: 2.0, // Max lifetime
     });
@@ -284,6 +291,11 @@ export class CombatEngine {
               this.gs.addAggro(player.id, aggroAmount + skill.aggroBonus * player.aggroMult);
             } else {
               this.gs.addAggro(player.id, aggroAmount);
+            }
+
+            // Mana on hit (basic attacks restore mana)
+            if (skill.isBasic && PLAYER.MANA_ON_HIT > 0) {
+              player.mana = Math.min(player.maxMana, player.mana + PLAYER.MANA_ON_HIT);
             }
 
             this.gs.addEvent({
@@ -417,6 +429,36 @@ export class CombatEngine {
         });
       }
     }
+  }
+
+  _placeHealZone(player, skill, angle) {
+    const dist = Math.min(skill.range, 150);
+    const targetX = player.x + Math.cos(angle) * dist;
+    const targetY = player.y + Math.sin(angle) * dist;
+
+    this.gs.addAoeZone({
+      id: `healzone_${nextProjectileId++}`,
+      type: 'heal_zone',
+      x: targetX,
+      y: targetY,
+      radius: skill.zoneRadius || 80,
+      ttl: skill.zoneDuration || 2.0,
+      maxTtl: skill.zoneDuration || 2.0,
+      active: true,
+      source: player.id,
+      owner: player.id,
+      healPower: skill.healPower || 800,
+      healTicks: skill.healTicks || 4,
+      _healTimer: 0,
+      _healInterval: (skill.zoneDuration || 2.0) / (skill.healTicks || 4),
+    });
+
+    this.gs.addEvent({
+      type: 'skill_used',
+      player: player.id,
+      skill: skill.name,
+      effect: 'heal_zone',
+    });
   }
 
   _cleanse(player, skill) {

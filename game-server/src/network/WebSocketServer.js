@@ -73,6 +73,9 @@ export class WebSocketServer {
       case 'leave_room':
         this.roomManager.leaveRoom(ws, client);
         break;
+      case 'list_rooms':
+        this.roomManager.listRooms(ws);
+        break;
       case 'select_class':
         this.roomManager.selectClass(ws, client, msg);
         break;

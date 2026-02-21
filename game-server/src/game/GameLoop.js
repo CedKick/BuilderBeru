@@ -2,6 +2,7 @@ import { SERVER, BOSS } from '../config.js';
 import { GameState } from './GameState.js';
 import { CombatEngine } from './CombatEngine.js';
 import { PhysicsEngine } from './PhysicsEngine.js';
+import { calculateXpReward } from '../data/playerProfile.js';
 
 export class GameLoop {
   constructor(roomCode, players, difficulty, wsServer, simulation = false) {
@@ -245,15 +246,35 @@ export class GameLoop {
   }
 
   _buildEndStats() {
-    return this.state.players.map(p => ({
-      id: p.id,
-      username: p.username,
-      class: p.class,
-      damageDealt: p.stats.damageDealt,
-      damageTaken: p.stats.damageTaken,
-      healingDone: p.stats.healingDone,
-      deaths: p.stats.deaths,
-    }));
+    const gs = this.state;
+    const elapsed = BOSS.ENRAGE_TIMER - gs.timer;
+    const victory = !gs.boss.alive;
+    const bossHpPercent = gs.boss.maxHp > 0 ? (gs.boss.hp / gs.boss.maxHp) * 100 : 0;
+    const playerCount = gs.players.length;
+
+    return gs.players.map(p => {
+      const xpReward = this.simulation ? 0 : calculateXpReward({
+        victory,
+        difficulty: this.state.difficulty || 'NORMAL',
+        bossHpPercent,
+        damageDealt: p.stats.damageDealt,
+        healingDone: p.stats.healingDone,
+        deaths: p.stats.deaths,
+        playerCount,
+        elapsed,
+      });
+
+      return {
+        id: p.id,
+        username: p.username,
+        class: p.class,
+        damageDealt: p.stats.damageDealt,
+        damageTaken: p.stats.damageTaken,
+        healingDone: p.stats.healingDone,
+        deaths: p.stats.deaths,
+        xpReward,
+      };
+    });
   }
 
   // ── Flush queued events to all clients ──
@@ -317,6 +338,9 @@ export class GameLoop {
           healingDone: Math.round(p.stats.healingDone),
           deaths: p.stats.deaths,
         },
+        skills: Object.fromEntries(
+          Object.entries(p.skills).map(([k, s]) => [k, { name: s.name, manaCost: s.manaCost || 0, cooldown: s.cooldown || 0 }])
+        ),
       })),
       boss: {
         x: Math.round(gs.boss.x),
@@ -332,6 +356,7 @@ export class GameLoop {
         shieldMaxHp: gs.boss.shieldMaxHp,
         rageBuff: gs.boss.rageBuff,
         speedStacks: gs.boss.speedStacks,
+        bursting: gs.boss._burstActive || false,
       },
       simulation: gs.simulation,
       adds: gs.adds.filter(a => a.alive).map(a => ({

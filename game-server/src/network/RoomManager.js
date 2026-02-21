@@ -415,6 +415,26 @@ export class RoomManager {
     }
   }
 
+  listRooms(ws) {
+    const rooms = [];
+    for (const [code, room] of this.rooms) {
+      rooms.push({
+        code,
+        host: [...room.players.values()].find(p => p.id === room.host)?.username || '???',
+        difficulty: room.difficulty,
+        state: room.state,
+        playerCount: room.players.size,
+        maxPlayers: ROOM.MAX_PLAYERS,
+        players: [...room.players.values()].map(p => ({
+          username: p.username,
+          class: p.class,
+          ready: p.ready,
+        })),
+      });
+    }
+    this._send(ws, { type: 'room_list', rooms });
+  }
+
   // Stats for monitoring
   getStats() {
     return {

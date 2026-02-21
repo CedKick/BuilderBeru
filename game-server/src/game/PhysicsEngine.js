@@ -1,4 +1,4 @@
-import { ARENA, PLAYER } from '../config.js';
+import { ARENA, PLAYER, AGGRO } from '../config.js';
 
 export class PhysicsEngine {
   constructor(gameState) {
@@ -83,6 +83,11 @@ export class PhysicsEngine {
             const actual = gs.boss.takeDamage(damage);
             owner.stats.damageDealt += actual;
             gs.addAggro(owner.id, actual * 1.0 * owner.aggroMult);
+
+            // Mana on hit for basic projectile attacks
+            if (proj.isBasic && PLAYER.MANA_ON_HIT > 0) {
+              owner.mana = Math.min(owner.maxMana, owner.mana + PLAYER.MANA_ON_HIT);
+            }
 
             gs.addEvent({
               type: 'damage',
@@ -226,6 +231,35 @@ export class PhysicsEngine {
                 crit,
                 skill: 'Piège',
               });
+            }
+          }
+        }
+      }
+
+      // Heal zone ticking (healer ground zone)
+      if (zone.type === 'heal_zone' && zone.active) {
+        zone._healTimer = (zone._healTimer || 0) + dt;
+        if (zone._healTimer >= zone._healInterval) {
+          zone._healTimer -= zone._healInterval;
+          const owner = gs.getPlayer(zone.owner);
+
+          for (const player of gs.getAlivePlayers()) {
+            const dist = Math.hypot(player.x - zone.x, player.y - zone.y);
+            if (dist < zone.radius + player.radius) {
+              const healPerTick = Math.round(zone.healPower / zone.healTicks);
+              const healed = player.heal(healPerTick);
+              if (healed > 0 && owner) {
+                owner.stats.healingDone += healed;
+                gs.addAggro(owner.id, healed * AGGRO.HEAL_TO_AGGRO * (owner.aggroMult || 1));
+
+                gs.addEvent({
+                  type: 'heal',
+                  source: owner.id,
+                  target: player.id,
+                  amount: healed,
+                  skill: 'Cercle de Soin',
+                });
+              }
             }
           }
         }

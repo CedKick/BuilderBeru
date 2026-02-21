@@ -53,8 +53,9 @@ export class Manaya extends BossBase {
       this._patternDive(),
       this._patternWaves(),
 
-      // Phase 4+ (50-30%) — Laser
+      // Phase 4+ (50-30%) — Laser + Double Circle
       this._patternLaser(),
+      this._patternDoubleCircle(),
 
       // Special mechanics (condition-triggered)
       this._patternDebuffRotation(),
@@ -731,6 +732,97 @@ export class Manaya extends BossBase {
           stacks,
           message: stacks >= 3 ? '💀 3 STACKS ! Dégâts ×3 pendant 30s !' : `Rage x${stacks}`,
         });
+      },
+    };
+  }
+
+  // ──────────────────────────
+  // PATTERN: Double Circle AoE
+  // Inner ring hits first, then outer ring hits second.
+  // Safe: right at boss feet OR very far away.
+  // ──────────────────────────
+  _patternDoubleCircle() {
+    return {
+      name: 'Double Impact',
+      phase: 4, weight: 2, cooldown: 16, globalCooldown: 2.5,
+      telegraphTime: 1.5, castTime: 0, recoveryTime: 1.0,
+
+      onStart: (boss, gs, data) => {
+        data.innerRadius = 180;   // Inner circle radius
+        data.outerInner = 200;    // Outer ring inner boundary
+        data.outerRadius = 420;   // Outer ring outer boundary
+        data.phase = 'telegraph';
+        data.innerHit = false;
+        data.outerHit = false;
+        data.delay = 0;
+
+        // Telegraph: inner circle (close to boss)
+        gs.addAoeZone({
+          id: `dbl_inner_tel_${Date.now()}`, type: 'circle_telegraph',
+          x: boss.x, y: boss.y, radius: data.innerRadius,
+          ttl: 2.0, maxTtl: 2.0, active: false, source: boss.id,
+        });
+        // Telegraph: outer ring (far from boss)
+        gs.addAoeZone({
+          id: `dbl_outer_tel_${Date.now()}`, type: 'donut_telegraph',
+          x: boss.x, y: boss.y, radius: data.outerRadius, innerRadius: data.outerInner,
+          ttl: 3.0, maxTtl: 3.0, active: false, source: boss.id,
+        });
+
+        gs.addEvent({ type: 'boss_message', text: '⚠️ DOUBLE IMPACT - Éloignez-vous puis rapprochez-vous !' });
+      },
+
+      onExecute: (boss, gs, data) => {
+        // Inner circle hits FIRST
+        const soloMult = gs.playerCount <= 1 ? (BOSS_CFG.SOLO_MECHANIC_MULT || 0.4) : 1.0;
+        for (const player of gs.getAlivePlayers()) {
+          const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
+          if (dist < data.innerRadius + player.radius) {
+            const dmg = boss.atk * 4.0 * soloMult;
+            const actual = player.takeDamage(dmg, boss);
+            if (actual > 0) {
+              gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Double Impact (intérieur)' });
+            }
+          }
+        }
+        // Visual inner explosion
+        gs.addAoeZone({
+          id: `dbl_inner_exp_${Date.now()}`, type: 'circle_explosion',
+          x: boss.x, y: boss.y, radius: data.innerRadius,
+          ttl: 0.4, maxTtl: 0.4, active: true, source: boss.id,
+        });
+        data.innerHit = true;
+        data.delay = 0;
+      },
+
+      onUpdate: (boss, gs, data, dt) => {
+        if (!data.innerHit) return false;
+        data.delay += dt;
+
+        // After 1s delay, outer ring hits
+        if (data.delay >= 1.0 && !data.outerHit) {
+          data.outerHit = true;
+          const soloMult = gs.playerCount <= 1 ? (BOSS_CFG.SOLO_MECHANIC_MULT || 0.4) : 1.0;
+          for (const player of gs.getAlivePlayers()) {
+            const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
+            // Hit if in outer ring (between outerInner and outerRadius)
+            if (dist >= data.outerInner && dist < data.outerRadius + player.radius) {
+              const dmg = boss.atk * 4.5 * soloMult;
+              const actual = player.takeDamage(dmg, boss);
+              if (actual > 0) {
+                gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Double Impact (extérieur)' });
+              }
+            }
+          }
+          // Visual outer explosion ring
+          gs.addAoeZone({
+            id: `dbl_outer_exp_${Date.now()}`, type: 'donut_explosion',
+            x: boss.x, y: boss.y, radius: data.outerRadius, innerRadius: data.outerInner,
+            ttl: 0.4, maxTtl: 0.4, active: true, source: boss.id,
+          });
+          return true;
+        }
+        return false;
       },
     };
   }

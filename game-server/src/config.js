@@ -29,16 +29,17 @@ export const ARENA = {
 
 export const PLAYER = {
   RADIUS: 20,                      // Hitbox radius
-  BASE_SPEED: 200,                 // Pixels per second (before SPD scaling)
-  DODGE_SPEED: 500,                // Pixels per second during dodge
+  BASE_SPEED: 145,                 // Pixels per second (slower, more tactical)
+  DODGE_SPEED: 420,                // Pixels per second during dodge
   DODGE_DURATION: 0.4,             // Seconds of dodge roll
   DODGE_COOLDOWN: 3.0,             // Seconds between dodges
   DODGE_IFRAMES: 0.35,             // Seconds of invincibility during dodge
-  MANA_REGEN_RATE: 2,              // Mana per second
+  MANA_REGEN_RATE: 1.5,            // Passive mana per second
+  MANA_ON_HIT: 8,                  // Mana restored per basic attack hit
 };
 
 export const BOSS = {
-  RADIUS: 50,                      // Hitbox radius
+  RADIUS: 75,                      // Hitbox radius (x1.5 bigger)
   ENRAGE_TIMER: 600,               // 10 minutes in seconds
   ENRAGE_HP_PERCENT: 8,            // Permanent enrage below 8%
   ENRAGE_SPEED_MULT: 2.0,

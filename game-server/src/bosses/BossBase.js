@@ -45,6 +45,14 @@ export class BossBase {
     this.targetId = null;
     this.moveTarget = null;     // { x, y } to move towards
 
+    // Acceleration bursts
+    this._burstTimer = 0;
+    this._burstCooldown = 8;     // Time between possible bursts
+    this._burstActive = false;
+    this._burstDuration = 0;
+    this._burstMaxDuration = 1.2; // 1.2s of speed boost
+    this._burstSpeedMult = 2.5;  // 2.5x speed during burst
+
     // Internal timers
     this._autoAttackTimer = 0;
     this._autoAttackInterval = 2.0;
@@ -55,7 +63,29 @@ export class BossBase {
     if (!this.alive) return;
 
     // Speed multiplier (enrage + cumulative speed buffs)
-    const spdMult = (this.enraged ? BOSS_CFG.ENRAGE_SPEED_MULT : 1.0) * (1 + (this.speedStacks || 0) * 0.10);
+    let spdMult = (this.enraged ? BOSS_CFG.ENRAGE_SPEED_MULT : 1.0) * (1 + (this.speedStacks || 0) * 0.10);
+
+    // Acceleration bursts
+    if (this._burstActive) {
+      this._burstDuration += dt;
+      if (this._burstDuration >= this._burstMaxDuration) {
+        this._burstActive = false;
+        this._burstTimer = 0;
+      } else {
+        spdMult *= this._burstSpeedMult;
+      }
+    } else if (!this.currentPattern) {
+      this._burstTimer += dt;
+      // Trigger burst: chance increases with phase, and after cooldown
+      if (this._burstTimer >= this._burstCooldown && this.phase >= 2) {
+        const burstChance = 0.02 * this.phase; // 4% at phase 2, up to 12% at phase 6 per tick
+        if (Math.random() < burstChance) {
+          this._burstActive = true;
+          this._burstDuration = 0;
+          gameState.addEvent({ type: 'boss_message', text: '⚡ Manaya accélère !' });
+        }
+      }
+    }
 
     // Tick per-pattern cooldowns
     for (const p of this.patterns) {
