@@ -43,7 +43,24 @@ const S = {
   h_son:       'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1770934305/Son_Portrait_vmup4f.png',
   h_hwang:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606314/icons/build-16.png',
   h_kang:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606322/icons/build-19.png',
+  // CHIBI (mascots)
+  h_daijin:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771602808/Daijin_p1pvcs.png',
+  h_pod042:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771604133/Pod042_rlmzhk.png',
+  // STEINS;GATE (collab)
+  h_kurisu:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771653556/Kurisu_Makise_bgr1ft.png',
+  h_kurisu_skin: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771653555/Kurisu_Makise_Skin_pxpiyx.png',
+  h_mayuri:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771655865/Mayuri_pdutiq.png',
+  // ATTACK ON TITAN (collab)
+  h_mikasa:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771655466/Mikasa_axfrpp.png',
+  // TOKYO GHOUL (collab)
+  h_kaneki:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771655666/Kaneki_aobcre.png',
+  h_kaneki_skin: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771655641/KanekiSkin_horxi4.png',
+  // FATE (collab)
+  h_saber:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771655017/Saber_xg6thi.png',
+  // BERSERK (collab)
+  h_guts:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771654575/Guts_y7usbq.png',
   // NIER AUTOMATA (collab)
+  h_a9:        'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771654101/A9_tky2tw.png',
   h_2b:        'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771499926/2B_vly2pt.png',
   h_pascal:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771500784/Pascal_xfuwum.png',
   h_a2:        'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771503623/A2_a0cyk9.png',
@@ -185,7 +202,7 @@ export const HUNTERS = {
   // ─── SPECIAL ────────────────────────────────────────────
   h_megumin: {
     name: 'Megumin', element: 'fire', rarity: 'legendaire', class: 'mage',
-    sprite: S.h_megumin, passiveDesc: '+10% ATK/DEF/SPD a toute l\'equipe',
+    series: 'konosuba', sprite: S.h_megumin, passiveDesc: '+10% ATK/DEF/SPD a toute l\'equipe',
     base:   { hp: 180, atk: 68, def: 8, spd: 28, crit: 20, res: 10 },
     growth: { hp: 6, atk: 5.0, def: 0.4, spd: 1.2, crit: 0.5, res: 0.35 },
     skills: [
@@ -466,7 +483,127 @@ export const HUNTERS = {
     ],
   },
 
-  // ═══ NIER AUTOMATA — Collab Hunters (tier 6 boss drops only) ═══
+  // ═══ CHIBI — Mascots Hunters ═══
+
+  h_daijin: {
+    name: 'Daijin', element: 'shadow', rarity: 'mythique', class: 'assassin',
+    series: 'chibi', sprite: S.h_daijin, passiveDesc: 'Esquive Feline : SPD +15% & CRIT +10% permanent',
+    base:   { hp: 320, atk: 48, def: 14, spd: 44, crit: 24, res: 6 },
+    growth: { hp: 10, atk: 3.4, def: 0.8, spd: 2.2, crit: 0.8, res: 0.2 },
+    skills: [
+      { name: 'Griffe Feline', power: 105, cdMax: 0 },
+      { name: 'Bond Dimensionnel', power: 185, cdMax: 3 },
+      { name: 'Pierre de Scellement', power: 140, cdMax: 2, buffDef: 30, buffDur: 2 },
+    ],
+  },
+
+  h_pod042: {
+    name: 'Pod 042', element: 'water', rarity: 'mythique', class: 'support',
+    series: 'chibi', sprite: S.h_pod042, passiveDesc: 'Protocole de Soutien : Equipe +10% DEF',
+    base:   { hp: 400, atk: 32, def: 26, spd: 30, crit: 8, res: 14 },
+    growth: { hp: 13, atk: 2.2, def: 1.5, spd: 1.3, crit: 0.3, res: 0.5 },
+    skills: [
+      { name: 'Tir Laser', power: 90, cdMax: 0 },
+      { name: 'Programme R010: Bouclier', power: 0, cdMax: 3, buffDef: 40, buffDur: 2 },
+      { name: 'Programme A110: Analyse', power: 130, cdMax: 2, debuffDef: 25, debuffDur: 2 },
+    ],
+  },
+
+  // ═══ STEINS;GATE — Collab Hunters ═══
+
+  h_kurisu: {
+    name: 'Kurisu Makise', element: 'water', rarity: 'mythique', class: 'mage',
+    series: 'steinsgate', sprite: S.h_kurisu, passiveDesc: 'Analyse Temporelle : ATK +5% par action (max 30%)',
+    base:   { hp: 380, atk: 52, def: 18, spd: 36, crit: 18, res: 8 },
+    growth: { hp: 12, atk: 3.6, def: 1.0, spd: 1.6, crit: 0.6, res: 0.3 },
+    skills: [
+      { name: 'Impulsion Temporelle', power: 108, cdMax: 0 },
+      { name: 'Divergence Shift', power: 195, cdMax: 3 },
+      { name: 'Amadeus Protocol', power: 160, cdMax: 2, buffAtk: 20, buffDur: 2 },
+    ],
+  },
+
+  h_mayuri: {
+    name: 'Mayuri Shiina', element: 'water', rarity: 'mythique', class: 'support',
+    series: 'steinsgate', sprite: S.h_mayuri, passiveDesc: 'Tutturu~ : Buff raid ATK +15% & DEF +10% pour TOUTE l\'equipe',
+    base:   { hp: 460, atk: 28, def: 24, spd: 32, crit: 6, res: 16 },
+    growth: { hp: 15, atk: 1.8, def: 1.4, spd: 1.4, crit: 0.2, res: 0.6 },
+    skills: [
+      { name: 'Etoile Filante', power: 78, cdMax: 0 },
+      { name: 'Tutturu Heal', power: 0, cdMax: 3, healSelf: 30, buffDef: 25, buffDur: 2, manaCost: 30 },
+      { name: 'Convergence du Destin', power: 0, cdMax: 5, grantExtraTurn: true, grantFreeCast: true, buffAtk: 80, buffDur: 1, manaCost: 60 },
+    ],
+  },
+
+  // ═══ ATTACK ON TITAN — Ackerman ═══
+
+  h_mikasa: {
+    name: 'Mikasa Ackerman', element: 'shadow', rarity: 'mythique', class: 'fighter',
+    series: 'aot', sprite: S.h_mikasa, passiveDesc: 'Lien Ackerman : Equipe ATK +12% & SPD +8%',
+    base:   { hp: 420, atk: 55, def: 20, spd: 40, crit: 20, res: 6 },
+    growth: { hp: 13, atk: 3.8, def: 1.1, spd: 1.8, crit: 0.6, res: 0.2 },
+    skills: [
+      { name: 'Lame Ackerman', power: 115, cdMax: 0 },
+      { name: 'Manoeuvre 3D', power: 200, cdMax: 3, buffAtk: 20, buffDur: 2 },
+      { name: 'Devotion Absolue', power: 150, cdMax: 3, healSelf: 25, buffDef: 35, buffDur: 2 },
+    ],
+  },
+
+  // ═══ TOKYO GHOUL — One-Eyed King ═══
+
+  h_kaneki: {
+    name: 'Ken Kaneki', element: 'shadow', rarity: 'mythique', class: 'assassin',
+    series: 'tokyoghoul', sprite: S.h_kaneki, passiveDesc: 'Eveil Goule : ATK +30% & CRIT +15 sous 50% PV',
+    base:   { hp: 360, atk: 56, def: 16, spd: 38, crit: 24, res: 4 },
+    growth: { hp: 11, atk: 4.0, def: 0.9, spd: 1.6, crit: 0.8, res: 0.2 },
+    skills: [
+      { name: 'Griffe de Kagune', power: 112, cdMax: 0 },
+      { name: 'Kagune: Rinkaku', power: 220, cdMax: 3 },
+      { name: 'Centipede', power: 280, cdMax: 4, selfDamage: 15, buffAtk: 35, buffDur: 2 },
+    ],
+  },
+
+  // ═══ FATE — King of Knights ═══
+
+  h_saber: {
+    name: 'Saber', element: 'water', rarity: 'mythique', class: 'fighter',
+    series: 'fate', sprite: S.h_saber, passiveDesc: 'Instinct Royal : Buff aleatoire chaque tour (ATK, CRIT, SPD ou Jackpot)',
+    base:   { hp: 440, atk: 54, def: 24, spd: 34, crit: 16, res: 8 },
+    growth: { hp: 14, atk: 3.8, def: 1.3, spd: 1.5, crit: 0.5, res: 0.3 },
+    skills: [
+      { name: 'Excalibur Strike', power: 112, cdMax: 0 },
+      { name: 'Invisible Air', power: 170, cdMax: 2, buffDef: 30, buffDur: 2 },
+      { name: 'Excalibur', power: 260, cdMax: 4 },
+    ],
+  },
+
+  // ═══ BERSERK — The Black Swordsman ═══
+
+  h_guts: {
+    name: 'Guts', element: 'shadow', rarity: 'mythique', class: 'fighter',
+    series: 'berserk', sprite: S.h_guts, passiveDesc: 'Berserker Armor : Plus les PV baissent, plus il devient un monstre',
+    base:   { hp: 480, atk: 58, def: 22, spd: 28, crit: 18, res: 4 },
+    growth: { hp: 16, atk: 4.2, def: 1.2, spd: 1.2, crit: 0.6, res: 0.2 },
+    skills: [
+      { name: 'Dragon Slayer', power: 118, cdMax: 0 },
+      { name: 'Canon du Bras', power: 195, cdMax: 3, debuffDef: 20, debuffDur: 2 },
+      { name: 'Berserker Armor', power: 280, cdMax: 4, buffAtk: 40, buffDur: 3, selfDamage: 20 },
+    ],
+  },
+
+  // ═══ NIER AUTOMATA — Collab Hunters ═══
+
+  h_a9: {
+    name: 'A9', element: 'shadow', rarity: 'mythique', class: 'assassin',
+    series: 'nier', sprite: S.h_a9, passiveDesc: 'Protocole Executeur : ATK +25% vs cibles < 30% HP',
+    base:   { hp: 340, atk: 54, def: 16, spd: 42, crit: 22, res: 5 },
+    growth: { hp: 11, atk: 3.8, def: 0.9, spd: 2.0, crit: 0.7, res: 0.2 },
+    skills: [
+      { name: 'Lame Silencieuse', power: 108, cdMax: 0, manaCost: 0 },
+      { name: 'Infiltration', power: 155, cdMax: 2, buffAtk: 20, buffDur: 2, manaCost: 15 },
+      { name: 'Programme B100: Execution', power: 220, cdMax: 4, manaCost: 30 },
+    ],
+  },
 
   h_2b: {
     name: '2B', element: 'shadow', rarity: 'mythique', class: 'fighter',
@@ -886,7 +1023,31 @@ export const HUNTER_PASSIVE_EFFECTS = {
   h_son:       { type: 'permanent', stats: { res: 15 } },
   h_isla:      { type: 'healBonus', value: 10 },
   h_hwang:     { type: 'permanent', stats: { def: 10 } },
+  // ── ATTACK ON TITAN ──
+  h_mikasa:    { type: 'teamAura', stats: { atk: 12, spd: 8 } },
+  // ── TOKYO GHOUL ──
+  h_kaneki:    { type: 'lowHp', threshold: 50, stats: { atk: 30, crit: 15 } },
+  // ── FATE ──
+  h_saber:     { type: 'chaotic', effects: [
+    { chance: 0.40, stats: { atk: 20 }, label: 'ATK +20%' },
+    { chance: 0.25, stats: { crit: 15 }, label: 'CRIT +15' },
+    { chance: 0.20, stats: { spd: 20 }, label: 'SPD +20%' },
+    { chance: 0.15, stats: { atk: 30, spd: 15, crit: 10 }, label: 'JACKPOT !' },
+  ]},
+  // ── BERSERK ──
+  h_guts:      { type: 'berserker', tiers: [
+    { threshold: 70, stats: { atk: 15, spd: 5 } },
+    { threshold: 40, stats: { atk: 35, spd: 15, crit: 10 } },
+    { threshold: 20, stats: { atk: 60, spd: 25, crit: 20 } },
+  ]},
+  // ── CHIBI ──
+  h_daijin:    { type: 'permanent', stats: { spd: 15, crit: 10 } },
+  h_pod042:    { type: 'teamDef', value: 10 },
+  // ── STEINS;GATE ──
+  h_kurisu:    { type: 'stacking', perStack: { atk: 5 }, maxStacks: 6 },
+  h_mayuri:    { type: 'teamAura', stats: { atk: 15, def: 10 } },
   // ── NIER AUTOMATA ──
+  h_a9:        { type: 'vsLowHp', threshold: 30, stats: { atk: 25 } },
   h_2b:        { type: 'vsDebuffed', stats: { atk: 15 } },
   h_pascal:    { type: 'teamAura', stats: { res: 10 } },
   h_a2:        { type: 'lowHp', threshold: 50, stats: { atk: 20, spd: 15 } },
@@ -897,11 +1058,19 @@ export const getHunterPassive = (hunterId) => HUNTER_PASSIVE_EFFECTS[hunterId] |
 // ─── Nier Automata — Special Drop System ─────────────────────────
 // Each Nier hunter has its own drop config (stage/tier, chance)
 // stageId = specific stage only | tier = any stage in that tier
-export const NIER_HUNTERS = ['h_2b', 'h_pascal', 'h_a2'];
+export const NIER_HUNTERS = ['h_2b', 'h_pascal', 'h_a2', 'h_a9', 'h_mikasa', 'h_kaneki', 'h_saber', 'h_daijin', 'h_pod042', 'h_kurisu', 'h_mayuri'];
 export const NIER_DROP_CONFIGS = {
   h_2b:     { stageId: 'a2_eve',           tier: 6, isBossOnly: true,  baseChance: 0.0035, perStarBonus: 0.0001 }, // 0.35%
   h_pascal: { stageId: 'a2_roi_machines',  tier: 5, isBossOnly: true,  baseChance: 0.006,  perStarBonus: 0.0001 }, // 0.60%
   h_a2:     {                              tier: 4, isBossOnly: false, baseChance: 0.009,  perStarBonus: 0.0001 }, // 0.90%
+  h_a9:     { minTier: 5,                           isBossOnly: false, baseChance: 0.01,   perStarBonus: 0 },      // 1% (1/100) tiers 5-6
+  h_mikasa: { minTier: 5,                           isBossOnly: false, baseChance: 0.002,  perStarBonus: 0 },      // 0.2% (1/500) tiers 5-6
+  h_kaneki: { minTier: 5,                           isBossOnly: false, baseChance: 0.002,  perStarBonus: 0 },      // 0.2% (1/500) tiers 5-6
+  h_saber:  { minTier: 5,                           isBossOnly: false, baseChance: 0.01,   perStarBonus: 0 },      // 1% (1/100) tiers 5-6
+  h_daijin: { minTier: 5,                           isBossOnly: false, baseChance: 0.01,   perStarBonus: 0 },      // 1% (1/100) tiers 5-6
+  h_pod042: { minTier: 5,                           isBossOnly: false, baseChance: 0.01,   perStarBonus: 0 },      // 1% (1/100) tiers 5-6
+  h_kurisu: { minTier: 5,                           isBossOnly: false, baseChance: 0.01,   perStarBonus: 0 },      // 1% (1/100) tiers 5-6
+  h_mayuri: { minTier: 5,                           isBossOnly: false, baseChance: 0.005,  perStarBonus: 0 },      // 0.5% (1/200) tiers 5-6
 };
 // Legacy alias for backward compat
 export const NIER_DROP_CONFIG = NIER_DROP_CONFIGS.h_2b;
@@ -911,11 +1080,27 @@ export function rollNierHunterDrop(stageId, stageTier, isBoss, star = 0) {
     const cfg = NIER_DROP_CONFIGS[id];
     // Skip if config requires boss stage and this isn't one
     if (cfg.isBossOnly && !isBoss) continue;
-    // Match by specific stageId if defined, otherwise match by tier
-    const stageMatch = cfg.stageId ? (cfg.stageId === stageId) : (cfg.tier === stageTier);
+    // Match by specific stageId, minTier (>=), or exact tier
+    const stageMatch = cfg.stageId ? (cfg.stageId === stageId)
+                     : cfg.minTier ? (stageTier >= cfg.minTier)
+                     : (cfg.tier === stageTier);
     if (!stageMatch) continue;
     const chance = cfg.baseChance + star * cfg.perStarBonus;
     if (Math.random() < chance) return id;
+  }
+  return null;
+}
+
+// ─── Boss Hunter Drops — Hunters that drop from World Bosses ─────
+export const BOSS_HUNTER_DROPS = {
+  h_guts:    { bosses: ['ragnarok', 'zephyr', 'supreme_monarch', 'archdemon'], baseChance: 1 / 1500 }, // 1/1500
+  h_megumin: { bosses: ['ragnarok', 'zephyr', 'supreme_monarch', 'archdemon'], baseChance: 1 / 1000 }, // 1/1000
+};
+
+export function rollBossHunterDrop(bossId, lootMult = 1) {
+  for (const [hunterId, cfg] of Object.entries(BOSS_HUNTER_DROPS)) {
+    if (!cfg.bosses.includes(bossId)) continue;
+    if (Math.random() < cfg.baseChance * lootMult) return hunterId;
   }
   return null;
 }
@@ -926,6 +1111,16 @@ export function rollNierHunterDrop(stageId, stageTier, isBoss, star = 0) {
 // If a skin drops and the hunter isn't owned → auto-unlock hunter + skin.
 
 export const HUNTER_SKINS = {
+  h_kaneki: [
+    { id: 'default', name: 'Ken Kaneki', sprite: S.h_kaneki },
+    { id: 'legendary', name: 'Kaneki Legendaire', sprite: S.h_kaneki_skin,
+      dropChance: 0.005, minTier: 5 },
+  ],
+  h_kurisu: [
+    { id: 'default', name: 'Kurisu Makise', sprite: S.h_kurisu },
+    { id: 'legendary', name: 'Kurisu Legendaire', sprite: S.h_kurisu_skin,
+      dropChance: 0.005, minTier: 5 },
+  ],
   h_2b: [
     { id: 'default', name: '2B', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771499926/2B_vly2pt.png' },
     { id: 'pink', name: '2B Rose', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771500244/2B_PINK_rvidyt.png',
@@ -943,8 +1138,8 @@ export function rollSkinDrop(stageId, stageTier) {
   for (const [hunterId, skins] of Object.entries(HUNTER_SKINS)) {
     for (const skin of skins) {
       if (skin.id === 'default') continue;
-      // Match by stageId or tier
-      const match = skin.stageId ? (skin.stageId === stageId) : skin.tier ? (skin.tier === stageTier) : true;
+      // Match by stageId, minTier (>=), exact tier, or any
+      const match = skin.stageId ? (skin.stageId === stageId) : skin.minTier ? (stageTier >= skin.minTier) : skin.tier ? (skin.tier === stageTier) : true;
       if (!match) continue;
       if (skin.dropChance && Math.random() < skin.dropChance) {
         drops.push({ hunterId, skinId: skin.id, skinName: skin.name, sprite: skin.sprite });

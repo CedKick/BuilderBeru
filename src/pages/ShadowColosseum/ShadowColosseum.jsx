@@ -26,7 +26,7 @@ import {
   calculatePowerScore, getDifficultyRating,
   BUFF_ICONS, computeDamagePreview, aiPickSkillArc2,
 } from './colosseumCore';
-import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS, rollNierHunterDrop, NIER_DROP_CONFIG, NIER_DROP_CONFIGS, HUNTER_SKINS, rollSkinDrop, getHunterSprite } from './raidData';
+import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS, rollNierHunterDrop, NIER_DROP_CONFIG, NIER_DROP_CONFIGS, HUNTER_SKINS, rollSkinDrop, getHunterSprite, rollBossHunterDrop, BOSS_HUNTER_DROPS } from './raidData';
 import { BattleStyles, BattleArena } from './BattleVFX';
 import {
   ARTIFACT_SETS, ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL,
@@ -1127,9 +1127,9 @@ export default function ShadowColosseum() {
       const fighter = b.team[entity.idx];
       if (!fighter || !fighter.alive) return prev;
       const skill = fighter.skills[skillIdx];
-      if (!skill || skill.cd > 0 || (skill.manaCost || 0) > (fighter.mana || 0)) return prev;
+      if (!skill || skill.cd > 0 || (!fighter.freeCast && (skill.manaCost || 0) > (fighter.mana || 0))) return prev;
 
-      const isPureSupport = skill.power === 0 && (skill.buffAtk || skill.buffDef || skill.healSelf);
+      const isPureSupport = skill.power === 0 && (skill.buffAtk || skill.buffDef || skill.healSelf || skill.grantExtraTurn);
       b.pendingSkill = skillIdx;
 
       if (isPureSupport) {
@@ -1206,8 +1206,12 @@ export default function ShadowColosseum() {
         const ally = b.team[allyIdx];
         if (!ally || !ally.alive) return prev;
 
-        // Deduct mana
-        fighter.mana = (fighter.mana || 0) - (skill.manaCost || 0);
+        // Deduct mana (skip if free cast from Mayuri buff)
+        if (fighter.freeCast) {
+          fighter.freeCast = false;
+        } else {
+          fighter.mana = (fighter.mana || 0) - (skill.manaCost || 0);
+        }
         // Apply buff/heal to chosen ally
         if (skill.buffAtk) ally.buffs.push({ stat: 'atk', value: skill.buffAtk / 100, dur: skill.buffDur || 2 });
         if (skill.buffDef) ally.buffs.push({ stat: 'def', value: skill.buffDef / 100, dur: skill.buffDur || 2 });
@@ -1222,6 +1226,18 @@ export default function ShadowColosseum() {
 
         const effectText = skill.healSelf ? `Soin ${ally.name}` : `Buff ${ally.name}`;
         b.log.unshift({ msg: `${fighter.name} → ${skill.name} → ${effectText}`, type: 'player' });
+
+        // ─── Grant Extra Turn + Free Cast (Mayuri's Convergence) ───
+        if (skill.grantExtraTurn) {
+          const extraEntry = { type: 'team', idx: allyIdx, spd: ally.spd, isExtra: true };
+          b.turnOrder.splice(b.currentTurn + 1, 0, extraEntry);
+          b.log.unshift({ msg: `⭐ ${ally.name} obtient un TOUR BONUS grace a ${fighter.name} !`, type: 'player' });
+          if (skill.grantFreeCast) {
+            ally.freeCast = true;
+            b.log.unshift({ msg: `✨ Prochain skill de ${ally.name} : 0 Mana & 0 CD !`, type: 'player' });
+          }
+        }
+
         b.lastAction = { type: 'support', idx: entity.idx, allyIdx, skillName: skill.name };
         b.pendingSkill = null;
         b.phase = 'advance';
@@ -1238,7 +1254,12 @@ export default function ShadowColosseum() {
     const fighter = b.team[fighterIdx];
     const skill = fighter.skills[skillIdx];
     const enemy = b.enemies[targetIdx];
-    fighter.mana = (fighter.mana || 0) - (skill.manaCost || 0);
+    const isFreeCast = !!fighter.freeCast;
+    if (isFreeCast) {
+      fighter.freeCast = false;
+    } else {
+      fighter.mana = (fighter.mana || 0) - (skill.manaCost || 0);
+    }
 
     // ─── Apply conditional hunter passives before attack ───
     const hp = fighter.hunterPassive;
@@ -1274,6 +1295,28 @@ export default function ShadowColosseum() {
       }
       if (hp.type === 'aoeDmg') tbForAttack.allDamage = (tbForAttack.allDamage || 0) + hp.value;
       if (hp.type === 'dotDmg') tbForAttack.allDamage = (tbForAttack.allDamage || 0) + hp.value;
+      // Berserker Armor — multi-threshold scaling (highest matching tier)
+      if (hp.type === 'berserker' && hp.tiers) {
+        const activeTier = [...hp.tiers].sort((a, b) => a.threshold - b.threshold).find(t => hpPct < t.threshold);
+        if (activeTier?.stats) {
+          if (activeTier.stats.atk) fighter.atk = Math.floor(fighter.atk * (1 + activeTier.stats.atk / 100));
+          if (activeTier.stats.spd) fighter.spd = Math.floor(fighter.spd * (1 + activeTier.stats.spd / 100));
+          if (activeTier.stats.crit) fighter.crit = +(fighter.crit + activeTier.stats.crit).toFixed(1);
+        }
+      }
+      // Chaotic — random buff each turn (weighted chances)
+      if (hp.type === 'chaotic' && hp.effects) {
+        let roll = Math.random();
+        for (const eff of hp.effects) {
+          roll -= eff.chance;
+          if (roll <= 0) {
+            if (eff.stats.atk) fighter.atk = Math.floor(fighter.atk * (1 + eff.stats.atk / 100));
+            if (eff.stats.spd) fighter.spd = Math.floor(fighter.spd * (1 + eff.stats.spd / 100));
+            if (eff.stats.crit) fighter.crit = +(fighter.crit + eff.stats.crit).toFixed(1);
+            break;
+          }
+        }
+      }
     }
 
     // ─── Weapon passives: ATK buff before damage calc ───
@@ -1487,7 +1530,12 @@ export default function ShadowColosseum() {
       selfDmg = Math.floor(fighter.maxHp * skill.selfDamage / 100);
       fighter.hp = Math.max(1, fighter.hp - selfDmg); // never kills self
     }
-    if (skill.cdMax > 0) skill.cd = skill.cdMax;
+    if (isFreeCast) {
+      // Free cast: no CD set, log bonus
+      b.log.unshift({ msg: `✨ ${fighter.name} : Free Cast ! 0 CD & 0 Mana !`, type: 'player' });
+    } else {
+      if (skill.cdMax > 0) skill.cd = skill.cdMax;
+    }
     fighter.mana = Math.min(fighter.maxMana || 100, (fighter.mana || 0) + (fighter.manaRegen || 5));
 
     const selfDmgLog = selfDmg > 0 ? ` (-${selfDmg} HP!)` : '';
@@ -1765,7 +1813,7 @@ export default function ShadowColosseum() {
         const res = addHunterOrDuplicate(rd, nierId);
         rd.hunterCollection = res.collection;
         saveRaidData(rd);
-        nierDrop = { id: nierId, name: HUNTERS[nierId].name, rarity: HUNTERS[nierId].rarity, series: 'nier', isDuplicate: res.isDuplicate, newStars: res.newStars };
+        nierDrop = { id: nierId, name: HUNTERS[nierId].name, rarity: HUNTERS[nierId].rarity, series: HUNTERS[nierId].series || 'collab', isDuplicate: res.isDuplicate, newStars: res.newStars };
         if (!res.isDuplicate) logLegendaryDrop('hunter', nierId, HUNTERS[nierId].name, HUNTERS[nierId].rarity);
       }
     }
@@ -2782,8 +2830,9 @@ export default function ShadowColosseum() {
 
     const playerSkill = player.skills[skillIdx];
 
-    // Check mana
-    const manaCost = ps.echoFreeMana ? 0 : (playerSkill.manaCost || 0);
+    // Check mana (free cast from Mayuri buff skips cost)
+    const isFreeCastArc1 = !!battle.freeCast;
+    const manaCost = isFreeCastArc1 ? 0 : ps.echoFreeMana ? 0 : (playerSkill.manaCost || 0);
     if (player.mana < manaCost) {
       log.push({ text: `Pas assez de mana ! (${player.mana}/${manaCost})`, type: 'info', id: Date.now() });
       setBattle(prev => ({ ...prev, log: log.slice(-10) }));
@@ -2895,6 +2944,28 @@ export default function ShadowColosseum() {
       if (hp.type === 'skillCd' && (playerSkill.cdMax || 0) >= (hp.minCd || 3) && hp.stats?.crit) {
         player.crit = +(player.crit + hp.stats.crit).toFixed(1);
       }
+      // Berserker Armor — multi-threshold scaling (highest matching tier)
+      if (hp.type === 'berserker' && hp.tiers) {
+        const activeTier = [...hp.tiers].sort((a, b) => a.threshold - b.threshold).find(t => hpPct < t.threshold);
+        if (activeTier?.stats) {
+          if (activeTier.stats.atk) player.atk = Math.floor(player.atk * (1 + activeTier.stats.atk / 100));
+          if (activeTier.stats.spd) player.spd = Math.floor(player.spd * (1 + activeTier.stats.spd / 100));
+          if (activeTier.stats.crit) player.crit = +(player.crit + activeTier.stats.crit).toFixed(1);
+        }
+      }
+      // Chaotic — random buff each turn (weighted chances)
+      if (hp.type === 'chaotic' && hp.effects) {
+        let roll = Math.random();
+        for (const eff of hp.effects) {
+          roll -= eff.chance;
+          if (roll <= 0) {
+            if (eff.stats.atk) player.atk = Math.floor(player.atk * (1 + eff.stats.atk / 100));
+            if (eff.stats.spd) player.spd = Math.floor(player.spd * (1 + eff.stats.spd / 100));
+            if (eff.stats.crit) player.crit = +(player.crit + eff.stats.crit).toFixed(1);
+            break;
+          }
+        }
+      }
     }
 
     // Gul'dan Halo Eternelle: permanent DEF bonus per hit
@@ -2917,7 +2988,11 @@ export default function ShadowColosseum() {
     if (pRes.healed) player.hp = Math.min(player.maxHp, player.hp + pRes.healed);
     if (pRes.buff) player.buffs.push({ ...pRes.buff });
     if (pRes.debuff) enemy.buffs.push({ ...pRes.debuff });
-    playerSkill.cd = playerSkill.cdMax;
+    if (isFreeCastArc1) {
+      log.push({ text: `✨ Free Cast ! 0 Mana & 0 CD !`, type: 'info', id: Date.now() - 0.01 });
+    } else {
+      playerSkill.cd = playerSkill.cdMax;
+    }
     log.push({ text: pRes.text, type: 'player', id: Date.now() });
 
     // ─── PASSIVE: afterAttack ─────────────────
@@ -3001,7 +3076,20 @@ export default function ShadowColosseum() {
     player.mana = Math.min(player.maxMana, player.mana + (player.manaRegen || 0));
 
     setDmgPopup(pRes.damage > 0 ? { target: 'enemy', value: pRes.damage, isCrit: pRes.isCrit } : null);
-    setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, passiveState: ps, log: log.slice(-10) }));
+
+    // ─── grantExtraTurn (ARC I): skip enemy turn, give player another turn ───
+    if (playerSkill.grantExtraTurn) {
+      log.push({ text: `⭐ Tour bonus ! ${player.name} peut rejouer immediatement !`, type: 'info', id: Date.now() + 0.2 });
+      if (playerSkill.grantFreeCast) {
+        log.push({ text: `✨ Prochain skill : 0 Mana & 0 CD !`, type: 'info', id: Date.now() + 0.3 });
+      }
+      setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, passiveState: ps, freeCast: !!playerSkill.grantFreeCast, katanaZStacks: newKatanaZStacks, katanaVState: newKatanaVState, guldanState: newGuldanState, turn: prev.turn + 1, log: log.slice(-10) }));
+      setTimeout(() => { setPhase('idle'); setDmgPopup(null); }, autoReplayRef.current ? 400 : 800);
+      return;
+    }
+
+    // Clear freeCast flag after consuming it (normal flow → enemy turn)
+    setBattle(prev => ({ ...prev, player: { ...player }, enemy: { ...enemy }, passiveState: ps, freeCast: false, katanaZStacks: newKatanaZStacks, katanaVState: newKatanaVState, guldanState: newGuldanState, log: log.slice(-10) }));
 
     if (enemy.hp <= 0) {
       setTimeout(() => handleVictory(), autoReplayRef.current ? 600 : 1200);
@@ -3321,6 +3409,18 @@ export default function ShadowColosseum() {
       weaponDrop = { id: 'w_guldan', ...WEAPONS.w_guldan, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_guldan'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
 
+    // Boss hunter drops (Guts etc.) — 1/1500 from world bosses
+    let bossHunterDrop = null;
+    const bossHunterId = rollBossHunterDrop(stage.id, lootMult);
+    if (bossHunterId && HUNTERS[bossHunterId]) {
+      const rd = loadRaidData();
+      const res = addHunterOrDuplicate(rd, bossHunterId);
+      rd.hunterCollection = res.collection;
+      saveRaidData(rd);
+      bossHunterDrop = { id: bossHunterId, name: HUNTERS[bossHunterId].name, rarity: HUNTERS[bossHunterId].rarity, series: HUNTERS[bossHunterId].series || 'collab', isDuplicate: res.isDuplicate, newStars: res.newStars };
+      if (!res.isDuplicate) logLegendaryDrop('hunter', bossHunterId, HUNTERS[bossHunterId].name, HUNTERS[bossHunterId].rarity);
+    }
+
     // Fragment drops (mercy system) — 1% chance per kill
     let fragmentDrop = null;
     if (stage.id === 'ragnarok' && Math.random() < 0.005) fragmentDrop = 'fragment_sulfuras';
@@ -3409,7 +3509,7 @@ export default function ShadowColosseum() {
       };
     });
     if (newAllocations > 0) setPendingAlloc(newAllocations);
-    setResult({ won: true, xp: scaledXp, coins: scaledCoins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrop, hammerDrop: hammerDrop || extraHammer, weaponDrop, fragmentDrop, guaranteedArtifact, pacteDrop, starLevel: currentStar, isNewStarRecord, newMaxStars, accountXpGain, accountLevelUp: newAccLvl > prevAccLvl ? newAccLvl : null, accountAllocations: newAllocations });
+    setResult({ won: true, xp: scaledXp, coins: scaledCoins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrop, hammerDrop: hammerDrop || extraHammer, weaponDrop, fragmentDrop, guaranteedArtifact, pacteDrop, bossHunterDrop, starLevel: currentStar, isNewStarRecord, newMaxStars, accountXpGain, accountLevelUp: newAccLvl > prevAccLvl ? newAccLvl : null, accountAllocations: newAllocations });
 
     // Weapon drop reveal + Beru reaction
     if (weaponDrop) {
@@ -3432,6 +3532,12 @@ export default function ShadowColosseum() {
         logLegendaryDrop('weapon', 'w_guldan', "Baton de Gul'dan", 'secret', weaponDrop.newAwakening || 0);
         try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: "LE BATON DE GUL'DAN !! 1/10 000 !! Le Halo Eternel brille autour de toi... Tu es INVINCIBLE maintenant !!" } })); } catch (e) {}
       }
+    }
+
+    // Boss hunter drop reveal + Beru reaction
+    if (bossHunterDrop) {
+      const dropRate = BOSS_HUNTER_DROPS[bossHunterDrop.id]?.baseChance ? `1/${Math.round(1 / BOSS_HUNTER_DROPS[bossHunterDrop.id].baseChance)}` : '???';
+      try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: `${bossHunterDrop.name.toUpperCase()} !! ${dropRate} !! Le guerrier legendaire rejoint ton equipe !! ${bossHunterDrop.isDuplicate ? 'DUPE → Etoile bonus !' : 'PREMIERE OBTENTION !! INCROYABLE !!'}` } })); } catch (e) {}
     }
 
     // ─── Beru taunts when farming secret weapon bosses (no secret drop) ───
@@ -4859,6 +4965,7 @@ export default function ShadowColosseum() {
                   teamBonuses.push({ source: m.name, label: `${parts.join(', ')} (permanent)`, color: 'text-emerald-400', type: 'self' });
                 }
                 if (m.hp.type === 'teamDef') teamBonuses.push({ source: m.name, label: `DEF +${m.hp.value}% equipe`, color: 'text-teal-400', type: 'team' });
+                if (m.hp.type === 'teamAura') teamBonuses.push({ source: m.name, label: `Equipe: ${Object.entries(m.hp.stats).map(([k,v])=>`${k.toUpperCase()}+${v}%`).join(', ')}`, color: 'text-teal-300', type: 'team' });
                 if (m.hp.type === 'healBonus') teamBonuses.push({ source: m.name, label: `Soin +${m.hp.value}%`, color: 'text-green-400', type: 'self' });
                 if (m.hp.type === 'critDmg') teamBonuses.push({ source: m.name, label: `CRIT DMG +${m.hp.value}%`, color: 'text-amber-400', type: 'self' });
                 if (m.hp.type === 'magicDmg') teamBonuses.push({ source: m.name, label: `DMG Magique +${m.hp.value}%`, color: 'text-indigo-400', type: 'self' });
@@ -4875,6 +4982,8 @@ export default function ShadowColosseum() {
                 if (m.hp.type === 'vsLowHp') teamBonuses.push({ source: m.name, label: `vs Ennemi <${m.hp.threshold}%: CRIT +${m.hp.stats?.crit || 0}`, color: 'text-pink-400', type: 'conditional' });
                 if (m.hp.type === 'vsDebuffed') teamBonuses.push({ source: m.name, label: `vs Debuff: ATK +${m.hp.stats?.atk || 0}%`, color: 'text-purple-400', type: 'conditional' });
                 if (m.hp.type === 'skillCd') teamBonuses.push({ source: m.name, label: `Skills CD${m.hp.minCd}+: CRIT +${m.hp.stats?.crit || 0}`, color: 'text-fuchsia-400', type: 'conditional' });
+                if (m.hp.type === 'berserker') teamBonuses.push({ source: m.name, label: `Berserker: <70% ATK+15% → <40% ATK+35% SPD+15% → <20% ATK+60% SPD+25% CRIT+20%`, color: 'text-red-500', type: 'conditional' });
+                if (m.hp.type === 'chaotic') teamBonuses.push({ source: m.name, label: `Instinct Royal: 40% ATK+20% | 25% CRIT+15 | 20% SPD+20% | 15% Jackpot!`, color: 'text-amber-400', type: 'conditional' });
               });
 
               return (
@@ -5731,9 +5840,19 @@ export default function ShadowColosseum() {
                   {r.nierDrop && (
                     <div className="mt-2 p-2 rounded-lg border border-red-500/40 bg-gradient-to-r from-red-900/30 to-black/40">
                       <div className="flex justify-between items-center">
-                        <span className="text-red-300 font-bold text-xs">{'\uD83D\uDDA4'} NieR:Automata</span>
+                        <span className="text-red-300 font-bold text-xs">{'\uD83D\uDDA4'} {{ nier: 'NieR:Automata', chibi: 'Chibi', steinsgate: 'Steins;Gate', fate: 'Fate', aot: 'Attack on Titan', tokyoghoul: 'Tokyo Ghoul', berserk: 'Berserk', konosuba: 'KonoSuba' }[r.nierDrop.series] || 'Collab'}</span>
                         <span className="text-white font-black text-xs" style={{ textShadow: '0 0 8px rgba(239,68,68,0.6)' }}>
                           {r.nierDrop.name} {r.nierDrop.isDuplicate ? '(Dupe)' : '(NOUVEAU !)'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {r.bossHunterDrop && (
+                    <div className="mt-2 p-2 rounded-lg border border-orange-500/50 bg-gradient-to-r from-orange-900/30 to-red-900/40" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>
+                      <div className="flex justify-between items-center">
+                        <span className="text-orange-300 font-bold text-xs">{'\u2694\uFE0F'} {{ berserk: 'BERSERK', konosuba: 'KONOSUBA' }[r.bossHunterDrop.series] || 'BOSS DROP'}</span>
+                        <span className="text-white font-black text-xs" style={{ textShadow: '0 0 10px rgba(249,115,22,0.8)' }}>
+                          {r.bossHunterDrop.name} {r.bossHunterDrop.isDuplicate ? '(Dupe)' : '(NOUVEAU !)'}
                         </span>
                       </div>
                     </div>

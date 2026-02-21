@@ -257,4 +257,69 @@ export const TALENT_SKILLS = {
     { id: 'ts_a2_2', name: 'Lame de Revanche', power: 340, cdMax: 3, manaCost: 45, buffAtk: 35, buffDur: 2, desc: 'La vengeance aiguise la lame' },
     { id: 'ts_a2_3', name: 'Rage de la Prototypee', power: 300, cdMax: 3, manaCost: 42, debuffDef: 30, debuffDur: 2, desc: 'La fureur du prototype originel' },
   ],
+  h_a9: [
+    { id: 'ts_a9_1', name: 'Protocole Zero', power: 440, cdMax: 5, manaCost: 62, desc: 'Execution terminale — puissance maximale sur cible affaiblie' },
+    { id: 'ts_a9_2', name: 'Lame Spectrale', power: 320, cdMax: 3, manaCost: 42, buffAtk: 35, buffDur: 2, desc: 'Frappe invisible qui amplifie les suivantes' },
+    { id: 'ts_a9_3', name: 'Dissimulation Fatale', power: 280, cdMax: 2, manaCost: 36, debuffDef: 35, debuffDur: 2, desc: 'Apparait dans l\'angle mort et brise les defenses' },
+  ],
+
+  // ─── HUNTERS — BERSERK ──────────────────────────────────────────
+
+  h_guts: [
+    { id: 'ts_guts_1', name: 'Eclipse Survivor', power: 500, cdMax: 5, manaCost: 68, selfDamage: 25, desc: 'La rage de l\'Eclipse — puissance absolue au prix de son propre corps' },
+    { id: 'ts_guts_2', name: 'Brand of Sacrifice', power: 360, cdMax: 3, manaCost: 48, buffAtk: 45, buffDur: 3, desc: 'La Marque du Sacrifice decuple la rage et la puissance' },
+    { id: 'ts_guts_3', name: 'Rage du Black Swordsman', power: 320, cdMax: 2, manaCost: 40, debuffDef: 40, debuffDur: 2, selfDamage: 10, desc: 'Assaut incessant — brise tout, meme son propre corps' },
+  ],
+
+  // ─── HUNTERS — ATTACK ON TITAN ────────────────────────────────
+
+  h_mikasa: [
+    { id: 'ts_mikasa_1', name: 'Dernier Acier', power: 420, cdMax: 5, manaCost: 58, desc: 'L\'attaque ultime de la meilleure soldate — precision mortelle' },
+    { id: 'ts_mikasa_2', name: 'Serment Ackerman', power: 0, cdMax: 4, manaCost: 50, healSelf: 40, buffAtk: 30, buffDur: 3, desc: 'Devotion absolue — soigne et inspire toute l\'equipe' },
+    { id: 'ts_mikasa_3', name: 'Tempete de Lames', power: 340, cdMax: 3, manaCost: 44, debuffDef: 30, debuffDur: 2, desc: 'Enchainement de coupes aerien devastateur' },
+  ],
+
+  // ─── HUNTERS — TOKYO GHOUL ──────────────────────────────────────
+
+  h_kaneki: [
+    { id: 'ts_kaneki_1', name: 'Kakuja Complet', power: 500, cdMax: 5, manaCost: 65, selfDamage: 20, desc: 'Forme Kakuja complete — puissance dementielle au prix de sa raison' },
+    { id: 'ts_kaneki_2', name: 'Centipede Noir', power: 380, cdMax: 3, manaCost: 48, buffAtk: 40, buffDur: 2, selfDamage: 10, desc: 'Le Mille-Pattes se reveille — rage incontrolable' },
+    { id: 'ts_kaneki_3', name: 'RC Explosion', power: 320, cdMax: 2, manaCost: 38, debuffDef: 35, debuffDur: 2, desc: 'Explosion de cellules RC — desintegre les defenses' },
+  ],
+
+  // ─── HUNTERS — FATE ─────────────────────────────────────────────
+
+  h_saber: [
+    { id: 'ts_saber_1', name: 'Excalibur Morgan', power: 480, cdMax: 5, manaCost: 65, desc: 'Le Noble Phantasm corrompu — puissance devastatrice absolue' },
+    { id: 'ts_saber_2', name: 'Avalon', power: 0, cdMax: 5, manaCost: 55, healSelf: 45, buffDef: 80, buffDur: 3, desc: 'Le fourreau legendaire — regeneration et protection totale' },
+    { id: 'ts_saber_3', name: 'Mana Burst', power: 350, cdMax: 3, manaCost: 45, buffAtk: 40, buffDur: 2, desc: 'Explosion de mana concentree dans la lame' },
+  ],
+
+  // ─── HUNTERS — CHIBI MASCOTS ──────────────────────────────────
+
+  h_daijin: [
+    { id: 'ts_daijin_1', name: 'Catastrophe Sismique', power: 380, cdMax: 5, manaCost: 55, debuffDef: 30, debuffDur: 2, desc: 'Libere le sceau — tremblement devastateur' },
+    { id: 'ts_daijin_2', name: 'Neuf Vies', power: 0, cdMax: 5, manaCost: 50, healSelf: 45, buffDef: 60, buffDur: 3, desc: 'Invoque la protection des 9 vies du chat' },
+    { id: 'ts_daijin_3', name: 'Griffes du Destin', power: 340, cdMax: 3, manaCost: 44, buffAtk: 30, buffDur: 2, desc: 'Griffes chargees d\'energie dimensionnelle' },
+  ],
+  h_pod042: [
+    { id: 'ts_pod042_1', name: 'Programme A170: Marteau', power: 360, cdMax: 4, manaCost: 50, debuffDef: 40, debuffDur: 2, desc: 'Frappe gravitationnelle lourde du Pod' },
+    { id: 'ts_pod042_2', name: 'Programme R030: Barriere', power: 0, cdMax: 5, manaCost: 55, buffDef: 120, buffDur: 3, desc: 'Barriere de protection absolue pour l\'equipe' },
+    { id: 'ts_pod042_3', name: 'Programme C400: Salve', power: 300, cdMax: 3, manaCost: 42, healSelf: 20, desc: 'Salve laser avec regeneration des systemes' },
+  ],
+
+  // ─── HUNTERS — STEINS;GATE ────────────────────────────────────
+
+  h_kurisu: [
+    { id: 'ts_kurisu_1', name: 'Reading Steiner', power: 380, cdMax: 4, manaCost: 52, buffAtk: 35, buffDur: 3, desc: 'Perception des lignes temporelles — boost massif' },
+    { id: 'ts_kurisu_2', name: 'D-Mail Paradoxe', power: 320, cdMax: 3, manaCost: 44, debuffDef: 40, debuffDur: 2, desc: 'Altere la timeline ennemie et affaiblit ses defenses' },
+    { id: 'ts_kurisu_3', name: 'Convergence Steins Gate', power: 450, cdMax: 5, manaCost: 60, desc: 'Atteint la ligne de convergence — degats ultimes' },
+  ],
+
+  // ── STEINS;GATE — Mayuri Shiina (Support Ultimate) ──
+  h_mayuri: [
+    { id: 'ts_mayuri_1', name: 'Tutturu Supreme', power: 0, cdMax: 4, manaCost: 50, healSelf: 45, buffDef: 40, buffDur: 3, desc: 'Soin massif et barriere protectrice pour un allie' },
+    { id: 'ts_mayuri_2', name: 'Horloge du Destin', power: 0, cdMax: 6, manaCost: 75, grantExtraTurn: true, grantFreeCast: true, buffAtk: 100, buffDur: 1, desc: 'Remonte le temps pour un allie — rejoue avec ATK +100%, 0 CD, 0 mana' },
+    { id: 'ts_mayuri_3', name: 'Priere de la Starlighter', power: 0, cdMax: 5, manaCost: 55, buffAtk: 50, buffDef: 30, buffDur: 3, desc: 'Benediction d\'etoile — buff ATK et DEF massif sur un allie' },
+  ],
 };
