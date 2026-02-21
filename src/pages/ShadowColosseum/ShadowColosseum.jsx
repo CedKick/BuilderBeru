@@ -82,6 +82,78 @@ const StoryTypewriter = ({ text, speaker }) => {
 const getChibiData = (id) => CHIBIS[id] || HUNTERS[id] || null;
 const getChibiSprite = (id) => SPRITES[id] || (HUNTERS[id] && HUNTERS[id].sprite) || '';
 
+// ─── Beru Scout Constants ─────────────────────────────────────
+
+const BERU_COMMISSION = 0.20;
+const randomPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const beruSay = (msg, mood = 'normal') => {
+  try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { message: msg, mood, type: mood } })); } catch (e) {}
+};
+
+const BERU_SCOUT_DIALOGUES = {
+  start: [
+    "Allez, Beru est sur le coup ! Scanner ACTIVE ! Mes antennes detectent les pepites...",
+    "Beru Scout en action ! Si y'a une pepite dans ce bazar, je la trouverai !",
+    "Scanner Beru ACTIVE ! On va trier le diamant de la poubelle !",
+  ],
+  noConfig: [
+    "Rien configure ? Pas grave, Beru sait ce qui est meta. ATK, CRIT, SPD... Je gere ! (hehe)",
+    "Bon, tu me fais confiance a 100% ? J'aime ca. Mode IA : ON !",
+  ],
+  goodProc: [
+    "OUIII ! Ca c'est du bon roll ! Beru approuve !",
+    "Oh la la, un roll de GENIE ! Continue comme ca !",
+    "C'est du PROPRE ! Meme moi je suis impressionne !",
+    "Roll PARFAIT ! T'as de la chance dis donc...",
+    "CA c'est un proc ! *chef's kiss*",
+    "MAGNIFIQUE ! Les RNG gods sont avec toi !",
+  ],
+  badProc: [
+    "Eurk... DEF flat ? Serieusement ? On est en 2026 la...",
+    "Bof bof bof... C'est pas terrible ca...",
+    "Quel roll de PERDANT ! On continue quand meme...",
+    "Pas de panique, un mauvais roll ca arrive... enfin pas a MOI.",
+    "RES flat ?! Tu veux soigner les mobs ou les taper ?!",
+    "HP flat... ouais... on va dire que c'est de la 'survie'...",
+  ],
+  abandoned: [
+    "Cet artefact c'est de la POUBELLE ! On jette et on pleure pas !",
+    "RIP cet artefact. Beru sait quand couper les pertes.",
+    "NEXT ! Celui-la est condamne. Au revoir et merci pour rien !",
+    "Trop de mauvais rolls, c'est mort. A la benne !",
+  ],
+  kept: [
+    "PEPITE DETECTEE ! Lock ce bijou immediatement !",
+    "Oh la MERVEILLE ! Cet artefact est SPLENDIDE ! Beru pleure de joie !",
+    "CA c'est du tier S ! On touche plus, c'est verrouille !",
+    "Incroyable, un artefact qui merite d'exister ! Rare de nos jours...",
+  ],
+  commission: [
+    "Faut racheter des marteaux... Beru s'en occupe ! (prix totalement normal, promis)",
+    "Un petit passage a la boutique... tarif special Beru ! (eheh)",
+    "Rupture de stock ? Pas de souci, j'ai un fournisseur... exclusif.",
+    "Marteaux livres ! Le prix ? Le marche fluctue beaucoup en ce moment...",
+  ],
+  summaryGood: [
+    "Mission accomplie ! {kept} pepites sur {total} artefacts ! Service Beru, toujours efficace !",
+    "Et voila ! {kept} artefacts de qualite ! Le reste ? Bah... c'etait du RNG cruel.",
+  ],
+  summaryBad: [
+    "Sur {total} artefacts, j'en ai sauve {kept}... Ton inventaire c'est un cimetiere en fait.",
+    "{kept} sauves sur {total}... Blame Netmarble pas Beru !",
+  ],
+  summaryEmpty: [
+    "ZERO match. Va farmer un peu et reviens voir tonton Beru !",
+    "Rien ne correspondait. T'es sur que t'as des artefacts toi ?",
+  ],
+};
+
+const AI_DEFAULT_SUBS = ['crit_rate', 'crit_dmg', 'atk_pct', 'spd_flat'];
+const AI_DEFAULT_MAINS = {
+  casque: null, plastron: 'atk_pct', gants: 'crit_rate', bottes: 'spd_flat',
+  collier: 'atk_pct', bracelet: 'atk_pct', anneau: 'crit_rate', boucles: 'atk_pct',
+};
+
 // ─── Stages ──────────────────────────────────────────────────
 
 const STAGES = [
@@ -238,7 +310,8 @@ const loadData = () => {
     // Migration: add locked field to artifacts
     d.artifactInventory = (d.artifactInventory || []).map(art => ({
       ...art,
-      locked: art.locked ?? false
+      locked: art.locked ?? false,
+      highlighted: art.highlighted ?? false
     }));
     // Also migrate equipped artifacts
     if (d.artifacts) {
@@ -247,7 +320,8 @@ const loadData = () => {
           if (d.artifacts[chibiId][slotId]) {
             d.artifacts[chibiId][slotId] = {
               ...d.artifacts[chibiId][slotId],
-              locked: d.artifacts[chibiId][slotId].locked ?? false
+              locked: d.artifacts[chibiId][slotId].locked ?? false,
+              highlighted: d.artifacts[chibiId][slotId].highlighted ?? false
             };
           }
         });
@@ -347,6 +421,19 @@ export default function ShadowColosseum() {
     includeMythic10: false       // Inclure Mythique Lv10+ (risqué)
   });
   const [cleanupPreview, setCleanupPreview] = useState(null);
+  // Beru Scout
+  const [scoutExpanded, setScoutExpanded] = useState(false);
+  const [scoutConfig, setScoutConfig] = useState({
+    targetSets: new Set(),
+    targetMainStats: {},
+    targetSubs: [],
+    rarityFilter: new Set(['mythique', 'legendaire']),
+    maxLevelFilter: 5,
+    badProcTolerance: 1,
+  });
+  const [scoutPhase, setScoutPhase] = useState(null); // null | 'running' | 'done'
+  const [scoutResults, setScoutResults] = useState(null);
+  const [scoutProgress, setScoutProgress] = useState(null);
   const [weaponDetailId, setWeaponDetailId] = useState(null);
   const [weaponFilter, setWeaponFilter] = useState({ element: null, sort: 'ilevel' }); // filter for weapon lists
   const [artifactSetDetail, setArtifactSetDetail] = useState(null);
@@ -2018,6 +2105,225 @@ export default function ShadowColosseum() {
     showToast(`✨ Nettoyage terminé! ${cleanupPreview.totalDelete} artefacts vendus pour ${cleanupPreview.totalCoins} coins`, '#10b981');
 
     setCleanupPreview(null);
+  };
+
+  // ─── Beru Scout ─────────────────────────────────────────────
+
+  const getScoutConfig = () => {
+    const c = { ...scoutConfig };
+    const useSubs = c.targetSubs.length > 0 ? c.targetSubs : AI_DEFAULT_SUBS;
+    const useMains = Object.keys(c.targetMainStats).length > 0 ? c.targetMainStats : AI_DEFAULT_MAINS;
+    return { ...c, targetSubs: useSubs, targetMainStats: useMains };
+  };
+
+  const computeScoutCandidates = () => {
+    const cfg = getScoutConfig();
+    return (data.artifactInventory || [])
+      .map((art, idx) => ({ art, idx }))
+      .filter(({ art }) => {
+        if (art.level > cfg.maxLevelFilter) return false;
+        if (art.locked) return false;
+        if (!cfg.rarityFilter.has(art.rarity)) return false;
+        if (cfg.targetSets.size > 0 && !cfg.targetSets.has(art.set)) return false;
+        const wantedMain = cfg.targetMainStats[art.slot];
+        if (wantedMain && art.mainStat !== wantedMain) return false;
+        if (cfg.targetSubs.length > 0) {
+          const artSubIds = new Set(art.subs.map(s => s.id));
+          if (!cfg.targetSubs.some(sid => artSubIds.has(sid))) return false;
+        }
+        return true;
+      });
+  };
+
+  const computeScoutEstimate = (candidates) => {
+    let totalEnhanceCost = 0;
+    const hammersNeeded = { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 };
+    candidates.forEach(({ art }) => {
+      for (let l = art.level; l < MAX_ARTIFACT_LEVEL; l++) {
+        totalEnhanceCost += ENHANCE_COST(l);
+        const valid = getRequiredHammer(l);
+        hammersNeeded[valid[0]]++;
+      }
+    });
+    const hammerDeficit = {};
+    let autoBuyCost = 0;
+    Object.keys(hammersNeeded).forEach(hId => {
+      const deficit = Math.max(0, hammersNeeded[hId] - (data.hammers?.[hId] || 0));
+      hammerDeficit[hId] = deficit;
+      autoBuyCost += deficit * (HAMMERS[hId]?.shopPrice || 0);
+    });
+    const beruCut = Math.ceil(autoBuyCost * BERU_COMMISSION);
+    return { candidateCount: candidates.length, totalEnhanceCost, hammersNeeded, hammerDeficit, autoBuyCost, beruCut, totalCost: totalEnhanceCost + autoBuyCost + beruCut };
+  };
+
+  const evaluateProc = (prevSubs, newSubs, desiredStats) => {
+    if (newSubs.length > prevSubs.length) {
+      const ns = newSubs[newSubs.length - 1];
+      return { isGood: desiredStats.includes(ns.id), type: 'new_sub', statId: ns.id, value: ns.value };
+    }
+    for (let i = 0; i < prevSubs.length; i++) {
+      if (newSubs[i] && newSubs[i].value !== prevSubs[i].value) {
+        return { isGood: desiredStats.includes(newSubs[i].id), type: 'upgrade', statId: newSubs[i].id, delta: newSubs[i].value - prevSubs[i].value };
+      }
+    }
+    return { isGood: true, type: 'none' };
+  };
+
+  const runBeruScout = () => {
+    const cfg = getScoutConfig();
+    const isAiMode = scoutConfig.targetSubs.length === 0;
+    const candidates = computeScoutCandidates();
+    if (candidates.length === 0) {
+      beruSay(randomPick(BERU_SCOUT_DIALOGUES.summaryEmpty), 'thinking');
+      return;
+    }
+
+    setScoutPhase('running');
+    beruSay(randomPick(BERU_SCOUT_DIALOGUES.start), 'excited');
+    if (isAiMode) setTimeout(() => beruSay(randomPick(BERU_SCOUT_DIALOGUES.noConfig), 'thinking'), 2000);
+
+    // Clone hammer counts for local tracking
+    const localHammers = { ...(data.hammers || {}) };
+    let totalSpent = 0;
+    let beruCut = 0;
+    const results = [];
+    let commissionMentioned = false;
+
+    for (const { art, idx } of candidates) {
+      let current = JSON.parse(JSON.stringify(art));
+      let badProcs = 0;
+      const log = [];
+
+      while (current.level < MAX_ARTIFACT_LEVEL) {
+        const coinCost = ENHANCE_COST(current.level);
+        const validHammers = getRequiredHammer(current.level);
+
+        // Find available hammer
+        let hammerToUse = null;
+        for (const hId of validHammers) {
+          if ((localHammers[hId] || 0) > 0) { hammerToUse = hId; break; }
+        }
+
+        // Auto-buy if needed (with commission)
+        if (!hammerToUse) {
+          const cheapest = validHammers[0];
+          const shopPrice = HAMMERS[cheapest]?.shopPrice || 100;
+          const beruPrice = Math.ceil(shopPrice * (1 + BERU_COMMISSION));
+          const totalNeeded = beruPrice + coinCost;
+          if (shadowCoinManager.getBalance() - totalSpent - beruCut < totalNeeded) {
+            log.push({ type: 'no_funds', level: current.level });
+            break;
+          }
+          beruCut += beruPrice - shopPrice;
+          totalSpent += beruPrice;
+          localHammers[cheapest] = (localHammers[cheapest] || 0) + 1;
+          if (!commissionMentioned) { commissionMentioned = true; log.push({ type: 'commission' }); }
+          hammerToUse = cheapest;
+        }
+
+        // Spend
+        totalSpent += coinCost;
+        localHammers[hammerToUse] = Math.max(0, (localHammers[hammerToUse] || 0) - 1);
+
+        // Enhance
+        const prevSubs = current.subs.map(s => ({ ...s }));
+        current = enhanceArtifact(current);
+
+        // Evaluate procs at milestones (5, 10, 15, 20)
+        if (current.level % 5 === 0 && current.level > 0) {
+          const proc = evaluateProc(prevSubs, current.subs, cfg.targetSubs);
+          log.push({ type: 'milestone', level: current.level, proc });
+          if (!proc.isGood) {
+            badProcs++;
+            if (badProcs > cfg.badProcTolerance) {
+              log.push({ type: 'abandoned', badProcs });
+              break;
+            }
+          }
+        }
+      }
+
+      // Final verdict
+      const goodSubCount = current.subs.filter(s => cfg.targetSubs.includes(s.id)).length;
+      const wasAbandoned = log.some(l => l.type === 'abandoned');
+      const verdict = (!wasAbandoned && goodSubCount >= 2) ? 'keep' : 'junk';
+
+      if (verdict === 'keep') {
+        current.locked = true;
+        current.highlighted = true;
+      }
+
+      results.push({ art: current, originalIdx: idx, verdict, log, badProcs });
+    }
+
+    // Apply all changes in one setData
+    const kept = results.filter(r => r.verdict === 'keep');
+    const junked = results.filter(r => r.verdict === 'junk');
+
+    // Build a map of originalIdx -> modified artifact
+    const modifiedMap = {};
+    results.forEach(r => { modifiedMap[r.originalIdx] = r.art; });
+
+    setData(prev => {
+      const newInv = prev.artifactInventory.map((art, i) => modifiedMap[i] !== undefined ? modifiedMap[i] : art);
+      return { ...prev, artifactInventory: newInv, hammers: { ...localHammers } };
+    });
+
+    if (totalSpent > 0) shadowCoinManager.spendCoins(totalSpent);
+
+    setScoutResults({ kept, junked, totalSpent, beruCut, log: results });
+    setScoutProgress(null);
+    setScoutPhase('done');
+
+    // Beru summary
+    const total = results.length;
+    const keptCount = kept.length;
+    setTimeout(() => {
+      if (total === 0) {
+        beruSay(randomPick(BERU_SCOUT_DIALOGUES.summaryEmpty), 'thinking');
+      } else if (keptCount >= total * 0.3) {
+        beruSay(randomPick(BERU_SCOUT_DIALOGUES.summaryGood).replace('{kept}', keptCount).replace('{total}', total), 'happy');
+      } else {
+        beruSay(randomPick(BERU_SCOUT_DIALOGUES.summaryBad).replace('{kept}', keptCount).replace('{total}', total), 'thinking');
+      }
+    }, 500);
+
+    // Delayed Beru comments for procs
+    let delay = 1500;
+    results.slice(0, 5).forEach(r => {
+      r.log.forEach(entry => {
+        if (entry.type === 'milestone' && entry.proc) {
+          setTimeout(() => beruSay(randomPick(entry.proc.isGood ? BERU_SCOUT_DIALOGUES.goodProc : BERU_SCOUT_DIALOGUES.badProc), entry.proc.isGood ? 'excited' : 'normal'), delay);
+          delay += 2500;
+        }
+        if (entry.type === 'abandoned') {
+          setTimeout(() => beruSay(randomPick(BERU_SCOUT_DIALOGUES.abandoned), 'shocked'), delay);
+          delay += 2500;
+        }
+        if (entry.type === 'commission') {
+          setTimeout(() => beruSay(randomPick(BERU_SCOUT_DIALOGUES.commission), 'normal'), delay);
+          delay += 2500;
+        }
+      });
+      if (r.verdict === 'keep') {
+        setTimeout(() => beruSay(randomPick(BERU_SCOUT_DIALOGUES.kept), 'excited'), delay);
+        delay += 2500;
+      }
+    });
+  };
+
+  const sellScoutJunk = () => {
+    if (!scoutResults?.junked?.length) return;
+    const junkUids = new Set(scoutResults.junked.map(j => j.art.uid));
+    let totalCoins = 0;
+    scoutResults.junked.forEach(j => {
+      totalCoins += Math.floor((FORGE_COSTS[j.art.rarity] || 200) * SELL_RATIO);
+    });
+    setData(prev => ({ ...prev, artifactInventory: prev.artifactInventory.filter(a => !junkUids.has(a.uid)) }));
+    shadowCoinManager.addCoins(totalCoins, 'beru_scout_sell');
+    showToast(`${scoutResults.junked.length} artefacts vendus pour ${totalCoins} coins !`, '#10b981');
+    beruSay(`${totalCoins} coins recuperes ! C'est pas grand-chose mais c'est du travail honnete ! ...enfin presque.`, 'happy');
+    setScoutResults(prev => ({ ...prev, junked: [], junkSold: true }));
   };
 
   // ─── Start Battle ──────────────────────────────────────────
@@ -7592,6 +7898,285 @@ export default function ShadowColosseum() {
               )}
             </div>
 
+            {/* ─── Beru Scout ──────────────────────── */}
+            <div className="mb-4">
+              <button
+                onClick={() => setScoutExpanded(prev => !prev)}
+                className="w-full flex items-center justify-between p-3 rounded-xl border border-cyan-500/30 bg-cyan-500/5 hover:bg-cyan-500/10 transition-all"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{'\uD83D\uDD0D'}</span>
+                  <span className="text-sm font-bold text-cyan-300">Beru Scout</span>
+                  <span className="text-[10px] text-gray-500">(Detection d'artefacts rares)</span>
+                </div>
+                <span className={`text-gray-400 transition-transform ${scoutExpanded ? 'rotate-180' : ''}`}>{'\u25BC'}</span>
+              </button>
+
+              {scoutExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  className="mt-2 p-3 rounded-xl border border-cyan-500/20 bg-gray-900/40 space-y-3"
+                >
+                  {/* A. Target Sets */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] text-gray-400">Sets cibles</span>
+                      <div className="flex gap-1">
+                        <button onClick={() => setScoutConfig(prev => ({ ...prev, targetSets: new Set(Object.keys(ALL_ARTIFACT_SETS)) }))} className="text-[8px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30">Tout</button>
+                        <button onClick={() => setScoutConfig(prev => ({ ...prev, targetSets: new Set() }))} className="text-[8px] px-1.5 py-0.5 rounded bg-gray-700/40 text-gray-400 hover:bg-gray-700/60">Aucun</button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {Object.entries(ALL_ARTIFACT_SETS).map(([id, s]) => (
+                        <button key={id}
+                          onClick={() => setScoutConfig(prev => {
+                            const ns = new Set(prev.targetSets);
+                            ns.has(id) ? ns.delete(id) : ns.add(id);
+                            return { ...prev, targetSets: ns };
+                          })}
+                          className={`text-[9px] px-1.5 py-0.5 rounded-full border transition-all ${
+                            scoutConfig.targetSets.has(id)
+                              ? `${s.border || 'border-cyan-500/50'} ${s.bg || 'bg-cyan-500/20'} ${s.color || 'text-cyan-300'}`
+                              : 'border-gray-700/30 bg-gray-800/20 text-gray-500'
+                          }`}
+                        >
+                          {s.icon} {s.name?.split(' ')[0] || id}
+                        </button>
+                      ))}
+                    </div>
+                    {scoutConfig.targetSets.size === 0 && <div className="text-[8px] text-gray-600 italic mt-0.5">Vide = tous les sets (mode IA)</div>}
+                  </div>
+
+                  {/* B. Main Stats per Slot */}
+                  <div>
+                    <div className="text-[10px] text-gray-400 mb-1">Main stat par slot <span className="text-gray-600">(optionnel)</span></div>
+                    <div className="grid grid-cols-4 gap-1">
+                      {SLOT_ORDER.map(sId => {
+                        const slotDef = ARTIFACT_SLOTS[sId];
+                        return (
+                          <div key={sId} className="flex flex-col items-center gap-0.5">
+                            <span className="text-xs">{slotDef?.icon}</span>
+                            <select
+                              value={scoutConfig.targetMainStats[sId] || ''}
+                              onChange={e => setScoutConfig(prev => {
+                                const nm = { ...prev.targetMainStats };
+                                if (e.target.value) nm[sId] = e.target.value; else delete nm[sId];
+                                return { ...prev, targetMainStats: nm };
+                              })}
+                              className="w-full text-[8px] bg-gray-800 border border-gray-700/30 rounded px-0.5 py-0.5 text-gray-300"
+                            >
+                              <option value="">Tous</option>
+                              {slotDef?.mainStats?.map(ms => (
+                                <option key={ms} value={ms}>{MAIN_STAT_VALUES[ms]?.name || ms}</option>
+                              ))}
+                            </select>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* C. Desired Sub-stats */}
+                  <div>
+                    <div className="text-[10px] text-gray-400 mb-1">Sub-stats recherchees <span className="text-gray-600">(max 4, vide = IA)</span></div>
+                    <div className="flex flex-wrap gap-1">
+                      {SUB_STAT_POOL.map(s => {
+                        const active = scoutConfig.targetSubs.includes(s.id);
+                        const disabled = !active && scoutConfig.targetSubs.length >= 4;
+                        return (
+                          <button key={s.id}
+                            disabled={disabled}
+                            onClick={() => setScoutConfig(prev => {
+                              const ns = active ? prev.targetSubs.filter(x => x !== s.id) : [...prev.targetSubs, s.id];
+                              return { ...prev, targetSubs: ns };
+                            })}
+                            className={`text-[9px] px-2 py-0.5 rounded-full border transition-all ${
+                              active ? 'border-amber-500/50 bg-amber-500/20 text-amber-300 font-bold' :
+                              disabled ? 'border-gray-800/20 bg-gray-900/10 text-gray-700 cursor-not-allowed' :
+                              'border-gray-700/30 bg-gray-800/20 text-gray-400 hover:border-gray-500/40'
+                            }`}
+                          >
+                            {s.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {scoutConfig.targetSubs.length === 0 && <div className="text-[8px] text-gray-600 italic mt-0.5">Mode IA: CRIT%, CRIT DMG, ATK%, SPD</div>}
+                  </div>
+
+                  {/* D. Filters */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-[9px] text-gray-400">Level max a scanner</span>
+                        <span className="text-xs font-bold text-cyan-300">{scoutConfig.maxLevelFilter}</span>
+                      </div>
+                      <input type="range" min="0" max="10" step="1" value={scoutConfig.maxLevelFilter}
+                        onChange={e => setScoutConfig(prev => ({ ...prev, maxLevelFilter: parseInt(e.target.value) }))}
+                        className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500" />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-[9px] text-gray-400">Tolerance mauvais procs</span>
+                        <span className="text-xs font-bold text-cyan-300">{scoutConfig.badProcTolerance}</span>
+                      </div>
+                      <input type="range" min="0" max="3" step="1" value={scoutConfig.badProcTolerance}
+                        onChange={e => setScoutConfig(prev => ({ ...prev, badProcTolerance: parseInt(e.target.value) }))}
+                        className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-cyan-500" />
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-gray-400 mr-2">Rarete</span>
+                    {['rare', 'legendaire', 'mythique'].map(r => (
+                      <button key={r}
+                        onClick={() => setScoutConfig(prev => {
+                          const ns = new Set(prev.rarityFilter);
+                          ns.has(r) ? ns.delete(r) : ns.add(r);
+                          return { ...prev, rarityFilter: ns };
+                        })}
+                        className={`text-[9px] px-2 py-0.5 rounded-full border mr-1 transition-all ${
+                          scoutConfig.rarityFilter.has(r) ? `${RARITY[r]?.color || 'text-cyan-300'} border-cyan-500/40 bg-cyan-500/10` : 'text-gray-600 border-gray-700/20'
+                        }`}
+                      >{r.charAt(0).toUpperCase() + r.slice(1)}</button>
+                    ))}
+                  </div>
+
+                  {/* E. Estimate */}
+                  {(() => {
+                    const candidates = computeScoutCandidates();
+                    const est = computeScoutEstimate(candidates);
+                    return (
+                      <div className="p-2 rounded-lg bg-gray-800/30 border border-gray-700/20">
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div>
+                            <div className="text-[8px] text-gray-500">Candidats</div>
+                            <div className="text-sm font-bold text-cyan-300">{est.candidateCount}</div>
+                          </div>
+                          <div>
+                            <div className="text-[8px] text-gray-500">Cout estime</div>
+                            <div className="text-sm font-bold text-yellow-300">{est.totalEnhanceCost}</div>
+                          </div>
+                          <div>
+                            <div className="text-[8px] text-gray-500">Materiaux*</div>
+                            <div className="text-sm font-bold text-amber-400">{est.autoBuyCost + est.beruCut}</div>
+                          </div>
+                        </div>
+                        {est.autoBuyCost > 0 && (
+                          <div className="text-[8px] text-gray-600 text-center mt-1 italic">* Tarif special Beru. Prix du marche... plus ou moins.</div>
+                        )}
+                        <div className="text-[9px] text-gray-400 text-center mt-1">
+                          Total: <span className="font-bold text-white">{est.totalCost}</span> coins
+                          {est.totalCost > shadowCoinManager.getBalance() && <span className="text-red-400 ml-1">(insuffisant !)</span>}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* F. Launch Button */}
+                  <button
+                    onClick={runBeruScout}
+                    disabled={scoutPhase === 'running' || computeScoutCandidates().length === 0}
+                    className={`w-full py-2.5 rounded-xl font-bold text-sm transition-all ${
+                      scoutPhase === 'running' ? 'bg-gray-700 text-gray-500 cursor-wait' :
+                      computeScoutCandidates().length === 0 ? 'bg-gray-800 text-gray-600 cursor-not-allowed' :
+                      'bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-500 hover:to-blue-500 shadow-lg shadow-cyan-500/20'
+                    }`}
+                  >
+                    {scoutPhase === 'running' ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                        Beru analyse...
+                      </span>
+                    ) : `\uD83D\uDD0D Beru Scout GO ! (${computeScoutCandidates().length} artefacts)`}
+                  </button>
+
+                  {/* Results Panel */}
+                  {scoutPhase === 'done' && scoutResults && (
+                    <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="space-y-2 border-t border-cyan-500/20 pt-3">
+                      <div className="text-xs font-bold text-cyan-300 mb-2">{'\uD83D\uDCCB'} Rapport Beru Scout</div>
+
+                      {/* Summary cards */}
+                      <div className="grid grid-cols-3 gap-1.5">
+                        <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
+                          <div className="text-[8px] text-green-400 font-bold">Gardes</div>
+                          <div className="text-lg font-black text-green-300">{scoutResults.kept.length}</div>
+                        </div>
+                        <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
+                          <div className="text-[8px] text-red-400 font-bold">Junk</div>
+                          <div className="text-lg font-black text-red-300">{scoutResults.junked.length}</div>
+                        </div>
+                        <div className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-center">
+                          <div className="text-[8px] text-yellow-400 font-bold">Depense</div>
+                          <div className="text-lg font-black text-yellow-300">{scoutResults.totalSpent}</div>
+                        </div>
+                      </div>
+
+                      {/* Kept list */}
+                      {scoutResults.kept.length > 0 && (
+                        <div>
+                          <div className="text-[9px] text-green-400 font-bold mb-1">{'\u2B50'} Pepites trouvees :</div>
+                          <div className="space-y-0.5 max-h-28 overflow-y-auto">
+                            {scoutResults.kept.map(r => {
+                              const setDef = ALL_ARTIFACT_SETS[r.art.set];
+                              return (
+                                <div key={r.art.uid} className="flex items-center gap-2 p-1 rounded bg-green-500/5 border border-green-500/10">
+                                  <span className="text-xs">{ARTIFACT_SLOTS[r.art.slot]?.icon}</span>
+                                  <span className={`text-[9px] font-bold ${setDef?.color || 'text-gray-300'}`}>{setDef?.name?.split(' ')[0]}</span>
+                                  <span className="text-[8px] text-gray-400">Lv{r.art.level}</span>
+                                  <span className="text-[8px] text-amber-400 ml-auto">iLv{computeArtifactILevel(r.art)}</span>
+                                  <span className="text-[8px] text-green-400">{r.art.subs.map(s => SUB_STAT_POOL.find(p => p.id === s.id)?.name || s.id).join(', ')}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Junk list + sell */}
+                      {scoutResults.junked.length > 0 && !scoutResults.junkSold && (
+                        <div>
+                          <div className="text-[9px] text-red-400 font-bold mb-1">{'\uD83D\uDDD1\uFE0F'} A la poubelle :</div>
+                          <div className="space-y-0.5 max-h-20 overflow-y-auto">
+                            {scoutResults.junked.map(r => {
+                              const setDef = ALL_ARTIFACT_SETS[r.art.set];
+                              return (
+                                <div key={r.art.uid} className="flex items-center gap-2 p-1 rounded bg-red-500/5 border border-red-500/10 text-[8px] text-gray-500">
+                                  <span>{ARTIFACT_SLOTS[r.art.slot]?.icon}</span>
+                                  <span className={setDef?.color || ''}>{setDef?.name?.split(' ')[0]}</span>
+                                  <span>Lv{r.art.level}</span>
+                                  <span className="text-red-400 ml-auto">{r.badProcs} bad procs</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <button onClick={sellScoutJunk}
+                            className="w-full mt-1.5 py-1.5 rounded-lg bg-red-600/30 text-red-300 text-[10px] font-bold hover:bg-red-600/50 transition-colors border border-red-500/30"
+                          >
+                            {'\uD83D\uDDD1\uFE0F'} Vendre {scoutResults.junked.length} artefacts ({scoutResults.junked.reduce((sum, j) => sum + Math.floor((FORGE_COSTS[j.art.rarity] || 200) * SELL_RATIO), 0)} coins)
+                          </button>
+                        </div>
+                      )}
+                      {scoutResults.junkSold && (
+                        <div className="text-[9px] text-green-400 text-center italic">{'\u2705'} Junk vendu !</div>
+                      )}
+
+                      {/* Beru commission (sneaky) */}
+                      {scoutResults.beruCut > 0 && (
+                        <div className="text-[8px] text-cyan-400/40 text-center italic">
+                          Frais de service Beru: {scoutResults.beruCut} coins (c'est les taxes, promis !)
+                        </div>
+                      )}
+
+                      <button onClick={() => { setScoutResults(null); setScoutPhase(null); }}
+                        className="w-full py-1.5 rounded-lg bg-gray-700/30 text-gray-400 text-[10px] hover:bg-gray-700/50 transition-colors"
+                      >Fermer le rapport</button>
+                    </motion.div>
+                  )}
+                </motion.div>
+              )}
+            </div>
+
             {/* Inventory Grid */}
             <div className="mb-5">
               <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Inventaire ({filtered.length})</div>
@@ -7606,11 +8191,21 @@ export default function ShadowColosseum() {
                     const mainDef = MAIN_STAT_VALUES[art.mainStat];
                     const selected = artSelected === idx;
                     return (
-                      <button key={art.uid || idx} onClick={() => { setArtSelected(selected ? null : idx); setArtEquipPicker(false); }}
+                      <button key={art.uid || idx} onClick={() => {
+                        if (art.highlighted) {
+                          setData(prev => ({ ...prev, artifactInventory: prev.artifactInventory.map((a, i) => i === idx ? { ...a, highlighted: false } : a) }));
+                        }
+                        setArtSelected(selected ? null : idx); setArtEquipPicker(false);
+                      }}
                         className={`relative p-1.5 rounded-lg border text-left transition-all ${
                           selected ? 'border-purple-400 bg-purple-500/15 ring-1 ring-purple-400/40' :
+                          art.highlighted ? 'border-yellow-400/60 bg-yellow-500/10 ring-2 ring-yellow-400/40 shadow-[0_0_12px_rgba(250,204,21,0.25)]' :
                           `${setDef?.border || 'border-gray-700/30'} ${setDef?.bg || 'bg-gray-800/10'} hover:border-gray-500/40`
                         }`}>
+                        {/* Highlighted badge */}
+                        {art.highlighted && (
+                          <span className="absolute -top-1 -left-1 text-[10px] bg-yellow-500 text-black rounded-full w-4 h-4 flex items-center justify-center font-black z-10">{'\u2B50'}</span>
+                        )}
                         {/* Lock button */}
                         <button
                           onClick={(e) => {
