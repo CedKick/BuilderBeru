@@ -3859,6 +3859,66 @@ export default function ShadowColosseum() {
         </div>
       )}
 
+      {/* ═══ PVE MULTI VIEW ═══ */}
+      {view === 'pve_multi' && (
+        <div className="max-w-2xl mx-auto px-4 pt-4 pb-16">
+          <div className="flex items-center gap-3 mb-6">
+            <button onClick={() => setView('hub')} className="text-gray-400 hover:text-white text-sm">&larr; Retour</button>
+            <h2 className="text-lg font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+              {'\uD83D\uDC09'} Mode PVE Multi
+            </h2>
+          </div>
+          <p className="text-sm text-gray-400 mb-6 text-center">
+            Choisis un boss et rejoins ou cree une partie multijoueur en temps reel !
+          </p>
+
+          {/* Boss Selection */}
+          <div className="space-y-4">
+            <a
+              href="http://159.223.225.71:3002/test"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block p-4 rounded-xl border border-emerald-500/30 bg-gradient-to-r from-emerald-900/20 to-teal-900/20 hover:from-emerald-900/40 hover:to-teal-900/40 transition-all group cursor-pointer"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-purple-900/60 to-red-900/60 border border-purple-500/30 flex items-center justify-center text-3xl flex-shrink-0">
+                  {'\uD83D\uDC09'}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-emerald-400 group-hover:text-emerald-300 text-base">Manaya</span>
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">BETA TEST</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Boss Raid inspir&eacute; de Tera Online. 3-5 joueurs, 6 phases, patterns AoE, laser, poison.</p>
+                  <div className="flex gap-2 mt-2">
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/20">3-5 joueurs</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/20">Temps reel</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/20">4 classes</span>
+                  </div>
+                </div>
+                <div className="text-gray-500 group-hover:text-emerald-400 text-xl transition-colors">{'\u2192'}</div>
+              </div>
+            </a>
+
+            {/* Coming soon bosses */}
+            <div className="p-4 rounded-xl border border-gray-700/30 bg-gray-900/30 opacity-50 cursor-not-allowed">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-orange-900/40 to-red-900/40 border border-gray-700/30 flex items-center justify-center text-3xl flex-shrink-0">
+                  {'\uD83D\uDD25'}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-gray-500 text-base">Ragnaros</span>
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-gray-700/30 text-gray-500 border border-gray-600/30">BIENTOT</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">By Fire Be Purged!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ═══ HUB VIEW ═══ */}
       {view === 'hub' && (
         <div className="max-w-2xl mx-auto px-4 pt-4">
@@ -3944,6 +4004,18 @@ export default function ShadowColosseum() {
             </div>
             <p className="text-[10px] text-gray-500 mt-0.5">Jusqu'a 6 chibis vs Raid Boss ! Controle Sung Jinwoo au clavier !</p>
           </Link>
+
+          {/* PVE Multi Button */}
+          <button
+            onClick={() => setView('pve_multi')}
+            className="block w-full mb-4 p-3 rounded-xl border border-emerald-500/30 bg-gradient-to-r from-emerald-900/30 to-teal-900/30 hover:from-emerald-900/50 hover:to-teal-900/50 transition-all text-center group">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-xl">{'\uD83D\uDC09'}</span>
+              <span className="font-bold text-emerald-400 group-hover:text-emerald-300">MODE PVE MULTI</span>
+              <span className="text-xs text-gray-400">— Boss Coop en ligne</span>
+            </div>
+            <p className="text-[10px] text-gray-500 mt-0.5">3-5 joueurs vs Boss en temps reel ! Beta test</p>
+          </button>
 
           {/* PVP Button */}
           <Link to="/shadow-colosseum/pvp"
