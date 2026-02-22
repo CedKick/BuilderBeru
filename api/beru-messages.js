@@ -91,24 +91,41 @@ async function handleSend(req, res) {
 async function handleRecent(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const result = await query(
-    `SELECT id, author, message, mood, created_at
-     FROM admin_messages
-     WHERE created_at > NOW() - INTERVAL '7 days'
-     ORDER BY created_at DESC
-     LIMIT 50`
-  );
+  try {
+    // Auto-create table if it doesn't exist (avoids 500 for new installs)
+    await query(`
+      CREATE TABLE IF NOT EXISTS admin_messages (
+        id SERIAL PRIMARY KEY,
+        author VARCHAR(20) NOT NULL,
+        message TEXT NOT NULL,
+        mood VARCHAR(20) DEFAULT 'normal',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
 
-  return res.status(200).json({
-    success: true,
-    messages: result.rows.map(r => ({
-      id: r.id,
-      author: r.author,
-      message: r.message,
-      mood: r.mood,
-      createdAt: r.created_at,
-    })),
-  });
+    const result = await query(
+      `SELECT id, author, message, mood, created_at
+       FROM admin_messages
+       WHERE created_at > NOW() - INTERVAL '7 days'
+       ORDER BY created_at DESC
+       LIMIT 50`
+    );
+
+    return res.status(200).json({
+      success: true,
+      messages: result.rows.map(r => ({
+        id: r.id,
+        author: r.author,
+        message: r.message,
+        mood: r.mood,
+        createdAt: r.created_at,
+      })),
+    });
+  } catch (err) {
+    // If table still doesn't exist or DB is down, return empty array instead of 500
+    console.warn('[beru-messages] recent query failed:', err.message);
+    return res.status(200).json({ success: true, messages: [] });
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
