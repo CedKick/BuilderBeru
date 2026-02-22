@@ -814,6 +814,18 @@ export default function TrainingDummy() {
       fighter.atk = origAtk;
       fighter.crit = origCrit;
 
+      // Apply healSelf from skills (e.g. Emma "Rempart Absolu", Seo "Soin Aquatique")
+      if (result.healed > 0) {
+        let healAmt = result.healed;
+        const hcP = artP.find(p => p.type === 'healCrit');
+        if (hcP) {
+          healAmt = Math.floor(healAmt * (1 + (hcP.healBoostPct || 0.30)));
+          if (Math.random() < (hcP.critChance || 0.10)) healAmt *= 2;
+        }
+        fighter.hp = Math.min(fighter.maxHp, fighter.hp + healAmt);
+        logEntries.push({ text: `${fighter.name} se soigne +${healAmt} PV`, time: elapsed, type: 'heal' });
+      }
+
       // Megumin manaRestore: restore X% of max mana after attack
       if (skill.manaRestore && fighter.maxMana > 0) {
         const restored = Math.floor(fighter.maxMana * skill.manaRestore / 100);
@@ -1376,6 +1388,12 @@ export default function TrainingDummy() {
 
     // Restore ATK
     fighter.atk = savedAtk;
+
+    // Apply healSelf from skills
+    if (result.healed > 0) {
+      fighter.hp = Math.min(fighter.maxHp, fighter.hp + result.healed);
+      log.push({ text: `💚 ${fighter.name} se soigne +${fmt(result.healed)} PV (${fmt(fighter.hp)}/${fmt(fighter.maxHp)})`, type: 'heal', id: Date.now() + 0.515 });
+    }
 
     // Megumin manaRestore: restore X% of max mana after attack
     if (skill.manaRestore && fighter.maxMana > 0) {

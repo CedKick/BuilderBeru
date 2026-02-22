@@ -636,23 +636,27 @@ export default function PvpMode() {
         }
       }
 
-      // Support healing
+      // Support healing — allies first, then self
       if (unit.class === 'support') {
         const aliveAllies = allies.filter(a => a.alive && a.id !== unit.id && a.hp < a.maxHp);
         const lowest = aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
-        if (lowest && (lowest.hp / lowest.maxHp) < 0.75) {
+        // Heal target: lowest ally <75% HP, OR self <75% HP as fallback
+        const healTarget = (lowest && (lowest.hp / lowest.maxHp) < 0.75) ? lowest
+          : (unit.hp < unit.maxHp && (unit.hp / unit.maxHp) < 0.75) ? unit : null;
+        if (healTarget) {
           const healBonus = unit.talentBonuses?.healBonus || 0;
-          let healAmt = Math.floor(lowest.maxHp * 0.15 * (1 + healBonus / 100));
+          let healAmt = Math.floor(healTarget.maxHp * 0.15 * (1 + healBonus / 100));
           // healCrit passive (Chaines du Destin 4p) — individual
           const healCritP = unit.passives?.find(p => p.type === 'healCrit');
           if (healCritP) {
             healAmt = Math.floor(healAmt * (1 + (healCritP.healBoostPct || 0.30)));
             if (Math.random() < (healCritP.critChance || 0.10)) { healAmt *= 2; }
           }
-          lowest.hp = Math.min(lowest.maxHp, lowest.hp + healAmt);
+          healTarget.hp = Math.min(healTarget.maxHp, healTarget.hp + healAmt);
           unit.lastAttackAt = now;
-          logEntries.push({ text: `${unit.name} soigne ${lowest.name} +${healAmt}`, time: elapsed, type: 'heal' });
-          addVfx('heal', { targetId: lowest.id });
+          const targetLabel = healTarget === unit ? 'se soigne' : `soigne ${healTarget.name}`;
+          logEntries.push({ text: `${unit.name} ${targetLabel} +${healAmt}`, time: elapsed, type: 'heal' });
+          addVfx('heal', { targetId: healTarget.id });
           // Track healing in window + logs
           if (healWindowTracker.current[unit.id] !== undefined) {
             healWindowTracker.current[unit.id] += healAmt;

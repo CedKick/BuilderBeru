@@ -887,13 +887,16 @@ export default function RaidMode() {
       const origBossDef = state.boss.def;
       state.boss.def = Math.floor(origBossDef * (1 - bossDebuffs.def / 100));
 
-      // Support healing: if support class and ally is low, heal instead of attack
+      // Support healing: allies first, then self as fallback
       if (chibi.class === 'support') {
         const aliveAllies = state.chibis.filter(a => a.alive && a.id !== chibi.id && a.hp < a.maxHp);
         const lowestAlly = aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
-        if (lowestAlly && (lowestAlly.hp / lowestAlly.maxHp) < 0.75) {
+        // Heal target: lowest ally <75% HP, OR self <75% HP as fallback
+        const healTarget = (lowestAlly && (lowestAlly.hp / lowestAlly.maxHp) < 0.75) ? lowestAlly
+          : (chibi.hp < chibi.maxHp && (chibi.hp / chibi.maxHp) < 0.75) ? chibi : null;
+        if (healTarget) {
           const healBonus = (chibi.talentBonuses?.healBonus || 0);
-          let healAmt = Math.floor(lowestAlly.maxHp * 0.15 * (1 + healBonus / 100));
+          let healAmt = Math.floor(healTarget.maxHp * 0.15 * (1 + healBonus / 100));
           // healCrit (Chaines du Destin 4p): +30% heal, 10% chance crit heal x2
           const healCritP = chibi.passives?.find(p => p.type === 'healCrit');
           if (healCritP) {
@@ -903,12 +906,13 @@ export default function RaidMode() {
               logEntries.push({ text: `${chibi.name} : SOIN CRITIQUE x2 !`, time: elapsed, type: 'heal' });
             }
           }
-          lowestAlly.hp = Math.min(lowestAlly.maxHp, lowestAlly.hp + healAmt);
+          healTarget.hp = Math.min(healTarget.maxHp, healTarget.hp + healAmt);
           chibi.lastAttackAt = now;
           // Restore stats before return
           chibi.atk = origAtk; chibi.crit = origCrit; chibi.def = origDef; state.boss.def = origBossDef;
-          logEntries.push({ text: `${chibi.name} soigne ${lowestAlly.name} +${fmt(healAmt)} PV`, time: elapsed, type: 'heal' });
-          vfxEvents.push({ id: now + Math.random(), type: 'heal', targetId: lowestAlly.id, value: healAmt, timestamp: now });
+          const targetLabel = healTarget === chibi ? 'se soigne' : `soigne ${healTarget.name}`;
+          logEntries.push({ text: `${chibi.name} ${targetLabel} +${fmt(healAmt)} PV`, time: elapsed, type: 'heal' });
+          vfxEvents.push({ id: now + Math.random(), type: 'heal', targetId: healTarget.id, value: healAmt, timestamp: now });
           stateChanged = true;
           return;
         }
