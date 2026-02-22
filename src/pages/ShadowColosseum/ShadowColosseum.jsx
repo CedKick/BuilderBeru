@@ -3517,9 +3517,9 @@ export default function ShadowColosseum() {
       weaponDrop = { id: 'w_guldan', ...WEAPONS.w_guldan, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_guldan'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
 
-    // Boss hunter drops (Guts etc.) — 1/1500 from world bosses
+    // Boss hunter drops (Guts, Sukuna etc.) — tier-gated
     let bossHunterDrop = null;
-    const bossHunterId = rollBossHunterDrop(stage.id, lootMult);
+    const bossHunterId = rollBossHunterDrop(stage.id, lootMult, stage.tier);
     if (bossHunterId && HUNTERS[bossHunterId]) {
       const rd = loadRaidData();
       const res = addHunterOrDuplicate(rd, bossHunterId);

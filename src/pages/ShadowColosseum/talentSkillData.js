@@ -263,6 +263,14 @@ export const TALENT_SKILLS = {
     { id: 'ts_a9_3', name: 'Dissimulation Fatale', power: 280, cdMax: 2, manaCost: 36, debuffDef: 35, debuffDur: 2, desc: 'Apparait dans l\'angle mort et brise les defenses' },
   ],
 
+  // ─── HUNTERS — JUJUTSU KAISEN ───────────────────────────────────
+
+  h_sukuna: [
+    { id: 'ts_sukuna_1', name: 'Domain Expansion', power: 480, cdMax: 5, manaCost: 65, buffSpd: 40, buffDur: 3, desc: 'Malevolent Shrine — domaine qui tranche tout a une vitesse inhumaine' },
+    { id: 'ts_sukuna_2', name: 'Fleche du Monde', power: 350, cdMax: 3, manaCost: 45, debuffDef: 30, debuffDur: 2, desc: 'Cleave invisible qui ignore les defenses — plus rapide que l\'oeil' },
+    { id: 'ts_sukuna_3', name: 'Flammes Maudites', power: 300, cdMax: 2, manaCost: 38, buffSpd: 20, buffDur: 2, debuffDef: 15, debuffDur: 2, desc: 'Flammes de malediction — brule et accelere a chaque frappe' },
+  ],
+
   // ─── HUNTERS — BERSERK ──────────────────────────────────────────
 
   h_guts: [

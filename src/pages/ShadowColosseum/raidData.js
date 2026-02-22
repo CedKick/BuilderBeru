@@ -59,6 +59,8 @@ const S = {
   h_saber:     'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771655017/Saber_xg6thi.png',
   // BERSERK (collab)
   h_guts:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771654575/Guts_y7usbq.png',
+  // JUJUTSU KAISEN (collab)
+  h_sukuna:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771728123/Sukuna_selojw.png',
   // NIER AUTOMATA (collab)
   h_a9:        'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771654101/A9_tky2tw.png',
   h_2b:        'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771499926/2B_vly2pt.png',
@@ -591,6 +593,20 @@ export const HUNTERS = {
     ],
   },
 
+  // ═══ JUJUTSU KAISEN — The King of Curses ═══
+
+  h_sukuna: {
+    name: 'Sukuna', element: 'fire', rarity: 'mythique', class: 'fighter',
+    series: 'jjk', sprite: S.h_sukuna, passiveDesc: 'Roi des Fleaux : La vitesse augmente a chaque attaque, les coups critiques infligent des degats bonus',
+    base:   { hp: 380, atk: 52, def: 16, spd: 45, crit: 25, res: 3 },
+    growth: { hp: 12, atk: 3.6, def: 0.8, spd: 2.2, crit: 0.9, res: 0.15 },
+    skills: [
+      { name: 'Dismantle', power: 110, cdMax: 0 },
+      { name: 'Cleave', power: 200, cdMax: 3, debuffDef: 25, debuffDur: 2 },
+      { name: 'Malevolent Shrine', power: 300, cdMax: 5, buffSpd: 30, buffDur: 3 },
+    ],
+  },
+
   // ═══ NIER AUTOMATA — Collab Hunters ═══
 
   h_a9: {
@@ -1034,6 +1050,8 @@ export const HUNTER_PASSIVE_EFFECTS = {
     { chance: 0.20, stats: { spd: 20 }, label: 'SPD +20%' },
     { chance: 0.15, stats: { atk: 30, spd: 15, crit: 10 }, label: 'JACKPOT !' },
   ]},
+  // ── JUJUTSU KAISEN ──
+  h_sukuna:    { type: 'stacking', perStack: { spd: 8, crit: 3 }, maxStacks: 6 },
   // ── BERSERK ──
   h_guts:      { type: 'berserker', tiers: [
     { threshold: 70, stats: { atk: 15, spd: 5 } },
@@ -1095,11 +1113,13 @@ export function rollNierHunterDrop(stageId, stageTier, isBoss, star = 0) {
 export const BOSS_HUNTER_DROPS = {
   h_guts:    { bosses: ['ragnarok', 'zephyr', 'supreme_monarch', 'archdemon'], baseChance: 1 / 1500 }, // 1/1500
   h_megumin: { bosses: ['ragnarok', 'zephyr', 'supreme_monarch', 'archdemon'], baseChance: 1 / 1000 }, // 1/1000
+  h_sukuna:  { bosses: ['ant_queen'], baseChance: 1 / 2000, minTier: 5 }, // 1/2000, Divin+ only
 };
 
-export function rollBossHunterDrop(bossId, lootMult = 1) {
+export function rollBossHunterDrop(bossId, lootMult = 1, tier = 1) {
   for (const [hunterId, cfg] of Object.entries(BOSS_HUNTER_DROPS)) {
     if (!cfg.bosses.includes(bossId)) continue;
+    if (cfg.minTier && tier < cfg.minTier) continue;
     if (Math.random() < cfg.baseChance * lootMult) return hunterId;
   }
   return null;
