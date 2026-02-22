@@ -94,6 +94,7 @@ const TrainingDummy = React.lazy(() => import('./pages/ShadowColosseum/TrainingD
 const Codex = React.lazy(() => import('./pages/Codex/Codex.jsx'));
 const MailInbox = React.lazy(() => import('./pages/MailInbox.jsx'));
 const AdminMailSender = React.lazy(() => import('./pages/AdminMailSender.jsx'));
+const AdminPanel = React.lazy(() => import('./pages/AdminPanel.jsx'));
 const FactionHub = React.lazy(() => import('./pages/FactionHub.jsx'));
 
 // Loading fallback
@@ -136,6 +137,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="/codex" element={<Codex />} />
               <Route path="/mail" element={<MailInbox />} />
               <Route path="/admin/mail" element={<AdminMailSender />} />
+              <Route path="/admin/panel" element={<AdminPanel />} />
               <Route path="/faction" element={<FactionHub />} />
               <Route path="/training-dummy" element={<TrainingDummy />} />
             </Routes>

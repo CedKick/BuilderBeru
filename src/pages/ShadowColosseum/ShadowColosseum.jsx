@@ -52,7 +52,7 @@ import {
   buildStageEnemies,
 } from './arc2Data';
 import { TALENT_SKILLS, TALENT_SKILL_COST, TALENT_SKILL_UNLOCK_LEVEL } from './talentSkillData';
-import { isLoggedIn, authHeaders } from '../../utils/auth';
+import { isLoggedIn, authHeaders, getAuthUser } from '../../utils/auth';
 import { cloudStorage } from '../../utils/CloudStorage';
 
 // ─── StoryTypewriter — char-by-char text reveal ──────────────
@@ -11009,6 +11009,15 @@ export default function ShadowColosseum() {
         className="fixed top-4 right-4 z-40 w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 border-2 border-indigo-400/50 shadow-lg shadow-indigo-500/30 flex items-center justify-center text-lg hover:scale-110 active:scale-95 transition-transform"
         title="Comment jouer ?"
       >?</button>
+
+      {/* ═══ ADMIN BUTTON (Kly only) ═══ */}
+      {getAuthUser()?.username?.toLowerCase() === 'kly' && (
+        <button
+          onClick={() => navigate('/admin/panel')}
+          className="fixed top-16 right-4 z-40 w-10 h-10 rounded-full bg-gradient-to-br from-red-600 to-pink-600 border-2 border-red-400/50 shadow-lg shadow-red-500/30 flex items-center justify-center text-sm hover:scale-110 active:scale-95 transition-transform"
+          title="Admin Panel"
+        >{'\u2699'}</button>
+      )}
 
       {/* ═══ DROP TOAST NOTIFICATION ═══ */}
       <AnimatePresence>
