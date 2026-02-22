@@ -2046,9 +2046,12 @@ export default function PvpMode() {
         const isAtk = editingStrategyType === 'atk';
         const stratKey = isAtk ? 'attackStrategy' : 'defenseStrategy';
         const strat = pvpData[stratKey] || { ...DEFAULT_STRATEGY };
-        const teamIds = isAtk
+        // Use current slots OR saved team (fallback for returning players)
+        const slotIds = isAtk
           ? [...team1, ...team2].filter(Boolean)
           : [...defTeam1, ...defTeam2].filter(Boolean);
+        const teamIds = slotIds.length >= 6 ? slotIds
+          : (isAtk ? pvpData.attackTeam : pvpData.defenseTeam) || [];
         const teamChibis = teamIds.map(id => {
           const c = allPool[id] || CHIBIS[id] || {};
           return { id, name: c.name, sprite: c.sprite || SPRITES[id], class: c.class };
@@ -2123,41 +2126,38 @@ export default function PvpMode() {
                 </div>
               </div>
 
-              {/* Section 3: Buff Priority */}
+              {/* Section 3+4: Team list with Buff & Heal badges */}
               <div className="mb-4">
-                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Priorite buff <span className="text-purple-400">(max 3)</span></div>
-                <div className="grid grid-cols-6 gap-1.5">
+                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Priorites <span className="text-amber-400">Buff</span> & <span className="text-emerald-400">Soin</span> <span className="opacity-50">(clique pour assigner 1-2-3)</span></div>
+                {teamChibis.length === 0 && (
+                  <div className="text-[10px] text-gray-600 text-center py-4">Aucune equipe enregistree</div>
+                )}
+                <div className="flex flex-col gap-1.5">
                   {teamChibis.map(c => {
-                    const idx = (strat.buffPriority || []).indexOf(c.id);
-                    const selected = idx >= 0;
+                    const buffIdx = (strat.buffPriority || []).indexOf(c.id);
+                    const healIdx = (strat.healPriority || []).indexOf(c.id);
                     return (
-                      <button key={c.id} onClick={() => togglePriority('buffPriority', c.id)}
-                        className={`relative flex flex-col items-center gap-0.5 p-1.5 rounded-lg transition-all border ${selected
-                          ? 'bg-amber-600/30 border-amber-500/50' : 'bg-gray-800/30 border-gray-700/20 hover:bg-gray-700/30'}`}>
-                        <img src={c.sprite} alt="" className="w-7 h-7 rounded-full object-cover" />
-                        <div className="text-[7px] text-gray-300 truncate w-full text-center">{c.name?.split(' ')[0]}</div>
-                        {selected && <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-[8px] text-black font-black flex items-center justify-center">{idx + 1}</div>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Section 4: Heal Priority */}
-              <div className="mb-4">
-                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Priorite soin <span className="text-emerald-400">(max 3)</span></div>
-                <div className="grid grid-cols-6 gap-1.5">
-                  {teamChibis.map(c => {
-                    const idx = (strat.healPriority || []).indexOf(c.id);
-                    const selected = idx >= 0;
-                    return (
-                      <button key={c.id} onClick={() => togglePriority('healPriority', c.id)}
-                        className={`relative flex flex-col items-center gap-0.5 p-1.5 rounded-lg transition-all border ${selected
-                          ? 'bg-emerald-600/30 border-emerald-500/50' : 'bg-gray-800/30 border-gray-700/20 hover:bg-gray-700/30'}`}>
-                        <img src={c.sprite} alt="" className="w-7 h-7 rounded-full object-cover" />
-                        <div className="text-[7px] text-gray-300 truncate w-full text-center">{c.name?.split(' ')[0]}</div>
-                        {selected && <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-[8px] text-black font-black flex items-center justify-center">{idx + 1}</div>}
-                      </button>
+                      <div key={c.id} className="flex items-center gap-2 p-2 rounded-xl bg-gray-800/30 border border-gray-700/20">
+                        <img src={c.sprite} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-bold text-white truncate">{c.name}</div>
+                          <div className="text-[9px] text-gray-500">{c.class || ''}</div>
+                        </div>
+                        {/* Buff badge */}
+                        <button onClick={() => togglePriority('buffPriority', c.id)}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black transition-all border-2 flex-shrink-0 ${buffIdx >= 0
+                            ? 'bg-amber-500 border-amber-400 text-black shadow-lg shadow-amber-500/30'
+                            : 'bg-gray-800/50 border-gray-600/30 text-gray-600 hover:border-amber-500/50 hover:text-amber-400'}`}>
+                          {buffIdx >= 0 ? buffIdx + 1 : 'B'}
+                        </button>
+                        {/* Heal badge */}
+                        <button onClick={() => togglePriority('healPriority', c.id)}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black transition-all border-2 flex-shrink-0 ${healIdx >= 0
+                            ? 'bg-emerald-500 border-emerald-400 text-black shadow-lg shadow-emerald-500/30'
+                            : 'bg-gray-800/50 border-gray-600/30 text-gray-600 hover:border-emerald-500/50 hover:text-emerald-400'}`}>
+                          {healIdx >= 0 ? healIdx + 1 : 'H'}
+                        </button>
+                      </div>
                     );
                   })}
                 </div>
