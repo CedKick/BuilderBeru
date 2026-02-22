@@ -642,14 +642,18 @@ export default function PvpMode() {
         }
       }
 
-      // Support healing — allies first, then self
+      // Support healing — allies first, then self (costs 25% maxMana)
       if (unit.class === 'support') {
+        const healManaCost = Math.floor((unit.maxMana || 0) * 0.25);
+        const hasEnoughMana = unit.maxMana <= 0 || (unit.mana || 0) >= healManaCost;
         const aliveAllies = allies.filter(a => a.alive && a.id !== unit.id && a.hp < a.maxHp);
         const lowest = aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
         // Heal target: lowest ally <75% HP, OR self <75% HP as fallback
-        const healTarget = (lowest && (lowest.hp / lowest.maxHp) < 0.75) ? lowest
-          : (unit.hp < unit.maxHp && (unit.hp / unit.maxHp) < 0.75) ? unit : null;
+        const healTarget = hasEnoughMana ? ((lowest && (lowest.hp / lowest.maxHp) < 0.75) ? lowest
+          : (unit.hp < unit.maxHp && (unit.hp / unit.maxHp) < 0.75) ? unit : null) : null;
         if (healTarget) {
+          // Consume mana for heal
+          if (unit.maxMana > 0) unit.mana = Math.max(0, (unit.mana || 0) - healManaCost);
           const healBonus = unit.talentBonuses?.healBonus || 0;
           let healAmt = Math.floor(healTarget.maxHp * 0.15 * (1 + healBonus / 100));
           // healCrit passive (Chaines du Destin 4p) — individual

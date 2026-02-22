@@ -691,13 +691,17 @@ export default function TrainingDummy() {
         );
       }
 
-      // Support healing — allies first, then self
+      // Support healing — allies first, then self (costs 25% maxMana)
       if (fighter.class === 'support') {
+        const healManaCost = Math.floor((fighter.maxMana || 0) * 0.25);
+        const hasEnoughMana = fighter.maxMana <= 0 || (fighter.mana || 0) >= healManaCost;
         const aliveAllies = state.fighters.filter(a => a.alive && a.id !== fighter.id && a.hp < a.maxHp);
         const lowest = aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
-        const healTarget = (lowest && (lowest.hp / lowest.maxHp) < 0.75) ? lowest
-          : (fighter.hp < fighter.maxHp && (fighter.hp / fighter.maxHp) < 0.75) ? fighter : null;
+        const healTarget = hasEnoughMana ? ((lowest && (lowest.hp / lowest.maxHp) < 0.75) ? lowest
+          : (fighter.hp < fighter.maxHp && (fighter.hp / fighter.maxHp) < 0.75) ? fighter : null) : null;
         if (healTarget) {
+          // Consume mana for heal
+          if (fighter.maxMana > 0) fighter.mana = Math.max(0, (fighter.mana || 0) - healManaCost);
           const healBonus = fighter.talentBonuses?.healBonus || 0;
           let healAmt = Math.floor(healTarget.maxHp * 0.15 * (1 + healBonus / 100));
           const healCritP = (fighter.passives || []).find(p => p.type === 'healCrit');

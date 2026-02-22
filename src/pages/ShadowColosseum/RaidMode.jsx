@@ -902,14 +902,18 @@ export default function RaidMode() {
       const origBossDef = state.boss.def;
       state.boss.def = Math.floor(origBossDef * (1 - bossDebuffs.def / 100));
 
-      // Support healing: allies first, then self as fallback
+      // Support healing: allies first, then self as fallback (costs 25% maxMana)
       if (chibi.class === 'support') {
+        const healManaCost = Math.floor((chibi.maxMana || 0) * 0.25);
+        const hasEnoughMana = chibi.maxMana <= 0 || (chibi.mana || 0) >= healManaCost;
         const aliveAllies = state.chibis.filter(a => a.alive && a.id !== chibi.id && a.hp < a.maxHp);
         const lowestAlly = aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
         // Heal target: lowest ally <75% HP, OR self <75% HP as fallback
-        const healTarget = (lowestAlly && (lowestAlly.hp / lowestAlly.maxHp) < 0.75) ? lowestAlly
-          : (chibi.hp < chibi.maxHp && (chibi.hp / chibi.maxHp) < 0.75) ? chibi : null;
+        const healTarget = hasEnoughMana ? ((lowestAlly && (lowestAlly.hp / lowestAlly.maxHp) < 0.75) ? lowestAlly
+          : (chibi.hp < chibi.maxHp && (chibi.hp / chibi.maxHp) < 0.75) ? chibi : null) : null;
         if (healTarget) {
+          // Consume mana for heal
+          if (chibi.maxMana > 0) chibi.mana = Math.max(0, (chibi.mana || 0) - healManaCost);
           const healBonus = (chibi.talentBonuses?.healBonus || 0);
           let healAmt = Math.floor(healTarget.maxHp * 0.15 * (1 + healBonus / 100));
           // healCrit (Chaines du Destin 4p): +30% heal, 10% chance crit heal x2
