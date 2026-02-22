@@ -632,15 +632,40 @@ export default function ShadowColosseum() {
     }).catch(() => {});
   };
 
-  // Fire-and-forget faction contribution reward
+  // Batched faction contribution reward — accumulates points, sends every 60s
+  const factionBatchCount = useRef(0);
+  const factionBatchTimer = useRef(null);
+  const flushFactionBatch = () => {
+    const count = factionBatchCount.current;
+    factionBatchCount.current = 0;
+    if (factionBatchTimer.current) { clearTimeout(factionBatchTimer.current); factionBatchTimer.current = null; }
+    if (count > 0 && isLoggedIn()) {
+      fetch('/api/factions?action=activity-reward', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ activity: 'arc', count }),
+        keepalive: true,
+      }).catch(() => {});
+    }
+  };
   const rewardFactionPoints = (activity) => {
     if (!isLoggedIn()) return;
+    if (activity === 'arc') {
+      factionBatchCount.current++;
+      if (!factionBatchTimer.current) {
+        factionBatchTimer.current = setTimeout(flushFactionBatch, 60000);
+      }
+      return;
+    }
+    // Non-arc activities (raid) — send immediately (rare, 1 per raid)
     fetch('/api/factions?action=activity-reward', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ activity }),
     }).catch(() => {});
   };
+  // Flush faction batch on unmount (page leave / navigation)
+  useEffect(() => () => flushFactionBatch(), []);
 
   // Fetch recent legendary drops
   const lastKnownDropIdRef = useRef(0);

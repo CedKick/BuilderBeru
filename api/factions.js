@@ -235,9 +235,11 @@ async function handleActivityReward(req, res) {
   const user = await extractUser(req);
   if (!user) return res.status(401).json({ success: false, message: 'Authentication required' });
 
-  const { activity } = req.body;
-  const points = ACTIVITY_POINTS[activity];
-  if (!points) return res.status(400).json({ success: false, message: 'Invalid activity' });
+  const { activity, count = 1 } = req.body;
+  const batchCount = Math.min(Math.max(1, parseInt(count) || 1), 500); // Cap at 500
+  const basePoints = ACTIVITY_POINTS[activity];
+  if (!basePoints) return res.status(400).json({ success: false, message: 'Invalid activity' });
+  const points = basePoints * batchCount;
 
   const result = await query(
     'UPDATE player_factions SET contribution_points = contribution_points + $1 WHERE username = $2 RETURNING contribution_points, points_spent',
