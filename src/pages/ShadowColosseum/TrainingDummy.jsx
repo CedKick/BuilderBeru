@@ -173,6 +173,9 @@ export default function TrainingDummy() {
   const timerRef = useRef(0);
   const lastDpsSnapshotRef = useRef(0);
   const dpsWindowTracker = useRef({}); // damage since last snapshot for rolling DPS
+  const healWindowTracker = useRef({});
+  const healReceivedWindowTracker = useRef({});
+  const dmgTakenWindowTracker = useRef({});
   const pauseTimeRef = useRef(0);
 
   const [isPaused, setIsPaused] = useState(false);
@@ -183,6 +186,7 @@ export default function TrainingDummy() {
   const [selectedFighter, setSelectedFighter] = useState(null); // For stats panel
   const [dpsHistory, setDpsHistory] = useState([]); // For DPS graph
   const [detailedLogs, setDetailedLogs] = useState({}); // For detailed stats
+  const [graphMetric, setGraphMetric] = useState('dps'); // 'dps' | 'hps' | 'hrps' | 'dtps'
 
   // ─── Battle State - Tour par Tour ──────────────────────────
   const [battle, setBattle] = useState(null);
@@ -577,11 +581,21 @@ export default function TrainingDummy() {
     setBattleState(state);
 
     dpsTracker.current = {};
+    dpsWindowTracker.current = {};
+    healWindowTracker.current = {};
+    healReceivedWindowTracker.current = {};
+    dmgTakenWindowTracker.current = {};
     const initialLogs = {};
     fighters.forEach(f => {
       dpsTracker.current[f.id] = 0;
+      dpsWindowTracker.current[f.id] = 0;
+      healWindowTracker.current[f.id] = 0;
+      healReceivedWindowTracker.current[f.id] = 0;
+      dmgTakenWindowTracker.current[f.id] = 0;
       initialLogs[f.id] = {
         totalDamage: 0,
+        totalHealing: 0,
+        healReceived: 0,
         damageTaken: 0,
         totalHits: 0,
         critHits: 0,
@@ -609,8 +623,6 @@ export default function TrainingDummy() {
     detailedLogsRef.current = initialLogs;
     setDpsHistory([]);
     lastDpsSnapshotRef.current = 0;
-    dpsWindowTracker.current = {};
-    fighters.forEach(f => { dpsWindowTracker.current[f.id] = 0; });
     dpsWindowTracker.current['training_dummy'] = 0;
 
     const duration = 180;
@@ -695,6 +707,12 @@ export default function TrainingDummy() {
           }
           healTarget.hp = Math.min(healTarget.maxHp, healTarget.hp + healAmt);
           fighter.lastAttackAt = now;
+          if (healWindowTracker.current[fighter.id] !== undefined) healWindowTracker.current[fighter.id] += healAmt;
+          if (healReceivedWindowTracker.current[healTarget.id] !== undefined) healReceivedWindowTracker.current[healTarget.id] += healAmt;
+          const fhLog = detailedLogsRef.current[fighter.id];
+          if (fhLog) fhLog.totalHealing = (fhLog.totalHealing || 0) + healAmt;
+          const rhLog = detailedLogsRef.current[healTarget.id];
+          if (rhLog) rhLog.healReceived = (rhLog.healReceived || 0) + healAmt;
           const label = healTarget === fighter ? 'se soigne' : `soigne ${healTarget.name}`;
           logEntries.push({ text: `${fighter.name} ${label} +${healAmt} PV`, time: elapsed, type: 'heal' });
           stateChanged = true;
@@ -846,6 +864,10 @@ export default function TrainingDummy() {
           if (Math.random() < (hcP.critChance || 0.10)) healAmt *= 2;
         }
         fighter.hp = Math.min(fighter.maxHp, fighter.hp + healAmt);
+        if (healWindowTracker.current[fighter.id] !== undefined) healWindowTracker.current[fighter.id] += healAmt;
+        if (healReceivedWindowTracker.current[fighter.id] !== undefined) healReceivedWindowTracker.current[fighter.id] += healAmt;
+        const hsLog = detailedLogsRef.current[fighter.id];
+        if (hsLog) { hsLog.totalHealing = (hsLog.totalHealing || 0) + healAmt; hsLog.healReceived = (hsLog.healReceived || 0) + healAmt; }
         logEntries.push({ text: `${fighter.name} se soigne +${healAmt} PV`, time: elapsed, type: 'heal' });
       }
 
@@ -955,7 +977,13 @@ export default function TrainingDummy() {
         const gs = fighter.passiveState.guldanState;
         gs.healStacks = (gs.healStacks || 0) + 1;
         const healAmt = Math.floor(result.damage * GULDAN_HEAL_PER_STACK * gs.healStacks);
-        if (healAmt > 0) fighter.hp = Math.min(fighter.maxHp, fighter.hp + healAmt);
+        if (healAmt > 0) {
+          fighter.hp = Math.min(fighter.maxHp, fighter.hp + healAmt);
+          if (healWindowTracker.current[fighter.id] !== undefined) healWindowTracker.current[fighter.id] += healAmt;
+          if (healReceivedWindowTracker.current[fighter.id] !== undefined) healReceivedWindowTracker.current[fighter.id] += healAmt;
+          const gLog = detailedLogsRef.current[fighter.id];
+          if (gLog) { gLog.totalHealing = (gLog.totalHealing || 0) + healAmt; gLog.healReceived = (gLog.healReceived || 0) + healAmt; }
+        }
         gs.defBonus = (gs.defBonus || 0) + GULDAN_DEF_PER_HIT;
         gs.atkBonus = (gs.atkBonus || 0) + GULDAN_ATK_PER_HIT;
         if (gs.spdStacks < GULDAN_SPD_MAX_STACKS && Math.random() < GULDAN_SPD_CHANCE) gs.spdStacks++;
@@ -976,6 +1004,10 @@ export default function TrainingDummy() {
       if (lifestealP && result.damage > 0 && Math.random() < (lifestealP.chance || 0.15)) {
         const heal = Math.floor(result.damage * (lifestealP.stealPct || 0.12));
         fighter.hp = Math.min(fighter.maxHp, fighter.hp + heal);
+        if (healWindowTracker.current[fighter.id] !== undefined) healWindowTracker.current[fighter.id] += heal;
+        if (healReceivedWindowTracker.current[fighter.id] !== undefined) healReceivedWindowTracker.current[fighter.id] += heal;
+        const lsLog = detailedLogsRef.current[fighter.id];
+        if (lsLog) { lsLog.totalHealing = (lsLog.totalHealing || 0) + heal; lsLog.healReceived = (lsLog.healReceived || 0) + heal; }
         logEntries.push({ text: `${fighter.name}: Vol de vie ! +${heal} PV`, time: elapsed, type: 'heal' });
       }
       // Echo CD: 20% chance -1 CD on a random skill
@@ -1125,9 +1157,8 @@ export default function TrainingDummy() {
 
           // Track damage taken by fighter
           const tLog = detailedLogsRef.current[target.id];
-          if (tLog) {
-            tLog.damageTaken = (tLog.damageTaken || 0) + dmgResult.damage;
-          }
+          if (tLog) tLog.damageTaken = (tLog.damageTaken || 0) + dmgResult.damage;
+          if (dmgTakenWindowTracker.current[target.id] !== undefined) dmgTakenWindowTracker.current[target.id] += dmgResult.damage;
         }
 
         if (target.hp <= 0) target.alive = false;
@@ -1149,14 +1180,23 @@ export default function TrainingDummy() {
       });
     });
 
-    // ─── DPS History Snapshot (every 2 seconds) — rolling window ──
-    if (elapsed - lastDpsSnapshotRef.current >= 2) {
+    // ─── DPS History Snapshot (every 1 second) — rolling window with HPS/HRPS/DTPS ──
+    if (elapsed - lastDpsSnapshotRef.current >= 1) {
       const windowDuration = elapsed - lastDpsSnapshotRef.current;
-      const snapshot = { time: elapsed };
+      const snapshot = { time: +elapsed.toFixed(1) };
       state.fighters.forEach(f => {
         const windowDmg = dpsWindowTracker.current[f.id] || 0;
-        snapshot[f.id] = windowDuration > 0 ? windowDmg / windowDuration : 0;
-        dpsWindowTracker.current[f.id] = 0; // reset window
+        const windowHeal = healWindowTracker.current[f.id] || 0;
+        const windowHealRecv = healReceivedWindowTracker.current[f.id] || 0;
+        const windowDmgTaken = dmgTakenWindowTracker.current[f.id] || 0;
+        snapshot[f.id] = windowDuration > 0 ? Math.floor(windowDmg / windowDuration) : 0;
+        snapshot[`${f.id}_hps`] = windowDuration > 0 ? Math.floor(windowHeal / windowDuration) : 0;
+        snapshot[`${f.id}_hrps`] = windowDuration > 0 ? Math.floor(windowHealRecv / windowDuration) : 0;
+        snapshot[`${f.id}_dtps`] = windowDuration > 0 ? Math.floor(windowDmgTaken / windowDuration) : 0;
+        dpsWindowTracker.current[f.id] = 0;
+        healWindowTracker.current[f.id] = 0;
+        healReceivedWindowTracker.current[f.id] = 0;
+        dmgTakenWindowTracker.current[f.id] = 0;
       });
       const dummyWindowDmg = dpsWindowTracker.current['training_dummy'] || 0;
       snapshot['dummy'] = windowDuration > 0 ? dummyWindowDmg / windowDuration : 0;
@@ -2463,62 +2503,121 @@ export default function TrainingDummy() {
 
   function renderResult() {
     if (!resultData) return null;
+    const dummyFighters = resultData.dpsBreakdown.map(f => ({ id: f.id, name: f.name, sprite: f.sprite }));
+    const suffix = graphMetric === 'hps' ? '_hps' : graphMetric === 'hrps' ? '_hrps' : graphMetric === 'dtps' ? '_dtps' : '';
+    const metricLabels = { dps: 'DPS', hps: 'Heal/s', hrps: 'Heal Recu/s', dtps: 'Dmg Recu/s' };
+    const transformedHistory = suffix ? dpsHistory.map(snap => {
+      const out = { time: snap.time };
+      dummyFighters.forEach(f => { out[f.id] = snap[`${f.id}${suffix}`] || 0; });
+      return out;
+    }) : dpsHistory;
 
     return (
       <>
+        {/* Header */}
         <div className="text-center">
-          <h2 className="text-4xl font-bold">
+          <h2 className="text-3xl font-bold">
             {resultData.defeat ? '❌ Défaite' : '✅ Victoire'}
           </h2>
         </div>
 
-        <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-          <h3 className="text-lg font-bold mb-2">Statistiques</h3>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>Total Dégâts: <span className="text-yellow-400 font-bold">{fmt(resultData.totalDmg)}</span></div>
-            {resultData.duration && <div>Durée: <span className="text-blue-400 font-bold">{resultData.duration}s</span></div>}
-            {resultData.turns && <div>Tours: <span className="text-purple-400 font-bold">{resultData.turns}</span></div>}
+        {/* Stats summary */}
+        <div className="bg-white/5 rounded-xl p-3 border border-white/10">
+          <div className="flex justify-center gap-6 text-sm">
+            <span className="text-yellow-400">DMG: <b>{fmt(resultData.totalDmg)}</b></span>
+            {resultData.duration && <span className="text-blue-400">Duree: <b>{resultData.duration}s</b></span>}
+            {resultData.turns && <span className="text-purple-400">Tours: <b>{resultData.turns}</b></span>}
           </div>
         </div>
 
-        <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-          <h3 className="text-lg font-bold mb-3">Répartition DPS</h3>
-          <div className="space-y-2">
+        {/* DPS Breakdown */}
+        <div className="bg-white/5 rounded-xl p-3 border border-white/10">
+          <h3 className="text-sm font-bold mb-2 text-center text-gray-300">DPS Breakdown</h3>
+          <div className="space-y-1.5">
             {resultData.dpsBreakdown.map((f, i) => (
-              <div key={f.id} className="flex items-center gap-3">
-                <span className="text-xl font-bold text-gray-400">{i + 1}</span>
-                <img src={f.sprite} alt={f.name} className="w-10 h-10 rounded-full object-cover border-2 border-purple-400" />
-                <div className="flex-1">
-                  <div className="text-sm font-bold">{f.name}</div>
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <span>{fmt(f.damage)} DMG</span>
-                    {f.dps !== undefined && <span>({fmt(Math.floor(f.dps))} DPS)</span>}
-                    <span>({f.percent.toFixed(1)}%)</span>
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2 mt-1">
-                    <div
-                      className="bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all"
-                      style={{ width: `${f.percent}%` }}
-                    />
-                  </div>
+              <div key={f.id} className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 w-4">#{i + 1}</span>
+                <img src={f.sprite} alt={f.name} className="w-6 h-6 rounded-full object-cover" />
+                <span className="text-xs flex-1 truncate">{f.name}</span>
+                <span className="text-xs text-gray-400">{fmt(f.damage)}</span>
+                <div className="w-20 h-2 bg-gray-700 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-orange-500"
+                    style={{ width: `${f.percent}%` }} />
                 </div>
+                <span className="text-[10px] text-gray-500 w-10 text-right">{f.percent.toFixed(1)}%</span>
               </div>
             ))}
           </div>
         </div>
 
+        {/* DPS Graph with metric filters */}
+        {dpsHistory.length > 1 && (
+          <div className="p-3 rounded-xl bg-gray-800/30 border border-gray-700/20">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <div className="text-xs text-gray-400 font-bold mr-1">Courbe</div>
+              {[
+                { key: 'dps', label: 'DPS', active: 'bg-orange-600/30 border-orange-400/50 text-orange-200' },
+                { key: 'hps', label: 'Heal', active: 'bg-green-600/30 border-green-400/50 text-green-200' },
+                { key: 'hrps', label: 'Heal Recu', active: 'bg-emerald-600/30 border-emerald-400/50 text-emerald-200' },
+                { key: 'dtps', label: 'Dmg Recu', active: 'bg-red-600/30 border-red-400/50 text-red-200' },
+              ].map(f => (
+                <button key={f.key} onClick={() => setGraphMetric(f.key)}
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all ${
+                    graphMetric === f.key ? f.active : 'bg-white/5 border-white/10 text-gray-500 hover:bg-white/10'
+                  }`}>{f.label}</button>
+              ))}
+            </div>
+            <SharedDPSGraph
+              dpsHistory={transformedHistory}
+              fighters={dummyFighters}
+              averageMode={true}
+              metricLabel={metricLabels[graphMetric]}
+            />
+          </div>
+        )}
+
+        {/* Detailed stats */}
+        <div className="p-3 rounded-xl bg-gray-800/30 border border-gray-700/20">
+          <div className="text-xs text-gray-400 font-bold mb-2">Statistiques detaillees</div>
+          {dummyFighters.map((c, i) => {
+            const log = detailedLogs[c.id];
+            if (!log) return null;
+            const critRate = log.totalHits > 0 ? (log.critHits / log.totalHits * 100).toFixed(0) : 0;
+            return (
+              <div key={i} className="flex items-center gap-3 py-1 border-b border-gray-700/10 last:border-0">
+                <img src={c.sprite} alt="" className="w-5 h-5 rounded-full object-cover" />
+                <div className="text-[10px] font-bold w-16 truncate">{c.name}</div>
+                <div className="flex-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[9px] text-gray-400">
+                  <span>{fmt(log.totalDamage)} dmg</span>
+                  {log.damageTaken > 0 && <span className="text-red-400">-{fmt(log.damageTaken)} recu</span>}
+                  {log.totalHealing > 0 && <span className="text-green-400">+{fmt(log.totalHealing)} heal</span>}
+                  {log.healReceived > 0 && log.healReceived !== log.totalHealing && <span className="text-emerald-400">+{fmt(log.healReceived)} soigne</span>}
+                  <span>{log.totalHits} hits</span>
+                  <span>{critRate}% crit</span>
+                  {log.maxCrit > 0 && <span className="text-yellow-400">max: {fmt(log.maxCrit)}</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Combat Logs */}
+        <SharedCombatLogs
+          combatLog={combatLog}
+          detailedLogs={detailedLogs}
+          fighters={dummyFighters}
+          boss={{ id: 'training_dummy', name: 'Mannequin', sprite: null }}
+        />
+
+        {/* Action buttons */}
         <div className="flex gap-4">
-          <button
-            onClick={() => setPhase('setup')}
-            className="flex-1 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 font-bold transition-all"
-          >
+          <button onClick={() => setPhase('setup')}
+            className="flex-1 py-3 rounded-xl bg-gray-700 hover:bg-gray-600 font-bold transition-all">
             Recommencer
           </button>
-          <button
-            onClick={handleRestartSameConfig}
-            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 font-bold transition-all"
-          >
-            Même Config
+          <button onClick={handleRestartSameConfig}
+            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 font-bold transition-all">
+            Meme Config
           </button>
         </div>
       </>

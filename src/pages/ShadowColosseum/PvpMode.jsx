@@ -133,6 +133,7 @@ export default function PvpMode() {
   const [dpsHistory, setDpsHistory] = useState([]);
   const dpsWindowTracker = useRef({});
   const healWindowTracker = useRef({});
+  const healReceivedWindowTracker = useRef({});
   const dmgTakenWindowTracker = useRef({});
   const lastDpsSnapshotRef = useRef(0);
   const [detailedLogs, setDetailedLogs] = useState({});
@@ -147,7 +148,7 @@ export default function PvpMode() {
   // Result state
   const [resultData, setResultData] = useState(null);
   const [graphTeamFilter, setGraphTeamFilter] = useState('all'); // 'all' | 'atk' | 'def'
-  const [graphMetric, setGraphMetric] = useState('dps'); // 'dps' | 'hps' | 'dtps'
+  const [graphMetric, setGraphMetric] = useState('dps'); // 'dps' | 'hps' | 'hrps' | 'dtps'
 
   // Rankings state
   const [rankings, setRankings] = useState([]);
@@ -423,6 +424,7 @@ export default function PvpMode() {
     dpsTracker.current = {};
     dpsWindowTracker.current = {};
     healWindowTracker.current = {};
+    healReceivedWindowTracker.current = {};
     dmgTakenWindowTracker.current = {};
     lastDpsSnapshotRef.current = 0;
     // Track BOTH teams
@@ -430,6 +432,7 @@ export default function PvpMode() {
       dpsTracker.current[c.id] = 0;
       dpsWindowTracker.current[c.id] = 0;
       healWindowTracker.current[c.id] = 0;
+      healReceivedWindowTracker.current[c.id] = 0;
       dmgTakenWindowTracker.current[c.id] = 0;
     });
     const initialSnapshot = { time: 0 };
@@ -437,7 +440,7 @@ export default function PvpMode() {
     setDpsHistory([initialSnapshot]);
     const initialLogs = {};
     [...attackers, ...defenders].forEach(c => {
-      initialLogs[c.id] = { totalDamage: 0, totalHealing: 0, damageTaken: 0, totalHits: 0, critHits: 0, maxCrit: 0, skillsUsed: 0 };
+      initialLogs[c.id] = { totalDamage: 0, totalHealing: 0, healReceived: 0, damageTaken: 0, totalHits: 0, critHits: 0, maxCrit: 0, skillsUsed: 0 };
     });
     setDetailedLogs(initialLogs);
     setGraphTeamFilter('all');
@@ -514,16 +517,19 @@ export default function PvpMode() {
     if (elapsed - lastDpsSnapshotRef.current >= 0.5) {
       const windowDuration = elapsed - lastDpsSnapshotRef.current;
       const snapshot = { time: +elapsed.toFixed(1) };
-      // Snapshot BOTH teams — DPS + HPS + DTPS
+      // Snapshot BOTH teams — DPS + HPS + HRPS + DTPS
       [...state.attackers, ...state.defenders].forEach(c => {
         const windowDmg = dpsWindowTracker.current[c.id] || 0;
         const windowHeal = healWindowTracker.current[c.id] || 0;
+        const windowHealRecv = healReceivedWindowTracker.current[c.id] || 0;
         const windowDmgTaken = dmgTakenWindowTracker.current[c.id] || 0;
         snapshot[c.id] = windowDuration > 0 ? Math.floor(windowDmg / windowDuration) : 0;
         snapshot[`${c.id}_hps`] = windowDuration > 0 ? Math.floor(windowHeal / windowDuration) : 0;
+        snapshot[`${c.id}_hrps`] = windowDuration > 0 ? Math.floor(windowHealRecv / windowDuration) : 0;
         snapshot[`${c.id}_dtps`] = windowDuration > 0 ? Math.floor(windowDmgTaken / windowDuration) : 0;
         dpsWindowTracker.current[c.id] = 0;
         healWindowTracker.current[c.id] = 0;
+        healReceivedWindowTracker.current[c.id] = 0;
         dmgTakenWindowTracker.current[c.id] = 0;
       });
       lastDpsSnapshotRef.current = elapsed;
@@ -658,13 +664,15 @@ export default function PvpMode() {
           logEntries.push({ text: `${unit.name} ${targetLabel} +${healAmt}`, time: elapsed, type: 'heal' });
           addVfx('heal', { targetId: healTarget.id });
           // Track healing in window + logs
-          if (healWindowTracker.current[unit.id] !== undefined) {
-            healWindowTracker.current[unit.id] += healAmt;
-          }
+          if (healWindowTracker.current[unit.id] !== undefined) healWindowTracker.current[unit.id] += healAmt;
+          if (healReceivedWindowTracker.current[healTarget.id] !== undefined) healReceivedWindowTracker.current[healTarget.id] += healAmt;
           setDetailedLogs(prev => {
-            const log = prev[unit.id];
-            if (!log) return prev;
-            return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + healAmt } };
+            const next = { ...prev };
+            const hLog = prev[unit.id];
+            if (hLog) next[unit.id] = { ...hLog, totalHealing: hLog.totalHealing + healAmt };
+            const rLog = prev[healTarget.id];
+            if (rLog) next[healTarget.id] = { ...next[healTarget.id] || rLog, healReceived: (rLog.healReceived || 0) + healAmt };
+            return next;
           });
           stateChanged = true;
           return;
@@ -885,9 +893,10 @@ export default function PvpMode() {
               target.def = Math.floor(target.def * (1 + (celShieldP.defBoostPct || 0.20)));
               logEntries.push({ text: `${target.name} — Bouclier Celeste brise ! +${onBreakHeal} PV + DEF +20%`, time: elapsed, type: 'passive' });
               if (healWindowTracker.current[target.id] !== undefined) healWindowTracker.current[target.id] += onBreakHeal;
+              if (healReceivedWindowTracker.current[target.id] !== undefined) healReceivedWindowTracker.current[target.id] += onBreakHeal;
               setDetailedLogs(prev => {
                 const log = prev[target.id]; if (!log) return prev;
-                return { ...prev, [target.id]: { ...log, totalHealing: log.totalHealing + onBreakHeal } };
+                return { ...prev, [target.id]: { ...log, totalHealing: log.totalHealing + onBreakHeal, healReceived: (log.healReceived || 0) + onBreakHeal } };
               });
             }
           }
@@ -940,9 +949,10 @@ export default function PvpMode() {
           unit.hp = Math.min(unit.maxHp, unit.hp + heal);
           logEntries.push({ text: `${unit.name} — Vol de vie ! +${heal} PV`, time: elapsed, type: 'heal' });
           if (healWindowTracker.current[unit.id] !== undefined) healWindowTracker.current[unit.id] += heal;
+          if (healReceivedWindowTracker.current[unit.id] !== undefined) healReceivedWindowTracker.current[unit.id] += heal;
           setDetailedLogs(prev => {
             const log = prev[unit.id]; if (!log) return prev;
-            return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + heal } };
+            return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + heal, healReceived: (log.healReceived || 0) + heal } };
           });
         }
 
@@ -981,9 +991,10 @@ export default function PvpMode() {
           if (healAmt > 0) {
             unit.hp = Math.min(unit.maxHp, unit.hp + healAmt);
             if (healWindowTracker.current[unit.id] !== undefined) healWindowTracker.current[unit.id] += healAmt;
+            if (healReceivedWindowTracker.current[unit.id] !== undefined) healReceivedWindowTracker.current[unit.id] += healAmt;
             setDetailedLogs(prev => {
               const log = prev[unit.id]; if (!log) return prev;
-              return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + healAmt } };
+              return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + healAmt, healReceived: (log.healReceived || 0) + healAmt } };
             });
           }
           gs.defBonus = (gs.defBonus || 0) + GULDAN_DEF_PER_HIT;
@@ -1029,9 +1040,10 @@ export default function PvpMode() {
             logEntries.push({ text: `${unit.name} — Siphon Vital ! +${siphonHeal} PV`, time: elapsed, type: 'heal' });
           }
           if (healWindowTracker.current[unit.id] !== undefined) healWindowTracker.current[unit.id] += siphonHeal;
+          if (healReceivedWindowTracker.current[unit.id] !== undefined) healReceivedWindowTracker.current[unit.id] += siphonHeal;
           setDetailedLogs(prev => {
             const log = prev[unit.id]; if (!log) return prev;
-            return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + siphonHeal } };
+            return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + siphonHeal, healReceived: (log.healReceived || 0) + siphonHeal } };
           });
         }
         // Arcane Overload: full mana → charge next x2 — individual
@@ -1067,9 +1079,10 @@ export default function PvpMode() {
           target.passiveState.vitalEmergencyCD = targetVSurge.emergencyCD || 10;
           logEntries.push({ text: `${target.name} — Urgence Vitale ! +${eHeal} PV`, time: elapsed, type: 'passive' });
           if (healWindowTracker.current[target.id] !== undefined) healWindowTracker.current[target.id] += eHeal;
+          if (healReceivedWindowTracker.current[target.id] !== undefined) healReceivedWindowTracker.current[target.id] += eHeal;
           setDetailedLogs(prev => {
             const log = prev[target.id]; if (!log) return prev;
-            return { ...prev, [target.id]: { ...log, totalHealing: log.totalHealing + eHeal } };
+            return { ...prev, [target.id]: { ...log, totalHealing: log.totalHealing + eHeal, healReceived: (log.healReceived || 0) + eHeal } };
           });
         }
 
@@ -1092,13 +1105,12 @@ export default function PvpMode() {
         unit.hp = Math.min(unit.maxHp, unit.hp + healAmt);
         addVfx('heal', { targetId: unit.id });
         // Track self-heal in window + logs
-        if (healWindowTracker.current[unit.id] !== undefined) {
-          healWindowTracker.current[unit.id] += healAmt;
-        }
+        if (healWindowTracker.current[unit.id] !== undefined) healWindowTracker.current[unit.id] += healAmt;
+        if (healReceivedWindowTracker.current[unit.id] !== undefined) healReceivedWindowTracker.current[unit.id] += healAmt;
         setDetailedLogs(prev => {
           const log = prev[unit.id];
           if (!log) return prev;
-          return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + healAmt } };
+          return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + healAmt, healReceived: (log.healReceived || 0) + healAmt } };
         });
       }
 
@@ -1744,8 +1756,8 @@ export default function PvpMode() {
             const filteredFighters = graphTeamFilter === 'atk' ? atkFighters : graphTeamFilter === 'def' ? defFighters : [...atkFighters, ...defFighters];
 
             // Metric suffix for dataKeys
-            const suffix = graphMetric === 'hps' ? '_hps' : graphMetric === 'dtps' ? '_dtps' : '';
-            const metricLabels = { dps: 'DPS', hps: 'Heal/s', dtps: 'Dmg Recu/s' };
+            const suffix = graphMetric === 'hps' ? '_hps' : graphMetric === 'hrps' ? '_hrps' : graphMetric === 'dtps' ? '_dtps' : '';
+            const metricLabels = { dps: 'DPS', hps: 'Heal/s', hrps: 'Heal Recu/s', dtps: 'Dmg Recu/s' };
 
             // Transform dpsHistory: remap metric keys to fighter.id (SharedDPSGraph reads fighter.id)
             const transformedHistory = suffix ? dpsHistory.map(snap => {
@@ -1777,6 +1789,7 @@ export default function PvpMode() {
                   {[
                     { key: 'dps', label: 'DPS', active: 'bg-orange-600/30 border-orange-400/50 text-orange-200' },
                     { key: 'hps', label: 'Heal', active: 'bg-green-600/30 border-green-400/50 text-green-200' },
+                    { key: 'hrps', label: 'Heal Recu', active: 'bg-emerald-600/30 border-emerald-400/50 text-emerald-200' },
                     { key: 'dtps', label: 'Dmg Recu', active: 'bg-red-600/30 border-red-400/50 text-red-200' },
                   ].map(f => (
                     <button key={f.key} onClick={() => setGraphMetric(f.key)}
@@ -1820,6 +1833,7 @@ export default function PvpMode() {
                         <span>{fmt(log.totalDamage)} dmg</span>
                         {log.damageTaken > 0 && <span className="text-red-400">-{fmt(log.damageTaken)} recu</span>}
                         {log.totalHealing > 0 && <span className="text-green-400">+{fmt(log.totalHealing)} heal</span>}
+                        {log.healReceived > 0 && log.healReceived !== log.totalHealing && <span className="text-emerald-400">+{fmt(log.healReceived)} soigne</span>}
                         <span>{log.totalHits} hits</span>
                         <span>{critRate}% crit</span>
                         {log.maxCrit > 0 && <span className="text-yellow-400">max: {fmt(log.maxCrit)}</span>}

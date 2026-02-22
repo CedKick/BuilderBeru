@@ -97,6 +97,9 @@ export default function RaidMode() {
   const sungBuffsRef = useRef([]);
   const dpsTracker = useRef({});
   const dpsWindowTracker = useRef({}); // damage since last snapshot for rolling DPS
+  const healWindowTracker = useRef({});
+  const healReceivedWindowTracker = useRef({});
+  const dmgTakenWindowTracker = useRef({});
   const startTimeRef = useRef(0);
   const pausedRef = useRef(false);
 
@@ -105,6 +108,7 @@ export default function RaidMode() {
   const [detailedLogs, setDetailedLogs] = useState({});
   const detailedLogsRef = useRef({});
   const lastDpsSnapshotRef = useRef(0);
+  const [graphMetric, setGraphMetric] = useState('dps'); // 'dps' | 'hps' | 'hrps' | 'dtps'
 
   // ─── Chibi weapon passives for VFX ─────────────────────────
   const chibiWeaponsMap = useMemo(() => {
@@ -460,7 +464,16 @@ export default function RaidMode() {
     timerRef.current = RAID_DURATION_SEC;
     dpsTracker.current = {};
     dpsWindowTracker.current = {};
-    chibis.forEach(c => { dpsTracker.current[c.id] = 0; dpsWindowTracker.current[c.id] = 0; });
+    healWindowTracker.current = {};
+    healReceivedWindowTracker.current = {};
+    dmgTakenWindowTracker.current = {};
+    chibis.forEach(c => {
+      dpsTracker.current[c.id] = 0;
+      dpsWindowTracker.current[c.id] = 0;
+      healWindowTracker.current[c.id] = 0;
+      healReceivedWindowTracker.current[c.id] = 0;
+      dmgTakenWindowTracker.current[c.id] = 0;
+    });
     dpsWindowTracker.current['boss'] = 0;
 
     // Initialize detailed logs
@@ -468,6 +481,8 @@ export default function RaidMode() {
     chibis.forEach(c => {
       initialLogs[c.id] = {
         totalDamage: 0,
+        totalHealing: 0,
+        healReceived: 0,
         damageTaken: 0,
         totalHits: 0,
         critHits: 0,
@@ -908,6 +923,13 @@ export default function RaidMode() {
           }
           healTarget.hp = Math.min(healTarget.maxHp, healTarget.hp + healAmt);
           chibi.lastAttackAt = now;
+          // Track healing
+          if (healWindowTracker.current[chibi.id] !== undefined) healWindowTracker.current[chibi.id] += healAmt;
+          if (healReceivedWindowTracker.current[healTarget.id] !== undefined) healReceivedWindowTracker.current[healTarget.id] += healAmt;
+          const cHLog = detailedLogsRef.current[chibi.id];
+          if (cHLog) cHLog.totalHealing = (cHLog.totalHealing || 0) + healAmt;
+          const rHLog = detailedLogsRef.current[healTarget.id];
+          if (rHLog) rHLog.healReceived = (rHLog.healReceived || 0) + healAmt;
           // Restore stats before return
           chibi.atk = origAtk; chibi.crit = origCrit; chibi.def = origDef; state.boss.def = origBossDef;
           const targetLabel = healTarget === chibi ? 'se soigne' : `soigne ${healTarget.name}`;
@@ -926,6 +948,12 @@ export default function RaidMode() {
           const healAmt = Math.floor(critAlly.maxHp * (martyrHeal.healPct || 0.20));
           critAlly.hp = Math.min(critAlly.maxHp, critAlly.hp + healAmt);
           chibi.passiveState.martyrHealed = true;
+          if (healWindowTracker.current[chibi.id] !== undefined) healWindowTracker.current[chibi.id] += healAmt;
+          if (healReceivedWindowTracker.current[critAlly.id] !== undefined) healReceivedWindowTracker.current[critAlly.id] += healAmt;
+          const mhLog = detailedLogsRef.current[chibi.id];
+          if (mhLog) mhLog.totalHealing = (mhLog.totalHealing || 0) + healAmt;
+          const mrLog = detailedLogsRef.current[critAlly.id];
+          if (mrLog) mrLog.healReceived = (mrLog.healReceived || 0) + healAmt;
           logEntries.push({ text: `${chibi.name} [Martyr] soigne ${critAlly.name} +${fmt(healAmt)} PV !`, time: elapsed, type: 'heal' });
           vfxEvents.push({ id: now + Math.random(), type: 'heal', targetId: critAlly.id, value: healAmt, timestamp: now });
         }
@@ -1138,6 +1166,10 @@ export default function RaidMode() {
           const healAmt = Math.floor(result.damage * GULDAN_HEAL_PER_STACK * gs.healStacks);
           if (healAmt > 0) {
             chibi.hp = Math.min(chibi.maxHp, chibi.hp + healAmt);
+            if (healWindowTracker.current[chibi.id] !== undefined) healWindowTracker.current[chibi.id] += healAmt;
+            if (healReceivedWindowTracker.current[chibi.id] !== undefined) healReceivedWindowTracker.current[chibi.id] += healAmt;
+            const gLog = detailedLogsRef.current[chibi.id];
+            if (gLog) { gLog.totalHealing = (gLog.totalHealing || 0) + healAmt; gLog.healReceived = (gLog.healReceived || 0) + healAmt; }
             logEntries.push({ text: `${chibi.name} : Halo x${gs.healStacks} +${fmt(healAmt)} PV`, time: elapsed, type: 'heal' });
           }
           gs.defBonus = (gs.defBonus || 0) + GULDAN_DEF_PER_HIT;
@@ -1292,6 +1324,10 @@ export default function RaidMode() {
         }
         if (chibi.passiveState.vitalEmergencyCD > 0) chibi.passiveState.vitalEmergencyCD--;
         chibi.hp = Math.min(chibi.maxHp, chibi.hp + healAmt);
+        if (healWindowTracker.current[chibi.id] !== undefined) healWindowTracker.current[chibi.id] += healAmt;
+        if (healReceivedWindowTracker.current[chibi.id] !== undefined) healReceivedWindowTracker.current[chibi.id] += healAmt;
+        const shLog = detailedLogsRef.current[chibi.id];
+        if (shLog) { shLog.totalHealing = (shLog.totalHealing || 0) + healAmt; shLog.healReceived = (shLog.healReceived || 0) + healAmt; }
       }
 
       // Apply buff/debuff
@@ -1411,6 +1447,10 @@ export default function RaidMode() {
                   const healAmt = Math.floor(target.maxHp * (celWrath.healOnBreak || 0.30));
                   target.hp = Math.min(target.maxHp, target.hp + healAmt);
                   target.buffs.push({ stat: 'def', value: celWrath.defBoost || 0.20, turns: 30 });
+                  if (healWindowTracker.current[target.id] !== undefined) healWindowTracker.current[target.id] += healAmt;
+                  if (healReceivedWindowTracker.current[target.id] !== undefined) healReceivedWindowTracker.current[target.id] += healAmt;
+                  const celLog = detailedLogsRef.current[target.id];
+                  if (celLog) { celLog.totalHealing = (celLog.totalHealing || 0) + healAmt; celLog.healReceived = (celLog.healReceived || 0) + healAmt; }
                   logEntries.push({ text: `${target.name} : Gardien Celeste brise ! Heal +${fmt(healAmt)} + DEF +${Math.round((celWrath.defBoost || 0.20) * 100)}% !`, time: elapsed, type: 'buff' });
                 }
               }
@@ -1434,6 +1474,9 @@ export default function RaidMode() {
             logEntries.push({ text: `${target.name} : Siphon Vital mode urgence ! Lifesteal 100% pendant ${target.passiveState.vitalEmergencyActive} attaques !`, time: elapsed, type: 'buff' });
           }
           target.hp -= actualDmg;
+          if (actualDmg > 0 && dmgTakenWindowTracker.current[target.id] !== undefined) dmgTakenWindowTracker.current[target.id] += actualDmg;
+          const dtLog = detailedLogsRef.current[target.id];
+          if (dtLog && actualDmg > 0) dtLog.damageTaken = (dtLog.damageTaken || 0) + actualDmg;
           // Reset flamme stacks when hit
           if (target.passiveState?.flammeStacks > 0) target.passiveState.flammeStacks = 0;
 
@@ -1528,14 +1571,23 @@ export default function RaidMode() {
       setVfxQueue(prev => [...prev.filter(v => now - v.timestamp < 800).slice(-20), ...vfxEvents]);
     }
 
-    // DPS snapshot every 2 seconds — rolling window
-    if (elapsed - lastDpsSnapshotRef.current >= 2) {
+    // DPS snapshot every 1 second — rolling window with HPS/HRPS/DTPS
+    if (elapsed - lastDpsSnapshotRef.current >= 1) {
       const windowDuration = elapsed - lastDpsSnapshotRef.current;
-      const snapshot = { time: elapsed };
+      const snapshot = { time: +elapsed.toFixed(1) };
       state.chibis.forEach(c => {
         const windowDmg = dpsWindowTracker.current[c.id] || 0;
-        snapshot[c.id] = windowDuration > 0 ? windowDmg / windowDuration : 0;
-        dpsWindowTracker.current[c.id] = 0; // reset window
+        const windowHeal = healWindowTracker.current[c.id] || 0;
+        const windowHealRecv = healReceivedWindowTracker.current[c.id] || 0;
+        const windowDmgTaken = dmgTakenWindowTracker.current[c.id] || 0;
+        snapshot[c.id] = windowDuration > 0 ? Math.floor(windowDmg / windowDuration) : 0;
+        snapshot[`${c.id}_hps`] = windowDuration > 0 ? Math.floor(windowHeal / windowDuration) : 0;
+        snapshot[`${c.id}_hrps`] = windowDuration > 0 ? Math.floor(windowHealRecv / windowDuration) : 0;
+        snapshot[`${c.id}_dtps`] = windowDuration > 0 ? Math.floor(windowDmgTaken / windowDuration) : 0;
+        dpsWindowTracker.current[c.id] = 0;
+        healWindowTracker.current[c.id] = 0;
+        healReceivedWindowTracker.current[c.id] = 0;
+        dmgTakenWindowTracker.current[c.id] = 0;
       });
       const bossWindowDmg = dpsWindowTracker.current['boss'] || 0;
       snapshot['boss'] = windowDuration > 0 ? bossWindowDmg / windowDuration : 0;
@@ -2062,47 +2114,88 @@ export default function RaidMode() {
         </div>
 
         {/* Detailed Stats Modal */}
-        {showDetailedStats && (
+        {showDetailedStats && (() => {
+          const raidFighters = dpsBreakdown.map(d => ({ id: d.id, name: d.name, sprite: d.sprite, element: d.element }));
+          const suffix = graphMetric === 'hps' ? '_hps' : graphMetric === 'hrps' ? '_hrps' : graphMetric === 'dtps' ? '_dtps' : '';
+          const metricLabels = { dps: 'DPS', hps: 'Heal/s', hrps: 'Heal Recu/s', dtps: 'Dmg Recu/s' };
+          const transformedHistory = suffix ? dpsHistory.map(snap => {
+            const out = { time: snap.time };
+            raidFighters.forEach(f => { out[f.id] = snap[`${f.id}${suffix}`] || 0; });
+            return out;
+          }) : dpsHistory;
+          return (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowDetailedStats(false)}>
             <div className="bg-[#0f0f1a] border-2 border-purple-400 rounded-2xl p-4 max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-purple-300">📊 Statistiques Détaillées du Raid</h2>
-                <button
-                  onClick={() => setShowDetailedStats(false)}
-                  className="p-2 rounded-lg bg-red-600/20 border border-red-500/30 hover:bg-red-600/30 transition-all text-red-300 font-bold"
-                >
+                <h2 className="text-xl font-bold text-purple-300">Statistiques du Raid</h2>
+                <button onClick={() => setShowDetailedStats(false)}
+                  className="p-2 rounded-lg bg-red-600/20 border border-red-500/30 hover:bg-red-600/30 transition-all text-red-300 font-bold">
                   ✕
                 </button>
               </div>
 
-              {/* DPS Graph in modal */}
+              {/* Metric filter */}
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <div className="text-xs text-gray-400 font-bold mr-1">Courbe</div>
+                {[
+                  { key: 'dps', label: 'DPS', active: 'bg-orange-600/30 border-orange-400/50 text-orange-200' },
+                  { key: 'hps', label: 'Heal', active: 'bg-green-600/30 border-green-400/50 text-green-200' },
+                  { key: 'hrps', label: 'Heal Recu', active: 'bg-emerald-600/30 border-emerald-400/50 text-emerald-200' },
+                  { key: 'dtps', label: 'Dmg Recu', active: 'bg-red-600/30 border-red-400/50 text-red-200' },
+                ].map(f => (
+                  <button key={f.key} onClick={() => setGraphMetric(f.key)}
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all ${
+                      graphMetric === f.key ? f.active : 'bg-white/5 border-white/10 text-gray-500 hover:bg-white/10'
+                    }`}>{f.label}</button>
+                ))}
+              </div>
+
+              {/* DPS Graph with averageMode + metric transform */}
               <div className="mb-4">
                 <SharedDPSGraph
-                  dpsHistory={dpsHistory}
-                  fighters={dpsBreakdown.map(d => ({
-                    id: d.id,
-                    name: d.name,
-                    sprite: d.sprite,
-                    element: d.element,
-                  }))}
-                  bossData={{ id: 'boss', name: boss.name, sprite: boss.sprite }}
+                  dpsHistory={transformedHistory}
+                  fighters={raidFighters}
+                  bossData={graphMetric === 'dps' ? { id: 'boss', name: boss.name, sprite: boss.sprite } : null}
+                  averageMode={true}
+                  metricLabel={metricLabels[graphMetric]}
                 />
+              </div>
+
+              {/* Detailed stats inline */}
+              <div className="mb-4 p-3 rounded-xl bg-gray-800/30 border border-gray-700/20">
+                <div className="text-xs text-gray-400 font-bold mb-2">Statistiques detaillees</div>
+                {raidFighters.map((c, i) => {
+                  const log = detailedLogs[c.id];
+                  if (!log) return null;
+                  const critRate = log.totalHits > 0 ? (log.critHits / log.totalHits * 100).toFixed(0) : 0;
+                  return (
+                    <div key={i} className="flex items-center gap-3 py-1 border-b border-gray-700/10 last:border-0">
+                      <img src={c.sprite} alt="" className="w-5 h-5 rounded-full object-cover" />
+                      <div className="text-[10px] font-bold w-16 truncate">{c.name}</div>
+                      <div className="flex-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[9px] text-gray-400">
+                        <span>{fmt(log.totalDamage)} dmg</span>
+                        {log.damageTaken > 0 && <span className="text-red-400">-{fmt(log.damageTaken)} recu</span>}
+                        {log.totalHealing > 0 && <span className="text-green-400">+{fmt(log.totalHealing)} heal</span>}
+                        {log.healReceived > 0 && log.healReceived !== log.totalHealing && <span className="text-emerald-400">+{fmt(log.healReceived)} soigne</span>}
+                        <span>{log.totalHits} hits</span>
+                        <span>{critRate}% crit</span>
+                        {log.maxCrit > 0 && <span className="text-yellow-400">max: {fmt(log.maxCrit)}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               <SharedCombatLogs
                 combatLog={combatLog}
                 detailedLogs={detailedLogs}
-                fighters={dpsBreakdown.map(d => ({
-                  id: d.id,
-                  name: d.name,
-                  sprite: d.sprite,
-                  element: d.element,
-                }))}
+                fighters={raidFighters}
                 boss={{ id: 'boss', name: boss.name, sprite: boss.sprite }}
               />
             </div>
           </div>
-        )}
+          );
+        })()}
       </div>
     );
   };
