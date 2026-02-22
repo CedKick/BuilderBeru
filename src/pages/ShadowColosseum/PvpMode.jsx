@@ -2049,7 +2049,10 @@ export default function PvpMode() {
         const teamIds = isAtk
           ? [...team1, ...team2].filter(Boolean)
           : [...defTeam1, ...defTeam2].filter(Boolean);
-        const teamChibis = teamIds.map(id => ({ id, ...(CHIBIS[id] || {}), sprite: SPRITES[id] })).filter(c => c.name);
+        const teamChibis = teamIds.map(id => {
+          const c = allPool[id] || CHIBIS[id] || {};
+          return { id, name: c.name, sprite: c.sprite || SPRITES[id], class: c.class };
+        }).filter(c => c.name);
 
         const updateStrat = (patch) => {
           const updated = { ...strat, ...patch };
