@@ -292,9 +292,12 @@ async function handleUpgradeBuff(req, res) {
     return res.status(400).json({ success: false, message: 'Buff already at max level' });
   }
 
-  // Upgrade buff
+  // Upgrade buff (UPSERT: handles buffs added after initial DB init)
   await query(
-    'UPDATE faction_buffs SET level = level + 1 WHERE faction = $1 AND buff_id = $2',
+    `INSERT INTO faction_buffs (faction, buff_id, level)
+     VALUES ($1, $2, 1)
+     ON CONFLICT (faction, buff_id)
+     DO UPDATE SET level = faction_buffs.level + 1`,
     [player.faction, buffId]
   );
 
