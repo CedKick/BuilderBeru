@@ -1288,6 +1288,12 @@ export default function PvpMode() {
         <div className="w-10 h-1 bg-gray-900/80 rounded-full overflow-hidden mt-0.5">
           <div className="h-full rounded-full transition-all duration-200" style={{ width: `${hpPct * 100}%`, backgroundColor: hpColor }} />
         </div>
+        {/* Mana bar */}
+        {unit.maxMana > 0 && unit.alive && (
+          <div className="w-10 h-[2px] bg-gray-900/60 rounded-full overflow-hidden mt-[1px]">
+            <div className="h-full rounded-full transition-all duration-200 bg-blue-400" style={{ width: `${Math.max(0, (unit.mana || 0) / unit.maxMana * 100)}%` }} />
+          </div>
+        )}
         {!unit.alive && <div className="text-[7px] text-red-500 font-bold mt-0.5">K.O.</div>}
       </div>
     );

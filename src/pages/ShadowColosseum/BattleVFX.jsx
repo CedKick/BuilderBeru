@@ -592,6 +592,12 @@ function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg, dps,
       <div className="w-12 h-1 bg-gray-900/80 rounded-full overflow-hidden mt-0.5">
         <div className="h-full rounded-full transition-all duration-200" style={{ width: `${hpPct * 100}%`, backgroundColor: hpColor }} />
       </div>
+      {/* Mana bar */}
+      {chibi.maxMana > 0 && chibi.alive && (
+        <div className="w-12 h-[2px] bg-gray-900/60 rounded-full overflow-hidden mt-[1px]">
+          <div className="h-full rounded-full transition-all duration-200 bg-blue-400" style={{ width: `${Math.max(0, (chibi.mana || 0) / chibi.maxMana * 100)}%` }} />
+        </div>
+      )}
       {!chibi.alive && <div className="text-[8px] text-red-500 font-bold mt-0.5">K.O.</div>}
     </div>
   );
@@ -951,6 +957,11 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
                   backgroundColor: !c.alive ? '#374151' : hpPct > 0.5 ? '#22c55e' : hpPct > 0.2 ? '#eab308' : '#ef4444',
                 }} />
               </div>
+              {c.maxMana > 0 && (
+                <div className="h-[2px] bg-gray-800 rounded-full overflow-hidden mt-[1px]">
+                  <div className="h-full rounded-full transition-all duration-200 bg-blue-400" style={{ width: `${Math.max(0, (c.mana || 0) / c.maxMana * 100)}%` }} />
+                </div>
+              )}
               <div className={`text-[8px] mt-0.5 truncate ${!c.alive ? 'text-red-500' : 'text-gray-500'}`}>
                 {c.name.split(' ')[0]}
               </div>
