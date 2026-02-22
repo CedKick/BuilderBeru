@@ -1625,7 +1625,7 @@ export default function PvpMode() {
 
           <div className="text-sm text-gray-400 mb-1">vs {resultData.opponentName}</div>
           <div className="text-xs text-gray-500 mb-4">
-            Toi: {resultData.aliveCount.atk}/3 — Ennemi: {resultData.aliveCount.def}/3 — {resultData.duration}s
+            Toi: {resultData.aliveCount.atk}/6 — Ennemi: {resultData.aliveCount.def}/6 — {resultData.duration}s
           </div>
 
           {resultData.ratingChange !== null && (
