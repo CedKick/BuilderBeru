@@ -256,15 +256,18 @@ export default function MailInbox() {
     }
   };
 
-  const applyRewardsToLocalStorage = (rewards) => {
+  const applyRewardsToLocalStorage = async (rewards) => {
     const SAVE_KEY = 'shadow_colosseum_data';
-    let data = JSON.parse(localStorage.getItem(SAVE_KEY) || '{"weaponCollection":{},"hammers":{}}');
+    const RAID_KEY = 'shadow_colosseum_raid';
+
+    // Load freshest data: pendingData > localStorage > cloud (fixes weapon upgrade bug when localStorage is stale/empty)
+    let data = await cloudStorage.loadFresh(SAVE_KEY) || {};
+    if (!data.weaponCollection) data.weaponCollection = {};
+    if (!data.hammers) data.hammers = {};
+    if (!data.fragments) data.fragments = {};
 
     // Weapons (quantity → awakening progression + A10 → 5 Red Hammers)
     if (rewards.weapons && Array.isArray(rewards.weapons)) {
-      if (!data.weaponCollection) data.weaponCollection = {};
-      if (!data.hammers) data.hammers = {};
-
       rewards.weapons.forEach(w => {
         const quantity = w.quantity || 1;
 
@@ -286,7 +289,6 @@ export default function MailInbox() {
 
     // Hammers
     if (rewards.hammers && typeof rewards.hammers === 'object') {
-      if (!data.hammers) data.hammers = {};
       Object.entries(rewards.hammers).forEach(([type, amt]) => {
         data.hammers[type] = (data.hammers[type] || 0) + amt;
       });
@@ -294,7 +296,6 @@ export default function MailInbox() {
 
     // Fragments
     if (rewards.fragments && typeof rewards.fragments === 'object') {
-      if (!data.fragments) data.fragments = {};
       Object.entries(rewards.fragments).forEach(([fragId, amt]) => {
         data.fragments[fragId] = (data.fragments[fragId] || 0) + amt;
       });
@@ -302,8 +303,7 @@ export default function MailInbox() {
 
     // Hunters (add to raid collection or increase stars)
     if (rewards.hunters && Array.isArray(rewards.hunters)) {
-      const RAID_KEY = 'shadow_colosseum_raid';
-      let raidData = JSON.parse(localStorage.getItem(RAID_KEY) || '{}');
+      let raidData = await cloudStorage.loadFresh(RAID_KEY) || {};
       if (!raidData.hunterCollection) raidData.hunterCollection = [];
 
       rewards.hunters.forEach(h => {
@@ -329,6 +329,8 @@ export default function MailInbox() {
     window.dispatchEvent(new CustomEvent('beru-react', {
       detail: { type: 'shadow-data-update' }
     }));
+
+    return data; // Return final data for success message
   };
 
   const claimRewards = async (mailId, rewards) => {
@@ -343,19 +345,17 @@ export default function MailInbox() {
         body: JSON.stringify({ mailId }),
       });
 
-      const data = await resp.json();
-      if (data.success) {
-        // Apply rewards to localStorage
-        applyRewardsToLocalStorage(rewards);
+      const result = await resp.json();
+      if (result.success) {
+        // Apply rewards (async — loads freshest data from cloud/localStorage)
+        const finalData = await applyRewardsToLocalStorage(rewards);
 
         // Update local state
         setMails(prev => prev.map(m =>
           m.id === mailId ? { ...m, claimed: true } : m
         ));
 
-        // Build detailed success message
-        const SAVE_KEY = 'shadow_colosseum_data';
-        let data = JSON.parse(localStorage.getItem(SAVE_KEY) || '{"weaponCollection":{},"hammers":{}}');
+        // Build detailed success message using the final data (not stale localStorage)
         let message = '\u2705 Recompenses reclamees avec succes !\n\nVous avez recu :\n';
 
         if (rewards.weapons && rewards.weapons.length > 0) {
@@ -363,7 +363,7 @@ export default function MailInbox() {
           rewards.weapons.forEach(w => {
             const weaponName = getWeaponName(w.id);
             const quantity = w.quantity || 1;
-            const finalAwakening = data.weaponCollection[w.id];
+            const finalAwakening = finalData.weaponCollection[w.id];
 
             if (finalAwakening === 10 || finalAwakening === undefined) {
               // If A10, some copies became red hammers
@@ -412,7 +412,7 @@ export default function MailInbox() {
 
         alert(message);
       } else {
-        alert('\u274C ' + (data.message || 'Erreur lors de la reclamation'));
+        alert('\u274C ' + (result.message || 'Erreur lors de la reclamation'));
       }
     } catch (err) {
       console.error('Failed to claim rewards:', err);

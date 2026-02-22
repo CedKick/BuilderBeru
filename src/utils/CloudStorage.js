@@ -116,6 +116,20 @@ class CloudStorageManager {
     }
   }
 
+  /** Load freshest data: pendingData (in-memory) > localStorage > cloud. Always returns the most up-to-date version. */
+  async loadFresh(key) {
+    // 1. In-memory pending data (most recent, not yet synced)
+    const pending = this._pendingData.get(key);
+    if (pending) return pending;
+
+    // 2. localStorage cache
+    const local = this.loadLocal(key);
+    if (local) return local;
+
+    // 3. Cloud (last resort — async fetch)
+    return this.loadCloud(key);
+  }
+
   /** Load from cloud backend */
   async loadCloud(key) {
     try {
