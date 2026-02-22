@@ -4357,9 +4357,9 @@ export default function ShadowColosseum() {
             <div className="flex items-center justify-center gap-2">
               <span className="text-xl">{'\uD83C\uDFC6'}</span>
               <span className="font-bold text-yellow-400 group-hover:text-yellow-300">RANK PVE</span>
-              <span className="text-xs text-gray-400">— Classement iLevel</span>
+              <span className="text-xs text-gray-400">— Power Score Lv.140</span>
             </div>
-            <p className="text-[10px] text-gray-500 mt-0.5">Top 100 des meilleurs hunters par iLevel !</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">Classement des meilleurs hunters Level 140 !</p>
           </Link>
 
           {/* Codex, Shop & Artifacts Buttons */}
