@@ -326,9 +326,9 @@ export const TALENT_SKILLS = {
   // ─── SPECIAL — Megumin (Konosuba) ────────────────────────────
 
   h_megumin: [
-    { id: 'ts_megumin_1', name: 'Flamme du Néant', power: 180, cdMax: 0, manaCost: 0, manaRestore: 40, buffAtk: 20, buffDur: 2, desc: 'Flamme noire qui restaure 40% de mana et booste l\'ATK' },
-    { id: 'ts_megumin_2', name: 'Nova Arcanique', power: 100, cdMax: 3, manaCost: 0, manaScaling: 15, consumeHalfMana: true, debuffDef: 25, debuffDur: 2, desc: 'Mana restante ×15 = puissance ! Consomme 50% mana et brise les DEF' },
-    { id: 'ts_megumin_3', name: 'MEGA EXPLOSION!!!', power: 5000, cdMax: 5, manaCost: 1200, manaThreshold: 0.9, grantExtraTurn: true, desc: 'L\'explosion ultime ! 5000% + rejoue immédiatement' },
+    { id: 'ts_megumin_1', name: 'Flamme du Néant', power: 140, cdMax: 0, manaCost: 0, manaRestore: 30, buffAtk: 15, buffDur: 2, desc: 'Flamme noire qui restaure 30% de mana et booste l\'ATK' },
+    { id: 'ts_megumin_2', name: 'Nova Arcanique', power: 100, cdMax: 3, manaCost: 0, manaScaling: 10, consumeHalfMana: true, debuffDef: 20, debuffDur: 2, desc: 'Mana restante ×10 = puissance ! Consomme 50% mana et brise les DEF' },
+    { id: 'ts_megumin_3', name: 'MEGA EXPLOSION!!!', power: 2800, cdMax: 8, manaCost: 1200, manaThreshold: 0.9, selfDamage: 20, selfStunTurns: 3, desc: 'L\'explosion ultime ! 2800% mais s\'inflige 20% PV et stun 3 tours' },
   ],
 
 };

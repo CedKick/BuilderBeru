@@ -932,6 +932,17 @@ export default function PvpMode() {
       });
 
       unit.lastAttackAt = now;
+      // SelfDamage: skill costs % of max HP
+      if (skill.selfDamage && skill.selfDamage > 0) {
+        const selfDmg = Math.floor(unit.maxHp * skill.selfDamage / 100);
+        unit.hp = Math.max(1, unit.hp - selfDmg);
+        logEntries.push({ text: `${unit.name} s'inflige ${selfDmg} dégâts !`, time: elapsed, type: 'normal' });
+      }
+      // SelfStun: skip X attack cycles (Megumin post-explosion)
+      if (skill.selfStunTurns && skill.selfStunTurns > 0) {
+        unit.lastAttackAt = now + skill.selfStunTurns * unit.attackInterval;
+        logEntries.push({ text: `${unit.name} est étourdi(e) pendant ${skill.selfStunTurns} cycles !`, time: elapsed, type: 'normal' });
+      }
       if (result.damage > 0) {
         logEntries.push({ text: `${unit.name} \u2192 ${target.name} -${result.damage}${result.isCrit ? ' CRIT!' : ''}`, time: elapsed, type: result.isCrit ? 'crit' : 'normal' });
       }

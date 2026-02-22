@@ -203,12 +203,12 @@ export const HUNTERS = {
   h_megumin: {
     name: 'Megumin', element: 'fire', rarity: 'legendaire', class: 'mage',
     series: 'konosuba', sprite: S.h_megumin, passiveDesc: '+10% ATK/DEF/SPD a toute l\'equipe',
-    base:   { hp: 180, atk: 68, def: 8, spd: 28, crit: 20, res: 10 },
-    growth: { hp: 6, atk: 5.0, def: 0.4, spd: 1.2, crit: 0.5, res: 0.35 },
+    base:   { hp: 180, atk: 58, def: 8, spd: 28, crit: 20, res: 10 },
+    growth: { hp: 6, atk: 4.0, def: 0.4, spd: 1.2, crit: 0.5, res: 0.35 },
     skills: [
       { name: 'Flamme Écarlate', power: 120, cdMax: 0, manaCost: 0, manaRestore: 25 },
-      { name: 'Détonation de Mana', power: 100, cdMax: 4, manaCost: 0, manaScaling: 10, consumeHalfMana: true },
-      { name: 'EXPLOSION!!!', power: 3000, cdMax: 6, manaCost: 1200, manaThreshold: 0.9 },
+      { name: 'Détonation de Mana', power: 100, cdMax: 4, manaCost: 0, manaScaling: 7, consumeHalfMana: true },
+      { name: 'EXPLOSION!!!', power: 1800, cdMax: 8, manaCost: 1200, manaThreshold: 0.9, selfDamage: 15, selfStunTurns: 2 },
     ],
     special: true,
   },

@@ -8,6 +8,9 @@ import { RoomManager } from './network/RoomManager.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// ── Profile Store (in-memory, synced by game clients) ──
+const profileStore = new Map();
+
 // ── HTTP Server ──
 const server = http.createServer((req, res) => {
   // CORS headers
@@ -54,6 +57,21 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ── Profile API (for cross-domain XP sync) ──
+  if (urlPath === '/api/profile') {
+    const params = new URL(req.url, `http://localhost:${SERVER.PORT}`).searchParams;
+    const username = params.get('username');
+    if (!username) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Missing username' }));
+      return;
+    }
+    const profile = profileStore.get(username.toLowerCase());
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, profile: profile || null }));
+    return;
+  }
+
   // Serve static files from public/ (images, assets)
   const MIME_TYPES = {
     '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
@@ -77,7 +95,7 @@ const server = http.createServer((req, res) => {
 
 // ── Room Manager + WebSocket ──
 const roomManager = new RoomManager(null);
-const wsServer = new WebSocketServer(server, roomManager);
+const wsServer = new WebSocketServer(server, roomManager, profileStore);
 roomManager.setWsServer(wsServer);
 
 // ── Start ──

@@ -1013,6 +1013,18 @@ export default function TrainingDummy() {
 
       fighter.lastAttackAt = now;
 
+      // SelfDamage: skill costs % of max HP
+      if (skill.selfDamage && skill.selfDamage > 0) {
+        const selfDmg = Math.floor(fighter.maxHp * skill.selfDamage / 100);
+        fighter.hp = Math.max(1, fighter.hp - selfDmg);
+        logEntries.push({ text: `${fighter.name} s'inflige ${selfDmg} dégâts !`, time: elapsed, type: 'normal' });
+      }
+      // SelfStun: skip X attack cycles (Megumin post-explosion)
+      if (skill.selfStunTurns && skill.selfStunTurns > 0) {
+        fighter.lastAttackAt = now + skill.selfStunTurns * fighter.attackInterval;
+        logEntries.push({ text: `${fighter.name} est étourdi(e) pendant ${skill.selfStunTurns} cycles !`, time: elapsed, type: 'normal' });
+      }
+
       // Enriched combat log with element and passive info
       logEntries.push({
         text: result.text,
@@ -1231,6 +1243,19 @@ export default function TrainingDummy() {
 
     const fighter = battle.fighters.find(f => f.id === battle.selectedFighterId);
     if (!fighter || !fighter.alive) return;
+
+    // ─── Stunned: skip turn ───
+    if (fighter.stunTurns > 0) {
+      fighter.stunTurns--;
+      const log = [...battle.log];
+      log.push({ text: '', type: 'system', id: Date.now() });
+      log.push({ text: `━━━━━━━━━━━━━━━━ TOUR ${battle.turn} ━━━━━━━━━━━━━━━━`, type: 'system', id: Date.now() + 0.01 });
+      log.push({ text: `💫 ${fighter.name} est étourdi(e) !${fighter.stunTurns > 0 ? ` (${fighter.stunTurns} tours restants)` : ' (reprend ses esprits)'}`, type: 'info', id: Date.now() + 0.02 });
+      fighter.skills.forEach(s => { if (s.cd > 0) s.cd--; });
+      fighter.mana = Math.min(fighter.maxMana, fighter.mana + (fighter.manaRegen || 0));
+      setBattle(prev => ({ ...prev, turn: prev.turn + 1, log: log.slice(-50) }));
+      return;
+    }
 
     const skill = fighter.skills[skillIdx];
     const dummy = battle.dummy;
@@ -1453,6 +1478,18 @@ export default function TrainingDummy() {
     fighter.mana = Math.min(fighter.maxMana, fighter.mana + (fighter.manaRegen || 0));
     if (fighter.manaRegen > 0) {
       log.push({ text: `  ├─ Mana regen: +${fmt(fighter.manaRegen)} → ${fmt(fighter.mana)}/${fmt(fighter.maxMana)}`, type: 'info', id: Date.now() + 0.78 });
+    }
+
+    // SelfDamage: skill costs % of max HP (manual mode)
+    if (skill.selfDamage && skill.selfDamage > 0) {
+      const selfDmg = Math.floor(fighter.maxHp * skill.selfDamage / 100);
+      fighter.hp = Math.max(1, fighter.hp - selfDmg);
+      log.push({ text: `  ├─ Self-damage: -${fmt(selfDmg)} PV !`, type: 'info', id: Date.now() + 0.785 });
+    }
+    // SelfStun: stunned for X turns after big attacks (Megumin)
+    if (skill.selfStunTurns && skill.selfStunTurns > 0) {
+      fighter.stunTurns = (fighter.stunTurns || 0) + skill.selfStunTurns;
+      log.push({ text: `  ├─ Étourdi(e) pendant ${skill.selfStunTurns} tours !`, type: 'info', id: Date.now() + 0.786 });
     }
 
     skill.cd = skill.cdMax || 0;

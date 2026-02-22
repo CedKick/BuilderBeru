@@ -24,7 +24,7 @@ import {
   getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
   getStarScaledStats, getStarRewardMult, getStarDropBonus, getGuaranteedArtifactRarity,
   calculatePowerScore, getDifficultyRating,
-  BUFF_ICONS, computeDamagePreview, aiPickSkillArc2,
+  BUFF_ICONS, computeDamagePreview, aiPickSkillArc2, fmtNum,
 } from './colosseumCore';
 import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS, rollNierHunterDrop, NIER_DROP_CONFIG, NIER_DROP_CONFIGS, HUNTER_SKINS, rollSkinDrop, getHunterSprite, rollBossHunterDrop, BOSS_HUNTER_DROPS } from './raidData';
 import { BattleStyles, BattleArena } from './BattleVFX';
@@ -536,6 +536,8 @@ export default function ShadowColosseum() {
   const [activeArc, setActiveArc] = useState(1); // 1 or 2 — tab switcher
   // Faction buffs (fetched from server)
   const [factionBuffs, setFactionBuffs] = useState(null); // { loot_sulfuras: 3, stats_hp: 5, ... } or null if not in faction
+  // Raid profile (fetched from game server for XP/level sync)
+  const [raidProfileServer, setRaidProfileServer] = useState(null);
   // ARC II state
   const [arc2StoryTier, setArc2StoryTier] = useState(null);
   const [arc2StoryIdx, setArc2StoryIdx] = useState(0);
@@ -706,6 +708,18 @@ export default function ShadowColosseum() {
         }
       } catch (e) { /* silently fail — buffs stay null */ }
     })();
+  }, []);
+
+  // Fetch raid profile from game server (XP/level sync for character sheet)
+  useEffect(() => {
+    try {
+      const authUser = JSON.parse(localStorage.getItem('builderberu_auth_user'));
+      if (!authUser?.username) return;
+      fetch(`http://159.223.225.71:3002/api/profile?username=${encodeURIComponent(authUser.username)}`)
+        .then(r => r.json())
+        .then(d => { if (d.success && d.profile) setRaidProfileServer(d.profile); })
+        .catch(() => {});
+    } catch { /* no auth user */ }
   }, []);
 
   // Helper: get faction loot multiplier for a specific weapon buff
@@ -1460,7 +1474,7 @@ export default function ShadowColosseum() {
       const healAmt = Math.floor(dmg * GULDAN_HEAL_PER_STACK * ps.guldanState.healStacks);
       if (healAmt > 0) {
         fighter.hp = Math.min(fighter.maxHp, fighter.hp + healAmt);
-        b.log.unshift({ msg: `${fighter.name} : Halo x${ps.guldanState.healStacks} +${healAmt} PV`, type: 'player' });
+        b.log.unshift({ msg: `${fighter.name} : Halo x${ps.guldanState.healStacks} +${fmtNum(healAmt)} PV`, type: 'player' });
       }
       // Stack bonuses
       ps.guldanState.defBonus = (ps.guldanState.defBonus || 0) + GULDAN_DEF_PER_HIT;
@@ -1555,6 +1569,11 @@ export default function ShadowColosseum() {
       selfDmg = Math.floor(fighter.maxHp * skill.selfDamage / 100);
       fighter.hp = Math.max(1, fighter.hp - selfDmg); // never kills self
     }
+    // Megumin selfStun: stunned for X turns after big explosions
+    if (skill.selfStunTurns && skill.selfStunTurns > 0) {
+      fighter.stunTurns = (fighter.stunTurns || 0) + skill.selfStunTurns;
+      b.log.unshift({ msg: `💫 ${fighter.name} est étourdi(e) pendant ${skill.selfStunTurns} tours après ${skill.name} !`, type: 'info' });
+    }
     if (isFreeCast) {
       // Free cast: no CD set, log bonus
       b.log.unshift({ msg: `✨ ${fighter.name} : Free Cast ! 0 CD & 0 Mana !`, type: 'player' });
@@ -1563,8 +1582,8 @@ export default function ShadowColosseum() {
     }
     fighter.mana = Math.min(fighter.maxMana || 100, (fighter.mana || 0) + (fighter.manaRegen || 5));
 
-    const selfDmgLog = selfDmg > 0 ? ` (-${selfDmg} HP!)` : '';
-    b.log.unshift({ msg: `${fighter.name} → ${skill.name} → ${enemy.name} ${dmg} DMG${result.isCrit ? ' CRIT!' : ''}${!enemy.alive ? ' KO!' : ''}${selfDmgLog}`, type: 'player' });
+    const selfDmgLog = selfDmg > 0 ? ` (-${fmtNum(selfDmg)} HP!)` : '';
+    b.log.unshift({ msg: `${fighter.name} → ${skill.name} → ${enemy.name} ${fmtNum(dmg)} DMG${result.isCrit ? ' CRIT!' : ''}${!enemy.alive ? ' KO!' : ''}${selfDmgLog}`, type: 'player' });
     b.lastAction = { type: 'player', idx: fighterIdx, targetEnemyIdx: targetIdx, damage: dmg, crit: result.isCrit, ko: !enemy.alive, selfDmg, atkFrames: skill.atkFrames || null };
     b.pendingSkill = null;
     b.phase = b.enemies.every(e => !e.alive) ? 'victory' : 'advance';
@@ -1593,7 +1612,7 @@ export default function ShadowColosseum() {
             if (skill.healAlly) {
               const healAmt = Math.floor(allyEnemy.maxHp * skill.healAlly / 100);
               allyEnemy.hp = Math.min(allyEnemy.maxHp, allyEnemy.hp + healAmt);
-              b.log.unshift({ msg: `${enemy.name} → ${skill.name} → Soin ${allyEnemy.name} +${healAmt} PV`, type: 'enemy' });
+              b.log.unshift({ msg: `${enemy.name} → ${skill.name} → Soin ${allyEnemy.name} +${fmtNum(healAmt)} PV`, type: 'enemy' });
             }
             if (skill.buffAllyAtk) allyEnemy.buffs.push({ stat: 'atk', value: skill.buffAllyAtk / 100, dur: skill.buffDur || 2 });
             if (skill.buffAllyDef) allyEnemy.buffs.push({ stat: 'def', value: skill.buffAllyDef / 100, dur: skill.buffDur || 2 });
@@ -1672,7 +1691,7 @@ export default function ShadowColosseum() {
             const counterDmg = Math.max(1, Math.floor(tFighter.atk * KATANA_Z_COUNTER_MULT));
             enemy.hp = Math.max(0, enemy.hp - counterDmg);
             if (enemy.hp <= 0) enemy.alive = false;
-            b.log.unshift({ msg: `${tFighter.name} : Katana Z contre-attaque ! -${counterDmg}`, type: 'player' });
+            b.log.unshift({ msg: `${tFighter.name} : Katana Z contre-attaque ! -${fmtNum(counterDmg)}`, type: 'player' });
           }
           if (tFighter.passiveState.katanaZStacks > 0) {
             let surviving = 0;
@@ -1702,7 +1721,7 @@ export default function ShadowColosseum() {
         if (skill.poison) extraEffects.push('☠️Poison');
         if (skill.antiHeal) extraEffects.push('🚫Soin');
         const effectsStr = extraEffects.length > 0 ? ` [${extraEffects.join(', ')}]` : '';
-        b.log.unshift({ msg: `${enemy.name} → ${skill.name} → ${tFighter.name} ${dmg} DMG${result.isCrit ? ' CRIT!' : ''}${!tFighter.alive ? ' KO!' : ''}${effectsStr}`, type: 'enemy' });
+        b.log.unshift({ msg: `${enemy.name} → ${skill.name} → ${tFighter.name} ${fmtNum(dmg)} DMG${result.isCrit ? ' CRIT!' : ''}${!tFighter.alive ? ' KO!' : ''}${effectsStr}`, type: 'enemy' });
         b.lastAction = { type: 'enemy', enemyIdx: entity.idx, targetIdx: tIdx, damage: dmg, crit: result.isCrit, ko: !tFighter.alive };
         b.phase = b.team.every(f => !f.alive) ? 'defeat' : 'advance';
         return b;
@@ -1760,6 +1779,12 @@ export default function ShadowColosseum() {
         if (!e) break;
         if (e.type === 'team' && !b.team[e.idx].alive) { next++; loops++; continue; }
         if (e.type === 'enemy' && !b.enemies[e.idx].alive) { next++; loops++; continue; }
+        // Stunned fighter: skip turn and decrement
+        if (e.type === 'team' && b.team[e.idx].stunTurns > 0) {
+          b.team[e.idx].stunTurns--;
+          b.log.unshift({ msg: `💫 ${b.team[e.idx].name} est étourdi(e) ! (${b.team[e.idx].stunTurns > 0 ? b.team[e.idx].stunTurns + ' tours restants' : 'dernier tour'})`, type: 'info' });
+          next++; loops++; continue;
+        }
         break;
       }
       b.currentTurn = next;
@@ -2808,10 +2833,19 @@ export default function ShadowColosseum() {
     let colossusUsed = battle.colossusUsed || false;
     const log = [...battle.log];
 
+    // ─── Stunned: force pass turn ───
+    let wasStunned = false;
+    if (player.stunTurns > 0) {
+      player.stunTurns--;
+      log.push({ text: `💫 ${player.name} est étourdi(e) !${player.stunTurns > 0 ? ` (${player.stunTurns} tours restants)` : ' (reprend ses esprits)'}`, type: 'info', id: Date.now() - 0.01 });
+      skillIdx = -1;
+      wasStunned = true;
+    }
+
     // ─── Pass turn (skillIdx === -1) ───
     if (skillIdx === -1) {
       player.mana = Math.min(player.maxMana || 100, (player.mana || 0) + (player.manaRegen || 5));
-      log.push({ text: `${player.name || 'Joueur'} passe son tour (MP +${player.manaRegen || 5})`, type: 'info', id: Date.now() });
+      if (!wasStunned) log.push({ text: `${player.name || 'Joueur'} passe son tour (MP +${player.manaRegen || 5})`, type: 'info', id: Date.now() });
       setPhase('player_atk');
       setDmgPopup(null);
       // Skip player attack, jump to enemy turn after delay
@@ -2833,7 +2867,7 @@ export default function ShadowColosseum() {
             if (p.trigger === 'onDodge' && p.type === 'counter') {
               const counterDmg = Math.max(1, Math.floor(getEffStat(player.atk, player.buffs, 'atk') * p.powerMult));
               enemy.hp = Math.max(0, enemy.hp - counterDmg);
-              log.push({ text: `Contre-attaque ! -${counterDmg} PV`, type: 'player', id: Date.now() + 0.95 });
+              log.push({ text: `Contre-attaque ! -${fmtNum(counterDmg)} PV`, type: 'player', id: Date.now() + 0.95 });
             }
           });
         } else if (dmgToPlayer > 0) {
@@ -3038,6 +3072,17 @@ export default function ShadowColosseum() {
     if (pRes.healed) player.hp = Math.min(player.maxHp, player.hp + pRes.healed);
     if (pRes.buff) player.buffs.push({ ...pRes.buff });
     if (pRes.debuff) enemy.buffs.push({ ...pRes.debuff });
+    // SelfDamage: skill costs % of max HP
+    if (playerSkill.selfDamage && playerSkill.selfDamage > 0) {
+      const selfDmg = Math.floor(player.maxHp * playerSkill.selfDamage / 100);
+      player.hp = Math.max(1, player.hp - selfDmg);
+      log.push({ text: `💥 ${player.name} s'inflige ${fmtNum(selfDmg)} dégâts !`, type: 'info', id: Date.now() - 0.015 });
+    }
+    // SelfStun: stunned for X turns after big attacks (Megumin)
+    if (playerSkill.selfStunTurns && playerSkill.selfStunTurns > 0) {
+      player.stunTurns = (player.stunTurns || 0) + playerSkill.selfStunTurns;
+      log.push({ text: `💫 ${player.name} est étourdi(e) pendant ${playerSkill.selfStunTurns} tours après ${playerSkill.name} !`, type: 'info', id: Date.now() - 0.014 });
+    }
     if (isFreeCastArc1) {
       log.push({ text: `✨ Free Cast ! 0 Mana & 0 CD !`, type: 'info', id: Date.now() - 0.01 });
     } else {
@@ -3051,7 +3096,7 @@ export default function ShadowColosseum() {
       if (p.type === 'lifesteal' && pRes.damage > 0 && Math.random() < p.chance) {
         const stolen = Math.floor(pRes.damage * p.stealPct);
         player.hp = Math.min(player.maxHp, player.hp + stolen);
-        log.push({ text: `Vol de vie ! +${stolen} PV`, type: 'info', id: Date.now() + 0.05 });
+        log.push({ text: `Vol de vie ! +${fmtNum(stolen)} PV`, type: 'info', id: Date.now() + 0.05 });
       }
       if (p.type === 'echoCD' && Math.random() < p.chance) {
         const cdSkills = player.skills.filter(s => s.cd > 0);
@@ -3100,7 +3145,7 @@ export default function ShadowColosseum() {
       const healAmt = Math.floor(pRes.damage * GULDAN_HEAL_PER_STACK * newGuldanState.healStacks);
       if (healAmt > 0) {
         player.hp = Math.min(player.maxHp, player.hp + healAmt);
-        log.push({ text: `Halo Eternel x${newGuldanState.healStacks} ! +${healAmt} PV`, type: 'buff', id: Date.now() + 0.071 });
+        log.push({ text: `Halo Eternel x${newGuldanState.healStacks} ! +${fmtNum(healAmt)} PV`, type: 'buff', id: Date.now() + 0.071 });
       }
       // +2% DEF per attack (permanent in fight)
       newGuldanState.defBonus = (newGuldanState.defBonus || 0) + GULDAN_DEF_PER_HIT;
@@ -3118,7 +3163,7 @@ export default function ShadowColosseum() {
       const regen = Math.floor(player.maxHp * tb.regenPerTurn / 100);
       if (regen > 0 && player.hp < player.maxHp) {
         player.hp = Math.min(player.maxHp, player.hp + regen);
-        log.push({ text: `${player.name} regenere +${regen} PV`, type: 'info', id: Date.now() + 0.1 });
+        log.push({ text: `${player.name} regenere +${fmtNum(regen)} PV`, type: 'info', id: Date.now() + 0.1 });
       }
     }
 
@@ -3169,7 +3214,7 @@ export default function ShadowColosseum() {
           if (p.trigger === 'onDodge' && p.type === 'counter') {
             const counterDmg = Math.max(1, Math.floor(getEffStat(player.atk, player.buffs, 'atk') * p.powerMult));
             enemy.hp = Math.max(0, enemy.hp - counterDmg);
-            log.push({ text: `Contre-attaque ! -${counterDmg} PV`, type: 'player', id: Date.now() + 0.95 });
+            log.push({ text: `Contre-attaque ! -${fmtNum(counterDmg)} PV`, type: 'player', id: Date.now() + 0.95 });
           }
         });
       } else {
@@ -3213,7 +3258,7 @@ export default function ShadowColosseum() {
         if (Math.random() * 100 < tb.counterChance) {
           const riposteDmg = Math.max(1, Math.floor(getEffStat(player.atk, player.buffs, 'atk') * 0.5));
           enemy.hp = Math.max(0, enemy.hp - riposteDmg);
-          log.push({ text: `${player.name} contre-attaque ! -${riposteDmg} PV`, type: 'player', id: Date.now() + 1.1 });
+          log.push({ text: `${player.name} contre-attaque ! -${fmtNum(riposteDmg)} PV`, type: 'player', id: Date.now() + 1.1 });
         }
       }
 
@@ -3222,7 +3267,7 @@ export default function ShadowColosseum() {
         if (Math.random() < KATANA_Z_COUNTER_CHANCE) {
           const counterDmg = Math.max(1, Math.floor(getEffStat(player.atk, player.buffs, 'atk') * KATANA_Z_COUNTER_MULT));
           enemy.hp = Math.max(0, enemy.hp - counterDmg);
-          log.push({ text: `Katana Z contre-attaque ! -${counterDmg} PV !`, type: 'player', id: Date.now() + 1.2 });
+          log.push({ text: `Katana Z contre-attaque ! -${fmtNum(counterDmg)} PV !`, type: 'player', id: Date.now() + 1.2 });
         }
       }
 
@@ -3269,7 +3314,7 @@ export default function ShadowColosseum() {
       if (newKatanaVState !== undefined && newKatanaVState.dots > 0) {
         const dotDmg = Math.max(1, Math.floor(getEffStat(player.atk, player.buffs, 'atk') * KATANA_V_DOT_PCT * newKatanaVState.dots));
         enemy.hp = Math.max(0, enemy.hp - dotDmg);
-        log.push({ text: `Lame Veneneuse x${newKatanaVState.dots} ! -${dotDmg} PV !`, type: 'player', id: Date.now() + 1.7 });
+        log.push({ text: `Lame Veneneuse x${newKatanaVState.dots} ! -${fmtNum(dotDmg)} PV !`, type: 'player', id: Date.now() + 1.7 });
       }
 
       // Gul'dan Halo Eternelle: end of turn — each heal stack has 50% stun chance
@@ -3984,11 +4029,11 @@ export default function ShadowColosseum() {
             const authUser = (() => { try { return JSON.parse(localStorage.getItem('builderberu_auth_user')); } catch { return null; } })();
             const username = authUser?.username || 'Joueur';
 
-            // Raid character data (stored locally on builderberu.com)
+            // Raid character data: XP/level from game server, config from localStorage
             const RAID_CHAR_KEY = 'manaya_raid_character';
             const raidChar = (() => { try { return JSON.parse(localStorage.getItem(RAID_CHAR_KEY)) || {}; } catch { return {}; } })();
-            const raidLvl = raidChar.raidLevel || 1;
-            const raidXp = raidChar.raidXp || 0;
+            const raidLvl = raidProfileServer?.level || raidChar.raidLevel || 1;
+            const raidXp = raidProfileServer?.xp || raidChar.raidXp || 0;
             const xpForNext = Math.floor(500 * Math.pow(raidLvl + 1, 1.5));
             const xpPct = xpForNext > 0 ? Math.min(100, Math.round(raidXp / xpForNext * 100)) : 100;
             const lvColor = raidLvl >= 40 ? '#f59e0b' : raidLvl >= 20 ? '#a78bfa' : '#38bdf8';
@@ -4180,6 +4225,17 @@ export default function ShadowColosseum() {
                     {data.stats?.wins || 0}W / {(data.stats?.battles || 0) - (data.stats?.wins || 0)}L
                   </div>
                 </div>
+
+                {/* Manaya Raid Stats */}
+                {raidProfileServer && (
+                  <div className="flex items-center justify-between bg-gray-800/30 rounded-lg px-3 py-2 border border-emerald-700/20 mt-1.5">
+                    <div className="text-[10px] text-emerald-400 font-bold">{'\uD83D\uDC09'} Manaya Raid</div>
+                    <div className="text-[10px] text-gray-500">
+                      {raidProfileServer.victories || 0}W / {raidProfileServer.defeats || 0}L
+                      <span className="text-gray-600 ml-1">({raidProfileServer.gamesPlayed || 0} parties)</span>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -4326,7 +4382,7 @@ export default function ShadowColosseum() {
               </div>
               <p className="text-[10px] text-gray-500 mt-0.5 relative inline-flex items-center gap-1">
                 Forge & Armes {'\uD83D\uDCB0'}{' '}
-                <span className="text-amber-400 font-bold">{coinDisplay}</span>
+                <span className="text-amber-400 font-bold">{fmtNum(coinDisplay)}</span>
                 {coinDelta && (
                   <motion.span
                     key={coinDelta.key}
@@ -4334,7 +4390,7 @@ export default function ShadowColosseum() {
                     animate={{ opacity: 0, y: -20 }}
                     transition={{ duration: 1.5 }}
                     className={`absolute -top-3 right-0 text-[10px] font-bold ${coinDelta.amount > 0 ? 'text-green-400' : 'text-red-400'}`}
-                  >{coinDelta.amount > 0 ? '+' : ''}{coinDelta.amount}</motion.span>
+                  >{coinDelta.amount > 0 ? '+' : ''}{fmtNum(coinDelta.amount)}</motion.span>
                 )}
               </p>
             </button>
@@ -4751,7 +4807,7 @@ export default function ShadowColosseum() {
                             <span>PV:{selected ? sc.hp : stage.hp}</span>
                             <span>RES:{selected ? Math.round(sc.res) : stage.res}%</span>
                             <span>XP:{selected ? Math.floor(stage.xp * getStarRewardMult(selectedStar).xp) : stage.xp}</span>
-                            <span>{'\uD83D\uDCB0'}{selected ? Math.floor(stage.coins * getStarRewardMult(selectedStar).coins) : stage.coins}</span>
+                            <span>{'\uD83D\uDCB0'}{fmtNum(selected ? Math.floor(stage.coins * getStarRewardMult(selectedStar).coins) : stage.coins)}</span>
                             {selChibi && elemAdv !== 1 && (
                               <span className={elemAdv > 1 ? 'text-green-400' : 'text-red-400'}>
                                 {elemAdv > 1 ? '\u25B2' : '\u25BC'}
@@ -4899,7 +4955,7 @@ export default function ShadowColosseum() {
                                 <span>PV:{(stage.hp / 1000).toFixed(0)}K</span>
                                 <span>ATK:{stage.atk}</span>
                                 <span>XP:{stage.xp}</span>
-                                <span>{'\uD83D\uDCB0'}{stage.coins}</span>
+                                <span>{'\uD83D\uDCB0'}{fmtNum(stage.coins)}</span>
                               </div>
                             </div>
                             {/* 3vN badge — enemy count from buildStageEnemies */}
@@ -5755,7 +5811,7 @@ export default function ShadowColosseum() {
                         {lastAction?.type === 'enemy' && lastAction.targetIdx === i && lastAction.damage > 0 && (
                           <motion.div key={`pd-${round}-${currentTurn}-${i}`} initial={{ opacity: 1, y: 0, scale: 1.2 }} animate={{ opacity: 0, y: -25 }} exit={{ opacity: 0 }} transition={{ duration: 1.2 }}
                             className={`absolute -top-3 left-1/2 -translate-x-1/2 text-sm font-black z-10 ${lastAction.crit ? 'text-yellow-300' : 'text-red-400'}`}>
-                            -{lastAction.damage}{lastAction.ko ? ' KO!' : ''}{lastAction.crit ? '!' : ''}
+                            -{fmtNum(lastAction.damage)}{lastAction.ko ? ' KO!' : ''}{lastAction.crit ? '!' : ''}
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -5764,7 +5820,7 @@ export default function ShadowColosseum() {
                         {lastAction?.type === 'player' && lastAction.idx === i && lastAction.selfDmg > 0 && (
                           <motion.div key={`sd-${round}-${currentTurn}-${i}`} initial={{ opacity: 1, y: 5, scale: 1 }} animate={{ opacity: 0, y: -15 }} exit={{ opacity: 0 }} transition={{ duration: 1.5 }}
                             className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-bold z-10 text-orange-400">
-                            -{lastAction.selfDmg} HP!
+                            -{fmtNum(lastAction.selfDmg)} HP!
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -5830,11 +5886,11 @@ export default function ShadowColosseum() {
                               style={{ right: `${100 - enHpPct}%`, width: `${Math.min(enHpPct, previewPct)}%` }} />
                           )}
                         </div>
-                        <div className="text-[7px] text-red-300">{en.hp.toLocaleString()}/{en.maxHp.toLocaleString()}</div>
+                        <div className="text-[7px] text-red-300">{fmtNum(en.hp)}/{fmtNum(en.maxHp)}</div>
                         {/* Damage preview text (always shown on mobile during pick_target) */}
                         {isPickTarget && preview && en.alive && (
                           <div className="text-[6px] text-yellow-300/80 leading-tight">
-                            ~{preview.min}-{preview.max} {preview.critChance > 0 && <span className="text-orange-300">| CRIT: {preview.critMin}-{preview.critMax}</span>}
+                            ~{fmtNum(preview.min)}-{fmtNum(preview.max)} {preview.critChance > 0 && <span className="text-orange-300">| CRIT: {fmtNum(preview.critMin)}-{fmtNum(preview.critMax)}</span>}
                             {preview.elementAdvantage && <span className="text-green-300 ml-0.5">★</span>}
                           </div>
                         )}
@@ -5845,7 +5901,7 @@ export default function ShadowColosseum() {
                         {lastAction?.type === 'player' && lastAction.targetEnemyIdx === ei && lastAction.damage > 0 && (
                           <motion.div key={`ed-${round}-${currentTurn}-${ei}`} initial={{ opacity: 1, y: 0, scale: 1.3 }} animate={{ opacity: 0, y: -30 }} exit={{ opacity: 0 }} transition={{ duration: 1.2 }}
                             className={`absolute -top-3 left-1/2 -translate-x-1/2 text-sm font-black z-10 ${lastAction.crit ? 'text-yellow-300' : 'text-red-400'}`}>
-                            -{lastAction.damage}{lastAction.crit ? ' CRIT!' : ''}{lastAction.ko ? ' KO!' : ''}
+                            -{fmtNum(lastAction.damage)}{lastAction.crit ? ' CRIT!' : ''}{lastAction.ko ? ' KO!' : ''}
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -5876,6 +5932,7 @@ export default function ShadowColosseum() {
                     if (sk.healSelf) parts.push(`Soin ${sk.healSelf}%`);
                     if (sk.debuffDef) parts.push(`DEF -${sk.debuffDef}%`);
                     if (sk.selfDamage) parts.push(`Cout ${sk.selfDamage}% PV`);
+                    if (sk.selfStunTurns) parts.push(`Stun ${sk.selfStunTurns}T`);
                     if (sk.manaRestore) parts.push(`+${sk.manaRestore}% MP`);
                     if (sk.consumeHalfMana) parts.push(`-50% MP`);
                     return parts.join(' | ') || 'Effet';
@@ -6164,7 +6221,7 @@ export default function ShadowColosseum() {
                 <h2 className="text-xl font-black text-yellow-400 mb-4">{r.stageName} vaincu !</h2>
                 <div className="space-y-2 text-sm text-left bg-gray-900/60 rounded-xl p-4 border border-purple-500/20">
                   <div className="flex justify-between"><span className="text-gray-400">XP gagn{'\u00e9'}s</span><span className="text-green-400 font-bold">+{r.xp}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-400">Coins</span><span className="text-yellow-400 font-bold">{'\uD83D\uDCB0'} +{r.coins}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">Coins</span><span className="text-yellow-400 font-bold">{'\uD83D\uDCB0'} +{fmtNum(r.coins)}</span></div>
                   {r.accountXpGain > 0 && <div className="flex justify-between"><span className="text-gray-400">XP Compte</span><span className="text-cyan-400 font-bold">+{r.accountXpGain}</span></div>}
                   {r.star > 0 && <div className="flex justify-between"><span className="text-gray-400">Difficult{'\u00e9'}</span><span className="text-yellow-300">{'\u2B50'}{r.star}</span></div>}
                   {r.hammerDrop && (
@@ -8325,7 +8382,7 @@ export default function ShadowColosseum() {
 
             <div className="text-center mb-5">
               <h2 className="text-xl font-black bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">Boutique</h2>
-              <div className="text-sm text-yellow-400 font-bold mt-1">{'\uD83D\uDCB0'} {coins} Shadow Coins</div>
+              <div className="text-sm text-yellow-400 font-bold mt-1">{'\uD83D\uDCB0'} {fmtNum(coins)} Shadow Coins</div>
             </div>
 
             {/* Hammer Inventory */}
@@ -8369,7 +8426,7 @@ export default function ShadowColosseum() {
                         <div className="text-lg">{h.icon}</div>
                         <div className="text-[9px] font-bold text-amber-300">{h.name.replace('Marteau ', '')}</div>
                         <div className="text-[10px] text-gray-500">Lv0-{h.maxLevel}</div>
-                        <div className="text-[9px] text-amber-400 mt-0.5">{h.shopPrice} coins</div>
+                        <div className="text-[9px] text-amber-400 mt-0.5">{fmtNum(h.shopPrice)} coins</div>
                       </button>
                       <div className="flex gap-0.5">
                         {[10, 100, 1000].map(qty => (
@@ -8462,8 +8519,8 @@ export default function ShadowColosseum() {
                       </div>
                       <div className="mt-1 text-[9px] text-right">
                         {maxed ? <span className="text-yellow-400">MAX A{MAX_WEAPON_AWAKENING}</span> :
-                         owned ? <span className="text-amber-400">Eveil A{aw+1} - {price} coins</span> :
-                         <span className="text-amber-400">{price} coins</span>}
+                         owned ? <span className="text-amber-400">Eveil A{aw+1} - {fmtNum(price)} coins</span> :
+                         <span className="text-amber-400">{fmtNum(price)} coins</span>}
                       </div>
                     </button>
                   );
@@ -9529,7 +9586,7 @@ export default function ShadowColosseum() {
                     onContextMenu={e => e.preventDefault()}
                     disabled={!canEnhance}
                     className="flex-1 py-1.5 rounded-lg bg-cyan-600/30 text-cyan-300 text-[10px] font-bold hover:bg-cyan-600/50 disabled:opacity-30 transition-colors select-none">
-                    {'\uD83D\uDD28'} +1 ({bestHammer ? HAMMERS[bestHammer].icon : '?'} {coinCost}c)
+                    {'\uD83D\uDD28'} +1 ({bestHammer ? HAMMERS[bestHammer].icon : '?'} {fmtNum(coinCost)}c)
                   </button>
                   {!isEquipped && (
                     <button onClick={doSell} disabled={selArt.locked}
@@ -9552,7 +9609,7 @@ export default function ShadowColosseum() {
                     ) : (
                       <span className="text-red-400">Pas de marteau !</span>
                     )}
-                    <span className="ml-auto">{coinCost} coins</span>
+                    <span className="ml-auto">{fmtNum(coinCost)} coins</span>
                   </div>
                 )}
 
@@ -9616,7 +9673,7 @@ export default function ShadowColosseum() {
                 <div className="text-[10px] text-white font-bold">{autoFarmStats.runs} runs</div>
                 <div className="flex flex-col gap-0 text-[9px]">
                   {autoFarmStats.levels > 0 && <span className="text-yellow-400">+{autoFarmStats.levels} niveaux</span>}
-                  <span className="text-amber-300">+{autoFarmStats.coins.toLocaleString()} coins</span>
+                  <span className="text-amber-300">+{fmtNum(autoFarmStats.coins)} coins</span>
                   {autoFarmStats.loots > 0 && <span className="text-purple-400">{autoFarmStats.loots} loots</span>}
                   {autoFarmStats.hunters > 0 && <span className="text-blue-400">{autoFarmStats.hunters} hunters</span>}
                   {autoFarmStats.weapons > 0 && <span className="text-red-400">{autoFarmStats.weapons} armes</span>}
@@ -10054,7 +10111,7 @@ export default function ShadowColosseum() {
                   <div className="text-[10px] text-gray-500">XP</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-black text-yellow-400">+{result.coins}</div>
+                  <div className="text-2xl font-black text-yellow-400">+{fmtNum(result.coins)}</div>
                   <div className="text-[10px] text-gray-500">Coins</div>
                 </div>
               </div>
@@ -10233,7 +10290,7 @@ export default function ShadowColosseum() {
                     <div className="text-[8px] text-gray-500">niveaux</div>
                   </div>
                   <div>
-                    <div className="text-sm font-black text-amber-300">{autoFarmStats.coins >= 1000 ? `${(autoFarmStats.coins/1000).toFixed(1)}K` : autoFarmStats.coins}</div>
+                    <div className="text-sm font-black text-amber-300">{fmtNum(autoFarmStats.coins)}</div>
                     <div className="text-[8px] text-gray-500">coins</div>
                   </div>
                   <div>

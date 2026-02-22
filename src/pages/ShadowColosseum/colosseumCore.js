@@ -303,6 +303,18 @@ export const getEffStat = (base, buffs, stat) => {
   return Math.max(1, Math.floor(base * (1 + mult)));
 };
 
+// ─── Number Formatting (K / M / B / T) ─────────────────────
+export const fmtNum = (n) => {
+  if (n == null || isNaN(n)) return '0';
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1e12) return `${sign}${(abs / 1e12).toFixed(1)}T`;
+  if (abs >= 1e9)  return `${sign}${(abs / 1e9).toFixed(1)}B`;
+  if (abs >= 1e6)  return `${sign}${(abs / 1e6).toFixed(1)}M`;
+  if (abs >= 1e3)  return `${sign}${(abs / 1e3).toFixed(1)}K`;
+  return `${sign}${Math.floor(abs)}`;
+};
+
 // ─── SPD-based Turn Order with Extra Turns ──────────────────
 // If a combatant's SPD >= 1.5x the fastest opponent → +1 extra turn
 // If a combatant's SPD >= 2.0x the fastest opponent → +2 extra turns (cap)
@@ -459,8 +471,8 @@ export const computeAttack = (attacker, skill, defender, tb = {}) => {
   const parts = [];
   if (res.isCrit) parts.push('CRITIQUE !');
   parts.push(`${attacker.name} utilise ${skill.name} !`);
-  if (res.damage > 0) parts.push(`-${res.damage} PV`);
-  if (res.healed > 0) parts.push(`+${res.healed} soins`);
+  if (res.damage > 0) parts.push(`-${fmtNum(res.damage)} PV`);
+  if (res.healed > 0) parts.push(`+${fmtNum(res.healed)} soins`);
   if (res.buff) parts.push(`${res.buff.stat.toUpperCase()} +${Math.round(res.buff.value * 100)}%`);
   if (res.debuff) parts.push(`DEF ennemi ${Math.round(res.debuff.value * 100)}%`);
   res.text = parts.join(' ');

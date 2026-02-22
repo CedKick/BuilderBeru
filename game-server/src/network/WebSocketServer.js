@@ -2,8 +2,9 @@ import { WebSocketServer as WSServer } from 'ws';
 import { SERVER } from '../config.js';
 
 export class WebSocketServer {
-  constructor(server, roomManager) {
+  constructor(server, roomManager, profileStore) {
     this.roomManager = roomManager;
+    this.profileStore = profileStore || new Map();
     this.clients = new Map(); // ws -> { id, username, roomCode }
 
     this.wss = new WSServer({
@@ -98,6 +99,13 @@ export class WebSocketServer {
       case 'sync_profile':
         client.colosseumData = msg.data || null;
         this._send(ws, { type: 'profile_synced', hasData: !!msg.data });
+        break;
+
+      // ── Save Raid Profile (for cross-domain XP sync) ──
+      case 'save_profile':
+        if (msg.profile && msg.profile.username) {
+          this.profileStore.set(msg.profile.username.toLowerCase(), msg.profile);
+        }
         break;
 
       // ── In-Game Inputs ──

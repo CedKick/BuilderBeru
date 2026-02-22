@@ -14,7 +14,7 @@ import {
   applySkillUpgrades, computeAttack, aiPickSkill, spdToInterval,
   accountLevelFromXp, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT,
   getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
-  mergeTalentBonuses,
+  mergeTalentBonuses, fmtNum,
 } from './colosseumCore';
 import {
   HUNTERS, SUNG_SKILLS, RAID_BOSSES,
@@ -44,14 +44,8 @@ const defaultColoData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {},
 const loadColoData = () => { try { const d = { ...defaultColoData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) }; if (!d.artifacts) d.artifacts = {}; if (!d.weapons) d.weapons = {}; if (!d.hammers) d.hammers = { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }; if (d.accountXp === undefined) d.accountXp = 0; if (!d.accountBonuses) d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }; if (d.accountAllocations === undefined) d.accountAllocations = 0; if (d.weaponInventory && Array.isArray(d.weaponInventory)) { if (!d.weaponCollection || typeof d.weaponCollection !== 'object' || Array.isArray(d.weaponCollection)) d.weaponCollection = {}; d.weaponInventory.forEach(wId => { if (d.weaponCollection[wId] === undefined) d.weaponCollection[wId] = 0; }); Object.values(d.weapons).forEach(wId => { if (wId && d.weaponCollection[wId] === undefined) d.weaponCollection[wId] = 0; }); delete d.weaponInventory; } if (!d.weaponCollection) d.weaponCollection = {}; const today = new Date().toISOString().slice(0, 10); if (d.dailyRaidDate !== today) { d.dailyRaidDate = today; d.dailyRaidCount = 0; } return d; } catch { return defaultColoData(); } };
 const saveColoData = (d) => localStorage.setItem(SAVE_KEY, JSON.stringify(d));
 
-// ─── Format numbers ──────────────────────────────────────────
-const fmt = (n) => {
-  if (n >= 1e12) return `${(n / 1e12).toFixed(1)}T`;
-  if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B`;
-  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
-  return String(Math.floor(n));
-};
+// ─── Format numbers (shared from colosseumCore) ─────────────
+const fmt = fmtNum;
 
 // ─── Sung skill glow colors (rgba for VFX) ──────────────────
 const SUNG_GLOW = {
@@ -901,7 +895,7 @@ export default function RaidMode() {
           chibi.lastAttackAt = now;
           // Restore stats before return
           chibi.atk = origAtk; chibi.crit = origCrit; chibi.def = origDef; state.boss.def = origBossDef;
-          logEntries.push({ text: `${chibi.name} soigne ${lowestAlly.name} +${healAmt} PV`, time: elapsed, type: 'heal' });
+          logEntries.push({ text: `${chibi.name} soigne ${lowestAlly.name} +${fmt(healAmt)} PV`, time: elapsed, type: 'heal' });
           vfxEvents.push({ id: now + Math.random(), type: 'heal', targetId: lowestAlly.id, value: healAmt, timestamp: now });
           stateChanged = true;
           return;
@@ -916,7 +910,7 @@ export default function RaidMode() {
           const healAmt = Math.floor(critAlly.maxHp * (martyrHeal.healPct || 0.20));
           critAlly.hp = Math.min(critAlly.maxHp, critAlly.hp + healAmt);
           chibi.passiveState.martyrHealed = true;
-          logEntries.push({ text: `${chibi.name} [Martyr] soigne ${critAlly.name} +${healAmt} PV !`, time: elapsed, type: 'heal' });
+          logEntries.push({ text: `${chibi.name} [Martyr] soigne ${critAlly.name} +${fmt(healAmt)} PV !`, time: elapsed, type: 'heal' });
           vfxEvents.push({ id: now + Math.random(), type: 'heal', targetId: critAlly.id, value: healAmt, timestamp: now });
         }
       }
@@ -1100,7 +1094,7 @@ export default function RaidMode() {
         if (chibi.passives?.find(p => p.type === 'lifesteal') && Math.random() < 0.15) {
           const heal = Math.floor(result.damage * 0.12);
           chibi.hp = Math.min(chibi.maxHp, chibi.hp + heal);
-          logEntries.push({ text: `${chibi.name} : Vol de vie ! +${heal} PV`, time: elapsed, type: 'heal' });
+          logEntries.push({ text: `${chibi.name} : Vol de vie ! +${fmt(heal)} PV`, time: elapsed, type: 'heal' });
         }
 
         // Katana Z: +1 stack after each hit
@@ -1151,10 +1145,10 @@ export default function RaidMode() {
               Math.floor(chibi.maxHp * (vitalSiphon.overHealShield || 0.20)),
               (chibi.passiveState.vitalOverhealShield || 0) + overheal
             );
-            logEntries.push({ text: `${chibi.name} : Siphon Vital ! +${steal} PV (bouclier +${overheal})`, time: elapsed, type: 'heal' });
+            logEntries.push({ text: `${chibi.name} : Siphon Vital ! +${fmt(steal)} PV (bouclier +${fmt(overheal)})`, time: elapsed, type: 'heal' });
           } else {
             chibi.hp = newHp;
-            logEntries.push({ text: `${chibi.name} : Siphon Vital ! +${steal} PV`, time: elapsed, type: 'heal' });
+            logEntries.push({ text: `${chibi.name} : Siphon Vital ! +${fmt(steal)} PV`, time: elapsed, type: 'heal' });
           }
         }
 
@@ -1267,6 +1261,18 @@ export default function RaidMode() {
 
       chibi.lastAttackAt = now;
 
+      // SelfDamage: skill costs % of max HP
+      if (skill.selfDamage && skill.selfDamage > 0) {
+        const selfDmg = Math.floor(chibi.maxHp * skill.selfDamage / 100);
+        chibi.hp = Math.max(1, chibi.hp - selfDmg);
+        logEntries.push({ text: `${chibi.name} s'inflige ${fmt(selfDmg)} dégâts !`, time: elapsed, type: 'normal' });
+      }
+      // SelfStun: skip X attack cycles (Megumin post-explosion)
+      if (skill.selfStunTurns && skill.selfStunTurns > 0) {
+        chibi.lastAttackAt = now + skill.selfStunTurns * chibi.attackInterval;
+        logEntries.push({ text: `${chibi.name} est étourdi(e) pendant ${skill.selfStunTurns} cycles !`, time: elapsed, type: 'normal' });
+      }
+
       // Add element multiplier info to log
       const elemMult = getElementMult(chibi.element, state.boss.element);
       let elemText = '';
@@ -1325,7 +1331,7 @@ export default function RaidMode() {
               state.boss.hp -= counterDmg;
               dpsTracker.current[target.id] = (dpsTracker.current[target.id] || 0) + counterDmg;
               dpsWindowTracker.current[target.id] = (dpsWindowTracker.current[target.id] || 0) + counterDmg;
-              logEntries.push({ text: `${target.name} contre-attaque ! -${counterDmg}`, time: elapsed, type: 'crit' });
+              logEntries.push({ text: `${target.name} contre-attaque ! -${fmt(counterDmg)}`, time: elapsed, type: 'crit' });
             }
             return;
           }
@@ -1353,7 +1359,7 @@ export default function RaidMode() {
                   const healAmt = Math.floor(target.maxHp * (celWrath.healOnBreak || 0.30));
                   target.hp = Math.min(target.maxHp, target.hp + healAmt);
                   target.buffs.push({ stat: 'def', value: celWrath.defBoost || 0.20, turns: 30 });
-                  logEntries.push({ text: `${target.name} : Gardien Celeste brise ! Heal +${healAmt} + DEF +${Math.round((celWrath.defBoost || 0.20) * 100)}% !`, time: elapsed, type: 'buff' });
+                  logEntries.push({ text: `${target.name} : Gardien Celeste brise ! Heal +${fmt(healAmt)} + DEF +${Math.round((celWrath.defBoost || 0.20) * 100)}% !`, time: elapsed, type: 'buff' });
                 }
               }
             }
@@ -1387,7 +1393,7 @@ export default function RaidMode() {
               state.boss.hp -= counterDmg;
               dpsTracker.current[target.id] = (dpsTracker.current[target.id] || 0) + counterDmg;
               dpsWindowTracker.current[target.id] = (dpsWindowTracker.current[target.id] || 0) + counterDmg;
-              logEntries.push({ text: `${target.name} : Katana Z contre-attaque ! -${counterDmg}`, time: elapsed, type: 'crit' });
+              logEntries.push({ text: `${target.name} : Katana Z contre-attaque ! -${fmt(counterDmg)}`, time: elapsed, type: 'crit' });
             }
             // Stack persistence: each stack has 50% chance to survive
             if (target.passiveState.katanaZStacks > 0) {
@@ -1428,7 +1434,7 @@ export default function RaidMode() {
           else if (bossElemMult < 1) bossElemText = ' \uD83D\uDEE1\uFE0F';
 
           logEntries.push({
-            text: `${state.boss.name} → ${target.name}: ${bossSkill.name} -${dmg?.damage || 0} PV${bossElemText}${!target.alive ? ' K.O. !' : ''}`,
+            text: `${state.boss.name} → ${target.name}: ${bossSkill.name} -${fmt(dmg?.damage || 0)} PV${bossElemText}${!target.alive ? ' K.O. !' : ''}`,
             time: elapsed,
             type: 'boss',
             element: state.boss.element,
@@ -1865,7 +1871,7 @@ export default function RaidMode() {
 
         {/* Rewards */}
         <div className="bg-white/5 rounded-xl p-4 border border-white/10 text-center">
-          <div className="text-yellow-400 text-lg font-bold mb-1">+{rewards.coins} Shadow Coins</div>
+          <div className="text-yellow-400 text-lg font-bold mb-1">+{fmt(rewards.coins)} Shadow Coins</div>
           <div className="text-emerald-400 text-sm">+{rewards.xpPerChibi} XP par chibi</div>
           {/* Hammer drops */}
           {Object.keys(hammerDrops).length > 0 && (
