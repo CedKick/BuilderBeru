@@ -402,6 +402,7 @@ export default function PvpMode() {
 
     const defenders = (opponent.teamData || []).map(d => ({
       ...d,
+      id: `${d.id}_def`, // Unique combat ID — prevents tracker collision when both teams share characters
       hp: d.maxHp || d.hp,
       buffs: [],
       passiveState: { flammeStacks: 0, martyrHealed: false, echoCounter: 0, sianStacks: 0 },
