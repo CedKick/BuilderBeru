@@ -521,6 +521,7 @@ export default function ShadowColosseum() {
   const [scoutProgress, setScoutProgress] = useState(null);
   const [weaponDetailId, setWeaponDetailId] = useState(null);
   const [weaponFilter, setWeaponFilter] = useState({ element: null, sort: 'ilevel' }); // filter for weapon lists
+  const [weaponSwapConfirm, setWeaponSwapConfirm] = useState(null); // { weaponId, fromChibiId }
   const [artifactSetDetail, setArtifactSetDetail] = useState(null);
   const [artifactScoreRole, setArtifactScoreRole] = useState('dps');
   const [ragnarokHistoryOpen, setRagnarokHistoryOpen] = useState(false);
@@ -4039,16 +4040,22 @@ export default function ShadowColosseum() {
             const lvColor = raidLvl >= 40 ? '#f59e0b' : raidLvl >= 20 ? '#a78bfa' : '#38bdf8';
 
             const preferredClass = raidChar.preferredClass || 'dps_cac';
-            const raidStatPoints = raidChar.statPoints || { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
-            // 3 stat points per raid level (same as game server)
-            const totalPoints = Math.max(0, (raidLvl - 1)) * 3;
-            const usedPoints = Object.values(raidStatPoints).reduce((s, v) => s + v, 0);
-            const freePoints = Math.max(0, totalPoints - usedPoints);
-
             const saveRaidChar = (updates) => {
               const current = (() => { try { return JSON.parse(localStorage.getItem(RAID_CHAR_KEY)) || {}; } catch { return {}; } })();
               localStorage.setItem(RAID_CHAR_KEY, JSON.stringify({ ...current, ...updates }));
             };
+
+            let raidStatPoints = raidChar.statPoints || { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
+            // 3 stat points per raid level (same as game server)
+            const totalPoints = Math.max(0, (raidLvl - 1)) * 3;
+            let usedPoints = Object.values(raidStatPoints).reduce((s, v) => s + v, 0);
+            // Auto-fix: reset if usedPoints exceeds totalPoints (stale localStorage from level desync)
+            if (usedPoints > totalPoints) {
+              raidStatPoints = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
+              saveRaidChar({ statPoints: raidStatPoints });
+              usedPoints = 0;
+            }
+            const freePoints = Math.max(0, totalPoints - usedPoints);
 
             const classInfo = {
               tank: {
@@ -7504,12 +7511,19 @@ export default function ShadowColosseum() {
           });
         };
 
-        const equipWeapon = (wId) => {
+        const equipWeapon = (wId, forceConfirmed = false) => {
           setData(prev => {
             if (prev.weaponCollection[wId] === undefined) return prev;
-            const equippedElsewhere = Object.entries(prev.weapons).some(([cId, eqW]) => eqW === wId && cId !== id);
-            if (equippedElsewhere) return prev;
-            return { ...prev, weapons: { ...prev.weapons, [id]: wId } };
+            const otherEntry = Object.entries(prev.weapons).find(([cId, eqW]) => eqW === wId && cId !== id);
+            if (otherEntry && !forceConfirmed) {
+              setWeaponSwapConfirm({ weaponId: wId, fromChibiId: otherEntry[0] });
+              return prev;
+            }
+            const newWeapons = { ...prev.weapons, [id]: wId };
+            if (otherEntry) {
+              newWeapons[otherEntry[0]] = prev.weapons[id] || null;
+            }
+            return { ...prev, weapons: newWeapons };
           });
         };
 
@@ -7564,8 +7578,9 @@ export default function ShadowColosseum() {
               )}
               {/* Available weapons from collection */}
               {(() => {
-                const equippedSet = new Set(Object.values(data.weapons).filter(Boolean));
-                let available = Object.keys(data.weaponCollection).filter(wId => wId !== weaponId && !equippedSet.has(wId) && WEAPONS[wId]);
+                const equippedByMap = {};
+                Object.entries(data.weapons).forEach(([cId, wId]) => { if (wId) equippedByMap[wId] = cId; });
+                let available = Object.keys(data.weaponCollection).filter(wId => wId !== weaponId && WEAPONS[wId]);
                 if (available.length === 0) return null;
                 // Filter by element
                 if (weaponFilter.element) available = available.filter(wId => (WEAPONS[wId].element || 'neutral') === weaponFilter.element);
@@ -7580,7 +7595,7 @@ export default function ShadowColosseum() {
                 });
                 // Collect element options
                 const elemOpts = new Set();
-                Object.keys(data.weaponCollection).filter(wId => wId !== weaponId && !equippedSet.has(wId) && WEAPONS[wId]).forEach(wId => elemOpts.add(WEAPONS[wId].element || 'neutral'));
+                Object.keys(data.weaponCollection).filter(wId => wId !== weaponId && WEAPONS[wId]).forEach(wId => elemOpts.add(WEAPONS[wId].element || 'neutral'));
                 return (
                 <div className="mt-2">
                   {/* Filters */}
@@ -7609,8 +7624,12 @@ export default function ShadowColosseum() {
                     const w = WEAPONS[wId];
                     const wAw = data.weaponCollection[wId] || 0;
                     const el = ELEMENTS[w.element];
+                    const ownerChibiId = equippedByMap[wId];
+                    const isEquippedElsewhere = ownerChibiId && ownerChibiId !== id;
+                    const ownerData = isEquippedElsewhere ? getChibiData(ownerChibiId) : null;
+                    const hasCurrentWeapon = !!weaponId;
                     return (
-                      <div key={wId} className="w-full flex items-center gap-2 p-1.5 rounded-lg border border-gray-700/30 bg-gray-800/20 hover:border-amber-500/40 transition-all text-left">
+                      <div key={wId} className={`w-full flex items-center gap-2 p-1.5 rounded-lg border transition-all text-left ${isEquippedElsewhere ? 'border-orange-500/40 bg-orange-500/5' : 'border-gray-700/30 bg-gray-800/20 hover:border-amber-500/40'}`}>
                         <button onClick={() => equipWeapon(wId)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
                           {w.sprite ? (
                             <img src={w.sprite} alt={w.name} className="w-6 h-6 object-contain" draggable={false} />
@@ -7626,15 +7645,67 @@ export default function ShadowColosseum() {
                               {el && <span className={`ml-1 ${el.color}`}>{el.icon}</span>}
                               {!w.element && <span className="ml-1 text-gray-600">-</span>}
                             </div>
+                            {isEquippedElsewhere && ownerData && (
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <img src={getChibiSprite(ownerChibiId)} alt={ownerData.name} className="w-3.5 h-3.5 object-contain" />
+                                <span className="text-[9px] text-orange-400">Equip. par {ownerData.name}</span>
+                              </div>
+                            )}
                           </div>
                         </button>
                         <button onClick={() => setWeaponDetailId(wId)} className="text-[10px] text-blue-400 hover:text-blue-300 px-1" title="Details">i</button>
-                        <button onClick={() => equipWeapon(wId)} className="text-[10px] text-cyan-400 hover:text-cyan-300">Equiper</button>
+                        {isEquippedElsewhere ? (
+                          <button onClick={() => equipWeapon(wId)} className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 whitespace-nowrap">
+                            {hasCurrentWeapon ? 'Echanger' : 'Prendre'}
+                          </button>
+                        ) : (
+                          <button onClick={() => equipWeapon(wId)} className="text-[10px] text-cyan-400 hover:text-cyan-300">Equiper</button>
+                        )}
                       </div>
                     );
                   })}
                   </div>
                 </div>
+                );
+              })()}
+
+              {/* Weapon Swap Confirmation Popup */}
+              {weaponSwapConfirm && (() => {
+                const swapW = WEAPONS[weaponSwapConfirm.weaponId];
+                const fromChibi = getChibiData(weaponSwapConfirm.fromChibiId);
+                const currentW = weaponId ? WEAPONS[weaponId] : null;
+                if (!swapW || !fromChibi) return null;
+                return (
+                  <div className="mt-2 p-3 rounded-xl border border-orange-500/50 bg-orange-500/10 backdrop-blur">
+                    <div className="text-[11px] font-bold text-orange-400 mb-2">{'\u26A0\uFE0F'} Changement d'arme</div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <img src={getChibiSprite(weaponSwapConfirm.fromChibiId)} alt={fromChibi.name} className="w-6 h-6 object-contain" />
+                      <div className="text-[10px] text-gray-300">
+                        <span className="font-bold text-orange-300">{fromChibi.name}</span> perdra <span className="font-bold text-amber-300">{swapW.name}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <img src={getChibiSprite(id)} alt={c.name} className="w-6 h-6 object-contain" />
+                      <div className="text-[10px] text-gray-300">
+                        <span className="font-bold text-cyan-300">{c.name}</span> {'\u2192'} equipera <span className="font-bold text-amber-300">{swapW.name}</span>
+                      </div>
+                    </div>
+                    {currentW ? (
+                      <div className="text-[9px] text-green-400 mb-2 pl-1">
+                        {'\u21C4'} {fromChibi.name} recevra <span className="font-bold">{currentW.name}</span> en echange
+                      </div>
+                    ) : (
+                      <div className="text-[9px] text-red-400 mb-2 pl-1">
+                        {'\u26A0\uFE0F'} {fromChibi.name} n'aura plus d'arme equipee
+                      </div>
+                    )}
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={() => setWeaponSwapConfirm(null)}
+                        className="text-[10px] px-3 py-1 rounded bg-gray-700/50 text-gray-400 hover:bg-gray-700/70">Annuler</button>
+                      <button onClick={() => { equipWeapon(weaponSwapConfirm.weaponId, true); setWeaponSwapConfirm(null); }}
+                        className="text-[10px] px-3 py-1 rounded bg-orange-500/30 text-orange-300 hover:bg-orange-500/50 font-bold">Confirmer</button>
+                    </div>
+                  </div>
                 );
               })()}
             </div>
