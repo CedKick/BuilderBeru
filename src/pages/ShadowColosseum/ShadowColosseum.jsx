@@ -7607,26 +7607,28 @@ export default function ShadowColosseum() {
         };
 
         const equipWeapon = (wId, forceConfirmed = false) => {
-          setData(prev => {
-            if (prev.weaponCollection[wId] === undefined) return prev;
-            const otherEntry = Object.entries(prev.weapons).find(([cId, eqW]) => eqW === wId && cId !== id);
-            if (otherEntry && !forceConfirmed) {
-              setWeaponSwapConfirm({ weaponId: wId, fromChibiId: otherEntry[0] });
-              return prev;
-            }
-            const newWeapons = { ...prev.weapons, [id]: wId };
-            if (otherEntry) {
-              newWeapons[otherEntry[0]] = prev.weapons[id] || null;
-            }
-            return { ...prev, weapons: newWeapons };
-          });
+          if ((data.weaponCollection || {})[wId] === undefined) return;
+          const otherEntry = Object.entries(data.weapons || {}).find(([cId, eqW]) => eqW === wId && cId !== id);
+          if (otherEntry && !forceConfirmed) {
+            setWeaponSwapConfirm({ weaponId: wId, fromChibiId: otherEntry[0] });
+            return;
+          }
+          const newWeapons = { ...(data.weapons || {}), [id]: wId };
+          if (otherEntry) {
+            newWeapons[otherEntry[0]] = data.weapons?.[id] || null;
+          }
+          const newData = { ...data, weapons: newWeapons };
+          setData(newData);
+          // Critical save — immediate cloud sync
+          cloudStorage.saveAndSync(SAVE_KEY, newData);
         };
 
         const unequipWeapon = () => {
-          setData(prev => {
-            if (!prev.weapons[id]) return prev;
-            return { ...prev, weapons: { ...prev.weapons, [id]: null } };
-          });
+          if (!data.weapons?.[id]) return;
+          const newData = { ...data, weapons: { ...(data.weapons || {}), [id]: null } };
+          setData(newData);
+          // Critical save — immediate cloud sync
+          cloudStorage.saveAndSync(SAVE_KEY, newData);
         };
 
         return (
@@ -8771,25 +8773,28 @@ export default function ShadowColosseum() {
                 }
 
                 const weaponData = forgeItems.find(i => i.weaponId === weaponId);
+                const isNew = data.weaponCollection?.[weaponId] === undefined;
 
-                // Deduct fragments + add weapon to collection directly
-                setData(prev => {
-                  const newFrags = { ...prev.fragments };
-                  newFrags[fragmentId] = (newFrags[fragmentId] || 0) - 10;
-                  const wc = { ...prev.weaponCollection };
-                  if (wc[weaponId] === undefined) {
-                    wc[weaponId] = 0;
-                  } else if (wc[weaponId] >= MAX_WEAPON_AWAKENING) {
-                    const newH = { ...(prev.hammers || {}) };
-                    newH.marteau_rouge = (newH.marteau_rouge || 0) + 5;
-                    return { ...prev, fragments: newFrags, weaponCollection: wc, hammers: newH };
-                  } else {
-                    wc[weaponId] = Math.min(wc[weaponId] + 1, MAX_WEAPON_AWAKENING);
-                  }
-                  return { ...prev, fragments: newFrags, weaponCollection: wc };
-                });
+                // Compute new data immutably for critical sync
+                const newFrags = { ...(data.fragments || {}) };
+                newFrags[fragmentId] = (newFrags[fragmentId] || 0) - 10;
+                const wc = { ...(data.weaponCollection || {}) };
+                let newData;
+                if (wc[weaponId] === undefined) {
+                  wc[weaponId] = 0;
+                  newData = { ...data, fragments: newFrags, weaponCollection: wc };
+                } else if (wc[weaponId] >= MAX_WEAPON_AWAKENING) {
+                  const newH = { ...(data.hammers || {}) };
+                  newH.marteau_rouge = (newH.marteau_rouge || 0) + 5;
+                  newData = { ...data, fragments: newFrags, weaponCollection: wc, hammers: newH };
+                } else {
+                  wc[weaponId] = Math.min(wc[weaponId] + 1, MAX_WEAPON_AWAKENING);
+                  newData = { ...data, fragments: newFrags, weaponCollection: wc };
+                }
 
-                const isNew = data.weaponCollection[weaponId] === undefined;
+                setData(newData);
+                // Critical save — immediate cloud sync (no 30s debounce)
+                cloudStorage.saveAndSync(SAVE_KEY, newData);
                 showToast(`⚒️ ${weaponData?.name || weaponId} ${isNew ? 'obtenue' : 'awakening +'} !`, '#fbbf24');
 
                 // Also send confirmation mail (no rewards — weapon already added)
