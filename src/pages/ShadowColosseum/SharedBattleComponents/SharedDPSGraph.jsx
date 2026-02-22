@@ -3,7 +3,7 @@
 // Used by both Training Dummy and Raid Mode
 
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea } from 'recharts';
 import { formatDamage, formatTime } from './sharedFormatters';
 import { Eye, EyeOff, ZoomIn, RotateCcw } from 'lucide-react';
 
@@ -19,6 +19,19 @@ const COLORS = [
 export default function SharedDPSGraph({ dpsHistory, fighters, bossData = null, averageMode = false, metricLabel = null }) {
   const [viewMode, setViewMode] = useState('individual'); // 'individual' | 'total'
   const [visibleLines, setVisibleLines] = useState({});
+
+  // Time range slider state (for averageMode)
+  const maxTime = dpsHistory?.length > 0 ? dpsHistory[dpsHistory.length - 1]?.time || 0 : 0;
+  const [rangeStart, setRangeStart] = useState(0);
+  const [rangeEnd, setRangeEnd] = useState(maxTime);
+  const sliderRef = useRef(null);
+  const draggingRef = useRef(null); // 'start' | 'end' | null
+
+  // Reset range when data changes
+  useEffect(() => {
+    setRangeStart(0);
+    setRangeEnd(maxTime);
+  }, [maxTime]);
 
   // Sync visibleLines with current fighters (add new fighters as visible)
   useEffect(() => {
@@ -113,6 +126,103 @@ export default function SharedDPSGraph({ dpsHistory, fighters, bossData = null, 
   const isZoomed = yZoomMax !== null;
   const zoomPercent = isZoomed ? Math.round((yZoomMax / naturalYMax) * 100) : 100;
 
+  // ─── Time range slider drag logic ────────────────────────
+  const getTimeFromX = useCallback((clientX) => {
+    if (!sliderRef.current || maxTime <= 0) return 0;
+    const rect = sliderRef.current.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    // Snap to 0.5s increments
+    return Math.round(pct * maxTime * 2) / 2;
+  }, [maxTime]);
+
+  const handleSliderDown = useCallback((e, handle) => {
+    e.preventDefault();
+    e.stopPropagation();
+    draggingRef.current = handle;
+    const onMove = (ev) => {
+      const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+      const t = getTimeFromX(clientX);
+      if (draggingRef.current === 'start') {
+        setRangeStart(Math.min(t, rangeEnd - 0.5));
+      } else if (draggingRef.current === 'end') {
+        setRangeEnd(Math.max(t, rangeStart + 0.5));
+      }
+    };
+    const onUp = () => {
+      draggingRef.current = null;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onUp);
+  }, [getTimeFromX, rangeStart, rangeEnd]);
+
+  // Use refs for latest rangeStart/rangeEnd in closure
+  const rangeStartRef = useRef(rangeStart);
+  const rangeEndRef = useRef(rangeEnd);
+  rangeStartRef.current = rangeStart;
+  rangeEndRef.current = rangeEnd;
+
+  const handleSliderDownStart = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    draggingRef.current = 'start';
+    const onMove = (ev) => {
+      const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+      const t = getTimeFromX(clientX);
+      setRangeStart(prev => Math.max(0, Math.min(t, rangeEndRef.current - 0.5)));
+    };
+    const onUp = () => {
+      draggingRef.current = null;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onUp);
+  }, [getTimeFromX]);
+
+  const handleSliderDownEnd = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    draggingRef.current = 'end';
+    const onMove = (ev) => {
+      const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+      const t = getTimeFromX(clientX);
+      setRangeEnd(prev => Math.min(maxTime, Math.max(t, rangeStartRef.current + 0.5)));
+    };
+    const onUp = () => {
+      draggingRef.current = null;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onUp);
+  }, [getTimeFromX, maxTime]);
+
+  // ─── Average calculation using time range ────────────────
+  const rangeAvg = useMemo(() => {
+    if (!averageMode || !dpsHistory || dpsHistory.length < 2) return {};
+    const inRange = dpsHistory.filter(s => s.time >= rangeStart && s.time <= rangeEnd);
+    if (inRange.length === 0) return {};
+    const avgs = {};
+    fighters.forEach(f => {
+      avgs[f.id] = Math.floor(inRange.reduce((s, snap) => s + (snap[f.id] || 0), 0) / inRange.length);
+    });
+    return avgs;
+  }, [averageMode, dpsHistory, fighters, rangeStart, rangeEnd]);
+
   if (!dpsHistory || dpsHistory.length === 0) {
     return (
       <div className="bg-white/5 rounded-xl p-6 border border-white/10">
@@ -150,6 +260,11 @@ export default function SharedDPSGraph({ dpsHistory, fighters, bossData = null, 
     }
     return null;
   };
+
+  // Slider positions as percentages
+  const startPct = maxTime > 0 ? (rangeStart / maxTime) * 100 : 0;
+  const endPct = maxTime > 0 ? (rangeEnd / maxTime) * 100 : 100;
+  const isFullRange = rangeStart <= 0 && rangeEnd >= maxTime;
 
   return (
     <div className="bg-gradient-to-br from-purple-900/20 to-indigo-900/20 rounded-xl p-4 border border-purple-400/30">
@@ -223,6 +338,11 @@ export default function SharedDPSGraph({ dpsHistory, fighters, bossData = null, 
             />
             <Tooltip content={<CustomTooltip />} />
 
+            {/* Highlight selected range */}
+            {averageMode && !isFullRange && (
+              <ReferenceArea x1={rangeStart} x2={rangeEnd} fill="#8b5cf6" fillOpacity={0.08} stroke="#8b5cf6" strokeOpacity={0.3} />
+            )}
+
           {viewMode === 'total' ? (
             <Line
               type="monotone"
@@ -263,6 +383,67 @@ export default function SharedDPSGraph({ dpsHistory, fighters, bossData = null, 
       </ResponsiveContainer>
       </div>
 
+      {/* ─── Time Range Slider (averageMode only) ─── */}
+      {averageMode && maxTime > 0 && (
+        <div className="mt-2 px-1">
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-[10px] text-gray-500">
+              Periode: <span className="text-purple-300 font-bold">{formatTime(rangeStart)}</span> → <span className="text-purple-300 font-bold">{formatTime(rangeEnd)}</span>
+              {!isFullRange && <span className="text-gray-600 ml-1">({(rangeEnd - rangeStart).toFixed(1)}s)</span>}
+            </div>
+            {!isFullRange && (
+              <button
+                onClick={() => { setRangeStart(0); setRangeEnd(maxTime); }}
+                className="text-[10px] text-gray-500 hover:text-purple-300 transition-colors"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+          {/* Slider track */}
+          <div
+            ref={sliderRef}
+            className="relative h-8 select-none touch-none"
+            style={{ cursor: 'default' }}
+          >
+            {/* Background bar */}
+            <div className="absolute top-3 left-0 right-0 h-2 rounded-full bg-gray-700/60" />
+            {/* Active range bar */}
+            <div
+              className="absolute top-3 h-2 rounded-full bg-gradient-to-r from-blue-500/60 to-purple-500/60"
+              style={{ left: `${startPct}%`, width: `${endPct - startPct}%` }}
+            />
+            {/* Start handle (red) */}
+            <div
+              className="absolute top-1 w-5 h-5 rounded-full bg-red-500 border-2 border-white shadow-lg shadow-red-500/30 cursor-grab active:cursor-grabbing z-10 hover:scale-110 transition-transform"
+              style={{ left: `calc(${startPct}% - 10px)` }}
+              onMouseDown={handleSliderDownStart}
+              onTouchStart={handleSliderDownStart}
+            />
+            {/* End handle (orange) */}
+            <div
+              className="absolute top-1 w-5 h-5 rounded-full bg-orange-400 border-2 border-white shadow-lg shadow-orange-400/30 cursor-grab active:cursor-grabbing z-10 hover:scale-110 transition-transform"
+              style={{ left: `calc(${endPct}% - 10px)` }}
+              onMouseDown={handleSliderDownEnd}
+              onTouchStart={handleSliderDownEnd}
+            />
+            {/* Time labels under handles */}
+            <div
+              className="absolute top-6 text-[9px] font-bold text-red-400 whitespace-nowrap"
+              style={{ left: `${startPct}%`, transform: 'translateX(-50%)' }}
+            >
+              {formatTime(rangeStart)}
+            </div>
+            <div
+              className="absolute top-6 text-[9px] font-bold text-orange-400 whitespace-nowrap"
+              style={{ left: `${endPct}%`, transform: 'translateX(-50%)' }}
+            >
+              {formatTime(rangeEnd)}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Legend with current DPS - clickable to show/hide */}
       <div className="mt-4 pt-4 border-t border-white/10">
         {/* Toggle all buttons */}
@@ -285,8 +466,8 @@ export default function SharedDPSGraph({ dpsHistory, fighters, bossData = null, 
 
         <div className="grid grid-cols-3 gap-2">
           {fighters.map((fighter, idx) => {
-            const latestDPS = averageMode && dpsHistory.length > 1
-              ? Math.floor(dpsHistory.reduce((s, snap) => s + (snap[fighter.id] || 0), 0) / dpsHistory.length)
+            const latestDPS = averageMode
+              ? (rangeAvg[fighter.id] || 0)
               : (dpsHistory[dpsHistory.length - 1]?.[fighter.id] || 0);
             const isVisible = visibleLines[fighter.id];
             return (
