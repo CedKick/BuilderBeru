@@ -418,13 +418,14 @@ export default function PvpMode() {
     dpsTracker.current = {};
     dpsWindowTracker.current = {};
     lastDpsSnapshotRef.current = 0;
-    attackers.forEach(c => { dpsTracker.current[c.id] = 0; dpsWindowTracker.current[c.id] = 0; });
+    // Track BOTH teams
+    [...attackers, ...defenders].forEach(c => { dpsTracker.current[c.id] = 0; dpsWindowTracker.current[c.id] = 0; });
     const initialSnapshot = { time: 0 };
-    attackers.forEach(c => { initialSnapshot[c.id] = 0; });
+    [...attackers, ...defenders].forEach(c => { initialSnapshot[c.id] = 0; });
     setDpsHistory([initialSnapshot]);
     const initialLogs = {};
-    attackers.forEach(c => {
-      initialLogs[c.id] = { totalDamage: 0, damageTaken: 0, totalHits: 0, critHits: 0, maxCrit: 0, skillsUsed: 0 };
+    [...attackers, ...defenders].forEach(c => {
+      initialLogs[c.id] = { totalDamage: 0, totalHealing: 0, damageTaken: 0, totalHits: 0, critHits: 0, maxCrit: 0, skillsUsed: 0 };
     });
     setDetailedLogs(initialLogs);
     startTimeRef.current = Date.now();
@@ -499,7 +500,8 @@ export default function PvpMode() {
     if (elapsed - lastDpsSnapshotRef.current >= 0.5) {
       const windowDuration = elapsed - lastDpsSnapshotRef.current;
       const snapshot = { time: +elapsed.toFixed(1) };
-      state.attackers.forEach(c => {
+      // Snapshot BOTH teams
+      [...state.attackers, ...state.defenders].forEach(c => {
         const windowDmg = dpsWindowTracker.current[c.id] || 0;
         snapshot[c.id] = windowDuration > 0 ? Math.floor(windowDmg / windowDuration) : 0;
         dpsWindowTracker.current[c.id] = 0;
@@ -532,13 +534,23 @@ export default function PvpMode() {
         attackerWon = atkHpPct > defHpPct;
       }
 
-      const totalDmg = Object.values(dpsTracker.current).reduce((s, v) => s + v, 0);
+      // Attacker breakdown
+      const atkTotalDmg = state.attackers.reduce((s, c) => s + (dpsTracker.current[c.id] || 0), 0);
       const dpsBreakdown = state.attackers.map(c => ({
         id: c.id, name: c.name, sprite: c.sprite, element: c.element,
         damage: dpsTracker.current[c.id] || 0,
-        percent: totalDmg > 0 ? ((dpsTracker.current[c.id] || 0) / totalDmg * 100) : 0,
-        alive: c.alive,
+        percent: atkTotalDmg > 0 ? ((dpsTracker.current[c.id] || 0) / atkTotalDmg * 100) : 0,
+        alive: c.alive, team: 'atk',
       })).sort((a, b) => b.damage - a.damage);
+      // Defender breakdown
+      const defTotalDmg = state.defenders.reduce((s, c) => s + (dpsTracker.current[c.id] || 0), 0);
+      const defBreakdown = state.defenders.map(c => ({
+        id: c.id, name: c.name, sprite: c.sprite, element: c.element,
+        damage: dpsTracker.current[c.id] || 0,
+        percent: defTotalDmg > 0 ? ((dpsTracker.current[c.id] || 0) / defTotalDmg * 100) : 0,
+        alive: c.alive, team: 'def',
+      })).sort((a, b) => b.damage - a.damage);
+      const totalDmg = atkTotalDmg + defTotalDmg;
 
       fetch('/api/pvp?action=report-result', {
         method: 'POST',
@@ -571,7 +583,10 @@ export default function PvpMode() {
         aliveCount: { atk: aliveAtk.length, def: aliveDef.length },
         duration: Math.floor(elapsed),
         dpsBreakdown,
+        defBreakdown,
         totalDamage: totalDmg,
+        atkTotalDmg,
+        defTotalDmg,
         opponentName: selectedOpponent?.displayName || '???',
         newRating: null,
         ratingChange: null,
@@ -618,6 +633,12 @@ export default function PvpMode() {
           unit.lastAttackAt = now;
           logEntries.push({ text: `${unit.name} soigne ${lowest.name} +${healAmt}`, time: elapsed, type: 'heal' });
           addVfx('heal', { targetId: lowest.id });
+          // Track healing in logs
+          setDetailedLogs(prev => {
+            const log = prev[unit.id];
+            if (!log) return prev;
+            return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + healAmt } };
+          });
           stateChanged = true;
           return;
         }
@@ -995,6 +1016,12 @@ export default function PvpMode() {
         }
         unit.hp = Math.min(unit.maxHp, unit.hp + healAmt);
         addVfx('heal', { targetId: unit.id });
+        // Track self-heal in logs
+        setDetailedLogs(prev => {
+          const log = prev[unit.id];
+          if (!log) return prev;
+          return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + healAmt } };
+        });
       }
 
       if (result.buff) unit.buffs.push({ ...result.buff });
@@ -1552,7 +1579,7 @@ export default function PvpMode() {
 
           <div className="text-sm text-gray-400 mb-1">vs {resultData.opponentName}</div>
           <div className="text-xs text-gray-500 mb-4">
-            {resultData.aliveCount.atk}/6 survivants — {resultData.duration}s
+            Toi: {resultData.aliveCount.atk}/3 — Ennemi: {resultData.aliveCount.def}/3 — {resultData.duration}s
           </div>
 
           {resultData.ratingChange !== null && (
@@ -1571,56 +1598,103 @@ export default function PvpMode() {
             </motion.div>
           )}
 
-          <div className="mb-4 p-3 rounded-xl bg-gray-800/30 border border-gray-700/20">
-            <div className="text-xs text-gray-400 font-bold mb-2">DPS Breakdown</div>
-            {resultData.dpsBreakdown.map((c, i) => (
-              <div key={i} className="flex items-center gap-2 py-1">
-                <img src={c.sprite} alt="" className={`w-6 h-6 rounded-full object-cover ${!c.alive ? 'grayscale opacity-50' : ''}`} />
-                <div className="flex-1 text-left">
-                  <div className="text-[10px] font-bold">{c.name}</div>
-                  <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full"
-                      style={{ width: `${c.percent}%` }} />
-                  </div>
-                </div>
-                <div className="text-[10px] text-gray-400 w-16 text-right">{fmt(c.damage)} ({c.percent.toFixed(0)}%)</div>
-              </div>
-            ))}
-          </div>
-
-          {/* DPS Curve Graph */}
-          {dpsHistory.length > 1 && (
-            <div className="mb-4 p-3 rounded-xl bg-gray-800/30 border border-gray-700/20">
-              <div className="text-xs text-gray-400 font-bold mb-2">{'\uD83D\uDCC8'} Courbe DPS</div>
-              <SharedDPSGraph
-                dpsHistory={dpsHistory}
-                fighters={resultData.dpsBreakdown.map(d => ({
-                  id: d.id, name: d.name, sprite: d.sprite,
-                }))}
-              />
+          {/* ─── TON EQUIPE ─── */}
+          <div className="mb-3 p-3 rounded-xl bg-cyan-900/15 border border-cyan-700/25">
+            <div className="text-xs font-bold mb-2 text-cyan-400 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block" />
+              Ton Equipe — {fmt(resultData.atkTotalDmg)} dmg total
             </div>
-          )}
-
-          {/* Detailed Combat Stats */}
-          <div className="mb-4 p-3 rounded-xl bg-gray-800/30 border border-gray-700/20">
-            <div className="text-xs text-gray-400 font-bold mb-2">{'\uD83D\uDCCA'} Statistiques detaillees</div>
             {resultData.dpsBreakdown.map((c, i) => {
               const log = detailedLogs[c.id];
-              if (!log) return null;
-              const critRate = log.totalHits > 0 ? (log.critHits / log.totalHits * 100).toFixed(0) : 0;
               return (
-                <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-700/10 last:border-0">
-                  <img src={c.sprite} alt="" className={`w-5 h-5 rounded-full object-cover ${!c.alive ? 'grayscale opacity-50' : ''}`} />
-                  <div className="text-[10px] font-bold w-16 truncate">{c.name}</div>
-                  <div className="flex-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[9px] text-gray-400">
-                    <span>{fmt(log.totalDamage)} dmg</span>
-                    <span>{log.totalHits} hits</span>
-                    <span>{critRate}% crit</span>
-                    {log.maxCrit > 0 && <span className="text-yellow-400">max: {fmt(log.maxCrit)}</span>}
+                <div key={i} className="flex items-center gap-2 py-1">
+                  <img src={c.sprite} alt="" className={`w-6 h-6 rounded-full object-cover ${!c.alive ? 'grayscale opacity-50' : ''}`} />
+                  <div className="flex-1 text-left">
+                    <div className="text-[10px] font-bold">{c.name} {!c.alive && <span className="text-red-400 text-[8px]">KO</span>}</div>
+                    <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full" style={{ width: `${c.percent}%` }} />
+                    </div>
+                  </div>
+                  <div className="text-right text-[9px] text-gray-400 w-24">
+                    <div>{fmt(c.damage)} ({c.percent.toFixed(0)}%)</div>
+                    {log?.totalHealing > 0 && <div className="text-green-400">+{fmt(log.totalHealing)} heal</div>}
                   </div>
                 </div>
               );
             })}
+          </div>
+
+          {/* ─── EQUIPE ADVERSE ─── */}
+          <div className="mb-3 p-3 rounded-xl bg-red-900/15 border border-red-700/25">
+            <div className="text-xs font-bold mb-2 text-red-400 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
+              {resultData.opponentName} — {fmt(resultData.defTotalDmg)} dmg total
+            </div>
+            {resultData.defBreakdown.map((c, i) => {
+              const log = detailedLogs[c.id];
+              return (
+                <div key={i} className="flex items-center gap-2 py-1">
+                  <img src={c.sprite} alt="" className={`w-6 h-6 rounded-full object-cover ${!c.alive ? 'grayscale opacity-50' : ''}`} />
+                  <div className="flex-1 text-left">
+                    <div className="text-[10px] font-bold">{c.name} {!c.alive && <span className="text-red-400 text-[8px]">KO</span>}</div>
+                    <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full" style={{ width: `${c.percent}%` }} />
+                    </div>
+                  </div>
+                  <div className="text-right text-[9px] text-gray-400 w-24">
+                    <div>{fmt(c.damage)} ({c.percent.toFixed(0)}%)</div>
+                    {log?.totalHealing > 0 && <div className="text-green-400">+{fmt(log.totalHealing)} heal</div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* DPS Curve Graph — BOTH teams */}
+          {dpsHistory.length > 1 && (
+            <div className="mb-3 p-3 rounded-xl bg-gray-800/30 border border-gray-700/20">
+              <div className="text-xs text-gray-400 font-bold mb-2">Courbe DPS</div>
+              <SharedDPSGraph
+                dpsHistory={dpsHistory}
+                fighters={[
+                  ...resultData.dpsBreakdown.map(d => ({ id: d.id, name: `${d.name} (Toi)`, sprite: d.sprite })),
+                  ...resultData.defBreakdown.map(d => ({ id: d.id, name: `${d.name} (${resultData.opponentName})`, sprite: d.sprite })),
+                ]}
+              />
+            </div>
+          )}
+
+          {/* ─── STATS DETAILLEES — 2 TEAMS ─── */}
+          <div className="mb-4 p-3 rounded-xl bg-gray-800/30 border border-gray-700/20">
+            <div className="text-xs text-gray-400 font-bold mb-2">Statistiques detaillees</div>
+            {[
+              { label: 'Ton Equipe', color: 'text-cyan-400', fighters: resultData.dpsBreakdown },
+              { label: resultData.opponentName, color: 'text-red-400', fighters: resultData.defBreakdown },
+            ].map((team, ti) => (
+              <div key={ti}>
+                <div className={`text-[10px] font-bold ${team.color} mb-1 ${ti > 0 ? 'mt-2 pt-2 border-t border-gray-700/20' : ''}`}>
+                  {team.label}
+                </div>
+                {team.fighters.map((c, i) => {
+                  const log = detailedLogs[c.id];
+                  if (!log) return null;
+                  const critRate = log.totalHits > 0 ? (log.critHits / log.totalHits * 100).toFixed(0) : 0;
+                  return (
+                    <div key={i} className="flex items-center gap-3 py-1 border-b border-gray-700/10 last:border-0">
+                      <img src={c.sprite} alt="" className={`w-5 h-5 rounded-full object-cover ${!c.alive ? 'grayscale opacity-50' : ''}`} />
+                      <div className="text-[10px] font-bold w-16 truncate">{c.name}</div>
+                      <div className="flex-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[9px] text-gray-400">
+                        <span>{fmt(log.totalDamage)} dmg</span>
+                        {log.totalHealing > 0 && <span className="text-green-400">+{fmt(log.totalHealing)} heal</span>}
+                        <span>{log.totalHits} hits</span>
+                        <span>{critRate}% crit</span>
+                        {log.maxCrit > 0 && <span className="text-yellow-400">max: {fmt(log.maxCrit)}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
 
           <div className="flex gap-2">
