@@ -443,6 +443,8 @@ const saveData = (d) => cloudStorage.save(SAVE_KEY, d);
 export default function ShadowColosseum() {
   const [view, setView] = useState('hub'); // hub, stats, skilltree, talents, battle, result
   const [data, setData] = useState(loadData);
+  const dataRef = useRef(data); // Always-fresh ref for sync callbacks
+  useEffect(() => { dataRef.current = data; }, [data]);
   const [cloudLoading, setCloudLoading] = useState(isLoggedIn());
   const cloudLoadedRef = useRef(false);
   const skipSaveRef = useRef(isLoggedIn()); // Prevent save during cloud load (race condition)
@@ -2082,13 +2084,14 @@ export default function ShadowColosseum() {
   };
   const stopStatHold = () => {
     if (statHoldRef.current) { clearTimeout(statHoldRef.current); statHoldRef.current = null; }
+    // Immediate cloud sync when user releases — prevents 30s debounce data loss
+    cloudStorage.saveAndSync(SAVE_KEY, dataRef.current);
   };
 
   const resetStats = (id) => {
-    setData(prev => ({
-      ...prev,
-      statPoints: { ...prev.statPoints, [id]: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 } },
-    }));
+    const newData = { ...data, statPoints: { ...data.statPoints, [id]: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 } } };
+    setData(newData);
+    cloudStorage.saveAndSync(SAVE_KEY, newData);
   };
 
   // ─── Skill Tree Logic ──────────────────────────────────────
@@ -2154,11 +2157,11 @@ export default function ShadowColosseum() {
   };
   const allocateTalent2Point = (id, nodeId) => {
     if (!canAllocT2(id, nodeId)) return;
-    setData(prev => {
-      const alloc = { ...(prev.talentTree2[id] || {}) };
-      alloc[nodeId] = (alloc[nodeId] || 0) + 1;
-      return { ...prev, talentTree2: { ...prev.talentTree2, [id]: alloc } };
-    });
+    const alloc = { ...(data.talentTree2[id] || {}) };
+    alloc[nodeId] = (alloc[nodeId] || 0) + 1;
+    const newData = { ...data, talentTree2: { ...data.talentTree2, [id]: alloc } };
+    setData(newData);
+    cloudStorage.saveAndSync(SAVE_KEY, newData);
   };
 
   // Merged bonuses: Talent I + Talent II
@@ -2211,13 +2214,13 @@ export default function ShadowColosseum() {
 
   const allocateTalentPoint = (id, treeId, nodeId) => {
     if (!canRankUpNode(id, treeId, nodeId)) return;
-    setData(prev => {
-      const chibiAlloc = { ...(prev.talentTree[id] || {}) };
-      const treeAlloc = { ...(chibiAlloc[treeId] || {}) };
-      treeAlloc[nodeId] = (treeAlloc[nodeId] || 0) + 1;
-      chibiAlloc[treeId] = treeAlloc;
-      return { ...prev, talentTree: { ...prev.talentTree, [id]: chibiAlloc } };
-    });
+    const chibiAlloc = { ...(data.talentTree[id] || {}) };
+    const treeAlloc = { ...(chibiAlloc[treeId] || {}) };
+    treeAlloc[nodeId] = (treeAlloc[nodeId] || 0) + 1;
+    chibiAlloc[treeId] = treeAlloc;
+    const newData = { ...data, talentTree: { ...data.talentTree, [id]: chibiAlloc } };
+    setData(newData);
+    cloudStorage.saveAndSync(SAVE_KEY, newData);
   };
 
   // Reset talents per tree (talent1, talent2, talentSkill)
@@ -2228,19 +2231,18 @@ export default function ShadowColosseum() {
     const coins = shadowCoinManager.getBalance();
     if (cost > 0 && coins < cost) return false;
     if (cost > 0) shadowCoinManager.spendCoins(cost);
-    setData(prev => {
-      const oldRespec = typeof prev.respecCount[id] === 'object' ? prev.respecCount[id] : { talent1: 0, talent2: 0, talentSkill: 0 };
-      const newRespec = { ...oldRespec, [treeType]: respecN + 1 };
-      const update = { ...prev, respecCount: { ...prev.respecCount, [id]: newRespec } };
-      if (treeType === 'talent1') update.talentTree = { ...prev.talentTree, [id]: {} };
-      if (treeType === 'talent2') update.talentTree2 = { ...prev.talentTree2, [id]: {} };
-      if (treeType === 'talentSkill') {
-        const ts = { ...prev.talentSkills };
-        delete ts[id];
-        update.talentSkills = ts;
-      }
-      return update;
-    });
+    const oldRespec = typeof data.respecCount[id] === 'object' ? data.respecCount[id] : { talent1: 0, talent2: 0, talentSkill: 0 };
+    const newRespec = { ...oldRespec, [treeType]: respecN + 1 };
+    const newData = { ...data, respecCount: { ...data.respecCount, [id]: newRespec } };
+    if (treeType === 'talent1') newData.talentTree = { ...data.talentTree, [id]: {} };
+    if (treeType === 'talent2') newData.talentTree2 = { ...data.talentTree2, [id]: {} };
+    if (treeType === 'talentSkill') {
+      const ts = { ...data.talentSkills };
+      delete ts[id];
+      newData.talentSkills = ts;
+    }
+    setData(newData);
+    cloudStorage.saveAndSync(SAVE_KEY, newData);
     return true;
   };
   const getRespecCost = (id, treeType = 'talent1') => {
@@ -2252,17 +2254,16 @@ export default function ShadowColosseum() {
   // Talent Skill: equip a skill
   const equipTalentSkill = (id, skillIndex, replacedSlot) => {
     if (getAvailTalentPts(id) < TALENT_SKILL_COST && !data.talentSkills[id]) return;
-    setData(prev => ({
-      ...prev,
-      talentSkills: { ...prev.talentSkills, [id]: { skillIndex, replacedSlot } },
-    }));
+    const newData = { ...data, talentSkills: { ...data.talentSkills, [id]: { skillIndex, replacedSlot } } };
+    setData(newData);
+    cloudStorage.saveAndSync(SAVE_KEY, newData);
   };
   const unequipTalentSkill = (id) => {
-    setData(prev => {
-      const ts = { ...prev.talentSkills };
-      delete ts[id];
-      return { ...prev, talentSkills: ts };
-    });
+    const ts = { ...data.talentSkills };
+    delete ts[id];
+    const newData = { ...data, talentSkills: ts };
+    setData(newData);
+    cloudStorage.saveAndSync(SAVE_KEY, newData);
   };
 
   // ═══════════════════════════════════════════════════════════════
@@ -11013,11 +11014,13 @@ export default function ShadowColosseum() {
                   if (actual <= 0) return;
                   pendingRef.current -= actual;
                   setAccountLevelUpPending(pendingRef.current);
-                  setData(prev => ({
-                    ...prev,
-                    accountBonuses: { ...prev.accountBonuses, [statKey]: (prev.accountBonuses[statKey] || 0) + ACCOUNT_BONUS_AMOUNT * actual },
-                    accountAllocations: (prev.accountAllocations || 0) + actual,
-                  }));
+                  const newData = {
+                    ...dataRef.current,
+                    accountBonuses: { ...dataRef.current.accountBonuses, [statKey]: (dataRef.current.accountBonuses[statKey] || 0) + ACCOUNT_BONUS_AMOUNT * actual },
+                    accountAllocations: (dataRef.current.accountAllocations || 0) + actual,
+                  };
+                  setData(newData);
+                  cloudStorage.saveAndSync(SAVE_KEY, newData);
                 };
                 return (
                   <div key={statKey} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.06] hover:border-indigo-500/30 transition-all">
