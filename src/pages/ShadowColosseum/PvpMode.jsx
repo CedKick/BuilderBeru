@@ -40,7 +40,8 @@ const PVP_KEY = 'pvp_data';
 const defaultColoData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, respecCount: {}, cooldowns: {}, stagesCleared: [], stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0 });
 const loadColoData = () => { try { return { ...defaultColoData(), ...JSON.parse(localStorage.getItem(COLO_KEY)) }; } catch { return defaultColoData(); } };
 
-const defaultPvpData = () => ({ displayName: '', defenseTeam: [], attackTeam: [], pvpStats: { wins: 0, losses: 0, rating: 1000, bestRating: 1000 }, lastMatchAt: 0 });
+const DEFAULT_STRATEGY = { buffPriority: [], healPriority: [], focusTarget: 'smart', playstyle: 'balanced' };
+const defaultPvpData = () => ({ displayName: '', defenseTeam: [], attackTeam: [], pvpStats: { wins: 0, losses: 0, rating: 1000, bestRating: 1000 }, lastMatchAt: 0, attackStrategy: { ...DEFAULT_STRATEGY }, defenseStrategy: { ...DEFAULT_STRATEGY } });
 const loadPvpData = () => { try { return { ...defaultPvpData(), ...JSON.parse(localStorage.getItem(PVP_KEY)) }; } catch { return defaultPvpData(); } };
 const savePvpData = (d) => localStorage.setItem(PVP_KEY, JSON.stringify(d));
 
@@ -73,6 +74,94 @@ const PVP_ARENAS = [
   'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771328568/pvpArena1_wfxqmk.png',
   'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771328568/pvpArena2_hqeqzb.png',
 ];
+
+// ═══════════════════════════════════════════════════════════════
+// SMART AI — Strategy-aware targeting & skill selection
+// ═══════════════════════════════════════════════════════════════
+
+/** Strip _atk/_def suffix for strategy ID matching */
+const baseId = (id) => id?.replace(/_(atk|def)$/, '') || id;
+
+/** Weighted random pick by inverse HP% (lower HP = higher weight) */
+function pickWeightedByHp(enemies) {
+  const weights = enemies.map(e => Math.max(0.1, 1.3 - (e.hp / e.maxHp)));
+  const total = weights.reduce((s, w) => s + w, 0);
+  let roll = Math.random() * total;
+  for (let i = 0; i < enemies.length; i++) {
+    roll -= weights[i];
+    if (roll <= 0) return enemies[i];
+  }
+  return enemies[enemies.length - 1];
+}
+
+/** Smart target selection — replaces random targeting */
+function pvpPickTarget(unit, aliveEnemies, strategy) {
+  if (aliveEnemies.length <= 1) return aliveEnemies[0] || null;
+
+  // 1. ALWAYS finish off low HP targets (< 20%)
+  const dying = aliveEnemies.filter(e => e.hp / e.maxHp < 0.20);
+  if (dying.length > 0) return dying.sort((a, b) => a.hp - b.hp)[0];
+
+  const focus = strategy?.focusTarget || 'smart';
+
+  // 2. Strategy-based focus
+  if (focus === 'support') {
+    const supports = aliveEnemies.filter(e => e.class === 'support');
+    if (supports.length > 0) return pickWeightedByHp(supports);
+    const tanks = aliveEnemies.filter(e => e.class === 'tank');
+    if (tanks.length > 0) return pickWeightedByHp(tanks);
+  }
+  if (focus === 'dps') {
+    const dps = aliveEnemies.filter(e => ['fighter', 'mage', 'assassin'].includes(e.class));
+    if (dps.length > 0) return dps.sort((a, b) => b.atk - a.atk)[0];
+  }
+  if (focus === 'lowest_hp') {
+    return aliveEnemies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
+  }
+
+  // 3. Smart default: focus-fire wounded → supports → weighted random
+  const wounded = aliveEnemies.filter(e => e.hp / e.maxHp < 0.35);
+  if (wounded.length > 0) return wounded.sort((a, b) => a.hp - b.hp)[0];
+
+  const supports = aliveEnemies.filter(e => e.class === 'support');
+  if (supports.length > 0 && Math.random() < 0.6) return supports[0];
+
+  return pickWeightedByHp(aliveEnemies);
+}
+
+/** Playstyle-aware AI skill selection */
+function aiPickSkillPvp(entity, strategy) {
+  const playstyle = strategy?.playstyle || 'balanced';
+  const avail = entity.skills.filter(s => s.cd === 0);
+  if (avail.length === 0) return entity.skills[0];
+
+  const hpPct = entity.hp / entity.maxHp;
+
+  if (playstyle === 'aggressive') {
+    // Self-heal only if critical (< 15%)
+    if (hpPct < 0.15) { const heal = avail.find(s => s.healSelf); if (heal) return heal; }
+    // Buff rarely (20%)
+    if (entity.buffs.length === 0) { const buff = avail.find(s => s.buffAtk || s.buffDef); if (buff && Math.random() < 0.2) return buff; }
+    // Strongest nuke (90%)
+    const attacks = avail.filter(s => s.power > 0).sort((a, b) => b.power - a.power);
+    if (attacks.length > 0 && Math.random() < 0.9) return attacks[0];
+    return avail[Math.floor(Math.random() * avail.length)];
+  }
+
+  if (playstyle === 'defensive') {
+    // Self-heal generously (< 60%)
+    if (hpPct < 0.60) { const heal = avail.find(s => s.healSelf); if (heal) return heal; }
+    // Buff eagerly (80%)
+    if (entity.buffs.length === 0) { const buff = avail.find(s => s.buffAtk || s.buffDef); if (buff && Math.random() < 0.8) return buff; }
+    // Moderate nuke (50%)
+    const attacks = avail.filter(s => s.power > 0).sort((a, b) => b.power - a.power);
+    if (attacks.length > 0 && Math.random() < 0.5) return attacks[0];
+    return avail[Math.floor(Math.random() * avail.length)];
+  }
+
+  // balanced — original aiPickSkill logic
+  return aiPickSkill(entity);
+}
 
 // ═══════════════════════════════════════════════════════════════
 // PVP MODE COMPONENT
@@ -149,6 +238,11 @@ export default function PvpMode() {
   const [resultData, setResultData] = useState(null);
   const [graphTeamFilter, setGraphTeamFilter] = useState('all'); // 'all' | 'atk' | 'def'
   const [graphMetric, setGraphMetric] = useState('dps'); // 'dps' | 'hps' | 'hrps' | 'dtps'
+
+  // Strategy modal state
+  const [showStrategyModal, setShowStrategyModal] = useState(false);
+  const [editingStrategyType, setEditingStrategyType] = useState('atk'); // 'atk' | 'def'
+  const opponentStrategyRef = useRef({});
 
   // Rankings state
   const [rankings, setRankings] = useState([]);
@@ -331,7 +425,7 @@ export default function PvpMode() {
       const resp = await fetch('/api/pvp?action=register-defense', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ displayName: displayName.trim(), teamData, powerScore }),
+        body: JSON.stringify({ displayName: displayName.trim(), teamData, powerScore, strategy: pvpData.defenseStrategy || {} }),
       });
       const json = await resp.json();
       if (json.success) {
@@ -415,6 +509,9 @@ export default function PvpMode() {
     // Apply PVP stat multipliers to defenders too
     defenders.forEach(applyPvpStats);
     applyTeamPassives(defenders);
+
+    // Capture opponent's defense strategy for AI
+    opponentStrategyRef.current = opponent.strategy || {};
 
     const state = { attackers, defenders };
     setBattleState(state);
@@ -642,15 +739,28 @@ export default function PvpMode() {
         }
       }
 
-      // Support healing — allies first, then self (costs 25% maxMana)
+      // Support healing — strategy-aware priority (costs 25% maxMana)
+      const strategy = isAttacker ? pvpData.attackStrategy : opponentStrategyRef.current;
       if (unit.class === 'support') {
         const healManaCost = Math.floor((unit.maxMana || 0) * 0.25);
         const hasEnoughMana = unit.maxMana <= 0 || (unit.mana || 0) >= healManaCost;
-        const aliveAllies = allies.filter(a => a.alive && a.id !== unit.id && a.hp < a.maxHp);
-        const lowest = aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
-        // Heal target: lowest ally <75% HP, OR self <75% HP as fallback
-        const healTarget = hasEnoughMana ? ((lowest && (lowest.hp / lowest.maxHp) < 0.75) ? lowest
-          : (unit.hp < unit.maxHp && (unit.hp / unit.maxHp) < 0.75) ? unit : null) : null;
+        // Heal threshold varies by playstyle: aggressive 0.50, balanced 0.75, defensive 0.90
+        const healThreshold = (strategy?.playstyle === 'aggressive') ? 0.50
+          : (strategy?.playstyle === 'defensive') ? 0.90 : 0.75;
+        const eligible = allies.filter(a => a.alive && a.id !== unit.id && a.hp < a.maxHp * healThreshold);
+        let healTarget = null;
+        if (hasEnoughMana && eligible.length > 0) {
+          // Check strategy heal priority first
+          const healPrio = strategy?.healPriority || [];
+          for (const prioId of healPrio) {
+            const match = eligible.find(a => baseId(a.id) === prioId);
+            if (match) { healTarget = match; break; }
+          }
+          // Fallback: lowest HP among eligible
+          if (!healTarget) healTarget = eligible.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
+        }
+        // Self-heal fallback
+        if (!healTarget && hasEnoughMana && unit.hp < unit.maxHp * healThreshold) healTarget = unit;
         if (healTarget) {
           // Consume mana for heal
           if (unit.maxMana > 0) unit.mana = Math.max(0, (unit.mana || 0) - healManaCost);
@@ -683,12 +793,12 @@ export default function PvpMode() {
         }
       }
 
-      // Pick target (random for V1)
+      // Pick target (strategy-aware smart targeting)
       const aliveEnemies = enemies.filter(e => e.alive);
       if (aliveEnemies.length === 0) return;
-      const target = aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
+      const target = pvpPickTarget(unit, aliveEnemies, strategy);
 
-      // Pick skill (AI)
+      // Pick skill (strategy-aware AI)
       const availSkills = unit.skills.filter(s => {
         if ((s.cd || 0) > 0) return false;
         if (s.consumeHalfMana) return (unit.mana || 0) > 0;
@@ -697,7 +807,7 @@ export default function PvpMode() {
         return (unit.mana || 999) >= cost;
       });
       const entityForAI = { ...unit, skills: availSkills.length > 0 ? availSkills.map(s => ({ ...s, cd: 0 })) : [{ ...unit.skills[0], cd: 0 }] };
-      const skill = aiPickSkill(entityForAI);
+      const skill = aiPickSkillPvp(entityForAI, strategy);
 
       // Save mana before consumption (for manaScaling)
       const manaBeforeConsume = unit.mana || 0;
@@ -1118,7 +1228,22 @@ export default function PvpMode() {
         });
       }
 
-      if (result.buff) unit.buffs.push({ ...result.buff });
+      // Strategy-aware buff targeting: prioritize buffPriority allies
+      if (result.buff) {
+        let buffTarget = unit;
+        const buffPrio = strategy?.buffPriority || [];
+        if (buffPrio.length > 0) {
+          const aliveAllies = allies.filter(a => a.alive);
+          for (const prioId of buffPrio) {
+            const match = aliveAllies.find(a => baseId(a.id) === prioId && !a.buffs.some(b => b.stat === result.buff.stat && b.value > 0));
+            if (match) { buffTarget = match; break; }
+          }
+        }
+        buffTarget.buffs.push({ ...result.buff });
+        if (buffTarget !== unit) {
+          logEntries.push({ text: `${unit.name} buff ${buffTarget.name} (${result.buff.stat.toUpperCase()} +${Math.round(result.buff.value * 100)}%)`, time: elapsed, type: 'heal' });
+        }
+      }
       if (result.debuff) target.buffs.push({ ...result.debuff });
 
       unit.skills.forEach(s => {
@@ -1446,21 +1571,33 @@ export default function PvpMode() {
               <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value.slice(0, 20))}
                 placeholder="Ton pseudo (max 20)"
                 className="w-full mb-2 px-3 py-1.5 rounded-lg bg-gray-900/50 border border-gray-700/30 text-sm text-white placeholder-gray-600 outline-none focus:border-blue-500/50" />
-              <button onClick={registerDefense}
-                disabled={[...defTeam1, ...defTeam2].filter(Boolean).length < 6 || !displayName.trim()}
-                className="w-full py-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold text-sm disabled:opacity-30 disabled:cursor-not-allowed hover:from-blue-500 hover:to-cyan-500 transition-all">
-                Sauvegarder Defense ({[...defTeam1, ...defTeam2].filter(Boolean).length}/6)
-              </button>
+              <div className="flex gap-2">
+                <button onClick={registerDefense}
+                  disabled={[...defTeam1, ...defTeam2].filter(Boolean).length < 6 || !displayName.trim()}
+                  className="flex-1 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold text-sm disabled:opacity-30 disabled:cursor-not-allowed hover:from-blue-500 hover:to-cyan-500 transition-all">
+                  Sauvegarder Defense ({[...defTeam1, ...defTeam2].filter(Boolean).length}/6)
+                </button>
+                <button onClick={() => { setEditingStrategyType('def'); setShowStrategyModal(true); }}
+                  className="px-3 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs hover:from-purple-500 hover:to-indigo-500 transition-all">
+                  Strategie
+                </button>
+              </div>
               {registerMsg && <div className="text-[10px] text-center mt-1.5 text-cyan-400">{registerMsg}</div>}
             </div>
           )}
 
           {tab === 'atk' && (
-            <button onClick={startMatchmaking}
-              disabled={[...team1, ...team2].filter(Boolean).length < 6 || !pvpData.defenseTeam || pvpData.defenseTeam.length < 6}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 to-orange-600 text-white font-black text-sm disabled:opacity-30 disabled:cursor-not-allowed hover:from-red-500 hover:to-orange-500 transition-all shadow-lg shadow-red-900/40">
-              {'\u2694\uFE0F'} CHERCHER ADVERSAIRE ({[...team1, ...team2].filter(Boolean).length}/6)
-            </button>
+            <div className="flex gap-2">
+              <button onClick={startMatchmaking}
+                disabled={[...team1, ...team2].filter(Boolean).length < 6 || !pvpData.defenseTeam || pvpData.defenseTeam.length < 6}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-600 to-orange-600 text-white font-black text-sm disabled:opacity-30 disabled:cursor-not-allowed hover:from-red-500 hover:to-orange-500 transition-all shadow-lg shadow-red-900/40">
+                {'\u2694\uFE0F'} CHERCHER ADVERSAIRE ({[...team1, ...team2].filter(Boolean).length}/6)
+              </button>
+              <button onClick={() => { setEditingStrategyType('atk'); setShowStrategyModal(true); }}
+                className="px-3 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs hover:from-purple-500 hover:to-indigo-500 transition-all">
+                Strategie
+              </button>
+            </div>
           )}
           {tab === 'atk' && (!pvpData.defenseTeam || pvpData.defenseTeam.length < 6) && (
             <div className="text-[10px] text-yellow-400 text-center mt-2">
@@ -1904,6 +2041,143 @@ export default function PvpMode() {
           </button>
         </div>
       )}
+      {/* ═══ STRATEGY MODAL ═══ */}
+      {showStrategyModal && (() => {
+        const isAtk = editingStrategyType === 'atk';
+        const stratKey = isAtk ? 'attackStrategy' : 'defenseStrategy';
+        const strat = pvpData[stratKey] || { ...DEFAULT_STRATEGY };
+        const teamIds = isAtk
+          ? [...team1, ...team2].filter(Boolean)
+          : [...defTeam1, ...defTeam2].filter(Boolean);
+        const teamChibis = teamIds.map(id => ({ id, ...(CHIBIS[id] || {}), sprite: SPRITES[id] })).filter(c => c.name);
+
+        const updateStrat = (patch) => {
+          const updated = { ...strat, ...patch };
+          setPvpData(prev => {
+            const next = { ...prev, [stratKey]: updated };
+            savePvpData(next);
+            return next;
+          });
+        };
+
+        const togglePriority = (field, id) => {
+          const list = [...(strat[field] || [])];
+          const idx = list.indexOf(id);
+          if (idx >= 0) list.splice(idx, 1);
+          else if (list.length < 3) list.push(id);
+          updateStrat({ [field]: list });
+        };
+
+        const focusOptions = [
+          { key: 'smart', label: 'Intelligent', desc: 'Focus blesses, puis supports' },
+          { key: 'support', label: 'Healers/Supports', desc: 'Cible les supports en priorite' },
+          { key: 'dps', label: 'DPS', desc: 'Cible les plus gros ATK' },
+          { key: 'lowest_hp', label: 'Plus faible', desc: 'Cible le plus bas en HP' },
+        ];
+        const styleOptions = [
+          { key: 'balanced', label: 'Equilibre', desc: 'Attaque/defense standard', color: 'blue' },
+          { key: 'aggressive', label: 'Agressif', desc: 'Nuke max, peu de soins', color: 'red' },
+          { key: 'defensive', label: 'Defensif', desc: 'Soins/buffs prioritaires', color: 'green' },
+        ];
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setShowStrategyModal(false)}>
+            <div className="bg-[#141428] rounded-2xl border border-purple-500/30 max-w-md w-full max-h-[85vh] overflow-y-auto p-5" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-black text-purple-300">Strategie {isAtk ? 'Attaque' : 'Defense'}</h3>
+                <button onClick={() => setShowStrategyModal(false)} className="text-gray-500 hover:text-white text-xl">&times;</button>
+              </div>
+
+              {/* Section 1: Focus Target */}
+              <div className="mb-4">
+                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Cible prioritaire</div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {focusOptions.map(o => (
+                    <button key={o.key} onClick={() => updateStrat({ focusTarget: o.key })}
+                      className={`px-2 py-2 rounded-lg text-left transition-all text-[10px] border ${strat.focusTarget === o.key
+                        ? 'bg-purple-600/30 border-purple-500/50 text-white'
+                        : 'bg-gray-800/30 border-gray-700/20 text-gray-400 hover:bg-gray-700/30'}`}>
+                      <div className="font-bold">{o.label}</div>
+                      <div className="text-[8px] opacity-60">{o.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Section 2: Playstyle */}
+              <div className="mb-4">
+                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Style de jeu</div>
+                <div className="flex gap-1.5">
+                  {styleOptions.map(o => (
+                    <button key={o.key} onClick={() => updateStrat({ playstyle: o.key })}
+                      className={`flex-1 px-2 py-2 rounded-lg text-center transition-all text-[10px] border ${strat.playstyle === o.key
+                        ? `bg-${o.color}-600/30 border-${o.color}-500/50 text-white`
+                        : 'bg-gray-800/30 border-gray-700/20 text-gray-400 hover:bg-gray-700/30'}`}>
+                      <div className="font-bold">{o.label}</div>
+                      <div className="text-[8px] opacity-60">{o.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Section 3: Buff Priority */}
+              <div className="mb-4">
+                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Priorite buff <span className="text-purple-400">(max 3)</span></div>
+                <div className="grid grid-cols-6 gap-1.5">
+                  {teamChibis.map(c => {
+                    const idx = (strat.buffPriority || []).indexOf(c.id);
+                    const selected = idx >= 0;
+                    return (
+                      <button key={c.id} onClick={() => togglePriority('buffPriority', c.id)}
+                        className={`relative flex flex-col items-center gap-0.5 p-1.5 rounded-lg transition-all border ${selected
+                          ? 'bg-amber-600/30 border-amber-500/50' : 'bg-gray-800/30 border-gray-700/20 hover:bg-gray-700/30'}`}>
+                        <img src={c.sprite} alt="" className="w-7 h-7 rounded-full object-cover" />
+                        <div className="text-[7px] text-gray-300 truncate w-full text-center">{c.name?.split(' ')[0]}</div>
+                        {selected && <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-[8px] text-black font-black flex items-center justify-center">{idx + 1}</div>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Section 4: Heal Priority */}
+              <div className="mb-4">
+                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Priorite soin <span className="text-emerald-400">(max 3)</span></div>
+                <div className="grid grid-cols-6 gap-1.5">
+                  {teamChibis.map(c => {
+                    const idx = (strat.healPriority || []).indexOf(c.id);
+                    const selected = idx >= 0;
+                    return (
+                      <button key={c.id} onClick={() => togglePriority('healPriority', c.id)}
+                        className={`relative flex flex-col items-center gap-0.5 p-1.5 rounded-lg transition-all border ${selected
+                          ? 'bg-emerald-600/30 border-emerald-500/50' : 'bg-gray-800/30 border-gray-700/20 hover:bg-gray-700/30'}`}>
+                        <img src={c.sprite} alt="" className="w-7 h-7 rounded-full object-cover" />
+                        <div className="text-[7px] text-gray-300 truncate w-full text-center">{c.name?.split(' ')[0]}</div>
+                        {selected && <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-[8px] text-black font-black flex items-center justify-center">{idx + 1}</div>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div className="p-3 rounded-xl bg-gray-800/20 border border-gray-700/10 text-[9px] text-gray-500">
+                <span className="text-purple-400 font-bold">Resume: </span>
+                Focus {focusOptions.find(o => o.key === strat.focusTarget)?.label || 'Intelligent'}
+                {' | '}Style {styleOptions.find(o => o.key === strat.playstyle)?.label || 'Equilibre'}
+                {(strat.buffPriority?.length > 0) && ` | ${strat.buffPriority.length} buff prio`}
+                {(strat.healPriority?.length > 0) && ` | ${strat.healPriority.length} heal prio`}
+              </div>
+
+              <button onClick={() => setShowStrategyModal(false)}
+                className="w-full mt-3 py-2 rounded-lg bg-purple-600/30 text-purple-300 font-bold text-sm hover:bg-purple-600/40 transition-all border border-purple-500/30">
+                Confirmer
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
     </div>
   );
 }
