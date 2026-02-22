@@ -989,7 +989,8 @@ export const loadRaidData = () => {
   }
 };
 
-export const saveRaidData = (d) => localStorage.setItem(RAID_SAVE_KEY, JSON.stringify(d));
+import { cloudStorage } from '../../utils/CloudStorage';
+export const saveRaidData = (d) => cloudStorage.save(RAID_SAVE_KEY, d);
 
 // ─── Hunter Passive Effects (structured, applied in combat) ──────────
 // Types:

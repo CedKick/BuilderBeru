@@ -351,6 +351,25 @@ export function rollHammerDrop(tier, isBoss) {
 // ═══════════════════════════════════════════════════════════════
 
 export const MAX_ARTIFACT_LEVEL = 20;
+export const MAX_ARTIFACT_INVENTORY = 1500;
+
+/** Trim artifact inventory to MAX_ARTIFACT_INVENTORY. Removes lowest-scored unlocked artifacts first. */
+export function trimArtifactInventory(inventory) {
+  if (!inventory || inventory.length <= MAX_ARTIFACT_INVENTORY) return inventory;
+  // Score all artifacts (higher = better)
+  const scored = inventory.map((art, i) => ({ art, i, score: scoreArtifact(art, 'dps'), protected: art.locked || art.highlighted }));
+  // Sort: protected first, then by score descending
+  scored.sort((a, b) => {
+    if (a.protected && !b.protected) return -1;
+    if (!a.protected && b.protected) return 1;
+    return b.score - a.score;
+  });
+  // Keep top MAX_ARTIFACT_INVENTORY
+  const kept = scored.slice(0, MAX_ARTIFACT_INVENTORY).map(s => s.art);
+  const removed = scored.length - kept.length;
+  if (removed > 0) console.log(`[Inventory] Auto-cleaned ${removed} low-score artifacts (limit: ${MAX_ARTIFACT_INVENTORY})`);
+  return kept;
+}
 
 // Coin cost per enhancement (in addition to hammer)
 export const ENHANCE_COST = (level) => {

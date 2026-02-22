@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Inbox, Gift, Trash2, ChevronDown, ChevronUp, Check, X, ArrowLeft, MessageCircle, Send } from 'lucide-react';
 import { isLoggedIn, authHeaders, getAuthUser } from '../utils/auth';
+import { cloudStorage } from '../utils/CloudStorage';
 import shadowCoinManager from '../components/ChibiSystem/ShadowCoinManager';
 import { WEAPONS } from './ShadowColosseum/equipmentData';
 import { HUNTERS } from './ShadowColosseum/raidData';
@@ -314,7 +315,7 @@ export default function MailInbox() {
         }
       });
 
-      localStorage.setItem(RAID_KEY, JSON.stringify(raidData));
+      cloudStorage.save(RAID_KEY, raidData);
     }
 
     // Coins
@@ -322,7 +323,7 @@ export default function MailInbox() {
       shadowCoinManager.addCoins(rewards.coins, 'mail-reward');
     }
 
-    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    cloudStorage.save(SAVE_KEY, data);
 
     // Dispatch update event
     window.dispatchEvent(new CustomEvent('beru-react', {

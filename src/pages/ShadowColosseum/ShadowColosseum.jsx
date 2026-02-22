@@ -44,6 +44,7 @@ import {
   computeWeaponILevel, computeArtifactILevel, computeEquipILevel,
   ARC2_ARTIFACT_SETS, generateArc2Artifact, generateSetArtifact,
   ROLE_WEIGHTS, scoreArtifact, scoreToGrade, scoreAllArtifacts,
+  MAX_ARTIFACT_INVENTORY, trimArtifactInventory,
 } from './equipmentData';
 import {
   isArc2Unlocked, ARC2_STAGES, ARC2_TIER_NAMES, ARC2_STORIES,
@@ -352,89 +353,88 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 
 const SAVE_KEY = 'shadow_colosseum_data';
 const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, fragments: { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [], monarchKills: 0, monarchDropLog: [], archDemonKills: 0, archDemonDropLog: [], lootBoostMs: 0 });
+
+// Migrations — apply to raw data from localStorage OR cloud
+const migrateData = (d) => {
+  if (!d.artifacts) d.artifacts = {};
+  if (!d.artifactInventory) d.artifactInventory = [];
+  if (!d.weapons) d.weapons = {};
+  if (d.weaponInventory && Array.isArray(d.weaponInventory)) {
+    if (!d.weaponCollection || typeof d.weaponCollection !== 'object' || Array.isArray(d.weaponCollection)) d.weaponCollection = {};
+    d.weaponInventory.forEach(wId => { if (d.weaponCollection[wId] === undefined) d.weaponCollection[wId] = 0; });
+    Object.values(d.weapons).forEach(wId => { if (wId && d.weaponCollection[wId] === undefined) d.weaponCollection[wId] = 0; });
+    delete d.weaponInventory;
+  }
+  if (!d.weaponCollection || typeof d.weaponCollection !== 'object') d.weaponCollection = {};
+  Object.values(d.weapons).forEach(wId => { if (wId && d.weaponCollection[wId] === undefined) d.weaponCollection[wId] = 0; });
+  if (!d.hammers) d.hammers = { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 };
+  if (d.hammers.marteau_rouge === undefined) d.hammers.marteau_rouge = 0;
+  if (d.accountXp === undefined) d.accountXp = 0;
+  if (!d.accountBonuses) d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
+  if (d.accountAllocations === undefined) d.accountAllocations = 0;
+  if (d.arc2Unlocked === undefined) d.arc2Unlocked = false;
+  if (!d.arc2StagesCleared) d.arc2StagesCleared = {};
+  if (!d.arc2StoriesWatched) d.arc2StoriesWatched = {};
+  if (d.arc2ClickCount === undefined) d.arc2ClickCount = 0;
+  if (d.grimoireWeiss === undefined) d.grimoireWeiss = false;
+  if (!d.arc2Team) d.arc2Team = [null, null, null];
+  if (!d.arc2StarsRecord) d.arc2StarsRecord = {};
+  if (d.ragnarokKills === undefined) d.ragnarokKills = 0;
+  if (!d.ragnarokDropLog) d.ragnarokDropLog = [];
+  if (d.zephyrKills === undefined) d.zephyrKills = 0;
+  if (!d.zephyrDropLog) d.zephyrDropLog = [];
+  if (d.monarchKills === undefined) d.monarchKills = 0;
+  if (!d.monarchDropLog) d.monarchDropLog = [];
+  if (d.lootBoostMs === undefined) d.lootBoostMs = 0;
+  if (!d.fragments) d.fragments = { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 };
+  if (d.fragments && d.fragments.fragment_guldan === undefined) d.fragments.fragment_guldan = 0;
+  if (!d.talentSkills) d.talentSkills = {};
+  d.artifactInventory = (d.artifactInventory || []).map(art => ({
+    ...art, locked: art.locked ?? false, highlighted: art.highlighted ?? false
+  }));
+  if (d.artifacts) {
+    Object.keys(d.artifacts).forEach(chibiId => {
+      Object.keys(d.artifacts[chibiId] || {}).forEach(slotId => {
+        if (d.artifacts[chibiId][slotId]) {
+          d.artifacts[chibiId][slotId] = {
+            ...d.artifacts[chibiId][slotId],
+            locked: d.artifacts[chibiId][slotId].locked ?? false,
+            highlighted: d.artifacts[chibiId][slotId].highlighted ?? false
+          };
+        }
+      });
+    });
+  }
+  for (const cid of Object.keys(d.respecCount || {})) {
+    if (typeof d.respecCount[cid] === 'number') {
+      d.respecCount[cid] = { talent1: d.respecCount[cid], talent2: d.respecCount[cid], talentSkill: 0 };
+    }
+  }
+  if (Array.isArray(d.stagesCleared)) {
+    const m = {};
+    d.stagesCleared.forEach(id => { m[id] = { maxStars: 0 }; });
+    d.stagesCleared = m;
+  } else if (!d.stagesCleared || typeof d.stagesCleared !== 'object') {
+    d.stagesCleared = {};
+  }
+  if (!d.accountResetV1) {
+    d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
+    d.accountAllocations = 0;
+    d.accountResetV1 = true;
+  }
+  return d;
+};
+
 const loadData = () => {
   try {
-    const d = { ...defaultData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) };
-    if (!d.artifacts) d.artifacts = {};
-    if (!d.artifactInventory) d.artifactInventory = [];
-    if (!d.weapons) d.weapons = {};
-    // Migration: weaponInventory (string[]) → weaponCollection ({weaponId: awakening})
-    if (d.weaponInventory && Array.isArray(d.weaponInventory)) {
-      if (!d.weaponCollection || typeof d.weaponCollection !== 'object' || Array.isArray(d.weaponCollection)) d.weaponCollection = {};
-      d.weaponInventory.forEach(wId => { if (d.weaponCollection[wId] === undefined) d.weaponCollection[wId] = 0; });
-      Object.values(d.weapons).forEach(wId => { if (wId && d.weaponCollection[wId] === undefined) d.weaponCollection[wId] = 0; });
-      delete d.weaponInventory;
-    }
-    if (!d.weaponCollection || typeof d.weaponCollection !== 'object') d.weaponCollection = {};
-    // Also ensure equipped weapons are in collection
-    Object.values(d.weapons).forEach(wId => { if (wId && d.weaponCollection[wId] === undefined) d.weaponCollection[wId] = 0; });
-    if (!d.hammers) d.hammers = { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 };
-    if (d.hammers.marteau_rouge === undefined) d.hammers.marteau_rouge = 0;
-    if (d.accountXp === undefined) d.accountXp = 0;
-    if (!d.accountBonuses) d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
-    if (d.accountAllocations === undefined) d.accountAllocations = 0;
-    // ARC II migration
-    if (d.arc2Unlocked === undefined) d.arc2Unlocked = false;
-    if (!d.arc2StagesCleared) d.arc2StagesCleared = {};
-    if (!d.arc2StoriesWatched) d.arc2StoriesWatched = {};
-    if (d.arc2ClickCount === undefined) d.arc2ClickCount = 0;
-    if (d.grimoireWeiss === undefined) d.grimoireWeiss = false;
-    if (!d.arc2Team) d.arc2Team = [null, null, null];
-    if (!d.arc2StarsRecord) d.arc2StarsRecord = {};
-    if (d.ragnarokKills === undefined) d.ragnarokKills = 0;
-    if (!d.ragnarokDropLog) d.ragnarokDropLog = [];
-    if (d.zephyrKills === undefined) d.zephyrKills = 0;
-    if (!d.zephyrDropLog) d.zephyrDropLog = [];
-    if (d.monarchKills === undefined) d.monarchKills = 0;
-    if (!d.monarchDropLog) d.monarchDropLog = [];
-    if (d.lootBoostMs === undefined) d.lootBoostMs = 0;
-    if (!d.fragments) d.fragments = { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 };
-    if (d.fragments && d.fragments.fragment_guldan === undefined) d.fragments.fragment_guldan = 0;
-    if (!d.talentSkills) d.talentSkills = {};
-    // Migration: add locked field to artifacts
-    d.artifactInventory = (d.artifactInventory || []).map(art => ({
-      ...art,
-      locked: art.locked ?? false,
-      highlighted: art.highlighted ?? false
-    }));
-    // Also migrate equipped artifacts
-    if (d.artifacts) {
-      Object.keys(d.artifacts).forEach(chibiId => {
-        Object.keys(d.artifacts[chibiId] || {}).forEach(slotId => {
-          if (d.artifacts[chibiId][slotId]) {
-            d.artifacts[chibiId][slotId] = {
-              ...d.artifacts[chibiId][slotId],
-              locked: d.artifacts[chibiId][slotId].locked ?? false,
-              highlighted: d.artifacts[chibiId][slotId].highlighted ?? false
-            };
-          }
-        });
-      });
-    }
-    // Migration: respecCount old format (number) → per-tree format
-    for (const cid of Object.keys(d.respecCount || {})) {
-      if (typeof d.respecCount[cid] === 'number') {
-        d.respecCount[cid] = { talent1: d.respecCount[cid], talent2: d.respecCount[cid], talentSkill: 0 };
-      }
-    }
-    // Migration: stagesCleared array → object { [id]: { maxStars } }
-    if (Array.isArray(d.stagesCleared)) {
-      const m = {};
-      d.stagesCleared.forEach(id => { m[id] = { maxStars: 0 }; });
-      d.stagesCleared = m;
-    } else if (!d.stagesCleared || typeof d.stagesCleared !== 'object') {
-      d.stagesCleared = {};
-    }
-    // Migration V1: forced account bonus reset (scaling rebalance)
-    if (!d.accountResetV1) {
-      d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
-      d.accountAllocations = 0;
-      d.accountResetV1 = true;
-    }
-    return d;
+    const raw = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (!raw) return defaultData();
+    return migrateData({ ...defaultData(), ...raw });
   } catch { return defaultData(); }
 };
-const saveData = (d) => localStorage.setItem(SAVE_KEY, JSON.stringify(d));
+
+// NeonDB cloud-first: saves to localStorage (cache) + schedules cloud sync
+const saveData = (d) => cloudStorage.save(SAVE_KEY, d);
 
 // ═══════════════════════════════════════════════════════════════
 // COMPONENT
@@ -443,18 +443,48 @@ const saveData = (d) => localStorage.setItem(SAVE_KEY, JSON.stringify(d));
 export default function ShadowColosseum() {
   const [view, setView] = useState('hub'); // hub, stats, skilltree, talents, battle, result
   const [data, setData] = useState(loadData);
-  const [cloudReady, setCloudReady] = useState(cloudStorage._initialized);
+  const [cloudLoading, setCloudLoading] = useState(isLoggedIn());
+  const cloudLoadedRef = useRef(false);
+  const skipSaveRef = useRef(isLoggedIn()); // Prevent save during cloud load (race condition)
+  const [syncStatus, setSyncStatus] = useState('synced');
 
-  // After cloud sync completes, reload data (protects against CTRL+SHIFT+R / cache clear)
+  // Cloud-first load: NeonDB = source of truth when logged in
   useEffect(() => {
-    if (cloudReady) return;
+    if (!isLoggedIn()) { setCloudLoading(false); skipSaveRef.current = false; return; }
+    if (cloudLoadedRef.current) return;
     let cancelled = false;
-    cloudStorage.whenReady().then(() => {
-      if (cancelled) return;
-      setCloudReady(true);
-      setData(loadData());
-    });
+    (async () => {
+      try {
+        await cloudStorage.whenReady();
+        if (cancelled) return;
+        const cloudData = await cloudStorage.loadCloud(SAVE_KEY);
+        if (cancelled) return;
+        if (cloudData) {
+          const migrated = migrateData({ ...defaultData(), ...cloudData });
+          setData(prev => {
+            const prevSize = JSON.stringify(prev).length;
+            const cloudSize = JSON.stringify(migrated).length;
+            return cloudSize >= prevSize * 0.8 ? migrated : prev;
+          });
+        }
+      } catch (err) {
+        console.warn('[ShadowColosseum] Cloud load failed:', err);
+      } finally {
+        if (!cancelled) {
+          cloudLoadedRef.current = true;
+          setCloudLoading(false);
+          skipSaveRef.current = false;
+        }
+      }
+    })();
     return () => { cancelled = true; };
+  }, []);
+
+  // Sync status indicator
+  useEffect(() => {
+    return cloudStorage.onSyncStatus((key, status) => {
+      if (key === SAVE_KEY) setSyncStatus(status);
+    });
   }, []);
 
   const [selChibi, setSelChibi] = useState(null);
@@ -756,7 +786,8 @@ export default function ShadowColosseum() {
 
   useEffect(() => { phaseRef.current = phase; }, [phase]);
   useEffect(() => () => { if (enhanceHoldRef.current) clearTimeout(enhanceHoldRef.current); }, []);
-  useEffect(() => { saveData(data); }, [data]);
+  // Save to cloud (debounced) — skip during initial cloud load to prevent race condition
+  useEffect(() => { if (!skipSaveRef.current) saveData(data); }, [data]);
 
   // 2-frame attack animation: triggered when lastAction has atkFrames
   useEffect(() => {
@@ -1917,16 +1948,16 @@ export default function ShadowColosseum() {
           d.weaponCollection[weaponDrop.id] = 0;
         }
       }
-      // ARC II artifact drop
-      const baseDropChance = 0.08 + star * 0.03; // 8% base + 3% per star
+      // ARC II artifact drop (rates /5 — inventory cap active)
+      const baseDropChance = (0.08 + star * 0.03) / 5; // 1.6% base + 0.6% per star
       let droppedArt = null;
       const gRarity = getGuaranteedArtifactRarity(star);
-      if (gRarity) droppedArt = generateArc2Artifact(gRarity);
+      if (gRarity && Math.random() < 0.2) droppedArt = generateArc2Artifact(gRarity); // 20% chance (was 100%)
       else if (Math.random() < baseDropChance) {
         const r = Math.random() < 0.15 ? 'mythique' : Math.random() < 0.45 ? 'legendaire' : 'rare';
         droppedArt = generateArc2Artifact(r);
       }
-      if (droppedArt) d.artifactInventory.push(droppedArt);
+      if (droppedArt) d.artifactInventory = trimArtifactInventory([...d.artifactInventory, droppedArt]);
       // Skin drop handling
       if (skinDrop) {
         if (!d.ownedSkins) d.ownedSkins = {};
@@ -3479,10 +3510,10 @@ export default function ShadowColosseum() {
       }
     }
 
-    // Guaranteed artifact at high stars
+    // Guaranteed artifact at high stars (rates /5 — inventory cap active)
     let guaranteedArtifact = null;
     const gRarity = getGuaranteedArtifactRarity(currentStar);
-    if (gRarity) guaranteedArtifact = generateArtifact(gRarity);
+    if (gRarity && Math.random() < 0.2) guaranteedArtifact = generateArtifact(gRarity); // 20% chance (was 100%)
 
     // Weapon drops — general (tier-based) + Sulfuras secret (no uniqueness check)
     let weaponDrop = null;
@@ -3613,7 +3644,7 @@ export default function ShadowColosseum() {
           }
           return wc;
         })(),
-        artifactInventory: [...prev.artifactInventory, ...(guaranteedArtifact ? [guaranteedArtifact] : []), ...(pacteDrop ? [pacteDrop] : [])],
+        artifactInventory: trimArtifactInventory([...prev.artifactInventory, ...(guaranteedArtifact ? [guaranteedArtifact] : []), ...(pacteDrop ? [pacteDrop] : [])]),
       };
     });
     if (newAllocations > 0) setPendingAlloc(newAllocations);
@@ -3953,9 +3984,42 @@ export default function ShadowColosseum() {
   // RENDER
   // ═══════════════════════════════════════════════════════════════
 
+  if (cloudLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a1a] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-gray-400 text-sm">Synchronisation cloud...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a1a] text-white pb-20">
       <BattleStyles />
+
+      {/* Cloud sync indicator */}
+      {isLoggedIn() && (
+        <div className="fixed top-2 right-2 z-50 flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur text-[10px]" title={
+          syncStatus === 'synced' ? 'Sauvegarde cloud OK' :
+          syncStatus === 'syncing' ? 'Synchronisation en cours...' :
+          syncStatus === 'error' ? 'Erreur de synchronisation' : 'En attente...'
+        }>
+          <div className={`w-1.5 h-1.5 rounded-full ${
+            syncStatus === 'synced' ? 'bg-green-400' :
+            syncStatus === 'syncing' ? 'bg-amber-400 animate-pulse' :
+            syncStatus === 'error' ? 'bg-red-400' : 'bg-gray-400'
+          }`} />
+          <span className={
+            syncStatus === 'synced' ? 'text-green-400' :
+            syncStatus === 'syncing' ? 'text-amber-400' :
+            syncStatus === 'error' ? 'text-red-400' : 'text-gray-400'
+          }>
+            {syncStatus === 'synced' ? 'Cloud' : syncStatus === 'syncing' ? 'Sync...' : syncStatus === 'error' ? 'Erreur' : '...'}
+          </span>
+        </div>
+      )}
 
       {/* Fixed bottom back button for sub-views (not result/battle/story) */}
       {!['hub', 'battle', 'result', 'arc2_story'].includes(view) && (
@@ -7543,7 +7607,7 @@ export default function ShadowColosseum() {
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
               <div className="text-[10px] text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon}
-                {evStars > 0 && <span className="ml-1 text-yellow-400">{Array.from({ length: evStars }).map(() => '\u2605').join('')}</span>}
+                {evStars > 0 && <span className="ml-1 text-yellow-400 font-bold">A{evStars}</span>}
               </div>
             </div>
 
@@ -8384,7 +8448,7 @@ export default function ShadowColosseum() {
           if (coins < cost) return;
           shadowCoinManager.spendCoins(cost);
           const art = generateArtifact(rarity);
-          setData(prev => ({ ...prev, artifactInventory: [...prev.artifactInventory, art] }));
+          setData(prev => ({ ...prev, artifactInventory: trimArtifactInventory([...prev.artifactInventory, art]) }));
         };
 
         const buyWeapon = (wId) => {
@@ -8675,42 +8739,44 @@ export default function ShadowColosseum() {
                   return;
                 }
 
-                // Deduct fragments
+                const weaponData = forgeItems.find(i => i.weaponId === weaponId);
+
+                // Deduct fragments + add weapon to collection directly
                 setData(prev => {
                   const newFrags = { ...prev.fragments };
                   newFrags[fragmentId] = (newFrags[fragmentId] || 0) - 10;
-                  return { ...prev, fragments: newFrags };
+                  const wc = { ...prev.weaponCollection };
+                  if (wc[weaponId] === undefined) {
+                    wc[weaponId] = 0;
+                  } else if (wc[weaponId] >= MAX_WEAPON_AWAKENING) {
+                    const newH = { ...(prev.hammers || {}) };
+                    newH.marteau_rouge = (newH.marteau_rouge || 0) + 5;
+                    return { ...prev, fragments: newFrags, weaponCollection: wc, hammers: newH };
+                  } else {
+                    wc[weaponId] = Math.min(wc[weaponId] + 1, MAX_WEAPON_AWAKENING);
+                  }
+                  return { ...prev, fragments: newFrags, weaponCollection: wc };
                 });
 
-                // Send weapon via mail system
+                const isNew = data.weaponCollection[weaponId] === undefined;
+                showToast(`⚒️ ${weaponData?.name || weaponId} ${isNew ? 'obtenue' : 'awakening +'} !`, '#fbbf24');
+
+                // Also send confirmation mail (no rewards — weapon already added)
                 try {
-                  const weaponData = forgeItems.find(i => i.weaponId === weaponId);
-                  const response = await fetch('/api/mail?action=self-reward', {
+                  await fetch('/api/mail?action=self-reward', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...authHeaders() },
                     body: JSON.stringify({
                       subject: `Arme forgée: ${weaponData?.name || weaponId}`,
-                      message: `Félicitations ! Vous avez forgé une arme légendaire.\n\nVotre ${weaponData?.name || weaponId} vous attend dans votre boîte de réception.\n\n⚒️ Forge Mystique`,
-                      mailType: 'reward',
-                      rewards: {
-                        weapons: [{ id: weaponId, awakening: 0 }]
-                      }
+                      message: `Félicitations ! Vous avez forgé une arme légendaire.\n\nVotre ${weaponData?.name || weaponId} a été ajoutée à votre collection.\n\n⚒️ Forge Mystique`,
+                      mailType: 'system',
                     })
                   });
-
-                  const data = await response.json();
-                  if (data.success) {
-                    showToast(`📬 ${weaponData?.name || weaponId} envoyée par mail!`, '#fbbf24');
-                    // Trigger mail update event
-                    window.dispatchEvent(new CustomEvent('beru-react', {
-                      detail: { type: 'mail-update' }
-                    }));
-                  } else {
-                    showToast(`❌ Erreur: ${data.error || 'Inconnu'}`, '#ef4444');
-                  }
+                  window.dispatchEvent(new CustomEvent('beru-react', {
+                    detail: { type: 'mail-update' }
+                  }));
                 } catch (err) {
-                  console.error('Forge error:', err);
-                  showToast('❌ Erreur lors de la forge', '#ef4444');
+                  console.error('Forge mail error:', err);
                 }
               };
 
@@ -8885,7 +8951,7 @@ export default function ShadowColosseum() {
             const newSlots = { ...newArts[cId] };
             delete newSlots[sId];
             newArts[cId] = newSlots;
-            return { ...prev, artifacts: newArts, artifactInventory: [...prev.artifactInventory, art] };
+            return { ...prev, artifacts: newArts, artifactInventory: trimArtifactInventory([...prev.artifactInventory, art]) };
           });
           setArtSelected(null);
         };

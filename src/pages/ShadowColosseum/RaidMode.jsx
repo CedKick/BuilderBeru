@@ -33,9 +33,11 @@ import {
   KATANA_Z_ATK_PER_HIT, KATANA_Z_STACK_PERSIST_CHANCE, KATANA_Z_COUNTER_CHANCE, KATANA_Z_COUNTER_MULT,
   SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
   GULDAN_HEAL_PER_STACK, GULDAN_DEF_PER_HIT, GULDAN_ATK_PER_HIT, GULDAN_SPD_CHANCE, GULDAN_SPD_BOOST, GULDAN_SPD_MAX_STACKS, GULDAN_STUN_CHANCE,
+  trimArtifactInventory,
 } from './equipmentData';
 import { BattleStyles, RaidArena } from './BattleVFX';
 import { isLoggedIn, authHeaders } from '../../utils/auth';
+import { cloudStorage } from '../../utils/CloudStorage';
 import SharedDPSGraph from './SharedBattleComponents/SharedDPSGraph';
 import SharedCombatLogs from './SharedBattleComponents/SharedCombatLogs';
 
@@ -43,7 +45,7 @@ import SharedCombatLogs from './SharedBattleComponents/SharedCombatLogs';
 const SAVE_KEY = 'shadow_colosseum_data';
 const defaultColoData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, respecCount: {}, cooldowns: {}, stagesCleared: [], stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, dailyRaidDate: '', dailyRaidCount: 0 });
 const loadColoData = () => { try { const d = { ...defaultColoData(), ...JSON.parse(localStorage.getItem(SAVE_KEY)) }; if (!d.artifacts) d.artifacts = {}; if (!d.weapons) d.weapons = {}; if (!d.hammers) d.hammers = { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }; if (d.accountXp === undefined) d.accountXp = 0; if (!d.accountBonuses) d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }; if (d.accountAllocations === undefined) d.accountAllocations = 0; if (d.weaponInventory && Array.isArray(d.weaponInventory)) { if (!d.weaponCollection || typeof d.weaponCollection !== 'object' || Array.isArray(d.weaponCollection)) d.weaponCollection = {}; d.weaponInventory.forEach(wId => { if (d.weaponCollection[wId] === undefined) d.weaponCollection[wId] = 0; }); Object.values(d.weapons).forEach(wId => { if (wId && d.weaponCollection[wId] === undefined) d.weaponCollection[wId] = 0; }); delete d.weaponInventory; } if (!d.weaponCollection) d.weaponCollection = {}; const today = new Date().toISOString().slice(0, 10); if (d.dailyRaidDate !== today) { d.dailyRaidDate = today; d.dailyRaidCount = 0; } return d; } catch { return defaultColoData(); } };
-const saveColoData = (d) => localStorage.setItem(SAVE_KEY, JSON.stringify(d));
+const saveColoData = (d) => cloudStorage.save(SAVE_KEY, d);
 
 // ─── Format numbers (shared from colosseumCore) ─────────────
 const fmt = fmtNum;
@@ -634,24 +636,24 @@ export default function RaidMode() {
         hammerDrops[hId] = (hammerDrops[hId] || 0) + 1;
       }
 
-      // Raid artifact drops — tier-aware (Ultime uses RC-scaled drops)
+      // Raid artifact drops — tier-aware (rates /5 — inventory cap active)
       const raidArtifactDrops = [];
       if (tier === 6) {
-        // Ultime mode: RC-scaled artifact drops — more drops at higher RC
-        if (rc >= 3) raidArtifactDrops.push(generateUltimeArtifact(rc));
-        if (rc >= 8) raidArtifactDrops.push(generateUltimeArtifact(rc));
-        if (rc >= 15) raidArtifactDrops.push(generateUltimeArtifact(rc));
-        if (rc >= 25) raidArtifactDrops.push(generateUltimeArtifact(rc));
+        // Ultime mode: RC-scaled artifact drops — 20% chance each (was 100%)
+        if (rc >= 3 && Math.random() < 0.2) raidArtifactDrops.push(generateUltimeArtifact(rc));
+        if (rc >= 8 && Math.random() < 0.2) raidArtifactDrops.push(generateUltimeArtifact(rc));
+        if (rc >= 15 && Math.random() < 0.2) raidArtifactDrops.push(generateUltimeArtifact(rc));
+        if (rc >= 25 && Math.random() < 0.2) raidArtifactDrops.push(generateUltimeArtifact(rc));
       } else {
-        if (rc >= tierData.artifactDrop1.rcMin) {
+        if (rc >= tierData.artifactDrop1.rcMin && Math.random() < 0.2) {
           const rarity1 = getTierArtifactRarity(tierData.artifactDrop1, rc);
           raidArtifactDrops.push(generateRaidArtifactFromTier(rarity1, tier));
         }
-        if (tierData.artifactDrop2 && rc >= tierData.artifactDrop2.rcMin) {
+        if (tierData.artifactDrop2 && rc >= tierData.artifactDrop2.rcMin && Math.random() < 0.2) {
           const rarity2 = getTierArtifactRarity(tierData.artifactDrop2, rc);
           raidArtifactDrops.push(generateRaidArtifactFromTier(rarity2, tier));
         }
-        if (isFullClear) {
+        if (isFullClear && Math.random() < 0.2) {
           raidArtifactDrops.push(generateRaidArtifactFromTier(tierData.artifactDropFullClear, tier));
         }
       }
@@ -678,7 +680,7 @@ export default function RaidMode() {
       Object.entries(hammerDrops).forEach(([hId, count]) => { newHammers[hId] = (newHammers[hId] || 0) + count; });
       newColoData.hammers = newHammers;
       if (raidArtifactDrops.length > 0) {
-        newColoData.artifactInventory = [...(newColoData.artifactInventory || []), ...raidArtifactDrops];
+        newColoData.artifactInventory = trimArtifactInventory([...(newColoData.artifactInventory || []), ...raidArtifactDrops]);
       }
       if (raidWeaponDrop) {
         const wc = { ...(newColoData.weaponCollection || {}) };
@@ -1801,7 +1803,7 @@ export default function RaidMode() {
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <span className="text-[11px] font-bold text-white truncate">{c.name}</span>
                       <span className={`text-[9px] ${ELEMENTS[c.element]?.color}`}>{ELEMENTS[c.element]?.icon}</span>
-                      {stars > 0 && <span className="text-[8px] text-yellow-400">{'★'.repeat(stars)}</span>}
+                      {stars > 0 && <span className="text-[8px] text-yellow-400 font-bold">A{stars}</span>}
                       <span className="text-[8px] text-gray-500">Lv{lv}</span>
                     </div>
                     {/* Stats row */}

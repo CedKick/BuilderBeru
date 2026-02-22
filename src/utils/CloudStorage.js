@@ -1,8 +1,8 @@
 /**
  * CloudStorage — Hybrid localStorage + Neon PostgreSQL backend
  *
- * Drop-in enhancement for localStorage. Saves locally (instant) + syncs to cloud (persistent).
- * Falls back to localStorage-only if backend is unavailable.
+ * NeonDB = source of truth. localStorage = optional cache.
+ * If localStorage is full (QuotaExceeded), data still reaches the cloud via _pendingData.
  *
  * Usage:
  *   import { cloudStorage } from '../utils/CloudStorage';
@@ -62,6 +62,9 @@ class CloudStorageManager {
     this._cloudSizes = {}; // Track cloud data sizes to prevent corruption
     this._readyPromise = null;
     this._readyResolve = null;
+    this._pendingData = new Map(); // key → fresh data (backup when localStorage fails)
+    this._syncStatus = {};         // key → 'synced' | 'syncing' | 'error' | 'pending'
+    this._statusListeners = new Set();
   }
 
   /** Returns a promise that resolves when initialSync is complete */
@@ -75,26 +78,27 @@ class CloudStorageManager {
     return this._readyPromise;
   }
 
-  /** Save data to localStorage + schedule cloud sync */
+  /** Save data to localStorage (cache) + schedule cloud sync. Cloud sync works even if localStorage is full. */
   save(key, data) {
-    // Always save to localStorage first (instant)
     const json = JSON.stringify(data);
+
+    // Store in pendingData BEFORE localStorage attempt — ensures cloud sync has fresh data
+    if (CLOUD_KEYS.includes(key)) {
+      this._pendingData.set(key, data);
+    }
+
+    // Try localStorage (optional cache)
     try {
       localStorage.setItem(key, json);
     } catch (e) {
-      // QuotaExceededError — try to free space
       if (e.name === 'QuotaExceededError') {
-        console.warn('[CloudStorage] localStorage quota exceeded for', key, '— clearing old data');
+        console.warn('[CloudStorage] Quota exceeded for', key, '— freeing space');
         this._freeSpace(key);
-        try {
-          localStorage.setItem(key, json);
-        } catch (e2) {
-          console.error('[CloudStorage] Still cannot save to localStorage:', key);
-        }
+        try { localStorage.setItem(key, json); } catch {}
       }
     }
 
-    // Schedule cloud sync (debounced)
+    // Schedule cloud sync — ALWAYS, even if localStorage failed
     if (CLOUD_KEYS.includes(key)) {
       this._scheduleSync(key);
     }
@@ -243,17 +247,24 @@ class CloudStorageManager {
     }
   }
 
-  /** Push a specific key to cloud NOW */
+  /** Push a specific key to cloud NOW. Uses _pendingData (freshest) or falls back to localStorage. */
   async syncKey(key) {
     try {
-      const data = this.loadLocal(key);
-      if (data === null) return false;
+      this._setSyncStatus(key, 'syncing');
+
+      // Prefer pending data (freshest), fall back to localStorage
+      const data = this._pendingData.get(key) ?? this.loadLocal(key);
+      if (data === null) {
+        this._setSyncStatus(key, 'synced');
+        return false;
+      }
 
       // Anti-corruption: refuse to overwrite cloud with much smaller data
       const localSize = JSON.stringify(data).length;
       const cloudSize = this._cloudSizes[key] || 0;
       if (cloudSize > 200 && localSize < cloudSize * 0.3) {
         console.warn(`[CloudStorage] BLOCKED sync for "${key}": local (${localSize}B) is much smaller than cloud (${cloudSize}B) — possible data corruption`);
+        this._setSyncStatus(key, 'error');
         return false;
       }
 
@@ -269,11 +280,15 @@ class CloudStorageManager {
       this._online = true;
       // Update tracked cloud size after successful sync
       this._cloudSizes[key] = localSize;
+      // Clear pending data after successful sync
+      this._pendingData.delete(key);
+      this._setSyncStatus(key, 'synced');
       return json.success;
     } catch (err) {
       console.warn('[CloudStorage] Sync failed for', key, err.message);
       this._online = false;
       this._syncQueue.add(key);
+      this._setSyncStatus(key, 'error');
       return false;
     }
   }
@@ -281,11 +296,33 @@ class CloudStorageManager {
   /** Push all tracked keys to cloud */
   async syncAll() {
     const promises = CLOUD_KEYS.map(key => {
+      const hasPending = this._pendingData.has(key);
       const raw = localStorage.getItem(key);
-      if (raw) return this.syncKey(key);
+      if (hasPending || raw) return this.syncKey(key);
       return Promise.resolve(false);
     });
     await Promise.allSettled(promises);
+  }
+
+  // ─── Sync Status ──────────────────────────────────────────
+
+  _setSyncStatus(key, status) {
+    if (this._syncStatus[key] === status) return;
+    this._syncStatus[key] = status;
+    for (const cb of this._statusListeners) {
+      try { cb(key, status); } catch {}
+    }
+  }
+
+  /** Subscribe to sync status changes. Returns unsubscribe function. */
+  onSyncStatus(callback) {
+    this._statusListeners.add(callback);
+    return () => this._statusListeners.delete(callback);
+  }
+
+  /** Get current sync status for a key */
+  getSyncStatus(key) {
+    return this._syncStatus[key] || 'synced';
   }
 
   // ─── Private ─────────────────────────────────────────────
@@ -323,6 +360,7 @@ class CloudStorageManager {
   /**
    * Intercept localStorage.setItem for tracked keys.
    * Any save to a CLOUD_KEYS key automatically schedules a cloud sync.
+   * Stores data in _pendingData so cloud sync works even if localStorage is full.
    */
   installAutoSync() {
     if (this._autoSyncInstalled) return;
@@ -332,7 +370,12 @@ class CloudStorageManager {
     const self = this;
 
     localStorage.setItem = function (key, value) {
-      // Call original
+      // Store in pendingData for reliable cloud sync (before localStorage attempt)
+      if (CLOUD_KEYS.includes(key) && self._initialized) {
+        try { self._pendingData.set(key, JSON.parse(value)); } catch {}
+      }
+
+      // Try localStorage (cache)
       try {
         original(key, value);
       } catch (e) {
@@ -342,8 +385,8 @@ class CloudStorageManager {
           try { original(key, value); } catch {}
         }
       }
-      // Auto cloud sync for tracked keys — but ONLY after initialSync is done
-      // This prevents pushing empty/default data to cloud during app startup
+
+      // Schedule cloud sync for tracked keys — ONLY after initialSync is done
       if (CLOUD_KEYS.includes(key) && self._initialized) {
         self._scheduleSync(key);
       }
@@ -352,39 +395,52 @@ class CloudStorageManager {
     // ─── Safety nets: never lose progression ─────────────────
 
     // 1. beforeunload — flush pending syncs when closing browser/tab
-    //    Uses sendBeacon for reliability (fetch can be cancelled during unload)
+    //    Uses sendBeacon or keepalive fetch for reliability
     window.addEventListener('beforeunload', () => {
-      if (self._syncQueue.size === 0) return;
+      const keysToSync = new Set([...self._syncQueue, ...self._pendingData.keys()]);
+      if (keysToSync.size === 0) return;
       const deviceId = getDeviceId();
-      for (const key of self._syncQueue) {
-        const data = self.loadLocal(key);
-        if (data !== null) {
-          // Anti-corruption: don't beacon corrupted data
-          const localSize = JSON.stringify(data).length;
-          const cloudSize = self._cloudSizes[key] || 0;
-          if (cloudSize > 200 && localSize < cloudSize * 0.3) {
-            console.warn(`[CloudStorage] BLOCKED beacon for "${key}": possible corruption`);
-            continue;
-          }
-          navigator.sendBeacon(
-            `${API_BASE}/save`,
-            new Blob([JSON.stringify({ deviceId, key, data })], { type: 'application/json' })
-          );
+
+      for (const key of keysToSync) {
+        // Prefer pending data (freshest), fall back to localStorage
+        const data = self._pendingData.get(key) ?? self.loadLocal(key);
+        if (data === null) continue;
+
+        // Anti-corruption: don't beacon corrupted data
+        const localSize = JSON.stringify(data).length;
+        const cloudSize = self._cloudSizes[key] || 0;
+        if (cloudSize > 200 && localSize < cloudSize * 0.3) {
+          console.warn(`[CloudStorage] BLOCKED beacon for "${key}": possible corruption`);
+          continue;
+        }
+
+        const blob = new Blob([JSON.stringify({ deviceId, key, data })], { type: 'application/json' });
+        if (blob.size > 60000) {
+          // Too large for sendBeacon (~64KB limit) → use keepalive fetch
+          fetch(`${API_BASE}/save`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ..._getAuthHeaders() },
+            body: blob,
+            keepalive: true,
+          }).catch(() => {});
+        } else {
+          navigator.sendBeacon(`${API_BASE}/save`, blob);
         }
       }
       self._syncQueue.clear();
+      self._pendingData.clear();
     });
 
     // 2. visibilitychange — sync when user switches tab or minimizes mobile browser
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden && self._initialized && self._syncQueue.size > 0) {
+      if (document.hidden && self._initialized && (self._syncQueue.size > 0 || self._pendingData.size > 0)) {
         self._flushQueue();
       }
     });
 
     // 3. Periodic sync every 60s — safety net
     setInterval(() => {
-      if (self._initialized && self._syncQueue.size > 0) {
+      if (self._initialized && (self._syncQueue.size > 0 || self._pendingData.size > 0)) {
         self._flushQueue();
       }
     }, 60000);
