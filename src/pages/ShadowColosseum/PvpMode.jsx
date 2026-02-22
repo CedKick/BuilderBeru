@@ -28,6 +28,7 @@ import {
   KATANA_Z_ATK_PER_HIT, KATANA_Z_STACK_PERSIST_CHANCE, KATANA_Z_COUNTER_CHANCE, KATANA_Z_COUNTER_MULT,
   KATANA_V_DOT_PCT, KATANA_V_DOT_MAX_STACKS, KATANA_V_BUFF_CHANCE,
   SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
+  GULDAN_HEAL_PER_STACK, GULDAN_DEF_PER_HIT, GULDAN_ATK_PER_HIT, GULDAN_SPD_CHANCE, GULDAN_SPD_BOOST, GULDAN_SPD_MAX_STACKS, GULDAN_STUN_CHANCE,
 } from './equipmentData';
 import { BattleStyles } from './BattleVFX';
 
@@ -236,6 +237,7 @@ export default function PvpMode() {
         ...(wId && WEAPONS[wId]?.passive === 'shadow_silence' ? { shadowSilence: [] } : {}),
         ...(wId && WEAPONS[wId]?.passive === 'katana_z_fury' ? { katanaZStacks: 0 } : {}),
         ...(wId && WEAPONS[wId]?.passive === 'katana_v_chaos' ? { katanaVState: { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1 } } : {}),
+        ...(wId && WEAPONS[wId]?.passive === 'guldan_halo' ? { guldanState: { healStacks: 0, defBonus: 0, atkBonus: 0, spdStacks: 0 } } : {}),
         // ULTIME passive state
         eternalRageStacks: 0,
         celestialShield: 0,
@@ -654,6 +656,13 @@ export default function PvpMode() {
       if (unit.passiveState.katanaVState?.allStatBuff > 0) {
         unit.atk = Math.floor(unit.atk * (1 + unit.passiveState.katanaVState.allStatBuff / 100));
       }
+      // Gul'dan Halo Eternelle: ATK + DEF + SPD stacking bonuses
+      if (unit.passiveState.guldanState) {
+        const gs = unit.passiveState.guldanState;
+        if (gs.atkBonus > 0) unit.atk = Math.floor(unit.atk * (1 + gs.atkBonus));
+        if (gs.defBonus > 0) unit.def = Math.floor(unit.def * (1 + gs.defBonus));
+        if (gs.spdStacks > 0) unit.atk = Math.floor(unit.atk * (1 + gs.spdStacks * GULDAN_SPD_BOOST * 0.1));
+      }
 
       // ─── ULTIME artifact passives: beforeAttack ───
       // Eternal Rage: +1% ATK per stack — individual
@@ -830,6 +839,24 @@ export default function PvpMode() {
             if (roll < 0.33) unit.passiveState.katanaVState.allStatBuff += 10;
             else if (roll < 0.66) unit.passiveState.katanaVState.shield = true;
             else unit.passiveState.katanaVState.nextDmgMult = 6;
+          }
+        }
+        // Gul'dan Halo Eternelle: post-attack stacking
+        if (unit.passiveState.guldanState && result.damage > 0) {
+          const gs = unit.passiveState.guldanState;
+          gs.healStacks = (gs.healStacks || 0) + 1;
+          const healAmt = Math.floor(result.damage * GULDAN_HEAL_PER_STACK * gs.healStacks);
+          if (healAmt > 0) unit.hp = Math.min(unit.maxHp, unit.hp + healAmt);
+          gs.defBonus = (gs.defBonus || 0) + GULDAN_DEF_PER_HIT;
+          gs.atkBonus = (gs.atkBonus || 0) + GULDAN_ATK_PER_HIT;
+          if (gs.spdStacks < GULDAN_SPD_MAX_STACKS && Math.random() < GULDAN_SPD_CHANCE) gs.spdStacks++;
+          // Stun: each stack 50% chance → stun target 1 turn
+          let stunProcs = 0;
+          for (let i = 0; i < gs.healStacks; i++) {
+            if (Math.random() < GULDAN_STUN_CHANCE) stunProcs++;
+          }
+          if (stunProcs > 0 && target.alive) {
+            target.lastAttackAt = now + target.attackInterval; // delay target's next attack
           }
         }
 

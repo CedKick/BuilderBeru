@@ -710,12 +710,12 @@ export default function ShadowColosseum() {
     })();
   }, []);
 
-  // Fetch raid profile from game server (XP/level sync for character sheet)
+  // Fetch raid profile via Vercel proxy (avoids HTTPS→HTTP mixed content block)
   useEffect(() => {
     try {
       const authUser = JSON.parse(localStorage.getItem('builderberu_auth_user'));
       if (!authUser?.username) return;
-      fetch(`http://159.223.225.71:3002/api/profile?username=${encodeURIComponent(authUser.username)}`)
+      fetch(`/api/raid-profile?username=${encodeURIComponent(authUser.username)}`)
         .then(r => r.json())
         .then(d => { if (d.success && d.profile) setRaidProfileServer(d.profile); })
         .catch(() => {});

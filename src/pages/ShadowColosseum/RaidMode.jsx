@@ -32,6 +32,7 @@ import {
   KATANA_V_BUFF_CHANCE, KATANA_V_DOT_PCT, KATANA_V_DOT_MAX_STACKS,
   KATANA_Z_ATK_PER_HIT, KATANA_Z_STACK_PERSIST_CHANCE, KATANA_Z_COUNTER_CHANCE, KATANA_Z_COUNTER_MULT,
   SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
+  GULDAN_HEAL_PER_STACK, GULDAN_DEF_PER_HIT, GULDAN_ATK_PER_HIT, GULDAN_SPD_CHANCE, GULDAN_SPD_BOOST, GULDAN_SPD_MAX_STACKS, GULDAN_STUN_CHANCE,
 } from './equipmentData';
 import { BattleStyles, RaidArena } from './BattleVFX';
 import { isLoggedIn, authHeaders } from '../../utils/auth';
@@ -300,6 +301,7 @@ export default function RaidMode() {
         ...(wId2 && WEAPONS[wId2]?.passive === 'shadow_silence' ? { shadowSilence: [] } : {}),
         ...(wId2 && WEAPONS[wId2]?.passive === 'katana_z_fury' ? { katanaZStacks: 0 } : {}),
         ...(wId2 && WEAPONS[wId2]?.passive === 'katana_v_chaos' ? { katanaVState: { dots: 0, allStatBuff: 0, shield: false, nextDmgMult: 1 } } : {}),
+        ...(wId2 && WEAPONS[wId2]?.passive === 'guldan_halo' ? { guldanState: { healStacks: 0, defBonus: 0, atkBonus: 0, spdStacks: 0, divinUsed: false } } : {}),
         // ULTIME artifact passive state
         eternalRageStacks: 0,     // Rage Eternelle: ATK stacking
         celestialShield: 0,       // Gardien Celeste: shield HP
@@ -850,6 +852,14 @@ export default function RaidMode() {
         chibi.atk = Math.floor(chibi.atk * (1 + chibi.passiveState.katanaZStacks * KATANA_Z_ATK_PER_HIT / 100));
       }
 
+      // Gul'dan Halo Eternelle: ATK + DEF + SPD stacking bonuses
+      if (chibi.passiveState.guldanState) {
+        const gs = chibi.passiveState.guldanState;
+        if (gs.atkBonus > 0) chibi.atk = Math.floor(chibi.atk * (1 + gs.atkBonus));
+        if (gs.defBonus > 0) chibi.def = Math.floor(chibi.def * (1 + gs.defBonus));
+        if (gs.spdStacks > 0) chibi.atk = Math.floor(chibi.atk * (1 + gs.spdStacks * GULDAN_SPD_BOOST * 0.1));
+      }
+
       // ── ULTIME Artifact Passives: beforeAttack ──
       // Rage Eternelle (2p): +1% ATK per stack — individual
       if (chibi.passiveState.eternalRageStacks > 0) {
@@ -1112,6 +1122,42 @@ export default function RaidMode() {
           chibi.passiveState.shadowSilence = chibi.passiveState.shadowSilence.map(t => t - 1).filter(t => t > 0);
           if (chibi.passiveState.shadowSilence.length < 3 && Math.random() < 0.10) {
             chibi.passiveState.shadowSilence.push(5);
+          }
+        }
+
+        // Gul'dan Halo Eternelle: post-attack stacking
+        if (chibi.passiveState.guldanState && result.damage > 0) {
+          const gs = chibi.passiveState.guldanState;
+          gs.healStacks = (gs.healStacks || 0) + 1;
+          const healAmt = Math.floor(result.damage * GULDAN_HEAL_PER_STACK * gs.healStacks);
+          if (healAmt > 0) {
+            chibi.hp = Math.min(chibi.maxHp, chibi.hp + healAmt);
+            logEntries.push({ text: `${chibi.name} : Halo x${gs.healStacks} +${fmt(healAmt)} PV`, time: elapsed, type: 'heal' });
+          }
+          gs.defBonus = (gs.defBonus || 0) + GULDAN_DEF_PER_HIT;
+          gs.atkBonus = (gs.atkBonus || 0) + GULDAN_ATK_PER_HIT;
+          if (gs.spdStacks < GULDAN_SPD_MAX_STACKS && Math.random() < GULDAN_SPD_CHANCE) {
+            gs.spdStacks++;
+            logEntries.push({ text: `${chibi.name} : Halo Celeste ! SPD +${gs.spdStacks * 200}%`, time: elapsed, type: 'buff' });
+          }
+          // Stun: each heal stack has 50% chance → delay boss next attack
+          let stunProcs = 0;
+          for (let i = 0; i < gs.healStacks; i++) {
+            if (Math.random() < GULDAN_STUN_CHANCE) stunProcs++;
+          }
+          if (stunProcs > 0 && state.boss.hp > 0) {
+            state.boss.lastAttackAt = now; // reset boss attack timer = delay next attack
+            logEntries.push({ text: `${chibi.name} : Halo Stun ! (${stunProcs} procs)`, time: elapsed, type: 'buff' });
+          }
+          // Halo Divin: resurrect first dead ally (once per combat)
+          if (!gs.divinUsed) {
+            const deadAlly = state.chibis.find(c => !c.alive && c.id !== chibi.id);
+            if (deadAlly) {
+              deadAlly.alive = true;
+              deadAlly.hp = Math.floor(deadAlly.maxHp * 0.5);
+              gs.divinUsed = true;
+              logEntries.push({ text: `${chibi.name} : HALO DIVIN ! ${deadAlly.name} ressuscite a 50% PV !`, time: elapsed, type: 'heal' });
+            }
           }
         }
 

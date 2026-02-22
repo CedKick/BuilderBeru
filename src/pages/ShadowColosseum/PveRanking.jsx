@@ -269,16 +269,19 @@ export default function PveRanking() {
   // ─── Init: submit + fetch + periodic refresh ────────────
   useEffect(() => {
     if (!loggedIn) return;
-    // Init table
-    fetch('/api/pve-ranking?action=init', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    }).catch(() => {});
-
-    submitAllHunters().then(() => {
+    // Init table THEN submit + fetch (must wait for table creation)
+    const initAndLoad = async () => {
+      try {
+        await fetch('/api/pve-ranking?action=init', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        });
+      } catch {}
+      await submitAllHunters();
       fetchRankings(hunterFilter);
       fetchHunterList();
-    });
+    };
+    initAndLoad();
 
     const interval = setInterval(() => {
       submitAllHunters().then(() => fetchRankings(hunterFilter));
