@@ -673,11 +673,12 @@ export function mergeTalentBonuses(tb1 = {}, tb2 = {}) {
   return merged;
 }
 
-export const PVP_DAMAGE_MULT = 0.55;  // All damage reduced in PVP (heals unaffected)
-export const PVP_HP_MULT = 3;         // All units get x3 HP in PVP (longer fights)
+export const PVP_DAMAGE_MULT = 0.12;  // Heavy damage reduction in PVP (heals unaffected)
+export const PVP_HP_MULT = 5;         // All units get x5 HP in PVP (longer fights)
 export const PVP_DEF_MULT = 1.6;      // DEF is 60% more effective in PVP
 export const PVP_RES_MULT = 1.4;      // RES is 40% more effective in PVP
-export const PVP_DURATION_SEC = 90;
+export const PVP_DMG_CAP = 0.08;      // Single hit can't exceed 8% of target maxHP (anti-OS)
+export const PVP_DURATION_SEC = 120;   // 2 minutes max (fights last ~1 min now)
 export const PVP_TICK_MS = 100;
 
 // ═══════════════════════════════════════════════════════════════

@@ -14,7 +14,7 @@ import {
   statsAtFull, getEffStat,
   applySkillUpgrades, computeAttack, aiPickSkill, aiPickSkillSupport, spdToInterval,
   accountLevelFromXp, getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
-  PVP_DAMAGE_MULT, PVP_HP_MULT, PVP_DEF_MULT, PVP_RES_MULT, PVP_DURATION_SEC, PVP_TICK_MS,
+  PVP_DAMAGE_MULT, PVP_HP_MULT, PVP_DEF_MULT, PVP_RES_MULT, PVP_DMG_CAP, PVP_DURATION_SEC, PVP_TICK_MS,
   mergeTalentBonuses,
 } from './colosseumCore';
 import {
@@ -784,7 +784,8 @@ export default function PvpMode() {
         if (counterPassive) {
           const counterSkill = target.skills[0];
           const counterResult = computeAttack(target, counterSkill, unit, target.talentBonuses || {});
-          const counterDmg = Math.max(1, Math.floor(counterResult.damage * PVP_DAMAGE_MULT * (counterPassive.powerMult || 0.80)));
+          let counterDmg = Math.max(1, Math.floor(counterResult.damage * PVP_DAMAGE_MULT * (counterPassive.powerMult || 0.80)));
+          if (PVP_DMG_CAP > 0) counterDmg = Math.min(counterDmg, Math.floor(unit.maxHp * PVP_DMG_CAP));
           unit.hp -= counterDmg;
           if (unit.hp <= 0) { unit.hp = 0; unit.alive = false; }
           logEntries.push({ text: `${target.name} contre-attaque ! -${counterDmg}`, time: elapsed, type: 'counter' });
@@ -797,6 +798,14 @@ export default function PvpMode() {
         });
         stateChanged = true;
         return;
+      }
+
+      // PVP anti-OS cap: no single hit can exceed X% of target maxHP
+      if (result.damage > 0 && PVP_DMG_CAP > 0) {
+        const maxDmg = Math.floor(target.maxHp * PVP_DMG_CAP);
+        if (result.damage > maxDmg) {
+          result = { ...result, damage: maxDmg };
+        }
       }
 
       // Apply damage
