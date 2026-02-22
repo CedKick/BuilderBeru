@@ -60,6 +60,7 @@ class CloudStorageManager {
     this._online = true;
     this._syncQueue = new Set();
     this._cloudSizes = {}; // Track cloud data sizes to prevent corruption
+    this._cloudTimestamps = {}; // Track cloud updated_at timestamps for concurrency
     this._readyPromise = null;
     this._readyResolve = null;
     this._pendingData = new Map(); // key → fresh data (backup when localStorage fails)
@@ -180,9 +181,10 @@ class CloudStorageManager {
 
     // Merge cloud data into localStorage
     for (const [key, entry] of Object.entries(cloudEntries)) {
-      // Track cloud sizes for anti-corruption checks
+      // Track cloud sizes + timestamps for anti-corruption checks
       const cloudJson = JSON.stringify(entry.data);
       this._cloudSizes[key] = cloudJson.length;
+      if (entry.updatedAt) this._cloudTimestamps[key] = new Date(entry.updatedAt).getTime();
 
       const localRaw = localStorage.getItem(key);
       if (loginPending || !localRaw) {
@@ -269,17 +271,27 @@ class CloudStorageManager {
       }
 
       const deviceId = getDeviceId();
+      const clientTimestamp = this._cloudTimestamps[key] || null;
       const resp = await fetch(`${API_BASE}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ..._getAuthHeaders() },
-        body: JSON.stringify({ deviceId, key, data }),
+        body: JSON.stringify({ deviceId, key, data, clientTimestamp }),
       });
+
+      if (resp.status === 409) {
+        // Server blocked: data corruption or stale timestamp
+        const errJson = await resp.json().catch(() => ({}));
+        console.warn(`[CloudStorage] Server BLOCKED sync for "${key}":`, errJson.reason || errJson.error);
+        this._setSyncStatus(key, 'error');
+        return false;
+      }
 
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const json = await resp.json();
       this._online = true;
-      // Update tracked cloud size after successful sync
+      // Update tracked cloud size + timestamp after successful sync
       this._cloudSizes[key] = localSize;
+      if (json.serverTimestamp) this._cloudTimestamps[key] = json.serverTimestamp;
       // Clear pending data after successful sync
       this._pendingData.delete(key);
       this._setSyncStatus(key, 'synced');
@@ -414,7 +426,8 @@ class CloudStorageManager {
           continue;
         }
 
-        const blob = new Blob([JSON.stringify({ deviceId, key, data })], { type: 'application/json' });
+        const clientTimestamp = self._cloudTimestamps[key] || null;
+        const blob = new Blob([JSON.stringify({ deviceId, key, data, clientTimestamp })], { type: 'application/json' });
         if (blob.size > 60000) {
           // Too large for sendBeacon (~64KB limit) → use keepalive fetch
           fetch(`${API_BASE}/save`, {
