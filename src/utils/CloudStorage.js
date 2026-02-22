@@ -52,7 +52,9 @@ function getDeviceId() {
 
 // Debounce map: key -> timeout
 const _syncTimers = {};
-const SYNC_DELAY = 3000; // 3s debounce
+const SYNC_DELAY = 30000; // 30s debounce (was 3s — reduced to save network transfer)
+const SYNC_THROTTLE = 120000; // 2 min minimum between syncs per key (auto-farming protection)
+const _lastSyncTime = {}; // key → timestamp of last successful sync
 
 class CloudStorageManager {
   constructor() {
@@ -64,6 +66,7 @@ class CloudStorageManager {
     this._readyPromise = null;
     this._readyResolve = null;
     this._pendingData = new Map(); // key → fresh data (backup when localStorage fails)
+    this._lastSyncHash = {};       // key → hash of last synced data (dirty detection)
     this._syncStatus = {};         // key → 'synced' | 'syncing' | 'error' | 'pending'
     this._statusListeners = new Set();
     this._crossTabListeners = new Set();
@@ -284,8 +287,17 @@ class CloudStorageManager {
         return false;
       }
 
+      // Dirty check: skip sync if data hasn't changed since last successful sync
+      const jsonStr = JSON.stringify(data);
+      const dataHash = jsonStr.length + ':' + jsonStr.slice(0, 100) + jsonStr.slice(-100);
+      if (this._lastSyncHash[key] === dataHash) {
+        this._pendingData.delete(key);
+        this._setSyncStatus(key, 'synced');
+        return true; // Already synced, skip
+      }
+
       // Anti-corruption: refuse to overwrite cloud with much smaller data
-      const localSize = JSON.stringify(data).length;
+      const localSize = jsonStr.length;
       const cloudSize = this._cloudSizes[key] || 0;
       if (cloudSize > 200 && localSize < cloudSize * 0.3) {
         console.warn(`[CloudStorage] BLOCKED sync for "${key}": local (${localSize}B) is much smaller than cloud (${cloudSize}B) — possible data corruption`);
@@ -295,10 +307,11 @@ class CloudStorageManager {
 
       const deviceId = getDeviceId();
       const clientTimestamp = this._cloudTimestamps[key] || null;
+      const body = JSON.stringify({ deviceId, key, data, clientTimestamp });
       const resp = await fetch(`${API_BASE}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ..._getAuthHeaders() },
-        body: JSON.stringify({ deviceId, key, data, clientTimestamp }),
+        body,
       });
 
       if (resp.status === 409) {
@@ -319,8 +332,10 @@ class CloudStorageManager {
       if (json.merged) {
         console.log(`[CloudStorage] Server MERGED "${key}" — concurrent session detected`);
       }
-      // Clear pending data after successful sync
+      // Clear pending data + update dirty hash + throttle timestamp after successful sync
       this._pendingData.delete(key);
+      this._lastSyncHash[key] = dataHash;
+      _lastSyncTime[key] = Date.now();
       this._setSyncStatus(key, 'synced');
       return json.success;
     } catch (err) {
@@ -375,10 +390,18 @@ class CloudStorageManager {
   _scheduleSync(key) {
     this._syncQueue.add(key);
     if (_syncTimers[key]) clearTimeout(_syncTimers[key]);
+
+    // Throttle: if we synced this key recently, delay until throttle period expires
+    const lastSync = _lastSyncTime[key] || 0;
+    const elapsed = Date.now() - lastSync;
+    const delay = elapsed < SYNC_THROTTLE
+      ? Math.max(SYNC_DELAY, SYNC_THROTTLE - elapsed) // Wait until throttle expires
+      : SYNC_DELAY; // Normal debounce
+
     _syncTimers[key] = setTimeout(() => {
       delete _syncTimers[key];
       this.syncKey(key);
-    }, SYNC_DELAY);
+    }, delay);
   }
 
   async _flushQueue() {
@@ -484,12 +507,12 @@ class CloudStorageManager {
       }
     });
 
-    // 3. Periodic sync every 60s — safety net
+    // 3. Periodic sync every 5 min — safety net (was 60s)
     setInterval(() => {
       if (self._initialized && (self._syncQueue.size > 0 || self._pendingData.size > 0)) {
         self._flushQueue();
       }
-    }, 60000);
+    }, 300000);
 
     // 4. Cross-tab sync — detect when another tab writes to localStorage
     //    (storage event only fires in OTHER tabs, not the one that wrote)

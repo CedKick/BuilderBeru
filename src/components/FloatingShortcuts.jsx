@@ -82,11 +82,11 @@ export default function FloatingShortcuts({ onMascotClick }) {
     };
 
     fetchDropLog();
-    const iv = setInterval(fetchDropLog, 60000);
+    const iv = setInterval(fetchDropLog, 300000); // 5 min (was 60s — save transfer)
     return () => clearInterval(iv);
   }, []);
 
-  // ── Mail unread count polling (every 2 min) ──
+  // ── Mail unread count polling (every 5 min) ──
   useEffect(() => {
     const fetchUnread = () => {
       if (!isLoggedIn()) return;
@@ -99,7 +99,7 @@ export default function FloatingShortcuts({ onMascotClick }) {
     };
 
     fetchUnread();
-    const iv = setInterval(fetchUnread, 120000);
+    const iv = setInterval(fetchUnread, 300000); // 5 min (was 120s — save transfer)
     return () => clearInterval(iv);
   }, []);
 
