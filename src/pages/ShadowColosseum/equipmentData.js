@@ -1022,6 +1022,68 @@ export function computeEquipILevel(equippedArtifacts, weaponId, weaponAwakening 
   return { total, avg: count > 0 ? Math.floor(total / count) : 0, count };
 }
 
+// ═══════════════════════════════════════════════════════════════
+// ARTIFACT SCORING — Role-based quality rating
+// ═══════════════════════════════════════════════════════════════
+
+export const ROLE_WEIGHTS = {
+  dps:     { atk_pct: 3, atk_flat: 2, crit_dmg: 3, crit_rate: 2.5, spd_flat: 2, hp_pct: 0.5, hp_flat: 0.3, def_pct: 0.5, def_flat: 0.3, res_flat: 0.3 },
+  support: { spd_flat: 3, hp_pct: 2, hp_flat: 1.5, atk_pct: 1.5, atk_flat: 1, crit_dmg: 1, crit_rate: 1, def_pct: 1.5, def_flat: 1, res_flat: 1.5 },
+  tank:    { def_pct: 3, def_flat: 2.5, hp_pct: 3, hp_flat: 2, res_flat: 2, spd_flat: 1.5, atk_pct: 0.5, atk_flat: 0.5, crit_dmg: 0.5, crit_rate: 0.5 },
+};
+
+// Max possible weighted score for normalization (mythique +20, 4 max subs)
+const MAX_RAW_SCORE = 220;
+
+export function scoreArtifact(art, role = 'dps') {
+  if (!art) return 0;
+  const w = ROLE_WEIGHTS[role] || ROLE_WEIGHTS.dps;
+
+  // Main stat contribution
+  let raw = (art.mainValue || 0) * (w[art.mainStat] || 0.5) * 0.3;
+
+  // Sub stats contribution
+  (art.subs || []).forEach(sub => {
+    raw += (sub.value || 0) * (w[sub.id] || 0.5);
+  });
+
+  // Rarity bonus
+  const rarityMult = art.rarity === 'mythique' ? 1.3 : art.rarity === 'legendaire' ? 1.1 : 1.0;
+  raw *= rarityMult;
+
+  // Level bonus
+  raw += (art.level || 0) * 2;
+
+  // Normalize to 0-100
+  return Math.min(100, Math.round((raw / MAX_RAW_SCORE) * 100));
+}
+
+export function scoreToGrade(score) {
+  if (score >= 85) return { grade: 'S', color: 'text-red-400', bg: 'bg-red-500/20' };
+  if (score >= 65) return { grade: 'A', color: 'text-orange-400', bg: 'bg-orange-500/20' };
+  if (score >= 45) return { grade: 'B', color: 'text-yellow-400', bg: 'bg-yellow-500/20' };
+  if (score >= 25) return { grade: 'C', color: 'text-green-400', bg: 'bg-green-500/20' };
+  return { grade: 'D', color: 'text-gray-400', bg: 'bg-gray-500/20' };
+}
+
+export function scoreAllArtifacts(equippedArtifacts, role = 'dps') {
+  if (!equippedArtifacts) return { scores: {}, avgScore: 0, avgGrade: scoreToGrade(0) };
+  const scores = {};
+  let total = 0;
+  let count = 0;
+  SLOT_ORDER.forEach(slotId => {
+    const art = equippedArtifacts[slotId];
+    if (art) {
+      const s = scoreArtifact(art, role);
+      scores[slotId] = s;
+      total += s;
+      count++;
+    }
+  });
+  const avgScore = count > 0 ? Math.round(total / count) : 0;
+  return { scores, avgScore, avgGrade: scoreToGrade(avgScore) };
+}
+
 export function rollRaidWeaponDrop(raidTier, isFullClear = false) {
   if (isFullClear && RAID_WEAPON_DROP.fullClearGuaranteed) {
     const rarityPool = RAID_WEAPON_DROP.tierPool[raidTier] || ['rare'];

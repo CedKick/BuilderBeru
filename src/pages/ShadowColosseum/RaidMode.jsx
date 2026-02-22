@@ -400,6 +400,15 @@ export default function RaidMode() {
         const val = c.hunterPassive.value || 0;
         chibis.forEach(ally => { ally.def = Math.floor(ally.def * (1 + val / 100)); });
       }
+      // Hunter passive: teamAura (Mayuri) → all allies stat buffs (permanent)
+      if (c.hunterPassive?.type === 'teamAura' && c.hunterPassive.stats) {
+        const stats = c.hunterPassive.stats;
+        chibis.forEach(ally => {
+          Object.entries(stats).forEach(([stat, pct]) => {
+            ally.buffs.push({ stat, value: pct / 100, turns: 9999 });
+          });
+        });
+      }
       // Hunter passive: buffBonus (Meri) → increase buff durations by X%
       if (c.hunterPassive?.type === 'buffBonus') {
         c.talentBonuses.buffBonus = (c.talentBonuses.buffBonus || 0) + c.hunterPassive.value;

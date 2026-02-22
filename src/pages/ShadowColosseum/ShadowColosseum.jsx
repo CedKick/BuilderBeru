@@ -43,6 +43,7 @@ import {
   RARITY_SUB_COUNT,
   computeWeaponILevel, computeArtifactILevel, computeEquipILevel,
   ARC2_ARTIFACT_SETS, generateArc2Artifact, generateSetArtifact,
+  ROLE_WEIGHTS, scoreArtifact, scoreToGrade, scoreAllArtifacts,
 } from './equipmentData';
 import {
   isArc2Unlocked, ARC2_STAGES, ARC2_TIER_NAMES, ARC2_STORIES,
@@ -494,6 +495,7 @@ export default function ShadowColosseum() {
   const [autoFarmStats, setAutoFarmStats] = useState({ runs: 0, wins: 0, levels: 0, coins: 0, loots: 0, hunters: 0, weapons: 0, artifacts: 0 });
   const [weaponReveal, setWeaponReveal] = useState(null); // weapon data for epic reveal
   const [artFilter, setArtFilter] = useState({ set: null, rarity: null, slot: null });
+  const [artSort, setArtSort] = useState('level_desc'); // 'level_desc' | 'level_asc' | 'ilevel' | 'rarity'
   const [artSelected, setArtSelected] = useState(null); // index in inventory OR "eq:chibiId:slot"
   const [artEquipPicker, setArtEquipPicker] = useState(false);
   const [cleanupExpanded, setCleanupExpanded] = useState(false);
@@ -520,6 +522,7 @@ export default function ShadowColosseum() {
   const [weaponDetailId, setWeaponDetailId] = useState(null);
   const [weaponFilter, setWeaponFilter] = useState({ element: null, sort: 'ilevel' }); // filter for weapon lists
   const [artifactSetDetail, setArtifactSetDetail] = useState(null);
+  const [artifactScoreRole, setArtifactScoreRole] = useState('dps');
   const [ragnarokHistoryOpen, setRagnarokHistoryOpen] = useState(false);
   const [monarchHistoryOpen, setMonarchHistoryOpen] = useState(false);
   const [beruAdvice, setBeruAdvice] = useState(null); // Beru Advisor analysis result
@@ -7579,63 +7582,128 @@ export default function ShadowColosseum() {
               })()}
             </div>
 
-            {/* Artifact Slots */}
-            <div className="mb-4">
-              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1.5">{'\uD83D\uDEE1\uFE0F'} Artefacts</div>
-              <div className="grid grid-cols-4 gap-1.5">
-                {SLOT_ORDER.map(slotId => {
-                  const slotDef = ARTIFACT_SLOTS[slotId];
-                  const art = equipped[slotId];
-                  const setDef = art ? ARTIFACT_SETS[art.set] : null;
-                  const mainDef = art ? MAIN_STAT_VALUES[art.mainStat] : null;
-                  return (
-                    <div key={slotId} className="text-center">
-                      {art ? (
-                        <button onClick={() => unequipArtifact(slotId)}
-                          className={`w-full p-2 rounded-lg border ${setDef?.border || 'border-gray-600/30'} ${setDef?.bg || 'bg-gray-800/20'} hover:brightness-125 transition-all relative`}>
-                          <div className="flex items-center justify-center gap-0.5">
-                            <span className="text-sm">{slotDef.icon}</span>
-                            <span className={`text-[9px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
-                          </div>
-                          <div className="text-[8px] text-amber-400/70 font-bold">iLv{computeArtifactILevel(art)}</div>
-                          <div className={`text-[10px] font-bold mt-0.5 ${setDef?.color || 'text-gray-300'}`}>{mainDef?.name || '?'}</div>
-                          <div className="text-[10px] font-black text-white">{art.mainValue}</div>
-                          <div className="mt-0.5 space-y-px">
-                            {art.subs.slice(0, 2).map((sub, si) => {
-                              const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
-                              return <div key={si} className="text-[9px] text-gray-400 truncate">{subDef?.name || sub.id} +{sub.value}</div>;
-                            })}
-                            {art.subs.length > 2 && <div className="text-[9px] text-gray-500">+{art.subs.length - 2} subs</div>}
-                          </div>
-                          <div className={`absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full ${setDef?.border?.replace('border-', 'bg-').replace('/30', '') || 'bg-gray-500'}`} />
-                        </button>
-                      ) : (
-                        <div className="w-full p-2 rounded-lg border border-gray-700/20 bg-gray-800/10">
-                          <div className="text-lg opacity-30">{slotDef.icon}</div>
-                          <div className="text-[9px] text-gray-600">{slotDef.name}</div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            {/* Artifact Slots — Detailed View */}
+            {(() => {
+              const artScoring = scoreAllArtifacts(equipped, artifactScoreRole);
+              const equipILv = computeEquipILevel(equipped);
+              const roleWeights = ROLE_WEIGHTS[artifactScoreRole] || ROLE_WEIGHTS.dps;
+              return (
+              <div className="mb-4">
+                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1.5">{'\uD83D\uDEE1\uFE0F'} Artefacts</div>
 
-            {/* Active Set Bonuses */}
-            {activeSets.length > 0 && (
-              <div className="mb-4 p-2 rounded-lg bg-gray-800/20 border border-gray-700/20">
-                <div className="text-[9px] text-gray-500 mb-1">Sets actifs :</div>
-                {activeSets.map((s, i) => (
-                  <div key={i} className="flex items-center gap-1 text-[9px] cursor-pointer hover:bg-white/5 rounded p-0.5 -m-0.5 transition-colors"
-                    onClick={() => setArtifactSetDetail(s.set.id)}>
-                    <span className={s.set.color}>{s.set.icon}</span>
-                    <span className={`${s.set.color} underline decoration-dotted`}>{s.set.name}</span>
-                    <span className="text-gray-500">({s.tier}p)</span>
-                    <span className="text-green-400 ml-auto">{s.bonus}</span>
+                {/* Role Toggle + Global Score */}
+                <div className="mb-2 p-2 rounded-lg bg-gray-800/30 border border-gray-700/20">
+                  <div className="flex items-center gap-1 mb-1.5">
+                    {[{ key: 'dps', label: 'DPS', icon: '\u2694\uFE0F' }, { key: 'support', label: 'Support', icon: '\uD83D\uDC9A' }, { key: 'tank', label: 'Tank', icon: '\uD83D\uDEE1\uFE0F' }].map(r => (
+                      <button key={r.key} onClick={() => setArtifactScoreRole(r.key)}
+                        className={`flex-1 text-[9px] font-bold py-1 rounded transition-all ${artifactScoreRole === r.key ? 'bg-white/15 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}>
+                        {r.icon} {r.label}
+                      </button>
+                    ))}
                   </div>
-                ))}
+                  <div className="flex items-center justify-between">
+                    <div className="text-[10px]">
+                      <span className="text-gray-400">iLevel Total:</span>{' '}
+                      <span className="text-amber-400 font-black">{equipILv.total}</span>
+                      <span className="text-gray-600 text-[8px] ml-1">(moy {equipILv.avg})</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] text-gray-400">Note:</span>
+                      <span className={`text-sm font-black ${artScoring.avgGrade.color}`}>{artScoring.avgGrade.grade}</span>
+                      <span className="text-[9px] text-gray-500">{artScoring.avgScore}/100</span>
+                    </div>
+                  </div>
+                  {/* Score bar */}
+                  <div className="mt-1 h-1.5 rounded-full bg-gray-700/50 overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-300" style={{
+                      width: `${artScoring.avgScore}%`,
+                      background: artScoring.avgScore >= 85 ? '#ef4444' : artScoring.avgScore >= 65 ? '#f97316' : artScoring.avgScore >= 45 ? '#eab308' : artScoring.avgScore >= 25 ? '#22c55e' : '#6b7280',
+                    }} />
+                  </div>
+                </div>
+
+                {/* Artifact Grid — 2 columns for detail */}
+                <div className="grid grid-cols-2 gap-1.5">
+                  {SLOT_ORDER.map(slotId => {
+                    const slotDef = ARTIFACT_SLOTS[slotId];
+                    const art = equipped[slotId];
+                    const setDef = art ? (ALL_ARTIFACT_SETS[art.set] || ARTIFACT_SETS[art.set]) : null;
+                    const mainDef = art ? MAIN_STAT_VALUES[art.mainStat] : null;
+                    const artScore = art ? (artScoring.scores[slotId] || 0) : 0;
+                    const artGrade = art ? scoreToGrade(artScore) : null;
+                    return (
+                      <div key={slotId}>
+                        {art ? (
+                          <button onClick={() => unequipArtifact(slotId)}
+                            className={`w-full p-1.5 rounded-lg border ${setDef?.border || 'border-gray-600/30'} ${setDef?.bg || 'bg-gray-800/20'} hover:brightness-125 transition-all text-left relative`}>
+                            {/* Header: Set name + rarity + level */}
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <span className="text-[10px]">{setDef?.icon || '?'}</span>
+                              <span className={`text-[8px] font-bold truncate flex-1 ${setDef?.color || 'text-gray-300'}`}>{setDef?.name || '?'}</span>
+                              <span className={`text-[8px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>{RARITY[art.rarity]?.stars || ''}</span>
+                            </div>
+                            {/* Slot + level + grade */}
+                            <div className="flex items-center justify-between mb-0.5">
+                              <div className="flex items-center gap-0.5">
+                                <span className="text-[10px]">{slotDef.icon}</span>
+                                <span className="text-[8px] text-gray-400">{slotDef.name}</span>
+                                <span className={`text-[9px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-[7px] text-amber-400/70 font-bold">iLv{computeArtifactILevel(art)}</span>
+                                <span className={`text-[10px] font-black ${artGrade?.color || 'text-gray-400'}`}>{artGrade?.grade || '?'}</span>
+                              </div>
+                            </div>
+                            {/* Main stat */}
+                            <div className="flex items-center gap-1 py-0.5 border-t border-b border-white/5">
+                              <span className="text-[10px]">{mainDef?.icon || '?'}</span>
+                              <span className="text-[9px] text-gray-300 font-medium">{mainDef?.name || '?'}</span>
+                              <span className="text-[10px] font-black text-white ml-auto">{art.mainValue}</span>
+                            </div>
+                            {/* ALL sub stats */}
+                            <div className="mt-0.5 grid grid-cols-2 gap-x-1 gap-y-px">
+                              {art.subs.map((sub, si) => {
+                                const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
+                                const weight = roleWeights[sub.id] || 0.5;
+                                const isGood = weight >= 2.5;
+                                const isOk = weight >= 1.5;
+                                return (
+                                  <div key={si} className={`text-[8px] truncate ${isGood ? 'text-green-400 font-bold' : isOk ? 'text-blue-300' : 'text-gray-500'}`}>
+                                    {subDef?.name || sub.id} +{sub.value}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </button>
+                        ) : (
+                          <div className="w-full p-1.5 rounded-lg border border-gray-700/20 bg-gray-800/10 text-center" style={{ minHeight: 80 }}>
+                            <div className="text-lg opacity-30 mt-2">{slotDef.icon}</div>
+                            <div className="text-[9px] text-gray-600">{slotDef.name}</div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Active Set Bonuses */}
+                {activeSets.length > 0 && (
+                  <div className="mt-2 p-2 rounded-lg bg-gray-800/20 border border-gray-700/20">
+                    <div className="text-[9px] text-gray-500 mb-1">Sets actifs :</div>
+                    {activeSets.map((s, i) => (
+                      <div key={i} className="flex items-center gap-1 text-[9px] cursor-pointer hover:bg-white/5 rounded p-0.5 -m-0.5 transition-colors"
+                        onClick={() => setArtifactSetDetail(s.set.id)}>
+                        <span className={s.set.color}>{s.set.icon}</span>
+                        <span className={`${s.set.color} underline decoration-dotted`}>{s.set.name}</span>
+                        <span className="text-gray-500">({s.tier}p)</span>
+                        <span className="text-green-400 ml-auto">{s.bonus}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+              );
+            })()}
 
             {/* Total Equipment Stats Summary */}
             {(() => {
@@ -8602,6 +8670,16 @@ export default function ShadowColosseum() {
           return true;
         });
 
+        // Sort inventory
+        const rarityOrder = { mythique: 3, legendaire: 2, rare: 1 };
+        filtered.sort((a, b) => {
+          if (artSort === 'level_desc') return (b.art.level || 0) - (a.art.level || 0);
+          if (artSort === 'level_asc') return (a.art.level || 0) - (b.art.level || 0);
+          if (artSort === 'ilevel') return computeArtifactILevel(b.art) - computeArtifactILevel(a.art);
+          if (artSort === 'rarity') return (rarityOrder[b.art.rarity] || 0) - (rarityOrder[a.art.rarity] || 0) || (b.art.level || 0) - (a.art.level || 0);
+          return 0;
+        });
+
         // Get selected artifact
         const getSelectedArt = () => {
           if (artSelected === null) return null;
@@ -9188,13 +9266,29 @@ export default function ShadowColosseum() {
 
             {/* Inventory Grid */}
             <div className="mb-5">
-              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Inventaire ({filtered.length})</div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Inventaire ({filtered.length})</div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[8px] text-gray-600">Tri:</span>
+                  {[
+                    { key: 'level_desc', label: 'Lv\u2193' },
+                    { key: 'level_asc', label: 'Lv\u2191' },
+                    { key: 'ilevel', label: 'iLv' },
+                    { key: 'rarity', label: '\u2605' },
+                  ].map(s => (
+                    <button key={s.key} onClick={() => setArtSort(s.key)}
+                      className={`text-[8px] px-1.5 py-0.5 rounded transition-all ${artSort === s.key ? 'bg-purple-500/30 text-purple-300 font-bold' : 'text-gray-500 hover:text-gray-300'}`}>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {filtered.length === 0 ? (
                 <div className="text-center text-[10px] text-gray-600 py-4">
                   {inv.length === 0 ? "Aucun artefact. Forge-en dans la Boutique !" : "Aucun artefact ne correspond aux filtres."}
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-1.5 max-h-64 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-1.5 max-h-80 overflow-y-auto pr-1">
                   {filtered.map(({ art, idx }) => {
                     const setDef = ALL_ARTIFACT_SETS[art.set];
                     const mainDef = MAIN_STAT_VALUES[art.mainStat];
@@ -9231,16 +9325,32 @@ export default function ShadowColosseum() {
                           {art.locked ? '\uD83D\uDD12' : '\uD83D\uDD13'}
                         </button>
 
+                        {/* Header: set icon + name */}
                         <div className="flex items-center gap-1 mb-0.5">
-                          <span className="text-xs">{ARTIFACT_SLOTS[art.slot]?.icon}</span>
-                          <span className={`text-[10px] font-bold truncate ${setDef?.color || 'text-gray-400'}`}>{setDef?.name?.split(' ')[0] || '?'}</span>
+                          <span className="text-[10px]">{setDef?.icon || '?'}</span>
+                          <span className={`text-[9px] font-bold truncate flex-1 ${setDef?.color || 'text-gray-400'}`}>{setDef?.name || '?'}</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <span className={`text-[9px] ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>{RARITY[art.rarity]?.stars || art.rarity}</span>
-                          <span className="text-[8px] text-amber-400/70 font-bold ml-auto">iLv{computeArtifactILevel(art)}</span>
+                        {/* Slot + rarity + level + iLevel */}
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <span className="text-[10px]">{ARTIFACT_SLOTS[art.slot]?.icon}</span>
+                          <span className={`text-[8px] ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>{RARITY[art.rarity]?.stars || art.rarity}</span>
+                          <span className={`text-[9px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
+                          <span className="text-[7px] text-amber-400/70 font-bold ml-auto">iLv{computeArtifactILevel(art)}</span>
                         </div>
-                        <div className="text-[10px] text-gray-300">{mainDef?.icon} {mainDef?.name}: +{art.mainValue}</div>
-                        <div className="text-[9px] text-gray-500">Lv {art.level}/{MAX_ARTIFACT_LEVEL} | {art.subs.length} subs</div>
+                        {/* Main stat */}
+                        <div className="flex items-center gap-1 py-0.5 border-t border-white/5">
+                          <span className="text-[9px]">{mainDef?.icon}</span>
+                          <span className="text-[9px] text-gray-300 font-medium">{mainDef?.name}: </span>
+                          <span className="text-[9px] font-black text-white">{art.mainValue}</span>
+                        </div>
+                        {/* All sub stats */}
+                        <div className="mt-0.5 space-y-px">
+                          {art.subs.map((sub, si) => {
+                            const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
+                            return <div key={si} className="text-[8px] text-gray-400 truncate">{subDef?.name || sub.id} +{sub.value}</div>;
+                          })}
+                          {art.subs.length === 0 && <div className="text-[8px] text-gray-600 italic">Aucune sub-stat</div>}
+                        </div>
                       </button>
                     );
                   })}
@@ -9256,38 +9366,55 @@ export default function ShadowColosseum() {
                   const chibi = getChibiData(cId);
                   if (!chibi) return null;
                   const filledCount = Object.values(slots).filter(Boolean).length;
+                  const eqILv = computeEquipILevel(slots);
                   return (
                     <div key={cId} className="mb-3 p-2 rounded-xl border border-gray-700/20 bg-gray-800/10">
                       <div className="flex items-center gap-2 mb-1.5">
                         <img src={getChibiSprite(cId)} alt="" className="w-8 h-8 object-contain" />
                         <span className="text-xs font-bold text-gray-200">{chibi.name}</span>
                         <span className="text-[10px] text-gray-500">{filledCount}/8</span>
+                        <span className="text-[8px] text-amber-400/70 font-bold ml-auto">iLv {eqILv.total}</span>
                       </div>
-                      <div className="grid grid-cols-4 gap-1">
+                      <div className="grid grid-cols-2 gap-1">
                         {SLOT_ORDER.map(sId => {
                           const art = slots[sId];
                           const eqKey = `eq:${cId}:${sId}`;
                           const selected = artSelected === eqKey;
                           if (!art) return (
                             <div key={sId} className="p-1 rounded border border-dashed border-gray-700/20 text-center">
-                              <div className="text-[10px] text-gray-700">{ARTIFACT_SLOTS[sId]?.icon}</div>
+                              <div className="text-[10px] text-gray-700">{ARTIFACT_SLOTS[sId]?.icon} {ARTIFACT_SLOTS[sId]?.name}</div>
                               <div className="text-[8px] text-gray-700">vide</div>
                             </div>
                           );
                           const setDef = ALL_ARTIFACT_SETS[art.set];
+                          const mainDef = MAIN_STAT_VALUES[art.mainStat];
                           return (
                             <button key={sId} onClick={() => { setArtSelected(selected ? null : eqKey); setArtEquipPicker(false); }}
-                              className={`relative p-1 rounded-lg border text-center transition-all ${
+                              className={`relative p-1.5 rounded-lg border text-left transition-all ${
                                 selected ? 'border-purple-400 bg-purple-500/15' :
                                 `${setDef?.border || 'border-gray-700/30'} ${setDef?.bg || 'bg-gray-800/10'} hover:border-gray-500/40`
                               }`}>
-                              {/* Lock indicator */}
                               {art.locked && (
-                                <span className="absolute top-0 right-0 text-[8px]">{'\uD83D\uDD12'}</span>
+                                <span className="absolute top-0.5 right-0.5 text-[8px]">{'\uD83D\uDD12'}</span>
                               )}
-                              <div className="text-[10px]">{ARTIFACT_SLOTS[sId]?.icon}</div>
-                              <div className={`text-[9px] font-bold truncate ${setDef?.color || 'text-gray-400'}`}>{setDef?.name?.split(' ')[0] || '?'}</div>
-                              <div className="text-[9px] text-gray-500">Lv{art.level}</div>
+                              {/* Set + slot */}
+                              <div className="flex items-center gap-1">
+                                <span className="text-[9px]">{setDef?.icon || '?'}</span>
+                                <span className={`text-[8px] font-bold truncate flex-1 ${setDef?.color || 'text-gray-400'}`}>{setDef?.name || '?'}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-[9px]">{ARTIFACT_SLOTS[sId]?.icon}</span>
+                                <span className={`text-[8px] ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>{RARITY[art.rarity]?.stars}</span>
+                                <span className={`text-[8px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
+                                <span className="text-[7px] text-amber-400/70 font-bold ml-auto">iLv{computeArtifactILevel(art)}</span>
+                              </div>
+                              {/* Main stat */}
+                              <div className="text-[8px] text-gray-300 mt-0.5">{mainDef?.icon} {mainDef?.name}: <span className="text-white font-bold">{art.mainValue}</span></div>
+                              {/* Subs */}
+                              {art.subs.map((sub, si) => {
+                                const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
+                                return <div key={si} className="text-[7px] text-gray-500">{subDef?.name || sub.id} +{sub.value}</div>;
+                              })}
                             </button>
                           );
                         })}
