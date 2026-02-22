@@ -61,24 +61,29 @@ export function verifyToken(token) {
  * Returns { userId, username, deviceId } or null.
  */
 export async function extractUser(req) {
-  const authHeader = req.headers?.authorization || req.headers?.Authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  try {
+    const authHeader = req.headers?.authorization || req.headers?.Authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
 
-  const token = authHeader.slice(7);
-  const decoded = verifyToken(token);
-  if (!decoded) return null;
+    const token = authHeader.slice(7);
+    const decoded = verifyToken(token);
+    if (!decoded) return null;
 
-  // Look up user's device_id from DB
-  const result = await query(
-    'SELECT device_id, display_name FROM users WHERE id = $1',
-    [decoded.userId]
-  );
-  if (result.rows.length === 0) return null;
+    // Look up user's device_id from DB
+    const result = await query(
+      'SELECT device_id, display_name FROM users WHERE id = $1',
+      [decoded.userId]
+    );
+    if (result.rows.length === 0) return null;
 
-  return {
-    userId: decoded.userId,
-    username: decoded.username,
-    deviceId: result.rows[0].device_id,
-    displayName: result.rows[0].display_name || decoded.username,
-  };
+    return {
+      userId: decoded.userId,
+      username: decoded.username,
+      deviceId: result.rows[0].device_id,
+      displayName: result.rows[0].display_name || decoded.username,
+    };
+  } catch (err) {
+    console.warn('[auth] extractUser failed:', err.message);
+    return null;
+  }
 }

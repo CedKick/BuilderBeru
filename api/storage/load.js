@@ -8,6 +8,20 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
+    // Auto-create table if needed
+    await query(`
+      CREATE TABLE IF NOT EXISTS user_storage (
+        id SERIAL PRIMARY KEY,
+        device_id VARCHAR(64) NOT NULL,
+        storage_key VARCHAR(128) NOT NULL,
+        data JSONB NOT NULL DEFAULT '{}',
+        size_bytes INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(device_id, storage_key)
+      )
+    `);
+
     let { deviceId, key } = req.query;
 
     // If auth token present, use the user's canonical deviceId

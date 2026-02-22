@@ -3,39 +3,38 @@ import { query } from './_db/neon.js';
 import { extractUser } from './_utils/auth.js';
 
 // ═══════════════════════════════════════════════════════════════
-// INIT — Create player_mail table
+// AUTO-INIT — ensure player_mail table exists
 // ═══════════════════════════════════════════════════════════════
 
-async function handleInit(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+const TABLE_SQL = `
+  CREATE TABLE IF NOT EXISTS player_mail (
+    id SERIAL PRIMARY KEY,
+    recipient_username VARCHAR(20),
+    sender VARCHAR(20) DEFAULT 'system',
+    subject VARCHAR(100) NOT NULL,
+    message TEXT NOT NULL,
+    mail_type VARCHAR(20) NOT NULL DEFAULT 'system',
+    rewards JSONB,
+    claimed BOOLEAN DEFAULT FALSE,
+    read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '30 days')
+  )
+`;
 
-  // Only kly can init
-  const user = await extractUser(req);
-  if (!user) return res.status(401).json({ error: 'Authentication required' });
-  if (user.username.toLowerCase() !== 'kly') {
-    return res.status(403).json({ error: 'Forbidden: Admin only' });
-  }
-
-  await query(`
-    CREATE TABLE IF NOT EXISTS player_mail (
-      id SERIAL PRIMARY KEY,
-      recipient_username VARCHAR(20),
-      sender VARCHAR(20) DEFAULT 'system',
-      subject VARCHAR(100) NOT NULL,
-      message TEXT NOT NULL,
-      mail_type VARCHAR(20) NOT NULL DEFAULT 'system',
-      rewards JSONB,
-      claimed BOOLEAN DEFAULT FALSE,
-      read BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMPTZ DEFAULT NOW(),
-      expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '30 days')
-    )
-  `);
-
+let tableChecked = false;
+async function ensureTable() {
+  if (tableChecked) return;
+  await query(TABLE_SQL);
   await query('CREATE INDEX IF NOT EXISTS idx_mail_recipient ON player_mail(recipient_username, created_at DESC)');
   await query('CREATE INDEX IF NOT EXISTS idx_mail_created ON player_mail(created_at DESC)');
   await query('CREATE INDEX IF NOT EXISTS idx_mail_recipient_unread ON player_mail(recipient_username, read) WHERE read = false');
+  tableChecked = true;
+}
 
+async function handleInit(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  await ensureTable();
   return res.status(200).json({ success: true });
 }
 
@@ -45,6 +44,7 @@ async function handleInit(req, res) {
 
 async function handleSend(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  await ensureTable();
 
   // Auth check
   const user = await extractUser(req);
@@ -141,6 +141,7 @@ async function handleSend(req, res) {
 
 async function handleSelfReward(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  await ensureTable();
 
   // Auth check (any logged-in user can send self-rewards)
   const user = await extractUser(req);
@@ -192,6 +193,7 @@ async function handleSelfReward(req, res) {
 
 async function handleInbox(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  await ensureTable();
 
   const user = await extractUser(req);
   if (!user) return res.status(401).json({ error: 'Authentication required' });
@@ -462,6 +464,6 @@ export default async function handler(req, res) {
     }
   } catch (err) {
     console.error('Mail API error:', err);
-    return res.status(500).json({ success: false, error: 'Server error' });
+    return res.status(500).json({ success: false, error: err.message || 'Server error' });
   }
 }

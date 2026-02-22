@@ -208,6 +208,29 @@ function mergeRaidData(cloud, incoming) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// AUTO-INIT — ensure user_storage table exists
+// ═══════════════════════════════════════════════════════════════
+
+let tableChecked = false;
+async function ensureTable() {
+  if (tableChecked) return;
+  await query(`
+    CREATE TABLE IF NOT EXISTS user_storage (
+      id SERIAL PRIMARY KEY,
+      device_id VARCHAR(64) NOT NULL,
+      storage_key VARCHAR(128) NOT NULL,
+      data JSONB NOT NULL DEFAULT '{}',
+      size_bytes INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(device_id, storage_key)
+    )
+  `);
+  await query('CREATE INDEX IF NOT EXISTS idx_user_storage_device ON user_storage(device_id)');
+  tableChecked = true;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════════════
 
@@ -219,6 +242,8 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
+    await ensureTable();
+
     const { deviceId: bodyDeviceId, key, data, clientTimestamp } = req.body;
 
     // If auth token present, use the user's canonical deviceId
@@ -319,6 +344,6 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error('Save error:', err);
-    return res.status(500).json({ success: false, error: 'Erreur serveur' });
+    return res.status(500).json({ success: false, error: err.message || 'Erreur serveur' });
   }
 }

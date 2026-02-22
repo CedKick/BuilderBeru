@@ -2,29 +2,37 @@
 import { query } from './_db/neon.js';
 import { extractUser } from './_utils/auth.js';
 
+const TABLE_SQL = `
+  CREATE TABLE IF NOT EXISTS legendary_drops (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    username VARCHAR(20) NOT NULL,
+    item_type VARCHAR(16) NOT NULL,
+    item_id VARCHAR(64) NOT NULL,
+    item_name VARCHAR(64) NOT NULL,
+    item_rarity VARCHAR(16),
+    awakening INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  )
+`;
+
+let tableChecked = false;
+async function ensureTable() {
+  if (tableChecked) return;
+  await query(TABLE_SQL);
+  await query('CREATE INDEX IF NOT EXISTS idx_drops_created ON legendary_drops(created_at DESC)');
+  tableChecked = true;
+}
+
 async function handleInit(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  await query(`
-    CREATE TABLE IF NOT EXISTS legendary_drops (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL,
-      username VARCHAR(20) NOT NULL,
-      item_type VARCHAR(16) NOT NULL,
-      item_id VARCHAR(64) NOT NULL,
-      item_name VARCHAR(64) NOT NULL,
-      item_rarity VARCHAR(16),
-      awakening INTEGER DEFAULT 0,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
-  await query('CREATE INDEX IF NOT EXISTS idx_drops_created ON legendary_drops(created_at DESC)');
-
+  await ensureTable();
   return res.status(200).json({ success: true });
 }
 
 async function handleSubmit(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  await ensureTable();
 
   const user = await extractUser(req);
   if (!user) return res.status(401).json({ error: 'Authentication required' });
@@ -54,6 +62,7 @@ async function handleSubmit(req, res) {
 }
 
 async function handleRecent(req, res) {
+  await ensureTable();
   const result = await query(
     `SELECT id, username, item_type, item_id, item_name, item_rarity, awakening, created_at
      FROM legendary_drops
@@ -98,6 +107,6 @@ export default async function handler(req, res) {
     }
   } catch (err) {
     console.error('Drop log error:', err);
-    return res.status(500).json({ success: false, error: 'Erreur serveur' });
+    return res.status(500).json({ success: false, error: err.message || 'Erreur serveur' });
   }
 }
