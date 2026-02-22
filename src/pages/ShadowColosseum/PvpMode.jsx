@@ -2081,9 +2081,9 @@ export default function PvpMode() {
           { key: 'lowest_hp', label: 'Plus faible', desc: 'Cible le plus bas en HP' },
         ];
         const styleOptions = [
-          { key: 'balanced', label: 'Equilibre', desc: 'Attaque/defense standard', color: 'blue' },
-          { key: 'aggressive', label: 'Agressif', desc: 'Nuke max, peu de soins', color: 'red' },
-          { key: 'defensive', label: 'Defensif', desc: 'Soins/buffs prioritaires', color: 'green' },
+          { key: 'balanced', label: 'Equilibre', desc: 'Attaque/defense standard', activeBg: 'rgba(59,130,246,0.35)', activeBorder: 'rgba(96,165,250,0.6)', activeText: '#93c5fd' },
+          { key: 'aggressive', label: 'Agressif', desc: 'Nuke max, peu de soins', activeBg: 'rgba(239,68,68,0.35)', activeBorder: 'rgba(248,113,113,0.6)', activeText: '#fca5a5' },
+          { key: 'defensive', label: 'Defensif', desc: 'Soins/buffs prioritaires', activeBg: 'rgba(34,197,94,0.35)', activeBorder: 'rgba(74,222,128,0.6)', activeText: '#86efac' },
         ];
 
         return (
@@ -2096,15 +2096,15 @@ export default function PvpMode() {
 
               {/* Section 1: Focus Target */}
               <div className="mb-4">
-                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Cible prioritaire</div>
+                <div className="text-[10px] text-gray-300 font-bold uppercase tracking-wider mb-2">Cible prioritaire</div>
                 <div className="grid grid-cols-2 gap-1.5">
                   {focusOptions.map(o => (
                     <button key={o.key} onClick={() => updateStrat({ focusTarget: o.key })}
-                      className={`px-2 py-2 rounded-lg text-left transition-all text-[10px] border ${strat.focusTarget === o.key
-                        ? 'bg-purple-600/30 border-purple-500/50 text-white'
-                        : 'bg-gray-800/30 border-gray-700/20 text-gray-400 hover:bg-gray-700/30'}`}>
+                      className={`px-2 py-2 rounded-lg text-left transition-all text-[11px] border ${strat.focusTarget === o.key
+                        ? 'bg-purple-500/35 border-purple-400/60 text-purple-100'
+                        : 'bg-gray-800/40 border-gray-600/30 text-gray-400 hover:bg-gray-700/40'}`}>
                       <div className="font-bold">{o.label}</div>
-                      <div className="text-[8px] opacity-60">{o.desc}</div>
+                      <div className="text-[9px] opacity-70">{o.desc}</div>
                     </button>
                   ))}
                 </div>
@@ -2112,49 +2112,51 @@ export default function PvpMode() {
 
               {/* Section 2: Playstyle */}
               <div className="mb-4">
-                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Style de jeu</div>
+                <div className="text-[10px] text-gray-300 font-bold uppercase tracking-wider mb-2">Style de jeu</div>
                 <div className="flex gap-1.5">
-                  {styleOptions.map(o => (
-                    <button key={o.key} onClick={() => updateStrat({ playstyle: o.key })}
-                      className={`flex-1 px-2 py-2 rounded-lg text-center transition-all text-[10px] border ${strat.playstyle === o.key
-                        ? `bg-${o.color}-600/30 border-${o.color}-500/50 text-white`
-                        : 'bg-gray-800/30 border-gray-700/20 text-gray-400 hover:bg-gray-700/30'}`}>
-                      <div className="font-bold">{o.label}</div>
-                      <div className="text-[8px] opacity-60">{o.desc}</div>
-                    </button>
-                  ))}
+                  {styleOptions.map(o => {
+                    const active = strat.playstyle === o.key;
+                    return (
+                      <button key={o.key} onClick={() => updateStrat({ playstyle: o.key })}
+                        className={`flex-1 px-2 py-2 rounded-lg text-center transition-all text-[11px] border ${!active ? 'bg-gray-800/40 border-gray-600/30 text-gray-400 hover:bg-gray-700/40' : ''}`}
+                        style={active ? { background: o.activeBg, borderColor: o.activeBorder, color: o.activeText } : undefined}>
+                        <div className="font-bold">{o.label}</div>
+                        <div className="text-[9px] opacity-70">{o.desc}</div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Section 3+4: Team list with Buff & Heal badges */}
               <div className="mb-4">
-                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Priorites <span className="text-amber-400">Buff</span> & <span className="text-emerald-400">Soin</span> <span className="opacity-50">(clique pour assigner 1-2-3)</span></div>
+                <div className="text-[10px] text-gray-300 font-bold uppercase tracking-wider mb-2">Priorites <span className="text-amber-300 font-black">Buff</span> & <span className="text-emerald-300 font-black">Soin</span> <span className="text-gray-500">(clique pour assigner 1-2-3)</span></div>
                 {teamChibis.length === 0 && (
-                  <div className="text-[10px] text-gray-600 text-center py-4">Aucune equipe enregistree</div>
+                  <div className="text-[10px] text-gray-500 text-center py-4">Aucune equipe enregistree</div>
                 )}
                 <div className="flex flex-col gap-1.5">
                   {teamChibis.map(c => {
                     const buffIdx = (strat.buffPriority || []).indexOf(c.id);
                     const healIdx = (strat.healPriority || []).indexOf(c.id);
                     return (
-                      <div key={c.id} className="flex items-center gap-2 p-2 rounded-xl bg-gray-800/30 border border-gray-700/20">
-                        <img src={c.sprite} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                      <div key={c.id} className="flex items-center gap-2 p-2 rounded-xl bg-gray-800/40 border border-gray-600/30">
+                        <img src={c.sprite} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0 ring-1 ring-gray-600/40" />
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-bold text-white truncate">{c.name}</div>
-                          <div className="text-[9px] text-gray-500">{c.class || ''}</div>
+                          <div className="text-[9px] text-gray-400">{c.class || ''}</div>
                         </div>
                         {/* Buff badge */}
                         <button onClick={() => togglePriority('buffPriority', c.id)}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black transition-all border-2 flex-shrink-0 ${buffIdx >= 0
-                            ? 'bg-amber-500 border-amber-400 text-black shadow-lg shadow-amber-500/30'
-                            : 'bg-gray-800/50 border-gray-600/30 text-gray-600 hover:border-amber-500/50 hover:text-amber-400'}`}>
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black transition-all border-2 flex-shrink-0 ${buffIdx >= 0
+                            ? 'bg-amber-500 border-amber-300 text-black shadow-lg shadow-amber-500/40 scale-110'
+                            : 'bg-gray-700/60 border-gray-500/40 text-gray-400 hover:border-amber-400/60 hover:text-amber-300 hover:bg-gray-700/80'}`}>
                           {buffIdx >= 0 ? buffIdx + 1 : 'B'}
                         </button>
                         {/* Heal badge */}
                         <button onClick={() => togglePriority('healPriority', c.id)}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black transition-all border-2 flex-shrink-0 ${healIdx >= 0
-                            ? 'bg-emerald-500 border-emerald-400 text-black shadow-lg shadow-emerald-500/30'
-                            : 'bg-gray-800/50 border-gray-600/30 text-gray-600 hover:border-emerald-500/50 hover:text-emerald-400'}`}>
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black transition-all border-2 flex-shrink-0 ${healIdx >= 0
+                            ? 'bg-emerald-500 border-emerald-300 text-black shadow-lg shadow-emerald-500/40 scale-110'
+                            : 'bg-gray-700/60 border-gray-500/40 text-gray-400 hover:border-emerald-400/60 hover:text-emerald-300 hover:bg-gray-700/80'}`}>
                           {healIdx >= 0 ? healIdx + 1 : 'H'}
                         </button>
                       </div>
@@ -2164,12 +2166,12 @@ export default function PvpMode() {
               </div>
 
               {/* Summary */}
-              <div className="p-3 rounded-xl bg-gray-800/20 border border-gray-700/10 text-[9px] text-gray-500">
-                <span className="text-purple-400 font-bold">Resume: </span>
+              <div className="p-3 rounded-xl bg-gray-800/30 border border-gray-600/20 text-[10px] text-gray-300">
+                <span className="text-purple-300 font-bold">Resume : </span>
                 Focus {focusOptions.find(o => o.key === strat.focusTarget)?.label || 'Intelligent'}
                 {' | '}Style {styleOptions.find(o => o.key === strat.playstyle)?.label || 'Equilibre'}
-                {(strat.buffPriority?.length > 0) && ` | ${strat.buffPriority.length} buff prio`}
-                {(strat.healPriority?.length > 0) && ` | ${strat.healPriority.length} heal prio`}
+                {(strat.buffPriority?.length > 0) && <span className="text-amber-300"> | {strat.buffPriority.length} buff prio</span>}
+                {(strat.healPriority?.length > 0) && <span className="text-emerald-300"> | {strat.healPriority.length} heal prio</span>}
               </div>
 
               <button onClick={() => setShowStrategyModal(false)}
