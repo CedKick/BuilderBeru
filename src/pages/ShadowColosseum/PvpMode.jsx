@@ -31,6 +31,7 @@ import {
   GULDAN_HEAL_PER_STACK, GULDAN_DEF_PER_HIT, GULDAN_ATK_PER_HIT, GULDAN_SPD_CHANCE, GULDAN_SPD_BOOST, GULDAN_SPD_MAX_STACKS, GULDAN_STUN_CHANCE,
 } from './equipmentData';
 import { BattleStyles } from './BattleVFX';
+import SharedDPSGraph from './SharedBattleComponents/SharedDPSGraph';
 
 // ─── Save keys ──────────────────────────────────────────────
 const COLO_KEY = 'shadow_colosseum_data';
@@ -129,6 +130,10 @@ export default function PvpMode() {
   const gameLoopRef = useRef(null);
   const startTimeRef = useRef(0);
   const dpsTracker = useRef({});
+  const [dpsHistory, setDpsHistory] = useState([]);
+  const dpsWindowTracker = useRef({});
+  const lastDpsSnapshotRef = useRef(0);
+  const [detailedLogs, setDetailedLogs] = useState({});
   const [speedMult, setSpeedMult] = useState(1);
   const speedMultRef = useRef(1);
   const [vfxEvents, setVfxEvents] = useState([]);
@@ -411,7 +416,17 @@ export default function PvpMode() {
     setCombatLog([{ text: `PVP: ${displayName || 'Toi'} vs ${opponent.displayName} !`, time: 0, type: 'system' }]);
     setVfxEvents([]);
     dpsTracker.current = {};
-    attackers.forEach(c => { dpsTracker.current[c.id] = 0; });
+    dpsWindowTracker.current = {};
+    lastDpsSnapshotRef.current = 0;
+    attackers.forEach(c => { dpsTracker.current[c.id] = 0; dpsWindowTracker.current[c.id] = 0; });
+    const initialSnapshot = { time: 0 };
+    attackers.forEach(c => { initialSnapshot[c.id] = 0; });
+    setDpsHistory([initialSnapshot]);
+    const initialLogs = {};
+    attackers.forEach(c => {
+      initialLogs[c.id] = { totalDamage: 0, damageTaken: 0, totalHits: 0, critHits: 0, maxCrit: 0, skillsUsed: 0 };
+    });
+    setDetailedLogs(initialLogs);
     startTimeRef.current = Date.now();
     timerRef.current = PVP_DURATION_SEC;
     setTimer(PVP_DURATION_SEC);
@@ -479,6 +494,19 @@ export default function PvpMode() {
     const elapsed = (now - startTimeRef.current) / 1000;
     const remaining = Math.max(0, PVP_DURATION_SEC - elapsed);
     timerRef.current = remaining;
+
+    // DPS snapshot every 0.5s for graph
+    if (elapsed - lastDpsSnapshotRef.current >= 0.5) {
+      const windowDuration = elapsed - lastDpsSnapshotRef.current;
+      const snapshot = { time: +elapsed.toFixed(1) };
+      state.attackers.forEach(c => {
+        const windowDmg = dpsWindowTracker.current[c.id] || 0;
+        snapshot[c.id] = windowDuration > 0 ? Math.floor(windowDmg / windowDuration) : 0;
+        dpsWindowTracker.current[c.id] = 0;
+      });
+      lastDpsSnapshotRef.current = elapsed;
+      setDpsHistory(prev => [...prev, snapshot]);
+    }
 
     let logEntries = [];
     let stateChanged = false;
@@ -802,6 +830,22 @@ export default function PvpMode() {
         if (dpsTracker.current[unit.id] !== undefined) {
           dpsTracker.current[unit.id] += result.damage;
         }
+        if (dpsWindowTracker.current[unit.id] !== undefined) {
+          dpsWindowTracker.current[unit.id] += result.damage;
+        }
+        // Update detailed logs
+        setDetailedLogs(prev => {
+          const log = prev[unit.id];
+          if (!log) return prev;
+          return { ...prev, [unit.id]: {
+            ...log,
+            totalDamage: log.totalDamage + result.damage,
+            totalHits: log.totalHits + 1,
+            critHits: log.critHits + (result.isCrit ? 1 : 0),
+            maxCrit: result.isCrit ? Math.max(log.maxCrit, result.damage) : log.maxCrit,
+            skillsUsed: log.skillsUsed + 1,
+          }};
+        });
 
         // VFX: attack + hit
         addVfx('attack', { sourceId: unit.id, isAttacker, element: unit.element });
@@ -1533,6 +1577,41 @@ export default function PvpMode() {
                 <div className="text-[10px] text-gray-400 w-16 text-right">{fmt(c.damage)} ({c.percent.toFixed(0)}%)</div>
               </div>
             ))}
+          </div>
+
+          {/* DPS Curve Graph */}
+          {dpsHistory.length > 1 && (
+            <div className="mb-4 p-3 rounded-xl bg-gray-800/30 border border-gray-700/20">
+              <div className="text-xs text-gray-400 font-bold mb-2">{'\uD83D\uDCC8'} Courbe DPS</div>
+              <SharedDPSGraph
+                dpsHistory={dpsHistory}
+                fighters={resultData.dpsBreakdown.map(d => ({
+                  id: d.id, name: d.name, sprite: d.sprite,
+                }))}
+              />
+            </div>
+          )}
+
+          {/* Detailed Combat Stats */}
+          <div className="mb-4 p-3 rounded-xl bg-gray-800/30 border border-gray-700/20">
+            <div className="text-xs text-gray-400 font-bold mb-2">{'\uD83D\uDCCA'} Statistiques detaillees</div>
+            {resultData.dpsBreakdown.map((c, i) => {
+              const log = detailedLogs[c.id];
+              if (!log) return null;
+              const critRate = log.totalHits > 0 ? (log.critHits / log.totalHits * 100).toFixed(0) : 0;
+              return (
+                <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-700/10 last:border-0">
+                  <img src={c.sprite} alt="" className={`w-5 h-5 rounded-full object-cover ${!c.alive ? 'grayscale opacity-50' : ''}`} />
+                  <div className="text-[10px] font-bold w-16 truncate">{c.name}</div>
+                  <div className="flex-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[9px] text-gray-400">
+                    <span>{fmt(log.totalDamage)} dmg</span>
+                    <span>{log.totalHits} hits</span>
+                    <span>{critRate}% crit</span>
+                    {log.maxCrit > 0 && <span className="text-yellow-400">max: {fmt(log.maxCrit)}</span>}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <div className="flex gap-2">
