@@ -175,58 +175,21 @@ function mergeNestedMax(cloud, incoming) {
   return result;
 }
 
-/** Merge artifact inventories: union, deduplicate by id or content hash */
+/** Merge artifact inventories: keep the BIGGER inventory (no duplication exploit) */
 function mergeArtifactInventories(cloudInv, incomingInv) {
   if (!cloudInv.length) return incomingInv;
   if (!incomingInv.length) return cloudInv;
-
-  // Build a set of unique artifact signatures to deduplicate
-  const seen = new Set();
-  const merged = [];
-
-  const getSignature = (art) => {
-    // Use id if present, otherwise hash key fields
-    if (art.id) return art.id;
-    return `${art.set || ''}_${art.slot || ''}_${art.rarity || ''}_${art.mainStat || ''}_${JSON.stringify(art.subs || [])}`;
-  };
-
-  // Cloud first (source of truth), then incoming
-  for (const art of cloudInv) {
-    const sig = getSignature(art);
-    if (!seen.has(sig)) {
-      seen.add(sig);
-      merged.push(art);
-    }
-  }
-  for (const art of incomingInv) {
-    const sig = getSignature(art);
-    if (!seen.has(sig)) {
-      seen.add(sig);
-      merged.push(art);
-    }
-  }
-
-  return merged;
+  // Anti-exploit: take the longer inventory (the one with more progression)
+  // This prevents double-farming via concurrent tabs
+  return cloudInv.length >= incomingInv.length ? cloudInv : incomingInv;
 }
 
-/** Merge drop logs: concat + deduplicate by timestamp */
+/** Merge drop logs: keep the longer log (no concat to prevent exploit) */
 function mergeDropLogs(cloudLog, incomingLog) {
   if (!cloudLog?.length && !incomingLog?.length) return [];
   if (!cloudLog?.length) return incomingLog;
   if (!incomingLog?.length) return cloudLog;
-
-  const seen = new Set();
-  const merged = [];
-  for (const entry of [...cloudLog, ...incomingLog]) {
-    const sig = `${entry.ts || entry.timestamp || ''}_${entry.item || entry.name || ''}`;
-    if (!seen.has(sig)) {
-      seen.add(sig);
-      merged.push(entry);
-    }
-  }
-  // Keep most recent 100 entries
-  merged.sort((a, b) => (b.ts || b.timestamp || 0) - (a.ts || a.timestamp || 0));
-  return merged.slice(0, 100);
+  return cloudLog.length >= incomingLog.length ? cloudLog : incomingLog;
 }
 
 /** Simple merge for raid data */
