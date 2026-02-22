@@ -1113,7 +1113,7 @@ export function rollNierHunterDrop(stageId, stageTier, isBoss, star = 0) {
 export const BOSS_HUNTER_DROPS = {
   h_guts:    { bosses: ['ragnarok', 'zephyr', 'supreme_monarch', 'archdemon'], baseChance: 1 / 1500 }, // 1/1500
   h_megumin: { bosses: ['ragnarok', 'zephyr', 'supreme_monarch', 'archdemon'], baseChance: 1 / 1000 }, // 1/1000
-  h_sukuna:  { bosses: ['ant_queen'], baseChance: 1 / 2000, minTier: 5 }, // 1/2000, Divin+ only
+  h_sukuna:  { bosses: ['ragnarok', 'zephyr', 'supreme_monarch', 'archdemon', 'ant_queen'], baseChance: 1 / 1500, minTier: 5 }, // 1/1500, Divin+ only
 };
 
 export function rollBossHunterDrop(bossId, lootMult = 1, tier = 1) {
