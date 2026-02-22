@@ -315,7 +315,7 @@ export default function MailInbox() {
         }
       });
 
-      cloudStorage.save(RAID_KEY, raidData);
+      await cloudStorage.saveAndSync(RAID_KEY, raidData);
     }
 
     // Coins
@@ -323,7 +323,8 @@ export default function MailInbox() {
       shadowCoinManager.addCoins(rewards.coins, 'mail-reward');
     }
 
-    cloudStorage.save(SAVE_KEY, data);
+    // Force immediate sync (no debounce) — ensures cloud has A3 BEFORE user navigates to ShadowColosseum
+    await cloudStorage.saveAndSync(SAVE_KEY, data);
 
     // Dispatch update event
     window.dispatchEvent(new CustomEvent('beru-react', {

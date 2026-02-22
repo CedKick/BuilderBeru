@@ -717,11 +717,17 @@ export default function ShadowColosseum() {
     }
   }, []);
 
-  // Fetch mail count on mount + listen for updates
+  // Fetch mail count on mount + listen for updates + reload data on shadow-data-update (mail rewards)
   useEffect(() => {
     if (isLoggedIn()) fetchUnreadMailCount();
     const handler = (e) => {
       if (e.detail?.type === 'mail-update') fetchUnreadMailCount();
+      if (e.detail?.type === 'shadow-data-update') {
+        // Mail rewards were claimed — reload freshest data to avoid cloud-first overwrite
+        cloudStorage.loadFresh(SAVE_KEY).then(fresh => {
+          if (fresh) setData(migrateData({ ...defaultData(), ...fresh }));
+        });
+      }
     };
     window.addEventListener('beru-react', handler);
     return () => window.removeEventListener('beru-react', handler);

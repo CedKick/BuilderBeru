@@ -106,6 +106,14 @@ class CloudStorageManager {
     }
   }
 
+  /** Save + immediately sync to cloud (no debounce). Use for critical saves like mail rewards. */
+  async saveAndSync(key, data) {
+    this.save(key, data);
+    if (CLOUD_KEYS.includes(key)) {
+      return this.syncKey(key);
+    }
+  }
+
   /** Load from localStorage (synchronous, instant) */
   loadLocal(key) {
     try {
