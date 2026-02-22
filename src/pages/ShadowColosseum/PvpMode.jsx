@@ -879,6 +879,11 @@ export default function PvpMode() {
               target.passiveState.celestialDefBoostTurns = celShieldP.defBoostTurns || 3;
               target.def = Math.floor(target.def * (1 + (celShieldP.defBoostPct || 0.20)));
               logEntries.push({ text: `${target.name} — Bouclier Celeste brise ! +${onBreakHeal} PV + DEF +20%`, time: elapsed, type: 'passive' });
+              if (healWindowTracker.current[target.id] !== undefined) healWindowTracker.current[target.id] += onBreakHeal;
+              setDetailedLogs(prev => {
+                const log = prev[target.id]; if (!log) return prev;
+                return { ...prev, [target.id]: { ...log, totalHealing: log.totalHealing + onBreakHeal } };
+              });
             }
           }
         }
@@ -929,6 +934,11 @@ export default function PvpMode() {
           const heal = Math.floor(result.damage * 0.12);
           unit.hp = Math.min(unit.maxHp, unit.hp + heal);
           logEntries.push({ text: `${unit.name} — Vol de vie ! +${heal} PV`, time: elapsed, type: 'heal' });
+          if (healWindowTracker.current[unit.id] !== undefined) healWindowTracker.current[unit.id] += heal;
+          setDetailedLogs(prev => {
+            const log = prev[unit.id]; if (!log) return prev;
+            return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + heal } };
+          });
         }
 
         // ─── Weapon passives: post-attack stack building ───
@@ -963,7 +973,14 @@ export default function PvpMode() {
           const gs = unit.passiveState.guldanState;
           gs.healStacks = (gs.healStacks || 0) + 1;
           const healAmt = Math.floor(result.damage * GULDAN_HEAL_PER_STACK * gs.healStacks);
-          if (healAmt > 0) unit.hp = Math.min(unit.maxHp, unit.hp + healAmt);
+          if (healAmt > 0) {
+            unit.hp = Math.min(unit.maxHp, unit.hp + healAmt);
+            if (healWindowTracker.current[unit.id] !== undefined) healWindowTracker.current[unit.id] += healAmt;
+            setDetailedLogs(prev => {
+              const log = prev[unit.id]; if (!log) return prev;
+              return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + healAmt } };
+            });
+          }
           gs.defBonus = (gs.defBonus || 0) + GULDAN_DEF_PER_HIT;
           gs.atkBonus = (gs.atkBonus || 0) + GULDAN_ATK_PER_HIT;
           if (gs.spdStacks < GULDAN_SPD_MAX_STACKS && Math.random() < GULDAN_SPD_CHANCE) gs.spdStacks++;
@@ -1006,6 +1023,11 @@ export default function PvpMode() {
             unit.hp = newHp;
             logEntries.push({ text: `${unit.name} — Siphon Vital ! +${siphonHeal} PV`, time: elapsed, type: 'heal' });
           }
+          if (healWindowTracker.current[unit.id] !== undefined) healWindowTracker.current[unit.id] += siphonHeal;
+          setDetailedLogs(prev => {
+            const log = prev[unit.id]; if (!log) return prev;
+            return { ...prev, [unit.id]: { ...log, totalHealing: log.totalHealing + siphonHeal } };
+          });
         }
         // Arcane Overload: full mana → charge next x2 — individual
         const arcOverP = unit.passives?.find(p => p.type === 'arcaneOverload');
@@ -1039,6 +1061,11 @@ export default function PvpMode() {
           target.passiveState.vitalEmergencyActive = 1;
           target.passiveState.vitalEmergencyCD = targetVSurge.emergencyCD || 10;
           logEntries.push({ text: `${target.name} — Urgence Vitale ! +${eHeal} PV`, time: elapsed, type: 'passive' });
+          if (healWindowTracker.current[target.id] !== undefined) healWindowTracker.current[target.id] += eHeal;
+          setDetailedLogs(prev => {
+            const log = prev[target.id]; if (!log) return prev;
+            return { ...prev, [target.id]: { ...log, totalHealing: log.totalHealing + eHeal } };
+          });
         }
 
         if (target.hp <= 0) {
@@ -1752,6 +1779,8 @@ export default function PvpMode() {
                 <SharedDPSGraph
                   dpsHistory={transformedHistory}
                   fighters={filteredFighters}
+                  averageMode={true}
+                  metricLabel={metricLabels[graphMetric]}
                 />
               </div>
             );

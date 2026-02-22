@@ -16,7 +16,7 @@ const COLORS = [
   '#06b6d4', // cyan
 ];
 
-export default function SharedDPSGraph({ dpsHistory, fighters, bossData = null }) {
+export default function SharedDPSGraph({ dpsHistory, fighters, bossData = null, averageMode = false, metricLabel = null }) {
   const [viewMode, setViewMode] = useState('individual'); // 'individual' | 'total'
   const [visibleLines, setVisibleLines] = useState({});
 
@@ -157,7 +157,7 @@ export default function SharedDPSGraph({ dpsHistory, fighters, bossData = null }
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-lg font-bold text-purple-300">
-            📊 DPS en temps réel (style Warcraft Logs)
+            {metricLabel ? `📊 ${metricLabel}` : '📊 DPS en temps réel (style Warcraft Logs)'}
           </h3>
         </div>
         <div className="flex gap-2">
@@ -285,7 +285,9 @@ export default function SharedDPSGraph({ dpsHistory, fighters, bossData = null }
 
         <div className="grid grid-cols-3 gap-2">
           {fighters.map((fighter, idx) => {
-            const latestDPS = dpsHistory[dpsHistory.length - 1]?.[fighter.id] || 0;
+            const latestDPS = averageMode && dpsHistory.length > 1
+              ? Math.floor(dpsHistory.reduce((s, snap) => s + (snap[fighter.id] || 0), 0) / dpsHistory.length)
+              : (dpsHistory[dpsHistory.length - 1]?.[fighter.id] || 0);
             const isVisible = visibleLines[fighter.id];
             return (
               <button
@@ -310,7 +312,7 @@ export default function SharedDPSGraph({ dpsHistory, fighters, bossData = null }
                     className="text-xs font-bold"
                     style={{ color: isVisible ? COLORS[idx % COLORS.length] : '#666' }}
                   >
-                    {formatDamage(latestDPS)}/s
+                    {formatDamage(latestDPS)}/s{averageMode ? ' moy' : ''}
                   </div>
                 </div>
                 {viewMode === 'individual' && (
