@@ -60,7 +60,7 @@ const S = {
   // BERSERK (collab)
   h_guts:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771654575/Guts_y7usbq.png',
   // JUJUTSU KAISEN (collab)
-  h_sukuna:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771728123/Sukuna_selojw.png',
+  h_sukuna:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771728787/Sukuna_rcgrdk.png',
   // NIER AUTOMATA (collab)
   h_a9:        'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771654101/A9_tky2tw.png',
   h_2b:        'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771499926/2B_vly2pt.png',
