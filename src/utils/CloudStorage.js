@@ -66,6 +66,7 @@ class CloudStorageManager {
     this._pendingData = new Map(); // key → fresh data (backup when localStorage fails)
     this._syncStatus = {};         // key → 'synced' | 'syncing' | 'error' | 'pending'
     this._statusListeners = new Set();
+    this._crossTabListeners = new Set();
   }
 
   /** Returns a promise that resolves when initialSync is complete */
@@ -290,8 +291,12 @@ class CloudStorageManager {
       const json = await resp.json();
       this._online = true;
       // Update tracked cloud size + timestamp after successful sync
-      this._cloudSizes[key] = localSize;
+      this._cloudSizes[key] = json.size || localSize;
       if (json.serverTimestamp) this._cloudTimestamps[key] = json.serverTimestamp;
+      // If server merged our data with another session's, log it
+      if (json.merged) {
+        console.log(`[CloudStorage] Server MERGED "${key}" — concurrent session detected`);
+      }
       // Clear pending data after successful sync
       this._pendingData.delete(key);
       this._setSyncStatus(key, 'synced');
@@ -335,6 +340,12 @@ class CloudStorageManager {
   /** Get current sync status for a key */
   getSyncStatus(key) {
     return this._syncStatus[key] || 'synced';
+  }
+
+  /** Subscribe to cross-tab data changes. Returns unsubscribe function. */
+  onCrossTabUpdate(callback) {
+    this._crossTabListeners.add(callback);
+    return () => this._crossTabListeners.delete(callback);
   }
 
   // ─── Private ─────────────────────────────────────────────
@@ -457,6 +468,18 @@ class CloudStorageManager {
         self._flushQueue();
       }
     }, 60000);
+
+    // 4. Cross-tab sync — detect when another tab writes to localStorage
+    //    (storage event only fires in OTHER tabs, not the one that wrote)
+    window.addEventListener('storage', (e) => {
+      if (!e.key || !CLOUD_KEYS.includes(e.key) || !self._initialized) return;
+      // Another tab just wrote to a tracked key — update our in-memory state
+      // Notify listeners so UI can react (e.g. show "data updated from another tab")
+      self._setSyncStatus(e.key, 'synced');
+      for (const cb of self._crossTabListeners) {
+        try { cb(e.key, e.newValue); } catch {}
+      }
+    });
   }
 
   get isOnline() { return this._online; }
