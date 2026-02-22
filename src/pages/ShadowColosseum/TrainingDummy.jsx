@@ -679,6 +679,29 @@ export default function TrainingDummy() {
         );
       }
 
+      // Support healing — allies first, then self
+      if (fighter.class === 'support') {
+        const aliveAllies = state.fighters.filter(a => a.alive && a.id !== fighter.id && a.hp < a.maxHp);
+        const lowest = aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
+        const healTarget = (lowest && (lowest.hp / lowest.maxHp) < 0.75) ? lowest
+          : (fighter.hp < fighter.maxHp && (fighter.hp / fighter.maxHp) < 0.75) ? fighter : null;
+        if (healTarget) {
+          const healBonus = fighter.talentBonuses?.healBonus || 0;
+          let healAmt = Math.floor(healTarget.maxHp * 0.15 * (1 + healBonus / 100));
+          const healCritP = (fighter.passives || []).find(p => p.type === 'healCrit');
+          if (healCritP) {
+            healAmt = Math.floor(healAmt * (1 + (healCritP.healBoostPct || 0.30)));
+            if (Math.random() < (healCritP.critChance || 0.10)) healAmt *= 2;
+          }
+          healTarget.hp = Math.min(healTarget.maxHp, healTarget.hp + healAmt);
+          fighter.lastAttackAt = now;
+          const label = healTarget === fighter ? 'se soigne' : `soigne ${healTarget.name}`;
+          logEntries.push({ text: `${fighter.name} ${label} +${healAmt} PV`, time: elapsed, type: 'heal' });
+          stateChanged = true;
+          return;
+        }
+      }
+
       // Pick skill
       const availSkills = fighter.skills.filter(s => {
         if ((s.cd || 0) > 0) return false;
