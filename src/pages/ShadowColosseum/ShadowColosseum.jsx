@@ -8801,6 +8801,7 @@ export default function ShadowColosseum() {
                       subject: `Arme forgée: ${weaponData?.name || weaponId}`,
                       message: `Félicitations ! Vous avez forgé une arme légendaire.\n\nVotre ${weaponData?.name || weaponId} a été ajoutée à votre collection.\n\n⚒️ Forge Mystique`,
                       mailType: 'system',
+                      rewards: {},
                     })
                   });
                   window.dispatchEvent(new CustomEvent('beru-react', {
