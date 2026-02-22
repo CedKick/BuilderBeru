@@ -132,6 +132,8 @@ export default function PvpMode() {
   const dpsTracker = useRef({});
   const [dpsHistory, setDpsHistory] = useState([]);
   const dpsWindowTracker = useRef({});
+  const healWindowTracker = useRef({});
+  const dmgTakenWindowTracker = useRef({});
   const lastDpsSnapshotRef = useRef(0);
   const [detailedLogs, setDetailedLogs] = useState({});
   const [speedMult, setSpeedMult] = useState(1);
@@ -144,6 +146,8 @@ export default function PvpMode() {
 
   // Result state
   const [resultData, setResultData] = useState(null);
+  const [graphTeamFilter, setGraphTeamFilter] = useState('all'); // 'all' | 'atk' | 'def'
+  const [graphMetric, setGraphMetric] = useState('dps'); // 'dps' | 'hps' | 'dtps'
 
   // Rankings state
   const [rankings, setRankings] = useState([]);
@@ -417,9 +421,16 @@ export default function PvpMode() {
     setVfxEvents([]);
     dpsTracker.current = {};
     dpsWindowTracker.current = {};
+    healWindowTracker.current = {};
+    dmgTakenWindowTracker.current = {};
     lastDpsSnapshotRef.current = 0;
     // Track BOTH teams
-    [...attackers, ...defenders].forEach(c => { dpsTracker.current[c.id] = 0; dpsWindowTracker.current[c.id] = 0; });
+    [...attackers, ...defenders].forEach(c => {
+      dpsTracker.current[c.id] = 0;
+      dpsWindowTracker.current[c.id] = 0;
+      healWindowTracker.current[c.id] = 0;
+      dmgTakenWindowTracker.current[c.id] = 0;
+    });
     const initialSnapshot = { time: 0 };
     [...attackers, ...defenders].forEach(c => { initialSnapshot[c.id] = 0; });
     setDpsHistory([initialSnapshot]);
@@ -428,6 +439,8 @@ export default function PvpMode() {
       initialLogs[c.id] = { totalDamage: 0, totalHealing: 0, damageTaken: 0, totalHits: 0, critHits: 0, maxCrit: 0, skillsUsed: 0 };
     });
     setDetailedLogs(initialLogs);
+    setGraphTeamFilter('all');
+    setGraphMetric('dps');
     startTimeRef.current = Date.now();
     timerRef.current = PVP_DURATION_SEC;
     setTimer(PVP_DURATION_SEC);
@@ -500,11 +513,17 @@ export default function PvpMode() {
     if (elapsed - lastDpsSnapshotRef.current >= 0.5) {
       const windowDuration = elapsed - lastDpsSnapshotRef.current;
       const snapshot = { time: +elapsed.toFixed(1) };
-      // Snapshot BOTH teams
+      // Snapshot BOTH teams — DPS + HPS + DTPS
       [...state.attackers, ...state.defenders].forEach(c => {
         const windowDmg = dpsWindowTracker.current[c.id] || 0;
+        const windowHeal = healWindowTracker.current[c.id] || 0;
+        const windowDmgTaken = dmgTakenWindowTracker.current[c.id] || 0;
         snapshot[c.id] = windowDuration > 0 ? Math.floor(windowDmg / windowDuration) : 0;
+        snapshot[`${c.id}_hps`] = windowDuration > 0 ? Math.floor(windowHeal / windowDuration) : 0;
+        snapshot[`${c.id}_dtps`] = windowDuration > 0 ? Math.floor(windowDmgTaken / windowDuration) : 0;
         dpsWindowTracker.current[c.id] = 0;
+        healWindowTracker.current[c.id] = 0;
+        dmgTakenWindowTracker.current[c.id] = 0;
       });
       lastDpsSnapshotRef.current = elapsed;
       setDpsHistory(prev => [...prev, snapshot]);
@@ -633,7 +652,10 @@ export default function PvpMode() {
           unit.lastAttackAt = now;
           logEntries.push({ text: `${unit.name} soigne ${lowest.name} +${healAmt}`, time: elapsed, type: 'heal' });
           addVfx('heal', { targetId: lowest.id });
-          // Track healing in logs
+          // Track healing in window + logs
+          if (healWindowTracker.current[unit.id] !== undefined) {
+            healWindowTracker.current[unit.id] += healAmt;
+          }
           setDetailedLogs(prev => {
             const log = prev[unit.id];
             if (!log) return prev;
@@ -811,6 +833,17 @@ export default function PvpMode() {
           if (unit.hp <= 0) { unit.hp = 0; unit.alive = false; }
           logEntries.push({ text: `${target.name} contre-attaque ! -${counterDmg}`, time: elapsed, type: 'counter' });
           addVfx('hit', { targetId: unit.id, damage: counterDmg });
+          // Track counter damage in window + logs
+          if (dpsWindowTracker.current[target.id] !== undefined) dpsWindowTracker.current[target.id] += counterDmg;
+          if (dmgTakenWindowTracker.current[unit.id] !== undefined) dmgTakenWindowTracker.current[unit.id] += counterDmg;
+          setDetailedLogs(prev => {
+            const tLog = prev[target.id];
+            const uLog = prev[unit.id];
+            const next = { ...prev };
+            if (tLog) next[target.id] = { ...tLog, totalDamage: tLog.totalDamage + counterDmg, totalHits: tLog.totalHits + 1 };
+            if (uLog) next[unit.id] = { ...uLog, damageTaken: uLog.damageTaken + counterDmg };
+            return next;
+          });
         }
         unit.lastAttackAt = now;
         unit.skills.forEach(s => {
@@ -863,18 +896,28 @@ export default function PvpMode() {
         if (dpsWindowTracker.current[unit.id] !== undefined) {
           dpsWindowTracker.current[unit.id] += result.damage;
         }
-        // Update detailed logs
+        if (dmgTakenWindowTracker.current[target.id] !== undefined) {
+          dmgTakenWindowTracker.current[target.id] += dmg;
+        }
+        // Update detailed logs — attacker dealt + target received
         setDetailedLogs(prev => {
-          const log = prev[unit.id];
-          if (!log) return prev;
-          return { ...prev, [unit.id]: {
-            ...log,
-            totalDamage: log.totalDamage + result.damage,
-            totalHits: log.totalHits + 1,
-            critHits: log.critHits + (result.isCrit ? 1 : 0),
-            maxCrit: result.isCrit ? Math.max(log.maxCrit, result.damage) : log.maxCrit,
-            skillsUsed: log.skillsUsed + 1,
-          }};
+          const aLog = prev[unit.id];
+          const tLog = prev[target.id];
+          const next = { ...prev };
+          if (aLog) {
+            next[unit.id] = {
+              ...aLog,
+              totalDamage: aLog.totalDamage + result.damage,
+              totalHits: aLog.totalHits + 1,
+              critHits: aLog.critHits + (result.isCrit ? 1 : 0),
+              maxCrit: result.isCrit ? Math.max(aLog.maxCrit, result.damage) : aLog.maxCrit,
+              skillsUsed: aLog.skillsUsed + 1,
+            };
+          }
+          if (tLog) {
+            next[target.id] = { ...tLog, damageTaken: tLog.damageTaken + dmg };
+          }
+          return next;
         });
 
         // VFX: attack + hit
@@ -1016,7 +1059,10 @@ export default function PvpMode() {
         }
         unit.hp = Math.min(unit.maxHp, unit.hp + healAmt);
         addVfx('heal', { targetId: unit.id });
-        // Track self-heal in logs
+        // Track self-heal in window + logs
+        if (healWindowTracker.current[unit.id] !== undefined) {
+          healWindowTracker.current[unit.id] += healAmt;
+        }
         setDetailedLogs(prev => {
           const log = prev[unit.id];
           if (!log) return prev;
@@ -1615,8 +1661,9 @@ export default function PvpMode() {
                       <div className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full" style={{ width: `${c.percent}%` }} />
                     </div>
                   </div>
-                  <div className="text-right text-[9px] text-gray-400 w-24">
+                  <div className="text-right text-[9px] text-gray-400 w-28">
                     <div>{fmt(c.damage)} ({c.percent.toFixed(0)}%)</div>
+                    {log?.damageTaken > 0 && <div className="text-red-400">-{fmt(log.damageTaken)} recu</div>}
                     {log?.totalHealing > 0 && <div className="text-green-400">+{fmt(log.totalHealing)} heal</div>}
                   </div>
                 </div>
@@ -1641,8 +1688,9 @@ export default function PvpMode() {
                       <div className="h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full" style={{ width: `${c.percent}%` }} />
                     </div>
                   </div>
-                  <div className="text-right text-[9px] text-gray-400 w-24">
+                  <div className="text-right text-[9px] text-gray-400 w-28">
                     <div>{fmt(c.damage)} ({c.percent.toFixed(0)}%)</div>
+                    {log?.damageTaken > 0 && <div className="text-red-400">-{fmt(log.damageTaken)} recu</div>}
                     {log?.totalHealing > 0 && <div className="text-green-400">+{fmt(log.totalHealing)} heal</div>}
                   </div>
                 </div>
@@ -1650,19 +1698,64 @@ export default function PvpMode() {
             })}
           </div>
 
-          {/* DPS Curve Graph — BOTH teams */}
-          {dpsHistory.length > 1 && (
-            <div className="mb-3 p-3 rounded-xl bg-gray-800/30 border border-gray-700/20">
-              <div className="text-xs text-gray-400 font-bold mb-2">Courbe DPS</div>
-              <SharedDPSGraph
-                dpsHistory={dpsHistory}
-                fighters={[
-                  ...resultData.dpsBreakdown.map(d => ({ id: d.id, name: `${d.name} (Toi)`, sprite: d.sprite })),
-                  ...resultData.defBreakdown.map(d => ({ id: d.id, name: `${d.name} (${resultData.opponentName})`, sprite: d.sprite })),
-                ]}
-              />
-            </div>
-          )}
+          {/* DPS Curve Graph — filterable by team + metric */}
+          {dpsHistory.length > 1 && (() => {
+            // Build fighters list based on team filter
+            const atkFighters = resultData.dpsBreakdown.map(d => ({ id: d.id, name: `${d.name} (Toi)`, sprite: d.sprite }));
+            const defFighters = resultData.defBreakdown.map(d => ({ id: d.id, name: `${d.name} (${resultData.opponentName})`, sprite: d.sprite }));
+            const filteredFighters = graphTeamFilter === 'atk' ? atkFighters : graphTeamFilter === 'def' ? defFighters : [...atkFighters, ...defFighters];
+
+            // Metric suffix for dataKeys
+            const suffix = graphMetric === 'hps' ? '_hps' : graphMetric === 'dtps' ? '_dtps' : '';
+            const metricLabels = { dps: 'DPS', hps: 'Heal/s', dtps: 'Dmg Recu/s' };
+
+            // Transform dpsHistory: remap metric keys to fighter.id (SharedDPSGraph reads fighter.id)
+            const transformedHistory = suffix ? dpsHistory.map(snap => {
+              const out = { time: snap.time };
+              filteredFighters.forEach(f => { out[f.id] = snap[`${f.id}${suffix}`] || 0; });
+              return out;
+            }) : dpsHistory;
+
+            return (
+              <div className="mb-3 p-3 rounded-xl bg-gray-800/30 border border-gray-700/20">
+                {/* Filters */}
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <div className="text-xs text-gray-400 font-bold mr-1">Courbe</div>
+                  {/* Team filter */}
+                  {[
+                    { key: 'all', label: 'Tous' },
+                    { key: 'atk', label: 'Toi' },
+                    { key: 'def', label: 'Ennemi' },
+                  ].map(f => (
+                    <button key={f.key} onClick={() => setGraphTeamFilter(f.key)}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all ${
+                        graphTeamFilter === f.key
+                          ? 'bg-purple-600/30 border-purple-400/50 text-purple-200'
+                          : 'bg-white/5 border-white/10 text-gray-500 hover:bg-white/10'
+                      }`}>{f.label}</button>
+                  ))}
+                  <span className="text-gray-600 mx-1">|</span>
+                  {/* Metric filter */}
+                  {[
+                    { key: 'dps', label: 'DPS', active: 'bg-orange-600/30 border-orange-400/50 text-orange-200' },
+                    { key: 'hps', label: 'Heal', active: 'bg-green-600/30 border-green-400/50 text-green-200' },
+                    { key: 'dtps', label: 'Dmg Recu', active: 'bg-red-600/30 border-red-400/50 text-red-200' },
+                  ].map(f => (
+                    <button key={f.key} onClick={() => setGraphMetric(f.key)}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-all ${
+                        graphMetric === f.key
+                          ? f.active
+                          : 'bg-white/5 border-white/10 text-gray-500 hover:bg-white/10'
+                      }`}>{f.label}</button>
+                  ))}
+                </div>
+                <SharedDPSGraph
+                  dpsHistory={transformedHistory}
+                  fighters={filteredFighters}
+                />
+              </div>
+            );
+          })()}
 
           {/* ─── STATS DETAILLEES — 2 TEAMS ─── */}
           <div className="mb-4 p-3 rounded-xl bg-gray-800/30 border border-gray-700/20">
@@ -1685,6 +1778,7 @@ export default function PvpMode() {
                       <div className="text-[10px] font-bold w-16 truncate">{c.name}</div>
                       <div className="flex-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[9px] text-gray-400">
                         <span>{fmt(log.totalDamage)} dmg</span>
+                        {log.damageTaken > 0 && <span className="text-red-400">-{fmt(log.damageTaken)} recu</span>}
                         {log.totalHealing > 0 && <span className="text-green-400">+{fmt(log.totalHealing)} heal</span>}
                         <span>{log.totalHits} hits</span>
                         <span>{critRate}% crit</span>
