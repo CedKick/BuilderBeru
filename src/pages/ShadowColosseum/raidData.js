@@ -61,6 +61,7 @@ const S = {
   h_guts:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771654575/Guts_y7usbq.png',
   // JUJUTSU KAISEN (collab)
   h_sukuna:    'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771728787/Sukuna_rcgrdk.png',
+  h_gojo:      'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771729193/GojoSatoru_ty0ahp.png',
   // NIER AUTOMATA (collab)
   h_a9:        'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771654101/A9_tky2tw.png',
   h_2b:        'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771499926/2B_vly2pt.png',
@@ -607,6 +608,18 @@ export const HUNTERS = {
     ],
   },
 
+  h_gojo: {
+    name: 'Gojo Satoru', element: 'light', rarity: 'mythique', class: 'mage',
+    series: 'jjk', sprite: S.h_gojo, passiveDesc: 'Infini : Reduit les degats recus et augmente CRIT. Six Eyes amplifie la puissance des techniques',
+    base:   { hp: 420, atk: 55, def: 28, spd: 32, crit: 22, res: 8 },
+    growth: { hp: 14, atk: 3.8, def: 1.6, spd: 1.4, crit: 0.8, res: 0.3 },
+    skills: [
+      { name: 'Blue', power: 120, cdMax: 0 },
+      { name: 'Red', power: 210, cdMax: 3, debuffDef: 20, debuffDur: 2 },
+      { name: 'Hollow Purple', power: 320, cdMax: 5, buffAtk: 30, buffDur: 2 },
+    ],
+  },
+
   // ═══ NIER AUTOMATA — Collab Hunters ═══
 
   h_a9: {
@@ -1052,6 +1065,7 @@ export const HUNTER_PASSIVE_EFFECTS = {
   ]},
   // ── JUJUTSU KAISEN ──
   h_sukuna:    { type: 'stacking', perStack: { spd: 8, crit: 3 }, maxStacks: 6 },
+  h_gojo:      { type: 'permanent', stats: { def: 25, crit: 15, res: 10 } },
   // ── BERSERK ──
   h_guts:      { type: 'berserker', tiers: [
     { threshold: 70, stats: { atk: 15, spd: 5 } },
@@ -1114,6 +1128,7 @@ export const BOSS_HUNTER_DROPS = {
   h_guts:    { bosses: ['ragnarok', 'zephyr', 'supreme_monarch', 'archdemon'], baseChance: 1 / 1500 }, // 1/1500
   h_megumin: { bosses: ['ragnarok', 'zephyr', 'supreme_monarch', 'archdemon'], baseChance: 1 / 1000 }, // 1/1000
   h_sukuna:  { bosses: ['ragnarok', 'zephyr', 'supreme_monarch', 'archdemon', 'ant_queen'], baseChance: 1 / 1500, minTier: 5 }, // 1/1500, Divin+ only
+  h_gojo:    { bosses: ['ragnarok', 'zephyr', 'supreme_monarch', 'archdemon'], baseChance: 1 / 1000 }, // 1/1000
 };
 
 export function rollBossHunterDrop(bossId, lootMult = 1, tier = 1) {

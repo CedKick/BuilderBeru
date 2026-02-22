@@ -271,6 +271,12 @@ export const TALENT_SKILLS = {
     { id: 'ts_sukuna_3', name: 'Flammes Maudites', power: 300, cdMax: 2, manaCost: 38, buffSpd: 20, buffDur: 2, debuffDef: 15, debuffDur: 2, desc: 'Flammes de malediction — brule et accelere a chaque frappe' },
   ],
 
+  h_gojo: [
+    { id: 'ts_gojo_1', name: 'Unlimited Void', power: 450, cdMax: 5, manaCost: 70, debuffDef: 35, debuffDur: 3, desc: 'Domaine Illimite — paralyse l\'ennemi dans un flux infini d\'informations' },
+    { id: 'ts_gojo_2', name: 'Hollow Purple', power: 400, cdMax: 4, manaCost: 55, buffAtk: 35, buffDur: 2, desc: 'Fusion de Blue et Red — technique secrete qui efface tout sur son passage' },
+    { id: 'ts_gojo_3', name: 'Six Eyes: Amplify', power: 280, cdMax: 2, manaCost: 35, buffAtk: 20, buffDur: 3, buffSpd: 15, buffDur: 3, desc: 'Les Six Yeux amplifient toute technique — perception absolue du flux d\'energie' },
+  ],
+
   // ─── HUNTERS — BERSERK ──────────────────────────────────────────
 
   h_guts: [
