@@ -59,8 +59,8 @@ export const STAT_META = {
   atk:  { name: 'ATK',  icon: '\u2694\uFE0F', color: 'text-red-400',     desc: "Puissance d'attaque", detail: 'Augmente les degats infliges. Formule : ATK x (Power du skill / 100). Multiplie par les bonus elementaires, crit, etc.' },
   def:  { name: 'DEF',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-blue-400', desc: 'Resistance physique', detail: 'Reduit les degats recus. Formule : 100 / (100 + DEF). Ex: 100 DEF = -50% degats, 200 DEF = -66%.' },
   spd:  { name: 'SPD',  icon: '\uD83D\uDCA8', color: 'text-emerald-400', desc: 'Vitesse', detail: 'Determine l\'ordre des tours et les tours bonus. SPD >= 1.5x l\'ennemi le + rapide = +1 tour bonus. SPD >= 2x = +2 tours bonus (max). Augmente aussi la regen mana (+1 mana par 15 SPD).' },
-  crit: { name: 'CRIT', icon: '\uD83C\uDFAF', color: 'text-yellow-400', desc: 'Chance de coup critique', detail: 'Chance en % d\'infliger un coup critique (x1.5 degats de base + bonus CRIT DMG). Cap : 100%. La RES ennemie reduit le crit de 0.5% par point. Surcap utile : ex. 120% CRIT - 20 RES ennemi (10%) = 110% → cap a 100%.' },
-  res:  { name: 'RES',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-cyan-400',    desc: 'Resistance elementaire + anti-crit', detail: 'Double usage : (1) Reduit les degats recus de 1% par point (cap 70%). (2) Reduit le crit rate ennemi de 0.5% par point. Ex: 40 RES = -40% degats et -20% crit ennemi.' },
+  crit: { name: 'CRIT', icon: '\uD83C\uDFAF', color: 'text-yellow-400', desc: 'Chance de coup critique', detail: 'Chance en % d\'infliger un coup critique (x1.5 degats de base + bonus CRIT DMG). Rendements degressifs : 50→39%, 100→61%, 150→75%, 200→85%. La RES ennemie reduit le crit (aussi en degressif).' },
+  res:  { name: 'RES',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-cyan-400',    desc: 'Resistance elementaire + anti-crit', detail: 'Double usage avec rendements degressifs : (1) Reduit les degats recus (50→35%, 100→55%, cap 70%). (2) Reduit le crit rate ennemi (50→18%, 100→29%, 200→41%). Stacker au-dela de ~100 est moins efficace — diversifier avec HP/DEF.' },
   mana: { name: 'MANA', icon: '\uD83D\uDCA0', color: 'text-violet-400',  desc: 'Points de mana', detail: 'Necessaire pour lancer des skills. Regen de base : 8/tick. Mana max = 50 + PV/4 + RES*2. Sans mana, le combattant ne peut que attendre.' },
 };
 
@@ -374,6 +374,10 @@ export const getUpgradeDesc = (skill, tierIdx) => {
   return tierIdx === 0 ? 'Effet +25%' : 'Effet +30%';
 };
 
+// Diminishing returns: nearly linear at low values, flattens at high values
+// k controls the inflection point — higher k = more linear before flattening
+const softcap = (val, k) => k * Math.log(1 + val / k);
+
 export const computeAttack = (attacker, skill, defender, tb = {}) => {
   const res = { damage: 0, isCrit: false, healed: 0, buff: null, debuff: null, text: '' };
   let effAtk = getEffStat(attacker.atk, attacker.buffs, 'atk');
@@ -397,10 +401,12 @@ export const computeAttack = (attacker, skill, defender, tb = {}) => {
     const defPenVal = tb.defPen || 0;
     let adjustedDef = Math.max(0, effDef * (1 - defPenVal / 100));
 
-    // Crit resistance: defender RES reduces crit chance (0.5% per RES point)
-    // Overcap allowed: 120 crit - 10 resist = 110 → capped to 100
-    const critResist = (defender.res || 0) * 0.5;
-    const critChance = Math.min(100, Math.max(0, (attacker.crit || 0) - critResist));
+    // Crit & RES: diminishing returns (logarithmic) to prevent stacking abuse
+    // CRIT k=80: 50→39%, 100→61%, 150→75%, 200→85% (can't guarantee 100%)
+    // RES anti-crit k=60 then *0.5: 50→18%, 100→29%, 200→41% (can't negate crits)
+    const effCrit = softcap(attacker.crit || 0, 80);
+    const critResist = softcap(defender.res || 0, 60) * 0.5;
+    const critChance = Math.min(100, Math.max(0, effCrit - critResist));
     res.isCrit = Math.random() * 100 < critChance;
 
     // Talent II: Ange de la Mort — crits ignore 50% DEF
@@ -411,12 +417,14 @@ export const computeAttack = (attacker, skill, defender, tb = {}) => {
     const defFactor = 100 / (100 + Math.max(0, adjustedDef));
     const critMult = res.isCrit ? 1.5 + (tb.critDamage || 0) / 100 : 1;
 
-    // Defender RES + Bastion RES bonus
+    // Defender RES + Bastion RES bonus — diminishing returns (k=50)
+    // 50→35%, 100→55%, 150→69%, 200→70% cap (needs ~190 raw to hit cap)
     let defenderRes = defender.res || 0;
     if (tb.bastionRes && defender.hp < defender.maxHp * 0.5) {
       defenderRes += (tb.bastionRes || 0);
     }
-    const resFactor = Math.max(0.3, 1 - Math.min(70, defenderRes) / 100);
+    const effRes = softcap(defenderRes, 50);
+    const resFactor = Math.max(0.3, 1 - Math.min(70, effRes) / 100);
 
     const physMult = 1 + (tb.physicalDamage || 0) / 100;
     const elemDmgMult = 1 + (tb.elementalDamage || 0) / 100;
