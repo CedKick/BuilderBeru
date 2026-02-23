@@ -1180,8 +1180,8 @@ export class Manaya extends BossBase {
 
       onStart: (boss, gs, data) => {
         data.innerRadius = 180;   // Inner circle radius
-        data.outerInner = 200;    // Outer ring inner boundary
-        data.outerRadius = 420;   // Outer ring outer boundary
+        data.outerInner = 180;    // Outer ring starts right at inner boundary (no gap)
+        data.outerRadius = 550;   // Outer ring outer boundary (wider coverage)
         data.phase = 'telegraph';
         data.innerHit = false;
         data.outerHit = false;

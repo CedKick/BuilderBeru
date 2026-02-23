@@ -142,10 +142,10 @@
 
     @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 
-    /* ── Party HUD (top-left) ── */
+    /* ── Party HUD (left side, vertically centered) ── */
     .party-hud {
-      position: absolute; top: 10px; left: 10px; z-index: 10; pointer-events: none;
-      display: flex; flex-direction: column; gap: 4px; min-width: 180px;
+      position: absolute; top: 50%; left: 10px; transform: translateY(-50%); z-index: 10; pointer-events: none;
+      display: flex; flex-direction: column; gap: 4px; min-width: 200px;
     }
     .party-member {
       display: flex; align-items: center; gap: 6px; padding: 4px 8px;
@@ -258,8 +258,8 @@
           <option value="">-- Classe --</option>
           <option value="tank">Tank</option>
           <option value="healer">Healer</option>
-          <option value="dps_cac">DPS CAC</option>
-          <option value="dps_range">DPS Distance</option>
+          <option value="dps_cac">Warrior</option>
+          <option value="dps_range">Archer</option>
         </select>
         <select id="diffSelect" onchange="selectDifficulty()">
           <option value="NORMAL">Normal</option>
@@ -339,6 +339,7 @@
 
       <div class="party-hud" id="partyHud" style="display:none"></div>
       <div class="game-timer" id="gameTimer"></div>
+      <div id="versionTag" style="position:absolute;bottom:6px;right:10px;font-size:10px;color:rgba(255,255,255,0.3);z-index:5;pointer-events:none;"></div>
 
       <div class="dps-panel" id="dpsPanel" style="display:none">
         <div class="dps-title">DPS Meter</div>
@@ -432,8 +433,9 @@
     };
 
     const ELEMENT_ICONS = { fire: '\u{1F525}', water: '\u{1F4A7}', shadow: '\u{1F31F}' };
+    const MANAYA_VERSION = 'v1.01';
     const CLASS_COLORS = { tank: '#3b82f6', healer: '#10b981', dps_cac: '#ef4444', dps_range: '#f59e0b' };
-    const CLASS_LABELS = { tank: 'Tank', healer: 'Healer', dps_cac: 'DPS CAC', dps_range: 'DPS Range' };
+    const CLASS_LABELS = { tank: 'Tank', healer: 'Healer', dps_cac: 'Warrior', dps_range: 'Archer' };
     const BAR_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899'];
     const HP_BARS = 150;
 
@@ -1014,6 +1016,7 @@
           document.getElementById('skillBar').style.display = 'flex';
           document.getElementById('playerHud').style.display = 'block';
           document.getElementById('partyHud').style.display = 'flex';
+          document.getElementById('versionTag').textContent = 'Manaya Raid ' + MANAYA_VERSION;
           // Start battle music
           battleMusic.currentTime = 0;
           battleMusic.play().catch(() => {});
@@ -1493,6 +1496,10 @@
       const BUFF_ICONS = {
         poison: '\u2620', atk_up: '\u2694', shield: '\u{1F6E1}', speed_up: '\u26A1', speed_down: '\u{1F422}',
         invuln: '\u2728', taunt: '\u{1F4E2}', def_up: '\u{1F6E1}',
+        manaya_mark_D1: '\u2460', manaya_mark_D2: '\u2461', manaya_mark_D3: '\u2462',
+      };
+      const BUFF_CUSTOM_COLORS = {
+        manaya_mark_D1: '#8BA02A', manaya_mark_D2: '#A855F7', manaya_mark_D3: '#EC64A4',
       };
       let html = '';
       for (const p of gameState.players) {
@@ -1508,8 +1515,10 @@
         if (p.buffs && p.buffs.length > 0) {
           for (const b of p.buffs) {
             const icon = BUFF_ICONS[b.type] || '?';
-            const isNeg = b.type === 'poison' || b.type === 'speed_down' || b.type.startsWith('debuff_');
-            buffsHtml += '<div class="pm-buff ' + (isNeg ? 'neg' : 'pos') + '" title="' + b.type + (b.stacks > 1 ? ' x' + b.stacks : '') + '">' + icon + '</div>';
+            const isNeg = b.type === 'poison' || b.type === 'speed_down' || b.type.startsWith('debuff_') || b.type.startsWith('manaya_mark_');
+            const customCol = BUFF_CUSTOM_COLORS[b.type];
+            const style = customCol ? 'background:' + customCol + '33;border:1px solid ' + customCol + ';color:' + customCol : '';
+            buffsHtml += '<div class="pm-buff ' + (customCol ? '' : (isNeg ? 'neg' : 'pos')) + '" title="' + b.type + (b.stacks > 1 ? ' x' + b.stacks : '') + '" style="' + style + '">' + icon + '</div>';
           }
         }
 
@@ -1540,9 +1549,13 @@
       if (['z','q','s','d','arrowup','arrowleft','arrowdown','arrowright'].includes(key)) { e.preventDefault(); sendMovement(); }
       if (e.key === ' ') {
         e.preventDefault();
-        // Dodge backward (opposite aim) when not moving, forward (aim direction) when moving
-        const moving = keys['z'] || keys['s'] || keys['q'] || keys['d'] || keys['arrowup'] || keys['arrowdown'] || keys['arrowleft'] || keys['arrowright'];
-        const dodgeAngle = moving ? mouseAngle : mouseAngle + Math.PI;
+        // Dodge in ZQSD direction; if no direction, dodge backwards (opposite mouse)
+        let dx = 0, dy = 0;
+        if (keys['z'] || keys['arrowup']) dy -= 1;
+        if (keys['s'] || keys['arrowdown']) dy += 1;
+        if (keys['q'] || keys['arrowleft']) dx -= 1;
+        if (keys['d'] || keys['arrowright']) dx += 1;
+        const dodgeAngle = (dx !== 0 || dy !== 0) ? Math.atan2(dy, dx) : mouseAngle + Math.PI;
         send({ type: 'input', input: { type: 'dodge', angle: dodgeAngle } });
       }
       if (key === 'a') send({ type: 'input', input: { type: 'skill', skill: 'skillA', angle: mouseAngle } });
