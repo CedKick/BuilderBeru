@@ -413,6 +413,8 @@ export class GameLoop {
         lineWidth: z.lineWidth,
         innerRadius: z.innerRadius,
         coneAngle: z.coneAngle,
+        ringIndex: z.ringIndex,
+        debuffPhase: z.debuffPhase,
       })),
     };
 

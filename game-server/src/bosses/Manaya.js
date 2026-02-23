@@ -64,7 +64,7 @@ export class Manaya extends BossBase {
       this._patternDoubleCircle(),
 
       // Special mechanics (condition-triggered)
-      this._patternDebuffRotation(),
+      this._patternTripleDebuff(),
       this._patternShield(),
       this._patternRageBuff(),
     ];
@@ -884,14 +884,29 @@ export class Manaya extends BossBase {
   }
 
   // ──────────────────────────
-  // PATTERN: Debuff Rotation (Tera mechanic)
-  // 3 colored zones, each player assigned a color
+  // PATTERN: Triple Debuff Circles (Tera Manaya — concentric expanding AOEs)
+  // 3 successive AOE phases:
+  //   Phase 1: inner circle (0 → R1) → D1
+  //   Phase 2: middle ring (R1 → R2) → D2
+  //   Phase 3: outer ring (R2 → R3) → D3
+  // Debuff replacement: D1 removes D2, D2 removes D3, D3 removes D1
+  // Party check: all 3 debuffs must exist on at least 1 player each (group)
+  //              Solo: must have exactly 1 debuff
   // ──────────────────────────
-  _patternDebuffRotation() {
+  _patternTripleDebuff() {
+    // Circular replacement table: receiving Dx removes Dy
+    const REPLACES = { D1: 'D2', D2: 'D3', D3: 'D1' };
+    const DEBUFF_NAMES = { D1: 'Marque I', D2: 'Marque II', D3: 'Marque III' };
+    const R1 = 150; // inner circle radius
+    const R2 = 300; // middle ring outer
+    const R3 = 480; // outer ring outer
+    const PHASE_DELAY = 2.5; // seconds between each sub-phase
+    const TELEGRAPH_PRE = 1.5; // telegraph shown before each detonation
+
     return {
-      name: 'Jugement de Manaya',
+      name: 'Trinité des Marques',
       phase: 2, weight: 0, cooldown: 30, globalCooldown: 5.0,
-      telegraphTime: 4.0, castTime: 1.0, recoveryTime: 2.0,
+      telegraphTime: 1.0, castTime: 0.5, recoveryTime: 2.0,
 
       condition: (boss, gs) => {
         return boss._debuffRotationTimer >= 90 && boss.phase >= 2;
@@ -901,69 +916,168 @@ export class Manaya extends BossBase {
         boss._debuffRotationTimer = 0;
         boss._debuffRotationCount++;
 
-        const colors = ['red', 'blue', 'green'];
-        const players = gs.getAlivePlayers();
-        data.markers = {};
+        data.subPhase = 0; // 0=waiting, 1/2/3=circle phases, 4=check
+        data.phaseTimer = 0;
+        data.bossX = boss.x;
+        data.bossY = boss.y;
+        data.telegraphShown = [false, false, false];
+        data.detonated = [false, false, false];
 
-        // Assign colors in rotation pattern
-        for (let i = 0; i < players.length; i++) {
-          const colorIdx = (i + boss._debuffRotationCount) % 3;
-          data.markers[players[i].id] = colors[colorIdx];
-          gs.addEvent({
-            type: 'debuff_marker',
-            target: players[i].id,
-            color: colors[colorIdx],
-          });
-        }
-
-        // Zone positions (triangle around boss)
-        const zoneRadius = 160;
-        const zoneDist = 250;
-        data.zones = {
-          red:   { x: boss.x + Math.cos(-Math.PI/2) * zoneDist, y: boss.y + Math.sin(-Math.PI/2) * zoneDist, radius: zoneRadius },
-          blue:  { x: boss.x + Math.cos(Math.PI/6) * zoneDist,  y: boss.y + Math.sin(Math.PI/6) * zoneDist,  radius: zoneRadius },
-          green: { x: boss.x + Math.cos(5*Math.PI/6) * zoneDist, y: boss.y + Math.sin(5*Math.PI/6) * zoneDist, radius: zoneRadius },
-        };
-
-        for (const [color, zone] of Object.entries(data.zones)) {
-          gs.addAoeZone({
-            id: `judge_${color}_${Date.now()}`, type: `judgment_zone_${color}`,
-            x: zone.x, y: zone.y, radius: zone.radius,
-            ttl: 5.0, maxTtl: 5.0, active: false, source: boss.id,
-          });
-        }
-
-        gs.addEvent({
-          type: 'boss_message',
-          text: '⚠️ JUGEMENT - Allez dans votre zone colorée ! ⚠️',
+        // Show all 3 circles as outlines immediately
+        gs.addAoeZone({
+          id: `trideb_ring1_${Date.now()}`, type: 'debuff_ring_outline',
+          x: boss.x, y: boss.y, radius: R1,
+          ttl: PHASE_DELAY * 3 + 6, maxTtl: PHASE_DELAY * 3 + 6,
+          active: false, source: boss.id, ringIndex: 1,
         });
+        gs.addAoeZone({
+          id: `trideb_ring2_${Date.now()}`, type: 'debuff_ring_outline',
+          x: boss.x, y: boss.y, radius: R2, innerRadius: R1,
+          ttl: PHASE_DELAY * 3 + 6, maxTtl: PHASE_DELAY * 3 + 6,
+          active: false, source: boss.id, ringIndex: 2,
+        });
+        gs.addAoeZone({
+          id: `trideb_ring3_${Date.now()}`, type: 'debuff_ring_outline',
+          x: boss.x, y: boss.y, radius: R3, innerRadius: R2,
+          ttl: PHASE_DELAY * 3 + 6, maxTtl: PHASE_DELAY * 3 + 6,
+          active: false, source: boss.id, ringIndex: 3,
+        });
+
+        gs.addEvent({ type: 'boss_message', text: '⚪ TRINITÉ DES MARQUES — 3 vagues arrivent !' });
+        gs.addEvent({ type: 'warning_beep', urgency: 0.3, bossId: boss.id });
       },
 
       onExecute: (boss, gs, data) => {
-        const soloMult = gs.playerCount <= 1 ? (BOSS_CFG.SOLO_MECHANIC_MULT || 0.4) : 1.0;
+        data.subPhase = 1;
+        data.phaseTimer = 0;
+      },
 
-        for (const player of gs.getAlivePlayers()) {
-          const marker = data.markers[player.id];
-          if (!marker) continue;
+      onUpdate: (boss, gs, data, dt) => {
+        data.phaseTimer += dt;
+        const bx = data.bossX;
+        const by = data.bossY;
 
-          const correctZone = data.zones[marker];
-          const dist = Math.hypot(player.x - correctZone.x, player.y - correctZone.y);
+        // ─── Helper: apply debuff to a player ───
+        const applyDebuff = (player, debuffType) => {
+          if (!player._manayaDebuffs) player._manayaDebuffs = new Set();
+          // Circular replacement: Dx removes Dy
+          const removes = REPLACES[debuffType];
+          if (removes && player._manayaDebuffs.has(removes)) {
+            player._manayaDebuffs.delete(removes);
+            gs.addEvent({ type: 'debuff_removed', target: player.id, debuff: removes });
+          }
+          player._manayaDebuffs.add(debuffType);
+          gs.addEvent({ type: 'debuff_applied', target: player.id, debuff: debuffType, name: DEBUFF_NAMES[debuffType] });
 
-          if (dist > correctZone.radius) {
-            // WRONG ZONE
-            const dmg = player.maxHp * (soloMult < 1 ? 0.6 : 10); // Solo: 60% HP, Group: oneshot
-            player.takeDamage(dmg, boss);
-            gs.addEvent({
-              type: 'damage', source: boss.id, target: player.id,
-              amount: Math.round(dmg), skill: 'Jugement - MAUVAISE ZONE', oneshot: soloMult >= 1,
+          // Debuff tick damage: 3% HP / 5s (0 in solo)
+          if (gs.playerCount > 1) {
+            const buffType = `manaya_mark_${debuffType}`;
+            const existing = (player.buffs || []).find(b => b.type === buffType);
+            if (!existing) {
+              player.addBuff({
+                type: buffType,
+                dur: 120, tickInterval: 5, damage: Math.round(player.maxHp * 0.03),
+                stackable: false, source: 'manaya_tridebuff',
+              });
+            }
+          }
+          // Also remove buff of the replaced debuff
+          if (gs.playerCount > 1) {
+            const removedDebuff = REPLACES[debuffType]; // D1 removes D2's buff, etc.
+            if (removedDebuff) player.removeBuff(`manaya_mark_${removedDebuff}`);
+          }
+        };
+
+        // ─── Sub-phase logic ───
+        for (let phase = 1; phase <= 3; phase++) {
+          const phaseStart = (phase - 1) * PHASE_DELAY;
+          const detonateAt = phaseStart + TELEGRAPH_PRE;
+
+          // Show telegraph before detonation
+          if (!data.telegraphShown[phase - 1] && data.phaseTimer >= phaseStart) {
+            data.telegraphShown[phase - 1] = true;
+            const innerR = phase === 1 ? 0 : (phase === 2 ? R1 : R2);
+            const outerR = phase === 1 ? R1 : (phase === 2 ? R2 : R3);
+            gs.addAoeZone({
+              id: `trideb_tel_${Date.now()}_${phase}`, type: 'debuff_circle_telegraph',
+              x: bx, y: by, radius: outerR, innerRadius: innerR,
+              ttl: TELEGRAPH_PRE + 0.3, maxTtl: TELEGRAPH_PRE + 0.3,
+              active: false, source: boss.id, debuffPhase: phase,
             });
-          } else {
-            // Correct zone
-            const dmg = boss.atk * 0.5;
-            const actual = player.takeDamage(dmg, boss);
-            gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Jugement OK' });
+            gs.addEvent({ type: 'warning_beep', urgency: 0.3 + phase * 0.2, bossId: boss.id });
+            gs.addEvent({ type: 'boss_message', text: `⚪ Marque ${phase}/3 — ${phase === 1 ? 'INTÉRIEUR' : phase === 2 ? 'MILIEU' : 'EXTÉRIEUR'} !` });
+          }
+
+          // Detonate
+          if (!data.detonated[phase - 1] && data.phaseTimer >= detonateAt) {
+            data.detonated[phase - 1] = true;
+            const debuffType = `D${phase}`;
+            const innerR = phase === 1 ? 0 : (phase === 2 ? R1 : R2);
+            const outerR = phase === 1 ? R1 : (phase === 2 ? R2 : R3);
+
+            // Visual explosion
+            gs.addAoeZone({
+              id: `trideb_exp_${Date.now()}_${phase}`, type: 'debuff_circle_explosion',
+              x: bx, y: by, radius: outerR, innerRadius: innerR,
+              ttl: 0.6, maxTtl: 0.6, active: true, source: boss.id, debuffPhase: phase,
+            });
+
+            // Apply debuff to players in the zone
+            for (const player of gs.getAlivePlayers()) {
+              const dist = Math.hypot(player.x - bx, player.y - by);
+              if (dist >= innerR && dist < outerR + player.radius) {
+                applyDebuff(player, debuffType);
+              }
+            }
           }
         }
+
+        // ─── Final check after all 3 phases ───
+        const checkAt = 2 * PHASE_DELAY + TELEGRAPH_PRE + 2.0; // 2s after last detonation
+        if (data.phaseTimer >= checkAt && !data.checked) {
+          data.checked = true;
+          const isSolo = gs.playerCount <= 1;
+          const players = gs.getAlivePlayers();
+
+          if (isSolo) {
+            // Solo: must have exactly 1 debuff
+            const p = players[0];
+            const debuffs = p?._manayaDebuffs || new Set();
+            if (debuffs.size !== 1) {
+              gs.addEvent({ type: 'boss_message', text: '💀 ÉCHEC — Vous deviez avoir exactement 1 Marque !' });
+              for (const pl of players) {
+                pl.takeTrueDamage(Math.round(pl.maxHp * 0.8), boss);
+                gs.addEvent({ type: 'damage', source: boss.id, target: pl.id, amount: Math.round(pl.maxHp * 0.8), skill: 'Trinité ÉCHOUÉE' });
+              }
+            } else {
+              gs.addEvent({ type: 'boss_message', text: '✅ Trinité validée !' });
+            }
+          } else {
+            // Group: all 3 debuffs must exist across the party
+            const allDebuffs = new Set();
+            for (const p of players) {
+              if (p._manayaDebuffs) p._manayaDebuffs.forEach(d => allDebuffs.add(d));
+            }
+            const hasAll = allDebuffs.has('D1') && allDebuffs.has('D2') && allDebuffs.has('D3');
+            if (!hasAll) {
+              const missing = ['D1', 'D2', 'D3'].filter(d => !allDebuffs.has(d)).map(d => DEBUFF_NAMES[d]);
+              gs.addEvent({ type: 'boss_message', text: `💀 WIPE — Il manque: ${missing.join(', ')} !` });
+              for (const pl of players) {
+                pl.takeTrueDamage(999999, boss);
+                gs.addEvent({ type: 'damage', source: boss.id, target: pl.id, amount: 999999, skill: 'Trinité WIPE' });
+              }
+            } else {
+              gs.addEvent({ type: 'boss_message', text: '✅ Trinité validée — Toutes les Marques sont présentes !' });
+            }
+          }
+
+          // Clear debuffs after check
+          for (const p of players) {
+            if (p._manayaDebuffs) p._manayaDebuffs.clear();
+          }
+        }
+
+        return data.phaseTimer >= checkAt + 0.5;
       },
     };
   }

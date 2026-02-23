@@ -1098,8 +1098,12 @@
         case 'phase_change': log('Phase ' + msg.phase, 'event'); break;
         case 'shield_activated': log('Shield: ' + Math.round(msg.shieldHp) + ' HP', 'event'); break;
         case 'shield_timer': log('Shield: ' + msg.remaining + 's left!', 'error'); break;
-        case 'debuff_marker':
-          if (msg.target === myId) log('VOTRE MARQUEUR: ' + msg.color.toUpperCase() + ' - Allez dans la zone ' + msg.color + ' !', 'error');
+        case 'debuff_applied':
+          if (msg.target === myId) log('⚪ MARQUE: ' + msg.name + ' appliquée !', 'error');
+          else log((gameState.players || []).find(p => p.id === msg.target)?.username + ' reçoit ' + msg.name, 'event');
+          break;
+        case 'debuff_removed':
+          if (msg.target === myId) log('Marque retirée: ' + msg.debuff, 'info');
           break;
         case 'cleanse': log('Cleanse!', 'heal'); break;
         case 'add_spawn': log(msg.name + ' appeared!', 'error'); break;
@@ -1919,15 +1923,83 @@
         ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.fillStyle = 'rgba(16,185,129,0.5)'; ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('\u2620', zone.x, zone.y + 5);
-      } else if (zone.type.includes('judgment_zone')) {
-        const color = zone.type.includes('red') ? '239,68,68' : zone.type.includes('blue') ? '59,130,246' : '34,197,94';
-        const label = zone.type.includes('red') ? 'RED' : zone.type.includes('blue') ? 'BLUE' : 'GREEN';
-        ctx.fillStyle = 'rgba(' + color + ',0.2)';
-        ctx.strokeStyle = 'rgba(' + color + ',0.8)'; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = 'rgb(' + color + ')';
-        ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(label, zone.x, zone.y + 8);
+      } else if (zone.type === 'debuff_ring_outline') {
+        // 3 concentric white circle outlines — persistent during triple debuff
+        const pulse = 0.4 + 0.2 * Math.sin(Date.now() / 600 + (zone.ringIndex || 0));
+        const innerR = zone.innerRadius || 0;
+        ctx.save();
+        // Outer ring stroke
+        ctx.strokeStyle = 'rgba(255,255,255,' + pulse + ')'; ctx.lineWidth = 2.5;
+        ctx.setLineDash([12, 6]);
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.stroke();
+        // Inner ring stroke (if ring, not circle)
+        if (innerR > 0) {
+          ctx.beginPath(); ctx.arc(zone.x, zone.y, innerR, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.setLineDash([]);
+        // Label: I, II, III
+        const labels = { 1: 'I', 2: 'II', 3: 'III' };
+        const labelR = innerR > 0 ? (innerR + zone.radius) / 2 : zone.radius * 0.5;
+        ctx.fillStyle = 'rgba(255,255,255,' + (pulse * 0.7) + ')';
+        ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(labels[zone.ringIndex] || '', zone.x, zone.y - labelR + 8);
+        ctx.restore();
+      } else if (zone.type === 'debuff_circle_telegraph') {
+        // White filling glow before detonation — growing inward shine
+        const innerR = zone.innerRadius || 0;
+        const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 120); // Fast pulse = urgency
+        ctx.save();
+        // Fill the zone area with white glow
+        if (innerR > 0) {
+          // Ring telegraph — fill between inner and outer
+          ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
+          ctx.arc(zone.x, zone.y, innerR, 0, Math.PI * 2, true); // Cut inner
+          ctx.fillStyle = 'rgba(255,255,255,' + (0.08 + progress * 0.2 + pulse * 0.05) + ')';
+          ctx.fill();
+        } else {
+          // Circle telegraph (inner circle)
+          const grad = ctx.createRadialGradient(zone.x, zone.y, 0, zone.x, zone.y, zone.radius);
+          grad.addColorStop(0, 'rgba(255,255,255,' + (0.15 + progress * 0.25) + ')');
+          grad.addColorStop(0.7, 'rgba(255,255,255,' + (0.05 + progress * 0.15) + ')');
+          grad.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill();
+        }
+        // Bright pulsing border
+        ctx.strokeStyle = 'rgba(255,255,255,' + (0.5 + pulse * 0.4) + ')'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.stroke();
+        if (innerR > 0) {
+          ctx.beginPath(); ctx.arc(zone.x, zone.y, innerR, 0, Math.PI * 2); ctx.stroke();
+        }
+        // Phase label (debuffPhase)
+        const phaseLabels = { 1: 'MARQUE I', 2: 'MARQUE II', 3: 'MARQUE III' };
+        const lr = innerR > 0 ? (innerR + zone.radius) / 2 : zone.radius * 0.5;
+        ctx.fillStyle = 'rgba(255,255,255,' + (0.6 + pulse * 0.4) + ')';
+        ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(phaseLabels[zone.debuffPhase] || '', zone.x, zone.y - lr + 6);
+        ctx.restore();
+      } else if (zone.type === 'debuff_circle_explosion') {
+        // White flash on detonation — bright burst then fade
+        const fade = zone.ttl / zone.maxTtl; // 1→0 over lifetime
+        const innerR = zone.innerRadius || 0;
+        ctx.save();
+        ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 30 * fade;
+        if (innerR > 0) {
+          ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
+          ctx.arc(zone.x, zone.y, innerR, 0, Math.PI * 2, true);
+          ctx.fillStyle = 'rgba(255,255,255,' + (0.5 * fade) + ')';
+          ctx.fill();
+        } else {
+          ctx.fillStyle = 'rgba(255,255,255,' + (0.5 * fade) + ')';
+          ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill();
+        }
+        // Bright edge
+        ctx.strokeStyle = 'rgba(255,255,255,' + (0.8 * fade) + ')'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.stroke();
+        if (innerR > 0) {
+          ctx.beginPath(); ctx.arc(zone.x, zone.y, innerR, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.restore();
       } else if (zone.type === 'trap') {
         ctx.fillStyle = 'rgba(245,158,11,0.2)';
         ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2;
@@ -2227,6 +2299,9 @@
           speed_down: { icon: '\u{1F422}', neg: true },
           invuln: { icon: '\u2728', neg: false },
           taunt: { icon: '\u{1F4E2}', neg: false },
+          manaya_mark_D1: { icon: '\u2460', neg: true },
+          manaya_mark_D2: { icon: '\u2461', neg: true },
+          manaya_mark_D3: { icon: '\u2462', neg: true },
         };
         const buffCount = p.buffs.length;
         const bSize = 16;
