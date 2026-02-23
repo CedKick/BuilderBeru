@@ -32,7 +32,7 @@ export const PLAYER = {
   BASE_SPEED: 145,                 // Pixels per second (slower, more tactical)
   DODGE_SPEED: 420,                // Pixels per second during dodge
   DODGE_DURATION: 0.6,             // Seconds of dodge roll
-  DODGE_COOLDOWN: 3.0,             // Seconds between dodges
+  DODGE_COOLDOWN: 6.0,             // Seconds between dodges
   DODGE_IFRAMES: 1.0,              // 1 second of invincibility during dodge
   MANA_REGEN_RATE: 1.5,            // Passive mana per second
   MANA_ON_HIT: 8,                  // Mana restored per basic attack hit
