@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Search, Swords, BookOpen, ArrowLeft, Users, Shield } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Swords, BookOpen, ArrowLeft, Users, Shield, Zap } from 'lucide-react';
 import { WEAPONS, WEAPON_AWAKENING_PASSIVES, MAX_WEAPON_AWAKENING, getWeaponAwakeningBonuses, computeWeaponBonuses,
   ARTIFACT_SETS, RAID_ARTIFACT_SETS, ARC2_ARTIFACT_SETS, ULTIME_ARTIFACT_SETS, ALL_ARTIFACT_SETS,
   ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL, RARITY_SUB_COUNT,
@@ -106,6 +106,7 @@ const CODEX_TABS = [
   { id: 'fighters',  label: 'Combattants', Icon: Users },
   { id: 'weapons',   label: 'Armes',       Icon: Swords },
   { id: 'artifacts', label: 'Artefacts',   Icon: Shield },
+  { id: 'mechanics', label: 'Mecaniques',  Icon: Zap },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -1009,6 +1010,179 @@ export default function Codex() {
             )}
           </AnimatePresence>
         </>
+      )}
+
+      {/* ═══ MECHANICS TAB ═══ */}
+      {activeTab === 'mechanics' && (
+        <div className="space-y-6">
+          {/* ─── Section: Stats ─── */}
+          <div className="bg-gray-800/30 border border-gray-700/30 rounded-2xl p-4">
+            <h2 className="text-lg font-black text-purple-400 mb-3">Stats de Base</h2>
+            <div className="space-y-2 text-sm text-gray-300">
+              <div className="flex items-start gap-2">
+                <span className="text-red-400 font-bold w-12 shrink-0">PV</span>
+                <span>Points de vie. A 0 PV, le combattant est elimine.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-orange-400 font-bold w-12 shrink-0">ATK</span>
+                <span>Attaque. Determine les degats infliges par les competences.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-blue-400 font-bold w-12 shrink-0">DEF</span>
+                <span>Defense. Reduit les degats recus. Formule : <code className="text-cyan-300 bg-gray-900/60 px-1 rounded">reduction = DEF / (DEF + 300)</code></span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-green-400 font-bold w-12 shrink-0">SPD</span>
+                <span>Vitesse. Determine l'ordre des tours (ARC I) ou la frequence d'attaque (PvP/Raid).</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-yellow-400 font-bold w-12 shrink-0">CRIT</span>
+                <span>Taux critique (max 80%). Chance de coup critique : <code className="text-cyan-300 bg-gray-900/60 px-1 rounded">degats x1.5 + bonusCritDmg</code></span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-teal-400 font-bold w-12 shrink-0">RES</span>
+                <span>Resistance (max 70%). Reduit les degats magiques et elementaires : <code className="text-cyan-300 bg-gray-900/60 px-1 rounded">mult = 1 - RES/100</code></span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-violet-400 font-bold w-12 shrink-0">INTEL</span>
+                <span>Intelligence (ex-Mana). Reserve d'energie pour les competences. <code className="text-cyan-300 bg-gray-900/60 px-1 rounded">Intel = 50 + PV/4 + RES×2</code>. Regen : <code className="text-cyan-300 bg-gray-900/60 px-1 rounded">8/tick + SPD/15</code></span>
+              </div>
+            </div>
+          </div>
+
+          {/* ─── Section: Allocation de points ─── */}
+          <div className="bg-gray-800/30 border border-gray-700/30 rounded-2xl p-4">
+            <h2 className="text-lg font-black text-purple-400 mb-3">Allocation de Points</h2>
+            <div className="text-sm text-gray-300 space-y-1">
+              <p>Chaque niveau donne <span className="text-yellow-400 font-bold">3 points</span> a repartir librement.</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                {[
+                  { stat: 'PV', val: '+20/pt', color: 'text-red-400' },
+                  { stat: 'ATK', val: '+2/pt', color: 'text-orange-400' },
+                  { stat: 'DEF', val: '+2/pt', color: 'text-blue-400' },
+                  { stat: 'SPD', val: '+1/pt', color: 'text-green-400' },
+                  { stat: 'CRIT', val: '+0.5%/pt', color: 'text-yellow-400' },
+                  { stat: 'RES', val: '+0.3%/pt', color: 'text-teal-400' },
+                  { stat: 'INTEL', val: '+4/pt', color: 'text-violet-400' },
+                ].map(s => (
+                  <div key={s.stat} className="flex items-center gap-2 bg-gray-900/40 rounded-lg px-2 py-1.5">
+                    <span className={`font-bold text-xs ${s.color}`}>{s.stat}</span>
+                    <span className="text-xs text-gray-400">{s.val}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ─── Section: Formule de Degats ─── */}
+          <div className="bg-gray-800/30 border border-gray-700/30 rounded-2xl p-4">
+            <h2 className="text-lg font-black text-purple-400 mb-3">Formule de Degats</h2>
+            <div className="text-sm text-gray-300 space-y-3">
+              <div>
+                <div className="text-xs text-gray-500 font-bold uppercase mb-1">Degats Bruts</div>
+                <code className="block text-cyan-300 bg-gray-900/60 px-3 py-2 rounded-lg text-xs leading-relaxed">
+                  DMG = ATK × (Puissance / 100) × MultElem × DefFactor × ResFactor × CritMult × Variance(0.9-1.1)
+                </code>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 font-bold uppercase mb-1">Facteur Defense</div>
+                <code className="block text-cyan-300 bg-gray-900/60 px-3 py-2 rounded-lg text-xs">
+                  DefFactor = 300 / (300 + DEF_cible)
+                </code>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 font-bold uppercase mb-1">Multiplicateur Elementaire</div>
+                <code className="block text-cyan-300 bg-gray-900/60 px-3 py-2 rounded-lg text-xs">
+                  Avantage : ×1.3 | Desavantage : ×0.75 | Neutre : ×1.0
+                </code>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 font-bold uppercase mb-1">Coup Critique</div>
+                <code className="block text-cyan-300 bg-gray-900/60 px-3 py-2 rounded-lg text-xs">
+                  CritMult = 1.5 + critDamageBonus/100
+                </code>
+              </div>
+            </div>
+          </div>
+
+          {/* ─── Section: Systeme Intel (Mages & Supports) ─── */}
+          <div className="bg-violet-900/20 border border-violet-500/30 rounded-2xl p-4">
+            <h2 className="text-lg font-black text-violet-400 mb-3">Systeme Intel — Mages & Supports</h2>
+            <div className="text-sm text-gray-300 space-y-3">
+              <p>Les classes <span className="text-blue-400 font-bold">Mage</span> et <span className="text-green-400 font-bold">Support</span> scalent leurs degats et soins sur l'Intelligence au lieu de l'ATK pure.</p>
+              <div>
+                <div className="text-xs text-violet-400 font-bold uppercase mb-1">Formule ATK Effective (Mage/Support)</div>
+                <code className="block text-cyan-300 bg-gray-900/60 px-3 py-2 rounded-lg text-xs">
+                  ATK_eff = Intel × 1.0 (ATK ignore)
+                </code>
+                <p className="text-[11px] text-gray-500 mt-1">L'ATK de base est ignoree. Seul l'Intel determine les degats des mages/supports. Investir en Intel est crucial.</p>
+              </div>
+              <div>
+                <div className="text-xs text-violet-400 font-bold uppercase mb-1">Bonus Soin Intel</div>
+                <code className="block text-cyan-300 bg-gray-900/60 px-3 py-2 rounded-lg text-xs">
+                  HealMult = 1 + Intel / 1000
+                </code>
+                <p className="text-[11px] text-gray-500 mt-1">A 200 Intel → +20% soins. A 500 Intel → +50% soins. S'applique aux soins des competences ET aux soins support (15% PV max).</p>
+              </div>
+              <div>
+                <div className="text-xs text-violet-400 font-bold uppercase mb-1">Pas de cout mana pour les soins</div>
+                <p className="text-[11px] text-gray-500">Les supports soignent librement sans consommer d'Intel/Mana. L'Intel sert uniquement de stat passive de scaling.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ─── Section: Enchantement ─── */}
+          <div className="bg-gray-800/30 border border-gray-700/30 rounded-2xl p-4">
+            <h2 className="text-lg font-black text-emerald-400 mb-3">Systeme d'Enchantement</h2>
+            <div className="text-sm text-gray-300 space-y-3">
+              <p>Chaque stat d'artefact ou d'arme peut etre enchantee individuellement. Cout : <span className="text-emerald-400 font-bold">10 Alkahest</span> par enchantement.</p>
+              <div>
+                <div className="text-xs text-emerald-400 font-bold uppercase mb-1">Bonus d'Enchantement</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                  <div className="bg-gray-900/40 rounded-lg px-3 py-2">
+                    <div className="text-xs font-bold text-yellow-400">Stats % (ATK%, PV%, CRIT%, etc.)</div>
+                    <code className="text-[11px] text-cyan-300">+10% a +30% de la valeur de base</code>
+                  </div>
+                  <div className="bg-gray-900/40 rounded-lg px-3 py-2">
+                    <div className="text-xs font-bold text-yellow-400">Stats Flat (PV, ATK, DEF, SPD, RES)</div>
+                    <code className="text-[11px] text-cyan-300">+10% a +50% de la valeur de base</code>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className="text-xs text-emerald-400 font-bold uppercase mb-1">Re-enchantement</div>
+                <p className="text-[11px] text-gray-500">Re-enchanter re-roll le bonus : il peut <span className="text-green-400">monter</span> ou <span className="text-red-400">descendre</span>. L'ancien bonus est perdu.</p>
+              </div>
+              <div>
+                <div className="text-xs text-emerald-400 font-bold uppercase mb-1">Re-roll Main Stat</div>
+                <p className="text-[11px] text-gray-500">Les artefacts de set permettent de re-roll la stat principale (10 Alkahest). Le bonus d'enchant du main est reset.</p>
+              </div>
+              <div>
+                <div className="text-xs text-emerald-400 font-bold uppercase mb-1">Obtenir de l'Alkahest</div>
+                <p className="text-[11px] text-gray-500">Raid Manaya : recompense de victoire. Raid Ant Queen : 5% par roll, nombre de rolls augmente avec le tier (10 a 50 rolls).</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ─── Section: Systeme Elementaire ─── */}
+          <div className="bg-gray-800/30 border border-gray-700/30 rounded-2xl p-4">
+            <h2 className="text-lg font-black text-purple-400 mb-3">Triangle Elementaire</h2>
+            <div className="text-sm text-gray-300 space-y-2">
+              <div className="flex flex-wrap gap-2 mb-2">
+                <span className="text-orange-400">Feu</span> <span className="text-gray-600">{'>'}</span>
+                <span className="text-green-400">Vent</span> <span className="text-gray-600">{'>'}</span>
+                <span className="text-cyan-400">Eau</span> <span className="text-gray-600">{'>'}</span>
+                <span className="text-orange-400">Feu</span>
+              </div>
+              <div className="flex flex-wrap gap-2 mb-2">
+                <span className="text-amber-400">Terre</span> <span className="text-gray-600">{'>'}</span>
+                <span className="text-yellow-300">Lumiere</span> <span className="text-gray-600">{'<>'}</span>
+                <span className="text-purple-400">Ombre</span>
+              </div>
+              <p className="text-[11px] text-gray-500">Avantage : ×1.3 degats | Desavantage : ×0.75 degats | Lumiere/Ombre : avantage mutuel ×1.3</p>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

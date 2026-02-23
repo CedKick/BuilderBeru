@@ -479,6 +479,92 @@ export function rerollArtifact(artifact) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ENCHANTMENT SYSTEM
+// ═══════════════════════════════════════════════════════════════
+
+export const ENCHANT_ALKAHEST_COST = 10;
+const ENCHANT_PCT_RANGE = [0.10, 0.30]; // +10% to +30% for percentage stats
+const ENCHANT_FLAT_RANGE = [0.10, 0.50]; // +10% to +50% for flat stats
+const FLAT_STATS = new Set(['hp_flat', 'atk_flat', 'def_flat', 'spd_flat', 'res_flat']);
+
+// Expanded main stat pool for re-rolling (no slot restriction)
+export const ENCHANT_MAIN_STAT_POOL = [
+  'hp_flat', 'hp_pct', 'atk_flat', 'atk_pct',
+  'crit_rate', 'crit_dmg', 'res_flat',
+  'def_flat', 'def_pct', 'spd_flat',
+];
+
+/** Roll enchant bonus for a stat value. Returns the bonus amount. */
+function rollEnchantBonus(statId, baseValue) {
+  const range = FLAT_STATS.has(statId) ? ENCHANT_FLAT_RANGE : ENCHANT_PCT_RANGE;
+  const mult = range[0] + Math.random() * (range[1] - range[0]);
+  return Math.round(baseValue * mult * 10) / 10; // 1 decimal
+}
+
+/**
+ * Enchant a single stat on an artifact (main or sub).
+ * statKey = 'main' for mainStat, or a sub.id like 'atk_pct'
+ * Re-enchanting re-rolls (can go up or down).
+ */
+export function enchantArtifactStat(artifact, statKey) {
+  const enchants = { main: artifact.enchants?.main || 0, subs: { ...(artifact.enchants?.subs || {}) } };
+
+  if (statKey === 'main') {
+    const previousBonus = enchants.main || 0;
+    const bonus = rollEnchantBonus(artifact.mainStat, artifact.mainValue);
+    enchants.main = bonus;
+    return { artifact: { ...artifact, enchants }, bonus, previousBonus };
+  } else {
+    const sub = artifact.subs.find(s => s.id === statKey);
+    if (!sub) return { artifact, bonus: 0, previousBonus: 0 };
+    const previousBonus = enchants.subs[statKey] || 0;
+    const bonus = rollEnchantBonus(statKey, sub.value);
+    enchants.subs[statKey] = bonus;
+    return { artifact: { ...artifact, enchants }, bonus, previousBonus };
+  }
+}
+
+/**
+ * Re-roll the mainStat of a set artifact. Picks random from ENCHANT_MAIN_STAT_POOL.
+ * Resets main enchant to 0. Keeps subs/enchants on subs.
+ */
+export function rerollArtifactMainStat(artifact) {
+  const pool = ENCHANT_MAIN_STAT_POOL.filter(s => s !== artifact.mainStat);
+  const newMainStat = pool[Math.floor(Math.random() * pool.length)];
+  const def = MAIN_STAT_VALUES[newMainStat];
+  const newMainValue = +(def.base + def.perLevel * artifact.level).toFixed(1);
+  const enchants = { main: 0, subs: { ...(artifact.enchants?.subs || {}) } };
+  return {
+    artifact: { ...artifact, mainStat: newMainStat, mainValue: newMainValue, enchants },
+    oldMainStat: artifact.mainStat,
+    newMainStat,
+  };
+}
+
+/**
+ * Enchant a weapon stat. statKey = 'atk' (base ATK) or 'bonus' (bonus stat).
+ */
+export function enchantWeaponStat(weaponId, statKey, weaponEnchants = {}) {
+  const w = WEAPONS[weaponId];
+  if (!w) return { enchants: weaponEnchants, bonus: 0, previousBonus: 0 };
+
+  const enc = { ...(weaponEnchants[weaponId] || { atk: 0, bonus: 0 }) };
+  let previousBonus, bonus;
+
+  if (statKey === 'atk') {
+    previousBonus = enc.atk || 0;
+    bonus = rollEnchantBonus('atk_flat', w.atk);
+    enc.atk = bonus;
+  } else {
+    previousBonus = enc.bonus || 0;
+    bonus = rollEnchantBonus(w.bonusStat, w.bonusValue);
+    enc.bonus = bonus;
+  }
+
+  return { enchants: { ...weaponEnchants, [weaponId]: enc }, bonus, previousBonus };
+}
+
+// ═══════════════════════════════════════════════════════════════
 // ARTIFACT BONUS COMPUTATION
 // ═══════════════════════════════════════════════════════════════
 
@@ -503,11 +589,13 @@ export function computeArtifactBonuses(equippedArtifacts) {
 
   Object.values(equippedArtifacts).forEach(art => {
     if (!art) return;
-    // Main stat
-    if (b[art.mainStat] !== undefined) b[art.mainStat] += art.mainValue;
-    // Sub stats
+    // Main stat + enchant bonus
+    const mainEnchant = art.enchants?.main || 0;
+    if (b[art.mainStat] !== undefined) b[art.mainStat] += art.mainValue + mainEnchant;
+    // Sub stats + enchant bonuses
     art.subs.forEach(sub => {
-      if (b[sub.id] !== undefined) b[sub.id] += sub.value;
+      const subEnchant = art.enchants?.subs?.[sub.id] || 0;
+      if (b[sub.id] !== undefined) b[sub.id] += sub.value + subEnchant;
     });
     // Count sets
     setCounts[art.set] = (setCounts[art.set] || 0) + 1;
@@ -876,13 +964,14 @@ export function getWeaponAwakeningBonuses(weaponId, awakening = 0) {
   return b;
 }
 
-export function computeWeaponBonuses(weaponId, awakening = 0) {
+export function computeWeaponBonuses(weaponId, awakening = 0, weaponEnchants = {}) {
   const b = { atk_flat: 0, atk_pct: 0, def_flat: 0, def_pct: 0, hp_pct: 0, spd_flat: 0, crit_rate: 0, crit_dmg: 0, res_flat: 0, fireDamage: 0, waterDamage: 0, shadowDamage: 0, windDamage: 0, lightDamage: 0, allDamage: 0, defPen: 0 };
   if (!weaponId) return b;
   const w = WEAPONS[weaponId];
   if (!w) return b;
-  b.atk_flat += w.atk;
-  if (b[w.bonusStat] !== undefined) b[w.bonusStat] += w.bonusValue;
+  const enc = weaponEnchants?.[weaponId] || {};
+  b.atk_flat += w.atk + (enc.atk || 0);
+  if (b[w.bonusStat] !== undefined) b[w.bonusStat] += w.bonusValue + (enc.bonus || 0);
   if (w.fireRes) b.res_flat += w.fireRes;
   if (w.darkRes) b.res_flat += w.darkRes;
   if (w.baseDef) b.def_flat += w.baseDef;

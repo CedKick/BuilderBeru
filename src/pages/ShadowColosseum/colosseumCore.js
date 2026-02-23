@@ -61,7 +61,7 @@ export const STAT_META = {
   spd:  { name: 'SPD',  icon: '\uD83D\uDCA8', color: 'text-emerald-400', desc: 'Vitesse', detail: 'Determine l\'ordre des tours et les tours bonus. SPD >= 1.5x l\'ennemi le + rapide = +1 tour bonus. SPD >= 2x = +2 tours bonus (max). Augmente aussi la regen mana (+1 mana par 15 SPD).' },
   crit: { name: 'CRIT', icon: '\uD83C\uDFAF', color: 'text-yellow-400', desc: 'Chance de coup critique', detail: 'Chance en % d\'infliger un coup critique (x1.5 degats de base + bonus CRIT DMG). Rendements degressifs : 50→39%, 100→61%, 150→75%, 200→85%. La RES ennemie reduit le crit (aussi en degressif).' },
   res:  { name: 'RES',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-cyan-400',    desc: 'Resistance elementaire + anti-crit', detail: 'Double usage avec rendements degressifs : (1) Reduit les degats recus (50→35%, 100→55%, cap 70%). (2) Reduit le crit rate ennemi (50→18%, 100→29%, 200→41%). Stacker au-dela de ~100 est moins efficace — diversifier avec HP/DEF.' },
-  mana: { name: 'MANA', icon: '\uD83D\uDCA0', color: 'text-violet-400',  desc: 'Points de mana', detail: 'Necessaire pour lancer des skills. Regen de base : 8/tick. Mana max = 50 + PV/4 + RES*2. Sans mana, le combattant ne peut que attendre.' },
+  mana: { name: 'INTEL', icon: '\uD83E\uDDE0', color: 'text-violet-400',  desc: 'Intelligence', detail: 'Determine la puissance des mages et supports. Les classes Mage/Support scalent leurs degats uniquement sur l\'Intel (ATK ignore, DMG = Intel x1.0). Soins : +1% par 10 Intel. Intel = 50 + PV/4 + RES*2. Regen : 8/tick + SPD/15.' },
 };
 
 // ─── Mana System ────────────────────────────────────────────
@@ -381,6 +381,10 @@ const softcap = (val, k) => k * Math.log(1 + val / k);
 export const computeAttack = (attacker, skill, defender, tb = {}) => {
   const res = { damage: 0, isCrit: false, healed: 0, buff: null, debuff: null, text: '' };
   let effAtk = getEffStat(attacker.atk, attacker.buffs, 'atk');
+  // Mages & Supports scale purely on Intel (maxMana): ATK×0 + Intel×1.0
+  if (attacker.isMage && attacker.maxMana) {
+    effAtk = Math.floor(attacker.maxMana * 1.0);
+  }
   let effDef = getEffStat(defender.def, defender.buffs || [], 'def');
 
   if (tb.hasBerserk && attacker.hp < attacker.maxHp * 0.3) {
@@ -471,10 +475,17 @@ export const computeAttack = (attacker, skill, defender, tb = {}) => {
     res.damage = Math.max(1, Math.floor(raw * elemMult * defFactor * resFactor * critMult * physMult * elemDmgMult * bossMult * artElemMult * weaponTypeMult * executionMult * variance));
   }
   const healBonusMult = 1 + (tb.healBonus || 0) / 100;
-  if (skill.healSelf) res.healed = Math.floor(attacker.maxHp * skill.healSelf / 100 * healBonusMult);
+  // Mages/Supports: Intel boosts heals (+1% per 10 Intel)
+  const intelHealMult = attacker.isMage && attacker.maxMana ? 1 + attacker.maxMana / 1000 : 1;
+  if (skill.healSelf) res.healed = Math.floor(attacker.maxHp * skill.healSelf / 100 * healBonusMult * intelHealMult);
   if (skill.buffAtk) res.buff = { stat: 'atk', value: skill.buffAtk / 100, turns: skill.buffDur || 3 };
   if (skill.buffDef) res.buff = { stat: 'def', value: skill.buffDef / 100, turns: skill.buffDur || 3 };
   if (skill.debuffDef) res.debuff = { stat: 'def', value: -(skill.debuffDef / 100), turns: skill.debuffDur || 2 };
+  // Shield team: caster's effective DEF × pct → applied to all allies by the mode
+  if (skill.shieldTeamPctDef) {
+    const effDef = getEffStat(attacker.def, attacker.buffs, 'def');
+    res.shieldTeam = Math.floor(effDef * skill.shieldTeamPctDef);
+  }
 
   const parts = [];
   if (res.isCrit) parts.push('CRITIQUE !');
@@ -483,6 +494,7 @@ export const computeAttack = (attacker, skill, defender, tb = {}) => {
   if (res.healed > 0) parts.push(`+${fmtNum(res.healed)} soins`);
   if (res.buff) parts.push(`${res.buff.stat.toUpperCase()} +${Math.round(res.buff.value * 100)}%`);
   if (res.debuff) parts.push(`DEF ennemi ${Math.round(res.debuff.value * 100)}%`);
+  if (res.shieldTeam) parts.push(`🛡️ +${fmtNum(res.shieldTeam)} Shield equipe`);
   res.text = parts.join(' ');
   return res;
 };
@@ -657,6 +669,11 @@ export const aiPickSkillArc2 = (enemy, allEnemies, allPlayers) => {
 
 // ─── SPD to attack interval (for raid real-time) ─────────────
 export const spdToInterval = (spd) => Math.max(500, Math.floor(3000 / (1 + spd / 50)));
+
+// ─── CD System for live modes (PvP/Raid) ─────────────────────
+export const BASE_CD_MS = 3000; // 1 CD point = 3 seconds in live modes
+// Intel CDR multiplier: cap 50% reduction (CD never below half)
+export const getIntelCDR = (intel) => Math.max(0.50, 1 - (intel || 0) / 1000);
 
 // ─── PVP Constants ───────────────────────────────────────────
 // ─── Talent II Bonus Merge ────────────────────────────────────

@@ -9,8 +9,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ELEMENTS, RARITY, CHIBIS, SPRITES,
   statsAtFull, getEffStat, computeAttack, mergeTalentBonuses,
-  getBaseMana, BASE_MANA_REGEN, applySkillUpgrades,
+  getBaseMana, BASE_MANA_REGEN, applySkillUpgrades, getSkillManaCost,
 } from './colosseumCore';
+import { TALENT_SKILLS, ULTIMATE_SKILLS } from './talentSkillData';
 
 import { HUNTERS, HUNTER_PASSIVE_EFFECTS, getHunterStars, getHunterSprite, HUNTER_SKINS, computeSynergies, computeCrossTeamSynergy } from './raidData';
 
@@ -394,7 +395,7 @@ export default function TrainingDummy() {
 
     const artBonuses = computeArtifactBonuses(coloData.artifacts?.[entityId]);
     const weaponId = coloData.weapons?.[entityId];
-    const weapBonuses = computeWeaponBonuses(weaponId, coloData.weaponCollection?.[weaponId] || 0);
+    const weapBonuses = computeWeaponBonuses(weaponId, coloData.weaponCollection?.[weaponId] || 0, coloData.weaponEnchants);
     const eqB = mergeEquipBonuses(artBonuses, weapBonuses);
     const evStars = 0; // Eveil stars not implemented yet
 
@@ -435,8 +436,20 @@ export default function TrainingDummy() {
     const mana = getBaseMana(lvData.level);
     const manaRegen = BASE_MANA_REGEN + (mergedTB.manaRegen || 0);
 
-    const rawSkills = applySkillUpgrades(entity.skills || [], coloData.skillTree?.[entityId] || {});
-    const skills = Array.isArray(rawSkills) ? rawSkills : (entity.skills || []);
+    const manaCostMult = Math.max(0.5, 1 - (mergedTB.manaCostReduce || 0) / 100);
+    const skillTreeData = coloData.skillTree?.[entityId] || {};
+    const skills = (entity.skills || []).map((sk, i) => {
+      // Talent Skill replacement
+      const tsData = coloData.talentSkills?.[entityId];
+      const baseSk = (tsData && tsData.replacedSlot === i && TALENT_SKILLS[entityId]?.[tsData.skillIndex]) ? TALENT_SKILLS[entityId][tsData.skillIndex] : sk;
+      const upgraded = applySkillUpgrades(baseSk, skillTreeData[i] || 0);
+      return { ...upgraded, cd: 0, manaCost: Math.floor(getSkillManaCost(upgraded) * manaCostMult) };
+    });
+    // Ultimate skill (4th slot)
+    if (coloData.ultimateSkills?.[entityId] && ULTIMATE_SKILLS[entityId]) {
+      const ult = ULTIMATE_SKILLS[entityId];
+      skills.push({ ...ult, cd: 0, manaCost: Math.floor(ult.manaCost * manaCostMult), isUltimate: true });
+    }
 
     // Attack interval (SPD-based)
     const baseInterval = 3000;
@@ -478,8 +491,10 @@ export default function TrainingDummy() {
       name: entity.name,
       sprite: getEntitySprite(entityId, coloData),
       element: entity.element,
+      class: entity.class,
       hp,
       maxHp: hp,
+      shield: 0,
       atk,
       def,
       spd,
@@ -493,6 +508,7 @@ export default function TrainingDummy() {
       passives: artPassives,
       passiveState,
       hunterPassive,
+      isMage: HUNTERS[entityId]?.class === 'mage' || HUNTERS[entityId]?.class === 'support',
       talentBonuses: mergedTB,
       attackInterval,
       lastAttackAt: 0,
@@ -691,10 +707,10 @@ export default function TrainingDummy() {
         );
       }
 
-      // Support healing — allies first, then self (costs 25% maxMana)
+      // Support healing — allies first, then self (Intel replaces mana cost)
       if (fighter.class === 'support') {
-        const healManaCost = Math.floor((fighter.maxMana || 0) * 0.25);
-        const hasEnoughMana = fighter.maxMana <= 0 || (fighter.mana || 0) >= healManaCost;
+        const healManaCost = 0; // Removed: mana renamed to Intel, no longer consumed for heals
+        const hasEnoughMana = true;
         const aliveAllies = state.fighters.filter(a => a.alive && a.id !== fighter.id && a.hp < a.maxHp);
         const lowest = aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
         const healTarget = hasEnoughMana ? ((lowest && (lowest.hp / lowest.maxHp) < 0.75) ? lowest
@@ -703,7 +719,8 @@ export default function TrainingDummy() {
           // Consume mana for heal
           if (fighter.maxMana > 0) fighter.mana = Math.max(0, (fighter.mana || 0) - healManaCost);
           const healBonus = fighter.talentBonuses?.healBonus || 0;
-          let healAmt = Math.floor(healTarget.maxHp * 0.15 * (1 + healBonus / 100));
+          const intelHealMult = fighter.isMage && fighter.maxMana ? 1 + fighter.maxMana / 1000 : 1;
+          let healAmt = Math.floor(healTarget.maxHp * 0.15 * (1 + healBonus / 100) * intelHealMult);
           const healCritP = (fighter.passives || []).find(p => p.type === 'healCrit');
           if (healCritP) {
             healAmt = Math.floor(healAmt * (1 + (healCritP.healBoostPct || 0.30)));
@@ -880,6 +897,11 @@ export default function TrainingDummy() {
         const restored = Math.floor(fighter.maxMana * skill.manaRestore / 100);
         fighter.mana = Math.min(fighter.maxMana, (fighter.mana || 0) + restored);
         logEntries.push({ text: `${fighter.name} restaure ${restored} mana !`, time: elapsed, type: 'heal' });
+      }
+      // Shield Team: apply shield to all alive fighters
+      if (result.shieldTeam > 0) {
+        state.fighters.filter(f => f.alive).forEach(f => { f.shield = (f.shield || 0) + result.shieldTeam; });
+        logEntries.push({ text: `${fighter.name} protege l'equipe ! +${result.shieldTeam} Shield`, time: elapsed, type: 'buff' });
       }
 
       // Apply damage
@@ -1143,6 +1165,12 @@ export default function TrainingDummy() {
           dmgResult.damage = 0;
         }
 
+        // Shield absorption
+        if (target.shield > 0 && dmgResult.damage > 0) {
+          const sa = Math.min(dmgResult.damage, target.shield);
+          target.shield -= sa;
+          dmgResult.damage -= sa;
+        }
         target.hp = Math.max(0, target.hp - dmgResult.damage);
 
         // Track damage dealt by dummy
@@ -1469,6 +1497,12 @@ export default function TrainingDummy() {
       log.push({ text: `✨ ${fighter.name} restaure ${restored} mana ! (${fmt(fighter.mana)}/${fmt(fighter.maxMana)})`, type: 'heal', id: Date.now() + 0.52 });
     }
 
+    // ShieldTeam: apply shield to all alive fighters
+    if (result.shieldTeam > 0) {
+      battle.fighters.filter(f => f.alive).forEach(f => { f.shield = (f.shield || 0) + result.shieldTeam; });
+      log.push({ text: `🛡️ ${fighter.name} protege l'equipe ! +${fmt(result.shieldTeam)} Shield`, type: 'heal', id: Date.now() + 0.525 });
+    }
+
     // Apply damage
     dummy.hp = Math.max(0, dummy.hp - result.damage);
     dpsTracker.current[fighter.id] = (dpsTracker.current[fighter.id] || 0) + result.damage;
@@ -1625,6 +1659,13 @@ export default function TrainingDummy() {
       }
 
       if (eResult.damage > 0) {
+        // Shield absorption
+        if (fighter.shield > 0 && eResult.damage > 0) {
+          const sa = Math.min(eResult.damage, fighter.shield);
+          fighter.shield -= sa;
+          eResult.damage -= sa;
+          if (sa > 0) log.push({ text: `🛡️ Shield absorbe ${fmt(sa)} dégâts`, type: 'buff', id: Date.now() + 0.29 });
+        }
         log.push({ text: `  └─ Dégâts finaux: ${fmt(eResult.damage)}`, type: 'enemy', id: Date.now() + 0.3 });
         fighter.hp = Math.max(0, fighter.hp - eResult.damage);
         log.push({ text: `💔 ${fighter.name}: -${fmt(eResult.damage)} PV (${fmt(fighter.hp)}/${fmt(fighter.maxHp)})`, type: 'enemy', id: Date.now() + 0.35 });
@@ -2331,6 +2372,20 @@ export default function TrainingDummy() {
                   />
                 </div>
               </div>
+
+              {/* Shield Bar */}
+              {(activeFighter.shield || 0) > 0 && (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-cyan-400 font-bold">Shield</span>
+                    <span className="text-white font-bold">{fmt(activeFighter.shield)}</span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div className="bg-gradient-to-r from-cyan-400 to-cyan-500 h-2 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, (activeFighter.shield / activeFighter.maxHp) * 100)}%` }} />
+                  </div>
+                </div>
+              )}
 
               {/* Mana Bar */}
               {activeFighter.maxMana > 0 && (

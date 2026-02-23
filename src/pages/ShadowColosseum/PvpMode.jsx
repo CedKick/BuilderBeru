@@ -15,8 +15,9 @@ import {
   applySkillUpgrades, computeAttack, aiPickSkill, aiPickSkillSupport, spdToInterval,
   accountLevelFromXp, getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
   PVP_DAMAGE_MULT, PVP_HP_MULT, PVP_DEF_MULT, PVP_RES_MULT, PVP_DMG_CAP, PVP_DURATION_SEC, PVP_TICK_MS,
-  mergeTalentBonuses,
+  mergeTalentBonuses, BASE_CD_MS, getIntelCDR,
 } from './colosseumCore';
+import { TALENT_SKILLS, ULTIMATE_SKILLS } from './talentSkillData';
 import {
   HUNTERS, HUNTER_PASSIVE_EFFECTS,
   computeSynergies, computeCrossTeamSynergy,
@@ -290,7 +291,7 @@ export default function PvpMode() {
     const tb = mergeTalentBonuses(tb1, tb2);
     const artBonuses = computeArtifactBonuses(coloData.artifacts?.[id]);
     const wId = coloData.weapons?.[id];
-    const weapBonuses = computeWeaponBonuses(wId, coloData.weaponCollection?.[wId] || 0);
+    const weapBonuses = computeWeaponBonuses(wId, coloData.weaponCollection?.[wId] || 0, coloData.weaponEnchants);
     const eqB = mergeEquipBonuses(artBonuses, weapBonuses);
     const evStars = HUNTERS[id] ? getHunterStars(raidData, id) : 0;
     const st = statsAtFull(chibi.base, chibi.growth, lvData.level, allocated, tb, eqB, evStars, coloData.accountBonuses);
@@ -325,13 +326,23 @@ export default function PvpMode() {
     let res2 = +(st.res + resFlat).toFixed(1);
 
     const skillTreeData = coloData.skillTree[id] || {};
+    const intelCDR = getIntelCDR(st.mana || 0);
     const skills = chibi.skills.map((sk, i) => {
+      // Talent Skill replacement
+      const tsData = coloData.talentSkills?.[id];
+      const baseSk = (tsData && tsData.replacedSlot === i && TALENT_SKILLS[id]?.[tsData.skillIndex]) ? TALENT_SKILLS[id][tsData.skillIndex] : sk;
       const lvl = skillTreeData[i] || 0;
-      const upgraded = applySkillUpgrades(sk, lvl);
+      const upgraded = applySkillUpgrades(baseSk, lvl);
       const rawCost = getSkillManaCost(upgraded);
       const cost = Math.floor(rawCost * (1 - (st.manaCostReduce || 0) / 100));
-      return { ...upgraded, cd: 0, cdMaxMs: upgraded.cdMax * spdToInterval(spd2), manaCost: cost };
+      return { ...upgraded, cd: 0, cdMaxMs: upgraded.cdMax * BASE_CD_MS * intelCDR, manaCost: cost };
     });
+    // Ultimate skill (4th slot)
+    if (coloData.ultimateSkills?.[id] && ULTIMATE_SKILLS[id]) {
+      const ult = ULTIMATE_SKILLS[id];
+      const manaCostMult = Math.max(0.5, 1 - (st.manaCostReduce || 0) / 100);
+      skills.push({ ...ult, cd: 0, cdMaxMs: ult.cdMax * BASE_CD_MS * intelCDR, manaCost: Math.floor(ult.manaCost * manaCostMult), isUltimate: true });
+    }
 
     const passives = getActivePassives(coloData.artifacts?.[id]);
 
@@ -347,7 +358,7 @@ export default function PvpMode() {
       id, name: chibi.name, element: chibi.element, class: chibi.class,
       sprite: chibi.sprite || SPRITES[id], rarity: chibi.rarity,
       weaponType,
-      hp: hp2, maxHp: hp2,
+      hp: hp2, maxHp: hp2, shield: 0,
       atk: atk2, def: def2, spd: spd2, crit: crit2, res: res2,
       mana: st.mana || 0, maxMana: st.mana || 0, manaRegen: st.manaRegen || 0, manaCostReduce: st.manaCostReduce || 0,
       skills, buffs: [], passives,
@@ -370,6 +381,7 @@ export default function PvpMode() {
       },
       talentBonuses: mergedTb,
       hunterPassive,
+      isMage: HUNTERS[id]?.class === 'mage' || HUNTERS[id]?.class === 'support',
       lastAttackAt: 0, attackInterval: spdToInterval(spd2),
       alive: true,
     };
@@ -806,8 +818,8 @@ export default function PvpMode() {
       // Support healing — strategy-aware priority (costs 25% maxMana)
       const strategy = isAttacker ? pvpData.attackStrategy : opponentStrategyRef.current;
       if (unit.class === 'support') {
-        const healManaCost = Math.floor((unit.maxMana || 0) * 0.35); // Nerfed: 35% mana cost (was 25%)
-        const hasEnoughMana = unit.maxMana <= 0 || (unit.mana || 0) >= healManaCost;
+        const healManaCost = 0; // Removed: mana renamed to Intel, no longer consumed for heals
+        const hasEnoughMana = true;
         // Heal threshold varies by playstyle: aggressive 0.50, balanced 0.75, defensive 0.90
         const healThreshold = (strategy?.playstyle === 'aggressive') ? 0.50
           : (strategy?.playstyle === 'defensive') ? 0.90 : 0.75;
@@ -829,7 +841,8 @@ export default function PvpMode() {
           // Consume mana for heal
           if (unit.maxMana > 0) unit.mana = Math.max(0, (unit.mana || 0) - healManaCost);
           const healBonus = unit.talentBonuses?.healBonus || 0;
-          let healAmt = Math.floor(healTarget.maxHp * 0.15 * (1 + healBonus / 100));
+          const intelHealMult = unit.isMage && unit.maxMana ? 1 + unit.maxMana / 1000 : 1;
+          let healAmt = Math.floor(healTarget.maxHp * 0.15 * (1 + healBonus / 100) * intelHealMult);
           // healCrit passive (Chaines du Destin 4p) — individual
           const healCritP = unit.passives?.find(p => p.type === 'healCrit');
           if (healCritP) {
@@ -1020,6 +1033,7 @@ export default function PvpMode() {
           const counterResult = computeAttack(target, counterSkill, unit, target.talentBonuses || {});
           let counterDmg = Math.max(1, Math.floor(counterResult.damage * PVP_DAMAGE_MULT * (counterPassive.powerMult || 0.80)));
           if (PVP_DMG_CAP > 0) counterDmg = Math.min(counterDmg, Math.floor(unit.maxHp * PVP_DMG_CAP));
+          if (unit.shield > 0 && counterDmg > 0) { const sa = Math.min(counterDmg, unit.shield); unit.shield -= sa; counterDmg -= sa; }
           unit.hp -= counterDmg;
           if (unit.hp <= 0) { unit.hp = 0; unit.alive = false; }
           logEntries.push({ text: `${target.name} contre-attaque ! -${counterDmg}`, time: elapsed, type: 'counter' });
@@ -1056,6 +1070,12 @@ export default function PvpMode() {
       // Apply damage
       if (result.damage > 0) {
         let dmg = result.damage;
+        // ─── Skill shield (e.g. Hwang ulti) absorbs first ───
+        if (target.shield > 0 && dmg > 0) {
+          const sa = Math.min(dmg, target.shield);
+          target.shield -= sa;
+          dmg -= sa;
+        }
         // ─── ULTIME: Celestial Shield absorbs damage — individual ───
         if (target.passiveState?.celestialShield > 0) {
           const absorbed = Math.min(dmg, target.passiveState.celestialShield);
@@ -1309,6 +1329,11 @@ export default function PvpMode() {
         }
       }
       if (result.debuff) target.buffs.push({ ...result.debuff });
+      // Shield Team: apply shield to all alive allies
+      if (result.shieldTeam > 0) {
+        allies.filter(a => a.alive).forEach(a => { a.shield = (a.shield || 0) + result.shieldTeam; });
+        logEntries.push({ text: `${unit.name} protege l'equipe ! +${result.shieldTeam} Shield`, time: elapsed, type: 'heal' });
+      }
 
       unit.skills.forEach(s => {
         if (s === skill && s.cdMax > 0) {
@@ -1490,9 +1515,19 @@ export default function PvpMode() {
           )}
         </div>
         {/* HP bar */}
-        <div className="w-10 h-1 bg-gray-900/80 rounded-full overflow-hidden mt-0.5">
+        <div className="w-10 h-1 bg-gray-900/80 rounded-full overflow-hidden mt-0.5 relative">
           <div className="h-full rounded-full transition-all duration-200" style={{ width: `${hpPct * 100}%`, backgroundColor: hpColor }} />
+          {(unit.shield || 0) > 0 && (
+            <div className="absolute top-0 h-full bg-cyan-400/60 rounded-full transition-all duration-200"
+              style={{ left: `${Math.min(hpPct * 100, 100)}%`, width: `${Math.min((unit.shield / unit.maxHp) * 100, 100 - Math.min(hpPct * 100, 100))}%` }} />
+          )}
         </div>
+        {/* Shield bar */}
+        {(unit.shield || 0) > 0 && (
+          <div className="w-10 h-[2px] bg-gray-900/60 rounded-full overflow-hidden mt-[1px]">
+            <div className="h-full rounded-full bg-cyan-400" style={{ width: `${Math.min(100, (unit.shield / unit.maxHp) * 100)}%` }} />
+          </div>
+        )}
         {/* Mana bar */}
         {unit.maxMana > 0 && unit.alive && (
           <div className="w-10 h-[2px] bg-gray-900/60 rounded-full overflow-hidden mt-[1px]">

@@ -14,8 +14,9 @@ import {
   applySkillUpgrades, computeAttack, aiPickSkill, spdToInterval,
   accountLevelFromXp, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT,
   getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
-  mergeTalentBonuses, fmtNum,
+  mergeTalentBonuses, fmtNum, BASE_CD_MS, getIntelCDR,
 } from './colosseumCore';
+import { TALENT_SKILLS, ULTIMATE_SKILLS } from './talentSkillData';
 import {
   HUNTERS, SUNG_SKILLS, RAID_BOSSES,
   RAID_DURATION_SEC, RAID_TICK_MS, BOSS_BASE_INTERVAL_MS, TEAM_SIZE,
@@ -159,7 +160,7 @@ export default function RaidMode() {
     const tb = mergeTalentBonuses(tb1, tb2);
     const artBonuses = computeArtifactBonuses(coloData.artifacts?.[id]);
     const wId = coloData.weapons?.[id];
-    const weapBonuses = computeWeaponBonuses(wId, coloData.weaponCollection?.[wId] || 0);
+    const weapBonuses = computeWeaponBonuses(wId, coloData.weaponCollection?.[wId] || 0, coloData.weaponEnchants);
     const eqB = mergeEquipBonuses(artBonuses, weapBonuses);
     const evStars = HUNTERS[id] ? getHunterStars(loadRaidData(), id) : 0;
     return statsAtFull(chibi.base, chibi.growth, lvData.level, allocated, tb, eqB, evStars, coloData.accountBonuses);
@@ -222,7 +223,7 @@ export default function RaidMode() {
     const tb = mergeTalentBonuses(tb1, tb2);
     const artBonuses = computeArtifactBonuses(coloData.artifacts?.[id]);
     const wId2 = coloData.weapons?.[id];
-    const weapBonuses = computeWeaponBonuses(wId2, coloData.weaponCollection?.[wId2] || 0);
+    const weapBonuses = computeWeaponBonuses(wId2, coloData.weaponCollection?.[wId2] || 0, coloData.weaponEnchants);
     const eqB = mergeEquipBonuses(artBonuses, weapBonuses);
     const evStars = HUNTERS[id] ? getHunterStars(loadRaidData(), id) : 0;
     const st = statsAtFull(chibi.base, chibi.growth, lvData.level, allocated, tb, eqB, evStars, coloData.accountBonuses);
@@ -264,13 +265,23 @@ export default function RaidMode() {
 
     // Build upgraded skills with mana costs
     const skillTreeData = coloData.skillTree[id] || {};
+    const intelCDR = getIntelCDR(mana);
     const skills = chibi.skills.map((sk, i) => {
+      // Talent Skill replacement
+      const tsData = coloData.talentSkills?.[id];
+      const baseSk = (tsData && tsData.replacedSlot === i && TALENT_SKILLS[id]?.[tsData.skillIndex]) ? TALENT_SKILLS[id][tsData.skillIndex] : sk;
       const lvl = skillTreeData[i] || 0;
-      const upgraded = applySkillUpgrades(sk, lvl);
+      const upgraded = applySkillUpgrades(baseSk, lvl);
       const rawCost = getSkillManaCost(upgraded);
       const cost = Math.floor(rawCost * (1 - manaCostReduce / 100));
-      return { ...upgraded, cd: 0, cdMaxMs: upgraded.cdMax * spdToInterval(finalSpd), manaCost: cost };
+      return { ...upgraded, cd: 0, cdMaxMs: upgraded.cdMax * BASE_CD_MS * intelCDR, manaCost: cost };
     });
+    // Ultimate skill (4th slot)
+    if (coloData.ultimateSkills?.[id] && ULTIMATE_SKILLS[id]) {
+      const ult = ULTIMATE_SKILLS[id];
+      const manaCostMult = Math.max(0.5, 1 - manaCostReduce / 100);
+      skills.push({ ...ult, cd: 0, cdMaxMs: ult.cdMax * BASE_CD_MS * intelCDR, manaCost: Math.floor(ult.manaCost * manaCostMult), isUltimate: true });
+    }
 
     // Passives from raid sets
     const passives = getActivePassives(coloData.artifacts?.[id]);
@@ -297,7 +308,7 @@ export default function RaidMode() {
     return {
       id, name: chibi.name, element: chibi.element, class: chibi.class,
       sprite: chibi.sprite, rarity: chibi.rarity, weaponType,
-      hp: finalHp, maxHp: finalHp,
+      hp: finalHp, maxHp: finalHp, shield: 0,
       atk: finalAtk, def: finalDef, spd: finalSpd, crit: finalCrit, res: finalRes,
       mana, maxMana: mana, manaRegen, manaCostReduce,
       skills, buffs: [], passives,
@@ -322,6 +333,7 @@ export default function RaidMode() {
       },
       talentBonuses: mergedTb,
       hunterPassive,
+      isMage: HUNTERS[id]?.class === 'mage' || HUNTERS[id]?.class === 'support',
       lastAttackAt: 0, attackInterval: spdToInterval(finalSpd),
       alive: true,
     };
@@ -689,8 +701,21 @@ export default function RaidMode() {
         }
       }
 
+      // Alkahest drops — tier-based rolls (5% chance each)
+      const ALKAHEST_ROLLS_BY_TIER = { 1: 10, 2: 15, 3: 20, 4: 30, 5: 40, 6: 50 };
+      const alkRolls = ALKAHEST_ROLLS_BY_TIER[tier] || 10;
+      let alkahestDropped = 0;
+      if (rc >= 3) {
+        for (let i = 0; i < alkRolls; i++) {
+          if (Math.random() < 0.05) alkahestDropped++;
+        }
+      }
+
       // XP to participating chibis + save hammer drops + raid artifacts
       const newColoData = { ...coloData };
+      if (alkahestDropped > 0) {
+        newColoData.alkahest = (newColoData.alkahest || 0) + alkahestDropped;
+      }
       const newHammers = { ...(newColoData.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0 }) };
       Object.entries(hammerDrops).forEach(([hId, count]) => { newHammers[hId] = (newHammers[hId] || 0) + count; });
       newColoData.hammers = newHammers;
@@ -776,7 +801,7 @@ export default function RaidMode() {
       setResultData({
         rc, barsDestroyed, isFullClear, totalDamage, endReason, dpsBreakdown,
         rewards, unlockedHunters, hunterDuplicates, hammerDrops, raidArtifactDrops,
-        raidWeaponDrop,
+        raidWeaponDrop, alkahestDropped,
         duration: Math.floor(elapsed),
         tier, tierData, tierUnlocked,
       });
@@ -906,10 +931,10 @@ export default function RaidMode() {
       const origBossDef = state.boss.def;
       state.boss.def = Math.floor(origBossDef * (1 - bossDebuffs.def / 100));
 
-      // Support healing: allies first, then self as fallback (costs 25% maxMana)
+      // Support healing: allies first, then self as fallback (Intel replaces mana cost)
       if (chibi.class === 'support') {
-        const healManaCost = Math.floor((chibi.maxMana || 0) * 0.25);
-        const hasEnoughMana = chibi.maxMana <= 0 || (chibi.mana || 0) >= healManaCost;
+        const healManaCost = 0; // Removed: mana renamed to Intel, no longer consumed for heals
+        const hasEnoughMana = true;
         const aliveAllies = state.chibis.filter(a => a.alive && a.id !== chibi.id && a.hp < a.maxHp);
         const lowestAlly = aliveAllies.sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp))[0];
         // Heal target: lowest ally <75% HP, OR self <75% HP as fallback
@@ -919,7 +944,8 @@ export default function RaidMode() {
           // Consume mana for heal
           if (chibi.maxMana > 0) chibi.mana = Math.max(0, (chibi.mana || 0) - healManaCost);
           const healBonus = (chibi.talentBonuses?.healBonus || 0);
-          let healAmt = Math.floor(healTarget.maxHp * 0.15 * (1 + healBonus / 100));
+          const intelHealMult = chibi.isMage && chibi.maxMana ? 1 + chibi.maxMana / 1000 : 1;
+          let healAmt = Math.floor(healTarget.maxHp * 0.15 * (1 + healBonus / 100) * intelHealMult);
           // healCrit (Chaines du Destin 4p): +30% heal, 10% chance crit heal x2
           const healCritP = chibi.passives?.find(p => p.type === 'healCrit');
           if (healCritP) {
@@ -1341,6 +1367,11 @@ export default function RaidMode() {
       // Apply buff/debuff
       if (result.buff) chibi.buffs.push({ ...result.buff });
       if (result.debuff) state.boss.buffs.push({ ...result.debuff });
+      // Shield Team: apply shield to all alive allies
+      if (result.shieldTeam > 0) {
+        state.chibis.filter(c => c.alive).forEach(c => { c.shield = (c.shield || 0) + result.shieldTeam; });
+        logEntries.push({ text: `${chibi.name} protege l'equipe ! +${result.shieldTeam} Shield`, time: elapsed, type: 'buff' });
+      }
 
       // Cooldown management (real-time)
       chibi.skills.forEach(s => {
@@ -1439,6 +1470,12 @@ export default function RaidMode() {
             return dmg;
           }
           let actualDmg = dmg.damage;
+          // Skill shield (e.g. Hwang ulti) absorbs first
+          if (target.shield > 0 && actualDmg > 0) {
+            const sa = Math.min(actualDmg, target.shield);
+            target.shield -= sa;
+            actualDmg -= sa;
+          }
           // Gardien Celeste: shield absorbs damage first — individual
           if (target.passiveState?.celestialShield > 0 && actualDmg > 0) {
             if (actualDmg <= target.passiveState.celestialShield) {
@@ -1936,7 +1973,7 @@ export default function RaidMode() {
 
   const renderResult = () => {
     if (!resultData) return null;
-    const { rc, barsDestroyed = 0, isFullClear, totalDamage, endReason, dpsBreakdown, rewards, unlockedHunters, hunterDuplicates = [], hammerDrops = {}, raidArtifactDrops = [], raidWeaponDrop = null, duration, tier = 1, tierData: resTierData, tierUnlocked } = resultData;
+    const { rc, barsDestroyed = 0, isFullClear, totalDamage, endReason, dpsBreakdown, rewards, unlockedHunters, hunterDuplicates = [], hammerDrops = {}, raidArtifactDrops = [], raidWeaponDrop = null, alkahestDropped = 0, duration, tier = 1, tierData: resTierData, tierUnlocked } = resultData;
     const resTd = resTierData || getTierData(tier);
     const min = Math.floor(duration / 60);
     const sec = duration % 60;
@@ -1995,6 +2032,14 @@ export default function RaidMode() {
                   <span className="text-xs text-amber-400">x{count}</span>
                 </div>
               ))}
+            </div>
+          )}
+          {/* Alkahest drops */}
+          {alkahestDropped > 0 && (
+            <div className="mt-2">
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-sm">
+                {'\u2697\uFE0F'} +{alkahestDropped} Alkahest
+              </span>
             </div>
           )}
         </div>

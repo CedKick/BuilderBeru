@@ -5,6 +5,7 @@
 
 export const TALENT_SKILL_COST = 15;
 export const TALENT_SKILL_UNLOCK_LEVEL = 100;
+export const ULTIMATE_SKILL_COST = 20;
 
 // ═══════════════════════════════════════════════════════════════
 // TALENT SKILLS — 3 per character (DPS / Utility / Survivability)
@@ -345,4 +346,23 @@ export const TALENT_SKILLS = {
     { id: 'ts_megumin_3', name: 'MEGA EXPLOSION!!!', power: 2800, cdMax: 8, manaCost: 1200, manaThreshold: 0.9, selfDamage: 20, selfStunTurns: 3, desc: 'L\'explosion ultime ! 2800% mais s\'inflige 20% PV et stun 3 tours' },
   ],
 
+};
+
+// ═══════════════════════════════════════════════════════════════
+// ULTIMATE SKILLS — 4th skill slot (added, not replacing)
+// Unlocks at level 100. Costs 20 talent points from the shared pool.
+// Only some characters have an ultimate. Added alongside normal skills.
+// ═══════════════════════════════════════════════════════════════
+
+export const ULTIMATE_SKILLS = {
+  h_hwang: {
+    id: 'ult_hwang',
+    name: 'Rempart d\'Acier',
+    power: 0,
+    cdMax: 4,
+    manaCost: 90,
+    shieldTeamPctDef: 0.20,
+    isUltimate: true,
+    desc: 'Protege toute l\'equipe avec un bouclier egal a 20% de sa DEF',
+  },
 };

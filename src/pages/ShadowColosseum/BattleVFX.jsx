@@ -237,14 +237,19 @@ function WeaponProjectile({ weaponPassive, active, distance, reversed }) {
 // HP BAR (shared)
 // ═══════════════════════════════════════════════════════════════
 
-function HpBar({ hp, maxHp, height = 'h-2', showText = false }) {
-  const pct = Math.max(0, maxHp > 0 ? (hp / maxHp) * 100 : 0);
-  const color = pct > 50 ? 'bg-green-500' : pct > 25 ? 'bg-yellow-500' : 'bg-red-500';
+function HpBar({ hp, maxHp, shield = 0, height = 'h-2', showText = false }) {
+  const hpPct = Math.max(0, maxHp > 0 ? (hp / maxHp) * 100 : 0);
+  const shieldPct = Math.max(0, maxHp > 0 ? (shield / maxHp) * 100 : 0);
+  const color = hpPct > 50 ? 'bg-green-500' : hpPct > 25 ? 'bg-yellow-500' : 'bg-red-500';
   return (
-    <div className={`w-full ${height} bg-gray-800 rounded-full overflow-hidden`}>
-      <div className={`h-full ${color} rounded-full transition-all duration-300`} style={{ width: `${pct}%` }} />
+    <div className={`w-full ${height} bg-gray-800 rounded-full overflow-hidden relative`}>
+      <div className={`h-full ${color} rounded-full transition-all duration-300`} style={{ width: `${Math.min(hpPct, 100)}%` }} />
+      {shield > 0 && (
+        <div className="absolute top-0 h-full bg-cyan-400/60 rounded-full transition-all duration-300"
+          style={{ left: `${Math.min(hpPct, 100)}%`, width: `${Math.min(shieldPct, 100 - Math.min(hpPct, 100))}%` }} />
+      )}
       {showText && (
-        <div className="text-[8px] text-gray-400 text-center mt-0.5">{hp}/{maxHp}</div>
+        <div className="text-[8px] text-gray-400 text-center mt-0.5">{hp}/{maxHp}{shield > 0 ? ` +${shield}🛡️` : ''}</div>
       )}
     </div>
   );
@@ -340,7 +345,7 @@ export function BattleArena({ battle, phase, dmgPopup, stageEmoji, stageSprite, 
           </div>
           {/* HP + Mana Bars */}
           <div className="w-20 mt-1">
-            <HpBar hp={player.hp} maxHp={player.maxHp} height="h-1.5" />
+            <HpBar hp={player.hp} maxHp={player.maxHp} shield={player.shield || 0} height="h-1.5" />
             {player.maxMana > 0 && (
               <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden mt-0.5">
                 <div className="h-full bg-gradient-to-r from-violet-500 to-blue-500 rounded-full transition-all duration-300"
@@ -443,11 +448,12 @@ export function BattleArena({ battle, phase, dmgPopup, stageEmoji, stageSprite, 
       )}
 
       {/* ─── SKILLS ─── */}
-      <div className="grid grid-cols-3 gap-2 mb-2">
+      <div className={`grid gap-2 mb-2 ${player.skills.length <= 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
         {player.skills.map((skill, i) => {
           const onCd = skill.cd > 0;
           const noMana = (skill.manaCost || 0) > 0 && player.mana < skill.manaCost && !battle.passiveState?.echoFreeMana;
           const blocked = onCd || noMana || phase !== 'idle';
+          const isUlti = !!skill.isUltimate;
           return (
             <button key={i}
               onClick={() => !blocked && onSkillUse(i)}
@@ -456,18 +462,21 @@ export function BattleArena({ battle, phase, dmgPopup, stageEmoji, stageSprite, 
                 onCd ? 'border-gray-700/30 bg-gray-800/20 opacity-40' :
                 noMana ? 'border-violet-700/30 bg-violet-900/20 opacity-50' :
                 phase !== 'idle' ? 'border-gray-700/30 bg-gray-800/20 opacity-60' :
+                isUlti ? 'border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/20 active:scale-95' :
                 'border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 active:scale-95'
               }`}>
               <div className="text-[10px] font-bold truncate">{skill.name}</div>
+              {isUlti && <div className="text-[7px] text-blue-400 font-bold">ULTI</div>}
               <div className="text-[8px] text-gray-400 mt-0.5">
                 {skill.power > 0 ? `DMG: ${skill.power}%` : ''}
                 {skill.buffAtk ? `ATK +${skill.buffAtk}%` : ''}
                 {skill.buffDef ? `DEF +${skill.buffDef}%` : ''}
                 {skill.healSelf ? `Soin ${skill.healSelf}%` : ''}
                 {skill.debuffDef ? `DEF -${skill.debuffDef}%` : ''}
+                {skill.shieldTeamPctDef ? `Shield ${Math.round(skill.shieldTeamPctDef * 100)}%DEF` : ''}
               </div>
               {(skill.manaCost || 0) > 0 && (
-                <div className={`text-[7px] mt-0.5 ${noMana ? 'text-red-400' : 'text-violet-400'}`}>
+                <div className={`text-[7px] mt-0.5 ${noMana ? 'text-red-400' : isUlti ? 'text-blue-400' : 'text-violet-400'}`}>
                   {battle.passiveState?.echoFreeMana ? <s>{skill.manaCost}</s> : skill.manaCost} MP
                 </div>
               )}
@@ -589,9 +598,19 @@ function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg, dps,
         )}
       </div>
       {/* HP bar */}
-      <div className="w-12 h-1 bg-gray-900/80 rounded-full overflow-hidden mt-0.5">
+      <div className="w-12 h-1 bg-gray-900/80 rounded-full overflow-hidden mt-0.5 relative">
         <div className="h-full rounded-full transition-all duration-200" style={{ width: `${hpPct * 100}%`, backgroundColor: hpColor }} />
+        {(chibi.shield || 0) > 0 && (
+          <div className="absolute top-0 h-full bg-cyan-400/60 rounded-full transition-all duration-200"
+            style={{ left: `${Math.min(hpPct * 100, 100)}%`, width: `${Math.min((chibi.shield / chibi.maxHp) * 100, 100 - Math.min(hpPct * 100, 100))}%` }} />
+        )}
       </div>
+      {/* Shield bar */}
+      {(chibi.shield || 0) > 0 && (
+        <div className="w-12 h-[2px] bg-gray-900/60 rounded-full overflow-hidden mt-[1px]">
+          <div className="h-full rounded-full bg-cyan-400" style={{ width: `${Math.min(100, (chibi.shield / chibi.maxHp) * 100)}%` }} />
+        </div>
+      )}
       {/* Mana bar */}
       {chibi.maxMana > 0 && chibi.alive && (
         <div className="w-12 h-[2px] bg-gray-900/60 rounded-full overflow-hidden mt-[1px]">
@@ -951,11 +970,18 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
           const hpPct = c.maxHp > 0 ? c.hp / c.maxHp : 0;
           return (
             <div key={c.id} className="text-center">
-              <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden relative">
                 <div className="h-full rounded-full transition-all duration-200" style={{
                   width: `${hpPct * 100}%`,
                   backgroundColor: !c.alive ? '#374151' : hpPct > 0.5 ? '#22c55e' : hpPct > 0.2 ? '#eab308' : '#ef4444',
                 }} />
+                {(c.shield || 0) > 0 && (
+                  <div className="absolute top-0 h-full rounded-full transition-all duration-200" style={{
+                    left: `${Math.min(hpPct * 100, 100)}%`,
+                    width: `${Math.min((c.shield / c.maxHp) * 100, 100 - Math.min(hpPct * 100, 100))}%`,
+                    backgroundColor: 'rgba(34, 211, 238, 0.6)',
+                  }} />
+                )}
               </div>
               {c.maxMana > 0 && (
                 <div className="h-[2px] bg-gray-800 rounded-full overflow-hidden mt-[1px]">

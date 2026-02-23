@@ -74,6 +74,7 @@ function mergeColoData(cloud, incoming) {
   m.talentTree = mergeNestedMax(cloud.talentTree, incoming.talentTree);
   m.talentTree2 = mergeNestedMax(cloud.talentTree2, incoming.talentTree2);
   m.talentSkills = mergeObjects(cloud.talentSkills, incoming.talentSkills);
+  m.ultimateSkills = mergeObjects(cloud.ultimateSkills, incoming.ultimateSkills);
 
   // ─── respecCount: MAX per hunter per tree
   m.respecCount = mergeNestedMax(cloud.respecCount, incoming.respecCount);
@@ -87,6 +88,9 @@ function mergeColoData(cloud, incoming) {
   // ─── hammers, fragments: MAX each ─────────────────────
   m.hammers = mergeObjectsMax(cloud.hammers, incoming.hammers);
   m.fragments = mergeObjectsMax(cloud.fragments, incoming.fragments);
+
+  // ─── weaponEnchants: prefer incoming (last enchant session) ─
+  m.weaponEnchants = mergeObjects(cloud.weaponEnchants, incoming.weaponEnchants);
 
   // ─── accountBonuses: MAX each stat ────────────────────
   m.accountBonuses = mergeObjectsMax(cloud.accountBonuses, incoming.accountBonuses);

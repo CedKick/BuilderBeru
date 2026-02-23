@@ -46,13 +46,14 @@ import {
   ROLE_WEIGHTS, scoreArtifact, scoreToGrade, scoreAllArtifacts,
   MAX_ARTIFACT_INVENTORY, trimArtifactInventory,
   REROLL_ALKAHEST_COST, REROLL_BASE_COIN_COST, REROLL_COIN_MULTIPLIER, getRerollCoinCost, rerollArtifact,
+  ENCHANT_ALKAHEST_COST, enchantArtifactStat, rerollArtifactMainStat, enchantWeaponStat, ENCHANT_MAIN_STAT_POOL,
 } from './equipmentData';
 import {
   isArc2Unlocked, ARC2_STAGES, ARC2_TIER_NAMES, ARC2_STORIES,
   ARC2_LOCKED_BERU_DIALOGUES, ARC2_BEBE_MACHINE_REACTIONS, GRIMOIRE_WEISS,
   buildStageEnemies,
 } from './arc2Data';
-import { TALENT_SKILLS, TALENT_SKILL_COST, TALENT_SKILL_UNLOCK_LEVEL } from './talentSkillData';
+import { TALENT_SKILLS, TALENT_SKILL_COST, TALENT_SKILL_UNLOCK_LEVEL, ULTIMATE_SKILLS, ULTIMATE_SKILL_COST } from './talentSkillData';
 import { isLoggedIn, authHeaders, getAuthUser } from '../../utils/auth';
 import { cloudStorage } from '../../utils/CloudStorage';
 
@@ -390,6 +391,7 @@ const migrateData = (d) => {
   if (!d.fragments) d.fragments = { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 };
   if (d.fragments && d.fragments.fragment_guldan === undefined) d.fragments.fragment_guldan = 0;
   if (!d.talentSkills) d.talentSkills = {};
+  if (!d.ultimateSkills) d.ultimateSkills = {};
   if (d.alkahest === undefined) d.alkahest = 0;
   // Sync alkahest earned in Manaya (stored in separate localStorage key)
   const pendingAlkahest = parseInt(localStorage.getItem('manaya_alkahest') || '0', 10);
@@ -1108,6 +1110,11 @@ export default function ShadowColosseum() {
       const up = applySkillUpgrades(baseSk, data.skillUpgrades?.[id]?.[i] || 0);
       return { ...up, cd: 0, manaCost: Math.floor(getSkillManaCost(up) * manaCostMult) };
     });
+    // Ultimate skill (4th slot, added on top)
+    if (data.ultimateSkills?.[id] && ULTIMATE_SKILLS[id]) {
+      const ult = ULTIMATE_SKILLS[id];
+      skills.push({ ...ult, cd: 0, manaCost: Math.floor(ult.manaCost * manaCostMult), isUltimate: true });
+    }
 
     // Initial buffs (firstTurn passive)
     const initBuffs = [];
@@ -1127,8 +1134,10 @@ export default function ShadowColosseum() {
       hp: fs.hp, maxHp: fs.hp, atk: fs.atk, def: fs.def,
       spd: fs.spd, crit: Math.min(80, fs.crit), res: Math.min(70, fs.res),
       mana: fs.mana || 100, maxMana: fs.mana || 100, manaRegen: fs.manaRegen || BASE_MANA_REGEN,
+      shield: 0,
       skills, buffs: initBuffs, alive: true, tb: mergedTb, level,
       hunterPassive, // stored for combat-time conditional checks
+      isMage: HUNTERS[id]?.class === 'mage' || HUNTERS[id]?.class === 'support',
       artPassives, // artifact set passives for combat
       passiveState: {
         sianStacks: 0,
@@ -1710,6 +1719,11 @@ export default function ShadowColosseum() {
     if (skill.buffAtk) fighter.buffs.push({ stat: 'atk', value: skill.buffAtk / 100, dur: skill.buffDur || 2 });
     if (skill.buffDef) fighter.buffs.push({ stat: 'def', value: skill.buffDef / 100, dur: skill.buffDur || 2 });
     if (skill.debuffDef) enemy.buffs.push({ stat: 'def', value: -(skill.debuffDef / 100), dur: skill.debuffDur || 2 });
+    // ShieldTeam: apply shield to all alive allies
+    if (result.shieldTeam > 0) {
+      b.team.filter(f => f && f.alive).forEach(f => { f.shield = (f.shield || 0) + result.shieldTeam; });
+      b.log.unshift({ msg: `🛡️ ${fighter.name} protege l'equipe ! +${fmtNum(result.shieldTeam)} Shield`, type: 'player' });
+    }
     // Berserker selfDamage: skill costs % of max HP to use
     let selfDmg = 0;
     if (skill.selfDamage && skill.selfDamage > 0) {
@@ -1822,6 +1836,12 @@ export default function ShadowColosseum() {
         }
         if (tPs.infamyDmgTakenPer > 0 && tPs.infamyStacks > 0) {
           dmg = Math.floor(dmg * (1 + tPs.infamyStacks * tPs.infamyDmgTakenPer));
+        }
+        // Shield absorption
+        if (tFighter.shield > 0 && dmg > 0) {
+          const sa = Math.min(dmg, tFighter.shield);
+          tFighter.shield -= sa;
+          dmg -= sa;
         }
         tFighter.hp = Math.max(0, tFighter.hp - dmg);
         // Burning Curse rescue: heal if below threshold (once)
@@ -2212,8 +2232,10 @@ export default function ShadowColosseum() {
   };
   // Talent Skill spent
   const getSpentTalentSkillPts = (id) => data.talentSkills[id] ? TALENT_SKILL_COST : 0;
-  // Total spent (T1 + T2 + Skill) — shared pool
-  const getSpentTalentPts = (id) => getSpentTalent1Pts(id) + getSpentTalent2Pts(data.talentTree2[id]) + getSpentTalentSkillPts(id);
+  // Ultimate Skill spent
+  const getSpentUltimatePts = (id) => data.ultimateSkills?.[id] ? ULTIMATE_SKILL_COST : 0;
+  // Total spent (T1 + T2 + Skill + Ulti) — shared pool
+  const getSpentTalentPts = (id) => getSpentTalent1Pts(id) + getSpentTalent2Pts(data.talentTree2[id]) + getSpentTalentSkillPts(id) + getSpentUltimatePts(id);
   const getAvailTalentPts = (id) => getTotalTalentPts(getChibiLevel(id).level) - getSpentTalentPts(id);
   const getTreePoints = (id, treeId) => {
     const tree = (data.talentTree[id] || {})[treeId] || {};
@@ -2246,7 +2268,7 @@ export default function ShadowColosseum() {
   const getChibiEquipBonuses = (id) => {
     const artBonuses = computeArtifactBonuses(data.artifacts[id]);
     const wId = data.weapons[id];
-    const weapBonuses = computeWeaponBonuses(wId, wId ? (data.weaponCollection[wId] || 0) : 0);
+    const weapBonuses = computeWeaponBonuses(wId, wId ? (data.weaponCollection[wId] || 0) : 0, data.weaponEnchants);
     return mergeEquipBonuses(artBonuses, weapBonuses);
   };
   const getChibiEveilStars = (id) => HUNTERS[id] ? getHunterStars(raidData, id) : 0;
@@ -2333,6 +2355,21 @@ export default function ShadowColosseum() {
     const ts = { ...data.talentSkills };
     delete ts[id];
     const newData = { ...data, talentSkills: ts };
+    setData(newData);
+    debouncedSaveAndSync(newData);
+  };
+
+  // Ultimate Skill: equip/unequip
+  const equipUltimateSkill = (id) => {
+    if (getAvailTalentPts(id) < ULTIMATE_SKILL_COST && !data.ultimateSkills?.[id]) return;
+    const newData = { ...data, ultimateSkills: { ...(data.ultimateSkills || {}), [id]: true } };
+    setData(newData);
+    debouncedSaveAndSync(newData);
+  };
+  const unequipUltimateSkill = (id) => {
+    const us = { ...(data.ultimateSkills || {}) };
+    delete us[id];
+    const newData = { ...data, ultimateSkills: us };
     setData(newData);
     debouncedSaveAndSync(newData);
   };
@@ -3006,6 +3043,7 @@ export default function ShadowColosseum() {
             }
           });
         } else if (dmgToPlayer > 0) {
+          if (player.shield > 0) { const sa = Math.min(dmgToPlayer, player.shield); player.shield -= sa; dmgToPlayer -= sa; }
           player.hp = Math.max(0, player.hp - dmgToPlayer);
         }
         if (eRes.healed) enemy.hp = Math.min(enemy.maxHp, enemy.hp + eRes.healed);
@@ -3207,6 +3245,11 @@ export default function ShadowColosseum() {
     if (pRes.healed) player.hp = Math.min(player.maxHp, player.hp + pRes.healed);
     if (pRes.buff) player.buffs.push({ ...pRes.buff });
     if (pRes.debuff) enemy.buffs.push({ ...pRes.debuff });
+    // ShieldTeam: apply shield to player (ARC I is solo)
+    if (pRes.shieldTeam > 0) {
+      player.shield = (player.shield || 0) + pRes.shieldTeam;
+      log.push({ text: `🛡️ ${player.name} protege l'equipe ! +${fmtNum(pRes.shieldTeam)} Shield`, type: 'buff', id: Date.now() - 0.005 });
+    }
     // SelfDamage: skill costs % of max HP
     if (playerSkill.selfDamage && playerSkill.selfDamage > 0) {
       const selfDmg = Math.floor(player.maxHp * playerSkill.selfDamage / 100);
@@ -3365,6 +3408,13 @@ export default function ShadowColosseum() {
         dmgToPlayer = 0;
         newKatanaVState.shield = false;
         log.push({ text: `Bouclier Divin absorbe le coup !`, type: 'buff', id: Date.now() + 0.9 });
+      }
+
+      // Shield absorption
+      if (player.shield > 0 && dmgToPlayer > 0) {
+        const sa = Math.min(dmgToPlayer, player.shield);
+        player.shield -= sa;
+        dmgToPlayer -= sa;
       }
 
       player.hp = Math.max(0, player.hp - dmgToPlayer);
@@ -6277,11 +6327,15 @@ export default function ShadowColosseum() {
                           <span className="text-[7px] text-gray-600">Lv{f.level}</span>
                         </div>
                         {/* HP bar */}
-                        <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mt-0.5">
+                        <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mt-0.5 relative">
                           <div className={`h-full transition-all duration-500 rounded-full ${hpPct > 50 ? 'bg-green-500' : hpPct > 25 ? 'bg-yellow-500' : 'bg-red-500'}`}
                             style={{ width: `${hpPct}%` }} />
+                          {(f.shield || 0) > 0 && (
+                            <div className="absolute top-0 h-full bg-cyan-400/60 rounded-full transition-all duration-300"
+                              style={{ left: `${Math.min(hpPct, 100)}%`, width: `${Math.min((f.shield / f.maxHp) * 100, 100 - Math.min(hpPct, 100))}%` }} />
+                          )}
                         </div>
-                        <div className="text-[7px] text-gray-400">{f.hp}/{f.maxHp}</div>
+                        <div className="text-[7px] text-gray-400">{f.hp}/{f.maxHp}{(f.shield || 0) > 0 ? <span className="text-cyan-400"> +{f.shield}🛡️</span> : ''}</div>
                         {/* Mana bar */}
                         <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mt-0.5">
                           <div className="h-full bg-gradient-to-r from-violet-500 to-blue-500 rounded-full transition-all duration-300"
@@ -6448,6 +6502,15 @@ export default function ShadowColosseum() {
                           </div>
                           <span className="text-[9px] text-green-300 font-medium w-20 text-right">{f.hp.toLocaleString()}/{f.maxHp.toLocaleString()}</span>
                         </div>
+                        {(f.shield || 0) > 0 && (
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[9px] text-cyan-400 font-bold w-6">🛡️</span>
+                            <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                              <div className="h-full bg-cyan-400/60 rounded-full" style={{ width: `${Math.min(100, (f.shield / f.maxHp) * 100)}%` }} />
+                            </div>
+                            <span className="text-[9px] text-cyan-300 font-medium w-20 text-right">{f.shield.toLocaleString()}</span>
+                          </div>
+                        )}
                         <div className="flex items-center gap-2">
                           <span className="text-[9px] text-violet-400 font-bold w-6">MP</span>
                           <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
@@ -6605,6 +6668,7 @@ export default function ShadowColosseum() {
                       : sk.manaCost > 0 && activeChar.mana < sk.manaCost;
                     const blocked = onCd || noMana;
                     const isPureSupport = sk.power === 0 && (sk.buffAtk || sk.buffDef || sk.healSelf);
+                    const isUlti = !!sk.isUltimate;
                     return (
                       <button key={i}
                         onClick={() => !blocked && arc2SelectSkill(i)}
@@ -6612,10 +6676,12 @@ export default function ShadowColosseum() {
                         className={`relative p-2 rounded-lg border text-center transition-all ${
                           onCd ? 'border-gray-700/30 bg-gray-800/20 opacity-40' :
                           noMana ? 'border-violet-700/30 bg-violet-900/20 opacity-50' :
+                          isUlti ? 'border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/20 active:scale-95' :
                           isPureSupport ? 'border-green-500/40 bg-green-500/10 hover:bg-green-500/20 active:scale-95' :
                           'border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 active:scale-95'
                         }`}>
                         <div className="text-[10px] font-bold truncate">{sk.name}</div>
+                        {isUlti && <div className="text-[7px] text-blue-400 font-bold">ULTI</div>}
                         <div className="text-[8px] text-gray-400 mt-0.5">
                           {sk.manaScaling ? `DMG: ${Math.floor((activeChar.mana || 0) * sk.manaScaling)}%` : sk.power > 0 ? `DMG: ${sk.power}%` : ''}
                           {sk.buffAtk ? `${sk.power > 0 || sk.manaScaling ? ' ' : ''}ATK +${sk.buffAtk}%` : ''}
@@ -7115,7 +7181,7 @@ export default function ShadowColosseum() {
               <div className="mt-2 px-3 py-1.5 rounded-lg bg-green-500/5 border border-green-500/20 inline-block">
                 <span className="text-sm font-bold text-green-400">{availTP}</span>
                 <span className="text-xs text-gray-400 ml-1">pts dispo</span>
-                <span className="text-[9px] text-gray-500 ml-1">(I:{spent1} + II:{spent2}{data.talentSkills[id] ? ` + S:${TALENT_SKILL_COST}` : ''} / {totalTP})</span>
+                <span className="text-[9px] text-gray-500 ml-1">(I:{spent1} + II:{spent2}{data.talentSkills[id] ? ` + S:${TALENT_SKILL_COST}` : ''}{data.ultimateSkills?.[id] ? ` + U:${ULTIMATE_SKILL_COST}` : ''} / {totalTP})</span>
               </div>
             </div>
 
@@ -7803,21 +7869,71 @@ export default function ShadowColosseum() {
               const skillChoices = TALENT_SKILLS[id] || [];
               const equipped = data.talentSkills[id]; // { skillIndex, replacedSlot } or undefined
               const hasEnoughPts = availTP >= TALENT_SKILL_COST || !!equipped;
+              const ultiData = ULTIMATE_SKILLS[id];
+              const ultiEquipped = !!data.ultimateSkills?.[id];
+              const hasEnoughPtsUlti = availTP >= ULTIMATE_SKILL_COST || ultiEquipped;
 
-              if (skillChoices.length === 0) return (
+              if (skillChoices.length === 0 && !ultiData) return (
                 <div className="text-center text-gray-500 text-xs py-8">Aucun Talent Skill disponible pour ce personnage.</div>
               );
 
               return (
                 <div>
-                  {/* Info banner */}
+                  {/* ── ULTIME SECTION ── */}
+                  {ultiData && (
+                    <div className="mb-4 p-3 rounded-xl bg-blue-500/5 border border-blue-500/20">
+                      <div className="text-[10px] text-blue-400 font-bold mb-1">ULTIME — {ULTIMATE_SKILL_COST} pts</div>
+                      <div className="text-[9px] text-gray-400 mb-2">Un 4eme skill puissant qui s'ajoute a tes 3 skills (ne remplace rien).</div>
+                      <div className={`p-3 rounded-xl border transition-all ${
+                        ultiEquipped ? 'border-blue-400/60 bg-blue-500/10' : 'border-gray-700/30 bg-gray-800/20'
+                      }`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-sm font-bold ${ultiEquipped ? 'text-blue-300' : 'text-white'}`}>{ultiData.name}</span>
+                              {ultiEquipped && <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold">DEBLOQUE</span>}
+                            </div>
+                            <div className="text-[10px] text-gray-400 mt-1">{ultiData.desc}</div>
+                            <div className="flex flex-wrap gap-2 mt-1.5">
+                              {ultiData.shieldTeamPctDef > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400">Shield {Math.round(ultiData.shieldTeamPctDef * 100)}% DEF</span>}
+                              {ultiData.power > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">DMG {ultiData.power}%</span>}
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400">CD {ultiData.cdMax}</span>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400">Mana {ultiData.manaCost}</span>
+                            </div>
+                          </div>
+                          <div>
+                            {!ultiEquipped && (
+                              <button
+                                onClick={() => equipUltimateSkill(id)}
+                                disabled={!hasEnoughPtsUlti}
+                                className="px-3 py-1.5 rounded-lg text-[10px] font-bold border border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 disabled:opacity-30 transition-all"
+                              >
+                                Debloquer
+                              </button>
+                            )}
+                            {ultiEquipped && (
+                              <button
+                                onClick={() => unequipUltimateSkill(id)}
+                                className="px-3 py-1.5 rounded-lg text-[10px] font-bold border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all"
+                              >
+                                Retirer
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── TALENT SKILL SECTION ── */}
+                  {skillChoices.length > 0 && (
+                  <>
                   <div className="mb-4 p-2.5 rounded-xl bg-cyan-500/5 border border-cyan-500/20 text-center">
                     <div className="text-[10px] text-cyan-400 font-bold">Talent Skill — {TALENT_SKILL_COST} pts</div>
                     <div className="text-[9px] text-gray-400 mt-0.5">Choisis 1 skill unique puissant. Il remplacera un de tes 3 skills par defaut.</div>
                     <div className="text-[9px] text-gray-500 mt-0.5">Ces skills coutent plus de mana mais sont bien plus puissants.</div>
                   </div>
 
-                  {/* Current default skills preview */}
                   {replacingSkillIdx !== null && (
                     <div className="mb-4 p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/30">
                       <div className="text-[10px] text-amber-400 font-bold mb-2 text-center">Quel skill remplacer ?</div>
@@ -7907,6 +8023,8 @@ export default function ShadowColosseum() {
                       );
                     })}
                   </div>
+                  </>
+                  )}
                 </div>
               );
             })()}
@@ -7937,6 +8055,14 @@ export default function ShadowColosseum() {
                   className="text-xs text-gray-500 hover:text-red-400 transition-colors py-2"
                 >
                   Reset Talent Skill {getRespecCost(id, 'talentSkill') > 0 ? `(${getRespecCost(id, 'talentSkill')} coins)` : '(gratuit)'}
+                </button>
+              )}
+              {talentTab === 3 && data.ultimateSkills?.[id] && (
+                <button
+                  onClick={() => unequipUltimateSkill(id)}
+                  className="text-xs text-gray-500 hover:text-red-400 transition-colors py-2 ml-2"
+                >
+                  Reset Ultime (gratuit)
                 </button>
               )}
             </div>
@@ -8032,7 +8158,8 @@ export default function ShadowColosseum() {
                     <div className="flex-1">
                       <div className="text-xs font-bold text-amber-300">{weapon.name} <span className="text-yellow-400 text-[10px]">A{wAw}</span> <span className="text-amber-400/70 text-[9px]">iLv{computeWeaponILevel(weaponId, wAw)}</span></div>
                       <div className="text-[9px] text-gray-400">
-                        ATK +{weapon.atk} | {MAIN_STAT_VALUES[weapon.bonusStat]?.name || weapon.bonusStat} +{weapon.bonusValue}
+                        ATK +{weapon.atk}{(data.weaponEnchants?.[weaponId]?.atk || 0) > 0 && <span className="text-green-400"> (+{data.weaponEnchants[weaponId].atk.toFixed(1)})</span>}
+                        {' | '}{MAIN_STAT_VALUES[weapon.bonusStat]?.name || weapon.bonusStat} +{weapon.bonusValue}{(data.weaponEnchants?.[weaponId]?.bonus || 0) > 0 && <span className="text-green-400"> (+{data.weaponEnchants[weaponId].bonus.toFixed(1)})</span>}
                       </div>
                       <div className="text-[10px] text-gray-500">{weapon.desc}</div>
                     </div>
@@ -8262,6 +8389,7 @@ export default function ShadowColosseum() {
                               <span className="text-[10px]">{mainDef?.icon || '?'}</span>
                               <span className="text-[9px] text-gray-300 font-medium">{mainDef?.name || '?'}</span>
                               <span className="text-[10px] font-black text-white ml-auto">{art.mainValue}</span>
+                              {(art.enchants?.main || 0) > 0 && <span className="text-[8px] text-green-400 font-bold">(+{art.enchants.main.toFixed(1)})</span>}
                             </div>
                             {/* ALL sub stats */}
                             <div className="mt-0.5 grid grid-cols-2 gap-x-1 gap-y-px">
@@ -8270,9 +8398,10 @@ export default function ShadowColosseum() {
                                 const weight = roleWeights[sub.id] || 0.5;
                                 const isGood = weight >= 2.5;
                                 const isOk = weight >= 1.5;
+                                const subEnch = art.enchants?.subs?.[sub.id] || 0;
                                 return (
                                   <div key={si} className={`text-[8px] truncate ${isGood ? 'text-green-400 font-bold' : isOk ? 'text-blue-300' : 'text-gray-500'}`}>
-                                    {subDef?.name || sub.id} +{sub.value}
+                                    {subDef?.name || sub.id} +{sub.value}{subEnch > 0 && <span className="text-green-400"> (+{subEnch.toFixed(1)})</span>}
                                   </div>
                                 );
                               })}
@@ -8376,28 +8505,93 @@ export default function ShadowColosseum() {
                         </div>
                       </div>
 
-                      {/* Stats */}
+                      {/* Stats + Enchant */}
                       <div className="mb-2 p-2 rounded-lg bg-gray-800/30 border border-gray-700/20">
                         {(() => {
                           const nextVal = eqArt.level < MAX_ARTIFACT_LEVEL ? +(eqMainDef.base + eqMainDef.perLevel * (eqArt.level + 1)).toFixed(1) : eqArt.mainValue;
+                          const mainEnchant = eqArt.enchants?.main || 0;
+                          const canEnchantMain = (data.alkahest || 0) >= ENCHANT_ALKAHEST_COST;
                           return (
-                            <div className="text-xs text-gray-200 font-bold mb-1">
-                              {eqMainDef?.icon} {eqMainDef?.name}: +{eqArt.mainValue}
-                              {eqArt.level < MAX_ARTIFACT_LEVEL && <span className="text-green-400/60 ml-1">{'\u2192'} {nextVal}</span>}
+                            <div className="flex items-center gap-1 mb-1">
+                              <div className="flex-1 text-xs font-bold">
+                                <span className="text-gray-200">{eqMainDef?.icon} {eqMainDef?.name}: +{eqArt.mainValue}</span>
+                                {mainEnchant > 0 && <span className="text-green-400 ml-1">(+{mainEnchant.toFixed(1)})</span>}
+                                {eqArt.level < MAX_ARTIFACT_LEVEL && <span className="text-green-400/40 ml-1">{'\u2192'} {nextVal}</span>}
+                              </div>
+                              <button
+                                onClick={() => {
+                                  if (!canEnchantMain) { beruSay("Pas assez d'Alkahest pour enchanter !", 'thinking'); return; }
+                                  const { artifact: enc, bonus, previousBonus } = enchantArtifactStat(eqArt, 'main');
+                                  setData(prev => {
+                                    const nd = { ...prev, alkahest: (prev.alkahest || 0) - ENCHANT_ALKAHEST_COST };
+                                    nd.artifacts = { ...prev.artifacts, [id]: { ...prev.artifacts[id], [equipDetailSlot]: enc } };
+                                    return nd;
+                                  });
+                                  if (bonus > previousBonus) beruSay(`Enchant UP ! +${bonus.toFixed(1)} (avant: ${previousBonus > 0 ? '+' + previousBonus.toFixed(1) : '0'})`, 'excited');
+                                  else beruSay(`Enchant DOWN... +${bonus.toFixed(1)} (avant: +${previousBonus.toFixed(1)})`, 'shocked');
+                                }}
+                                className={`text-[8px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${canEnchantMain ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
+                                {mainEnchant > 0 ? '\u2697\uFE0F Re-ench' : '\u2697\uFE0F Ench'} {ENCHANT_ALKAHEST_COST}
+                              </button>
                             </div>
                           );
                         })()}
                         {eqArt.subs.map((sub, i) => {
                           const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
+                          const subEnchant = eqArt.enchants?.subs?.[sub.id] || 0;
+                          const canEnchantSub = (data.alkahest || 0) >= ENCHANT_ALKAHEST_COST;
                           return (
-                            <div key={i} className="text-[10px] text-gray-400">
-                              {subDef?.name || sub.id}: +{sub.value}
-                              {eqIsMilestone && <span className="text-amber-400/50 ml-1">(chance {'\u2B06\uFE0F'})</span>}
+                            <div key={i} className="flex items-center gap-1 text-[10px]">
+                              <div className="flex-1">
+                                <span className="text-gray-400">{subDef?.name || sub.id}: +{sub.value}</span>
+                                {subEnchant > 0 && <span className="text-green-400 ml-1">(+{subEnchant.toFixed(1)})</span>}
+                                {eqIsMilestone && <span className="text-amber-400/50 ml-1">(chance {'\u2B06\uFE0F'})</span>}
+                              </div>
+                              <button
+                                onClick={() => {
+                                  if (!canEnchantSub) { beruSay("Pas assez d'Alkahest !", 'thinking'); return; }
+                                  const { artifact: enc, bonus, previousBonus } = enchantArtifactStat(eqArt, sub.id);
+                                  setData(prev => {
+                                    const nd = { ...prev, alkahest: (prev.alkahest || 0) - ENCHANT_ALKAHEST_COST };
+                                    nd.artifacts = { ...prev.artifacts, [id]: { ...prev.artifacts[id], [equipDetailSlot]: enc } };
+                                    return nd;
+                                  });
+                                  if (bonus > previousBonus) beruSay(`Enchant UP ! +${bonus.toFixed(1)}`, 'excited');
+                                  else beruSay(`Enchant DOWN... +${bonus.toFixed(1)} (avant: +${previousBonus.toFixed(1)})`, 'shocked');
+                                }}
+                                className={`text-[8px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${canEnchantSub ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
+                                {subEnchant > 0 ? '\u2697\uFE0F Re' : '\u2697\uFE0F'} {ENCHANT_ALKAHEST_COST}
+                              </button>
                             </div>
                           );
                         })}
                         {eqIsMilestone && <div className="text-[9px] text-amber-400 mt-1 font-bold">{'\u2B50'} Palier Lv{eqArt.level + 1} — Boost sub-stat !</div>}
                       </div>
+
+                      {/* Re-roll Main Stat (set artifacts only) */}
+                      {eqArt.set && (
+                        <div className="mb-2">
+                          <button
+                            onClick={() => {
+                              if ((data.alkahest || 0) < ENCHANT_ALKAHEST_COST) { beruSay("Pas assez d'Alkahest !", 'thinking'); return; }
+                              if (!window.confirm(`Re-roll le main stat de cet artefact ?\n\nActuel: ${MAIN_STAT_VALUES[eqArt.mainStat]?.name}\nPool: ${ENCHANT_MAIN_STAT_POOL.map(s => MAIN_STAT_VALUES[s]?.name).join(', ')}\n\nCout: ${ENCHANT_ALKAHEST_COST} Alkahest\nL'enchant du main stat sera perdu !`)) return;
+                              const { artifact: enc, oldMainStat, newMainStat } = rerollArtifactMainStat(eqArt);
+                              setData(prev => {
+                                const nd = { ...prev, alkahest: (prev.alkahest || 0) - ENCHANT_ALKAHEST_COST };
+                                nd.artifacts = { ...prev.artifacts, [id]: { ...prev.artifacts[id], [equipDetailSlot]: enc } };
+                                return nd;
+                              });
+                              beruSay(`Main stat change ! ${MAIN_STAT_VALUES[oldMainStat]?.name} → ${MAIN_STAT_VALUES[newMainStat]?.name}`, newMainStat === oldMainStat ? 'shocked' : 'excited');
+                            }}
+                            className={`w-full py-1.5 rounded-lg text-[10px] font-bold transition-colors ${
+                              (data.alkahest || 0) >= ENCHANT_ALKAHEST_COST
+                                ? 'bg-violet-600/25 text-violet-300 hover:bg-violet-600/40'
+                                : 'bg-gray-700/20 text-gray-600'
+                            }`}>
+                            {'\uD83C\uDFB2'} Re-roll Main Stat ({ENCHANT_ALKAHEST_COST}{'\u2697\uFE0F'})
+                          </button>
+                        </div>
+                      )}
 
                       {/* Actions */}
                       <div className="flex gap-2">
@@ -11555,17 +11749,51 @@ export default function ShadowColosseum() {
                 </div>
                 <button onClick={() => setWeaponDetailId(null)} className="text-gray-500 hover:text-white text-xl">&times;</button>
               </div>
-              {/* Base stats */}
-              <div className="bg-white/5 rounded-xl p-3 border border-white/10 mb-3">
-                <div className="text-xs text-gray-400 mb-1">{wDet.desc}</div>
-                <div className="flex gap-4 text-sm">
-                  <span className="text-white font-bold">ATK +{wDet.atk}</span>
-                  <span className="text-amber-300">{MAIN_STAT_VALUES[wDet.bonusStat]?.name} +{wDet.bonusValue}</span>
-                  {wDet.fireRes && <span className="text-orange-400">Fire RES +{wDet.fireRes}%</span>}
+              {/* Base stats + Enchant */}
+              {(() => {
+                const wEnc = data.weaponEnchants?.[weaponDetailId] || {};
+                const canEnchW = owned && (data.alkahest || 0) >= ENCHANT_ALKAHEST_COST;
+                return (
+                <div className="bg-white/5 rounded-xl p-3 border border-white/10 mb-3">
+                  <div className="text-xs text-gray-400 mb-1">{wDet.desc}</div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-white font-bold">ATK +{wDet.atk}</span>
+                      {(wEnc.atk || 0) > 0 && <span className="text-green-400 text-xs font-bold">(+{wEnc.atk.toFixed(1)})</span>}
+                      {owned && (
+                        <button onClick={() => {
+                          if (!canEnchW) { beruSay("Pas assez d'Alkahest !", 'thinking'); return; }
+                          const { enchants: newEnc, bonus, previousBonus } = enchantWeaponStat(weaponDetailId, 'atk', data.weaponEnchants || {});
+                          setData(prev => ({ ...prev, alkahest: (prev.alkahest || 0) - ENCHANT_ALKAHEST_COST, weaponEnchants: newEnc }));
+                          if (bonus > previousBonus) beruSay(`Enchant ATK UP ! +${bonus.toFixed(1)}`, 'excited');
+                          else beruSay(`Enchant ATK DOWN... +${bonus.toFixed(1)}`, 'shocked');
+                        }} className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${canEnchW ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
+                          {(wEnc.atk || 0) > 0 ? '\u2697\uFE0F Re-ench' : '\u2697\uFE0F Ench'} {ENCHANT_ALKAHEST_COST}
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-amber-300">{MAIN_STAT_VALUES[wDet.bonusStat]?.name} +{wDet.bonusValue}</span>
+                      {(wEnc.bonus || 0) > 0 && <span className="text-green-400 text-xs font-bold">(+{wEnc.bonus.toFixed(1)})</span>}
+                      {owned && (
+                        <button onClick={() => {
+                          if (!canEnchW) { beruSay("Pas assez d'Alkahest !", 'thinking'); return; }
+                          const { enchants: newEnc, bonus, previousBonus } = enchantWeaponStat(weaponDetailId, 'bonus', data.weaponEnchants || {});
+                          setData(prev => ({ ...prev, alkahest: (prev.alkahest || 0) - ENCHANT_ALKAHEST_COST, weaponEnchants: newEnc }));
+                          if (bonus > previousBonus) beruSay(`Enchant UP ! +${bonus.toFixed(1)}`, 'excited');
+                          else beruSay(`Enchant DOWN... +${bonus.toFixed(1)}`, 'shocked');
+                        }} className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${canEnchW ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
+                          {(wEnc.bonus || 0) > 0 ? '\u2697\uFE0F Re-ench' : '\u2697\uFE0F Ench'} {ENCHANT_ALKAHEST_COST}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {wDet.fireRes && <div className="text-sm text-orange-400 mt-1">Fire RES +{wDet.fireRes}%</div>}
+                  {owned && <div className="text-xs mt-2 flex items-center gap-3"><span className="text-yellow-400 font-bold">Eveil : A{wAw}/{MAX_WEAPON_AWAKENING}</span><span className="text-amber-400 font-bold">iLv {computeWeaponILevel(weaponDetailId, wAw)}</span></div>}
+                  {!owned && <div className="text-xs mt-2 flex items-center gap-3"><span className="text-gray-500 italic">Non possedee</span><span className="text-amber-400/50">iLv {computeWeaponILevel(weaponDetailId, 0)}</span></div>}
                 </div>
-                {owned && <div className="text-xs mt-2 flex items-center gap-3"><span className="text-yellow-400 font-bold">Eveil : A{wAw}/{MAX_WEAPON_AWAKENING}</span><span className="text-amber-400 font-bold">iLv {computeWeaponILevel(weaponDetailId, wAw)}</span></div>}
-                {!owned && <div className="text-xs mt-2 flex items-center gap-3"><span className="text-gray-500 italic">Non possedee</span><span className="text-amber-400/50">iLv {computeWeaponILevel(weaponDetailId, 0)}</span></div>}
-              </div>
+                );
+              })()}
               {/* Awakening passives A1-A5 */}
               <div className="text-xs font-bold text-amber-400 mb-1.5">Passifs d'Eveil</div>
               <div className="space-y-1.5 mb-3">
