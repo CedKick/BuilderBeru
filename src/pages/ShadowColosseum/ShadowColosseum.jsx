@@ -3863,14 +3863,14 @@ export default function ShadowColosseum() {
     // Auto-farm stats tracking
     if (autoReplayRef.current) {
       const levelsGained = newLevel - level;
-      const lootCount = (hunterDrop ? 1 : 0) + (weaponDrop ? 1 : 0) + (guaranteedArtifact ? 1 : 0) + (hammerDrop ? 1 : 0);
+      const lootCount = hunterDrops.length + (weaponDrop ? 1 : 0) + (guaranteedArtifact ? 1 : 0) + (hammerDrop ? 1 : 0) + setUltimeDrops.length;
       setAutoFarmStats(prev => ({
         runs: prev.runs + 1,
         wins: prev.wins + 1,
         levels: prev.levels + levelsGained,
         coins: prev.coins + scaledCoins,
         loots: prev.loots + lootCount,
-        hunters: prev.hunters + (hunterDrop ? 1 : 0),
+        hunters: prev.hunters + hunterDrops.length,
         weapons: prev.weapons + (weaponDrop ? 1 : 0),
         artifacts: prev.artifacts + (guaranteedArtifact ? 1 : 0),
       }));
