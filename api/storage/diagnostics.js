@@ -23,16 +23,15 @@ export default async function handler(req, res) {
     // 1. Table sizes (actual disk usage)
     const tableSizes = await query(`
       SELECT
-        relname AS table_name,
-        pg_size_pretty(pg_total_relation_size(relid)) AS total_size,
-        pg_total_relation_size(relid) AS total_bytes,
-        pg_size_pretty(pg_relation_size(relid)) AS data_size,
-        pg_size_pretty(pg_total_relation_size(relid) - pg_relation_size(relid)) AS index_toast_size,
-        n_live_tup AS live_rows,
-        n_dead_tup AS dead_rows
-      FROM pg_stat_user_tables
-      JOIN pg_class ON pg_stat_user_tables.relname = pg_class.relname
-      ORDER BY pg_total_relation_size(relid) DESC
+        s.relname AS table_name,
+        pg_size_pretty(pg_total_relation_size(s.relid)) AS total_size,
+        pg_total_relation_size(s.relid) AS total_bytes,
+        pg_size_pretty(pg_relation_size(s.relid)) AS data_size,
+        pg_size_pretty(pg_total_relation_size(s.relid) - pg_relation_size(s.relid)) AS index_toast_size,
+        s.n_live_tup AS live_rows,
+        s.n_dead_tup AS dead_rows
+      FROM pg_stat_user_tables s
+      ORDER BY pg_total_relation_size(s.relid) DESC
       LIMIT 20
     `);
 
