@@ -40,12 +40,12 @@ export const PLAYER = {
 
 export const BOSS = {
   RADIUS: 75,                      // Hitbox radius (x1.5 bigger)
-  ENRAGE_TIMER: 600,               // 10 minutes in seconds
-  ENRAGE_HP_PERCENT: 8,            // Permanent enrage below 8%
+  ENRAGE_TIMER: 900,               // 15 minutes in seconds
+  ENRAGE_HP_PERCENT: 5,            // Permanent enrage below 5%
   ENRAGE_SPEED_MULT: 2.0,
   ENRAGE_DMG_MULT: 2.0,
   // Boss HP scales with player count: index = playerCount
-  PLAYER_SCALE: [0, 0.12, 0.28, 0.50, 0.75, 1.0],
+  PLAYER_SCALE: [0, 0.12, 0.28, 0.65, 0.85, 1.0],
   SOLO_MECHANIC_MULT: 0.4,         // Mechanics do 40% in solo (no oneshot)
 };
 

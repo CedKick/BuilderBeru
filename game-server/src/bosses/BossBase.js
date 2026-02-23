@@ -143,6 +143,9 @@ export class BossBase {
     // Check phase transitions
     this._checkPhases(gameState);
 
+    // Frozen state (enrage animation) — skip all actions
+    if (this._frozen) return;
+
     // Try to start a new pattern
     if (this.patternCooldown <= 0) {
       const pattern = this._selectPattern(gameState);

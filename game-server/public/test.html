@@ -223,6 +223,77 @@
     .game-end-xp-bar { height: 8px; background: #1e293b; border-radius: 4px; margin-top: 8px; overflow: hidden; }
     .game-end-xp-bar-fill { height: 100%; background: linear-gradient(90deg, #7c3aed, #a78bfa); border-radius: 4px; animation: xpBarFill 1.5s ease-out; }
     .game-end-timer { text-align: center; font-size: 11px; color: #64748b; margin-top: 10px; }
+
+    /* ── Loot Drop Section ── */
+    .game-end-loot { margin-top: 12px; padding: 10px; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; }
+    .game-end-loot h4 { font-size: 12px; color: #f59e0b; margin-bottom: 6px; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+    .loot-items { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+    .loot-item {
+      background: #1a1a2e; border: 1px solid #444; border-radius: 6px; padding: 6px 8px; text-align: center; min-width: 80px;
+      cursor: default; transition: border-color 0.2s;
+    }
+    .loot-item:hover { border-color: #a78bfa; }
+    .loot-item .loot-icon { font-size: 18px; }
+    .loot-item .loot-name { font-size: 9px; color: #e2e8f0; margin-top: 2px; }
+    .loot-item .loot-main { font-size: 8px; color: #a78bfa; }
+    .loot-item .loot-tier { font-size: 8px; font-weight: bold; }
+
+    /* ── Gear Panel (Sidebar) ── */
+    .gear-panel { background: #1a1a2e; border: 1px solid #f59e0b44; border-radius: 6px; padding: 6px; margin-top: 4px; }
+    .gear-panel h3 { color: #f59e0b; }
+    .gear-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin-bottom: 4px; }
+    .gear-slot {
+      background: #111; border: 1px solid #333; border-radius: 4px; padding: 4px; cursor: pointer;
+      display: flex; align-items: center; gap: 4px; min-height: 32px; transition: border-color 0.15s;
+    }
+    .gear-slot:hover { border-color: #a78bfa; }
+    .gear-slot.equipped { border-color: #f59e0b; }
+    .gear-slot .gs-icon { font-size: 14px; flex-shrink: 0; width: 18px; text-align: center; }
+    .gear-slot .gs-info { flex: 1; min-width: 0; overflow: hidden; }
+    .gear-slot .gs-name { font-size: 8px; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gear-slot .gs-stat { font-size: 7px; color: #a78bfa; }
+    .gear-slot .gs-empty { font-size: 8px; color: #555; font-style: italic; }
+    .gear-weapon {
+      background: #111; border: 1px solid #333; border-radius: 4px; padding: 5px; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; margin-bottom: 4px; transition: border-color 0.15s;
+    }
+    .gear-weapon:hover { border-color: #a78bfa; }
+    .gear-weapon.equipped { border-color: #ef4444; }
+    .gear-weapon .gw-icon { font-size: 16px; }
+    .gear-weapon .gw-info { flex: 1; }
+    .gear-weapon .gw-name { font-size: 9px; color: #ccc; }
+    .gear-weapon .gw-stat { font-size: 8px; color: #ef4444; }
+    .gear-weapon .gw-empty { font-size: 9px; color: #555; font-style: italic; }
+    .gear-summary { font-size: 8px; color: #94a3b8; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 4px; }
+    .gear-summary span { background: #1e293b; padding: 1px 4px; border-radius: 3px; }
+
+    /* ── Inventory Modal ── */
+    .inv-modal {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 100;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(3px);
+    }
+    .inv-panel {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      background: #1a1a2e; border: 2px solid #333; border-radius: 10px; padding: 16px;
+      min-width: 360px; max-width: 500px; max-height: 70vh; overflow-y: auto;
+    }
+    .inv-panel h3 { color: #f59e0b; margin-bottom: 8px; font-size: 14px; }
+    .inv-items { display: flex; flex-direction: column; gap: 4px; }
+    .inv-row {
+      display: flex; align-items: center; gap: 8px; background: #111; border: 1px solid #333;
+      border-radius: 6px; padding: 6px 8px; cursor: pointer; transition: border-color 0.15s;
+    }
+    .inv-row:hover { border-color: #a78bfa; }
+    .inv-row .inv-icon { font-size: 20px; flex-shrink: 0; }
+    .inv-row .inv-info { flex: 1; }
+    .inv-row .inv-name { font-size: 10px; color: #e2e8f0; }
+    .inv-row .inv-main { font-size: 9px; color: #a78bfa; }
+    .inv-row .inv-subs { font-size: 8px; color: #64748b; }
+    .inv-row .inv-tier { font-size: 9px; font-weight: bold; }
+    .inv-row .inv-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .inv-row .inv-actions button { font-size: 9px; padding: 2px 6px; }
+    .inv-empty { text-align: center; color: #555; font-size: 11px; padding: 20px; }
+    .inv-close { position: absolute; top: 8px; right: 12px; background: #ef4444; font-size: 10px; padding: 2px 8px; }
   </style>
 </head>
 <body>
@@ -283,6 +354,17 @@
         <div id="statPointsRemaining" style="font-size:10px;color:#f59e0b;margin-bottom:4px"></div>
         <div id="statAllocUI"></div>
         <button onclick="resetStatPoints()" style="width:100%;margin-top:4px;background:#ef4444;font-size:9px;padding:3px">Reset Stats</button>
+      </div>
+
+      <div class="gear-panel" id="gearPanel" style="display:none">
+        <h3>Équipement Raid</h3>
+        <div class="gear-weapon" id="gearWeaponSlot" onclick="openInventory('weapon')">
+          <span class="gw-icon">⚔️</span>
+          <div class="gw-info"><span class="gw-empty">Aucune arme</span></div>
+        </div>
+        <div class="gear-slots" id="gearSlots"></div>
+        <div class="gear-summary" id="gearSummary"></div>
+        <button onclick="openInventory('all')" style="width:100%;margin-top:3px;background:#b45309;font-size:9px;padding:3px">Inventaire</button>
       </div>
 
       <div class="sim-panel" id="simPanel">
@@ -405,7 +487,20 @@
               <div id="gameEndXpBarFill" class="game-end-xp-bar-fill"></div>
             </div>
           </div>
+          <div id="gameEndLoot" class="game-end-loot" style="display:none">
+            <h4>🎁 Butin obtenu</h4>
+            <div class="loot-items" id="gameEndLootItems"></div>
+          </div>
           <div id="gameEndTimer" class="game-end-timer"></div>
+        </div>
+      </div>
+
+      <!-- Inventory Modal -->
+      <div class="inv-modal" id="invModal" onclick="if(event.target===this)closeInventory()">
+        <div class="inv-panel">
+          <button class="inv-close" onclick="closeInventory()">✕</button>
+          <h3 id="invTitle">Inventaire</h3>
+          <div class="inv-items" id="invItems"></div>
         </div>
       </div>
     </div>
@@ -433,7 +528,7 @@
     };
 
     const ELEMENT_ICONS = { fire: '\u{1F525}', water: '\u{1F4A7}', shadow: '\u{1F31F}' };
-    const MANAYA_VERSION = 'v1.01';
+    const MANAYA_VERSION = 'v1.02';
     const CLASS_COLORS = { tank: '#3b82f6', healer: '#10b981', dps_cac: '#ef4444', dps_range: '#f59e0b' };
     const CLASS_LABELS = { tank: 'Tank', healer: 'Healer', dps_cac: 'Warrior', dps_range: 'Archer' };
     const BAR_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899'];
@@ -862,6 +957,262 @@
     updateProfileDisplay();
     updateStatsPanel();
 
+    // ── Raid Gear System (Client) ──
+    const INVENTORY_KEY = 'manaya_raid_inventory';
+    const EQUIPPED_KEY = 'manaya_raid_equipped';
+
+    const GEAR_SLOT_DEFS = [
+      { id: 'helmet',   name: 'Casque',   icon: '🪖' },
+      { id: 'chest',    name: 'Plastron', icon: '🛡️' },
+      { id: 'gloves',   name: 'Gants',    icon: '🧤' },
+      { id: 'boots',    name: 'Bottes',   icon: '👢' },
+      { id: 'necklace', name: 'Collier',  icon: '📿' },
+      { id: 'bracelet', name: 'Bracelet', icon: '⌚' },
+      { id: 'ring',     name: 'Anneau',   icon: '💍' },
+      { id: 'earring',  name: 'Boucles',  icon: '✨' },
+    ];
+
+    const STAT_LABELS = {
+      hp_flat: 'HP', hp_pct: 'HP%', atk_flat: 'ATK', atk_pct: 'ATK%',
+      def_flat: 'DEF', def_pct: 'DEF%', spd_flat: 'SPD', crit_rate: 'CRIT',
+      crit_dmg: 'CRIT DMG', res_flat: 'RES', mana_flat: 'Mana',
+    };
+
+    function loadInventory() {
+      try { return JSON.parse(localStorage.getItem(INVENTORY_KEY)) || []; } catch { return []; }
+    }
+    function saveInventory(inv) { localStorage.setItem(INVENTORY_KEY, JSON.stringify(inv)); }
+    function loadEquipped() {
+      try { return JSON.parse(localStorage.getItem(EQUIPPED_KEY)) || { weapon: null, artifacts: {} }; } catch { return { weapon: null, artifacts: {} }; }
+    }
+    function saveEquipped(eq) {
+      localStorage.setItem(EQUIPPED_KEY, JSON.stringify(eq));
+      updateGearPanel();
+    }
+
+    function addToInventory(items) {
+      const inv = loadInventory();
+      for (const item of items) inv.push(item);
+      saveInventory(inv);
+    }
+
+    function removeFromInventory(itemId) {
+      let inv = loadInventory();
+      inv = inv.filter(i => i.id !== itemId);
+      saveInventory(inv);
+    }
+
+    function equipItem(item) {
+      const eq = loadEquipped();
+      if (item.type === 'weapon') {
+        // Unequip current weapon → back to inventory
+        if (eq.weapon) addToInventory([eq.weapon]);
+        eq.weapon = item;
+        removeFromInventory(item.id);
+      } else {
+        // Artifact — equip to its slot
+        const slotId = item.slot;
+        if (eq.artifacts[slotId]) addToInventory([eq.artifacts[slotId]]);
+        eq.artifacts[slotId] = item;
+        removeFromInventory(item.id);
+      }
+      saveEquipped(eq);
+    }
+
+    function unequipItem(slotId) {
+      const eq = loadEquipped();
+      if (slotId === 'weapon') {
+        if (eq.weapon) { addToInventory([eq.weapon]); eq.weapon = null; }
+      } else {
+        if (eq.artifacts[slotId]) { addToInventory([eq.artifacts[slotId]]); delete eq.artifacts[slotId]; }
+      }
+      saveEquipped(eq);
+    }
+
+    function getGearBonuses() {
+      const eq = loadEquipped();
+      const b = {
+        hp_flat: 0, hp_pct: 0, atk_flat: 0, atk_pct: 0, def_flat: 0, def_pct: 0,
+        spd_flat: 0, crit_rate: 0, crit_dmg: 0, res_flat: 0, mana_flat: 0,
+      };
+      if (eq.weapon) {
+        b.atk_flat += eq.weapon.atk || 0;
+        if (eq.weapon.bonusStat && b[eq.weapon.bonusStat] !== undefined) {
+          b[eq.weapon.bonusStat] += eq.weapon.bonusValue || 0;
+        }
+      }
+      for (const art of Object.values(eq.artifacts)) {
+        if (!art) continue;
+        if (art.mainStat && b[art.mainStat.id] !== undefined) b[art.mainStat.id] += art.mainStat.value;
+        for (const sub of (art.subs || [])) {
+          if (b[sub.id] !== undefined) b[sub.id] += sub.value;
+        }
+      }
+      return b;
+    }
+
+    function updateGearPanel() {
+      const profile = loadProfile();
+      const panel = document.getElementById('gearPanel');
+      if (!profile) { panel.style.display = 'none'; return; }
+      panel.style.display = 'block';
+
+      const eq = loadEquipped();
+
+      // Weapon slot
+      const wSlot = document.getElementById('gearWeaponSlot');
+      if (eq.weapon) {
+        wSlot.className = 'gear-weapon equipped';
+        wSlot.innerHTML =
+          '<span class="gw-icon">' + (eq.weapon.icon || '⚔️') + '</span>' +
+          '<div class="gw-info">' +
+          '<div class="gw-name" style="color:' + (eq.weapon.tierColor || '#9ca3af') + '">' + eq.weapon.name + '</div>' +
+          '<div class="gw-stat">ATK +' + eq.weapon.atk + (eq.weapon.bonusStat ? ' | ' + STAT_LABELS[eq.weapon.bonusStat] + ' +' + eq.weapon.bonusValue : '') + '</div>' +
+          '</div>';
+      } else {
+        wSlot.className = 'gear-weapon';
+        wSlot.innerHTML = '<span class="gw-icon">⚔️</span><div class="gw-info"><span class="gw-empty">Aucune arme</span></div>';
+      }
+
+      // Artifact slots
+      const slotsEl = document.getElementById('gearSlots');
+      let slotsHtml = '';
+      for (const slot of GEAR_SLOT_DEFS) {
+        const art = eq.artifacts[slot.id];
+        if (art) {
+          slotsHtml += '<div class="gear-slot equipped" onclick="openInventory(\'' + slot.id + '\')">' +
+            '<span class="gs-icon">' + slot.icon + '</span>' +
+            '<div class="gs-info">' +
+            '<div class="gs-name" style="color:' + (art.tierColor || '#9ca3af') + '">' + art.tierLabel + '</div>' +
+            '<div class="gs-stat">' + art.mainStat.label + ' +' + art.mainStat.value + '</div>' +
+            '</div></div>';
+        } else {
+          slotsHtml += '<div class="gear-slot" onclick="openInventory(\'' + slot.id + '\')">' +
+            '<span class="gs-icon">' + slot.icon + '</span>' +
+            '<div class="gs-info"><span class="gs-empty">' + slot.name + '</span></div></div>';
+        }
+      }
+      slotsEl.innerHTML = slotsHtml;
+
+      // Summary
+      const bonuses = getGearBonuses();
+      const summaryEl = document.getElementById('gearSummary');
+      let sumHtml = '';
+      for (const [stat, val] of Object.entries(bonuses)) {
+        if (val > 0) {
+          const pct = stat.endsWith('_pct') ? '%' : '';
+          sumHtml += '<span style="color:#a78bfa">' + STAT_LABELS[stat] + ' +' + val + pct + '</span>';
+        }
+      }
+      summaryEl.innerHTML = sumHtml || '<span style="color:#555">Aucun bonus</span>';
+    }
+
+    let currentInvFilter = 'all';
+
+    function openInventory(filter) {
+      currentInvFilter = filter;
+      const modal = document.getElementById('invModal');
+      const titleEl = document.getElementById('invTitle');
+      const itemsEl = document.getElementById('invItems');
+      const inv = loadInventory();
+      const eq = loadEquipped();
+
+      if (filter === 'weapon') {
+        titleEl.textContent = 'Armes';
+      } else if (filter === 'all') {
+        titleEl.textContent = 'Inventaire (' + inv.length + ' items)';
+      } else {
+        const slotDef = GEAR_SLOT_DEFS.find(s => s.id === filter);
+        titleEl.textContent = slotDef ? slotDef.name : 'Inventaire';
+      }
+
+      // Filter items
+      let filtered = inv;
+      if (filter === 'weapon') {
+        filtered = inv.filter(i => i.type === 'weapon');
+      } else if (filter !== 'all') {
+        filtered = inv.filter(i => i.slot === filter);
+      }
+
+      if (filtered.length === 0) {
+        // Show equipped + unequip option if slot has gear
+        let html = '<div class="inv-empty">Aucun item</div>';
+        if (filter === 'weapon' && eq.weapon) {
+          html = buildInvRow(eq.weapon, true);
+        } else if (filter !== 'all' && filter !== 'weapon' && eq.artifacts[filter]) {
+          html = buildInvRow(eq.artifacts[filter], true);
+        }
+        itemsEl.innerHTML = html;
+      } else {
+        // Show current equipped at top if applicable
+        let html = '';
+        if (filter === 'weapon' && eq.weapon) {
+          html += '<div style="font-size:9px;color:#f59e0b;margin-bottom:4px">Équipé:</div>' + buildInvRow(eq.weapon, true);
+          html += '<div style="font-size:9px;color:#94a3b8;margin:6px 0 4px">Inventaire:</div>';
+        } else if (filter !== 'all' && filter !== 'weapon' && eq.artifacts[filter]) {
+          html += '<div style="font-size:9px;color:#f59e0b;margin-bottom:4px">Équipé:</div>' + buildInvRow(eq.artifacts[filter], true);
+          html += '<div style="font-size:9px;color:#94a3b8;margin:6px 0 4px">Inventaire:</div>';
+        }
+        for (const item of filtered) {
+          html += buildInvRow(item, false);
+        }
+        itemsEl.innerHTML = html;
+      }
+
+      modal.style.display = 'block';
+    }
+
+    function buildInvRow(item, isEquipped) {
+      const isWeapon = item.type === 'weapon';
+      const icon = isWeapon ? (item.icon || '⚔️') : (GEAR_SLOT_DEFS.find(s => s.id === item.slot)?.icon || '📦');
+      const tierColor = item.tierColor || '#9ca3af';
+      const name = item.name || (item.tierLabel + ' ' + (item.slotName || ''));
+      const mainLine = isWeapon
+        ? 'ATK +' + item.atk + (item.bonusStat ? ' | ' + STAT_LABELS[item.bonusStat] + ' +' + item.bonusValue : '')
+        : item.mainStat ? item.mainStat.label + ' +' + item.mainStat.value : '';
+      const subsLine = !isWeapon && item.subs ? item.subs.map(s => s.label + '+' + s.value).join(' · ') : '';
+      const tierLabel = item.tier ? '<span class="inv-tier" style="color:' + tierColor + '">' + item.tier + '</span> ' : '';
+
+      let actions = '';
+      if (isEquipped) {
+        const slotArg = isWeapon ? 'weapon' : item.slot;
+        actions = '<button onclick="event.stopPropagation();unequipItem(\'' + slotArg + '\');openInventory(\'' + currentInvFilter + '\')" class="danger">Retirer</button>';
+      } else {
+        actions = '<button onclick="event.stopPropagation();equipFromInv(\'' + item.id + '\')" class="success">Équiper</button>' +
+          '<button onclick="event.stopPropagation();trashItem(\'' + item.id + '\')" class="danger" title="Détruire">🗑️</button>';
+      }
+
+      return '<div class="inv-row">' +
+        '<span class="inv-icon">' + icon + '</span>' +
+        '<div class="inv-info">' +
+        '<div class="inv-name">' + tierLabel + '<span style="color:' + tierColor + '">' + name + '</span></div>' +
+        (mainLine ? '<div class="inv-main">' + mainLine + '</div>' : '') +
+        (subsLine ? '<div class="inv-subs">' + subsLine + '</div>' : '') +
+        '</div>' +
+        '<div class="inv-actions">' + actions + '</div>' +
+        '</div>';
+    }
+
+    function equipFromInv(itemId) {
+      const inv = loadInventory();
+      const item = inv.find(i => i.id === itemId);
+      if (!item) return;
+      equipItem(item);
+      openInventory(currentInvFilter);
+    }
+
+    function trashItem(itemId) {
+      removeFromInventory(itemId);
+      openInventory(currentInvFilter);
+    }
+
+    function closeInventory() {
+      document.getElementById('invModal').style.display = 'none';
+    }
+
+    // Initialize gear panel
+    updateGearPanel();
+
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
@@ -965,6 +1316,7 @@
           level: profile.level,
           statPoints: mergedStats,
           equippedHunters: selectedHunters.filter(Boolean),
+          raidGear: loadEquipped(),
         },
       });
     }
@@ -1203,6 +1555,45 @@
             xpBarFillEl.style.width = '0%';
           }
 
+          // ── Loot Drops ──
+          const lootSection = document.getElementById('gameEndLoot');
+          const lootItemsEl = document.getElementById('gameEndLootItems');
+          if (victory && msg.result.loot) {
+            const myLoot = msg.result.loot.find(l => l.playerId === myId);
+            if (myLoot && myLoot.items.length > 0) {
+              // Add to player inventory
+              addToInventory(myLoot.items);
+              updateGearPanel();
+
+              lootItemsEl.innerHTML = '';
+              for (const item of myLoot.items) {
+                const isWeapon = item.type === 'weapon';
+                const icon = isWeapon ? (item.icon || '⚔️') : (GEAR_SLOT_DEFS.find(s => s.id === item.slot)?.icon || '📦');
+                const tierColor = item.tierColor || '#9ca3af';
+                const name = isWeapon ? item.name : (item.tierLabel + ' ' + (item.slotName || ''));
+                const mainLine = isWeapon
+                  ? 'ATK +' + item.atk
+                  : item.mainStat ? item.mainStat.label + ' +' + item.mainStat.value : '';
+
+                const div = document.createElement('div');
+                div.className = 'loot-item';
+                div.style.borderColor = tierColor;
+                div.innerHTML =
+                  '<div class="loot-icon">' + icon + '</div>' +
+                  '<div class="loot-name" style="color:' + tierColor + '">' + name + '</div>' +
+                  '<div class="loot-main">' + mainLine + '</div>' +
+                  '<div class="loot-tier" style="color:' + tierColor + '">' + (item.tier || '') + '</div>';
+                lootItemsEl.appendChild(div);
+              }
+              lootSection.style.display = 'block';
+              log(myLoot.items.length + ' item(s) obtenu(s) !', 'heal');
+            } else {
+              lootSection.style.display = 'none';
+            }
+          } else {
+            lootSection.style.display = 'none';
+          }
+
           // Countdown timer (room resets in 10s)
           let countdown = 10;
           timerEl.textContent = 'Retour au lobby dans ' + countdown + 's...';
@@ -1232,6 +1623,7 @@
           document.getElementById('deathOverlay').style.display = 'none';
           document.getElementById('game').classList.remove('dead-filter');
           updateRoomDisplay();
+          updateGearPanel();
           log('Room reset — Prêt pour un nouveau combat !', 'info');
           break;
 

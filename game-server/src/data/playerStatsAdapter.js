@@ -6,6 +6,7 @@
 
 import { CLASS_STATS } from './classStats.js';
 import { HUNTERS, hunterStatsAtLevel } from './hunterData.js';
+import { computeRaidGearBonuses } from './raidGearData.js';
 
 // Class overlay: modifiers applied on top of hunter base stats
 const CLASS_OVERLAY = {
@@ -36,6 +37,30 @@ const STAT_PER_POINT = { hp: 8, atk: 1.5, def: 1.5, spd: 1, crit: 0.8, res: 0.8,
  *   }
  * @returns {Object} Final stats for the Player entity
  */
+// Apply raid gear bonuses to final stats (flat first, then percent)
+function applyGearBonuses(stats, colosseumData) {
+  const gear = colosseumData?.raidGear;
+  if (!gear) return stats;
+  const b = computeRaidGearBonuses(gear);
+
+  stats.hp += b.hp_flat;
+  stats.maxHp += b.hp_flat;
+  stats.atk += b.atk_flat;
+  stats.def += b.def_flat;
+  stats.spd += b.spd_flat;
+  stats.crit += b.crit_rate;
+  stats.res += b.res_flat;
+  stats.mana += b.mana_flat;
+  stats.maxMana += b.mana_flat;
+
+  // Percent bonuses
+  if (b.hp_pct > 0)  { const bonus = Math.floor(stats.maxHp * b.hp_pct / 100); stats.hp += bonus; stats.maxHp += bonus; }
+  if (b.atk_pct > 0) { stats.atk += Math.floor(stats.atk * b.atk_pct / 100); }
+  if (b.def_pct > 0) { stats.def += Math.floor(stats.def * b.def_pct / 100); }
+
+  return stats;
+}
+
 export function buildPlayerStats(playerClass, colosseumData) {
   const mainHunter = colosseumData?.mainHunter || null;
   const hunterLevel = colosseumData?.hunterLevels?.[mainHunter] || 30;
@@ -49,7 +74,7 @@ export function buildPlayerStats(playerClass, colosseumData) {
     const hp = Math.floor(hStats.hp * RAID_SCALE.hp * overlay.hpMult);
     const mana = overlay.mana;
 
-    return {
+    return applyGearBonuses({
       hp,
       maxHp: hp,
       mana,
@@ -65,7 +90,7 @@ export function buildPlayerStats(playerClass, colosseumData) {
       hunters: colosseumData?.equippedHunters || [null, null, null],
       hunterLevels: colosseumData?.hunterLevels || {},
       hunterStars: colosseumData?.hunterStars || {},
-    };
+    }, colosseumData);
   }
 
   // ── Mode 2: Class defaults (no main hunter) ──
@@ -99,7 +124,7 @@ export function buildPlayerStats(playerClass, colosseumData) {
   const hp = Math.floor((base.hp + (pts.hp || 0) * STAT_PER_POINT.hp) * levelMult);
   const mana = Math.floor((base.mana + (pts.mana || 0) * STAT_PER_POINT.mana) * levelMult);
 
-  return {
+  return applyGearBonuses({
     hp,
     maxHp: hp,
     mana,
@@ -115,5 +140,5 @@ export function buildPlayerStats(playerClass, colosseumData) {
     hunters: colosseumData.equippedHunters || [null, null, null],
     hunterLevels: colosseumData.hunterLevels || {},
     hunterStars: colosseumData.hunterStars || {},
-  };
+  }, colosseumData);
 }

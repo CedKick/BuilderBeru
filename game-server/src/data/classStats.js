@@ -227,7 +227,7 @@ export const CLASS_SKILLS = {
       projSpeed: 850,
       projRadius: 12,
       cooldown: 1.2,
-      manaCost: 15,
+      manaCost: 25,
       piercing: true,
     },
     skillA: {
@@ -237,7 +237,7 @@ export const CLASS_SKILLS = {
       range: 550,
       aoeRadius: 130,
       cooldown: 8,
-      manaCost: 50,
+      manaCost: 70,
       delay: 0.8,
     },
     skillB: {
@@ -247,7 +247,7 @@ export const CLASS_SKILLS = {
       range: 400,
       trapRadius: 90,
       cooldown: 10,
-      manaCost: 35,
+      manaCost: 50,
       duration: 12,
     },
     ultimate: {
@@ -259,7 +259,7 @@ export const CLASS_SKILLS = {
       range: 550,
       coneAngle: 35,
       cooldown: 40,
-      manaCost: 130,
+      manaCost: 160,
     },
   },
 };

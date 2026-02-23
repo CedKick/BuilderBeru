@@ -74,7 +74,7 @@ export class Manaya extends BossBase {
     }
 
     // Mechanic tracking
-    this._shieldPhaseDone = false;
+    this._shieldPhasesUsed = 0; // 0→1 at 60%, 1→2 at 30%
     this._debuffRotationCount = 0;
     this._debuffRotationTimer = 0;  // Counts up, triggers every ~90s
     this._lastDebuffHp = 100;
@@ -798,7 +798,7 @@ export class Manaya extends BossBase {
           id: data.laserZoneId, type: 'laser',
           x: boss.x, y: boss.y, radius: 800, angle: data.angle, lineWidth: 60,
           ttl: data.duration + 0.5, maxTtl: data.duration + 0.5, active: true,
-          source: boss.id, damagePerTick: boss.atk * 8.0, // Near one-shot per tick
+          source: boss.id, damagePerTick: boss.atk * 15.0, // Heavy damage per tick
           tickInterval: 0.2, _tickTimer: 0,
         });
       },
@@ -859,7 +859,7 @@ export class Manaya extends BossBase {
             id: zoneId, type: 'laser_red',
             x: boss.x, y: boss.y, radius: 700, angle: a, lineWidth: 50,
             ttl: data.duration + 0.5, maxTtl: data.duration + 0.5, active: true,
-            source: boss.id, damagePerTick: boss.atk * 9.0, // Near one-shot
+            source: boss.id, damagePerTick: boss.atk * 18.0, // Near one-shot
             tickInterval: 0.2, _tickTimer: 0,
           });
         }
@@ -1083,23 +1083,26 @@ export class Manaya extends BossBase {
   }
 
   // ──────────────────────────
-  // PATTERN: Shield Phase (once at ~40% HP)
+  // PATTERN: Shield Phase (60% HP + 30% HP — always followed by Trinité des Marques)
   // ──────────────────────────
   _patternShield() {
     return {
       name: 'Bouclier d\'Énergie',
-      phase: 3, weight: 0, cooldown: 999, globalCooldown: 3.0,
+      phase: 2, weight: 0, cooldown: 999, globalCooldown: 3.0,
       telegraphTime: 1.5, castTime: 0, recoveryTime: 1.0,
 
       condition: (boss) => {
         const hpPct = (boss.hp / boss.maxHp) * 100;
-        return hpPct <= 40 && !this._shieldPhaseDone;
+        if (hpPct <= 30 && this._shieldPhasesUsed < 2) return true;
+        if (hpPct <= 60 && this._shieldPhasesUsed < 1) return true;
+        return false;
       },
 
       onStart: (boss, gs, data) => {
-        this._shieldPhaseDone = true;
+        this._shieldPhasesUsed++;
         data.shieldTimer = 15;
-        gs.addEvent({ type: 'boss_message', text: '🛡️ BOUCLIER - Détruisez-le en 15s !' });
+        const num = this._shieldPhasesUsed;
+        gs.addEvent({ type: 'boss_message', text: `🛡️ BOUCLIER ${num}/2 — Détruisez-le en 15s !` });
       },
 
       onExecute: (boss, gs, data) => {
@@ -1113,17 +1116,21 @@ export class Manaya extends BossBase {
 
         if (!boss.shielded) {
           gs.addEvent({ type: 'boss_message', text: 'Bouclier brisé !' });
+          // Force Trinité des Marques after shield phase
+          this._debuffRotationTimer = 90;
           return true;
         }
 
         if (data.shieldTimer <= 0) {
           gs.addEvent({ type: 'boss_message', text: '💀 BOUCLIER NON BRISÉ - WIPE !' });
-          const soloMult = gs.playerCount <= 1 ? (BOSS_CFG.SOLO_MECHANIC_MULT || 0.4) : 1.0;
+          const isSolo = gs.playerCount <= 1;
           for (const player of gs.getAlivePlayers()) {
-            player.takeDamage(player.maxHp * (soloMult < 1 ? 0.8 : 10), boss);
+            player.takeDamage(player.maxHp * (isSolo ? 0.8 : 10), boss);
           }
           boss.shielded = false;
           boss.shieldHp = 0;
+          // Force Trinité even on fail
+          this._debuffRotationTimer = 90;
           return true;
         }
 
@@ -1204,8 +1211,7 @@ export class Manaya extends BossBase {
       },
 
       onExecute: (boss, gs, data) => {
-        // Inner circle hits FIRST
-        const soloMult = gs.playerCount <= 1 ? (BOSS_CFG.SOLO_MECHANIC_MULT || 0.4) : 1.0;
+        // Inner circle hits FIRST — always OS (true damage 999999)
         for (const player of gs.getAlivePlayers()) {
           const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
           if (dist < data.innerRadius + player.radius) {
@@ -1232,7 +1238,7 @@ export class Manaya extends BossBase {
         // After 1s delay, outer ring hits
         if (data.delay >= 1.0 && !data.outerHit) {
           data.outerHit = true;
-          const soloMult = gs.playerCount <= 1 ? (BOSS_CFG.SOLO_MECHANIC_MULT || 0.4) : 1.0;
+          // Outer ring — always OS (true damage 999999)
           for (const player of gs.getAlivePlayers()) {
             const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
             // Hit if in outer ring (between outerInner and outerRadius)

@@ -3,6 +3,7 @@ import { GameState } from './GameState.js';
 import { CombatEngine } from './CombatEngine.js';
 import { PhysicsEngine } from './PhysicsEngine.js';
 import { calculateXpReward } from '../data/playerProfile.js';
+import { generateRaidArtifact, generateRaidWeaponDrop } from '../data/raidGearData.js';
 
 export class GameLoop {
   constructor(roomCode, players, difficulty, wsServer, simulation = false) {
@@ -124,12 +125,27 @@ export class GameLoop {
       return;
     }
 
-    // 7. Check enrage (permanent at <8% HP)
+    // 7. Check enrage (permanent at <5% HP) — 5s freeze then Trinité
     if (!gs.boss.enraged && gs.boss.alive) {
       const hpPercent = (gs.boss.hp / gs.boss.maxHp) * 100;
       if (hpPercent <= BOSS.ENRAGE_HP_PERCENT) {
         gs.boss.enterEnrage();
+        // Freeze boss for 5s before enrage attack
+        gs.boss._enrageFreeze = 5.0;
+        gs.boss._enrageFreezeTriggered = false;
         this._broadcastEvent({ type: 'boss_enrage' });
+        this._broadcastEvent({ type: 'boss_message', text: '💀 MANAYA S\'ENRAGE — 5 secondes...' });
+      }
+    }
+    // Enrage freeze countdown → force Trinité des Marques
+    if (gs.boss._enrageFreeze > 0) {
+      gs.boss._enrageFreeze -= dt;
+      gs.boss._frozen = true; // Prevent pattern execution
+      if (gs.boss._enrageFreeze <= 0 && !gs.boss._enrageFreezeTriggered) {
+        gs.boss._enrageFreezeTriggered = true;
+        gs.boss._frozen = false;
+        gs.boss._debuffRotationTimer = 90; // Force Trinité
+        this._broadcastEvent({ type: 'boss_message', text: '💀 TRINITÉ DE LA RAGE !' });
       }
     }
 
@@ -233,11 +249,14 @@ export class GameLoop {
     const gs = this.state;
 
     if (!gs.boss.alive) {
+      // Generate loot drops for each player (T0 only for now)
+      const loot = this._generateLootDrops();
       this._endGame({
         victory: true,
         reason: 'boss_killed',
         time: BOSS.ENRAGE_TIMER - gs.timer,
         stats: this._buildEndStats(),
+        loot,
       });
       return;
     }
@@ -288,6 +307,51 @@ export class GameLoop {
         deaths: p.stats.deaths,
         xpReward,
       };
+    });
+  }
+
+  // ── Generate loot drops for victory ──
+  // Tier availability depends on difficulty + player count:
+  //   NORMAL:    1-2 players → T0       | 3+ players → T0, T1
+  //   HARD:      1-2 players → T1, T2   | 3+ players → T1, T2, T3
+  //   NIGHTMARE: 1-2 players → T4       | 3+ players → T4, T5
+  _getAvailableTiers() {
+    const difficulty = this.state.difficulty || 'NORMAL';
+    const playerCount = this.state.players.length;
+    const is3Plus = playerCount >= 3;
+
+    switch (difficulty) {
+      case 'HARD':
+        return is3Plus ? ['T1', 'T2', 'T3'] : ['T1', 'T2'];
+      case 'NIGHTMARE':
+        return is3Plus ? ['T4', 'T5'] : ['T4'];
+      default: // NORMAL
+        return is3Plus ? ['T0', 'T1'] : ['T0'];
+    }
+  }
+
+  _generateLootDrops() {
+    const gs = this.state;
+    const tiers = this._getAvailableTiers();
+
+    // Each player gets their own loot roll
+    return gs.players.map(p => {
+      const items = [];
+
+      // 1-2 artifacts guaranteed — random tier from available pool
+      const numArtifacts = 1 + (Math.random() < 0.4 ? 1 : 0);
+      for (let i = 0; i < numArtifacts; i++) {
+        const tier = tiers[Math.floor(Math.random() * tiers.length)];
+        items.push(generateRaidArtifact(tier));
+      }
+
+      // 15% chance for a weapon drop (lowest available tier)
+      if (Math.random() < 0.15) {
+        const weapon = generateRaidWeaponDrop(tiers[0]);
+        if (weapon) items.push({ ...weapon, type: 'weapon' });
+      }
+
+      return { playerId: p.id, items };
     });
   }
 
