@@ -349,6 +349,9 @@ export class RoomManager {
       result, // { victory: bool, time, stats per player }
     });
 
+    // Persist alkahest to Neon DB via Vercel API
+    this._depositAlkahest(result);
+
     // Reset room after 10s for replay
     setTimeout(() => {
       if (!this.rooms.has(room.code)) return;
@@ -362,6 +365,38 @@ export class RoomManager {
         room: this._serializeRoom(room),
       });
     }, 10000);
+  }
+
+  async _depositAlkahest(result) {
+    try {
+      if (!result.loot || !result.stats) return;
+      // Build username → alkahest map
+      const deposits = [];
+      for (const loot of result.loot) {
+        if (!loot.alkahest || loot.alkahest <= 0) continue;
+        const stat = result.stats.find(s => s.id === loot.playerId);
+        if (!stat?.username) continue;
+        deposits.push({ username: stat.username, alkahest: loot.alkahest });
+      }
+      if (deposits.length === 0) return;
+
+      const API_URL = process.env.VERCEL_API_URL || 'https://builderberu.com';
+      const SECRET = process.env.GAME_SERVER_SECRET || 'manaya-raid-secret-key';
+
+      const resp = await fetch(`${API_URL}/api/storage/deposit-alkahest`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Server-Secret': SECRET },
+        body: JSON.stringify({ deposits }),
+      });
+      const data = await resp.json();
+      if (data.success) {
+        console.log(`[Alkahest] Deposited for ${deposits.length} players:`, data.results.map(r => `${r.username}: ${r.status}`).join(', '));
+      } else {
+        console.warn('[Alkahest] Deposit failed:', data.error);
+      }
+    } catch (err) {
+      console.error('[Alkahest] Deposit error:', err.message);
+    }
   }
 
   _getClientColosseumData(clientId) {

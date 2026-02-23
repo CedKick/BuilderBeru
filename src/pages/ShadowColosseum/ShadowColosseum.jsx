@@ -624,6 +624,22 @@ export default function ShadowColosseum() {
     }
   }, [view]);
 
+  // Refresh alkahest from cloud when entering artifacts/equipment view
+  const alkahestSyncRef = useRef(null);
+  useEffect(() => {
+    if ((view === 'artifacts' || view === 'equipment') && isLoggedIn()) {
+      // Avoid syncing more than once per 30s
+      const now = Date.now();
+      if (alkahestSyncRef.current && now - alkahestSyncRef.current < 30000) return;
+      alkahestSyncRef.current = now;
+      cloudStorage.loadFresh(SAVE_KEY).then(fresh => {
+        if (fresh && (fresh.alkahest || 0) > (data.alkahest || 0)) {
+          setData(prev => ({ ...prev, alkahest: fresh.alkahest }));
+        }
+      }).catch(() => {});
+    }
+  }, [view]);
+
   // Scroll detail panel into view when a chibi is selected
   useEffect(() => {
     if (selChibi && detailPanelRef.current) {
