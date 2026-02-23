@@ -13,10 +13,37 @@
  */
 
 const API_BASE = '/api/storage';
-const CLIENT_VERSION = 2; // Bump when deploying network-critical changes (track old vs new clients)
+const CLIENT_VERSION = 3; // Bump when deploying network-critical changes (track old vs new clients)
 const DEVICE_ID_KEY = 'builderberu_device_id';
 const AUTH_TOKEN_KEY = 'builderberu_auth_token';
 const TRACKED_KEYS_KEY = 'builderberu_cloud_keys';
+const HASH_PREFIX = '_cs_h_'; // localStorage prefix for persisted sync hashes
+
+// Fast sampled hash — O(500) regardless of string size, good enough for dirty detection
+function _computeHash(str) {
+  let h = str.length;
+  const step = Math.max(1, (str.length / 500) | 0);
+  for (let i = 0; i < str.length; i += step) {
+    h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  }
+  return str.length + '_' + (h >>> 0).toString(36);
+}
+
+// Gzip compress string → base64 (uses native CompressionStream, returns null if unavailable)
+async function _gzipBase64(str) {
+  if (typeof CompressionStream === 'undefined') return null;
+  try {
+    const blob = new Blob([new TextEncoder().encode(str)]);
+    const stream = blob.stream().pipeThrough(new CompressionStream('gzip'));
+    const compressed = new Uint8Array(await new Response(stream).arrayBuffer());
+    // Convert to base64 in chunks (avoid stack overflow)
+    let binary = '';
+    for (let i = 0; i < compressed.length; i += 8192) {
+      binary += String.fromCharCode.apply(null, compressed.subarray(i, i + 8192));
+    }
+    return btoa(binary);
+  } catch { return null; }
+}
 
 // Get auth headers if user is logged in (reads directly from localStorage to avoid circular imports)
 function _getAuthHeaders() {
@@ -69,6 +96,10 @@ class CloudStorageManager {
     this._readyResolve = null;
     this._pendingData = new Map(); // key → fresh data (backup when localStorage fails)
     this._lastSyncHash = {};       // key → hash of last synced data (dirty detection)
+    // Restore persisted hashes from localStorage (survive page reload)
+    for (const key of CLOUD_KEYS) {
+      try { const h = localStorage.getItem(HASH_PREFIX + key); if (h) this._lastSyncHash[key] = h; } catch {}
+    }
     this._syncStatus = {};         // key → 'synced' | 'syncing' | 'error' | 'pending'
     this._statusListeners = new Set();
     this._crossTabListeners = new Set();
@@ -222,6 +253,11 @@ class CloudStorageManager {
       this._cloudSizes[key] = cloudJson.length;
       if (entry.updatedAt) this._cloudTimestamps[key] = new Date(entry.updatedAt).getTime();
 
+      // Compute hash of cloud data so we don't re-sync unchanged data after page reload
+      const cloudHash = _computeHash(cloudJson);
+      this._lastSyncHash[key] = cloudHash;
+      try { localStorage.setItem(HASH_PREFIX + key, cloudHash); } catch {}
+
       const localRaw = localStorage.getItem(key);
       if (loginPending || !localRaw) {
         // Login pending: cloud ALWAYS wins (cross-device sync)
@@ -324,7 +360,7 @@ class CloudStorageManager {
 
       // Dirty check: skip sync if data hasn't changed since last successful sync
       const jsonStr = JSON.stringify(data);
-      const dataHash = jsonStr.length + ':' + jsonStr.slice(0, 100) + jsonStr.slice(-100);
+      const dataHash = _computeHash(jsonStr);
       if (this._lastSyncHash[key] === dataHash) {
         this._pendingData.delete(key);
         this._setSyncStatus(key, 'synced');
@@ -342,7 +378,19 @@ class CloudStorageManager {
 
       const deviceId = getDeviceId();
       const clientTimestamp = this._cloudTimestamps[key] || null;
-      const body = JSON.stringify({ deviceId, key, data, clientTimestamp, clientVersion: CLIENT_VERSION });
+
+      // Try gzip compression for large payloads (>5KB) — reduces 1.9MB to ~200KB
+      let body;
+      if (jsonStr.length > 5000) {
+        const compressed = await _gzipBase64(jsonStr);
+        if (compressed && compressed.length < jsonStr.length * 0.9) {
+          body = JSON.stringify({ deviceId, key, compressed: 'gzip', payload: compressed, clientTimestamp, clientVersion: CLIENT_VERSION });
+        }
+      }
+      if (!body) {
+        body = JSON.stringify({ deviceId, key, data, clientTimestamp, clientVersion: CLIENT_VERSION });
+      }
+
       const resp = await fetch(`${API_BASE}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ..._getAuthHeaders() },
@@ -370,6 +418,7 @@ class CloudStorageManager {
       // Clear pending data + update dirty hash + throttle timestamp after successful sync
       this._pendingData.delete(key);
       this._lastSyncHash[key] = dataHash;
+      try { localStorage.setItem(HASH_PREFIX + key, dataHash); } catch {} // Persist hash across page reloads
       _lastSyncTime[key] = Date.now();
       this._setSyncStatus(key, 'synced');
       return json.success;

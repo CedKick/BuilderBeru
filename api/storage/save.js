@@ -1,5 +1,6 @@
 import { query } from '../_db/neon.js';
 import { extractUser } from '../_utils/auth.js';
+import { gunzipSync } from 'node:zlib';
 
 const ALLOWED_KEYS = [
   'builderberu_users', 'shadow_colosseum_data', 'shadow_colosseum_raid',
@@ -249,7 +250,19 @@ export default async function handler(req, res) {
   try {
     await ensureTable();
 
-    const { deviceId: bodyDeviceId, key, data, clientTimestamp, clientVersion } = req.body;
+    const { deviceId: bodyDeviceId, key, data: rawData, compressed, payload, clientTimestamp, clientVersion } = req.body;
+
+    // Decompress gzipped payload if client sent compressed data
+    let data = rawData;
+    if (compressed === 'gzip' && payload) {
+      try {
+        const buf = Buffer.from(payload, 'base64');
+        data = JSON.parse(gunzipSync(buf).toString());
+      } catch (e) {
+        console.error('[save] Decompression failed:', e.message);
+        return res.status(400).json({ error: 'Decompression failed' });
+      }
+    }
 
     // If auth token present, use the user's canonical deviceId
     let deviceId = bodyDeviceId;
