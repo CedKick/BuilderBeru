@@ -9530,6 +9530,185 @@ export default function ShadowColosseum() {
         // Equipped chibis list
         const equippedChibis = Object.entries(data.artifacts || {}).filter(([, slots]) => slots && Object.values(slots).some(Boolean));
 
+        // Detail panel JSX — rendered after inventory or after equipped section
+        const detailPanelJSX = selArt ? (
+          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} key={artSelected}
+            className="p-3 rounded-xl border border-purple-500/30 bg-purple-500/5 mb-4">
+            {/* Close */}
+            <button onClick={() => { setArtSelected(null); setArtEquipPicker(false); }}
+              className="float-right text-gray-500 hover:text-gray-300 text-xs">{'\u2715'}</button>
+
+            {/* Info */}
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xl">{ARTIFACT_SLOTS[selArt.slot]?.icon}</span>
+              <div>
+                <div className={`text-sm font-bold ${ALL_ARTIFACT_SETS[selArt.set]?.color || 'text-gray-300'}`}>{ALL_ARTIFACT_SETS[selArt.set]?.name || '?'}</div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] ${RARITY[selArt.rarity]?.color}`}>{RARITY[selArt.rarity]?.stars} {selArt.rarity}</span>
+                  <span className="text-[10px] text-gray-400">Lv {selArt.level}/{MAX_ARTIFACT_LEVEL}</span>
+                  <span className="text-[10px] text-amber-400 font-bold">iLv {computeArtifactILevel(selArt)}</span>
+                </div>
+              </div>
+            </div>
+            {/* Stats */}
+            <div className="mb-2 p-2 rounded-lg bg-gray-800/30 border border-gray-700/20">
+              {(() => {
+                const mainDef = MAIN_STAT_VALUES[selArt.mainStat];
+                const nextVal = selArt.level < MAX_ARTIFACT_LEVEL ? +(mainDef.base + mainDef.perLevel * (selArt.level + 1)).toFixed(1) : selArt.mainValue;
+                return (
+                  <div className="text-xs text-gray-200 font-bold mb-1">
+                    {mainDef?.icon} {mainDef?.name}: +{selArt.mainValue}
+                    {selArt.level < MAX_ARTIFACT_LEVEL && <span className="text-green-400/60 ml-1">{'\u2192'} {nextVal}</span>}
+                  </div>
+                );
+              })()}
+              {selArt.subs.map((sub, i) => {
+                const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
+                return (
+                  <div key={i} className="text-[10px] text-gray-400">
+                    {subDef?.name || sub.id}: +{sub.value}
+                    {isMilestone && <span className="text-amber-400/50 ml-1">(chance {'\u2B06\uFE0F'})</span>}
+                  </div>
+                );
+              })}
+              {isMilestone && <div className="text-[9px] text-amber-400 mt-1 font-bold">{'\u2B50'} Palier Lv{selArt.level + 1} — Boost sub-stat !</div>}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2">
+              {/* Lock toggle */}
+              <button
+                onClick={() => {
+                  if (isEquipped) {
+                    const [, cId, sId] = artSelected.split(':');
+                    setData(prev => ({
+                      ...prev,
+                      artifacts: {
+                        ...prev.artifacts,
+                        [cId]: {
+                          ...prev.artifacts[cId],
+                          [sId]: { ...prev.artifacts[cId][sId], locked: !prev.artifacts[cId][sId].locked }
+                        }
+                      }
+                    }));
+                  } else {
+                    setData(prev => ({
+                      ...prev,
+                      artifactInventory: prev.artifactInventory.map((a, i) =>
+                        i === artSelected ? { ...a, locked: !a.locked } : a
+                      )
+                    }));
+                  }
+                }}
+                className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-colors ${
+                  selArt.locked
+                    ? 'bg-yellow-600/30 text-yellow-300 hover:bg-yellow-600/50'
+                    : 'bg-gray-600/30 text-gray-400 hover:bg-gray-600/50'
+                }`}
+              >
+                {selArt.locked ? '\uD83D\uDD12 Verrouillé' : '\uD83D\uDD13 Déverrouiller'}
+              </button>
+
+              {!isEquipped && (
+                <button onClick={() => setArtEquipPicker(prev => !prev)}
+                  className="flex-1 py-1.5 rounded-lg bg-indigo-600/30 text-indigo-300 text-[10px] font-bold hover:bg-indigo-600/50 transition-colors">
+                  {'\u2694\uFE0F'} Equiper
+                </button>
+              )}
+              {isEquipped && (
+                <button onClick={doUnequip}
+                  className="flex-1 py-1.5 rounded-lg bg-orange-600/30 text-orange-300 text-[10px] font-bold hover:bg-orange-600/50 transition-colors">
+                  Desequiper
+                </button>
+              )}
+              <button
+                onPointerDown={() => {
+                  if (!canEnhance) return;
+                  doEnhance();
+                  let delay = 350;
+                  const tick = () => { doEnhance(); delay = Math.max(40, delay * 0.82); enhanceHoldRef.current = setTimeout(tick, delay); };
+                  enhanceHoldRef.current = setTimeout(tick, delay);
+                }}
+                onPointerUp={() => { if (enhanceHoldRef.current) { clearTimeout(enhanceHoldRef.current); enhanceHoldRef.current = null; } }}
+                onPointerLeave={() => { if (enhanceHoldRef.current) { clearTimeout(enhanceHoldRef.current); enhanceHoldRef.current = null; } }}
+                onContextMenu={e => e.preventDefault()}
+                disabled={!canEnhance}
+                className="flex-1 py-1.5 rounded-lg bg-cyan-600/30 text-cyan-300 text-[10px] font-bold hover:bg-cyan-600/50 disabled:opacity-30 transition-colors select-none">
+                {'\uD83D\uDD28'} +1 ({bestHammer ? HAMMERS[bestHammer].icon : '?'} {fmtNum(coinCost)}c)
+              </button>
+              {!isEquipped && (
+                <button onClick={doSell} disabled={selArt.locked}
+                  className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-colors ${
+                    selArt.locked
+                      ? 'bg-gray-800/40 text-gray-600 cursor-not-allowed'
+                      : 'bg-red-600/20 text-red-400 hover:bg-red-600/40'
+                  }`}>
+                  {selArt.locked ? '\uD83D\uDD12 Verrouillé' : `Vendre (${Math.floor((FORGE_COSTS[selArt.rarity] || 200) * SELL_RATIO)}c)`}
+                </button>
+              )}
+            </div>
+            {/* Reroll button (Alkahest) */}
+            <div className="mt-1.5 relative group/reroll">
+              <button onClick={doReroll}
+                className={`w-full py-1.5 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
+                  selArt.locked ? 'bg-gray-700/20 text-gray-600' :
+                  canReroll ? 'bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600/40' :
+                  'bg-emerald-600/15 text-emerald-300/50'
+                }`}>
+                {'\uD83C\uDFB2'} Reroll substats ({REROLL_ALKAHEST_COST}{'\u2697\uFE0F'} + {fmtNum(rerollCoinCost)}c)
+                {rerollCount > 0 && <span className="ml-1 text-amber-400">x{rerollCount + 1}</span>}
+              </button>
+              {/* Tooltip on hover */}
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2.5 py-1.5 rounded-lg bg-gray-900/95 border border-gray-600/40 text-[9px] text-gray-300 opacity-0 group-hover/reroll:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                Reroll toutes les substats (remet l'artefact au Lv 0)
+                <br/><span className="text-emerald-400">Cout: {REROLL_ALKAHEST_COST} Alkahest + {fmtNum(rerollCoinCost)} coins</span>
+                {selArt.locked && <><br/><span className="text-yellow-400">Deverrouille l'artefact d'abord</span></>}
+              </div>
+              {(data.alkahest || 0) < REROLL_ALKAHEST_COST && !selArt.locked && (
+                <div className="text-[8px] text-gray-500 mt-0.5 text-center">Pas assez d'Alkahest — Affronte Manaya pour en obtenir</div>
+              )}
+            </div>
+
+            {/* Enhancement details */}
+            {selArt.level < MAX_ARTIFACT_LEVEL && (
+              <div className="mt-2 flex items-center gap-2 p-1.5 rounded-lg bg-gray-800/30 border border-gray-700/20 text-[9px] text-gray-400">
+                <span>Requis :</span>
+                {bestHammer ? (
+                  <span className="text-amber-300">{HAMMERS[bestHammer].icon} {HAMMERS[bestHammer].name} (x1)</span>
+                ) : (
+                  <span className="text-red-400">Pas de marteau !</span>
+                )}
+                <span className="ml-auto">{fmtNum(coinCost)} coins</span>
+              </div>
+            )}
+
+            {/* Chibi Equip Picker */}
+            {artEquipPicker && !isEquipped && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                className="mt-2 p-2 rounded-lg border border-indigo-500/30 bg-indigo-500/5">
+                <div className="text-[10px] text-indigo-300 font-bold mb-1.5">Equiper sur :</div>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[...ownedIds, ...ownedHunterIds].map(id => {
+                    const c = getChibiData(id);
+                    if (!c) return null;
+                    const currentSlotArt = data.artifacts[id]?.[selArt.slot];
+                    return (
+                      <button key={id} onClick={() => doEquip(id)}
+                        className="p-1 rounded-lg border border-gray-700/30 bg-gray-800/20 hover:border-indigo-400/50 transition-all text-center">
+                        <img src={getChibiSprite(id)} alt="" className="w-8 h-8 mx-auto object-contain" />
+                        <div className="text-[9px] text-gray-300 truncate">{c.name.split(' ')[0]}</div>
+                        {currentSlotArt && (
+                          <div className="text-[8px] text-yellow-400">{ARTIFACT_SLOTS[selArt.slot]?.icon} Lv{currentSlotArt.level}</div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        ) : null;
+
         return (
           <div className="max-w-2xl mx-auto px-4 pt-4 pb-16">
 
@@ -10126,6 +10305,9 @@ export default function ShadowColosseum() {
               )}
             </div>
 
+            {/* Detail Panel — inventory item */}
+            {!isEquipped && detailPanelJSX}
+
             {/* Equipped Section */}
             {equippedChibis.length > 0 && (
               <div className="mb-5">
@@ -10193,184 +10375,9 @@ export default function ShadowColosseum() {
               </div>
             )}
 
-            {/* Detail Panel */}
-            {selArt && (
-              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                className="p-3 rounded-xl border border-purple-500/30 bg-purple-500/5 mb-4">
-                {/* Close */}
-                <button onClick={() => { setArtSelected(null); setArtEquipPicker(false); }}
-                  className="float-right text-gray-500 hover:text-gray-300 text-xs">{'\u2715'}</button>
+            {/* Detail Panel — equipped item */}
+            {isEquipped && detailPanelJSX}
 
-                {/* Info */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">{ARTIFACT_SLOTS[selArt.slot]?.icon}</span>
-                  <div>
-                    <div className={`text-sm font-bold ${ALL_ARTIFACT_SETS[selArt.set]?.color || 'text-gray-300'}`}>{ALL_ARTIFACT_SETS[selArt.set]?.name || '?'}</div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] ${RARITY[selArt.rarity]?.color}`}>{RARITY[selArt.rarity]?.stars} {selArt.rarity}</span>
-                      <span className="text-[10px] text-gray-400">Lv {selArt.level}/{MAX_ARTIFACT_LEVEL}</span>
-                      <span className="text-[10px] text-amber-400 font-bold">iLv {computeArtifactILevel(selArt)}</span>
-                    </div>
-                  </div>
-                </div>
-                {/* Stats */}
-                <div className="mb-2 p-2 rounded-lg bg-gray-800/30 border border-gray-700/20">
-                  {(() => {
-                    const mainDef = MAIN_STAT_VALUES[selArt.mainStat];
-                    const nextVal = selArt.level < MAX_ARTIFACT_LEVEL ? +(mainDef.base + mainDef.perLevel * (selArt.level + 1)).toFixed(1) : selArt.mainValue;
-                    return (
-                      <div className="text-xs text-gray-200 font-bold mb-1">
-                        {mainDef?.icon} {mainDef?.name}: +{selArt.mainValue}
-                        {selArt.level < MAX_ARTIFACT_LEVEL && <span className="text-green-400/60 ml-1">{'\u2192'} {nextVal}</span>}
-                      </div>
-                    );
-                  })()}
-                  {selArt.subs.map((sub, i) => {
-                    const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
-                    return (
-                      <div key={i} className="text-[10px] text-gray-400">
-                        {subDef?.name || sub.id}: +{sub.value}
-                        {isMilestone && <span className="text-amber-400/50 ml-1">(chance {'\u2B06\uFE0F'})</span>}
-                      </div>
-                    );
-                  })}
-                  {isMilestone && <div className="text-[9px] text-amber-400 mt-1 font-bold">{'\u2B50'} Palier Lv{selArt.level + 1} — Boost sub-stat !</div>}
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2">
-                  {/* Lock toggle */}
-                  <button
-                    onClick={() => {
-                      if (isEquipped) {
-                        const [, cId, sId] = artSelected.split(':');
-                        setData(prev => ({
-                          ...prev,
-                          artifacts: {
-                            ...prev.artifacts,
-                            [cId]: {
-                              ...prev.artifacts[cId],
-                              [sId]: { ...prev.artifacts[cId][sId], locked: !prev.artifacts[cId][sId].locked }
-                            }
-                          }
-                        }));
-                      } else {
-                        setData(prev => ({
-                          ...prev,
-                          artifactInventory: prev.artifactInventory.map((a, i) =>
-                            i === artSelected ? { ...a, locked: !a.locked } : a
-                          )
-                        }));
-                      }
-                    }}
-                    className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-colors ${
-                      selArt.locked
-                        ? 'bg-yellow-600/30 text-yellow-300 hover:bg-yellow-600/50'
-                        : 'bg-gray-600/30 text-gray-400 hover:bg-gray-600/50'
-                    }`}
-                  >
-                    {selArt.locked ? '\uD83D\uDD12 Verrouillé' : '\uD83D\uDD13 Déverrouiller'}
-                  </button>
-
-                  {!isEquipped && (
-                    <button onClick={() => setArtEquipPicker(prev => !prev)}
-                      className="flex-1 py-1.5 rounded-lg bg-indigo-600/30 text-indigo-300 text-[10px] font-bold hover:bg-indigo-600/50 transition-colors">
-                      {'\u2694\uFE0F'} Equiper
-                    </button>
-                  )}
-                  {isEquipped && (
-                    <button onClick={doUnequip}
-                      className="flex-1 py-1.5 rounded-lg bg-orange-600/30 text-orange-300 text-[10px] font-bold hover:bg-orange-600/50 transition-colors">
-                      Desequiper
-                    </button>
-                  )}
-                  <button
-                    onPointerDown={() => {
-                      if (!canEnhance) return;
-                      doEnhance();
-                      let delay = 350;
-                      const tick = () => { doEnhance(); delay = Math.max(40, delay * 0.82); enhanceHoldRef.current = setTimeout(tick, delay); };
-                      enhanceHoldRef.current = setTimeout(tick, delay);
-                    }}
-                    onPointerUp={() => { if (enhanceHoldRef.current) { clearTimeout(enhanceHoldRef.current); enhanceHoldRef.current = null; } }}
-                    onPointerLeave={() => { if (enhanceHoldRef.current) { clearTimeout(enhanceHoldRef.current); enhanceHoldRef.current = null; } }}
-                    onContextMenu={e => e.preventDefault()}
-                    disabled={!canEnhance}
-                    className="flex-1 py-1.5 rounded-lg bg-cyan-600/30 text-cyan-300 text-[10px] font-bold hover:bg-cyan-600/50 disabled:opacity-30 transition-colors select-none">
-                    {'\uD83D\uDD28'} +1 ({bestHammer ? HAMMERS[bestHammer].icon : '?'} {fmtNum(coinCost)}c)
-                  </button>
-                  {!isEquipped && (
-                    <button onClick={doSell} disabled={selArt.locked}
-                      className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-colors ${
-                        selArt.locked
-                          ? 'bg-gray-800/40 text-gray-600 cursor-not-allowed'
-                          : 'bg-red-600/20 text-red-400 hover:bg-red-600/40'
-                      }`}>
-                      {selArt.locked ? '\uD83D\uDD12 Verrouillé' : `Vendre (${Math.floor((FORGE_COSTS[selArt.rarity] || 200) * SELL_RATIO)}c)`}
-                    </button>
-                  )}
-                </div>
-                {/* Reroll button (Alkahest) */}
-                <div className="mt-1.5 relative group/reroll">
-                  <button onClick={doReroll}
-                    className={`w-full py-1.5 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
-                      selArt.locked ? 'bg-gray-700/20 text-gray-600' :
-                      canReroll ? 'bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600/40' :
-                      'bg-emerald-600/15 text-emerald-300/50'
-                    }`}>
-                    {'\uD83C\uDFB2'} Reroll substats ({REROLL_ALKAHEST_COST}{'\u2697\uFE0F'} + {fmtNum(rerollCoinCost)}c)
-                    {rerollCount > 0 && <span className="ml-1 text-amber-400">x{rerollCount + 1}</span>}
-                  </button>
-                  {/* Tooltip on hover */}
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2.5 py-1.5 rounded-lg bg-gray-900/95 border border-gray-600/40 text-[9px] text-gray-300 opacity-0 group-hover/reroll:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                    Reroll toutes les substats (remet l'artefact au Lv 0)
-                    <br/><span className="text-emerald-400">Cout: {REROLL_ALKAHEST_COST} Alkahest + {fmtNum(rerollCoinCost)} coins</span>
-                    {selArt.locked && <><br/><span className="text-yellow-400">Deverrouille l'artefact d'abord</span></>}
-                  </div>
-                  {(data.alkahest || 0) < REROLL_ALKAHEST_COST && !selArt.locked && (
-                    <div className="text-[8px] text-gray-500 mt-0.5 text-center">Pas assez d'Alkahest — Affronte Manaya pour en obtenir</div>
-                  )}
-                </div>
-
-                {/* Enhancement details */}
-                {selArt.level < MAX_ARTIFACT_LEVEL && (
-                  <div className="mt-2 flex items-center gap-2 p-1.5 rounded-lg bg-gray-800/30 border border-gray-700/20 text-[9px] text-gray-400">
-                    <span>Requis :</span>
-                    {bestHammer ? (
-                      <span className="text-amber-300">{HAMMERS[bestHammer].icon} {HAMMERS[bestHammer].name} (x1)</span>
-                    ) : (
-                      <span className="text-red-400">Pas de marteau !</span>
-                    )}
-                    <span className="ml-auto">{fmtNum(coinCost)} coins</span>
-                  </div>
-                )}
-
-                {/* Chibi Equip Picker */}
-                {artEquipPicker && !isEquipped && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
-                    className="mt-2 p-2 rounded-lg border border-indigo-500/30 bg-indigo-500/5">
-                    <div className="text-[10px] text-indigo-300 font-bold mb-1.5">Equiper sur :</div>
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {[...ownedIds, ...ownedHunterIds].map(id => {
-                        const c = getChibiData(id);
-                        if (!c) return null;
-                        const currentSlotArt = data.artifacts[id]?.[selArt.slot];
-                        return (
-                          <button key={id} onClick={() => doEquip(id)}
-                            className="p-1 rounded-lg border border-gray-700/30 bg-gray-800/20 hover:border-indigo-400/50 transition-all text-center">
-                            <img src={getChibiSprite(id)} alt="" className="w-8 h-8 mx-auto object-contain" />
-                            <div className="text-[9px] text-gray-300 truncate">{c.name.split(' ')[0]}</div>
-                            {currentSlotArt && (
-                              <div className="text-[8px] text-yellow-400">{ARTIFACT_SLOTS[selArt.slot]?.icon} Lv{currentSlotArt.level}</div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </motion.div>
-            )}
           </div>
         );
       })()}
