@@ -343,7 +343,7 @@ export const TALENT_SKILLS = {
   h_megumin: [
     { id: 'ts_megumin_1', name: 'Flamme du Néant', power: 140, cdMax: 0, manaCost: 0, manaRestore: 30, buffAtk: 15, buffDur: 2, desc: 'Flamme noire qui restaure 30% de mana et booste l\'ATK' },
     { id: 'ts_megumin_2', name: 'Nova Arcanique', power: 100, cdMax: 3, manaCost: 0, manaScaling: 10, consumeHalfMana: true, debuffDef: 20, debuffDur: 2, desc: 'Mana restante ×10 = puissance ! Consomme 50% mana et brise les DEF' },
-    { id: 'ts_megumin_3', name: 'MEGA EXPLOSION!!!', power: 2800, cdMax: 8, manaCost: 450, manaThreshold: 0.9, selfDamage: 20, selfStunTurns: 3, desc: 'L\'explosion ultime ! 2800% mais s\'inflige 20% PV et stun 3 tours' },
+    { id: 'ts_megumin_3', name: 'MEGA EXPLOSION!!!', power: 8000, cdMax: 8, manaCost: 450, manaThreshold: 0.9, selfDamage: 20, selfStunTurns: 2, desc: 'L\'explosion ultime ! 8000% mais s\'inflige 20% PV et stun 2 tours' },
   ],
 
 };

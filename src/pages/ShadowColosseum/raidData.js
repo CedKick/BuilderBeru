@@ -211,7 +211,7 @@ export const HUNTERS = {
     skills: [
       { name: 'Flamme Écarlate', power: 120, cdMax: 0, manaCost: 0, manaRestore: 25 },
       { name: 'Détonation de Mana', power: 100, cdMax: 4, manaCost: 0, manaScaling: 7, consumeHalfMana: true },
-      { name: 'EXPLOSION!!!', power: 1800, cdMax: 8, manaCost: 400, manaThreshold: 0.9, selfDamage: 15, selfStunTurns: 2 },
+      { name: 'EXPLOSION!!!', power: 5500, cdMax: 8, manaCost: 400, manaThreshold: 0.9, selfDamage: 15, selfStunTurns: 1 },
     ],
     special: true,
   },

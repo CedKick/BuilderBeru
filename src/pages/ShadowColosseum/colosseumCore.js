@@ -61,7 +61,7 @@ export const STAT_META = {
   spd:  { name: 'SPD',  icon: '\uD83D\uDCA8', color: 'text-emerald-400', desc: 'Vitesse', detail: 'Determine l\'ordre des tours et les tours bonus. SPD >= 1.5x l\'ennemi le + rapide = +1 tour bonus. SPD >= 2x = +2 tours bonus (max). Augmente aussi la regen mana (+1 mana par 15 SPD).' },
   crit: { name: 'CRIT', icon: '\uD83C\uDFAF', color: 'text-yellow-400', desc: 'Chance de coup critique', detail: 'Chance en % d\'infliger un coup critique (x1.5 degats de base + bonus CRIT DMG). Rendements degressifs : 50→39%, 100→61%, 150→75%, 200→85%. La RES ennemie reduit le crit (aussi en degressif).' },
   res:  { name: 'RES',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-cyan-400',    desc: 'Resistance elementaire + anti-crit', detail: 'Double usage avec rendements degressifs : (1) Reduit les degats recus (50→35%, 100→55%, cap 70%). (2) Reduit le crit rate ennemi (50→18%, 100→29%, 200→41%). Stacker au-dela de ~100 est moins efficace — diversifier avec HP/DEF.' },
-  mana: { name: 'INT', icon: '\uD83E\uDDE0', color: 'text-violet-400',  desc: 'Intelligence', detail: 'Intelligence du combattant. Augmente le pool de Mana (+1.5 mana/pt). Les mages/supports utilisent la Mana comme puissance (DMG = Mana x1.0 au lieu d\'ATK). Skills mana-scaling : bonus avec rendements degressifs (racine carree). Soins : +1% par 10 Mana.' },
+  mana: { name: 'INT', icon: '\uD83E\uDDE0', color: 'text-violet-400',  desc: 'Intelligence', detail: 'Intelligence du combattant. Augmente le pool de Mana (+1.5 mana/pt). Les mages/supports utilisent Mana x3 comme puissance d\'attaque (au lieu d\'ATK). Skills mana-scaling : bonus avec rendements degressifs (racine carree). Soins : +1% par 10 Mana. Regen : 8/tick + SPD/15.' },
 };
 
 // ─── Mana System ────────────────────────────────────────────
@@ -394,13 +394,13 @@ const softcap = (val, k) => k * Math.log(1 + val / k);
 export const computeAttack = (attacker, skill, defender, tb = {}) => {
   const res = { damage: 0, isCrit: false, healed: 0, buff: null, debuff: null, text: '' };
   let effAtk = getEffStat(attacker.atk, attacker.buffs, 'atk');
-  // Mages & Supports scale purely on Intel (maxMana): ATK×0 + Intel×1.0
-  // Exception: manaScaling skills already scale power on mana — only partial Intel bonus to avoid quadratic explosion
+  // Mages & Supports: Mana×3 as attack power (compensates for no ATK buff stacking)
+  // Exception: manaScaling skills — only partial Intel bonus to avoid quadratic explosion
   if (attacker.isMage && attacker.maxMana) {
     if (skill.manaScaling) {
-      effAtk = Math.floor(effAtk + attacker.maxMana * 0.1);
+      effAtk = Math.floor(effAtk + attacker.maxMana * 0.3);
     } else {
-      effAtk = Math.floor(attacker.maxMana * 1.0);
+      effAtk = Math.floor(attacker.maxMana * 3.0);
     }
   }
   let effDef = getEffStat(defender.def, defender.buffs || [], 'def');
