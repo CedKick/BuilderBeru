@@ -35,6 +35,10 @@ function mergeColoData(cloud, incoming) {
   m.monarchKills = Math.max(cloud.monarchKills || 0, incoming.monarchKills || 0);
   m.archDemonKills = Math.max(cloud.archDemonKills || 0, incoming.archDemonKills || 0);
   m.lootBoostMs = Math.max(cloud.lootBoostMs || 0, incoming.lootBoostMs || 0);
+  m.alkahest = Math.max(cloud.alkahest || 0, incoming.alkahest || 0);
+
+  // ─── rerollCounts: MAX per artifact uid ──────────────
+  m.rerollCounts = mergeObjectsMax(cloud.rerollCounts, incoming.rerollCounts);
 
   // ─── Booleans: OR (true wins) ─────────────────────────
   m.arc2Unlocked = !!(cloud.arc2Unlocked || incoming.arc2Unlocked);

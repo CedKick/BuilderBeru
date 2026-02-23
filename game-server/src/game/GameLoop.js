@@ -3,7 +3,7 @@ import { GameState } from './GameState.js';
 import { CombatEngine } from './CombatEngine.js';
 import { PhysicsEngine } from './PhysicsEngine.js';
 import { calculateXpReward } from '../data/playerProfile.js';
-import { generateRaidArtifact, generateRaidWeaponDrop, FEATHER_DROP_RATES } from '../data/raidGearData.js';
+import { generateRaidArtifact, generateRaidWeaponDrop, FEATHER_DROP_RATES, calculateAlkahestReward } from '../data/raidGearData.js';
 
 export class GameLoop {
   constructor(roomCode, players, difficulty, wsServer, simulation = false) {
@@ -247,10 +247,10 @@ export class GameLoop {
 
   _checkGameEnd() {
     const gs = this.state;
+    const bossHpPercent = gs.boss.maxHp > 0 ? (gs.boss.hp / gs.boss.maxHp) * 100 : 0;
 
     if (!gs.boss.alive) {
-      // Generate loot drops for each player (T0 only for now)
-      const loot = this._generateLootDrops();
+      const loot = this._generateLootDrops(0, true);
       this._endGame({
         victory: true,
         reason: 'boss_killed',
@@ -263,10 +263,13 @@ export class GameLoop {
 
     const anyAlive = gs.players.some(p => p.alive);
     if (!anyAlive) {
+      // Generate loot on loss too (alkahest if boss < 75% HP, no items)
+      const loot = this._generateLootDrops(bossHpPercent, false);
       this._endGame({
         victory: false,
         reason: 'party_wipe',
         stats: this._buildEndStats(),
+        loot,
       });
     }
   }
@@ -333,36 +336,45 @@ export class GameLoop {
     }
   }
 
-  _generateLootDrops() {
+  _generateLootDrops(bossHpPercent = 0, victory = true) {
     const gs = this.state;
     const tiers = this._getAvailableTiers();
     const difficulty = gs.difficulty || 'NORMAL';
     const featherRate = FEATHER_DROP_RATES[difficulty] || 0.05;
+    const playerCount = gs.players.length;
 
     // Each player gets their own loot roll
     return gs.players.map(p => {
       const items = [];
       let feathers = 0;
 
-      // 1-2 artifacts guaranteed — random tier from available pool
-      const numArtifacts = 1 + (Math.random() < 0.4 ? 1 : 0);
-      for (let i = 0; i < numArtifacts; i++) {
-        const tier = tiers[Math.floor(Math.random() * tiers.length)];
-        items.push(generateRaidArtifact(tier));
+      // Items and feathers only on victory
+      if (victory) {
+        // 1-2 artifacts guaranteed — random tier from available pool
+        const numArtifacts = 1 + (Math.random() < 0.4 ? 1 : 0);
+        for (let i = 0; i < numArtifacts; i++) {
+          const tier = tiers[Math.floor(Math.random() * tiers.length)];
+          items.push(generateRaidArtifact(tier));
+        }
+
+        // 15% chance for a weapon drop
+        if (Math.random() < 0.15) {
+          const weapon = generateRaidWeaponDrop(tiers[0]);
+          if (weapon) items.push({ ...weapon, type: 'weapon' });
+        }
+
+        // Plume de Manaya drop roll (very rare)
+        if (Math.random() * 100 < featherRate) {
+          feathers = 1;
+        }
       }
 
-      // 15% chance for a weapon drop
-      if (Math.random() < 0.15) {
-        const weapon = generateRaidWeaponDrop(tiers[0]);
-        if (weapon) items.push({ ...weapon, type: 'weapon' });
-      }
+      // Alkahest awarded even on loss (if boss was below 75% HP)
+      const alkahest = this.simulation ? 0 : calculateAlkahestReward(
+        bossHpPercent, difficulty, playerCount, victory
+      );
 
-      // Plume de Manaya drop roll (very rare)
-      if (Math.random() * 100 < featherRate) {
-        feathers = 1;
-      }
-
-      return { playerId: p.id, items, feathers };
+      return { playerId: p.id, items, feathers, alkahest };
     });
   }
 

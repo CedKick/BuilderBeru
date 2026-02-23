@@ -450,6 +450,35 @@ export function enhanceArtifact(artifact) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ARTIFACT REROLL (Alkahest System)
+// ═══════════════════════════════════════════════════════════════
+
+export const REROLL_ALKAHEST_COST = 10;
+export const REROLL_BASE_COIN_COST = 10000;
+export const REROLL_COIN_MULTIPLIER = 4; // x4 each subsequent reroll on same artifact
+
+/** Coin cost for rerolling an artifact (escalates x4 each time). */
+export function getRerollCoinCost(rerollCount) {
+  return REROLL_BASE_COIN_COST * Math.pow(REROLL_COIN_MULTIPLIER, rerollCount);
+}
+
+/** Reroll all sub-stats on an artifact. Keeps set/slot/rarity/mainStat. Resets level to 0. */
+export function rerollArtifact(artifact) {
+  const subCount = RARITY_SUB_COUNT[artifact.rarity].initial;
+  const available = SUB_STAT_POOL.filter(s => s.id !== artifact.mainStat);
+  const subs = [];
+  const used = new Set();
+  for (let i = 0; i < subCount; i++) {
+    const cands = available.filter(s => !used.has(s.id));
+    if (!cands.length) break;
+    const pick = cands[Math.floor(Math.random() * cands.length)];
+    used.add(pick.id);
+    subs.push({ id: pick.id, value: pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1)) });
+  }
+  return { ...artifact, level: 0, mainValue: MAIN_STAT_VALUES[artifact.mainStat].base, subs };
+}
+
+// ═══════════════════════════════════════════════════════════════
 // ARTIFACT BONUS COMPUTATION
 // ═══════════════════════════════════════════════════════════════
 

@@ -1807,15 +1807,16 @@
             xpBarFillEl.style.width = '0%';
           }
 
-          // ── Loot Drops ──
+          // ── Loot Drops (shown on victory AND loss for alkahest) ──
           const lootSection = document.getElementById('gameEndLoot');
           const lootItemsEl = document.getElementById('gameEndLootItems');
-          if (victory && msg.result.loot) {
+          if (msg.result.loot) {
             const myLoot = msg.result.loot.find(l => l.playerId === myId);
             const hasItems = myLoot && myLoot.items.length > 0;
             const hasFeathers = myLoot && myLoot.feathers > 0;
+            const myAlkahest = myLoot?.alkahest || 0;
 
-            if (hasItems || hasFeathers) {
+            if (hasItems || hasFeathers || myAlkahest > 0) {
               // Add items to inventory
               if (hasItems) addToInventory(myLoot.items);
               // Add feathers
@@ -1823,12 +1824,32 @@
                 addFeathers(myLoot.feathers);
                 log('🪶 +' + myLoot.feathers + ' Plume de Manaya !', 'hunter');
               }
+              // Add alkahest
+              if (myAlkahest > 0) {
+                const prev = parseInt(localStorage.getItem('manaya_alkahest') || '0');
+                localStorage.setItem('manaya_alkahest', prev + myAlkahest);
+                log('⚗️ +' + myAlkahest + ' Maitre d\'Alkahest !', 'heal');
+              }
               updateGearPanel();
               updateForgePanel();
 
               lootItemsEl.innerHTML = '';
 
-              // Show feather drop first (rare!)
+              // Show alkahest drop first
+              if (myAlkahest > 0) {
+                const aDiv = document.createElement('div');
+                aDiv.className = 'loot-item';
+                aDiv.style.borderColor = '#10b981';
+                aDiv.style.background = 'rgba(16,185,129,0.15)';
+                aDiv.innerHTML =
+                  '<div class="loot-icon" style="font-size:24px">⚗️</div>' +
+                  '<div class="loot-name" style="color:#10b981;font-weight:bold">Maitre d\'Alkahest</div>' +
+                  '<div class="loot-main" style="color:#f59e0b">x' + myAlkahest + '</div>' +
+                  '<div class="loot-tier" style="color:#10b981">RAID</div>';
+                lootItemsEl.appendChild(aDiv);
+              }
+
+              // Show feather drop (rare!)
               if (hasFeathers) {
                 const fDiv = document.createElement('div');
                 fDiv.className = 'loot-item';

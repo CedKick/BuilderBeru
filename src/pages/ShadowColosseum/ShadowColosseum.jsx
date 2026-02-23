@@ -45,6 +45,7 @@ import {
   ARC2_ARTIFACT_SETS, generateArc2Artifact, generateSetArtifact,
   ROLE_WEIGHTS, scoreArtifact, scoreToGrade, scoreAllArtifacts,
   MAX_ARTIFACT_INVENTORY, trimArtifactInventory,
+  REROLL_ALKAHEST_COST, REROLL_BASE_COIN_COST, REROLL_COIN_MULTIPLIER, getRerollCoinCost, rerollArtifact,
 } from './equipmentData';
 import {
   isArc2Unlocked, ARC2_STAGES, ARC2_TIER_NAMES, ARC2_STORIES,
@@ -352,7 +353,7 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, fragments: { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [], monarchKills: 0, monarchDropLog: [], archDemonKills: 0, archDemonDropLog: [], lootBoostMs: 0 });
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, fragments: { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [], monarchKills: 0, monarchDropLog: [], archDemonKills: 0, archDemonDropLog: [], lootBoostMs: 0, alkahest: 0, rerollCounts: {} });
 
 // Migrations — apply to raw data from localStorage OR cloud
 const migrateData = (d) => {
@@ -389,6 +390,8 @@ const migrateData = (d) => {
   if (!d.fragments) d.fragments = { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 };
   if (d.fragments && d.fragments.fragment_guldan === undefined) d.fragments.fragment_guldan = 0;
   if (!d.talentSkills) d.talentSkills = {};
+  if (d.alkahest === undefined) d.alkahest = 0;
+  if (!d.rerollCounts) d.rerollCounts = {};
   d.artifactInventory = (d.artifactInventory || []).map(art => ({
     ...art, locked: art.locked ?? false, highlighted: art.highlighted ?? false
   }));
@@ -601,6 +604,18 @@ export default function ShadowColosseum() {
     }
   };
   useEffect(() => { if (view !== 'arc2_story') stopStoryMusic(); }, [view]);
+
+  // Beru alkahest notification when entering artifacts view with 0 alkahest
+  const beruAlkahestShownRef = useRef(false);
+  useEffect(() => {
+    if (view === 'artifacts' && (data.alkahest || 0) === 0 && !beruAlkahestShownRef.current) {
+      beruAlkahestShownRef.current = true;
+      const t = setTimeout(() => {
+        beruSay("Tu n'as pas d'Alkahest ! Affronte Manaya en Mode PVE Multi pour en obtenir. L'Alkahest permet de reroll les substats de tes artefacts.", 'thinking');
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [view]);
 
   // Scroll detail panel into view when a chibi is selected
   useEffect(() => {
@@ -9225,6 +9240,52 @@ export default function ShadowColosseum() {
           });
         };
 
+        // Reroll logic (Alkahest system)
+        const rerollCount = selArt ? (data.rerollCounts?.[selArt.uid] || 0) : 0;
+        const rerollCoinCost = getRerollCoinCost(rerollCount);
+        const canReroll = selArt && !selArt.locked
+          && (data.alkahest || 0) >= REROLL_ALKAHEST_COST
+          && coins >= rerollCoinCost;
+
+        const doReroll = async () => {
+          if (!canReroll || !selArt) return;
+          if (!window.confirm(`Reroll les substats de cet artefact ?\n\nCout: ${REROLL_ALKAHEST_COST} Alkahest + ${fmtNum(rerollCoinCost)} coins\nL'artefact repassera au niveau 0 !`)) return;
+
+          shadowCoinManager.spendCoins(rerollCoinCost);
+          try {
+            const token = localStorage.getItem('builderberu_auth_token');
+            const resp = await fetch('/api/storage/reroll', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
+              body: JSON.stringify({ artifactUid: selArt.uid, rerollCount }),
+            });
+            const result = await resp.json();
+            if (!result.success) {
+              shadowCoinManager.addCoins(rerollCoinCost, 'reroll_refund');
+              beruSay(result.error || 'Reroll echoue... tes coins ont ete rendus.', 'shocked');
+              return;
+            }
+            const rerolled = result.rerolledArtifact;
+            setData(prev => {
+              const nd = { ...prev, alkahest: result.alkahestRemaining };
+              if (!nd.rerollCounts) nd.rerollCounts = {};
+              nd.rerollCounts[selArt.uid] = result.rerollCount;
+              if (isEquipped) {
+                const [, cId, sId] = artSelected.split(':');
+                nd.artifacts = { ...prev.artifacts, [cId]: { ...prev.artifacts[cId], [sId]: rerolled } };
+              } else {
+                nd.artifactInventory = [...prev.artifactInventory];
+                nd.artifactInventory[artSelected] = rerolled;
+              }
+              return nd;
+            });
+            beruSay('Artefact reroll ! Voyons ces nouvelles substats...', 'excited');
+          } catch {
+            shadowCoinManager.addCoins(rerollCoinCost, 'reroll_refund');
+            beruSay('Erreur reseau... reessaie plus tard.', 'shocked');
+          }
+        };
+
         const doSell = () => {
           if (!selArt || isEquipped || selArt.locked) return;
           const sellPrice = Math.floor((FORGE_COSTS[selArt.rarity] || 200) * SELL_RATIO);
@@ -9278,7 +9339,10 @@ export default function ShadowColosseum() {
             {/* Header */}
             <div className="text-center mb-4">
               <h2 className="text-xl font-black bg-gradient-to-r from-purple-400 to-indigo-300 bg-clip-text text-transparent">{'\uD83D\uDC8E'} Artefacts</h2>
-              <div className="text-xs text-gray-400 mt-0.5">{inv.length} en inventaire</div>
+              <div className="flex items-center justify-center gap-3 mt-1">
+                <span className="text-xs text-gray-400">{inv.length} en inventaire</span>
+                <span className="text-xs text-emerald-400 font-bold">{'\u2697\uFE0F'} {data.alkahest || 0} Alkahest</span>
+              </div>
             </div>
 
             {/* Filters */}
@@ -10049,6 +10113,20 @@ export default function ShadowColosseum() {
                     </button>
                   )}
                 </div>
+                {/* Reroll button (Alkahest) */}
+                {!selArt.locked && (
+                  <div className="mt-1.5">
+                    <button onClick={doReroll} disabled={!canReroll}
+                      className="w-full py-1.5 rounded-lg bg-emerald-600/25 text-emerald-300 text-[10px] font-bold hover:bg-emerald-600/40 disabled:opacity-30 transition-colors"
+                      title={`Reroll substats: ${REROLL_ALKAHEST_COST} Alkahest + ${fmtNum(rerollCoinCost)} coins — remet l'artefact au Lv 0`}>
+                      {'\u2697\uFE0F'} Reroll substats ({REROLL_ALKAHEST_COST}{'\u2697\uFE0F'} + {fmtNum(rerollCoinCost)}c)
+                      {rerollCount > 0 && <span className="ml-1 text-amber-400">x{rerollCount + 1}</span>}
+                    </button>
+                    {(data.alkahest || 0) < REROLL_ALKAHEST_COST && (
+                      <div className="text-[8px] text-gray-500 mt-0.5 text-center">Pas assez d'Alkahest — Affronte Manaya pour en obtenir</div>
+                    )}
+                  </div>
+                )}
 
                 {/* Enhancement details */}
                 {selArt.level < MAX_ARTIFACT_LEVEL && (

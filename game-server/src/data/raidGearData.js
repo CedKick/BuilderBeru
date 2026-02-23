@@ -278,6 +278,59 @@ export const FEATHER_DROP_RATES = {
   NIGHTMARE_3:    5.0,
 };
 
+// ═══════════════════════════════════════════════════════════════
+// ALKAHEST REWARDS — Currency for artifact rerolling
+// Earned by fighting Manaya (even on loss if boss < 75% HP)
+// ═══════════════════════════════════════════════════════════════
+
+export const ALKAHEST_DIFFICULTY_MULT = {
+  NORMAL: 1.0, HARD: 2.5, NIGHTMARE: 5.0,
+  NIGHTMARE_PLUS: 8.0, NIGHTMARE_2: 14.0, NIGHTMARE_3: 22.0,
+};
+
+export const ALKAHEST_PLAYER_MULT = { 1: 1.0, 2: 1.4, 3: 2.0, 4: 2.5, 5: 2.8 };
+
+// Boss must be below 75% HP for any alkahest reward
+// Thresholds checked from top to bottom (victory first, then by HP)
+export const ALKAHEST_HP_THRESHOLDS = [
+  { maxHpPct: 0,  base: [10, 12] },  // Boss killed
+  { maxHpPct: 50, base: [5, 9]   },  // Below 50%
+  { maxHpPct: 70, base: [3, 5]   },  // Below 70%
+  { maxHpPct: 75, base: [1, 2]   },  // Below 75% (minimum)
+];
+
+/**
+ * Calculate alkahest reward for a player.
+ * @param {number} bossHpPercent - Boss remaining HP as 0-100
+ * @param {string} difficulty - NORMAL through NIGHTMARE_3
+ * @param {number} playerCount - 1-5
+ * @param {boolean} victory - true if boss killed
+ * @returns {number} alkahest amount (0 if boss above 75% HP)
+ */
+export function calculateAlkahestReward(bossHpPercent, difficulty, playerCount, victory) {
+  if (bossHpPercent > 75) return 0;
+
+  let baseRange = null;
+  if (victory || bossHpPercent <= 0) {
+    baseRange = ALKAHEST_HP_THRESHOLDS[0].base; // killed
+  } else {
+    for (const threshold of ALKAHEST_HP_THRESHOLDS) {
+      if (bossHpPercent <= threshold.maxHpPct) {
+        baseRange = threshold.base;
+        break;
+      }
+    }
+  }
+  if (!baseRange) return 0;
+
+  const base = baseRange[0] + Math.floor(Math.random() * (baseRange[1] - baseRange[0] + 1));
+  const diffMult = ALKAHEST_DIFFICULTY_MULT[difficulty] || 1.0;
+  const playerMult = ALKAHEST_PLAYER_MULT[playerCount] || 1.0;
+  const variance = 0.9 + Math.random() * 0.2; // ±10%
+
+  return Math.round(base * diffMult * playerMult * variance);
+}
+
 // ── Compute total stat bonuses from equipped gear ──
 // equippedGear: { weapon: weaponObj|null, artifacts: { helmet: artifactObj, chest: ... } }
 export function computeRaidGearBonuses(equippedGear) {
