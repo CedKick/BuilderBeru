@@ -294,7 +294,9 @@ export default async function handler(req, res) {
       const cloudUpdatedAt = new Date(existing.rows[0].updated_at).getTime();
 
       // CHECK 1: Size — refuse if new data is suspiciously small (empty/corrupt)
-      if (cloudSize > MIN_SIZE_CHECK && sizeBytes < cloudSize * CORRUPTION_RATIO) {
+      // Skip for shadow_colosseum_raid: React sends partial data (hunterCollection/raidStats only),
+      // CHECK 4 below will patch in gear fields from cloud.
+      if (key !== 'shadow_colosseum_raid' && cloudSize > MIN_SIZE_CHECK && sizeBytes < cloudSize * CORRUPTION_RATIO) {
         console.warn(
           `[save] BLOCKED: ${key} for ${deviceId} — new ${sizeBytes}B vs cloud ${cloudSize}B (${(sizeBytes/cloudSize*100).toFixed(0)}%)`
         );
@@ -359,6 +361,83 @@ export default async function handler(req, res) {
           jsonStr = JSON.stringify(finalData);
           sizeBytes = Buffer.byteLength(jsonStr, 'utf8');
           console.log(`[save] PATCHED server fields for ${deviceId}: alkahest=${finalData.alkahest}`);
+        }
+      }
+
+      // CHECK 4: Protect server-deposited gear/profile fields for shadow_colosseum_raid
+      // React only sends { hunterCollection, raidStats, ... } but game server deposits
+      // inventory, equipped, feathers, manayaOwned, statPoints, raidProfile via deposit-raid API.
+      // Without this, React's CloudStorage.save() would overwrite gear data.
+      if (key === 'shadow_colosseum_raid') {
+        const cloudData = typeof existing.rows[0].data === 'string'
+          ? JSON.parse(existing.rows[0].data)
+          : existing.rows[0].data;
+
+        let patched = false;
+
+        // Gear fields: always preserve from cloud (game server is source of truth)
+        for (const field of ['inventory', 'equipped', 'raidProfile']) {
+          if (cloudData[field] && !finalData[field]) {
+            finalData[field] = cloudData[field];
+            patched = true;
+          }
+        }
+
+        // feathers: MAX (never lose forge currency)
+        const cloudFeathers = cloudData.feathers || 0;
+        const incomingFeathers = finalData.feathers || 0;
+        if (cloudFeathers > incomingFeathers) {
+          finalData.feathers = cloudFeathers;
+          patched = true;
+        }
+
+        // manayaOwned: OR (true wins — never un-forge)
+        const cOwn = cloudData.manayaOwned || {};
+        const iOwn = finalData.manayaOwned || {};
+        const mergedOwn = { ...iOwn };
+        for (const [k, v] of Object.entries(cOwn)) {
+          if (v) { mergedOwn[k] = true; patched = true; }
+        }
+        finalData.manayaOwned = mergedOwn;
+
+        // statPoints: MAX per stat (both React and game can allocate)
+        const cPts = cloudData.statPoints || {};
+        const iPts = finalData.statPoints || {};
+        const mergedPts = {};
+        for (const s of ['hp', 'atk', 'def', 'spd', 'crit', 'res']) {
+          const cVal = cPts[s] || 0;
+          const iVal = iPts[s] || 0;
+          mergedPts[s] = Math.max(cVal, iVal);
+          if (cVal > iVal) patched = true;
+        }
+        finalData.statPoints = mergedPts;
+
+        // hunterCollection: union by id, MAX stars
+        const cColl = cloudData.hunterCollection || [];
+        const iColl = finalData.hunterCollection || [];
+        if (cColl.length > 0) {
+          const collMap = new Map();
+          for (const h of cColl) {
+            const entry = typeof h === 'string' ? { id: h, stars: 0 } : h;
+            collMap.set(entry.id, entry);
+          }
+          for (const h of iColl) {
+            const entry = typeof h === 'string' ? { id: h, stars: 0 } : h;
+            const existing = collMap.get(entry.id);
+            if (existing) {
+              existing.stars = Math.max(existing.stars || 0, entry.stars || 0);
+            } else {
+              collMap.set(entry.id, entry);
+            }
+          }
+          finalData.hunterCollection = Array.from(collMap.values());
+          patched = true;
+        }
+
+        if (patched) {
+          jsonStr = JSON.stringify(finalData);
+          sizeBytes = Buffer.byteLength(jsonStr, 'utf8');
+          console.log(`[save] PATCHED raid gear fields for ${deviceId}`);
         }
       }
     }

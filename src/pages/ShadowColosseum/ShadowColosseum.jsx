@@ -4208,11 +4208,12 @@ export default function ShadowColosseum() {
             const authUser = (() => { try { return JSON.parse(localStorage.getItem('builderberu_auth_user')); } catch { return null; } })();
             const username = authUser?.username || 'Joueur';
 
-            // Raid character data: XP/level from game server, config from localStorage
+            // Raid character data: XP/level from game server OR Neon DB cloud fallback
             const RAID_CHAR_KEY = 'manaya_raid_character';
             const raidChar = (() => { try { return JSON.parse(localStorage.getItem(RAID_CHAR_KEY)) || {}; } catch { return {}; } })();
-            const raidLvl = raidProfileServer?.level || raidChar.raidLevel || 1;
-            const raidXp = raidProfileServer?.xp || raidChar.raidXp || 0;
+            const cloudProfile = raidStorage?.raidProfile;
+            const raidLvl = raidProfileServer?.level || cloudProfile?.level || raidChar.raidLevel || 1;
+            const raidXp = raidProfileServer?.xp || cloudProfile?.xp || raidChar.raidXp || 0;
             const xpForNext = Math.floor(500 * Math.pow(raidLvl + 1, 1.5));
             const xpPct = xpForNext > 0 ? Math.min(100, Math.round(raidXp / xpForNext * 100)) : 100;
             const lvColor = raidLvl >= 40 ? '#f59e0b' : raidLvl >= 20 ? '#a78bfa' : '#38bdf8';
@@ -4718,12 +4719,12 @@ export default function ShadowColosseum() {
                 </div>
 
                 {/* Manaya Raid Stats */}
-                {raidProfileServer && (
+                {(raidProfileServer || cloudProfile) && (
                   <div className="flex items-center justify-between bg-gray-800/30 rounded-lg px-3 py-2 border border-emerald-700/20 mt-1.5">
                     <div className="text-[10px] text-emerald-400 font-bold">{'\uD83D\uDC09'} Manaya Raid</div>
                     <div className="text-[10px] text-gray-500">
-                      {raidProfileServer.victories || 0}W / {raidProfileServer.defeats || 0}L
-                      <span className="text-gray-600 ml-1">({raidProfileServer.gamesPlayed || 0} parties)</span>
+                      {(raidProfileServer || cloudProfile).victories || 0}W / {(raidProfileServer || cloudProfile).defeats || 0}L
+                      <span className="text-gray-600 ml-1">({(raidProfileServer || cloudProfile).gamesPlayed || 0} parties)</span>
                     </div>
                   </div>
                 )}

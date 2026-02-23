@@ -1206,6 +1206,8 @@
           feathers: loadFeathers(),
           manayaOwned: loadManayaOwned(),
           statPoints: profile?.allocatedStats || {},
+          // Include full profile for Neon DB persistence (survives pm2 restart)
+          raidProfile: profile ? { level: profile.level, xp: profile.xp, username: profile.username, gamesPlayed: profile.gamesPlayed, victories: profile.victories, defeats: profile.defeats } : null,
         };
         // Include pending hunter drops (one-time, cleared after send)
         if (pendingHunterDrops.length > 0) {
