@@ -327,6 +327,40 @@ export default async function handler(req, res) {
           `[save] MERGED: ${key} for ${deviceId} — cloud ts ${cloudUpdatedAt} > client ts ${clientTimestamp}. Merged result: ${sizeBytes}B`
         );
       }
+
+      // CHECK 3: Always protect server-deposited fields (alkahest, rerollCounts)
+      // These can be written by game-server via deposit-alkahest API while client has stale data
+      if (!merged && key === 'shadow_colosseum_data') {
+        const cloudData = typeof existing.rows[0].data === 'string'
+          ? JSON.parse(existing.rows[0].data)
+          : existing.rows[0].data;
+
+        let patched = false;
+        // Alkahest: always keep MAX (server deposits must never be lost)
+        const cloudAlk = cloudData.alkahest || 0;
+        const incomingAlk = finalData.alkahest || 0;
+        if (cloudAlk > incomingAlk) {
+          finalData = { ...finalData, alkahest: cloudAlk };
+          patched = true;
+        }
+        // RerollCounts: always keep MAX per artifact (never lose reroll history)
+        const cloudRC = cloudData.rerollCounts || {};
+        const incomingRC = finalData.rerollCounts || {};
+        const mergedRC = { ...incomingRC };
+        for (const [uid, count] of Object.entries(cloudRC)) {
+          mergedRC[uid] = Math.max(mergedRC[uid] || 0, count || 0);
+        }
+        if (Object.keys(cloudRC).length > 0) {
+          finalData = { ...finalData, rerollCounts: mergedRC };
+          patched = true;
+        }
+
+        if (patched) {
+          jsonStr = JSON.stringify(finalData);
+          sizeBytes = Buffer.byteLength(jsonStr, 'utf8');
+          console.log(`[save] PATCHED server fields for ${deviceId}: alkahest=${finalData.alkahest}`);
+        }
+      }
     }
 
     // ─── Write ──────────────────────────────────────────────
