@@ -678,16 +678,25 @@
     // ── Floating Damage Numbers ──
     let floatingNumbers = []; // { x, y, text, color, alpha, vy, age }
 
-    function addFloatingNumber(x, y, amount, crit, isHeal) {
-      const color = isHeal ? '#10b981' : (crit ? '#ffd700' : '#ffffff');
-      const size = crit ? 22 : (isHeal ? 16 : 18);
-      const prefix = isHeal ? '+' : '';
+    function addFloatingNumber(x, y, amount, crit, isHeal, isDamageTaken) {
+      let color, size, prefix;
+      if (isDamageTaken) {
+        color = amount >= 5000 ? '#ff0000' : '#ff6b6b';
+        size = amount >= 5000 ? 26 : 22;
+        prefix = '-';
+      } else if (isHeal) {
+        color = '#10b981'; size = 16; prefix = '+';
+      } else if (crit) {
+        color = '#ffd700'; size = 22; prefix = '';
+      } else {
+        color = '#ffffff'; size = 18; prefix = '';
+      }
       floatingNumbers.push({
         x: x + (Math.random() - 0.5) * 40,
         y: y - 30,
         text: prefix + formatNum(amount),
-        color, size, alpha: 1, vy: -60, age: 0, maxAge: 1.2,
-        bold: crit,
+        color, size, alpha: 1, vy: -60, age: 0, maxAge: isDamageTaken ? 1.5 : 1.2,
+        bold: crit || isDamageTaken,
       });
     }
 
@@ -1639,7 +1648,7 @@
             } else {
               const p = (gameState.players || []).find(pl => pl.id === msg.target);
               if (p) {
-                addFloatingNumber(p.x, p.y, msg.amount, msg.crit, false);
+                addFloatingNumber(p.x, p.y, msg.amount, msg.crit, false, true);
                 if (msg.amount > 2000) triggerScreenShake(Math.min(12, msg.amount / 500));
                 spawnParticles(p.x, p.y, '#ef4444', 4, 100, 3);
               }
@@ -1666,7 +1675,7 @@
         case 'dot_tick':
           if (gameState && msg.amount > 0) {
             const pt = (gameState.players || []).find(pl => pl.id === msg.target);
-            if (pt) addFloatingNumber(pt.x, pt.y, msg.amount, false, false);
+            if (pt) addFloatingNumber(pt.x, pt.y, msg.amount, false, false, true);
           }
           if (msg.target === myId) log('Poison x' + (msg.stacks || 1) + ': -' + msg.amount, 'error');
           break;
