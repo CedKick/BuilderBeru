@@ -364,7 +364,7 @@ export default function Codex() {
                     isOwn ? 'bg-gray-800/40' : 'bg-gray-800/20'
                   }`}>
                     {f.sprite ? (
-                      <img src={f.sprite} alt={f.name} className={`w-full h-full object-contain ${!isOwn ? 'grayscale opacity-40' : ''}`} draggable={false} />
+                      <img loading="lazy" src={f.sprite} alt={f.name} className={`w-full h-full object-contain ${!isOwn ? 'grayscale opacity-40' : ''}`} draggable={false} />
                     ) : (
                       <span className={`text-3xl ${!isOwn ? 'opacity-30' : ''}`}>{eCfg.icon}</span>
                     )}
@@ -415,7 +415,7 @@ export default function Codex() {
                         <div className="flex items-start gap-4 mb-4">
                           <div className={`w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden border ${rCfg.border} ${rCfg.bg}`}>
                             {f.sprite ? (
-                              <img src={f.sprite} alt={f.name} className={`w-full h-full object-contain ${!isOwn ? 'grayscale opacity-40' : ''}`} draggable={false} />
+                              <img loading="lazy" src={f.sprite} alt={f.name} className={`w-full h-full object-contain ${!isOwn ? 'grayscale opacity-40' : ''}`} draggable={false} />
                             ) : (
                               <span className="text-4xl">{eCfg.icon}</span>
                             )}
@@ -549,7 +549,8 @@ export default function Codex() {
                             </div>
                           ) : (
                             <div className="text-[11px] text-gray-300">
-                              {'\uD83C\uDFAF'} Drop aleatoire en victoire Colosseum (Tier 1-6).
+                              <div>{'\uD83C\uDFAF'} <span className="text-red-400 font-bold">Drop universel</span> — 5 tirages x 1% par victoire</div>
+                              <div className="text-[10px] text-gray-500 mt-0.5">Disponible partout : ARC I, ARC II, Raid Manaya</div>
                               <span className={`ml-1 ${rCfg.color}`}>Rarete : {rCfg.label}</span>
                             </div>
                           )}
@@ -618,7 +619,7 @@ export default function Codex() {
                   <div className="absolute top-1.5 right-1.5 text-[9px] font-bold text-gray-500 bg-gray-900/80 px-1.5 py-0.5 rounded">iLv {iLevel}</div>
                   <div className={`w-full aspect-square rounded-lg mb-2 flex items-center justify-center overflow-hidden ${isOwned ? 'bg-gray-800/40' : 'bg-gray-800/20'}`}>
                     {sprite ? (
-                      <img src={sprite} alt={w.name} className={`w-full h-full object-contain ${!isOwned ? 'grayscale opacity-40' : ''}`} />
+                      <img loading="lazy" src={sprite} alt={w.name} className={`w-full h-full object-contain ${!isOwned ? 'grayscale opacity-40' : ''}`} />
                     ) : (
                       <span className={`text-3xl ${!isOwned ? 'grayscale opacity-30' : ''}`}>{w.icon}</span>
                     )}
@@ -659,7 +660,7 @@ export default function Codex() {
                         <div className="flex items-start gap-4 mb-4">
                           <div className={`w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden border ${rCfg.border} ${rCfg.bg}`}>
                             {sprite ? (
-                              <img src={sprite} alt={w.name} className={`w-full h-full object-contain ${!isOwned ? 'grayscale opacity-40' : ''}`} />
+                              <img loading="lazy" src={sprite} alt={w.name} className={`w-full h-full object-contain ${!isOwned ? 'grayscale opacity-40' : ''}`} />
                             ) : (
                               <span className={`text-4xl ${!isOwned ? 'grayscale opacity-30' : ''}`}>{w.icon}</span>
                             )}
@@ -966,7 +967,7 @@ export default function Codex() {
                           )}
                           {s.source === 'ultime' && (
                             <div className="text-[11px] text-gray-300">
-                              {'\uD83D\uDCA0'} Drop exclusif en mode <span className="text-red-400 font-bold">Raid Ultime</span> (RC 3+). Taux de drop augmente avec le RC. Sets les plus puissants du jeu.
+                              {'\uD83D\uDCA0'} <span className="text-red-400 font-bold">Drop universel</span> — 5 tirages x 0.5% par victoire. Disponible partout : ARC I, ARC II, Raid Manaya. Sets les plus puissants du jeu.
                             </div>
                           )}
                         </div>

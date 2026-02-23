@@ -332,12 +332,11 @@ export function calculateAlkahestReward(bossHpPercent, difficulty, playerCount, 
 }
 
 // ═══════════════════════════════════════════════════════════════
-// HUNTER DROPS — All hunters can drop from Manaya Raid
-// 5 rolls per victory, 3% chance each
+// HUNTER DROPS — Universal system: 5 rolls × 1% (same as ARC I/II)
 // ═══════════════════════════════════════════════════════════════
 
 export const HUNTER_ROLL_COUNT = 5;
-export const HUNTER_DROP_CHANCE = 0.03; // 3%
+export const HUNTER_DROP_CHANCE = 0.01; // 1% (universal)
 
 // Lightweight hunter pool for server-side loot generation (50 hunters)
 export const MANAYA_HUNTER_POOL = [
@@ -404,7 +403,7 @@ export const MANAYA_HUNTER_POOL = [
   { id: 'h_a2', name: 'A2', rarity: 'mythique', element: 'fire' },
 ];
 
-// Roll hunter drops: 5 rolls × 3% each
+// Roll hunter drops: 5 rolls × 1% each (universal)
 export function rollHunterDrops() {
   const drops = [];
   for (let i = 0; i < HUNTER_ROLL_COUNT; i++) {
@@ -417,28 +416,23 @@ export function rollHunterDrops() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SET ULTIME — Manaya set pieces direct drop
-// 15% base chance, scaling with difficulty
+// SET ULTIME — Universal: 5 rolls × 0.5% (same as ARC I/II)
 // ═══════════════════════════════════════════════════════════════
 
-export const SET_ULTIME_DROP_RATES = {
-  NORMAL:         0.15,
-  HARD:           0.20,
-  NIGHTMARE:      0.25,
-  NIGHTMARE_PLUS: 0.32,
-  NIGHTMARE_2:    0.40,
-  NIGHTMARE_3:    0.50,
-};
+export const SET_ULTIME_ROLL_COUNT = 5;
+export const SET_ULTIME_DROP_CHANCE = 0.005; // 0.5%
 
-// Roll set ultime drop: 1 roll at difficulty-scaled rate
-export function rollSetUltimeDrop(difficulty) {
-  const rate = SET_ULTIME_DROP_RATES[difficulty] || 0.15;
-  if (Math.random() < rate) {
-    const slots = Object.keys(MANAYA_SET_PIECES);
-    const slot = slots[Math.floor(Math.random() * slots.length)];
-    return { ...MANAYA_SET_PIECES[slot], isSetUltimeDrop: true };
+// Roll set ultime drops: 5 rolls × 0.5% each (universal)
+export function rollSetUltimeDrops() {
+  const drops = [];
+  const slots = Object.keys(MANAYA_SET_PIECES);
+  for (let i = 0; i < SET_ULTIME_ROLL_COUNT; i++) {
+    if (Math.random() < SET_ULTIME_DROP_CHANCE) {
+      const slot = slots[Math.floor(Math.random() * slots.length)];
+      drops.push({ ...MANAYA_SET_PIECES[slot], isSetUltimeDrop: true });
+    }
   }
-  return null;
+  return drops;
 }
 
 // ── Compute total stat bonuses from equipped gear ──

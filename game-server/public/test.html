@@ -1899,8 +1899,8 @@
             const hasFeathers = myLoot && myLoot.feathers > 0;
             const myAlkahest = myLoot?.alkahest || 0;
             const myHunterDrops = myLoot?.hunterDrops || [];
-            const mySetUltimeDrop = myLoot?.setUltimeDrop || null;
-            const hasAnyLoot = hasItems || hasFeathers || myAlkahest > 0 || myHunterDrops.length > 0 || mySetUltimeDrop;
+            const mySetUltimeDrops = myLoot?.setUltimeDrops || [];
+            const hasAnyLoot = hasItems || hasFeathers || myAlkahest > 0 || myHunterDrops.length > 0 || mySetUltimeDrops.length > 0;
 
             if (hasAnyLoot) {
               // Add items to inventory
@@ -1925,14 +1925,16 @@
                   log('🎉 HUNTER DROP : ' + h.name + ' (' + h.rarity + ') !', 'hunter');
                 }
               }
-              // Add set ultime drop
-              if (mySetUltimeDrop) {
-                const suSlot = mySetUltimeDrop.slot || 'weapon';
+              // Add set ultime drops (array)
+              if (mySetUltimeDrops.length > 0) {
                 const owned = loadManayaOwned();
-                owned[suSlot] = true;
+                for (const suDrop of mySetUltimeDrops) {
+                  const suSlot = suDrop.slot || 'weapon';
+                  owned[suSlot] = true;
+                  addToInventory([suDrop]);
+                  log('🩸 SET ULTIME : ' + (suDrop.name || suSlot) + ' !', 'hunter');
+                }
                 saveManayaOwned(owned);
-                addToInventory([mySetUltimeDrop]);
-                log('🩸 SET ULTIME : ' + (mySetUltimeDrop.name || suSlot) + ' !', 'hunter');
               }
               updateGearPanel();
               updateForgePanel();
@@ -1958,15 +1960,15 @@
                 lootItemsEl.appendChild(hDiv);
               }
 
-              // ── Show set ultime drop ──
-              if (mySetUltimeDrop) {
+              // ── Show set ultime drops (array) ──
+              for (const suDrop of mySetUltimeDrops) {
                 const suDiv = document.createElement('div');
                 suDiv.className = 'loot-item';
                 suDiv.style.borderColor = MANAYA_SET_COLOR;
                 suDiv.style.background = 'rgba(255,45,85,0.25)';
                 suDiv.style.animation = 'pulse 1s ease-in-out infinite';
-                const suIcon = mySetUltimeDrop.icon || mySetUltimeDrop.slotIcon || '🩸';
-                const suName = mySetUltimeDrop.name || 'Set Manaya';
+                const suIcon = suDrop.icon || suDrop.slotIcon || '🩸';
+                const suName = suDrop.name || 'Set Manaya';
                 suDiv.innerHTML =
                   '<div class="loot-icon" style="font-size:22px">' + suIcon + '</div>' +
                   '<div class="loot-name" style="color:' + MANAYA_SET_COLOR + ';font-weight:bold;font-size:10px">' + suName + '</div>' +
@@ -2026,7 +2028,7 @@
               lootSection.style.display = 'block';
               if (hasItems) log(myLoot.items.length + ' item(s) obtenu(s) !', 'heal');
               if (myHunterDrops.length > 0) log('🎉 ' + myHunterDrops.length + ' hunter(s) obtenu(s) !', 'hunter');
-              if (mySetUltimeDrop) log('🩸 Piece Set Ultime obtenue !', 'hunter');
+              if (mySetUltimeDrops.length > 0) log('🩸 ' + mySetUltimeDrops.length + ' piece(s) Set Ultime obtenue(s) !', 'hunter');
             } else {
               lootSection.style.display = 'none';
             }

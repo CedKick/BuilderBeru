@@ -26,14 +26,14 @@ import {
   calculatePowerScore, getDifficultyRating,
   BUFF_ICONS, computeDamagePreview, aiPickSkillArc2, fmtNum,
 } from './colosseumCore';
-import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS, rollNierHunterDrop, NIER_DROP_CONFIG, NIER_DROP_CONFIGS, HUNTER_SKINS, rollSkinDrop, getHunterSprite, rollBossHunterDrop, BOSS_HUNTER_DROPS, getHunterDropSources } from './raidData';
+import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS, HUNTER_SKINS, rollSkinDrop, getHunterSprite, getHunterDropSources, rollUniversalHunterDrops, rollUniversalSetUltimeDrops } from './raidData';
 import { BattleStyles, BattleArena } from './BattleVFX';
 import {
   ARTIFACT_SETS, ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL,
   ALL_ARTIFACT_SETS, RAID_ARTIFACT_SETS,
   WEAPONS, WEAPON_PRICES, FORGE_COSTS, ENHANCE_COST, SELL_RATIO, MAX_ARTIFACT_LEVEL,
   generateArtifact, enhanceArtifact, computeArtifactBonuses, computeWeaponBonuses,
-  mergeEquipBonuses, getActiveSetBonuses, getActivePassives, MAX_EVEIL_STARS, STAGE_HUNTER_DROP,
+  mergeEquipBonuses, getActiveSetBonuses, getActivePassives, MAX_EVEIL_STARS,
   HAMMERS, HAMMER_ORDER, getRequiredHammer, rollHammerDrop, RED_HAMMER_BY_RARITY, RED_HAMMER_ULTIME,
   SULFURAS_STACK_PER_TURN, SULFURAS_STACK_MAX,
   KATANA_Z_ATK_PER_HIT, KATANA_Z_STACK_PERSIST_CHANCE, KATANA_Z_COUNTER_CHANCE, KATANA_Z_COUNTER_MULT,
@@ -1975,44 +1975,33 @@ export default function ShadowColosseum() {
     if (!hammerDrop && dropBonus.hammerPct > 0 && Math.random() * 100 < dropBonus.hammerPct) {
       extraHammer = rollHammerDrop(stage.tier, !!stage.isBoss);
     }
-    // Hunter drop (ARC II = +50% higher base chance) — excludes Nier collab hunters
-    let hunterDrop = null;
-    const baseHunterChance = (stage.isBoss ? STAGE_HUNTER_DROP.dropChance.boss : STAGE_HUNTER_DROP.dropChance.normal) * 1.5;
-    const hunterChance = baseHunterChance + dropBonus.hunterPct / 100;
-    if (Math.random() < hunterChance) {
-      const tierPool = STAGE_HUNTER_DROP.tierPool[stage.tier] || ['rare'];
-      const dropRarity = tierPool[Math.floor(Math.random() * tierPool.length)];
-      const hunterCandidates = Object.entries(HUNTERS).filter(([, h]) => h.rarity === dropRarity && !h.series);
-      if (hunterCandidates.length > 0) {
-        const [pickId, pickData] = hunterCandidates[Math.floor(Math.random() * hunterCandidates.length)];
-        const rd = loadRaidData();
-        const res = addHunterOrDuplicate(rd, pickId);
+    // Universal hunter drops (5 rolls × 1%)
+    const hunterDrops = rollUniversalHunterDrops();
+    if (hunterDrops.length > 0) {
+      const rd = loadRaidData();
+      hunterDrops.forEach(h => {
+        const res = addHunterOrDuplicate(rd, h.id);
         rd.hunterCollection = res.collection;
-        saveRaidData(rd);
-        hunterDrop = { id: pickId, name: pickData.name, rarity: pickData.rarity, isDuplicate: res.isDuplicate, newStars: res.newStars };
-      }
+        h.isDuplicate = res.isDuplicate;
+        h.newStars = res.newStars;
+      });
+      saveRaidData(rd);
+      hunterDrops.forEach(h => {
+        if (!h.isDuplicate && (h.series || h.rarity === 'mythique')) logLegendaryDrop('hunter', h.id, h.name, h.rarity);
+      });
+    }
+    // Universal set ultime drops (5 rolls × 0.5%)
+    const setUltimeDrops = rollUniversalSetUltimeDrops();
+    if (setUltimeDrops.length > 0) {
+      const owned = JSON.parse(localStorage.getItem('manaya_set_owned') || '{}');
+      for (const piece of setUltimeDrops) owned[piece.slot] = true;
+      localStorage.setItem('manaya_set_owned', JSON.stringify(owned));
     }
     // Weapon drop
     let weaponDrop = null;
     const rolledWeaponId = rollWeaponDrop(stage.tier, !!stage.isBoss);
     if (rolledWeaponId && WEAPONS[rolledWeaponId]) {
       weaponDrop = { id: rolledWeaponId, ...WEAPONS[rolledWeaponId] };
-    }
-    // Nier Automata special drop — per-hunter stage/tier config
-    let nierDrop = null;
-    const hasNierOnStage = Object.values(NIER_DROP_CONFIGS).some(c =>
-      c.stageId ? c.stageId === stage.id : c.tier === stage.tier
-    );
-    if (hasNierOnStage) {
-      const nierId = rollNierHunterDrop(stage.id, stage.tier, !!stage.isBoss, star);
-      if (nierId && HUNTERS[nierId]) {
-        const rd = loadRaidData();
-        const res = addHunterOrDuplicate(rd, nierId);
-        rd.hunterCollection = res.collection;
-        saveRaidData(rd);
-        nierDrop = { id: nierId, name: HUNTERS[nierId].name, rarity: HUNTERS[nierId].rarity, series: HUNTERS[nierId].series || 'collab', isDuplicate: res.isDuplicate, newStars: res.newStars };
-        if (!res.isDuplicate) logLegendaryDrop('hunter', nierId, HUNTERS[nierId].name, HUNTERS[nierId].rarity);
-      }
     }
     // Skin drop (stage/tier based)
     let skinDrop = null;
@@ -2093,7 +2082,7 @@ export default function ShadowColosseum() {
       // Store result for display
       d._arc2Result = {
         coins, xp: Math.floor(stage.xp * rMult.xp), art: droppedArt, star, stageName: stage.name,
-        accountXpGain, hammerDrop: hammerDrop || extraHammer, hunterDrop, weaponDrop, nierDrop, skinDrop,
+        accountXpGain, hammerDrop: hammerDrop || extraHammer, hunterDrops, setUltimeDrops, weaponDrop, skinDrop,
       };
       return d;
     });
@@ -3606,22 +3595,25 @@ export default function ShadowColosseum() {
       extraHammer = rollHammerDrop(stage.tier, !!stage.isBoss);
     }
 
-    // Hunter drop (base + star bonus)
-    let hunterDrop = null;
-    const baseHunterChance = stage.isBoss ? STAGE_HUNTER_DROP.dropChance.boss : STAGE_HUNTER_DROP.dropChance.normal;
-    const hunterChance = baseHunterChance + dropBonus.hunterPct / 100;
-    if (Math.random() < hunterChance) {
-      const tierPool = STAGE_HUNTER_DROP.tierPool[stage.tier] || ['rare'];
-      const dropRarity = tierPool[Math.floor(Math.random() * tierPool.length)];
-      const hunterCandidates = Object.entries(HUNTERS).filter(([, h]) => h.rarity === dropRarity && !h.series);
-      if (hunterCandidates.length > 0) {
-        const [pickId, pickData] = hunterCandidates[Math.floor(Math.random() * hunterCandidates.length)];
-        const rd = loadRaidData();
-        const res = addHunterOrDuplicate(rd, pickId);
+    // Universal hunter drops (5 rolls × 1%)
+    const hunterDrops = rollUniversalHunterDrops();
+    if (hunterDrops.length > 0) {
+      const rd = loadRaidData();
+      hunterDrops.forEach(h => {
+        const res = addHunterOrDuplicate(rd, h.id);
         rd.hunterCollection = res.collection;
-        saveRaidData(rd);
-        hunterDrop = { id: pickId, name: pickData.name, rarity: pickData.rarity, isDuplicate: res.isDuplicate, newStars: res.newStars };
-      }
+        h.isDuplicate = res.isDuplicate;
+        h.newStars = res.newStars;
+      });
+      saveRaidData(rd);
+    }
+
+    // Universal set ultime drops (5 rolls × 0.5%)
+    const setUltimeDrops = rollUniversalSetUltimeDrops();
+    if (setUltimeDrops.length > 0) {
+      const owned = JSON.parse(localStorage.getItem('manaya_set_owned') || '{}');
+      for (const piece of setUltimeDrops) owned[piece.slot] = true;
+      localStorage.setItem('manaya_set_owned', JSON.stringify(owned));
     }
 
     // Guaranteed artifact at high stars (rates /5 — inventory cap active)
@@ -3662,17 +3654,12 @@ export default function ShadowColosseum() {
       weaponDrop = { id: 'w_guldan', ...WEAPONS.w_guldan, isNew, newAwakening: isNew ? 0 : Math.min((data.weaponCollection['w_guldan'] || 0) + 1, MAX_WEAPON_AWAKENING) };
     }
 
-    // Boss hunter drops (Guts, Sukuna etc.) — tier-gated
-    let bossHunterDrop = null;
-    const bossHunterId = rollBossHunterDrop(stage.id, lootMult, stage.tier);
-    if (bossHunterId && HUNTERS[bossHunterId]) {
-      const rd = loadRaidData();
-      const res = addHunterOrDuplicate(rd, bossHunterId);
-      rd.hunterCollection = res.collection;
-      saveRaidData(rd);
-      bossHunterDrop = { id: bossHunterId, name: HUNTERS[bossHunterId].name, rarity: HUNTERS[bossHunterId].rarity, series: HUNTERS[bossHunterId].series || 'collab', isDuplicate: res.isDuplicate, newStars: res.newStars };
-      if (!res.isDuplicate) logLegendaryDrop('hunter', bossHunterId, HUNTERS[bossHunterId].name, HUNTERS[bossHunterId].rarity);
-    }
+    // Log legendary hunter drops (from universal system)
+    hunterDrops.forEach(h => {
+      if (!h.isDuplicate && (h.series || h.rarity === 'mythique')) {
+        logLegendaryDrop('hunter', h.id, h.name, h.rarity);
+      }
+    });
 
     // Fragment drops (mercy system) — 1% chance per kill
     let fragmentDrop = null;
@@ -3762,7 +3749,7 @@ export default function ShadowColosseum() {
       };
     });
     if (newAllocations > 0) setPendingAlloc(newAllocations);
-    setResult({ won: true, xp: scaledXp, coins: scaledCoins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrop, hammerDrop: hammerDrop || extraHammer, weaponDrop, fragmentDrop, guaranteedArtifact, pacteDrop, bossHunterDrop, starLevel: currentStar, isNewStarRecord, newMaxStars, accountXpGain, accountLevelUp: newAccLvl > prevAccLvl ? newAccLvl : null, accountAllocations: newAllocations });
+    setResult({ won: true, xp: scaledXp, coins: scaledCoins, leveled, newLevel, oldLevel: level, newStatPts, newSP, newTP, hunterDrops, setUltimeDrops, hammerDrop: hammerDrop || extraHammer, weaponDrop, fragmentDrop, guaranteedArtifact, pacteDrop, starLevel: currentStar, isNewStarRecord, newMaxStars, accountXpGain, accountLevelUp: newAccLvl > prevAccLvl ? newAccLvl : null, accountAllocations: newAllocations });
 
     // Weapon drop reveal + Beru reaction
     if (weaponDrop) {
@@ -3787,10 +3774,14 @@ export default function ShadowColosseum() {
       }
     }
 
-    // Boss hunter drop reveal + Beru reaction
-    if (bossHunterDrop) {
-      const dropRate = BOSS_HUNTER_DROPS[bossHunterDrop.id]?.baseChance ? `1/${Math.round(1 / BOSS_HUNTER_DROPS[bossHunterDrop.id].baseChance)}` : '???';
-      try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: `${bossHunterDrop.name.toUpperCase()} !! ${dropRate} !! Le guerrier legendaire rejoint ton equipe !! ${bossHunterDrop.isDuplicate ? 'DUPE → Etoile bonus !' : 'PREMIERE OBTENTION !! INCROYABLE !!'}` } })); } catch (e) {}
+    // Hunter drop reveal + Beru reaction
+    if (hunterDrops.length > 0) {
+      const bestDrop = hunterDrops.find(h => !h.isDuplicate) || hunterDrops[0];
+      try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: `${bestDrop.name.toUpperCase()} !! ${hunterDrops.length > 1 ? hunterDrops.length + ' HUNTERS D\'UN COUP !!! ' : ''}${bestDrop.isDuplicate ? 'DUPE → Etoile bonus !' : 'PREMIERE OBTENTION !! INCROYABLE !!'}` } })); } catch (e) {}
+    }
+    // Set Ultime drop reveal + Beru reaction
+    if (setUltimeDrops.length > 0) {
+      try { window.dispatchEvent(new CustomEvent('beru-react', { detail: { type: 'excited', message: `SET ULTIME DE MANAYA !! ${setUltimeDrops.map(p => p.name).join(' + ')} !! 0.5% de chance... TU ES BENI PAR LES DIEUX !!` } })); } catch (e) {}
     }
 
     // ─── Beru taunts when farming secret weapon bosses (no secret drop) ───
@@ -3971,7 +3962,7 @@ export default function ShadowColosseum() {
       >
         <div className="p-4 rounded-xl border border-purple-500/30 bg-purple-500/5 mt-2">
           <div className="flex items-center gap-3 mb-3">
-            <img src={getSprite(id)} alt="" className="w-14 h-14 object-contain" style={{ filter: RARITY[cd.rarity].glow }} />
+            <img loading="lazy" src={getSprite(id)} alt="" className="w-14 h-14 object-contain" style={{ filter: RARITY[cd.rarity].glow }} />
             <div className="flex-1">
               <div className="text-base font-bold">{cd.name}</div>
               <div className="text-xs text-gray-400">
@@ -3991,7 +3982,7 @@ export default function ShadowColosseum() {
             {weapon && (
               <div className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg bg-gray-800/40 border border-gray-700/30">
                 {weapon.sprite ? (
-                  <img src={weapon.sprite} alt={weapon.name} className="w-10 h-10 object-contain drop-shadow-[0_0_4px_rgba(251,191,36,0.3)]" draggable={false} />
+                  <img loading="lazy" src={weapon.sprite} alt={weapon.name} className="w-10 h-10 object-contain drop-shadow-[0_0_4px_rgba(251,191,36,0.3)]" draggable={false} />
                 ) : (
                   <span className="text-2xl">{weapon.icon}</span>
                 )}
@@ -5007,7 +4998,7 @@ export default function ShadowColosseum() {
                         }`}
                       >
                         <div className="flex items-center gap-2.5">
-                          <img src={getSprite(id)} alt={c.name} className="w-12 h-12 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
+                          <img loading="lazy" src={getSprite(id)} alt={c.name} className="w-12 h-12 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-bold truncate">{c.name}</div>
                             <div className="flex items-center gap-1 text-[11px]">
@@ -5020,7 +5011,7 @@ export default function ShadowColosseum() {
                           {_weapon && (
                             <div className="flex flex-col items-center gap-0.5 shrink-0">
                               {_weapon.sprite ? (
-                                <img src={_weapon.sprite} alt={_weapon.name} className="w-7 h-7 object-contain" draggable={false} />
+                                <img loading="lazy" src={_weapon.sprite} alt={_weapon.name} className="w-7 h-7 object-contain" draggable={false} />
                               ) : (
                                 <span className="text-base">{_weapon.icon}</span>
                               )}
@@ -5119,7 +5110,7 @@ export default function ShadowColosseum() {
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <img src={getSprite(id)} alt={c.name} className="w-10 h-10 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
+                          <img loading="lazy" src={getSprite(id)} alt={c.name} className="w-10 h-10 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1 text-xs font-bold">
                               <span className="truncate">{c.name}</span>
@@ -5140,7 +5131,7 @@ export default function ShadowColosseum() {
                           {_weapon && (
                             <div className="flex flex-col items-center gap-0.5 shrink-0">
                               {_weapon.sprite ? (
-                                <img src={_weapon.sprite} alt={_weapon.name} className="w-7 h-7 object-contain" draggable={false} />
+                                <img loading="lazy" src={_weapon.sprite} alt={_weapon.name} className="w-7 h-7 object-contain" draggable={false} />
                               ) : (
                                 <span className="text-base">{_weapon.icon}</span>
                               )}
@@ -5263,7 +5254,7 @@ export default function ShadowColosseum() {
                         {!unlocked ? (
                           <span className="text-2xl w-10 text-center">{'\uD83D\uDD12'}</span>
                         ) : stage.sprite ? (
-                          <img src={stage.sprite} alt={stage.name} className={`${stage.spriteSize === 'lg' ? 'w-14 h-14' : 'w-10 h-10'} object-contain rounded`} />
+                          <img loading="lazy" src={stage.sprite} alt={stage.name} className={`${stage.spriteSize === 'lg' ? 'w-14 h-14' : 'w-10 h-10'} object-contain rounded`} />
                         ) : (
                           <span className="text-2xl w-10 text-center">{stage.emoji}</span>
                         )}
@@ -5396,7 +5387,7 @@ export default function ShadowColosseum() {
 
                 return (
                   <div key={`a2t${tier}`} className="mb-4 relative rounded-xl overflow-hidden" style={tierMap ? { background: `linear-gradient(to bottom, rgba(15,15,26,0.75), rgba(15,15,26,0.92))` } : {}}>
-                    {tierMap && <img src={tierMap} alt={ARC2_TIER_NAMES[tier]} className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none" />}
+                    {tierMap && <img loading="lazy" src={tierMap} alt={ARC2_TIER_NAMES[tier]} className="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none" />}
                     <div className="relative p-2">
                     <div className="flex items-center gap-2 text-xs text-gray-500 font-bold uppercase tracking-wider mb-2">
                       <span>Tier {tier} — {ARC2_TIER_NAMES[tier]}</span>
@@ -5432,7 +5423,7 @@ export default function ShadowColosseum() {
                             {!unlocked ? (
                               <span className="text-2xl w-10 text-center">{'\uD83D\uDD12'}</span>
                             ) : stage.sprite ? (
-                              <img src={stage.sprite} alt={stage.name} className="w-10 h-10 object-contain rounded" />
+                              <img loading="lazy" src={stage.sprite} alt={stage.name} className="w-10 h-10 object-contain rounded" />
                             ) : (
                               <span className="text-2xl w-10 text-center">{stage.emoji}</span>
                             )}
@@ -5804,7 +5795,7 @@ export default function ShadowColosseum() {
                   >
                     {chibi ? (
                       <>
-                        <img src={getChibiSprite(chibiId)} alt={chibi.name} className="w-12 h-12 mx-auto object-contain" style={{ filter: RARITY[chibi.rarity]?.glow }} />
+                        <img loading="lazy" src={getChibiSprite(chibiId)} alt={chibi.name} className="w-12 h-12 mx-auto object-contain" style={{ filter: RARITY[chibi.rarity]?.glow }} />
                         <div className="text-[10px] font-bold mt-1 truncate">{chibi.name}</div>
                         <div className="text-[9px] text-gray-500">Lv{getChibiLevel(chibiId).level}</div>
                         <div className={`text-[8px] ${elemColor}`}>{ELEMENTS[chibi.element]?.icon} {ELEMENTS[chibi.element]?.name}</div>
@@ -5900,7 +5891,7 @@ export default function ShadowColosseum() {
                       const elemWeak = ELEMENTS[stage.element]?.beats === m.element;
                       return (
                         <div key={m.id} className="flex items-start gap-2.5 p-2 rounded-lg bg-gray-800/40">
-                          <img src={getChibiSprite(m.id)} alt="" className="w-9 h-9 object-contain rounded-lg flex-shrink-0" />
+                          <img loading="lazy" src={getChibiSprite(m.id)} alt="" className="w-9 h-9 object-contain rounded-lg flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 mb-0.5">
                               <span className="text-[11px] font-bold text-white truncate">{m.name}</span>
@@ -6040,7 +6031,7 @@ export default function ShadowColosseum() {
                           'border-gray-700/30 bg-gray-800/30 hover:border-purple-500/40'
                         }`}
                       >
-                        <img src={getSprite(id)} alt={c.name} className="w-10 h-10 mx-auto object-contain" style={{ filter: RARITY[c.rarity]?.glow }} />
+                        <img loading="lazy" src={getSprite(id)} alt={c.name} className="w-10 h-10 mx-auto object-contain" style={{ filter: RARITY[c.rarity]?.glow }} />
                         <div className="text-[9px] font-bold truncate mt-1">{c.name}</div>
                         <div className="text-[8px] text-gray-500">Lv{lv}</div>
                         <div className={`text-[7px] ${cEl?.color || 'text-gray-500'}`}>
@@ -6268,7 +6259,7 @@ export default function ShadowColosseum() {
                         isActive ? 'border-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.4)]' :
                         'border-gray-600/30'
                       }`} style={canPickAlly ? { background: 'radial-gradient(circle, rgba(74,222,128,0.08), transparent)' } : isActive ? { background: 'radial-gradient(circle, rgba(250,204,21,0.08), transparent)' } : {}}>
-                        <img src={atkAnim?.idx === i ? atkAnim.frames[atkAnim.frame] : f.sprite} alt={f.name} className="w-10 h-10 object-contain"
+                        <img loading="lazy" src={atkAnim?.idx === i ? atkAnim.frames[atkAnim.frame] : f.sprite} alt={f.name} className="w-10 h-10 object-contain"
                           style={{
                             animation: atkAnim?.idx === i ? 'none' : !f.alive ? 'none' : isActive ? 'idleBreatheFlip 3s ease-in-out infinite' : 'idleBreatheFlip 4s ease-in-out infinite',
                             filter: !f.alive ? 'grayscale(1)' : atkAnim?.idx === i ? 'drop-shadow(0 0 8px rgba(239,68,68,0.8))' : '',
@@ -6353,7 +6344,7 @@ export default function ShadowColosseum() {
                         boxShadow: en.isMain && en.alive ? '0 0 15px rgba(239,68,68,0.25)' : 'none',
                       }}>
                         {en.sprite ? (
-                          <img src={en.sprite} alt={en.name} className={`${en.isMain ? 'w-11 h-11' : 'w-8 h-8'} object-contain`}
+                          <img loading="lazy" src={en.sprite} alt={en.name} className={`${en.isMain ? 'w-11 h-11' : 'w-8 h-8'} object-contain`}
                             style={{ filter: en.isMain ? 'drop-shadow(0 0 6px rgba(239,68,68,0.4))' : '' }} />
                         ) : (
                           <span className={en.isMain ? 'text-3xl' : 'text-xl'}
@@ -6441,7 +6432,7 @@ export default function ShadowColosseum() {
                       onClick={(e) => e.stopPropagation()}>
                       <button onClick={() => { setEnemyTooltip(null); setTooltipPinned(false); }} className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-white text-xs transition-colors">&times;</button>
                       <div className="flex items-center gap-2 mb-2">
-                        <img src={f.sprite} alt={f.name} className="w-10 h-10 object-contain" />
+                        <img loading="lazy" src={f.sprite} alt={f.name} className="w-10 h-10 object-contain" />
                         <div>
                           <div className="text-xs font-bold text-white">{f.name} <span className="text-gray-500 font-normal">Lv{f.level}</span></div>
                           <div className="text-[9px] text-gray-400">{fEl.icon} {fEl.name}</div>
@@ -6523,7 +6514,7 @@ export default function ShadowColosseum() {
                       className="bg-gray-900 border-2 border-red-500/50 rounded-xl p-3 mb-2 shadow-2xl relative">
                       <button onClick={() => { setEnemyTooltip(null); setTooltipPinned(false); }} className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-white text-xs transition-colors">&times;</button>
                       <div className="flex items-center gap-2 mb-2">
-                        {en.sprite ? <img src={en.sprite} alt={en.name} className="w-10 h-10 object-contain" /> : <span className="text-xl">{en.emoji}</span>}
+                        {en.sprite ? <img loading="lazy" src={en.sprite} alt={en.name} className="w-10 h-10 object-contain" /> : <span className="text-xl">{en.emoji}</span>}
                         <div>
                           <div className="text-xs font-bold text-white">{en.name} {en.isMain && <span className="text-[8px] bg-red-500/30 text-red-300 px-1.5 rounded font-bold ml-1">BOSS</span>}</div>
                           <div className="text-[9px] text-gray-400">{enEl.icon} {enEl.name}</div>
@@ -6591,7 +6582,7 @@ export default function ShadowColosseum() {
             {phase === 'advance' && <div className="text-center py-2 mb-2"><div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto" /></div>}
             {phase === 'victory' && (
               <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center py-4">
-                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771551432/Victory_hcur2y.png" alt="Victory" className="w-32 mx-auto mb-1 drop-shadow-[0_0_12px_rgba(234,179,8,0.5)]" style={{ animation: 'victoryPulse 1.5s ease-in-out infinite' }} />
+                <img loading="lazy" src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771551432/Victory_hcur2y.png" alt="Victory" className="w-32 mx-auto mb-1 drop-shadow-[0_0_12px_rgba(234,179,8,0.5)]" style={{ animation: 'victoryPulse 1.5s ease-in-out infinite' }} />
               </motion.div>
             )}
             {phase === 'defeat' && (
@@ -6730,14 +6721,14 @@ export default function ShadowColosseum() {
                       </span>
                     </div>
                   )}
-                  {r.hunterDrop && (
-                    <div className="flex justify-between items-center">
+                  {r.hunterDrops?.length > 0 && r.hunterDrops.map((hd, hi) => (
+                    <div key={hi} className="flex justify-between items-center">
                       <span className="text-gray-400">Hunter</span>
-                      <span className={`text-xs font-bold ${r.hunterDrop.rarity === 'mythique' ? 'text-purple-400' : r.hunterDrop.rarity === 'legendaire' ? 'text-yellow-400' : 'text-blue-400'}`}>
-                        {'\uD83C\uDF1F'} {r.hunterDrop.name} {r.hunterDrop.isDuplicate ? '(Dupe)' : '(Nouveau !)'}
+                      <span className={`text-xs font-bold ${hd.rarity === 'mythique' ? 'text-purple-400' : hd.rarity === 'legendaire' ? 'text-yellow-400' : 'text-blue-400'}`}>
+                        {'\uD83C\uDF1F'} {hd.name} {hd.isDuplicate ? '(Dupe)' : '(Nouveau !)'}
                       </span>
                     </div>
-                  )}
+                  ))}
                   {r.art && (
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Artefact ARC II</span>
@@ -6746,30 +6737,20 @@ export default function ShadowColosseum() {
                       </span>
                     </div>
                   )}
-                  {r.nierDrop && (
-                    <div className="mt-2 p-2 rounded-lg border border-red-500/40 bg-gradient-to-r from-red-900/30 to-black/40">
+                  {r.setUltimeDrops?.length > 0 && r.setUltimeDrops.map((su, si) => (
+                    <div key={si} className="mt-2 p-2 rounded-lg border border-red-500/50 bg-gradient-to-r from-red-900/30 to-black/40" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>
                       <div className="flex justify-between items-center">
-                        <span className="text-red-300 font-bold text-xs">{'\uD83D\uDDA4'} {{ nier: 'NieR:Automata', chibi: 'Chibi', steinsgate: 'Steins;Gate', fate: 'Fate', aot: 'Attack on Titan', tokyoghoul: 'Tokyo Ghoul', berserk: 'Berserk', konosuba: 'KonoSuba' }[r.nierDrop.series] || 'Collab'}</span>
+                        <span className="text-red-300 font-bold text-xs">{'\uD83E\uDE78'} SET ULTIME</span>
                         <span className="text-white font-black text-xs" style={{ textShadow: '0 0 8px rgba(239,68,68,0.6)' }}>
-                          {r.nierDrop.name} {r.nierDrop.isDuplicate ? '(Dupe)' : '(NOUVEAU !)'}
+                          {su.name}
                         </span>
                       </div>
                     </div>
-                  )}
-                  {r.bossHunterDrop && (
-                    <div className="mt-2 p-2 rounded-lg border border-orange-500/50 bg-gradient-to-r from-orange-900/30 to-red-900/40" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>
-                      <div className="flex justify-between items-center">
-                        <span className="text-orange-300 font-bold text-xs">{'\u2694\uFE0F'} {{ berserk: 'BERSERK', konosuba: 'KONOSUBA' }[r.bossHunterDrop.series] || 'BOSS DROP'}</span>
-                        <span className="text-white font-black text-xs" style={{ textShadow: '0 0 10px rgba(249,115,22,0.8)' }}>
-                          {r.bossHunterDrop.name} {r.bossHunterDrop.isDuplicate ? '(Dupe)' : '(NOUVEAU !)'}
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                  ))}
                   {r.skinDrop && (
                     <div className="mt-2 p-2 rounded-lg border border-pink-500/50 bg-gradient-to-r from-pink-900/30 to-purple-900/30" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>
                       <div className="flex items-center gap-2">
-                        <img src={r.skinDrop.sprite} alt={r.skinDrop.skinName} className="w-10 h-10 rounded-lg border border-pink-400/40 object-contain" />
+                        <img loading="lazy" src={r.skinDrop.sprite} alt={r.skinDrop.skinName} className="w-10 h-10 rounded-lg border border-pink-400/40 object-contain" />
                         <div>
                           <div className="text-pink-300 font-black text-xs">{'\uD83C\uDFA8'} SKIN RARE !</div>
                           <div className="text-white text-[10px]">{r.skinDrop.skinName}</div>
@@ -6807,7 +6788,7 @@ export default function ShadowColosseum() {
 
             {/* Header */}
             <div className="text-center mb-5">
-              <img src={getSprite(id)} alt={c.name} className="w-16 h-16 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
+              <img loading="lazy" src={getSprite(id)} alt={c.name} className="w-16 h-16 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
               <div className="text-[10px] text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon} {ELEMENTS[c.element].name}
@@ -6851,7 +6832,7 @@ export default function ShadowColosseum() {
                             }`}
                             title={isOwned ? skin.name : `${skin.name} (non obtenu)`}
                           >
-                            <img src={skin.sprite} alt={skin.name} className="w-10 h-10 object-contain" />
+                            <img loading="lazy" src={skin.sprite} alt={skin.name} className="w-10 h-10 object-contain" />
                             {!isOwned && <div className="absolute inset-0 flex items-center justify-center"><span className="text-sm">{'\uD83D\uDD12'}</span></div>}
                             {isActive && <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-400 rounded-full border border-purple-900" />}
                             <div className={`text-[7px] mt-0.5 truncate max-w-[48px] ${isActive ? 'text-purple-300' : 'text-gray-500'}`}>{skin.name}</div>
@@ -6980,7 +6961,7 @@ export default function ShadowColosseum() {
 
             {/* Header */}
             <div className="text-center mb-5">
-              <img src={getSprite(id)} alt={c.name} className="w-16 h-16 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
+              <img loading="lazy" src={getSprite(id)} alt={c.name} className="w-16 h-16 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
               <div className="text-[10px] text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon} {ELEMENTS[c.element].name}
@@ -7114,7 +7095,7 @@ export default function ShadowColosseum() {
 
             {/* Header */}
             <div className="text-center mb-3">
-              <img src={getChibiSprite(id)} alt={c.name} className="w-14 h-14 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
+              <img loading="lazy" src={getChibiSprite(id)} alt={c.name} className="w-14 h-14 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
               <div className="text-[10px] text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon}
@@ -8024,7 +8005,7 @@ export default function ShadowColosseum() {
 
             {/* Header */}
             <div className="text-center mb-4">
-              <img src={getChibiSprite(id)} alt={c.name} className="w-14 h-14 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
+              <img loading="lazy" src={getChibiSprite(id)} alt={c.name} className="w-14 h-14 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
               <div className="text-[10px] text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon}
@@ -8041,7 +8022,7 @@ export default function ShadowColosseum() {
                 <div className="p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 cursor-pointer" onClick={() => setWeaponDetailId(weaponId)}>
                   <div className="flex items-center gap-2">
                     {weapon.sprite ? (
-                      <img src={weapon.sprite} alt={weapon.name} className="w-8 h-8 object-contain" draggable={false} />
+                      <img loading="lazy" src={weapon.sprite} alt={weapon.name} className="w-8 h-8 object-contain" draggable={false} />
                     ) : (
                       <span className="text-xl">{weapon.icon}</span>
                     )}
@@ -8117,7 +8098,7 @@ export default function ShadowColosseum() {
                       <div key={wId} className={`w-full flex items-center gap-2 p-1.5 rounded-lg border transition-all text-left ${isEquippedElsewhere ? 'border-orange-500/40 bg-orange-500/5' : 'border-gray-700/30 bg-gray-800/20 hover:border-amber-500/40'}`}>
                         <button onClick={() => equipWeapon(wId)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
                           {w.sprite ? (
-                            <img src={w.sprite} alt={w.name} className="w-6 h-6 object-contain" draggable={false} />
+                            <img loading="lazy" src={w.sprite} alt={w.name} className="w-6 h-6 object-contain" draggable={false} />
                           ) : (
                             <span>{w.icon}</span>
                           )}
@@ -8132,7 +8113,7 @@ export default function ShadowColosseum() {
                             </div>
                             {isEquippedElsewhere && ownerData && (
                               <div className="flex items-center gap-1 mt-0.5">
-                                <img src={getChibiSprite(ownerChibiId)} alt={ownerData.name} className="w-3.5 h-3.5 object-contain" />
+                                <img loading="lazy" src={getChibiSprite(ownerChibiId)} alt={ownerData.name} className="w-3.5 h-3.5 object-contain" />
                                 <span className="text-[9px] text-orange-400">Equip. par {ownerData.name}</span>
                               </div>
                             )}
@@ -8164,13 +8145,13 @@ export default function ShadowColosseum() {
                   <div className="mt-2 p-3 rounded-xl border border-orange-500/50 bg-orange-500/10 backdrop-blur">
                     <div className="text-[11px] font-bold text-orange-400 mb-2">{'\u26A0\uFE0F'} Changement d'arme</div>
                     <div className="flex items-center gap-2 mb-1.5">
-                      <img src={getChibiSprite(weaponSwapConfirm.fromChibiId)} alt={fromChibi.name} className="w-6 h-6 object-contain" />
+                      <img loading="lazy" src={getChibiSprite(weaponSwapConfirm.fromChibiId)} alt={fromChibi.name} className="w-6 h-6 object-contain" />
                       <div className="text-[10px] text-gray-300">
                         <span className="font-bold text-orange-300">{fromChibi.name}</span> perdra <span className="font-bold text-amber-300">{swapW.name}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mb-2">
-                      <img src={getChibiSprite(id)} alt={c.name} className="w-6 h-6 object-contain" />
+                      <img loading="lazy" src={getChibiSprite(id)} alt={c.name} className="w-6 h-6 object-contain" />
                       <div className="text-[10px] text-gray-300">
                         <span className="font-bold text-cyan-300">{c.name}</span> {'\u2192'} equipera <span className="font-bold text-amber-300">{swapW.name}</span>
                       </div>
@@ -9247,7 +9228,7 @@ export default function ShadowColosseum() {
                       }`}>
                       <div className="flex items-center gap-1.5">
                         {w.sprite ? (
-                          <img src={w.sprite} alt={w.name} className="w-6 h-6 object-contain" draggable={false} />
+                          <img loading="lazy" src={w.sprite} alt={w.name} className="w-6 h-6 object-contain" draggable={false} />
                         ) : (
                           <span className="text-sm">{w.icon}</span>
                         )}
@@ -9791,7 +9772,7 @@ export default function ShadowColosseum() {
                     return (
                       <button key={id} onClick={() => doEquip(id)}
                         className="p-1 rounded-lg border border-gray-700/30 bg-gray-800/20 hover:border-indigo-400/50 transition-all text-center">
-                        <img src={getChibiSprite(id)} alt="" className="w-8 h-8 mx-auto object-contain" />
+                        <img loading="lazy" src={getChibiSprite(id)} alt="" className="w-8 h-8 mx-auto object-contain" />
                         <div className="text-[9px] text-gray-300 truncate">{c.name.split(' ')[0]}</div>
                         {currentSlotArt && (
                           <div className="text-[8px] text-yellow-400">{ARTIFACT_SLOTS[selArt.slot]?.icon} Lv{currentSlotArt.level}</div>
@@ -10416,7 +10397,7 @@ export default function ShadowColosseum() {
                   return (
                     <div key={cId} className="mb-3 p-2 rounded-xl border border-gray-700/20 bg-gray-800/10">
                       <div className="flex items-center gap-2 mb-1.5">
-                        <img src={getChibiSprite(cId)} alt="" className="w-8 h-8 object-contain" />
+                        <img loading="lazy" src={getChibiSprite(cId)} alt="" className="w-8 h-8 object-contain" />
                         <span className="text-xs font-bold text-gray-200">{chibi.name}</span>
                         <span className="text-[10px] text-gray-500">{filledCount}/8</span>
                         <span className="text-[8px] text-amber-400/70 font-bold ml-auto">iLv {eqILv.total}</span>
@@ -10535,7 +10516,7 @@ export default function ShadowColosseum() {
                 <div className="mt-1 flex items-center gap-1.5">
                   {data.weaponCollection?.['w_sulfuras'] !== undefined ? (
                     <>
-                      <img src={WEAPONS.w_sulfuras?.sprite} alt="Sulfuras" className="w-4 h-4 object-contain" />
+                      <img loading="lazy" src={WEAPONS.w_sulfuras?.sprite} alt="Sulfuras" className="w-4 h-4 object-contain" />
                       <span className="text-[9px] text-orange-300 font-bold">Sulfuras obtenue ! (x{(data.ragnarokDropLog || []).filter(d => d.weaponId === 'w_sulfuras').length} drops, A{data.weaponCollection['w_sulfuras']})</span>
                     </>
                   ) : (
@@ -10664,7 +10645,7 @@ export default function ShadowColosseum() {
                       <div key={wId} className="flex items-center gap-1.5">
                         {has ? (
                           <>
-                            <img src={w?.sprite} alt={w?.name} className="w-4 h-4 object-contain" />
+                            <img loading="lazy" src={w?.sprite} alt={w?.name} className="w-4 h-4 object-contain" />
                             <span className="text-[9px] text-purple-300 font-bold">{w?.name} obtenu ! (x{count} drops, A{data.weaponCollection[wId]})</span>
                           </>
                         ) : (
@@ -10739,7 +10720,7 @@ export default function ShadowColosseum() {
                 <div className="mt-1 flex items-center gap-1.5">
                   {data.weaponCollection?.['w_guldan'] !== undefined ? (
                     <>
-                      <img src={WEAPONS.w_guldan?.sprite} alt="Baton de Gul'dan" className="w-4 h-4 object-contain" />
+                      <img loading="lazy" src={WEAPONS.w_guldan?.sprite} alt="Baton de Gul'dan" className="w-4 h-4 object-contain" />
                       <span className="text-[9px] text-green-300 font-bold">Baton de Gul'dan obtenu ! (x{(data.archDemonDropLog || []).filter(d => d.weaponId === 'w_guldan').length} drops, A{data.weaponCollection['w_guldan']})</span>
                     </>
                   ) : (
@@ -10850,7 +10831,7 @@ export default function ShadowColosseum() {
                 <div key={ch.id} className="p-3 rounded-xl bg-gray-900/60 border border-gray-700/30 hover:border-gray-600/50 transition-all">
                   {/* Header */}
                   <div className="flex items-center gap-2.5 mb-2">
-                    <img src={getChibiSprite(ch.id)} alt="" className="w-10 h-10 object-contain rounded-lg bg-gray-800/50" />
+                    <img loading="lazy" src={getChibiSprite(ch.id)} alt="" className="w-10 h-10 object-contain rounded-lg bg-gray-800/50" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className="text-sm font-bold text-white truncate">{ch.name}</span>
@@ -10944,7 +10925,7 @@ export default function ShadowColosseum() {
         <div className="max-w-xl mx-auto px-4 pt-12 text-center">
           {result.won ? (
             <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200 }}>
-              <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771551432/Victory_hcur2y.png" alt="Victory" className="w-48 mx-auto mb-2 drop-shadow-[0_0_16px_rgba(234,179,8,0.5)]" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }} />
+              <img loading="lazy" src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771551432/Victory_hcur2y.png" alt="Victory" className="w-48 mx-auto mb-2 drop-shadow-[0_0_16px_rgba(234,179,8,0.5)]" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }} />
               {result.starLevel > 0 && (
                 <div className="mb-2">
                   <div className="flex items-center justify-center gap-0.5">
@@ -11012,33 +10993,41 @@ export default function ShadowColosseum() {
                   </div>
                 </motion.div>
               )}
-              {result.hunterDrop && (
-                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.1 }}
-                  className="bg-gradient-to-r from-red-600/20 to-purple-600/20 border border-red-500/40 rounded-xl p-3 mb-6">
+              {result.hunterDrops?.length > 0 && result.hunterDrops.map((hd, hi) => (
+                <motion.div key={hi} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.1 + hi * 0.15 }}
+                  className="bg-gradient-to-r from-red-600/20 to-purple-600/20 border border-red-500/40 rounded-xl p-3 mb-3">
                   <div className="text-red-400 font-black text-lg">{'\u2694\uFE0F'} HUNTER DROP !</div>
                   <div className="flex items-center justify-center gap-2 mt-1">
-                    <img src={HUNTERS[result.hunterDrop.id]?.sprite || ''} alt="" className="w-10 h-10 object-contain" />
+                    <img loading="lazy" src={HUNTERS[hd.id]?.sprite || ''} alt="" className="w-10 h-10 object-contain" />
                     <div>
-                      <div className="text-sm font-bold text-white">{result.hunterDrop.name}</div>
-                      <div className={`text-[10px] ${RARITY[result.hunterDrop.rarity]?.color || 'text-gray-400'}`}>
-                        {RARITY[result.hunterDrop.rarity]?.stars || ''}
+                      <div className="text-sm font-bold text-white">{hd.name}</div>
+                      <div className={`text-[10px] ${RARITY[hd.rarity]?.color || 'text-gray-400'}`}>
+                        {RARITY[hd.rarity]?.stars || ''}
                       </div>
                     </div>
                   </div>
-                  {result.hunterDrop.isDuplicate ? (
-                    <div className="text-yellow-400 text-xs mt-1">Doublon ! Eveil A{result.hunterDrop.newStars}</div>
+                  {hd.isDuplicate ? (
+                    <div className="text-yellow-400 text-xs mt-1">Doublon ! Eveil A{hd.newStars}</div>
                   ) : (
                     <div className="text-green-400 text-xs mt-1">Nouveau hunter debloque !</div>
                   )}
                 </motion.div>
-              )}
+              ))}
+              {result.setUltimeDrops?.length > 0 && result.setUltimeDrops.map((su, si) => (
+                <motion.div key={si} initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 1.2 + si * 0.15, type: 'spring', stiffness: 200 }}
+                  className="bg-gradient-to-r from-red-600/30 to-pink-600/30 border-2 border-red-400/60 rounded-xl p-4 mb-3" style={{ boxShadow: '0 0 30px rgba(239, 68, 68, 0.3)' }}>
+                  <div className="text-red-300 font-black text-lg animate-pulse">{'\uD83E\uDE78'} SET ULTIME DE MANAYA !</div>
+                  <div className="text-white font-black text-sm mt-1">{su.name}</div>
+                  <div className="text-red-400 text-[10px] mt-0.5">Piece du Set Manaya T12</div>
+                </motion.div>
+              ))}
               {result.weaponDrop && (
                 <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 1.2, type: 'spring', stiffness: 200 }}
                   className="bg-gradient-to-r from-orange-600/30 to-red-600/30 border-2 border-orange-400/60 rounded-xl p-4 mb-6 cursor-pointer" style={{ boxShadow: '0 0 30px rgba(251, 146, 60, 0.3)' }}
                   onClick={() => result.weaponDrop.id === 'w_sulfuras' ? setWeaponReveal(result.weaponDrop) : setWeaponDetailId(result.weaponDrop.id)}>
                   <div className="text-orange-300 font-black text-lg animate-pulse">{'\u2694\uFE0F'} ARME OBTENUE !</div>
                   <div className="text-2xl mt-1">{result.weaponDrop.sprite ? (
-                    <img src={result.weaponDrop.sprite} alt={result.weaponDrop.name} className="w-10 h-10 object-contain mx-auto" draggable={false} />
+                    <img loading="lazy" src={result.weaponDrop.sprite} alt={result.weaponDrop.name} className="w-10 h-10 object-contain mx-auto" draggable={false} />
                   ) : result.weaponDrop.icon}</div>
                   <div className="text-white font-black text-sm mt-1">{result.weaponDrop.name}</div>
                   <div className="text-orange-400 text-[10px] mt-0.5">ATK +{result.weaponDrop.atk} | {MAIN_STAT_VALUES[result.weaponDrop.bonusStat]?.name} +{result.weaponDrop.bonusValue}</div>
@@ -11263,7 +11252,7 @@ export default function ShadowColosseum() {
               <motion.div animate={{ x: [0, -8, 8, -5, 5, 0], y: [0, 5, -5, 3, -3, 0] }} transition={{ duration: 0.6, delay: 0.5, repeat: 5 }}>
                 <div className="text-red-400 font-black text-sm tracking-[0.4em] uppercase mb-3" style={{ textShadow: '0 0 30px rgba(239,68,68,1), 0 0 60px rgba(239,68,68,0.5)' }}>SECRET WEAPON</div>
                 <motion.div className="mb-5" initial={{ rotateY: 0, scale: 1 }} animate={{ rotateY: [0, 180, 360], scale: [1, 1.3, 1] }} transition={{ duration: 3, delay: 0.8, repeat: Infinity, repeatDelay: 2 }}>
-                  {weaponReveal.sprite ? <img src={weaponReveal.sprite} alt={weaponReveal.name} className="w-32 h-32 object-contain mx-auto drop-shadow-[0_0_30px_rgba(239,68,68,0.8)]" draggable={false} /> : <span className="text-8xl drop-shadow-[0_0_30px_rgba(239,68,68,0.8)]">{weaponReveal.icon}</span>}
+                  {weaponReveal.sprite ? <img loading="lazy" src={weaponReveal.sprite} alt={weaponReveal.name} className="w-32 h-32 object-contain mx-auto drop-shadow-[0_0_30px_rgba(239,68,68,0.8)]" draggable={false} /> : <span className="text-8xl drop-shadow-[0_0_30px_rgba(239,68,68,0.8)]">{weaponReveal.icon}</span>}
                 </motion.div>
                 <motion.h2 className="text-4xl font-black mb-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.5 }} style={{ background: 'linear-gradient(135deg, #ef4444, #f59e0b, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', filter: 'drop-shadow(0 0 20px rgba(239,68,68,0.8))' }}>{weaponReveal.name}</motion.h2>
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.5 }} className="space-y-2">
@@ -11283,7 +11272,7 @@ export default function ShadowColosseum() {
             <motion.div className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} style={{ background: 'rgba(0,0,0,0.85)' }} />
             <motion.div className="relative z-10 text-center bg-gradient-to-b from-purple-900/40 to-indigo-900/40 border border-purple-500/30 rounded-xl p-6" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
               <div className="text-purple-400 font-bold text-xs tracking-wider uppercase mb-2">Drop</div>
-              <div className="mb-3">{weaponReveal.sprite ? <img src={weaponReveal.sprite} alt={weaponReveal.name} className="w-20 h-20 object-contain mx-auto" draggable={false} /> : <span className="text-5xl">{weaponReveal.icon}</span>}</div>
+              <div className="mb-3">{weaponReveal.sprite ? <img loading="lazy" src={weaponReveal.sprite} alt={weaponReveal.name} className="w-20 h-20 object-contain mx-auto" draggable={false} /> : <span className="text-5xl">{weaponReveal.icon}</span>}</div>
               <h2 className="text-xl font-black text-orange-300 mb-2">{weaponReveal.name}</h2>
               <div className="text-orange-200 text-xs">ATK +{weaponReveal.atk} | {MAIN_STAT_VALUES[weaponReveal.bonusStat]?.name} +{weaponReveal.bonusValue}</div>
               {weaponReveal.isNew ? <div className="text-green-400 text-xs font-bold mt-2">Nouvelle arme !</div> : weaponReveal.newAwakening !== undefined && <div className="text-yellow-400 text-xs font-bold mt-2">Eveil A{weaponReveal.newAwakening - 1} → A{weaponReveal.newAwakening}</div>}
@@ -11307,7 +11296,7 @@ export default function ShadowColosseum() {
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <img src={SPRITES.ragnarok} alt="Ragnarok" className="w-12 h-12 object-contain" />
+                  <img loading="lazy" src={SPRITES.ragnarok} alt="Ragnarok" className="w-12 h-12 object-contain" />
                   <div>
                     <h3 className="text-lg font-black text-orange-300">{'\u2604\uFE0F'} Ragnarok</h3>
                     <div className="text-[10px] text-gray-400">Tier 6 — Domaine du Monarque</div>
@@ -11336,7 +11325,7 @@ export default function ShadowColosseum() {
               <div className={`mb-4 p-3 rounded-xl border ${hasSulfuras ? 'bg-gradient-to-r from-orange-900/20 to-red-900/20 border-orange-500/30' : 'bg-gray-800/20 border-gray-700/20'}`}>
                 <div className="flex items-center gap-2 mb-1">
                   {hasSulfuras ? (
-                    <img src={WEAPONS.w_sulfuras?.sprite} alt="Sulfuras" className="w-8 h-8 object-contain" />
+                    <img loading="lazy" src={WEAPONS.w_sulfuras?.sprite} alt="Sulfuras" className="w-8 h-8 object-contain" />
                   ) : (
                     <span className="text-2xl opacity-30">{'\uD83D\uDD28'}</span>
                   )}
@@ -11388,7 +11377,7 @@ export default function ShadowColosseum() {
                         }`} onClick={() => { setRagnarokHistoryOpen(false); isSulfuras ? setWeaponReveal({ ...wData, isNew: false }) : setWeaponDetailId(entry.weaponId); }}>
                           <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
                             {entry.sprite || wData?.sprite ? (
-                              <img src={entry.sprite || wData?.sprite} alt={entry.name} className="w-8 h-8 object-contain" />
+                              <img loading="lazy" src={entry.sprite || wData?.sprite} alt={entry.name} className="w-8 h-8 object-contain" />
                             ) : (
                               <span className="text-lg">{entry.icon || wData?.icon || '?'}</span>
                             )}
@@ -11454,7 +11443,7 @@ export default function ShadowColosseum() {
               <div className={`mb-3 p-3 rounded-xl border ${hasZ ? 'bg-gradient-to-r from-cyan-900/20 to-blue-900/20 border-cyan-500/30' : 'bg-gray-800/20 border-gray-700/20'}`}>
                 <div className="flex items-center gap-2 mb-1">
                   {hasZ ? (
-                    <img src={WEAPONS.w_katana_z?.sprite} alt="Katana Z" className="w-8 h-8 object-contain" />
+                    <img loading="lazy" src={WEAPONS.w_katana_z?.sprite} alt="Katana Z" className="w-8 h-8 object-contain" />
                   ) : (
                     <span className="text-2xl opacity-30">{'\u2694\uFE0F'}</span>
                   )}
@@ -11471,7 +11460,7 @@ export default function ShadowColosseum() {
               <div className={`mb-3 p-3 rounded-xl border ${hasV ? 'bg-gradient-to-r from-emerald-900/20 to-green-900/20 border-emerald-500/30' : 'bg-gray-800/20 border-gray-700/20'}`}>
                 <div className="flex items-center gap-2 mb-1">
                   {hasV ? (
-                    <img src={WEAPONS.w_katana_v?.sprite} alt="Katana V" className="w-8 h-8 object-contain" />
+                    <img loading="lazy" src={WEAPONS.w_katana_v?.sprite} alt="Katana V" className="w-8 h-8 object-contain" />
                   ) : (
                     <span className="text-2xl opacity-30">{'\u2694\uFE0F'}</span>
                   )}
@@ -11518,7 +11507,7 @@ export default function ShadowColosseum() {
                         }`} onClick={() => { setMonarchHistoryOpen(false); isKatana ? setWeaponReveal({ ...wData, isNew: false }) : setWeaponDetailId(entry.weaponId); }}>
                           <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
                             {entry.sprite || wData?.sprite ? (
-                              <img src={entry.sprite || wData?.sprite} alt={entry.name} className="w-8 h-8 object-contain" />
+                              <img loading="lazy" src={entry.sprite || wData?.sprite} alt={entry.name} className="w-8 h-8 object-contain" />
                             ) : (
                               <span className="text-lg">{entry.icon || wData?.icon || '?'}</span>
                             )}
@@ -11922,7 +11911,7 @@ export default function ShadowColosseum() {
                 ? 'bg-green-900/90 border-green-500/50 shadow-green-500/20'
                 : 'bg-blue-900/90 border-blue-500/50 shadow-blue-500/20'
             }`}>
-              <img src={getChibiSprite(catchToast.id)} alt="" className="w-8 h-8 object-contain" />
+              <img loading="lazy" src={getChibiSprite(catchToast.id)} alt="" className="w-8 h-8 object-contain" />
               <div>
                 <div className="text-xs font-bold text-white">{catchToast.name}</div>
                 {catchToast.isNew ? (
