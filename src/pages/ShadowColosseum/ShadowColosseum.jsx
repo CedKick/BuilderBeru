@@ -466,8 +466,11 @@ export default function ShadowColosseum() {
   const skipSaveRef = useRef(isLoggedIn()); // Prevent save during cloud load (race condition)
   const [syncStatus, setSyncStatus] = useState('synced');
 
-  // Cloud-first load: NeonDB = source of truth when logged in
-  // Skip if already loaded this session (avoids redundant cloud fetch on remount)
+  // Cloud-first load: wait for initialSync to merge cloud↔localStorage, then re-read
+  // initialSync() already fetches all cloud data, merges with localStorage, and handles
+  // login-pending (cloud wins) + corruption detection. A second loadCloud() is redundant
+  // and can overwrite fresh local data (e.g. raid XP) with stale cloud data if the
+  // async sync hadn't completed before refresh.
   useEffect(() => {
     if (!isLoggedIn()) { setCloudLoading(false); skipSaveRef.current = false; return; }
     if (cloudLoadedRef.current || _cloudLoadedThisSession) {
@@ -478,16 +481,10 @@ export default function ShadowColosseum() {
       try {
         await cloudStorage.whenReady();
         if (cancelled) return;
-        const cloudData = await cloudStorage.loadCloud(SAVE_KEY);
+        // initialSync already merged cloud → localStorage — just re-read it
+        const freshData = loadData();
         if (cancelled) return;
-        if (cloudData) {
-          const migrated = migrateData({ ...defaultData(), ...cloudData });
-          setData(prev => {
-            const prevSize = JSON.stringify(prev).length;
-            const cloudSize = JSON.stringify(migrated).length;
-            return cloudSize >= prevSize * 0.8 ? migrated : prev;
-          });
-        }
+        setData(freshData);
       } catch (err) {
         console.warn('[ShadowColosseum] Cloud load failed:', err);
       } finally {
