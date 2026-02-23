@@ -74,6 +74,25 @@ export class BossBase {
   update(dt, gameState) {
     if (!this.alive) return;
 
+    // Stun processing (Manaya Set 8pc)
+    if (this._stunned) {
+      this._stunnedTimer -= dt;
+      if (this._stunnedTimer <= 0) {
+        this._stunned = false;
+        this._stunnedTimer = 0;
+      }
+      return; // Boss does nothing while stunned
+    }
+
+    // Burn DoT (Manaya Set 8pc)
+    if (this._burning) {
+      this._burnTimer -= dt;
+      if (this._burnTimer <= 0) { this._burning = false; }
+      // Small burn DoT: 0.5% maxHp per second
+      const burnDmg = Math.floor(this.maxHp * 0.005 * dt);
+      if (burnDmg > 0) this._applyDamage(burnDmg);
+    }
+
     // Speed multiplier (enrage + cumulative speed buffs)
     let spdMult = (this.enraged ? BOSS_CFG.ENRAGE_SPEED_MULT : 1.0) * (1 + (this.speedStacks || 0) * 0.10);
 
@@ -334,6 +353,16 @@ export class BossBase {
 
   addSpeedStack() {
     this.speedStacks++;
+  }
+
+  // ── Stun (Manaya Set 8pc) ──
+  cancelCurrentPattern() {
+    if (this.currentPattern) {
+      // Clean up AoE zones from this pattern
+      this.currentPattern = null;
+      this.casting = null;
+      this.patternCooldown = 3.0; // 3s before next pattern after stun cancel
+    }
   }
 
   // ── Pattern System ──

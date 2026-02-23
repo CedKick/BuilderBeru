@@ -6,7 +6,7 @@
 
 import { CLASS_STATS } from './classStats.js';
 import { HUNTERS, hunterStatsAtLevel } from './hunterData.js';
-import { computeRaidGearBonuses } from './raidGearData.js';
+import { computeRaidGearBonuses, countManayaSetPieces, getManayaSetBonuses } from './raidGearData.js';
 
 // Class overlay: modifiers applied on top of hunter base stats
 const CLASS_OVERLAY = {
@@ -53,10 +53,22 @@ function applyGearBonuses(stats, colosseumData) {
   stats.mana += b.mana_flat;
   stats.maxMana += b.mana_flat;
 
-  // Percent bonuses
+  // Percent bonuses (gear)
   if (b.hp_pct > 0)  { const bonus = Math.floor(stats.maxHp * b.hp_pct / 100); stats.hp += bonus; stats.maxHp += bonus; }
   if (b.atk_pct > 0) { stats.atk += Math.floor(stats.atk * b.atk_pct / 100); }
   if (b.def_pct > 0) { stats.def += Math.floor(stats.def * b.def_pct / 100); }
+
+  // ── Manaya Set Bonuses (2pc/4pc/6pc stat bonuses) ──
+  const setPieces = countManayaSetPieces(gear);
+  if (setPieces >= 2) {
+    const sb = getManayaSetBonuses(setPieces);
+    if (sb.atk_pct > 0)  stats.atk += Math.floor(stats.atk * sb.atk_pct / 100);
+    if (sb.def_pct > 0)  stats.def += Math.floor(stats.def * sb.def_pct / 100);
+    if (sb.crit_rate > 0) stats.crit += sb.crit_rate;
+    if (sb.crit_dmg > 0)  stats.crit += Math.floor(sb.crit_dmg * 0.3); // crit_dmg as partial crit boost
+    if (sb.hp_pct > 0)   { const bonus = Math.floor(stats.maxHp * sb.hp_pct / 100); stats.hp += bonus; stats.maxHp += bonus; }
+    if (sb.mana_flat > 0) { stats.mana += sb.mana_flat; stats.maxMana += sb.mana_flat; }
+  }
 
   return stats;
 }

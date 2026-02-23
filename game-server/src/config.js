@@ -80,7 +80,10 @@ export const ADDS = {
 };
 
 export const DIFFICULTY = {
-  NORMAL:    { hpMult: 1.0, dmgMult: 1.0, spdMult: 1.0, label: 'Normal' },
-  HARD:      { hpMult: 2.0, dmgMult: 1.5, spdMult: 1.2, label: 'Difficile' },
-  NIGHTMARE: { hpMult: 3.5, dmgMult: 2.5, spdMult: 1.5, label: 'Cauchemar' },
+  NORMAL:         { hpMult: 1.0,  dmgMult: 1.0,  spdMult: 1.0,  label: 'Normal' },
+  HARD:           { hpMult: 2.0,  dmgMult: 1.5,  spdMult: 1.2,  label: 'Difficile' },
+  NIGHTMARE:      { hpMult: 3.5,  dmgMult: 2.5,  spdMult: 1.5,  label: 'Cauchemar' },
+  NIGHTMARE_PLUS: { hpMult: 5.0,  dmgMult: 3.5,  spdMult: 1.7,  label: 'Cauchemar+' },
+  NIGHTMARE_2:    { hpMult: 8.0,  dmgMult: 5.0,  spdMult: 2.0,  label: 'Cauchemar++' },
+  NIGHTMARE_3:    { hpMult: 12.0, dmgMult: 7.0,  spdMult: 2.3,  label: 'Cauchemar+++' },
 };

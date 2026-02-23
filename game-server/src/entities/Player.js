@@ -1,6 +1,7 @@
 import { PLAYER, ARENA } from '../config.js';
 import { CLASS_STATS, CLASS_SKILLS } from '../data/classStats.js';
 import { buildPlayerStats } from '../data/playerStatsAdapter.js';
+import { countManayaSetPieces, getManayaSetBonuses } from '../data/raidGearData.js';
 
 export class Player {
   constructor(id, username, playerClass, x, y, colosseumData = null) {
@@ -30,6 +31,18 @@ export class Player {
     this.res = stats.res;
     this.aggroMult = stats.aggroMult;
     this.color = stats.color;
+
+    // Manaya Set bonus (8pc = stun chance on hit)
+    const raidGear = colosseumData?.raidGear || null;
+    this.manayaSetCount = countManayaSetPieces(raidGear);
+    this.manayaSetBonuses = this.manayaSetCount >= 2 ? getManayaSetBonuses(this.manayaSetCount) : null;
+
+    // Apply Manaya set bonus: dmg_pct (6pc)
+    if (this.manayaSetBonuses?.dmg_pct) {
+      this.dmgBonus = this.manayaSetBonuses.dmg_pct / 100; // +15% all damage
+    } else {
+      this.dmgBonus = 0;
+    }
 
     // Main hunter (avatar) info
     this.mainHunter = stats.mainHunter || null;

@@ -294,6 +294,27 @@
     .inv-row .inv-actions button { font-size: 9px; padding: 2px 6px; }
     .inv-empty { text-align: center; color: #555; font-size: 11px; padding: 20px; }
     .inv-close { position: absolute; top: 8px; right: 12px; background: #ef4444; font-size: 10px; padding: 2px 8px; }
+
+    /* ── Forge Panel ── */
+    .forge-panel { background: #1a1a2e; border: 1px solid #ff2d5544; border-radius: 6px; padding: 6px; margin-top: 4px; }
+    .forge-panel h3 { color: #ff2d55; }
+    .feather-count { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #f59e0b; margin-bottom: 4px; }
+    .feather-count .feather-num { font-weight: bold; font-size: 14px; color: #ff2d55; }
+    .forge-grid { display: flex; flex-direction: column; gap: 3px; }
+    .forge-row {
+      display: flex; align-items: center; gap: 6px; background: #111; border: 1px solid #333;
+      border-radius: 4px; padding: 4px 6px; font-size: 9px;
+    }
+    .forge-row.owned { border-color: #ff2d55; background: rgba(255,45,85,0.08); }
+    .forge-row .fr-icon { font-size: 14px; flex-shrink: 0; }
+    .forge-row .fr-info { flex: 1; min-width: 0; }
+    .forge-row .fr-name { color: #ff2d55; font-weight: bold; }
+    .forge-row .fr-stat { color: #a78bfa; font-size: 8px; }
+    .forge-row .fr-cost { color: #f59e0b; font-size: 8px; }
+    .forge-row button { font-size: 8px; padding: 2px 6px; flex-shrink: 0; }
+    .set-bonus-list { margin-top: 4px; font-size: 8px; }
+    .set-bonus-item { color: #666; padding: 1px 0; }
+    .set-bonus-item.active { color: #ff2d55; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -336,6 +357,9 @@
           <option value="NORMAL">Normal</option>
           <option value="HARD">Hard</option>
           <option value="NIGHTMARE">Nightmare</option>
+          <option value="NIGHTMARE_PLUS">Nightmare+</option>
+          <option value="NIGHTMARE_2">Nightmare++</option>
+          <option value="NIGHTMARE_3">Nightmare+++</option>
         </select>
       </div>
 
@@ -365,6 +389,15 @@
         <div class="gear-slots" id="gearSlots"></div>
         <div class="gear-summary" id="gearSummary"></div>
         <button onclick="openInventory('all')" style="width:100%;margin-top:3px;background:#b45309;font-size:9px;padding:3px">Inventaire</button>
+      </div>
+
+      <div class="forge-panel" id="forgePanel" style="display:none">
+        <h3>Forge de Manaya</h3>
+        <div class="feather-count">
+          <span>🪶</span> Plumes: <span class="feather-num" id="featherCount">0</span>
+        </div>
+        <div class="forge-grid" id="forgeGrid"></div>
+        <div class="set-bonus-list" id="setBonusList"></div>
       </div>
 
       <div class="sim-panel" id="simPanel">
@@ -528,7 +561,7 @@
     };
 
     const ELEMENT_ICONS = { fire: '\u{1F525}', water: '\u{1F4A7}', shadow: '\u{1F31F}' };
-    const MANAYA_VERSION = 'v1.02';
+    const MANAYA_VERSION = 'v1.03';
     const CLASS_COLORS = { tank: '#3b82f6', healer: '#10b981', dps_cac: '#ef4444', dps_range: '#f59e0b' };
     const CLASS_LABELS = { tank: 'Tank', healer: 'Healer', dps_cac: 'Warrior', dps_range: 'Archer' };
     const BAR_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899'];
@@ -978,6 +1011,164 @@
       crit_dmg: 'CRIT DMG', res_flat: 'RES', mana_flat: 'Mana',
     };
 
+    // ── Manaya Set (T12) ──
+    const FEATHER_KEY = 'manaya_raid_feathers';
+    const MANAYA_OWNED_KEY = 'manaya_set_owned'; // { weapon: true, helmet: true, ... }
+    const MANAYA_SET_COLOR = '#ff2d55';
+
+    const MANAYA_FEATHER_COST = {
+      weapon: 3, helmet: 2, chest: 2, gloves: 2,
+      boots: 1, necklace: 1, bracelet: 1, ring: 1, earring: 1,
+    };
+
+    const MANAYA_SET_PIECES = {
+      weapon: {
+        id: 'manaya_weapon', type: 'weapon', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+        name: 'Griffe de Manaya', icon: '🩸', isManayaSet: true, slot: 'weapon',
+        atk: 300, bonusStat: 'crit_dmg', bonusValue: 40,
+      },
+      helmet: {
+        id: 'manaya_helmet', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+        slot: 'helmet', slotName: 'Casque', slotIcon: '🪖', name: 'Diadème de Manaya', isManayaSet: true,
+        mainStat: { id: 'hp_flat', label: 'HP', value: 3500 },
+        subs: [{ id: 'def_flat', label: 'DEF', value: 120 }, { id: 'res_flat', label: 'RES', value: 50 }],
+      },
+      chest: {
+        id: 'manaya_chest', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+        slot: 'chest', slotName: 'Plastron', slotIcon: '🛡️', name: 'Plastron de Manaya', isManayaSet: true,
+        mainStat: { id: 'atk_flat', label: 'ATK', value: 220 },
+        subs: [{ id: 'def_flat', label: 'DEF', value: 100 }, { id: 'hp_flat', label: 'HP', value: 2000 }],
+      },
+      gloves: {
+        id: 'manaya_gloves', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+        slot: 'gloves', slotName: 'Gants', slotIcon: '🧤', name: 'Serres de Manaya', isManayaSet: true,
+        mainStat: { id: 'crit_rate', label: 'CRIT', value: 35 },
+        subs: [{ id: 'crit_dmg', label: 'CRIT DMG', value: 55 }, { id: 'atk_flat', label: 'ATK', value: 80 }],
+      },
+      boots: {
+        id: 'manaya_boots', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+        slot: 'boots', slotName: 'Bottes', slotIcon: '👢', name: 'Pas de Manaya', isManayaSet: true,
+        mainStat: { id: 'spd_flat', label: 'SPD', value: 35 },
+        subs: [{ id: 'def_flat', label: 'DEF', value: 60 }],
+      },
+      necklace: {
+        id: 'manaya_necklace', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+        slot: 'necklace', slotName: 'Collier', slotIcon: '📿', name: 'Pendentif de Manaya', isManayaSet: true,
+        mainStat: { id: 'hp_pct', label: 'HP%', value: 30 },
+        subs: [{ id: 'atk_pct', label: 'ATK%', value: 25 }],
+      },
+      bracelet: {
+        id: 'manaya_bracelet', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+        slot: 'bracelet', slotName: 'Bracelet', slotIcon: '⌚', name: 'Chaîne de Manaya', isManayaSet: true,
+        mainStat: { id: 'atk_pct', label: 'ATK%', value: 28 },
+        subs: [{ id: 'def_pct', label: 'DEF%', value: 18 }],
+      },
+      ring: {
+        id: 'manaya_ring', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+        slot: 'ring', slotName: 'Anneau', slotIcon: '💍', name: 'Sceau de Manaya', isManayaSet: true,
+        mainStat: { id: 'crit_rate', label: 'CRIT', value: 25 },
+        subs: [{ id: 'res_flat', label: 'RES', value: 40 }],
+      },
+      earring: {
+        id: 'manaya_earring', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+        slot: 'earring', slotName: 'Boucles', slotIcon: '✨', name: 'Larme de Manaya', isManayaSet: true,
+        mainStat: { id: 'atk_pct', label: 'ATK%', value: 25 },
+        subs: [{ id: 'hp_pct', label: 'HP%', value: 18 }, { id: 'mana_flat', label: 'Mana', value: 180 }],
+      },
+    };
+
+    const MANAYA_SET_BONUSES = [
+      { count: 2, label: '2P: ATK +12%, DEF +12%' },
+      { count: 4, label: '4P: CRIT +18%, CRIT DMG +30%' },
+      { count: 6, label: '6P: HP +22%, Mana +250, DMG +15%' },
+      { count: 8, label: '8P: 3% chance/hit de stun Manaya' },
+    ];
+
+    function loadFeathers() { return parseInt(localStorage.getItem(FEATHER_KEY)) || 0; }
+    function saveFeathers(n) { localStorage.setItem(FEATHER_KEY, String(n)); }
+    function addFeathers(n) { saveFeathers(loadFeathers() + n); }
+    function loadManayaOwned() {
+      try { return JSON.parse(localStorage.getItem(MANAYA_OWNED_KEY)) || {}; } catch { return {}; }
+    }
+    function saveManayaOwned(obj) { localStorage.setItem(MANAYA_OWNED_KEY, JSON.stringify(obj)); }
+
+    function forgeManayaPiece(slotId) {
+      const cost = MANAYA_FEATHER_COST[slotId];
+      const feathers = loadFeathers();
+      const owned = loadManayaOwned();
+      if (owned[slotId]) return; // Already owned
+      if (feathers < cost) return; // Not enough feathers
+      saveFeathers(feathers - cost);
+      owned[slotId] = true;
+      saveManayaOwned(owned);
+      // Add piece to inventory
+      const piece = { ...MANAYA_SET_PIECES[slotId] };
+      addToInventory([piece]);
+      updateForgePanel();
+      updateGearPanel();
+    }
+
+    function countEquippedManayaPieces() {
+      const eq = loadEquipped();
+      let count = 0;
+      if (eq.weapon?.isManayaSet) count++;
+      for (const art of Object.values(eq.artifacts || {})) {
+        if (art?.isManayaSet) count++;
+      }
+      return count;
+    }
+
+    function updateForgePanel() {
+      const profile = loadProfile();
+      const panel = document.getElementById('forgePanel');
+      if (!profile) { panel.style.display = 'none'; return; }
+      panel.style.display = 'block';
+
+      const feathers = loadFeathers();
+      document.getElementById('featherCount').textContent = feathers;
+
+      const owned = loadManayaOwned();
+      const grid = document.getElementById('forgeGrid');
+      const allSlots = ['weapon', ...GEAR_SLOT_DEFS.map(s => s.id)];
+      let html = '';
+
+      for (const slotId of allSlots) {
+        const piece = MANAYA_SET_PIECES[slotId];
+        const cost = MANAYA_FEATHER_COST[slotId];
+        const isOwned = !!owned[slotId];
+        const canForge = !isOwned && feathers >= cost;
+        const icon = piece.icon || (slotId === 'weapon' ? '🩸' : GEAR_SLOT_DEFS.find(s => s.id === slotId)?.icon || '📦');
+        const mainLine = piece.type === 'weapon'
+          ? 'ATK +' + piece.atk
+          : piece.mainStat ? piece.mainStat.label + ' +' + piece.mainStat.value : '';
+
+        html += '<div class="forge-row' + (isOwned ? ' owned' : '') + '">' +
+          '<span class="fr-icon">' + icon + '</span>' +
+          '<div class="fr-info">' +
+          '<div class="fr-name">' + piece.name + '</div>' +
+          '<div class="fr-stat">' + mainLine + '</div>' +
+          '</div>' +
+          '<div class="fr-cost">🪶' + cost + '</div>' +
+          (isOwned
+            ? '<span style="color:#10b981;font-size:9px;font-weight:bold">✓</span>'
+            : '<button onclick="forgeManayaPiece(\'' + slotId + '\')" ' + (canForge ? 'class="success"' : 'disabled') + '>Forger</button>'
+          ) +
+          '</div>';
+      }
+      grid.innerHTML = html;
+
+      // Set bonuses
+      const setPieces = countEquippedManayaPieces();
+      const bonusList = document.getElementById('setBonusList');
+      let bonusHtml = '';
+      for (const b of MANAYA_SET_BONUSES) {
+        const active = setPieces >= b.count;
+        bonusHtml += '<div class="set-bonus-item' + (active ? ' active' : '') + '">' +
+          (active ? '✦ ' : '○ ') + b.label + '</div>';
+      }
+      bonusList.innerHTML = bonusHtml;
+    }
+
     function loadInventory() {
       try { return JSON.parse(localStorage.getItem(INVENTORY_KEY)) || []; } catch { return []; }
     }
@@ -988,6 +1179,7 @@
     function saveEquipped(eq) {
       localStorage.setItem(EQUIPPED_KEY, JSON.stringify(eq));
       updateGearPanel();
+      updateForgePanel();
     }
 
     function addToInventory(items) {
@@ -1104,6 +1296,11 @@
           sumHtml += '<span style="color:#a78bfa">' + STAT_LABELS[stat] + ' +' + val + pct + '</span>';
         }
       }
+      // Show Manaya set count if any
+      const mCount = countEquippedManayaPieces();
+      if (mCount > 0) {
+        sumHtml += '<span style="color:' + MANAYA_SET_COLOR + ';font-weight:bold">Set Manaya ' + mCount + '/9</span>';
+      }
       summaryEl.innerHTML = sumHtml || '<span style="color:#555">Aucun bonus</span>';
     }
 
@@ -1210,8 +1407,9 @@
       document.getElementById('invModal').style.display = 'none';
     }
 
-    // Initialize gear panel
+    // Initialize gear panel + forge
     updateGearPanel();
+    updateForgePanel();
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
@@ -1560,13 +1758,38 @@
           const lootItemsEl = document.getElementById('gameEndLootItems');
           if (victory && msg.result.loot) {
             const myLoot = msg.result.loot.find(l => l.playerId === myId);
-            if (myLoot && myLoot.items.length > 0) {
-              // Add to player inventory
-              addToInventory(myLoot.items);
+            const hasItems = myLoot && myLoot.items.length > 0;
+            const hasFeathers = myLoot && myLoot.feathers > 0;
+
+            if (hasItems || hasFeathers) {
+              // Add items to inventory
+              if (hasItems) addToInventory(myLoot.items);
+              // Add feathers
+              if (hasFeathers) {
+                addFeathers(myLoot.feathers);
+                log('🪶 +' + myLoot.feathers + ' Plume de Manaya !', 'hunter');
+              }
               updateGearPanel();
+              updateForgePanel();
 
               lootItemsEl.innerHTML = '';
-              for (const item of myLoot.items) {
+
+              // Show feather drop first (rare!)
+              if (hasFeathers) {
+                const fDiv = document.createElement('div');
+                fDiv.className = 'loot-item';
+                fDiv.style.borderColor = MANAYA_SET_COLOR;
+                fDiv.style.background = 'rgba(255,45,85,0.15)';
+                fDiv.innerHTML =
+                  '<div class="loot-icon" style="font-size:24px">🪶</div>' +
+                  '<div class="loot-name" style="color:' + MANAYA_SET_COLOR + ';font-weight:bold">Plume de Manaya</div>' +
+                  '<div class="loot-main" style="color:#f59e0b">x' + myLoot.feathers + '</div>' +
+                  '<div class="loot-tier" style="color:' + MANAYA_SET_COLOR + '">RARE</div>';
+                lootItemsEl.appendChild(fDiv);
+              }
+
+              // Show item drops
+              for (const item of (myLoot.items || [])) {
                 const isWeapon = item.type === 'weapon';
                 const icon = isWeapon ? (item.icon || '⚔️') : (GEAR_SLOT_DEFS.find(s => s.id === item.slot)?.icon || '📦');
                 const tierColor = item.tierColor || '#9ca3af';
@@ -1586,7 +1809,7 @@
                 lootItemsEl.appendChild(div);
               }
               lootSection.style.display = 'block';
-              log(myLoot.items.length + ' item(s) obtenu(s) !', 'heal');
+              if (hasItems) log(myLoot.items.length + ' item(s) obtenu(s) !', 'heal');
             } else {
               lootSection.style.display = 'none';
             }
@@ -1624,6 +1847,7 @@
           document.getElementById('game').classList.remove('dead-filter');
           updateRoomDisplay();
           updateGearPanel();
+          updateForgePanel();
           log('Room reset — Prêt pour un nouveau combat !', 'info');
           break;
 

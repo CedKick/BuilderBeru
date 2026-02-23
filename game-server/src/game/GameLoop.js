@@ -3,7 +3,7 @@ import { GameState } from './GameState.js';
 import { CombatEngine } from './CombatEngine.js';
 import { PhysicsEngine } from './PhysicsEngine.js';
 import { calculateXpReward } from '../data/playerProfile.js';
-import { generateRaidArtifact, generateRaidWeaponDrop } from '../data/raidGearData.js';
+import { generateRaidArtifact, generateRaidWeaponDrop, FEATHER_DROP_RATES } from '../data/raidGearData.js';
 
 export class GameLoop {
   constructor(roomCode, players, difficulty, wsServer, simulation = false) {
@@ -311,32 +311,38 @@ export class GameLoop {
   }
 
   // ── Generate loot drops for victory ──
-  // Tier availability depends on difficulty + player count:
-  //   NORMAL:    1-2 players → T0       | 3+ players → T0, T1
-  //   HARD:      1-2 players → T1, T2   | 3+ players → T1, T2, T3
-  //   NIGHTMARE: 1-2 players → T4       | 3+ players → T4, T5
+  // Tier availability by difficulty + player count:
+  //   NORMAL:         1-2p → T0       | 3+ → T0, T1
+  //   HARD:           1-2p → T1, T2   | 3+ → T1-T3
+  //   NIGHTMARE:      1-2p → T4, T5   | 3+ → T4-T5
+  //   NIGHTMARE_PLUS: 1-2p → T6, T7   | 3+ → T6-T7
+  //   NIGHTMARE_2:    1-2p → T8, T9   | 3+ → T8-T9
+  //   NIGHTMARE_3:    1-2p → T10, T11 | 3+ → T10-T11
   _getAvailableTiers() {
     const difficulty = this.state.difficulty || 'NORMAL';
     const playerCount = this.state.players.length;
     const is3Plus = playerCount >= 3;
 
     switch (difficulty) {
-      case 'HARD':
-        return is3Plus ? ['T1', 'T2', 'T3'] : ['T1', 'T2'];
-      case 'NIGHTMARE':
-        return is3Plus ? ['T4', 'T5'] : ['T4'];
-      default: // NORMAL
-        return is3Plus ? ['T0', 'T1'] : ['T0'];
+      case 'HARD':           return is3Plus ? ['T1', 'T2', 'T3'] : ['T1', 'T2'];
+      case 'NIGHTMARE':      return is3Plus ? ['T4', 'T5'] : ['T4', 'T5'];
+      case 'NIGHTMARE_PLUS': return is3Plus ? ['T6', 'T7'] : ['T6', 'T7'];
+      case 'NIGHTMARE_2':    return is3Plus ? ['T8', 'T9'] : ['T8', 'T9'];
+      case 'NIGHTMARE_3':    return is3Plus ? ['T10', 'T11'] : ['T10', 'T11'];
+      default:               return is3Plus ? ['T0', 'T1'] : ['T0']; // NORMAL
     }
   }
 
   _generateLootDrops() {
     const gs = this.state;
     const tiers = this._getAvailableTiers();
+    const difficulty = gs.difficulty || 'NORMAL';
+    const featherRate = FEATHER_DROP_RATES[difficulty] || 0.05;
 
     // Each player gets their own loot roll
     return gs.players.map(p => {
       const items = [];
+      let feathers = 0;
 
       // 1-2 artifacts guaranteed — random tier from available pool
       const numArtifacts = 1 + (Math.random() < 0.4 ? 1 : 0);
@@ -345,13 +351,18 @@ export class GameLoop {
         items.push(generateRaidArtifact(tier));
       }
 
-      // 15% chance for a weapon drop (lowest available tier)
+      // 15% chance for a weapon drop
       if (Math.random() < 0.15) {
         const weapon = generateRaidWeaponDrop(tiers[0]);
         if (weapon) items.push({ ...weapon, type: 'weapon' });
       }
 
-      return { playerId: p.id, items };
+      // Plume de Manaya drop roll (very rare)
+      if (Math.random() * 100 < featherRate) {
+        feathers = 1;
+      }
+
+      return { playerId: p.id, items, feathers };
     });
   }
 

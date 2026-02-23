@@ -153,6 +153,131 @@ export function generateRaidWeaponDrop(tier = 'T0') {
   };
 }
 
+// ══════════════════════════════════════════════════════
+// ── MANAYA SET (T12) — Legendary boss drop set ──
+// Fixed stats, unique (no duplicates), crafted from Plumes de Manaya
+// ══════════════════════════════════════════════════════
+
+export const MANAYA_SET_COLOR = '#ff2d55';
+export const MANAYA_SET_TIER = 'T12';
+
+// Feather cost per slot
+export const MANAYA_FEATHER_COST = {
+  weapon:   3,
+  helmet:   2,
+  chest:    2,
+  gloves:   2,
+  boots:    1,
+  necklace: 1,
+  bracelet: 1,
+  ring:     1,
+  earring:  1,
+};
+// Total: 3+2+2+2+1+1+1+1+1 = 14 feathers for full set
+
+// Fixed Manaya Set pieces (no RNG — stats are predetermined)
+export const MANAYA_SET_PIECES = {
+  weapon: {
+    id: 'manaya_weapon', type: 'weapon', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+    name: 'Griffe de Manaya', icon: '🩸', isManayaSet: true, slot: 'weapon',
+    atk: 300, bonusStat: 'crit_dmg', bonusValue: 40,
+  },
+  helmet: {
+    id: 'manaya_helmet', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+    slot: 'helmet', slotName: 'Casque', slotIcon: '🪖', name: 'Diadème de Manaya', isManayaSet: true,
+    mainStat: { id: 'hp_flat', label: 'HP', value: 3500 },
+    subs: [{ id: 'def_flat', label: 'DEF', value: 120 }, { id: 'res_flat', label: 'RES', value: 50 }],
+  },
+  chest: {
+    id: 'manaya_chest', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+    slot: 'chest', slotName: 'Plastron', slotIcon: '🛡️', name: 'Plastron de Manaya', isManayaSet: true,
+    mainStat: { id: 'atk_flat', label: 'ATK', value: 220 },
+    subs: [{ id: 'def_flat', label: 'DEF', value: 100 }, { id: 'hp_flat', label: 'HP', value: 2000 }],
+  },
+  gloves: {
+    id: 'manaya_gloves', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+    slot: 'gloves', slotName: 'Gants', slotIcon: '🧤', name: 'Serres de Manaya', isManayaSet: true,
+    mainStat: { id: 'crit_rate', label: 'CRIT', value: 35 },
+    subs: [{ id: 'crit_dmg', label: 'CRIT DMG', value: 55 }, { id: 'atk_flat', label: 'ATK', value: 80 }],
+  },
+  boots: {
+    id: 'manaya_boots', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+    slot: 'boots', slotName: 'Bottes', slotIcon: '👢', name: 'Pas de Manaya', isManayaSet: true,
+    mainStat: { id: 'spd_flat', label: 'SPD', value: 35 },
+    subs: [{ id: 'def_flat', label: 'DEF', value: 60 }],
+  },
+  necklace: {
+    id: 'manaya_necklace', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+    slot: 'necklace', slotName: 'Collier', slotIcon: '📿', name: 'Pendentif de Manaya', isManayaSet: true,
+    mainStat: { id: 'hp_pct', label: 'HP%', value: 30 },
+    subs: [{ id: 'atk_pct', label: 'ATK%', value: 25 }],
+  },
+  bracelet: {
+    id: 'manaya_bracelet', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+    slot: 'bracelet', slotName: 'Bracelet', slotIcon: '⌚', name: 'Chaîne de Manaya', isManayaSet: true,
+    mainStat: { id: 'atk_pct', label: 'ATK%', value: 28 },
+    subs: [{ id: 'def_pct', label: 'DEF%', value: 18 }],
+  },
+  ring: {
+    id: 'manaya_ring', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+    slot: 'ring', slotName: 'Anneau', slotIcon: '💍', name: 'Sceau de Manaya', isManayaSet: true,
+    mainStat: { id: 'crit_rate', label: 'CRIT', value: 25 },
+    subs: [{ id: 'res_flat', label: 'RES', value: 40 }],
+  },
+  earring: {
+    id: 'manaya_earring', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_SET_COLOR,
+    slot: 'earring', slotName: 'Boucles', slotIcon: '✨', name: 'Larme de Manaya', isManayaSet: true,
+    mainStat: { id: 'atk_pct', label: 'ATK%', value: 25 },
+    subs: [{ id: 'hp_pct', label: 'HP%', value: 18 }, { id: 'mana_flat', label: 'Mana', value: 180 }],
+  },
+};
+
+// Set Bonuses (cumulative)
+export const MANAYA_SET_BONUSES = {
+  2: { label: '2P: ATK +12%, DEF +12%', atk_pct: 12, def_pct: 12 },
+  4: { label: '4P: CRIT +18%, CRIT DMG +30%', crit_rate: 18, crit_dmg: 30 },
+  6: { label: '6P: HP +22%, Mana +250, DMG +15%', hp_pct: 22, mana_flat: 250, dmg_pct: 15 },
+  8: { label: '8P: Chaque hit 3% chance de stun Manaya (annule pattern)', stunChance: 0.03 },
+};
+
+// Count equipped Manaya pieces
+export function countManayaSetPieces(equippedGear) {
+  if (!equippedGear) return 0;
+  let count = 0;
+  if (equippedGear.weapon?.isManayaSet) count++;
+  for (const art of Object.values(equippedGear.artifacts || {})) {
+    if (art?.isManayaSet) count++;
+  }
+  return count;
+}
+
+// Get active set bonuses as flat stat object
+export function getManayaSetBonuses(pieceCount) {
+  const bonuses = {
+    atk_pct: 0, def_pct: 0, crit_rate: 0, crit_dmg: 0,
+    hp_pct: 0, mana_flat: 0, dmg_pct: 0, stunChance: 0,
+  };
+  for (const [threshold, bonus] of Object.entries(MANAYA_SET_BONUSES)) {
+    if (pieceCount >= parseInt(threshold)) {
+      for (const [key, val] of Object.entries(bonus)) {
+        if (key === 'label') continue;
+        bonuses[key] = (bonuses[key] || 0) + val;
+      }
+    }
+  }
+  return bonuses;
+}
+
+// Feather drop rates by difficulty (percentage)
+export const FEATHER_DROP_RATES = {
+  NORMAL:         0.05,
+  HARD:           0.2,
+  NIGHTMARE:      0.5,
+  NIGHTMARE_PLUS: 1.0,
+  NIGHTMARE_2:    2.0,
+  NIGHTMARE_3:    5.0,
+};
+
 // ── Compute total stat bonuses from equipped gear ──
 // equippedGear: { weapon: weaponObj|null, artifacts: { helmet: artifactObj, chest: ... } }
 export function computeRaidGearBonuses(equippedGear) {

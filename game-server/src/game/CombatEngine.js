@@ -417,10 +417,42 @@ export class CombatEngine {
       damage *= COMBAT.CRIT_MULTIPLIER;
     }
 
+    // Manaya Set 6pc: +15% all damage
+    if (attacker.dmgBonus > 0) {
+      damage *= (1 + attacker.dmgBonus);
+    }
+
     // Variance
     damage *= COMBAT.VARIANCE_MIN + Math.random() * (COMBAT.VARIANCE_MAX - COMBAT.VARIANCE_MIN);
 
     return { damage: Math.max(1, Math.round(damage)), crit };
+  }
+
+  // ── Manaya Set 8pc: chance to stun boss and cancel pattern ──
+  checkManayaSetStun(player) {
+    if (!player.manayaSetBonuses?.stunChance) return;
+    if (Math.random() >= player.manayaSetBonuses.stunChance) return;
+
+    const boss = this.gs.boss;
+    if (!boss.alive || boss._stunned) return;
+
+    // Stun boss for 2 seconds — cancels current pattern
+    boss._stunned = true;
+    boss._stunnedTimer = 2.0;
+    boss.cancelCurrentPattern();
+
+    // Apply burn debuff to boss (cosmetic + small DoT)
+    boss._burning = true;
+    boss._burnTimer = 4.0;
+
+    this.gs.addEvent({
+      type: 'boss_message',
+      text: '🩸 Set Manaya — Manaya est STUN ! Pattern annulé !',
+    });
+    this.gs.addEvent({
+      type: 'manaya_set_stun',
+      player: player.id,
+    });
   }
 
   // ── Skill Implementations ──
@@ -472,6 +504,9 @@ export class CombatEngine {
             } else {
               this.gs.addAggro(player.id, aggroAmount);
             }
+
+            // Manaya Set 8pc stun check
+            this.checkManayaSetStun(player);
 
             // Mana/Rage on hit (basic attacks restore resource)
             if (skill.isBasic) {
