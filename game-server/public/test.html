@@ -1924,77 +1924,81 @@
         ctx.fillStyle = 'rgba(16,185,129,0.5)'; ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText('\u2620', zone.x, zone.y + 5);
       } else if (zone.type === 'debuff_ring_outline') {
-        // 3 concentric white circle outlines — persistent during triple debuff
+        // 3 concentric colored circle outlines — D1=olive green, D2=violet, D3=pink
+        const MARK_COLORS = { 1: '139,160,42', 2: '168,85,247', 3: '236,100,164' };
+        const mc = MARK_COLORS[zone.ringIndex] || '255,255,255';
         const pulse = 0.4 + 0.2 * Math.sin(Date.now() / 600 + (zone.ringIndex || 0));
         const innerR = zone.innerRadius || 0;
         ctx.save();
-        // Outer ring stroke
-        ctx.strokeStyle = 'rgba(255,255,255,' + pulse + ')'; ctx.lineWidth = 2.5;
+        // Outer ring stroke (colored)
+        ctx.strokeStyle = 'rgba(' + mc + ',' + pulse + ')'; ctx.lineWidth = 2.5;
         ctx.setLineDash([12, 6]);
         ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.stroke();
-        // Inner ring stroke (if ring, not circle)
         if (innerR > 0) {
           ctx.beginPath(); ctx.arc(zone.x, zone.y, innerR, 0, Math.PI * 2); ctx.stroke();
         }
         ctx.setLineDash([]);
-        // Label: I, II, III
+        // Label: I, II, III (colored)
         const labels = { 1: 'I', 2: 'II', 3: 'III' };
         const labelR = innerR > 0 ? (innerR + zone.radius) / 2 : zone.radius * 0.5;
-        ctx.fillStyle = 'rgba(255,255,255,' + (pulse * 0.7) + ')';
+        ctx.fillStyle = 'rgba(' + mc + ',' + (pulse * 0.8) + ')';
         ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText(labels[zone.ringIndex] || '', zone.x, zone.y - labelR + 8);
         ctx.restore();
       } else if (zone.type === 'debuff_circle_telegraph') {
-        // White filling glow before detonation — growing inward shine
+        // Colored filling glow before detonation
+        const MARK_COLORS = { 1: '139,160,42', 2: '168,85,247', 3: '236,100,164' };
+        const mc = MARK_COLORS[zone.debuffPhase] || '255,255,255';
         const innerR = zone.innerRadius || 0;
-        const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 120); // Fast pulse = urgency
+        const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 120);
         ctx.save();
-        // Fill the zone area with white glow
         if (innerR > 0) {
-          // Ring telegraph — fill between inner and outer
           ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
-          ctx.arc(zone.x, zone.y, innerR, 0, Math.PI * 2, true); // Cut inner
-          ctx.fillStyle = 'rgba(255,255,255,' + (0.08 + progress * 0.2 + pulse * 0.05) + ')';
+          ctx.arc(zone.x, zone.y, innerR, 0, Math.PI * 2, true);
+          ctx.fillStyle = 'rgba(' + mc + ',' + (0.08 + progress * 0.2 + pulse * 0.05) + ')';
           ctx.fill();
         } else {
-          // Circle telegraph (inner circle)
           const grad = ctx.createRadialGradient(zone.x, zone.y, 0, zone.x, zone.y, zone.radius);
-          grad.addColorStop(0, 'rgba(255,255,255,' + (0.15 + progress * 0.25) + ')');
-          grad.addColorStop(0.7, 'rgba(255,255,255,' + (0.05 + progress * 0.15) + ')');
-          grad.addColorStop(1, 'rgba(255,255,255,0)');
+          grad.addColorStop(0, 'rgba(' + mc + ',' + (0.15 + progress * 0.25) + ')');
+          grad.addColorStop(0.7, 'rgba(' + mc + ',' + (0.05 + progress * 0.15) + ')');
+          grad.addColorStop(1, 'rgba(' + mc + ',0)');
           ctx.fillStyle = grad;
           ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill();
         }
-        // Bright pulsing border
-        ctx.strokeStyle = 'rgba(255,255,255,' + (0.5 + pulse * 0.4) + ')'; ctx.lineWidth = 3;
+        // Bright pulsing border (colored)
+        ctx.strokeStyle = 'rgba(' + mc + ',' + (0.5 + pulse * 0.4) + ')'; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.stroke();
         if (innerR > 0) {
           ctx.beginPath(); ctx.arc(zone.x, zone.y, innerR, 0, Math.PI * 2); ctx.stroke();
         }
-        // Phase label (debuffPhase)
+        // Phase label (colored)
         const phaseLabels = { 1: 'MARQUE I', 2: 'MARQUE II', 3: 'MARQUE III' };
         const lr = innerR > 0 ? (innerR + zone.radius) / 2 : zone.radius * 0.5;
-        ctx.fillStyle = 'rgba(255,255,255,' + (0.6 + pulse * 0.4) + ')';
+        ctx.fillStyle = 'rgba(' + mc + ',' + (0.6 + pulse * 0.4) + ')';
         ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText(phaseLabels[zone.debuffPhase] || '', zone.x, zone.y - lr + 6);
         ctx.restore();
       } else if (zone.type === 'debuff_circle_explosion') {
-        // White flash on detonation — bright burst then fade
-        const fade = zone.ttl / zone.maxTtl; // 1→0 over lifetime
+        // Colored flash on detonation — bright burst then fade
+        const MARK_COLORS = { 1: '139,160,42', 2: '168,85,247', 3: '236,100,164' };
+        const MARK_HEX = { 1: '#8BA02A', 2: '#A855F7', 3: '#EC64A4' };
+        const mc = MARK_COLORS[zone.debuffPhase] || '255,255,255';
+        const mh = MARK_HEX[zone.debuffPhase] || '#ffffff';
+        const fade = zone.ttl / zone.maxTtl;
         const innerR = zone.innerRadius || 0;
         ctx.save();
-        ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 30 * fade;
+        ctx.shadowColor = mh; ctx.shadowBlur = 30 * fade;
         if (innerR > 0) {
           ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
           ctx.arc(zone.x, zone.y, innerR, 0, Math.PI * 2, true);
-          ctx.fillStyle = 'rgba(255,255,255,' + (0.5 * fade) + ')';
+          ctx.fillStyle = 'rgba(' + mc + ',' + (0.5 * fade) + ')';
           ctx.fill();
         } else {
-          ctx.fillStyle = 'rgba(255,255,255,' + (0.5 * fade) + ')';
+          ctx.fillStyle = 'rgba(' + mc + ',' + (0.5 * fade) + ')';
           ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill();
         }
-        // Bright edge
-        ctx.strokeStyle = 'rgba(255,255,255,' + (0.8 * fade) + ')'; ctx.lineWidth = 4;
+        // Bright colored edge
+        ctx.strokeStyle = 'rgba(' + mc + ',' + (0.8 * fade) + ')'; ctx.lineWidth = 4;
         ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.stroke();
         if (innerR > 0) {
           ctx.beginPath(); ctx.arc(zone.x, zone.y, innerR, 0, Math.PI * 2); ctx.stroke();
@@ -2299,9 +2303,9 @@
           speed_down: { icon: '\u{1F422}', neg: true },
           invuln: { icon: '\u2728', neg: false },
           taunt: { icon: '\u{1F4E2}', neg: false },
-          manaya_mark_D1: { icon: '\u2460', neg: true },
-          manaya_mark_D2: { icon: '\u2461', neg: true },
-          manaya_mark_D3: { icon: '\u2462', neg: true },
+          manaya_mark_D1: { icon: '\u2460', neg: true, color: '#8BA02A' },
+          manaya_mark_D2: { icon: '\u2461', neg: true, color: '#A855F7' },
+          manaya_mark_D3: { icon: '\u2462', neg: true, color: '#EC64A4' },
         };
         const buffCount = p.buffs.length;
         const bSize = 16;
@@ -2311,16 +2315,17 @@
         const by = p.y + 44;
         for (const b of p.buffs) {
           const info = BUFF_DRAW[b.type] || { icon: '?', neg: true };
+          const customColor = info.color; // Manaya marks have custom colors
           // Background pill
-          ctx.fillStyle = info.neg ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.35)';
+          ctx.fillStyle = customColor ? (customColor + '59') : (info.neg ? 'rgba(239,68,68,0.35)' : 'rgba(16,185,129,0.35)');
           ctx.beginPath();
           ctx.roundRect(bx - 1, by - 1, bSize + 2, bSize + 2, 3);
           ctx.fill();
-          ctx.strokeStyle = info.neg ? '#ef4444' : '#10b981';
+          ctx.strokeStyle = customColor || (info.neg ? '#ef4444' : '#10b981');
           ctx.lineWidth = 1;
           ctx.stroke();
-          // Icon
-          ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+          // Icon (colored for marks)
+          ctx.fillStyle = customColor || '#fff'; ctx.font = (customColor ? 'bold ' : '') + '10px sans-serif'; ctx.textAlign = 'center';
           ctx.fillText(info.icon, bx + bSize / 2, by + bSize - 3);
           // Stack count
           if (b.stacks > 1) {
