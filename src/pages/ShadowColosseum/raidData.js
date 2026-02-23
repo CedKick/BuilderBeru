@@ -1262,7 +1262,7 @@ export function getHunterSprite(hunterId, data) {
 
 // ─── Star (Advancement) stat bonuses ─────────────────────────────
 // Each duplicate (star) gives cumulative % bonuses to stats.
-// A0-A5 use fixed bonuses, after A5 every 5 levels = +1% HP/ATK/DEF (max A200)
+// A0-A5 use fixed bonuses, A6-A200 every 5 levels = +1%, A201-A1000 every 10 levels = +1%
 export const STAR_STAT_BONUSES = {
   0: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 },
   1: { hp: 5, atk: 3, def: 2, spd: 0, crit: 0, res: 0 },
@@ -1272,17 +1272,26 @@ export const STAR_STAT_BONUSES = {
   5: { hp: 20, atk: 15, def: 10, spd: 5, crit: 5, res: 3 },
 };
 
-// Compute dynamic star bonuses (A0-A5 use table, after A5 every 5 levels = +1% HP/ATK/DEF)
+// Compute dynamic star bonuses
+// A0-A5: fixed table, A6-A200: +1% HP/ATK/DEF every 5 levels, A201-A1000: +1% every 10 levels
 const computeStarBonuses = (stars) => {
   if (stars <= 5) {
     return STAR_STAT_BONUSES[stars] || STAR_STAT_BONUSES[0];
   }
 
-  // After A5: every 5 awakening levels gives +1% HP/ATK/DEF
-  // A10 = +1%, A15 = +2%, A20 = +3%, etc.
   const baseBonus = STAR_STAT_BONUSES[5];
-  const extraTiers = Math.floor(stars / 5) - 1; // -1 because A5 is already in base
-  const extraBonus = extraTiers * 1; // +1% per tier
+  let extraBonus;
+
+  if (stars <= 200) {
+    // A6-A200: every 5 awakening levels = +1% HP/ATK/DEF
+    const extraTiers = Math.floor(stars / 5) - 1; // -1 because A5 is already in base
+    extraBonus = extraTiers * 1;
+  } else {
+    // A201-A1000: bonus at A200 + every 10 levels = +1%
+    const bonusAt200 = Math.floor(200 / 5) - 1; // 39
+    const extraTiers = Math.floor((stars - 200) / 10);
+    extraBonus = bonusAt200 + extraTiers;
+  }
 
   return {
     hp: baseBonus.hp + extraBonus,
@@ -1334,7 +1343,7 @@ export const addHunterOrDuplicate = (raidData, hunterId) => {
   );
   const idx = collection.findIndex(e => e.id === hunterId);
   if (idx >= 0) {
-    if (collection[idx].stars < 200) collection[idx].stars++; // Max A200
+    if (collection[idx].stars < 1000) collection[idx].stars++; // Max A1000
     return { collection, isDuplicate: true, newStars: collection[idx].stars };
   }
   collection.push({ id: hunterId, stars: 0 });

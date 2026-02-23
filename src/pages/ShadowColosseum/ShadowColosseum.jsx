@@ -10821,7 +10821,7 @@ export default function ShadowColosseum() {
 
             <div className="text-[10px] text-gray-500 mb-4 p-2 rounded-lg bg-gray-900/40 border border-gray-700/20">
               Les <span className="text-emerald-400">passifs</span> des hunters s'appliquent automatiquement en combat.
-              L'<span className="text-yellow-400">awakening</span> (A0-A200) augmente les stats à chaque duplicate (+1% HP/ATK/DEF tous les 5 niveaux après A5).
+              L'<span className="text-yellow-400">awakening</span> (A0-A1000) augmente les stats à chaque duplicate (+1% HP/ATK/DEF tous les 5 niveaux jusqu'à A200, puis tous les 10 niveaux).
             </div>
 
             <div className="space-y-3">
