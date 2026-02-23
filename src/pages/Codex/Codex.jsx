@@ -681,22 +681,22 @@ export default function Codex() {
                         </div>
 
                         <div className="flex items-center justify-between mb-4 bg-gray-800/40 rounded-xl px-4 py-2.5 border border-gray-700/30">
-                          <button onClick={() => setViewAwakening(Math.max(0, viewAwakening - 1))} disabled={viewAwakening <= 0}
+                          <button onClick={() => setViewAwakening(Math.max(0, viewAwakening - (viewAwakening > 10 ? 5 : 1)))} disabled={viewAwakening <= 0}
                             className="p-1 rounded-lg hover:bg-gray-700/40 disabled:opacity-20 transition-all"><ChevronLeft className="w-5 h-5" /></button>
                           <div className="text-center">
                             <div className="text-lg font-black text-purple-400">A{viewAwakening}</div>
-                            <div className="text-[9px] text-gray-500">{viewAwakening === 0 ? 'Base' : viewAwakening <= 5 ? 'Passive unique' : '+3% ATK/DEF/PV'}</div>
+                            <div className="text-[9px] text-gray-500">{viewAwakening === 0 ? 'Base' : viewAwakening <= 5 ? 'Passive unique' : viewAwakening <= 10 ? '+3% ATK/DEF/PV par niv' : '+2% ATK/DEF/PV /5 niv'}</div>
                           </div>
-                          <button onClick={() => setViewAwakening(Math.min(MAX_WEAPON_AWAKENING, viewAwakening + 1))} disabled={viewAwakening >= MAX_WEAPON_AWAKENING}
+                          <button onClick={() => setViewAwakening(Math.min(MAX_WEAPON_AWAKENING, viewAwakening + (viewAwakening >= 10 ? 5 : 1)))} disabled={viewAwakening >= MAX_WEAPON_AWAKENING}
                             className="p-1 rounded-lg hover:bg-gray-700/40 disabled:opacity-20 transition-all"><ChevronRight className="w-5 h-5" /></button>
                         </div>
 
-                        <div className="flex justify-center gap-1 mb-4">
-                          {Array.from({ length: MAX_WEAPON_AWAKENING + 1 }, (_, i) => (
+                        <div className="flex flex-wrap justify-center gap-1 mb-4">
+                          {[0,1,2,3,4,5,6,7,8,9,10,15,20,25,30,40,50,60,70,80,90,100].filter(i => i <= MAX_WEAPON_AWAKENING).map(i => (
                             <button key={i} onClick={() => setViewAwakening(i)}
-                              className={`w-2.5 h-2.5 rounded-full transition-all ${
-                                i === viewAwakening ? 'bg-purple-400 scale-125' : i <= (isOwned ? getAwakening(w.id) : -1) ? 'bg-purple-600/60' : 'bg-gray-700/40'
-                              }`} title={`A${i}`} />
+                              className={`px-1.5 py-0.5 rounded text-[8px] font-bold transition-all ${
+                                i === viewAwakening ? 'bg-purple-400 text-white scale-110' : i <= (isOwned ? getAwakening(w.id) : -1) ? 'bg-purple-600/60 text-purple-300' : 'bg-gray-700/40 text-gray-500'
+                              }`}>A{i}</button>
                           ))}
                         </div>
 

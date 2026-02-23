@@ -601,13 +601,15 @@ export const WEAPONS = {
 export const WEAPON_PRICES = { rare: 500, legendaire: 2000, mythique: 5000 };
 
 // ═══════════════════════════════════════════════════════════════
-// WEAPON AWAKENING SYSTEM (A0-A10)
+// WEAPON AWAKENING SYSTEM (A0-A100)
 // A0 = base, A1-A5 = unique passives, A6-A10 = +3% ATK/DEF/HP each
+// A11-A100 = +2% ATK/DEF/HP every 5 levels
 // ═══════════════════════════════════════════════════════════════
 
-export const MAX_WEAPON_AWAKENING = 10;
+export const MAX_WEAPON_AWAKENING = 100;
 const AW_PASSIVE_CAP = 5; // A1-A5 have unique passives
 const AW_FLAT_BONUS = 3;  // A6-A10: +3% ATK, DEF, HP each
+const AW_EXTENDED_BONUS = 2; // A11+: +2% ATK/DEF/HP every 5 levels
 
 export const WEAPON_AWAKENING_PASSIVES = {
   // ── FIRE ──
@@ -853,15 +855,24 @@ export function getWeaponAwakeningBonuses(weaponId, awakening = 0) {
   const b = { atk_pct: 0, def_pct: 0, hp_pct: 0, crit_rate: 0, crit_dmg: 0, spd_flat: 0, res_flat: 0, fireDamage: 0, waterDamage: 0, shadowDamage: 0, windDamage: 0, lightDamage: 0, allDamage: 0, defPen: 0 };
   if (!weaponId || awakening <= 0) return b;
   const passives = WEAPON_AWAKENING_PASSIVES[weaponId] || [];
+  // A1-A5: unique passives
   for (let i = 0; i < Math.min(awakening, AW_PASSIVE_CAP); i++) {
     if (passives[i]?.stats) {
       Object.entries(passives[i].stats).forEach(([k, v]) => { if (b[k] !== undefined) b[k] += v; });
     }
   }
-  const flatLevels = Math.max(0, awakening - AW_PASSIVE_CAP);
+  // A6-A10: +3% ATK/DEF/HP each
+  const flatLevels = Math.max(0, Math.min(awakening, 10) - AW_PASSIVE_CAP);
   b.atk_pct += flatLevels * AW_FLAT_BONUS;
   b.def_pct += flatLevels * AW_FLAT_BONUS;
   b.hp_pct += flatLevels * AW_FLAT_BONUS;
+  // A11-A100: +2% ATK/DEF/HP every 5 levels
+  if (awakening > 10) {
+    const extTiers = Math.floor((awakening - 10) / 5);
+    b.atk_pct += extTiers * AW_EXTENDED_BONUS;
+    b.def_pct += extTiers * AW_EXTENDED_BONUS;
+    b.hp_pct += extTiers * AW_EXTENDED_BONUS;
+  }
   return b;
 }
 
