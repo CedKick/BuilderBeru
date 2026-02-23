@@ -239,6 +239,31 @@ class CloudStorageManager {
           try {
             localStorage.setItem(key, cloudJson);
           } catch { /* ignore quota errors */ }
+        } else if (key === 'shadow_colosseum_data') {
+          // Always protect server-deposited fields (alkahest, rerollCounts)
+          // These can be written by game-server while client has stale local data
+          try {
+            const localData = JSON.parse(localRaw);
+            const cloudData = entry.data;
+            let patched = false;
+            if ((cloudData.alkahest || 0) > (localData.alkahest || 0)) {
+              localData.alkahest = cloudData.alkahest;
+              patched = true;
+            }
+            const cloudRC = cloudData.rerollCounts || {};
+            const localRC = localData.rerollCounts || {};
+            for (const [uid, count] of Object.entries(cloudRC)) {
+              if ((count || 0) > (localRC[uid] || 0)) {
+                localRC[uid] = count;
+                patched = true;
+              }
+            }
+            if (patched) {
+              localData.rerollCounts = localRC;
+              localStorage.setItem(key, JSON.stringify(localData));
+              console.log(`[CloudStorage] Patched server fields for "${key}": alkahest=${localData.alkahest}`);
+            }
+          } catch { /* ignore parse errors */ }
         }
       }
     }

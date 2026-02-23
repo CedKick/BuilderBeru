@@ -632,9 +632,9 @@ export default function ShadowColosseum() {
       const now = Date.now();
       if (alkahestSyncRef.current && now - alkahestSyncRef.current < 30000) return;
       alkahestSyncRef.current = now;
-      cloudStorage.loadFresh(SAVE_KEY).then(fresh => {
-        if (fresh && (fresh.alkahest || 0) > (data.alkahest || 0)) {
-          setData(prev => ({ ...prev, alkahest: fresh.alkahest }));
+      cloudStorage.loadCloud(SAVE_KEY).then(cloud => {
+        if (cloud && (cloud.alkahest || 0) > (data.alkahest || 0)) {
+          setData(prev => ({ ...prev, alkahest: cloud.alkahest }));
         }
       }).catch(() => {});
     }
