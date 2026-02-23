@@ -4088,6 +4088,12 @@ export default function ShadowColosseum() {
                     );
                   })}
                 </div>
+                {/* MANA — read-only derived pool */}
+                <div className="flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/15 rounded-md px-2 py-1.5 mb-2">
+                  <span className="text-xs">{'\uD83D\uDD2E'}</span>
+                  <span className="text-[11px] font-bold text-blue-400">MANA</span>
+                  <span className="text-xs text-white ml-auto font-bold">{s.mana}</span>
+                </div>
                 {derivedLines.length > 0 && (
                   <div className="grid grid-cols-2 gap-1 mb-3">
                     {derivedLines.map(d => (
@@ -6986,6 +6992,30 @@ export default function ShadowColosseum() {
                   </div>
                 );
               })}
+              {/* MANA — read-only derived stat from INT + base */}
+              {(() => {
+                const baseMana = c.base.mana || 0;
+                const manaGrowth = Math.floor((c.growth.mana || 0) * (level - 1));
+                const intFromAlloc = (alloc.mana || 0) * (STAT_PER_POINT.mana || 0);
+                const intFromAccount = ((data.accountBonuses || {}).mana || 0) * (STAT_PER_POINT.mana || 0);
+                const totalMana = Math.floor(baseMana + manaGrowth + intFromAlloc + intFromAccount);
+                const intBonus = Math.floor(intFromAlloc + intFromAccount);
+                return (
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-blue-500/5 border border-blue-500/20">
+                    <span className="text-base w-6 text-center">{'\uD83D\uDD2E'}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-blue-400">MANA</span>
+                        <div className="text-right">
+                          <span className="text-sm font-bold text-white">{totalMana}</span>
+                          {intBonus > 0 && <span className="text-[9px] text-violet-400 ml-1">(+{intBonus} via INT)</span>}
+                        </div>
+                      </div>
+                      <div className="text-[9px] text-gray-500">Pool de mana (base {baseMana} + croissance {manaGrowth} + INT)</div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Per-point info */}
