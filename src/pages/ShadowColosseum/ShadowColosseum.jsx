@@ -4336,6 +4336,266 @@ export default function ShadowColosseum() {
                   </div>
                 </div>
 
+                {/* ═══ RAID GEAR ═══ */}
+                {(() => {
+                  const INV_KEY = 'manaya_raid_inventory';
+                  const EQ_KEY = 'manaya_raid_equipped';
+                  const FEATH_KEY = 'manaya_raid_feathers';
+                  const MOWN_KEY = 'manaya_set_owned';
+
+                  const inv = (() => { try { return JSON.parse(localStorage.getItem(INV_KEY)) || []; } catch { return []; } })();
+                  const eq = (() => { try { return JSON.parse(localStorage.getItem(EQ_KEY)) || { weapon: null, artifacts: {} }; } catch { return { weapon: null, artifacts: {} }; } })();
+                  const feathers = parseInt(localStorage.getItem(FEATH_KEY)) || 0;
+                  const mOwned = (() => { try { return JSON.parse(localStorage.getItem(MOWN_KEY)) || {}; } catch { return {}; } })();
+
+                  const SLOTS = [
+                    { id: 'helmet', name: 'Casque', icon: '\uD83E\uDE96' },
+                    { id: 'chest', name: 'Plastron', icon: '\uD83D\uDEE1\uFE0F' },
+                    { id: 'gloves', name: 'Gants', icon: '\uD83E\uDDE4' },
+                    { id: 'boots', name: 'Bottes', icon: '\uD83D\uDC62' },
+                    { id: 'necklace', name: 'Collier', icon: '\uD83D\uDCFF' },
+                    { id: 'bracelet', name: 'Bracelet', icon: '\u231A' },
+                    { id: 'ring', name: 'Anneau', icon: '\uD83D\uDC8D' },
+                    { id: 'earring', name: 'Boucles', icon: '\u2728' },
+                  ];
+
+                  const STAT_LBL = {
+                    hp_flat: 'HP', hp_pct: 'HP%', atk_flat: 'ATK', atk_pct: 'ATK%',
+                    def_flat: 'DEF', def_pct: 'DEF%', spd_flat: 'SPD', crit_rate: 'CRIT',
+                    crit_dmg: 'CRIT DMG', res_flat: 'RES', mana_flat: 'Mana',
+                  };
+
+                  // Compute gear bonuses
+                  const gearBonuses = {};
+                  if (eq.weapon) {
+                    gearBonuses.atk_flat = (gearBonuses.atk_flat || 0) + (eq.weapon.atk || 0);
+                    if (eq.weapon.bonusStat) gearBonuses[eq.weapon.bonusStat] = (gearBonuses[eq.weapon.bonusStat] || 0) + (eq.weapon.bonusValue || 0);
+                  }
+                  for (const art of Object.values(eq.artifacts || {})) {
+                    if (!art) continue;
+                    if (art.mainStat) gearBonuses[art.mainStat.id] = (gearBonuses[art.mainStat.id] || 0) + art.mainStat.value;
+                    for (const sub of (art.subs || [])) gearBonuses[sub.id] = (gearBonuses[sub.id] || 0) + sub.value;
+                  }
+
+                  // Manaya set
+                  const MANAYA_COL = '#ff2d55';
+                  const MANAYA_COST = { weapon: 3, helmet: 2, chest: 2, gloves: 2, boots: 1, necklace: 1, bracelet: 1, ring: 1, earring: 1 };
+                  const MANAYA_PIECES = {
+                    weapon: { name: 'Griffe de Manaya', icon: '\uD83E\uDE78', stat: 'ATK +300' },
+                    helmet: { name: 'Diad\u00e8me de Manaya', icon: '\uD83E\uDE96', stat: 'HP +3500' },
+                    chest: { name: 'Plastron de Manaya', icon: '\uD83D\uDEE1\uFE0F', stat: 'ATK +220' },
+                    gloves: { name: 'Serres de Manaya', icon: '\uD83E\uDDE4', stat: 'CRIT +35' },
+                    boots: { name: 'Pas de Manaya', icon: '\uD83D\uDC62', stat: 'SPD +35' },
+                    necklace: { name: 'Pendentif de Manaya', icon: '\uD83D\uDCFF', stat: 'HP% +30' },
+                    bracelet: { name: 'Cha\u00eene de Manaya', icon: '\u231A', stat: 'ATK% +28' },
+                    ring: { name: 'Sceau de Manaya', icon: '\uD83D\uDC8D', stat: 'CRIT +25' },
+                    earring: { name: 'Larme de Manaya', icon: '\u2728', stat: 'ATK% +25' },
+                  };
+                  const SET_BONUSES = [
+                    { count: 2, label: '2P: ATK +12%, DEF +12%' },
+                    { count: 4, label: '4P: CRIT +18%, CRIT DMG +30%' },
+                    { count: 6, label: '6P: HP +22%, Mana +250, DMG +15%' },
+                    { count: 8, label: '8P: 3% chance/hit de stun Manaya' },
+                  ];
+                  let setPieceCount = 0;
+                  if (eq.weapon?.isManayaSet) setPieceCount++;
+                  for (const a of Object.values(eq.artifacts || {})) { if (a?.isManayaSet) setPieceCount++; }
+
+                  const doEquip = (item) => {
+                    let curInv = (() => { try { return JSON.parse(localStorage.getItem(INV_KEY)) || []; } catch { return []; } })();
+                    let curEq = (() => { try { return JSON.parse(localStorage.getItem(EQ_KEY)) || { weapon: null, artifacts: {} }; } catch { return { weapon: null, artifacts: {} }; } })();
+                    if (item.type === 'weapon') {
+                      if (curEq.weapon) curInv.push(curEq.weapon);
+                      curEq.weapon = item;
+                    } else {
+                      if (curEq.artifacts[item.slot]) curInv.push(curEq.artifacts[item.slot]);
+                      curEq.artifacts[item.slot] = item;
+                    }
+                    curInv = curInv.filter(i => i.id !== item.id);
+                    localStorage.setItem(INV_KEY, JSON.stringify(curInv));
+                    localStorage.setItem(EQ_KEY, JSON.stringify(curEq));
+                    setData(prev => ({ ...prev }));
+                  };
+
+                  const doUnequip = (slotId) => {
+                    let curInv = (() => { try { return JSON.parse(localStorage.getItem(INV_KEY)) || []; } catch { return []; } })();
+                    let curEq = (() => { try { return JSON.parse(localStorage.getItem(EQ_KEY)) || { weapon: null, artifacts: {} }; } catch { return { weapon: null, artifacts: {} }; } })();
+                    if (slotId === 'weapon') {
+                      if (curEq.weapon) { curInv.push(curEq.weapon); curEq.weapon = null; }
+                    } else {
+                      if (curEq.artifacts[slotId]) { curInv.push(curEq.artifacts[slotId]); delete curEq.artifacts[slotId]; }
+                    }
+                    localStorage.setItem(INV_KEY, JSON.stringify(curInv));
+                    localStorage.setItem(EQ_KEY, JSON.stringify(curEq));
+                    setData(prev => ({ ...prev }));
+                  };
+
+                  const doForge = (slotId) => {
+                    const cost = MANAYA_COST[slotId];
+                    let f = parseInt(localStorage.getItem(FEATH_KEY)) || 0;
+                    let owned = (() => { try { return JSON.parse(localStorage.getItem(MOWN_KEY)) || {}; } catch { return {}; } })();
+                    if (owned[slotId] || f < cost) return;
+                    localStorage.setItem(FEATH_KEY, String(f - cost));
+                    owned[slotId] = true;
+                    localStorage.setItem(MOWN_KEY, JSON.stringify(owned));
+                    // Add the piece to inventory (full Manaya set piece data)
+                    const FULL_PIECES = {
+                      weapon: { id: 'manaya_weapon', type: 'weapon', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_COL, name: 'Griffe de Manaya', icon: '\uD83E\uDE78', isManayaSet: true, slot: 'weapon', atk: 300, bonusStat: 'crit_dmg', bonusValue: 40 },
+                      helmet: { id: 'manaya_helmet', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_COL, slot: 'helmet', slotName: 'Casque', slotIcon: '\uD83E\uDE96', name: 'Diad\u00e8me de Manaya', isManayaSet: true, mainStat: { id: 'hp_flat', label: 'HP', value: 3500 }, subs: [{ id: 'def_flat', label: 'DEF', value: 120 }, { id: 'res_flat', label: 'RES', value: 50 }] },
+                      chest: { id: 'manaya_chest', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_COL, slot: 'chest', slotName: 'Plastron', slotIcon: '\uD83D\uDEE1\uFE0F', name: 'Plastron de Manaya', isManayaSet: true, mainStat: { id: 'atk_flat', label: 'ATK', value: 220 }, subs: [{ id: 'def_flat', label: 'DEF', value: 100 }, { id: 'hp_flat', label: 'HP', value: 2000 }] },
+                      gloves: { id: 'manaya_gloves', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_COL, slot: 'gloves', slotName: 'Gants', slotIcon: '\uD83E\uDDE4', name: 'Serres de Manaya', isManayaSet: true, mainStat: { id: 'crit_rate', label: 'CRIT', value: 35 }, subs: [{ id: 'crit_dmg', label: 'CRIT DMG', value: 55 }, { id: 'atk_flat', label: 'ATK', value: 80 }] },
+                      boots: { id: 'manaya_boots', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_COL, slot: 'boots', slotName: 'Bottes', slotIcon: '\uD83D\uDC62', name: 'Pas de Manaya', isManayaSet: true, mainStat: { id: 'spd_flat', label: 'SPD', value: 35 }, subs: [{ id: 'def_flat', label: 'DEF', value: 60 }] },
+                      necklace: { id: 'manaya_necklace', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_COL, slot: 'necklace', slotName: 'Collier', slotIcon: '\uD83D\uDCFF', name: 'Pendentif de Manaya', isManayaSet: true, mainStat: { id: 'hp_pct', label: 'HP%', value: 30 }, subs: [{ id: 'atk_pct', label: 'ATK%', value: 25 }] },
+                      bracelet: { id: 'manaya_bracelet', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_COL, slot: 'bracelet', slotName: 'Bracelet', slotIcon: '\u231A', name: 'Cha\u00eene de Manaya', isManayaSet: true, mainStat: { id: 'atk_pct', label: 'ATK%', value: 28 }, subs: [{ id: 'def_pct', label: 'DEF%', value: 18 }] },
+                      ring: { id: 'manaya_ring', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_COL, slot: 'ring', slotName: 'Anneau', slotIcon: '\uD83D\uDC8D', name: 'Sceau de Manaya', isManayaSet: true, mainStat: { id: 'crit_rate', label: 'CRIT', value: 25 }, subs: [{ id: 'res_flat', label: 'RES', value: 40 }] },
+                      earring: { id: 'manaya_earring', tier: 'T12', tierLabel: 'Manaya', tierColor: MANAYA_COL, slot: 'earring', slotName: 'Boucles', slotIcon: '\u2728', name: 'Larme de Manaya', isManayaSet: true, mainStat: { id: 'atk_pct', label: 'ATK%', value: 25 }, subs: [{ id: 'hp_pct', label: 'HP%', value: 18 }, { id: 'mana_flat', label: 'Mana', value: 180 }] },
+                    };
+                    let curInv = (() => { try { return JSON.parse(localStorage.getItem(INV_KEY)) || []; } catch { return []; } })();
+                    curInv.push({ ...FULL_PIECES[slotId] });
+                    localStorage.setItem(INV_KEY, JSON.stringify(curInv));
+                    setData(prev => ({ ...prev }));
+                  };
+
+                  const hasGear = eq.weapon || Object.keys(eq.artifacts || {}).length > 0 || inv.length > 0 || feathers > 0;
+
+                  return (
+                    <>
+                      {/* ── Équipement Raid ── */}
+                      <div className="mb-3">
+                        <div className="text-[10px] text-yellow-400 font-bold uppercase tracking-wider mb-1.5">{'\uD83D\uDEE1\uFE0F'} Equipement Raid</div>
+                        <div className="text-[8px] text-gray-500 mb-2">Equipe armes et artefacts obtenus en battant Manaya.</div>
+
+                        {/* Weapon */}
+                        <div className="mb-1.5 p-1.5 rounded-lg border bg-gray-900/40 flex items-center gap-2" style={{ borderColor: eq.weapon ? (eq.weapon.tierColor || '#f59e0b') + '66' : '#333' }}>
+                          <span className="text-sm">{eq.weapon?.icon || '\u2694\uFE0F'}</span>
+                          <div className="flex-1 min-w-0">
+                            {eq.weapon ? (
+                              <>
+                                <div className="text-[9px] font-bold" style={{ color: eq.weapon.tierColor || '#f59e0b' }}>{eq.weapon.name}</div>
+                                <div className="text-[8px] text-purple-400">ATK +{eq.weapon.atk}{eq.weapon.bonusStat ? ` | ${STAT_LBL[eq.weapon.bonusStat]} +${eq.weapon.bonusValue}` : ''}</div>
+                              </>
+                            ) : (
+                              <div className="text-[9px] text-gray-600 italic">Aucune arme</div>
+                            )}
+                          </div>
+                          {eq.weapon && (
+                            <button onClick={() => doUnequip('weapon')} className="text-[8px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30">Retirer</button>
+                          )}
+                        </div>
+
+                        {/* 8 Artifact Slots */}
+                        <div className="grid grid-cols-4 gap-1">
+                          {SLOTS.map(slot => {
+                            const art = eq.artifacts?.[slot.id];
+                            return (
+                              <div key={slot.id} className="p-1 rounded border text-center cursor-default" style={{ borderColor: art ? (art.tierColor || '#a78bfa') + '44' : '#333', background: art ? (art.tierColor || '#a78bfa') + '08' : 'rgba(0,0,0,0.2)' }}>
+                                <div className="text-xs">{slot.icon}</div>
+                                {art ? (
+                                  <>
+                                    <div className="text-[7px] font-bold truncate" style={{ color: art.tierColor || '#a78bfa' }}>{art.tierLabel || art.tier}</div>
+                                    <div className="text-[7px] text-purple-400 truncate">{art.mainStat?.label} +{art.mainStat?.value}</div>
+                                    <button onClick={() => doUnequip(slot.id)} className="text-[7px] text-red-400 hover:text-red-300 mt-0.5">{'\u2716'}</button>
+                                  </>
+                                ) : (
+                                  <div className="text-[7px] text-gray-600">{slot.name}</div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Gear Bonuses Summary */}
+                        {Object.keys(gearBonuses).length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {Object.entries(gearBonuses).filter(([,v]) => v > 0).map(([stat, val]) => (
+                              <span key={stat} className="text-[7px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                                {STAT_LBL[stat]} +{val}{stat.endsWith('_pct') ? '%' : ''}
+                              </span>
+                            ))}
+                            {setPieceCount > 0 && (
+                              <span className="text-[7px] px-1.5 py-0.5 rounded font-bold" style={{ background: MANAYA_COL + '15', color: MANAYA_COL, border: `1px solid ${MANAYA_COL}33` }}>
+                                Set Manaya {setPieceCount}/9
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Inventory */}
+                        {inv.length > 0 && (
+                          <details className="mt-1.5">
+                            <summary className="text-[9px] text-yellow-500 cursor-pointer hover:text-yellow-400">{'\uD83D\uDCE6'} Inventaire ({inv.length} items)</summary>
+                            <div className="mt-1 space-y-0.5 max-h-40 overflow-y-auto">
+                              {inv.map((item, idx) => {
+                                const isW = item.type === 'weapon';
+                                const tierCol = item.tierColor || '#9ca3af';
+                                return (
+                                  <div key={item.id || idx} className="flex items-center gap-1.5 p-1 rounded border border-gray-700/30 bg-gray-900/30 text-[8px]">
+                                    <span className="text-xs">{isW ? (item.icon || '\u2694\uFE0F') : (SLOTS.find(s => s.id === item.slot)?.icon || '\uD83D\uDCE6')}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-bold truncate" style={{ color: tierCol }}>{item.name || `${item.tierLabel} ${item.slotName || ''}`}</div>
+                                      <div className="text-purple-400 truncate">{isW ? `ATK +${item.atk}` : item.mainStat ? `${item.mainStat.label} +${item.mainStat.value}` : ''}</div>
+                                    </div>
+                                    <button onClick={() => doEquip(item)} className="px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 text-[8px] flex-shrink-0">Equiper</button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </details>
+                        )}
+                      </div>
+
+                      {/* ── Forge de Manaya ── */}
+                      <div className="mb-3 p-2.5 rounded-lg border bg-gray-900/30" style={{ borderColor: MANAYA_COL + '33' }}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: MANAYA_COL }}>{'\uD83D\uDD25'} Forge de Manaya</div>
+                          <div className="flex items-center gap-1 text-[10px]">
+                            <span>{'\uD83E\uDEB6'}</span>
+                            <span className="font-bold" style={{ color: MANAYA_COL }}>{feathers}</span>
+                            <span className="text-gray-500">Plumes</span>
+                          </div>
+                        </div>
+                        <div className="text-[8px] text-gray-500 mb-2">Forge les pieces du Set Legendaire avec des Plumes (drop rare du boss).</div>
+
+                        <div className="space-y-0.5">
+                          {['weapon', ...SLOTS.map(s => s.id)].map(slotId => {
+                            const piece = MANAYA_PIECES[slotId];
+                            const cost = MANAYA_COST[slotId];
+                            const isOwned = !!mOwned[slotId];
+                            const canForge = !isOwned && feathers >= cost;
+                            return (
+                              <div key={slotId} className="flex items-center gap-1.5 p-1 rounded" style={{ background: isOwned ? MANAYA_COL + '0D' : 'transparent', border: isOwned ? `1px solid ${MANAYA_COL}33` : '1px solid #333' }}>
+                                <span className="text-xs">{piece.icon}</span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-[8px] font-bold" style={{ color: MANAYA_COL }}>{piece.name}</div>
+                                  <div className="text-[7px] text-purple-400">{piece.stat}</div>
+                                </div>
+                                <div className="text-[8px] text-yellow-500 flex-shrink-0">{'\uD83E\uDEB6'}{cost}</div>
+                                {isOwned ? (
+                                  <span className="text-[8px] text-green-400 font-bold flex-shrink-0">{'\u2713'}</span>
+                                ) : (
+                                  <button onClick={() => doForge(slotId)} disabled={!canForge}
+                                    className={`text-[8px] px-1.5 py-0.5 rounded flex-shrink-0 ${canForge ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30 cursor-pointer' : 'bg-gray-700/30 text-gray-600 cursor-not-allowed'}`}>
+                                    Forger
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Set Bonuses */}
+                        <div className="mt-2 space-y-0.5">
+                          {SET_BONUSES.map(b => (
+                            <div key={b.count} className="text-[8px]" style={{ color: setPieceCount >= b.count ? MANAYA_COL : '#555', fontWeight: setPieceCount >= b.count ? 'bold' : 'normal' }}>
+                              {setPieceCount >= b.count ? '\u2726 ' : '\u25CB '}{b.label}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+
                 {/* Hunters Summary */}
                 <div className="flex items-center justify-between bg-gray-800/30 rounded-lg px-3 py-2 border border-gray-700/20">
                   <div className="text-[10px] text-gray-400">
