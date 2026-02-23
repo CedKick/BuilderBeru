@@ -529,6 +529,48 @@
     battleMusic.loop = true;
     battleMusic.volume = 0.35;
 
+    // ── Warning Sounds (Web Audio API) ──
+    let audioCtx = null;
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      return audioCtx;
+    }
+    function playWarningBeep(urgency) {
+      // urgency: 0 (calm) → 1 (imminent danger)
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        // Higher pitch = more urgent (300Hz → 800Hz)
+        osc.frequency.value = 300 + urgency * 500;
+        osc.type = 'sine';
+        gain.gain.value = 0.08 + urgency * 0.12; // 0.08 → 0.20
+        osc.start();
+        // Short beep: shorter = more urgent (120ms → 50ms)
+        const dur = 0.12 - urgency * 0.07;
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+        osc.stop(ctx.currentTime + dur + 0.01);
+      } catch {}
+    }
+    function playExplosionBoom() {
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.value = 60;
+        osc.frequency.exponentialRampToValueAtTime(25, ctx.currentTime + 0.4);
+        gain.gain.value = 0.25;
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.6);
+      } catch {}
+    }
+
     // ── State (must be declared before auto-login uses them) ──
     let ws = null, myId = null, gameState = null, roomInfo = null, inRoom = false;
     let keys = {}, mouseAngle = 0, lastAimSent = 0, gameStartTime = 0;
@@ -1039,6 +1081,18 @@
           }
           break;
         case 'boss_message': log(msg.text, 'event'); break;
+        case 'boss_curl':
+          log('⚠️ Manaya se met en boule !', 'error');
+          screenShake.intensity = 3;
+          break;
+        case 'boss_uncurl':
+          log('💥 EXPLOSION !', 'error');
+          screenShake.intensity = 15;
+          playExplosionBoom();
+          break;
+        case 'warning_beep':
+          playWarningBeep(msg.urgency || 0.5);
+          break;
         case 'boss_enrage': log('BOSS ENRAGED!', 'error'); break;
         case 'boss_rage_stack': log(msg.message, 'error'); break;
         case 'phase_change': log('Phase ' + msg.phase, 'event'); break;
@@ -1760,6 +1814,73 @@
         ctx.setLineDash([15, 8]);
         ctx.beginPath(); ctx.moveTo(zone.x, zone.y); ctx.lineTo(endX, endY); ctx.stroke();
         ctx.setLineDash([]);
+      } else if (zone.type === 'menacing_wave_telegraph') {
+        // Pulsing danger zone — boss is charging, run away!
+        const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 200); // Fast pulse
+        const innerPulse = zone.radius * (0.3 + 0.15 * Math.sin(Date.now() / 300));
+        ctx.save();
+        // Outer danger ring (pulsing red)
+        ctx.strokeStyle = 'rgba(239,68,68,' + (0.3 + pulse * 0.4) + ')';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 5]);
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+        // Filling inner danger area (growing with progress)
+        const fillR = zone.radius * progress;
+        const grad = ctx.createRadialGradient(zone.x, zone.y, 0, zone.x, zone.y, fillR);
+        grad.addColorStop(0, 'rgba(239,68,68,' + (0.15 + pulse * 0.1) + ')');
+        grad.addColorStop(0.7, 'rgba(249,115,22,' + (0.1 + pulse * 0.08) + ')');
+        grad.addColorStop(1, 'rgba(249,115,22,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, fillR, 0, Math.PI * 2); ctx.fill();
+        // Inner energy buildup — concentric pulsing rings
+        for (let r = 40; r < innerPulse; r += 35) {
+          ctx.strokeStyle = 'rgba(255,150,50,' + (0.15 + pulse * 0.15) + ')';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(zone.x, zone.y, r, 0, Math.PI * 2); ctx.stroke();
+        }
+        // Center glow
+        const cGrad = ctx.createRadialGradient(zone.x, zone.y, 0, zone.x, zone.y, 30);
+        cGrad.addColorStop(0, 'rgba(255,200,100,' + (0.4 + pulse * 0.3) + ')');
+        cGrad.addColorStop(1, 'rgba(255,100,50,0)');
+        ctx.fillStyle = cGrad;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, 30, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      } else if (zone.type === 'fire_wave') {
+        // Expanding fire ring — deadly if caught inside
+        ctx.save();
+        ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 30;
+        // Outer ring edge (bright fire line)
+        const ringWidth = 25 + 10 * Math.sin(Date.now() / 100);
+        const edgeGrad = ctx.createRadialGradient(zone.x, zone.y, Math.max(0, zone.radius - ringWidth), zone.x, zone.y, zone.radius + 5);
+        edgeGrad.addColorStop(0, 'rgba(255,150,50,0)');
+        edgeGrad.addColorStop(0.3, 'rgba(255,100,30,0.6)');
+        edgeGrad.addColorStop(0.7, 'rgba(239,68,68,0.8)');
+        edgeGrad.addColorStop(1, 'rgba(200,50,30,0.2)');
+        ctx.fillStyle = edgeGrad;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius + 5, 0, Math.PI * 2); ctx.fill();
+        // Inner burning area (semi-transparent fill)
+        const innerGrad = ctx.createRadialGradient(zone.x, zone.y, 0, zone.x, zone.y, zone.radius);
+        innerGrad.addColorStop(0, 'rgba(255,80,30,0.25)');
+        innerGrad.addColorStop(0.5, 'rgba(239,68,68,0.15)');
+        innerGrad.addColorStop(1, 'rgba(249,115,22,0.3)');
+        ctx.fillStyle = innerGrad;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill();
+        // Fire particles along the expanding edge
+        const numParticles = Math.floor(zone.radius / 8);
+        for (let i = 0; i < numParticles; i++) {
+          const a = (i / numParticles) * Math.PI * 2 + Date.now() / 500;
+          const r = zone.radius + (Math.random() - 0.5) * 20;
+          const px = zone.x + Math.cos(a) * r;
+          const py = zone.y + Math.sin(a) * r;
+          const size = 2 + Math.random() * 3;
+          ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,200,50,0.7)' : 'rgba(255,100,30,0.6)';
+          ctx.beginPath(); ctx.arc(px, py, size, 0, Math.PI * 2); ctx.fill();
+        }
+        // Bright edge stroke
+        ctx.strokeStyle = 'rgba(255,180,80,0.6)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
       } else if (zone.type === 'circle_explosion') {
         ctx.save();
         ctx.fillStyle = 'rgba(255,100,50,0.7)';

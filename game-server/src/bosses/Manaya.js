@@ -49,8 +49,9 @@ export class Manaya extends BossBase {
       this._patternDonut(),
       this._patternPoisonCircle(),
 
-      // Phase 3+ (75-50%) — Death Ball + Dive + Waves + Leap Slam
+      // Phase 3+ (75-50%) — Death Ball + Menacing Wave + Dive + Waves + Leap Slam
       this._patternDeathBall(),
+      this._patternMenacingWave(),
       this._patternDive(),
       this._patternWaves(),
       this._patternLeapSlam(),
@@ -551,6 +552,102 @@ export class Manaya extends BossBase {
           x: boss.x, y: boss.y, radius: 250,
           ttl: 0.5, maxTtl: 0.5, active: true, source: boss.id,
         });
+      },
+    };
+  }
+
+  // ──────────────────────────
+  // PATTERN: Menacing Wave (Tera — boss curls into ball, fire ring expands)
+  // Boss charges energy → expanding fire wave → ticks = death
+  // ──────────────────────────
+  _patternMenacingWave() {
+    return {
+      name: 'Vague Dévastatrice',
+      phase: 3, weight: 2, cooldown: 30, globalCooldown: 4.0,
+      telegraphTime: 3.5, castTime: 0.3, recoveryTime: 2.0,
+
+      onStart: (boss, gs, data) => {
+        data.chargeElapsed = 0;
+        data.chargeDuration = 3.5; // 3.5s to run away
+        data.waveElapsed = 0;
+        data.waveDuration = 2.0; // fire ring expands over 2s
+        data.maxRadius = 450; // max fire ring radius
+        data.phase = 'charge'; // charge → wave → done
+        data.lastBeep = 0;
+
+        // Boss curls up — send event for client visual + sound
+        gs.addEvent({ type: 'boss_curl', bossId: boss.id });
+        gs.addEvent({ type: 'boss_message', text: '🔥 Manaya se met en boule... ÉLOIGNEZ-VOUS !' });
+
+        // Telegraph: pulsing red circle showing max danger zone
+        gs.addAoeZone({
+          id: `mwave_tel_${Date.now()}`, type: 'menacing_wave_telegraph',
+          x: boss.x, y: boss.y, radius: data.maxRadius,
+          ttl: data.chargeDuration + 0.5, maxTtl: data.chargeDuration + 0.5,
+          active: false, source: boss.id,
+        });
+      },
+
+      onExecute: (boss, gs, data) => {
+        data.phase = 'wave';
+        data.waveElapsed = 0;
+
+        // Create the expanding fire wave zone
+        data.waveZoneId = `mwave_${Date.now()}`;
+        gs.addAoeZone({
+          id: data.waveZoneId, type: 'fire_wave',
+          x: boss.x, y: boss.y,
+          radius: 30, // starts small
+          maxRadius: data.maxRadius,
+          ttl: data.waveDuration + 1.0, maxTtl: data.waveDuration + 1.0,
+          active: true, source: boss.id,
+          damagePerTick: boss.atk * 6.0, // Massive tick damage
+          tickInterval: 0.15, _tickTimer: 0,
+        });
+
+        // Boss uncurls — explosion event
+        gs.addEvent({ type: 'boss_uncurl', bossId: boss.id });
+        gs.addEvent({ type: 'boss_message', text: '💥 VAGUE DE FEU !' });
+      },
+
+      onUpdate: (boss, gs, data, dt) => {
+        if (data.phase === 'charge') {
+          data.chargeElapsed += dt;
+
+          // Escalating warning beeps — send events at increasing frequency
+          const beepInterval = Math.max(0.15, 0.6 - (data.chargeElapsed / data.chargeDuration) * 0.5);
+          data.lastBeep += dt;
+          if (data.lastBeep >= beepInterval) {
+            data.lastBeep = 0;
+            const urgency = data.chargeElapsed / data.chargeDuration; // 0→1
+            gs.addEvent({ type: 'warning_beep', urgency, bossId: boss.id });
+          }
+
+          // Telegraph follows boss position
+          const telZone = gs.aoeZones.find(z => z.id && z.id.startsWith('mwave_tel_'));
+          if (telZone) { telZone.x = boss.x; telZone.y = boss.y; }
+
+          return false; // onExecute fires after telegraphTime
+        }
+
+        if (data.phase === 'wave') {
+          data.waveElapsed += dt;
+          const progress = Math.min(1, data.waveElapsed / data.waveDuration);
+
+          // Expand the fire ring
+          const zone = gs.aoeZones.find(z => z.id === data.waveZoneId);
+          if (zone) {
+            // Easing: fast start, slight slow at end
+            const eased = 1 - Math.pow(1 - progress, 2);
+            zone.radius = 30 + (data.maxRadius - 30) * eased;
+            zone.x = boss.x;
+            zone.y = boss.y;
+          }
+
+          return data.waveElapsed >= data.waveDuration + 0.5;
+        }
+
+        return true;
       },
     };
   }

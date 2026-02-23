@@ -288,6 +288,30 @@ export class PhysicsEngine {
           }
         }
       }
+
+      // Fire wave — expanding circle tick damage (Menacing Wave)
+      if (zone.type === 'fire_wave' && zone.active && zone.damagePerTick) {
+        zone._tickTimer = (zone._tickTimer || 0) - dt;
+        if (zone._tickTimer <= 0) {
+          zone._tickTimer = zone.tickInterval || 0.15;
+
+          for (const player of gs.getAlivePlayers()) {
+            const dist = Math.hypot(player.x - zone.x, player.y - zone.y);
+            if (dist < zone.radius + player.radius) {
+              const actual = player.takeDamage(zone.damagePerTick, gs.boss);
+              if (actual > 0) {
+                gs.addEvent({
+                  type: 'damage',
+                  source: gs.boss.id,
+                  target: player.id,
+                  amount: actual,
+                  skill: 'Vague de Feu',
+                });
+              }
+            }
+          }
+        }
+      }
     }
 
     // Cleanup expired zones
