@@ -399,6 +399,28 @@ export class RoomManager {
     }
   }
 
+  async depositRaidData(client, data) {
+    try {
+      if (!data || !client.username) return;
+      const API_URL = process.env.VERCEL_API_URL || 'https://builderberu.com';
+      const SECRET = process.env.GAME_SERVER_SECRET || 'manaya-raid-secret-key';
+
+      const resp = await fetch(`${API_URL}/api/storage/deposit-raid`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Server-Secret': SECRET },
+        body: JSON.stringify({ username: client.username, raidData: data }),
+      });
+      const result = await resp.json();
+      if (result.success) {
+        console.log(`[RaidSync] Deposited for ${client.username}: ${result.status}`);
+      } else {
+        console.warn(`[RaidSync] Failed for ${client.username}:`, result.error || result.status);
+      }
+    } catch (err) {
+      console.error('[RaidSync] Deposit error:', err.message);
+    }
+  }
+
   _getClientColosseumData(clientId) {
     // Look through WS clients to find this player's synced colosseum data
     for (const [, clientData] of this.wsServer.clients) {

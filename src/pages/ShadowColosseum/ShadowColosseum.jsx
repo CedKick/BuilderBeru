@@ -598,6 +598,8 @@ export default function ShadowColosseum() {
   const [factionBuffs, setFactionBuffs] = useState(null); // { loot_sulfuras: 3, stats_hp: 5, ... } or null if not in faction
   // Raid profile (fetched from game server for XP/level sync)
   const [raidProfileServer, setRaidProfileServer] = useState(null);
+  // Raid storage (inventory, equipped, feathers, etc. from Neon DB)
+  const [raidStorage, setRaidStorage] = useState(null);
   // ARC II state
   const [arc2StoryTier, setArc2StoryTier] = useState(null);
   const [arc2StoryIdx, setArc2StoryIdx] = useState(0);
@@ -839,6 +841,31 @@ export default function ShadowColosseum() {
         .then(d => { if (d.success && d.profile) setRaidProfileServer(d.profile); })
         .catch(() => {});
     } catch { /* no auth user */ }
+  }, []);
+
+  // Fetch raid storage (inventory, equipped, feathers) from Neon DB
+  useEffect(() => {
+    try {
+      const authUser = JSON.parse(localStorage.getItem('builderberu_auth_user'));
+      if (!authUser?.username) return;
+      fetch(`/api/storage/load-raid?username=${encodeURIComponent(authUser.username)}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.success && d.raidData) {
+            setRaidStorage(d.raidData);
+            // Cache in localStorage for the fiche UI to read
+            if (d.raidData.inventory) localStorage.setItem('manaya_raid_inventory', JSON.stringify(d.raidData.inventory));
+            if (d.raidData.equipped) localStorage.setItem('manaya_raid_equipped', JSON.stringify(d.raidData.equipped));
+            if (d.raidData.feathers !== undefined) localStorage.setItem('manaya_raid_feathers', String(d.raidData.feathers));
+            if (d.raidData.manayaOwned) localStorage.setItem('manaya_set_owned', JSON.stringify(d.raidData.manayaOwned));
+            if (d.raidData.statPoints) {
+              const rc = (() => { try { return JSON.parse(localStorage.getItem('manaya_raid_character')) || {}; } catch { return {}; } })();
+              rc.statPoints = d.raidData.statPoints;
+              localStorage.setItem('manaya_raid_character', JSON.stringify(rc));
+            }
+          }
+        }).catch(() => {});
+    } catch {}
   }, []);
 
   // Helper: get faction loot multiplier for a specific weapon buff
@@ -4373,6 +4400,52 @@ export default function ShadowColosseum() {
                     })}
                   </div>
                 </div>
+
+                {/* ═══ TOTAL COMBAT STATS ═══ */}
+                {(() => {
+                  // Base stats per class (must match game-server playerStatsAdapter.js CLASS_STATS)
+                  const CLASS_BASE = {
+                    tank:      { hp: 15000, atk: 180, def: 300, spd: 120, crit: 10, res: 40, mana: 200 },
+                    healer:    { hp: 8000,  atk: 120, def: 150, spd: 130, crit: 12, res: 30, mana: 400 },
+                    dps_cac:   { hp: 10000, atk: 250, def: 180, spd: 140, crit: 25, res: 15, mana: 250 },
+                    dps_range: { hp: 7500,  atk: 220, def: 120, spd: 150, crit: 30, res: 10, mana: 300 },
+                  };
+                  // Server-side stat per point (from playerStatsAdapter.js)
+                  const SERVER_SPP = { hp: 150, atk: 3, def: 4, spd: 2, crit: 0.8, res: 1.5 };
+                  const base = CLASS_BASE[preferredClass] || CLASS_BASE.dps_cac;
+                  const lvlMult = 1 + (raidLvl - 1) * 0.02;
+                  // Gear bonuses from equipped items
+                  const eqData = (() => { try { return JSON.parse(localStorage.getItem('manaya_raid_equipped')) || { weapon: null, artifacts: {} }; } catch { return { weapon: null, artifacts: {} }; } })();
+                  const gb = { hp_flat: 0, hp_pct: 0, atk_flat: 0, atk_pct: 0, def_flat: 0, def_pct: 0, spd_flat: 0, crit_rate: 0, res_flat: 0, mana_flat: 0 };
+                  if (eqData.weapon) { gb.atk_flat += eqData.weapon.atk || 0; if (eqData.weapon.bonusStat && gb[eqData.weapon.bonusStat] !== undefined) gb[eqData.weapon.bonusStat] += eqData.weapon.bonusValue || 0; }
+                  for (const art of Object.values(eqData.artifacts || {})) { if (!art) continue; if (art.mainStat && gb[art.mainStat.id] !== undefined) gb[art.mainStat.id] += art.mainStat.value; for (const sub of (art.subs || [])) { if (gb[sub.id] !== undefined) gb[sub.id] += sub.value; } }
+
+                  let tHp = Math.floor((base.hp + (raidStatPoints.hp || 0) * SERVER_SPP.hp) * lvlMult) + gb.hp_flat;
+                  let tAtk = Math.floor((base.atk + (raidStatPoints.atk || 0) * SERVER_SPP.atk) * lvlMult) + gb.atk_flat;
+                  let tDef = Math.floor((base.def + (raidStatPoints.def || 0) * SERVER_SPP.def) * lvlMult) + gb.def_flat;
+                  const tSpd = Math.floor((base.spd + (raidStatPoints.spd || 0) * SERVER_SPP.spd) * lvlMult) + gb.spd_flat;
+                  const tCrit = Math.floor(base.crit + (raidStatPoints.crit || 0) * SERVER_SPP.crit) + gb.crit_rate;
+                  const tRes = Math.floor(base.res + (raidStatPoints.res || 0) * SERVER_SPP.res) + gb.res_flat;
+                  // Apply % bonuses
+                  if (gb.hp_pct > 0) tHp += Math.floor(tHp * gb.hp_pct / 100);
+                  if (gb.atk_pct > 0) tAtk += Math.floor(tAtk * gb.atk_pct / 100);
+                  if (gb.def_pct > 0) tDef += Math.floor(tDef * gb.def_pct / 100);
+
+                  const clsLabel = { tank: 'Tank', healer: 'Healer', dps_cac: 'Warrior', dps_range: 'Archer' };
+                  return (
+                    <div className="mb-3 p-2 rounded-lg border border-purple-500/20 bg-purple-900/10">
+                      <div className="text-[9px] text-purple-400 font-bold mb-1">STATS EN COMBAT ({clsLabel[preferredClass] || preferredClass})</div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px]">
+                        <span style={{ color: '#10b981' }}>HP {tHp}</span>
+                        <span style={{ color: '#ef4444' }}>ATK {tAtk}</span>
+                        <span style={{ color: '#3b82f6' }}>DEF {tDef}</span>
+                        <span style={{ color: '#f59e0b' }}>SPD {tSpd}</span>
+                        <span style={{ color: '#f97316' }}>CRIT {tCrit}</span>
+                        <span style={{ color: '#a78bfa' }}>RES {tRes}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* ═══ RAID GEAR ═══ */}
                 {(() => {

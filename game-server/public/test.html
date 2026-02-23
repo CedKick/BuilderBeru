@@ -1016,6 +1016,7 @@
       saveProfile(profile);
       updateStatsPanel();
       updateProfileDisplay();
+      syncRaidToCloud();
     }
 
     function resetStatPoints() {
@@ -1025,6 +1026,7 @@
       saveProfile(profile);
       updateStatsPanel();
       updateProfileDisplay();
+      syncRaidToCloud();
     }
 
     function updateStatsPanel() {
@@ -1050,6 +1052,35 @@
           '<button onclick="allocateStat(\'' + stat + '\')" style="padding:1px 6px;font-size:9px;' + (free > 0 ? '' : 'opacity:0.3;pointer-events:none') + '">+</button>' +
           '</div>';
       }
+      // ── Total combat stats (base class + allocated + gear) ──
+      const cls = document.getElementById('classSelect')?.value || 'dps_range';
+      const CLASS_BASE = {
+        tank:      { hp: 15000, atk: 180, def: 300, spd: 120, crit: 10, res: 40, mana: 200 },
+        healer:    { hp: 8000,  atk: 120, def: 150, spd: 130, crit: 12, res: 30, mana: 400 },
+        dps_cac:   { hp: 10000, atk: 250, def: 180, spd: 140, crit: 25, res: 15, mana: 250 },
+        dps_range: { hp: 7500,  atk: 220, def: 120, spd: 150, crit: 30, res: 10, mana: 300 },
+      };
+      const base = CLASS_BASE[cls] || CLASS_BASE.dps_range;
+      const lvlMult = 1 + (profile.level - 1) * 0.02;
+      const gb = getGearBonuses();
+
+      const totalHp = Math.floor((base.hp + (allocated.hp || 0) * 150) * lvlMult) + (gb.hp_flat || 0);
+      const totalAtk = Math.floor((base.atk + (allocated.atk || 0) * 3) * lvlMult) + (gb.atk_flat || 0);
+      const totalDef = Math.floor((base.def + (allocated.def || 0) * 4) * lvlMult) + (gb.def_flat || 0);
+      const totalSpd = Math.floor((base.spd + (allocated.spd || 0) * 2) * lvlMult) + (gb.spd_flat || 0);
+      const totalCrit = Math.floor(base.crit + (allocated.crit || 0) * 0.8) + (gb.crit_rate || 0);
+      const totalRes = Math.floor(base.res + (allocated.res || 0) * 1.5) + (gb.res_flat || 0);
+
+      html += '<div style="margin-top:6px;padding:4px 6px;background:#111;border:1px solid #333;border-radius:4px;font-size:8px;color:#94a3b8">' +
+        '<div style="color:#a78bfa;font-weight:bold;margin-bottom:2px;font-size:9px">STATS EN COMBAT (' + (cls === 'dps_range' ? 'Archer' : cls === 'dps_cac' ? 'Warrior' : cls === 'tank' ? 'Tank' : 'Healer') + ')</div>' +
+        '<span style="color:#10b981">HP ' + totalHp + '</span> · ' +
+        '<span style="color:#ef4444">ATK ' + totalAtk + '</span> · ' +
+        '<span style="color:#3b82f6">DEF ' + totalDef + '</span> · ' +
+        '<span style="color:#f59e0b">SPD ' + totalSpd + '</span> · ' +
+        '<span style="color:#f97316">CRIT ' + totalCrit + '</span> · ' +
+        '<span style="color:#8b5cf6">RES ' + totalRes + '</span>' +
+        '</div>';
+
       ui.innerHTML = html;
     }
 
@@ -1159,6 +1190,29 @@
     }
     function saveManayaOwned(obj) { localStorage.setItem(MANAYA_OWNED_KEY, JSON.stringify(obj)); }
 
+    // ── Sync all raid data to Neon DB via game server WebSocket ──
+    let _raidSyncTimer = null;
+    function syncRaidToCloud() {
+      // Debounce 2s to avoid spamming during rapid equip/unequip
+      if (_raidSyncTimer) clearTimeout(_raidSyncTimer);
+      _raidSyncTimer = setTimeout(() => {
+        _raidSyncTimer = null;
+        if (!ws || ws.readyState !== 1) return;
+        const profile = loadProfile();
+        ws.send(JSON.stringify({
+          type: 'sync_raid_storage',
+          data: {
+            inventory: loadInventory(),
+            equipped: loadEquipped(),
+            feathers: loadFeathers(),
+            manayaOwned: loadManayaOwned(),
+            statPoints: profile?.allocatedStats || {},
+          }
+        }));
+        console.log('[RaidSync] Sent to cloud');
+      }, 2000);
+    }
+
     function forgeManayaPiece(slotId) {
       const cost = MANAYA_FEATHER_COST[slotId];
       const feathers = loadFeathers();
@@ -1173,6 +1227,7 @@
       addToInventory([piece]);
       updateForgePanel();
       updateGearPanel();
+      syncRaidToCloud();
     }
 
     function countEquippedManayaPieces() {
@@ -1276,6 +1331,7 @@
         removeFromInventory(item.id);
       }
       saveEquipped(eq);
+      syncRaidToCloud();
     }
 
     function unequipItem(slotId) {
@@ -1286,6 +1342,7 @@
         if (eq.artifacts[slotId]) { addToInventory([eq.artifacts[slotId]]); delete eq.artifacts[slotId]; }
       }
       saveEquipped(eq);
+      syncRaidToCloud();
     }
 
     function getGearBonuses() {
@@ -1849,6 +1906,7 @@
               }
               updateGearPanel();
               updateForgePanel();
+              syncRaidToCloud(); // Sync new loot to Neon DB
 
               lootItemsEl.innerHTML = '';
 

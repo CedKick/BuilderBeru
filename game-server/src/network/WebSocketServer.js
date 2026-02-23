@@ -108,6 +108,11 @@ export class WebSocketServer {
         }
         break;
 
+      // ── Sync Raid Storage to Neon DB (inventory, equipped, feathers, etc.) ──
+      case 'sync_raid_storage':
+        this.roomManager.depositRaidData(client, msg.data);
+        break;
+
       // ── In-Game Inputs ──
       case 'input':
         this.roomManager.handleInput(client, msg);
