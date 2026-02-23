@@ -47,7 +47,7 @@ export default async function handler(req, res) {
         storage_key,
         COUNT(*) AS user_count,
         SUM(size_bytes) AS total_text_bytes,
-        pg_size_pretty(SUM(size_bytes)) AS total_text_size,
+        pg_size_pretty(SUM(size_bytes)::bigint) AS total_text_size,
         pg_size_pretty(AVG(size_bytes)::bigint) AS avg_per_user,
         pg_size_pretty(MAX(size_bytes)::bigint) AS max_per_user
       FROM user_storage
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
     // 5. Top 10 biggest entries
     const biggestEntries = await query(`
       SELECT device_id, storage_key, size_bytes,
-             pg_size_pretty(size_bytes) AS size_pretty,
+             pg_size_pretty(size_bytes::bigint) AS size_pretty,
              updated_at
       FROM user_storage
       ORDER BY size_bytes DESC
@@ -103,7 +103,7 @@ export default async function handler(req, res) {
         device_id,
         storage_key,
         client_version,
-        pg_size_pretty(size_bytes) AS size_pretty,
+        pg_size_pretty(size_bytes::bigint) AS size_pretty,
         updated_at
       FROM user_storage
       WHERE storage_key = 'shadow_colosseum_data'
