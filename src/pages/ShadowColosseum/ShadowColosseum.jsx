@@ -354,7 +354,7 @@ const TIER_COOLDOWN_MIN = { 1: 15, 2: 30, 3: 60, 4: 60, 5: 90, 6: 120 };
 // ═══════════════════════════════════════════════════════════════
 
 const SAVE_KEY = 'shadow_colosseum_data';
-const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, fragments: { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [], monarchKills: 0, monarchDropLog: [], archDemonKills: 0, archDemonDropLog: [], lootBoostMs: 0, alkahest: 0, rerollCounts: {} });
+const defaultData = () => ({ chibiLevels: {}, statPoints: {}, skillTree: {}, talentTree: {}, talentTree2: {}, talentSkills: {}, respecCount: {}, cooldowns: {}, stagesCleared: {}, stats: { battles: 0, wins: 0 }, artifacts: {}, artifactInventory: [], weapons: {}, weaponCollection: {}, hammers: { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 }, fragments: { fragment_sulfuras: 0, fragment_raeshalare: 0, fragment_katana_z: 0, fragment_katana_v: 0, fragment_guldan: 0 }, accountXp: 0, accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0, mana: 0 }, accountAllocations: 0, arc2Unlocked: false, arc2StagesCleared: {}, arc2StoriesWatched: {}, arc2ClickCount: 0, grimoireWeiss: false, arc2Team: [null, null, null], arc2StarsRecord: {}, ragnarokKills: 0, ragnarokDropLog: [], zephyrKills: 0, zephyrDropLog: [], monarchKills: 0, monarchDropLog: [], archDemonKills: 0, archDemonDropLog: [], lootBoostMs: 0, alkahest: 0, rerollCounts: {} });
 
 // Migrations — apply to raw data from localStorage OR cloud
 const migrateData = (d) => {
@@ -372,7 +372,7 @@ const migrateData = (d) => {
   if (!d.hammers) d.hammers = { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 };
   if (d.hammers.marteau_rouge === undefined) d.hammers.marteau_rouge = 0;
   if (d.accountXp === undefined) d.accountXp = 0;
-  if (!d.accountBonuses) d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
+  if (!d.accountBonuses) d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0, mana: 0 };
   if (d.accountAllocations === undefined) d.accountAllocations = 0;
   if (d.arc2Unlocked === undefined) d.arc2Unlocked = false;
   if (!d.arc2StagesCleared) d.arc2StagesCleared = {};
@@ -429,7 +429,7 @@ const migrateData = (d) => {
     d.stagesCleared = {};
   }
   if (!d.accountResetV1) {
-    d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
+    d.accountBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0, mana: 0 };
     d.accountAllocations = 0;
     d.accountResetV1 = true;
   }
@@ -2143,14 +2143,13 @@ export default function ShadowColosseum() {
   const getTotalStatPts = (level) => (level - 1) * POINTS_PER_LEVEL;
   const getSpentStatPts = (id) => {
     const alloc = data.statPoints[id] || {};
-    // Only count stats in STAT_ORDER (ignores orphaned mana allocations from old saves)
     return STAT_ORDER.reduce((s, k) => s + (alloc[k] || 0), 0);
   };
   const getAvailStatPts = (id) => getTotalStatPts(getChibiLevel(id).level) - getSpentStatPts(id);
 
   const allocateStat = (id, stat, delta) => {
     setData(prev => {
-      const alloc = { ...(prev.statPoints[id] || { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 }) };
+      const alloc = { ...(prev.statPoints[id] || { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0, mana: 0 }) };
       const newVal = (alloc[stat] || 0) + delta;
       if (newVal < 0) return prev;
       if (delta > 0) {
@@ -4829,7 +4828,7 @@ export default function ShadowColosseum() {
                       const allocCount = accountAllocationsAtLevel(acc.level);
                       setData(prev => ({
                         ...prev,
-                        accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 },
+                        accountBonuses: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0, mana: 0 },
                         accountAllocations: 0,
                       }));
                       setPendingAlloc(allocCount);
@@ -6987,23 +6986,6 @@ export default function ShadowColosseum() {
                   </div>
                 );
               })}
-              {/* Mana — read-only, character-intrinsic stat */}
-              {(() => {
-                const mm = STAT_META.mana;
-                const manaVal = Math.floor((c.base.mana || 0) + (c.growth.mana || 0) * (level - 1));
-                return (
-                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-violet-500/5 border border-violet-500/20">
-                    <span className="text-base w-6 text-center">{mm.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className={`text-xs font-bold ${mm.color}`}>{mm.name}</span>
-                        <span className="text-sm font-bold text-white">{manaVal}</span>
-                      </div>
-                      <div className="text-[9px] text-gray-500">Stat intrinseque (non allouable)</div>
-                    </div>
-                  </div>
-                );
-              })()}
             </div>
 
             {/* Per-point info */}
