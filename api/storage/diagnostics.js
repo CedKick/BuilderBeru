@@ -8,7 +8,12 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   // Admin check — only admin users can access
+  // Supports both Authorization header (fetch) and ?token= query param (browser URL)
   const ADMINS = ['CedKick', 'Kly'];
+  const queryToken = req.query?.token;
+  if (queryToken && !req.headers?.authorization) {
+    req.headers = { ...req.headers, authorization: `Bearer ${queryToken}` };
+  }
   const user = await extractUser(req);
   if (!user || !ADMINS.includes(user.username)) {
     return res.status(403).json({ error: 'Admin only' });
