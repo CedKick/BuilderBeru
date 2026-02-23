@@ -21,7 +21,7 @@ import {
   RAID_DURATION_SEC, RAID_TICK_MS, BOSS_BASE_INTERVAL_MS, TEAM_SIZE,
   HUNTER_UNLOCK_THRESHOLDS,
   computeSynergies, computeCrossTeamSynergy, computeRaidRewards,
-  loadRaidData, saveRaidData, getHunterPool, getHunterStars,
+  loadRaidData, saveRaidData, getHunterPool, getHunterStars, RAID_SAVE_KEY,
   HUNTER_PASSIVE_EFFECTS,
   RAID_TIERS, MAX_RAID_TIER, getTierData, getTierArtifactRarity,
 } from './raidData';
@@ -728,6 +728,8 @@ export default function RaidMode() {
       const raidAccountXp = Math.floor((30 + rc * 15 + (isFullClear ? 50 : 0)) * tierData.xpMult);
       newColoData.accountXp = (newColoData.accountXp || 0) + raidAccountXp;
       setColoData(newColoData);
+      // Force immediate cloud sync — raid XP is critical, don't rely on debounce
+      cloudStorage.saveAndSync(SAVE_KEY, newColoData);
 
       // Update raid data — with tier tracking
       const newRaidData = { ...raidData };
@@ -768,6 +770,8 @@ export default function RaidMode() {
         }
       });
       setRaidData(newRaidData);
+      // Force immediate cloud sync for raid progression too
+      cloudStorage.saveAndSync(RAID_SAVE_KEY, newRaidData);
 
       setResultData({
         rc, barsDestroyed, isFullClear, totalDamage, endReason, dpsBreakdown,
