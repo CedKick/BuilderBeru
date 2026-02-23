@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ELEMENTS, RARITY, CHIBIS, SPRITES,
   statsAtFull, getEffStat, computeAttack, mergeTalentBonuses,
-  getBaseMana, BASE_MANA_REGEN, applySkillUpgrades, getSkillManaCost,
+  getBaseMana, BASE_MANA_REGEN, applySkillUpgrades, getSkillManaCost, getManaScaledPower,
 } from './colosseumCore';
 import { TALENT_SKILLS, ULTIMATE_SKILLS } from './talentSkillData';
 
@@ -433,8 +433,8 @@ export default function TrainingDummy() {
     const crit = st.crit + (synergyBonuses.crit || 0);
     const res = st.res + (synergyBonuses.res || 0);
 
-    const mana = getBaseMana(lvData.level);
-    const manaRegen = BASE_MANA_REGEN + (mergedTB.manaRegen || 0);
+    const mana = st.mana;
+    const manaRegen = st.manaRegen || BASE_MANA_REGEN;
 
     const manaCostMult = Math.max(0.5, 1 - (mergedTB.manaCostReduce || 0) / 100);
     const skillTreeData = coloData.skillTree?.[entityId] || {};
@@ -864,9 +864,9 @@ export default function TrainingDummy() {
       if (bonusCritDmg > 0) tbForAttack.critDamage = (tbForAttack.critDamage || 0) + bonusCritDmg * 100;
       if (bonusDefIgnore > 0) tbForAttack.defPen = (tbForAttack.defPen || 0) + bonusDefIgnore * 100;
 
-      // Megumin manaScaling: power = mana (before consumption) × multiplier
+      // Megumin manaScaling: sqrt diminishing returns to prevent quadratic Intel² explosion
       const skillForAttack = skill.manaScaling
-        ? { ...skill, power: Math.floor(manaBeforeConsume * skill.manaScaling) }
+        ? { ...skill, power: getManaScaledPower(manaBeforeConsume, skill) }
         : skill;
 
       // Compute attack
@@ -1458,9 +1458,9 @@ export default function TrainingDummy() {
       log.push({ text: `💪 ATK boosté: ${fmt(savedAtk)} → ${fmt(boostedAtk)}`, type: 'buff', id: Date.now() + 0.35 });
     }
 
-    // Megumin manaScaling: power = mana (before consumption) × multiplier
+    // Megumin manaScaling: sqrt diminishing returns to prevent quadratic Intel² explosion
     const skillForManual = skill.manaScaling
-      ? { ...skill, power: Math.floor(manaBeforeConsumeManual * skill.manaScaling) }
+      ? { ...skill, power: getManaScaledPower(manaBeforeConsumeManual, skill) }
       : skill;
 
     // Compute attack with detailed breakdown
@@ -2433,7 +2433,7 @@ export default function TrainingDummy() {
                         )}
                       </div>
                       <div className="text-xs text-gray-400 space-y-0.5">
-                        <div>Puissance: {skill.manaScaling ? `${Math.floor((activeFighter.mana || 0) * skill.manaScaling)}%` : `${skill.power}%`}</div>
+                        <div>Puissance: {skill.manaScaling ? `${getManaScaledPower(activeFighter.mana || 0, skill)}%` : `${skill.power}%`}</div>
                         {skill.consumeHalfMana && <div className="text-orange-400">Consomme 50% Mana</div>}
                         {skill.manaRestore && <div className="text-cyan-400">Restaure {skill.manaRestore}% Mana</div>}
                         {skill.manaThreshold && (

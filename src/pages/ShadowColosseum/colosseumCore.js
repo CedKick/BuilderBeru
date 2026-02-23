@@ -52,8 +52,9 @@ export const RARITY = {
 };
 
 // ─── Stat System ─────────────────────────────────────────────
-export const STAT_PER_POINT = { hp: 16, atk: 1.5, def: 1.5, spd: 1, crit: 0.8, res: 0.8, mana: 4 };
-export const STAT_ORDER = ['hp', 'atk', 'def', 'spd', 'crit', 'res', 'mana'];
+export const STAT_PER_POINT = { hp: 16, atk: 1.5, def: 1.5, spd: 1, crit: 0.8, res: 0.8 };
+export const STAT_ORDER = ['hp', 'atk', 'def', 'spd', 'crit', 'res'];
+// Mana/Intel is NOT allocatable — it's a character-intrinsic stat (base + growth per level)
 export const STAT_META = {
   hp:   { name: 'PV',   icon: '\u2764\uFE0F', color: 'text-green-400',   desc: 'Points de Vie', detail: 'Determine la survie du combattant. +16 PV par point investi (le stat defensif le plus fiable — pas de rendements degressifs ni de cap). A 0 PV, le combattant est K.O.' },
   atk:  { name: 'ATK',  icon: '\u2694\uFE0F', color: 'text-red-400',     desc: "Puissance d'attaque", detail: 'Augmente les degats infliges. Formule : ATK x (Power du skill / 100). Multiplie par les bonus elementaires, crit, etc.' },
@@ -61,16 +62,28 @@ export const STAT_META = {
   spd:  { name: 'SPD',  icon: '\uD83D\uDCA8', color: 'text-emerald-400', desc: 'Vitesse', detail: 'Determine l\'ordre des tours et les tours bonus. SPD >= 1.5x l\'ennemi le + rapide = +1 tour bonus. SPD >= 2x = +2 tours bonus (max). Augmente aussi la regen mana (+1 mana par 15 SPD).' },
   crit: { name: 'CRIT', icon: '\uD83C\uDFAF', color: 'text-yellow-400', desc: 'Chance de coup critique', detail: 'Chance en % d\'infliger un coup critique (x1.5 degats de base + bonus CRIT DMG). Rendements degressifs : 50→39%, 100→61%, 150→75%, 200→85%. La RES ennemie reduit le crit (aussi en degressif).' },
   res:  { name: 'RES',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-cyan-400',    desc: 'Resistance elementaire + anti-crit', detail: 'Double usage avec rendements degressifs : (1) Reduit les degats recus (50→35%, 100→55%, cap 70%). (2) Reduit le crit rate ennemi (50→18%, 100→29%, 200→41%). Stacker au-dela de ~100 est moins efficace — diversifier avec HP/DEF.' },
-  mana: { name: 'INTEL', icon: '\uD83E\uDDE0', color: 'text-violet-400',  desc: 'Intelligence', detail: 'Determine la puissance des mages et supports. Les classes Mage/Support scalent leurs degats uniquement sur l\'Intel (ATK ignore, DMG = Intel x1.0). Soins : +1% par 10 Intel. Intel = 50 + PV/4 + RES*2. Regen : 8/tick + SPD/15.' },
+  mana: { name: 'MANA', icon: '\uD83E\uDDE0', color: 'text-violet-400',  desc: 'Mana / Intelligence', detail: 'Stat intrinseque au personnage (non allouable). Determine la puissance des mages/supports (DMG = Mana x1.0, ATK ignore). Skills mana-scaling : bonus avec rendements degressifs (racine carree). Soins : +1% par 10 Mana. Regen : 8/tick + SPD/15. Pool fixe par perso (base + croissance par niveau).' },
 };
 
 // ─── Mana System ────────────────────────────────────────────
-export const getBaseMana = (base) => Math.floor(50 + base.hp / 4 + (base.res || 0) * 2);
+// Mana is now a character-intrinsic stat (base.mana + growth.mana per level)
+// Fallback for old data without base.mana: 50 + HP/4 + RES*2
+export const getBaseMana = (base) => base.mana || Math.floor(50 + base.hp / 4 + (base.res || 0) * 2);
 export const BASE_MANA_REGEN = 8;
 export const getSkillManaCost = (skill) => {
   if (skill.manaCost !== undefined) return skill.manaCost;
   if (!skill.power || skill.cdMax === 0) return 0;
   return Math.floor(5 + skill.power / 15 + skill.cdMax * 3);
+};
+// Mana-scaled power with diminishing returns (sqrt curve)
+// Prevents quadratic Intel² explosion on manaScaling skills
+// At mana=500,  scaling=7: bonus ≈ 592  → power ≈ 692%
+// At mana=2000, scaling=7: bonus ≈ 1183 → power ≈ 1283%
+// At mana=10000,scaling=7: bonus ≈ 2646 → power ≈ 2746%
+export const getManaScaledPower = (currentMana, skill) => {
+  if (!skill.manaScaling) return skill.power;
+  const manaBonus = Math.floor(10 * Math.sqrt(currentMana * skill.manaScaling));
+  return skill.power + manaBonus;
 };
 export const POINTS_PER_LEVEL = 2;
 export const MAX_LEVEL = 140;
@@ -279,12 +292,11 @@ export const statsAtFull = (base, growth, level, allocated = {}, tb = {}, equipB
   stats.spd += (globalBonuses.spd || 0) * STAT_PER_POINT.spd;
   stats.crit = +(stats.crit + (globalBonuses.crit || 0) * STAT_PER_POINT.crit).toFixed(1);
   stats.res = +(stats.res + (globalBonuses.res || 0) * STAT_PER_POINT.res).toFixed(1);
-  // Mana (derived from base stats + allocated + equipment + account)
+  // Mana — character-intrinsic stat (base.mana + growth.mana × level), NOT allocatable
   const baseMana = getBaseMana(base);
-  const manaFromAlloc = (allocated.mana || 0) * STAT_PER_POINT.mana;
-  const manaFromAccount = (globalBonuses.mana || 0) * STAT_PER_POINT.mana;
+  const manaFromGrowth = Math.floor((growth.mana || 0) * (level - 1));
   const manaPercent = 1 + (mergedTb.manaPercent || 0) / 100 + (equipBonuses.manaPercent || 0) / 100;
-  stats.mana = Math.floor((baseMana + manaFromAlloc + manaFromAccount) * manaPercent);
+  stats.mana = Math.floor((baseMana + manaFromGrowth) * manaPercent);
   stats.manaRegen = BASE_MANA_REGEN + Math.floor(stats.spd / 15) + Math.floor(mergedTb.manaRegen || 0);
   stats.manaCostReduce = Math.min(50, (mergedTb.manaCostReduce || 0) + (equipBonuses.manaCostReduce || 0));
   return stats;
@@ -382,8 +394,13 @@ export const computeAttack = (attacker, skill, defender, tb = {}) => {
   const res = { damage: 0, isCrit: false, healed: 0, buff: null, debuff: null, text: '' };
   let effAtk = getEffStat(attacker.atk, attacker.buffs, 'atk');
   // Mages & Supports scale purely on Intel (maxMana): ATK×0 + Intel×1.0
+  // Exception: manaScaling skills already scale power on mana — only partial Intel bonus to avoid quadratic explosion
   if (attacker.isMage && attacker.maxMana) {
-    effAtk = Math.floor(attacker.maxMana * 1.0);
+    if (skill.manaScaling) {
+      effAtk = Math.floor(effAtk + attacker.maxMana * 0.1);
+    } else {
+      effAtk = Math.floor(attacker.maxMana * 1.0);
+    }
   }
   let effDef = getEffStat(defender.def, defender.buffs || [], 'def');
 

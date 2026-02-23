@@ -14,7 +14,7 @@ import {
   applySkillUpgrades, computeAttack, aiPickSkill, spdToInterval,
   accountLevelFromXp, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT,
   getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
-  mergeTalentBonuses, fmtNum, BASE_CD_MS, getIntelCDR,
+  mergeTalentBonuses, fmtNum, BASE_CD_MS, getIntelCDR, getManaScaledPower,
 } from './colosseumCore';
 import { TALENT_SKILLS, ULTIMATE_SKILLS } from './talentSkillData';
 import {
@@ -1033,7 +1033,7 @@ export default function RaidMode() {
 
       // Megumin manaScaling: power = mana (before consumption) × multiplier
       const skillForAttack = skill.manaScaling
-        ? { ...skill, power: Math.floor(manaBeforeConsume * skill.manaScaling) }
+        ? { ...skill, power: getManaScaledPower(manaBeforeConsume, skill) }
         : skill;
 
       let result = computeAttack(chibi, skillForAttack, state.boss, chibi.talentBonuses || {});

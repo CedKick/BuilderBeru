@@ -83,8 +83,8 @@ export const HUNTERS = {
   h_kanae: {
     name: 'Tawata Kanae', element: 'fire', rarity: 'mythique', class: 'assassin',
     sprite: S.h_kanae, passiveDesc: 'SPD +20% au 1er tour',
-    base:   { hp: 350, atk: 52, def: 16, spd: 42, crit: 22, res: 4 },
-    growth: { hp: 11, atk: 3.8, def: 0.9, spd: 2.0, crit: 0.7, res: 0.2 },
+    base:   { hp: 350, atk: 52, def: 16, spd: 42, crit: 22, res: 4, mana: 100 },
+    growth: { hp: 11, atk: 3.8, def: 0.9, spd: 2.0, crit: 0.7, res: 0.2, mana: 0.5 },
     skills: [
       { name: 'Flamme Eclair', power: 110, cdMax: 0 },
       { name: 'Dague Incandescente', power: 200, cdMax: 3 },
@@ -94,8 +94,8 @@ export const HUNTERS = {
   h_stark: {
     name: 'Stark', element: 'fire', rarity: 'mythique', class: 'fighter',
     sprite: S.h_stark, passiveDesc: 'DEF +30% quand PV < 40%',
-    base:   { hp: 520, atk: 46, def: 30, spd: 24, crit: 10, res: 12 },
-    growth: { hp: 17, atk: 3.2, def: 1.8, spd: 1.1, crit: 0.3, res: 0.5 },
+    base:   { hp: 520, atk: 46, def: 30, spd: 24, crit: 10, res: 12, mana: 120 },
+    growth: { hp: 17, atk: 3.2, def: 1.8, spd: 1.1, crit: 0.3, res: 0.5, mana: 0.6 },
     skills: [
       { name: 'Poing Ardent', power: 105, cdMax: 0 },
       { name: 'Eruption Offensive', power: 185, cdMax: 3 },
@@ -105,8 +105,8 @@ export const HUNTERS = {
   h_fern: {
     name: 'Fern', element: 'fire', rarity: 'mythique', class: 'fighter',
     sprite: S.h_fern, passiveDesc: 'ATK +15% permanent',
-    base:   { hp: 440, atk: 54, def: 22, spd: 32, crit: 16, res: 6 },
-    growth: { hp: 14, atk: 3.8, def: 1.2, spd: 1.5, crit: 0.5, res: 0.2 },
+    base:   { hp: 440, atk: 54, def: 22, spd: 32, crit: 16, res: 6, mana: 130 },
+    growth: { hp: 14, atk: 3.8, def: 1.2, spd: 1.5, crit: 0.5, res: 0.2, mana: 0.7 },
     skills: [
       { name: 'Magie Offensive', power: 112, cdMax: 0 },
       { name: 'Destruction Totale', power: 210, cdMax: 4 },
@@ -116,8 +116,8 @@ export const HUNTERS = {
   h_reed: {
     name: 'Christopher Reed', element: 'fire', rarity: 'mythique', class: 'support',
     sprite: S.h_reed, passiveDesc: 'DEF equipe +10% passif',
-    base:   { hp: 480, atk: 34, def: 32, spd: 26, crit: 8, res: 18 },
-    growth: { hp: 16, atk: 2.2, def: 1.8, spd: 1.2, crit: 0.3, res: 0.7 },
+    base:   { hp: 480, atk: 34, def: 32, spd: 26, crit: 8, res: 18, mana: 320 },
+    growth: { hp: 16, atk: 2.2, def: 1.8, spd: 1.2, crit: 0.3, res: 0.7, mana: 2 },
     skills: [
       { name: 'Flamme Gardienne', power: 90, cdMax: 0 },
       { name: 'Mur de Feu', power: 0, cdMax: 3, buffDef: 50, buffDur: 3 },
@@ -127,8 +127,8 @@ export const HUNTERS = {
   h_choi: {
     name: 'Choi Jong-In', element: 'fire', rarity: 'legendaire', class: 'mage',
     sprite: S.h_choi, passiveDesc: 'Degats AoE +15%',
-    base:   { hp: 360, atk: 48, def: 18, spd: 28, crit: 14, res: 12 },
-    growth: { hp: 12, atk: 3.4, def: 1.0, spd: 1.3, crit: 0.5, res: 0.5 },
+    base:   { hp: 360, atk: 48, def: 18, spd: 28, crit: 14, res: 12, mana: 300 },
+    growth: { hp: 12, atk: 3.4, def: 1.0, spd: 1.3, crit: 0.5, res: 0.5, mana: 2 },
     skills: [
       { name: 'Boule de Feu', power: 105, cdMax: 0 },
       { name: 'Eruption Ardente', power: 195, cdMax: 3 },
@@ -138,8 +138,8 @@ export const HUNTERS = {
   h_emma: {
     name: 'Emma Laurent', element: 'fire', rarity: 'legendaire', class: 'tank',
     sprite: S.h_emma, passiveDesc: 'DEF +20%, aggro augmentee',
-    base:   { hp: 580, atk: 28, def: 40, spd: 18, crit: 5, res: 18 },
-    growth: { hp: 19, atk: 1.8, def: 2.2, spd: 0.8, crit: 0.2, res: 0.7 },
+    base:   { hp: 580, atk: 28, def: 40, spd: 18, crit: 5, res: 18, mana: 90 },
+    growth: { hp: 19, atk: 1.8, def: 2.2, spd: 0.8, crit: 0.2, res: 0.7, mana: 0.4 },
     skills: [
       { name: 'Bouclier Brulant', power: 88, cdMax: 0 },
       { name: 'Forteresse Ignee', power: 0, cdMax: 3, buffDef: 70, buffDur: 3 },
@@ -149,8 +149,8 @@ export const HUNTERS = {
   h_esil: {
     name: 'Esil Radiru', element: 'fire', rarity: 'legendaire', class: 'fighter',
     sprite: S.h_esil, passiveDesc: 'DEF +25% quand PV < 50%',
-    base:   { hp: 480, atk: 44, def: 28, spd: 26, crit: 12, res: 10 },
-    growth: { hp: 16, atk: 3.0, def: 1.6, spd: 1.2, crit: 0.4, res: 0.4 },
+    base:   { hp: 480, atk: 44, def: 28, spd: 26, crit: 12, res: 10, mana: 110 },
+    growth: { hp: 16, atk: 3.0, def: 1.6, spd: 1.2, crit: 0.4, res: 0.4, mana: 0.5 },
     skills: [
       { name: 'Coup de Lance', power: 100, cdMax: 0 },
       { name: 'Charge Brulante', power: 180, cdMax: 3 },
@@ -160,8 +160,8 @@ export const HUNTERS = {
   h_yuqi: {
     name: 'Yuqi', element: 'fire', rarity: 'legendaire', class: 'fighter',
     sprite: S.h_yuqi, passiveDesc: 'PV +15% permanent',
-    base:   { hp: 500, atk: 40, def: 26, spd: 24, crit: 10, res: 10 },
-    growth: { hp: 17, atk: 2.8, def: 1.5, spd: 1.1, crit: 0.3, res: 0.4 },
+    base:   { hp: 500, atk: 40, def: 26, spd: 24, crit: 10, res: 10, mana: 100 },
+    growth: { hp: 17, atk: 2.8, def: 1.5, spd: 1.1, crit: 0.3, res: 0.4, mana: 0.5 },
     skills: [
       { name: 'Frappe Brisante', power: 100, cdMax: 0 },
       { name: 'Impact Volcanique', power: 175, cdMax: 3 },
@@ -171,8 +171,8 @@ export const HUNTERS = {
   h_yoo: {
     name: 'Yoo Soohyun', element: 'fire', rarity: 'legendaire', class: 'mage',
     sprite: S.h_yoo, passiveDesc: 'CRIT +10% sur skills CD3+',
-    base:   { hp: 350, atk: 46, def: 17, spd: 30, crit: 16, res: 10 },
-    growth: { hp: 11, atk: 3.4, def: 0.9, spd: 1.4, crit: 0.5, res: 0.4 },
+    base:   { hp: 350, atk: 46, def: 17, spd: 30, crit: 16, res: 10, mana: 280 },
+    growth: { hp: 11, atk: 3.4, def: 0.9, spd: 1.4, crit: 0.5, res: 0.4, mana: 1.8 },
     skills: [
       { name: 'Lance de Flamme', power: 102, cdMax: 0 },
       { name: 'Meteore', power: 190, cdMax: 3 },
@@ -182,8 +182,8 @@ export const HUNTERS = {
   h_gina: {
     name: 'Gina', element: 'fire', rarity: 'rare', class: 'support',
     sprite: S.h_gina, passiveDesc: 'Soin +15% efficacite',
-    base:   { hp: 400, atk: 28, def: 22, spd: 26, crit: 8, res: 14 },
-    growth: { hp: 13, atk: 2.0, def: 1.3, spd: 1.1, crit: 0.3, res: 0.5 },
+    base:   { hp: 400, atk: 28, def: 22, spd: 26, crit: 8, res: 14, mana: 220 },
+    growth: { hp: 13, atk: 2.0, def: 1.3, spd: 1.1, crit: 0.3, res: 0.5, mana: 1.4 },
     skills: [
       { name: 'Flammeche', power: 85, cdMax: 0 },
       { name: 'Soin Igné', power: 0, cdMax: 4, healSelf: 22 },
@@ -193,8 +193,8 @@ export const HUNTERS = {
   h_song: {
     name: 'Song Chiyul', element: 'fire', rarity: 'rare', class: 'mage',
     sprite: S.h_song, passiveDesc: 'ATK +10% contre boss',
-    base:   { hp: 330, atk: 42, def: 15, spd: 28, crit: 12, res: 8 },
-    growth: { hp: 10, atk: 3.0, def: 0.9, spd: 1.2, crit: 0.4, res: 0.3 },
+    base:   { hp: 330, atk: 42, def: 15, spd: 28, crit: 12, res: 8, mana: 240 },
+    growth: { hp: 10, atk: 3.0, def: 0.9, spd: 1.2, crit: 0.4, res: 0.3, mana: 1.5 },
     skills: [
       { name: 'Etincelle', power: 95, cdMax: 0 },
       { name: 'Pyrotechnie', power: 170, cdMax: 3 },
@@ -206,12 +206,12 @@ export const HUNTERS = {
   h_megumin: {
     name: 'Megumin', element: 'fire', rarity: 'legendaire', class: 'mage',
     series: 'konosuba', sprite: S.h_megumin, passiveDesc: '+10% ATK/DEF/SPD a toute l\'equipe',
-    base:   { hp: 180, atk: 58, def: 8, spd: 28, crit: 20, res: 10 },
-    growth: { hp: 6, atk: 4.0, def: 0.4, spd: 1.2, crit: 0.5, res: 0.35 },
+    base:   { hp: 180, atk: 58, def: 8, spd: 28, crit: 20, res: 10, mana: 260 },
+    growth: { hp: 6, atk: 4.0, def: 0.4, spd: 1.2, crit: 0.5, res: 0.35, mana: 1.8 },
     skills: [
       { name: 'Flamme Écarlate', power: 120, cdMax: 0, manaCost: 0, manaRestore: 25 },
       { name: 'Détonation de Mana', power: 100, cdMax: 4, manaCost: 0, manaScaling: 7, consumeHalfMana: true },
-      { name: 'EXPLOSION!!!', power: 1800, cdMax: 8, manaCost: 1200, manaThreshold: 0.9, selfDamage: 15, selfStunTurns: 2 },
+      { name: 'EXPLOSION!!!', power: 1800, cdMax: 8, manaCost: 400, manaThreshold: 0.9, selfDamage: 15, selfStunTurns: 2 },
     ],
     special: true,
   },
@@ -221,8 +221,8 @@ export const HUNTERS = {
   h_chae_in: {
     name: 'Cha Hae-In', element: 'water', rarity: 'mythique', class: 'fighter',
     sprite: S.h_chae_in, passiveDesc: 'ATK et SPD +10% permanent',
-    base:   { hp: 440, atk: 52, def: 24, spd: 36, crit: 18, res: 8 },
-    growth: { hp: 14, atk: 3.8, def: 1.3, spd: 1.7, crit: 0.5, res: 0.3 },
+    base:   { hp: 440, atk: 52, def: 24, spd: 36, crit: 18, res: 8, mana: 130 },
+    growth: { hp: 14, atk: 3.8, def: 1.3, spd: 1.7, crit: 0.5, res: 0.3, mana: 0.7 },
     skills: [
       { name: 'Coup d\'Epee', power: 110, cdMax: 0 },
       { name: 'Frappe Celeste', power: 195, cdMax: 3 },
@@ -232,8 +232,8 @@ export const HUNTERS = {
   h_frieren: {
     name: 'Frieren', element: 'water', rarity: 'mythique', class: 'mage',
     sprite: S.h_frieren, passiveDesc: 'Degats magiques +25%',
-    base:   { hp: 360, atk: 56, def: 15, spd: 28, crit: 18, res: 10 },
-    growth: { hp: 11, atk: 4.0, def: 0.8, spd: 1.3, crit: 0.6, res: 0.4 },
+    base:   { hp: 360, atk: 56, def: 15, spd: 28, crit: 18, res: 10, mana: 380 },
+    growth: { hp: 11, atk: 4.0, def: 0.8, spd: 1.3, crit: 0.6, res: 0.4, mana: 2.5 },
     skills: [
       { name: 'Zoltraak', power: 115, cdMax: 0 },
       { name: 'Magie Ancienne', power: 225, cdMax: 4 },
@@ -243,8 +243,8 @@ export const HUNTERS = {
   h_alicia: {
     name: 'Alicia Blanche', element: 'water', rarity: 'mythique', class: 'mage',
     sprite: S.h_alicia, passiveDesc: 'CRIT DMG +20%',
-    base:   { hp: 370, atk: 54, def: 16, spd: 30, crit: 20, res: 8 },
-    growth: { hp: 12, atk: 3.8, def: 0.9, spd: 1.4, crit: 0.6, res: 0.3 },
+    base:   { hp: 370, atk: 54, def: 16, spd: 30, crit: 20, res: 8, mana: 350 },
+    growth: { hp: 12, atk: 3.8, def: 0.9, spd: 1.4, crit: 0.6, res: 0.3, mana: 2.2 },
     skills: [
       { name: 'Lame de Glace', power: 108, cdMax: 0 },
       { name: 'Blizzard Absolu', power: 210, cdMax: 4 },
@@ -254,8 +254,8 @@ export const HUNTERS = {
   h_meri: {
     name: 'Meri Laine', element: 'water', rarity: 'mythique', class: 'support',
     sprite: S.h_meri, passiveDesc: 'Buff equipe +15% efficacite',
-    base:   { hp: 460, atk: 30, def: 28, spd: 28, crit: 8, res: 16 },
-    growth: { hp: 15, atk: 2.0, def: 1.5, spd: 1.3, crit: 0.3, res: 0.6 },
+    base:   { hp: 460, atk: 30, def: 28, spd: 28, crit: 8, res: 16, mana: 340 },
+    growth: { hp: 15, atk: 2.0, def: 1.5, spd: 1.3, crit: 0.3, res: 0.6, mana: 2.2 },
     skills: [
       { name: 'Vague d\'Infusion', power: 88, cdMax: 0 },
       { name: 'Maree Soignante', power: 0, cdMax: 4, healSelf: 28 },
@@ -265,8 +265,8 @@ export const HUNTERS = {
   h_shuhua: {
     name: 'Shuhua', element: 'water', rarity: 'legendaire', class: 'fighter',
     sprite: S.h_shuhua, passiveDesc: 'ATK +12% permanent',
-    base:   { hp: 450, atk: 46, def: 24, spd: 30, crit: 14, res: 8 },
-    growth: { hp: 15, atk: 3.4, def: 1.3, spd: 1.4, crit: 0.4, res: 0.3 },
+    base:   { hp: 450, atk: 46, def: 24, spd: 30, crit: 14, res: 8, mana: 110 },
+    growth: { hp: 15, atk: 3.4, def: 1.3, spd: 1.4, crit: 0.4, res: 0.3, mana: 0.6 },
     skills: [
       { name: 'Poing d\'Eau', power: 105, cdMax: 0 },
       { name: 'Raz-de-Maree', power: 180, cdMax: 3 },
@@ -276,8 +276,8 @@ export const HUNTERS = {
   h_meilin: {
     name: 'Meilin Fisher', element: 'water', rarity: 'legendaire', class: 'support',
     sprite: S.h_meilin, passiveDesc: 'Soin +20% efficacite',
-    base:   { hp: 430, atk: 26, def: 24, spd: 28, crit: 8, res: 16 },
-    growth: { hp: 14, atk: 1.8, def: 1.4, spd: 1.2, crit: 0.3, res: 0.6 },
+    base:   { hp: 430, atk: 26, def: 24, spd: 28, crit: 8, res: 16, mana: 280 },
+    growth: { hp: 14, atk: 1.8, def: 1.4, spd: 1.2, crit: 0.3, res: 0.6, mana: 1.8 },
     skills: [
       { name: 'Eclat Glace', power: 85, cdMax: 0 },
       { name: 'Source de Vie', power: 0, cdMax: 4, healSelf: 25 },
@@ -287,8 +287,8 @@ export const HUNTERS = {
   h_seo: {
     name: 'Seo Jiwoo', element: 'water', rarity: 'legendaire', class: 'tank',
     sprite: S.h_seo, passiveDesc: 'PV +20%, aggro augmentee',
-    base:   { hp: 600, atk: 26, def: 38, spd: 18, crit: 5, res: 20 },
-    growth: { hp: 20, atk: 1.8, def: 2.2, spd: 0.8, crit: 0.2, res: 0.8 },
+    base:   { hp: 600, atk: 26, def: 38, spd: 18, crit: 5, res: 20, mana: 100 },
+    growth: { hp: 20, atk: 1.8, def: 2.2, spd: 0.8, crit: 0.2, res: 0.8, mana: 0.5 },
     skills: [
       { name: 'Bouclier Glacial', power: 85, cdMax: 0 },
       { name: 'Mur de Glace', power: 0, cdMax: 3, buffDef: 70, buffDur: 3 },
@@ -298,8 +298,8 @@ export const HUNTERS = {
   h_anna: {
     name: 'Anna Ruiz', element: 'water', rarity: 'legendaire', class: 'assassin',
     sprite: S.h_anna, passiveDesc: 'CRIT +12% permanent',
-    base:   { hp: 360, atk: 46, def: 16, spd: 36, crit: 18, res: 5 },
-    growth: { hp: 11, atk: 3.4, def: 0.9, spd: 1.8, crit: 0.6, res: 0.2 },
+    base:   { hp: 360, atk: 46, def: 16, spd: 36, crit: 18, res: 5, mana: 90 },
+    growth: { hp: 11, atk: 3.4, def: 0.9, spd: 1.8, crit: 0.6, res: 0.2, mana: 0.4 },
     skills: [
       { name: 'Fleche de Glace', power: 105, cdMax: 0 },
       { name: 'Tir Perforant', power: 185, cdMax: 3 },
@@ -309,8 +309,8 @@ export const HUNTERS = {
   h_han_song: {
     name: 'Han Song-Yi', element: 'water', rarity: 'legendaire', class: 'assassin',
     sprite: S.h_han_song, passiveDesc: 'SPD +15% permanent',
-    base:   { hp: 340, atk: 48, def: 15, spd: 40, crit: 20, res: 4 },
-    growth: { hp: 11, atk: 3.5, def: 0.9, spd: 1.9, crit: 0.6, res: 0.2 },
+    base:   { hp: 340, atk: 48, def: 15, spd: 40, crit: 20, res: 4, mana: 90 },
+    growth: { hp: 11, atk: 3.5, def: 0.9, spd: 1.9, crit: 0.6, res: 0.2, mana: 0.4 },
     skills: [
       { name: 'Lame d\'Eau', power: 108, cdMax: 0 },
       { name: 'Frappe Eclair', power: 190, cdMax: 3 },
@@ -320,8 +320,8 @@ export const HUNTERS = {
   h_seorin: {
     name: 'Seorin', element: 'water', rarity: 'rare', class: 'assassin',
     sprite: S.h_seorin, passiveDesc: 'CRIT +8% contre ennemis PV < 50%',
-    base:   { hp: 320, atk: 40, def: 14, spd: 36, crit: 16, res: 4 },
-    growth: { hp: 10, atk: 2.8, def: 0.8, spd: 1.8, crit: 0.5, res: 0.2 },
+    base:   { hp: 320, atk: 40, def: 14, spd: 36, crit: 16, res: 4, mana: 80 },
+    growth: { hp: 10, atk: 2.8, def: 0.8, spd: 1.8, crit: 0.5, res: 0.2, mana: 0.3 },
     skills: [
       { name: 'Fleche Rapide', power: 95, cdMax: 0 },
       { name: 'Tir Glacial', power: 165, cdMax: 3 },
@@ -331,8 +331,8 @@ export const HUNTERS = {
   h_lee_johee: {
     name: 'Lee Johee', element: 'water', rarity: 'rare', class: 'support',
     sprite: S.h_lee_johee, passiveDesc: 'Soin +10% efficacite',
-    base:   { hp: 400, atk: 24, def: 22, spd: 24, crit: 6, res: 14 },
-    growth: { hp: 13, atk: 1.6, def: 1.3, spd: 1.0, crit: 0.2, res: 0.5 },
+    base:   { hp: 400, atk: 24, def: 22, spd: 24, crit: 6, res: 14, mana: 200 },
+    growth: { hp: 13, atk: 1.6, def: 1.3, spd: 1.0, crit: 0.2, res: 0.5, mana: 1.2 },
     skills: [
       { name: 'Lumiere Soignante', power: 80, cdMax: 0 },
       { name: 'Regeneration', power: 0, cdMax: 4, healSelf: 22 },
@@ -342,8 +342,8 @@ export const HUNTERS = {
   h_nam: {
     name: 'Nam Chae-Young', element: 'water', rarity: 'rare', class: 'assassin',
     sprite: S.h_nam, passiveDesc: 'SPD +10% permanent',
-    base:   { hp: 320, atk: 38, def: 14, spd: 34, crit: 14, res: 4 },
-    growth: { hp: 10, atk: 2.6, def: 0.8, spd: 1.7, crit: 0.4, res: 0.2 },
+    base:   { hp: 320, atk: 38, def: 14, spd: 34, crit: 14, res: 4, mana: 80 },
+    growth: { hp: 10, atk: 2.6, def: 0.8, spd: 1.7, crit: 0.4, res: 0.2, mana: 0.3 },
     skills: [
       { name: 'Tir Rapide', power: 92, cdMax: 0 },
       { name: 'Volée de Flèches', power: 160, cdMax: 3 },
@@ -356,8 +356,8 @@ export const HUNTERS = {
   h_ilhwan: {
     name: 'Ilhwan', element: 'shadow', rarity: 'mythique', class: 'assassin',
     sprite: S.h_ilhwan, passiveDesc: 'CRIT +15% quand PV > 80%',
-    base:   { hp: 380, atk: 54, def: 18, spd: 40, crit: 22, res: 5 },
-    growth: { hp: 12, atk: 3.8, def: 1.0, spd: 1.8, crit: 0.6, res: 0.2 },
+    base:   { hp: 380, atk: 54, def: 18, spd: 40, crit: 22, res: 5, mana: 100 },
+    growth: { hp: 12, atk: 3.8, def: 1.0, spd: 1.8, crit: 0.6, res: 0.2, mana: 0.5 },
     skills: [
       { name: 'Lame d\'Ombre', power: 112, cdMax: 0 },
       { name: 'Assassinat', power: 205, cdMax: 3 },
@@ -367,8 +367,8 @@ export const HUNTERS = {
   h_minnie: {
     name: 'Minnie', element: 'shadow', rarity: 'mythique', class: 'assassin',
     sprite: S.h_minnie, passiveDesc: 'DEF ignore +10% sur crits',
-    base:   { hp: 360, atk: 50, def: 20, spd: 38, crit: 20, res: 6 },
-    growth: { hp: 11, atk: 3.6, def: 1.0, spd: 1.8, crit: 0.6, res: 0.2 },
+    base:   { hp: 360, atk: 50, def: 20, spd: 38, crit: 20, res: 6, mana: 100 },
+    growth: { hp: 11, atk: 3.6, def: 1.0, spd: 1.8, crit: 0.6, res: 0.2, mana: 0.5 },
     skills: [
       { name: 'Frappe Sournoise', power: 108, cdMax: 0 },
       { name: 'Embuscade Nocturne', power: 195, cdMax: 3 },
@@ -378,8 +378,8 @@ export const HUNTERS = {
   h_silverbaek: {
     name: 'Baek Yoonho', element: 'shadow', rarity: 'mythique', class: 'fighter',
     sprite: S.h_silverbaek, passiveDesc: 'ATK +20% quand PV > 70%',
-    base:   { hp: 500, atk: 52, def: 28, spd: 28, crit: 14, res: 10 },
-    growth: { hp: 16, atk: 3.8, def: 1.5, spd: 1.3, crit: 0.4, res: 0.4 },
+    base:   { hp: 500, atk: 52, def: 28, spd: 28, crit: 14, res: 10, mana: 130 },
+    growth: { hp: 16, atk: 3.8, def: 1.5, spd: 1.3, crit: 0.4, res: 0.4, mana: 0.7 },
     skills: [
       { name: 'Griffe d\'Argent', power: 110, cdMax: 0 },
       { name: 'Metamorphose', power: 200, cdMax: 4, buffAtk: 40, buffDur: 3 },
@@ -389,8 +389,8 @@ export const HUNTERS = {
   h_sian: {
     name: 'Sian Halat', element: 'shadow', rarity: 'mythique', class: 'assassin',
     sprite: S.h_sian, passiveDesc: 'ATK +3% par attaque (stack x10)',
-    base:   { hp: 370, atk: 50, def: 18, spd: 38, crit: 18, res: 6 },
-    growth: { hp: 12, atk: 3.6, def: 1.0, spd: 1.8, crit: 0.5, res: 0.2 },
+    base:   { hp: 370, atk: 50, def: 18, spd: 38, crit: 18, res: 6, mana: 100 },
+    growth: { hp: 12, atk: 3.6, def: 1.0, spd: 1.8, crit: 0.5, res: 0.2, mana: 0.5 },
     skills: [
       { name: 'Poing Sombre', power: 108, cdMax: 0 },
       { name: 'Combo Furieux', power: 195, cdMax: 3 },
@@ -400,8 +400,8 @@ export const HUNTERS = {
   h_charlotte: {
     name: 'Charlotte', element: 'shadow', rarity: 'legendaire', class: 'mage',
     sprite: S.h_charlotte, passiveDesc: 'DoT +25% degats',
-    base:   { hp: 350, atk: 46, def: 16, spd: 30, crit: 14, res: 10 },
-    growth: { hp: 11, atk: 3.2, def: 1.0, spd: 1.4, crit: 0.5, res: 0.4 },
+    base:   { hp: 350, atk: 46, def: 16, spd: 30, crit: 14, res: 10, mana: 280 },
+    growth: { hp: 11, atk: 3.2, def: 1.0, spd: 1.4, crit: 0.5, res: 0.4, mana: 1.8 },
     skills: [
       { name: 'Ombre Rampante', power: 100, cdMax: 0 },
       { name: 'Malediction Noire', power: 175, cdMax: 3, debuffDef: 20, debuffDur: 2 },
@@ -411,8 +411,8 @@ export const HUNTERS = {
   h_lee_bora: {
     name: 'Lee Bora', element: 'shadow', rarity: 'legendaire', class: 'mage',
     sprite: S.h_lee_bora, passiveDesc: 'Debuff ennemi +15% efficacite',
-    base:   { hp: 360, atk: 44, def: 18, spd: 28, crit: 14, res: 12 },
-    growth: { hp: 12, atk: 3.2, def: 1.0, spd: 1.3, crit: 0.5, res: 0.5 },
+    base:   { hp: 360, atk: 44, def: 18, spd: 28, crit: 14, res: 12, mana: 280 },
+    growth: { hp: 12, atk: 3.2, def: 1.0, spd: 1.3, crit: 0.5, res: 0.5, mana: 1.8 },
     skills: [
       { name: 'Frappe Obscure', power: 100, cdMax: 0 },
       { name: 'Voile Maudit', power: 165, cdMax: 3, debuffDef: 25, debuffDur: 2 },
@@ -422,8 +422,8 @@ export const HUNTERS = {
   h_harper: {
     name: 'Harper', element: 'shadow', rarity: 'legendaire', class: 'tank',
     sprite: S.h_harper, passiveDesc: 'DEF +20%, aggro augmentee',
-    base:   { hp: 580, atk: 28, def: 38, spd: 18, crit: 5, res: 18 },
-    growth: { hp: 19, atk: 1.8, def: 2.2, spd: 0.8, crit: 0.2, res: 0.7 },
+    base:   { hp: 580, atk: 28, def: 38, spd: 18, crit: 5, res: 18, mana: 90 },
+    growth: { hp: 19, atk: 1.8, def: 2.2, spd: 0.8, crit: 0.2, res: 0.7, mana: 0.4 },
     skills: [
       { name: 'Frappe du Neant', power: 88, cdMax: 0 },
       { name: 'Mur d\'Ombre', power: 0, cdMax: 3, buffDef: 65, buffDur: 3 },
@@ -433,8 +433,8 @@ export const HUNTERS = {
   h_lim: {
     name: 'Lim Tae-Gyu', element: 'shadow', rarity: 'legendaire', class: 'fighter',
     sprite: S.h_lim, passiveDesc: 'ATK +15% contre ennemis debuffs',
-    base:   { hp: 470, atk: 44, def: 26, spd: 26, crit: 12, res: 8 },
-    growth: { hp: 15, atk: 3.0, def: 1.5, spd: 1.2, crit: 0.4, res: 0.3 },
+    base:   { hp: 470, atk: 44, def: 26, spd: 26, crit: 12, res: 8, mana: 110 },
+    growth: { hp: 15, atk: 3.0, def: 1.5, spd: 1.2, crit: 0.4, res: 0.3, mana: 0.6 },
     skills: [
       { name: 'Poing Briseur', power: 102, cdMax: 0 },
       { name: 'Impact Devastateur', power: 180, cdMax: 3 },
@@ -444,8 +444,8 @@ export const HUNTERS = {
   h_kang: {
     name: 'Kang Taeshik', element: 'shadow', rarity: 'legendaire', class: 'assassin',
     sprite: S.h_kang, passiveDesc: 'CRIT +10% permanent',
-    base:   { hp: 350, atk: 46, def: 16, spd: 36, crit: 18, res: 5 },
-    growth: { hp: 11, atk: 3.4, def: 0.9, spd: 1.7, crit: 0.6, res: 0.2 },
+    base:   { hp: 350, atk: 46, def: 16, spd: 36, crit: 18, res: 5, mana: 90 },
+    growth: { hp: 11, atk: 3.4, def: 0.9, spd: 1.7, crit: 0.6, res: 0.2, mana: 0.4 },
     skills: [
       { name: 'Dague Empoisonnee', power: 105, cdMax: 0 },
       { name: 'Coup Traitre', power: 190, cdMax: 3 },
@@ -455,8 +455,8 @@ export const HUNTERS = {
   h_son: {
     name: 'Son Kihoon', element: 'shadow', rarity: 'legendaire', class: 'tank',
     sprite: S.h_son, passiveDesc: 'RES +15% permanent',
-    base:   { hp: 560, atk: 26, def: 36, spd: 18, crit: 5, res: 20 },
-    growth: { hp: 18, atk: 1.8, def: 2.0, spd: 0.8, crit: 0.2, res: 0.8 },
+    base:   { hp: 560, atk: 26, def: 36, spd: 18, crit: 5, res: 20, mana: 100 },
+    growth: { hp: 18, atk: 1.8, def: 2.0, spd: 0.8, crit: 0.2, res: 0.8, mana: 0.5 },
     skills: [
       { name: 'Coup de Masse', power: 90, cdMax: 0 },
       { name: 'Bastion', power: 0, cdMax: 3, buffDef: 60, buffDur: 3 },
@@ -466,8 +466,8 @@ export const HUNTERS = {
   h_isla: {
     name: 'Isla Wright', element: 'shadow', rarity: 'rare', class: 'support',
     sprite: S.h_isla, passiveDesc: 'Soin +10% efficacite',
-    base:   { hp: 400, atk: 24, def: 22, spd: 26, crit: 6, res: 14 },
-    growth: { hp: 13, atk: 1.6, def: 1.3, spd: 1.1, crit: 0.2, res: 0.5 },
+    base:   { hp: 400, atk: 24, def: 22, spd: 26, crit: 6, res: 14, mana: 200 },
+    growth: { hp: 13, atk: 1.6, def: 1.3, spd: 1.1, crit: 0.2, res: 0.5, mana: 1.2 },
     skills: [
       { name: 'Toucher Obscur', power: 82, cdMax: 0 },
       { name: 'Soin des Ombres', power: 0, cdMax: 4, healSelf: 22 },
@@ -477,8 +477,8 @@ export const HUNTERS = {
   h_hwang: {
     name: 'Hwang Dongsuk', element: 'shadow', rarity: 'rare', class: 'tank',
     sprite: S.h_hwang, passiveDesc: 'DEF +10% permanent',
-    base:   { hp: 520, atk: 24, def: 32, spd: 16, crit: 4, res: 14 },
-    growth: { hp: 17, atk: 1.6, def: 1.8, spd: 0.7, crit: 0.1, res: 0.6 },
+    base:   { hp: 520, atk: 24, def: 32, spd: 16, crit: 4, res: 14, mana: 80 },
+    growth: { hp: 17, atk: 1.6, def: 1.8, spd: 0.7, crit: 0.1, res: 0.6, mana: 0.3 },
     skills: [
       { name: 'Coup de Bouclier', power: 85, cdMax: 0 },
       { name: 'Garde', power: 0, cdMax: 3, buffDef: 50, buffDur: 3 },
@@ -491,8 +491,8 @@ export const HUNTERS = {
   h_daijin: {
     name: 'Daijin', element: 'shadow', rarity: 'mythique', class: 'assassin',
     series: 'chibi', sprite: S.h_daijin, passiveDesc: 'Esquive Feline : SPD +15% & CRIT +10% permanent',
-    base:   { hp: 320, atk: 48, def: 14, spd: 44, crit: 24, res: 6 },
-    growth: { hp: 10, atk: 3.4, def: 0.8, spd: 2.2, crit: 0.8, res: 0.2 },
+    base:   { hp: 320, atk: 48, def: 14, spd: 44, crit: 24, res: 6, mana: 80 },
+    growth: { hp: 10, atk: 3.4, def: 0.8, spd: 2.2, crit: 0.8, res: 0.2, mana: 0.4 },
     skills: [
       { name: 'Griffe Feline', power: 105, cdMax: 0 },
       { name: 'Bond Dimensionnel', power: 185, cdMax: 3 },
@@ -503,8 +503,8 @@ export const HUNTERS = {
   h_pod042: {
     name: 'Pod 042', element: 'water', rarity: 'mythique', class: 'support',
     series: 'chibi', sprite: S.h_pod042, passiveDesc: 'Protocole de Soutien : Equipe +10% DEF',
-    base:   { hp: 400, atk: 32, def: 26, spd: 30, crit: 8, res: 14 },
-    growth: { hp: 13, atk: 2.2, def: 1.5, spd: 1.3, crit: 0.3, res: 0.5 },
+    base:   { hp: 400, atk: 32, def: 26, spd: 30, crit: 8, res: 14, mana: 280 },
+    growth: { hp: 13, atk: 2.2, def: 1.5, spd: 1.3, crit: 0.3, res: 0.5, mana: 1.8 },
     skills: [
       { name: 'Tir Laser', power: 90, cdMax: 0 },
       { name: 'Programme R010: Bouclier', power: 0, cdMax: 3, buffDef: 40, buffDur: 2 },
@@ -517,8 +517,8 @@ export const HUNTERS = {
   h_kurisu: {
     name: 'Kurisu Makise', element: 'water', rarity: 'mythique', class: 'mage',
     series: 'steinsgate', sprite: S.h_kurisu, passiveDesc: 'Analyse Temporelle : ATK +5% par action (max 30%)',
-    base:   { hp: 380, atk: 52, def: 18, spd: 36, crit: 18, res: 8 },
-    growth: { hp: 12, atk: 3.6, def: 1.0, spd: 1.6, crit: 0.6, res: 0.3 },
+    base:   { hp: 380, atk: 52, def: 18, spd: 36, crit: 18, res: 8, mana: 350 },
+    growth: { hp: 12, atk: 3.6, def: 1.0, spd: 1.6, crit: 0.6, res: 0.3, mana: 2.2 },
     skills: [
       { name: 'Impulsion Temporelle', power: 108, cdMax: 0 },
       { name: 'Divergence Shift', power: 195, cdMax: 3 },
@@ -529,8 +529,8 @@ export const HUNTERS = {
   h_mayuri: {
     name: 'Mayuri Shiina', element: 'water', rarity: 'mythique', class: 'support',
     series: 'steinsgate', sprite: S.h_mayuri, passiveDesc: 'Tutturu~ : Buff raid ATK +15% & DEF +10% pour TOUTE l\'equipe',
-    base:   { hp: 460, atk: 28, def: 24, spd: 32, crit: 6, res: 16 },
-    growth: { hp: 15, atk: 1.8, def: 1.4, spd: 1.4, crit: 0.2, res: 0.6 },
+    base:   { hp: 460, atk: 28, def: 24, spd: 32, crit: 6, res: 16, mana: 360 },
+    growth: { hp: 15, atk: 1.8, def: 1.4, spd: 1.4, crit: 0.2, res: 0.6, mana: 2.2 },
     skills: [
       { name: 'Etoile Filante', power: 78, cdMax: 0 },
       { name: 'Tutturu Heal', power: 0, cdMax: 3, healSelf: 30, buffDef: 25, buffDur: 2, manaCost: 30 },
@@ -543,8 +543,8 @@ export const HUNTERS = {
   h_mikasa: {
     name: 'Mikasa Ackerman', element: 'shadow', rarity: 'mythique', class: 'fighter',
     series: 'aot', sprite: S.h_mikasa, passiveDesc: 'Lien Ackerman : Equipe ATK +12% & SPD +8%',
-    base:   { hp: 420, atk: 55, def: 20, spd: 40, crit: 20, res: 6 },
-    growth: { hp: 13, atk: 3.8, def: 1.1, spd: 1.8, crit: 0.6, res: 0.2 },
+    base:   { hp: 420, atk: 55, def: 20, spd: 40, crit: 20, res: 6, mana: 120 },
+    growth: { hp: 13, atk: 3.8, def: 1.1, spd: 1.8, crit: 0.6, res: 0.2, mana: 0.6 },
     skills: [
       { name: 'Lame Ackerman', power: 115, cdMax: 0 },
       { name: 'Manoeuvre 3D', power: 200, cdMax: 3, buffAtk: 20, buffDur: 2 },
@@ -557,8 +557,8 @@ export const HUNTERS = {
   h_kaneki: {
     name: 'Ken Kaneki', element: 'shadow', rarity: 'mythique', class: 'assassin',
     series: 'tokyoghoul', sprite: S.h_kaneki, passiveDesc: 'Eveil Goule : ATK +30% & CRIT +15 sous 50% PV',
-    base:   { hp: 360, atk: 56, def: 16, spd: 38, crit: 24, res: 4 },
-    growth: { hp: 11, atk: 4.0, def: 0.9, spd: 1.6, crit: 0.8, res: 0.2 },
+    base:   { hp: 360, atk: 56, def: 16, spd: 38, crit: 24, res: 4, mana: 80 },
+    growth: { hp: 11, atk: 4.0, def: 0.9, spd: 1.6, crit: 0.8, res: 0.2, mana: 0.4 },
     skills: [
       { name: 'Griffe de Kagune', power: 112, cdMax: 0 },
       { name: 'Kagune: Rinkaku', power: 220, cdMax: 3 },
@@ -571,8 +571,8 @@ export const HUNTERS = {
   h_saber: {
     name: 'Saber', element: 'water', rarity: 'mythique', class: 'fighter',
     series: 'fate', sprite: S.h_saber, passiveDesc: 'Instinct Royal : Buff aleatoire chaque tour (ATK, CRIT, SPD ou Jackpot)',
-    base:   { hp: 440, atk: 54, def: 24, spd: 34, crit: 16, res: 8 },
-    growth: { hp: 14, atk: 3.8, def: 1.3, spd: 1.5, crit: 0.5, res: 0.3 },
+    base:   { hp: 440, atk: 54, def: 24, spd: 34, crit: 16, res: 8, mana: 130 },
+    growth: { hp: 14, atk: 3.8, def: 1.3, spd: 1.5, crit: 0.5, res: 0.3, mana: 0.7 },
     skills: [
       { name: 'Excalibur Strike', power: 112, cdMax: 0 },
       { name: 'Invisible Air', power: 170, cdMax: 2, buffDef: 30, buffDur: 2 },
@@ -585,8 +585,8 @@ export const HUNTERS = {
   h_guts: {
     name: 'Guts', element: 'shadow', rarity: 'mythique', class: 'fighter',
     series: 'berserk', sprite: S.h_guts, passiveDesc: 'Berserker Armor : Plus les PV baissent, plus il devient un monstre',
-    base:   { hp: 480, atk: 58, def: 22, spd: 28, crit: 18, res: 4 },
-    growth: { hp: 16, atk: 4.2, def: 1.2, spd: 1.2, crit: 0.6, res: 0.2 },
+    base:   { hp: 480, atk: 58, def: 22, spd: 28, crit: 18, res: 4, mana: 100 },
+    growth: { hp: 16, atk: 4.2, def: 1.2, spd: 1.2, crit: 0.6, res: 0.2, mana: 0.5 },
     skills: [
       { name: 'Dragon Slayer', power: 118, cdMax: 0 },
       { name: 'Canon du Bras', power: 195, cdMax: 3, debuffDef: 20, debuffDur: 2 },
@@ -599,8 +599,8 @@ export const HUNTERS = {
   h_sukuna: {
     name: 'Sukuna', element: 'fire', rarity: 'mythique', class: 'fighter',
     series: 'jjk', sprite: S.h_sukuna, passiveDesc: 'Roi des Fleaux : La vitesse augmente a chaque attaque, les coups critiques infligent des degats bonus',
-    base:   { hp: 380, atk: 52, def: 16, spd: 45, crit: 25, res: 3 },
-    growth: { hp: 12, atk: 3.6, def: 0.8, spd: 2.2, crit: 0.9, res: 0.15 },
+    base:   { hp: 380, atk: 52, def: 16, spd: 45, crit: 25, res: 3, mana: 110 },
+    growth: { hp: 12, atk: 3.6, def: 0.8, spd: 2.2, crit: 0.9, res: 0.15, mana: 0.6 },
     skills: [
       { name: 'Dismantle', power: 110, cdMax: 0 },
       { name: 'Cleave', power: 200, cdMax: 3, debuffDef: 25, debuffDur: 2 },
@@ -611,8 +611,8 @@ export const HUNTERS = {
   h_gojo: {
     name: 'Gojo Satoru', element: 'light', rarity: 'mythique', class: 'mage',
     series: 'jjk', sprite: S.h_gojo, passiveDesc: 'Infini : Reduit les degats recus et augmente CRIT. Six Eyes amplifie la puissance des techniques',
-    base:   { hp: 420, atk: 55, def: 28, spd: 32, crit: 22, res: 8 },
-    growth: { hp: 14, atk: 3.8, def: 1.6, spd: 1.4, crit: 0.8, res: 0.3 },
+    base:   { hp: 420, atk: 55, def: 28, spd: 32, crit: 22, res: 8, mana: 400 },
+    growth: { hp: 14, atk: 3.8, def: 1.6, spd: 1.4, crit: 0.8, res: 0.3, mana: 2.8 },
     skills: [
       { name: 'Blue', power: 120, cdMax: 0 },
       { name: 'Red', power: 210, cdMax: 3, debuffDef: 20, debuffDur: 2 },
@@ -625,8 +625,8 @@ export const HUNTERS = {
   h_a9: {
     name: 'A9', element: 'shadow', rarity: 'mythique', class: 'assassin',
     series: 'nier', sprite: S.h_a9, passiveDesc: 'Protocole Executeur : ATK +25% vs cibles < 30% HP',
-    base:   { hp: 340, atk: 54, def: 16, spd: 42, crit: 22, res: 5 },
-    growth: { hp: 11, atk: 3.8, def: 0.9, spd: 2.0, crit: 0.7, res: 0.2 },
+    base:   { hp: 340, atk: 54, def: 16, spd: 42, crit: 22, res: 5, mana: 90 },
+    growth: { hp: 11, atk: 3.8, def: 0.9, spd: 2.0, crit: 0.7, res: 0.2, mana: 0.5 },
     skills: [
       { name: 'Lame Silencieuse', power: 108, cdMax: 0, manaCost: 0 },
       { name: 'Infiltration', power: 155, cdMax: 2, buffAtk: 20, buffDur: 2, manaCost: 15 },
@@ -637,8 +637,8 @@ export const HUNTERS = {
   h_2b: {
     name: '2B', element: 'shadow', rarity: 'mythique', class: 'fighter',
     series: 'nier', sprite: S.h_2b, passiveDesc: 'DMG +15% vs cibles debuff',
-    base:   { hp: 460, atk: 55, def: 26, spd: 38, crit: 20, res: 10 },
-    growth: { hp: 15, atk: 4.0, def: 1.4, spd: 1.8, crit: 0.6, res: 0.4 },
+    base:   { hp: 460, atk: 55, def: 26, spd: 38, crit: 20, res: 10, mana: 140 },
+    growth: { hp: 15, atk: 4.0, def: 1.4, spd: 1.8, crit: 0.6, res: 0.4, mana: 0.7 },
     skills: [
       { name: 'Frappe Vertueuse', power: 115, cdMax: 0, manaCost: 0 },
       { name: 'Mode B — Offensive', power: 215, cdMax: 3, buffAtk: 30, buffDur: 2, manaCost: 30 },
@@ -649,8 +649,8 @@ export const HUNTERS = {
   h_pascal: {
     name: 'Pascal', element: 'water', rarity: 'mythique', class: 'support',
     series: 'nier', sprite: S.h_pascal, passiveDesc: 'Aura: allies +10% RES au combat',
-    base:   { hp: 440, atk: 30, def: 28, spd: 32, crit: 8, res: 16 },
-    growth: { hp: 13, atk: 2.4, def: 1.6, spd: 1.4, crit: 0.4, res: 0.5 },
+    base:   { hp: 440, atk: 30, def: 28, spd: 32, crit: 8, res: 16, mana: 300 },
+    growth: { hp: 13, atk: 2.4, def: 1.6, spd: 1.4, crit: 0.4, res: 0.5, mana: 2 },
     skills: [
       { name: 'Parole Apaisante', power: 85, cdMax: 0, manaCost: 0 },
       { name: 'Protocole Pacifiste', power: 0, cdMax: 2, healSelf: 25, buffDef: 25, buffDur: 2, manaCost: 20 },
@@ -661,8 +661,8 @@ export const HUNTERS = {
   h_a2: {
     name: 'A2', element: 'fire', rarity: 'mythique', class: 'fighter',
     series: 'nier', sprite: S.h_a2, passiveDesc: 'Berserk: +20% ATK +15% SPD sous 50% HP',
-    base:   { hp: 430, atk: 55, def: 20, spd: 34, crit: 22, res: 6 },
-    growth: { hp: 14, atk: 4.2, def: 1.0, spd: 1.6, crit: 0.7, res: 0.3 },
+    base:   { hp: 430, atk: 55, def: 20, spd: 34, crit: 22, res: 6, mana: 120 },
+    growth: { hp: 14, atk: 4.2, def: 1.0, spd: 1.6, crit: 0.7, res: 0.3, mana: 0.6 },
     skills: [
       { name: 'Frappe Sauvage', power: 110, cdMax: 0, manaCost: 0 },
       { name: 'Lame Sanguinaire', power: 175, cdMax: 2, debuffDef: 20, debuffDur: 2, manaCost: 15 },

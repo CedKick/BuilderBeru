@@ -24,7 +24,7 @@ import {
   getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
   getStarScaledStats, getStarRewardMult, getStarDropBonus, getGuaranteedArtifactRarity,
   calculatePowerScore, getDifficultyRating,
-  BUFF_ICONS, computeDamagePreview, aiPickSkillArc2, fmtNum,
+  BUFF_ICONS, computeDamagePreview, aiPickSkillArc2, fmtNum, getManaScaledPower,
 } from './colosseumCore';
 import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS, HUNTER_SKINS, rollSkinDrop, getHunterSprite, getHunterDropSources, rollUniversalHunterDrops, rollUniversalSetUltimeDrops } from './raidData';
 import { BattleStyles, BattleArena } from './BattleVFX';
@@ -1556,9 +1556,9 @@ export default function ShadowColosseum() {
       b.log.unshift({ msg: `${fighter.name} : Iron Will ! Ultimate DMG +${Math.round(ps.ironWillUltBonus * 100)}% !`, type: 'player' });
     }
 
-    // Megumin manaScaling: power = mana (before consumption) × multiplier
+    // Megumin manaScaling: sqrt diminishing returns to prevent quadratic Intel² explosion
     const skillForAttack = skill.manaScaling
-      ? { ...skill, power: Math.floor(manaBeforeConsume * skill.manaScaling) }
+      ? { ...skill, power: getManaScaledPower(manaBeforeConsume, skill) }
       : skill;
 
     let result = computeAttack(fighter, skillForAttack, enemy, tbForAttack);
@@ -2143,7 +2143,8 @@ export default function ShadowColosseum() {
   const getTotalStatPts = (level) => (level - 1) * POINTS_PER_LEVEL;
   const getSpentStatPts = (id) => {
     const alloc = data.statPoints[id] || {};
-    return Object.values(alloc).reduce((s, v) => s + v, 0);
+    // Only count stats in STAT_ORDER (ignores orphaned mana allocations from old saves)
+    return STAT_ORDER.reduce((s, k) => s + (alloc[k] || 0), 0);
   };
   const getAvailStatPts = (id) => getTotalStatPts(getChibiLevel(id).level) - getSpentStatPts(id);
 
@@ -3220,9 +3221,9 @@ export default function ShadowColosseum() {
     }
 
     setPhase('player_atk');
-    // Megumin manaScaling: power = mana (before consumption) × multiplier
+    // Megumin manaScaling: sqrt diminishing returns to prevent quadratic Intel² explosion
     const skillForAttackArc1 = playerSkill.manaScaling
-      ? { ...playerSkill, power: Math.floor(manaBeforeConsumeArc1 * playerSkill.manaScaling) }
+      ? { ...playerSkill, power: getManaScaledPower(manaBeforeConsumeArc1, playerSkill) }
       : playerSkill;
     let pRes = computeAttack(player, skillForAttackArc1, enemy, tbForAttack);
     player.atk = savedAtk;
@@ -3555,8 +3556,8 @@ export default function ShadowColosseum() {
         const cost = sk.manaCost || 0;
         if (p.mana < cost) return;
       }
-      // manaScaling: estimate real power for AI scoring
-      let score = (sk.manaScaling ? (p.mana || 0) * sk.manaScaling : (sk.power || 100)) * (sk.hits || 1);
+      // manaScaling: estimate real power for AI scoring (sqrt curve)
+      let score = (sk.manaScaling ? getManaScaledPower(p.mana || 0, sk) : (sk.power || 100)) * (sk.hits || 1);
       // Prefer finishing blows
       const estDmg = Math.floor(p.atk * (sk.power || 100) / 100 * (sk.hits || 1));
       if (estDmg >= e.hp) score += 5000;
@@ -4795,7 +4796,7 @@ export default function ShadowColosseum() {
           {/* Account Level Bar */}
           {(() => {
             const acc = accountLevelFromXp(data.accountXp || 0);
-            const totalBonusAllocated = Object.values(data.accountBonuses || {}).reduce((s, v) => s + v, 0);
+            const totalBonusAllocated = STAT_ORDER.reduce((s, k) => s + ((data.accountBonuses || {})[k] || 0), 0);
             const totalBonusEarned = accountAllocationsAtLevel(acc.level) * ACCOUNT_BONUS_AMOUNT;
             const pendingPoints = totalBonusEarned - totalBonusAllocated;
             const ab = data.accountBonuses || {};
@@ -6462,7 +6463,7 @@ export default function ShadowColosseum() {
                   const fEl = ELEMENTS[f.element] || ELEMENTS.shadow;
                   const getSkillDesc = (sk) => {
                     const parts = [];
-                    if (sk.manaScaling) parts.push(`DMG Mana×${sk.manaScaling}`);
+                    if (sk.manaScaling) parts.push(`DMG ${getManaScaledPower(f.mana || 0, sk)}%`);
                     else if (sk.power > 0) parts.push(`DMG ${sk.power}%`);
                     if (sk.buffAtk) parts.push(`ATK +${sk.buffAtk}%`);
                     if (sk.buffDef) parts.push(`DEF +${sk.buffDef}%`);
@@ -6683,7 +6684,7 @@ export default function ShadowColosseum() {
                         <div className="text-[10px] font-bold truncate">{sk.name}</div>
                         {isUlti && <div className="text-[7px] text-blue-400 font-bold">ULTI</div>}
                         <div className="text-[8px] text-gray-400 mt-0.5">
-                          {sk.manaScaling ? `DMG: ${Math.floor((activeChar.mana || 0) * sk.manaScaling)}%` : sk.power > 0 ? `DMG: ${sk.power}%` : ''}
+                          {sk.manaScaling ? `DMG: ${getManaScaledPower(activeChar.mana || 0, sk)}%` : sk.power > 0 ? `DMG: ${sk.power}%` : ''}
                           {sk.buffAtk ? `${sk.power > 0 || sk.manaScaling ? ' ' : ''}ATK +${sk.buffAtk}%` : ''}
                           {sk.buffDef ? `${sk.power > 0 || sk.buffAtk || sk.manaScaling ? ' ' : ''}DEF +${sk.buffDef}%` : ''}
                           {sk.healSelf ? `${sk.power > 0 || sk.manaScaling ? ' ' : ''}Soin ${sk.healSelf}%` : ''}
@@ -6927,12 +6928,10 @@ export default function ShadowColosseum() {
               {STAT_ORDER.map(stat => {
                 const m = STAT_META[stat];
                 const isPct = stat === 'crit' || stat === 'res';
-                const baseVal = stat === 'mana'
-                  ? getBaseMana(c.base)
-                  : isPct
+                const baseVal = isPct
                     ? +(c.base[stat] + c.growth[stat] * (level - 1)).toFixed(1)
                     : Math.floor(c.base[stat] + c.growth[stat] * (level - 1));
-                const bonusVal = (alloc[stat] || 0) * STAT_PER_POINT[stat];
+                const bonusVal = (alloc[stat] || 0) * (STAT_PER_POINT[stat] || 0);
                 const totalVal = isPct ? +(baseVal + bonusVal).toFixed(1) : Math.floor(baseVal + bonusVal);
                 const allocated = alloc[stat] || 0;
 
@@ -6988,6 +6987,23 @@ export default function ShadowColosseum() {
                   </div>
                 );
               })}
+              {/* Mana — read-only, character-intrinsic stat */}
+              {(() => {
+                const mm = STAT_META.mana;
+                const manaVal = Math.floor((c.base.mana || 0) + (c.growth.mana || 0) * (level - 1));
+                return (
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-violet-500/5 border border-violet-500/20">
+                    <span className="text-base w-6 text-center">{mm.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs font-bold ${mm.color}`}>{mm.name}</span>
+                        <span className="text-sm font-bold text-white">{manaVal}</span>
+                      </div>
+                      <div className="text-[9px] text-gray-500">Stat intrinseque (non allouable)</div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Per-point info */}

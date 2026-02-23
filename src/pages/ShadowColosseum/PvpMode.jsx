@@ -15,7 +15,7 @@ import {
   applySkillUpgrades, computeAttack, aiPickSkill, aiPickSkillSupport, spdToInterval,
   accountLevelFromXp, getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
   PVP_DAMAGE_MULT, PVP_HP_MULT, PVP_DEF_MULT, PVP_RES_MULT, PVP_DMG_CAP, PVP_DURATION_SEC, PVP_TICK_MS,
-  mergeTalentBonuses, BASE_CD_MS, getIntelCDR,
+  mergeTalentBonuses, BASE_CD_MS, getIntelCDR, getManaScaledPower,
 } from './colosseumCore';
 import { TALENT_SKILLS, ULTIMATE_SKILLS } from './talentSkillData';
 import {
@@ -974,7 +974,7 @@ export default function PvpMode() {
 
       // Megumin manaScaling: power = mana (before consumption) × multiplier
       const skillForAttack = skill.manaScaling
-        ? { ...skill, power: Math.floor(manaBeforeConsume * skill.manaScaling) }
+        ? { ...skill, power: getManaScaledPower(manaBeforeConsume, skill) }
         : skill;
 
       let result = computeAttack(unit, skillForAttack, target, unit.talentBonuses || {});
