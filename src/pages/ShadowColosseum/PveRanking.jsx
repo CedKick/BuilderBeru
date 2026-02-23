@@ -377,7 +377,7 @@ export default function PveRanking() {
                 const myRankEntry = myHunters.find(m => m.hunterId === h.id);
                 return (
                   <div key={h.id} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-800/50 border border-gray-700/30">
-                    {h.sprite && <img src={h.sprite} alt="" className="w-5 h-5 rounded-full object-cover" />}
+                    {h.sprite && <img loading="lazy" src={h.sprite} alt="" className="w-5 h-5 rounded-full object-cover" />}
                     <span className={`text-[10px] font-bold ${ELEMENT_COLORS[h.element] || 'text-gray-400'}`}>{h.name}</span>
                     <span className="text-[9px] text-amber-400 font-mono">{fmtNum(h.powerScore)}</span>
                   </div>
@@ -546,7 +546,7 @@ function EntryDetailView({ entry, onClose }) {
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           {hd.sprite ? (
-            <img src={hd.sprite} alt="" className="w-14 h-14 rounded-full object-cover border-2 border-purple-500/50" />
+            <img loading="lazy" src={hd.sprite} alt="" className="w-14 h-14 rounded-full object-cover border-2 border-purple-500/50" />
           ) : (
             <div className="w-14 h-14 rounded-full bg-gray-800 flex items-center justify-center text-2xl border-2 border-purple-500/50">
               {elemIcon || '\uD83D\uDC64'}

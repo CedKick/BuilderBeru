@@ -135,7 +135,7 @@ function BeruChibiDissuasion({ containerRef }) {
       )}
 
       {/* Béru sprite */}
-      <img
+      <img loading="lazy"
         src={BERU_SPRITE}
         alt="Béru"
         className="w-14 h-14 md:w-[72px] md:h-[72px] object-contain"

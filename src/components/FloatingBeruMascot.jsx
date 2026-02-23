@@ -2721,7 +2721,7 @@ const FloatingBeruMascot = () => {
                     disabled={count === 0}
                     title={count > 0 ? `${chibi.name} (x${count}) — ${chibi.collectOnly ? 'Compagnon unique !' : isDeployed ? 'Retirer' : 'Deployer'}` : `${chibi.name} — ${chibi.collectOnly ? '???' : 'Pas encore capture'}`}
                   >
-                    <img
+                    <img loading="lazy"
                       src={chibi.sprite}
                       alt={chibi.name}
                       className="w-8 h-8 object-contain"
@@ -2796,7 +2796,7 @@ const FloatingBeruMascot = () => {
             {secretMode === 'clone' && (
               <>
                 {[...Array(4)].map((_, i) => (
-                  <img
+                  <img loading="lazy"
                     key={i}
                     src={BERU_SPRITE}
                     alt=""
@@ -2823,7 +2823,7 @@ const FloatingBeruMascot = () => {
                   transition={{ duration: 0.4, ease: 'easeOut' }}
                   className="absolute bottom-full left-1/2 -translate-x-1/2 mb-14 pointer-events-none z-50"
                 >
-                  <img
+                  <img loading="lazy"
                     src={typeof bubbleImage === 'string' ? bubbleImage : bubbleImage.src}
                     alt=""
                     className="w-28 h-28 md:w-36 md:h-36 rounded-xl shadow-lg shadow-purple-500/30 border border-purple-400/40 object-cover"
@@ -2973,7 +2973,7 @@ const FloatingBeruMascot = () => {
                 transform: `scaleX(${facingLeft ? -1 : 1})${isThrown ? ` rotate(${throwSpin}deg)` : ''}`,
               }}
             >
-              <img
+              <img loading="lazy"
                 src={BERU_SPRITE}
                 alt="Beru"
                 className="w-14 h-14 md:w-[72px] md:h-[72px] object-contain pointer-events-none"
@@ -3049,7 +3049,7 @@ const FloatingBeruMascot = () => {
               )}
             </AnimatePresence>
             {/* Companion sprite */}
-            <img
+            <img loading="lazy"
               src={chibi.sprite}
               alt={chibi.name}
               className="w-8 h-8 md:w-10 md:h-10 object-contain"
@@ -3155,7 +3155,7 @@ const FloatingBeruMascot = () => {
             </div>
           )}
           {/* Wanderer sprite */}
-          <img
+          <img loading="lazy"
             src={wanderer.chibi.sprite}
             alt={wanderer.chibi.name}
             className="w-12 h-12 md:w-14 md:h-14 object-contain transition-transform duration-200 group-hover/wander:scale-125"
@@ -3355,7 +3355,7 @@ const FloatingBeruMascot = () => {
             {/* Phase 4: Reboot */}
             {realDestroyPhase === 4 && (
               <div className="absolute inset-0 bg-black flex flex-col items-center justify-center gap-6">
-                <img
+                <img loading="lazy"
                   src={BERU_SPRITE}
                   alt="Beru"
                   className="w-16 h-16 md:w-20 md:h-20 object-contain"

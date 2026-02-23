@@ -568,7 +568,7 @@ const EnhancedChibiWorld = () => {
               borderColor: notif.rarity ? CHIBI_RARITIES[notif.rarity.toUpperCase()]?.color : undefined
             }}
           >
-            {notif.icon && <img src={notif.icon} alt="" className="notification-icon" />}
+            {notif.icon && <img loading="lazy" src={notif.icon} alt="" className="notification-icon" />}
             <div className="notification-content">
               {notif.title && <div className="notification-title">{notif.title}</div>}
               <div className="notification-message">{notif.message}</div>

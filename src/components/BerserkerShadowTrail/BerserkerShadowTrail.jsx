@@ -1260,7 +1260,7 @@ const BerserkerShadowTrail = ({ showTankMessage }) => {
           filter: berserkerDirection === 'glitch' ? 'invert(1) hue-rotate(90deg)' : ''
         }}
       >
-        <img 
+        <img loading="lazy" 
           src={BERSERKER_SPRITES[berserkerDirection] || BERSERKER_SPRITES.up}
           alt={`Berserker des Ombres - ${berserkerDirection} ${isLegendary ? '(Legendary)' : ''}`}
           width="140"

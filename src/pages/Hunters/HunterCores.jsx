@@ -47,7 +47,7 @@ const HuntersCore = ({ onClose, onSelect }) => {
                             : 'border-transparent'
                         }`}
                     >
-                      <img src={core.src} alt={core.name} className="w-full h-full object-contain" />
+                      <img loading="lazy" src={core.src} alt={core.name} className="w-full h-full object-contain" />
                     </div>
                   ))}
               </div>

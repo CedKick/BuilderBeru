@@ -1391,7 +1391,7 @@ export default function PvpMode() {
           {unit.name}
         </div>
         <div className="relative">
-          <img src={unit.sprite} alt={unit.name}
+          <img loading="lazy" src={unit.sprite} alt={unit.name}
             className="w-10 h-10 object-contain"
             style={{
               animation: anim,
@@ -1529,7 +1529,7 @@ export default function PvpMode() {
                       }`}>
                       {chibi ? (
                         <>
-                          <img src={chibi.sprite || SPRITES[id]} alt="" className="w-8 h-8 rounded-full object-cover" />
+                          <img loading="lazy" src={chibi.sprite || SPRITES[id]} alt="" className="w-8 h-8 rounded-full object-cover" />
                           <div className="text-left flex-1 min-w-0">
                             <div className="text-xs font-bold truncate">{chibi.name}</div>
                             <div className="text-[10px] text-gray-500">
@@ -1554,7 +1554,7 @@ export default function PvpMode() {
                 {poolArray.filter(([id]) => !selectedIds.includes(id)).map(([id, chibi]) => (
                   <button key={id} onClick={() => handlePickChibi(id)}
                     className="p-1.5 rounded-lg bg-gray-900/50 hover:bg-gray-700/30 transition-all border border-gray-700/20 text-center">
-                    <img src={chibi.sprite || SPRITES[id]} alt="" className="w-8 h-8 mx-auto rounded-full object-cover" />
+                    <img loading="lazy" src={chibi.sprite || SPRITES[id]} alt="" className="w-8 h-8 mx-auto rounded-full object-cover" />
                     <div className="text-[9px] truncate mt-0.5">{chibi.name}</div>
                     <div className={`text-[8px] ${RARITY[chibi.rarity]?.color || 'text-gray-400'}`}>
                       {ELEMENTS[chibi.element]?.icon} Lv.{(coloData.chibiLevels[id] || { level: 1 }).level}
@@ -1644,7 +1644,7 @@ export default function PvpMode() {
                 </div>
                 <div className="flex items-center gap-1 mb-1">
                   {(opp.teamData || []).map((unit, j) => (
-                    <img key={j} src={unit.sprite} alt="" className="w-7 h-7 rounded-full object-cover border border-gray-700/30" />
+                    <img loading="lazy" key={j} src={unit.sprite} alt="" className="w-7 h-7 rounded-full object-cover border border-gray-700/30" />
                   ))}
                 </div>
                 <div className="flex items-center gap-3 text-[10px] text-gray-500">
@@ -1845,7 +1845,7 @@ export default function PvpMode() {
               const log = detailedLogs[c.id];
               return (
                 <div key={i} className="flex items-center gap-2 py-1">
-                  <img src={c.sprite} alt="" className={`w-6 h-6 rounded-full object-cover ${!c.alive ? 'grayscale opacity-50' : ''}`} />
+                  <img loading="lazy" src={c.sprite} alt="" className={`w-6 h-6 rounded-full object-cover ${!c.alive ? 'grayscale opacity-50' : ''}`} />
                   <div className="flex-1 text-left">
                     <div className="text-[10px] font-bold">{c.name} {!c.alive && <span className="text-red-400 text-[8px]">KO</span>}</div>
                     <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
@@ -1872,7 +1872,7 @@ export default function PvpMode() {
               const log = detailedLogs[c.id];
               return (
                 <div key={i} className="flex items-center gap-2 py-1">
-                  <img src={c.sprite} alt="" className={`w-6 h-6 rounded-full object-cover ${!c.alive ? 'grayscale opacity-50' : ''}`} />
+                  <img loading="lazy" src={c.sprite} alt="" className={`w-6 h-6 rounded-full object-cover ${!c.alive ? 'grayscale opacity-50' : ''}`} />
                   <div className="flex-1 text-left">
                     <div className="text-[10px] font-bold">{c.name} {!c.alive && <span className="text-red-400 text-[8px]">KO</span>}</div>
                     <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
@@ -1968,7 +1968,7 @@ export default function PvpMode() {
                   const critRate = log.totalHits > 0 ? (log.critHits / log.totalHits * 100).toFixed(0) : 0;
                   return (
                     <div key={i} className="flex items-center gap-3 py-1 border-b border-gray-700/10 last:border-0">
-                      <img src={c.sprite} alt="" className={`w-5 h-5 rounded-full object-cover ${!c.alive ? 'grayscale opacity-50' : ''}`} />
+                      <img loading="lazy" src={c.sprite} alt="" className={`w-5 h-5 rounded-full object-cover ${!c.alive ? 'grayscale opacity-50' : ''}`} />
                       <div className="text-[10px] font-bold w-16 truncate">{c.name}</div>
                       <div className="flex-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[9px] text-gray-400">
                         <span>{fmt(log.totalDamage)} dmg</span>
@@ -2145,7 +2145,7 @@ export default function PvpMode() {
                     const healIdx = (strat.healPriority || []).indexOf(c.id);
                     return (
                       <div key={c.id} className="flex items-center gap-2 p-2 rounded-xl" style={{ background: 'rgba(40,40,70,0.7)', border: '1px solid rgba(120,120,160,0.25)' }}>
-                        <img src={c.sprite} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" style={{ border: '2px solid rgba(150,150,180,0.3)' }} />
+                        <img loading="lazy" src={c.sprite} alt="" className="w-9 h-9 rounded-full object-cover flex-shrink-0" style={{ border: '2px solid rgba(150,150,180,0.3)' }} />
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-bold text-white truncate">{c.name}</div>
                           <div className="text-[9px]" style={{ color: '#aaa' }}>{c.class || ''}</div>

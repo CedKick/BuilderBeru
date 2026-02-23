@@ -546,7 +546,7 @@ export default function LoreStory() {
           >
             <div className="flex items-end gap-2" style={{ flexDirection: interruption.fromLeft ? 'row' : 'row-reverse' }}>
               {/* Chibi sprite */}
-              <img
+              <img loading="lazy"
                 src={interruption.chibi.sprite}
                 alt={interruption.chibi.name}
                 className="w-10 h-10 md:w-14 md:h-14 object-contain drop-shadow-lg"

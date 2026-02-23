@@ -238,7 +238,7 @@ const CharacterBuffs = ({
               <>
                 <span className="text-white/60">-</span>
                 <span className="text-purple-400 text-sm">{characters[selectedCharacter].name}</span>
-                <img
+                <img loading="lazy"
                   src={characters[selectedCharacter].icon}
                   alt={characters[selectedCharacter].name}
                   className="w-5 h-5 rounded"
@@ -382,7 +382,7 @@ const CharacterBuffs = ({
                     <div className="flex items-start gap-3">
                       {/* Buff Icon */}
                       <div className="relative group flex-shrink-0">
-                        <img
+                        <img loading="lazy"
                           src={buff.img || characters[selectedCharacter]?.icon}
                           alt={buff.name}
                           className="w-10 h-10 lg:w-12 lg:h-12 rounded"

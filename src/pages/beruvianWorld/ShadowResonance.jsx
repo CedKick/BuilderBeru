@@ -208,7 +208,7 @@ export default function ShadowResonance({
             <h2 className="resonance-title">Résonance Détectée!</h2>
             
             <div className="shadow-display">
-              <img 
+              <img loading="lazy" 
                 src={currentShadow.sprite} 
                 alt={currentShadow.name}
                 className="shadow-sprite"

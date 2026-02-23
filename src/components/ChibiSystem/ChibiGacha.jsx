@@ -135,7 +135,7 @@ const ChibiGacha = ({ shadowCoins, onClose, onPull }) => {
     // Utiliser le sprite idle s'il existe, sinon un emoji de fallback
     if (chibi.sprites?.idle) {
       return (
-        <img 
+        <img loading="lazy" 
           src={chibi.sprites.idle} 
           alt={chibi.name}
           className="chibi-gacha-sprite"

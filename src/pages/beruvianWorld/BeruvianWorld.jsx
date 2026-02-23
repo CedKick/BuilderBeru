@@ -847,7 +847,7 @@ function HunterMarker({ x, y, faction }) {
       className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200`}
       style={{ left: x, top: y, zIndex: 100 }}
     >
-      <img
+      <img loading="lazy"
         src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747606352/icons/build-31.png"
         alt="Hunter"
         className={`border-2 rounded-full ${factionColors[faction]} shadow-lg`}

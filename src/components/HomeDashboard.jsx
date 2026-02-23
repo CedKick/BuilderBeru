@@ -165,7 +165,7 @@ export default function HomeDashboard() {
                 </motion.div>
               )}
             </AnimatePresence>
-            <img
+            <img loading="lazy"
               src={BERU_SPRITE}
               alt="Beru"
               className="w-8 h-8 md:w-10 md:h-10"

@@ -564,7 +564,7 @@ const handleSungSkillDragStart = (skill, type, index) => {
                           >
                             <div className="flex flex-col items-center">
                               {skill?.src ? (
-  <img src={skill.src} alt={skill.name} className="w-8 h-8 object-cover rounded" />
+  <img loading="lazy" src={skill.src} alt={skill.name} className="w-8 h-8 object-cover rounded" />
 ) : (
   <span className="text-lg">{getSkillIcon(skill)}</span>
 )}
@@ -599,7 +599,7 @@ const handleSungSkillDragStart = (skill, type, index) => {
                           >
                             <div className="flex flex-col items-center">
                               {weapon?.src ? (
-                                <img src={weapon.src} alt={weapon.name} className="w-8 h-8 object-cover rounded" />
+                                <img loading="lazy" src={weapon.src} alt={weapon.name} className="w-8 h-8 object-cover rounded" />
                               ) : (
                                 <span className="text-lg">{idx === 0 ? '🗡️' : '⚔️'}</span>
                               )}
@@ -634,7 +634,7 @@ const handleSungSkillDragStart = (skill, type, index) => {
                       return (
                         <div key={idx} className="space-y-2">
                           <div className="flex items-center gap-2 mb-2">
-                            <img
+                            <img loading="lazy"
                               src={hunter.icon}
                               alt={hunter.name}
                               className="w-8 h-8 rounded-full ring-2 ring-cyan-500/50"
@@ -657,7 +657,7 @@ const handleSungSkillDragStart = (skill, type, index) => {
                             <div className="flex items-center gap-2">
                               <span className="text-lg">🛡️</span>
                               <span className="text-xs">Support {idx + 1}</span>
-                              <img
+                              <img loading="lazy"
                                 src={hunter.icon}
                                 alt={hunter.name}
                                 className="ml-auto w-4 h-4 rounded-full opacity-70"
@@ -692,7 +692,7 @@ const handleSungSkillDragStart = (skill, type, index) => {
                           }`}
                       >
                         {hunter && (
-                          <img
+                          <img loading="lazy"
                             src={hunter.icon}
                             alt={hunter.name}
                             className="w-12 h-12 rounded-full mx-auto mb-1"
@@ -735,7 +735,7 @@ const handleSungSkillDragStart = (skill, type, index) => {
                                 <span className="text-lg">{skill.icon}</span>
                                 <span className="text-xs">{skill.name}</span>
                               </div>
-                              <img
+                              <img loading="lazy"
                                 src={hunter.icon}
                                 alt={hunter.name}
                                 className="absolute bottom-1 right-1 w-4 h-4 rounded-full opacity-70"
@@ -851,15 +851,15 @@ const handleSungSkillDragStart = (skill, type, index) => {
                           }}
                         >
                           {action.weaponData?.src ? (
-                            <img src={action.weaponData.src} alt={action.name} className="w-10 h-10 object-cover rounded" />
+                            <img loading="lazy" src={action.weaponData.src} alt={action.name} className="w-10 h-10 object-cover rounded" />
                           ) : action.src ? (
-                            <img src={action.src} alt={action.name} className="w-10 h-10 object-cover rounded" />
+                            <img loading="lazy" src={action.src} alt={action.name} className="w-10 h-10 object-cover rounded" />
                           ) : (
                             <span>{action.icon}</span>
                           )}
 
                           {action.hunterIcon && (
-                            <img
+                            <img loading="lazy"
                               src={action.hunterIcon}
                               alt={action.hunterName}
                               className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full ring-2 ring-white/50"
@@ -1149,7 +1149,7 @@ const handleSungSkillDragStart = (skill, type, index) => {
               <div className="space-y-2">
                 {mode === 'sung_hunters' && (
                   <div className="flex items-center gap-3 p-2 bg-purple-900/20 rounded-lg">
-                    <img
+                    <img loading="lazy"
                       src={characters['jinwoo']?.icon || "https://via.placeholder.com/40"}
                       alt="Sung"
                       className="w-10 h-10 rounded-full ring-2 ring-purple-500/50"
@@ -1174,7 +1174,7 @@ const handleSungSkillDragStart = (skill, type, index) => {
                         }`}
                       onClick={() => mode === 'hunters_only' && setSelectedHunter(idx)}
                     >
-                      <img
+                      <img loading="lazy"
                         src={hunter.icon}
                         alt={hunter.name}
                         className="w-10 h-10 rounded-full ring-2 ring-gray-600/50"
@@ -1241,7 +1241,7 @@ const handleSungSkillDragStart = (skill, type, index) => {
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-500">#{idx + 1}</span>
                         {action.hunterIcon && (
-                          <img src={action.hunterIcon} alt="" className="w-5 h-5 rounded-full" />
+                          <img loading="lazy" src={action.hunterIcon} alt="" className="w-5 h-5 rounded-full" />
                         )}
                         <span className="text-sm">{action.icon}</span>
                         <span className="text-sm truncate max-w-[120px]">{action.name}</span>
@@ -1585,7 +1585,7 @@ const handleSungSkillDragStart = (skill, type, index) => {
                     <div key={idx} className="grid grid-cols-3 gap-4 bg-gray-800/20 rounded-lg p-4 border border-gray-700/50">
                       <div>
                         <h5 className="text-sm font-medium mb-3 flex items-center gap-2" style={{ color: hunter?.color || '#06B6D4' }}>
-                          {hunter?.icon && <img src={hunter.icon} alt={hunter.name} className="w-5 h-5 rounded-full" />}
+                          {hunter?.icon && <img loading="lazy" src={hunter.icon} alt={hunter.name} className="w-5 h-5 rounded-full" />}
                           {mode === 'sung_hunters' ? `Support ${idx + 1}` : `Hunter ${idx + 1}`}
                         </h5>
                         <select

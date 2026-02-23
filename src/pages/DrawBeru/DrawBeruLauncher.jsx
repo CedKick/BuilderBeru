@@ -240,7 +240,7 @@ const DrawBeruLauncher = () => {
               ← Retour
             </button>
             <div className="flex items-center gap-3 flex-grow">
-              <img
+              <img loading="lazy"
                 src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760821994/DrasBeru_zd8ju5.png"
                 alt="DrawBeru"
                 className="w-10 h-10"
@@ -273,7 +273,7 @@ const DrawBeruLauncher = () => {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
-          <img
+          <img loading="lazy"
             src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760821994/DrasBeru_zd8ju5.png"
             alt="DrawBeru"
             className="w-12 h-12"

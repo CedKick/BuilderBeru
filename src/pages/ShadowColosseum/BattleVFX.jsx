@@ -209,7 +209,7 @@ function WeaponProjectile({ weaponPassive, active, distance, reversed }) {
         top: '52%',
         animation: `${kf} ${config.duration}s ease-in forwards`,
       }}>
-        <img src={config.sprite} alt=""
+        <img loading="lazy" src={config.sprite} alt=""
           className="pointer-events-none"
           style={{
             width: config.width, height: config.height,
@@ -320,7 +320,7 @@ export function BattleArena({ battle, phase, dmgPopup, stageEmoji, stageSprite, 
           )}
           {/* Sprite */}
           <div className="relative">
-            <img src={playerSprite} alt={player.name}
+            <img loading="lazy" src={playerSprite} alt={player.name}
               className="w-16 h-16 object-contain"
               style={{
                 filter: playerData ? RARITY[playerData.rarity]?.glow : '',
@@ -376,7 +376,7 @@ export function BattleArena({ battle, phase, dmgPopup, stageEmoji, stageSprite, 
                 boxShadow: enemy.isBoss ? `0 0 20px ${ELEMENT_COLORS_RAW[enemyElement] || '#a855f7'}40` : 'none',
               }}>
               {stageSprite ? (
-                <img src={stageSprite} alt={enemy.name} className={`${stageSpriteSize === 'lg' ? 'w-20 h-20' : 'w-12 h-12'} object-contain`}
+                <img loading="lazy" src={stageSprite} alt={enemy.name} className={`${stageSpriteSize === 'lg' ? 'w-20 h-20' : 'w-12 h-12'} object-contain`}
                   style={{ filter: enemy.isBoss ? `drop-shadow(0 0 8px ${ELEMENT_COLORS_RAW[enemyElement] || '#a855f7'})` : '' }} />
               ) : (
                 <span className="text-3xl" style={{ filter: enemy.isBoss ? `drop-shadow(0 0 8px ${ELEMENT_COLORS_RAW[enemyElement] || '#a855f7'})` : '' }}>
@@ -554,7 +554,7 @@ function ArenaChibiSprite({ chibi, pos, isAttacking, isHit, isHealing, dmg, dps,
       )}
       {/* Sprite */}
       <div className="relative">
-        <img src={isCasting ? MEGUMIN_CAST_SPRITE : chibi.sprite} alt={chibi.name}
+        <img loading="lazy" src={isCasting ? MEGUMIN_CAST_SPRITE : chibi.sprite} alt={chibi.name}
           className="w-12 h-12 object-contain"
           style={{
             animation: isCasting ? 'meguminCast 2s ease-out forwards' : anim,
@@ -818,7 +818,7 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
       <div className="absolute inset-0 rounded-2xl overflow-hidden border border-white/10">
 
         {/* Arena background image */}
-        <img src={arenaBgRef.current} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ filter: 'brightness(0.6)' }} />
+        <img loading="lazy" src={arenaBgRef.current} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ filter: 'brightness(0.6)' }} />
         {/* Dark overlay for readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30" />
 
@@ -853,7 +853,7 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
           {/* Boss sprite */}
           <div className="relative">
             {b.sprite ? (
-              <img src={b.sprite} alt={b.name}
+              <img loading="lazy" src={b.sprite} alt={b.name}
                 className="w-28 h-28 object-contain"
                 style={{
                   animation: bossAnim,
@@ -896,7 +896,7 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
             {/* MEGUMIN EXPLOSION on boss */}
             {meguminExplosion && (
               <div className="absolute pointer-events-none flex items-center justify-center" style={{ top: '-60%', left: '-50%', width: '200%', height: '200%', zIndex: 50 }}>
-                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771534341/Explosion_cbnuhl.png" alt="EXPLOSION"
+                <img loading="lazy" src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771534341/Explosion_cbnuhl.png" alt="EXPLOSION"
                   style={{ width: 180, height: 180, animation: 'explosionGrow 1.5s ease-out forwards', imageRendering: 'auto' }} />
               </div>
             )}
@@ -931,7 +931,7 @@ export function RaidArena({ battleState, vfxQueue, timer, isPaused, sungCooldown
               animation: `${kf} ${dur}s ease-in forwards`,
               marginLeft: 48,
             }}>
-              <img src={config.sprite} alt=""
+              <img loading="lazy" src={config.sprite} alt=""
                 style={{
                   width: config.width, height: config.height,
                   filter: `drop-shadow(0 0 8px ${config.trailColor})`,

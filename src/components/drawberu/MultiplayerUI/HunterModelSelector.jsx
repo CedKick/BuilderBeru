@@ -85,7 +85,7 @@ const HunterModelSelector = ({
                 {/* Fond: image ou violet */}
                 {hasImage ? (
                   <>
-                    <img
+                    <img loading="lazy"
                       src={theme.image}
                       alt={theme.name}
                       className="absolute inset-0 w-full h-full object-cover"
@@ -229,7 +229,7 @@ const HunterModelSelector = ({
         <div className="bg-purple-900/30 rounded-xl border border-purple-500/30 p-4">
           <h3 className="text-white font-semibold mb-3 text-center">Aperçu</h3>
           <div className="flex justify-center">
-            <img
+            <img loading="lazy"
               src={previewImage}
               alt="Preview"
               className="max-h-48 rounded-lg shadow-lg"

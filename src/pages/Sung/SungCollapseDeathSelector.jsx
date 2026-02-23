@@ -27,7 +27,7 @@ const SungCollapseDeathSelector = ({ onNext, onBack }) => {
             ? 'border-yellow-400 bg-yellow-100 bg-opacity-10 shadow-yellow-400'
             : 'border-gray-600 hover:border-blue-500 bg-gray-800 hover:bg-gray-700'}`}
       >
-        <img src={rune.src} alt={rune.name} className="w-10 h-10 mb-1 rounded" />
+        <img loading="lazy" src={rune.src} alt={rune.name} className="w-10 h-10 mb-1 rounded" />
         <span className="truncate w-full text-center text-white">{rune.name}</span>
         <span className="text-[10px] italic text-gray-400">{rune.type}</span>
       </button>

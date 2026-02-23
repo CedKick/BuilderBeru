@@ -326,7 +326,7 @@ export default function FloatingPod042({
               transform: isThrown ? `rotate(${throwSpin}deg)` : undefined,
             }}
           >
-            <img
+            <img loading="lazy"
               src={POD_SPRITE}
               alt="Pod 042"
               className="w-16 h-16 object-contain drop-shadow-lg"

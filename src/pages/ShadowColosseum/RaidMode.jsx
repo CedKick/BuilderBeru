@@ -1788,7 +1788,7 @@ export default function RaidMode() {
                       }`}>
                       {chibi ? (
                         <>
-                          <img src={chibi.sprite} alt={chibi.name} className="w-10 h-10 rounded-full object-cover" />
+                          <img loading="lazy" src={chibi.sprite} alt={chibi.name} className="w-10 h-10 rounded-full object-cover" />
                           <span className="text-[10px] text-white/80 mt-1 truncate w-full text-center">{chibi.name}</span>
                           <span className="text-[9px] text-yellow-400">Lv.{getChibiLevel(id)}</span>
                         </>
@@ -1862,7 +1862,7 @@ export default function RaidMode() {
 
               return (
                 <div key={id} className="flex items-start gap-2.5 p-2 rounded-lg bg-gray-800/40">
-                  <img src={c.sprite} alt="" className="w-9 h-9 object-contain rounded-lg flex-shrink-0" />
+                  <img loading="lazy" src={c.sprite} alt="" className="w-9 h-9 object-contain rounded-lg flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <span className="text-[11px] font-bold text-white truncate">{c.name}</span>
@@ -1903,7 +1903,7 @@ export default function RaidMode() {
             {Object.entries(allPool).filter(([id]) => !selectedIds.includes(id)).map(([id, c]) => (
               <button key={id} onClick={() => handlePickChibi(id)}
                 className="flex flex-col items-center p-2 rounded-lg bg-white/5 border border-white/10 hover:border-purple-400/60 transition-all hover:bg-purple-500/10">
-                <img src={c.sprite} alt={c.name} className="w-10 h-10 rounded-full object-cover" />
+                <img loading="lazy" src={c.sprite} alt={c.name} className="w-10 h-10 rounded-full object-cover" />
                 <span className="text-[10px] text-white/80 mt-1 truncate w-full text-center">{c.name}</span>
                 <span className={`text-[9px] ${RARITY[c.rarity]?.color}`}>{RARITY[c.rarity]?.stars}</span>
                 <span className={`text-[9px] ${ELEMENTS[c.element]?.color}`}>{ELEMENTS[c.element]?.icon}</span>
@@ -2046,7 +2046,7 @@ export default function RaidMode() {
             {dpsBreakdown.map((d, i) => (
               <div key={d.id} className="flex items-center gap-2">
                 <span className="text-xs text-gray-500 w-4">#{i + 1}</span>
-                <img src={d.sprite} alt={d.name} className="w-6 h-6 rounded-full object-cover" />
+                <img loading="lazy" src={d.sprite} alt={d.name} className="w-6 h-6 rounded-full object-cover" />
                 <span className="text-xs flex-1 truncate">{d.name}</span>
                 <span className="text-xs text-gray-400">{fmt(d.damage)}</span>
                 <div className="w-20 h-2 bg-gray-700 rounded-full overflow-hidden">
@@ -2079,7 +2079,7 @@ export default function RaidMode() {
                 const h = HUNTERS[id];
                 return (
                   <div key={id} className="flex flex-col items-center">
-                    <img src={h.sprite} alt={h.name} className="w-12 h-12 rounded-full border-2 border-yellow-400 object-cover" />
+                    <img loading="lazy" src={h.sprite} alt={h.name} className="w-12 h-12 rounded-full border-2 border-yellow-400 object-cover" />
                     <span className="text-xs mt-1">{h.name}</span>
                     <span className={`text-[9px] ${RARITY[h.rarity]?.color}`}>{RARITY[h.rarity]?.stars}</span>
                   </div>
@@ -2099,7 +2099,7 @@ export default function RaidMode() {
                 const h = HUNTERS[id];
                 return (
                   <div key={`${id}_${i}`} className="flex flex-col items-center">
-                    <img src={h?.sprite} alt={h?.name} className="w-12 h-12 rounded-full border-2 border-amber-400 object-cover" />
+                    <img loading="lazy" src={h?.sprite} alt={h?.name} className="w-12 h-12 rounded-full border-2 border-amber-400 object-cover" />
                     <span className="text-xs mt-1">{h?.name}</span>
                     <span className="text-[9px] text-yellow-400">Eveil +1 {'\u2605'}</span>
                   </div>
@@ -2178,7 +2178,7 @@ export default function RaidMode() {
                   const critRate = log.totalHits > 0 ? (log.critHits / log.totalHits * 100).toFixed(0) : 0;
                   return (
                     <div key={i} className="flex items-center gap-3 py-1 border-b border-gray-700/10 last:border-0">
-                      <img src={c.sprite} alt="" className="w-5 h-5 rounded-full object-cover" />
+                      <img loading="lazy" src={c.sprite} alt="" className="w-5 h-5 rounded-full object-cover" />
                       <div className="text-[10px] font-bold w-16 truncate">{c.name}</div>
                       <div className="flex-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[9px] text-gray-400">
                         <span>{fmt(log.totalDamage)} dmg</span>

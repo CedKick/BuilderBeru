@@ -40,7 +40,7 @@ export default function FighterCard({
       {/* Header: Avatar + Name + Weapon */}
       <div className="flex items-center gap-3 mb-2">
         <div className="relative">
-          <img
+          <img loading="lazy"
             src={fighter.sprite}
             alt={fighter.name}
             className={`w-12 h-12 rounded-full object-cover border-2 ${

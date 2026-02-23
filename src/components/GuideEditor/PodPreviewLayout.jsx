@@ -83,7 +83,7 @@ export default function PodPreviewLayout({ formData }) {
           {/* Colonne 4 - Boss avec éléments */}
           {/* Colonne 4 - Boss avec éléments intégrés dans l'image */}
           <div className="relative w-40 h-40">
-            <img
+            <img loading="lazy"
               src={bossInfo?.src}
               alt={boss}
               className="w-80% h-80% rounded-md shadow-md object-cover"
@@ -91,7 +91,7 @@ export default function PodPreviewLayout({ formData }) {
             {selectedElements?.length > 0 && (
               <div className="absolute bottom-11 left-1 flex gap-[1px]">
                 {selectedElements.map((el, idx) => (
-                  <img
+                  <img loading="lazy"
                     key={idx}
                     src={elementData[el.toLowerCase()]}
                     alt={el}
@@ -133,7 +133,7 @@ export default function PodPreviewLayout({ formData }) {
               {/* Gauche */}
               <div>
                 {sungLeftArtifact?.map((a, i) => (
-                  <img
+                  <img loading="lazy"
                     key={`sung-left-${i}`}
                     src={a.src}
                     alt={a.name}
@@ -146,7 +146,7 @@ export default function PodPreviewLayout({ formData }) {
               {/* Core */}
               <div>
                 {sungCore && Object.values(sungCore).map((core, i) => (
-                  <img
+                  <img loading="lazy"
                     key={`sung-core-${i}`}
                     src={core.src}
                     alt={core.name}
@@ -159,7 +159,7 @@ export default function PodPreviewLayout({ formData }) {
               {/* Droite */}
               <div>
                 {sungRightArtifact?.map((a, i) => (
-                  <img
+                  <img loading="lazy"
                     key={`sung-right-${i}`}
                     src={a.src}
                     alt={a.name}
@@ -177,7 +177,7 @@ export default function PodPreviewLayout({ formData }) {
     <p className="font-bold mb-1">Armes :</p>
     <div className="flex gap-1 flex-wrap">
       {weaponsSelected?.map((w, idx) => (
-        <img key={idx} src={w.src} alt={w.name} className="w-26 h-26" />
+        <img loading="lazy" key={idx} src={w.src} alt={w.name} className="w-26 h-26" />
       ))}
     </div>
   </div>
@@ -188,7 +188,7 @@ export default function PodPreviewLayout({ formData }) {
       <p className="font-bold mb-1">Skills :</p>
       <div className="flex gap-1 flex-wrap">
         {sungSkills?.map((s, idx) => (
-          <img key={idx} src={s.src} alt={s.name} title={s.name} className="w-12 h-12" />
+          <img loading="lazy" key={idx} src={s.src} alt={s.name} title={s.name} className="w-12 h-12" />
         ))}
       </div>
     </div>
@@ -199,12 +199,12 @@ export default function PodPreviewLayout({ formData }) {
       <div className="flex gap-2">
         <div className="text-center">
           {sungCollapseDeath?.collapse && (
-            <img src={sungCollapseDeath.collapse.src} alt="Collapse" className="w-12 h-12" />
+            <img loading="lazy" src={sungCollapseDeath.collapse.src} alt="Collapse" className="w-12 h-12" />
           )}
         </div>
         <div className="text-center">
           {sungCollapseDeath?.death && (
-            <img src={sungCollapseDeath.death.src} alt="Death" className="w-12 h-12" />
+            <img loading="lazy" src={sungCollapseDeath.death.src} alt="Death" className="w-12 h-12" />
           )}
         </div>
       </div>
@@ -219,13 +219,13 @@ export default function PodPreviewLayout({ formData }) {
             <p className="text-xs">Offensives :</p>
             <div className="flex flex-wrap gap-1 mb-1">
               {sungBlessings?.offensive?.map((stone, idx) => (
-                <img key={`off-${idx}`} src={stone.src} alt={stone.name} title={stone.name} className="w-12 h-12" />
+                <img loading="lazy" key={`off-${idx}`} src={stone.src} alt={stone.name} title={stone.name} className="w-12 h-12" />
               ))}
             </div>
             <p className="text-xs">Défensives :</p>
             <div className="flex flex-wrap gap-1">
               {sungBlessings?.defensive?.map((stone, idx) => (
-                <img key={`def-${idx}`} src={stone.src} alt={stone.name} title={stone.name} className="w-12 h-12" />
+                <img loading="lazy" key={`def-${idx}`} src={stone.src} alt={stone.name} title={stone.name} className="w-12 h-12" />
               ))}
             </div>
           </div>
@@ -254,7 +254,7 @@ export default function PodPreviewLayout({ formData }) {
       {hunter.leftArtifact?.length > 0 ? (
         hunter.leftArtifact.map((a, i) => (
           <div key={`left-${i}`} className="flex flex-col items-center">
-            <img src={a.src} alt={a.name} className="w-20 h-20 object-contain" />
+            <img loading="lazy" src={a.src} alt={a.name} className="w-20 h-20 object-contain" />
             <span className="text-xs text-center">{a.name}</span>
           </div>
         ))
@@ -267,7 +267,7 @@ export default function PodPreviewLayout({ formData }) {
       {hunter.rightArtifact?.length > 0 ? (
         hunter.rightArtifact.map((a, i) => (
           <div key={`right-${i}`} className="flex flex-col items-center">
-            <img src={a.src} alt={a.name} className="w-20 h-20 object-contain" />
+            <img loading="lazy" src={a.src} alt={a.name} className="w-20 h-20 object-contain" />
             <span className="text-xs text-center">{a.name}</span>
           </div>
         ))
@@ -279,7 +279,7 @@ export default function PodPreviewLayout({ formData }) {
     {/* Image du Hunter */}
     {hunter.img && (
       <div className="ml-4">
-        <img
+        <img loading="lazy"
           src={hunter.img}
           alt={hunter.name}
           title={hunter.name}
@@ -299,7 +299,7 @@ export default function PodPreviewLayout({ formData }) {
                       .filter((c) => c?.name)
                       .map((core, i) => (
                         <div key={i} className="flex flex-col items-center">
-                          <img src={core.src} alt={core.name} className="w-12 h-12 object-contain" />
+                          <img loading="lazy" src={core.src} alt={core.name} className="w-12 h-12 object-contain" />
                           <span className="text-xs text-center">{core.name}</span>
                         </div>
                       ))}
@@ -320,7 +320,7 @@ export default function PodPreviewLayout({ formData }) {
           <div className="flex flex-wrap gap-2 justify-start">
             {selectedShadows.map((s, idx) => (
               <div key={idx} className="flex flex-col items-center text-xs">
-                <img
+                <img loading="lazy"
                   src={s.src}
                   alt={s.name}
                   title={s.name}

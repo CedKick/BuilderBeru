@@ -172,12 +172,12 @@ export default function CarouselPOD({ data, onSelect }) {
 
                                         {bossInfo?.src && (
                                             <div className="relative w-1/2 flex items-center justify-center">
-                                                <img
+                                                <img loading="lazy"
                                                     src={bossInfo.src}
                                                     alt={bossInfo.name}
                                                     className="w-[90%] h-auto object-contain rounded-md z-0"
                                                 />
-                                                <img
+                                                <img loading="lazy"
                                                     src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1749054035/cadre_ojwsaz.png"
                                                     alt="Cadre"
                                                     className="absolute top-0 left-0 w-full h-full pointer-events-none z-10"

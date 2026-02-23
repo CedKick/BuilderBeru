@@ -1747,7 +1747,7 @@ const CharacterSlot = ({ character, onRemove, onAdvancementChange, onSetPiecesCh
                 }`}
             >
                 {character.image ? (
-                    <img src={character.image} alt={character.name} className="w-full h-full object-cover" />
+                    <img loading="lazy" src={character.image} alt={character.name} className="w-full h-full object-cover" />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-purple-400 text-4xl">
                         👤
@@ -1935,7 +1935,7 @@ const CharacterDetailsPanel = ({
             <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold flex items-center gap-3">
                     {member.image && (
-                        <img src={member.image} alt={member.name} className="w-12 h-12 rounded-lg object-cover border-2 border-purple-500" />
+                        <img loading="lazy" src={member.image} alt={member.name} className="w-12 h-12 rounded-lg object-cover border-2 border-purple-500" />
                     )}
                     {member.name}
                 </h2>
@@ -4919,7 +4919,7 @@ const IndividualCharacterStatCard = ({ member, onClick, onCompare, isComparing, 
                 <div className="mb-3 px-3 py-2 bg-amber-900/30 border border-amber-500/30 rounded-lg text-sm text-amber-300 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <span>vs</span>
-                        {whatIfMember.image && <img src={whatIfMember.image} alt="" className="w-5 h-5 rounded object-cover" />}
+                        {whatIfMember.image && <img loading="lazy" src={whatIfMember.image} alt="" className="w-5 h-5 rounded object-cover" />}
                         <span className="font-semibold">{whatIfMember.name}</span>
                         <span>{getElementEmoji(whatIfMember.element)}</span>
                     </div>
@@ -5004,7 +5004,7 @@ const IndividualCharacterStatCard = ({ member, onClick, onCompare, isComparing, 
             {/* Header avec image et nom */}
             <div className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-700/50">
                 {member.image ? (
-                    <img src={member.image} alt={member.name} className="w-12 h-12 rounded-lg object-cover border-2 border-purple-500" />
+                    <img loading="lazy" src={member.image} alt={member.name} className="w-12 h-12 rounded-lg object-cover border-2 border-purple-500" />
                 ) : (
                     <div className="w-12 h-12 rounded-lg bg-gray-700 flex items-center justify-center text-2xl">👤</div>
                 )}
@@ -5702,7 +5702,7 @@ const CharacterSelectionModal = ({ characters, elementFilter, onElementChange, o
                             className="bg-gray-800 hover:bg-gray-700 rounded-lg p-2 transition-colors group"
                         >
                             {char.image ? (
-                                <img src={char.image} alt={char.name} className="w-full aspect-square object-cover rounded mb-2" />
+                                <img loading="lazy" src={char.image} alt={char.name} className="w-full aspect-square object-cover rounded mb-2" />
                             ) : (
                                 <div className="w-full aspect-square bg-gray-700 rounded mb-2 flex items-center justify-center text-4xl">
                                     👤

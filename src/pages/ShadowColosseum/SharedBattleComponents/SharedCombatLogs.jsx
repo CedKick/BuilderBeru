@@ -174,7 +174,7 @@ function DamageTab({ detailedLogs, fighters, boss }) {
         return (
           <div key={entity.id} className="bg-black/30 rounded-lg p-3 border border-white/10">
             <div className="flex items-center gap-2 mb-2">
-              <img src={entity.sprite} alt={entity.name} className="w-8 h-8 rounded-full" />
+              <img loading="lazy" src={entity.sprite} alt={entity.name} className="w-8 h-8 rounded-full" />
               <span className="font-bold text-white">{entity.name}</span>
               {entity.element && (
                 <span className={`text-xs px-2 py-0.5 rounded ${ELEMENT_BG[entity.element]}`}>
@@ -213,7 +213,7 @@ function StatsTab({ detailedLogs, fighters }) {
         return (
           <div key={fighter.id} className="bg-black/30 rounded-lg p-3 border border-white/10">
             <div className="flex items-center gap-2 mb-2">
-              <img src={fighter.sprite} alt={fighter.name} className="w-8 h-8 rounded-full" />
+              <img loading="lazy" src={fighter.sprite} alt={fighter.name} className="w-8 h-8 rounded-full" />
               <span className="font-bold text-white">{fighter.name}</span>
               {fighter.element && (
                 <span className={`text-xs px-2 py-0.5 rounded ${ELEMENT_BG[fighter.element]}`}>
@@ -250,7 +250,7 @@ function CritsTab({ detailedLogs, fighters }) {
         return (
           <div key={fighter.id} className="bg-black/30 rounded-lg p-3 border border-orange-500/20">
             <div className="flex items-center gap-2 mb-2">
-              <img src={fighter.sprite} alt={fighter.name} className="w-8 h-8 rounded-full" />
+              <img loading="lazy" src={fighter.sprite} alt={fighter.name} className="w-8 h-8 rounded-full" />
               <span className="font-bold text-white">{fighter.name}</span>
             </div>
             <div className="space-y-1 text-xs">
@@ -290,7 +290,7 @@ function BuffsTab({ detailedLogs, fighters }) {
         return (
           <div key={fighter.id} className="bg-black/30 rounded-lg p-3 border border-purple-500/20">
             <div className="flex items-center gap-2 mb-2">
-              <img src={fighter.sprite} alt={fighter.name} className="w-8 h-8 rounded-full" />
+              <img loading="lazy" src={fighter.sprite} alt={fighter.name} className="w-8 h-8 rounded-full" />
               <span className="font-bold text-white">{fighter.name}</span>
             </div>
 

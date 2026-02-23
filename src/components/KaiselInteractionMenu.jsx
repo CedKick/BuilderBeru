@@ -791,7 +791,7 @@ const KaiselInteractionMenu = ({
             border: '1px solid rgba(0, 255, 65, 0.2)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <img 
+              <img loading="lazy" 
                 src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750768929/Kaisel_face_dm9394.png"
                 alt="Kaisel"
                 style={{

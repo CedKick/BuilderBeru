@@ -37,7 +37,7 @@ const ShadowSelector = ({ onNext, onCancel, initialShadows = [] }) => {
             }`}
             onClick={() => toggleShadow(shadow)}
           >
-            <img
+            <img loading="lazy"
               src={shadow.src}
               alt={shadow.name}
               className="w-20 h-20 object-contain mb-2"

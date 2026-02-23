@@ -22,7 +22,7 @@ const ElementSelector = ({ selectedElements, setSelectedElements, maxElements = 
 
       <div className="flex flex-wrap justify-center gap-3 mb-6">
         {ALL_ELEMENTS.map((element) => (
-          <img
+          <img loading="lazy"
             key={element}
             src={elementData[element]}
             alt={element}

@@ -320,7 +320,7 @@ const ChibiBubble = ({ message, position, entityType = 'tank', isMobile, onClose
                         paddingBottom: isMobileDevice ? '6px' : '8px',
                         borderBottom: `1px solid ${config.color}40`,
                     }}>
-                        <img
+                        <img loading="lazy"
                             src={config.icon}
                             alt={config.name}
                             style={{

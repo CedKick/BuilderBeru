@@ -510,7 +510,7 @@ const TeamBuffs = ({
                       ))}
                     </select>
                     {charId && characters[charId] && (
-                      <img
+                      <img loading="lazy"
                         src={characters[charId].icon}
                         alt={characters[charId].name}
                         className="absolute right-1 top-1 w-8 h-8 rounded pointer-events-none"
@@ -538,7 +538,7 @@ const TeamBuffs = ({
                       ))}
                     </select>
                     {charId && characters[charId] && (
-                      <img
+                      <img loading="lazy"
                         src={characters[charId].icon}
                         alt={characters[charId].name}
                         className="absolute right-1 top-1 w-8 h-8 rounded pointer-events-none opacity-80"
@@ -578,7 +578,7 @@ const TeamBuffs = ({
                       >
                         <div className="flex items-start gap-3">
                           <div className="relative flex-shrink-0">
-                            <img
+                            <img loading="lazy"
                               src={buff.icon}
                               alt={buff.character}
                               className="w-10 h-10 rounded"

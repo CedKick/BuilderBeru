@@ -1572,7 +1572,7 @@ const HallOfFlameDebugPopup = ({
                       <div className="screenshot-preview">
                         {formData.screenshots.map((file, index) => (
                           <div key={index} className="relative">
-                            <img 
+                            <img loading="lazy" 
                               src={URL.createObjectURL(file)} 
                               alt={`Screenshot ${index + 1}`}
                               className="screenshot-thumb"

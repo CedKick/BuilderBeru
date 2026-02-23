@@ -594,7 +594,7 @@ const displayShadows = React.useMemo(() => {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-xs font-semibold text-red-300 uppercase">{t('pod.stats.final')}</h4>
-                <img
+                <img loading="lazy"
                   src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png"
                   alt="Import"
                   className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity"
@@ -872,7 +872,7 @@ const displayShadows = React.useMemo(() => {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <h4 className="text-xs font-semibold text-red-300 uppercase">{t('pod.stats.final')}</h4>
-                <img
+                <img loading="lazy"
                   src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png"
                   alt="Import"
                   className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity"
@@ -933,7 +933,7 @@ const displayShadows = React.useMemo(() => {
                 >
                   {character ? (
                     <>
-                      <img
+                      <img loading="lazy"
                         src={character.icon}
                         alt={character.name}
                         className="w-8 h-8 rounded-full mr-2"
@@ -1100,7 +1100,7 @@ const displayShadows = React.useMemo(() => {
                   {character && (
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-[9px] text-gray-500">{t('pod.stats.final')}</label>
-                      <img
+                      <img loading="lazy"
                         src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055837/beruProst_ymvwos.png"
                         alt="Import"
                         className="w-7 h-7 cursor-pointer hover:opacity-80 transition-opacity"
@@ -1194,7 +1194,7 @@ const displayShadows = React.useMemo(() => {
                 <div className="flex flex-col items-center">
                   {shadowInfo ? (
                     <>
-                      <img
+                      <img loading="lazy"
                         src={shadowInfo.src}
                         alt={shadowInfo.name}
                         className="w-16 h-16 rounded-full mb-2 border-2 border-purple-500"
@@ -1320,7 +1320,7 @@ const displayShadows = React.useMemo(() => {
                         : 'hover:bg-red-900/20 hover:scale-105 border-transparent hover:border-red-500'
                         }`}
                     >
-                      <img
+                      <img loading="lazy"
                         src={character.icon}
                         alt={character.name}
                         className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} rounded-full mx-auto mb-1`}

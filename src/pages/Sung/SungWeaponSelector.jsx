@@ -32,7 +32,7 @@ export default function SungWeaponSelector({ onNext, onBack }) {
             className={`border-4 rounded-lg p-2 cursor-pointer flex flex-col items-center justify-center transition
               ${isSelected(weapon) ? 'border-yellow-400' : 'border-white hover:border-yellow-500'}`}
           >
-            <img
+            <img loading="lazy"
               src={weapon.src}
               alt={weapon.name}
               className="h-24 object-contain"

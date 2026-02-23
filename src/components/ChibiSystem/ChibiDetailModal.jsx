@@ -96,7 +96,7 @@ const ChibiDetailModal = ({ chibi, onClose, onInteract, resources }) => {
                 className="rarity-glow" 
                 style={{ backgroundColor: `${rarityColor}40` }}
               />
-              <img 
+              <img loading="lazy" 
                 src={chibi.sprites.idle || 'placeholder.png'} 
                 alt={chibi.name}
                 className="chibi-sprite"

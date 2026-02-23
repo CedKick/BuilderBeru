@@ -53,7 +53,7 @@ const HunterArtifacts = ({ side, onClose, onConfirm }) => {
                         const selected = selectedCounts[artifact.set] || 0;
                         return (
                             <div key={artifact.set} className="bg-gray-800 p-2 rounded-lg flex flex-col items-center">
-                                <img
+                                <img loading="lazy"
                                     src={artifact.src}
                                     alt={artifact.set}
                                     className="w-20 h-20 cursor-pointer object-contain"

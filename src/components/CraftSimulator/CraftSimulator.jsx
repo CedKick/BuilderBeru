@@ -1259,7 +1259,7 @@ useEffect(() => {
                       <div className="flex items-center justify-between mb-1">
                         <p className="text-xs text-gray-400">Tentatives actuelles</p>
                         <div className="flex items-center gap-1">
-                          <img 
+                          <img loading="lazy" 
                             src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1758047311/hammer_tez64c.png"
                             alt="hammer"
                             className="w-4 h-4"

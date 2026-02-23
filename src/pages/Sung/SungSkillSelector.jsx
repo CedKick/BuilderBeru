@@ -53,7 +53,7 @@ const SungSkillSelector = ({ onNext, onBack }) => {
                     onClick={() => toggleSkill(skill)}
                     title={`${skill.name} (${skill.element} - ${skill.type})`}
                   >
-                    <img
+                    <img loading="lazy"
                       src={skill.src}
                       alt={`${skill.name} ${skill.element} ${skill.type} ${skill.className}`}
                       className="w-11 h-11 object-contain"

@@ -314,7 +314,7 @@ const ChibiEntity = ({ chibiEntity, position, onClick, canvasRef }) => {
     
     if (spriteUrl) {
       return (
-        <img 
+        <img loading="lazy" 
           src={spriteUrl}
           alt={chibiEntity.name}
           className="chibi-sprite"

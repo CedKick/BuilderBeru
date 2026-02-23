@@ -679,7 +679,7 @@ const ArtifactCard = ({
       <div className="flex justify-between items-center mb-[2px]">
         <h2 className="text-base font-bold">{t(`titleArtifact.${title}`)}</h2>
         <div className="flex items-center gap-1">
-          <img
+          <img loading="lazy"
             src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750335621/chooseSet_fo08yb.png"
             onClick={() => handleOpenLibrary(title)}
             alt="Charger un set existant"
@@ -687,7 +687,7 @@ const ArtifactCard = ({
             title="Charger un set existant"
           />
 
-          <img
+          <img loading="lazy"
             src={currentSetIcon}
             onClick={() => onSetIconClick(title)}
             alt={(artifactData && artifactData.set) || "Sélectionner un Set"}
@@ -695,7 +695,7 @@ const ArtifactCard = ({
             className="w-5 h-5 cursor-pointer hover:scale-110 transition"
           />
 
-          <img
+          <img loading="lazy"
             src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750356736/resetArtifact_eobh2e.png"
             onClick={() => handleResetArtifact(title)}
             alt="Reset Artifact"
@@ -704,7 +704,7 @@ const ArtifactCard = ({
           />
 
           {shouldShowSave(artifactData) && (
-            <img
+            <img loading="lazy"
               src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750335754/saveSet_gp2hfr.png"
               onClick={() => handleSaveSet(title)}
               alt="Save le set"
@@ -787,13 +787,13 @@ const ArtifactCard = ({
           {/* + / - boutons uniquement si une substat est sélectionnée */}
           {subStat && (
             <>
-              <img
+              <img loading="lazy"
                 src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748513494/BoutonMoins_zlzwcz.png"
                 alt="Moins"
                 onClick={() => handleDecreaseSubStat(idx)}
                 className="w-4 h-4 cursor-pointer select-none"
               />
-              <img
+              <img loading="lazy"
                 src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748513182/BoutonPlus_zc3k7t.png"
                 alt="Plus"
                 onClick={() => {

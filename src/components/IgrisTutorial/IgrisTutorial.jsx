@@ -410,7 +410,7 @@ const IgrisTutorial = ({ onClose, selectedCharacter, characters, showTankMessage
               transform: 'translate(-50%, -50%)',
             }}
           >
-            <img 
+            <img loading="lazy" 
               src={currentImages[igrisDirection]} 
               alt={isIgrisk ? "Igrisk sur Cerbère" : "Igris sur Cerbère"}
               width="100"

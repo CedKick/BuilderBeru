@@ -129,7 +129,7 @@ const SetBuffs = ({ equippedSets = [], onClose, onApplyBuffs }) => {
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <img 
+                    <img loading="lazy" 
                       src={buff.icon} 
                       alt={buff.name} 
                       className="w-10 h-10 rounded object-cover"

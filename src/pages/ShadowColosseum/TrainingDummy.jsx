@@ -1869,7 +1869,7 @@ export default function TrainingDummy() {
                         >
                           {entity ? (
                             <>
-                              <img
+                              <img loading="lazy"
                                 src={getEntitySprite(id, coloData)}
                                 alt={entity.name}
                                 className="w-10 h-10 rounded-full object-cover"
@@ -1921,7 +1921,7 @@ export default function TrainingDummy() {
                               : 'border-white/10 bg-white/5 hover:border-purple-400 hover:bg-purple-500/10'
                           }`}
                         >
-                          <img
+                          <img loading="lazy"
                             src={getEntitySprite(hunterId, coloData)}
                             alt={hunter.name}
                             className="w-12 h-12 rounded-full object-cover"
@@ -1958,7 +1958,7 @@ export default function TrainingDummy() {
                               : 'border-white/10 bg-white/5 hover:border-cyan-400 hover:bg-cyan-500/10'
                           }`}
                         >
-                          <img
+                          <img loading="lazy"
                             src={getEntitySprite(chibiId, coloData)}
                             alt={chibi.name}
                             className="w-12 h-12 rounded-full object-cover"
@@ -2286,7 +2286,7 @@ export default function TrainingDummy() {
                         : 'border-red-500/30 bg-red-900/10 opacity-30 cursor-not-allowed'
                     }`}
                   >
-                    <img
+                    <img loading="lazy"
                       src={f.sprite}
                       alt={f.name}
                       className="w-full h-full rounded-lg object-cover"
@@ -2302,7 +2302,7 @@ export default function TrainingDummy() {
             {/* Active Fighter Detail */}
             <div className="bg-white/5 rounded-xl p-4 border-2 border-purple-400/30">
               <div className="flex items-center gap-3 mb-3">
-                <img
+                <img loading="lazy"
                   src={activeFighter.sprite}
                   alt={activeFighter.name}
                   className="w-16 h-16 rounded-full object-cover border-2 border-purple-400"
@@ -2410,7 +2410,7 @@ export default function TrainingDummy() {
             <h3 className="text-lg font-bold text-center text-orange-300">Mannequin</h3>
             <div className="bg-white/5 rounded-xl p-4 border-2 border-orange-400/30">
               <div className="flex items-center gap-3 mb-3">
-                <img
+                <img loading="lazy"
                   src={battle.dummy.sprite}
                   alt={battle.dummy.name}
                   className="w-20 h-20 rounded-full object-cover border-2 border-orange-400"
@@ -2541,7 +2541,7 @@ export default function TrainingDummy() {
             {resultData.dpsBreakdown.map((f, i) => (
               <div key={f.id} className="flex items-center gap-2">
                 <span className="text-xs text-gray-500 w-4">#{i + 1}</span>
-                <img src={f.sprite} alt={f.name} className="w-6 h-6 rounded-full object-cover" />
+                <img loading="lazy" src={f.sprite} alt={f.name} className="w-6 h-6 rounded-full object-cover" />
                 <span className="text-xs flex-1 truncate">{f.name}</span>
                 <span className="text-xs text-gray-400">{fmt(f.damage)}</span>
                 <div className="w-20 h-2 bg-gray-700 rounded-full overflow-hidden">
@@ -2589,7 +2589,7 @@ export default function TrainingDummy() {
             const critRate = log.totalHits > 0 ? (log.critHits / log.totalHits * 100).toFixed(0) : 0;
             return (
               <div key={i} className="flex items-center gap-3 py-1 border-b border-gray-700/10 last:border-0">
-                <img src={c.sprite} alt="" className="w-5 h-5 rounded-full object-cover" />
+                <img loading="lazy" src={c.sprite} alt="" className="w-5 h-5 rounded-full object-cover" />
                 <div className="text-[10px] font-bold w-16 truncate">{c.name}</div>
                 <div className="flex-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[9px] text-gray-400">
                   <span>{fmt(log.totalDamage)} dmg</span>

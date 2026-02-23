@@ -144,7 +144,7 @@ const ChibiEntity = ({ chibiId, position, onClick }) => {
       />
       
       {/* Sprite du chibi */}
-      <img 
+      <img loading="lazy" 
         src={chibiData.sprite}
         alt={chibiData.name}
         className="chibi-sprite"

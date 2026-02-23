@@ -60,7 +60,7 @@ export default function SungEditor({ onNext, onBack }) {
           {config.leftArtifact?.length ? (
             config.leftArtifact.map((artifact, i) => (
               <div key={i} className="flex flex-col items-center mb-1">
-                <img src={artifact.src} alt={artifact.name} className="w-12 h-12 object-contain" />
+                <img loading="lazy" src={artifact.src} alt={artifact.name} className="w-12 h-12 object-contain" />
                 <span className="text-sm font-bold text-yellow-300">x{artifact.amount}</span>
               </div>
             ))
@@ -79,7 +79,7 @@ export default function SungEditor({ onNext, onBack }) {
           {config.core ? (
             <div className="flex gap-1">
               {Object.values(config.core).map((core) => (
-                <img
+                <img loading="lazy"
                   key={core.name}
                   src={core.src}
                   alt={core.name}
@@ -102,7 +102,7 @@ export default function SungEditor({ onNext, onBack }) {
           {config.rightArtifact?.length ? (
             config.rightArtifact.map((artifact, i) => (
               <div key={i} className="flex flex-col items-center mb-1">
-                <img src={artifact.src} alt={artifact.name} className="w-12 h-12 object-contain" />
+                <img loading="lazy" src={artifact.src} alt={artifact.name} className="w-12 h-12 object-contain" />
                 <span className="text-sm font-bold text-yellow-300">x{artifact.amount}</span>
               </div>
             ))

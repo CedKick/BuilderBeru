@@ -230,7 +230,7 @@ export default function HomePage() {
       <div className="absolute top-3 right-3 z-10">
         <div className="flex gap-1.5 items-center bg-black/40 backdrop-blur-sm rounded-lg px-2.5 py-1.5">
           {langFlags.map(flag => (
-            <img
+            <img loading="lazy"
               key={flag.lang}
               src={flag.src}
               alt={flag.alt}
@@ -326,7 +326,7 @@ export default function HomePage() {
                 </div>
 
                 {/* Logo */}
-                <img
+                <img loading="lazy"
                   src={item.img}
                   alt={item.label}
                   className="nav-logo w-24 h-24 md:w-32 md:h-32 object-contain relative z-10 transition-all duration-500 ease-out"
@@ -380,7 +380,7 @@ export default function HomePage() {
                   />
                 </div>
                 {item.img ? (
-                  <img
+                  <img loading="lazy"
                     src={item.img}
                     alt={item.label}
                     className="nav-logo w-24 h-24 md:w-32 md:h-32 object-contain relative z-10 transition-all duration-500 ease-out"

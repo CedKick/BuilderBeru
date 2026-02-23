@@ -3726,7 +3726,7 @@ const DrawBeruFixed = ({
                 <div className="bg-black/30 backdrop-blur-sm border-b border-purple-500/30 px-3 py-2">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 py-3">
-                            <img
+                            <img loading="lazy"
                                 src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760821994/DrasBeru_zd8ju5.png"
                                 alt="DrawBeru logo"
                                 className="w-8 h-8 select-none"
@@ -3773,7 +3773,7 @@ const DrawBeruFixed = ({
                                 : 'bg-gradient-to-r from-purple-500/90 via-pink-500/90 to-purple-600/90 border-purple-400/50'
                         }`}>
                             <div className="flex items-center gap-3">
-                                <img
+                                <img loading="lazy"
                                     src={currentPainter.sprites.front}
                                     alt={currentPainter.name}
                                     className="w-8 h-8 object-contain animate-bounce"
@@ -3802,7 +3802,7 @@ const DrawBeruFixed = ({
                         <div className="bg-[#1a0a2e]/95 backdrop-blur-sm border-b border-purple-500/30 p-3">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <img
+                                    <img loading="lazy"
                                         src={CHIBI_PAINTERS.beru_papillon.sprites.front}
                                         alt="Beru Papillon"
                                         className="w-8 h-8 object-contain"
@@ -4406,7 +4406,7 @@ const DrawBeruFixed = ({
                                 if (!painter) return null;
 
                                 return (
-                                    <img
+                                    <img loading="lazy"
                                         key={chibiId}
                                         src={chibiState.facingFront ? painter.sprites.front : painter.sprites.back}
                                         alt={painter.name}
@@ -4734,7 +4734,7 @@ const DrawBeruFixed = ({
                                         }`}
                                         aria-label={isActive ? `Arrêter ${painter.name}` : `Activer ${painter.name}`}
                                     >
-                                        <img
+                                        <img loading="lazy"
                                             src={isActive ? painter.sprites.back : painter.sprites.front}
                                             alt={painter.name}
                                             className="w-10 h-10 object-contain"
@@ -4821,7 +4821,7 @@ const DrawBeruFixed = ({
                             : 'bg-gradient-to-r from-purple-500/95 via-pink-500/95 to-purple-600/95 border-purple-300/50'
                     }`}>
                         <div className="flex items-center gap-4">
-                            <img
+                            <img loading="lazy"
                                 src={currentPainter.sprites.front}
                                 alt={currentPainter.name}
                                 className="w-12 h-12 object-contain animate-bounce"
@@ -5050,7 +5050,7 @@ const DrawBeruFixed = ({
                     <div className="w-80 bg-[#1a0a2e]/95 backdrop-blur-sm border-l border-purple-500/30 p-6 flex flex-col">
                         {/* Header */}
                         <div className="flex items-center gap-3 mb-6">
-                            <img
+                            <img loading="lazy"
                                 src={CHIBI_PAINTERS.beru_papillon.sprites.front}
                                 alt="Beru Papillon"
                                 className="w-12 h-12 object-contain"
@@ -5197,7 +5197,7 @@ const DrawBeruFixed = ({
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between flex-wrap gap-4">
                         <div className="flex items-center gap-3 py-3">
-                            <img
+                            <img loading="lazy"
                                 src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1760821994/DrasBeru_zd8ju5.png"
                                 alt="DrawBeru logo"
                                 className="w-8 h-8 select-none"
@@ -5525,7 +5525,7 @@ const DrawBeruFixed = ({
                                             ? `${currentPainter.name} ACTIVÉ - ${autoDrawBeruTimeRemaining}s restantes`
                                             : `▶ Lancer ${currentPainter.name} - ${currentPainter.duration}s d'aide`}
                                     >
-                                        <img
+                                        <img loading="lazy"
                                             src={currentPainter.sprites.back}
                                             alt={currentPainter.name}
                                             className="w-10 h-10 object-contain"
@@ -5854,7 +5854,7 @@ const DrawBeruFixed = ({
                                                             : `Max ${MAX_ACTIVE_CHIBIS} chibis actifs`
                                                     }
                                                 >
-                                                    <img
+                                                    <img loading="lazy"
                                                         src={isActive ? painter.sprites.back : painter.sprites.front}
                                                         alt={painter.name}
                                                         className="w-12 h-12 object-contain"
@@ -5983,7 +5983,7 @@ const DrawBeruFixed = ({
                                         if (!painter) return null;
 
                                         return (
-                                            <img
+                                            <img loading="lazy"
                                                 key={chibiId}
                                                 src={chibiState.facingFront ? painter.sprites.front : painter.sprites.back}
                                                 alt={painter.name}

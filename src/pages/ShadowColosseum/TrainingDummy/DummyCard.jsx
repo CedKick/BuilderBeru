@@ -36,7 +36,7 @@ export default function DummyCard({
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-3">
-        <img
+        <img loading="lazy"
           src={dummy.sprite}
           alt={dummy.name}
           className={`w-16 h-16 rounded-full object-cover border-2 ${

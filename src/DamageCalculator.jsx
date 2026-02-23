@@ -587,7 +587,7 @@ const DamageCalculator = ({
             <div className="bg-indigo-900/20 rounded p-2">
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2">
-                  <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055045/sungicon_bfndrc.png" alt="icon" className="w-4 h-4 rounded" />
+                  <img loading="lazy" src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055045/sungicon_bfndrc.png" alt="icon" className="w-4 h-4 rounded" />
                   <h3 className="text-white/90 text-xs font-medium">{t('damageCalculator.sections.baseStats')}</h3>
                 </div>
 
@@ -606,7 +606,7 @@ const DamageCalculator = ({
                       ))}
                   </select>
                   {selectedCharacter && characters[selectedCharacter] && (
-                    <img
+                    <img loading="lazy"
                       src={characters[selectedCharacter].icon}
                       alt={characters[selectedCharacter].name}
                       className="w-4 h-4 rounded"
@@ -863,7 +863,7 @@ const DamageCalculator = ({
             {/* Multipliers */}
             <div className="bg-indigo-900/20 rounded p-2">
               <div className="flex items-center gap-2 mb-1.5">
-                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055721/jinahlogo_lllt2d.png" alt="icon" className="w-4 h-4 rounded" />
+                <img loading="lazy" src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055721/jinahlogo_lllt2d.png" alt="icon" className="w-4 h-4 rounded" />
                 <h3 className="text-white/90 text-xs font-medium">{t('damageCalculator.sections.skillMultipliers')}</h3>
               </div>
               <div className="space-y-1">
@@ -885,7 +885,7 @@ const DamageCalculator = ({
             {/* OTHER BUFFS - NOUVELLE SECTION */}
             <div className="bg-indigo-900/20 rounded p-2">
               <div className="flex items-center gap-2 mb-1.5">
-                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png" alt="icon" className="w-4 h-4 rounded" />
+                <img loading="lazy" src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png" alt="icon" className="w-4 h-4 rounded" />
                 <h3 className="text-white/90 text-xs font-medium">{t('damageCalculator.sections.otherBuffs')}</h3>
               </div>
 
@@ -922,7 +922,7 @@ const DamageCalculator = ({
             {/* Advanced Stats */}
             <div className="bg-indigo-900/20 rounded p-2">
               <div className="flex items-center gap-2 mb-1.5">
-                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png" alt="icon" className="w-4 h-4 rounded" />
+                <img loading="lazy" src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png" alt="icon" className="w-4 h-4 rounded" />
                 <h3 className="text-white/90 text-xs font-medium">{t('damageCalculator.sections.advancedStats')}</h3>
               </div>
               <div className="space-y-1">
@@ -955,7 +955,7 @@ const DamageCalculator = ({
             {/* Boss Config */}
             <div className="bg-indigo-900/20 rounded p-2">
               <div className="flex items-center gap-2 mb-1.5">
-                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055802/bossConfig_ftvd3z.png" alt="icon" className="w-4 h-4 rounded" />
+                <img loading="lazy" src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055802/bossConfig_ftvd3z.png" alt="icon" className="w-4 h-4 rounded" />
                 <h3 className="text-white/90 text-xs font-medium">{t('damageCalculator.sections.bossConfig')}</h3>
               </div>
 
@@ -1027,7 +1027,7 @@ const DamageCalculator = ({
             {/* Damage Output */}
             <div className="bg-indigo-900/20 rounded p-2">
               <div className="flex items-center gap-2 mb-1.5">
-                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055837/beruProst_ymvwos.png" alt="icon" className="w-4 h-4 rounded" />
+                <img loading="lazy" src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055837/beruProst_ymvwos.png" alt="icon" className="w-4 h-4 rounded" />
                 <h3 className="text-white/90 text-xs font-medium">{t('damageCalculator.sections.damageOutput')}</h3>
               </div>
               
@@ -1074,7 +1074,7 @@ const DamageCalculator = ({
             {/* SETTINGS - NOUVELLE SECTION */}
             <div className="bg-indigo-900/20 rounded p-2">
               <div className="flex items-center gap-2 mb-1.5">
-                <img src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055837/beruProst_ymvwos.png" alt="icon" className="w-4 h-4 rounded" />
+                <img loading="lazy" src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055837/beruProst_ymvwos.png" alt="icon" className="w-4 h-4 rounded" />
                 <h3 className="text-white/90 text-xs font-medium">{t('damageCalculator.sections.settings')}</h3>
               </div>
 

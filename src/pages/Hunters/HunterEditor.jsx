@@ -79,7 +79,7 @@ const HunterEditor = ({ selectedHunters, onNext, onPrevious }) => {
                 {hunter.leftArtifact.length > 0 ? (
                   hunter.leftArtifact.map((artifact, i) => (
                     <div key={i} className="flex flex-col items-center mb-1">
-                      <img src={artifact.src} alt={artifact.name} className="w-10 h-10 object-contain" />
+                      <img loading="lazy" src={artifact.src} alt={artifact.name} className="w-10 h-10 object-contain" />
                       <span className="text-sm text-yellow-300 font-bold">x{artifact.amount}</span>
                     </div>
                   ))
@@ -90,7 +90,7 @@ const HunterEditor = ({ selectedHunters, onNext, onPrevious }) => {
 
               {/* Core */}
               <div className="flex flex-col items-center">
-                <img src={hunter.img} alt={hunter.name} className="w-20 h-20 object-contain" />
+                <img loading="lazy" src={hunter.img} alt={hunter.name} className="w-20 h-20 object-contain" />
                 <div
                   onClick={() => setCorePopupIndex(index)}
                   className={`w-28 h-16 mt-2 border-2 rounded-lg flex items-center justify-center cursor-pointer 
@@ -100,7 +100,7 @@ const HunterEditor = ({ selectedHunters, onNext, onPrevious }) => {
                   {hunter.core ? (
                     <div className="flex gap-1">
                       {Object.values(hunter.core).map((core) => (
-                        <img key={core.name} src={core.src} alt={core.name} className="w-6 h-6 object-contain" />
+                        <img loading="lazy" key={core.name} src={core.src} alt={core.name} className="w-6 h-6 object-contain" />
                       ))}
                     </div>
                   ) : (
@@ -119,7 +119,7 @@ const HunterEditor = ({ selectedHunters, onNext, onPrevious }) => {
                 {hunter.rightArtifact.length > 0 ? (
                   hunter.rightArtifact.map((artifact, i) => (
                     <div key={i} className="flex flex-col items-center mb-1">
-                      <img src={artifact.src} alt={artifact.name} className="w-10 h-10 object-contain" />
+                      <img loading="lazy" src={artifact.src} alt={artifact.name} className="w-10 h-10 object-contain" />
                       <span className="text-sm text-yellow-300 font-bold">x{artifact.amount}</span>
                     </div>
                   ))

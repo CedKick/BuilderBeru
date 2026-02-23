@@ -37,7 +37,7 @@ export default function StatsPanel({ entity, weaponId, logs, onClose }) {
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <img
+            <img loading="lazy"
               src={entity.sprite}
               alt={entity.name}
               className="w-16 h-16 rounded-full border-2 border-purple-400"

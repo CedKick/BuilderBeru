@@ -1854,7 +1854,7 @@ const loadAdminStats = async () => {
                       
                       return (
                         <div key={index} className="screenshot-item border border-cyan-500/30 rounded overflow-hidden">
-                          <img 
+                          <img loading="lazy" 
                             src={finalUrl} 
                             alt={`Screenshot ${index + 1}`}
                             className="w-full h-48 md:h-64 object-cover cursor-pointer hover:scale-105 transition-transform"

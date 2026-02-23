@@ -155,7 +155,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                     <div key={idx} className="flex items-center gap-1">
                       <div className="border border-gray-600 rounded overflow-hidden">
                         {weapon ? (
-                          <img
+                          <img loading="lazy"
                             src={weapon.src}
                             alt={weapon.name}
                             className="w-10 h-10 object-cover"
@@ -201,7 +201,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                   return (
                     <div key={idx} className={`border-2 rounded overflow-hidden ${rarityBorder[skill.rarity || 'mythic']}`}>
                       {skillData ? (
-                        <img
+                        <img loading="lazy"
                           src={skillData.src}
                           alt={skillData.name}
                           className="w-10 h-10 object-cover"
@@ -238,7 +238,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                   return (
                     <div key={idx} className={`border-2 ${borderColor} rounded overflow-hidden`}>
                       {blessingData ? (
-                        <img
+                        <img loading="lazy"
                           src={blessingData.src}
                           alt={blessingData.name}
                           className="w-10 h-10 object-cover"
@@ -327,7 +327,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                       <div key={idx} className="flex items-center gap-1">
                         <div className="border border-gray-600 rounded overflow-hidden">
                           {weapon ? (
-                            <img
+                            <img loading="lazy"
                               src={weapon.src}
                               alt={weapon.name}
                               className="w-10 h-10 object-cover"
@@ -375,7 +375,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                     return (
                       <div key={idx} className={`border-2 rounded overflow-hidden ${rarityBorder[skill.rarity || 'mythic']}`}>
                         {skillData ? (
-                          <img
+                          <img loading="lazy"
                             src={skillData.src}
                             alt={skillData.name}
                             className="w-10 h-10 object-cover"
@@ -413,7 +413,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                     return (
                       <div key={idx} className={`border-2 ${borderColor} rounded overflow-hidden`}>
                         {blessingData ? (
-                          <img
+                          <img loading="lazy"
                             src={blessingData.src}
                             alt={blessingData.name}
                             className="w-10 h-10 object-cover"
@@ -496,7 +496,7 @@ const BDGViewMode = ({ preset, scoreData, showTankMessage, isMobile }) => {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
                     {character?.icon && (
-                      <img
+                      <img loading="lazy"
                         src={character.icon}
                         alt={character.name}
                         className="w-8 h-8 rounded-full mr-2"

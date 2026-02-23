@@ -185,7 +185,7 @@ const TVDialogueSystem = React.memo(({
             }}
           >
             <div className="relative">
-              <img 
+              <img loading="lazy" 
                 src={tvImages[tv1ImageIndex]}
                 alt="TV1 Character"
                 className="tv-dialogue-img-left w-72 h-auto drop-shadow-2xl"
@@ -227,7 +227,7 @@ const TVDialogueSystem = React.memo(({
             }}
           >
             <div className="relative">
-              <img 
+              <img loading="lazy" 
                 src={tvImages[tv2ImageIndex]}
                 alt="TV2 Character"
                 className="tv-dialogue-img-right w-72 h-auto drop-shadow-2xl"
@@ -270,7 +270,7 @@ const TVDialogueSystem = React.memo(({
               }}
             >
               <div className="relative">
-                <img 
+                <img loading="lazy" 
                   src={tvImages[tv1ImageIndex]}
                   alt="TV1 Mobile"
                   className="tv-dialogue-img-mobile-top w-56 h-auto drop-shadow-xl"
@@ -304,7 +304,7 @@ const TVDialogueSystem = React.memo(({
               }}
             >
               <div className="relative">
-                <img 
+                <img loading="lazy" 
                   src={tvImages[tv2ImageIndex]}
                   alt="TV2 Mobile"
                   className="tv-dialogue-img-mobile-bottom w-56 h-auto drop-shadow-xl"

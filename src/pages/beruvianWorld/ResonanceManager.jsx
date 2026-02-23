@@ -54,7 +54,7 @@ export default function ResonanceManager({ activeResonance, playerStats, onCorru
   return (
     <div className="resonance-manager">
       <div className="resonance-header">
-        <img 
+        <img loading="lazy" 
           src={activeResonance.shadow.sprite} 
           alt={activeResonance.shadow.name}
           className="resonance-icon"

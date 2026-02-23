@@ -53,7 +53,7 @@ export default function HunterSelector({ selectedHunters = [], setSelectedHunter
                     } cursor-pointer`}
                     onClick={() => toggleHunter(hunter.id)}
                   >
-                    <img
+                    <img loading="lazy"
                       src={hunter.icon}
                       alt={`${hunter.name} - ${hunter.class} - ${hunter.element}`}
                       className="w-15 h-15 object-contain rounded-full"

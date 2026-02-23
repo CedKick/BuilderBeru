@@ -5570,7 +5570,7 @@ BobbyJones : "Allez l'Inter !"
                             onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
                             className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-purple-900/30 hover:bg-purple-900/50 transition-all border border-purple-600/50 hover:border-purple-500"
                           >
-                            <img
+                            <img loading="lazy"
                               src={currentLang.flag}
                               alt={currentLang.name}
                               className="w-6 h-4 rounded"
@@ -5605,7 +5605,7 @@ BobbyJones : "Allez l'Inter !"
                                       className={`w-full flex items-center gap-2 px-3 py-2 hover:bg-purple-900/30 transition-colors ${lang.code === i18n.language ? 'bg-purple-900/20' : ''
                                         }`}
                                     >
-                                      <img
+                                      <img loading="lazy"
                                         src={lang.flag}
                                         alt={lang.name}
                                         className="w-6 h-4 rounded"
@@ -5954,7 +5954,7 @@ BobbyJones : "Allez l'Inter !"
                                 .filter((charKey) => characters[charKey])
                                 .slice(0, 5)
                                 .map((charKey) => (
-                                  <img
+                                  <img loading="lazy"
                                     key={charKey}
                                     src={characters[charKey]?.icon || '/default.png'}
                                     alt={characters[charKey]?.name || charKey}
@@ -6085,7 +6085,7 @@ BobbyJones : "Allez l'Inter !"
     {selectedCharacter && characters[selectedCharacter] ? (
       <>
         {/* Afficher le coloriage SI disponible, sinon l'image par défaut */}
-        <img
+        <img loading="lazy"
           src={currentColoringImage || characters[selectedCharacter].img}
           alt={characters[selectedCharacter].name}
           className="max-w-full max-h-full object-contain relative z-10"
@@ -6110,7 +6110,7 @@ BobbyJones : "Allez l'Inter !"
         )}
       </>
     ) : (
-      <img
+      <img loading="lazy"
         src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
         className="max-w-full max-h-full object-contain relative z-10"
         id="targetToDestroy"
@@ -6802,7 +6802,7 @@ BobbyJones : "Allez l'Inter !"
 
                         {/* 🖼️ IMAGE SECTION */}
                         <div className="relative p-6 flex justify-center bg-gradient-to-b from-black/80 to-gray-900/80">
-                          <img
+                          <img loading="lazy"
                             src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747680569/SERN_ab7od6.png"
                             alt="SERN - Sung Bobby Jones"
                             className="max-w-full max-h-[300px] object-contain rounded-lg shadow-2xl"
@@ -7044,7 +7044,7 @@ BobbyJones : "Allez l'Inter !"
                     >
                       {currentImage && (
                         <div className="w-full flex items-center justify-center">
-                          <img
+                          <img loading="lazy"
                             ref={mainImageRef}
                             src={currentImage?.src}
                             alt="Image narrative"
@@ -7221,7 +7221,7 @@ BobbyJones : "Allez l'Inter !"
                           onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
                           className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-yellow-900/20 hover:bg-yellow-900/30 transition-all border border-yellow-600/30 hover:border-yellow-500"
                         >
-                          <img
+                          <img loading="lazy"
                             src={currentLang.flag}
                             alt={currentLang.name}
                             className="w-7 h-5 rounded"
@@ -7255,7 +7255,7 @@ BobbyJones : "Allez l'Inter !"
                                     className={`w-full flex items-center gap-2 px-3 py-2 hover:bg-yellow-900/30 transition-colors ${lang.code === i18n.language ? 'bg-yellow-900/20' : ''
                                       }`}
                                   >
-                                    <img
+                                    <img loading="lazy"
                                       src={lang.flag}
                                       alt={lang.name}
                                       className="w-7 h-5 rounded"
@@ -7288,7 +7288,7 @@ BobbyJones : "Allez l'Inter !"
                         {['Fire', 'Water', 'Light', 'Dark', 'Wind'].map((el) => {
                           const key = el.toLowerCase();
                           return (
-                            <img
+                            <img loading="lazy"
                               key={el}
                               src={ICON_ELEMENTS[key]}
                               alt={el}
@@ -7427,7 +7427,7 @@ BobbyJones : "Allez l'Inter !"
                         {['Tank', 'DPS', 'Support'].map((type) => {
                           const key = type.toLowerCase();
                           return (
-                            <img
+                            <img loading="lazy"
                               key={type}
                               src={ICON_CLASSES[key]}
                               alt={type}
@@ -7704,7 +7704,7 @@ BobbyJones : "Allez l'Inter !"
                             {recentBuilds
                               .filter((charKey) => characters[charKey])
                               .map((charKey) => (
-                                <img
+                                <img loading="lazy"
                                   key={charKey}
                                   src={characters[charKey]?.icon || '/default.png'}
                                   alt={characters[charKey]?.name || charKey}
@@ -7819,7 +7819,7 @@ BobbyJones : "Allez l'Inter !"
                             .filter((charKey) => characters[charKey])
                             .slice(0, 5)
                             .map((charKey) => (
-                              <img
+                              <img loading="lazy"
                                 key={charKey}
                                 src={characters[charKey]?.icon || '/default.png'}
                                 alt={characters[charKey]?.name || charKey}
@@ -8102,7 +8102,7 @@ BobbyJones : "Allez l'Inter !"
 
                           {/* 🖼️ IMAGE SECTION */}
                           <div className="relative p-6 flex justify-center bg-gradient-to-b from-black/80 to-gray-900/80">
-                            <img
+                            <img loading="lazy"
                               src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1747680569/SERN_ab7od6.png"
                               alt="SERN - Sung Bobby Jones"
                               className="max-w-full max-h-[300px] object-contain rounded-lg shadow-2xl"
@@ -8345,7 +8345,7 @@ BobbyJones : "Allez l'Inter !"
                         {/* IMAGE dynamique */}
                         {currentImage && (
                           <div className="w-full flex items-center justify-center">
-                            <img
+                            <img loading="lazy"
                               ref={mainImageRef}
                               src={currentImage?.src}
                               alt="Image narrative"
@@ -8451,7 +8451,7 @@ BobbyJones : "Allez l'Inter !"
     {selectedCharacter && characters[selectedCharacter] ? (
       <>
         {/* Afficher le coloriage SI disponible, sinon l'image par défaut */}
-        <img
+        <img loading="lazy"
           src={currentColoringImage || characters[selectedCharacter].img}
           alt={characters[selectedCharacter].name}
           className="max-w-full max-h-full object-contain relative z-10"
@@ -8476,7 +8476,7 @@ BobbyJones : "Allez l'Inter !"
         )}
       </>
     ) : (
-      <img
+      <img loading="lazy"
         src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1748276015/beru_select_Char_d7u6mh.png"
         className="max-w-full max-h-full object-contain relative z-10"
         id="targetToDestroy"
@@ -9027,7 +9027,7 @@ BobbyJones : "Allez l'Inter !"
               e.currentTarget.style.boxShadow = '0 4px 20px rgba(139, 92, 246, 0.2)';
             }}
           >
-            <img
+            <img loading="lazy"
               src={IGRIS_ICON_URL}
               alt="Guide Igris"
               style={{

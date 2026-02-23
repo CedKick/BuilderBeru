@@ -606,7 +606,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-xs font-semibold text-purple-300 uppercase">{t('bdg.stats.final')}</h4>
-                <img
+                <img loading="lazy"
                   src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png"
                   alt="Import"
                   className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity"
@@ -900,7 +900,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
             <div>
               <div className="flex items-center justify-between mb-1">
                 <h4 className="text-xs font-semibold text-purple-300 uppercase">{t('bdg.stats.final')}</h4>
-                <img
+                <img loading="lazy"
                   src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055557/chaelogo_hci0do.png"
                   alt="Import"
                   className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity"
@@ -961,7 +961,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                 >
                   {character ? (
                     <>
-                      <img
+                      <img loading="lazy"
                         src={character.icon}
                         alt={character.name}
                         className="w-8 h-8 rounded-full mr-2"
@@ -1150,7 +1150,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                   {character && (
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-[9px] text-gray-500">{t('bdg.stats.final')}</label>
-                      <img
+                      <img loading="lazy"
   src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1754055837/beruProst_ymvwos.png"
   alt="Import"
   className="w-7 h-7 cursor-pointer hover:opacity-80 transition-opacity"
@@ -1317,7 +1317,7 @@ const BDGEditMode = ({ preset, scoreData, onUpdate, showTankMessage, isMobile, c
                         : 'hover:bg-purple-900/20 hover:scale-105 border-transparent hover:border-purple-500'
                         }`}
                     >
-                      <img
+                      <img loading="lazy"
                         src={character.icon}
                         alt={character.name}
                         className={`${isMobile ? 'w-10 h-10' : 'w-12 h-12'} rounded-full mx-auto mb-1`}

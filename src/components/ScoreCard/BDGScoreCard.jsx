@@ -57,7 +57,7 @@ const BDGScoreCard = ({ showTankMessage, activeAccount, currentBuildStats}) => {
       >
         {/* Image avec overlay de texte */}
         <div className="relative w-full">
-          <img 
+          <img loading="lazy" 
             src={bossImages[currentWeekData.currentBoss] || bossImages.fatchna} 
             alt={currentWeekData.bossName}  
             className="w-full h-[100px] sm:h-[120px] object-cover"

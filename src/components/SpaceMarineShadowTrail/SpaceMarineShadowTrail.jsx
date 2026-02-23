@@ -956,7 +956,7 @@ const SpaceMarineShadowTrail = () => {
       >
         {/* SPRITE */}
         <div className="spacemarine-sprite">
-          <img 
+          <img loading="lazy" 
             src={SPACEMARINE_SPRITES[direction]}
             alt="Space Marine"
             className="spacemarine-image"

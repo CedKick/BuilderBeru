@@ -331,7 +331,7 @@ export default function FloatingDaijin({
               transform: isThrown ? `rotate(${throwSpin}deg)` : undefined,
             }}
           >
-            <img
+            <img loading="lazy"
               src={DAIJIN_SPRITE}
               alt="Daijin"
               className="w-16 h-16 object-contain drop-shadow-lg"

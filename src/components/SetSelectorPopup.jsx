@@ -32,7 +32,7 @@ const SetSelectorPopup = ({ slot, onSelect, onClose }) => {
               className="flex items-center gap-2 p-1 rounded hover:bg-purple-800 cursor-pointer transition"
             >
               {set.icon && (
-                <img
+                <img loading="lazy"
                   src={set.icon}
                   alt={set.name}
                   className="w-5 h-5 object-contain"

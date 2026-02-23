@@ -161,7 +161,7 @@ const displayShadows = React.useMemo(() => {
                     <div key={idx} className="flex items-center gap-1">
                       <div className="border border-gray-600 rounded overflow-hidden">
                         {weapon ? (
-                          <img
+                          <img loading="lazy"
                             src={weapon.src}
                             alt={weapon.name}
                             className="w-10 h-10 object-cover"
@@ -207,7 +207,7 @@ const displayShadows = React.useMemo(() => {
                   return (
                     <div key={idx} className={`border-2 rounded overflow-hidden ${rarityBorder[skill.rarity || 'mythic']}`}>
                       {skillData ? (
-                        <img
+                        <img loading="lazy"
                           src={skillData.src}
                           alt={skillData.name}
                           className="w-10 h-10 object-cover"
@@ -244,7 +244,7 @@ const displayShadows = React.useMemo(() => {
                   return (
                     <div key={idx} className={`border-2 ${borderColor} rounded overflow-hidden`}>
                       {blessingData ? (
-                        <img
+                        <img loading="lazy"
                           src={blessingData.src}
                           alt={blessingData.name}
                           className="w-10 h-10 object-cover"
@@ -333,7 +333,7 @@ const displayShadows = React.useMemo(() => {
                       <div key={idx} className="flex items-center gap-1">
                         <div className="border border-gray-600 rounded overflow-hidden">
                           {weapon ? (
-                            <img
+                            <img loading="lazy"
                               src={weapon.src}
                               alt={weapon.name}
                               className="w-10 h-10 object-cover"
@@ -381,7 +381,7 @@ const displayShadows = React.useMemo(() => {
                     return (
                       <div key={idx} className={`border-2 rounded overflow-hidden ${rarityBorder[skill.rarity || 'mythic']}`}>
                         {skillData ? (
-                          <img
+                          <img loading="lazy"
                             src={skillData.src}
                             alt={skillData.name}
                             className="w-10 h-10 object-cover"
@@ -417,7 +417,7 @@ const displayShadows = React.useMemo(() => {
                     return (
                       <div key={idx} className={`border-2 ${borderColor} rounded overflow-hidden`}>
                         {blessingData ? (
-                          <img
+                          <img loading="lazy"
                             src={blessingData.src}
                             alt={blessingData.name}
                             className="w-10 h-10 object-cover"
@@ -500,7 +500,7 @@ const displayShadows = React.useMemo(() => {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center">
                     {character?.icon && (
-                      <img
+                      <img loading="lazy"
                         src={character.icon}
                         alt={character.name}
                         className="w-8 h-8 rounded-full mr-2"
@@ -623,7 +623,7 @@ const displayShadows = React.useMemo(() => {
         <div key={idx} className="bg-black/30 rounded-lg p-3 border border-red-500/30 flex flex-col items-center">
           {shadowInfo ? (
             <>
-              <img
+              <img loading="lazy"
                 src={shadowInfo.src}
                 alt={shadowInfo.name}
                 className="w-16 h-16 rounded-full mb-2 border-2 border-purple-500"

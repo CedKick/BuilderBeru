@@ -1311,7 +1311,7 @@ html, body, #root {
 
                               {/* IMAGE CHARACTER */}
                               {characterImage && (
-                                <img
+                                <img loading="lazy"
                                   src={characterImage.icon}
                                   alt={characterImage.name}
                                   className="character-image"
@@ -1636,7 +1636,7 @@ html, body, #root {
                       const elementColor = getElementColor(character?.element);
 
                       return characterImage && (
-                        <img
+                        <img loading="lazy"
                           src={characterImage.img}
                           alt={characterImage.name}
                           className="character-image-large"

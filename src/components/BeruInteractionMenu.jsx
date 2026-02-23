@@ -392,7 +392,7 @@ const BeruInteractionMenu = ({
             border: `1px solid ${currentSubMenu === 'advice' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(138, 43, 226, 0.3)'}`
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <img 
+              <img loading="lazy" 
                 src="https://res.cloudinary.com/dbg7m8qjd/image/upload/v1750414699/beru_face_w2rdyn.png"
                 alt="Béru"
                 style={{

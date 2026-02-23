@@ -36,7 +36,7 @@ const SungBlessingSelector = ({ onNext, onBack }) => {
             }`}
             title={stone.name}
           >
-            <img
+            <img loading="lazy"
               src={stone.src}
               alt={`${stone.name} ${stone.type}`}
               className="w-14 h-14 object-contain mx-auto"
@@ -59,7 +59,7 @@ const SungBlessingSelector = ({ onNext, onBack }) => {
                 }`}
                 title={stone.name}
               >
-                <img
+                <img loading="lazy"
                   src={stone.src}
                   alt={`${stone.name} ${stone.type}`}
                   className="w-14 h-14 object-contain mx-auto"
