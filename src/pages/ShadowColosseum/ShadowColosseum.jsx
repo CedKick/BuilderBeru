@@ -10369,14 +10369,13 @@ export default function ShadowColosseum() {
                           );
                         })}
                       </div>
+                      {/* Detail Panel — equipped item (inline under this chibi) */}
+                      {isEquipped && artSelected?.startsWith(`eq:${cId}:`) && detailPanelJSX}
                     </div>
                   );
                 })}
               </div>
             )}
-
-            {/* Detail Panel — equipped item */}
-            {isEquipped && detailPanelJSX}
 
           </div>
         );
