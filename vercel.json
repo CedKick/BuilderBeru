@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/cron/vacuum",
+      "schedule": "0 4 * * *"
+    }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/" }

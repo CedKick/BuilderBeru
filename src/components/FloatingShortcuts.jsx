@@ -82,7 +82,7 @@ export default function FloatingShortcuts({ onMascotClick }) {
     };
 
     fetchDropLog();
-    const iv = setInterval(fetchDropLog, 300000); // 5 min (was 60s — save transfer)
+    const iv = setInterval(fetchDropLog, 900000); // 15 min (was 5 min — save network)
     return () => clearInterval(iv);
   }, []);
 
@@ -99,7 +99,7 @@ export default function FloatingShortcuts({ onMascotClick }) {
     };
 
     fetchUnread();
-    const iv = setInterval(fetchUnread, 300000); // 5 min (was 120s — save transfer)
+    const iv = setInterval(fetchUnread, 900000); // 15 min (was 5 min — save network)
     return () => clearInterval(iv);
   }, []);
 

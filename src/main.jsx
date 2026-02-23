@@ -62,7 +62,7 @@ import { cloudStorage } from './utils/CloudStorage';
 
   // Check on startup + every 5 minutes
   setTimeout(checkStorageUsage, 5000);
-  setInterval(checkStorageUsage, 300000);
+  setInterval(checkStorageUsage, 900000); // 15 min (was 5 min)
 })();
 
 // Cloud sync on app startup (non-blocking)

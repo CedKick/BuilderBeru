@@ -770,8 +770,8 @@ export default function RaidMode() {
         }
       });
       setRaidData(newRaidData);
-      // Force immediate cloud sync for raid progression too
-      cloudStorage.saveAndSync(RAID_SAVE_KEY, newRaidData);
+      // Raid progression — save to localStorage + schedule cloud sync (no double immediate sync)
+      cloudStorage.save(RAID_SAVE_KEY, newRaidData);
 
       setResultData({
         rc, barsDestroyed, isFullClear, totalDamage, endReason, dpsBreakdown,

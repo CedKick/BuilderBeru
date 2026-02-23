@@ -55,6 +55,7 @@ function getDeviceId() {
 const _syncTimers = {};
 const SYNC_DELAY = 30000; // 30s debounce (was 3s — reduced to save network transfer)
 const SYNC_THROTTLE = 120000; // 2 min minimum between syncs per key (auto-farming protection)
+const SAVE_SYNC_THROTTLE = 15000; // 15s smart throttle for saveAndSync — if synced recently, schedule instead of force
 const _lastSyncTime = {}; // key → timestamp of last successful sync
 
 class CloudStorageManager {
@@ -110,10 +111,18 @@ class CloudStorageManager {
     }
   }
 
-  /** Save + immediately sync to cloud (no debounce). Use for critical saves like mail rewards. */
+  /** Save + sync to cloud. Uses smart throttle: if synced <15s ago, schedules instead of forcing.
+   *  localStorage is ALWAYS saved instantly. Cloud sync is the only thing throttled.
+   *  beforeunload catches any pending syncs on tab close — zero data loss. */
   async saveAndSync(key, data) {
     this.save(key, data);
     if (CLOUD_KEYS.includes(key)) {
+      const lastSync = _lastSyncTime[key] || 0;
+      if (Date.now() - lastSync < SAVE_SYNC_THROTTLE) {
+        // Synced recently — schedule instead of forcing (localStorage has the data)
+        this._scheduleSync(key);
+        return;
+      }
       return this.syncKey(key);
     }
   }
@@ -513,7 +522,7 @@ class CloudStorageManager {
       if (self._initialized && (self._syncQueue.size > 0 || self._pendingData.size > 0)) {
         self._flushQueue();
       }
-    }, 300000);
+    }, 900000); // 15 min periodic safety net (was 5 min)
 
     // 4. Cross-tab sync — detect when another tab writes to localStorage
     //    (storage event only fires in OTHER tabs, not the one that wrote)

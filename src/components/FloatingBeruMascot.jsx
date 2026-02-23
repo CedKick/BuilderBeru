@@ -1479,7 +1479,7 @@ const FloatingBeruMascot = () => {
     };
 
     pollAdminMessages(); // Poll initial
-    const interval = setInterval(pollAdminMessages, 300000); // 5 min (was 30s — save transfer)
+    const interval = setInterval(pollAdminMessages, 900000); // 15 min (was 5 min — save network)
     return () => clearInterval(interval);
   }, []);
 

@@ -449,7 +449,7 @@ const debouncedSaveAndSync = (data) => {
   _debouncedSyncTimer = setTimeout(() => {
     _debouncedSyncTimer = null;
     cloudStorage.saveAndSync(SAVE_KEY, data);
-  }, 3000);
+  }, 10000); // 10s debounce (was 3s — reduce cloud writes)
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -728,7 +728,7 @@ export default function ShadowColosseum() {
   // Fetch drop log on mount + poll every 5 min (was 60s — reduced for network savings)
   useEffect(() => {
     fetchDropLog();
-    const iv = setInterval(fetchDropLog, 300000);
+    const iv = setInterval(fetchDropLog, 900000); // 15 min (was 5 min)
     return () => clearInterval(iv);
   }, []);
 
@@ -2108,7 +2108,7 @@ export default function ShadowColosseum() {
   const resetStats = (id) => {
     const newData = { ...data, statPoints: { ...data.statPoints, [id]: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 } } };
     setData(newData);
-    cloudStorage.saveAndSync(SAVE_KEY, newData);
+    debouncedSaveAndSync(newData); // localStorage instant, cloud in 10s (was immediate)
   };
 
   // ─── Skill Tree Logic ──────────────────────────────────────
@@ -2259,7 +2259,7 @@ export default function ShadowColosseum() {
       newData.talentSkills = ts;
     }
     setData(newData);
-    cloudStorage.saveAndSync(SAVE_KEY, newData);
+    debouncedSaveAndSync(newData); // localStorage instant, cloud in 10s (was immediate)
     return true;
   };
   const getRespecCost = (id, treeType = 'talent1') => {
@@ -7637,16 +7637,14 @@ export default function ShadowColosseum() {
           }
           const newData = { ...data, weapons: newWeapons };
           setData(newData);
-          // Critical save — immediate cloud sync
-          cloudStorage.saveAndSync(SAVE_KEY, newData);
+          debouncedSaveAndSync(newData); // localStorage instant, cloud in 10s
         };
 
         const unequipWeapon = () => {
           if (!data.weapons?.[id]) return;
           const newData = { ...data, weapons: { ...(data.weapons || {}), [id]: null } };
           setData(newData);
-          // Critical save — immediate cloud sync
-          cloudStorage.saveAndSync(SAVE_KEY, newData);
+          debouncedSaveAndSync(newData); // localStorage instant, cloud in 10s
         };
 
         return (

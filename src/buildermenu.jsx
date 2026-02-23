@@ -73,7 +73,7 @@ export default function BuilderMenu({ isOpen, onClose }) {
   useEffect(() => {
     if (!authState.loggedIn) return;
     fetchUnreadCount();
-    const iv = setInterval(fetchUnreadCount, 300000); // 5 min (was 120s — save transfer)
+    const iv = setInterval(fetchUnreadCount, 900000); // 15 min (was 5 min — save network)
     return () => clearInterval(iv);
   }, [authState.loggedIn]);
 
