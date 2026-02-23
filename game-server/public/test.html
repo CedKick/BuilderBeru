@@ -6,9 +6,34 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0f0f1a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-    #app { display: flex; height: 100vh; }
-    #sidebar { width: 320px; padding: 10px; background: #1a1a2e; overflow-y: auto; flex-shrink: 0; border-right: 1px solid #2a2a4e; }
-    #game { flex: 1; position: relative; }
+    #app { position: relative; height: 100vh; }
+    #game { width: 100%; height: 100%; position: relative; }
+
+    /* ── Centered Lobby Overlay ── */
+    #lobby {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 80;
+      background: rgba(10, 10, 26, 0.92); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      overflow-y: auto;
+    }
+    .lobby-panel {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+      border: 1px solid #2a2a4e; border-radius: 16px; padding: 24px 28px;
+      width: 520px; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 0 60px rgba(124,58,237,0.15), 0 0 120px rgba(0,0,0,0.5);
+    }
+    .lobby-header { text-align: center; margin-bottom: 16px; }
+    .lobby-header h1 { font-size: 28px; font-weight: 900; color: #a78bfa; letter-spacing: 3px; margin: 0; text-shadow: 0 0 20px rgba(167,139,250,0.4); }
+    .lobby-header .lobby-subtitle { font-size: 11px; color: #64748b; margin-top: 4px; }
+    .lobby-section { margin-bottom: 12px; background: rgba(0,0,0,0.2); border: 1px solid #2a2a4e; border-radius: 10px; padding: 12px; }
+    .lobby-section h3 { color: #7c3aed; margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }
+    .lobby-section h3 .section-icon { font-size: 14px; }
+    .lobby-hint { font-size: 9px; color: #64748b; margin-bottom: 6px; line-height: 1.3; }
+    .lobby-divider { height: 1px; background: linear-gradient(90deg, transparent, #2a2a4e, transparent); margin: 12px 0; }
+    .lobby-status { text-align: center; padding: 6px 10px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 6px; font-size: 10px; color: #f87171; margin-bottom: 10px; }
+    .lobby-status.connected { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #34d399; }
+    .lobby-controls { font-size: 9px; color: #555; line-height: 1.6; text-align: center; margin-top: 8px; }
+    .lobby-controls kbd { background: #333; padding: 1px 4px; border-radius: 2px; font-size: 8px; border: 1px solid #555; }
     canvas { display: block; cursor: crosshair; }
 
     h2 { color: #a78bfa; margin-bottom: 6px; font-size: 15px; }
@@ -169,18 +194,7 @@
     /* ── Timer ── */
     .game-timer { position: absolute; top: 12px; right: 14px; z-index: 10; font-size: 24px; font-weight: bold; pointer-events: none; text-shadow: 0 0 8px #000; }
 
-    /* ── Simulation Panel ── */
-    .sim-panel { background: #1a1a2e; border: 2px solid #f59e0b; border-radius: 6px; padding: 6px; margin-top: 6px; }
-    .sim-panel h3 { color: #f59e0b; }
-    .sim-panel button { font-size: 10px; padding: 3px 8px; background: #b45309; }
-    .sim-panel button:hover { background: #d97706; }
-    .sim-toggle { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-    .sim-toggle input[type="checkbox"] { accent-color: #f59e0b; }
-    .sim-toggle label { font-size: 11px; color: #f59e0b; cursor: pointer; margin: 0; }
-
-    /* ── Controls ── */
-    .controls-info { font-size: 9px; color: #555; margin-top: 4px; line-height: 1.4; }
-    .controls-info kbd { background: #333; padding: 1px 3px; border-radius: 2px; font-size: 8px; border: 1px solid #555; }
+    /* ── Aggro Indicator ── */
 
     /* ── Death ── */
     @keyframes deathPulse { 0%,100% { opacity: 0.7; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.05); } }
@@ -319,122 +333,133 @@
 </head>
 <body>
   <div id="app">
-    <div id="sidebar">
-      <h2>Manaya Raid</h2>
-      <div id="profileDisplay" style="margin-bottom:4px"></div>
-      <div id="status">Disconnected</div>
-
-      <input id="username" type="hidden" value="Player1" />
-      <div id="connectionSection">
-        <h3>Connection</h3>
-        <div class="inline-row">
-          <input id="usernameVisible" placeholder="Username" value="Player1" oninput="document.getElementById('username').value=this.value" />
+    <!-- ══ CENTERED LOBBY OVERLAY ══ -->
+    <div id="lobby">
+      <div class="lobby-panel">
+        <div class="lobby-header">
+          <h1>MANAYA RAID</h1>
+          <div class="lobby-subtitle">Boss Raid Multijoueur — Jusqu'a 5 joueurs en cooperation</div>
         </div>
-        <div class="inline-row">
-          <button onclick="connect()" id="btnConnect">Connect</button>
-        </div>
-      </div>
 
-      <h3>Room</h3>
-      <div class="inline-row">
-        <button onclick="createRoom()" id="btnCreate" disabled>Create</button>
-        <input id="roomCode" placeholder="Code" style="width:80px" />
-        <button onclick="joinRoom()" id="btnJoin" disabled>Join</button>
-      </div>
-      <button onclick="refreshRoomList()" id="btnBrowse" disabled style="width:calc(100% - 4px);margin-top:4px;background:#2563eb">Browse Rooms</button>
-      <div id="roomList" style="margin-top:4px;max-height:150px;overflow-y:auto"></div>
+        <div id="profileDisplay" style="margin-bottom:6px"></div>
+        <div id="status" class="lobby-status">Deconnecte</div>
 
-      <h3>Class & Difficulty</h3>
-      <div class="inline-row">
-        <select id="classSelect" onchange="selectClass()">
-          <option value="">-- Classe --</option>
-          <option value="tank">Tank</option>
-          <option value="healer">Healer</option>
-          <option value="dps_cac">Warrior</option>
-          <option value="dps_range">Archer</option>
-        </select>
-        <select id="diffSelect" onchange="selectDifficulty()">
-          <option value="NORMAL">Normal</option>
-          <option value="HARD">Hard</option>
-          <option value="NIGHTMARE">Nightmare</option>
-          <option value="NIGHTMARE_PLUS">Nightmare+</option>
-          <option value="NIGHTMARE_2">Nightmare++</option>
-          <option value="NIGHTMARE_3">Nightmare+++</option>
-        </select>
-      </div>
-
-      <h3>Hunters (3 max)</h3>
-      <div id="hunterSelection" style="max-height:200px;overflow-y:auto;background:#111;border-radius:6px;padding:4px;margin-bottom:4px"></div>
-      <div id="hunterSelected" style="font-size:10px;color:#a78bfa;margin-bottom:4px"></div>
-      <input id="hunterLevel" type="hidden" value="30" />
-
-      <div style="margin-top:4px">
-        <button onclick="toggleReady()" id="btnReady" disabled class="success">Ready</button>
-      </div>
-      <div id="roomPlayers" class="room-players"></div>
-
-      <div id="statsPanel" style="background:#1a1a2e;border:1px solid #7c3aed44;border-radius:6px;padding:6px;margin-top:4px;display:none">
-        <h3 style="color:#a78bfa">Player Stats</h3>
-        <div id="statPointsRemaining" style="font-size:10px;color:#f59e0b;margin-bottom:4px"></div>
-        <div id="statAllocUI"></div>
-        <button onclick="resetStatPoints()" style="width:100%;margin-top:4px;background:#ef4444;font-size:9px;padding:3px">Reset Stats</button>
-      </div>
-
-      <div class="gear-panel" id="gearPanel" style="display:none">
-        <h3>Équipement Raid</h3>
-        <div class="gear-weapon" id="gearWeaponSlot" onclick="openInventory('weapon')">
-          <span class="gw-icon">⚔️</span>
-          <div class="gw-info"><span class="gw-empty">Aucune arme</span></div>
-        </div>
-        <div class="gear-slots" id="gearSlots"></div>
-        <div class="gear-summary" id="gearSummary"></div>
-        <button onclick="openInventory('all')" style="width:100%;margin-top:3px;background:#b45309;font-size:9px;padding:3px">Inventaire</button>
-      </div>
-
-      <div class="forge-panel" id="forgePanel" style="display:none">
-        <h3>Forge de Manaya</h3>
-        <div class="feather-count">
-          <span>🪶</span> Plumes: <span class="feather-num" id="featherCount">0</span>
-        </div>
-        <div class="forge-grid" id="forgeGrid"></div>
-        <div class="set-bonus-list" id="setBonusList"></div>
-      </div>
-
-      <div class="sim-panel" id="simPanel">
-        <h3>Mode Entrainement</h3>
-        <div class="sim-toggle">
-          <input type="checkbox" id="simToggle" onchange="toggleSimulation()" />
-          <label for="simToggle">God Mode (invincible, pour tester les patterns)</label>
-        </div>
-        <div id="simControls" style="display:none">
-          <label>Set Boss HP %</label>
+        <!-- Connection -->
+        <div class="lobby-section" id="connectionSection">
+          <h3><span class="section-icon">🌐</span> Connexion</h3>
+          <div class="lobby-hint">Choisis ton pseudo puis connecte-toi au serveur de raid.</div>
+          <input id="username" type="hidden" value="Player1" />
           <div class="inline-row">
-            <button onclick="simSetBossHp(90)">90%</button>
-            <button onclick="simSetBossHp(75)">75%</button>
-            <button onclick="simSetBossHp(50)">50%</button>
-            <button onclick="simSetBossHp(30)">30%</button>
-            <button onclick="simSetBossHp(20)">20%</button>
-            <button onclick="simSetBossHp(8)">8%</button>
+            <input id="usernameVisible" placeholder="Ton pseudo..." value="Player1" oninput="document.getElementById('username').value=this.value" style="font-size:13px;padding:6px 10px" />
           </div>
-          <div class="inline-row" style="margin-top:3px">
-            <button onclick="simFullHeal()">Full Heal</button>
-            <button onclick="simKillAdds()">Kill Adds</button>
-            <button onclick="simSpawnAdds()">Spawn Adds</button>
+          <div class="inline-row" style="margin-top:4px">
+            <button onclick="connect()" id="btnConnect" style="width:100%;padding:8px;font-size:12px">Se connecter</button>
           </div>
         </div>
-      </div>
 
-      <div class="controls-info">
-        <h3>Controls</h3>
-        <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> Move | <kbd>Space</kbd> Dodge<br>
-        <kbd>Hold LMB</kbd> Auto-Attack Combo | <kbd>RMB</kbd> Block/Secondary<br>
-        <span style="color:#f59e0b;font-size:8px">Cancel Block: ATK1+2 → RMB → repeat = + DPS</span><br>
-        <kbd>A</kbd> Skill 1 | <kbd>E</kbd> Skill 2 | <kbd>R</kbd> Ultimate<br>
-        <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> Summon Hunter
-      </div>
+        <!-- Room -->
+        <div class="lobby-section">
+          <h3><span class="section-icon">🚪</span> Salle</h3>
+          <div class="lobby-hint">Cree une salle ou rejoins-en une. Partage le code a tes amis pour jouer ensemble !</div>
+          <div class="inline-row">
+            <button onclick="createRoom()" id="btnCreate" disabled style="flex:1;padding:6px">Creer</button>
+            <input id="roomCode" placeholder="Code..." style="width:90px;text-align:center;font-size:12px" />
+            <button onclick="joinRoom()" id="btnJoin" disabled style="flex:1;padding:6px">Rejoindre</button>
+          </div>
+          <button onclick="refreshRoomList()" id="btnBrowse" disabled style="width:100%;margin-top:4px;background:#2563eb;padding:6px;font-size:11px">Salles disponibles</button>
+          <div id="roomList" style="margin-top:4px;max-height:130px;overflow-y:auto"></div>
+        </div>
 
-      <h3>Log</h3>
-      <div id="log"></div>
+        <!-- Class & Difficulty -->
+        <div class="lobby-section">
+          <h3><span class="section-icon">⚔️</span> Classe & Difficulte</h3>
+          <div class="lobby-hint">
+            <b>Tank</b> — Protege l'equipe, aggro le boss. <b>Healer</b> — Soigne et buff. <b>Warrior</b> — Degats corps a corps. <b>Archer</b> — Degats a distance.
+          </div>
+          <div class="inline-row">
+            <select id="classSelect" onchange="selectClass()" style="font-size:12px;padding:5px">
+              <option value="">-- Classe --</option>
+              <option value="tank">🛡️ Tank</option>
+              <option value="healer">💚 Healer</option>
+              <option value="dps_cac">🗡️ Warrior</option>
+              <option value="dps_range">🏹 Archer</option>
+            </select>
+            <select id="diffSelect" onchange="selectDifficulty()" style="font-size:12px;padding:5px">
+              <option value="NORMAL">Normal</option>
+              <option value="HARD">Difficile</option>
+              <option value="NIGHTMARE">Cauchemar</option>
+              <option value="NIGHTMARE_PLUS">Cauchemar+</option>
+              <option value="NIGHTMARE_2">Cauchemar++</option>
+              <option value="NIGHTMARE_3">Cauchemar+++</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Hunters -->
+        <div class="lobby-section">
+          <h3><span class="section-icon">👥</span> Chasseurs (3 max)</h3>
+          <div class="lobby-hint">Selectionne jusqu'a 3 chasseurs de support. Ils interviennent en combat avec <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>.</div>
+          <div id="hunterSelection" style="max-height:180px;overflow-y:auto;background:#111;border-radius:6px;padding:4px;margin-bottom:4px"></div>
+          <div id="hunterSelected" style="font-size:10px;color:#a78bfa;margin-bottom:4px"></div>
+          <input id="hunterLevel" type="hidden" value="30" />
+        </div>
+
+        <!-- Player Stats -->
+        <div class="lobby-section" id="statsPanel" style="display:none">
+          <h3><span class="section-icon">📊</span> Stats du joueur</h3>
+          <div class="lobby-hint">Repartis tes points de stats. Tu gagnes des points en montant de niveau.</div>
+          <div id="statPointsRemaining" style="font-size:10px;color:#f59e0b;margin-bottom:4px"></div>
+          <div id="statAllocUI"></div>
+          <button onclick="resetStatPoints()" style="width:100%;margin-top:4px;background:#ef4444;font-size:9px;padding:4px">Reinitialiser les stats</button>
+        </div>
+
+        <!-- Gear -->
+        <div class="lobby-section gear-panel" id="gearPanel" style="display:none">
+          <h3><span class="section-icon">🛡️</span> Equipement Raid</h3>
+          <div class="lobby-hint">Equipe des artefacts et armes obtenus en battant Manaya. Plus la difficulte est haute, meilleur le loot !</div>
+          <div class="gear-weapon" id="gearWeaponSlot" onclick="openInventory('weapon')">
+            <span class="gw-icon">⚔️</span>
+            <div class="gw-info"><span class="gw-empty">Aucune arme</span></div>
+          </div>
+          <div class="gear-slots" id="gearSlots"></div>
+          <div class="gear-summary" id="gearSummary"></div>
+          <button onclick="openInventory('all')" style="width:100%;margin-top:3px;background:#b45309;font-size:9px;padding:4px">Inventaire</button>
+        </div>
+
+        <!-- Forge -->
+        <div class="lobby-section forge-panel" id="forgePanel" style="display:none">
+          <h3><span class="section-icon">🔥</span> Forge de Manaya</h3>
+          <div class="lobby-hint">Forge les pieces du Set Legendaire de Manaya avec des Plumes. Les plumes sont un drop tres rare du boss.</div>
+          <div class="feather-count">
+            <span>🪶</span> Plumes: <span class="feather-num" id="featherCount">0</span>
+          </div>
+          <div class="forge-grid" id="forgeGrid"></div>
+          <div class="set-bonus-list" id="setBonusList"></div>
+        </div>
+
+        <!-- Ready + Players -->
+        <div style="margin-top:8px;text-align:center">
+          <button onclick="toggleReady()" id="btnReady" disabled class="success" style="width:100%;padding:10px;font-size:14px;font-weight:bold;letter-spacing:1px">PRET !</button>
+        </div>
+        <div id="roomPlayers" class="room-players" style="margin-top:6px;text-align:center"></div>
+
+        <div class="lobby-divider"></div>
+
+        <!-- Controls Help -->
+        <div class="lobby-controls">
+          <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> Deplacement &nbsp;|&nbsp; <kbd>Espace</kbd> Esquive<br>
+          <kbd>Maintenir Clic G</kbd> Combo Auto-Attaque &nbsp;|&nbsp; <kbd>Clic D</kbd> Bloquer<br>
+          <span style="color:#f59e0b">Astuce : ATK → Bloquer → ATK = + de DPS</span><br>
+          <kbd>A</kbd> Skill 1 &nbsp;|&nbsp; <kbd>E</kbd> Skill 2 &nbsp;|&nbsp; <kbd>R</kbd> Ultimate &nbsp;|&nbsp;
+          <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> Invoquer Chasseur
+        </div>
+
+        <!-- Log (collapsible, at the bottom) -->
+        <details style="margin-top:8px">
+          <summary style="font-size:10px;color:#555;cursor:pointer">Journal de combat</summary>
+          <div id="log" style="margin-top:4px"></div>
+        </details>
+      </div>
     </div>
 
     <div id="game">
@@ -1430,7 +1455,8 @@
       ws = new WebSocket('ws://' + host + ':' + port + '/ws?username=' + encodeURIComponent(username));
       ws.onopen = () => {
         log('Connected!', 'info');
-        document.getElementById('status').textContent = 'Connected';
+        document.getElementById('status').textContent = 'Connecte';
+        document.getElementById('status').className = 'lobby-status connected';
         // Hide connection section once connected
         document.getElementById('connectionSection').style.display = 'none';
         document.getElementById('btnCreate').disabled = false;
@@ -1447,7 +1473,8 @@
       ws.onmessage = (e) => handleMessage(JSON.parse(e.data));
       ws.onclose = () => {
         log('Disconnected', 'error');
-        document.getElementById('status').textContent = 'Disconnected';
+        document.getElementById('status').textContent = 'Deconnecte';
+        document.getElementById('status').className = 'lobby-status';
         document.getElementById('connectionSection').style.display = 'block';
         document.getElementById('btnCreate').disabled = true;
         document.getElementById('btnJoin').disabled = true;
@@ -1470,15 +1497,7 @@
       if (cls && inRoom) { send({ type: 'select_class', class: cls }); log('Class: ' + CLASS_LABELS[cls], 'info'); }
     }
     function selectDifficulty() { if (inRoom) send({ type: 'select_difficulty', difficulty: document.getElementById('diffSelect').value }); }
-    function toggleSimulation() {
-      const enabled = document.getElementById('simToggle').checked;
-      document.getElementById('simControls').style.display = enabled ? 'block' : 'none';
-      if (inRoom) send({ type: 'set_simulation', enabled });
-    }
-    function simSetBossHp(pct) { send({ type: 'input', input: { type: 'sim_set_boss_hp', percent: pct } }); }
-    function simFullHeal() { send({ type: 'input', input: { type: 'sim_full_heal' } }); }
-    function simKillAdds() { send({ type: 'input', input: { type: 'sim_kill_adds' } }); }
-    function simSpawnAdds() { send({ type: 'input', input: { type: 'sim_spawn_adds', adds: [{ type: 'minion' }, { type: 'elite' }] } }); }
+    // (Training mode removed)
     function selectHunters() {
       if (!inRoom) return;
       send({
@@ -1560,6 +1579,7 @@
 
         case 'game_start':
           log('FIGHT!', 'event'); gameStartTime = Date.now();
+          document.getElementById('lobby').style.display = 'none';
           document.getElementById('bossHud').style.display = 'block';
           document.getElementById('dpsPanel').style.display = 'block';
           document.getElementById('hunterBar').style.display = 'flex';
@@ -1661,7 +1681,7 @@
         case 'cleanse': log('Cleanse!', 'heal'); break;
         case 'add_spawn': log(msg.name + ' appeared!', 'error'); break;
         case 'add_killed': log('Add killed!', 'damage'); break;
-        case 'simulation_changed': log('Simulation: ' + (msg.simulation ? 'ON' : 'OFF'), 'info'); break;
+        case 'simulation_changed': break; // legacy
 
         case 'game_end': {
           // Fade out battle music
@@ -1836,11 +1856,13 @@
 
         case 'room_reset':
           roomInfo = msg.room; gameState = null; floatingNumbers = [];
+          document.getElementById('lobby').style.display = 'flex';
           document.getElementById('bossHud').style.display = 'none';
           document.getElementById('dpsPanel').style.display = 'none';
           document.getElementById('hunterBar').style.display = 'none';
           document.getElementById('skillBar').style.display = 'none';
           document.getElementById('playerHud').style.display = 'none';
+          document.getElementById('partyHud').style.display = 'none';
           document.getElementById('buffDisplay').innerHTML = '';
           document.getElementById('gameEndOverlay').style.display = 'none';
           document.getElementById('deathOverlay').style.display = 'none';

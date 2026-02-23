@@ -360,13 +360,11 @@ export class Manaya extends BossBase {
       },
 
       onExecute: (boss, gs, data) => {
-        const soloMult = gs.playerCount <= 1 ? (BOSS_CFG.SOLO_MECHANIC_MULT || 0.4) : 1.0;
         for (const player of gs.getAlivePlayers()) {
           const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
-          // Hit if in the ring zone (not inner safe, not outer safe)
+          // Hit if in the ring zone (not inner safe, not outer safe) — ALWAYS OS
           if (dist > data.innerSafe && dist < data.outerSafe) {
-            const dmg = boss.atk * 5.0 * soloMult;
-            const actual = player.takeDamage(dmg, boss);
+            const actual = player.takeTrueDamage(999999, boss);
             if (actual > 0) {
               gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Anneau Destructeur' });
             }
@@ -405,24 +403,21 @@ export class Manaya extends BossBase {
         // After 1.2s, outer ring detonates + laser on close targets
         if (data.phase2Timer >= 1.2 && !data.phase2Done) {
           data.phase2Done = true;
-          const soloMult = gs.playerCount <= 1 ? (BOSS_CFG.SOLO_MECHANIC_MULT || 0.4) : 1.0;
 
           for (const player of gs.getAlivePlayers()) {
             const dist = Math.hypot(player.x - boss.x, player.y - boss.y);
 
-            // Outer ring damage (370-550 range)
+            // Outer ring — ALWAYS OS (true damage)
             if (dist >= data.outerRingInner && dist < data.outerRingOuter + player.radius) {
-              const dmg = boss.atk * 5.0 * soloMult;
-              const actual = player.takeDamage(dmg, boss);
+              const actual = player.takeTrueDamage(999999, boss);
               if (actual > 0) {
                 gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Anneau Extérieur' });
               }
             }
 
-            // Laser punishment for being too close (within 160px)
+            // Laser punishment for being too close (within 160px) — ALWAYS OS
             if (dist < 160 + player.radius) {
-              const dmg = boss.atk * 8.0 * soloMult;
-              const actual = player.takeDamage(dmg, boss);
+              const actual = player.takeTrueDamage(999999, boss);
               if (actual > 0) {
                 gs.addEvent({ type: 'damage', source: boss.id, target: player.id, amount: actual, skill: 'Laser Piège' });
               }
