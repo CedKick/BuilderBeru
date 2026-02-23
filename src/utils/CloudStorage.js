@@ -13,6 +13,7 @@
  */
 
 const API_BASE = '/api/storage';
+const CLIENT_VERSION = 2; // Bump when deploying network-critical changes (track old vs new clients)
 const DEVICE_ID_KEY = 'builderberu_device_id';
 const AUTH_TOKEN_KEY = 'builderberu_auth_token';
 const TRACKED_KEYS_KEY = 'builderberu_cloud_keys';
@@ -307,7 +308,7 @@ class CloudStorageManager {
 
       const deviceId = getDeviceId();
       const clientTimestamp = this._cloudTimestamps[key] || null;
-      const body = JSON.stringify({ deviceId, key, data, clientTimestamp });
+      const body = JSON.stringify({ deviceId, key, data, clientTimestamp, clientVersion: CLIENT_VERSION });
       const resp = await fetch(`${API_BASE}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ..._getAuthHeaders() },
@@ -483,7 +484,7 @@ class CloudStorageManager {
         }
 
         const clientTimestamp = self._cloudTimestamps[key] || null;
-        const blob = new Blob([JSON.stringify({ deviceId, key, data, clientTimestamp })], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify({ deviceId, key, data, clientTimestamp, clientVersion: CLIENT_VERSION })], { type: 'application/json' });
         if (blob.size > 60000) {
           // Too large for sendBeacon (~64KB limit) → use keepalive fetch
           fetch(`${API_BASE}/save`, {

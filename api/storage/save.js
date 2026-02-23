@@ -227,6 +227,7 @@ async function ensureTable() {
     )
   `);
   await query('CREATE INDEX IF NOT EXISTS idx_user_storage_device ON user_storage(device_id)');
+  await query('ALTER TABLE user_storage ADD COLUMN IF NOT EXISTS client_version INTEGER');
   tableChecked = true;
 }
 
@@ -244,7 +245,7 @@ export default async function handler(req, res) {
   try {
     await ensureTable();
 
-    const { deviceId: bodyDeviceId, key, data, clientTimestamp } = req.body;
+    const { deviceId: bodyDeviceId, key, data, clientTimestamp, clientVersion } = req.body;
 
     // If auth token present, use the user's canonical deviceId
     let deviceId = bodyDeviceId;
@@ -326,12 +327,12 @@ export default async function handler(req, res) {
 
     // ─── Write ──────────────────────────────────────────────
     const result = await query(
-      `INSERT INTO user_storage (device_id, storage_key, data, size_bytes, updated_at)
-       VALUES ($1, $2, $3, $4, NOW())
+      `INSERT INTO user_storage (device_id, storage_key, data, size_bytes, client_version, updated_at)
+       VALUES ($1, $2, $3, $4, $5, NOW())
        ON CONFLICT (device_id, storage_key)
-       DO UPDATE SET data = $3, size_bytes = $4, updated_at = NOW()
+       DO UPDATE SET data = $3, size_bytes = $4, client_version = $5, updated_at = NOW()
        RETURNING updated_at`,
-      [deviceId, key, jsonStr, sizeBytes]
+      [deviceId, key, jsonStr, sizeBytes, clientVersion || null]
     );
 
     const serverTimestamp = new Date(result.rows[0].updated_at).getTime();
