@@ -7,9 +7,10 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // Admin check — only user "CedKick" can access
+  // Admin check — only admin users can access
+  const ADMINS = ['CedKick', 'Kly'];
   const user = await extractUser(req);
-  if (!user || user.username !== 'CedKick') {
+  if (!user || !ADMINS.includes(user.username)) {
     return res.status(403).json({ error: 'Admin only' });
   }
 
