@@ -26,7 +26,7 @@ import {
   calculatePowerScore, getDifficultyRating,
   BUFF_ICONS, computeDamagePreview, aiPickSkillArc2, fmtNum,
 } from './colosseumCore';
-import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS, rollNierHunterDrop, NIER_DROP_CONFIG, NIER_DROP_CONFIGS, HUNTER_SKINS, rollSkinDrop, getHunterSprite, rollBossHunterDrop, BOSS_HUNTER_DROPS } from './raidData';
+import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS, rollNierHunterDrop, NIER_DROP_CONFIG, NIER_DROP_CONFIGS, HUNTER_SKINS, rollSkinDrop, getHunterSprite, rollBossHunterDrop, BOSS_HUNTER_DROPS, getHunterDropSources } from './raidData';
 import { BattleStyles, BattleArena } from './BattleVFX';
 import {
   ARTIFACT_SETS, ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL,
@@ -10912,6 +10912,25 @@ export default function ShadowColosseum() {
                       </div>
                     </div>
                   )}
+
+                  {/* Drop Sources */}
+                  {ch.isHunter && (() => {
+                    const sources = getHunterDropSources(ch.id);
+                    if (sources.length === 0) return null;
+                    return (
+                      <div className="mt-2">
+                        <div className="text-[9px] text-gray-500 font-bold uppercase mb-1">Sources de Drop</div>
+                        <div className="flex flex-wrap gap-1">
+                          {sources.map((s, si) => (
+                            <div key={si} className="px-2 py-1 rounded-lg text-[9px] bg-gray-800/60 border border-gray-700/30" title={s.detail}>
+                              <span style={{ color: s.color }} className="font-bold">{s.label}</span>
+                              <span className="text-gray-500 ml-1">{s.detail}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>

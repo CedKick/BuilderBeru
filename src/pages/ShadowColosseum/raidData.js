@@ -1141,6 +1141,51 @@ export function rollBossHunterDrop(bossId, lootMult = 1, tier = 1) {
   return null;
 }
 
+// ─── Hunter Drop Sources (for codex display) ─────────────────────
+// Compiled from all drop systems: RC unlock, shop, boss, stage, manaya raid
+export function getHunterDropSources(hunterId) {
+  const sources = [];
+
+  // 1. Manaya Raid — ALL hunters drop here (5 rolls × 3%)
+  sources.push({ type: 'manaya', label: 'Raid Manaya', detail: '5 rolls × 3% par victoire', color: '#ff2d55' });
+
+  // 2. World Boss drops
+  if (BOSS_HUNTER_DROPS[hunterId]) {
+    const cfg = BOSS_HUNTER_DROPS[hunterId];
+    const bossNames = { ragnarok: 'Ragnarok', zephyr: 'Zephyr', supreme_monarch: 'Monarque', archdemon: 'Archidemon', ant_queen: 'Reine Fourmis' };
+    const names = cfg.bosses.map(b => bossNames[b] || b).join(', ');
+    const chance = cfg.baseChance >= 0.001 ? '1/' + Math.round(1 / cfg.baseChance) : (cfg.baseChance * 100).toFixed(2) + '%';
+    const tierNote = cfg.minTier ? ' (Tier ' + cfg.minTier + '+)' : '';
+    sources.push({ type: 'boss', label: 'World Boss', detail: names + ' — ' + chance + tierNote, color: '#facc15' });
+  }
+
+  // 3. Stage/Nier drops
+  if (NIER_DROP_CONFIGS[hunterId]) {
+    const cfg = NIER_DROP_CONFIGS[hunterId];
+    const chance = (cfg.baseChance * 100).toFixed(1) + '%';
+    let where = '';
+    if (cfg.stageId) where = 'Stage ' + cfg.stageId;
+    else if (cfg.minTier) where = 'Tiers ' + cfg.minTier + '-6';
+    else if (cfg.tier) where = 'Tier ' + cfg.tier;
+    const bossNote = cfg.isBossOnly ? ' (boss only)' : '';
+    sources.push({ type: 'stage', label: 'Stage Drop', detail: where + ' — ' + chance + bossNote, color: '#a78bfa' });
+  }
+
+  // 4. RC Unlock (all non-special hunters)
+  const h = HUNTERS[hunterId];
+  if (h && !h.series) {
+    sources.push({ type: 'rc', label: 'Unlock RC', detail: 'Paliers RC (3-280)', color: '#60a5fa' });
+  }
+
+  // 5. Shop (all non-special hunters)
+  if (h && !h.series) {
+    const price = HUNTER_SHOP_PRICES[h.rarity] || '?';
+    sources.push({ type: 'shop', label: 'Boutique', detail: price + ' coins', color: '#10b981' });
+  }
+
+  return sources;
+}
+
 // ─── Hunter Skins System ─────────────────────────────────────────
 // Each hunter can have alternate skins. 'default' is always owned.
 // Skins can drop from specific stages or be unlocked via events.

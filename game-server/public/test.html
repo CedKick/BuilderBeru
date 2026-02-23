@@ -1192,6 +1192,7 @@
 
     // ── Sync all raid data to Neon DB via game server WebSocket ──
     let _raidSyncTimer = null;
+    let pendingHunterDrops = []; // Transient: cleared after sync
     function syncRaidToCloud() {
       // Debounce 2s to avoid spamming during rapid equip/unequip
       if (_raidSyncTimer) clearTimeout(_raidSyncTimer);
@@ -1199,15 +1200,21 @@
         _raidSyncTimer = null;
         if (!ws || ws.readyState !== 1) return;
         const profile = loadProfile();
+        const syncData = {
+          inventory: loadInventory(),
+          equipped: loadEquipped(),
+          feathers: loadFeathers(),
+          manayaOwned: loadManayaOwned(),
+          statPoints: profile?.allocatedStats || {},
+        };
+        // Include pending hunter drops (one-time, cleared after send)
+        if (pendingHunterDrops.length > 0) {
+          syncData.hunterDrops = [...pendingHunterDrops];
+          pendingHunterDrops = [];
+        }
         ws.send(JSON.stringify({
           type: 'sync_raid_storage',
-          data: {
-            inventory: loadInventory(),
-            equipped: loadEquipped(),
-            feathers: loadFeathers(),
-            manayaOwned: loadManayaOwned(),
-            statPoints: profile?.allocatedStats || {},
-          }
+          data: syncData,
         }));
         console.log('[RaidSync] Sent to cloud');
       }, 2000);
@@ -1889,8 +1896,11 @@
             const hasItems = myLoot && myLoot.items.length > 0;
             const hasFeathers = myLoot && myLoot.feathers > 0;
             const myAlkahest = myLoot?.alkahest || 0;
+            const myHunterDrops = myLoot?.hunterDrops || [];
+            const mySetUltimeDrop = myLoot?.setUltimeDrop || null;
+            const hasAnyLoot = hasItems || hasFeathers || myAlkahest > 0 || myHunterDrops.length > 0 || mySetUltimeDrop;
 
-            if (hasItems || hasFeathers || myAlkahest > 0) {
+            if (hasAnyLoot) {
               // Add items to inventory
               if (hasItems) addToInventory(myLoot.items);
               // Add feathers
@@ -1904,13 +1914,66 @@
                 localStorage.setItem('manaya_alkahest', prev + myAlkahest);
                 log('⚗️ +' + myAlkahest + ' Maitre d\'Alkahest !', 'heal');
               }
+              // Add hunter drops to pending (for cloud sync)
+              if (myHunterDrops.length > 0) {
+                for (const h of myHunterDrops) {
+                  pendingHunterDrops.push(h);
+                  // Also add to local ownedHunters for immediate use
+                  if (!ownedHunters.includes(h.id)) ownedHunters.push(h.id);
+                  log('🎉 HUNTER DROP : ' + h.name + ' (' + h.rarity + ') !', 'hunter');
+                }
+              }
+              // Add set ultime drop
+              if (mySetUltimeDrop) {
+                const suSlot = mySetUltimeDrop.slot || 'weapon';
+                const owned = loadManayaOwned();
+                owned[suSlot] = true;
+                saveManayaOwned(owned);
+                addToInventory([mySetUltimeDrop]);
+                log('🩸 SET ULTIME : ' + (mySetUltimeDrop.name || suSlot) + ' !', 'hunter');
+              }
               updateGearPanel();
               updateForgePanel();
               syncRaidToCloud(); // Sync new loot to Neon DB
 
               lootItemsEl.innerHTML = '';
 
-              // Show alkahest drop first
+              // ── Show hunter drops first (rarest!) ──
+              const ELEM_ICONS = { fire: '🔥', water: '💧', shadow: '🌑', light: '✨', dark: '🌑' };
+              const RARITY_COLORS = { mythique: '#f472b6', legendaire: '#facc15', rare: '#60a5fa' };
+              for (const h of myHunterDrops) {
+                const hDiv = document.createElement('div');
+                hDiv.className = 'loot-item';
+                const hColor = RARITY_COLORS[h.rarity] || '#a78bfa';
+                hDiv.style.borderColor = hColor;
+                hDiv.style.background = 'rgba(244,114,182,0.2)';
+                hDiv.style.animation = 'pulse 1s ease-in-out infinite';
+                hDiv.innerHTML =
+                  '<div class="loot-icon" style="font-size:22px">' + (ELEM_ICONS[h.element] || '⭐') + '</div>' +
+                  '<div class="loot-name" style="color:' + hColor + ';font-weight:bold;font-size:10px">' + h.name + '</div>' +
+                  '<div class="loot-main" style="color:#e2e8f0;font-size:8px">HUNTER</div>' +
+                  '<div class="loot-tier" style="color:' + hColor + ';font-size:8px;text-transform:uppercase">' + h.rarity + '</div>';
+                lootItemsEl.appendChild(hDiv);
+              }
+
+              // ── Show set ultime drop ──
+              if (mySetUltimeDrop) {
+                const suDiv = document.createElement('div');
+                suDiv.className = 'loot-item';
+                suDiv.style.borderColor = MANAYA_SET_COLOR;
+                suDiv.style.background = 'rgba(255,45,85,0.25)';
+                suDiv.style.animation = 'pulse 1s ease-in-out infinite';
+                const suIcon = mySetUltimeDrop.icon || mySetUltimeDrop.slotIcon || '🩸';
+                const suName = mySetUltimeDrop.name || 'Set Manaya';
+                suDiv.innerHTML =
+                  '<div class="loot-icon" style="font-size:22px">' + suIcon + '</div>' +
+                  '<div class="loot-name" style="color:' + MANAYA_SET_COLOR + ';font-weight:bold;font-size:10px">' + suName + '</div>' +
+                  '<div class="loot-main" style="color:#f59e0b;font-size:8px">SET ULTIME</div>' +
+                  '<div class="loot-tier" style="color:' + MANAYA_SET_COLOR + '">T12</div>';
+                lootItemsEl.appendChild(suDiv);
+              }
+
+              // Show alkahest drop
               if (myAlkahest > 0) {
                 const aDiv = document.createElement('div');
                 aDiv.className = 'loot-item';
@@ -1960,6 +2023,8 @@
               }
               lootSection.style.display = 'block';
               if (hasItems) log(myLoot.items.length + ' item(s) obtenu(s) !', 'heal');
+              if (myHunterDrops.length > 0) log('🎉 ' + myHunterDrops.length + ' hunter(s) obtenu(s) !', 'hunter');
+              if (mySetUltimeDrop) log('🩸 Piece Set Ultime obtenue !', 'hunter');
             } else {
               lootSection.style.display = 'none';
             }

@@ -3,7 +3,7 @@ import { GameState } from './GameState.js';
 import { CombatEngine } from './CombatEngine.js';
 import { PhysicsEngine } from './PhysicsEngine.js';
 import { calculateXpReward } from '../data/playerProfile.js';
-import { generateRaidArtifact, generateRaidWeaponDrop, FEATHER_DROP_RATES, calculateAlkahestReward } from '../data/raidGearData.js';
+import { generateRaidArtifact, generateRaidWeaponDrop, FEATHER_DROP_RATES, calculateAlkahestReward, rollHunterDrops, rollSetUltimeDrop } from '../data/raidGearData.js';
 
 export class GameLoop {
   constructor(roomCode, players, difficulty, wsServer, simulation = false) {
@@ -347,6 +347,8 @@ export class GameLoop {
     return gs.players.map(p => {
       const items = [];
       let feathers = 0;
+      let hunterDrops = [];
+      let setUltimeDrop = null;
 
       // Items and feathers only on victory
       if (victory) {
@@ -367,6 +369,12 @@ export class GameLoop {
         if (Math.random() * 100 < featherRate) {
           feathers = 1;
         }
+
+        // Hunter drops — 5 rolls × 3% each (any hunter from the full pool)
+        hunterDrops = rollHunterDrops();
+
+        // Set Ultime — Manaya set piece direct drop (15% base, scales with difficulty)
+        setUltimeDrop = rollSetUltimeDrop(difficulty);
       }
 
       // Alkahest awarded even on loss (if boss was below 75% HP)
@@ -374,7 +382,7 @@ export class GameLoop {
         bossHpPercent, difficulty, playerCount, victory
       );
 
-      return { playerId: p.id, items, feathers, alkahest };
+      return { playerId: p.id, items, feathers, alkahest, hunterDrops, setUltimeDrop };
     });
   }
 

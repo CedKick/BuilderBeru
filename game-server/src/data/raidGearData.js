@@ -331,6 +331,116 @@ export function calculateAlkahestReward(bossHpPercent, difficulty, playerCount, 
   return Math.round(base * diffMult * playerMult * variance);
 }
 
+// ═══════════════════════════════════════════════════════════════
+// HUNTER DROPS — All hunters can drop from Manaya Raid
+// 5 rolls per victory, 3% chance each
+// ═══════════════════════════════════════════════════════════════
+
+export const HUNTER_ROLL_COUNT = 5;
+export const HUNTER_DROP_CHANCE = 0.03; // 3%
+
+// Lightweight hunter pool for server-side loot generation (50 hunters)
+export const MANAYA_HUNTER_POOL = [
+  // FIRE
+  { id: 'h_kanae', name: 'Tawata Kanae', rarity: 'mythique', element: 'fire' },
+  { id: 'h_stark', name: 'Stark', rarity: 'mythique', element: 'fire' },
+  { id: 'h_fern', name: 'Fern', rarity: 'mythique', element: 'fire' },
+  { id: 'h_reed', name: 'Christopher Reed', rarity: 'mythique', element: 'fire' },
+  { id: 'h_choi', name: 'Choi Jong-In', rarity: 'legendaire', element: 'fire' },
+  { id: 'h_emma', name: 'Emma Laurent', rarity: 'legendaire', element: 'fire' },
+  { id: 'h_esil', name: 'Esil Radiru', rarity: 'legendaire', element: 'fire' },
+  { id: 'h_yuqi', name: 'Yuqi', rarity: 'legendaire', element: 'fire' },
+  { id: 'h_yoo', name: 'Yoo Soohyun', rarity: 'legendaire', element: 'fire' },
+  { id: 'h_gina', name: 'Gina', rarity: 'rare', element: 'fire' },
+  { id: 'h_song', name: 'Song Chiyul', rarity: 'rare', element: 'fire' },
+  { id: 'h_megumin', name: 'Megumin', rarity: 'legendaire', element: 'fire' },
+  // WATER
+  { id: 'h_chae_in', name: 'Cha Hae-In', rarity: 'mythique', element: 'water' },
+  { id: 'h_frieren', name: 'Frieren', rarity: 'mythique', element: 'water' },
+  { id: 'h_alicia', name: 'Alicia Blanche', rarity: 'mythique', element: 'water' },
+  { id: 'h_meri', name: 'Meri Laine', rarity: 'mythique', element: 'water' },
+  { id: 'h_shuhua', name: 'Shuhua', rarity: 'legendaire', element: 'water' },
+  { id: 'h_meilin', name: 'Meilin Fisher', rarity: 'legendaire', element: 'water' },
+  { id: 'h_seo', name: 'Seo Jiwoo', rarity: 'legendaire', element: 'water' },
+  { id: 'h_anna', name: 'Anna Ruiz', rarity: 'legendaire', element: 'water' },
+  { id: 'h_han_song', name: 'Han Song-Yi', rarity: 'legendaire', element: 'water' },
+  { id: 'h_seorin', name: 'Seorin', rarity: 'rare', element: 'water' },
+  { id: 'h_lee_johee', name: 'Lee Johee', rarity: 'rare', element: 'water' },
+  { id: 'h_nam', name: 'Nam Chae-Young', rarity: 'rare', element: 'water' },
+  // SHADOW
+  { id: 'h_ilhwan', name: 'Ilhwan', rarity: 'mythique', element: 'shadow' },
+  { id: 'h_minnie', name: 'Minnie', rarity: 'mythique', element: 'shadow' },
+  { id: 'h_silverbaek', name: 'Baek Yoonho', rarity: 'mythique', element: 'shadow' },
+  { id: 'h_sian', name: 'Sian Halat', rarity: 'mythique', element: 'shadow' },
+  { id: 'h_charlotte', name: 'Charlotte', rarity: 'legendaire', element: 'shadow' },
+  { id: 'h_lee_bora', name: 'Lee Bora', rarity: 'legendaire', element: 'shadow' },
+  { id: 'h_harper', name: 'Harper', rarity: 'legendaire', element: 'shadow' },
+  { id: 'h_lim', name: 'Lim Tae-Gyu', rarity: 'legendaire', element: 'shadow' },
+  { id: 'h_kang', name: 'Kang Taeshik', rarity: 'legendaire', element: 'shadow' },
+  { id: 'h_son', name: 'Son Kihoon', rarity: 'legendaire', element: 'shadow' },
+  { id: 'h_isla', name: 'Isla Wright', rarity: 'rare', element: 'shadow' },
+  { id: 'h_hwang', name: 'Hwang Dongsuk', rarity: 'rare', element: 'shadow' },
+  // CHIBI
+  { id: 'h_daijin', name: 'Daijin', rarity: 'mythique', element: 'shadow' },
+  { id: 'h_pod042', name: 'Pod 042', rarity: 'mythique', element: 'water' },
+  // STEINS;GATE
+  { id: 'h_kurisu', name: 'Kurisu Makise', rarity: 'mythique', element: 'water' },
+  { id: 'h_mayuri', name: 'Mayuri Shiina', rarity: 'mythique', element: 'water' },
+  // ATTACK ON TITAN
+  { id: 'h_mikasa', name: 'Mikasa Ackerman', rarity: 'mythique', element: 'shadow' },
+  // TOKYO GHOUL
+  { id: 'h_kaneki', name: 'Ken Kaneki', rarity: 'mythique', element: 'shadow' },
+  // FATE
+  { id: 'h_saber', name: 'Saber', rarity: 'mythique', element: 'water' },
+  // BERSERK
+  { id: 'h_guts', name: 'Guts', rarity: 'mythique', element: 'shadow' },
+  // JUJUTSU KAISEN
+  { id: 'h_sukuna', name: 'Sukuna', rarity: 'mythique', element: 'fire' },
+  { id: 'h_gojo', name: 'Gojo Satoru', rarity: 'mythique', element: 'light' },
+  // NIER AUTOMATA
+  { id: 'h_a9', name: 'A9', rarity: 'mythique', element: 'shadow' },
+  { id: 'h_2b', name: '2B', rarity: 'mythique', element: 'shadow' },
+  { id: 'h_pascal', name: 'Pascal', rarity: 'mythique', element: 'water' },
+  { id: 'h_a2', name: 'A2', rarity: 'mythique', element: 'fire' },
+];
+
+// Roll hunter drops: 5 rolls × 3% each
+export function rollHunterDrops() {
+  const drops = [];
+  for (let i = 0; i < HUNTER_ROLL_COUNT; i++) {
+    if (Math.random() < HUNTER_DROP_CHANCE) {
+      const hunter = MANAYA_HUNTER_POOL[Math.floor(Math.random() * MANAYA_HUNTER_POOL.length)];
+      drops.push({ ...hunter, type: 'hunter' });
+    }
+  }
+  return drops;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SET ULTIME — Manaya set pieces direct drop
+// 15% base chance, scaling with difficulty
+// ═══════════════════════════════════════════════════════════════
+
+export const SET_ULTIME_DROP_RATES = {
+  NORMAL:         0.15,
+  HARD:           0.20,
+  NIGHTMARE:      0.25,
+  NIGHTMARE_PLUS: 0.32,
+  NIGHTMARE_2:    0.40,
+  NIGHTMARE_3:    0.50,
+};
+
+// Roll set ultime drop: 1 roll at difficulty-scaled rate
+export function rollSetUltimeDrop(difficulty) {
+  const rate = SET_ULTIME_DROP_RATES[difficulty] || 0.15;
+  if (Math.random() < rate) {
+    const slots = Object.keys(MANAYA_SET_PIECES);
+    const slot = slots[Math.floor(Math.random() * slots.length)];
+    return { ...MANAYA_SET_PIECES[slot], isSetUltimeDrop: true };
+  }
+  return null;
+}
+
 // ── Compute total stat bonuses from equipped gear ──
 // equippedGear: { weapon: weaponObj|null, artifacts: { helmet: artifactObj, chest: ... } }
 export function computeRaidGearBonuses(equippedGear) {

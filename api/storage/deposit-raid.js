@@ -73,7 +73,8 @@ export default async function handler(req, res) {
 }
 
 function mergeRaidStorage(cloud, incoming) {
-  const m = { ...incoming };
+  // Preserve cloud fields not in incoming (hunterCollection, raidStats, etc.)
+  const m = { ...cloud, ...incoming };
 
   // feathers: MAX (never lose forge currency)
   m.feathers = Math.max(cloud.feathers || 0, incoming.feathers || 0);
@@ -81,7 +82,7 @@ function mergeRaidStorage(cloud, incoming) {
   // manayaOwned: OR (true wins — never un-forge)
   const cOwn = cloud.manayaOwned || {};
   const iOwn = incoming.manayaOwned || {};
-  m.manayaOwned = { ...iOwn };
+  m.manayaOwned = { ...cOwn, ...iOwn };
   for (const [k, v] of Object.entries(cOwn)) {
     if (v) m.manayaOwned[k] = true;
   }
@@ -100,6 +101,25 @@ function mergeRaidStorage(cloud, incoming) {
   m.statPoints = {};
   for (const s of ['hp', 'atk', 'def', 'spd', 'crit', 'res']) {
     m.statPoints[s] = Math.max(cPts[s] || 0, iPts[s] || 0);
+  }
+
+  // hunterDrops: merge into hunterCollection (transient field from game server)
+  if (incoming.hunterDrops && incoming.hunterDrops.length > 0) {
+    const collection = (m.hunterCollection || []).map(e =>
+      typeof e === 'string' ? { id: e, stars: 0 } : { ...e }
+    );
+    for (const h of incoming.hunterDrops) {
+      const idx = collection.findIndex(e => e.id === h.id);
+      if (idx >= 0) {
+        // Duplicate: +1 star (awakening)
+        if (collection[idx].stars < 200) collection[idx].stars++;
+      } else {
+        // New hunter
+        collection.push({ id: h.id, stars: 0 });
+      }
+    }
+    m.hunterCollection = collection;
+    delete m.hunterDrops; // Transient — don't persist
   }
 
   return m;
