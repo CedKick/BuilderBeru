@@ -673,7 +673,7 @@ export function mergeTalentBonuses(tb1 = {}, tb2 = {}) {
   return merged;
 }
 
-export const PVP_DAMAGE_MULT = 0.12;  // Heavy damage reduction in PVP (heals unaffected)
+export const PVP_DAMAGE_MULT = 0.15;  // Damage reduction in PVP (heals unaffected) — buffed from 0.12
 export const PVP_HP_MULT = 5;         // All units get x5 HP in PVP (longer fights)
 export const PVP_DEF_MULT = 1.6;      // DEF is 60% more effective in PVP
 export const PVP_RES_MULT = 1.4;      // RES is 40% more effective in PVP

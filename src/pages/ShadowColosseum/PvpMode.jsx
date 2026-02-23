@@ -280,7 +280,7 @@ export default function PvpMode() {
   // BUILD ENTITY — Compute combat-ready unit from save data
   // ═══════════════════════════════════════════════════════════════
 
-  const buildChibiEntity = useCallback((id) => {
+  const buildChibiEntity = useCallback((id, synergyBonuses = { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0, allStats: 0 }) => {
     const chibi = allPool[id];
     if (!chibi) return null;
     const lvData = coloData.chibiLevels[id] || { level: 1, xp: 0 };
@@ -298,15 +298,31 @@ export default function PvpMode() {
 
     const hunterPassive = HUNTERS[id] ? (HUNTER_PASSIVE_EFFECTS[id] || null) : null;
 
-    let hp2 = st.hp, atk2 = st.atk, def2 = st.def, spd2 = st.spd, crit2 = st.crit, res2 = st.res;
+    // Apply synergy bonuses (team element/class bonuses)
+    const syn = synergyBonuses;
+    let hpMult = 1 + (syn.hp + syn.allStats) / 100;
+    let atkMult = 1 + (syn.atk + syn.allStats) / 100;
+    let defMult = 1 + (syn.def + syn.allStats) / 100;
+    let spdMult = 1 + (syn.spd + syn.allStats) / 100;
+    let critFlat = syn.crit || 0;
+    let resFlat = syn.res || 0;
+
+    // Apply permanent hunter passives (% bonuses)
     if (hunterPassive?.type === 'permanent' && hunterPassive.stats) {
-      if (hunterPassive.stats.hp) hp2 = Math.floor(hp2 * (1 + hunterPassive.stats.hp / 100));
-      if (hunterPassive.stats.atk) atk2 = Math.floor(atk2 * (1 + hunterPassive.stats.atk / 100));
-      if (hunterPassive.stats.def) def2 = Math.floor(def2 * (1 + hunterPassive.stats.def / 100));
-      if (hunterPassive.stats.spd) spd2 = Math.floor(spd2 * (1 + hunterPassive.stats.spd / 100));
-      if (hunterPassive.stats.crit) crit2 = +(crit2 + hunterPassive.stats.crit).toFixed(1);
-      if (hunterPassive.stats.res) res2 = +(res2 + hunterPassive.stats.res).toFixed(1);
+      if (hunterPassive.stats.hp)   hpMult  += hunterPassive.stats.hp / 100;
+      if (hunterPassive.stats.atk)  atkMult += hunterPassive.stats.atk / 100;
+      if (hunterPassive.stats.def)  defMult += hunterPassive.stats.def / 100;
+      if (hunterPassive.stats.spd)  spdMult += hunterPassive.stats.spd / 100;
+      if (hunterPassive.stats.crit) critFlat += hunterPassive.stats.crit;
+      if (hunterPassive.stats.res)  resFlat  += hunterPassive.stats.res;
     }
+
+    let hp2 = Math.floor(st.hp * hpMult);
+    let atk2 = Math.floor(st.atk * atkMult);
+    let def2 = Math.floor(st.def * defMult);
+    let spd2 = Math.floor(st.spd * spdMult);
+    let crit2 = +(st.crit + critFlat).toFixed(1);
+    let res2 = +(st.res + resFlat).toFixed(1);
 
     const skillTreeData = coloData.skillTree[id] || {};
     const skills = chibi.skills.map((sk, i) => {
@@ -388,6 +404,36 @@ export default function PvpMode() {
   const activeSetter2 = tab === 'atk' ? setTeam2 : setDefTeam2;
   const selectedIds = useMemo(() => [...activeTeam1, ...activeTeam2].filter(Boolean), [activeTeam1, activeTeam2]);
 
+  // ─── Team synergies (same as RaidMode) ──────────────────────
+  const synergy1 = useMemo(() => {
+    const team = activeTeam1.filter(Boolean).map(id => allPool[id]).filter(Boolean);
+    return computeSynergies(team);
+  }, [activeTeam1, allPool]);
+  const synergy2 = useMemo(() => {
+    const team = activeTeam2.filter(Boolean).map(id => allPool[id]).filter(Boolean);
+    return computeSynergies(team);
+  }, [activeTeam2, allPool]);
+  const crossSynergy = useMemo(() => {
+    const t1 = activeTeam1.filter(Boolean).map(id => allPool[id]).filter(Boolean);
+    const t2 = activeTeam2.filter(Boolean).map(id => allPool[id]).filter(Boolean);
+    return computeCrossTeamSynergy(t1, t2);
+  }, [activeTeam1, activeTeam2, allPool]);
+
+  // ATK team synergies (always computed for combat)
+  const atkSynergy1 = useMemo(() => {
+    const team = team1.filter(Boolean).map(id => allPool[id]).filter(Boolean);
+    return computeSynergies(team);
+  }, [team1, allPool]);
+  const atkSynergy2 = useMemo(() => {
+    const team = team2.filter(Boolean).map(id => allPool[id]).filter(Boolean);
+    return computeSynergies(team);
+  }, [team2, allPool]);
+  const atkCrossSynergy = useMemo(() => {
+    const t1 = team1.filter(Boolean).map(id => allPool[id]).filter(Boolean);
+    const t2 = team2.filter(Boolean).map(id => allPool[id]).filter(Boolean);
+    return computeCrossTeamSynergy(t1, t2);
+  }, [team1, team2, allPool]);
+
   const handleSlotClick = (teamNum, idx) => {
     const team = teamNum === 1 ? activeTeam1 : activeTeam2;
     if (team[idx]) {
@@ -416,7 +462,19 @@ export default function PvpMode() {
     if (!displayName.trim()) { setRegisterMsg('Choisis un nom !'); return; }
 
     setRegisterMsg('Enregistrement...');
-    const teamData = defIds.map(id => buildChibiEntity(id)).filter(Boolean);
+    // Compute defense synergies
+    const defSyn1 = computeSynergies(defTeam1.filter(Boolean).map(id => allPool[id]).filter(Boolean));
+    const defSyn2 = computeSynergies(defTeam2.filter(Boolean).map(id => allPool[id]).filter(Boolean));
+    const defCross = computeCrossTeamSynergy(
+      defTeam1.filter(Boolean).map(id => allPool[id]).filter(Boolean),
+      defTeam2.filter(Boolean).map(id => allPool[id]).filter(Boolean),
+    );
+    const defBonuses1 = { ...defSyn1.bonuses, crit: defSyn1.bonuses.crit + defCross.bonuses.crit };
+    const defBonuses2 = { ...defSyn2.bonuses, crit: defSyn2.bonuses.crit + defCross.bonuses.crit };
+    const teamData = [
+      ...defTeam1.filter(Boolean).map(id => buildChibiEntity(id, defBonuses1)),
+      ...defTeam2.filter(Boolean).map(id => buildChibiEntity(id, defBonuses2)),
+    ].filter(Boolean);
     if (teamData.length < 6) { setRegisterMsg('Erreur: unites invalides'); return; }
 
     const powerScore = computePowerScore(defIds);
@@ -488,7 +546,13 @@ export default function PvpMode() {
     setArenaBg(PVP_ARENAS[Math.floor(Math.random() * PVP_ARENAS.length)]);
 
     const atkIds = [...team1, ...team2].filter(Boolean);
-    const attackers = atkIds.map(id => buildChibiEntity(id)).filter(Boolean);
+    // Apply synergy bonuses per team (like RaidMode)
+    const allBonuses1 = { ...atkSynergy1.bonuses, crit: atkSynergy1.bonuses.crit + atkCrossSynergy.bonuses.crit };
+    const allBonuses2 = { ...atkSynergy2.bonuses, crit: atkSynergy2.bonuses.crit + atkCrossSynergy.bonuses.crit };
+    const attackers = [
+      ...team1.filter(Boolean).map(id => buildChibiEntity(id, allBonuses1)),
+      ...team2.filter(Boolean).map(id => buildChibiEntity(id, allBonuses2)),
+    ].filter(Boolean);
     if (attackers.length === 0) return;
 
     // Apply PVP stat multipliers (HP x3, DEF x1.6, RES x1.4)
@@ -724,9 +788,9 @@ export default function PvpMode() {
       if (!unit.alive) return;
       if (now - unit.lastAttackAt < unit.attackInterval) return;
 
-      // Mana regen
+      // Mana regen (x0.75 in PvP — slower than PvE)
       if (unit.maxMana > 0) {
-        unit.mana = Math.min(unit.maxMana, (unit.mana || 0) + (unit.manaRegen || 0) * (unit.attackInterval / 3000));
+        unit.mana = Math.min(unit.maxMana, (unit.mana || 0) + (unit.manaRegen || 0) * (unit.attackInterval / 3000) * 0.75);
       }
 
       // Echo Temporel: free mana every 3 attacks
@@ -742,7 +806,7 @@ export default function PvpMode() {
       // Support healing — strategy-aware priority (costs 25% maxMana)
       const strategy = isAttacker ? pvpData.attackStrategy : opponentStrategyRef.current;
       if (unit.class === 'support') {
-        const healManaCost = Math.floor((unit.maxMana || 0) * 0.25);
+        const healManaCost = Math.floor((unit.maxMana || 0) * 0.35); // Nerfed: 35% mana cost (was 25%)
         const hasEnoughMana = unit.maxMana <= 0 || (unit.mana || 0) >= healManaCost;
         // Heal threshold varies by playstyle: aggressive 0.50, balanced 0.75, defensive 0.90
         const healThreshold = (strategy?.playstyle === 'aggressive') ? 0.50
@@ -1511,41 +1575,56 @@ export default function PvpMode() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            {[1, 2].map(teamNum => (
-              <div key={teamNum} className="space-y-1.5">
-                <div className="text-[10px] text-gray-500 text-center font-bold">Equipe {teamNum}</div>
-                {[0, 1, 2].map(idx => {
-                  const team = teamNum === 1 ? activeTeam1 : activeTeam2;
-                  const id = team[idx];
-                  const chibi = id ? allPool[id] : null;
-                  const isActive = pickSlot?.team === teamNum && pickSlot?.idx === idx;
-                  return (
-                    <button key={idx} onClick={() => handleSlotClick(teamNum, idx)}
-                      className={`w-full p-2 rounded-lg border transition-all flex items-center gap-2 ${
-                        isActive ? 'border-yellow-400/60 bg-yellow-500/10' :
-                        chibi ? 'border-gray-600/30 bg-gray-800/30 hover:bg-gray-700/30' :
-                        'border-dashed border-gray-700/30 bg-gray-900/20 hover:bg-gray-800/20'
-                      }`}>
-                      {chibi ? (
-                        <>
-                          <img loading="lazy" src={chibi.sprite || SPRITES[id]} alt="" className="w-8 h-8 rounded-full object-cover" />
-                          <div className="text-left flex-1 min-w-0">
-                            <div className="text-xs font-bold truncate">{chibi.name}</div>
-                            <div className="text-[10px] text-gray-500">
-                              {ELEMENTS[chibi.element]?.icon} Lv.{(coloData.chibiLevels[id] || { level: 1 }).level}
+          <div className="grid grid-cols-2 gap-3 mb-2">
+            {[1, 2].map(teamNum => {
+              const teamSynergy = teamNum === 1 ? synergy1 : synergy2;
+              return (
+                <div key={teamNum} className="space-y-1.5">
+                  <div className="text-[10px] text-gray-500 text-center font-bold">Equipe {teamNum}</div>
+                  {[0, 1, 2].map(idx => {
+                    const team = teamNum === 1 ? activeTeam1 : activeTeam2;
+                    const id = team[idx];
+                    const chibi = id ? allPool[id] : null;
+                    const isActive = pickSlot?.team === teamNum && pickSlot?.idx === idx;
+                    return (
+                      <button key={idx} onClick={() => handleSlotClick(teamNum, idx)}
+                        className={`w-full p-2 rounded-lg border transition-all flex items-center gap-2 ${
+                          isActive ? 'border-yellow-400/60 bg-yellow-500/10' :
+                          chibi ? 'border-gray-600/30 bg-gray-800/30 hover:bg-gray-700/30' :
+                          'border-dashed border-gray-700/30 bg-gray-900/20 hover:bg-gray-800/20'
+                        }`}>
+                        {chibi ? (
+                          <>
+                            <img loading="lazy" src={chibi.sprite || SPRITES[id]} alt="" className="w-8 h-8 rounded-full object-cover" />
+                            <div className="text-left flex-1 min-w-0">
+                              <div className="text-xs font-bold truncate">{chibi.name}</div>
+                              <div className="text-[10px] text-gray-500">
+                                {ELEMENTS[chibi.element]?.icon} Lv.{(coloData.chibiLevels[id] || { level: 1 }).level}
+                              </div>
                             </div>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-xs text-gray-600 w-full text-center">+ Slot vide</div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            ))}
+                          </>
+                        ) : (
+                          <div className="text-xs text-gray-600 w-full text-center">+ Slot vide</div>
+                        )}
+                      </button>
+                    );
+                  })}
+                  {/* Synergy labels per team */}
+                  {teamSynergy.labels.length > 0 && (
+                    <div className="text-center text-[10px] text-amber-400 font-medium mt-1">
+                      {teamSynergy.labels.join(', ')}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
+          {/* Cross-team synergy */}
+          {crossSynergy.labels.length > 0 && (
+            <div className="text-center text-[10px] text-yellow-400 font-medium mb-3">
+              {crossSynergy.labels.join(' | ')}
+            </div>
+          )}
 
           {pickSlot && (
             <div className="mb-4 p-3 rounded-xl bg-gray-800/50 border border-gray-700/30">
