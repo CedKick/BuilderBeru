@@ -1638,7 +1638,7 @@ export default function PvpMode() {
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="font-bold text-sm">{opp.displayName}</div>
                   <div className="flex items-center gap-2">
-                    {opp.foughtToday > 0 && <span className="text-[9px] text-yellow-400">{opp.foughtToday}/3 combats</span>}
+                    {opp.foughtToday > 0 && <span className="text-[9px] text-yellow-400">{opp.foughtToday}x aujourd'hui</span>}
                     <span className="text-xs text-amber-400">Rating {opp.rating}</span>
                   </div>
                 </div>
