@@ -436,6 +436,22 @@ const loadData = () => {
 // NeonDB cloud-first: saves to localStorage (cache) + schedules cloud sync
 const saveData = (d) => cloudStorage.save(SAVE_KEY, d);
 
+// Session-level flag: skip cloud reload if already loaded this browser session
+// (prevents re-fetching stale cloud data on every component remount)
+let _cloudLoadedThisSession = false;
+
+// Debounced cloud sync — for rapid actions (stat clicks, talent nodes)
+// Saves to localStorage immediately, but only syncs to cloud after 3s of inactivity
+let _debouncedSyncTimer = null;
+const debouncedSaveAndSync = (data) => {
+  cloudStorage.save(SAVE_KEY, data); // localStorage immediate
+  if (_debouncedSyncTimer) clearTimeout(_debouncedSyncTimer);
+  _debouncedSyncTimer = setTimeout(() => {
+    _debouncedSyncTimer = null;
+    cloudStorage.saveAndSync(SAVE_KEY, data);
+  }, 3000);
+};
+
 // ═══════════════════════════════════════════════════════════════
 // COMPONENT
 // ═══════════════════════════════════════════════════════════════
@@ -451,9 +467,12 @@ export default function ShadowColosseum() {
   const [syncStatus, setSyncStatus] = useState('synced');
 
   // Cloud-first load: NeonDB = source of truth when logged in
+  // Skip if already loaded this session (avoids redundant cloud fetch on remount)
   useEffect(() => {
     if (!isLoggedIn()) { setCloudLoading(false); skipSaveRef.current = false; return; }
-    if (cloudLoadedRef.current) return;
+    if (cloudLoadedRef.current || _cloudLoadedThisSession) {
+      setCloudLoading(false); skipSaveRef.current = false; return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -474,6 +493,7 @@ export default function ShadowColosseum() {
       } finally {
         if (!cancelled) {
           cloudLoadedRef.current = true;
+          _cloudLoadedThisSession = true;
           setCloudLoading(false);
           skipSaveRef.current = false;
         }
@@ -708,10 +728,10 @@ export default function ShadowColosseum() {
       .catch(() => {});
   };
 
-  // Fetch drop log on mount + poll every 60s
+  // Fetch drop log on mount + poll every 5 min (was 60s — reduced for network savings)
   useEffect(() => {
     fetchDropLog();
-    const iv = setInterval(fetchDropLog, 60000);
+    const iv = setInterval(fetchDropLog, 300000);
     return () => clearInterval(iv);
   }, []);
 
@@ -2084,8 +2104,8 @@ export default function ShadowColosseum() {
   };
   const stopStatHold = () => {
     if (statHoldRef.current) { clearTimeout(statHoldRef.current); statHoldRef.current = null; }
-    // Immediate cloud sync when user releases — prevents 30s debounce data loss
-    cloudStorage.saveAndSync(SAVE_KEY, dataRef.current);
+    // Debounced cloud sync — user may click another stat right after
+    debouncedSaveAndSync(dataRef.current);
   };
 
   const resetStats = (id) => {
@@ -2161,7 +2181,7 @@ export default function ShadowColosseum() {
     alloc[nodeId] = (alloc[nodeId] || 0) + 1;
     const newData = { ...data, talentTree2: { ...data.talentTree2, [id]: alloc } };
     setData(newData);
-    cloudStorage.saveAndSync(SAVE_KEY, newData);
+    debouncedSaveAndSync(newData);
   };
 
   // Merged bonuses: Talent I + Talent II
@@ -2220,7 +2240,7 @@ export default function ShadowColosseum() {
     chibiAlloc[treeId] = treeAlloc;
     const newData = { ...data, talentTree: { ...data.talentTree, [id]: chibiAlloc } };
     setData(newData);
-    cloudStorage.saveAndSync(SAVE_KEY, newData);
+    debouncedSaveAndSync(newData);
   };
 
   // Reset talents per tree (talent1, talent2, talentSkill)
@@ -2256,14 +2276,14 @@ export default function ShadowColosseum() {
     if (getAvailTalentPts(id) < TALENT_SKILL_COST && !data.talentSkills[id]) return;
     const newData = { ...data, talentSkills: { ...data.talentSkills, [id]: { skillIndex, replacedSlot } } };
     setData(newData);
-    cloudStorage.saveAndSync(SAVE_KEY, newData);
+    debouncedSaveAndSync(newData);
   };
   const unequipTalentSkill = (id) => {
     const ts = { ...data.talentSkills };
     delete ts[id];
     const newData = { ...data, talentSkills: ts };
     setData(newData);
-    cloudStorage.saveAndSync(SAVE_KEY, newData);
+    debouncedSaveAndSync(newData);
   };
 
   // ═══════════════════════════════════════════════════════════════
@@ -11020,7 +11040,7 @@ export default function ShadowColosseum() {
                     accountAllocations: (dataRef.current.accountAllocations || 0) + actual,
                   };
                   setData(newData);
-                  cloudStorage.saveAndSync(SAVE_KEY, newData);
+                  debouncedSaveAndSync(newData);
                 };
                 return (
                   <div key={statKey} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.06] hover:border-indigo-500/30 transition-all">
