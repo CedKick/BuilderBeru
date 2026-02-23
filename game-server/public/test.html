@@ -436,18 +436,35 @@
           </div>
         </div>
 
-        <!-- Hidden panels (stats/gear/forge managed from React page) -->
-        <div id="statsPanel" style="display:none">
-          <div id="statPointsRemaining"></div>
+        <!-- Stats Panel -->
+        <div id="statsPanel" style="display:none;background:linear-gradient(135deg,rgba(16,185,129,0.1),rgba(30,30,60,0.4));border:1px solid #10b98144;border-radius:8px;padding:8px 10px;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <h3 style="color:#10b981;font-size:11px;margin:0">📊 STATS RAID (3 pts/lvl)</h3>
+            <button onclick="resetStatPoints()" style="font-size:8px;padding:2px 6px;background:#ef4444;color:white;border:none;border-radius:3px;cursor:pointer">Reset</button>
+          </div>
+          <div id="statPointsRemaining" style="font-size:9px;color:#94a3b8;margin-bottom:4px"></div>
           <div id="statAllocUI"></div>
         </div>
-        <div id="gearPanel" style="display:none">
-          <div class="gear-weapon" id="gearWeaponSlot"></div>
+
+        <!-- Gear Panel -->
+        <div id="gearPanel" style="display:none;background:linear-gradient(135deg,rgba(59,130,246,0.1),rgba(30,30,60,0.4));border:1px solid #3b82f644;border-radius:8px;padding:8px 10px;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <h3 style="color:#3b82f6;font-size:11px;margin:0">🛡️ EQUIPEMENT RAID</h3>
+            <button onclick="openInventory('all')" style="font-size:8px;padding:2px 6px;background:#7c3aed;color:white;border:none;border-radius:3px;cursor:pointer">📦 Inventaire</button>
+          </div>
+          <div style="font-size:8px;color:#64748b;margin-bottom:4px">Clique sur un slot pour equiper. Armes et artefacts obtenus en battant Manaya.</div>
+          <div class="gear-weapon" id="gearWeaponSlot" onclick="openInventory('weapon')" style="cursor:pointer"></div>
           <div class="gear-slots" id="gearSlots"></div>
           <div class="gear-summary" id="gearSummary"></div>
         </div>
-        <div id="forgePanel" style="display:none">
-          <span class="feather-num" id="featherCount">0</span>
+
+        <!-- Forge Panel -->
+        <div id="forgePanel" style="display:none;background:linear-gradient(135deg,rgba(255,45,85,0.1),rgba(30,30,60,0.4));border:1px solid #ff2d5544;border-radius:8px;padding:8px 10px;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <h3 style="color:#ff2d55;font-size:11px;margin:0">🔥 FORGE DE MANAYA</h3>
+            <span style="font-size:10px;color:#f59e0b">🪶 <span class="feather-num" id="featherCount">0</span> Plumes</span>
+          </div>
+          <div style="font-size:8px;color:#64748b;margin-bottom:4px">Forge les pieces du Set Legendaire avec des Plumes (drop rare du boss).</div>
           <div class="forge-grid" id="forgeGrid"></div>
           <div class="set-bonus-list" id="setBonusList"></div>
         </div>
@@ -1016,7 +1033,7 @@
       const ui = document.getElementById('statAllocUI');
       const remaining = document.getElementById('statPointsRemaining');
       if (!profile || profile.level <= 1) return;
-      // Panel stays hidden (managed from React page)
+      panel.style.display = 'block';
 
       const { allocated, free, total } = getStatPoints(profile);
       remaining.innerHTML = 'Points: <span style="color:#10b981;font-weight:bold">' + free + '</span> / ' + total + ' disponibles';
@@ -1172,7 +1189,7 @@
       const profile = loadProfile();
       const panel = document.getElementById('forgePanel');
       if (!profile) return;
-      // Panel stays hidden (managed from React page)
+      panel.style.display = 'block';
 
       const feathers = loadFeathers();
       document.getElementById('featherCount').textContent = feathers;
@@ -1297,7 +1314,7 @@
       const profile = loadProfile();
       const panel = document.getElementById('gearPanel');
       if (!profile) return;
-      // Panel stays hidden (managed from React page)
+      panel.style.display = 'block';
 
       const eq = loadEquipped();
 
