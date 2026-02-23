@@ -8240,7 +8240,12 @@ export default function ShadowColosseum() {
                   };
 
                   const doEqReroll = async () => {
-                    if (!eqCanReroll) return;
+                    if (!eqCanReroll) {
+                      if (eqArt.locked) beruSay("Deverrouille l'artefact d'abord avant de reroll ! Clique sur le cadenas.", 'angry');
+                      else if ((data.alkahest || 0) < REROLL_ALKAHEST_COST) beruSay("T'as pas assez d'Alkahest ! Affronte Manaya en PVE Multi pour en obtenir. Meme en perdant tu peux en gagner si tu fais assez de degats au boss !", 'thinking');
+                      else if (eqCoins < eqRerollCoinCost) beruSay(`T'as pas assez de coins ! Il te faut ${fmtNum(eqRerollCoinCost)} coins pour ce reroll.`, 'angry');
+                      return;
+                    }
                     if (!window.confirm(`Reroll les substats de cet artefact ?\n\nCout: ${REROLL_ALKAHEST_COST} Alkahest + ${fmtNum(eqRerollCoinCost)} coins\nL'artefact repassera au niveau 0 !`)) return;
                     shadowCoinManager.spendCoins(eqRerollCoinCost);
                     try {
@@ -8365,12 +8370,12 @@ export default function ShadowColosseum() {
 
                       {/* Reroll button */}
                       <div className="mt-1.5 relative group/eqreroll">
-                        <button onClick={doEqReroll} disabled={!eqCanReroll}
-                          className={`w-full py-1.5 rounded-lg text-[10px] font-bold transition-colors ${
-                            eqArt.locked ? 'bg-gray-700/20 text-gray-600 cursor-not-allowed' :
+                        <button onClick={doEqReroll}
+                          className={`w-full py-1.5 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
+                            eqArt.locked ? 'bg-gray-700/20 text-gray-600' :
                             eqCanReroll ? 'bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600/40' :
                             'bg-emerald-600/15 text-emerald-300/50'
-                          } disabled:opacity-30`}>
+                          }`}>
                           {'\uD83C\uDFB2'} Reroll substats ({REROLL_ALKAHEST_COST}{'\u2697\uFE0F'} + {fmtNum(eqRerollCoinCost)}c)
                           {eqRerollCount > 0 && <span className="ml-1 text-amber-400">x{eqRerollCount + 1}</span>}
                         </button>
@@ -9434,7 +9439,13 @@ export default function ShadowColosseum() {
           && coins >= rerollCoinCost;
 
         const doReroll = async () => {
-          if (!canReroll || !selArt) return;
+          if (!selArt) return;
+          if (!canReroll) {
+            if (selArt.locked) beruSay("Deverrouille l'artefact d'abord avant de reroll ! Clique sur le cadenas.", 'angry');
+            else if ((data.alkahest || 0) < REROLL_ALKAHEST_COST) beruSay("T'as pas assez d'Alkahest ! Affronte Manaya en PVE Multi pour en obtenir. Meme en perdant tu peux en gagner si tu fais assez de degats au boss !", 'thinking');
+            else if (coins < rerollCoinCost) beruSay(`T'as pas assez de coins ! Il te faut ${fmtNum(rerollCoinCost)} coins pour ce reroll.`, 'angry');
+            return;
+          }
           if (!window.confirm(`Reroll les substats de cet artefact ?\n\nCout: ${REROLL_ALKAHEST_COST} Alkahest + ${fmtNum(rerollCoinCost)} coins\nL'artefact repassera au niveau 0 !`)) return;
 
           shadowCoinManager.spendCoins(rerollCoinCost);
@@ -10301,12 +10312,12 @@ export default function ShadowColosseum() {
                 </div>
                 {/* Reroll button (Alkahest) */}
                 <div className="mt-1.5 relative group/reroll">
-                  <button onClick={doReroll} disabled={!canReroll}
-                    className={`w-full py-1.5 rounded-lg text-[10px] font-bold transition-colors ${
-                      selArt.locked ? 'bg-gray-700/20 text-gray-600 cursor-not-allowed' :
+                  <button onClick={doReroll}
+                    className={`w-full py-1.5 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
+                      selArt.locked ? 'bg-gray-700/20 text-gray-600' :
                       canReroll ? 'bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600/40' :
                       'bg-emerald-600/15 text-emerald-300/50'
-                    } disabled:opacity-30`}>
+                    }`}>
                     {'\uD83C\uDFB2'} Reroll substats ({REROLL_ALKAHEST_COST}{'\u2697\uFE0F'} + {fmtNum(rerollCoinCost)}c)
                     {rerollCount > 0 && <span className="ml-1 text-amber-400">x{rerollCount + 1}</span>}
                   </button>
