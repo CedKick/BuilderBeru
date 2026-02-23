@@ -3876,10 +3876,11 @@ export default function ShadowColosseum() {
       }));
     }
 
-    // Auto-replay logic — si arme droppée, pause 4.5s pour l'animation puis reprend
+    // Auto-replay logic — pause plus longue si loot rare (arme, hunter, set ultime)
     if (autoReplayRef.current) {
       setView('result');
-      const delay = weaponDrop ? 2250 : 750;
+      const hasRareLoot = weaponDrop || hunterDrops.length > 0 || setUltimeDrops.length > 0;
+      const delay = hasRareLoot ? 2500 : 750;
       setTimeout(() => {
         if (autoReplayRef.current) {
           setResult(null); setBattle(null);
@@ -6721,14 +6722,26 @@ export default function ShadowColosseum() {
                       </span>
                     </div>
                   )}
-                  {r.hunterDrops?.length > 0 && r.hunterDrops.map((hd, hi) => (
-                    <div key={hi} className="flex justify-between items-center">
-                      <span className="text-gray-400">Hunter</span>
-                      <span className={`text-xs font-bold ${hd.rarity === 'mythique' ? 'text-purple-400' : hd.rarity === 'legendaire' ? 'text-yellow-400' : 'text-blue-400'}`}>
-                        {'\uD83C\uDF1F'} {hd.name} {hd.isDuplicate ? '(Dupe)' : '(Nouveau !)'}
-                      </span>
+                  {/* Hunter + Set Ultime drops — côte à côte */}
+                  {(r.hunterDrops?.length > 0 || r.setUltimeDrops?.length > 0) && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {r.hunterDrops?.map((hd, hi) => (
+                        <div key={`h${hi}`} className="flex-1 min-w-[120px] p-2 rounded-lg border border-blue-500/50 bg-gradient-to-r from-blue-900/30 to-purple-900/30 text-center" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>
+                          <img loading="lazy" src={HUNTERS[hd.id]?.sprite || ''} alt="" className="w-8 h-8 mx-auto object-contain" />
+                          <div className="text-blue-300 font-black text-[10px]">{'\uD83C\uDF1F'} {hd.name}</div>
+                          <div className={`text-[8px] ${hd.isDuplicate ? 'text-yellow-400' : 'text-green-400'}`}>
+                            {hd.isDuplicate ? `Dupe ! A${hd.newStars}` : 'Nouveau !'}
+                          </div>
+                        </div>
+                      ))}
+                      {r.setUltimeDrops?.map((su, si) => (
+                        <div key={`s${si}`} className="flex-1 min-w-[120px] p-2 rounded-lg border border-red-500/50 bg-gradient-to-r from-red-900/30 to-black/40 text-center" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>
+                          <div className="text-red-300 font-black text-[10px]">{'\uD83E\uDE78'} SET ULTIME</div>
+                          <div className="text-white font-black text-[10px]" style={{ textShadow: '0 0 8px rgba(239,68,68,0.6)' }}>{su.name}</div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                   {r.art && (
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Artefact ARC II</span>
@@ -6737,16 +6750,6 @@ export default function ShadowColosseum() {
                       </span>
                     </div>
                   )}
-                  {r.setUltimeDrops?.length > 0 && r.setUltimeDrops.map((su, si) => (
-                    <div key={si} className="mt-2 p-2 rounded-lg border border-red-500/50 bg-gradient-to-r from-red-900/30 to-black/40" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>
-                      <div className="flex justify-between items-center">
-                        <span className="text-red-300 font-bold text-xs">{'\uD83E\uDE78'} SET ULTIME</span>
-                        <span className="text-white font-black text-xs" style={{ textShadow: '0 0 8px rgba(239,68,68,0.6)' }}>
-                          {su.name}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
                   {r.skinDrop && (
                     <div className="mt-2 p-2 rounded-lg border border-pink-500/50 bg-gradient-to-r from-pink-900/30 to-purple-900/30" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>
                       <div className="flex items-center gap-2">
@@ -10475,13 +10478,8 @@ export default function ShadowColosseum() {
             getChibiData={getChibiData}
             weaponPassive={selChibi && data.weapons[selChibi] ? WEAPONS[data.weapons[selChibi]]?.passive : null}
           />
-          {/* Auto toggle + Farm stats HUD */}
+          {/* Farm stats HUD (Auto button moved to persistent bottom bar) */}
           <div className="absolute top-1 right-2 z-20 flex flex-col items-end gap-1">
-            <button
-              onClick={() => { const next = !autoReplay; setAutoReplay(next); if (next) setAutoFarmStats({ runs: 0, wins: 0, levels: 0, coins: 0, loots: 0, hunters: 0, weapons: 0, artifacts: 0 }); }}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${autoReplay ? 'bg-green-500/90 text-white shadow-lg shadow-green-500/30 ring-1 ring-green-400/50' : 'bg-gray-700/80 text-gray-400 hover:bg-gray-600/80'}`}>
-              Auto {autoReplay ? 'ON' : 'OFF'}
-            </button>
             {autoReplay && autoFarmStats.runs > 0 && (
               <div className="px-2.5 py-1.5 rounded-lg bg-gray-900/90 border border-green-500/30 backdrop-blur-sm text-right">
                 <div className="text-[9px] text-green-400 font-bold uppercase tracking-wider mb-0.5">Auto-Farm</div>
@@ -10993,34 +10991,36 @@ export default function ShadowColosseum() {
                   </div>
                 </motion.div>
               )}
-              {result.hunterDrops?.length > 0 && result.hunterDrops.map((hd, hi) => (
-                <motion.div key={hi} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.1 + hi * 0.15 }}
-                  className="bg-gradient-to-r from-red-600/20 to-purple-600/20 border border-red-500/40 rounded-xl p-3 mb-3">
-                  <div className="text-red-400 font-black text-lg">{'\u2694\uFE0F'} HUNTER DROP !</div>
-                  <div className="flex items-center justify-center gap-2 mt-1">
-                    <img loading="lazy" src={HUNTERS[hd.id]?.sprite || ''} alt="" className="w-10 h-10 object-contain" />
-                    <div>
-                      <div className="text-sm font-bold text-white">{hd.name}</div>
+              {/* Hunter + Set Ultime drops — côte à côte, même vitesse */}
+              {(result.hunterDrops?.length > 0 || result.setUltimeDrops?.length > 0) && (
+                <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 1.1, type: 'spring', stiffness: 200 }}
+                  className="flex flex-wrap justify-center gap-3 mb-4">
+                  {result.hunterDrops?.map((hd, hi) => (
+                    <div key={`h${hi}`}
+                      className="flex-1 min-w-[140px] max-w-[200px] bg-gradient-to-b from-blue-600/30 to-purple-600/30 border-2 border-blue-400/60 rounded-xl p-3 text-center" style={{ boxShadow: '0 0 30px rgba(96, 165, 250, 0.3)' }}>
+                      <div className="text-blue-300 font-black text-sm animate-pulse">{'\uD83C\uDF1F'} HUNTER !</div>
+                      <img loading="lazy" src={HUNTERS[hd.id]?.sprite || ''} alt="" className="w-14 h-14 mx-auto mt-1 object-contain drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]" />
+                      <div className="text-sm font-black text-white mt-1">{hd.name}</div>
                       <div className={`text-[10px] ${RARITY[hd.rarity]?.color || 'text-gray-400'}`}>
                         {RARITY[hd.rarity]?.stars || ''}
                       </div>
+                      {hd.isDuplicate ? (
+                        <div className="text-yellow-400 text-[10px] font-bold mt-1">Dupe ! A{hd.newStars}</div>
+                      ) : (
+                        <div className="text-green-400 text-[10px] font-bold mt-1">Nouveau !</div>
+                      )}
                     </div>
-                  </div>
-                  {hd.isDuplicate ? (
-                    <div className="text-yellow-400 text-xs mt-1">Doublon ! Eveil A{hd.newStars}</div>
-                  ) : (
-                    <div className="text-green-400 text-xs mt-1">Nouveau hunter debloque !</div>
-                  )}
+                  ))}
+                  {result.setUltimeDrops?.map((su, si) => (
+                    <div key={`s${si}`}
+                      className="flex-1 min-w-[140px] max-w-[200px] bg-gradient-to-b from-red-600/30 to-pink-600/30 border-2 border-red-400/60 rounded-xl p-3 text-center" style={{ boxShadow: '0 0 30px rgba(239, 68, 68, 0.3)' }}>
+                      <div className="text-red-300 font-black text-sm animate-pulse">{'\uD83E\uDE78'} SET ULTIME !</div>
+                      <div className="text-white font-black text-sm mt-2">{su.name}</div>
+                      <div className="text-red-400 text-[10px] mt-1">Set Manaya T12</div>
+                    </div>
+                  ))}
                 </motion.div>
-              ))}
-              {result.setUltimeDrops?.length > 0 && result.setUltimeDrops.map((su, si) => (
-                <motion.div key={si} initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 1.2 + si * 0.15, type: 'spring', stiffness: 200 }}
-                  className="bg-gradient-to-r from-red-600/30 to-pink-600/30 border-2 border-red-400/60 rounded-xl p-4 mb-3" style={{ boxShadow: '0 0 30px rgba(239, 68, 68, 0.3)' }}>
-                  <div className="text-red-300 font-black text-lg animate-pulse">{'\uD83E\uDE78'} SET ULTIME DE MANAYA !</div>
-                  <div className="text-white font-black text-sm mt-1">{su.name}</div>
-                  <div className="text-red-400 text-[10px] mt-0.5">Piece du Set Manaya T12</div>
-                </motion.div>
-              ))}
+              )}
               {result.weaponDrop && (
                 <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 1.2, type: 'spring', stiffness: 200 }}
                   className="bg-gradient-to-r from-orange-600/30 to-red-600/30 border-2 border-orange-400/60 rounded-xl p-4 mb-6 cursor-pointer" style={{ boxShadow: '0 0 30px rgba(251, 146, 60, 0.3)' }}
@@ -11095,52 +11095,12 @@ export default function ShadowColosseum() {
               </button>
             )}
             {result.won && (
-              <div className="flex items-center justify-center gap-3">
-                <button
-                  onClick={() => { setResult(null); setBattle(null); setTimeout(() => startBattle(), 50); }}
-                  className="px-5 py-2.5 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-xl font-bold text-sm shadow-lg hover:scale-105 transition-transform"
-                >
-                  {'🔁'} Recommencer
-                </button>
-                <label className="flex items-center gap-2 cursor-pointer select-none"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const next = !autoReplay;
-                    setAutoReplay(next);
-                    if (next) { setAutoFarmStats({ runs: 0, wins: 0, levels: 0, coins: 0, loots: 0, hunters: 0, weapons: 0, artifacts: 0 }); setResult(null); setBattle(null); setTimeout(() => startBattle(), 100); }
-                  }}>
-                  <div className={`relative w-10 h-5 rounded-full transition-colors ${autoReplay ? 'bg-green-500' : 'bg-gray-600'}`}>
-                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${autoReplay ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                  </div>
-                  <span className={`text-xs font-bold ${autoReplay ? 'text-green-400' : 'text-gray-400'}`}>
-                    Auto
-                  </span>
-                </label>
-              </div>
-            )}
-            {/* Auto-farm stats on result screen */}
-            {autoReplay && autoFarmStats.runs > 0 && (
-              <div className="w-full max-w-xs mx-auto px-3 py-2 rounded-xl bg-gray-900/80 border border-green-500/30 backdrop-blur-sm">
-                <div className="text-[10px] text-green-400 font-bold uppercase tracking-wider text-center mb-1">Auto-Farm en cours</div>
-                <div className="grid grid-cols-4 gap-2 text-center">
-                  <div>
-                    <div className="text-sm font-black text-white">{autoFarmStats.runs}</div>
-                    <div className="text-[8px] text-gray-500">runs</div>
-                  </div>
-                  <div>
-                    <div className="text-sm font-black text-yellow-400">+{autoFarmStats.levels}</div>
-                    <div className="text-[8px] text-gray-500">niveaux</div>
-                  </div>
-                  <div>
-                    <div className="text-sm font-black text-amber-300">{fmtNum(autoFarmStats.coins)}</div>
-                    <div className="text-[8px] text-gray-500">coins</div>
-                  </div>
-                  <div>
-                    <div className="text-sm font-black text-purple-400">{autoFarmStats.loots}</div>
-                    <div className="text-[8px] text-gray-500">loots</div>
-                  </div>
-                </div>
-              </div>
+              <button
+                onClick={() => { setResult(null); setBattle(null); setTimeout(() => startBattle(), 50); }}
+                className="px-5 py-2.5 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-xl font-bold text-sm shadow-lg hover:scale-105 transition-transform"
+              >
+                {'🔁'} Recommencer
+              </button>
             )}
             {/* Ragnarok persistent tracker on result screen */}
             {STAGES[selStage]?.id === 'ragnarok' && (
@@ -11236,6 +11196,38 @@ export default function ShadowColosseum() {
               Retour au Colisee
             </button>
           </div>
+        </div>
+      )}
+
+      {/* ═══ PERSISTENT AUTO BUTTON (bottom bar) ═══ */}
+      {(view === 'battle' || view === 'result') && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3">
+          <button
+            onClick={() => {
+              const next = !autoReplay;
+              setAutoReplay(next);
+              if (next) {
+                setAutoFarmStats({ runs: 0, wins: 0, levels: 0, coins: 0, loots: 0, hunters: 0, weapons: 0, artifacts: 0 });
+                if (view === 'result') { setResult(null); setBattle(null); setTimeout(() => startBattle(), 100); }
+              }
+            }}
+            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg backdrop-blur-sm ${
+              autoReplay
+                ? 'bg-green-500/90 text-white shadow-green-500/40 ring-2 ring-green-400/50'
+                : 'bg-gray-700/90 text-gray-300 hover:bg-gray-600/90 border border-gray-600/50'
+            }`}
+          >
+            {autoReplay ? '⏸ Auto ON' : '▶ Auto OFF'}
+          </button>
+          {autoReplay && autoFarmStats.runs > 0 && (
+            <div className="px-3 py-1.5 rounded-xl bg-gray-900/90 border border-green-500/30 backdrop-blur-sm flex items-center gap-3 text-[10px]">
+              <span className="text-white font-bold">{autoFarmStats.runs} runs</span>
+              {autoFarmStats.levels > 0 && <span className="text-yellow-400">+{autoFarmStats.levels} niv</span>}
+              <span className="text-amber-300">+{fmtNum(autoFarmStats.coins)}</span>
+              {autoFarmStats.loots > 0 && <span className="text-purple-400">{autoFarmStats.loots} loots</span>}
+              {autoFarmStats.hunters > 0 && <span className="text-blue-400">{autoFarmStats.hunters} hunters</span>}
+            </div>
+          )}
         </div>
       )}
 
