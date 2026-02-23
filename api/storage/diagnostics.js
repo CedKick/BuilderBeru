@@ -31,7 +31,7 @@ export default async function handler(req, res) {
         n_live_tup AS live_rows,
         n_dead_tup AS dead_rows
       FROM pg_stat_user_tables
-      JOIN pg_class ON relname = pg_class.relname
+      JOIN pg_class ON pg_stat_user_tables.relname = pg_class.relname
       ORDER BY pg_total_relation_size(relid) DESC
       LIMIT 20
     `);
