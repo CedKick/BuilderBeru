@@ -55,6 +55,9 @@ export class Manaya extends BossBase {
       this._patternWaves(),
       this._patternLeapSlam(),
 
+      // Phase 3+ (75-50%) — Triple Laser (Tera iconic)
+      this._patternTripleLaser(),
+
       // Phase 4+ (50-30%) — Laser + Double Circle
       this._patternLaser(),
       this._patternDoubleCircle(),
@@ -712,6 +715,70 @@ export class Manaya extends BossBase {
           zone.angle = data.angle;
           zone.x = boss.x;
           zone.y = boss.y;
+        }
+
+        return data.elapsed >= data.duration;
+      },
+    };
+  }
+
+  // ──────────────────────────
+  // PATTERN: Triple Laser (Tera Manaya iconic)
+  // 3 red beams at 120° intervals, slow rotation, near one-shot
+  // ──────────────────────────
+  _patternTripleLaser() {
+    return {
+      name: 'Trinité Écarlate',
+      phase: 3, weight: 2, cooldown: 22, globalCooldown: 3.5,
+      telegraphTime: 2.0, castTime: 0.5, recoveryTime: 1.5,
+
+      onStart: (boss, gs, data) => {
+        const target = gs.getHighestAggroPlayer();
+        data.startAngle = target ? Math.atan2(target.y - boss.y, target.x - boss.x) : boss.rotation;
+        data.rotDir = Math.random() > 0.5 ? 1 : -1;
+        data.angle = data.startAngle;
+        data.elapsed = 0;
+        data.duration = 4.0; // 4 seconds of rotating lasers
+
+        // Telegraph: 3 thin red lines showing where lasers will fire
+        for (let i = 0; i < 3; i++) {
+          const a = data.startAngle + (i * Math.PI * 2 / 3); // 120° apart
+          gs.addAoeZone({
+            id: `trilaser_tel_${Date.now()}_${i}`, type: 'laser_red_telegraph',
+            x: boss.x, y: boss.y, radius: 700, angle: a, lineWidth: 20,
+            ttl: 2.5, maxTtl: 2.5, active: false, source: boss.id,
+          });
+        }
+        gs.addEvent({ type: 'boss_message', text: '🔴 Trinité Écarlate !' });
+      },
+
+      onExecute: (boss, gs, data) => {
+        data.laserIds = [];
+        for (let i = 0; i < 3; i++) {
+          const a = data.angle + (i * Math.PI * 2 / 3);
+          const zoneId = `trilaser_${Date.now()}_${i}`;
+          data.laserIds.push(zoneId);
+          gs.addAoeZone({
+            id: zoneId, type: 'laser_red',
+            x: boss.x, y: boss.y, radius: 700, angle: a, lineWidth: 50,
+            ttl: data.duration + 0.5, maxTtl: data.duration + 0.5, active: true,
+            source: boss.id, damagePerTick: boss.atk * 9.0, // Near one-shot
+            tickInterval: 0.2, _tickTimer: 0,
+          });
+        }
+      },
+
+      onUpdate: (boss, gs, data, dt) => {
+        data.elapsed += dt;
+        data.angle += data.rotDir * (Math.PI / 4) * dt; // 45°/sec (slower than single laser)
+
+        for (let i = 0; i < 3; i++) {
+          const zone = gs.aoeZones.find(z => z.id === data.laserIds[i]);
+          if (zone) {
+            zone.angle = data.angle + (i * Math.PI * 2 / 3);
+            zone.x = boss.x;
+            zone.y = boss.y;
+          }
         }
 
         return data.elapsed >= data.duration;

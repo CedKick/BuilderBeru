@@ -266,8 +266,8 @@ export class PhysicsEngine {
         }
       }
 
-      // Laser tick damage on players
-      if (zone.type === 'laser' && zone.active && zone.damagePerTick) {
+      // Laser tick damage on players (yellow single + red triple)
+      if ((zone.type === 'laser' || zone.type === 'laser_red') && zone.active && zone.damagePerTick) {
         zone._tickTimer = (zone._tickTimer || 0) - dt;
         if (zone._tickTimer <= 0) {
           zone._tickTimer = zone.tickInterval || 0.2;

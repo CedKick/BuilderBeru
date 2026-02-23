@@ -63,7 +63,7 @@
 
     /* ── Player HP/Mana (BOTTOM of screen) ── */
     .player-hud {
-      position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%);
+      position: absolute; bottom: 140px; left: 50%; transform: translateX(-50%);
       width: 420px; pointer-events: none; z-index: 10;
     }
     .player-hud-name { text-align: center; font-size: 11px; color: #ccc; margin-bottom: 2px; }
@@ -127,7 +127,7 @@
 
     /* ── Buff/Debuff ── */
     .buff-display {
-      position: absolute; bottom: 168px; left: 50%; transform: translateX(-50%);
+      position: absolute; bottom: 198px; left: 50%; transform: translateX(-50%);
       display: flex; gap: 4px; z-index: 10; pointer-events: none;
     }
     .buff-icon {
@@ -472,6 +472,13 @@
     let tankBlockLoaded = false;
     tankBlockImg.onload = () => { tankBlockLoaded = true; };
 
+    // ── Add (Tentacle) Sprite ──
+    const addImg = new Image();
+    addImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771729827/tentaculeManaya_dkn8yg.png';
+    let addImgLoaded = false;
+    addImg.onload = () => { addImgLoaded = true; };
+    const ADD_SPRITE_SIZE = { minion: 42, elite: 56, caster: 38 };
+
     // ── Arena Map ──
     const arenaMapImg = new Image();
     arenaMapImg.src = 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771694314/mapManaya_gjdwpd.jpg';
@@ -566,8 +573,18 @@
     let autoStatPointsApplied = false;
 
     // ── Hunter Selection UI (pick 3, no duplicates) ──
+    // Auto-select first 3 owned hunters (from URL params)
     let selectedHunters = [null, null, null];
     let selectedCount = 0;
+    if (ownedHunters.length >= 3) {
+      selectedHunters = [ownedHunters[0], ownedHunters[1], ownedHunters[2]];
+      selectedCount = 3;
+    } else if (ownedHunters.length > 0) {
+      for (let i = 0; i < ownedHunters.length && i < 3; i++) {
+        selectedHunters[i] = ownedHunters[i];
+        selectedCount++;
+      }
+    }
 
     function buildHunterSelectionUI() {
       const container = document.getElementById('hunterSelection');
@@ -1694,6 +1711,47 @@
         ctx.setLineDash([6, 6]);
         ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         ctx.setLineDash([]);
+      } else if (zone.type === 'laser_red_telegraph') {
+        // Red laser telegraph — pulsing dashed red line
+        const endX = zone.x + Math.cos(zone.angle) * zone.radius;
+        const endY = zone.y + Math.sin(zone.angle) * zone.radius;
+        const pulse = 0.3 + 0.4 * Math.sin(Date.now() / 150); // Fast pulse for urgency
+        ctx.strokeStyle = 'rgba(239,68,68,' + (pulse * progress) + ')';
+        ctx.lineWidth = (zone.lineWidth || 20) * 0.5;
+        ctx.setLineDash([12, 6]);
+        ctx.beginPath(); ctx.moveTo(zone.x, zone.y); ctx.lineTo(endX, endY); ctx.stroke();
+        ctx.setLineDash([]);
+        // Small red dot at source
+        ctx.fillStyle = 'rgba(239,68,68,' + pulse + ')';
+        ctx.beginPath(); ctx.arc(zone.x, zone.y, 6, 0, Math.PI * 2); ctx.fill();
+      } else if (zone.type === 'laser_red') {
+        // Triple red laser — menacing crimson beams
+        const endX = zone.x + Math.cos(zone.angle) * zone.radius;
+        const endY = zone.y + Math.sin(zone.angle) * zone.radius;
+        const lw = zone.lineWidth || 50;
+        const perp = zone.angle + Math.PI / 2;
+        ctx.save();
+        ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 25;
+        // Wide outer glow (dark red)
+        ctx.strokeStyle = 'rgba(239,68,68,0.15)'; ctx.lineWidth = lw + 16;
+        ctx.beginPath(); ctx.moveTo(zone.x, zone.y); ctx.lineTo(endX, endY); ctx.stroke();
+        // Core beam — bright red
+        ctx.strokeStyle = zone.active ? 'rgba(248,113,113,0.85)' : 'rgba(239,68,68,0.3)';
+        ctx.lineWidth = lw * 0.6;
+        ctx.beginPath(); ctx.moveTo(zone.x, zone.y); ctx.lineTo(endX, endY); ctx.stroke();
+        // Inner hot core — white-pink
+        const flicker = 0.5 + 0.3 * Math.sin(Date.now() / 80); // Rapid flicker
+        ctx.strokeStyle = 'rgba(255,200,200,' + flicker + ')';
+        ctx.lineWidth = lw * 0.15;
+        ctx.beginPath(); ctx.moveTo(zone.x, zone.y); ctx.lineTo(endX, endY); ctx.stroke();
+        // Edge particles (scattered dots along beam)
+        for (let t = 0.1; t < 1; t += 0.12) {
+          const px = zone.x + (endX - zone.x) * t + (Math.random() - 0.5) * lw * 0.8;
+          const py = zone.y + (endY - zone.y) * t + (Math.random() - 0.5) * lw * 0.8;
+          ctx.fillStyle = 'rgba(255,120,120,' + (0.3 + Math.random() * 0.4) + ')';
+          ctx.beginPath(); ctx.arc(px, py, 1.5 + Math.random() * 2, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore();
       } else if (zone.type === 'laser_telegraph') {
         const endX = zone.x + Math.cos(zone.angle) * zone.radius;
         const endY = zone.y + Math.sin(zone.angle) * zone.radius;
@@ -2085,49 +2143,53 @@
     function drawAdd(add) {
       ctx.save();
 
-      // Shadow
-      ctx.fillStyle = 'rgba(0,0,0,0.3)';
-      ctx.beginPath(); ctx.ellipse(add.x, add.y + add.radius * 0.7, add.radius * 0.8, add.radius * 0.3, 0, 0, Math.PI * 2); ctx.fill();
-
-      // Body glow
       const isElite = add.type === 'elite';
       const isCaster = add.type === 'caster';
-      if (isElite) {
-        ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 12;
-      } else if (isCaster) {
-        ctx.shadowColor = '#7c3aed'; ctx.shadowBlur = 10;
+      const spriteSize = ADD_SPRITE_SIZE[add.type] || 42;
+
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath(); ctx.ellipse(add.x, add.y + spriteSize * 0.35, spriteSize * 0.4, spriteSize * 0.15, 0, 0, Math.PI * 2); ctx.fill();
+
+      if (addImgLoaded) {
+        // Glow effect for elite/caster
+        if (isElite) {
+          ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 14;
+        } else if (isCaster) {
+          ctx.shadowColor = '#7c3aed'; ctx.shadowBlur = 12;
+        } else {
+          ctx.shadowColor = '#ef4444'; ctx.shadowBlur = 6;
+        }
+
+        // Draw tentacle sprite (flip based on movement direction)
+        ctx.save();
+        ctx.translate(add.x, add.y);
+        if (add.rotation > Math.PI / 2 || add.rotation < -Math.PI / 2) {
+          ctx.scale(-1, 1);
+        }
+        ctx.drawImage(addImg, -spriteSize / 2, -spriteSize / 2, spriteSize, spriteSize);
+        ctx.restore(); // Back to global canvas transform
+
+        ctx.shadowBlur = 0;
+
+        // Elite crown / Caster symbol on top of sprite
+        if (isElite) {
+          ctx.fillStyle = '#ffd700'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText('\u{1F451}', add.x, add.y - spriteSize / 2 - 4);
+        } else if (isCaster) {
+          ctx.fillStyle = '#c084fc'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText('\u{1F52E}', add.x, add.y - spriteSize / 2 - 4);
+        }
+      } else {
+        // Fallback: colored circle
+        const grad = ctx.createRadialGradient(add.x, add.y, 3, add.x, add.y, add.radius);
+        grad.addColorStop(0, add.color); grad.addColorStop(1, add.color + '66');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(add.x, add.y, add.radius, 0, Math.PI * 2); ctx.fill();
       }
-
-      // Body
-      const grad = ctx.createRadialGradient(add.x, add.y, 3, add.x, add.y, add.radius);
-      grad.addColorStop(0, add.color); grad.addColorStop(1, add.color + '66');
-      ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.arc(add.x, add.y, add.radius, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowBlur = 0;
-
-      // Elite crown / Caster symbol
-      if (isElite) {
-        ctx.fillStyle = '#ffd700'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('\u{1F451}', add.x, add.y - add.radius - 4);
-      } else if (isCaster) {
-        ctx.fillStyle = '#c084fc'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('\u{1F52E}', add.x, add.y - add.radius - 4);
-      }
-
-      // Eyes (facing direction)
-      const eyeX1 = add.x + Math.cos(add.rotation - 0.3) * (add.radius * 0.5);
-      const eyeY1 = add.y + Math.sin(add.rotation - 0.3) * (add.radius * 0.5);
-      const eyeX2 = add.x + Math.cos(add.rotation + 0.3) * (add.radius * 0.5);
-      const eyeY2 = add.y + Math.sin(add.rotation + 0.3) * (add.radius * 0.5);
-      ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.arc(eyeX1, eyeY1, 3, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(eyeX2, eyeY2, 3, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#000';
-      ctx.beginPath(); ctx.arc(eyeX1 + Math.cos(add.rotation) * 1.5, eyeY1 + Math.sin(add.rotation) * 1.5, 1.5, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(eyeX2 + Math.cos(add.rotation) * 1.5, eyeY2 + Math.sin(add.rotation) * 1.5, 1.5, 0, Math.PI * 2); ctx.fill();
 
       // HP bar
-      const bw = add.radius * 2.2, bh = 4, by = add.y - add.radius - 8;
+      const bw = spriteSize * 1.1, bh = 4, by = add.y - spriteSize / 2 - 8;
       ctx.fillStyle = '#111'; ctx.fillRect(add.x - bw/2, by, bw, bh);
       const hpPct = add.hp / add.maxHp;
       ctx.fillStyle = isElite ? '#dc2626' : isCaster ? '#7c3aed' : '#ef4444';
@@ -2135,7 +2197,7 @@
 
       // Name
       ctx.fillStyle = '#999'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(add.name, add.x, add.y + add.radius + 14);
+      ctx.fillText(add.name, add.x, add.y + spriteSize / 2 + 14);
 
       ctx.restore();
     }
