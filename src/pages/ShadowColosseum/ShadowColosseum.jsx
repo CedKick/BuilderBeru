@@ -391,6 +391,12 @@ const migrateData = (d) => {
   if (d.fragments && d.fragments.fragment_guldan === undefined) d.fragments.fragment_guldan = 0;
   if (!d.talentSkills) d.talentSkills = {};
   if (d.alkahest === undefined) d.alkahest = 0;
+  // Sync alkahest earned in Manaya (stored in separate localStorage key)
+  const pendingAlkahest = parseInt(localStorage.getItem('manaya_alkahest') || '0', 10);
+  if (pendingAlkahest > 0) {
+    d.alkahest = (d.alkahest || 0) + pendingAlkahest;
+    localStorage.removeItem('manaya_alkahest');
+  }
   if (!d.rerollCounts) d.rerollCounts = {};
   d.artifactInventory = (d.artifactInventory || []).map(art => ({
     ...art, locked: art.locked ?? false, highlighted: art.highlighted ?? false
