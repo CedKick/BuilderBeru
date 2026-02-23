@@ -1,7 +1,7 @@
 // src/pages/AdminPanel.jsx — Admin panel for managing player data (Kly only)
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Search, User, ChevronLeft, Save, RefreshCw, Package, Sword, Star, TrendingUp, X, Check, AlertTriangle } from 'lucide-react';
+import { Shield, Search, User, ChevronLeft, Save, RefreshCw, Package, Sword, Star, TrendingUp, X, Check, AlertTriangle, Activity } from 'lucide-react';
 import { isLoggedIn, authHeaders, getAuthUser } from '../utils/auth';
 import { HUNTERS } from './ShadowColosseum/raidData';
 import { WEAPONS } from './ShadowColosseum/equipmentData';
@@ -17,6 +17,7 @@ const TABS = [
   { id: 'weapons', label: 'Armes', icon: Sword },
   { id: 'account', label: 'Compte', icon: TrendingUp },
   { id: 'inventory', label: 'Inventaire', icon: Package },
+  { id: 'diagnostics', label: 'Serveur', icon: Activity },
 ];
 
 export default function AdminPanel() {
@@ -324,9 +325,9 @@ export default function AdminPanel() {
           )}
 
           {/* Tabs */}
-          {selectedUser && playerData && (
+          {(selectedUser && playerData || activeTab === 'diagnostics') && (
             <div className="flex gap-1 px-6 pt-3 border-b border-white/10 bg-[#0a0a15]">
-              {TABS.map(tab => (
+              {TABS.filter(tab => tab.id === 'diagnostics' || (selectedUser && playerData)).map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
@@ -351,7 +352,11 @@ export default function AdminPanel() {
               </div>
             )}
 
-            {!selectedUser && !loading && (
+            {activeTab === 'diagnostics' && (
+              <DiagnosticsTab allUsers={allUsers} />
+            )}
+
+            {!selectedUser && !loading && activeTab !== 'diagnostics' && (
               <div className="flex items-center justify-center h-64 text-gray-600">
                 <div className="text-center">
                   <Shield size={48} className="mx-auto mb-4 opacity-20" />
@@ -366,7 +371,7 @@ export default function AdminPanel() {
               </div>
             )}
 
-            {selectedUser && playerData && !loading && (
+            {selectedUser && playerData && !loading && activeTab !== 'diagnostics' && (
               <>
                 {activeTab === 'overview' && <OverviewTab data={playerData} raidData={raidData} />}
                 {activeTab === 'hunters' && <HuntersTab data={playerData} setField={setField} />}
@@ -378,6 +383,286 @@ export default function AdminPanel() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// TAB: Diagnostics (Server)
+// ═══════════════════════════════════════════════════════════
+
+function DiagnosticsTab({ allUsers }) {
+  const [diag, setDiag] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [lastFetch, setLastFetch] = useState(null);
+
+  const fetchDiag = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resp = await fetch('/api/storage/diagnostics', { headers: authHeaders() });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      if (data.error) throw new Error(data.error);
+      setDiag(data);
+      setLastFetch(new Date());
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Auto-fetch on mount
+  useEffect(() => { fetchDiag(); }, []);
+
+  // Build device_id → username map
+  const deviceToUser = {};
+  for (const u of allUsers) {
+    if (u.deviceId) deviceToUser[u.deviceId] = u.username;
+  }
+  // Also try partial match (diagnostics may have full device_id)
+  const resolveUser = (deviceId) => {
+    if (deviceToUser[deviceId]) return deviceToUser[deviceId];
+    // Try matching prefix
+    for (const [did, uname] of Object.entries(deviceToUser)) {
+      if (deviceId?.startsWith(did?.slice(0, 16)) || did?.startsWith(deviceId?.slice(0, 16))) {
+        return uname;
+      }
+    }
+    return null;
+  };
+
+  if (loading && !diag) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error && !diag) {
+    return (
+      <div className="text-center py-12">
+        <AlertTriangle size={32} className="mx-auto mb-3 text-red-400" />
+        <p className="text-red-400 mb-3">{error}</p>
+        <button onClick={fetchDiag} className="px-4 py-2 bg-purple-500 hover:bg-purple-600 rounded-lg text-sm font-semibold transition-colors">
+          Reessayer
+        </button>
+      </div>
+    );
+  }
+
+  if (!diag) return null;
+
+  return (
+    <div className="space-y-6">
+      {/* Header + Refresh */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+            Diagnostics Serveur
+          </h2>
+          {lastFetch && (
+            <p className="text-xs text-gray-500 mt-1">
+              Mis a jour : {lastFetch.toLocaleTimeString('fr-FR')}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={fetchDiag}
+          disabled={loading}
+          className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-gray-300 transition-colors"
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          Rafraichir
+        </button>
+      </div>
+
+      {/* ─── DB Size ───────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+          <div className="text-[10px] text-gray-500 uppercase tracking-wide">Taille BDD</div>
+          <div className="text-xl font-bold text-cyan-400">{diag.dbSize?.db_size || '?'}</div>
+        </div>
+        <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+          <div className="text-[10px] text-gray-500 uppercase tracking-wide">Devices uniques</div>
+          <div className="text-xl font-bold text-purple-400">{diag.uniqueDevices || 0}</div>
+        </div>
+        <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+          <div className="text-[10px] text-gray-500 uppercase tracking-wide">Joueurs NEW (v2)</div>
+          <div className="text-xl font-bold text-green-400">
+            {diag.versionSummary?.filter(v => v.status?.includes('NEW')).reduce((s, v) => s + parseInt(v.player_count), 0) || 0}
+          </div>
+        </div>
+        <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+          <div className="text-[10px] text-gray-500 uppercase tracking-wide">Joueurs OLD</div>
+          <div className="text-xl font-bold text-red-400">
+            {diag.versionSummary?.filter(v => v.status?.includes('OLD')).reduce((s, v) => s + parseInt(v.player_count), 0) || 0}
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Version Tracking per Player ─────────── */}
+      <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+        <h3 className="text-sm font-bold text-amber-400 mb-3">Version Code par Joueur</h3>
+        <div className="space-y-1.5">
+          {diag.clientVersions?.map((cv, i) => {
+            const username = resolveUser(cv.device_id);
+            const isNew = cv.client_version >= 2;
+            return (
+              <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg" style={{ background: isNew ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)' }}>
+                <div className="flex items-center gap-3">
+                  <span
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                    style={{
+                      background: isNew ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)',
+                      color: isNew ? '#22c55e' : '#ef4444',
+                      border: `1px solid ${isNew ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                    }}
+                  >
+                    {isNew ? 'NEW' : 'OLD'}
+                  </span>
+                  <span className="text-sm font-medium text-white">
+                    {username || cv.device_id?.slice(0, 16) + '...'}
+                  </span>
+                  {!username && (
+                    <span className="text-[10px] text-gray-600">(pas inscrit)</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <span>{cv.size_pretty}</span>
+                  <span>{cv.updated_at ? new Date(cv.updated_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                </div>
+              </div>
+            );
+          })}
+          {(!diag.clientVersions || diag.clientVersions.length === 0) && (
+            <p className="text-gray-600 text-xs">Aucune donnee de version</p>
+          )}
+        </div>
+      </div>
+
+      {/* ─── Storage par Cle ──────────────────────── */}
+      <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+        <h3 className="text-sm font-bold text-blue-400 mb-3">Stockage par Cle</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[10px] text-gray-500 uppercase border-b border-white/10">
+                <th className="pb-2 pr-4">Cle</th>
+                <th className="pb-2 pr-4">Joueurs</th>
+                <th className="pb-2 pr-4">Total</th>
+                <th className="pb-2 pr-4">Moyenne</th>
+                <th className="pb-2">Max</th>
+              </tr>
+            </thead>
+            <tbody>
+              {diag.keyBreakdown?.map((kb, i) => (
+                <tr key={i} className="border-b border-white/5">
+                  <td className="py-2 pr-4 font-medium text-gray-300">{kb.storage_key}</td>
+                  <td className="py-2 pr-4 text-gray-400">{kb.user_count}</td>
+                  <td className="py-2 pr-4 text-cyan-400 font-medium">{kb.total_text_size}</td>
+                  <td className="py-2 pr-4 text-gray-400">{kb.avg_per_user}</td>
+                  <td className="py-2 text-amber-400 font-medium">{kb.max_per_user}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ─── Table Sizes ─────────────────────────── */}
+      <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+        <h3 className="text-sm font-bold text-purple-400 mb-3">Taille des Tables</h3>
+        <div className="space-y-2">
+          {diag.tableSizes?.map((ts, i) => {
+            const pct = diag.dbSize?.db_bytes ? (ts.total_bytes / diag.dbSize.db_bytes * 100) : 0;
+            return (
+              <div key={i} className="flex items-center gap-3">
+                <span className="w-40 text-sm text-gray-300 font-medium truncate">{ts.table_name}</span>
+                <div className="flex-1 h-5 bg-white/5 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: `${Math.max(pct, 1)}%`, background: 'linear-gradient(90deg, #a855f7, #6366f1)' }}
+                  />
+                </div>
+                <span className="text-sm text-white font-medium w-24 text-right">{ts.total_size}</span>
+                <span className="text-xs text-gray-500 w-20 text-right">
+                  {ts.live_rows} rows
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ─── Bloat Estimate ──────────────────────── */}
+      <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+        <h3 className="text-sm font-bold text-red-400 mb-3">Bloat (Dead Tuples)</h3>
+        <p className="text-xs text-gray-500 mb-3">
+          Dead tuples = copies mortes MVCC. Si dead_pct est eleve, lancer VACUUM FULL.
+        </p>
+        <div className="space-y-1.5">
+          {diag.bloatEstimate?.filter(b => parseInt(b.dead_tuples) > 0).map((b, i) => (
+            <div key={i} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-white/5">
+              <span className="text-sm text-gray-300">{b.relname}</span>
+              <div className="flex items-center gap-4 text-xs">
+                <span className="text-green-400">{b.live_tuples} live</span>
+                <span className="text-red-400">{b.dead_tuples} dead</span>
+                <span
+                  className="font-bold px-2 py-0.5 rounded"
+                  style={{
+                    color: parseFloat(b.dead_pct) > 50 ? '#ef4444' : parseFloat(b.dead_pct) > 20 ? '#f59e0b' : '#22c55e',
+                    background: parseFloat(b.dead_pct) > 50 ? 'rgba(239,68,68,0.1)' : parseFloat(b.dead_pct) > 20 ? 'rgba(245,158,11,0.1)' : 'rgba(34,197,94,0.1)',
+                  }}
+                >
+                  {b.dead_pct}%
+                </span>
+              </div>
+            </div>
+          ))}
+          {diag.bloatEstimate?.filter(b => parseInt(b.dead_tuples) > 0).length === 0 && (
+            <p className="text-green-400 text-xs">Aucun bloat detecte</p>
+          )}
+        </div>
+      </div>
+
+      {/* ─── Biggest Entries ─────────────────────── */}
+      <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+        <h3 className="text-sm font-bold text-orange-400 mb-3">Top 10 Plus Grosses Entrees</h3>
+        <div className="space-y-1.5">
+          {diag.biggestEntries?.map((be, i) => {
+            const username = resolveUser(be.device_id);
+            return (
+              <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-white/5">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-500 w-5 text-right">{i + 1}.</span>
+                  <span className="text-sm font-medium text-white">{username || be.device_id?.slice(0, 16) + '...'}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-gray-400">{be.storage_key}</span>
+                </div>
+                <span className="text-sm font-bold text-orange-400">{be.size_pretty}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ─── TOAST Size ──────────────────────────── */}
+      {diag.toastSize?.length > 0 && (
+        <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+          <h3 className="text-sm font-bold text-gray-400 mb-3">TOAST (JSONB Large Values)</h3>
+          <div className="space-y-1.5">
+            {diag.toastSize.map((ts, i) => (
+              <div key={i} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-white/5">
+                <span className="text-sm text-gray-300">{ts.table_name}</span>
+                <span className="text-sm text-gray-400">{ts.toast_size}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
