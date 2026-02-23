@@ -580,6 +580,7 @@ export default function ShadowColosseum() {
   const [monarchHistoryOpen, setMonarchHistoryOpen] = useState(false);
   const [beruAdvice, setBeruAdvice] = useState(null); // Beru Advisor analysis result
   const [eqInvFilter, setEqInvFilter] = useState({ slot: null, set: null }); // filters for equipment view inventory
+  const [equipDetailSlot, setEquipDetailSlot] = useState(null); // slotId for equipment view detail panel
   const [rosterSort, setRosterSort] = useState('ilevel'); // 'ilevel' | 'level' | 'name'
   const [rosterFilterElem, setRosterFilterElem] = useState(null); // element id or null
   const [rosterFilterClass, setRosterFilterClass] = useState(null); // class id or null
@@ -608,7 +609,7 @@ export default function ShadowColosseum() {
   // Beru alkahest notification when entering artifacts view with 0 alkahest
   const beruAlkahestShownRef = useRef(false);
   useEffect(() => {
-    if (view === 'artifacts' && (data.alkahest || 0) === 0 && !beruAlkahestShownRef.current) {
+    if ((view === 'artifacts' || view === 'equipment') && (data.alkahest || 0) === 0 && !beruAlkahestShownRef.current) {
       beruAlkahestShownRef.current = true;
       const t = setTimeout(() => {
         beruSay("Tu n'as pas d'Alkahest ! Affronte Manaya en Mode PVE Multi pour en obtenir. L'Alkahest permet de reroll les substats de tes artefacts.", 'thinking');
@@ -8105,7 +8106,10 @@ export default function ShadowColosseum() {
               const roleWeights = ROLE_WEIGHTS[artifactScoreRole] || ROLE_WEIGHTS.dps;
               return (
               <div className="mb-4">
-                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1.5">{'\uD83D\uDEE1\uFE0F'} Artefacts</div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{'\uD83D\uDEE1\uFE0F'} Artefacts</div>
+                  <span className="text-[10px] text-emerald-400 font-bold">{'\u2697\uFE0F'} {data.alkahest || 0} Alkahest</span>
+                </div>
 
                 {/* Role Toggle + Global Score */}
                 <div className="mb-2 p-2 rounded-lg bg-gray-800/30 border border-gray-700/20">
@@ -8150,8 +8154,11 @@ export default function ShadowColosseum() {
                     return (
                       <div key={slotId}>
                         {art ? (
-                          <button onClick={() => unequipArtifact(slotId)}
-                            className={`w-full p-1.5 rounded-lg border ${setDef?.border || 'border-gray-600/30'} ${setDef?.bg || 'bg-gray-800/20'} hover:brightness-125 transition-all text-left relative`}>
+                          <button onClick={() => setEquipDetailSlot(equipDetailSlot === slotId ? null : slotId)}
+                            className={`w-full p-1.5 rounded-lg border ${equipDetailSlot === slotId ? 'border-purple-400 bg-purple-500/15' : `${setDef?.border || 'border-gray-600/30'} ${setDef?.bg || 'bg-gray-800/20'}`} hover:brightness-125 transition-all text-left relative`}>
+                            {art.locked && (
+                              <span className="absolute top-0.5 right-0.5 text-[8px]">{'\uD83D\uDD12'}</span>
+                            )}
                             {/* Header: Set name + rarity + level */}
                             <div className="flex items-center gap-1 mb-0.5">
                               <span className="text-[10px]">{setDef?.icon || '?'}</span>
@@ -8201,6 +8208,185 @@ export default function ShadowColosseum() {
                     );
                   })}
                 </div>
+
+                {/* Equipment Detail Panel */}
+                {equipDetailSlot && equipped[equipDetailSlot] && (() => {
+                  const eqArt = equipped[equipDetailSlot];
+                  const eqSetDef = ALL_ARTIFACT_SETS[eqArt.set] || ARTIFACT_SETS[eqArt.set];
+                  const eqMainDef = MAIN_STAT_VALUES[eqArt.mainStat];
+                  const eqCoins = shadowCoinManager.getBalance();
+                  const eqHammers = data.hammers || { marteau_forge: 0, marteau_runique: 0, marteau_celeste: 0, marteau_rouge: 0 };
+                  const eqCoinCost = ENHANCE_COST(eqArt.level);
+                  const eqValidHammers = getRequiredHammer(eqArt.level);
+                  const eqBestHammer = eqValidHammers.find(hId => (eqHammers[hId] || 0) > 0) || null;
+                  const eqCanEnhance = eqArt.level < MAX_ARTIFACT_LEVEL && eqCoins >= eqCoinCost && eqBestHammer;
+                  const eqIsMilestone = (eqArt.level + 1) % 5 === 0;
+                  const eqRerollCount = data.rerollCounts?.[eqArt.uid] || 0;
+                  const eqRerollCoinCost = getRerollCoinCost(eqRerollCount);
+                  const eqCanReroll = !eqArt.locked
+                    && (data.alkahest || 0) >= REROLL_ALKAHEST_COST
+                    && eqCoins >= eqRerollCoinCost;
+
+                  const doEqEnhance = () => {
+                    if (!eqCanEnhance) return;
+                    shadowCoinManager.spendCoins(eqCoinCost);
+                    setData(prev => {
+                      const newH = { ...(prev.hammers || {}) };
+                      newH[eqBestHammer] = Math.max(0, (newH[eqBestHammer] || 0) - 1);
+                      const newArts = { ...prev.artifacts };
+                      newArts[id] = { ...newArts[id], [equipDetailSlot]: enhanceArtifact(newArts[id][equipDetailSlot]) };
+                      return { ...prev, artifacts: newArts, hammers: newH };
+                    });
+                  };
+
+                  const doEqReroll = async () => {
+                    if (!eqCanReroll) return;
+                    if (!window.confirm(`Reroll les substats de cet artefact ?\n\nCout: ${REROLL_ALKAHEST_COST} Alkahest + ${fmtNum(eqRerollCoinCost)} coins\nL'artefact repassera au niveau 0 !`)) return;
+                    shadowCoinManager.spendCoins(eqRerollCoinCost);
+                    try {
+                      const token = localStorage.getItem('builderberu_auth_token');
+                      const resp = await fetch('/api/storage/reroll', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
+                        body: JSON.stringify({ artifactUid: eqArt.uid, rerollCount: eqRerollCount }),
+                      });
+                      const result = await resp.json();
+                      if (!result.success) {
+                        shadowCoinManager.addCoins(eqRerollCoinCost, 'reroll_refund');
+                        beruSay(result.error || 'Reroll echoue... tes coins ont ete rendus.', 'shocked');
+                        return;
+                      }
+                      const rerolled = result.rerolledArtifact;
+                      setData(prev => {
+                        const nd = { ...prev, alkahest: result.alkahestRemaining };
+                        if (!nd.rerollCounts) nd.rerollCounts = {};
+                        nd.rerollCounts[eqArt.uid] = result.rerollCount;
+                        nd.artifacts = { ...prev.artifacts, [id]: { ...prev.artifacts[id], [equipDetailSlot]: rerolled } };
+                        return nd;
+                      });
+                      beruSay('Artefact reroll ! Voyons ces nouvelles substats...', 'excited');
+                    } catch {
+                      shadowCoinManager.addCoins(eqRerollCoinCost, 'reroll_refund');
+                      beruSay('Erreur reseau... reessaie plus tard.', 'shocked');
+                    }
+                  };
+
+                  return (
+                    <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+                      className="mt-2 p-3 rounded-xl border border-purple-500/30 bg-purple-500/5">
+                      {/* Close */}
+                      <button onClick={() => setEquipDetailSlot(null)}
+                        className="float-right text-gray-500 hover:text-gray-300 text-xs">{'\u2715'}</button>
+
+                      {/* Info */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xl">{ARTIFACT_SLOTS[equipDetailSlot]?.icon}</span>
+                        <div>
+                          <div className={`text-sm font-bold ${eqSetDef?.color || 'text-gray-300'}`}>{eqSetDef?.name || '?'}</div>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] ${RARITY[eqArt.rarity]?.color}`}>{RARITY[eqArt.rarity]?.stars} {eqArt.rarity}</span>
+                            <span className="text-[10px] text-gray-400">Lv {eqArt.level}/{MAX_ARTIFACT_LEVEL}</span>
+                            <span className="text-[10px] text-amber-400 font-bold">iLv {computeArtifactILevel(eqArt)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Stats */}
+                      <div className="mb-2 p-2 rounded-lg bg-gray-800/30 border border-gray-700/20">
+                        {(() => {
+                          const nextVal = eqArt.level < MAX_ARTIFACT_LEVEL ? +(eqMainDef.base + eqMainDef.perLevel * (eqArt.level + 1)).toFixed(1) : eqArt.mainValue;
+                          return (
+                            <div className="text-xs text-gray-200 font-bold mb-1">
+                              {eqMainDef?.icon} {eqMainDef?.name}: +{eqArt.mainValue}
+                              {eqArt.level < MAX_ARTIFACT_LEVEL && <span className="text-green-400/60 ml-1">{'\u2192'} {nextVal}</span>}
+                            </div>
+                          );
+                        })()}
+                        {eqArt.subs.map((sub, i) => {
+                          const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
+                          return (
+                            <div key={i} className="text-[10px] text-gray-400">
+                              {subDef?.name || sub.id}: +{sub.value}
+                              {eqIsMilestone && <span className="text-amber-400/50 ml-1">(chance {'\u2B06\uFE0F'})</span>}
+                            </div>
+                          );
+                        })}
+                        {eqIsMilestone && <div className="text-[9px] text-amber-400 mt-1 font-bold">{'\u2B50'} Palier Lv{eqArt.level + 1} — Boost sub-stat !</div>}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-2">
+                        {/* Lock toggle */}
+                        <button
+                          onClick={() => {
+                            setData(prev => ({
+                              ...prev,
+                              artifacts: {
+                                ...prev.artifacts,
+                                [id]: {
+                                  ...prev.artifacts[id],
+                                  [equipDetailSlot]: { ...prev.artifacts[id][equipDetailSlot], locked: !prev.artifacts[id][equipDetailSlot].locked }
+                                }
+                              }
+                            }));
+                          }}
+                          className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-colors ${
+                            eqArt.locked
+                              ? 'bg-yellow-600/30 text-yellow-300 hover:bg-yellow-600/50'
+                              : 'bg-gray-600/30 text-gray-400 hover:bg-gray-600/50'
+                          }`}
+                        >
+                          {eqArt.locked ? '\uD83D\uDD12' : '\uD83D\uDD13'}
+                        </button>
+
+                        {/* Unequip */}
+                        <button onClick={() => { unequipArtifact(equipDetailSlot); setEquipDetailSlot(null); }}
+                          className="py-1.5 px-2 rounded-lg bg-orange-600/30 text-orange-300 text-[10px] font-bold hover:bg-orange-600/50 transition-colors">
+                          Retirer
+                        </button>
+
+                        {/* Enhance +1 */}
+                        <button
+                          onPointerDown={() => {
+                            if (!eqCanEnhance) return;
+                            doEqEnhance();
+                            let delay = 350;
+                            const tick = () => { doEqEnhance(); delay = Math.max(40, delay * 0.82); enhanceHoldRef.current = setTimeout(tick, delay); };
+                            enhanceHoldRef.current = setTimeout(tick, delay);
+                          }}
+                          onPointerUp={() => { if (enhanceHoldRef.current) { clearTimeout(enhanceHoldRef.current); enhanceHoldRef.current = null; } }}
+                          onPointerLeave={() => { if (enhanceHoldRef.current) { clearTimeout(enhanceHoldRef.current); enhanceHoldRef.current = null; } }}
+                          onContextMenu={e => e.preventDefault()}
+                          disabled={!eqCanEnhance}
+                          className="flex-1 py-1.5 rounded-lg bg-cyan-600/30 text-cyan-300 text-[10px] font-bold hover:bg-cyan-600/50 disabled:opacity-30 transition-colors select-none">
+                          {'\uD83D\uDD28'} +1 ({eqBestHammer ? HAMMERS[eqBestHammer].icon : '?'} {fmtNum(eqCoinCost)}c)
+                        </button>
+                      </div>
+
+                      {/* Reroll button */}
+                      <div className="mt-1.5 relative group/eqreroll">
+                        <button onClick={doEqReroll} disabled={!eqCanReroll}
+                          className={`w-full py-1.5 rounded-lg text-[10px] font-bold transition-colors ${
+                            eqArt.locked ? 'bg-gray-700/20 text-gray-600 cursor-not-allowed' :
+                            eqCanReroll ? 'bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600/40' :
+                            'bg-emerald-600/15 text-emerald-300/50'
+                          } disabled:opacity-30`}>
+                          {'\uD83C\uDFB2'} Reroll substats ({REROLL_ALKAHEST_COST}{'\u2697\uFE0F'} + {fmtNum(eqRerollCoinCost)}c)
+                          {eqRerollCount > 0 && <span className="ml-1 text-amber-400">x{eqRerollCount + 1}</span>}
+                        </button>
+                        {/* Tooltip on hover */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2.5 py-1.5 rounded-lg bg-gray-900/95 border border-gray-600/40 text-[9px] text-gray-300 opacity-0 group-hover/eqreroll:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                          Reroll toutes les substats (remet l'artefact au Lv 0)
+                          <br/><span className="text-emerald-400">Cout: {REROLL_ALKAHEST_COST} Alkahest + {fmtNum(eqRerollCoinCost)} coins</span>
+                          {eqArt.locked && <><br/><span className="text-yellow-400">Deverrouille l'artefact d'abord</span></>}
+                        </div>
+                        {(data.alkahest || 0) < REROLL_ALKAHEST_COST && !eqArt.locked && (
+                          <div className="text-[8px] text-gray-500 mt-0.5 text-center">Pas assez d'Alkahest — Affronte Manaya pour en obtenir</div>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })()}
 
                 {/* Active Set Bonuses */}
                 {activeSets.length > 0 && (
@@ -10114,19 +10300,26 @@ export default function ShadowColosseum() {
                   )}
                 </div>
                 {/* Reroll button (Alkahest) */}
-                {!selArt.locked && (
-                  <div className="mt-1.5">
-                    <button onClick={doReroll} disabled={!canReroll}
-                      className="w-full py-1.5 rounded-lg bg-emerald-600/25 text-emerald-300 text-[10px] font-bold hover:bg-emerald-600/40 disabled:opacity-30 transition-colors"
-                      title={`Reroll substats: ${REROLL_ALKAHEST_COST} Alkahest + ${fmtNum(rerollCoinCost)} coins — remet l'artefact au Lv 0`}>
-                      {'\u2697\uFE0F'} Reroll substats ({REROLL_ALKAHEST_COST}{'\u2697\uFE0F'} + {fmtNum(rerollCoinCost)}c)
-                      {rerollCount > 0 && <span className="ml-1 text-amber-400">x{rerollCount + 1}</span>}
-                    </button>
-                    {(data.alkahest || 0) < REROLL_ALKAHEST_COST && (
-                      <div className="text-[8px] text-gray-500 mt-0.5 text-center">Pas assez d'Alkahest — Affronte Manaya pour en obtenir</div>
-                    )}
+                <div className="mt-1.5 relative group/reroll">
+                  <button onClick={doReroll} disabled={!canReroll}
+                    className={`w-full py-1.5 rounded-lg text-[10px] font-bold transition-colors ${
+                      selArt.locked ? 'bg-gray-700/20 text-gray-600 cursor-not-allowed' :
+                      canReroll ? 'bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600/40' :
+                      'bg-emerald-600/15 text-emerald-300/50'
+                    } disabled:opacity-30`}>
+                    {'\uD83C\uDFB2'} Reroll substats ({REROLL_ALKAHEST_COST}{'\u2697\uFE0F'} + {fmtNum(rerollCoinCost)}c)
+                    {rerollCount > 0 && <span className="ml-1 text-amber-400">x{rerollCount + 1}</span>}
+                  </button>
+                  {/* Tooltip on hover */}
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2.5 py-1.5 rounded-lg bg-gray-900/95 border border-gray-600/40 text-[9px] text-gray-300 opacity-0 group-hover/reroll:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                    Reroll toutes les substats (remet l'artefact au Lv 0)
+                    <br/><span className="text-emerald-400">Cout: {REROLL_ALKAHEST_COST} Alkahest + {fmtNum(rerollCoinCost)} coins</span>
+                    {selArt.locked && <><br/><span className="text-yellow-400">Deverrouille l'artefact d'abord</span></>}
                   </div>
-                )}
+                  {(data.alkahest || 0) < REROLL_ALKAHEST_COST && !selArt.locked && (
+                    <div className="text-[8px] text-gray-500 mt-0.5 text-center">Pas assez d'Alkahest — Affronte Manaya pour en obtenir</div>
+                  )}
+                </div>
 
                 {/* Enhancement details */}
                 {selArt.level < MAX_ARTIFACT_LEVEL && (
