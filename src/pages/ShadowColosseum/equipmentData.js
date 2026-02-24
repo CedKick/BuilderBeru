@@ -479,6 +479,7 @@ export function enhanceArtifact(artifact) {
 // ═══════════════════════════════════════════════════════════════
 
 export const REROLL_ALKAHEST_COST = 10;
+export const REROLL_LOCK_COSTS = [10, 22, 45, 70, 100]; // index = number of locked stats (0-4)
 export const REROLL_BASE_COIN_COST = 10000;
 export const REROLL_COIN_MULTIPLIER = 4; // x4 each subsequent reroll on same artifact
 
@@ -574,24 +575,50 @@ export function rerollArtifactMainStat(artifact) {
  * Full reroll: main stat + all sub-stats + reset level + clear enchants.
  * No duplicates between main and subs.
  */
-export function rerollArtifactFull(artifact) {
-  const mainPool = ENCHANT_MAIN_STAT_POOL.filter(s => s !== artifact.mainStat);
-  const newMainStat = mainPool[Math.floor(Math.random() * mainPool.length)];
-  const def = MAIN_STAT_VALUES[newMainStat];
-  const newMainValue = def ? def.base : artifact.mainValue;
+export function rerollArtifactFull(artifact, lockedStats = new Set()) {
+  // Main stat: keep if locked, otherwise reroll
+  let newMainStat = artifact.mainStat;
+  let newMainValue = artifact.mainValue;
+  if (!lockedStats.has('main')) {
+    const mainPool = ENCHANT_MAIN_STAT_POOL.filter(s => s !== artifact.mainStat);
+    newMainStat = mainPool[Math.floor(Math.random() * mainPool.length)];
+    const def = MAIN_STAT_VALUES[newMainStat];
+    newMainValue = def ? def.base : artifact.mainValue;
+  }
+
+  // Subs: keep locked ones, reroll the rest
+  const lockedSubs = artifact.subs.filter(s => lockedStats.has(s.id));
   const subCount = RARITY_SUB_COUNT[artifact.rarity].initial;
-  const available = SUB_STAT_POOL.filter(s => s.id !== newMainStat);
-  const subs = [];
-  const used = new Set();
-  for (let i = 0; i < subCount; i++) {
-    const cands = available.filter(s => !used.has(s.id));
+  const rerollCount = subCount - lockedSubs.length;
+  const usedIds = new Set([newMainStat, ...lockedSubs.map(s => s.id)]);
+  const available = SUB_STAT_POOL.filter(s => !usedIds.has(s.id));
+  const newRerolled = [];
+  for (let i = 0; i < rerollCount; i++) {
+    const cands = available.filter(s => !usedIds.has(s.id));
     if (!cands.length) break;
     const pick = cands[Math.floor(Math.random() * cands.length)];
-    used.add(pick.id);
-    subs.push({ id: pick.id, value: pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1)) });
+    usedIds.add(pick.id);
+    newRerolled.push({ id: pick.id, value: pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1)) });
   }
+  const subs = [...lockedSubs, ...newRerolled];
+
+  // Enchants: preserve for locked stats, reset for rerolled ones
+  const newEnchants = {
+    main: lockedStats.has('main') ? (artifact.enchants?.main || 0) : 0,
+    subs: {}
+  };
+  subs.forEach(sub => {
+    newEnchants.subs[sub.id] = lockedStats.has(sub.id) ? (artifact.enchants?.subs?.[sub.id] || 0) : 0;
+  });
+
+  // Level always resets to 0, main value resets to base
+  if (lockedStats.has('main')) {
+    const def = MAIN_STAT_VALUES[newMainStat];
+    newMainValue = def ? def.base : newMainValue;
+  }
+
   return {
-    artifact: { ...artifact, level: 0, mainStat: newMainStat, mainValue: newMainValue, subs, enchants: { main: 0, subs: {} } },
+    artifact: { ...artifact, level: 0, mainStat: newMainStat, mainValue: newMainValue, subs, enchants: newEnchants, statLocks: undefined },
     oldMainStat: artifact.mainStat,
     newMainStat,
   };
@@ -609,7 +636,7 @@ export function enchantWeaponStat(weaponId, statKey, weaponEnchants = {}) {
 
   if (statKey === 'atk') {
     previousBonus = enc.atk || 0;
-    bonus = rollEnchantBonus('atk_flat', w.atk);
+    bonus = rollEnchantBonus(w.scalingStat === 'int' ? 'int_flat' : 'atk_flat', w.atk);
     enc.atk = bonus;
   } else {
     previousBonus = enc.bonus || 0;
@@ -700,39 +727,39 @@ export const WEAPONS = {
   // Fire (5)
   w_lame_inferno:     { id: 'w_lame_inferno',     name: "Lame de l'Inferno",   rarity: 'mythique',   element: 'fire',   weaponType: 'blade',   atk: 25, bonusStat: 'crit_rate', bonusValue: 8,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Forgee dans les flammes eternelles', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771547980/lameInferno_xutq4p.png' },
   w_hache_volcanique: { id: 'w_hache_volcanique', name: 'Hache Volcanique',     rarity: 'legendaire', element: 'fire',   weaponType: 'heavy',   atk: 18, bonusStat: 'atk_pct',   bonusValue: 10, icon: '\uD83E\uDE93', desc: 'Lave solidifiee en acier', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771547478/HacheVolcanique_ifjtal.png' },
-  w_arc_braise:       { id: 'w_arc_braise',       name: 'Arc de Braise',        rarity: 'legendaire', element: 'fire',   weaponType: 'ranged',  atk: 15, bonusStat: 'spd_flat',  bonusValue: 8,  icon: '\uD83C\uDFF9', desc: 'Fleches enflammees' },
+  w_arc_braise:       { id: 'w_arc_braise',       name: 'Arc de Braise',        rarity: 'legendaire', element: 'fire',   weaponType: 'ranged',  atk: 15, bonusStat: 'spd_flat',  bonusValue: 8,  icon: '\uD83C\uDFF9', desc: 'Fleches enflammees', scalingStat: 'int' },
   w_dague_pyrite:     { id: 'w_dague_pyrite',     name: 'Dague de Pyrite',      rarity: 'rare',       element: 'fire',   weaponType: 'blade',   atk: 10, bonusStat: 'crit_rate', bonusValue: 5,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Lame incandescente' },
   w_marteau_forge:    { id: 'w_marteau_forge',    name: 'Marteau de la Forge',  rarity: 'rare',       element: 'fire',   weaponType: 'heavy',   atk: 12, bonusStat: 'def_pct',   bonusValue: 6,  icon: '\uD83D\uDD28', desc: 'Outil du forgeron ancestral' },
 
   // Water (5)
   w_trident_abyssal:  { id: 'w_trident_abyssal',  name: 'Trident Abyssal',     rarity: 'mythique',   element: 'water',  weaponType: 'polearm', atk: 22, bonusStat: 'atk_pct',   bonusValue: 12, icon: '\uD83D\uDD31', desc: 'Arme des profondeurs', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771548200/TridentAbyssal_sdvheh.png' },
   w_epee_glaciale:    { id: 'w_epee_glaciale',    name: 'Epee Glaciale',        rarity: 'legendaire', element: 'water',  weaponType: 'blade',   atk: 18, bonusStat: 'crit_dmg',  bonusValue: 12, icon: '\u2694\uFE0F', desc: 'Glace eternelle tranchante' },
-  w_arc_tsunami:      { id: 'w_arc_tsunami',      name: 'Arc du Tsunami',       rarity: 'legendaire', element: 'water',  weaponType: 'ranged',  atk: 16, bonusStat: 'spd_flat',  bonusValue: 10, icon: '\uD83C\uDFF9', desc: 'Fleches de maree', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771549492/ArcTsunami_c2u6zk.png' },
-  w_lance_corail:     { id: 'w_lance_corail',     name: 'Lance de Corail',      rarity: 'rare',       element: 'water',  weaponType: 'polearm', atk: 11, bonusStat: 'hp_pct',    bonusValue: 8,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Durcie par les abysses' },
-  w_baton_brume:      { id: 'w_baton_brume',      name: 'Baton de Brume',       rarity: 'rare',       element: 'water',  weaponType: 'ranged',  atk: 9,  bonusStat: 'res_flat',   bonusValue: 6,  icon: '\uD83E\uDE84', desc: 'Canalise les brumes marines' },
+  w_arc_tsunami:      { id: 'w_arc_tsunami',      name: 'Arc du Tsunami',       rarity: 'legendaire', element: 'water',  weaponType: 'ranged',  atk: 16, bonusStat: 'spd_flat',  bonusValue: 10, icon: '\uD83C\uDFF9', desc: 'Fleches de maree', scalingStat: 'int', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771549492/ArcTsunami_c2u6zk.png' },
+  w_lance_corail:     { id: 'w_lance_corail',     name: 'Lance de Corail',      rarity: 'rare',       element: 'water',  weaponType: 'polearm', atk: 11, bonusStat: 'hp_pct',    bonusValue: 8,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Durcie par les abysses', scalingStat: 'int' },
+  w_baton_brume:      { id: 'w_baton_brume',      name: 'Baton de Brume',       rarity: 'rare',       element: 'water',  weaponType: 'staff',   atk: 9,  bonusStat: 'res_flat',   bonusValue: 6,  icon: '\uD83E\uDE84', desc: 'Canalise les brumes marines', scalingStat: 'int' },
 
   // Shadow (5)
   w_faux_monarque:    { id: 'w_faux_monarque',    name: 'Faux du Monarque',     rarity: 'mythique',   element: 'shadow', weaponType: 'scythe', atk: 28, bonusStat: 'crit_dmg',  bonusValue: 15, icon: '\u2694\uFE0F', desc: "L'arme du Roi des Ombres" },
   w_katana_void:      { id: 'w_katana_void',      name: 'Katana du Void',       rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 24, bonusStat: 'crit_rate', bonusValue: 10, icon: '\uD83D\uDDE1\uFE0F', desc: 'Tranche la realite' },
-  w_griffe_nuit:      { id: 'w_griffe_nuit',      name: 'Griffe de la Nuit',    rarity: 'legendaire', element: 'shadow', weaponType: 'polearm', atk: 17, bonusStat: 'spd_flat',  bonusValue: 10, icon: '\uD83D\uDDE1\uFE0F', desc: "Rapide comme l'ombre", sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771550258/GriffeNuit_uczxbi.png' },
+  w_griffe_nuit:      { id: 'w_griffe_nuit',      name: 'Griffe de la Nuit',    rarity: 'legendaire', element: 'shadow', weaponType: 'polearm', atk: 17, bonusStat: 'spd_flat',  bonusValue: 10, icon: '\uD83D\uDDE1\uFE0F', desc: "Rapide comme l'ombre", scalingStat: 'int', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771550258/GriffeNuit_uczxbi.png' },
   w_masse_tenebres:   { id: 'w_masse_tenebres',   name: 'Masse des Tenebres',  rarity: 'legendaire', element: 'shadow', weaponType: 'heavy',   atk: 20, bonusStat: 'hp_pct',    bonusValue: 10, icon: '\uD83D\uDD28', desc: "Poids de l'obscurite" },
   w_dague_ombre:      { id: 'w_dague_ombre',      name: "Dague d'Ombre",        rarity: 'rare',       element: 'shadow', weaponType: 'blade',   atk: 10, bonusStat: 'atk_pct',   bonusValue: 6,  icon: '\uD83D\uDDE1\uFE0F', desc: 'Lame des assassins' },
 
   // Neutral (3)
   w_epee_ancienne:    { id: 'w_epee_ancienne',    name: 'Epee Ancienne',        rarity: 'legendaire', element: null,     weaponType: 'blade',   atk: 16, bonusStat: 'atk_pct',   bonusValue: 8,  icon: '\u2694\uFE0F', desc: "Arme d'une ere oubliee", sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771548878/EpeeAncienne_wsdywo.png' },
-  w_baguette_sage:    { id: 'w_baguette_sage',    name: 'Baguette du Sage',     rarity: 'rare',       element: null,     weaponType: 'ranged',  atk: 8,  bonusStat: 'crit_rate', bonusValue: 5,  icon: '\uD83E\uDE84', desc: 'Sagesse cristallisee' },
+  w_baguette_sage:    { id: 'w_baguette_sage',    name: 'Baguette du Sage',     rarity: 'rare',       element: null,     weaponType: 'staff',   atk: 8,  bonusStat: 'crit_rate', bonusValue: 5,  icon: '\uD83E\uDE84', desc: 'Sagesse cristallisee', scalingStat: 'int' },
   w_bouclier_hero:    { id: 'w_bouclier_hero',    name: 'Bouclier du Heros',    rarity: 'rare',       element: null,     weaponType: 'shield',  atk: 6,  bonusStat: 'def_pct',   bonusValue: 10, icon: '\uD83D\uDEE1\uFE0F', desc: 'Protection legendaire' },
 
   // ── Ultime (10) — Raid Ultime exclusive drops ──
   w_lame_eternite:    { id: 'w_lame_eternite',    name: "Lame de l'Eternite",   rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 80,  bonusStat: 'crit_rate', bonusValue: 15, icon: '\u2694\uFE0F', desc: 'Tranche a travers le temps', ultime: true },
   w_trident_abysses:  { id: 'w_trident_abysses',  name: 'Trident des Abysses',  rarity: 'mythique',   element: 'water',  weaponType: 'polearm', atk: 75,  bonusStat: 'atk_pct',   bonusValue: 18, icon: '\uD83D\uDD31', desc: 'Forge dans les abysses', ultime: true },
-  w_arc_celeste:      { id: 'w_arc_celeste',      name: 'Arc Celeste',          rarity: 'mythique',   element: 'light',  weaponType: 'ranged',  atk: 65,  bonusStat: 'spd_flat',  bonusValue: 15, icon: '\uD83C\uDFF9', desc: 'Lumiere purificatrice', ultime: true, sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771547754/arcCeleste_i2ztc1.png' },
+  w_arc_celeste:      { id: 'w_arc_celeste',      name: 'Arc Celeste',          rarity: 'mythique',   element: 'light',  weaponType: 'ranged',  atk: 65,  bonusStat: 'spd_flat',  bonusValue: 15, icon: '\uD83C\uDFF9', desc: 'Lumiere purificatrice', scalingStat: 'int', ultime: true, sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771547754/arcCeleste_i2ztc1.png' },
   w_hache_ragnarok:   { id: 'w_hache_ragnarok',   name: 'Hache de Ragnarok',    rarity: 'mythique',   element: 'fire',   weaponType: 'heavy',   atk: 90,  bonusStat: 'crit_dmg',  bonusValue: 20, icon: '\uFA62', desc: 'Forgee dans le feu du chaos', ultime: true, sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771544509/HacheRagnarok_hj9z8e.png' },
-  w_lance_tempete:    { id: 'w_lance_tempete',     name: 'Lance de la Tempete',  rarity: 'mythique',   element: 'wind',   weaponType: 'polearm', atk: 70,  bonusStat: 'spd_flat',  bonusValue: 12, icon: '\uD83C\uDF2A\uFE0F', desc: 'Invoque la foudre', ultime: true },
+  w_lance_tempete:    { id: 'w_lance_tempete',     name: 'Lance de la Tempete',  rarity: 'mythique',   element: 'wind',   weaponType: 'polearm', atk: 70,  bonusStat: 'spd_flat',  bonusValue: 12, icon: '\uD83C\uDF2A\uFE0F', desc: 'Invoque la foudre', scalingStat: 'int', ultime: true },
   w_katana_murasame:  { id: 'w_katana_murasame',  name: 'Murasame',             rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 85,  bonusStat: 'crit_rate', bonusValue: 12, icon: '\uD83D\uDDE1\uFE0F', desc: 'Katana maudit legendaire', ultime: true },
   w_marteau_titan:    { id: 'w_marteau_titan',     name: 'Marteau du Titan',     rarity: 'mythique',   element: 'earth',  weaponType: 'heavy',   atk: 100, bonusStat: 'def_pct',   bonusValue: 15, icon: '\uD83D\uDD28', desc: 'Ecrase les montagnes', ultime: true },
   w_dague_assassin:   { id: 'w_dague_assassin',    name: "Dague de l'Assassin",  rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 60,  bonusStat: 'crit_dmg',  bonusValue: 25, icon: '\uD83D\uDDE1\uFE0F', desc: 'Un coup, une vie', ultime: true },
-  w_baton_supreme:    { id: 'w_baton_supreme',     name: 'Baton Arcane Supreme', rarity: 'mythique',   element: null,     weaponType: 'ranged',  atk: 55,  bonusStat: 'hp_pct',    bonusValue: 15, icon: '\uD83E\uDE84', desc: 'Pouvoir arcanique brut', ultime: true },
+  w_baton_supreme:    { id: 'w_baton_supreme',     name: 'Baton Arcane Supreme', rarity: 'mythique',   element: null,     weaponType: 'staff',   atk: 55,  bonusStat: 'hp_pct',    bonusValue: 15, icon: '\uD83E\uDE84', desc: 'Pouvoir arcanique brut', scalingStat: 'int', ultime: true },
   w_epee_monarque:    { id: 'w_epee_monarque',     name: 'Epee du Monarque',     rarity: 'mythique',   element: 'shadow', weaponType: 'blade',   atk: 120, bonusStat: 'atk_pct',   bonusValue: 20, icon: '\u2694\uFE0F', desc: "L'arme du roi des ombres", ultime: true },
 
   // Secret — drop 1/10000 from Ragnarok
@@ -779,7 +806,7 @@ export const WEAPON_AWAKENING_PASSIVES = {
     { desc: 'SPD +4', stats: { spd_flat: 4 } },
     { desc: 'Degats Feu +5%', stats: { fireDamage: 5 } },
     { desc: 'CRIT +4%', stats: { crit_rate: 4 } },
-    { desc: 'ATK +6%', stats: { atk_pct: 6 } },
+    { desc: 'INT +6%', stats: { int_pct: 6 } },
     { desc: 'Tous Degats +5%', stats: { allDamage: 5 } },
   ],
   w_dague_pyrite: [
@@ -814,7 +841,7 @@ export const WEAPON_AWAKENING_PASSIVES = {
   w_arc_tsunami: [
     { desc: 'SPD +5', stats: { spd_flat: 5 } },
     { desc: 'Degats Eau +5%', stats: { waterDamage: 5 } },
-    { desc: 'ATK +6%', stats: { atk_pct: 6 } },
+    { desc: 'INT +6%', stats: { int_pct: 6 } },
     { desc: 'CRIT +4%', stats: { crit_rate: 4 } },
     { desc: 'Tous Degats +5%', stats: { allDamage: 5 } },
   ],
@@ -822,7 +849,7 @@ export const WEAPON_AWAKENING_PASSIVES = {
     { desc: 'PV +5%', stats: { hp_pct: 5 } },
     { desc: 'Degats Eau +4%', stats: { waterDamage: 4 } },
     { desc: 'DEF +4%', stats: { def_pct: 4 } },
-    { desc: 'ATK +3%', stats: { atk_pct: 3 } },
+    { desc: 'INT +3%', stats: { int_pct: 3 } },
     { desc: 'RES +3', stats: { res_flat: 3 } },
   ],
   w_baton_brume: [
@@ -851,7 +878,7 @@ export const WEAPON_AWAKENING_PASSIVES = {
     { desc: 'SPD +5', stats: { spd_flat: 5 } },
     { desc: 'Degats Ombre +6%', stats: { shadowDamage: 6 } },
     { desc: 'CRIT +5%', stats: { crit_rate: 5 } },
-    { desc: 'ATK +6%', stats: { atk_pct: 6 } },
+    { desc: 'INT +6%', stats: { int_pct: 6 } },
     { desc: 'Tous Degats +5%', stats: { allDamage: 5 } },
   ],
   w_masse_tenebres: [
@@ -879,7 +906,7 @@ export const WEAPON_AWAKENING_PASSIVES = {
   w_baguette_sage: [
     { desc: 'CRIT +3%', stats: { crit_rate: 3 } },
     { desc: 'Tous Degats +3%', stats: { allDamage: 3 } },
-    { desc: 'ATK +3%', stats: { atk_pct: 3 } },
+    { desc: 'INT +3%', stats: { int_pct: 3 } },
     { desc: 'SPD +3', stats: { spd_flat: 3 } },
     { desc: 'PV +4%', stats: { hp_pct: 4 } },
   ],
@@ -910,7 +937,7 @@ export const WEAPON_AWAKENING_PASSIVES = {
     { desc: 'SPD +6', stats: { spd_flat: 6 } },
     { desc: 'Tous Degats +8%', stats: { allDamage: 8 } },
     { desc: 'CRIT +6%', stats: { crit_rate: 6 } },
-    { desc: 'ATK +8%', stats: { atk_pct: 8 } },
+    { desc: 'INT +8%', stats: { int_pct: 8 } },
     { desc: 'CRIT DMG +12%', stats: { crit_dmg: 12 } },
   ],
   w_hache_ragnarok: [
@@ -923,7 +950,7 @@ export const WEAPON_AWAKENING_PASSIVES = {
   w_lance_tempete: [
     { desc: 'SPD +6', stats: { spd_flat: 6 } },
     { desc: 'CRIT +6%', stats: { crit_rate: 6 } },
-    { desc: 'ATK +8%', stats: { atk_pct: 8 } },
+    { desc: 'INT +8%', stats: { int_pct: 8 } },
     { desc: 'Tous Degats +8%', stats: { allDamage: 8 } },
     { desc: 'Ignore 8% DEF + SPD +4', stats: { defPen: 8, spd_flat: 4 } },
   ],
@@ -953,7 +980,7 @@ export const WEAPON_AWAKENING_PASSIVES = {
     { desc: 'Tous Degats +8%', stats: { allDamage: 8 } },
     { desc: 'DEF +6%', stats: { def_pct: 6 } },
     { desc: 'CRIT +6%', stats: { crit_rate: 6 } },
-    { desc: 'ATK +8% + RES +5', stats: { atk_pct: 8, res_flat: 5 } },
+    { desc: 'INT +8% + RES +5', stats: { int_pct: 8, res_flat: 5 } },
   ],
   w_epee_monarque: [
     { desc: 'Shadow DMG +12%', stats: { shadowDamage: 12 } },
@@ -1027,12 +1054,14 @@ export function getWeaponAwakeningBonuses(weaponId, awakening = 0) {
 }
 
 export function computeWeaponBonuses(weaponId, awakening = 0, weaponEnchants = {}) {
-  const b = { atk_flat: 0, atk_pct: 0, def_flat: 0, def_pct: 0, hp_pct: 0, int_pct: 0, spd_flat: 0, crit_rate: 0, crit_dmg: 0, res_flat: 0, fireDamage: 0, waterDamage: 0, shadowDamage: 0, windDamage: 0, lightDamage: 0, allDamage: 0, defPen: 0 };
+  const b = { atk_flat: 0, atk_pct: 0, int_flat: 0, def_flat: 0, def_pct: 0, hp_pct: 0, int_pct: 0, spd_flat: 0, crit_rate: 0, crit_dmg: 0, res_flat: 0, fireDamage: 0, waterDamage: 0, shadowDamage: 0, windDamage: 0, lightDamage: 0, allDamage: 0, defPen: 0 };
   if (!weaponId) return b;
   const w = WEAPONS[weaponId];
   if (!w) return b;
   const enc = weaponEnchants?.[weaponId] || {};
-  b.atk_flat += w.atk + (enc.atk || 0);
+  // Route weapon power to INT or ATK based on scalingStat
+  const baseStat = w.scalingStat === 'int' ? 'int_flat' : 'atk_flat';
+  b[baseStat] += w.atk + (enc.atk || 0);
   if (b[w.bonusStat] !== undefined) b[w.bonusStat] += w.bonusValue + (enc.bonus || 0);
   if (w.fireRes) b.res_flat += w.fireRes;
   if (w.darkRes) b.res_flat += w.darkRes;

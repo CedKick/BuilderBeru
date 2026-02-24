@@ -4658,7 +4658,7 @@ export default function ShadowColosseum() {
                   // Gear bonuses from equipped items
                   const eqData = (() => { try { return JSON.parse(localStorage.getItem('manaya_raid_equipped')) || { weapon: null, artifacts: {} }; } catch { return { weapon: null, artifacts: {} }; } })();
                   const gb = { hp_flat: 0, hp_pct: 0, atk_flat: 0, atk_pct: 0, def_flat: 0, def_pct: 0, spd_flat: 0, crit_rate: 0, res_flat: 0, mana_flat: 0 };
-                  if (eqData.weapon) { gb.atk_flat += eqData.weapon.atk || 0; if (eqData.weapon.bonusStat && gb[eqData.weapon.bonusStat] !== undefined) gb[eqData.weapon.bonusStat] += eqData.weapon.bonusValue || 0; }
+                  if (eqData.weapon) { const wStat = eqData.weapon.scalingStat === 'int' ? 'int_flat' : 'atk_flat'; if (!gb[wStat]) gb[wStat] = 0; gb[wStat] += eqData.weapon.atk || 0; if (eqData.weapon.bonusStat && gb[eqData.weapon.bonusStat] !== undefined) gb[eqData.weapon.bonusStat] += eqData.weapon.bonusValue || 0; }
                   for (const art of Object.values(eqData.artifacts || {})) { if (!art) continue; if (art.mainStat && gb[art.mainStat.id] !== undefined) gb[art.mainStat.id] += art.mainStat.value; for (const sub of (art.subs || [])) { if (gb[sub.id] !== undefined) gb[sub.id] += sub.value; } }
 
                   let tHp = Math.floor((base.hp + (raidStatPoints.hp || 0) * SERVER_SPP.hp) * lvlMult) + gb.hp_flat;
@@ -4720,7 +4720,8 @@ export default function ShadowColosseum() {
                   // Compute gear bonuses
                   const gearBonuses = {};
                   if (eq.weapon) {
-                    gearBonuses.atk_flat = (gearBonuses.atk_flat || 0) + (eq.weapon.atk || 0);
+                    const wStat = eq.weapon.scalingStat === 'int' ? 'int_flat' : 'atk_flat';
+                    gearBonuses[wStat] = (gearBonuses[wStat] || 0) + (eq.weapon.atk || 0);
                     if (eq.weapon.bonusStat) gearBonuses[eq.weapon.bonusStat] = (gearBonuses[eq.weapon.bonusStat] || 0) + (eq.weapon.bonusValue || 0);
                   }
                   for (const art of Object.values(eq.artifacts || {})) {
@@ -4824,7 +4825,7 @@ export default function ShadowColosseum() {
                             {eq.weapon ? (
                               <>
                                 <div className="text-[9px] font-bold" style={{ color: eq.weapon.tierColor || '#f59e0b' }}>{eq.weapon.name}</div>
-                                <div className="text-[8px] text-purple-400">ATK +{eq.weapon.atk}{eq.weapon.bonusStat ? ` | ${STAT_LBL[eq.weapon.bonusStat]} +${eq.weapon.bonusValue}` : ''}</div>
+                                <div className="text-[8px] text-purple-400">{eq.weapon.scalingStat === 'int' ? 'INT' : 'ATK'} +{eq.weapon.atk}{eq.weapon.bonusStat ? ` | ${STAT_LBL[eq.weapon.bonusStat]} +${eq.weapon.bonusValue}` : ''}</div>
                               </>
                             ) : (
                               <div className="text-[9px] text-gray-600 italic">Aucune arme</div>
@@ -8391,7 +8392,7 @@ export default function ShadowColosseum() {
                     <div className="flex-1">
                       <div className="text-xs font-bold text-amber-300">{weapon.name} <span className="text-yellow-400 text-[10px]">A{wAw}</span> <span className="text-amber-400/70 text-[9px]">iLv{computeWeaponILevel(weaponId, wAw)}</span></div>
                       <div className="text-[9px] text-gray-400">
-                        ATK +{weapon.atk}{(data.weaponEnchants?.[weaponId]?.atk || 0) > 0 && <span className="text-green-400"> (+{data.weaponEnchants[weaponId].atk.toFixed(1)})</span>}
+                        {weapon.scalingStat === 'int' ? 'INT' : 'ATK'} +{weapon.atk}{(data.weaponEnchants?.[weaponId]?.atk || 0) > 0 && <span className="text-green-400"> (+{data.weaponEnchants[weaponId].atk.toFixed(1)})</span>}
                         {' | '}{MAIN_STAT_VALUES[weapon.bonusStat]?.name || weapon.bonusStat} +{weapon.bonusValue}{(data.weaponEnchants?.[weaponId]?.bonus || 0) > 0 && <span className="text-green-400"> (+{data.weaponEnchants[weaponId].bonus.toFixed(1)})</span>}
                       </div>
                       <div className="text-[10px] text-gray-500">{weapon.desc}</div>
@@ -11717,7 +11718,7 @@ export default function ShadowColosseum() {
                     <img loading="lazy" src={result.weaponDrop.sprite} alt={result.weaponDrop.name} className="w-10 h-10 object-contain mx-auto" draggable={false} />
                   ) : result.weaponDrop.icon}</div>
                   <div className="text-white font-black text-sm mt-1">{result.weaponDrop.name}</div>
-                  <div className="text-orange-400 text-[10px] mt-0.5">ATK +{result.weaponDrop.atk} | {MAIN_STAT_VALUES[result.weaponDrop.bonusStat]?.name} +{result.weaponDrop.bonusValue}</div>
+                  <div className="text-orange-400 text-[10px] mt-0.5">{result.weaponDrop.scalingStat === 'int' ? 'INT' : 'ATK'} +{result.weaponDrop.atk} | {MAIN_STAT_VALUES[result.weaponDrop.bonusStat]?.name} +{result.weaponDrop.bonusValue}</div>
                   {result.weaponDrop._redHammers ? (
                     <div className="text-red-400 text-xs mt-1 font-bold">{'\uD83D\uDD34'} Deja A10 ! +{result.weaponDrop._redHammers} Marteau{result.weaponDrop._redHammers > 1 ? 'x' : ''} Rouge{result.weaponDrop._redHammers > 1 ? 's' : ''}</div>
                   ) : result.weaponDrop.isNew ? (
@@ -12530,7 +12531,7 @@ export default function ShadowColosseum() {
                     <div key={lvl} className={`flex items-center gap-2 p-2 rounded-lg border ${unlocked ? 'border-indigo-500/40 bg-indigo-500/10' : 'border-gray-700/30 bg-gray-800/20'}`}>
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black ${unlocked ? 'bg-indigo-500/30 text-indigo-300' : 'bg-gray-700/30 text-gray-500'}`}>A{lvl}</div>
                       <div className="flex-1">
-                        <div className={`text-xs ${unlocked ? 'text-indigo-300' : 'text-gray-500'}`}>ATK +{bonus}%, DEF +{bonus}%, PV +{bonus}%</div>
+                        <div className={`text-xs ${unlocked ? 'text-indigo-300' : 'text-gray-500'}`}>ATK +{bonus}%, INT +{bonus}%, DEF +{bonus}%, PV +{bonus}%</div>
                       </div>
                       {!unlocked && <span className="text-gray-600 text-sm">{'\uD83D\uDD12'}</span>}
                       {unlocked && <span className="text-indigo-400 text-sm">{'\u2714'}</span>}

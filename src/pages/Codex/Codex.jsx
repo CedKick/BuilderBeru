@@ -37,7 +37,9 @@ const WEAPON_TYPE_CONFIG = {
   heavy:   { label: 'Lourde',   icon: '\uD83D\uDD28' },
   polearm: { label: 'Lance',    icon: '\uD83D\uDDE1\uFE0F' },
   ranged:  { label: 'Distance', icon: '\uD83C\uDFF9' },
+  staff:   { label: 'Baton',    icon: '\uD83E\uDE84' },
   shield:  { label: 'Bouclier', icon: '\uD83D\uDEE1\uFE0F' },
+  scythe:  { label: 'Faux',     icon: '\u2694\uFE0F' },
 };
 
 const RARITY_CONFIG = {
@@ -47,9 +49,11 @@ const RARITY_CONFIG = {
 };
 
 const STAT_LABELS = {
-  atk_flat: 'ATK', atk_pct: 'ATK%', def_pct: 'DEF%', hp_pct: 'PV%',
+  atk_flat: 'ATK', atk_pct: 'ATK%', int_flat: 'INT', int_pct: 'INT%',
+  def_flat: 'DEF', def_pct: 'DEF%', hp_pct: 'PV%',
   spd_flat: 'SPD', crit_rate: 'CRIT%', crit_dmg: 'CRIT DMG%', res_flat: 'RES',
   fireDamage: 'DMG Feu%', waterDamage: 'DMG Eau%', shadowDamage: 'DMG Ombre%',
+  windDamage: 'DMG Vent%', lightDamage: 'DMG Lumiere%',
   allDamage: 'Tous DMG%', defPen: 'PEN DEF%',
 };
 
@@ -778,7 +782,7 @@ export default function Codex() {
                             className="p-1 rounded-lg hover:bg-gray-700/40 disabled:opacity-20 transition-all"><ChevronLeft className="w-5 h-5" /></button>
                           <div className="text-center">
                             <div className="text-lg font-black text-purple-400">A{viewAwakening}</div>
-                            <div className="text-[9px] text-gray-500">{viewAwakening === 0 ? 'Base' : viewAwakening <= 5 ? 'Passive unique' : viewAwakening <= 10 ? '+3% ATK/DEF/PV par niv' : '+2% ATK/DEF/PV /5 niv'}</div>
+                            <div className="text-[9px] text-gray-500">{viewAwakening === 0 ? 'Base' : viewAwakening <= 5 ? 'Passive unique' : viewAwakening <= 10 ? '+3% ATK/INT/DEF/PV par niv' : '+2% ATK/INT/DEF/PV /5 niv'}</div>
                           </div>
                           <button onClick={() => setViewAwakening(Math.min(MAX_WEAPON_AWAKENING, viewAwakening + (viewAwakening >= 10 ? 5 : 1)))} disabled={viewAwakening >= MAX_WEAPON_AWAKENING}
                             className="p-1 rounded-lg hover:bg-gray-700/40 disabled:opacity-20 transition-all"><ChevronRight className="w-5 h-5" /></button>
@@ -832,7 +836,7 @@ export default function Codex() {
                                 lvl <= viewAwakening ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-300' : 'bg-gray-800/30 border-gray-700/20 text-gray-600'
                               }`}>
                                 <span className="font-bold w-6 text-center">A{lvl}</span>
-                                <span>ATK +3%, DEF +3%, PV +3%</span>
+                                <span>ATK +3%, INT +3%, DEF +3%, PV +3%</span>
                               </div>
                             ))}
                           </div>
