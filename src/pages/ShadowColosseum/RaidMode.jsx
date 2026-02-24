@@ -1984,8 +1984,8 @@ export default function RaidMode() {
     <div className="space-y-6">
       {/* Boss Preview */}
       <div className="bg-gradient-to-r from-red-900/40 to-amber-900/40 border border-red-500/30 rounded-2xl p-4 text-center relative">
-        {/* Ranking button — top left, Ultime only */}
-        {selectedTier === 6 && isLoggedIn() && (
+        {/* Ranking button — top left, Ant Queen Ultime only */}
+        {selectedTier === 6 && bossId === 'ant_queen' && isLoggedIn() && (
           <button onClick={fetchRankings}
             className="absolute top-2 left-2 px-2 py-1 rounded-lg border border-yellow-500/40 bg-yellow-500/10 hover:bg-yellow-500/20 transition-all text-yellow-400 text-[10px] font-bold flex items-center gap-1">
             {'\uD83C\uDFC6'} Ranking
@@ -2421,7 +2421,7 @@ export default function RaidMode() {
             className="px-6 py-2 rounded-xl font-bold bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 transition-all">
             Relancer le Raid
           </button>
-          {tier === 6 && isLoggedIn() && (
+          {tier === 6 && bossId === 'ant_queen' && isLoggedIn() && (
             <button onClick={fetchRankings}
               className="px-4 py-2 rounded-lg border border-yellow-500/40 bg-yellow-500/10 hover:bg-yellow-500/20 transition-all text-yellow-400 text-sm font-bold flex items-center gap-1">
               {'\uD83C\uDFC6'} Ranking Mondial
