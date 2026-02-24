@@ -4981,15 +4981,15 @@ export default function ShadowColosseum() {
                 {data.artifactInventory.length} en inventaire
               </p>
             </button>
-            <button
-              onClick={() => setView('faction_members')}
+            <Link
+              to="/faction"
               className="p-3 rounded-xl border border-blue-500/30 bg-gradient-to-r from-blue-900/20 to-cyan-900/20 hover:from-blue-900/40 hover:to-cyan-900/40 transition-all text-center group">
               <div className="flex items-center justify-center gap-1.5">
                 <span className="text-lg">{'\uD83D\uDC65'}</span>
-                <span className="font-bold text-blue-400 group-hover:text-blue-300 text-sm">MEMBRES</span>
+                <span className="font-bold text-blue-400 group-hover:text-blue-300 text-sm">FACTION</span>
               </div>
-              <p className="text-[10px] text-gray-500 mt-0.5">Faction en ligne</p>
-            </button>
+              <p className="text-[10px] text-gray-500 mt-0.5">Membres & Buffs</p>
+            </Link>
           </div>
 
           {/* No chibis warning */}

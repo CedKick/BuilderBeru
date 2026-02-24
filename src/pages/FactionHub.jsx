@@ -41,8 +41,10 @@ export default function FactionHub() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [factionData, setFactionData] = useState(null);
-  const [activeTab, setActiveTab] = useState('buffs'); // buffs, shop, weekly
+  const [activeTab, setActiveTab] = useState('buffs'); // buffs, shop, weekly, members
   const [weeklyStats, setWeeklyStats] = useState(null);
+  const [fmMembers, setFmMembers] = useState(null);
+  const [fmLoading, setFmLoading] = useState(false);
   const [showChangeFactionModal, setShowChangeFactionModal] = useState(false);
   const [hoveringVoxCordis, setHoveringVoxCordis] = useState(false);
   const [hoveringReplicant, setHoveringReplicant] = useState(false);
@@ -167,6 +169,22 @@ export default function FactionHub() {
     }
     loadFactionStatus();
   }, []);
+
+  // Fetch faction members when switching to members tab
+  useEffect(() => {
+    if (activeTab !== 'members' || !isLoggedIn()) return;
+    setFmLoading(true);
+    fetch('/api/factions?action=faction-members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) setFmMembers(d.members);
+        setFmLoading(false);
+      })
+      .catch(() => setFmLoading(false));
+  }, [activeTab]);
 
   const loadFactionStatus = async () => {
     setLoading(true);
@@ -505,6 +523,12 @@ export default function FactionHub() {
             icon={<Trophy size={18} />}
             label="Compétition Hebdomadaire"
           />
+          <TabButton
+            active={activeTab === 'members'}
+            onClick={() => setActiveTab('members')}
+            icon={<Users size={18} />}
+            label="Membres"
+          />
         </div>
 
         {/* Tab Content */}
@@ -528,6 +552,10 @@ export default function FactionHub() {
               currentFaction={currentFaction}
               factions={FACTIONS}
             />
+          )}
+
+          {activeTab === 'members' && (
+            <MembersTab members={fmMembers} loading={fmLoading} factionName={currentFaction.name} />
           )}
         </AnimatePresence>
       </div>
@@ -1001,25 +1029,240 @@ function BuffsTab({ buffs, currentLevels, onUpgrade, pointsAvailable }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SHOP TAB (Placeholder)
+// SHOP TAB — Forge Rouge (Alkahest + Ultimate Artifacts)
 // ═══════════════════════════════════════════════════════════════
 
+const ULTIME_SET_NAMES = {
+  rage_eternelle: { name: 'Rage Eternelle', icon: '\uD83D\uDCA2', color: 'text-red-400' },
+  gardien_celeste: { name: 'Gardien Celeste', icon: '\uD83D\uDEE1\uFE0F', color: 'text-cyan-400' },
+  siphon_vital: { name: 'Siphon Vital', icon: '\uD83E\uDE78', color: 'text-emerald-400' },
+  tempete_arcane: { name: 'Tempete Arcane', icon: '\u26A1', color: 'text-violet-400' },
+  equilibre_supreme: { name: 'Equilibre Supreme', icon: '\u2696\uFE0F', color: 'text-amber-300' },
+  pacte_ombres: { name: 'Pacte des Ombres', icon: '\uD83C\uDF11', color: 'text-purple-300' },
+};
+
+const SLOT_NAMES = {
+  casque: 'Casque', plastron: 'Plastron', gants: 'Gants', bottes: 'Bottes',
+  collier: 'Collier', bracelet: 'Bracelet', anneau: 'Anneau', boucles: "Boucles d'oreilles",
+};
+
 function ShopTab() {
+  const [redHammers, setRedHammers] = useState(null);
+  const [alkahest, setAlkahest] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [buying, setBuying] = useState(false);
+  const [lootReveal, setLootReveal] = useState(null); // { setName, setId, slot, artifact }
+
+  // Fetch colosseum data for red hammer / alkahest count
+  useEffect(() => {
+    if (!isLoggedIn()) { setLoading(false); return; }
+    fetch('/api/storage/load', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ key: 'shadow_colosseum_data' }),
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && d.data) {
+          setRedHammers(d.data.hammers?.marteau_rouge || 0);
+          setAlkahest(d.data.alkahest || 0);
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const buyItem = async (item) => {
+    if (buying) return;
+    setBuying(true);
+    setLootReveal(null);
+    try {
+      const resp = await fetch('/api/storage/forge-rouge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ item }),
+      });
+      const d = await resp.json();
+      if (d.success) {
+        setRedHammers(d.redHammersRemaining);
+        if (item === 'alkahest') {
+          setAlkahest(d.alkahest);
+        } else if (item === 'ultime') {
+          setLootReveal({ setName: d.setName, setId: d.setId, slot: d.slot, artifact: d.artifact });
+        }
+      } else {
+        alert(d.error || 'Erreur');
+      }
+    } catch {
+      alert('Erreur reseau');
+    } finally {
+      setBuying(false);
+    }
+  };
+
+  const canBuyAlk = (redHammers || 0) >= 100;
+  const canBuyUlt = (redHammers || 0) >= 1000;
+
   return (
     <motion.div
       key="shop"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="bg-white/5 border border-white/10 rounded-xl p-12 text-center"
     >
-      <div className="text-6xl mb-4">🏪</div>
-      <h3 className="text-2xl font-bold text-white mb-2">
-        Boutique en construction
-      </h3>
-      <p className="text-gray-400 max-w-md mx-auto">
-        La boutique de faction sera bientôt disponible. Vous pourrez dépenser vos points de contribution pour obtenir des objets exclusifs.
-      </p>
+      {loading ? (
+        <div className="bg-white/5 border border-white/10 rounded-xl p-12 text-center">
+          <div className="text-gray-400 animate-pulse">Chargement...</div>
+        </div>
+      ) : !isLoggedIn() ? (
+        <div className="bg-white/5 border border-white/10 rounded-xl p-12 text-center">
+          <div className="text-gray-400">Connexion requise.</div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Header with balance */}
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between">
+            <div className="text-sm font-bold text-red-400">{'\uD83D\uDD34'} Forge Rouge</div>
+            <div className="flex items-center gap-4 text-sm">
+              <span className="text-red-300">{'\uD83D\uDD34'} {redHammers ?? '?'} marteaux</span>
+              <span className="text-cyan-300">{'\u2697\uFE0F'} {alkahest ?? '?'} alkahest</span>
+            </div>
+          </div>
+
+          {/* Alkahest */}
+          <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+            <div className="flex items-center gap-4">
+              <div className="text-4xl">{'\u2697\uFE0F'}</div>
+              <div className="flex-1">
+                <div className="text-lg font-bold text-white">Alkahest</div>
+                <div className="text-sm text-gray-400">Echange 100 marteaux rouges contre 1 Alkahest</div>
+                <div className="text-xs text-gray-500 mt-1">Utilise pour reroll les artefacts dans le Colosseum</div>
+              </div>
+            </div>
+            <button
+              onClick={() => buyItem('alkahest')}
+              disabled={!canBuyAlk || buying}
+              className={`mt-3 w-full py-2.5 rounded-lg text-sm font-bold transition-all ${canBuyAlk && !buying
+                ? 'bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30'
+                : 'bg-gray-800/40 border border-gray-700/20 text-gray-600 cursor-not-allowed'}`}
+            >
+              {buying ? '...' : `\uD83D\uDD34 100 marteaux rouges \u2192 +1 Alkahest`}
+            </button>
+          </div>
+
+          {/* Ultimate Artifact */}
+          <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+            <div className="flex items-center gap-4">
+              <div className="text-4xl">{'\uD83C\uDF1F'}</div>
+              <div className="flex-1">
+                <div className="text-lg font-bold text-white">Artefact Ultime</div>
+                <div className="text-sm text-gray-400">1 piece mythique aleatoire d'un set ultime</div>
+                <div className="text-xs text-gray-500 mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                  {Object.entries(ULTIME_SET_NAMES).map(([id, s]) => (
+                    <span key={id} className={s.color}>{s.icon} {s.name}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => buyItem('ultime')}
+              disabled={!canBuyUlt || buying}
+              className={`mt-3 w-full py-2.5 rounded-lg text-sm font-bold transition-all ${canBuyUlt && !buying
+                ? 'bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30'
+                : 'bg-gray-800/40 border border-gray-700/20 text-gray-600 cursor-not-allowed'}`}
+            >
+              {buying ? '...' : `\uD83D\uDD34 1000 marteaux rouges \u2192 1 piece ultime`}
+            </button>
+
+            {/* Loot Reveal */}
+            {lootReveal && (() => {
+              const setInfo = ULTIME_SET_NAMES[lootReveal.setId] || {};
+              return (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  className="mt-4 p-4 rounded-xl border-2 border-amber-400/50 bg-amber-400/10 text-center"
+                >
+                  <div className="text-3xl mb-2">{setInfo.icon || '\uD83C\uDF1F'}</div>
+                  <div className={`text-lg font-black ${setInfo.color || 'text-amber-300'}`}>
+                    {lootReveal.setName}
+                  </div>
+                  <div className="text-sm text-gray-300 mt-1">
+                    {SLOT_NAMES[lootReveal.slot] || lootReveal.slot} — Mythique
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Ajoutee a ton inventaire d'artefacts !
+                  </div>
+                </motion.div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MEMBERS TAB
+// ═══════════════════════════════════════════════════════════════
+
+function MembersTab({ members, loading, factionName }) {
+  const statusIcon = { online: '\uD83D\uDFE2', recent: '\uD83D\uDFE1', offline: '\u26AB' };
+  const statusLabel = { online: 'En ligne', recent: 'Actif recemment', offline: 'Hors ligne' };
+  const statusOrder = { online: 0, recent: 1, offline: 2 };
+  const sorted = members ? [...members].sort((a, b) => statusOrder[a.status] - statusOrder[b.status] || b.points - a.points) : [];
+  const onlineCount = sorted.filter(m => m.status === 'online').length;
+  const recentCount = sorted.filter(m => m.status === 'recent').length;
+
+  return (
+    <motion.div
+      key="members"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+    >
+      {loading ? (
+        <div className="bg-white/5 border border-white/10 rounded-xl p-12 text-center">
+          <div className="text-gray-400 animate-pulse">Chargement des membres...</div>
+        </div>
+      ) : !members || sorted.length === 0 ? (
+        <div className="bg-white/5 border border-white/10 rounded-xl p-12 text-center">
+          <div className="text-6xl mb-4">👥</div>
+          <div className="text-gray-400">Aucun membre dans cette faction.</div>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center justify-between mb-4 px-1">
+            <div className="text-sm text-gray-400">
+              {sorted.length} membre{sorted.length > 1 ? 's' : ''} — {factionName}
+            </div>
+            <div className="flex items-center gap-3 text-xs">
+              {onlineCount > 0 && <span className="text-green-400">{'\uD83D\uDFE2'} {onlineCount} en ligne</span>}
+              {recentCount > 0 && <span className="text-yellow-400">{'\uD83D\uDFE1'} {recentCount} recent</span>}
+            </div>
+          </div>
+          <div className="space-y-2">
+            {sorted.map(m => (
+              <div key={m.username} className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${
+                m.status === 'online' ? 'border-green-500/30 bg-green-500/5' :
+                m.status === 'recent' ? 'border-yellow-500/20 bg-yellow-500/5' :
+                'border-white/5 bg-white/[0.02]'
+              }`}>
+                <span className="text-lg">{statusIcon[m.status]}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold text-white truncate">{m.displayName}</div>
+                  <div className="text-xs text-gray-500">{statusLabel[m.status]}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-bold text-amber-400">{m.points.toLocaleString()}</div>
+                  <div className="text-[10px] text-gray-600">pts contribution</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </motion.div>
   );
 }
