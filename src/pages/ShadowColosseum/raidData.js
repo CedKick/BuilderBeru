@@ -777,6 +777,7 @@ export const RAID_BOSSES = {
       { name: 'Griffe Infernale', power: 180, cdSec: 0, target: 'single' },
       { name: 'Souffle de Feu', power: 120, cdSec: 6, target: 'aoe', dot: { dmgPct: 2, duration: 6 } },
       { name: 'Queue Venimeuse', power: 250, cdSec: 10, target: 'single', dot: { dmgPct: 4, duration: 8 } },
+      { name: 'Malediction Brulante', power: 100, cdSec: 25, target: 'single', healReduce: { pct: 50, duration: 10 } },
       { name: 'Rugissement', power: 80, cdSec: 12, target: 'aoe', buffAtk: 35 },
       { name: 'Charge Devastatrice', power: 350, cdSec: 18, target: 'single' },
     ],

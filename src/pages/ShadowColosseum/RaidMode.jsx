@@ -1096,6 +1096,10 @@ export default function RaidMode() {
               logEntries.push({ text: `${chibi.name} : SOIN CRITIQUE x2 !`, time: elapsed, type: 'heal' });
             }
           }
+          // Heal reduction debuff (Manticore Malediction)
+          if (healTarget.healReducePct && healTarget.healReduceExpiry > now) {
+            healAmt = Math.floor(healAmt * (1 - healTarget.healReducePct / 100));
+          }
           healTarget.hp = Math.min(healTarget.maxHp, healTarget.hp + healAmt);
           chibi.lastAttackAt = now;
           // Track healing
@@ -1723,6 +1727,12 @@ export default function RaidMode() {
             }
           }
 
+          // Apply heal reduction debuff (Manticore Malediction Brulante)
+          if (bSkill.healReduce && target.alive) {
+            target.healReducePct = bSkill.healReduce.pct;
+            target.healReduceExpiry = now + bSkill.healReduce.duration * 1000;
+            logEntries.push({ text: `${target.name} : Malediction ! Soins -${bSkill.healReduce.pct}% pendant ${bSkill.healReduce.duration}s`, time: elapsed, type: 'debuff' });
+          }
           if (target.hp <= 0) { target.hp = 0; target.alive = false; }
           return dmg;
         };
