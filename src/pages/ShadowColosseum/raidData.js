@@ -744,7 +744,8 @@ export const RAID_BOSSES = {
     totalBars: 10,
     baseHP: 50000,
     barScaling: (i) => 50000 * (1 + 0.3 * i),
-    stats: { atk: 80, def: 45, spd: 25, crit: 12, res: 15 },
+    stats: { atk: 500, def: 45, spd: 25, crit: 12, res: 15 },
+    defPen: 40, // Boss ignores 40% of hunter DEF
     skills: [
       { name: 'Mandibule', power: 100, cdSec: 0, target: 'single' },
       { name: 'Acide', power: 60, cdSec: 8, target: 'aoe', debuffDef: 20 },
@@ -767,8 +768,8 @@ export const RAID_BOSSES = {
     totalBars: 10,
     baseHP: 250000,
     barScaling: (i) => 250000 * (1 + 0.35 * i),
-    stats: { atk: 20000, def: 200, spd: 35, crit: 30, res: 20 },
-    defPen: 85, // Boss ignores 85% of hunter DEF
+    stats: { atk: 2545, def: 200, spd: 35, crit: 30, res: 20 },
+    defPen: 60, // Boss ignores 60% of hunter DEF
     stunImmune: true, // Immune to Halo permastun
     targeting: 'intelligent',
     lootMult: 1.5,
