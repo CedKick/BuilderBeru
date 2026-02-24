@@ -1197,6 +1197,7 @@ export default function ShadowColosseum() {
       skills, buffs: initBuffs, alive: true, tb: mergedTb, level,
       hunterPassive, // stored for combat-time conditional checks
       isMage: HUNTERS[id]?.class === 'mage' || HUNTERS[id]?.class === 'support',
+      hunterClass: HUNTERS[id]?.class || 'fighter',
       artPassives, // artifact set passives for combat
       passiveState: {
         sianStacks: 0,

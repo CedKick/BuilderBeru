@@ -460,6 +460,7 @@ export default function RaidMode() {
       talentBonuses: mergedTb,
       hunterPassive,
       isMage: HUNTERS[id]?.class === 'mage' || HUNTERS[id]?.class === 'support',
+      hunterClass: HUNTERS[id]?.class || 'fighter',
       lastAttackAt: 0, attackInterval: spdToInterval(finalSpd),
       alive: true,
     };

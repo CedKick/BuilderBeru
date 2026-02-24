@@ -382,6 +382,7 @@ export default function PvpMode() {
       talentBonuses: mergedTb,
       hunterPassive,
       isMage: HUNTERS[id]?.class === 'mage' || HUNTERS[id]?.class === 'support',
+      hunterClass: HUNTERS[id]?.class || 'fighter',
       lastAttackAt: 0, attackInterval: spdToInterval(spd2),
       alive: true,
     };

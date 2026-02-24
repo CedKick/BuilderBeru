@@ -509,6 +509,7 @@ export default function TrainingDummy() {
       passiveState,
       hunterPassive,
       isMage: HUNTERS[entityId]?.class === 'mage' || HUNTERS[entityId]?.class === 'support',
+      hunterClass: HUNTERS[entityId]?.class || 'fighter',
       talentBonuses: mergedTB,
       attackInterval,
       lastAttackAt: 0,
