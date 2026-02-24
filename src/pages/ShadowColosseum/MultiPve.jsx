@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
-const GAME_SERVER_URL = 'http://159.223.225.71:3002/test';
+const GAME_SERVER_URL = 'https://manaya.builderberu.com/test';
 
 export default function MultiPve() {
   const [loading, setLoading] = useState(true);
