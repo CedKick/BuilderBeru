@@ -2120,6 +2120,45 @@ export default function RaidMode() {
                   ))}
                 </div>
               )}
+              {/* Hunter passive buffs */}
+              {(() => {
+                const passiveLabels = [];
+                team.forEach(id => {
+                  if (!id) return;
+                  const h = HUNTERS[id];
+                  const hp = HUNTER_PASSIVE_EFFECTS[id];
+                  if (!h || !hp) return;
+                  if (hp.type === 'teamAura' && hp.stats) {
+                    const parts = Object.entries(hp.stats).map(([k, v]) => `${k.toUpperCase()} +${v}%`);
+                    passiveLabels.push({ name: h.name, label: parts.join(', ') + ' (equipe)', color: 'text-cyan-400' });
+                  } else if (hp.type === 'teamDef') {
+                    passiveLabels.push({ name: h.name, label: `DEF +${hp.value}% (equipe)`, color: 'text-cyan-400' });
+                  } else if (hp.type === 'permanent' && hp.stats) {
+                    const parts = Object.entries(hp.stats).map(([k, v]) => `${k.toUpperCase()} +${v}%`);
+                    passiveLabels.push({ name: h.name, label: parts.join(', '), color: 'text-blue-400' });
+                  } else if (hp.type === 'healBonus') {
+                    passiveLabels.push({ name: h.name, label: `Soin +${hp.value}%`, color: 'text-green-400' });
+                  } else if (hp.type === 'buffBonus') {
+                    passiveLabels.push({ name: h.name, label: `Buff duree +${hp.value}%`, color: 'text-violet-400' });
+                  } else if (hp.type === 'magicDmg') {
+                    passiveLabels.push({ name: h.name, label: `DMG Magique +${hp.value}%`, color: 'text-indigo-400' });
+                  } else if (hp.type === 'critDmg') {
+                    passiveLabels.push({ name: h.name, label: `CRIT DMG +${hp.value}%`, color: 'text-amber-400' });
+                  } else if (hp.type === 'stacking' && hp.perStack) {
+                    const parts = Object.entries(hp.perStack).map(([k, v]) => `${k.toUpperCase()} +${v}%`);
+                    passiveLabels.push({ name: h.name, label: `${parts.join(', ')}/action (max x${hp.maxStacks || '?'})`, color: 'text-blue-400' });
+                  }
+                });
+                return passiveLabels.length > 0 ? (
+                  <div className="mt-1 space-y-0.5 border-t border-white/5 pt-1">
+                    {passiveLabels.map((p, i) => (
+                      <div key={i} className={`text-[9px] text-center ${p.color}`}>
+                        {p.name}: {p.label}
+                      </div>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
             </div>
           );
         })}
