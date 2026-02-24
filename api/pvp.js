@@ -1,5 +1,6 @@
 import { query } from './_db/neon.js';
 import { extractUser } from './_utils/auth.js';
+import { validatePvpTeam } from './_utils/validate.js';
 
 const ELO_K = 32;
 const MIN_RATING = 100;
@@ -77,6 +78,13 @@ async function handleRegisterDefense(req, res) {
   const jsonStr = JSON.stringify(teamData);
   if (Buffer.byteLength(jsonStr, 'utf8') > 500 * 1024) {
     return res.status(413).json({ error: 'Team data too large' });
+  }
+
+  // Anti-cheat: validate team data bounds
+  const pvpValidation = validatePvpTeam(teamData, powerScore);
+  if (!pvpValidation.valid) {
+    console.warn(`[pvp] REJECTED defense for ${user.deviceId}: ${pvpValidation.errors.join(', ')}`);
+    return res.status(400).json({ error: 'Invalid team data', details: pvpValidation.errors });
   }
 
   const strategyJson = JSON.stringify(strategy || {});

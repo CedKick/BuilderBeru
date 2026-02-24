@@ -1,6 +1,7 @@
 import { query } from '../_db/neon.js';
 import { extractUser } from '../_utils/auth.js';
 import { gunzipSync } from 'node:zlib';
+import { sanitizeColoData } from '../_utils/validate.js';
 
 const ALLOWED_KEYS = [
   'builderberu_users', 'shadow_colosseum_data', 'shadow_colosseum_raid',
@@ -455,6 +456,27 @@ export default async function handler(req, res) {
           jsonStr = JSON.stringify(finalData);
           sizeBytes = Buffer.byteLength(jsonStr, 'utf8');
           console.log(`[save] PATCHED raid gear fields for ${deviceId}`);
+        }
+      }
+
+      // CHECK 5: Anti-cheat bounds validation for shadow_colosseum_data
+      // Sanitizes values to valid ranges (clamp, don't reject)
+      if (key === 'shadow_colosseum_data') {
+        const cloudForValidation = existing.rows.length > 0
+          ? (typeof existing.rows[0].data === 'string'
+            ? JSON.parse(existing.rows[0].data)
+            : existing.rows[0].data)
+          : null;
+
+        const { data: sanitized, suspicious } = sanitizeColoData(
+          finalData, cloudForValidation, deviceId
+        );
+
+        if (suspicious.length > 0) {
+          finalData = sanitized;
+          jsonStr = JSON.stringify(finalData);
+          sizeBytes = Buffer.byteLength(jsonStr, 'utf8');
+          console.warn(`[save] SANITIZED ${suspicious.length} values for ${deviceId}`);
         }
       }
     }
