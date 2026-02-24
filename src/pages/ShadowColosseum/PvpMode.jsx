@@ -1179,7 +1179,7 @@ export default function PvpMode() {
           if (unit.passiveState.katanaVState.dots < KATANA_V_DOT_MAX_STACKS) unit.passiveState.katanaVState.dots++;
           // DoT on target
           if (unit.passiveState.katanaVState.dots > 0 && target.alive) {
-            const dotDmg = Math.max(1, Math.floor(unit.atk * KATANA_V_DOT_PCT * unit.passiveState.katanaVState.dots));
+            const dotDmg = Math.max(1, Math.floor((unit.maxMana || unit.atk) * KATANA_V_DOT_PCT * unit.passiveState.katanaVState.dots));
             target.hp -= dotDmg;
             if (target.hp <= 0) { target.hp = 0; target.alive = false; }
           }

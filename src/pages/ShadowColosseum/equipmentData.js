@@ -741,7 +741,7 @@ export const WEAPONS = {
   w_raeshalare:       { id: 'w_raeshalare',       name: "Rae'shalare, Murmure de la Mort", rarity: 'mythique', element: 'shadow', weaponType: 'ranged', atk: 200, bonusStat: 'crit_dmg', bonusValue: 25, icon: '\uD83C\uDFF9', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771525011/arc_d4t23d.png', desc: 'Tire une fleche gemissante qui inflige des degats d\'Ombre et reduit les ennemis au silence', secret: true, passive: 'shadow_silence', darkRes: 50, dropSource: 'Zephyr Ultime', dropRate: '1/5,000' },
   // Secret — drop 1/50000 from Monarque Supreme
   w_katana_z:         { id: 'w_katana_z',         name: 'Katana Z',             rarity: 'mythique',   element: 'water', weaponType: 'blade',  atk: 260, bonusStat: 'spd_flat', bonusValue: 15, icon: '\u2694\uFE0F', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771539184/KatanaZ_pgth96.png', desc: 'Katana de vitesse absolue. Chaque coup renforce son porteur.', secret: true, passive: 'katana_z_fury', darkRes: 40, dropSource: 'Monarque Supreme', dropRate: '1/50,000' },
-  w_katana_v:         { id: 'w_katana_v',         name: 'Katana V',             rarity: 'mythique',   element: 'light', weaponType: 'blade',  atk: 240, bonusStat: 'crit_dmg', bonusValue: 20, icon: '\u2694\uFE0F', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771539430/KatanaV_zv4oke.png', desc: 'Katana du chaos. Empoisonne, buff et protege.', secret: true, passive: 'katana_v_chaos', darkRes: 35, dropSource: 'Monarque Supreme', dropRate: '1/50,000' },
+  w_katana_v:         { id: 'w_katana_v',         name: 'Katana V',             rarity: 'mythique',   element: 'light', weaponType: 'blade',  atk: 120, bonusStat: 'int_pct', bonusValue: 25, icon: '\u2694\uFE0F', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771539430/KatanaV_zv4oke.png', desc: 'Katana du chaos. Scale sur INT/Mana. Empoisonne, buff et protege.', secret: true, passive: 'katana_v_chaos', darkRes: 35, dropSource: 'Monarque Supreme', dropRate: '1/50,000' },
   // Secret — drop 1/80,000 from Archdemon (cumulative pity)
   w_guldan:            { id: 'w_guldan',            name: "Baton de Gul'dan",      rarity: 'mythique',   element: 'wind',  weaponType: 'staff',  atk: 180, bonusStat: 'spd_flat', bonusValue: 20, baseDef: 50, windRes: 10, icon: '\uD83E\uDE84', sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771638363/batonGuldan_vuu7ez.png', projectile: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771638364/projectileGuldan_ii184b.png', desc: "Baton maudit du demon Gul'dan. Un halo eternel protege et renforce son porteur.", secret: true, passive: 'guldan_halo', dropSource: 'Archdemon', dropRate: '1/80,000' },
 };
@@ -985,10 +985,10 @@ export const WEAPON_AWAKENING_PASSIVES = {
   ],
   w_katana_v: [
     { desc: 'CRIT DMG +18%', stats: { crit_dmg: 18 } },
-    { desc: 'ATK +12%', stats: { atk_pct: 12 } },
+    { desc: 'INT +15%', stats: { int_pct: 15 } },
     { desc: 'CRIT +10%', stats: { crit_rate: 10 } },
     { desc: 'Degats Lumiere +12%', stats: { lightDamage: 12 } },
-    { desc: 'Ignore 12% DEF + Tous Degats +10%', stats: { defPen: 12, allDamage: 10 } },
+    { desc: 'INT +10% + Ignore 12% DEF + Tous Degats +10%', stats: { int_pct: 10, defPen: 12, allDamage: 10 } },
   ],
   w_guldan: [
     { desc: 'DEF +25%', stats: { def_pct: 25 } },
@@ -1054,7 +1054,7 @@ export const KATANA_Z_COUNTER_CHANCE = 0.5;       // 50% contre-attaque quand to
 export const KATANA_Z_COUNTER_MULT = 2.0;         // 200% ATK du joueur
 
 // Katana V passives
-export const KATANA_V_DOT_PCT = 0.03;             // 3% ATK du joueur par stack par tour
+export const KATANA_V_DOT_PCT = 0.03;             // 3% maxMana (INT) du joueur par stack par tour
 export const KATANA_V_DOT_MAX_STACKS = 10;        // max 10 stacks de DoT
 export const KATANA_V_BUFF_CHANCE = 0.30;          // 30% chance de buff par coup
 

@@ -1664,7 +1664,7 @@ export default function ShadowColosseum() {
       if (ps.katanaVState.dots < KATANA_V_DOT_MAX_STACKS) ps.katanaVState.dots++;
       // DoT damage to target
       if (ps.katanaVState.dots > 0 && enemy.alive) {
-        const dotDmg = Math.max(1, Math.floor(fighter.atk * KATANA_V_DOT_PCT * ps.katanaVState.dots));
+        const dotDmg = Math.max(1, Math.floor((fighter.maxMana || fighter.atk) * KATANA_V_DOT_PCT * ps.katanaVState.dots));
         enemy.hp = Math.max(0, enemy.hp - dotDmg);
         if (enemy.hp <= 0) enemy.alive = false;
       }
@@ -3585,7 +3585,7 @@ export default function ShadowColosseum() {
 
       // Katana V: DoT tick on enemy
       if (newKatanaVState !== undefined && newKatanaVState.dots > 0) {
-        const dotDmg = Math.max(1, Math.floor(getEffStat(player.atk, player.buffs, 'atk') * KATANA_V_DOT_PCT * newKatanaVState.dots));
+        const dotDmg = Math.max(1, Math.floor((player.maxMana || getEffStat(player.atk, player.buffs, 'atk')) * KATANA_V_DOT_PCT * newKatanaVState.dots));
         enemy.hp = Math.max(0, enemy.hp - dotDmg);
         log.push({ text: `Lame Veneneuse x${newKatanaVState.dots} ! -${fmtNum(dotDmg)} PV !`, type: 'player', id: Date.now() + 1.7 });
       }
@@ -9331,6 +9331,8 @@ export default function ShadowColosseum() {
                   if (eqInvFilter.set && art.set !== eqInvFilter.set) return false;
                   return true;
                 });
+                const invHClass = HUNTERS[id]?.class || 'fighter';
+                const invHElement = c.element || 'fire';
                 return filteredInv.length === 0 ? (
                   <div className="text-center text-[10px] text-gray-600 py-4">
                     {data.artifactInventory.length === 0 ? "Aucun artefact. Forge-en dans la Boutique !" : "Aucun artefact ne correspond aux filtres."}
@@ -9341,6 +9343,7 @@ export default function ShadowColosseum() {
                       const setDef = ALL_ARTIFACT_SETS[art.set];
                       const slotDef = ARTIFACT_SLOTS[art.slot];
                       const mainDef = MAIN_STAT_VALUES[art.mainStat];
+                      const mainColor = getStatColor(art.mainStat, invHClass, invHElement);
                       return (
                         <button key={art.uid || i} onClick={() => equipArtifact(art)}
                           className={`p-2 rounded-lg border ${setDef?.border || 'border-gray-600/30'} ${setDef?.bg || 'bg-gray-800/20'} hover:brightness-125 transition-all text-left`}>
@@ -9352,14 +9355,15 @@ export default function ShadowColosseum() {
                             <span className={`text-[9px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
                           </div>
                           <div className="flex items-center gap-1 mt-1">
-                            <span className="text-[9px] text-gray-300 font-bold">{mainDef?.icon} {mainDef?.name || '?'}</span>
-                            <span className="text-[10px] font-black text-white ml-auto">+{art.mainValue}</span>
+                            <span className={`text-[9px] font-bold ${mainColor}`}>{mainDef?.icon} {mainDef?.name || '?'}</span>
+                            <span className={`text-[10px] font-black ml-auto ${mainColor}`}>+{art.mainValue}</span>
                           </div>
                           {art.subs.length > 0 && (
                             <div className="mt-1 pt-1 border-t border-gray-700/20 space-y-px">
                               {art.subs.map((sub, si) => {
                                 const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
-                                return <div key={si} className="text-[9px] text-gray-500">{subDef?.name || sub.id} +{sub.value}</div>;
+                                const subColor = getStatColor(sub.id, invHClass, invHElement);
+                                return <div key={si} className={`text-[9px] ${subColor}`}>{subDef?.name || sub.id} +{sub.value}</div>;
                               })}
                             </div>
                           )}

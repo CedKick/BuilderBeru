@@ -1237,7 +1237,7 @@ export default function RaidMode() {
         if (kvs.dots < KATANA_V_DOT_MAX_STACKS) kvs.dots++;
         // DoT tick on boss
         if (kvs.dots > 0) {
-          const dotDmg = Math.max(1, Math.floor(chibi.atk * KATANA_V_DOT_PCT * kvs.dots));
+          const dotDmg = Math.max(1, Math.floor((chibi.maxMana || chibi.atk) * KATANA_V_DOT_PCT * kvs.dots));
           state.boss.hp -= dotDmg;
           dpsTracker.current[chibi.id] = (dpsTracker.current[chibi.id] || 0) + dotDmg;
           dpsWindowTracker.current[chibi.id] = (dpsWindowTracker.current[chibi.id] || 0) + dotDmg;
