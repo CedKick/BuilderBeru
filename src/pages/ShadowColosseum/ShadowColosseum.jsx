@@ -5084,6 +5084,17 @@ export default function ShadowColosseum() {
             <p className="text-[10px] text-gray-500 mt-0.5">6v6 contre les equipes des autres joueurs !</p>
           </Link>
 
+          {/* PVP Live Button */}
+          <Link to="/shadow-colosseum/pvp-live"
+            className="block mb-4 p-3 rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-900/30 to-fuchsia-900/30 hover:from-purple-900/50 hover:to-fuchsia-900/50 transition-all text-center group">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-xl">{'\u2694\uFE0F'}</span>
+              <span className="font-bold text-purple-400 group-hover:text-purple-300">MODE PVP LIVE</span>
+              <span className="text-xs text-gray-400">— Tour par Tour</span>
+            </div>
+            <p className="text-[10px] text-gray-500 mt-0.5">3v3 strategique vs Beru ou vs Joueur !</p>
+          </Link>
+
           {/* PVE Ranking Button */}
           <Link to="/shadow-colosseum/pve-ranking"
             className="block mb-4 p-3 rounded-xl border border-yellow-500/30 bg-gradient-to-r from-yellow-900/30 to-amber-900/30 hover:from-yellow-900/50 hover:to-amber-900/50 transition-all text-center group">

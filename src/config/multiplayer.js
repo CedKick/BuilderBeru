@@ -9,6 +9,9 @@ export const MULTIPLAYER_CONFIG = {
   // Namespace Socket.io pour DrawBeru
   NAMESPACE: '/drawberu',
 
+  // Namespace Socket.io pour PVP Live
+  PVP_LIVE_NAMESPACE: '/pvp-live',
+
   // Reconnexion automatique
   RECONNECTION_ATTEMPTS: 5,
   RECONNECTION_DELAY: 1000,
