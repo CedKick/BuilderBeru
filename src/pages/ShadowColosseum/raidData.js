@@ -887,7 +887,13 @@ export const TEAM_SIZE = 3;
 
 // ─── SPD → attack interval ──────────────────────────────────
 
-export const spdToInterval = (spd) => Math.max(500, 3000 / (1 + spd / 50));
+// Diminishing returns: 0-100 full, 100-200 half, 200+ quarter
+const effectiveSpd = (spd) => {
+  if (spd <= 100) return spd;
+  if (spd <= 200) return 100 + (spd - 100) * 0.5;
+  return 150 + (spd - 200) * 0.25;
+};
+export const spdToInterval = (spd) => Math.max(600, 3000 / (1 + effectiveSpd(spd) / 50));
 
 // ─── Team Synergies ──────────────────────────────────────────
 

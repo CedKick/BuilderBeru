@@ -58,10 +58,10 @@ export const STAT_META = {
   hp:   { name: 'PV',   icon: '\u2764\uFE0F', color: 'text-green-400',   desc: 'Points de Vie', detail: 'Determine la survie du combattant. +16 PV par point investi (le stat defensif le plus fiable — pas de rendements degressifs ni de cap). A 0 PV, le combattant est K.O.' },
   atk:  { name: 'ATK',  icon: '\u2694\uFE0F', color: 'text-red-400',     desc: "Puissance d'attaque", detail: 'Augmente les degats infliges. Formule : ATK x (Power du skill / 100). Multiplie par les bonus elementaires, crit, etc.' },
   def:  { name: 'DEF',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-blue-400', desc: 'Resistance physique', detail: 'Reduit les degats recus. Formule : 100 / (100 + DEF). Ex: 100 DEF = -50% degats, 200 DEF = -66%.' },
-  spd:  { name: 'SPD',  icon: '\uD83D\uDCA8', color: 'text-emerald-400', desc: 'Vitesse', detail: 'Determine l\'ordre des tours et les tours bonus. SPD >= 1.5x l\'ennemi le + rapide = +1 tour bonus. SPD >= 2x = +2 tours bonus (max). Augmente aussi la regen mana (+1 mana par 15 SPD).' },
+  spd:  { name: 'SPD',  icon: '\uD83D\uDCA8', color: 'text-emerald-400', desc: 'Vitesse', detail: 'Determine l\'ordre des tours et la vitesse d\'attaque. Rendements degressifs : 0-100 plein effet, 100-200 demi-effet, 200+ quart. Tours bonus : SPD >= 2x ennemi = +1 tour, >= 3x = +2 (max). Regen mana : +1/15 SPD (cap +10).' },
   crit: { name: 'CRIT', icon: '\uD83C\uDFAF', color: 'text-yellow-400', desc: 'Chance de coup critique', detail: 'Chance en % d\'infliger un coup critique (x1.5 degats de base + bonus CRIT DMG). Rendements degressifs : 50→39%, 100→61%, 150→75%, 200→85%. La RES ennemie reduit le crit (aussi en degressif).' },
   res:  { name: 'RES',  icon: '\uD83D\uDEE1\uFE0F', color: 'text-cyan-400',    desc: 'Resistance elementaire + anti-crit', detail: 'Double usage avec rendements degressifs : (1) Reduit les degats recus (50→35%, 100→55%, cap 70%). (2) Reduit le crit rate ennemi (50→18%, 100→29%, 200→41%). Stacker au-dela de ~100 est moins efficace — diversifier avec HP/DEF.' },
-  mana: { name: 'INT', icon: '\uD83E\uDDE0', color: 'text-violet-400',  desc: 'Intelligence', detail: 'Intelligence du combattant. Augmente le pool de Mana (+1.5 mana/pt). Les mages/supports utilisent Mana x2 comme puissance d\'attaque (au lieu d\'ATK). Skills mana-scaling : bonus avec rendements degressifs (racine carree). Soins : +1% par 10 Mana. Regen : 8/tick + SPD/15.' },
+  mana: { name: 'INT', icon: '\uD83E\uDDE0', color: 'text-violet-400',  desc: 'Intelligence', detail: 'Intelligence du combattant. Augmente le pool de Mana (+1.5 mana/pt). Les mages utilisent Mana x1.2 comme puissance d\'attaque, supports x0.8. Skills mana-scaling : bonus avec rendements degressifs (racine carree). Soins : +1% par 10 Mana. Regen : 5/tick + SPD/15 (cap +10).' },
 };
 
 // ─── Mana System ────────────────────────────────────────────
@@ -310,7 +310,7 @@ export const statsAtFull = (base, growth, level, allocated = {}, tb = {}, equipB
   const manaFromIntFlat = (equipBonuses.int_flat || 0);
   const manaPercent = 1 + (mergedTb.manaPercent || 0) / 100 + (equipBonuses.manaPercent || 0) / 100 + (equipBonuses.int_pct || 0) / 100;
   stats.mana = Math.floor((baseMana + manaFromGrowth + manaFromAlloc + manaFromAccount + manaFromIntFlat) * manaPercent);
-  stats.manaRegen = BASE_MANA_REGEN + Math.floor(stats.spd / 15) + Math.floor(mergedTb.manaRegen || 0);
+  stats.manaRegen = BASE_MANA_REGEN + Math.min(10, Math.floor(stats.spd / 15)) + Math.floor(mergedTb.manaRegen || 0);
   stats.manaCostReduce = Math.min(50, (mergedTb.manaCostReduce || 0) + (equipBonuses.manaCostReduce || 0));
   // Flat elemental damage from artifact stats
   stats.fireDmgFlat = (equipBonuses.fire_dmg_flat || 0);
@@ -347,8 +347,8 @@ export const fmtNum = (n) => {
 };
 
 // ─── SPD-based Turn Order with Extra Turns ──────────────────
-// If a combatant's SPD >= 1.5x the fastest opponent → +1 extra turn
-// If a combatant's SPD >= 2.0x the fastest opponent → +2 extra turns (cap)
+// If a combatant's SPD >= 2.0x the fastest opponent → +1 extra turn
+// If a combatant's SPD >= 3.0x the fastest opponent → +2 extra turns (cap)
 // Extra turns are interleaved at lower priority (0.65x and 0.35x SPD)
 export const buildSpdTurnOrder = (rawEntries) => {
   const teamEntries = rawEntries.filter(e => e.type === 'team');
@@ -360,7 +360,7 @@ export const buildSpdTurnOrder = (rawEntries) => {
   rawEntries.forEach(entry => {
     const compareSpd = entry.type === 'team' ? maxEnemySpd : maxTeamSpd;
     const ratio = compareSpd > 0 ? entry.spd / compareSpd : 1;
-    const extra = ratio >= 2.0 ? 2 : ratio >= 1.5 ? 1 : 0;
+    const extra = ratio >= 3.0 ? 2 : ratio >= 2.0 ? 1 : 0;
     result.push({ ...entry, isExtra: false });
     if (extra >= 1) result.push({ ...entry, isExtra: true, _prio: entry.spd * 0.65 });
     if (extra >= 2) result.push({ ...entry, isExtra: true, _prio: entry.spd * 0.35 });
@@ -712,7 +712,13 @@ export const aiPickSkillArc2 = (enemy, allEnemies, allPlayers) => {
 };
 
 // ─── SPD to attack interval (for raid real-time) ─────────────
-export const spdToInterval = (spd) => Math.max(500, Math.floor(3000 / (1 + spd / 50)));
+// Diminishing returns: 0-100 full, 100-200 half, 200+ quarter
+const effectiveSpd = (spd) => {
+  if (spd <= 100) return spd;
+  if (spd <= 200) return 100 + (spd - 100) * 0.5;
+  return 150 + (spd - 200) * 0.25;
+};
+export const spdToInterval = (spd) => Math.max(600, Math.floor(3000 / (1 + effectiveSpd(spd) / 50)));
 
 // ─── CD System for live modes (PvP/Raid) ─────────────────────
 export const BASE_CD_MS = 3000; // 1 CD point = 3 seconds in live modes
