@@ -333,7 +333,7 @@ export default function PvpMode() {
       const baseSk = (tsData && tsData.replacedSlot === i && TALENT_SKILLS[id]?.[tsData.skillIndex]) ? TALENT_SKILLS[id][tsData.skillIndex] : sk;
       const lvl = skillTreeData[i] || 0;
       const upgraded = applySkillUpgrades(baseSk, lvl);
-      const rawCost = getSkillManaCost(upgraded);
+      const rawCost = getSkillManaCost(upgraded, st.mana || 0);
       const cost = Math.floor(rawCost * (1 - (st.manaCostReduce || 0) / 100));
       return { ...upgraded, cd: 0, cdMaxMs: upgraded.cdMax * BASE_CD_MS * intelCDR, manaCost: cost };
     });

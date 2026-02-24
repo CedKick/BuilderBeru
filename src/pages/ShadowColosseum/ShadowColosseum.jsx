@@ -1144,7 +1144,7 @@ export default function ShadowColosseum() {
       const ts = data.talentSkills[id];
       const baseSk = (ts && ts.replacedSlot === i && TALENT_SKILLS[id]?.[ts.skillIndex]) ? TALENT_SKILLS[id][ts.skillIndex] : sk;
       const up = applySkillUpgrades(baseSk, data.skillUpgrades?.[id]?.[i] || 0);
-      return { ...up, cd: 0, manaCost: Math.floor(getSkillManaCost(up) * manaCostMult) };
+      return { ...up, cd: 0, manaCost: Math.floor(getSkillManaCost(up, fs.mana) * manaCostMult) };
     });
     // Ultimate skill (4th slot, added on top)
     if (data.ultimateSkills?.[id] && ULTIMATE_SKILLS[id]) {
@@ -2974,7 +2974,7 @@ export default function ShadowColosseum() {
           const ts = data.talentSkills[selChibi];
           const baseSk = (ts && ts.replacedSlot === i && TALENT_SKILLS[selChibi]?.[ts.skillIndex]) ? TALENT_SKILLS[selChibi][ts.skillIndex] : sk;
           const upgraded = applySkillUpgrades(baseSk, tree[i] || 0);
-          const baseCost = getSkillManaCost(upgraded);
+          const baseCost = getSkillManaCost(upgraded, s.mana);
           const finalCost = Math.max(0, Math.floor(baseCost * (1 - costReduce / 100)));
           return { ...upgraded, cdMax: Math.max(0, upgraded.cdMax - cdReduction), cd: 0, manaCost: finalCost };
         }),

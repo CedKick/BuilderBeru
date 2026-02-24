@@ -69,16 +69,16 @@ export const STAT_META = {
 // Fallback for old data without base.mana: 50 + HP/4 + RES*2
 export const getBaseMana = (base) => base.mana || Math.floor(50 + base.hp / 4 + (base.res || 0) * 2);
 export const BASE_MANA_REGEN = 5;
-export const getSkillManaCost = (skill) => {
+export const getSkillManaCost = (skill, maxMana = 0) => {
   if (skill.manaCost !== undefined) return skill.manaCost;
   if (skill.cdMax === 0) return 0; // Basic attacks always free
-  // Heal skills: expensive mana cost based on heal %
+  // Heal skills: 10% of max mana (min 30)
   const healValue = (skill.healSelf || 0) + (skill.healAlly || 0);
-  if (healValue > 0) return Math.floor(25 + healValue * 2.0 + skill.cdMax * 5);
-  // Pure buff skills (no damage): moderate mana cost
+  if (healValue > 0) return Math.max(30, Math.floor(maxMana * 0.10));
+  // Pure buff skills (no damage): 5% of max mana (min 15)
   const buffValue = (skill.buffAtk || 0) + (skill.buffDef || 0) + (skill.buffSpd || 0)
                   + (skill.buffAllyAtk || 0) + (skill.buffAllyDef || 0);
-  if (!skill.power && buffValue > 0) return Math.floor(10 + buffValue * 0.3 + skill.cdMax * 3);
+  if (!skill.power && buffValue > 0) return Math.max(15, Math.floor(maxMana * 0.05));
   if (!skill.power) return 0;
   return Math.floor(5 + skill.power / 15 + skill.cdMax * 3);
 };

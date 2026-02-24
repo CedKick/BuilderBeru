@@ -443,7 +443,7 @@ export default function TrainingDummy() {
       const tsData = coloData.talentSkills?.[entityId];
       const baseSk = (tsData && tsData.replacedSlot === i && TALENT_SKILLS[entityId]?.[tsData.skillIndex]) ? TALENT_SKILLS[entityId][tsData.skillIndex] : sk;
       const upgraded = applySkillUpgrades(baseSk, skillTreeData[i] || 0);
-      return { ...upgraded, cd: 0, manaCost: Math.floor(getSkillManaCost(upgraded) * manaCostMult) };
+      return { ...upgraded, cd: 0, manaCost: Math.floor(getSkillManaCost(upgraded, mana) * manaCostMult) };
     });
     // Ultimate skill (4th slot)
     if (coloData.ultimateSkills?.[entityId] && ULTIMATE_SKILLS[entityId]) {

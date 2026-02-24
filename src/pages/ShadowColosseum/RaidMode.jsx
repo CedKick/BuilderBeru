@@ -398,7 +398,7 @@ export default function RaidMode() {
       const baseSk = (tsData && tsData.replacedSlot === i && TALENT_SKILLS[id]?.[tsData.skillIndex]) ? TALENT_SKILLS[id][tsData.skillIndex] : sk;
       const lvl = skillTreeData[i] || 0;
       const upgraded = applySkillUpgrades(baseSk, lvl);
-      const rawCost = getSkillManaCost(upgraded);
+      const rawCost = getSkillManaCost(upgraded, mana);
       const cost = Math.floor(rawCost * (1 - manaCostReduce / 100));
       return { ...upgraded, cd: 0, cdMaxMs: upgraded.cdMax * BASE_CD_MS * intelCDR, manaCost: cost };
     });
