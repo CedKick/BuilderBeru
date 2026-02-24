@@ -23,6 +23,7 @@ import {
 import {
   computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses,
   getActivePassives, WEAPONS, ARTIFACT_SETS, ALL_ARTIFACT_SETS,
+  ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL,
 } from './equipmentData';
 import { MULTIPLAYER_CONFIG } from '../../config/multiplayer';
 
@@ -265,7 +266,9 @@ export default function PvpLive() {
   const [tempArtifacts, setTempArtifacts] = useState(null);
   const [tempWeapons, setTempWeapons] = useState(null);
   const [tempWeaponCollection, setTempWeaponCollection] = useState(null);
+  const [tempArtifactInventory, setTempArtifactInventory] = useState(null);
   const [equipFocusHunter, setEquipFocusHunter] = useState(0); // index 0-2
+  const [eqInvFilter, setEqInvFilter] = useState({ slot: null, set: null });
 
   // ─── Battle State ──────────────────────────────────────────
   const [battle, setBattle] = useState(null);
@@ -274,6 +277,7 @@ export default function PvpLive() {
   const battleLogRef = useRef(null);
   const [hoveredTarget, setHoveredTarget] = useState(null);
   const [inspectedFighter, setInspectedFighter] = useState(null); // clicked fighter for stats panel
+  const [damagePopups, setDamagePopups] = useState([]); // { id, fighterId, value, isCrit, type: 'damage'|'heal', timestamp }
 
   // ─── Timers ────────────────────────────────────────────────
   const [timer, setTimer] = useState(0);
@@ -393,10 +397,13 @@ export default function PvpLive() {
         const artClone = JSON.parse(JSON.stringify(coloData.artifacts || {}));
         const wpnClone = JSON.parse(JSON.stringify(coloData.weapons || {}));
         const wpnCollClone = JSON.parse(JSON.stringify(coloData.weaponCollection || {}));
+        const artInvClone = JSON.parse(JSON.stringify(coloData.artifactInventory || []));
         setTempArtifacts(artClone);
         setTempWeapons(wpnClone);
         setTempWeaponCollection(wpnCollClone);
+        setTempArtifactInventory(artInvClone);
         setEquipFocusHunter(0);
+        setEqInvFilter({ slot: null, set: null });
         setPhase('equip');
         setTimer(EQUIP_TIME);
         beruSay('Equipe tes hunters !', 'thinking');
@@ -824,10 +831,13 @@ export default function PvpLive() {
     const artClone = JSON.parse(JSON.stringify(coloData.artifacts || {}));
     const wpnClone = JSON.parse(JSON.stringify(coloData.weapons || {}));
     const wpnCollClone = JSON.parse(JSON.stringify(coloData.weaponCollection || {}));
+    const artInvClone = JSON.parse(JSON.stringify(coloData.artifactInventory || []));
     setTempArtifacts(artClone);
     setTempWeapons(wpnClone);
     setTempWeaponCollection(wpnCollClone);
+    setTempArtifactInventory(artInvClone);
     setEquipFocusHunter(0);
+    setEqInvFilter({ slot: null, set: null });
     setPhase('equip');
     setTimer(EQUIP_TIME);
     beruSay(randMsg(BERU_EQUIP.start), 'thinking');
@@ -881,6 +891,111 @@ export default function PvpLive() {
       return next;
     });
   }, []);
+
+  // ─── Equip a single artifact from inventory to focused hunter (TEMP only) ───
+  const equipArtifactFromInv = useCallback((art, hunterId) => {
+    // Atomically: remove art from inventory, equip it, return displaced piece to inventory
+    const currentArts = tempArtifacts?.[hunterId] || {};
+    const displaced = currentArts[art.slot]; // piece being replaced (may be null)
+
+    setTempArtifacts(prev => {
+      const next = JSON.parse(JSON.stringify(prev));
+      if (!next[hunterId]) next[hunterId] = {};
+      next[hunterId][art.slot] = art;
+      return next;
+    });
+
+    setTempArtifactInventory(prev => {
+      let inv = prev.filter(a => a.uid !== art.uid);
+      if (displaced) inv.push(displaced);
+      return inv;
+    });
+  }, [tempArtifacts]);
+
+  // ─── Auto-Equip PVP: best artifacts from inventory for focused hunter (TEMP only) ───
+  const autoEquipPvp = useCallback((hunterId) => {
+    const c = allPool[hunterId];
+    if (!c || !tempArtifactInventory) return;
+
+    const hClass = HUNTERS[hunterId]?.class || 'fighter';
+    const role = hClass === 'mage' ? 'mage' : hClass === 'tank' ? 'tank' : hClass === 'support' ? 'support' : 'dps';
+
+    // Preferred main stats per slot per role
+    const mainStatPriority = {
+      dps: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_dmg', bottes: 'spd_flat', collier: 'atk_pct', bracelet: 'atk_pct', anneau: 'crit_rate', boucles: 'atk_pct' },
+      mage: { casque: 'hp_pct', plastron: 'int_pct', gants: 'crit_dmg', bottes: 'spd_flat', collier: 'int_pct', bracelet: 'int_pct', anneau: 'crit_rate', boucles: 'int_pct' },
+      tank: { casque: 'hp_pct', plastron: 'atk_flat', gants: 'crit_rate', bottes: 'def_pct', collier: 'hp_pct', bracelet: 'def_pct', anneau: 'res_flat', boucles: 'hp_pct' },
+      support: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_rate', bottes: 'spd_flat', collier: 'hp_pct', bracelet: 'def_pct', anneau: 'res_flat', boucles: 'hp_pct' },
+    };
+    const idealMain = mainStatPriority[role] || mainStatPriority.dps;
+
+    const subPriorities = {
+      dps: ['atk_pct', 'crit_dmg', 'crit_rate', 'atk_flat', 'spd_flat'],
+      mage: ['int_pct', 'crit_dmg', 'crit_rate', 'int_flat', 'spd_flat'],
+      tank: ['hp_pct', 'def_pct', 'hp_flat', 'def_flat', 'res_flat'],
+      support: ['hp_pct', 'spd_flat', 'res_flat', 'def_pct', 'hp_flat'],
+    };
+    const subPriority = subPriorities[role] || subPriorities.dps;
+
+    // Score artifact
+    const scoreRaw = (art) => {
+      let score = 0;
+      score += art.rarity === 'mythique' ? 30 : art.rarity === 'legendaire' ? 15 : 0;
+      score += art.level * 2;
+      if (idealMain[art.slot] === art.mainStat) score += 25;
+      score += art.mainValue * 0.5;
+      (art.subs || []).forEach(sub => {
+        const idx = subPriority.indexOf(sub.id);
+        if (idx !== -1) score += (5 - idx) * 2 + sub.value * 0.3;
+      });
+      return score;
+    };
+
+    // Pool: inventory + currently equipped on this hunter
+    const currentEquipped = tempArtifacts?.[hunterId] || {};
+    let pool = [...tempArtifactInventory];
+    SLOT_ORDER.forEach(slot => {
+      if (currentEquipped[slot]) pool.push(currentEquipped[slot]);
+    });
+
+    // For each slot, pick the best artifact from the pool
+    const newEquipped = {};
+    const usedUids = new Set();
+
+    SLOT_ORDER.forEach(slot => {
+      const candidates = pool
+        .filter(a => a.slot === slot && !usedUids.has(a.uid))
+        .sort((a, b) => scoreRaw(b) - scoreRaw(a));
+      if (candidates[0]) {
+        newEquipped[slot] = candidates[0];
+        usedUids.add(candidates[0].uid);
+      }
+    });
+
+    // Update temp state
+    setTempArtifacts(prev => ({
+      ...prev,
+      [hunterId]: newEquipped,
+    }));
+
+    // Remaining pool goes back to inventory
+    const remaining = pool.filter(a => !usedUids.has(a.uid));
+    setTempArtifactInventory(remaining);
+
+    // Beru reaction
+    const setsEquipped = {};
+    Object.values(newEquipped).forEach(a => {
+      if (a?.set) setsEquipped[a.set] = (setsEquipped[a.set] || 0) + 1;
+    });
+    const setLabels = Object.entries(setsEquipped)
+      .filter(([, cnt]) => cnt >= 2)
+      .map(([sId, cnt]) => {
+        const s = ALL_ARTIFACT_SETS[sId];
+        return `${s?.icon || ''} ${s?.name || sId} (${cnt >= 4 ? '4p' : '2p'})`;
+      }).join(' + ');
+
+    beruSay(setLabels ? `Auto-equip ! ${setLabels}` : 'Meilleurs artefacts equipes !', 'excited');
+  }, [tempArtifacts, tempArtifactInventory, allPool, beruSay]);
 
   // Beru auto-equips: assign best weapons to Beru's picks
   const beruAutoEquip = useCallback(() => {
@@ -1183,6 +1298,15 @@ export default function PvpLive() {
       attacker.hp = Math.min(attacker.maxHp, attacker.hp + res.healed);
     }
 
+    // Push damage/heal popups for the floating numbers
+    const now = Date.now();
+    if (res.damage > 0) {
+      setDamagePopups(prev => [...prev, { id: now + '_dmg', fighterId: defender.id, value: res.damage, isCrit: res.isCrit, type: 'damage', timestamp: now }]);
+    }
+    if (res.healed > 0) {
+      setDamagePopups(prev => [...prev, { id: now + '_heal', fighterId: attacker.id, value: res.healed, isCrit: false, type: 'heal', timestamp: now }]);
+    }
+
     // Apply buff
     if (res.buff) {
       const buffTarget = skill.buffAllyAtk || skill.buffAllyDef ? target : attacker;
@@ -1416,9 +1540,12 @@ export default function PvpLive() {
     setTempArtifacts(null);
     setTempWeapons(null);
     setTempWeaponCollection(null);
+    setTempArtifactInventory(null);
+    setEqInvFilter({ slot: null, set: null });
     setDraftFilter({ element: null, class: null });
     setHoveredTarget(null);
     setInspectedFighter(null);
+    setDamagePopups([]);
     setTimer(0);
     setRoomCode('');
     setJoinCode('');
@@ -1434,6 +1561,16 @@ export default function PvpLive() {
       battleLogRef.current.scrollTop = battleLogRef.current.scrollHeight;
     }
   }, [battleLog]);
+
+  // Auto-remove damage popups after 1.5s
+  useEffect(() => {
+    if (damagePopups.length === 0) return;
+    const timer = setTimeout(() => {
+      const cutoff = Date.now() - 1500;
+      setDamagePopups(prev => prev.filter(p => p.timestamp > cutoff));
+    }, 1600);
+    return () => clearTimeout(timer);
+  }, [damagePopups]);
 
   // ═══════════════════════════════════════════════════════════════
   // DAMAGE / HEAL PREVIEW
@@ -1505,6 +1642,38 @@ export default function PvpLive() {
     const hpPct = fighter.maxHp > 0 ? (fighter.hp / fighter.maxHp * 100) : 0;
     const manaPct = fighter.maxMana > 0 ? (fighter.mana / fighter.maxMana * 100) : 0;
     const elem = ELEMENTS[fighter.element];
+
+    // Ghost HP bar: track previous HP percentage with a ref
+    const prevHpPctRef = useRef(hpPct);
+    const ghostHpPct = useRef(hpPct);
+
+    useEffect(() => {
+      if (hpPct < prevHpPctRef.current) {
+        // Damage was taken — set ghost to old value, then let CSS transition shrink it
+        ghostHpPct.current = prevHpPctRef.current;
+      }
+      const timeout = setTimeout(() => {
+        ghostHpPct.current = hpPct;
+        prevHpPctRef.current = hpPct;
+      }, 50);
+      return () => clearTimeout(timeout);
+    }, [hpPct]);
+
+    // Also track for re-render trigger
+    const [ghostPct, setGhostPct] = useState(hpPct);
+    useEffect(() => {
+      if (hpPct < ghostPct) {
+        // keep ghostPct at old value — it will shrink after delay
+        const t = setTimeout(() => setGhostPct(hpPct), 1000);
+        return () => clearTimeout(t);
+      } else {
+        setGhostPct(hpPct);
+      }
+    }, [hpPct]); // eslint-disable-line
+
+    // Get active popups for this fighter
+    const myPopups = damagePopups.filter(p => p.fighterId === fighter.id);
+
     return (
       <div
         onClick={(e) => { e.stopPropagation(); if (onClick) onClick(fighter); else setInspectedFighter(prev => prev?.id === fighter.id ? null : fighter); }}
@@ -1514,6 +1683,27 @@ export default function PvpLive() {
           fighter.side === 'player' ? 'border-blue-500/30 bg-blue-900/20 hover:border-blue-400/50' : 'border-red-500/30 bg-red-900/20 hover:border-red-400/50'
         }`}
       >
+        {/* Floating damage/heal numbers */}
+        <AnimatePresence>
+          {myPopups.map((popup) => (
+            <motion.div
+              key={popup.id}
+              initial={{ opacity: 1, y: 0, scale: popup.isCrit ? 1.3 : 1 }}
+              animate={{ opacity: 0, y: -32, scale: popup.isCrit ? 1.5 : 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.2, ease: 'easeOut' }}
+              className={`absolute -top-2 left-1/2 -translate-x-1/2 z-20 pointer-events-none font-bold whitespace-nowrap ${
+                popup.type === 'damage'
+                  ? (popup.isCrit ? 'text-base text-orange-300 drop-shadow-[0_0_6px_rgba(251,146,60,0.7)]' : 'text-sm text-red-400 drop-shadow-[0_0_4px_rgba(239,68,68,0.5)]')
+                  : 'text-sm text-green-400 drop-shadow-[0_0_4px_rgba(34,197,94,0.5)]'
+              }`}
+            >
+              {popup.type === 'damage' ? `-${fmt(popup.value)}` : `+${fmt(popup.value)}`}
+              {popup.isCrit && <span className="ml-0.5 text-[9px]">CRIT!</span>}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
         <div className="flex items-center gap-1.5">
           <img src={fighter.sprite} alt={fighter.name} className="w-10 h-10 rounded object-contain" />
           <div className="flex-1 min-w-0">
@@ -1523,8 +1713,18 @@ export default function PvpLive() {
             </div>
             {showHp && fighter.alive && (
               <>
-                <div className="h-1.5 bg-gray-800 rounded-full mt-0.5 overflow-hidden">
-                  <div className={`h-full rounded-full transition-all ${hpPct > 50 ? 'bg-green-500' : hpPct > 25 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${hpPct}%` }} />
+                {/* HP bar with ghost damage trail */}
+                <div className="relative h-1.5 bg-gray-800 rounded-full mt-0.5 overflow-hidden">
+                  {/* Ghost bar (the lingering damage chunk) — behind the real bar */}
+                  <div
+                    className="absolute inset-0 h-full rounded-full bg-orange-500/70"
+                    style={{ width: `${ghostPct}%`, transition: 'width 1s ease-out 0.15s' }}
+                  />
+                  {/* Real HP bar — instant shrink */}
+                  <div
+                    className={`relative h-full rounded-full z-[1] ${hpPct > 50 ? 'bg-green-500' : hpPct > 25 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                    style={{ width: `${hpPct}%`, transition: 'width 0.15s ease-out' }}
+                  />
                 </div>
                 <div className="h-1 bg-gray-800 rounded-full mt-0.5 overflow-hidden">
                   <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${manaPct}%` }} />
@@ -2072,7 +2272,7 @@ export default function PvpLive() {
             <div className="p-3 rounded-xl bg-gray-800/30 border border-gray-700">
               <p className="text-xs text-gray-400 mb-2 font-bold">Arme</p>
               <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
-                {availWeapons.map(wId => {
+                {[...availWeapons].sort((a, b) => (WEAPONS[b]?.atk || 0) - (WEAPONS[a]?.atk || 0)).map(wId => {
                   const w = WEAPONS[wId];
                   if (!w) return null;
                   const isEquipped = currentWeapon === wId;
@@ -2094,14 +2294,15 @@ export default function PvpLive() {
               </div>
             </div>
 
-            {/* Artifact Sets */}
-            <div className="p-3 rounded-xl bg-gray-800/30 border border-gray-700 mt-3 md:mt-0">
-              <p className="text-xs text-gray-400 mb-2 font-bold">Sets d'Artefacts</p>
+            {/* Artifact Sets — Current + Available from other hunters */}
+            <div className="p-3 rounded-xl bg-gray-800/30 border border-gray-700 mt-3 md:mt-0 max-h-[400px] overflow-y-auto">
+              {/* Section A: Current Sets on focused hunter */}
+              <p className="text-xs text-gray-400 mb-2 font-bold">Sets Equipes</p>
               {(() => {
                 const sets = getHunterSets(focusId);
-                if (sets.length === 0) return <p className="text-[10px] text-gray-600">Aucun set equipe</p>;
+                if (sets.length === 0) return <p className="text-[10px] text-gray-600 mb-3">Aucun set equipe</p>;
                 return (
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 mb-3">
                     {sets.map(s => (
                       <div key={s.setId} className={`p-1.5 rounded-lg border ${s.border || 'border-gray-700'} ${s.bg || 'bg-gray-900/30'}`}>
                         <div className="flex items-center justify-between">
@@ -2115,6 +2316,64 @@ export default function PvpLive() {
                   </div>
                 );
               })()}
+
+              {/* Section B: Available sets from OTHER hunters in the box */}
+              <div className="border-t border-gray-700/50 pt-2 mt-2">
+                <p className="text-xs text-gray-400 mb-2 font-bold">Sets Disponibles (autres hunters)</p>
+                {(() => {
+                  if (!tempArtifacts) return <p className="text-[10px] text-gray-600">Aucun artefact dans la box</p>;
+                  // Gather sets from all hunters except the focused one
+                  const otherSets = [];
+                  const currentFocusSets = new Set(getHunterSets(focusId).map(s => s.setId));
+                  Object.entries(tempArtifacts).forEach(([hId, arts]) => {
+                    if (hId === focusId) return;
+                    const setCounts = {};
+                    Object.values(arts).forEach(art => {
+                      if (art?.set) setCounts[art.set] = (setCounts[art.set] || 0) + 1;
+                    });
+                    Object.entries(setCounts).forEach(([setId, count]) => {
+                      const setInfo = ALL_ARTIFACT_SETS[setId];
+                      if (setInfo && count >= 2) {
+                        // Check if we already added this set from another hunter
+                        const existing = otherSets.find(s => s.setId === setId && s.fromId === hId);
+                        if (!existing) {
+                          const ownerName = allPool[hId]?.name || hId;
+                          const ownerSprite = allPool[hId]?.sprite || SPRITES[hId];
+                          otherSets.push({ setId, count, fromId: hId, ownerName, ownerSprite, ...setInfo });
+                        }
+                      }
+                    });
+                  });
+
+                  if (otherSets.length === 0) return <p className="text-[10px] text-gray-600">Aucun set disponible a echanger</p>;
+
+                  return (
+                    <div className="space-y-1.5">
+                      {otherSets.map(s => (
+                        <div key={`${s.fromId}-${s.setId}`} className={`p-1.5 rounded-lg border ${s.border || 'border-gray-700'} ${s.bg || 'bg-gray-900/30'}`}>
+                          <div className="flex items-center justify-between gap-1">
+                            <div className="flex items-center gap-1 min-w-0 flex-1">
+                              <img src={s.ownerSprite} alt="" className="w-5 h-5 rounded object-contain flex-shrink-0" />
+                              <div className="min-w-0">
+                                <span className={`text-[10px] ${s.color || 'text-gray-300'}`}>{s.icon} {s.name}</span>
+                                <span className="text-[8px] text-gray-500 ml-1">({s.count}p sur {s.ownerName})</span>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => swapArtifactSet(s.fromId, focusId, s.setId)}
+                              className="flex-shrink-0 px-2 py-0.5 rounded text-[9px] font-bold bg-purple-600/80 hover:bg-purple-500 text-white transition-all"
+                            >
+                              Swap
+                            </button>
+                          </div>
+                          {s.count >= 2 && s.passive2 && <p className="text-[8px] text-gray-500 mt-0.5">2P: {s.passive2.desc || 'Actif'}</p>}
+                          {s.count >= 4 && s.passive4 && <p className="text-[8px] text-gray-500">4P: {s.passive4.desc || 'Actif'}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
 
             {/* Stats preview */}
@@ -2153,6 +2412,211 @@ export default function PvpLive() {
             </div>
           </div>
         )}
+
+        {/* ═══ Artifact Inventory Browser ═══ */}
+        {focusId && tempArtifactInventory && tempArtifactInventory.length > 0 && (
+          <div className="mt-4 p-3 rounded-xl bg-gray-800/30 border border-gray-700">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-gray-400 font-bold">Inventaire Artefacts ({tempArtifactInventory.length})</p>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => autoEquipPvp(focusId)}
+                  className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-500/30 text-[10px] font-bold text-cyan-300 hover:from-cyan-600/50 hover:to-blue-600/50 transition-all"
+                >
+                  Auto-Equip
+                </button>
+              </div>
+            </div>
+
+            {/* Filters */}
+            <div className="mb-2 space-y-1">
+              {/* Slot filter */}
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="text-[9px] text-gray-500 w-8">Slot</span>
+                {SLOT_ORDER.map(sId => (
+                  <button key={sId} onClick={() => setEqInvFilter(prev => ({ ...prev, slot: prev.slot === sId ? null : sId }))}
+                    className={`px-1.5 py-0.5 rounded text-[10px] transition-all ${
+                      eqInvFilter.slot === sId ? 'text-purple-300 bg-purple-500/15 ring-1 ring-purple-400/50' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                    }`}>{ARTIFACT_SLOTS[sId]?.icon || sId}</button>
+                ))}
+              </div>
+              {/* Set filter */}
+              {(() => {
+                const setsInInv = new Set(tempArtifactInventory.map(a => a.set));
+                if (setsInInv.size === 0) return null;
+                return (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-[9px] text-gray-500 w-8">Set</span>
+                    {[...setsInInv].map(setId => {
+                      const s = ALL_ARTIFACT_SETS[setId];
+                      if (!s) return null;
+                      return (
+                        <div key={setId} className="relative group/set">
+                          <button onClick={() => setEqInvFilter(prev => ({ ...prev, set: prev.set === setId ? null : setId }))}
+                            className={`px-1.5 py-0.5 rounded text-[10px] transition-all ${
+                              eqInvFilter.set === setId ? `${s.color} ${s.bg} ring-1 ring-current` : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
+                            }`}>{s.icon}</button>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/set:block z-50 pointer-events-none">
+                            <div className="bg-gray-900/95 backdrop-blur-sm border border-gray-600/40 rounded-lg px-2.5 py-1.5 shadow-xl w-max max-w-[200px]">
+                              <div className={`text-[10px] font-bold ${s.color} mb-1`}>{s.icon} {s.name}</div>
+                              {s.bonus2Desc && <div className="text-[9px] text-green-400">2p : {s.bonus2Desc}</div>}
+                              {s.bonus4Desc && <div className="text-[9px] text-blue-400">4p : {s.bonus4Desc}</div>}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+              {(eqInvFilter.slot || eqInvFilter.set) && (
+                <button onClick={() => setEqInvFilter({ slot: null, set: null })}
+                  className="text-[10px] text-red-400 hover:text-red-300">Reset filtres</button>
+              )}
+            </div>
+
+            {/* Inventory grid */}
+            {(() => {
+              const filtered = tempArtifactInventory.filter(art => {
+                if (eqInvFilter.slot && art.slot !== eqInvFilter.slot) return false;
+                if (eqInvFilter.set && art.set !== eqInvFilter.set) return false;
+                return true;
+              });
+              return filtered.length === 0 ? (
+                <p className="text-center text-[10px] text-gray-600 py-4">
+                  {tempArtifactInventory.length === 0 ? "Inventaire vide" : "Aucun artefact ne correspond aux filtres."}
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 max-h-72 overflow-y-auto">
+                  {filtered.map((art, i) => {
+                    const setDef = ALL_ARTIFACT_SETS[art.set];
+                    const slotDef = ARTIFACT_SLOTS[art.slot];
+                    const mainDef = MAIN_STAT_VALUES[art.mainStat];
+                    return (
+                      <button key={art.uid || i} onClick={() => equipArtifactFromInv(art, focusId)}
+                        className={`p-2 rounded-lg border ${setDef?.border || 'border-gray-600/30'} ${setDef?.bg || 'bg-gray-800/20'} hover:brightness-125 transition-all text-left`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm">{slotDef?.icon || '?'}</span>
+                            <span className={`text-[10px] font-bold truncate ${setDef?.color || 'text-gray-300'}`}>{setDef?.name?.split(' ')[0] || '?'}</span>
+                          </div>
+                          <span className={`text-[9px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <span className={`text-[9px] font-bold ${mainDef?.name?.includes('ATK') || mainDef?.name?.includes('INT') ? 'text-red-400' : 'text-gray-400'}`}>{mainDef?.icon || ''} {mainDef?.name || '?'}</span>
+                          <span className="text-[10px] font-black ml-auto">+{art.mainValue}</span>
+                        </div>
+                        {art.subs && art.subs.length > 0 && (
+                          <div className="mt-1 pt-1 border-t border-gray-700/20 space-y-px">
+                            {art.subs.map((sub, si) => {
+                              const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
+                              return <div key={si} className="text-[9px] text-gray-400">{subDef?.name || sub.id} +{sub.value}</div>;
+                            })}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* ═══ Team Overview — All 3 hunters side by side ═══ */}
+        <div className="mt-5 p-4 rounded-xl bg-gray-800/20 border border-gray-700/50">
+          <p className="text-xs text-gray-400 font-bold mb-3 text-center">Vue d'ensemble de l'equipe</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {myPicks.map((hId) => {
+              const chibi = allPool[hId];
+              if (!chibi) return null;
+              const fighter = buildPvpFighter(hId, tempArtifacts, tempWeapons, tempWeaponCollection, 'player');
+              if (!fighter) return null;
+              const hunterSets = getHunterSets(hId);
+              const passive = HUNTER_PASSIVE_EFFECTS[hId] || null;
+              const wId = tempWeapons?.[hId];
+              const weapon = wId && WEAPONS[wId] ? WEAPONS[wId] : null;
+              const elemInfo = ELEMENTS[chibi.element];
+
+              return (
+                <div key={hId} className="p-3 rounded-xl bg-gray-900/40 border border-gray-700/50">
+                  {/* Header: portrait + name + element */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <img src={chibi.sprite || SPRITES[hId]} alt="" className="w-10 h-10 rounded object-contain" />
+                    <div>
+                      <p className="text-xs font-bold text-gray-200">{chibi.name}</p>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px]">{elemInfo?.icon}</span>
+                        <span className="text-[9px] text-gray-500 capitalize">{fighter.hunterClass}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Key stats */}
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 mb-2">
+                    {[
+                      { l: 'HP', v: fmt(fighter.hp), c: 'text-green-400' },
+                      { l: 'ATK', v: fmt(fighter.atk), c: 'text-red-400' },
+                      { l: 'DEF', v: fmt(fighter.def), c: 'text-blue-400' },
+                      { l: 'SPD', v: fmt(fighter.spd), c: 'text-emerald-400' },
+                      { l: 'CRIT', v: `${fighter.crit?.toFixed(1)}%`, c: 'text-yellow-400' },
+                      { l: 'INT', v: fmt(fighter.maxMana || 0), c: 'text-violet-400' },
+                    ].map(s => (
+                      <div key={s.l} className="flex justify-between text-[9px]">
+                        <span className={s.c}>{s.l}</span>
+                        <span className="text-gray-300 font-mono">{s.v}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Hunter passive */}
+                  {passive && (
+                    <div className="mb-2 p-1.5 rounded-lg bg-purple-900/20 border border-purple-500/20">
+                      <p className="text-[8px] text-purple-400 font-bold mb-0.5">Passif Hunter</p>
+                      <p className="text-[8px] text-gray-400">
+                        {passive.type === 'permanent' && passive.stats && `Stats permanentes: ${Object.entries(passive.stats).map(([k, v]) => `${k.toUpperCase()} +${v}%`).join(', ')}`}
+                        {passive.type === 'teamDef' && `DEF equipe +${passive.value}%`}
+                        {passive.type === 'teamAura' && passive.stats && `Aura equipe: ${Object.entries(passive.stats).map(([k, v]) => `${k.toUpperCase()} +${v}%`).join(', ')}`}
+                        {passive.type === 'critDmg' && `Degats critiques +${passive.value}%`}
+                        {passive.type === 'healBonus' && `Bonus soins +${passive.value}%`}
+                        {passive.type === 'magicDmg' && `Degats magiques +${passive.value}%`}
+                        {passive.type === 'debuffBonus' && `Bonus debuff +${passive.value}%`}
+                        {passive.type === 'firstTurn' && `Tour 1: SPD +${passive.stats?.spd || 0}%`}
+                        {passive.type === 'conditional' && (passive.desc || `Conditionnel: ${passive.threshold || ''}%`)}
+                        {!['permanent', 'teamDef', 'teamAura', 'critDmg', 'healBonus', 'magicDmg', 'debuffBonus', 'firstTurn', 'conditional'].includes(passive.type) && `${passive.type}: ${passive.value || ''}`}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Artifact set bonuses */}
+                  {hunterSets.length > 0 && (
+                    <div className="mb-2">
+                      <p className="text-[8px] text-gray-500 mb-0.5">Sets:</p>
+                      <div className="space-y-0.5">
+                        {hunterSets.map(s => (
+                          <div key={s.setId} className="text-[8px]">
+                            <span className={s.color || 'text-gray-300'}>{s.icon} {s.name} ({s.count}p)</span>
+                            {s.count >= 2 && s.passive2 && <span className="text-gray-500 ml-1">2P</span>}
+                            {s.count >= 4 && s.passive4 && <span className="text-gray-500 ml-1">4P</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Weapon */}
+                  {weapon && (
+                    <div className="text-[8px]">
+                      <span className="text-gray-500">Arme: </span>
+                      <span className={RARITY[weapon.rarity]?.color || 'text-gray-300'}>{weapon.icon || '⚔️'} {weapon.name}</span>
+                      <span className="text-gray-500 ml-1">ATK+{weapon.atk}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         <div className="text-center mt-4">
           <motion.button
