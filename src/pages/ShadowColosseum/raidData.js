@@ -1295,12 +1295,12 @@ export function getHunterSprite(hunterId, data) {
 // Each duplicate (star) gives cumulative % bonuses to stats.
 // A0-A5 use fixed bonuses, A6-A200 every 5 levels = +1%, A201-A1000 every 10 levels = +1%
 export const STAR_STAT_BONUSES = {
-  0: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 },
-  1: { hp: 5, atk: 3, def: 2, spd: 0, crit: 0, res: 0 },
-  2: { hp: 8, atk: 5, def: 3, spd: 2, crit: 1, res: 0 },
-  3: { hp: 12, atk: 8, def: 5, spd: 3, crit: 2, res: 1 },
-  4: { hp: 16, atk: 12, def: 8, spd: 4, crit: 3, res: 2 },
-  5: { hp: 20, atk: 15, def: 10, spd: 5, crit: 5, res: 3 },
+  0: { hp: 0, atk: 0, def: 0, int: 0, spd: 0, crit: 0, res: 0 },
+  1: { hp: 5, atk: 3, def: 2, int: 3, spd: 0, crit: 0, res: 0 },
+  2: { hp: 8, atk: 5, def: 3, int: 5, spd: 2, crit: 1, res: 0 },
+  3: { hp: 12, atk: 8, def: 5, int: 8, spd: 3, crit: 2, res: 1 },
+  4: { hp: 16, atk: 12, def: 8, int: 12, spd: 4, crit: 3, res: 2 },
+  5: { hp: 20, atk: 15, def: 10, int: 15, spd: 5, crit: 5, res: 3 },
 };
 
 // Compute dynamic star bonuses
@@ -1328,6 +1328,7 @@ const computeStarBonuses = (stars) => {
     hp: baseBonus.hp + extraBonus,
     atk: baseBonus.atk + extraBonus,
     def: baseBonus.def + extraBonus,
+    int: baseBonus.int + extraBonus,
     spd: baseBonus.spd,
     crit: baseBonus.crit,
     res: baseBonus.res,
@@ -1340,6 +1341,7 @@ export const applyStarBonuses = (stats, stars) => {
   if (bonus.hp)   stats.hp  = Math.floor(stats.hp  * (1 + bonus.hp / 100));
   if (bonus.atk)  stats.atk = Math.floor(stats.atk * (1 + bonus.atk / 100));
   if (bonus.def)  stats.def = Math.floor(stats.def * (1 + bonus.def / 100));
+  if (bonus.int && stats.mana) stats.mana = Math.floor(stats.mana * (1 + bonus.int / 100));
   if (bonus.spd)  stats.spd = Math.floor(stats.spd * (1 + bonus.spd / 100));
   if (bonus.crit) stats.crit += bonus.crit;
   if (bonus.res)  stats.res += bonus.res;
