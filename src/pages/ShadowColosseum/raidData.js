@@ -528,7 +528,7 @@ export const HUNTERS = {
 
   h_mayuri: {
     name: 'Mayuri Shiina', element: 'water', rarity: 'mythique', class: 'support',
-    series: 'steinsgate', sprite: S.h_mayuri, passiveDesc: 'Tutturu~ : Buff raid ATK +15%, DEF +10% & INT +15% pour TOUTE l\'equipe',
+    series: 'steinsgate', sprite: S.h_mayuri, passiveDesc: 'Tutturu~ : Buff raid ATK +15%, DEF +10% & INT +15% pour TOUTE l\'equipe. A3: +3% DMG Eau par membre Water',
     base:   { hp: 460, atk: 28, def: 24, spd: 32, crit: 6, res: 16, mana: 360 },
     growth: { hp: 15, atk: 1.8, def: 1.4, spd: 1.4, crit: 0.2, res: 0.6, mana: 2.2 },
     skills: [
@@ -1118,6 +1118,30 @@ export const HUNTER_PASSIVE_EFFECTS = {
 };
 
 export const getHunterPassive = (hunterId) => HUNTER_PASSIVE_EFFECTS[hunterId] || null;
+
+// ─── Awakening Passives (unique per-star A1-A5 passives) ────────
+// Each hunter can have unique passives unlocked at specific awakening levels.
+// A6+ still uses the generic stat bonuses from STAR_STAT_BONUSES.
+export const HUNTER_AWAKENING_PASSIVES = {
+  h_mayuri: {
+    A3: {
+      type: 'teamElementalDmg',
+      element: 'water',
+      pctPerAlly: 3,
+      desc: 'A3: +3% DMG Eau par membre Water dans l\'equipe',
+    },
+  },
+};
+
+export const getAwakeningPassives = (hunterId, stars) => {
+  const passives = HUNTER_AWAKENING_PASSIVES[hunterId];
+  if (!passives) return [];
+  const active = [];
+  for (let i = 1; i <= Math.min(stars, 5); i++) {
+    if (passives[`A${i}`]) active.push(passives[`A${i}`]);
+  }
+  return active;
+};
 
 // ─── Nier Automata — Special Drop System ─────────────────────────
 // Each Nier hunter has its own drop config (stage/tier, chance)

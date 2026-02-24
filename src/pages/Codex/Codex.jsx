@@ -7,7 +7,7 @@ import { WEAPONS, WEAPON_AWAKENING_PASSIVES, MAX_WEAPON_AWAKENING, getWeaponAwak
   ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL, RARITY_SUB_COUNT,
 } from '../ShadowColosseum/equipmentData';
 import { CHIBIS, SPRITES, ELEMENTS, RARITY, STAT_META, getSkillManaCost } from '../ShadowColosseum/colosseumCore';
-import { HUNTERS, HUNTER_PASSIVE_EFFECTS, getHunterStars } from '../ShadowColosseum/raidData';
+import { HUNTERS, HUNTER_PASSIVE_EFFECTS, getHunterStars, getAwakeningPassives } from '../ShadowColosseum/raidData';
 
 // ═══════════════════════════════════════════════════════════════
 // CODEX — Encyclopedie du Shadow Colosseum
@@ -472,6 +472,12 @@ export default function Codex() {
                               </div>
                             )}
                             {f.passiveDesc && <p className="text-[11px] text-amber-300 mt-1.5 italic">{f.passiveDesc}</p>}
+                            {evStars >= 1 && (() => {
+                              const awPs = getAwakeningPassives(f.id, evStars);
+                              return awPs.length > 0 ? awPs.map((ap, i) => (
+                                <p key={i} className="text-[10px] text-yellow-300 mt-0.5">{ap.desc}</p>
+                              )) : null;
+                            })()}
                             {!isOwn && <div className="text-[10px] text-gray-600 font-bold mt-1">Non obtenu</div>}
                           </div>
                         </div>
@@ -592,6 +598,17 @@ export default function Codex() {
                                   </span>
                                 </div>
                                 <div className="text-[10px] text-gray-300">{f.passiveDesc}</div>
+                                {evStars >= 1 && (() => {
+                                  const awPs = getAwakeningPassives(f.id, evStars);
+                                  return awPs.length > 0 ? (
+                                    <div className="mt-2 pt-2 border-t border-white/10">
+                                      <div className="text-[9px] text-yellow-500 font-bold uppercase mb-1">Passifs d'eveil</div>
+                                      {awPs.map((ap, i) => (
+                                        <div key={i} className="text-[10px] text-yellow-300">{ap.desc}</div>
+                                      ))}
+                                    </div>
+                                  ) : null;
+                                })()}
                               </div>
                             </div>
                           );

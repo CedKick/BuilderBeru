@@ -23,7 +23,7 @@ import {
   HUNTER_UNLOCK_THRESHOLDS,
   computeSynergies, computeCrossTeamSynergy, computeRaidRewards,
   loadRaidData, saveRaidData, getHunterPool, getHunterStars, RAID_SAVE_KEY,
-  HUNTER_PASSIVE_EFFECTS,
+  HUNTER_PASSIVE_EFFECTS, getAwakeningPassives,
   RAID_TIERS, MAX_RAID_TIER, getTierData, getTierArtifactRarity,
 } from './raidData';
 import {
@@ -560,6 +560,25 @@ export default function RaidMode() {
       if (c.hunterPassive?.type === 'firstTurn' && c.hunterPassive.stats?.spd) {
         c.buffs.push({ stat: 'spd', value: c.hunterPassive.stats.spd / 100, turns: 1 });
       }
+    });
+
+    // ─── Awakening passives (A1-A5 unique per-hunter passives) ───
+    chibis.forEach(c => {
+      if (!c.id || !HUNTERS[c.id]) return;
+      const stars = getHunterStars(loadRaidData(), c.id);
+      const awPassives = getAwakeningPassives(c.id, stars);
+      awPassives.forEach(ap => {
+        if (ap.type === 'teamElementalDmg') {
+          const count = chibis.filter(ally => ally.element === ap.element).length;
+          const bonus = count * ap.pctPerAlly;
+          if (bonus > 0) {
+            const dmgKey = `${ap.element}Damage`;
+            chibis.forEach(ally => {
+              ally.talentBonuses[dmgKey] = (ally.talentBonuses[dmgKey] || 0) + bonus;
+            });
+          }
+        }
+      });
     });
 
     // ─── ULTIME artifact set passives: onBattleStart ───
@@ -2149,6 +2168,17 @@ export default function RaidMode() {
                     const parts = Object.entries(hp.perStack).map(([k, v]) => `${k.toUpperCase()} +${v}%`);
                     passiveLabels.push({ name: h.name, label: `${parts.join(', ')}/action (max x${hp.maxStacks || '?'})`, color: 'text-blue-400' });
                   }
+                  // Awakening passives (A1-A5)
+                  const stars = getHunterStars(raidData, id);
+                  const awPs = getAwakeningPassives(id, stars);
+                  awPs.forEach(ap => {
+                    if (ap.type === 'teamElementalDmg') {
+                      const count = team.filter(tid => tid && HUNTERS[tid]?.element === ap.element).length;
+                      const totalBonus = count * ap.pctPerAlly;
+                      const elemNames = { fire: 'Feu', water: 'Eau', shadow: 'Ombre', light: 'Lumiere', earth: 'Terre' };
+                      passiveLabels.push({ name: h.name, label: `DMG ${elemNames[ap.element] || ap.element} +${totalBonus}% (${count}x ${ap.element})`, color: 'text-cyan-300' });
+                    }
+                  });
                 });
                 return passiveLabels.length > 0 ? (
                   <div className="mt-1 space-y-0.5 border-t border-white/5 pt-1">
@@ -2239,6 +2269,17 @@ export default function RaidMode() {
                         {hp.type === 'teamDef' && <span className="ml-1 text-[8px] px-1 rounded bg-teal-900/40 text-teal-300">EQUIPE</span>}
                       </div>
                     )}
+                    {/* Awakening passives */}
+                    {isHunter && stars >= 1 && (() => {
+                      const awPs = getAwakeningPassives(id, stars);
+                      if (!awPs.length) return null;
+                      return awPs.map((ap, i) => (
+                        <div key={i} className="text-[9px] text-yellow-300 mt-0.5">
+                          <span className="text-[8px] text-yellow-600 uppercase mr-1">[eveil]</span>
+                          {ap.desc}
+                        </div>
+                      ));
+                    })()}
                   </div>
                 </div>
               );

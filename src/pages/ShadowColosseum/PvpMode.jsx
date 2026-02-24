@@ -19,7 +19,7 @@ import {
 } from './colosseumCore';
 import { TALENT_SKILLS, ULTIMATE_SKILLS } from './talentSkillData';
 import {
-  HUNTERS, HUNTER_PASSIVE_EFFECTS,
+  HUNTERS, HUNTER_PASSIVE_EFFECTS, getAwakeningPassives,
   computeSynergies, computeCrossTeamSynergy,
   loadRaidData, getHunterPool, getHunterStars,
 } from './raidData';
@@ -661,6 +661,24 @@ export default function PvpMode() {
       if (c.hunterPassive?.type === 'firstTurn' && c.hunterPassive.stats?.spd) {
         c.buffs.push({ stat: 'spd', value: c.hunterPassive.stats.spd / 100, turns: 1 });
       }
+    });
+    // ─── Awakening passives (A1-A5 unique per-hunter passives) ───
+    units.forEach(c => {
+      if (!c.id || !HUNTERS[c.id]) return;
+      const stars = getHunterStars(loadRaidData(), c.id);
+      const awPassives = getAwakeningPassives(c.id, stars);
+      awPassives.forEach(ap => {
+        if (ap.type === 'teamElementalDmg') {
+          const count = units.filter(ally => ally.element === ap.element).length;
+          const bonus = count * ap.pctPerAlly;
+          if (bonus > 0) {
+            const dmgKey = `${ap.element}Damage`;
+            units.forEach(ally => {
+              ally.talentBonuses[dmgKey] = (ally.talentBonuses[dmgKey] || 0) + bonus;
+            });
+          }
+        }
+      });
     });
     // ULTIME artifact passives: onBattleStart
     units.forEach(c => {

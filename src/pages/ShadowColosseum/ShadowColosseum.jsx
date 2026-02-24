@@ -26,7 +26,7 @@ import {
   calculatePowerScore, getDifficultyRating,
   BUFF_ICONS, computeDamagePreview, aiPickSkillArc2, fmtNum, getManaScaledPower,
 } from './colosseumCore';
-import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS, HUNTER_SKINS, rollSkinDrop, getHunterSprite, getHunterDropSources, rollUniversalHunterDrops, rollUniversalSetUltimeDrops } from './raidData';
+import { HUNTERS, loadRaidData, saveRaidData, getHunterStars, addHunterOrDuplicate, HUNTER_PASSIVE_EFFECTS, getAwakeningPassives, HUNTER_SKINS, rollSkinDrop, getHunterSprite, getHunterDropSources, rollUniversalHunterDrops, rollUniversalSetUltimeDrops } from './raidData';
 import { BattleStyles, BattleArena } from './BattleVFX';
 import {
   ARTIFACT_SETS, ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL,
@@ -1256,6 +1256,24 @@ export default function ShadowColosseum() {
           });
         });
       }
+    });
+    // ─── Awakening passives (A1-A5 unique per-hunter passives) ───
+    fighters.forEach(f => {
+      if (!f.id || !HUNTERS[f.id]) return;
+      const stars = getHunterStars(loadRaidData(), f.id);
+      const awPassives = getAwakeningPassives(f.id, stars);
+      awPassives.forEach(ap => {
+        if (ap.type === 'teamElementalDmg') {
+          const count = fighters.filter(ally => ally.element === ap.element).length;
+          const bonus = count * ap.pctPerAlly;
+          if (bonus > 0) {
+            const dmgKey = `${ap.element}Damage`;
+            fighters.forEach(ally => {
+              ally.tb[dmgKey] = (ally.tb[dmgKey] || 0) + bonus;
+            });
+          }
+        }
+      });
     });
     // ─── Apply ARC II artifact set passives (onBattleStart + team buffs) ───
     fighters.forEach(f => {
