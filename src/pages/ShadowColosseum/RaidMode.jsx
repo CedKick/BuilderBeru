@@ -459,7 +459,7 @@ export default function RaidMode() {
       },
       talentBonuses: mergedTb,
       hunterPassive,
-      isMage: HUNTERS[id]?.class === 'mage' || HUNTERS[id]?.class === 'support',
+      isMage: HUNTERS[id]?.class === 'mage' || HUNTERS[id]?.class === 'support' || HUNTERS[id]?.class === 'tank',
       hunterClass: HUNTERS[id]?.class || 'fighter',
       lastAttackAt: 0, attackInterval: spdToInterval(finalSpd),
       alive: true,
@@ -2255,7 +2255,9 @@ export default function RaidMode() {
                     </div>
                     {/* Stats row */}
                     <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[9px]">
-                      <span className="text-red-400">ATK:{fs.atk}</span>
+                      {(c.class === 'mage' || c.class === 'support' || c.class === 'tank')
+                        ? <span className="text-violet-400">INT:{fs.mana}</span>
+                        : <span className="text-red-400">ATK:{fs.atk}</span>}
                       <span className="text-green-400">HP:{fs.hp}</span>
                       <span className="text-blue-400">DEF:{fs.def}</span>
                       <span className="text-yellow-400">SPD:{fs.spd}</span>

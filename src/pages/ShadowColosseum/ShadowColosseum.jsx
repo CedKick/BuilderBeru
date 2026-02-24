@@ -1196,7 +1196,7 @@ export default function ShadowColosseum() {
       shield: 0,
       skills, buffs: initBuffs, alive: true, tb: mergedTb, level,
       hunterPassive, // stored for combat-time conditional checks
-      isMage: HUNTERS[id]?.class === 'mage' || HUNTERS[id]?.class === 'support',
+      isMage: HUNTERS[id]?.class === 'mage' || HUNTERS[id]?.class === 'support' || HUNTERS[id]?.class === 'tank',
       hunterClass: HUNTERS[id]?.class || 'fighter',
       artPassives, // artifact set passives for combat
       passiveState: {
@@ -5313,7 +5313,11 @@ export default function ShadowColosseum() {
                           )}
                         </div>
                         <div className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-0.5 text-[10px] text-gray-400">
-                          <span>PV:{s.hp}</span><span>ATK:{s.atk}</span><span>DEF:{s.def}</span>
+                          <span>PV:{s.hp}</span>
+                          {(c.class === 'mage' || c.class === 'support' || c.class === 'tank')
+                            ? <span className="text-violet-400">INT:{s.mana}</span>
+                            : <span>ATK:{s.atk}</span>}
+                          <span>DEF:{s.def}</span>
                           <span>SPD:{s.spd}</span><span>CRT:{s.crit}%</span><span>RES:{s.res}%</span>
                         </div>
                         {level < MAX_LEVEL && (
