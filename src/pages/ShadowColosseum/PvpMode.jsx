@@ -575,8 +575,17 @@ export default function PvpMode() {
       ...d,
       id: `${d.id}_def`, // Unique combat ID — prevents tracker collision when both teams share characters
       hp: d.maxHp || d.hp,
+      shield: 0,
       buffs: [],
-      passiveState: { flammeStacks: 0, martyrHealed: false, echoCounter: 0, sianStacks: 0 },
+      passiveState: {
+        // Standard fields (ensures compatibility with old registrations)
+        flammeStacks: 0, martyrHealed: false, echoCounter: 0, sianStacks: 0,
+        eternalRageStacks: 0, celestialShield: 0, celestialShieldBroken: false,
+        vitalOverhealShield: 0, vitalEmergencyCD: 0, vitalEmergencyActive: 0,
+        arcaneOverloadCD: 0, supremeAllStatsCounter: 0,
+        // Spread stored passiveState (preserves weapon-specific fields: sulfuras, katana, guldan, etc.)
+        ...(d.passiveState || {}),
+      },
       lastAttackAt: 0,
       attackInterval: spdToInterval(d.spd),
       alive: true,
