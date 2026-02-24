@@ -528,7 +528,7 @@ export const HUNTERS = {
 
   h_mayuri: {
     name: 'Mayuri Shiina', element: 'water', rarity: 'mythique', class: 'support',
-    series: 'steinsgate', sprite: S.h_mayuri, passiveDesc: 'Tutturu~ : Buff raid ATK +15% & DEF +10% pour TOUTE l\'equipe',
+    series: 'steinsgate', sprite: S.h_mayuri, passiveDesc: 'Tutturu~ : Buff raid ATK +15%, DEF +10% & INT +15% pour TOUTE l\'equipe',
     base:   { hp: 460, atk: 28, def: 24, spd: 32, crit: 6, res: 16, mana: 360 },
     growth: { hp: 15, atk: 1.8, def: 1.4, spd: 1.4, crit: 0.2, res: 0.6, mana: 2.2 },
     skills: [
@@ -1109,7 +1109,7 @@ export const HUNTER_PASSIVE_EFFECTS = {
   h_pod042:    { type: 'teamDef', value: 10 },
   // ── STEINS;GATE ──
   h_kurisu:    { type: 'stacking', perStack: { atk: 5 }, maxStacks: 6 },
-  h_mayuri:    { type: 'teamAura', stats: { atk: 15, def: 10 } },
+  h_mayuri:    { type: 'teamAura', stats: { atk: 15, def: 10, int: 15 } },
   // ── NIER AUTOMATA ──
   h_a9:        { type: 'vsLowHp', threshold: 30, stats: { atk: 25 } },
   h_2b:        { type: 'vsDebuffed', stats: { atk: 15 } },
