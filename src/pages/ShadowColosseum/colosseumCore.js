@@ -68,7 +68,7 @@ export const STAT_META = {
 // Mana: character-intrinsic base + growth, plus low-rate allocation (+0.1/pt)
 // Fallback for old data without base.mana: 50 + HP/4 + RES*2
 export const getBaseMana = (base) => base.mana || Math.floor(50 + base.hp / 4 + (base.res || 0) * 2);
-export const BASE_MANA_REGEN = 8;
+export const BASE_MANA_REGEN = 5;
 export const getSkillManaCost = (skill) => {
   if (skill.manaCost !== undefined) return skill.manaCost;
   if (skill.cdMax === 0) return 0; // Basic attacks always free
