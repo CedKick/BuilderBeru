@@ -459,8 +459,9 @@ export default async function handler(req, res) {
         }
       }
 
-      // CHECK 5: Anti-cheat bounds validation for shadow_colosseum_data
-      // Sanitizes values to valid ranges (clamp, don't reject)
+      // CHECK 5: Anti-cheat bounds validation + integrity stamp
+      // Sanitizes values to valid ranges, stamps HMAC checksum
+      // ALWAYS runs for shadow_colosseum_data (integrity stamp needed even if clean)
       if (key === 'shadow_colosseum_data') {
         const cloudForValidation = existing.rows.length > 0
           ? (typeof existing.rows[0].data === 'string'
@@ -472,10 +473,12 @@ export default async function handler(req, res) {
           finalData, cloudForValidation, deviceId
         );
 
+        // Always apply (includes integrity stamp even if no violations)
+        finalData = sanitized;
+        jsonStr = JSON.stringify(finalData);
+        sizeBytes = Buffer.byteLength(jsonStr, 'utf8');
+
         if (suspicious.length > 0) {
-          finalData = sanitized;
-          jsonStr = JSON.stringify(finalData);
-          sizeBytes = Buffer.byteLength(jsonStr, 'utf8');
           console.warn(`[save] SANITIZED ${suspicious.length} values for ${deviceId}`);
         }
       }

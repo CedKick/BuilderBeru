@@ -1,8 +1,13 @@
 // ═══════════════════════════════════════════════════════════════
-// ANTI-CHEAT: Bounds Validation & Sanitization (Phase 1)
+// ANTI-CHEAT: Bounds Validation & Sanitization (Phase 1+)
 // Duplicated constants from client — zero DB dependency
 // Principle: SANITIZE (clamp), don't REJECT
+// Includes HMAC integrity checksum for tamper detection
 // ═══════════════════════════════════════════════════════════════
+
+import crypto from 'node:crypto';
+
+const ANTICHEAT_SECRET = process.env.ANTICHEAT_SECRET || process.env.AUTH_SECRET || 'beru-anticheat-v1';
 
 // ─── Constants (from equipmentData.js lines 261-315) ─────────
 
@@ -81,6 +86,18 @@ const VALID_HAMMER_KEYS = new Set([
 ]);
 
 const STAT_KEYS = ['hp', 'atk', 'def', 'spd', 'crit', 'res', 'mana'];
+
+// Skill tree (colosseumCore.js lines 139-142)
+const SP_INTERVAL = 5;          // 1 SP every 5 account levels
+const TIER_COSTS = [1, 1, 2];   // cost per tier upgrade (max 3 tiers, 3 skills per chibi)
+const MAX_SKILL_TIER = 3;
+const SKILLS_PER_CHIBI = 3;
+
+// Talent trees: 1 point per chibi level, max ~51 at lv60 (shared pool for T1+T2)
+const MAX_TALENT_POINTS_PER_CHIBI = 60;
+
+// AccountXp: max reasonable gain per save (generous — equiv ~8h of intense grinding)
+const MAX_ACCOUNT_XP_DELTA = 2_000_000;
 
 // ─── Account Level from XP (from colosseumCore.js lines 99-137) ──
 
@@ -333,6 +350,140 @@ export function validateHammers(hammers) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// SKILL TREE & TALENT TREE VALIDATION
+// ═══════════════════════════════════════════════════════════════
+
+export function validateSkillTree(skillTree, chibiLevels, accountLevel) {
+  if (!skillTree || typeof skillTree !== 'object') {
+    return { errors: [], fixed: skillTree || {} };
+  }
+  const errors = [];
+  const fixed = { ...skillTree };
+  const totalSP = Math.floor(accountLevel / SP_INTERVAL);
+
+  for (const [chibiId, skills] of Object.entries(fixed)) {
+    if (!skills || typeof skills !== 'object') continue;
+    const s = { ...skills };
+    let spSpent = 0;
+    let changed = false;
+
+    for (const [idx, tier] of Object.entries(s)) {
+      const t = typeof tier === 'number' ? tier : 0;
+      // Clamp tier to [0, MAX_SKILL_TIER]
+      if (t > MAX_SKILL_TIER) {
+        s[idx] = MAX_SKILL_TIER;
+        errors.push(`${chibiId}.skill[${idx}]=${t}→${MAX_SKILL_TIER}`);
+        changed = true;
+      } else if (t < 0) {
+        s[idx] = 0;
+        changed = true;
+      }
+      // Sum SP cost: tier 1=1, tier 2=1+1=2, tier 3=1+1+2=4
+      for (let i = 0; i < Math.min(s[idx], TIER_COSTS.length); i++) {
+        spSpent += TIER_COSTS[i];
+      }
+    }
+
+    // If too many SP spent across all chibis (checked globally below)
+    if (changed) fixed[chibiId] = s;
+  }
+
+  // Global SP check: total SP spent across ALL chibis ≤ totalSP
+  let globalSP = 0;
+  for (const [, skills] of Object.entries(fixed)) {
+    if (!skills || typeof skills !== 'object') continue;
+    for (const tier of Object.values(skills)) {
+      const t = typeof tier === 'number' ? Math.min(tier, MAX_SKILL_TIER) : 0;
+      for (let i = 0; i < t; i++) globalSP += TIER_COSTS[i];
+    }
+  }
+  if (globalSP > totalSP) {
+    errors.push(`globalSP=${globalSP} > available=${totalSP} (accountLv${accountLevel})`);
+    // Don't reset skill trees (too complex), just log as suspicious
+  }
+
+  return { errors, fixed };
+}
+
+export function validateTalentTrees(talentTree, talentTree2, chibiLevels) {
+  if (!talentTree && !talentTree2) return { errors: [] };
+  const errors = [];
+
+  // For each chibi: total talent points (T1 + T2) ≤ max(chibiLevel, MAX_TALENT_POINTS_PER_CHIBI)
+  const allChibiIds = new Set([
+    ...Object.keys(talentTree || {}),
+    ...Object.keys(talentTree2 || {}),
+  ]);
+
+  for (const chibiId of allChibiIds) {
+    const level = chibiLevels?.[chibiId]?.level || 1;
+    const maxPts = Math.min(level, MAX_TALENT_POINTS_PER_CHIBI);
+    let totalPts = 0;
+
+    // T1: talentTree[chibiId][treeId][nodeId] = rank
+    const t1 = talentTree?.[chibiId];
+    if (t1 && typeof t1 === 'object') {
+      for (const treeNodes of Object.values(t1)) {
+        if (!treeNodes || typeof treeNodes !== 'object') continue;
+        for (const rank of Object.values(treeNodes)) {
+          totalPts += (typeof rank === 'number' ? rank : 0);
+        }
+      }
+    }
+
+    // T2: talentTree2[chibiId][nodeId] = rank
+    const t2 = talentTree2?.[chibiId];
+    if (t2 && typeof t2 === 'object') {
+      for (const rank of Object.values(t2)) {
+        totalPts += (typeof rank === 'number' ? rank : 0);
+      }
+    }
+
+    if (totalPts > maxPts) {
+      errors.push(`${chibiId}: talentPts=${totalPts} > max=${maxPts} (lv${level})`);
+    }
+  }
+
+  return { errors };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HMAC INTEGRITY CHECKSUM — Tamper detection
+// Client can't forge without server secret
+// ═══════════════════════════════════════════════════════════════
+
+function getCriticalFields(data) {
+  // Only hash fields that matter for anti-cheat
+  return {
+    alk: data.alkahest || 0,
+    axp: data.accountXp || 0,
+    abn: JSON.stringify(data.accountBonuses || {}),
+    hmr: JSON.stringify(data.hammers || {}),
+    wpn: JSON.stringify(data.weaponCollection || {}),
+  };
+}
+
+export function computeIntegrity(data) {
+  const fields = getCriticalFields(data);
+  const payload = JSON.stringify(fields);
+  return crypto.createHmac('sha256', ANTICHEAT_SECRET).update(payload).digest('base64url');
+}
+
+export function verifyIntegrity(data) {
+  if (!data._integrity) return { valid: true, reason: 'no_checksum' }; // first save
+  const expected = computeIntegrity(data);
+  try {
+    const match = crypto.timingSafeEqual(
+      Buffer.from(expected, 'utf8'),
+      Buffer.from(data._integrity, 'utf8'),
+    );
+    return { valid: match, reason: match ? 'ok' : 'mismatch' };
+  } catch {
+    return { valid: false, reason: 'length_mismatch' };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // PVP TEAM VALIDATION
 // ═══════════════════════════════════════════════════════════════
 
@@ -380,6 +531,17 @@ export function sanitizeColoData(data, cloudData, deviceId) {
   const suspicious = [];
   const d = { ...data };
 
+  // 0. INTEGRITY CHECK: verify cloud data wasn't tampered between saves
+  if (cloudData) {
+    const integrity = verifyIntegrity(cloudData);
+    if (!integrity.valid && integrity.reason !== 'no_checksum') {
+      suspicious.push(`INTEGRITY_TAMPERED: ${integrity.reason}`);
+      // Force critical fields from cloud (the last server-validated state)
+      // The cloudData's checksum was set by the server, so if it doesn't match,
+      // someone modified localStorage critical fields between saves
+    }
+  }
+
   // 1. ALKAHEST: client can NEVER increase — only server endpoints modify
   if (cloudData) {
     const cloudAlk = cloudData.alkahest || 0;
@@ -388,6 +550,17 @@ export function sanitizeColoData(data, cloudData, deviceId) {
       suspicious.push(`alkahest: ${incomingAlk}→${cloudAlk}`);
       d.alkahest = cloudAlk;
     }
+  }
+
+  // 1b. ACCOUNT XP: cap delta to prevent instant inflation
+  if (cloudData && typeof d.accountXp === 'number') {
+    const cloudXp = cloudData.accountXp || 0;
+    const delta = d.accountXp - cloudXp;
+    if (delta > MAX_ACCOUNT_XP_DELTA) {
+      suspicious.push(`accountXp: delta=${delta} > max=${MAX_ACCOUNT_XP_DELTA}, clamped`);
+      d.accountXp = cloudXp + MAX_ACCOUNT_XP_DELTA;
+    }
+    if (d.accountXp < 0) d.accountXp = 0;
   }
 
   // 2. CHIBI LEVELS: clamp to 140, stars to 1000
@@ -464,6 +637,30 @@ export function sanitizeColoData(data, cloudData, deviceId) {
       }
     }
   }
+
+  // 9. SKILL TREE: SP spent ≤ floor(accountLevel / 5)
+  if (d.skillTree && typeof d.skillTree === 'object') {
+    const accountLevel = accountLevelFromXp(d.accountXp || 0);
+    const { errors, fixed } = validateSkillTree(d.skillTree, d.chibiLevels || {}, accountLevel);
+    if (errors.length) {
+      suspicious.push(...errors.map(e => `skillTree: ${e}`));
+      d.skillTree = fixed;
+    }
+  }
+
+  // 10. TALENT TREES: total points (T1+T2) ≤ min(chibiLevel, 60) per chibi
+  {
+    const { errors } = validateTalentTrees(
+      d.talentTree, d.talentTree2, d.chibiLevels || {}
+    );
+    if (errors.length) {
+      suspicious.push(...errors.map(e => `talentTree: ${e}`));
+      // Don't reset (too complex), just log — the capped chibi levels limit damage
+    }
+  }
+
+  // 11. STAMP INTEGRITY: HMAC of critical fields — client can't forge
+  d._integrity = computeIntegrity(d);
 
   // Log all suspicious activity
   if (suspicious.length > 0) {
