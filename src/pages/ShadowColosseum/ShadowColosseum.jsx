@@ -10913,271 +10913,6 @@ export default function ShadowColosseum() {
                 <div className="text-[9px] text-red-300/70 text-center">{(() => { const ms = data.lootBoostMs; const h = Math.floor(ms/3600000); const m = Math.floor((ms%3600000)/60000); const s = Math.floor((ms%60000)/1000); return h > 0 ? `${h}h${String(m).padStart(2,'0')}m` : `${m}m${String(s).padStart(2,'0')}s`; })()}</div>
               </div>
             )}
-            {/* Ragnarok Tracker — persistent kill counter & Sulfuras hunt */}
-            {STAGES[selStage]?.id === 'ragnarok' && (
-              <div className="mt-1 px-2.5 py-2 rounded-lg bg-gradient-to-b from-orange-900/40 to-red-900/40 border border-orange-500/30 backdrop-blur-sm cursor-pointer hover:border-orange-400/50 transition-colors"
-                onClick={() => setRagnarokHistoryOpen(true)}>
-                <div className="text-[9px] text-orange-400 font-bold uppercase tracking-wider mb-1">{'\u2604\uFE0F'} Ragnarok</div>
-                <div className="flex items-center gap-2 text-[10px]">
-                  <span className="text-red-300 font-bold">{'\u2620\uFE0F'} {data.ragnarokKills || 0} kills</span>
-                  <span className="text-gray-600">|</span>
-                  <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {(data.ragnarokDropLog || []).length} drops</span>
-                </div>
-                <div className="mt-1 flex items-center gap-1.5">
-                  {data.weaponCollection?.['w_sulfuras'] !== undefined ? (
-                    <>
-                      <img loading="lazy" src={WEAPONS.w_sulfuras?.sprite} alt="Sulfuras" className="w-4 h-4 object-contain" />
-                      <span className="text-[9px] text-orange-300 font-bold">Sulfuras obtenue ! (x{(data.ragnarokDropLog || []).filter(d => d.weaponId === 'w_sulfuras').length} drops, A{data.weaponCollection['w_sulfuras']})</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-[10px] opacity-40">{'\uD83D\uDD28'}</span>
-                      <span className="text-[9px] text-gray-500">{data.ragnarokKills > 0 ? `${data.ragnarokKills} kills sans Sulfuras` : 'Chasse en cours...'}</span>
-                    </>
-                  )}
-                </div>
-                {(() => {
-                  const base = 1/10000;
-                  const lm = data.lootBoostMs > 0 ? 2 : 1;
-                  const fm = getFactionLootMult('loot_sulfuras');
-                  const eff = base * lm * fm;
-                  const effRate = Math.round(1 / eff);
-                  return (
-                    <>
-                      <div className="mt-1 flex items-center gap-1 flex-wrap">
-                        <span className="text-[9px] text-gray-500">Taux :</span>
-                        <span className="text-[9px] text-orange-400 font-bold">1/{effRate.toLocaleString()}</span>
-                        <span className="text-[8px] text-gray-600">({(eff * 100).toFixed(3)}%)</span>
-                        {(lm > 1 || fm > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2 Loot' : ''}{lm > 1 && fm > 1 ? ' + ' : ''}{fm > 1 ? `Faction x${fm.toFixed(1)}` : ''}</span>}
-                      </div>
-                      {(data.ragnarokKills || 0) > 0 && (
-                        <div className="mt-1 flex items-center gap-1.5">
-                          <span className="text-[9px] text-gray-500">Chance cumulee :</span>
-                          <span className="text-[9px] text-orange-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - eff, data.ragnarokKills)) * 100).toFixed(2)}%</span>
-                          <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-orange-600 to-red-500 rounded-full transition-all"
-                              style={{ width: `${Math.min(100, (1 - Math.pow(1 - eff, data.ragnarokKills)) * 100)}%` }} />
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-                {/* Fragment counter */}
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  <span className="text-[9px] text-gray-500">Fragments :</span>
-                  <span className="text-[9px] text-orange-300 font-bold">{'\uD83D\uDD25'} {(data.fragments?.fragment_sulfuras || 0)}/10</span>
-                  <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-orange-500 to-red-400 rounded-full transition-all"
-                      style={{ width: `${Math.min(100, (data.fragments?.fragment_sulfuras || 0) * 10)}%` }} />
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* Zephyr Tracker — persistent kill counter & Rae'shalare hunt */}
-            {STAGES[selStage]?.id === 'zephyr' && (
-              <div className="mt-1 px-2.5 py-2 rounded-lg bg-gradient-to-b from-teal-900/40 to-cyan-900/40 border border-teal-500/30 backdrop-blur-sm">
-                <div className="text-[9px] text-teal-400 font-bold uppercase tracking-wider mb-1">{'\uD83C\uDF2C\uFE0F'} Zephyr Ultime</div>
-                <div className="flex items-center gap-2 text-[10px]">
-                  <span className="text-teal-300 font-bold">{'\u2620\uFE0F'} {data.zephyrKills || 0} kills</span>
-                  <span className="text-gray-600">|</span>
-                  <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {(data.zephyrDropLog || []).length} drops</span>
-                </div>
-                <div className="mt-1 flex items-center gap-1.5">
-                  {data.weaponCollection?.['w_raeshalare'] !== undefined ? (
-                    <>
-                      <span className="text-sm">{'\uD83C\uDFF9'}</span>
-                      <span className="text-[9px] text-teal-300 font-bold">Rae'shalare obtenue ! (x{(data.zephyrDropLog || []).filter(d => d.weaponId === 'w_raeshalare').length} drops, A{data.weaponCollection['w_raeshalare']})</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-[10px] opacity-40">{'\uD83C\uDFF9'}</span>
-                      <span className="text-[9px] text-gray-500">{data.zephyrKills > 0 ? `${data.zephyrKills} kills sans Rae'shalare` : 'Chasse en cours...'}</span>
-                    </>
-                  )}
-                </div>
-                {(() => {
-                  const base = 1/5000;
-                  const lm = data.lootBoostMs > 0 ? 2 : 1;
-                  const fm = getFactionLootMult('loot_raeshalare');
-                  const eff = base * lm * fm;
-                  const effRate = Math.round(1 / eff);
-                  return (
-                    <>
-                      <div className="mt-1 flex items-center gap-1 flex-wrap">
-                        <span className="text-[9px] text-gray-500">Taux :</span>
-                        <span className="text-[9px] text-teal-400 font-bold">1/{effRate.toLocaleString()}</span>
-                        <span className="text-[8px] text-gray-600">({(eff * 100).toFixed(3)}%)</span>
-                        {(lm > 1 || fm > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2 Loot' : ''}{lm > 1 && fm > 1 ? ' + ' : ''}{fm > 1 ? `Faction x${fm.toFixed(1)}` : ''}</span>}
-                      </div>
-                      {(data.zephyrKills || 0) > 0 && (
-                        <div className="mt-1 flex items-center gap-1.5">
-                          <span className="text-[9px] text-gray-500">Chance cumulee :</span>
-                          <span className="text-[9px] text-teal-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - eff, data.zephyrKills)) * 100).toFixed(2)}%</span>
-                          <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-teal-500 to-cyan-400 rounded-full transition-all"
-                              style={{ width: `${Math.min(100, (1 - Math.pow(1 - eff, data.zephyrKills)) * 100)}%` }} />
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-                {/* Fragment counter */}
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  <span className="text-[9px] text-gray-500">Fragments :</span>
-                  <span className="text-[9px] text-teal-300 font-bold">{'\uD83C\uDF00'} {(data.fragments?.fragment_raeshalare || 0)}/10</span>
-                  <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-teal-500 to-cyan-400 rounded-full transition-all"
-                      style={{ width: `${Math.min(100, (data.fragments?.fragment_raeshalare || 0) * 10)}%` }} />
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* Monarque Supreme Tracker — Katana Z & V hunt */}
-            {STAGES[selStage]?.id === 'supreme_monarch' && (
-              <div className="mt-1 px-2.5 py-2 rounded-lg bg-gradient-to-b from-purple-900/40 to-indigo-900/40 border border-purple-500/30 backdrop-blur-sm cursor-pointer hover:border-purple-400/50 transition-colors"
-                onClick={() => setMonarchHistoryOpen(true)}>
-                <div className="text-[9px] text-purple-400 font-bold uppercase tracking-wider mb-1">{'\uD83D\uDC51'} Monarque Supreme</div>
-                <div className="flex items-center gap-2 text-[10px]">
-                  <span className="text-purple-300 font-bold">{'\u2620\uFE0F'} {data.monarchKills || 0} kills</span>
-                  <span className="text-gray-600">|</span>
-                  <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {(data.monarchDropLog || []).length} drops</span>
-                </div>
-                <div className="mt-1 space-y-0.5">
-                  {['w_katana_z', 'w_katana_v'].map(wId => {
-                    const has = data.weaponCollection?.[wId] !== undefined;
-                    const count = (data.monarchDropLog || []).filter(d => d.weaponId === wId).length;
-                    const w = WEAPONS[wId];
-                    const buffId = wId === 'w_katana_z' ? 'loot_katana_z' : 'loot_katana_v';
-                    const eff = (1/50000) * (data.lootBoostMs > 0 ? 2 : 1) * getFactionLootMult(buffId);
-                    return (
-                      <div key={wId} className="flex items-center gap-1.5">
-                        {has ? (
-                          <>
-                            <img loading="lazy" src={w?.sprite} alt={w?.name} className="w-4 h-4 object-contain" />
-                            <span className="text-[9px] text-purple-300 font-bold">{w?.name} obtenu ! (x{count} drops, A{data.weaponCollection[wId]})</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-[10px] opacity-40">{'\u2694\uFE0F'}</span>
-                            <span className="text-[9px] text-gray-500">{w?.name} — 1/{Math.round(1/eff).toLocaleString()}</span>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                {(() => {
-                  const base = 1/50000;
-                  const lm = data.lootBoostMs > 0 ? 2 : 1;
-                  const fmZ = getFactionLootMult('loot_katana_z');
-                  const fmV = getFactionLootMult('loot_katana_v');
-                  const effZ = base * lm * fmZ;
-                  const effV = base * lm * fmV;
-                  const bestEff = Math.max(effZ, effV);
-                  const effRate = Math.round(1 / bestEff);
-                  return (
-                    <>
-                      <div className="mt-1 flex items-center gap-1 flex-wrap">
-                        <span className="text-[9px] text-gray-500">Taux (chaque) :</span>
-                        <span className="text-[9px] text-purple-400 font-bold">~1/{effRate.toLocaleString()}</span>
-                        {(lm > 1 || fmZ > 1 || fmV > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2 Loot' : ''}{lm > 1 && (fmZ > 1 || fmV > 1) ? ' + ' : ''}{fmZ > 1 ? `Z x${fmZ.toFixed(1)}` : ''}{fmZ > 1 && fmV > 1 ? ', ' : ''}{fmV > 1 ? `V x${fmV.toFixed(1)}` : ''}</span>}
-                      </div>
-                      {(data.monarchKills || 0) > 0 && (
-                        <div className="mt-1 flex items-center gap-1.5">
-                          <span className="text-[9px] text-gray-500">Chance cumulee :</span>
-                          <span className="text-[9px] text-purple-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - bestEff, data.monarchKills)) * 100).toFixed(2)}%</span>
-                          <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-purple-600 to-indigo-500 rounded-full transition-all"
-                              style={{ width: `${Math.min(100, (1 - Math.pow(1 - bestEff, data.monarchKills)) * 100)}%` }} />
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-                {/* Fragment counters — Katana Z & V */}
-                <div className="mt-1.5 space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] text-gray-500">Fragments :</span>
-                    <span className="text-[9px] text-blue-300 font-bold">{'\u26A1'} Katana Z {(data.fragments?.fragment_katana_z || 0)}/10</span>
-                    <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all"
-                        style={{ width: `${Math.min(100, (data.fragments?.fragment_katana_z || 0) * 10)}%` }} />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] text-transparent">Fragments :</span>
-                    <span className="text-[9px] text-emerald-300 font-bold">{'\uD83D\uDC9A'} Katana V {(data.fragments?.fragment_katana_v || 0)}/10</span>
-                    <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full transition-all"
-                        style={{ width: `${Math.min(100, (data.fragments?.fragment_katana_v || 0) * 10)}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* Archdemon Tracker — persistent kill counter & Baton de Gul'dan hunt */}
-            {STAGES[selStage]?.id === 'archdemon' && (
-              <div className="mt-1 px-2.5 py-2 rounded-lg bg-gradient-to-b from-green-900/40 to-emerald-900/40 border border-green-500/30 backdrop-blur-sm">
-                <div className="text-[9px] text-green-400 font-bold uppercase tracking-wider mb-1">{'\uD83D\uDE08'} Archdemon</div>
-                <div className="flex items-center gap-2 text-[10px]">
-                  <span className="text-green-300 font-bold">{'\u2620\uFE0F'} {data.archDemonKills || 0} kills</span>
-                  <span className="text-gray-600">|</span>
-                  <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {(data.archDemonDropLog || []).length} drops</span>
-                </div>
-                <div className="mt-1 flex items-center gap-1.5">
-                  {data.weaponCollection?.['w_guldan'] !== undefined ? (
-                    <>
-                      <img loading="lazy" src={WEAPONS.w_guldan?.sprite} alt="Baton de Gul'dan" className="w-4 h-4 object-contain" />
-                      <span className="text-[9px] text-green-300 font-bold">Baton de Gul'dan obtenu ! (x{(data.archDemonDropLog || []).filter(d => d.weaponId === 'w_guldan').length} drops, A{data.weaponCollection['w_guldan']})</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-[10px] opacity-40">{'\uD83E\uDE84'}</span>
-                      <span className="text-[9px] text-gray-500">{(data.archDemonKills || 0) > 0 ? `${data.archDemonKills} kills` : 'Chasse en cours...'}</span>
-                    </>
-                  )}
-                </div>
-                {(() => {
-                  const base = 1/10000;
-                  const lm = data.lootBoostMs > 0 ? 2 : 1;
-                  const fm = getFactionLootMult('loot_guldan');
-                  const eff = base * lm * fm;
-                  const effRate = Math.round(1 / eff);
-                  return (
-                    <>
-                      <div className="mt-1 flex items-center gap-1 flex-wrap">
-                        <span className="text-[9px] text-gray-500">Taux :</span>
-                        <span className="text-[9px] text-green-400 font-bold">1/{effRate.toLocaleString()}</span>
-                        <span className="text-[8px] text-gray-600">({(eff * 100).toFixed(3)}%)</span>
-                        {(lm > 1 || fm > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2 Loot' : ''}{lm > 1 && fm > 1 ? ' + ' : ''}{fm > 1 ? `Faction x${fm.toFixed(1)}` : ''}</span>}
-                      </div>
-                      {(data.archDemonKills || 0) > 0 && (
-                        <div className="mt-1 flex items-center gap-1.5">
-                          <span className="text-[9px] text-gray-500">Chance cumulee :</span>
-                          <span className="text-[9px] text-green-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - eff, data.archDemonKills)) * 100).toFixed(2)}%</span>
-                          <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-green-600 to-emerald-400 rounded-full transition-all"
-                              style={{ width: `${Math.min(100, (1 - Math.pow(1 - eff, data.archDemonKills)) * 100)}%` }} />
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-                {/* Fragment counter */}
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  <span className="text-[9px] text-gray-500">Fragments :</span>
-                  <span className="text-[9px] text-green-300 font-bold">{'\uD83E\uDE84'} {(data.fragments?.fragment_guldan || 0)}/10</span>
-                  <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full transition-all"
-                      style={{ width: `${Math.min(100, (data.fragments?.fragment_guldan || 0) * 10)}%` }} />
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -11611,35 +11346,250 @@ export default function ShadowColosseum() {
         </div>
       )}
 
-      {/* ═══ PERSISTENT AUTO BUTTON (bottom bar) ═══ */}
+      {/* ═══ PERSISTENT AUTO BUTTON + BOSS TRACKER (bottom bar) ═══ */}
       {(view === 'battle' || view === 'result') && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3">
           <button
-            onClick={() => {
-              const next = !autoReplay;
-              setAutoReplay(next);
-              if (next) {
-                setAutoFarmStats({ runs: 0, wins: 0, levels: 0, coins: 0, loots: 0, hunters: 0, weapons: 0, artifacts: 0 });
-                if (view === 'result') { setResult(null); setBattle(null); setTimeout(() => startBattle(), 100); }
-              }
-            }}
-            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg backdrop-blur-sm ${
-              autoReplay
-                ? 'bg-green-500/90 text-white shadow-green-500/40 ring-2 ring-green-400/50'
-                : 'bg-gray-700/90 text-gray-300 hover:bg-gray-600/90 border border-gray-600/50'
-            }`}
-          >
-            {autoReplay ? '⏸ Auto ON' : '▶ Auto OFF'}
-          </button>
-          {autoReplay && autoFarmStats.runs > 0 && (
-            <div className="px-3 py-1.5 rounded-xl bg-gray-900/90 border border-green-500/30 backdrop-blur-sm flex items-center gap-3 text-[10px]">
-              <span className="text-white font-bold">{autoFarmStats.runs} runs</span>
-              {autoFarmStats.levels > 0 && <span className="text-yellow-400">+{autoFarmStats.levels} niv</span>}
-              <span className="text-amber-300">+{fmtNum(autoFarmStats.coins)}</span>
-              {autoFarmStats.loots > 0 && <span className="text-purple-400">{autoFarmStats.loots} loots</span>}
-              {autoFarmStats.hunters > 0 && <span className="text-blue-400">{autoFarmStats.hunters} hunters</span>}
-            </div>
-          )}
+              onClick={() => {
+                const next = !autoReplay;
+                setAutoReplay(next);
+                if (next) {
+                  setAutoFarmStats({ runs: 0, wins: 0, levels: 0, coins: 0, loots: 0, hunters: 0, weapons: 0, artifacts: 0 });
+                  if (view === 'result') { setResult(null); setBattle(null); setTimeout(() => startBattle(), 100); }
+                }
+              }}
+              className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg backdrop-blur-sm ${
+                autoReplay
+                  ? 'bg-green-500/90 text-white shadow-green-500/40 ring-2 ring-green-400/50'
+                  : 'bg-gray-700/90 text-gray-300 hover:bg-gray-600/90 border border-gray-600/50'
+              }`}
+            >
+              {autoReplay ? '\u23F8 Auto ON' : '\u25B6 Auto OFF'}
+            </button>
+            {autoReplay && autoFarmStats.runs > 0 && (
+              <div className="px-3 py-1.5 rounded-xl bg-gray-900/90 border border-green-500/30 backdrop-blur-sm flex items-center gap-3 text-[10px]">
+                <span className="text-white font-bold">{autoFarmStats.runs} runs</span>
+                {autoFarmStats.levels > 0 && <span className="text-yellow-400">+{autoFarmStats.levels} niv</span>}
+                <span className="text-amber-300">+{fmtNum(autoFarmStats.coins)}</span>
+                {autoFarmStats.loots > 0 && <span className="text-purple-400">{autoFarmStats.loots} loots</span>}
+                {autoFarmStats.hunters > 0 && <span className="text-blue-400">{autoFarmStats.hunters} hunters</span>}
+              </div>
+            )}
+
+          {(() => {
+            const stageId = STAGES[selStage]?.id;
+            const lm = data.lootBoostMs > 0 ? 2 : 1;
+
+            // ── Ragnarok ──
+            if (stageId === 'ragnarok') {
+              const kills = data.ragnarokKills || 0;
+              const drops = (data.ragnarokDropLog || []).length;
+              const has = data.weaponCollection?.['w_sulfuras'] !== undefined;
+              const dropCount = (data.ragnarokDropLog || []).filter(d => d.weaponId === 'w_sulfuras').length;
+              const fm = getFactionLootMult('loot_sulfuras');
+              const eff = (1/10000) * lm * fm;
+              const frags = data.fragments?.fragment_sulfuras || 0;
+              return (
+                <div className="px-3 py-2 rounded-xl bg-gray-900/90 border border-orange-500/30 backdrop-blur-sm cursor-pointer hover:border-orange-400/50 transition-colors min-w-[280px]"
+                  onClick={() => setRagnarokHistoryOpen(true)}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-orange-400 font-bold">{'\u2604\uFE0F'} Ragnarok</span>
+                    <div className="flex items-center gap-2 text-[10px]">
+                      <span className="text-red-300 font-bold">{'\u2620\uFE0F'} {kills} kills</span>
+                      <span className="text-gray-600">|</span>
+                      <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {drops} drops</span>
+                    </div>
+                  </div>
+                  <div className="mt-1 flex items-center gap-2">
+                    {has ? (
+                      <span className="text-[9px] text-orange-300 font-bold">{'\uD83D\uDD25'} Sulfuras {'\u2713'}(A{data.weaponCollection['w_sulfuras']}) x{dropCount}</span>
+                    ) : (
+                      <span className="text-[9px] text-gray-500">{'\uD83D\uDD28'} Sulfuras — 1/{Math.round(1/eff).toLocaleString()}</span>
+                    )}
+                    <span className="text-[9px] text-gray-600">|</span>
+                    <span className="text-[9px] text-orange-300 font-bold">{'\uD83D\uDD25'} {frags}/10</span>
+                    <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-orange-500 to-red-400 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, frags * 10)}%` }} />
+                    </div>
+                  </div>
+                  {kills > 0 && (
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <span className="text-[9px] text-gray-500">Chance :</span>
+                      <span className="text-[9px] text-orange-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - eff, kills)) * 100).toFixed(2)}%</span>
+                      <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-orange-600 to-red-500 rounded-full transition-all"
+                          style={{ width: `${Math.min(100, (1 - Math.pow(1 - eff, kills)) * 100)}%` }} />
+                      </div>
+                      {(lm > 1 || fm > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2' : ''}{lm > 1 && fm > 1 ? '+' : ''}{fm > 1 ? `F${fm.toFixed(1)}` : ''}</span>}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // ── Zephyr Ultime ──
+            if (stageId === 'zephyr') {
+              const kills = data.zephyrKills || 0;
+              const drops = (data.zephyrDropLog || []).length;
+              const has = data.weaponCollection?.['w_raeshalare'] !== undefined;
+              const dropCount = (data.zephyrDropLog || []).filter(d => d.weaponId === 'w_raeshalare').length;
+              const fm = getFactionLootMult('loot_raeshalare');
+              const eff = (1/5000) * lm * fm;
+              const frags = data.fragments?.fragment_raeshalare || 0;
+              return (
+                <div className="px-3 py-2 rounded-xl bg-gray-900/90 border border-teal-500/30 backdrop-blur-sm min-w-[280px]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-teal-400 font-bold">{'\uD83C\uDF2C\uFE0F'} Zephyr Ultime</span>
+                    <div className="flex items-center gap-2 text-[10px]">
+                      <span className="text-teal-300 font-bold">{'\u2620\uFE0F'} {kills} kills</span>
+                      <span className="text-gray-600">|</span>
+                      <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {drops} drops</span>
+                    </div>
+                  </div>
+                  <div className="mt-1 flex items-center gap-2">
+                    {has ? (
+                      <span className="text-[9px] text-teal-300 font-bold">{'\uD83C\uDFF9'} Rae'shalare {'\u2713'}(A{data.weaponCollection['w_raeshalare']}) x{dropCount}</span>
+                    ) : (
+                      <span className="text-[9px] text-gray-500">{'\uD83C\uDFF9'} Rae'shalare — 1/{Math.round(1/eff).toLocaleString()}</span>
+                    )}
+                    <span className="text-[9px] text-gray-600">|</span>
+                    <span className="text-[9px] text-teal-300 font-bold">{'\uD83C\uDF00'} {frags}/10</span>
+                    <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-teal-500 to-cyan-400 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, frags * 10)}%` }} />
+                    </div>
+                  </div>
+                  {kills > 0 && (
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <span className="text-[9px] text-gray-500">Chance :</span>
+                      <span className="text-[9px] text-teal-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - eff, kills)) * 100).toFixed(2)}%</span>
+                      <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-teal-500 to-cyan-400 rounded-full transition-all"
+                          style={{ width: `${Math.min(100, (1 - Math.pow(1 - eff, kills)) * 100)}%` }} />
+                      </div>
+                      {(lm > 1 || fm > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2' : ''}{lm > 1 && fm > 1 ? '+' : ''}{fm > 1 ? `F${fm.toFixed(1)}` : ''}</span>}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // ── Monarque Supreme ──
+            if (stageId === 'supreme_monarch') {
+              const kills = data.monarchKills || 0;
+              const drops = (data.monarchDropLog || []).length;
+              const fmZ = getFactionLootMult('loot_katana_z');
+              const fmV = getFactionLootMult('loot_katana_v');
+              const effZ = (1/50000) * lm * fmZ;
+              const effV = (1/50000) * lm * fmV;
+              const bestEff = Math.max(effZ, effV);
+              const fragsZ = data.fragments?.fragment_katana_z || 0;
+              const fragsV = data.fragments?.fragment_katana_v || 0;
+              return (
+                <div className="px-3 py-2 rounded-xl bg-gray-900/90 border border-purple-500/30 backdrop-blur-sm cursor-pointer hover:border-purple-400/50 transition-colors min-w-[320px]"
+                  onClick={() => setMonarchHistoryOpen(true)}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-purple-400 font-bold">{'\uD83D\uDC51'} Monarque Supreme</span>
+                    <div className="flex items-center gap-2 text-[10px]">
+                      <span className="text-purple-300 font-bold">{'\u2620\uFE0F'} {kills} kills</span>
+                      <span className="text-gray-600">|</span>
+                      <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {drops} drops</span>
+                    </div>
+                  </div>
+                  <div className="mt-1 flex items-center gap-2 flex-wrap">
+                    {['w_katana_z', 'w_katana_v'].map(wId => {
+                      const has = data.weaponCollection?.[wId] !== undefined;
+                      const count = (data.monarchDropLog || []).filter(d => d.weaponId === wId).length;
+                      const w = WEAPONS[wId];
+                      const buffId = wId === 'w_katana_z' ? 'loot_katana_z' : 'loot_katana_v';
+                      const wEff = (1/50000) * lm * getFactionLootMult(buffId);
+                      const fKey = wId === 'w_katana_z' ? 'fragment_katana_z' : 'fragment_katana_v';
+                      const frags = data.fragments?.[fKey] || 0;
+                      const emoji = wId === 'w_katana_z' ? '\u26A1' : '\uD83D\uDC9A';
+                      const color = wId === 'w_katana_z' ? 'text-blue-300' : 'text-emerald-300';
+                      const barFrom = wId === 'w_katana_z' ? 'from-blue-500' : 'from-emerald-500';
+                      const barTo = wId === 'w_katana_z' ? 'to-cyan-400' : 'to-green-400';
+                      return (
+                        <div key={wId} className="flex items-center gap-1.5">
+                          {has ? (
+                            <span className={`text-[9px] ${color} font-bold`}>{emoji} {w?.name} {'\u2713'}(A{data.weaponCollection[wId]}) x{count}</span>
+                          ) : (
+                            <span className="text-[9px] text-gray-500">{emoji} {w?.name} — 1/{Math.round(1/wEff).toLocaleString()}</span>
+                          )}
+                          <span className={`text-[9px] ${color} font-bold`}>{frags}/10</span>
+                          <div className="w-10 h-1 bg-gray-800 rounded-full overflow-hidden">
+                            <div className={`h-full bg-gradient-to-r ${barFrom} ${barTo} rounded-full transition-all`}
+                              style={{ width: `${Math.min(100, frags * 10)}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {kills > 0 && (
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <span className="text-[9px] text-gray-500">Chance :</span>
+                      <span className="text-[9px] text-purple-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - bestEff, kills)) * 100).toFixed(2)}%</span>
+                      <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-purple-600 to-indigo-500 rounded-full transition-all"
+                          style={{ width: `${Math.min(100, (1 - Math.pow(1 - bestEff, kills)) * 100)}%` }} />
+                      </div>
+                      {(lm > 1 || fmZ > 1 || fmV > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2' : ''}{lm > 1 && (fmZ > 1 || fmV > 1) ? '+' : ''}{fmZ > 1 ? `Z${fmZ.toFixed(1)}` : ''}{fmV > 1 ? `V${fmV.toFixed(1)}` : ''}</span>}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // ── Archdemon ──
+            if (stageId === 'archdemon') {
+              const kills = data.archDemonKills || 0;
+              const drops = (data.archDemonDropLog || []).length;
+              const has = data.weaponCollection?.['w_guldan'] !== undefined;
+              const dropCount = (data.archDemonDropLog || []).filter(d => d.weaponId === 'w_guldan').length;
+              const fm = getFactionLootMult('loot_guldan');
+              const eff = (1/10000) * lm * fm;
+              const frags = data.fragments?.fragment_guldan || 0;
+              return (
+                <div className="px-3 py-2 rounded-xl bg-gray-900/90 border border-green-500/30 backdrop-blur-sm min-w-[280px]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-green-400 font-bold">{'\uD83D\uDE08'} Archdemon</span>
+                    <div className="flex items-center gap-2 text-[10px]">
+                      <span className="text-green-300 font-bold">{'\u2620\uFE0F'} {kills} kills</span>
+                      <span className="text-gray-600">|</span>
+                      <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {drops} drops</span>
+                    </div>
+                  </div>
+                  <div className="mt-1 flex items-center gap-2">
+                    {has ? (
+                      <span className="text-[9px] text-green-300 font-bold">{'\uD83E\uDE84'} Gul'dan {'\u2713'}(A{data.weaponCollection['w_guldan']}) x{dropCount}</span>
+                    ) : (
+                      <span className="text-[9px] text-gray-500">{'\uD83E\uDE84'} Gul'dan — 1/{Math.round(1/eff).toLocaleString()}</span>
+                    )}
+                    <span className="text-[9px] text-gray-600">|</span>
+                    <span className="text-[9px] text-green-300 font-bold">{'\uD83E\uDE84'} {frags}/10</span>
+                    <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, frags * 10)}%` }} />
+                    </div>
+                  </div>
+                  {kills > 0 && (
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <span className="text-[9px] text-gray-500">Chance :</span>
+                      <span className="text-[9px] text-green-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - eff, kills)) * 100).toFixed(2)}%</span>
+                      <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-green-600 to-emerald-400 rounded-full transition-all"
+                          style={{ width: `${Math.min(100, (1 - Math.pow(1 - eff, kills)) * 100)}%` }} />
+                      </div>
+                      {(lm > 1 || fm > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2' : ''}{lm > 1 && fm > 1 ? '+' : ''}{fm > 1 ? `F${fm.toFixed(1)}` : ''}</span>}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            return null;
+          })()}
         </div>
       )}
 

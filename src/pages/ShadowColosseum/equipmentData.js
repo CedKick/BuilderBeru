@@ -269,6 +269,8 @@ export const MAIN_STAT_VALUES = {
   crit_dmg:  { name: 'CRIT DMG%', base: 5,   perLevel: 3,   icon: '\uD83D\uDCA5' },
   res_flat:  { name: 'RES',       base: 3,   perLevel: 1.5, icon: '\uD83D\uDEE1\uFE0F' },
   def_flat:  { name: 'DEF',       base: 3,   perLevel: 1.5, icon: '\uD83D\uDEE1\uFE0F' },
+  int_flat:  { name: 'INT',       base: 3,   perLevel: 2,   icon: '\uD83E\uDDE0' },
+  int_pct:   { name: 'INT%',      base: 3,   perLevel: 2,   icon: '\uD83E\uDDE0' },
 };
 
 export const SUB_STAT_POOL = [
@@ -282,6 +284,8 @@ export const SUB_STAT_POOL = [
   { id: 'hp_pct',    name: 'PV%',      range: [2, 5] },
   { id: 'atk_pct',   name: 'ATK%',     range: [2, 5] },
   { id: 'def_pct',   name: 'DEF%',     range: [2, 5] },
+  { id: 'int_flat',  name: 'INT',      range: [1, 4] },
+  { id: 'int_pct',   name: 'INT%',     range: [2, 5] },
 ];
 
 export const RARITY_SUB_COUNT = {
@@ -486,13 +490,14 @@ export function rerollArtifact(artifact) {
 export const ENCHANT_ALKAHEST_COST = 10;
 const ENCHANT_PCT_RANGE = [0.10, 0.30]; // +10% to +30% for percentage stats
 const ENCHANT_FLAT_RANGE = [0.10, 0.50]; // +10% to +50% for flat stats
-const FLAT_STATS = new Set(['hp_flat', 'atk_flat', 'def_flat', 'spd_flat', 'res_flat']);
+const FLAT_STATS = new Set(['hp_flat', 'atk_flat', 'def_flat', 'spd_flat', 'res_flat', 'int_flat']);
 
 // Expanded main stat pool for re-rolling (no slot restriction)
 export const ENCHANT_MAIN_STAT_POOL = [
   'hp_flat', 'hp_pct', 'atk_flat', 'atk_pct',
   'crit_rate', 'crit_dmg', 'res_flat',
   'def_flat', 'def_pct', 'spd_flat',
+  'int_flat', 'int_pct',
 ];
 
 /** Roll enchant bonus for a stat value. Returns the bonus amount. */
@@ -599,6 +604,7 @@ export function enchantWeaponStat(weaponId, statKey, weaponEnchants = {}) {
 const EMPTY_BONUSES = () => ({
   hp_flat: 0, hp_pct: 0, atk_flat: 0, atk_pct: 0,
   def_flat: 0, def_pct: 0, spd_flat: 0, spd_pct: 0,
+  int_flat: 0, int_pct: 0,
   crit_rate: 0, crit_dmg: 0, res_flat: 0,
   // Set bonuses (mapped to talent-bonus-compatible keys)
   atkPercent: 0, defPercent: 0, hpPercent: 0, spdPercent: 0,

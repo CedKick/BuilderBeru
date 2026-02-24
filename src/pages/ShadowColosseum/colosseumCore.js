@@ -299,13 +299,14 @@ export const statsAtFull = (base, growth, level, allocated = {}, tb = {}, equipB
   stats.spd += (globalBonuses.spd || 0) * STAT_PER_POINT.spd;
   stats.crit = +(stats.crit + (globalBonuses.crit || 0) * STAT_PER_POINT.crit).toFixed(1);
   stats.res = +(stats.res + (globalBonuses.res || 0) * STAT_PER_POINT.res).toFixed(1);
-  // Mana — base intrinsic + growth + allocation (0.1/pt) + account bonus (0.1/pt)
+  // Mana — base intrinsic + growth + allocation (0.1/pt) + account bonus (0.1/pt) + INT from artifacts
   const baseMana = getBaseMana(base);
   const manaFromGrowth = Math.floor((growth.mana || 0) * (level - 1));
   const manaFromAlloc = (allocated.mana || 0) * STAT_PER_POINT.mana;
   const manaFromAccount = (globalBonuses.mana || 0) * STAT_PER_POINT.mana;
-  const manaPercent = 1 + (mergedTb.manaPercent || 0) / 100 + (equipBonuses.manaPercent || 0) / 100;
-  stats.mana = Math.floor((baseMana + manaFromGrowth + manaFromAlloc + manaFromAccount) * manaPercent);
+  const manaFromIntFlat = (equipBonuses.int_flat || 0);
+  const manaPercent = 1 + (mergedTb.manaPercent || 0) / 100 + (equipBonuses.manaPercent || 0) / 100 + (equipBonuses.int_pct || 0) / 100;
+  stats.mana = Math.floor((baseMana + manaFromGrowth + manaFromAlloc + manaFromAccount + manaFromIntFlat) * manaPercent);
   stats.manaRegen = BASE_MANA_REGEN + Math.floor(stats.spd / 15) + Math.floor(mergedTb.manaRegen || 0);
   stats.manaCostReduce = Math.min(50, (mergedTb.manaCostReduce || 0) + (equipBonuses.manaCostReduce || 0));
   return stats;
