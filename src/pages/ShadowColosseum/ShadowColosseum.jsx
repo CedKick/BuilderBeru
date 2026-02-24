@@ -2868,6 +2868,88 @@ export default function ShadowColosseum() {
       ncs.canComplete = ncs.availableInInv >= ncs.needed;
     });
 
+    // Optimal set plan recommendation based on total available artifacts (equipped + inventory)
+    const allAvailable = [...Object.values(equipped).filter(Boolean), ...inventory];
+    const totalSetCounts = {};
+    allAvailable.forEach(art => { if (art?.set) totalSetCounts[art.set] = (totalSetCounts[art.set] || 0) + 1; });
+    const totalSlotCoverage = {};
+    const allBySlot = {};
+    SLOT_ORDER.forEach(s => { allBySlot[s] = allAvailable.filter(a => a.slot === s); });
+    [...resolvedTiers.S, ...resolvedTiers.A].forEach(setId => {
+      totalSlotCoverage[setId] = SLOT_ORDER.filter(s => allBySlot[s].some(a => a.set === setId)).length;
+    });
+
+    const candidatePlans = [];
+    const recSets = [...resolvedTiers.S, ...resolvedTiers.A];
+    // 8p plans
+    for (const s of recSets) {
+      if (totalSlotCoverage[s] >= 8) candidatePlans.push([{ set: s, n: 8 }]);
+    }
+    // 4p + 4p
+    for (let i = 0; i < recSets.length; i++) {
+      for (let j = i + 1; j < recSets.length; j++) {
+        if (totalSlotCoverage[recSets[i]] >= 4 && totalSlotCoverage[recSets[j]] >= 4) {
+          candidatePlans.push([{ set: recSets[i], n: 4 }, { set: recSets[j], n: 4 }]);
+        }
+      }
+    }
+    // 4p + 2p + 2p
+    for (const s4 of recSets) {
+      if (totalSlotCoverage[s4] < 4) continue;
+      for (let j = 0; j < recSets.length; j++) {
+        if (recSets[j] === s4 || totalSlotCoverage[recSets[j]] < 2) continue;
+        for (let k = j + 1; k < recSets.length; k++) {
+          if (recSets[k] === s4 || totalSlotCoverage[recSets[k]] < 2) continue;
+          candidatePlans.push([{ set: s4, n: 4 }, { set: recSets[j], n: 2 }, { set: recSets[k], n: 2 }]);
+        }
+      }
+    }
+
+    // Pick best plan by S-tier priority
+    const planScore = (plan) => {
+      let sc = 0;
+      for (const p of plan) {
+        const tier = getSetTier(p.set);
+        const tierMult = tier === 'S' ? 3 : tier === 'A' ? 2 : 1;
+        sc += p.n * tierMult;
+      }
+      return sc;
+    };
+    candidatePlans.sort((a, b) => planScore(b) - planScore(a));
+    const optimalPlan = candidatePlans[0] || null;
+
+    // Check reroll needs: for optimal plan, which slots have wrong main stat or wrong set
+    const rerollAdvice = [];
+    if (optimalPlan) {
+      const slotsNeeded = {};
+      for (const p of optimalPlan) {
+        let remaining = p.n;
+        for (const slot of SLOT_ORDER) {
+          if (remaining <= 0 || slotsNeeded[slot]) continue;
+          const hasSet = allBySlot[slot].some(a => a.set === p.set);
+          if (hasSet) { slotsNeeded[slot] = p.set; remaining--; }
+        }
+        // If not enough slots, fill from remaining
+        if (remaining > 0) {
+          for (const slot of SLOT_ORDER) {
+            if (remaining <= 0 || slotsNeeded[slot]) continue;
+            slotsNeeded[slot] = p.set;
+            remaining--;
+          }
+        }
+      }
+      // Check each equipped slot
+      Object.entries(equipped).forEach(([slot, art]) => {
+        if (!art) return;
+        const idealMainStat = idealStats.mainStats[slot];
+        if (idealMainStat && art.mainStat !== idealMainStat) {
+          const curName = MAIN_STAT_VALUES[art.mainStat]?.name || art.mainStat;
+          const idealName = MAIN_STAT_VALUES[idealMainStat]?.name || idealMainStat;
+          rerollAdvice.push({ slot, type: 'mainStat', msg: `${ARTIFACT_SLOTS[slot]?.name}: ${curName} -> ${idealName}` });
+        }
+      });
+    }
+
     // Mage-specific advice
     const mageAdvice = hClass === 'mage' ? (() => {
       const issues = [];
@@ -2934,6 +3016,7 @@ export default function ShadowColosseum() {
         hunterClass: hClass, hunterElement: hElement, role,
         recommendedSets: { S: resolvedTiers.S, A: resolvedTiers.A },
         currentSetAnalysis, slotAdvice, nearCompleteSets, mageAdvice,
+        optimalPlan, rerollAdvice,
         overallGrade: 'D',
         summary: randomPick(BERU_ADVICE_DIALOGUES.gradeD),
       };
@@ -2954,6 +3037,7 @@ export default function ShadowColosseum() {
       hunterClass: hClass, hunterElement: hElement, role,
       recommendedSets: { S: resolvedTiers.S, A: resolvedTiers.A },
       currentSetAnalysis, slotAdvice, nearCompleteSets, mageAdvice,
+      optimalPlan, rerollAdvice,
       overallGrade: grade,
       summary: randomPick(BERU_ADVICE_DIALOGUES[gradeDialogues[grade]]),
     };
@@ -8986,7 +9070,7 @@ export default function ShadowColosseum() {
                     {'\uD83D\uDD28'} Max +20
                   </button>
                 )}
-                {/* Auto-equip button */}
+                {/* Auto-equip button — set-first algorithm */}
                 {data.artifactInventory.length > 0 && (
                   <button
                     onClick={() => {
@@ -8998,7 +9082,9 @@ export default function ShadowColosseum() {
                       const elementSetMap = { fire: 'flamme_maudite', water: 'maree_eternelle', shadow: 'ombre_souveraine' };
                       const classTiers = CLASS_SET_TIERS[aeClass] || CLASS_SET_TIERS.fighter;
                       const resolveSet = (sid) => sid === 'ELEMENT_SET' ? elementSetMap[c.element] : sid;
-                      const preferredSets = new Set([...(classTiers.S || []), ...(classTiers.A || [])].map(resolveSet).filter(Boolean));
+                      const sTierSets = (classTiers.S || []).map(resolveSet).filter(Boolean);
+                      const aTierSets = (classTiers.A || []).map(resolveSet).filter(Boolean);
+                      const preferredSets = new Set([...sTierSets, ...aTierSets]);
 
                       // Preferred main stats per slot per role
                       const mainStatPriority = {
@@ -9018,14 +9104,13 @@ export default function ShadowColosseum() {
                       };
                       const subPriority = subPriorities[role] || subPriorities.dps;
 
-                      // Score each artifact for this chibi (base score)
-                      const scoreArtifact = (art) => {
+                      // Score artifact raw quality (without set bonus)
+                      const scoreRaw = (art) => {
                         let score = 0;
                         score += art.rarity === 'mythique' ? 30 : art.rarity === 'legendaire' ? 15 : 0;
                         score += art.level * 2;
                         if (idealMain[art.slot] === art.mainStat) score += 25;
                         score += art.mainValue * 0.5;
-                        if (preferredSets.has(art.set)) score += 20;
                         art.subs.forEach(sub => {
                           const idx = subPriority.indexOf(sub.id);
                           if (idx !== -1) score += (5 - idx) * 2 + sub.value * 0.3;
@@ -9033,7 +9118,43 @@ export default function ShadowColosseum() {
                         return score;
                       };
 
-                      // 2-pass auto-equip: Pass 1 = best by raw score, Pass 2 = optimize set bonuses
+                      // Value of set bonuses (how much a completed set is worth in score points)
+                      const setBonus2Value = (setId) => {
+                        const s = ALL_ARTIFACT_SETS[setId];
+                        if (!s) return 15;
+                        if (s.passive2) return 40; // Passives are very strong
+                        const b = s.bonus2 || {};
+                        let v = 15;
+                        if (b.manaPercent) v += b.manaPercent * 0.8;
+                        if (b.atkPercent) v += b.atkPercent * 1.5;
+                        if (b.defPercent) v += b.defPercent;
+                        if (b.hpPercent) v += b.hpPercent;
+                        if (b.critRate) v += b.critRate * 2;
+                        if (b.spdPercent) v += b.spdPercent * 1.5;
+                        if (b.resFlat) v += b.resFlat;
+                        if (b.manaCostReduce) v += b.manaCostReduce;
+                        return v;
+                      };
+                      const setBonus4Value = (setId) => {
+                        const s = ALL_ARTIFACT_SETS[setId];
+                        if (!s) return 30;
+                        if (s.passive4) return 60;
+                        const b = s.bonus4 || {};
+                        let v = 30;
+                        if (b.critDamage) v += b.critDamage * 1.5;
+                        if (b.fireDamage) v += b.fireDamage * 2;
+                        if (b.waterDamage) v += b.waterDamage * 2;
+                        if (b.shadowDamage) v += b.shadowDamage * 2;
+                        if (b.allDamage) v += b.allDamage * 2.5;
+                        if (b.healBonus) v += b.healBonus;
+                        if (b.hpPercent) v += b.hpPercent;
+                        if (b.defPen) v += b.defPen * 2;
+                        if (b.manaRegen) v += b.manaRegen * 0.5;
+                        if (b.manaCostReduce) v += b.manaCostReduce;
+                        return v;
+                      };
+
+                      // ─── Set-First Auto-Equip ───
                       setData(prev => {
                         let inv = [...prev.artifactInventory];
                         const prevEquipped = { ...(prev.artifacts[id] || {}) };
@@ -9044,71 +9165,213 @@ export default function ShadowColosseum() {
                           }
                         });
 
-                        // Pass 1: Pick top-3 candidates per slot by raw score
-                        const topPerSlot = {};
-                        SLOT_ORDER.forEach(slotId => {
-                          const candidates = inv.filter(a => a.slot === slotId);
-                          candidates.sort((a, b) => scoreArtifact(b) - scoreArtifact(a));
-                          topPerSlot[slotId] = candidates.slice(0, 3);
+                        // Index artifacts by slot and set
+                        const bySlot = {};
+                        const bySlotAndSet = {};
+                        SLOT_ORDER.forEach(s => { bySlot[s] = []; });
+                        inv.forEach(a => {
+                          if (bySlot[a.slot]) bySlot[a.slot].push(a);
                         });
-
-                        // Pick best raw per slot first
-                        let newEquipped = {};
-                        let usedUids = new Set();
-                        SLOT_ORDER.forEach(slotId => {
-                          const best = topPerSlot[slotId].find(a => !usedUids.has(a.uid));
-                          if (best) { newEquipped[slotId] = best; usedUids.add(best.uid); }
-                        });
-
-                        // Pass 2: Check set counts and try to complete sets
-                        const setCounts = {};
-                        Object.values(newEquipped).forEach(art => {
-                          if (art?.set) setCounts[art.set] = (setCounts[art.set] || 0) + 1;
-                        });
-
-                        // Find sets that are close to a bonus threshold (2p, 4p)
-                        Object.entries(setCounts).forEach(([setId, count]) => {
-                          const isPreferred = preferredSets.has(setId);
-                          if (!isPreferred) return;
-                          // Try to complete 4p if at 3, or 2p if at 1
-                          const target = count >= 3 ? 4 : count >= 1 ? 2 : 0;
-                          if (count >= target) return; // Already have bonus
-                          const needed = target - count;
-                          // Find slots where this set is NOT equipped but a candidate exists
-                          const swapSlots = SLOT_ORDER.filter(slotId => {
-                            const cur = newEquipped[slotId];
-                            return cur && cur.set !== setId;
+                        // Sort each slot by raw score descending
+                        SLOT_ORDER.forEach(s => {
+                          bySlot[s].sort((a, b) => scoreRaw(b) - scoreRaw(a));
+                          bySlotAndSet[s] = {};
+                          bySlot[s].forEach(a => {
+                            if (!bySlotAndSet[s][a.set]) bySlotAndSet[s][a.set] = [];
+                            bySlotAndSet[s][a.set].push(a);
                           });
-                          let swapped = 0;
-                          for (const slotId of swapSlots) {
-                            if (swapped >= needed) break;
-                            const alt = topPerSlot[slotId].find(a => a.set === setId && !usedUids.has(a.uid));
-                            if (!alt) continue;
-                            const curScore = scoreArtifact(newEquipped[slotId]);
-                            const altScore = scoreArtifact(alt);
-                            // Accept swap if alt is within 15 points of current (set bonus compensates)
-                            if (altScore >= curScore - 15) {
-                              usedUids.delete(newEquipped[slotId].uid);
-                              newEquipped[slotId] = alt;
-                              usedUids.add(alt.uid);
-                              swapped++;
+                        });
+
+                        // Count how many artifacts per set are available across all slots
+                        const setSlotCoverage = {};
+                        [...preferredSets].forEach(setId => {
+                          setSlotCoverage[setId] = SLOT_ORDER.filter(s => (bySlotAndSet[s][setId] || []).length > 0).length;
+                        });
+
+                        // Generate set plans: list of [setId, targetPieces] tuples
+                        const allSets = [...preferredSets];
+                        const plans = [];
+
+                        // Plan type: 8p (single set fills everything)
+                        for (const s8 of allSets) {
+                          if (setSlotCoverage[s8] >= 8) {
+                            plans.push([{ set: s8, n: 8 }]);
+                          }
+                        }
+                        // Plan type: 4p + 4p
+                        for (let i = 0; i < allSets.length; i++) {
+                          for (let j = i + 1; j < allSets.length; j++) {
+                            if (setSlotCoverage[allSets[i]] >= 4 && setSlotCoverage[allSets[j]] >= 4) {
+                              plans.push([{ set: allSets[i], n: 4 }, { set: allSets[j], n: 4 }]);
                             }
+                          }
+                        }
+                        // Plan type: 4p + 2p + 2p
+                        for (let i = 0; i < allSets.length; i++) {
+                          if (setSlotCoverage[allSets[i]] < 4) continue;
+                          for (let j = 0; j < allSets.length; j++) {
+                            if (j === i || setSlotCoverage[allSets[j]] < 2) continue;
+                            for (let k = j + 1; k < allSets.length; k++) {
+                              if (k === i || setSlotCoverage[allSets[k]] < 2) continue;
+                              plans.push([{ set: allSets[i], n: 4 }, { set: allSets[j], n: 2 }, { set: allSets[k], n: 2 }]);
+                            }
+                          }
+                        }
+                        // Plan type: 2p + 2p + 2p + 2p
+                        if (allSets.length >= 4) {
+                          const sets2 = allSets.filter(s => setSlotCoverage[s] >= 2);
+                          for (let i = 0; i < sets2.length; i++) {
+                            for (let j = i+1; j < sets2.length; j++) {
+                              for (let k = j+1; k < sets2.length; k++) {
+                                for (let l = k+1; l < sets2.length; l++) {
+                                  plans.push([{ set: sets2[i], n: 2 }, { set: sets2[j], n: 2 }, { set: sets2[k], n: 2 }, { set: sets2[l], n: 2 }]);
+                                }
+                              }
+                            }
+                          }
+                        }
+                        // Plan type: 4p + 2p (remaining 2 slots = best available)
+                        for (const s4 of allSets) {
+                          if (setSlotCoverage[s4] < 4) continue;
+                          for (const s2 of allSets) {
+                            if (s2 === s4 || setSlotCoverage[s2] < 2) continue;
+                            plans.push([{ set: s4, n: 4 }, { set: s2, n: 2 }]);
+                          }
+                        }
+                        // Fallback: greedy (no set constraint)
+                        plans.push([]);
+
+                        // Evaluate each plan: assign artifacts to slots respecting set targets
+                        const evaluatePlan = (plan) => {
+                          const assigned = {};
+                          const usedUids = new Set();
+                          let totalScore = 0;
+
+                          // For each set in the plan, greedily assign best artifact per slot
+                          const slotsRemaining = new Set(SLOT_ORDER);
+                          for (const { set: setId, n: needed } of plan) {
+                            // Find slots that have this set available, sorted by best artifact score
+                            const slotCandidates = [...slotsRemaining]
+                              .map(s => {
+                                const arts = (bySlotAndSet[s][setId] || []).filter(a => !usedUids.has(a.uid));
+                                return { slot: s, best: arts[0] || null, score: arts[0] ? scoreRaw(arts[0]) : -999 };
+                              })
+                              .filter(sc => sc.best)
+                              .sort((a, b) => {
+                                // Prefer slots where the set piece is close in quality to the raw best
+                                const aBestRaw = bySlot[a.slot].find(x => !usedUids.has(x.uid));
+                                const bBestRaw = bySlot[b.slot].find(x => !usedUids.has(x.uid));
+                                const aLoss = (aBestRaw ? scoreRaw(aBestRaw) : 0) - a.score;
+                                const bLoss = (bBestRaw ? scoreRaw(bBestRaw) : 0) - b.score;
+                                return aLoss - bLoss; // Pick slot where using this set costs the least
+                              });
+
+                            let placed = 0;
+                            for (const sc of slotCandidates) {
+                              if (placed >= needed) break;
+                              if (!slotsRemaining.has(sc.slot)) continue;
+                              assigned[sc.slot] = sc.best;
+                              usedUids.add(sc.best.uid);
+                              totalScore += sc.score;
+                              slotsRemaining.delete(sc.slot);
+                              placed++;
+                            }
+                            // Add set bonus value (2p, 4p, 8p = 2p+4p stacked + extra)
+                            if (placed >= 2) totalScore += setBonus2Value(setId);
+                            if (placed >= 4) totalScore += setBonus4Value(setId);
+                            if (placed >= 8) totalScore += 50; // 8p synergy bonus
+                          }
+
+                          // Fill remaining slots with best raw artifacts
+                          for (const slot of slotsRemaining) {
+                            const best = bySlot[slot].find(a => !usedUids.has(a.uid));
+                            if (best) {
+                              assigned[slot] = best;
+                              usedUids.add(best.uid);
+                              totalScore += scoreRaw(best);
+                            }
+                          }
+
+                          return { assigned, totalScore, plan };
+                        };
+
+                        // Find the best plan
+                        let bestResult = { assigned: {}, totalScore: -Infinity, plan: [] };
+                        for (const plan of plans) {
+                          const result = evaluatePlan(plan);
+                          if (result.totalScore > bestResult.totalScore) bestResult = result;
+                        }
+
+                        // Remove equipped from inventory
+                        const equippedUids = new Set(Object.values(bestResult.assigned).map(a => a.uid));
+                        inv = inv.filter(a => !equippedUids.has(a.uid));
+                        return { ...prev, artifacts: { ...prev.artifacts, [id]: bestResult.assigned }, artifactInventory: inv };
+                      });
+
+                      // Report what set plan was chosen via Beru + reroll advice
+                      setTimeout(() => {
+                        const eq = data.artifacts[id] || {};
+                        const setCnts = {};
+                        Object.values(eq).forEach(a => { if (a?.set) setCnts[a.set] = (setCnts[a.set] || 0) + 1; });
+                        const setLabels = Object.entries(setCnts)
+                          .filter(([, cnt]) => cnt >= 2)
+                          .sort((a, b) => b[1] - a[1])
+                          .map(([sId, cnt]) => {
+                            const sd = ALL_ARTIFACT_SETS[sId];
+                            const bonusTag = cnt >= 8 ? '8p' : cnt >= 4 ? '4p' : '2p';
+                            return `${sd?.icon || ''} ${sd?.name || sId} (${bonusTag})`;
+                          }).join(' + ');
+
+                        // Check for reroll advice: artifacts with wrong main stat for this class
+                        const rerollSlots = [];
+                        Object.entries(eq).forEach(([slot, art]) => {
+                          if (!art) return;
+                          if (idealMain[slot] && art.mainStat !== idealMain[slot]) {
+                            const curName = MAIN_STAT_VALUES[art.mainStat]?.name || art.mainStat;
+                            const idealName = MAIN_STAT_VALUES[idealMain[slot]]?.name || idealMain[slot];
+                            rerollSlots.push(`${ARTIFACT_SLOTS[slot]?.name}: ${curName} -> ${idealName}`);
                           }
                         });
 
-                        // Remove equipped from inventory
-                        const equippedUids = new Set(Object.values(newEquipped).map(a => a.uid));
-                        inv = inv.filter(a => !equippedUids.has(a.uid));
-                        return { ...prev, artifacts: { ...prev.artifacts, [id]: newEquipped }, artifactInventory: inv };
-                      });
-                      const roleMsg = { dps: "Full DPS ! Que la destruction commence !", mage: "Full INT ! La magie va tout ravager !", tank: "Blindage maximal ! Rien ne passera !", support: "Support optimal ! L'equipe te remercie !" };
-                      window.dispatchEvent(new CustomEvent('beru-react', {
-                        detail: { message: roleMsg[role] || roleMsg.dps, mood: 'happy' }
-                      }));
+                        let msg = setLabels
+                          ? `Sets: ${setLabels}`
+                          : (role === 'mage' ? "Full INT ! La magie va tout ravager !" : role === 'tank' ? "Blindage maximal !" : role === 'support' ? "Support optimal !" : "Full DPS !");
+
+                        if (rerollSlots.length > 0) {
+                          msg += ` | Reroll stats: ${rerollSlots.slice(0, 3).join(', ')}${rerollSlots.length > 3 ? '...' : ''}`;
+                        }
+
+                        window.dispatchEvent(new CustomEvent('beru-react', {
+                          detail: { message: msg, mood: rerollSlots.length > 2 ? 'thinking' : 'happy' }
+                        }));
+                      }, 100);
                     }}
                     className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-500/30 text-[10px] font-bold text-cyan-300 hover:from-cyan-600/50 hover:to-blue-600/50 transition-all"
                   >
                     {'\u2728'} Auto-Equip
+                  </button>
+                )}
+                {/* Unequip All button */}
+                {Object.values(equipped).some(a => a) && (
+                  <button
+                    onClick={() => {
+                      setData(prev => {
+                        const prevEquipped = prev.artifacts[id] || {};
+                        const returned = SLOT_ORDER.map(s => prevEquipped[s]).filter(Boolean);
+                        if (returned.length === 0) return prev;
+                        return {
+                          ...prev,
+                          artifacts: { ...prev.artifacts, [id]: {} },
+                          artifactInventory: [...prev.artifactInventory, ...returned]
+                        };
+                      });
+                      window.dispatchEvent(new CustomEvent('beru-react', {
+                        detail: { message: "Tout desequipe ! L'inventaire recupere tout.", mood: 'normal' }
+                      }));
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-red-600/30 to-rose-600/30 border border-red-500/30 text-[10px] font-bold text-red-300 hover:from-red-600/50 hover:to-rose-600/50 transition-all"
+                  >
+                    {'\uD83D\uDDD1\uFE0F'} Desequiper
                   </button>
                 )}
                 </div>
@@ -9279,6 +9542,42 @@ export default function ShadowColosseum() {
                         <div className="text-[9px] text-indigo-400 font-bold mb-1">{'\uD83E\uDDE0'} Conseil Mage</div>
                         {advice.mageAdvice.map((tip, i) => (
                           <div key={i} className="text-[8px] text-indigo-300/80 mb-0.5">{'\u26A0'} {tip}</div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Optimal Set Plan */}
+                    {advice.optimalPlan && (
+                      <div className="mb-2 p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                        <div className="text-[9px] text-cyan-400 font-bold mb-1">{'\uD83C\uDFAF'} Plan de sets optimal</div>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {advice.optimalPlan.map((p, i) => {
+                            const sd = ALL_ARTIFACT_SETS[p.set];
+                            return (
+                              <span key={i} className={`text-[9px] px-1.5 py-0.5 rounded ${sd?.bg || 'bg-gray-700/30'} ${sd?.color || 'text-gray-300'} border ${sd?.border || 'border-gray-600/30'}`}>
+                                {sd?.icon || '?'} {sd?.name || p.set} ({p.n}p)
+                              </span>
+                            );
+                          })}
+                        </div>
+                        {advice.optimalPlan.map((p, i) => {
+                          const sd = ALL_ARTIFACT_SETS[p.set];
+                          return (
+                            <div key={i} className="text-[8px] text-gray-400 mt-0.5">
+                              {sd?.icon} {p.n >= 4 ? sd?.bonus4Desc || sd?.bonus2Desc : sd?.bonus2Desc}
+                              {p.n >= 4 && sd?.bonus2Desc && <span className="text-gray-500"> + {sd?.bonus2Desc}</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Reroll Advice */}
+                    {advice.rerollAdvice?.length > 0 && (
+                      <div className="mb-2 p-2 rounded-lg bg-rose-500/10 border border-rose-500/20">
+                        <div className="text-[9px] text-rose-400 font-bold mb-1">{'\uD83D\uDD04'} Stats a reroll</div>
+                        {advice.rerollAdvice.map((ra, i) => (
+                          <div key={i} className="text-[8px] text-rose-300/80 mb-0.5">{'\u26A0'} {ra.msg}</div>
                         ))}
                       </div>
                     )}
