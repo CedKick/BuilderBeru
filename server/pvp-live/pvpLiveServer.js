@@ -428,6 +428,7 @@ const httpServer = createServer((req, res) => {
 });
 
 const io = new Server(httpServer, {
+  path: '/pvp-live/socket.io',
   cors: {
     origin: CORS_ORIGINS,
     methods: ['GET', 'POST'],
@@ -435,12 +436,10 @@ const io = new Server(httpServer, {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// SOCKET.IO NAMESPACE: /pvp-live
+// SOCKET.IO (custom path: /pvp-live/socket.io)
 // ═══════════════════════════════════════════════════════════════
 
-const pvpNs = io.of('/pvp-live');
-
-pvpNs.on('connection', (socket) => {
+io.on('connection', (socket) => {
   console.log(`[PVP Live] Connected: ${socket.id}`);
   let currentRoom = null;
 
@@ -466,7 +465,7 @@ pvpNs.on('connection', (socket) => {
     socket.join(code);
     currentRoom = code;
 
-    io.of('/pvp-live').to(code).emit('room-joined', {
+    io.to(code).emit('room-joined', {
       code,
       p1: { name: room.p1.name },
       p2: { name: room.p2.name },
@@ -475,7 +474,7 @@ pvpNs.on('connection', (socket) => {
     console.log(`[PVP Live] ${name} joined room ${code}`);
 
     // Start draft after short delay
-    setTimeout(() => startDraft(io.of('/pvp-live'), room), 2000);
+    setTimeout(() => startDraft(io, room), 2000);
   });
 
   socket.on('matchmake', ({ name, pool }) => {
@@ -499,7 +498,7 @@ pvpNs.on('connection', (socket) => {
     const role = getPlayerRole(room, socket.id);
     if (!role) return;
 
-    const success = processDraftAction(io.of('/pvp-live'), room, role, hunterId);
+    const success = processDraftAction(io, room, role, hunterId);
     if (!success) {
       socket.emit('error', { message: 'Action invalide' });
     }
@@ -515,7 +514,7 @@ pvpNs.on('connection', (socket) => {
     const role = getPlayerRole(room, socket.id);
     if (!role) return;
 
-    playerEquipReady(io.of('/pvp-live'), room, role);
+    playerEquipReady(io, room, role);
   });
 
   // ─── BATTLE ────────────────────────────────────────────────
@@ -528,7 +527,7 @@ pvpNs.on('connection', (socket) => {
     const role = getPlayerRole(room, socket.id);
     if (!role) return;
 
-    processBattleAction(io.of('/pvp-live'), room, role, action);
+    processBattleAction(io, room, role, action);
   });
 
   socket.on('battle-sync', (syncData) => {
@@ -539,7 +538,7 @@ pvpNs.on('connection', (socket) => {
     const role = getPlayerRole(room, socket.id);
     if (!role) return;
 
-    processBattleSync(io.of('/pvp-live'), room, role, syncData);
+    processBattleSync(io, room, role, syncData);
   });
 
   socket.on('battle-end', (result) => {
@@ -550,7 +549,7 @@ pvpNs.on('connection', (socket) => {
     const role = getPlayerRole(room, socket.id);
     if (!role) return;
 
-    processBattleEnd(io.of('/pvp-live'), room, role, result);
+    processBattleEnd(io, room, role, result);
   });
 
   // ─── DISCONNECT ────────────────────────────────────────────
@@ -569,8 +568,8 @@ pvpNs.on('connection', (socket) => {
         if (role && room.phase !== 'finished' && room.phase !== 'waiting') {
           // Forfeit — opponent wins
           const winner = getOpponentRole(role);
-          io.of('/pvp-live').to(currentRoom).emit('opponent-left', { forfeitRole: role, winner });
-          endBattle(io.of('/pvp-live'), room, winner);
+          io.to(currentRoom).emit('opponent-left', { forfeitRole: role, winner });
+          endBattle(io, room, winner);
         } else if (room.phase === 'waiting') {
           // Room was waiting, just destroy
           destroyRoom(currentRoom);

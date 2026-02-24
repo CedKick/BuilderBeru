@@ -196,7 +196,8 @@ export default function PvpLive() {
     setOnlineError('');
 
     return import('socket.io-client').then(({ io }) => {
-      const socket = io(`${MULTIPLAYER_CONFIG.SOCKET_URL}${MULTIPLAYER_CONFIG.PVP_LIVE_NAMESPACE}`, {
+      const socket = io(MULTIPLAYER_CONFIG.SOCKET_URL, {
+        path: '/pvp-live/socket.io',
         reconnectionAttempts: MULTIPLAYER_CONFIG.RECONNECTION_ATTEMPTS,
         reconnectionDelay: MULTIPLAYER_CONFIG.RECONNECTION_DELAY,
         reconnectionDelayMax: MULTIPLAYER_CONFIG.RECONNECTION_DELAY_MAX,
