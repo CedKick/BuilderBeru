@@ -2851,14 +2851,14 @@ export default function ShadowColosseum() {
       return { setId, count, tier, verdict };
     });
 
-    // Near-complete set detection
+    // Near-complete set detection — only suggest sets that are S or A tier for this class
     const nearCompleteSets = [];
     Object.entries(setCounts).forEach(([setId, count]) => {
       const tier = getSetTier(setId);
-      if (tier === 'C') return; // Don't recommend completing bad sets
-      if (count === 1) nearCompleteSets.push({ setId, count, needed: 1, bonus: '2p' });
-      else if (count === 3) nearCompleteSets.push({ setId, count, needed: 1, bonus: '4p' });
-      else if (count >= 5 && count < 8) nearCompleteSets.push({ setId, count, needed: 8 - count, bonus: '8p' });
+      if (tier !== 'S' && tier !== 'A') return; // Only recommend completing good sets for this class
+      if (count === 1) nearCompleteSets.push({ setId, count, needed: 1, bonus: '2p', tier });
+      else if (count === 3) nearCompleteSets.push({ setId, count, needed: 1, bonus: '4p', tier });
+      else if (count >= 5 && count < 8) nearCompleteSets.push({ setId, count, needed: 8 - count, bonus: '8p', tier });
     });
     // Also check inventory for potential set completions
     const invSetCounts = {};
