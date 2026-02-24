@@ -407,59 +407,8 @@ export default function PvpLive() {
     socketRef.current?.emit('battle-action', { skillIdx, targetIdx, targetSide, expectedRole: myRole });
   }, [myRole]);
 
-  // Start online battle (build fighters locally)
-  const startOnlineBattle = useCallback((p1Picks, p2Picks) => {
-    const artData = tempArtifacts || coloData.artifacts;
-    const wpnData = tempWeapons || coloData.weapons;
-    const wpnCollData = tempWeaponCollection || coloData.weaponCollection;
-
-    // My picks are the ones matching my role
-    const myPicks = myRole === 'p1' ? p1Picks : p2Picks;
-    const oppPicks = myRole === 'p1' ? p2Picks : p1Picks;
-
-    const myFighters = myPicks.map(id => buildPvpFighter(id, artData, wpnData, wpnCollData, 'player')).filter(Boolean);
-    const oppFighters = oppPicks.map(id => buildPvpFighter(id, artData, wpnData, wpnCollData, 'beru')).filter(Boolean);
-
-    if (myFighters.length === 0 || oppFighters.length === 0) return;
-
-    const entries = [
-      ...myFighters.map((f, i) => ({ ...f, type: 'team', idx: i })),
-      ...oppFighters.map((f, i) => ({ ...f, type: 'enemy', idx: i })),
-    ];
-    const turnOrder = buildSpdTurnOrder(entries);
-
-    const battleState = {
-      playerTeam: myFighters,
-      beruTeam: oppFighters,
-      turnOrder,
-      currentTurn: 0,
-      round: 1,
-      phase: 'advance',
-      globalTimer: BATTLE_TIME,
-    };
-
-    setBattle(battleState);
-    setBattleLog([{ text: 'Le combat commence !', type: 'system' }]);
-    setPendingSkill(null);
-    setPhase('battle');
-    setTimer(BATTLE_TIME);
-    setTurnTimer(TURN_TIME);
-
-    // Sync turn order with server
-    socketRef.current?.emit('battle-sync', { turnOrder: turnOrder.map(e => ({ type: e.type, idx: e.idx, spd: e.spd })), currentTurn: 0, round: 1 });
-
-    setTimeout(() => advanceBattle(battleState), 500);
-  }, [myRole, tempArtifacts, tempWeapons, tempWeaponCollection, coloData, buildPvpFighter]);
-
-  // Apply opponent's action locally
-  const applyOnlineAction = useCallback((from, skillIdx, targetIdx, targetSide) => {
-    // This will be called when opponent sends their action via server
-    // For now, the battle engine handles it similarly to AI turns
-    // In a complete implementation, we'd replay the exact action
-  }, []);
-
   // ═══════════════════════════════════════════════════════════════
-  // BUILD PVP FIGHTER
+  // BUILD PVP FIGHTER (must be before startOnlineBattle)
   // ═══════════════════════════════════════════════════════════════
 
   const buildPvpFighter = useCallback((id, artifactsData, weaponsData, weaponCollectionData, side = 'player') => {
@@ -548,6 +497,57 @@ export default function PvpLive() {
       },
     };
   }, [allPool, coloData, raidData]);
+
+  // Start online battle (build fighters locally)
+  const startOnlineBattle = useCallback((p1Picks, p2Picks) => {
+    const artData = tempArtifacts || coloData.artifacts;
+    const wpnData = tempWeapons || coloData.weapons;
+    const wpnCollData = tempWeaponCollection || coloData.weaponCollection;
+
+    // My picks are the ones matching my role
+    const myPicks = myRole === 'p1' ? p1Picks : p2Picks;
+    const oppPicks = myRole === 'p1' ? p2Picks : p1Picks;
+
+    const myFighters = myPicks.map(id => buildPvpFighter(id, artData, wpnData, wpnCollData, 'player')).filter(Boolean);
+    const oppFighters = oppPicks.map(id => buildPvpFighter(id, artData, wpnData, wpnCollData, 'beru')).filter(Boolean);
+
+    if (myFighters.length === 0 || oppFighters.length === 0) return;
+
+    const entries = [
+      ...myFighters.map((f, i) => ({ ...f, type: 'team', idx: i })),
+      ...oppFighters.map((f, i) => ({ ...f, type: 'enemy', idx: i })),
+    ];
+    const turnOrder = buildSpdTurnOrder(entries);
+
+    const battleState = {
+      playerTeam: myFighters,
+      beruTeam: oppFighters,
+      turnOrder,
+      currentTurn: 0,
+      round: 1,
+      phase: 'advance',
+      globalTimer: BATTLE_TIME,
+    };
+
+    setBattle(battleState);
+    setBattleLog([{ text: 'Le combat commence !', type: 'system' }]);
+    setPendingSkill(null);
+    setPhase('battle');
+    setTimer(BATTLE_TIME);
+    setTurnTimer(TURN_TIME);
+
+    // Sync turn order with server
+    socketRef.current?.emit('battle-sync', { turnOrder: turnOrder.map(e => ({ type: e.type, idx: e.idx, spd: e.spd })), currentTurn: 0, round: 1 });
+
+    setTimeout(() => advanceBattle(battleState), 500);
+  }, [myRole, tempArtifacts, tempWeapons, tempWeaponCollection, coloData, buildPvpFighter]);
+
+  // Apply opponent's action locally
+  const applyOnlineAction = useCallback((from, skillIdx, targetIdx, targetSide) => {
+    // This will be called when opponent sends their action via server
+    // For now, the battle engine handles it similarly to AI turns
+    // In a complete implementation, we'd replay the exact action
+  }, []);
 
   // ═══════════════════════════════════════════════════════════════
   // BERU DRAFT AI
