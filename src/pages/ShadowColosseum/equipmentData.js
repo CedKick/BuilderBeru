@@ -268,6 +268,7 @@ export const MAIN_STAT_VALUES = {
   crit_rate: { name: 'CRIT%',     base: 3,   perLevel: 1.5, icon: '\uD83C\uDFAF' },
   crit_dmg:  { name: 'CRIT DMG%', base: 5,   perLevel: 3,   icon: '\uD83D\uDCA5' },
   res_flat:  { name: 'RES',       base: 3,   perLevel: 1.5, icon: '\uD83D\uDEE1\uFE0F' },
+  def_flat:  { name: 'DEF',       base: 3,   perLevel: 1.5, icon: '\uD83D\uDEE1\uFE0F' },
 };
 
 export const SUB_STAT_POOL = [
@@ -536,6 +537,33 @@ export function rerollArtifactMainStat(artifact) {
   const enchants = { main: 0, subs: { ...(artifact.enchants?.subs || {}) } };
   return {
     artifact: { ...artifact, mainStat: newMainStat, mainValue: newMainValue, enchants },
+    oldMainStat: artifact.mainStat,
+    newMainStat,
+  };
+}
+
+/**
+ * Full reroll: main stat + all sub-stats + reset level + clear enchants.
+ * No duplicates between main and subs.
+ */
+export function rerollArtifactFull(artifact) {
+  const mainPool = ENCHANT_MAIN_STAT_POOL.filter(s => s !== artifact.mainStat);
+  const newMainStat = mainPool[Math.floor(Math.random() * mainPool.length)];
+  const def = MAIN_STAT_VALUES[newMainStat];
+  const newMainValue = def ? def.base : artifact.mainValue;
+  const subCount = RARITY_SUB_COUNT[artifact.rarity].initial;
+  const available = SUB_STAT_POOL.filter(s => s.id !== newMainStat);
+  const subs = [];
+  const used = new Set();
+  for (let i = 0; i < subCount; i++) {
+    const cands = available.filter(s => !used.has(s.id));
+    if (!cands.length) break;
+    const pick = cands[Math.floor(Math.random() * cands.length)];
+    used.add(pick.id);
+    subs.push({ id: pick.id, value: pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1)) });
+  }
+  return {
+    artifact: { ...artifact, level: 0, mainStat: newMainStat, mainValue: newMainValue, subs, enchants: { main: 0, subs: {} } },
     oldMainStat: artifact.mainStat,
     newMainStat,
   };

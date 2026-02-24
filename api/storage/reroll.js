@@ -17,8 +17,14 @@ const SUB_STAT_POOL = [
 
 const MAIN_STAT_BASE = {
   hp_flat: 50, hp_pct: 5, atk_flat: 5, atk_pct: 5,
-  def_pct: 5, spd_flat: 3, crit_rate: 3, crit_dmg: 5, res_flat: 3,
+  def_flat: 3, def_pct: 5, spd_flat: 3, crit_rate: 3, crit_dmg: 5, res_flat: 3,
 };
+
+const ENCHANT_MAIN_STAT_POOL = [
+  'hp_flat', 'hp_pct', 'atk_flat', 'atk_pct',
+  'crit_rate', 'crit_dmg', 'res_flat',
+  'def_flat', 'def_pct', 'spd_flat',
+];
 
 const RARITY_INITIAL_SUBS = { rare: 1, legendaire: 2, mythique: 3 };
 const REROLL_ALKAHEST_COST = 10;
@@ -54,7 +60,7 @@ export default async function handler(req, res) {
     const user = await extractUser(req);
     if (!user) return res.status(401).json({ error: 'Not authenticated' });
 
-    const { artifactUid } = req.body;
+    const { artifactUid, fullReroll } = req.body;
     if (!artifactUid) return res.status(400).json({ error: 'Missing artifactUid' });
 
     // Read current data from Neon
@@ -99,15 +105,22 @@ export default async function handler(req, res) {
     if (!artifact) return res.status(404).json({ error: 'Artifact not found' });
     if (artifact.locked) return res.status(400).json({ error: 'Artifact is locked' });
 
-    // Generate new sub-stats server-side
-    const newSubs = generateNewSubs(artifact.rarity, artifact.mainStat);
-    const newMainValue = MAIN_STAT_BASE[artifact.mainStat] || artifact.mainValue;
+    // Full reroll: main stat + subs. Normal reroll: subs only.
+    let newMainStat = artifact.mainStat;
+    if (fullReroll) {
+      const mainPool = ENCHANT_MAIN_STAT_POOL.filter(s => s !== artifact.mainStat);
+      newMainStat = mainPool[Math.floor(Math.random() * mainPool.length)];
+    }
+    const newSubs = generateNewSubs(artifact.rarity, newMainStat);
+    const newMainValue = MAIN_STAT_BASE[newMainStat] || artifact.mainValue;
 
     const rerolled = {
       ...artifact,
       level: 0,
+      mainStat: newMainStat,
       mainValue: newMainValue,
       subs: newSubs,
+      enchants: { main: 0, subs: {} },
     };
 
     // Deduct alkahest

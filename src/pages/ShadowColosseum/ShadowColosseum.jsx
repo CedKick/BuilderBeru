@@ -46,7 +46,7 @@ import {
   ROLE_WEIGHTS, scoreArtifact, scoreToGrade, scoreAllArtifacts,
   MAX_ARTIFACT_INVENTORY, trimArtifactInventory,
   REROLL_ALKAHEST_COST, REROLL_BASE_COIN_COST, REROLL_COIN_MULTIPLIER, getRerollCoinCost, rerollArtifact,
-  ENCHANT_ALKAHEST_COST, enchantArtifactStat, rerollArtifactMainStat, enchantWeaponStat, ENCHANT_MAIN_STAT_POOL,
+  ENCHANT_ALKAHEST_COST, enchantArtifactStat, rerollArtifactMainStat, rerollArtifactFull, enchantWeaponStat, ENCHANT_MAIN_STAT_POOL,
 } from './equipmentData';
 import {
   isArc2Unlocked, ARC2_STAGES, ARC2_TIER_NAMES, ARC2_STORIES,
@@ -8483,14 +8483,14 @@ export default function ShadowColosseum() {
                       else if (eqCoins < eqRerollCoinCost) beruSay(`T'as pas assez de coins ! Il te faut ${fmtNum(eqRerollCoinCost)} coins pour ce reroll.`, 'angry');
                       return;
                     }
-                    if (!window.confirm(`Reroll les substats de cet artefact ?\n\nCout: ${REROLL_ALKAHEST_COST} Alkahest + ${fmtNum(eqRerollCoinCost)} coins\nL'artefact repassera au niveau 0 !`)) return;
+                    if (!window.confirm(`Reroll COMPLET de cet artefact ?\n\nMain stat + Substats seront reroll.\nCout: ${REROLL_ALKAHEST_COST} Alkahest + ${fmtNum(eqRerollCoinCost)} coins\nL'artefact repassera au niveau 0 !\nIrreversible !`)) return;
                     shadowCoinManager.spendCoins(eqRerollCoinCost);
                     try {
                       const token = localStorage.getItem('builderberu_auth_token');
                       const resp = await fetch('/api/storage/reroll', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
-                        body: JSON.stringify({ artifactUid: eqArt.uid, rerollCount: eqRerollCount }),
+                        body: JSON.stringify({ artifactUid: eqArt.uid, rerollCount: eqRerollCount, fullReroll: true }),
                       });
                       const result = await resp.json();
                       if (!result.success) {
@@ -8596,31 +8596,6 @@ export default function ShadowColosseum() {
                         {eqIsMilestone && <div className="text-[9px] text-amber-400 mt-1 font-bold">{'\u2B50'} Palier Lv{eqArt.level + 1} — Boost sub-stat !</div>}
                       </div>
 
-                      {/* Re-roll Main Stat (set artifacts only) */}
-                      {eqArt.set && (
-                        <div className="mb-2">
-                          <button
-                            onClick={() => {
-                              if ((data.alkahest || 0) < ENCHANT_ALKAHEST_COST) { beruSay("Pas assez d'Alkahest !", 'thinking'); return; }
-                              if (!window.confirm(`Re-roll le main stat de cet artefact ?\n\nActuel: ${MAIN_STAT_VALUES[eqArt.mainStat]?.name}\nPool: ${ENCHANT_MAIN_STAT_POOL.map(s => MAIN_STAT_VALUES[s]?.name).join(', ')}\n\nCout: ${ENCHANT_ALKAHEST_COST} Alkahest\nL'enchant du main stat sera perdu !`)) return;
-                              const { artifact: enc, oldMainStat, newMainStat } = rerollArtifactMainStat(eqArt);
-                              setData(prev => {
-                                const nd = { ...prev, alkahest: (prev.alkahest || 0) - ENCHANT_ALKAHEST_COST };
-                                nd.artifacts = { ...prev.artifacts, [id]: { ...prev.artifacts[id], [equipDetailSlot]: enc } };
-                                return nd;
-                              });
-                              beruSay(`Main stat change ! ${MAIN_STAT_VALUES[oldMainStat]?.name} → ${MAIN_STAT_VALUES[newMainStat]?.name}`, newMainStat === oldMainStat ? 'shocked' : 'excited');
-                            }}
-                            className={`w-full py-1.5 rounded-lg text-[10px] font-bold transition-colors ${
-                              (data.alkahest || 0) >= ENCHANT_ALKAHEST_COST
-                                ? 'bg-violet-600/25 text-violet-300 hover:bg-violet-600/40'
-                                : 'bg-gray-700/20 text-gray-600'
-                            }`}>
-                            {'\uD83C\uDFB2'} Re-roll Main Stat ({ENCHANT_ALKAHEST_COST}{'\u2697\uFE0F'})
-                          </button>
-                        </div>
-                      )}
-
                       {/* Actions */}
                       <div className="flex gap-2">
                         {/* Lock toggle */}
@@ -8678,12 +8653,12 @@ export default function ShadowColosseum() {
                             eqCanReroll ? 'bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600/40' :
                             'bg-emerald-600/15 text-emerald-300/50'
                           }`}>
-                          {'\uD83C\uDFB2'} Reroll substats ({REROLL_ALKAHEST_COST}{'\u2697\uFE0F'} + {fmtNum(eqRerollCoinCost)}c)
+                          {'\uD83C\uDFB2'} Reroll complet ({REROLL_ALKAHEST_COST}{'\u2697\uFE0F'} + {fmtNum(eqRerollCoinCost)}c)
                           {eqRerollCount > 0 && <span className="ml-1 text-amber-400">x{eqRerollCount + 1}</span>}
                         </button>
                         {/* Tooltip on hover */}
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2.5 py-1.5 rounded-lg bg-gray-900/95 border border-gray-600/40 text-[9px] text-gray-300 opacity-0 group-hover/eqreroll:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                          Reroll toutes les substats (remet l'artefact au Lv 0)
+                          Reroll la main stat + substats (remet au Lv 0, irreversible)
                           <br/><span className="text-emerald-400">Cout: {REROLL_ALKAHEST_COST} Alkahest + {fmtNum(eqRerollCoinCost)} coins</span>
                           {eqArt.locked && <><br/><span className="text-yellow-400">Deverrouille l'artefact d'abord</span></>}
                         </div>
@@ -9748,7 +9723,7 @@ export default function ShadowColosseum() {
             else if (coins < rerollCoinCost) beruSay(`T'as pas assez de coins ! Il te faut ${fmtNum(rerollCoinCost)} coins pour ce reroll.`, 'angry');
             return;
           }
-          if (!window.confirm(`Reroll les substats de cet artefact ?\n\nCout: ${REROLL_ALKAHEST_COST} Alkahest + ${fmtNum(rerollCoinCost)} coins\nL'artefact repassera au niveau 0 !`)) return;
+          if (!window.confirm(`Reroll COMPLET de cet artefact ?\n\nMain stat + Substats seront reroll.\nCout: ${REROLL_ALKAHEST_COST} Alkahest + ${fmtNum(rerollCoinCost)} coins\nL'artefact repassera au niveau 0 !\nIrreversible !`)) return;
 
           shadowCoinManager.spendCoins(rerollCoinCost);
           try {
@@ -9756,7 +9731,7 @@ export default function ShadowColosseum() {
             const resp = await fetch('/api/storage/reroll', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
-              body: JSON.stringify({ artifactUid: selArt.uid, rerollCount }),
+              body: JSON.stringify({ artifactUid: selArt.uid, rerollCount, fullReroll: true }),
             });
             const result = await resp.json();
             if (!result.success) {
@@ -9852,24 +9827,76 @@ export default function ShadowColosseum() {
                 </div>
               </div>
             </div>
-            {/* Stats */}
+            {/* Stats + Enchant */}
             <div className="mb-2 p-2 rounded-lg bg-gray-800/30 border border-gray-700/20">
               {(() => {
                 const mainDef = MAIN_STAT_VALUES[selArt.mainStat];
                 const nextVal = selArt.level < MAX_ARTIFACT_LEVEL ? +(mainDef.base + mainDef.perLevel * (selArt.level + 1)).toFixed(1) : selArt.mainValue;
+                const mainEnchant = selArt.enchants?.main || 0;
+                const canEnchantMain = (data.alkahest || 0) >= ENCHANT_ALKAHEST_COST;
                 return (
-                  <div className="text-xs text-gray-200 font-bold mb-1">
-                    {mainDef?.icon} {mainDef?.name}: +{selArt.mainValue}
-                    {selArt.level < MAX_ARTIFACT_LEVEL && <span className="text-green-400/60 ml-1">{'\u2192'} {nextVal}</span>}
+                  <div className="flex items-center gap-1 mb-1">
+                    <div className="flex-1 text-xs font-bold">
+                      <span className="text-gray-200">{mainDef?.icon} {mainDef?.name}: +{selArt.mainValue}</span>
+                      {mainEnchant > 0 && <span className="text-green-400 ml-1">(+{mainEnchant.toFixed(1)})</span>}
+                      {selArt.level < MAX_ARTIFACT_LEVEL && <span className="text-green-400/40 ml-1">{'\u2192'} {nextVal}</span>}
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (!canEnchantMain) { beruSay("Pas assez d'Alkahest pour enchanter !", 'thinking'); return; }
+                        const { artifact: enc, bonus, previousBonus } = enchantArtifactStat(selArt, 'main');
+                        setData(prev => {
+                          const nd = { ...prev, alkahest: (prev.alkahest || 0) - ENCHANT_ALKAHEST_COST };
+                          if (isEquipped) {
+                            const [, cId, sId] = artSelected.split(':');
+                            nd.artifacts = { ...prev.artifacts, [cId]: { ...prev.artifacts[cId], [sId]: enc } };
+                          } else {
+                            nd.artifactInventory = [...prev.artifactInventory];
+                            nd.artifactInventory[artSelected] = enc;
+                          }
+                          return nd;
+                        });
+                        if (bonus > previousBonus) beruSay(`Enchant UP ! +${bonus.toFixed(1)} (avant: ${previousBonus > 0 ? '+' + previousBonus.toFixed(1) : '0'})`, 'excited');
+                        else beruSay(`Enchant DOWN... +${bonus.toFixed(1)} (avant: +${previousBonus.toFixed(1)})`, 'shocked');
+                      }}
+                      className={`text-[8px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${canEnchantMain ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
+                      {mainEnchant > 0 ? '\u2697\uFE0F Re-ench' : '\u2697\uFE0F Ench'} {ENCHANT_ALKAHEST_COST}
+                    </button>
                   </div>
                 );
               })()}
               {selArt.subs.map((sub, i) => {
                 const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
+                const subEnchant = selArt.enchants?.subs?.[sub.id] || 0;
+                const canEnchantSub = (data.alkahest || 0) >= ENCHANT_ALKAHEST_COST;
                 return (
-                  <div key={i} className="text-[10px] text-gray-400">
-                    {subDef?.name || sub.id}: +{sub.value}
-                    {isMilestone && <span className="text-amber-400/50 ml-1">(chance {'\u2B06\uFE0F'})</span>}
+                  <div key={i} className="flex items-center gap-1 text-[10px]">
+                    <div className="flex-1">
+                      <span className="text-gray-400">{subDef?.name || sub.id}: +{sub.value}</span>
+                      {subEnchant > 0 && <span className="text-green-400 ml-1">(+{subEnchant.toFixed(1)})</span>}
+                      {isMilestone && <span className="text-amber-400/50 ml-1">(chance {'\u2B06\uFE0F'})</span>}
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (!canEnchantSub) { beruSay("Pas assez d'Alkahest !", 'thinking'); return; }
+                        const { artifact: enc, bonus, previousBonus } = enchantArtifactStat(selArt, sub.id);
+                        setData(prev => {
+                          const nd = { ...prev, alkahest: (prev.alkahest || 0) - ENCHANT_ALKAHEST_COST };
+                          if (isEquipped) {
+                            const [, cId, sId] = artSelected.split(':');
+                            nd.artifacts = { ...prev.artifacts, [cId]: { ...prev.artifacts[cId], [sId]: enc } };
+                          } else {
+                            nd.artifactInventory = [...prev.artifactInventory];
+                            nd.artifactInventory[artSelected] = enc;
+                          }
+                          return nd;
+                        });
+                        if (bonus > previousBonus) beruSay(`Enchant UP ! +${bonus.toFixed(1)}`, 'excited');
+                        else beruSay(`Enchant DOWN... +${bonus.toFixed(1)} (avant: +${previousBonus.toFixed(1)})`, 'shocked');
+                      }}
+                      className={`text-[8px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${canEnchantSub ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
+                      {subEnchant > 0 ? '\u2697\uFE0F Re' : '\u2697\uFE0F'} {ENCHANT_ALKAHEST_COST}
+                    </button>
                   </div>
                 );
               })}
@@ -9957,12 +9984,12 @@ export default function ShadowColosseum() {
                   canReroll ? 'bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600/40' :
                   'bg-emerald-600/15 text-emerald-300/50'
                 }`}>
-                {'\uD83C\uDFB2'} Reroll substats ({REROLL_ALKAHEST_COST}{'\u2697\uFE0F'} + {fmtNum(rerollCoinCost)}c)
+                {'\uD83C\uDFB2'} Reroll complet ({REROLL_ALKAHEST_COST}{'\u2697\uFE0F'} + {fmtNum(rerollCoinCost)}c)
                 {rerollCount > 0 && <span className="ml-1 text-amber-400">x{rerollCount + 1}</span>}
               </button>
               {/* Tooltip on hover */}
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2.5 py-1.5 rounded-lg bg-gray-900/95 border border-gray-600/40 text-[9px] text-gray-300 opacity-0 group-hover/reroll:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                Reroll toutes les substats (remet l'artefact au Lv 0)
+                Reroll la main stat + substats (remet au Lv 0, irreversible)
                 <br/><span className="text-emerald-400">Cout: {REROLL_ALKAHEST_COST} Alkahest + {fmtNum(rerollCoinCost)} coins</span>
                 {selArt.locked && <><br/><span className="text-yellow-400">Deverrouille l'artefact d'abord</span></>}
               </div>
