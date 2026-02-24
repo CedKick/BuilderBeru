@@ -1026,13 +1026,13 @@ export const KATANA_V_DOT_PCT = 0.03;             // 3% ATK du joueur par stack 
 export const KATANA_V_DOT_MAX_STACKS = 10;        // max 10 stacks de DoT
 export const KATANA_V_BUFF_CHANCE = 0.30;          // 30% chance de buff par coup
 
-// Baton de Gul'dan passives — Halo Eternelle
-export const GULDAN_HEAL_PER_STACK = 0.10;         // +10% heal per stack (% of damage dealt)
-export const GULDAN_STUN_CHANCE = 0.50;            // 50% stun chance per stack end of turn
-export const GULDAN_DEF_PER_HIT = 0.02;            // +2% DEF per attack (permanent in fight)
+// Baton de Gul'dan passives — Halo Eternelle (nerfed: was 50% stun → 5%, heal 10% → 4%, SPD 200% → 80%)
+export const GULDAN_HEAL_PER_STACK = 0.02;         // +2% heal per stack (% of damage dealt) — was 10%
+export const GULDAN_STUN_CHANCE = 0.05;            // 5% stun chance per stack end of turn — was 50%
+export const GULDAN_DEF_PER_HIT = 0.01;            // +1% DEF per attack (permanent in fight) — was 2%
 export const GULDAN_ATK_PER_HIT = 0.015;           // +1.5% ATK per hit (stackable)
-export const GULDAN_SPD_CHANCE = 0.50;             // 50% chance to boost attack speed
-export const GULDAN_SPD_BOOST = 2.0;               // +200% SPD boost per stack
+export const GULDAN_SPD_CHANCE = 0.25;             // 25% chance to boost attack speed — was 50%
+export const GULDAN_SPD_BOOST = 0.80;              // +80% SPD boost per stack — was 200%
 export const GULDAN_SPD_MAX_STACKS = 3;            // max 3 SPD stacks
 
 // ═══════════════════════════════════════════════════════════════

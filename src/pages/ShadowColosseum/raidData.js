@@ -767,8 +767,9 @@ export const RAID_BOSSES = {
     totalBars: 10,
     baseHP: 250000,
     barScaling: (i) => 250000 * (1 + 0.35 * i),
-    stats: { atk: 15000, def: 200, spd: 35, crit: 30, res: 20 },
-    defPen: 70, // Boss ignores 70% of hunter DEF
+    stats: { atk: 25000, def: 200, spd: 35, crit: 30, res: 20 },
+    defPen: 85, // Boss ignores 85% of hunter DEF
+    stunImmune: true, // Immune to Halo permastun
     targeting: 'intelligent',
     lootMult: 1.5,
     skills: [

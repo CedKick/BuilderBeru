@@ -479,6 +479,7 @@ export default function RaidMode() {
       spd: Math.floor(b.stats.spd * tierData.bossSpdMult),
       crit: b.stats.crit, res: b.stats.res,
       defPen: b.defPen || 0,
+      stunImmune: !!b.stunImmune,
       buffs: [],
       currentBar: 0, totalBars: isInfinite ? 999999 : b.totalBars, barsDestroyed: 0,
       infiniteBars: isInfinite,
@@ -1352,14 +1353,16 @@ export default function RaidMode() {
             gs.spdStacks++;
             logEntries.push({ text: `${chibi.name} : Halo Celeste ! SPD +${gs.spdStacks * 200}%`, time: elapsed, type: 'buff' });
           }
-          // Stun: each heal stack has 50% chance → delay boss next attack
-          let stunProcs = 0;
-          for (let i = 0; i < gs.healStacks; i++) {
-            if (Math.random() < GULDAN_STUN_CHANCE) stunProcs++;
-          }
-          if (stunProcs > 0 && state.boss.hp > 0) {
-            state.boss.lastAttackAt = now; // reset boss attack timer = delay next attack
-            logEntries.push({ text: `${chibi.name} : Halo Stun ! (${stunProcs} procs)`, time: elapsed, type: 'buff' });
+          // Stun: each heal stack has 5% chance → delay boss next attack (immune if boss has stunImmune)
+          if (!state.boss.stunImmune) {
+            let stunProcs = 0;
+            for (let i = 0; i < gs.healStacks; i++) {
+              if (Math.random() < GULDAN_STUN_CHANCE) stunProcs++;
+            }
+            if (stunProcs > 0 && state.boss.hp > 0) {
+              state.boss.lastAttackAt = now; // reset boss attack timer = delay next attack
+              logEntries.push({ text: `${chibi.name} : Halo Stun ! (${stunProcs} procs)`, time: elapsed, type: 'buff' });
+            }
           }
           // Halo Divin: resurrect first dead ally (once per combat)
           if (!gs.divinUsed) {
