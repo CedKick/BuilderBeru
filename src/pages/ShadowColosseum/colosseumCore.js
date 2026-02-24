@@ -412,7 +412,7 @@ const softcap = (val, k) => k * Math.log(1 + val / k);
 export const computeAttack = (attacker, skill, defender, tb = {}) => {
   const res = { damage: 0, isCrit: false, healed: 0, buff: null, debuff: null, text: '' };
   let effAtk = getEffStat(attacker.atk, attacker.buffs, 'atk');
-  // Mages & Supports: Mana×2 as attack power (compensates for no ATK buff stacking)
+  // Mages & Supports: Mana×1.2 as attack power (balanced vs fighters/assassins)
   // INT buffs boost maxMana for mages (e.g. Mayuri teamAura, artifact INT%)
   // Exception: manaScaling skills — only partial Intel bonus to avoid quadratic explosion
   if (attacker.isMage && attacker.maxMana) {
@@ -421,7 +421,7 @@ export const computeAttack = (attacker, skill, defender, tb = {}) => {
     if (skill.manaScaling) {
       effAtk = Math.floor(effAtk + effMana * 0.2);
     } else {
-      effAtk = Math.floor(effMana * 2.0);
+      effAtk = Math.floor(effMana * 1.2);
     }
   }
   let effDef = getEffStat(defender.def, defender.buffs || [], 'def');
