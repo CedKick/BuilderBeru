@@ -45,7 +45,7 @@ import {
   ARC2_ARTIFACT_SETS, generateArc2Artifact, generateSetArtifact, ULTIME_ARTIFACT_SETS,
   ROLE_WEIGHTS, scoreArtifact, scoreToGrade, scoreAllArtifacts,
   MAX_ARTIFACT_INVENTORY, trimArtifactInventory,
-  REROLL_ALKAHEST_COST, REROLL_BASE_COIN_COST, REROLL_COIN_MULTIPLIER, getRerollCoinCost, rerollArtifact,
+  REROLL_ALKAHEST_COST, REROLL_LOCK_COSTS, REROLL_BASE_COIN_COST, REROLL_COIN_MULTIPLIER, getRerollCoinCost, rerollArtifact,
   ENCHANT_ALKAHEST_COST, enchantArtifactStat, rerollArtifactMainStat, rerollArtifactFull, enchantWeaponStat, ENCHANT_MAIN_STAT_POOL,
 } from './equipmentData';
 import {
@@ -2858,7 +2858,7 @@ export default function ShadowColosseum() {
       if (tier !== 'S' && tier !== 'A') return; // Only recommend completing good sets for this class
       if (count === 1) nearCompleteSets.push({ setId, count, needed: 1, bonus: '2p', tier });
       else if (count === 3) nearCompleteSets.push({ setId, count, needed: 1, bonus: '4p', tier });
-      else if (count >= 5 && count < 8) nearCompleteSets.push({ setId, count, needed: 8 - count, bonus: '8p', tier });
+      else if (count >= 5 && count < 8 && ALL_ARTIFACT_SETS[setId]?.bonus8Desc) nearCompleteSets.push({ setId, count, needed: 8 - count, bonus: '8p', tier });
     });
     // Also check inventory for potential set completions
     const invSetCounts = {};
@@ -2881,9 +2881,10 @@ export default function ShadowColosseum() {
 
     const candidatePlans = [];
     const recSets = [...resolvedTiers.S, ...resolvedTiers.A];
-    // 8p plans
+    // 8p plans (only for sets that actually have an 8p bonus)
     for (const s of recSets) {
-      if (totalSlotCoverage[s] >= 8) candidatePlans.push([{ set: s, n: 8 }]);
+      const sDef = ALL_ARTIFACT_SETS[s];
+      if (totalSlotCoverage[s] >= 8 && sDef?.bonus8Desc) candidatePlans.push([{ set: s, n: 8 }]);
     }
     // 4p + 4p
     for (let i = 0; i < recSets.length; i++) {
@@ -8664,8 +8665,12 @@ export default function ShadowColosseum() {
                   const eqIsMilestone = (eqArt.level + 1) % 5 === 0;
                   const eqRerollCount = data.rerollCounts?.[eqArt.uid] || 0;
                   const eqRerollCoinCost = getRerollCoinCost(eqRerollCount);
+                  // Stat lock system for reroll protection
+                  const eqStatLocks = eqArt.statLocks || { main: false, subs: {} };
+                  const eqLockCount = (eqStatLocks.main ? 1 : 0) + eqArt.subs.filter(s => eqStatLocks.subs?.[s.id]).length;
+                  const eqLockAlkCost = REROLL_LOCK_COSTS[Math.min(eqLockCount, REROLL_LOCK_COSTS.length - 1)];
                   const eqCanReroll = !eqArt.locked
-                    && (data.alkahest || 0) >= REROLL_ALKAHEST_COST
+                    && (data.alkahest || 0) >= eqLockAlkCost
                     && eqCoins >= eqRerollCoinCost;
 
                   const doEqEnhance = () => {
@@ -8683,18 +8688,24 @@ export default function ShadowColosseum() {
                   const doEqReroll = async () => {
                     if (!eqCanReroll) {
                       if (eqArt.locked) beruSay("Deverrouille l'artefact d'abord avant de reroll ! Clique sur le cadenas.", 'angry');
-                      else if ((data.alkahest || 0) < REROLL_ALKAHEST_COST) beruSay("T'as pas assez d'Alkahest ! Affronte Manaya en PVE Multi pour en obtenir. Meme en perdant tu peux en gagner si tu fais assez de degats au boss !", 'thinking');
+                      else if ((data.alkahest || 0) < eqLockAlkCost) beruSay(`T'as pas assez d'Alkahest ! Il te faut ${eqLockAlkCost}${eqLockCount > 0 ? ` (${eqLockCount} stat${eqLockCount > 1 ? 's' : ''} verrouillee${eqLockCount > 1 ? 's' : ''})` : ''}. Affronte Manaya en PVE Multi pour en obtenir !`, 'thinking');
                       else if (eqCoins < eqRerollCoinCost) beruSay(`T'as pas assez de coins ! Il te faut ${fmtNum(eqRerollCoinCost)} coins pour ce reroll.`, 'angry');
                       return;
                     }
-                    if (!window.confirm(`Reroll COMPLET de cet artefact ?\n\nMain stat + Substats seront reroll.\nCout: ${REROLL_ALKAHEST_COST} Alkahest + ${fmtNum(eqRerollCoinCost)} coins\nL'artefact repassera au niveau 0 !\nIrreversible !`)) return;
+                    // Build locked stats set
+                    const lockedStats = new Set();
+                    if (eqStatLocks.main) lockedStats.add('main');
+                    eqArt.subs.forEach(s => { if (eqStatLocks.subs?.[s.id]) lockedStats.add(s.id); });
+
+                    const lockInfo = eqLockCount > 0 ? `\n${eqLockCount} stat${eqLockCount > 1 ? 's' : ''} verrouillee${eqLockCount > 1 ? 's' : ''} (protegee${eqLockCount > 1 ? 's' : ''} du reroll)` : '';
+                    if (!window.confirm(`Reroll COMPLET de cet artefact ?${lockInfo}\n\nLes stats NON verrouillees seront reroll.\nCout: ${eqLockAlkCost} Alkahest + ${fmtNum(eqRerollCoinCost)} coins\nL'artefact repassera au niveau 0 !\nIrreversible !`)) return;
                     shadowCoinManager.spendCoins(eqRerollCoinCost);
                     try {
                       const token = localStorage.getItem('builderberu_auth_token');
                       const resp = await fetch('/api/storage/reroll', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
-                        body: JSON.stringify({ artifactUid: eqArt.uid, rerollCount: eqRerollCount, fullReroll: true }),
+                        body: JSON.stringify({ artifactUid: eqArt.uid, rerollCount: eqRerollCount, fullReroll: true, lockedStats: [...lockedStats] }),
                       });
                       const result = await resp.json();
                       if (!result.success) {
@@ -8710,7 +8721,7 @@ export default function ShadowColosseum() {
                         nd.artifacts = { ...prev.artifacts, [id]: { ...prev.artifacts[id], [equipDetailSlot]: rerolled } };
                         return nd;
                       });
-                      beruSay('Artefact reroll ! Voyons ces nouvelles substats...', 'excited');
+                      beruSay(eqLockCount > 0 ? `Reroll avec ${eqLockCount} lock${eqLockCount > 1 ? 's' : ''} ! Les stats protegees sont intactes.` : 'Artefact reroll ! Voyons ces nouvelles substats...', 'excited');
                     } catch {
                       shadowCoinManager.addCoins(eqRerollCoinCost, 'reroll_refund');
                       beruSay('Erreur reseau... reessaie plus tard.', 'shocked');
@@ -8743,8 +8754,22 @@ export default function ShadowColosseum() {
                           const nextVal = eqArt.level < MAX_ARTIFACT_LEVEL ? +(eqMainDef.base + eqMainDef.perLevel * (eqArt.level + 1)).toFixed(1) : eqArt.mainValue;
                           const mainEnchant = eqArt.enchants?.main || 0;
                           const canEnchantMain = (data.alkahest || 0) >= ENCHANT_ALKAHEST_COST;
+                          const mainLocked = eqStatLocks.main;
+                          const maxLocksReached = eqLockCount >= 4 && !mainLocked;
                           return (
                             <div className="flex items-center gap-1 mb-1">
+                              <button onClick={() => {
+                                if (maxLocksReached) { beruSay('Max 4 stats verrouillees ! Deverrouille une autre stat d\'abord.', 'thinking'); return; }
+                                setData(prev => {
+                                  const arts = { ...prev.artifacts };
+                                  const art = { ...arts[id][equipDetailSlot] };
+                                  art.statLocks = { ...(art.statLocks || { main: false, subs: {} }), main: !mainLocked };
+                                  arts[id] = { ...arts[id], [equipDetailSlot]: art };
+                                  return { ...prev, artifacts: arts };
+                                });
+                              }} className={`text-[10px] ${mainLocked ? 'text-yellow-400' : maxLocksReached ? 'text-gray-700' : 'text-gray-600 hover:text-gray-400'} transition-colors`}>
+                                {mainLocked ? '\uD83D\uDD12' : '\uD83D\uDD13'}
+                              </button>
                               <div className="flex-1 text-xs font-bold">
                                 <span className="text-gray-200">{eqMainDef?.icon} {eqMainDef?.name}: +{eqArt.mainValue}</span>
                                 {mainEnchant > 0 && <span className="text-green-400 ml-1">(+{mainEnchant.toFixed(1)})</span>}
@@ -8772,8 +8797,24 @@ export default function ShadowColosseum() {
                           const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
                           const subEnchant = eqArt.enchants?.subs?.[sub.id] || 0;
                           const canEnchantSub = (data.alkahest || 0) >= ENCHANT_ALKAHEST_COST;
+                          const subLocked = eqStatLocks.subs?.[sub.id] || false;
+                          const subMaxLock = eqLockCount >= 4 && !subLocked;
                           return (
                             <div key={i} className="flex items-center gap-1 text-[10px]">
+                              <button onClick={() => {
+                                if (subMaxLock) { beruSay('Max 4 stats verrouillees !', 'thinking'); return; }
+                                setData(prev => {
+                                  const arts = { ...prev.artifacts };
+                                  const art = { ...arts[id][equipDetailSlot] };
+                                  const sl = { ...(art.statLocks || { main: false, subs: {} }) };
+                                  sl.subs = { ...(sl.subs || {}), [sub.id]: !subLocked };
+                                  art.statLocks = sl;
+                                  arts[id] = { ...arts[id], [equipDetailSlot]: art };
+                                  return { ...prev, artifacts: arts };
+                                });
+                              }} className={`text-[9px] ${subLocked ? 'text-yellow-400' : subMaxLock ? 'text-gray-700' : 'text-gray-600 hover:text-gray-400'} transition-colors`}>
+                                {subLocked ? '\uD83D\uDD12' : '\uD83D\uDD13'}
+                              </button>
                               <div className="flex-1">
                                 <span className="text-gray-400">{subDef?.name || sub.id}: +{sub.value}</span>
                                 {subEnchant > 0 && <span className="text-green-400 ml-1">(+{subEnchant.toFixed(1)})</span>}
@@ -8857,13 +8898,15 @@ export default function ShadowColosseum() {
                             eqCanReroll ? 'bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600/40' :
                             'bg-emerald-600/15 text-emerald-300/50'
                           }`}>
-                          {'\uD83C\uDFB2'} Reroll complet ({REROLL_ALKAHEST_COST}{'\u2697\uFE0F'} + {fmtNum(eqRerollCoinCost)}c)
+                          {'\uD83C\uDFB2'} Reroll complet ({eqLockAlkCost}{'\u2697\uFE0F'} + {fmtNum(eqRerollCoinCost)}c)
+                          {eqLockCount > 0 && <span className="ml-1 text-yellow-400">{'\uD83D\uDD12'}{eqLockCount}</span>}
                           {eqRerollCount > 0 && <span className="ml-1 text-amber-400">x{eqRerollCount + 1}</span>}
                         </button>
                         {/* Tooltip on hover */}
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2.5 py-1.5 rounded-lg bg-gray-900/95 border border-gray-600/40 text-[9px] text-gray-300 opacity-0 group-hover/eqreroll:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                          Reroll la main stat + substats (remet au Lv 0, irreversible)
-                          <br/><span className="text-emerald-400">Cout: {REROLL_ALKAHEST_COST} Alkahest + {fmtNum(eqRerollCoinCost)} coins</span>
+                          Reroll les stats NON verrouillees (remet au Lv 0, irreversible)
+                          <br/><span className="text-emerald-400">Cout: {eqLockAlkCost} Alkahest + {fmtNum(eqRerollCoinCost)} coins</span>
+                          {eqLockCount > 0 && <><br/><span className="text-yellow-400">{eqLockCount} stat{eqLockCount > 1 ? 's' : ''} protegee{eqLockCount > 1 ? 's' : ''}</span></>}
                           {eqArt.locked && <><br/><span className="text-yellow-400">Deverrouille l'artefact d'abord</span></>}
                         </div>
                         {(data.alkahest || 0) < REROLL_ALKAHEST_COST && !eqArt.locked && (
@@ -9192,9 +9235,9 @@ export default function ShadowColosseum() {
                         const allSets = [...preferredSets];
                         const plans = [];
 
-                        // Plan type: 8p (single set fills everything)
+                        // Plan type: 8p (only for sets that actually have an 8p bonus)
                         for (const s8 of allSets) {
-                          if (setSlotCoverage[s8] >= 8) {
+                          if (setSlotCoverage[s8] >= 8 && ALL_ARTIFACT_SETS[s8]?.bonus8Desc) {
                             plans.push([{ set: s8, n: 8 }]);
                           }
                         }
@@ -9279,7 +9322,7 @@ export default function ShadowColosseum() {
                             // Add set bonus value (2p, 4p, 8p = 2p+4p stacked + extra)
                             if (placed >= 2) totalScore += setBonus2Value(setId);
                             if (placed >= 4) totalScore += setBonus4Value(setId);
-                            if (placed >= 8) totalScore += 50; // 8p synergy bonus
+                            if (placed >= 8 && ALL_ARTIFACT_SETS[setId]?.bonus8Desc) totalScore += 50; // 8p synergy bonus
                           }
 
                           // Fill remaining slots with best raw artifacts
@@ -9564,8 +9607,9 @@ export default function ShadowColosseum() {
                           const sd = ALL_ARTIFACT_SETS[p.set];
                           return (
                             <div key={i} className="text-[8px] text-gray-400 mt-0.5">
-                              {sd?.icon} {p.n >= 4 ? sd?.bonus4Desc || sd?.bonus2Desc : sd?.bonus2Desc}
+                              {sd?.icon} {p.n >= 8 && sd?.bonus8Desc ? sd.bonus8Desc : p.n >= 4 ? sd?.bonus4Desc || sd?.bonus2Desc : sd?.bonus2Desc}
                               {p.n >= 4 && sd?.bonus2Desc && <span className="text-gray-500"> + {sd?.bonus2Desc}</span>}
+                              {p.n >= 8 && sd?.bonus4Desc && <span className="text-gray-500"> + {sd?.bonus4Desc}</span>}
                             </div>
                           );
                         })}
@@ -10315,22 +10359,31 @@ export default function ShadowColosseum() {
           });
         };
 
-        // Reroll logic (Alkahest system)
+        // Reroll logic (Alkahest system) with stat locks
         const rerollCount = selArt ? (data.rerollCounts?.[selArt.uid] || 0) : 0;
         const rerollCoinCost = getRerollCoinCost(rerollCount);
+        const invStatLocks = selArt?.statLocks || { main: false, subs: {} };
+        const invLockCount = selArt ? (invStatLocks.main ? 1 : 0) + selArt.subs.filter(s => invStatLocks.subs?.[s.id]).length : 0;
+        const invLockAlkCost = REROLL_LOCK_COSTS[Math.min(invLockCount, REROLL_LOCK_COSTS.length - 1)];
         const canReroll = selArt && !selArt.locked
-          && (data.alkahest || 0) >= REROLL_ALKAHEST_COST
+          && (data.alkahest || 0) >= invLockAlkCost
           && coins >= rerollCoinCost;
 
         const doReroll = async () => {
           if (!selArt) return;
           if (!canReroll) {
             if (selArt.locked) beruSay("Deverrouille l'artefact d'abord avant de reroll ! Clique sur le cadenas.", 'angry');
-            else if ((data.alkahest || 0) < REROLL_ALKAHEST_COST) beruSay("T'as pas assez d'Alkahest ! Affronte Manaya en PVE Multi pour en obtenir. Meme en perdant tu peux en gagner si tu fais assez de degats au boss !", 'thinking');
+            else if ((data.alkahest || 0) < invLockAlkCost) beruSay(`T'as pas assez d'Alkahest ! Il te faut ${invLockAlkCost}${invLockCount > 0 ? ` (${invLockCount} stat${invLockCount > 1 ? 's' : ''} verrouillee${invLockCount > 1 ? 's' : ''})` : ''}. Affronte Manaya en PVE Multi pour en obtenir !`, 'thinking');
             else if (coins < rerollCoinCost) beruSay(`T'as pas assez de coins ! Il te faut ${fmtNum(rerollCoinCost)} coins pour ce reroll.`, 'angry');
             return;
           }
-          if (!window.confirm(`Reroll COMPLET de cet artefact ?\n\nMain stat + Substats seront reroll.\nCout: ${REROLL_ALKAHEST_COST} Alkahest + ${fmtNum(rerollCoinCost)} coins\nL'artefact repassera au niveau 0 !\nIrreversible !`)) return;
+          // Build locked stats set
+          const lockedStats = new Set();
+          if (invStatLocks.main) lockedStats.add('main');
+          selArt.subs.forEach(s => { if (invStatLocks.subs?.[s.id]) lockedStats.add(s.id); });
+
+          const lockInfo = invLockCount > 0 ? `\n${invLockCount} stat${invLockCount > 1 ? 's' : ''} verrouillee${invLockCount > 1 ? 's' : ''} (protegee${invLockCount > 1 ? 's' : ''} du reroll)` : '';
+          if (!window.confirm(`Reroll COMPLET de cet artefact ?${lockInfo}\n\nLes stats NON verrouillees seront reroll.\nCout: ${invLockAlkCost} Alkahest + ${fmtNum(rerollCoinCost)} coins\nL'artefact repassera au niveau 0 !\nIrreversible !`)) return;
 
           shadowCoinManager.spendCoins(rerollCoinCost);
           try {
@@ -10338,7 +10391,7 @@ export default function ShadowColosseum() {
             const resp = await fetch('/api/storage/reroll', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' },
-              body: JSON.stringify({ artifactUid: selArt.uid, rerollCount, fullReroll: true }),
+              body: JSON.stringify({ artifactUid: selArt.uid, rerollCount, fullReroll: true, lockedStats: [...lockedStats] }),
             });
             const result = await resp.json();
             if (!result.success) {
@@ -10360,7 +10413,7 @@ export default function ShadowColosseum() {
               }
               return nd;
             });
-            beruSay('Artefact reroll ! Voyons ces nouvelles substats...', 'excited');
+            beruSay(invLockCount > 0 ? `Reroll avec ${invLockCount} lock${invLockCount > 1 ? 's' : ''} ! Les stats protegees sont intactes.` : 'Artefact reroll ! Voyons ces nouvelles substats...', 'excited');
           } catch {
             shadowCoinManager.addCoins(rerollCoinCost, 'reroll_refund');
             beruSay('Erreur reseau... reessaie plus tard.', 'shocked');
@@ -10443,6 +10496,26 @@ export default function ShadowColosseum() {
                 const canEnchantMain = (data.alkahest || 0) >= ENCHANT_ALKAHEST_COST;
                 return (
                   <div className="flex items-center gap-1 mb-1">
+                    <button
+                      onClick={() => {
+                        if (!invStatLocks.main && invLockCount >= 4) { beruSay('Max 4 stats verrouillees ! Deverrouille une autre stat.', 'angry'); return; }
+                        const updateArt = (art) => {
+                          const locks = { ...(art.statLocks || { main: false, subs: {} }) };
+                          locks.main = !locks.main;
+                          return { ...art, statLocks: locks };
+                        };
+                        if (isEquipped) {
+                          const [, cId, sId] = artSelected.split(':');
+                          setData(prev => ({ ...prev, artifacts: { ...prev.artifacts, [cId]: { ...prev.artifacts[cId], [sId]: updateArt(prev.artifacts[cId][sId]) } } }));
+                        } else {
+                          setData(prev => ({ ...prev, artifactInventory: prev.artifactInventory.map((a, idx) => idx === artSelected ? updateArt(a) : a) }));
+                        }
+                      }}
+                      className={`text-[10px] px-0.5 rounded transition-colors ${invStatLocks.main ? 'text-yellow-400' : !invStatLocks.main && invLockCount >= 4 ? 'text-gray-700 cursor-not-allowed' : 'text-gray-600 hover:text-gray-400'}`}
+                      title={invStatLocks.main ? 'Stat verrouillee (protegee du reroll)' : invLockCount >= 4 ? 'Max 4 locks' : 'Verrouiller cette stat'}
+                    >
+                      {invStatLocks.main ? '\uD83D\uDD12' : '\uD83D\uDD13'}
+                    </button>
                     <div className="flex-1 text-xs font-bold">
                       <span className="text-gray-200">{mainDef?.icon} {mainDef?.name}: +{selArt.mainValue}</span>
                       {mainEnchant > 0 && <span className="text-green-400 ml-1">(+{mainEnchant.toFixed(1)})</span>}
@@ -10476,8 +10549,29 @@ export default function ShadowColosseum() {
                 const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
                 const subEnchant = selArt.enchants?.subs?.[sub.id] || 0;
                 const canEnchantSub = (data.alkahest || 0) >= ENCHANT_ALKAHEST_COST;
+                const subLocked = invStatLocks.subs?.[sub.id] || false;
                 return (
                   <div key={i} className="flex items-center gap-1 text-[10px]">
+                    <button
+                      onClick={() => {
+                        if (!subLocked && invLockCount >= 4) { beruSay('Max 4 stats verrouillees ! Deverrouille une autre stat.', 'angry'); return; }
+                        const updateArt = (art) => {
+                          const locks = { ...(art.statLocks || { main: false, subs: {} }), subs: { ...(art.statLocks?.subs || {}) } };
+                          locks.subs[sub.id] = !subLocked;
+                          return { ...art, statLocks: locks };
+                        };
+                        if (isEquipped) {
+                          const [, cId, sId] = artSelected.split(':');
+                          setData(prev => ({ ...prev, artifacts: { ...prev.artifacts, [cId]: { ...prev.artifacts[cId], [sId]: updateArt(prev.artifacts[cId][sId]) } } }));
+                        } else {
+                          setData(prev => ({ ...prev, artifactInventory: prev.artifactInventory.map((a, idx) => idx === artSelected ? updateArt(a) : a) }));
+                        }
+                      }}
+                      className={`text-[10px] px-0.5 rounded transition-colors ${subLocked ? 'text-yellow-400' : !subLocked && invLockCount >= 4 ? 'text-gray-700 cursor-not-allowed' : 'text-gray-600 hover:text-gray-400'}`}
+                      title={subLocked ? 'Stat verrouillee (protegee du reroll)' : invLockCount >= 4 ? 'Max 4 locks' : 'Verrouiller cette stat'}
+                    >
+                      {subLocked ? '\uD83D\uDD12' : '\uD83D\uDD13'}
+                    </button>
                     <div className="flex-1">
                       <span className="text-gray-400">{subDef?.name || sub.id}: +{sub.value}</span>
                       {subEnchant > 0 && <span className="text-green-400 ml-1">(+{subEnchant.toFixed(1)})</span>}
@@ -10591,16 +10685,18 @@ export default function ShadowColosseum() {
                   canReroll ? 'bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600/40' :
                   'bg-emerald-600/15 text-emerald-300/50'
                 }`}>
-                {'\uD83C\uDFB2'} Reroll complet ({REROLL_ALKAHEST_COST}{'\u2697\uFE0F'} + {fmtNum(rerollCoinCost)}c)
+                {'\uD83C\uDFB2'} Reroll complet ({invLockAlkCost}{'\u2697\uFE0F'} + {fmtNum(rerollCoinCost)}c)
+                {invLockCount > 0 && <span className="ml-1 text-yellow-400">{'\uD83D\uDD12'}{invLockCount}</span>}
                 {rerollCount > 0 && <span className="ml-1 text-amber-400">x{rerollCount + 1}</span>}
               </button>
               {/* Tooltip on hover */}
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2.5 py-1.5 rounded-lg bg-gray-900/95 border border-gray-600/40 text-[9px] text-gray-300 opacity-0 group-hover/reroll:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                Reroll la main stat + substats (remet au Lv 0, irreversible)
-                <br/><span className="text-emerald-400">Cout: {REROLL_ALKAHEST_COST} Alkahest + {fmtNum(rerollCoinCost)} coins</span>
+                Reroll les stats NON verrouillees (remet au Lv 0, irreversible)
+                <br/><span className="text-emerald-400">Cout: {invLockAlkCost} Alkahest + {fmtNum(rerollCoinCost)} coins</span>
+                {invLockCount > 0 && <><br/><span className="text-yellow-400">{invLockCount} stat{invLockCount > 1 ? 's' : ''} protegee{invLockCount > 1 ? 's' : ''}</span></>}
                 {selArt.locked && <><br/><span className="text-yellow-400">Deverrouille l'artefact d'abord</span></>}
               </div>
-              {(data.alkahest || 0) < REROLL_ALKAHEST_COST && !selArt.locked && (
+              {(data.alkahest || 0) < invLockAlkCost && !selArt.locked && (
                 <div className="text-[8px] text-gray-500 mt-0.5 text-center">Pas assez d'Alkahest — Affronte Manaya pour en obtenir</div>
               )}
             </div>
