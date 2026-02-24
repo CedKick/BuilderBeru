@@ -37,7 +37,7 @@ import {
   trimArtifactInventory,
 } from './equipmentData';
 import { BattleStyles, RaidArena } from './BattleVFX';
-import { isLoggedIn, authHeaders } from '../../utils/auth';
+import { isLoggedIn, authHeaders, getAuthUser } from '../../utils/auth';
 import { cloudStorage } from '../../utils/CloudStorage';
 import SharedDPSGraph from './SharedBattleComponents/SharedDPSGraph';
 import SharedCombatLogs from './SharedBattleComponents/SharedCombatLogs';
@@ -90,6 +90,14 @@ export default function RaidMode() {
   const [resultData, setResultData] = useState(null);
   const [showDetailedStats, setShowDetailedStats] = useState(false);
 
+  // ─── Ranking state ──────────────────────────────────────────
+  const [showRanking, setShowRanking] = useState(false);
+  const [rankingData, setRankingData] = useState(null);
+  const [rankingLoading, setRankingLoading] = useState(false);
+  const [rankingExpandedId, setRankingExpandedId] = useState(null);
+  const [rankingDetail, setRankingDetail] = useState({});
+  const rankingCacheRef = useRef({ data: null, ts: 0 });
+
   // ─── Refs for game loop ────────────────────────────────────
   const gameLoopRef = useRef(null);
   const battleRef = useRef(null);
@@ -140,6 +148,127 @@ export default function RaidMode() {
   // ─── Save effects ──────────────────────────────────────────
   useEffect(() => { saveColoData(coloData); }, [coloData]);
   useEffect(() => { saveRaidData(raidData); }, [raidData]);
+
+  // ─── Ranking helpers ──────────────────────────────────────
+
+  const compressGzip = async (obj) => {
+    const json = JSON.stringify(obj);
+    const blob = new Blob([json]);
+    const cs = new CompressionStream('gzip');
+    const compressed = blob.stream().pipeThrough(cs);
+    const reader = new Response(compressed).arrayBuffer();
+    const buf = await reader;
+    return btoa(String.fromCharCode(...new Uint8Array(buf)));
+  };
+
+  const decompressGzip = async (b64) => {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const blob = new Blob([bytes]);
+    const ds = new DecompressionStream('gzip');
+    const decompressed = blob.stream().pipeThrough(ds);
+    const text = await new Response(decompressed).text();
+    return JSON.parse(text);
+  };
+
+  const fetchRankings = async () => {
+    const now = Date.now();
+    if (rankingCacheRef.current.data && now - rankingCacheRef.current.ts < 5 * 60 * 1000) {
+      setRankingData(rankingCacheRef.current.data);
+      setShowRanking(true);
+      return;
+    }
+    setRankingLoading(true);
+    setShowRanking(true);
+    try {
+      const resp = await fetch('/api/raid-ranking?action=rankings', {
+        headers: { ...authHeaders() },
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setRankingData(data);
+        rankingCacheRef.current = { data, ts: Date.now() };
+      }
+    } catch (e) { console.error('[ranking] fetch error:', e); }
+    setRankingLoading(false);
+  };
+
+  const fetchPlayerDetail = async (entryId) => {
+    if (rankingDetail[entryId]) return; // already cached
+    try {
+      const resp = await fetch(`/api/raid-ranking?action=player-detail&id=${entryId}`, {
+        headers: { ...authHeaders() },
+      });
+      const data = await resp.json();
+      if (data.success && data.teamDetail) {
+        const detail = await decompressGzip(data.teamDetail);
+        setRankingDetail(prev => ({ ...prev, [entryId]: detail }));
+      }
+    } catch (e) { console.error('[ranking] detail error:', e); }
+  };
+
+  const submitRaidRanking = async (rc, totalDamage, duration, dpsBreakdown) => {
+    if (!isLoggedIn() || rc < 1) return;
+    const prevBestRC = raidData.raidStats?.tierBestRC?.[6] || 0;
+    const prevBestDmg = raidData.raidStats?.tierBestDamage?.[6] || 0;
+    // Skip if not improved
+    if (rc < prevBestRC || (rc === prevBestRC && totalDamage <= prevBestDmg)) return;
+
+    try {
+      const user = getAuthUser();
+      // Build lightweight fighters for rankings list
+      const fighters = dpsBreakdown.map(d => ({ n: d.name, e: d.element, d: d.damage }));
+
+      // Build full team detail for expansion
+      const teamDetail = dpsBreakdown.map(d => {
+        const chibi = allPool[d.id];
+        if (!chibi) return { n: d.name, e: d.element, d: d.damage };
+        const lvData = coloData.chibiLevels[d.id] || { level: 1, xp: 0 };
+        const allocated = coloData.statPoints[d.id] || {};
+        const tb1 = computeTalentBonuses(coloData.talentTree[d.id] || {});
+        const tb2 = computeTalentBonuses2(coloData.talentTree2?.[d.id]);
+        const tb = mergeTalentBonuses(tb1, tb2);
+        const artBonuses = computeArtifactBonuses(coloData.artifacts?.[d.id]);
+        const wId = coloData.weapons?.[d.id];
+        const weapBonuses = computeWeaponBonuses(wId, coloData.weaponCollection?.[wId] || 0, coloData.weaponEnchants);
+        const eqB = mergeEquipBonuses(artBonuses, weapBonuses);
+        const evStars = HUNTERS[d.id] ? getHunterStars(raidData, d.id) : 0;
+        const st = statsAtFull(chibi.base, chibi.growth, lvData.level, allocated, tb, eqB, evStars, coloData.accountBonuses);
+
+        // Weapon info
+        const wData = wId && WEAPONS[wId] ? WEAPONS[wId] : null;
+        const aw = wId ? (coloData.weaponCollection?.[wId] || 0) : 0;
+
+        // Artifacts — compact
+        const arts = coloData.artifacts?.[d.id];
+        const artList = arts ? Object.entries(arts).map(([slot, a]) => ({
+          sl: slot, set: a.set, ms: a.mainStat, lv: a.level || 0, r: a.rarity,
+        })) : [];
+
+        return {
+          n: d.name, e: d.element, d: d.damage,
+          s: { hp: st.hp, atk: st.atk, def: st.def, spd: st.spd, cr: st.crit, cd: st.critDmg || 0, res: st.res, mana: st.mana || 0 },
+          w: wData ? { id: wId, aw, nm: wData.name } : null,
+          a: artList,
+        };
+      });
+
+      const compressed = await compressGzip(teamDetail);
+
+      await fetch('/api/raid-ranking?action=submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({
+          displayName: user?.username || 'Joueur',
+          rc, totalDamage: Math.floor(totalDamage), duration,
+          fighters, teamDetail: compressed,
+        }),
+      });
+      // Invalidate cache
+      rankingCacheRef.current = { data: null, ts: 0 };
+    } catch (e) { console.error('[ranking] submit error:', e); }
+  };
 
   // ─── SEO ───────────────────────────────────────────────────
   useEffect(() => {
@@ -760,6 +889,8 @@ export default function RaidMode() {
       const newRaidData = { ...raidData };
       const oldTierBestRC = { ...(newRaidData.raidStats?.tierBestRC || {}) };
       oldTierBestRC[tier] = Math.max(oldTierBestRC[tier] || 0, rc);
+      const oldTierBestDamage = { ...(newRaidData.raidStats?.tierBestDamage || {}) };
+      oldTierBestDamage[tier] = Math.max(oldTierBestDamage[tier] || 0, totalDamage);
       newRaidData.raidStats = {
         totalRC: newRC,
         bestRC: Math.max(raidData.raidStats.bestRC || 0, rc),
@@ -767,6 +898,7 @@ export default function RaidMode() {
         raidsPlayed: (raidData.raidStats.raidsPlayed || 0) + 1,
         bestTierCleared: newRaidData.raidStats?.bestTierCleared || 0,
         tierBestRC: oldTierBestRC,
+        tierBestDamage: oldTierBestDamage,
       };
       // Unlock next tier on full clear
       let tierUnlocked = null;
@@ -806,6 +938,11 @@ export default function RaidMode() {
         tier, tierData, tierUnlocked,
       });
       setPhase('result');
+
+      // Auto-submit ranking for Ultime (tier 6)
+      if (tier === 6 && rc >= 1) {
+        submitRaidRanking(rc, totalDamage, Math.floor(elapsed), dpsBreakdown);
+      }
       return;
     }
 
@@ -1734,6 +1871,13 @@ export default function RaidMode() {
     <div className="space-y-6">
       {/* Boss Preview */}
       <div className="bg-gradient-to-r from-red-900/40 to-amber-900/40 border border-red-500/30 rounded-2xl p-4 text-center relative">
+        {/* Ranking button — top left, Ultime only */}
+        {selectedTier === 6 && isLoggedIn() && (
+          <button onClick={fetchRankings}
+            className="absolute top-2 left-2 px-2 py-1 rounded-lg border border-yellow-500/40 bg-yellow-500/10 hover:bg-yellow-500/20 transition-all text-yellow-400 text-[10px] font-bold flex items-center gap-1">
+            {'\uD83C\uDFC6'} Ranking
+          </button>
+        )}
         {/* Tier badge */}
         <div className={`absolute top-2 right-2 px-2 py-1 rounded-lg border ${currentTierData.borderColor} bg-gradient-to-r ${currentTierData.bgGradient}`}>
           <span className={`text-xs font-bold ${currentTierData.nameColor}`}>Tier {selectedTier}: {currentTierData.name}</span>
@@ -2155,7 +2299,7 @@ export default function RaidMode() {
         )}
 
         {/* Actions */}
-        <div className="flex justify-center gap-3">
+        <div className="flex justify-center gap-3 flex-wrap">
           <Link to="/shadow-colosseum"
             className="px-4 py-2 rounded-lg bg-white/10 text-gray-300 hover:bg-white/20 transition-all text-sm">
             Retour au Colisee
@@ -2164,6 +2308,12 @@ export default function RaidMode() {
             className="px-6 py-2 rounded-xl font-bold bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 transition-all">
             Relancer le Raid
           </button>
+          {tier === 6 && isLoggedIn() && (
+            <button onClick={fetchRankings}
+              className="px-4 py-2 rounded-lg border border-yellow-500/40 bg-yellow-500/10 hover:bg-yellow-500/20 transition-all text-yellow-400 text-sm font-bold flex items-center gap-1">
+              {'\uD83C\uDFC6'} Ranking Mondial
+            </button>
+          )}
         </div>
 
         {/* Detailed Stats Modal */}
@@ -2314,6 +2464,143 @@ export default function RaidMode() {
           {phase === 'result' && renderResult()}
         </motion.div>
       </AnimatePresence>
+
+      {/* ═══ Ranking Modal ═══ */}
+      {showRanking && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => { setShowRanking(false); setRankingExpandedId(null); }}>
+          <div className="bg-[#0f0f1a] border-2 border-yellow-500/40 rounded-2xl p-4 max-w-xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-yellow-400 flex items-center gap-2">{'\uD83C\uDFC6'} Ranking Ultime — Ant Queen</h2>
+              <button onClick={() => { setShowRanking(false); setRankingExpandedId(null); }}
+                className="p-2 rounded-lg bg-red-600/20 border border-red-500/30 hover:bg-red-600/30 transition-all text-red-300 font-bold text-sm">{'\u2715'}</button>
+            </div>
+
+            {rankingLoading && !rankingData && (
+              <div className="text-center text-gray-400 py-8">Chargement...</div>
+            )}
+
+            {rankingData && (
+              <>
+                {/* My rank */}
+                <div className="mb-3 p-2 rounded-lg bg-white/5 border border-white/10 text-center text-sm">
+                  {(() => {
+                    const myInTop = rankingData.rankings.find(r => r.isMe);
+                    if (myInTop) return <span className="text-yellow-400">Mon rang : <b>#{myInTop.rank}</b> / {rankingData.total} joueurs — RC: {myInTop.rc} | DMG: {fmtNum(myInTop.totalDamage)}</span>;
+                    if (rankingData.myRank && rankingData.myEntry) return <span className="text-gray-400">Mon rang : <b>#{rankingData.myRank}</b> / {rankingData.total} — RC: {rankingData.myEntry.rc} | DMG: {fmtNum(rankingData.myEntry.totalDamage)}</span>;
+                    return <span className="text-gray-500">Pas encore classe — Fais un Raid Ultime !</span>;
+                  })()}
+                </div>
+
+                {/* Top 50 */}
+                <div className="space-y-1">
+                  {rankingData.rankings.map(r => {
+                    const isExpanded = rankingExpandedId === r.entryId;
+                    const medal = r.rank === 1 ? '\uD83E\uDD47' : r.rank === 2 ? '\uD83E\uDD48' : r.rank === 3 ? '\uD83E\uDD49' : null;
+                    return (
+                      <div key={r.entryId}>
+                        <button onClick={() => setRankingExpandedId(isExpanded ? null : r.entryId)}
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-left ${
+                            r.isMe ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10'
+                          }`}>
+                          <span className="w-8 text-center text-xs font-bold text-gray-400">{medal || `#${r.rank}`}</span>
+                          <span className={`flex-1 text-sm font-bold truncate ${r.isMe ? 'text-yellow-400' : 'text-white'}`}>
+                            {r.displayName} {r.isMe && <span className="text-[9px] bg-yellow-500/20 px-1 rounded text-yellow-300">MOI</span>}
+                          </span>
+                          <span className="text-orange-400 text-xs font-bold">RC {r.rc}</span>
+                          <span className="text-blue-400 text-[10px]">{fmtNum(r.totalDamage)}</span>
+                          <span className="text-gray-500 text-[10px]">{isExpanded ? '\u25B2' : '\u25BC'}</span>
+                        </button>
+
+                        {/* Expanded: fighters breakdown */}
+                        {isExpanded && (
+                          <div className="ml-8 mr-2 mt-1 mb-2 p-2 rounded-lg bg-black/30 border border-white/5 space-y-1">
+                            {r.fighters.map((f, i) => {
+                              const maxDmg = Math.max(...r.fighters.map(x => x.d || 0), 1);
+                              const pct = ((f.d || 0) / (r.totalDamage || 1) * 100).toFixed(1);
+                              return (
+                                <div key={i} className="flex items-center gap-2">
+                                  <span className="text-[10px] text-gray-500 w-3">#{i + 1}</span>
+                                  <span className={`text-[10px] w-14 truncate ${ELEMENTS[f.e]?.color || 'text-gray-400'}`}>{f.n}</span>
+                                  <div className="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+                                    <div className={`h-full rounded-full ${ELEMENTS[f.e]?.bg?.replace('/20', '') || 'bg-purple-500'}`}
+                                      style={{ width: `${(f.d || 0) / maxDmg * 100}%` }} />
+                                  </div>
+                                  <span className="text-[9px] text-gray-400 w-16 text-right">{fmtNum(f.d || 0)}</span>
+                                  <span className="text-[9px] text-gray-500 w-10 text-right">{pct}%</span>
+                                </div>
+                              );
+                            })}
+
+                            {/* Voir equip button */}
+                            <div className="flex justify-center mt-2">
+                              <button onClick={() => fetchPlayerDetail(r.entryId)}
+                                className="px-3 py-1 rounded-lg bg-purple-500/15 border border-purple-500/30 text-purple-300 text-[10px] font-bold hover:bg-purple-500/25 transition-all">
+                                {rankingDetail[r.entryId] ? '\u2705 Equip ci-dessous' : '\uD83D\uDD0D Voir equip'}
+                              </button>
+                            </div>
+
+                            {/* Team detail (stats, weapon, artifacts) */}
+                            {rankingDetail[r.entryId] && (
+                              <div className="mt-2 space-y-2">
+                                {rankingDetail[r.entryId].map((p, pi) => (
+                                  <div key={pi} className="p-2 rounded-lg bg-white/5 border border-white/10">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className={`text-xs font-bold ${ELEMENTS[p.e]?.color || ''}`}>{ELEMENTS[p.e]?.icon || ''} {p.n}</span>
+                                      <span className="text-[9px] text-gray-500">{fmtNum(p.d)} dmg</span>
+                                    </div>
+                                    {/* Stats grid */}
+                                    {p.s && (
+                                      <div className="grid grid-cols-4 gap-x-3 gap-y-0.5 text-[9px] mb-1">
+                                        <span className="text-gray-400">HP <span className="text-white font-bold">{fmtNum(p.s.hp)}</span></span>
+                                        <span className="text-gray-400">ATK <span className="text-orange-400 font-bold">{fmtNum(p.s.atk)}</span></span>
+                                        <span className="text-gray-400">DEF <span className="text-blue-400 font-bold">{fmtNum(p.s.def)}</span></span>
+                                        <span className="text-gray-400">SPD <span className="text-green-400 font-bold">{p.s.spd}</span></span>
+                                        <span className="text-gray-400">CRIT <span className="text-yellow-400 font-bold">{p.s.cr}%</span></span>
+                                        <span className="text-gray-400">CDMG <span className="text-red-400 font-bold">{p.s.cd}%</span></span>
+                                        <span className="text-gray-400">RES <span className="text-purple-400 font-bold">{p.s.res}</span></span>
+                                        <span className="text-gray-400">MANA <span className="text-cyan-400 font-bold">{p.s.mana}</span></span>
+                                      </div>
+                                    )}
+                                    {/* Weapon */}
+                                    {p.w && (
+                                      <div className="text-[9px] text-gray-400 mb-1">
+                                        {'\u2694\uFE0F'} <span className="text-white font-bold">{p.w.nm}</span> <span className="text-yellow-400">A{p.w.aw}</span>
+                                      </div>
+                                    )}
+                                    {/* Artifacts */}
+                                    {p.a && p.a.length > 0 && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {p.a.map((art, ai) => {
+                                          const setInfo = RAID_ARTIFACT_SETS[art.set] || ULTIME_ARTIFACT_SETS[art.set];
+                                          const rarColor = art.r === 'mythique' ? 'text-red-400' : art.r === 'legendaire' ? 'text-yellow-400' : 'text-blue-400';
+                                          return (
+                                            <div key={ai} className="px-1.5 py-0.5 rounded bg-black/30 border border-white/5 text-[8px]">
+                                              <span>{setInfo?.icon || '?'}</span> <span className="text-gray-400">{art.sl}</span> <span className={rarColor}>+{art.lv}</span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {rankingData.total > 50 && (
+                  <div className="text-center text-[10px] text-gray-500 mt-2">Top 50 affiche sur {rankingData.total} joueurs</div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

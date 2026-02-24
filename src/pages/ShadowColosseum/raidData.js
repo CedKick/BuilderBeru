@@ -963,7 +963,7 @@ export const RAID_SAVE_KEY = 'shadow_colosseum_raid';
 
 export const defaultRaidData = () => ({
   hunterCollection: [],
-  raidStats: { totalRC: 0, bestRC: 0, totalDamage: 0, raidsPlayed: 0, bestTierCleared: 0, tierBestRC: {} },
+  raidStats: { totalRC: 0, bestRC: 0, totalDamage: 0, raidsPlayed: 0, bestTierCleared: 0, tierBestRC: {}, tierBestDamage: {} },
   weeklyBoss: {},
   lastTeam: [],
   unlockedTier: 1,
@@ -982,6 +982,7 @@ export const loadRaidData = () => {
     if (!raw.currentTier) raw.currentTier = 1;
     if (!raw.raidStats.bestTierCleared && raw.raidStats.bestTierCleared !== 0) raw.raidStats.bestTierCleared = 0;
     if (!raw.raidStats.tierBestRC) raw.raidStats.tierBestRC = {};
+    if (!raw.raidStats.tierBestDamage) raw.raidStats.tierBestDamage = {};
     localStorage.setItem(RAID_SAVE_KEY, JSON.stringify(raw));
     return raw;
   } catch {
