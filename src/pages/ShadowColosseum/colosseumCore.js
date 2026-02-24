@@ -71,7 +71,15 @@ export const getBaseMana = (base) => base.mana || Math.floor(50 + base.hp / 4 + 
 export const BASE_MANA_REGEN = 8;
 export const getSkillManaCost = (skill) => {
   if (skill.manaCost !== undefined) return skill.manaCost;
-  if (!skill.power || skill.cdMax === 0) return 0;
+  if (skill.cdMax === 0) return 0; // Basic attacks always free
+  // Heal skills: expensive mana cost based on heal %
+  const healValue = (skill.healSelf || 0) + (skill.healAlly || 0);
+  if (healValue > 0) return Math.floor(15 + healValue * 1.5 + skill.cdMax * 4);
+  // Pure buff skills (no damage): moderate mana cost
+  const buffValue = (skill.buffAtk || 0) + (skill.buffDef || 0) + (skill.buffSpd || 0)
+                  + (skill.buffAllyAtk || 0) + (skill.buffAllyDef || 0);
+  if (!skill.power && buffValue > 0) return Math.floor(10 + buffValue * 0.3 + skill.cdMax * 3);
+  if (!skill.power) return 0;
   return Math.floor(5 + skill.power / 15 + skill.cdMax * 3);
 };
 // Mana-scaled power with diminishing returns (sqrt curve)

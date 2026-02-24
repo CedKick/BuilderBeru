@@ -6,7 +6,7 @@ import { WEAPONS, WEAPON_AWAKENING_PASSIVES, MAX_WEAPON_AWAKENING, getWeaponAwak
   ARTIFACT_SETS, RAID_ARTIFACT_SETS, ARC2_ARTIFACT_SETS, ULTIME_ARTIFACT_SETS, ALL_ARTIFACT_SETS,
   ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL, RARITY_SUB_COUNT,
 } from '../ShadowColosseum/equipmentData';
-import { CHIBIS, SPRITES, ELEMENTS, RARITY, STAT_META } from '../ShadowColosseum/colosseumCore';
+import { CHIBIS, SPRITES, ELEMENTS, RARITY, STAT_META, getSkillManaCost } from '../ShadowColosseum/colosseumCore';
 import { HUNTERS, HUNTER_PASSIVE_EFFECTS, getHunterStars } from '../ShadowColosseum/raidData';
 
 // ═══════════════════════════════════════════════════════════════
@@ -83,6 +83,40 @@ const PASSIVE_TYPE_LABELS = {
   vsBoss: 'vs Boss', vsLowHp: 'vs PV Bas', vsDebuffed: 'vs Debuff', defIgnore: 'Ignore DEF',
   aoeDmg: 'AOE', dotDmg: 'DOT', teamDef: 'Equipe DEF', buffBonus: 'Buff+',
   skillCd: 'Reduc CD', debuffBonus: 'Debuff+', teamAura: 'Aura Equipe',
+};
+
+const SKILL_SCOPE_CONFIG = {
+  offensive:  { label: 'Offensif',     icon: '\u2694\uFE0F', border: 'border-red-500/40',    bg: 'bg-red-500/10',    text: 'text-red-400' },
+  buffSelf:   { label: 'Buff Self',    icon: '\uD83D\uDEE1\uFE0F', border: 'border-blue-500/40',   bg: 'bg-blue-500/10',   text: 'text-blue-400' },
+  buffTeam:   { label: 'Buff Equipe',  icon: '\uD83D\uDC65', border: 'border-violet-500/40', bg: 'bg-violet-500/10', text: 'text-violet-400' },
+  healSelf:   { label: 'Soin Self',    icon: '\uD83D\uDC9A', border: 'border-green-500/40',  bg: 'bg-green-500/10',  text: 'text-green-400' },
+  healTeam:   { label: 'Soin Equipe',  icon: '\uD83D\uDC9A', border: 'border-teal-500/40',   bg: 'bg-teal-500/10',   text: 'text-teal-400' },
+  debuff:     { label: 'Debuff',       icon: '\uD83D\uDD3B', border: 'border-orange-500/40', bg: 'bg-orange-500/10', text: 'text-orange-400' },
+  dot:        { label: 'DOT',          icon: '\u2620\uFE0F', border: 'border-lime-500/40',   bg: 'bg-lime-500/10',   text: 'text-lime-400' },
+  special:    { label: 'Special',      icon: '\u26A1',       border: 'border-yellow-500/40', bg: 'bg-yellow-500/10', text: 'text-yellow-400' },
+};
+
+function getSkillScopes(sk) {
+  const scopes = [];
+  if (sk.power > 0) scopes.push('offensive');
+  if (sk.buffAllyAtk || sk.buffAllyDef) scopes.push('buffTeam');
+  else if (sk.buffAtk || sk.buffDef || sk.buffSpd) scopes.push('buffSelf');
+  if (sk.healAlly) scopes.push('healTeam');
+  if (sk.healSelf) scopes.push('healSelf');
+  if (sk.debuffDef || sk.debuffAtk || sk.debuffSpd || sk.antiHeal) scopes.push('debuff');
+  if (sk.poison) scopes.push('dot');
+  if (sk.grantExtraTurn || sk.selfDamage || sk.selfStunTurns || sk.consumeHalfMana) scopes.push('special');
+  return scopes;
+}
+
+const PASSIVE_SCOPE_MAP = {
+  teamDef: 'team', teamAura: 'team', healBonus: 'team',
+  vsBoss: 'boss', vsLowHp: 'boss', vsDebuffed: 'boss', defIgnore: 'boss', aoeDmg: 'boss', dotDmg: 'boss',
+};
+const PASSIVE_SCOPE_CONFIG = {
+  self: { label: 'Self', icon: '\uD83D\uDEE1\uFE0F', border: 'border-blue-500/30', bg: 'bg-blue-500/10', text: 'text-blue-400' },
+  team: { label: 'Equipe', icon: '\uD83D\uDC65', border: 'border-violet-500/30', bg: 'bg-violet-500/10', text: 'text-violet-400' },
+  boss: { label: 'vs Boss', icon: '\u2694\uFE0F', border: 'border-red-500/30', bg: 'bg-red-500/10', text: 'text-red-400' },
 };
 
 function computeWeaponILevel(weapon, awakening) {
@@ -485,42 +519,83 @@ export default function Codex() {
                         {/* Skills */}
                         <div className="mb-4">
                           <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Skills</div>
-                          <div className="space-y-1.5">
-                            {(f.skills || []).map((sk, i) => (
-                              <div key={i} className={`p-2.5 rounded-lg border ${
-                                i === 0 ? 'bg-gray-800/30 border-gray-700/20' :
-                                i === 1 ? 'bg-blue-500/5 border-blue-500/20' :
-                                'bg-purple-500/5 border-purple-500/20'
-                              }`}>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-bold text-white">{sk.name}</span>
-                                  <div className="flex items-center gap-2">
-                                    {sk.power > 0 && <span className="text-[10px] text-orange-400 font-bold">POW {sk.power}</span>}
-                                    <span className="text-[10px] text-gray-500">CD {sk.cdMax || 0}</span>
+                          <div className="space-y-2">
+                            {(f.skills || []).map((sk, i) => {
+                              const scopes = getSkillScopes(sk);
+                              const mainScope = scopes[0] ? SKILL_SCOPE_CONFIG[scopes[0]] : null;
+                              const manaCost = getSkillManaCost(sk);
+                              return (
+                                <div key={i} className={`p-2.5 rounded-lg border ${
+                                  mainScope ? `${mainScope.bg} ${mainScope.border}` :
+                                  'bg-gray-800/30 border-gray-700/20'
+                                }`}>
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-[11px] font-bold text-white">{sk.name}</span>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      {sk.power > 0 && <span className="text-[10px] text-orange-400 font-bold">POW {sk.power}</span>}
+                                      <span className="text-[10px] text-gray-500">CD {sk.cdMax || 0}</span>
+                                      {manaCost > 0 && <span className="text-[10px] text-indigo-400">{'\uD83D\uDD2E'}{manaCost}</span>}
+                                    </div>
+                                  </div>
+                                  {/* Scope badges */}
+                                  <div className="flex flex-wrap gap-1 mt-1.5">
+                                    {scopes.map(scope => {
+                                      const cfg = SKILL_SCOPE_CONFIG[scope];
+                                      return (
+                                        <span key={scope} className={`text-[8px] px-1.5 py-0.5 rounded-full border font-bold uppercase ${cfg.border} ${cfg.bg} ${cfg.text}`}>
+                                          {cfg.icon} {cfg.label}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                  {sk.desc && <div className="text-[10px] text-gray-500 mt-1">{sk.desc}</div>}
+                                  {/* Effect details */}
+                                  <div className="flex flex-wrap gap-1.5 mt-1">
+                                    {sk.buffAtk && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/15 text-green-400">ATK +{sk.buffAtk}% ({sk.buffDur}t)</span>}
+                                    {sk.buffDef && <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400">DEF +{sk.buffDef}% ({sk.buffDur}t)</span>}
+                                    {sk.buffSpd && <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-400">SPD +{sk.buffSpd}% ({sk.buffDur}t)</span>}
+                                    {sk.buffAllyAtk && <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-400">ATK Equipe +{sk.buffAllyAtk}% ({sk.buffDur}t)</span>}
+                                    {sk.buffAllyDef && <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-400">DEF Equipe +{sk.buffAllyDef}% ({sk.buffDur}t)</span>}
+                                    {sk.debuffDef && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/15 text-red-400">DEF ennemi -{sk.debuffDef}% ({sk.debuffDur}t)</span>}
+                                    {sk.debuffAtk && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/15 text-red-400">ATK ennemi -{sk.debuffAtk}% ({sk.debuffDur}t)</span>}
+                                    {sk.debuffSpd && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/15 text-red-400">SPD ennemi -{sk.debuffSpd}% ({sk.debuffDur}t)</span>}
+                                    {sk.healSelf && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/15 text-green-400">Soin {sk.healSelf}% PV max</span>}
+                                    {sk.healAlly && <span className="text-[9px] px-1.5 py-0.5 rounded bg-teal-500/15 text-teal-400">Soin allie {sk.healAlly}% PV max</span>}
+                                    {sk.poison && <span className="text-[9px] px-1.5 py-0.5 rounded bg-lime-500/15 text-lime-400">Poison {sk.poison}/t ({sk.poisonDur}t)</span>}
+                                    {sk.antiHeal && <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-400">Anti-Soin ({sk.antiHealDur}t)</span>}
+                                    {sk.selfDamage && <span className="text-[9px] px-1.5 py-0.5 rounded bg-yellow-500/15 text-yellow-400">Auto-DMG {sk.selfDamage}%</span>}
+                                    {sk.selfStunTurns && <span className="text-[9px] px-1.5 py-0.5 rounded bg-yellow-500/15 text-yellow-400">Auto-Stun {sk.selfStunTurns}t</span>}
+                                    {sk.grantExtraTurn && <span className="text-[9px] px-1.5 py-0.5 rounded bg-yellow-500/15 text-yellow-400">Tour bonus</span>}
+                                    {sk.manaRestore && <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-400">+{sk.manaRestore} Mana</span>}
+                                    {sk.consumeHalfMana && <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-400">Consume 50% Mana</span>}
                                   </div>
                                 </div>
-                                {sk.desc && <div className="text-[10px] text-gray-500 mt-0.5">{sk.desc}</div>}
-                                <div className="flex flex-wrap gap-1.5 mt-1">
-                                  {sk.buffAtk && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/15 text-green-400">ATK +{sk.buffAtk}% ({sk.buffDur}t)</span>}
-                                  {sk.buffDef && <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400">DEF +{sk.buffDef}% ({sk.buffDur}t)</span>}
-                                  {sk.debuffDef && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/15 text-red-400">DEF ennemi -{sk.debuffDef}% ({sk.debuffDur}t)</span>}
-                                  {sk.healSelf && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/15 text-green-400">Soin {sk.healSelf}% PV max</span>}
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
 
                         {/* Hunter Passive */}
-                        {f.type === 'hunter' && passive && f.passiveDesc && (
-                          <div className="mb-4">
-                            <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Passif</div>
-                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-medium ${PASSIVE_TYPE_COLORS[passive.type] || 'bg-gray-800/50 text-gray-300'}`}>
-                              <span className="font-bold uppercase text-[8px] opacity-70 px-1 py-0.5 rounded bg-black/20">{PASSIVE_TYPE_LABELS[passive.type] || passive.type}</span>
-                              <span>{f.passiveDesc}</span>
+                        {f.type === 'hunter' && passive && f.passiveDesc && (() => {
+                          const passiveScope = PASSIVE_SCOPE_MAP[passive.type] || 'self';
+                          const psCfg = PASSIVE_SCOPE_CONFIG[passiveScope];
+                          return (
+                            <div className="mb-4">
+                              <div className="text-[10px] text-gray-500 font-bold uppercase mb-2">Passif</div>
+                              <div className={`p-2.5 rounded-lg border ${psCfg.border} ${psCfg.bg}`}>
+                                <div className="flex items-center gap-2 mb-1.5">
+                                  <span className={`font-bold uppercase text-[8px] px-1.5 py-0.5 rounded-full border ${PASSIVE_TYPE_COLORS[passive.type] || 'bg-gray-800/50 text-gray-300'}`}>
+                                    {PASSIVE_TYPE_LABELS[passive.type] || passive.type}
+                                  </span>
+                                  <span className={`text-[8px] px-1.5 py-0.5 rounded-full border font-bold uppercase ${psCfg.border} ${psCfg.text}`}>
+                                    {psCfg.icon} {psCfg.label}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-gray-300">{f.passiveDesc}</div>
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          );
+                        })()}
 
                         {/* Eveil Breakdown (Hunters) */}
                         {f.type === 'hunter' && evStars > 0 && (
