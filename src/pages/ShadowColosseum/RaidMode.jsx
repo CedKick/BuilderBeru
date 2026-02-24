@@ -68,7 +68,7 @@ export default function RaidMode() {
   const [phase, setPhase] = useState('setup'); // setup | battle | result
   const [coloData, setColoData] = useState(loadColoData);
   const [raidData, setRaidData] = useState(loadRaidData);
-  const [bossId] = useState('ant_queen');
+  const [bossId, setBossId] = useState('ant_queen');
   const [selectedTier, setSelectedTier] = useState(raidData.currentTier || 1);
 
   // ─── Setup state ───────────────────────────────────────────
@@ -690,7 +690,9 @@ export default function RaidMode() {
       const rc = barsDestroyed * tierData.rcPerBar;
       const isFullClear = !state.boss.infiniteBars && barsDestroyed >= state.boss.totalBars;
       const totalDamage = Object.values(dpsTracker.current).reduce((s, v) => s + v, 0);
-      const rewards = computeRaidRewards(rc, isFullClear, tierData);
+      const rawRewards = computeRaidRewards(rc, isFullClear, tierData);
+      const bossLootMult = boss.lootMult || 1;
+      const rewards = { ...rawRewards, coins: Math.floor(rawRewards.coins * bossLootMult), xpPerChibi: Math.floor(rawRewards.xpPerChibi * bossLootMult) };
       const endReason = remaining <= 0 ? 'timeout' : aliveCount === 0 ? 'wipe' : 'clear';
 
       // DPS breakdown
@@ -729,7 +731,7 @@ export default function RaidMode() {
 
       // Random hunter drop — scales with RC and tier (minimum 3 RC for any loot)
       const tierDropMult = [0, 1, 1.5, 2, 3, 4, 5][tier] || 1;
-      const dropChance = Math.min(0.6, rc * 0.03 * tierDropMult);
+      const dropChance = Math.min(0.6, rc * 0.03 * tierDropMult * (boss.lootMult || 1));
       if (rc >= 3 && Math.random() < dropChance) {
         // Pick rarity based on tier
         const rarityRoll = Math.random();
@@ -781,32 +783,35 @@ export default function RaidMode() {
         }).catch(() => {});
       }
 
+      // Loot multiplier (Manticore = 1.5x)
+      const lootMult = boss.lootMult || 1;
+
       // Hammer drops — tier-aware (minimum 3 RC for any loot)
       const hammerDrops = {};
-      const hammerCount = rc >= 3 ? Math.floor(tierData.hammerCountBase + rc * tierData.hammerCountPerRC + (isFullClear ? 2 : 0)) : 0;
+      const hammerCount = rc >= 3 ? Math.floor((tierData.hammerCountBase + rc * tierData.hammerCountPerRC + (isFullClear ? 2 : 0)) * lootMult) : 0;
       for (let i = 0; i < hammerCount; i++) {
         const hId = tierData.hammerTiers[Math.floor(Math.random() * tierData.hammerTiers.length)];
         hammerDrops[hId] = (hammerDrops[hId] || 0) + 1;
       }
 
-      // Raid artifact drops — tier-aware (rates /5 — inventory cap active)
+      // Raid artifact drops — tier-aware, scaled by lootMult
       const raidArtifactDrops = [];
+      const artChance = 0.2 * lootMult;
       if (tier === 6) {
-        // Ultime mode: RC-scaled artifact drops — 20% chance each (was 100%)
-        if (rc >= 3 && Math.random() < 0.2) raidArtifactDrops.push(generateUltimeArtifact(rc));
-        if (rc >= 8 && Math.random() < 0.2) raidArtifactDrops.push(generateUltimeArtifact(rc));
-        if (rc >= 15 && Math.random() < 0.2) raidArtifactDrops.push(generateUltimeArtifact(rc));
-        if (rc >= 25 && Math.random() < 0.2) raidArtifactDrops.push(generateUltimeArtifact(rc));
+        if (rc >= 3 && Math.random() < artChance) raidArtifactDrops.push(generateUltimeArtifact(rc));
+        if (rc >= 8 && Math.random() < artChance) raidArtifactDrops.push(generateUltimeArtifact(rc));
+        if (rc >= 15 && Math.random() < artChance) raidArtifactDrops.push(generateUltimeArtifact(rc));
+        if (rc >= 25 && Math.random() < artChance) raidArtifactDrops.push(generateUltimeArtifact(rc));
       } else {
-        if (rc >= tierData.artifactDrop1.rcMin && Math.random() < 0.2) {
+        if (rc >= tierData.artifactDrop1.rcMin && Math.random() < artChance) {
           const rarity1 = getTierArtifactRarity(tierData.artifactDrop1, rc);
           raidArtifactDrops.push(generateRaidArtifactFromTier(rarity1, tier));
         }
-        if (tierData.artifactDrop2 && rc >= tierData.artifactDrop2.rcMin && Math.random() < 0.2) {
+        if (tierData.artifactDrop2 && rc >= tierData.artifactDrop2.rcMin && Math.random() < artChance) {
           const rarity2 = getTierArtifactRarity(tierData.artifactDrop2, rc);
           raidArtifactDrops.push(generateRaidArtifactFromTier(rarity2, tier));
         }
-        if (isFullClear && Math.random() < 0.2) {
+        if (isFullClear && Math.random() < artChance) {
           raidArtifactDrops.push(generateRaidArtifactFromTier(tierData.artifactDropFullClear, tier));
         }
       }
@@ -827,9 +832,9 @@ export default function RaidMode() {
         }
       }
 
-      // Alkahest drops — tier-based rolls (5% chance each)
+      // Alkahest drops — tier-based rolls (5% chance each), scaled by lootMult
       const ALKAHEST_ROLLS_BY_TIER = { 1: 10, 2: 15, 3: 20, 4: 30, 5: 40, 6: 50 };
-      const alkRolls = ALKAHEST_ROLLS_BY_TIER[tier] || 10;
+      const alkRolls = Math.floor((ALKAHEST_ROLLS_BY_TIER[tier] || 10) * lootMult);
       let alkahestDropped = 0;
       if (rc >= 3) {
         for (let i = 0; i < alkRolls; i++) {
@@ -936,8 +941,8 @@ export default function RaidMode() {
       });
       setPhase('result');
 
-      // Auto-submit ranking for Ultime (tier 6)
-      if (tier === 6 && rc >= 1) {
+      // Auto-submit ranking for Ant Queen Ultime (tier 6) only
+      if (tier === 6 && rc >= 1 && bossId === 'ant_queen') {
         submitRaidRanking(rc, totalDamage, Math.floor(elapsed), dpsBreakdown);
       }
       return;
@@ -1683,6 +1688,30 @@ export default function RaidMode() {
           return dmg;
         };
 
+        // ─── Intelligent target selection (Manticore) ──────────
+        const pickSmartTarget = (candidates) => {
+          if (!boss.targeting || boss.targeting !== 'intelligent' || candidates.length <= 1) {
+            return candidates[Math.floor(Math.random() * candidates.length)];
+          }
+          const roll = Math.random();
+          // 60% — target highest DPS
+          if (roll < 0.60) {
+            const sorted = [...candidates].sort((a, b) => (dpsTracker.current[b.id] || 0) - (dpsTracker.current[a.id] || 0));
+            const top = sorted[0];
+            // If top DPS has very high DEF (>50% of boss ATK), 40% chance switch to #2
+            if (sorted.length > 1 && top.def > state.boss.atk * 0.5 && Math.random() < 0.4) return sorted[1];
+            return top;
+          }
+          // 20% — target support/healer
+          if (roll < 0.80) {
+            const supports = candidates.filter(c => c.class === 'support' || c.isMage);
+            if (supports.length > 0) return supports[Math.floor(Math.random() * supports.length)];
+          }
+          // 20% — target lowest HP (finish off)
+          const byHp = [...candidates].sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+          return byHp[0];
+        };
+
         if (bossSkill.target === 'aoe') {
           alive.forEach(target => applyBossDmgToTarget(target, bossSkill));
           logEntries.push({ text: `${state.boss.name} utilise ${bossSkill.name} ! AoE sur toute l'equipe !`, time: elapsed, type: 'boss' });
@@ -1692,13 +1721,13 @@ export default function RaidMode() {
           for (let i = 0; i < hits; i++) {
             const aliveNow = state.chibis.filter(c => c.alive);
             if (aliveNow.length === 0) break;
-            const target = aliveNow[Math.floor(Math.random() * aliveNow.length)];
+            const target = pickSmartTarget(aliveNow);
             applyBossDmgToTarget(target, bossSkill);
           }
           logEntries.push({ text: `${state.boss.name} utilise ${bossSkill.name} ! ${bossSkill.hits || 3} frappes !`, time: elapsed, type: 'boss' });
           vfxEvents.push({ id: now + Math.random() + 0.4, type: 'boss_aoe', timestamp: now });
         } else {
-          const target = alive[Math.floor(Math.random() * alive.length)];
+          const target = pickSmartTarget(alive);
           const dmg = applyBossDmgToTarget(target, bossSkill);
 
           // Boss element advantage
@@ -2407,11 +2436,27 @@ export default function RaidMode() {
   return (
     <div className="min-h-screen bg-[#0f0f1a] text-white p-4 max-w-2xl mx-auto">
       <BattleStyles />
-      {/* Title */}
+      {/* Title + Boss Selector */}
       <div className="text-center mb-4">
         <h1 className="text-2xl font-bold bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
           {boss.emoji} Mode Raid
         </h1>
+        {phase === 'setup' && (
+          <div className="flex justify-center gap-2 mt-2">
+            {Object.entries(RAID_BOSSES).map(([id, b]) => (
+              <button key={id} onClick={() => setBossId(id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 transition-all text-sm font-bold ${
+                  bossId === id
+                    ? 'border-red-500/60 bg-red-500/15 text-white scale-105'
+                    : 'border-white/15 bg-white/5 text-gray-400 hover:border-white/30 hover:text-gray-200'
+                }`}>
+                <span>{b.emoji}</span>
+                <span>{b.name}</span>
+                {id === 'manticore' && <span className="text-[8px] bg-red-500/30 text-red-300 px-1 rounded ml-1">NEW</span>}
+              </button>
+            ))}
+          </div>
+        )}
         <p className="text-xs text-gray-500 mt-1">
           {phase === 'setup' ? 'Compose ton equipe de 6 combattants' :
            phase === 'battle' ? 'Combat en cours...' : 'Resultats du raid'}

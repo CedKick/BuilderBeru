@@ -757,6 +757,32 @@ export const RAID_BOSSES = {
       { barsRemaining: 3, name: 'Berserk', atkMult: 1.6, spdMult: 1.5 },
     ],
   },
+
+  manticore: {
+    id: 'manticore',
+    name: 'Manticore',
+    element: 'fire',
+    emoji: '\uD83E\uDD81',
+    sprite: 'https://res.cloudinary.com/dbg7m8qjd/image/upload/v1771896639/Manticore_pi7a3e.png',
+    totalBars: 10,
+    baseHP: 250000,
+    barScaling: (i) => 250000 * (1 + 0.35 * i),
+    stats: { atk: 400, def: 200, spd: 35, crit: 25, res: 20 },
+    targeting: 'intelligent',
+    lootMult: 1.5,
+    skills: [
+      { name: 'Griffe Infernale', power: 180, cdSec: 0, target: 'single' },
+      { name: 'Souffle de Feu', power: 120, cdSec: 6, target: 'aoe' },
+      { name: 'Queue Venimeuse', power: 250, cdSec: 10, target: 'single' },
+      { name: 'Rugissement', power: 80, cdSec: 12, target: 'aoe', buffAtk: 35 },
+      { name: 'Charge Devastatrice', power: 350, cdSec: 18, target: 'single' },
+    ],
+    phases: [
+      { barsRemaining: 10, name: 'Traque', atkMult: 1.0, spdMult: 1.0 },
+      { barsRemaining: 6, name: 'Furie', atkMult: 1.4, spdMult: 1.3 },
+      { barsRemaining: 3, name: 'Carnage', atkMult: 1.8, spdMult: 1.6 },
+    ],
+  },
 };
 
 // ─── Raid Tier System ────────────────────────────────────────
