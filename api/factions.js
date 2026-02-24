@@ -74,6 +74,8 @@ export default async function handler(req, res) {
       case 'weekly-stats': return await handleWeeklyStats(req, res);
       case 'change-faction': return await handleChangeFaction(req, res);
       case 'activity-reward': return await handleActivityReward(req, res);
+      case 'heartbeat': return await handleHeartbeat(req, res);
+      case 'faction-members': return await handleFactionMembers(req, res);
       default:
         return res.status(400).json({ success: false, message: 'Invalid action' });
     }
@@ -132,6 +134,9 @@ async function handleInit(req, res) {
       );
     }
   }
+
+  // Migration: add last_activity column
+  await query(`ALTER TABLE player_factions ADD COLUMN IF NOT EXISTS last_activity TIMESTAMPTZ DEFAULT NOW()`);
 
   return res.json({ success: true, message: 'Faction tables created' });
 }
@@ -242,7 +247,7 @@ async function handleActivityReward(req, res) {
   const points = basePoints * batchCount;
 
   const result = await query(
-    'UPDATE player_factions SET contribution_points = contribution_points + $1 WHERE username = $2 RETURNING contribution_points, points_spent',
+    'UPDATE player_factions SET contribution_points = contribution_points + $1, last_activity = NOW() WHERE username = $2 RETURNING contribution_points, points_spent',
     [points, user.username]
   );
 
@@ -403,5 +408,64 @@ async function handleChangeFaction(req, res) {
     oldFaction: currentFaction,
     cost: FACTION_CHANGE_COST,
     message: `Vous avez rejoint ${FACTIONS[newFaction].name}!`,
+  });
+}
+
+// ─── HEARTBEAT: Lightweight activity ping ─────────────────────
+
+async function handleHeartbeat(req, res) {
+  const user = await extractUser(req);
+  if (!user) return res.status(401).json({ success: false });
+  await query('UPDATE player_factions SET last_activity = NOW() WHERE username = $1', [user.username]);
+  return res.json({ success: true });
+}
+
+// ─── FACTION MEMBERS: List members with online status ─────────
+
+async function handleFactionMembers(req, res) {
+  const user = await extractUser(req);
+  if (!user) return res.status(401).json({ success: false, message: 'Authentication required' });
+
+  // Get player's faction
+  const playerData = await query(
+    'SELECT faction FROM player_factions WHERE username = $1',
+    [user.username]
+  );
+  if (playerData.rows.length === 0) {
+    return res.status(400).json({ success: false, message: 'Not in a faction' });
+  }
+  const factionId = playerData.rows[0].faction;
+
+  // Get all members of this faction with display_name from users table
+  const members = await query(
+    `SELECT pf.username, u.display_name, pf.contribution_points, pf.last_activity
+     FROM player_factions pf
+     LEFT JOIN users u ON LOWER(u.username) = LOWER(pf.username)
+     WHERE pf.faction = $1
+     ORDER BY pf.last_activity DESC NULLS LAST
+     LIMIT 100`,
+    [factionId]
+  );
+
+  const now = Date.now();
+  const membersList = members.rows.map(m => {
+    const lastAct = m.last_activity ? new Date(m.last_activity).getTime() : 0;
+    const diffMin = (now - lastAct) / 60000;
+    let status = 'offline';
+    if (diffMin < 5) status = 'online';
+    else if (diffMin < 60) status = 'recent';
+    return {
+      username: m.username,
+      displayName: m.display_name || m.username,
+      points: m.contribution_points,
+      status,
+    };
+  });
+
+  return res.json({
+    success: true,
+    faction: factionId,
+    factionName: FACTIONS[factionId]?.name || factionId,
+    members: membersList,
   });
 }

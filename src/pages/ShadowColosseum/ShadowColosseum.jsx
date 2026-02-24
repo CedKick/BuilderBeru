@@ -42,7 +42,7 @@ import {
   MAX_WEAPON_AWAKENING, WEAPON_AWAKENING_PASSIVES, rollWeaponDrop,
   RARITY_SUB_COUNT,
   computeWeaponILevel, computeArtifactILevel, computeEquipILevel,
-  ARC2_ARTIFACT_SETS, generateArc2Artifact, generateSetArtifact,
+  ARC2_ARTIFACT_SETS, generateArc2Artifact, generateSetArtifact, ULTIME_ARTIFACT_SETS,
   ROLE_WEIGHTS, scoreArtifact, scoreToGrade, scoreAllArtifacts,
   MAX_ARTIFACT_INVENTORY, trimArtifactInventory,
   REROLL_ALKAHEST_COST, REROLL_BASE_COIN_COST, REROLL_COIN_MULTIPLIER, getRerollCoinCost, rerollArtifact,
@@ -598,6 +598,10 @@ export default function ShadowColosseum() {
   const [activeArc, setActiveArc] = useState(1); // 1 or 2 — tab switcher
   // Faction buffs (fetched from server)
   const [factionBuffs, setFactionBuffs] = useState(null); // { loot_sulfuras: 3, stats_hp: 5, ... } or null if not in faction
+  // Faction members (for online tracking)
+  const [fmMembers, setFmMembers] = useState(null);
+  const [fmLoading, setFmLoading] = useState(false);
+  const [fmFaction, setFmFaction] = useState(null);
   // Raid profile (fetched from game server for XP/level sync)
   const [raidProfileServer, setRaidProfileServer] = useState(null);
   // Raid storage (inventory, equipped, feathers, etc. from Neon DB)
@@ -615,6 +619,25 @@ export default function ShadowColosseum() {
     }
   };
   useEffect(() => { if (view !== 'arc2_story') stopStoryMusic(); }, [view]);
+
+  // Fetch faction members when entering the members view
+  useEffect(() => {
+    if (view !== 'faction_members' || !isLoggedIn()) return;
+    setFmLoading(true);
+    fetch('/api/factions?action=faction-members', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          setFmMembers(d.members);
+          setFmFaction({ id: d.faction, name: d.factionName });
+        }
+        setFmLoading(false);
+      })
+      .catch(() => setFmLoading(false));
+  }, [view]);
 
   // Beru alkahest notification when entering artifacts view with 0 alkahest
   const beruAlkahestShownRef = useRef(false);
@@ -727,6 +750,19 @@ export default function ShadowColosseum() {
   };
   // Flush faction batch on unmount (page leave / navigation)
   useEffect(() => () => flushFactionBatch(), []);
+
+  // Heartbeat — update last_activity every 2 min so faction members can see who's online
+  useEffect(() => {
+    if (!isLoggedIn()) return;
+    const id = setInterval(() => {
+      fetch('/api/factions?action=heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        keepalive: true,
+      }).catch(() => {});
+    }, 120000);
+    return () => clearInterval(id);
+  }, []);
 
   // Fetch recent legendary drops
   const lastKnownDropIdRef = useRef(0);
@@ -4902,8 +4938,8 @@ export default function ShadowColosseum() {
             <p className="text-[10px] text-gray-500 mt-0.5">Classement des meilleurs hunters Level 140 !</p>
           </Link>
 
-          {/* Codex, Shop & Artifacts Buttons */}
-          <div className="grid grid-cols-3 gap-2 mb-4">
+          {/* Codex, Shop, Artifacts & Members Buttons */}
+          <div className="grid grid-cols-4 gap-2 mb-4">
             <Link
               to="/codex"
               className="p-3 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-900/20 to-teal-900/20 hover:from-cyan-900/40 hover:to-teal-900/40 transition-all text-center group">
@@ -4944,6 +4980,15 @@ export default function ShadowColosseum() {
               <p className="text-[10px] text-gray-500 mt-0.5">
                 {data.artifactInventory.length} en inventaire
               </p>
+            </button>
+            <button
+              onClick={() => setView('faction_members')}
+              className="p-3 rounded-xl border border-blue-500/30 bg-gradient-to-r from-blue-900/20 to-cyan-900/20 hover:from-blue-900/40 hover:to-cyan-900/40 transition-all text-center group">
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="text-lg">{'\uD83D\uDC65'}</span>
+                <span className="font-bold text-blue-400 group-hover:text-blue-300 text-sm">MEMBRES</span>
+              </div>
+              <p className="text-[10px] text-gray-500 mt-0.5">Faction en ligne</p>
             </button>
           </div>
 
@@ -9514,6 +9559,75 @@ export default function ShadowColosseum() {
                         {'\uD83D\uDD34'} {boostCost} marteaux rouges — Acheter (+1h)
                       </button>
                     </div>
+
+                    {/* Alkahest Exchange — 100 red hammers → 1 alkahest */}
+                    {(() => {
+                      const alkCost = 100;
+                      const canBuyAlk = redHammers >= alkCost;
+                      const buyAlk = () => {
+                        if (!canBuyAlk) return;
+                        setData(prev => {
+                          const newH = { ...prev.hammers };
+                          newH.marteau_rouge = (newH.marteau_rouge || 0) - alkCost;
+                          return { ...prev, hammers: newH, alkahest: (prev.alkahest || 0) + 1 };
+                        });
+                      };
+                      return (
+                        <div className="mt-3 p-3 rounded-xl border border-red-500/20 bg-red-900/10 transition-all">
+                          <div className="flex items-center gap-3">
+                            <div className="text-3xl">{'\u2697\uFE0F'}</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-black text-red-300">Alkahest</div>
+                              <div className="text-[10px] text-gray-400 mt-0.5">Echange 100 marteaux rouges contre 1 Alkahest</div>
+                              <div className="text-[9px] text-gray-500 mt-0.5">Actuel : {data.alkahest || 0} alkahest</div>
+                            </div>
+                          </div>
+                          <button onClick={buyAlk} disabled={!canBuyAlk}
+                            className={`mt-2 w-full py-2 rounded-lg text-xs font-bold transition-all ${canBuyAlk
+                              ? 'bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 hover:text-red-200'
+                              : 'bg-gray-800/40 border border-gray-700/20 text-gray-600 cursor-not-allowed'}`}>
+                            {'\uD83D\uDD34'} 100 marteaux rouges — +1 Alkahest
+                          </button>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Ultimate Artifact — 1000 red hammers → 1 random ultimate set piece */}
+                    {(() => {
+                      const ultCost = 1000;
+                      const canBuyUlt = redHammers >= ultCost;
+                      const ultSetNames = Object.entries(ULTIME_ARTIFACT_SETS).map(([, v]) => v.name);
+                      const buyUlt = () => {
+                        if (!canBuyUlt) return;
+                        const ultKeys = Object.keys(ULTIME_ARTIFACT_SETS);
+                        const randomSetId = ultKeys[Math.floor(Math.random() * ultKeys.length)];
+                        const artifact = generateSetArtifact(randomSetId);
+                        setData(prev => {
+                          const newH = { ...prev.hammers };
+                          newH.marteau_rouge = (newH.marteau_rouge || 0) - ultCost;
+                          return { ...prev, hammers: newH, artifactInventory: trimArtifactInventory([...(prev.artifactInventory || []), artifact]) };
+                        });
+                      };
+                      return (
+                        <div className="mt-3 p-3 rounded-xl border border-red-500/20 bg-red-900/10 transition-all">
+                          <div className="flex items-center gap-3">
+                            <div className="text-3xl">{'\uD83C\uDF1F'}</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-black text-red-300">Artefact Ultime</div>
+                              <div className="text-[10px] text-gray-400 mt-0.5">1 piece mythique aleatoire d'un set ultime</div>
+                              <div className="text-[9px] text-gray-500 mt-0.5">{ultSetNames.join(', ')}</div>
+                            </div>
+                          </div>
+                          <button onClick={buyUlt} disabled={!canBuyUlt}
+                            className={`mt-2 w-full py-2 rounded-lg text-xs font-bold transition-all ${canBuyUlt
+                              ? 'bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 hover:text-red-200'
+                              : 'bg-gray-800/40 border border-gray-700/20 text-gray-600 cursor-not-allowed'}`}>
+                            {'\uD83D\uDD34'} 1000 marteaux rouges — 1 piece ultime
+                          </button>
+                        </div>
+                      );
+                    })()}
+
                   </div>
                 </div>
               );
@@ -9635,6 +9749,55 @@ export default function ShadowColosseum() {
                 {'\uD83D\uDC8E'} Gerer et ameliorer tes artefacts
               </button>
             </div>
+          </div>
+        );
+      })()}
+
+      {/* ═══ FACTION MEMBERS VIEW ═══ */}
+      {view === 'faction_members' && (() => {
+        const statusIcon = { online: '\uD83D\uDFE2', recent: '\uD83D\uDFE1', offline: '\u26AB' };
+        const statusLabel = { online: 'En ligne', recent: 'Recent', offline: 'Hors ligne' };
+        const statusOrder = { online: 0, recent: 1, offline: 2 };
+        const sorted = fmMembers ? [...fmMembers].sort((a, b) => statusOrder[a.status] - statusOrder[b.status] || b.points - a.points) : [];
+
+        return (
+          <div className="p-4 max-w-lg mx-auto">
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setView('hub')} className="text-gray-400 hover:text-white text-sm">&larr; Menu</button>
+              <div className="text-sm font-bold text-blue-400">
+                {'\uD83D\uDC65'} Membres {fmFaction ? `— ${fmFaction.name}` : ''}
+              </div>
+            </div>
+
+            {fmLoading ? (
+              <div className="text-center py-8 text-gray-500 text-sm animate-pulse">Chargement...</div>
+            ) : !isLoggedIn() ? (
+              <div className="text-center py-8 text-gray-500 text-sm">Connexion requise pour voir les membres.</div>
+            ) : !fmMembers ? (
+              <div className="text-center py-8 text-gray-500 text-sm">Tu n'es dans aucune faction.</div>
+            ) : sorted.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 text-sm">Aucun membre dans cette faction.</div>
+            ) : (
+              <div className="space-y-2">
+                {sorted.map(m => (
+                  <div key={m.username} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                    m.status === 'online' ? 'border-green-500/30 bg-green-500/5' :
+                    m.status === 'recent' ? 'border-yellow-500/20 bg-yellow-500/5' :
+                    'border-gray-700/30 bg-gray-800/20'
+                  }`}>
+                    <span className="text-sm">{statusIcon[m.status]}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-bold text-white truncate">{m.displayName}</div>
+                      <div className="text-[10px] text-gray-500">{statusLabel[m.status]}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs font-bold text-amber-400">{m.points}</div>
+                      <div className="text-[9px] text-gray-600">pts contribution</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         );
       })()}
