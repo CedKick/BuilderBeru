@@ -767,7 +767,7 @@ export const RAID_BOSSES = {
     totalBars: 10,
     baseHP: 250000,
     barScaling: (i) => 250000 * (1 + 0.35 * i),
-    stats: { atk: 400, def: 200, spd: 35, crit: 25, res: 20 },
+    stats: { atk: 5000, def: 200, spd: 35, crit: 25, res: 20 },
     targeting: 'intelligent',
     lootMult: 1.5,
     skills: [
