@@ -12,7 +12,6 @@ import {
   statsAtFull, getEffStat,
   applySkillUpgrades, computeAttack, aiPickSkillArc2,
   accountLevelFromXp, getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
-  PVP_DAMAGE_MULT, PVP_HP_MULT, PVP_DEF_MULT, PVP_RES_MULT, PVP_DMG_CAP,
   mergeTalentBonuses, BASE_CD_MS, getIntelCDR, getManaScaledPower,
   buildSpdTurnOrder, fmtNum, getElementMult,
 } from './colosseumCore';
@@ -23,7 +22,7 @@ import {
 } from './raidData';
 import {
   computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses,
-  getActivePassives, WEAPONS, ARTIFACT_SETS,
+  getActivePassives, WEAPONS, ARTIFACT_SETS, ALL_ARTIFACT_SETS,
 } from './equipmentData';
 import { MULTIPLAYER_CONFIG } from '../../config/multiplayer';
 
@@ -73,38 +72,158 @@ const REWARDS = {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// BERU PERSONALITY MESSAGES
+// BERU PERSONALITY MESSAGES — Le Monarque des Ombres a un EGO
 // ═══════════════════════════════════════════════════════════════
 
 const BERU_DRAFT = {
-  ban_player: ["Hehe, pas celui-la pour toi !", "Beru bloque ton meilleur hunter !", "Tu croyais le prendre ? NON !", "Celui-la tu l'auras PAS !"],
-  ban_beru: ["Hmm tu m'embetes la...", "Ok ok, tu sais ce que tu fais...", "Grrr... pas juste !"],
-  pick_good: ["BERU A PRIS LE MEILLEUR !", "Celui-la est a MOI !", "Mon equipe va etre INCROYABLE !"],
-  pick_counter: ["Haha, counter parfait !", "Tu vas regretter ton pick !", "Element contre element, facile !"],
-  steal: ["VOLE ! Tu le voulais celui-la hein ?!", "Trop lent ! Beru l'a pris !", "HAHAHA Beru est MALIN !"],
-  think: ["Hmm... Beru reflechit...", "Strategie en cours...", "Beru analyse la situation..."],
+  ban_player: [
+    "HAHAHA ! Celui-la ? Pour TOI ? Dans tes REVES !",
+    "Beru INTERDIT ce hunter ! T'avais cru hein ?!",
+    "Nan nan nan ! Tu croyais Beru allait te laisser LE MEILLEUR ?! HAHA naive !",
+    "BAN ! C'est le MONARQUE qui decide ici, pas toi !",
+    "*claque des doigts* DISPARU ! Ton meilleur pick ? POUF ! Magie de Beru !",
+  ],
+  ban_beru: [
+    "HEY ! C'etait MON hunter ca ! T'as PAS le droit !",
+    "...Beru est pas content la. PAS CONTENT DU TOUT.",
+    "Ok... Tu ban mon favori... Beru va s'en souvenir... *prend des notes*",
+    "KIEEEEK ! Pourquoi tu bans LUI ?! T'es un MONSTRE !",
+    "Beru note ton nom sur sa liste noire... TRAITRE !",
+  ],
+  pick_good: [
+    "MWAHAHA ! CE hunter est a BERU maintenant ! PERSONNE d'autre !",
+    "Tu VOIS ca ?! L'equipe de REVE ! Beru est un GENIE !",
+    "Beru pick comme un PRO ! Un jour tu comprendras ma GRANDEUR !",
+    "*danse de la victoire* Beru a le MEILLEUR hunter ! EASY GAME !",
+  ],
+  pick_counter: [
+    "OHOHO ! Element counter PARFAIT ! Beru a un QI de 300 !",
+    "Tu crois Beru pick au hasard ?! STRATEGIE PURE mon ami !",
+    "Hehe... Beru voit ton equipe et Beru SAIT comment te detruire !",
+  ],
+  steal: [
+    "VOLEEEEE ! Tu le voulais hein ?! TROP TARD ! BERU L'A PRIS ! *dab*",
+    "Oh tu regardais ce hunter ? DOMMAGE ! Il est dans l'equipe de BERU maintenant ! KIEEK !",
+    "HAHAHA ! La tete que tu fais ! Beru a VOLE ton pick ! *evil laugh*",
+  ],
+  think: [
+    "Hmm... Beru reflechit... (c'est RARE donc apprecie)",
+    "Chut ! Le GENIE travaille !",
+    "Beru analyse... calcule... DOMINE !",
+    "*se gratte la tete* ...Beru savait que c'etait son tour hein !",
+  ],
 };
 
 const BERU_BATTLE = {
-  turn_start: ["A moi ! Prepare-toi !", "Beru va FRAPPER !", "Tu vas rien voir venir !", "C'est l'heure du SHOW !"],
-  crit_beru: ["CRITIQUE ! HAHA !", "Ca fait mal hein ?!", "BOOOM ! Beru est trop FORT !", "DEVASTATION !"],
-  crit_player: ["H-hein ?! Ca fait mal...", "AIEEE ! Pas juste !", "Ok ok t'es pas mal...", "Coup de chance !"],
-  ko_beru: ["UN DE MOINS ! Facile !", "Adieu petit hunter !", "Beru elimine TOUT !", "K.O. ! Suivant !"],
-  ko_player: ["N-NON ! Mon hunter !", "Grrr... tu vas payer !", "C'est pas fini !", "BERU VA SE VENGER !"],
-  heal: ["Hehe, Beru se soigne !", "On reprend des forces !", "Pas si vite !", "Regeneration !"],
-  losing: ["A-attends... c'est pas normal...", "BERU PANIQUE !", "Faut que je me concentre...", "T-tu triches ?!"],
-  winning: ["Trop FACILE ! Hahaha !", "T'abandonnes pas ?", "Beru est le MAITRE !", "Victoire assuree !"],
-  start: ["Que le combat COMMENCE !", "Beru va t'ecraser !", "Prepare-toi a PERDRE !", "3v3 ? Beru va gagner EASY !"],
+  turn_start: [
+    "C'est l'heure du SPECTACLE ! Beru entre en scene !",
+    "BERU VA FRAPPER ! Couvre tes yeux si t'as peur !",
+    "Tu vas rien voir venir ! ...Ou peut-etre un peu. Mais ca va faire MAL !",
+    "*se craque les doigts* Ah la la... Beru aime ce moment !",
+    "A MOI ! Beru va montrer POURQUOI il est le MONARQUE !",
+  ],
+  crit_beru: [
+    "CRITIQUE !!! BOOOOOM ! T'AS SENTI CA ?! HAHAHAHA !",
+    "DEVASTATION TOTALE ! Beru est trop PUISSANT pour ce jeu !",
+    "OH LA LA ! Meme Beru est impressionne par Beru !",
+    "*explosion en arriere-plan* C'EST CA LA PUISSANCE DU MONARQUE !",
+    "CRIT ! Et Beru a meme pas utilise 10% de sa force ! *flex*",
+  ],
+  crit_player: [
+    "H-HEIN ?! ...Ca fait un peu mal mais Beru s'en FICHE !",
+    "AIEEE ! ...Ahem. Beru voulait dire : 'bof, c'est tout ?'",
+    "...Ok. Coup de chance. Ca arrivera plus JAMAIS.",
+    "T-tu triches c'est pas possible ! PERSONNE crit Beru comme ca !",
+    "*essuie une larme* C'est rien ! Beru a les yeux qui piquent c'est tout !",
+  ],
+  ko_beru: [
+    "K.O. !!! ELIMINE ! ADIEU ! Beru est SANS PITIE !",
+    "UN DE MOINS ! *fait une danse* Beru DOMINE !",
+    "Ton hunter est par TERRE ! Tu veux le ramasser ? TROP TARD !",
+    "BOUM ! K.O. ! C'etait meme pas un defi ! SUIVANT !",
+  ],
+  ko_player: [
+    "N-NOOOON ! MON HUNTER ! QU'EST-CE QUE T'AS FAIT ?!",
+    "...Beru va aller dans un coin pleurer 2 secondes... *snif* ...OK C'EST FINI ! REVANCHE !",
+    "KIEEEEK ! Mon hunter ! Tu vas PAYER pour ca ! BERU VA SE VENGER !!!",
+    "*rage interne* ...c'est PAS fini... Beru a encore des hunters...",
+  ],
+  heal: [
+    "Hehe ! Beru se soigne ! T'es VERT de jalousie hein ?!",
+    "*se soigne* Beru est IMMORTEL ! Tu peux pas gagner !",
+    "REGENERATION ! Beru revient PLUS FORT qu'avant ! Tremble !",
+    "Oh tu croyais que Beru allait juste attaquer ? SURPRISE ! SOIN !",
+  ],
+  losing: [
+    "A-ATTENDS... c'est pas normal... BERU REFUSE cette realite !",
+    "T-TU TRICHES C'EST OBLIGÉ ! Beru va verifier les logs !",
+    "BERU PANIQUE ?! NON ! Beru est juste... surpris ! VOILA !",
+    "*transpire* C'est la strategie de Beru ! Faire croire qu'il perd ! ...oui voila !",
+    "OK STOP ! On recommence ! ...non ? ...BON OK Beru va se concentrer !",
+  ],
+  winning: [
+    "Trop FACILE ! Beru joue les yeux fermes et GAGNE quand meme !",
+    "Tu veux abandonner ? Beru comprendrait ! C'est dur de perdre face au MONARQUE !",
+    "HAHAHA ! Beru est le MAITRE ! Beru est le GOAT ! BERU EST TOUT !",
+    "*pose victorieuse* Prend une photo, c'est GRATUIT !",
+  ],
+  start: [
+    "Que le combat COMMENCE ! Beru va ecraser, pulveriser, ATOMISER !",
+    "3v3 ? Beru pourrait gagner en 1v3 mais bon, soyons fairplay !",
+    "Prepare-toi a PERDRE ! ...Et ensuite Beru va danser sur ta defaite !",
+    "KIEEEEEK ! Le combat commence ! Beru est HYPER ! MEGA HYPER !",
+  ],
 };
 
 const BERU_EQUIP = {
-  start: ["Beru prepare son equipe...", "Hmm, quelle arme choisir...", "Optimisation en cours !"],
-  done: ["Beru est PRET !", "Mon equipe est PARFAITE !", "Tu vas voir ce que tu vas voir !"],
+  start: [
+    "Hmm... *enfile une armure* Beru se prepare...",
+    "Quelle arme pour DETRUIRE ? Beru hesite entre TOUTES !",
+    "Phase equip ! Beru va creer l'equipe ULTIME !",
+  ],
+  done: [
+    "Mon equipe est PAR-FAITE ! *chef's kiss*",
+    "Beru est PRET ! Et toi ? ...Beru s'en fiche en fait !",
+    "MWAHAHA ! Tu vas voir ce que tu vas voir ! L'equipe de BERU est LEGENDAIRE !",
+  ],
 };
 
 const BERU_RESULT = {
-  win: ["HAHAHA ! Beru GAGNE ! Trop facile !", "Beru est INVINCIBLE !", "On remet ca ? Beru veut encore GAGNER !"],
-  lose: ["G-GRRRR... Beru a perdu ?! IMPOSSIBLE !", "C-c'etait juste un echauffement !", "Revanche ! REVANCHE !!", "Beru exige une REVANCHE !"],
+  win: [
+    "HAHAHA ! Beru GAGNE ! C'etait EVIDENT ! Tu croyais avoir une CHANCE ?!",
+    "VICTOIRE ! Beru est le CHAMPION ! Le MONARQUE ! Le GOAT ! *dab dab dab*",
+    "On remet ca ?! Beru veut encore te DETRUIRE ! C'etait trop BON !",
+    "GG EZ ! ...enfin c'etait pas EZ, Beru a du REFLECHIR ! Mais Beru a GAGNE !",
+  ],
+  lose: [
+    "G-GRRRRR... IMPOSSIBLE ! Beru a PERDU ?! LE MONARQUE A PERDU ?!?!",
+    "...C-c'etait un echauffement ! Beru avait PAS ses LUNETTES !",
+    "REVANCHE !!! REVANCHE !!! Beru EXIGE une revanche IMMÉDIATE !!!",
+    "*retourne la table* C'EST PAS JUSTE ! Beru va ENTRAINER son equipe et REVENIR !",
+    "...Beru va aller dans un coin... pleurer un peu... *snif* MAIS BERU REVIENDRA PLUS FORT !",
+  ],
+};
+
+// Beru reactions when player tries to interact with the floating mascot
+const BERU_INTERACTIVE = {
+  poked: [
+    "HEY ! Touche pas Beru ! Le Monarque est PAS un jouet !",
+    "KIEEEEK ! Arrete de me toucher ! Beru a des LIMITES !",
+    "...Tu veux te BATTRE ? Beru est PRET ! *leve les poings*",
+    "Si tu continues Beru va te BANNIR de son jeu !",
+  ],
+  hidden: [
+    "KIEEEEEEK ! QU'EST-CE QUE T'AS FAIT LÀÀÀ ?! Tu m'as CACHÉ ?! TU TRICHES EN ME NIANT ?!",
+    "OHHH NON NON NON ! On CACHE PAS le Monarque ! BERU EST LA ET IL RESTE LA !",
+    "T'as essaye de faire DISPARAITRE Beru ?! L'AUDACE ! Le CULOT ! L'AFFRONT !",
+    "...Tu croyais te debarrasser de Beru ? MWAHAHA ! Beru revient TOUJOURS !",
+  ],
+  calmed: [
+    "MODE CALME ?! BERU ?! CALME ?! HAHAHAHA !! T'es DROLE toi !",
+    "Beru REFUSE le mode calme ! Le Monarque est TOUJOURS a 200% !",
+    "Tu veux calmer Beru ?! *s'enerve encore plus* CALMER ?! BERU ?! C'EST INSULTANT !",
+    "MODE CALME REFUSE ! Beru a 2 modes : EXCITE et MEGA EXCITE !",
+  ],
 };
 
 const randMsg = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -140,6 +259,7 @@ export default function PvpLive() {
   const [picks, setPicks] = useState({ p1: [], p2: [] });
   const [draftStep, setDraftStep] = useState(0);
   const [selectedForDraft, setSelectedForDraft] = useState(null);
+  const [draftFilter, setDraftFilter] = useState({ element: null, class: null });
 
   // ─── Equip State (temporary clones) ────────────────────────
   const [tempArtifacts, setTempArtifacts] = useState(null);
@@ -152,6 +272,8 @@ export default function PvpLive() {
   const [pendingSkill, setPendingSkill] = useState(null);
   const [battleLog, setBattleLog] = useState([]);
   const battleLogRef = useRef(null);
+  const [hoveredTarget, setHoveredTarget] = useState(null);
+  const [inspectedFighter, setInspectedFighter] = useState(null); // clicked fighter for stats panel
 
   // ─── Timers ────────────────────────────────────────────────
   const [timer, setTimer] = useState(0);
@@ -159,9 +281,7 @@ export default function PvpLive() {
   const timerRef = useRef(null);
   const turnTimerRef = useRef(null);
 
-  // ─── Beru ──────────────────────────────────────────────────
-  const [beruMsg, setBeruMsg] = useState('');
-  const [beruMood, setBeruMood] = useState('excited');
+  // ─── Beru (uses floating mascot only via beru-react event) ──
 
   // ─── Result ────────────────────────────────────────────────
   const [result, setResult] = useState(null); // { won, rewards, stats }
@@ -469,17 +589,12 @@ export default function PvpLive() {
     const weaponPassive = wId && WEAPONS[wId] ? WEAPONS[wId].passive : null;
     const artPassives = getActivePassives(artifactsData?.[id]);
 
-    // Apply PVP multipliers
-    const pvpHp = Math.floor(fs.hp * PVP_HP_MULT);
-    const pvpDef = Math.floor(fs.def * PVP_DEF_MULT);
-    const pvpRes = +(Math.min(85, fs.res * PVP_RES_MULT)).toFixed(1);
-
     return {
       id, name: chibi.name, sprite: chibi.sprite || SPRITES[id], element: chibi.element,
       class: chibi.class || (HUNTERS[id]?.class) || 'fighter',
       rarity: chibi.rarity,
-      hp: pvpHp, maxHp: pvpHp, atk: fs.atk, def: pvpDef,
-      spd: fs.spd, crit: Math.min(80, fs.crit), res: pvpRes,
+      hp: fs.hp, maxHp: fs.hp, atk: fs.atk, def: fs.def,
+      spd: fs.spd, crit: Math.min(80, fs.crit), res: +(Math.min(85, fs.res)).toFixed(1),
       mana: fs.mana || 100, maxMana: fs.mana || 100, manaRegen: fs.manaRegen || BASE_MANA_REGEN,
       shield: 0, skills, buffs: initBuffs, alive: true,
       tb: mergedTb, level: lvData.level, side,
@@ -738,6 +853,34 @@ export default function PvpLive() {
       wId === currentWeapon || !equippedWeapons.has(wId)
     );
   }, [tempWeapons, tempWeaponCollection]);
+
+  const getHunterSets = useCallback((hunterId) => {
+    if (!tempArtifacts?.[hunterId]) return [];
+    const setCounts = {};
+    Object.values(tempArtifacts[hunterId]).forEach(art => {
+      if (art?.set) setCounts[art.set] = (setCounts[art.set] || 0) + 1;
+    });
+    return Object.entries(setCounts).map(([setId, count]) => ({ setId, count, ...(ALL_ARTIFACT_SETS[setId] || {}) }));
+  }, [tempArtifacts]);
+
+  const swapArtifactSet = useCallback((fromHunterId, toHunterId, setId) => {
+    setTempArtifacts(prev => {
+      const next = JSON.parse(JSON.stringify(prev));
+      const fromArts = next[fromHunterId] || {};
+      const toArts = next[toHunterId] || {};
+      const SLOTS = ['helmet','chest','gloves','boots','necklace','bracelet','ring','earring'];
+      SLOTS.forEach(slot => {
+        if (fromArts[slot]?.set === setId) {
+          const temp = toArts[slot];
+          toArts[slot] = fromArts[slot];
+          fromArts[slot] = temp;
+        }
+      });
+      next[fromHunterId] = fromArts;
+      next[toHunterId] = toArts;
+      return next;
+    });
+  }, []);
 
   // Beru auto-equips: assign best weapons to Beru's picks
   const beruAutoEquip = useCallback(() => {
@@ -1019,13 +1162,6 @@ export default function PvpLive() {
     const defender = target;
     const res = computeAttack(attacker, skill, defender, attacker.tb || {});
 
-    // Apply PVP damage reduction + cap
-    if (res.damage > 0) {
-      res.damage = Math.floor(res.damage * PVP_DAMAGE_MULT);
-      const maxDmg = Math.floor(defender.maxHp * PVP_DMG_CAP);
-      if (res.damage > maxDmg) res.damage = maxDmg;
-    }
-
     // Apply damage
     let koOccurred = false;
     if (res.damage > 0) {
@@ -1078,13 +1214,6 @@ export default function PvpLive() {
       if (koOccurred) beruSay(randMsg(BERU_BATTLE.ko_player), 'panic');
       else if (res.isCrit) beruSay(randMsg(BERU_BATTLE.crit_player), 'panic');
     }
-
-    // Update mood based on HP
-    const beruHpPct = beruTeam.filter(f => f.alive).reduce((s, f) => s + f.hp / f.maxHp, 0) / Math.max(1, beruTeam.filter(f => f.alive).length);
-    const playerHpPct = playerTeam.filter(f => f.alive).reduce((s, f) => s + f.hp / f.maxHp, 0) / Math.max(1, playerTeam.filter(f => f.alive).length);
-    if (beruHpPct < playerHpPct - 0.3) setBeruMood('panic');
-    else if (beruHpPct > playerHpPct + 0.3) setBeruMood('confident');
-    else setBeruMood('excited');
 
     // Advance
     const newState = { ...state, currentTurn: state.currentTurn + 1 };
@@ -1235,9 +1364,42 @@ export default function PvpLive() {
   // ═══════════════════════════════════════════════════════════════
 
   const beruSay = (msg, mood = 'excited') => {
-    setBeruMsg(msg);
-    setBeruMood(mood);
+    const moodMap = { panic: 'scared', confident: 'happy', thinking: 'thinking' };
+    window.dispatchEvent(new CustomEvent('beru-react', {
+      detail: {
+        message: msg,
+        mood: moodMap[mood] || 'excited',
+        duration: mood === 'panic' ? 5000 : 4000,
+        animation: mood === 'panic' ? 'shake' : mood === 'confident' ? 'bounce' : 'bounce',
+      },
+    }));
   };
+
+  // ─── Beru Interactive Reactions ─────────────────────────────
+  // Listen for beru-hide / beru-calm events from the floating mascot
+  useEffect(() => {
+    const handleBeruHide = () => {
+      // Beru was hidden — he comes back angry after 3s
+      setTimeout(() => {
+        beruSay(randMsg(BERU_INTERACTIVE.hidden), 'panic');
+      }, 3000);
+    };
+    const handleBeruCalm = () => {
+      // Someone tried to calm Beru — he gets MORE energetic
+      beruSay(randMsg(BERU_INTERACTIVE.calmed), 'panic');
+    };
+    const handleBeruPoke = () => {
+      beruSay(randMsg(BERU_INTERACTIVE.poked), 'panic');
+    };
+    window.addEventListener('beru-hide', handleBeruHide);
+    window.addEventListener('beru-calm', handleBeruCalm);
+    window.addEventListener('beru-poke', handleBeruPoke);
+    return () => {
+      window.removeEventListener('beru-hide', handleBeruHide);
+      window.removeEventListener('beru-calm', handleBeruCalm);
+      window.removeEventListener('beru-poke', handleBeruPoke);
+    };
+  }, []);
 
   // Reset to lobby
   const resetToLobby = () => {
@@ -1254,7 +1416,9 @@ export default function PvpLive() {
     setTempArtifacts(null);
     setTempWeapons(null);
     setTempWeaponCollection(null);
-    setBeruMsg('');
+    setDraftFilter({ element: null, class: null });
+    setHoveredTarget(null);
+    setInspectedFighter(null);
     setTimer(0);
     setRoomCode('');
     setJoinCode('');
@@ -1270,6 +1434,37 @@ export default function PvpLive() {
       battleLogRef.current.scrollTop = battleLogRef.current.scrollHeight;
     }
   }, [battleLog]);
+
+  // ═══════════════════════════════════════════════════════════════
+  // DAMAGE / HEAL PREVIEW
+  // ═══════════════════════════════════════════════════════════════
+
+  const estimateDamage = useCallback((attacker, skill, defender) => {
+    if (!attacker || !skill || !defender) return null;
+    if (skill.power <= 0 && !skill.healSelf && !skill.healAlly) return null;
+
+    if (skill.healSelf > 0) {
+      const healAmt = Math.floor(attacker.maxHp * skill.healSelf / 100);
+      return { type: 'heal', value: healAmt };
+    }
+    if (skill.healAlly > 0) {
+      return { type: 'heal', value: Math.floor(attacker.maxHp * (skill.healAlly || skill.power || 10) / 100) };
+    }
+    if (skill.power > 0) {
+      let effAtk = getEffStat(attacker.atk, attacker.buffs, 'atk');
+      if (attacker.isMage && attacker.maxMana) {
+        const manaMult = attacker.hunterClass === 'support' ? 0.8 : attacker.hunterClass === 'tank' ? 1.0 : 1.2;
+        effAtk = Math.floor(attacker.maxMana * manaMult);
+      }
+      const raw = effAtk * (skill.power / 100);
+      const effDef = getEffStat(defender.def, defender.buffs || [], 'def');
+      const defFactor = 100 / (100 + Math.max(0, effDef));
+      const dmg = Math.floor(raw * defFactor);
+      const elemMult = getElementMult(attacker.element, defender.element);
+      return { type: 'damage', value: Math.floor(dmg * elemMult), elemMult };
+    }
+    return null;
+  }, []);
 
   // ═══════════════════════════════════════════════════════════════
   // RENDER HELPERS
@@ -1305,17 +1500,20 @@ export default function PvpLive() {
     );
   };
 
-  const FighterPortrait = ({ fighter, isActive, showHp = true }) => {
+  const FighterPortrait = ({ fighter, isActive, showHp = true, onClick }) => {
     if (!fighter) return null;
     const hpPct = fighter.maxHp > 0 ? (fighter.hp / fighter.maxHp * 100) : 0;
     const manaPct = fighter.maxMana > 0 ? (fighter.mana / fighter.maxMana * 100) : 0;
     const elem = ELEMENTS[fighter.element];
     return (
-      <div className={`relative p-1.5 rounded-lg border transition-all ${
-        !fighter.alive ? 'opacity-30 border-gray-800 bg-gray-900/50' :
-        isActive ? 'border-yellow-400/60 bg-yellow-900/20 ring-1 ring-yellow-400/30' :
-        fighter.side === 'player' ? 'border-blue-500/30 bg-blue-900/20' : 'border-red-500/30 bg-red-900/20'
-      }`}>
+      <div
+        onClick={(e) => { e.stopPropagation(); if (onClick) onClick(fighter); else setInspectedFighter(prev => prev?.id === fighter.id ? null : fighter); }}
+        className={`relative p-1.5 rounded-lg border transition-all cursor-pointer ${
+          !fighter.alive ? 'opacity-30 border-gray-800 bg-gray-900/50' :
+          isActive ? 'border-yellow-400/60 bg-yellow-900/20 ring-1 ring-yellow-400/30' :
+          fighter.side === 'player' ? 'border-blue-500/30 bg-blue-900/20 hover:border-blue-400/50' : 'border-red-500/30 bg-red-900/20 hover:border-red-400/50'
+        }`}
+      >
         <div className="flex items-center gap-1.5">
           <img src={fighter.sprite} alt={fighter.name} className="w-10 h-10 rounded object-contain" />
           <div className="flex-1 min-w-0">
@@ -1333,7 +1531,7 @@ export default function PvpLive() {
                 </div>
                 <div className="flex justify-between text-[8px] text-gray-500 mt-0.5">
                   <span>{fmt(fighter.hp)}/{fmt(fighter.maxHp)}</span>
-                  <span className="text-blue-400">{Math.floor(fighter.mana)}</span>
+                  <span className="text-red-400">{fmt(fighter.atk)}</span>
                 </div>
               </>
             )}
@@ -1342,7 +1540,7 @@ export default function PvpLive() {
         {!fighter.alive && <div className="absolute inset-0 flex items-center justify-center"><span className="text-red-500 text-sm font-bold">K.O.</span></div>}
         {fighter.buffs.length > 0 && (
           <div className="flex gap-0.5 mt-0.5 flex-wrap">
-            {fighter.buffs.slice(0, 4).map((b, i) => (
+            {fighter.buffs.map((b, i) => (
               <span key={i} className={`text-[7px] px-0.5 rounded ${b.value > 0 ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400'}`}>
                 {b.stat?.toUpperCase()}{b.value > 0 ? '+' : ''}{Math.round(b.value * 100)}%
               </span>
@@ -1350,6 +1548,99 @@ export default function PvpLive() {
           </div>
         )}
       </div>
+    );
+  };
+
+  // ─── Fighter Detail Panel (click to inspect) ────────────────
+  const FighterDetailPanel = ({ fighter, onClose }) => {
+    if (!fighter) return null;
+    const elem = ELEMENTS[fighter.element];
+    const sets = (() => {
+      if (!fighter.artPassives) return [];
+      return fighter.artPassives.map(p => ALL_ARTIFACT_SETS[p.setId]).filter(Boolean);
+    })();
+    const uniqueSets = [...new Map(sets.map(s => [s.id, s])).values()];
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+        className="p-3 rounded-xl bg-gray-800/80 backdrop-blur border border-gray-600 mb-3"
+      >
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex items-center gap-2">
+            <img src={fighter.sprite} alt="" className="w-12 h-12 rounded object-contain" />
+            <div>
+              <p className="text-sm font-bold">{fighter.name} <span className="text-[10px]">{elem?.icon}</span></p>
+              <p className="text-[10px] text-gray-400 capitalize">{fighter.hunterClass} | Lv{fighter.level}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-500 hover:text-white text-xs px-2 py-0.5 rounded bg-gray-700/50">✕</button>
+        </div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-4 gap-x-3 gap-y-1 mb-2">
+          {[
+            { k: 'hp', l: 'PV', c: 'text-green-400', v: `${fmt(fighter.hp)}/${fmt(fighter.maxHp)}` },
+            { k: 'atk', l: 'ATK', c: 'text-red-400', v: fmt(fighter.atk) },
+            { k: 'def', l: 'DEF', c: 'text-blue-400', v: fmt(fighter.def) },
+            { k: 'spd', l: 'SPD', c: 'text-emerald-400', v: fmt(fighter.spd) },
+            { k: 'crit', l: 'CRIT', c: 'text-yellow-400', v: `${fighter.crit?.toFixed(1)}%` },
+            { k: 'res', l: 'RES', c: 'text-cyan-400', v: `${fighter.res?.toFixed(1)}%` },
+            { k: 'mana', l: 'INT', c: 'text-violet-400', v: `${Math.floor(fighter.mana)}/${fighter.maxMana}` },
+            { k: 'shield', l: 'Bouclier', c: 'text-gray-300', v: fighter.shield > 0 ? fmt(fighter.shield) : '-' },
+          ].map(s => (
+            <div key={s.k} className="flex items-center justify-between text-[10px]">
+              <span className={s.c}>{s.l}</span>
+              <span className="text-gray-200 font-mono">{s.v}</span>
+            </div>
+          ))}
+        </div>
+        {/* Artifact Sets */}
+        {uniqueSets.length > 0 && (
+          <div className="mb-2">
+            <p className="text-[9px] text-gray-500 mb-0.5">Sets :</p>
+            <div className="flex flex-wrap gap-1">
+              {uniqueSets.map(s => (
+                <span key={s.id} className={`text-[9px] px-1.5 py-0.5 rounded border ${s.border || 'border-gray-700'} ${s.bg || 'bg-gray-900/30'} ${s.color || 'text-gray-300'}`}>
+                  {s.icon} {s.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Buffs & Debuffs */}
+        {fighter.buffs.length > 0 && (
+          <div className="mb-2">
+            <p className="text-[9px] text-gray-500 mb-0.5">Effets actifs :</p>
+            <div className="flex flex-wrap gap-1">
+              {fighter.buffs.map((b, i) => (
+                <span key={i} className={`text-[9px] px-1.5 py-0.5 rounded ${b.value > 0 ? 'bg-green-900/40 text-green-400 border border-green-500/30' : 'bg-red-900/40 text-red-400 border border-red-500/30'}`}>
+                  {b.stat?.toUpperCase()} {b.value > 0 ? '+' : ''}{Math.round(b.value * 100)}%
+                  {b.turns < 999 && <span className="text-gray-500 ml-0.5">({b.turns}t)</span>}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Skills */}
+        <div>
+          <p className="text-[9px] text-gray-500 mb-0.5">Skills :</p>
+          <div className="space-y-0.5">
+            {fighter.skills.map((sk, i) => (
+              <div key={i} className="flex items-center justify-between text-[9px]">
+                <span className={sk.cd > 0 ? 'text-gray-600' : 'text-gray-300'}>{sk.name} {sk.isUltimate ? '★' : ''}</span>
+                <div className="flex gap-1.5 text-gray-500">
+                  {sk.power > 0 && <span className="text-red-400">P:{sk.power}</span>}
+                  {sk.healSelf > 0 && <span className="text-green-400">+{sk.healSelf}%HP</span>}
+                  {sk.healAlly > 0 && <span className="text-green-400">Heal</span>}
+                  {sk.buffAtk > 0 && <span className="text-orange-400">ATK+{sk.buffAtk}%</span>}
+                  {sk.debuffDef > 0 && <span className="text-purple-400">-{sk.debuffDef}%DEF</span>}
+                  <span>{sk.cd > 0 ? `CD:${sk.cd}/${sk.cdMax}` : sk.cdMax > 0 ? `CD:${sk.cdMax}` : ''}</span>
+                  {(sk.manaCost || 0) > 0 && <span className="text-violet-400">M:{sk.manaCost}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
     );
   };
 
@@ -1573,23 +1864,6 @@ export default function PvpLive() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-4xl mx-auto">
         <TimerBar current={timer} max={DRAFT_TIME} label="Phase de Draft" />
 
-        {/* Beru message */}
-        <AnimatePresence>
-          {beruMsg && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className={`mb-3 p-2 rounded-lg text-center text-sm italic ${
-                beruMood === 'panic' ? 'bg-red-900/30 text-red-300' :
-                beruMood === 'confident' ? 'bg-green-900/30 text-green-300' :
-                beruMood === 'thinking' ? 'bg-yellow-900/30 text-yellow-300' :
-                'bg-purple-900/30 text-purple-300'
-              }`}
-            >
-              🤖 Beru: "{beruMsg}"
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Draft status */}
         <div className="flex justify-between items-center mb-3">
           <div>
@@ -1687,8 +1961,38 @@ export default function PvpLive() {
         {/* Pool grid */}
         {!isDone && isP1Turn && (
           <>
+            {/* Quick Filters */}
+            <div className="flex flex-wrap gap-1 justify-center mb-2">
+              {Object.entries(ELEMENTS).map(([key, el]) => (
+                <button key={key} onClick={() => setDraftFilter(prev => ({ ...prev, element: prev.element === key ? null : key }))}
+                  className={`px-2 py-0.5 rounded text-[10px] border transition-all ${
+                    draftFilter.element === key ? 'border-yellow-400 bg-yellow-900/30 text-yellow-300' : 'border-gray-700 bg-gray-800/50 text-gray-400'
+                  }`}>
+                  {el.icon} {el.name || key}
+                </button>
+              ))}
+              <span className="text-gray-700 mx-1">|</span>
+              {['fighter', 'mage', 'support', 'tank'].map(cls => (
+                <button key={cls} onClick={() => setDraftFilter(prev => ({ ...prev, class: prev.class === cls ? null : cls }))}
+                  className={`px-2 py-0.5 rounded text-[10px] border transition-all capitalize ${
+                    draftFilter.class === cls ? 'border-purple-400 bg-purple-900/30 text-purple-300' : 'border-gray-700 bg-gray-800/50 text-gray-400'
+                  }`}>
+                  {cls}
+                </button>
+              ))}
+            </div>
+
             <div className="flex flex-wrap gap-1.5 justify-center max-h-[320px] overflow-y-auto p-2 bg-gray-900/30 rounded-xl border border-gray-800">
-              {draftPool.map(id => (
+              {draftPool.filter(id => {
+                const c = allPool[id];
+                if (!c) return false;
+                if (draftFilter.element && c.element !== draftFilter.element) return false;
+                if (draftFilter.class) {
+                  const hCls = HUNTERS[id]?.class || c.class || 'fighter';
+                  if (hCls !== draftFilter.class) return false;
+                }
+                return true;
+              }).map(id => (
                 <HunterCard
                   key={id}
                   id={id}
@@ -1740,17 +2044,8 @@ export default function PvpLive() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto">
         <TimerBar current={timer} max={EQUIP_TIME} label="Phase d'Equipement" color="cyan" />
 
-        <AnimatePresence>
-          {beruMsg && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="mb-3 p-2 rounded-lg text-center text-sm italic bg-purple-900/30 text-purple-300">
-              🤖 Beru: "{beruMsg}"
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <p className="text-xs text-gray-400 text-center mb-3">
-          Change les armes de tes hunters — ces modifications sont temporaires !
+          Change les armes et sets de tes hunters — ces modifications sont temporaires !
         </p>
 
         {/* Hunter tabs */}
@@ -1772,7 +2067,7 @@ export default function PvpLive() {
 
         {/* Current hunter equipment */}
         {focusId && focusChibi && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Weapon selection */}
             <div className="p-3 rounded-xl bg-gray-800/30 border border-gray-700">
               <p className="text-xs text-gray-400 mb-2 font-bold">Arme</p>
@@ -1797,6 +2092,29 @@ export default function PvpLive() {
                 })}
                 {availWeapons.length === 0 && <p className="text-[10px] text-gray-600 text-center py-4">Aucune arme disponible</p>}
               </div>
+            </div>
+
+            {/* Artifact Sets */}
+            <div className="p-3 rounded-xl bg-gray-800/30 border border-gray-700 mt-3 md:mt-0">
+              <p className="text-xs text-gray-400 mb-2 font-bold">Sets d'Artefacts</p>
+              {(() => {
+                const sets = getHunterSets(focusId);
+                if (sets.length === 0) return <p className="text-[10px] text-gray-600">Aucun set equipe</p>;
+                return (
+                  <div className="space-y-1.5">
+                    {sets.map(s => (
+                      <div key={s.setId} className={`p-1.5 rounded-lg border ${s.border || 'border-gray-700'} ${s.bg || 'bg-gray-900/30'}`}>
+                        <div className="flex items-center justify-between">
+                          <span className={`text-xs ${s.color || 'text-gray-300'}`}>{s.icon} {s.name}</span>
+                          <span className="text-[9px] text-gray-400">{s.count} pieces</span>
+                        </div>
+                        {s.count >= 2 && s.passive2 && <p className="text-[8px] text-gray-500 mt-0.5">2P: {s.passive2.desc || 'Actif'}</p>}
+                        {s.count >= 4 && s.passive4 && <p className="text-[8px] text-gray-500">4P: {s.passive4.desc || 'Actif'}</p>}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Stats preview */}
@@ -1873,20 +2191,6 @@ export default function PvpLive() {
           {bPhase === 'pick' && <TimerBar current={turnTimer} max={TURN_TIME} label="Ton tour" color="yellow" />}
         </div>
 
-        {/* Beru message */}
-        <AnimatePresence>
-          {beruMsg && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className={`mb-2 p-1.5 rounded-lg text-center text-xs italic ${
-                beruMood === 'panic' ? 'bg-red-900/30 text-red-300' :
-                beruMood === 'confident' ? 'bg-green-900/30 text-green-300' :
-                'bg-purple-900/30 text-purple-300'
-              }`}>
-              🤖 Beru: "{beruMsg}"
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Round indicator */}
         <div className="text-center mb-2">
           <span className="text-[10px] text-gray-500">Round {round}</span>
@@ -1904,11 +2208,29 @@ export default function PvpLive() {
                   onClick={() => {
                     if (bPhase === 'pick_ally' && pendingSkill && f.alive) playerSelectTarget(i);
                   }}
-                  className={bPhase === 'pick_ally' && f.alive ? 'cursor-pointer' : ''}
+                  onMouseEnter={() => {
+                    if (bPhase === 'pick_ally' && pendingSkill && f.alive) setHoveredTarget(1000 + i);
+                  }}
+                  onMouseLeave={() => setHoveredTarget(null)}
+                  className={`relative ${bPhase === 'pick_ally' && f.alive ? 'cursor-pointer hover:ring-2 hover:ring-green-400/50 rounded-lg' : ''}`}
                 >
+                  {hoveredTarget === 1000 + i && pendingSkill && (() => {
+                    const entry = battle.turnOrder[battle.currentTurn];
+                    const attacker = battle.playerTeam[entry.idx];
+                    const est = estimateDamage(attacker, pendingSkill.skill, f);
+                    if (!est) return null;
+                    return (
+                      <div className={`absolute -top-6 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap z-10 ${
+                        est.type === 'heal' ? 'bg-green-900/90 text-green-300' : 'bg-red-900/90 text-red-300'
+                      }`}>
+                        ~{est.type === 'heal' ? '+' : '-'}{fmt(est.value)} {est.type === 'heal' ? 'HP' : 'DMG'}
+                      </div>
+                    );
+                  })()}
                   <FighterPortrait
                     fighter={f}
                     isActive={currentEntry?.type === 'team' && currentEntry?.idx === i && (bPhase === 'pick' || bPhase === 'pick_target' || bPhase === 'pick_ally')}
+                    onClick={bPhase === 'pick_ally' && pendingSkill && f.alive ? () => playerSelectTarget(i) : undefined}
                   />
                 </div>
               ))}
@@ -1921,20 +2243,44 @@ export default function PvpLive() {
             <div className="space-y-1.5">
               {beruTeam.map((f, i) => (
                 <div key={f.id}
-                  onClick={() => {
-                    if (bPhase === 'pick_target' && pendingSkill && f.alive) playerSelectTarget(i);
+                  onMouseEnter={() => {
+                    if (bPhase === 'pick_target' && pendingSkill && f.alive) setHoveredTarget(i);
                   }}
-                  className={bPhase === 'pick_target' && f.alive ? 'cursor-pointer hover:ring-2 hover:ring-red-400/50 rounded-lg' : ''}
+                  onMouseLeave={() => setHoveredTarget(null)}
+                  className={`relative ${bPhase === 'pick_target' && f.alive ? 'cursor-pointer hover:ring-2 hover:ring-red-400/50 rounded-lg' : ''}`}
                 >
+                  {hoveredTarget === i && pendingSkill && (() => {
+                    const entry = battle.turnOrder[battle.currentTurn];
+                    const attacker = battle.playerTeam[entry.idx];
+                    const est = estimateDamage(attacker, pendingSkill.skill, f);
+                    if (!est) return null;
+                    return (
+                      <div className={`absolute -top-6 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap z-10 ${
+                        est.type === 'heal' ? 'bg-green-900/90 text-green-300' : 'bg-red-900/90 text-red-300'
+                      }`}>
+                        ~{est.type === 'heal' ? '+' : '-'}{fmt(est.value)} {est.type === 'heal' ? 'HP' : 'DMG'}
+                      </div>
+                    );
+                  })()}
                   <FighterPortrait
                     fighter={f}
                     isActive={currentEntry?.type === 'enemy' && currentEntry?.idx === i && bPhase === 'enemy_act'}
+                    onClick={bPhase === 'pick_target' && pendingSkill && f.alive ? () => playerSelectTarget(i) : undefined}
                   />
                 </div>
               ))}
             </div>
           </div>
         </div>
+
+        {/* Fighter Detail Panel (click to inspect) */}
+        <AnimatePresence>
+          {inspectedFighter && (() => {
+            // Always show live data from battle state
+            const live = [...playerTeam, ...beruTeam].find(f => f.id === inspectedFighter.id) || inspectedFighter;
+            return <FighterDetailPanel fighter={live} onClose={() => setInspectedFighter(null)} />;
+          })()}
+        </AnimatePresence>
 
         {/* Skill selection (player's turn) */}
         {bPhase === 'pick' && activeUnit && currentEntry?.type === 'team' && (
@@ -1965,6 +2311,18 @@ export default function PvpLive() {
                       {(sk.manaCost || 0) > 0 && <span className="text-violet-400">M:{sk.manaCost}</span>}
                     </div>
                     {sk.isUltimate && <span className="text-[8px] text-yellow-400">★ ULTIME</span>}
+                    {(() => {
+                      const defaultTarget = beruTeam.find(f => f.alive);
+                      const est = defaultTarget && sk.power > 0 ? estimateDamage(activeUnit, sk, defaultTarget) :
+                                  sk.healSelf > 0 ? { type: 'heal', value: Math.floor(activeUnit.maxHp * sk.healSelf / 100) } : null;
+                      if (!est) return null;
+                      return (
+                        <p className={`text-[9px] mt-0.5 font-bold ${est.type === 'heal' ? 'text-green-400' : 'text-red-400'}`}>
+                          ~{est.type === 'heal' ? '+' : '-'}{fmt(est.value)} {est.type === 'heal' ? 'HP' : 'DMG'}
+                          {est.elemMult > 1 ? ' ★' : est.elemMult < 1 ? ' ▼' : ''}
+                        </p>
+                      );
+                    })()}
                   </motion.button>
                 );
               })}
@@ -2062,18 +2420,6 @@ export default function PvpLive() {
             </p>
           )}
         </div>
-
-        {/* Beru reaction */}
-        <AnimatePresence>
-          {beruMsg && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              className={`p-3 rounded-xl mb-4 italic text-sm ${
-                result.won ? 'bg-red-900/20 text-red-300' : 'bg-green-900/20 text-green-300'
-              }`}>
-              🤖 Beru: "{beruMsg}"
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         <div className="flex gap-3 justify-center">
           <motion.button
