@@ -56,6 +56,12 @@ import {
 import { TALENT_SKILLS, TALENT_SKILL_COST, TALENT_SKILL_UNLOCK_LEVEL, ULTIMATE_SKILLS, ULTIMATE_SKILL_COST } from './talentSkillData';
 import { isLoggedIn, authHeaders, getAuthUser } from '../../utils/auth';
 import { cloudStorage } from '../../utils/CloudStorage';
+import {
+  ELEMENT_SET_MAP, CLASS_SET_TIERS, CLASS_IDEAL_STATS, STAT_COLOR_MAP,
+  resolveSetId, getResolvedTiers, getSetTier, getStatColor,
+  scoreArtifact as scoreArtifactShared, scoreArtifactRaw,
+  setBonus2Value, setBonus4Value, autoEquipSetFirst, analyzeEquipment as analyzeEquipmentShared,
+} from './autoEquipUtils';
 
 // ─── StoryTypewriter — char-by-char text reveal ──────────────
 const StoryTypewriter = ({ text, speaker }) => {
@@ -158,93 +164,7 @@ const AI_DEFAULT_MAINS = {
   collier: 'atk_pct', bracelet: 'atk_pct', anneau: 'crit_rate', boucles: 'atk_pct',
 };
 
-// ─── Beru Advisor Constants ──────────────────────────────────
-
-const ELEMENT_SET_MAP = { fire: 'flamme_maudite', water: 'maree_eternelle', shadow: 'ombre_souveraine' };
-
-const CLASS_SET_TIERS = {
-  assassin: {
-    S: ['infamie_chaotique', 'ELEMENT_SET'],
-    A: ['expertise_bestiale', 'fureur_desespoir', 'flamme_interieure'],
-    B: ['eclat_angelique', 'voile_ombre'],
-    C: ['volonte_de_fer', 'benediction_celeste'],
-  },
-  fighter: {
-    S: ['infamie_chaotique', 'ELEMENT_SET'],
-    A: ['expertise_bestiale', 'fureur_desespoir', 'flamme_interieure'],
-    B: ['chaines_destin', 'aura_commandeur'],
-    C: ['benediction_celeste', 'source_arcanique'],
-  },
-  mage: {
-    S: ['source_arcanique', 'tempete_arcane', 'ELEMENT_SET'],
-    A: ['echo_temporel', 'expertise_bestiale', 'infamie_chaotique'],
-    B: ['eclat_angelique', 'flamme_interieure'],
-    C: ['volonte_de_fer', 'chaines_destin'],
-  },
-  tank: {
-    S: ['volonte_de_fer', 'chaines_destin'],
-    A: ['aura_commandeur', 'benediction_celeste'],
-    B: ['sacrifice_martyr', 'voile_ombre'],
-    C: ['infamie_chaotique', 'expertise_bestiale'],
-  },
-  support: {
-    S: ['benediction_celeste', 'echo_temporel'],
-    A: ['aura_commandeur', 'volonte_de_fer', 'source_arcanique'],
-    B: ['sacrifice_martyr', 'chaines_destin'],
-    C: ['infamie_chaotique', 'fureur_desespoir'],
-  },
-};
-
-const CLASS_IDEAL_STATS = {
-  assassin: {
-    mainStats: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_dmg', bottes: 'spd_flat', collier: 'atk_pct', bracelet: 'atk_pct', anneau: 'crit_rate', boucles: 'atk_pct' },
-    goodSubs: ['crit_dmg', 'crit_rate', 'atk_pct', 'spd_flat', 'atk_flat'],
-    badSubs: ['hp_flat', 'def_flat', 'res_flat'],
-  },
-  fighter: {
-    mainStats: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_rate', bottes: 'spd_flat', collier: 'atk_pct', bracelet: 'atk_pct', anneau: 'crit_dmg', boucles: 'atk_pct' },
-    goodSubs: ['atk_pct', 'crit_rate', 'crit_dmg', 'atk_flat', 'hp_pct'],
-    badSubs: ['res_flat', 'def_flat'],
-  },
-  mage: {
-    mainStats: { casque: 'hp_pct', plastron: 'int_pct', gants: 'crit_dmg', bottes: 'spd_flat', collier: 'int_pct', bracelet: 'int_pct', anneau: 'crit_rate', boucles: 'int_pct' },
-    goodSubs: ['int_pct', 'int_flat', 'crit_dmg', 'crit_rate', 'spd_flat'],
-    badSubs: ['atk_flat', 'atk_pct', 'hp_flat', 'def_flat'],
-  },
-  tank: {
-    mainStats: { casque: 'hp_pct', plastron: 'atk_flat', gants: 'crit_rate', bottes: 'def_pct', collier: 'hp_pct', bracelet: 'def_pct', anneau: 'res_flat', boucles: 'hp_pct' },
-    goodSubs: ['hp_pct', 'def_pct', 'res_flat', 'hp_flat', 'def_flat'],
-    badSubs: ['crit_dmg', 'atk_pct', 'atk_flat'],
-  },
-  support: {
-    mainStats: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_rate', bottes: 'spd_flat', collier: 'hp_pct', bracelet: 'def_pct', anneau: 'res_flat', boucles: 'hp_pct' },
-    goodSubs: ['hp_pct', 'spd_flat', 'res_flat', 'def_pct', 'hp_flat'],
-    badSubs: ['crit_dmg', 'atk_flat'],
-  },
-};
-
-// ─── Stat Color Map by Class ──────────────────────────────
-const STAT_COLOR_MAP = {
-  fighter:  { green: ['atk_flat','atk_pct','crit_dmg','crit_rate','spd_flat'], gray: ['int_flat','int_pct','hp_flat','res_flat'] },
-  assassin: { green: ['atk_flat','atk_pct','crit_dmg','crit_rate','spd_flat'], gray: ['int_flat','int_pct','hp_flat','res_flat'] },
-  mage:     { green: ['int_flat','int_pct','crit_dmg','crit_rate','spd_flat'], gray: ['atk_flat','atk_pct','hp_flat','res_flat'] },
-  support:  { green: ['atk_flat','atk_pct','crit_dmg','crit_rate','spd_flat'], gray: ['int_flat','int_pct'] },
-  tank:     { green: ['hp_flat','hp_pct','def_flat','def_pct','res_flat'], gray: ['atk_flat','crit_dmg','int_flat','int_pct'] },
-};
-
-const getStatColor = (statId, hunterClass, hunterElement) => {
-  const map = STAT_COLOR_MAP[hunterClass] || STAT_COLOR_MAP.fighter;
-  if (map.green.includes(statId)) return 'text-green-400 font-bold';
-  if (map.gray.includes(statId)) return 'text-gray-500';
-  // Elemental dmg matching hunter element → green
-  const elemMap = { fire: ['fire_dmg_flat','fire_dmg_pct'], water: ['water_dmg_flat','water_dmg_pct'], shadow: ['shadow_dmg_flat','shadow_dmg_pct'], light: ['light_dmg_flat','light_dmg_pct'], earth: ['earth_dmg_flat','earth_dmg_pct'] };
-  if (elemMap[hunterElement]?.includes(statId)) return 'text-green-400 font-bold';
-  // Any elemental stat not matching → white (neutral)
-  const allElem = Object.values(elemMap).flat();
-  if (allElem.includes(statId)) return 'text-gray-300';
-  // Default: white (neutral — DEF, RES, HP%, etc.)
-  return 'text-gray-300';
-};
+// ─── Beru Advisor Constants (imported from autoEquipUtils.js) ──────────────
 
 const BERU_ADVICE_DIALOGUES = {
   analyzing: ["Laisse Beru analyser... *ajuste lunettes*", "Hmm, voyons voir ce que t'as...", "Beru Expert Mode : ON ! Analysons tout ca..."],
@@ -2791,257 +2711,20 @@ export default function ShadowColosseum() {
     setScoutResults(prev => ({ ...prev, junked: [], junkSold: true }));
   };
 
-  // ─── Beru Advisor: analyzeEquipment ────────────────────────
+  // ─── Beru Advisor: analyzeEquipment (delegates to shared util) ────────────────────────
 
   const analyzeEquipment = (hunterId, equipped, inventory) => {
     const h = HUNTERS[hunterId];
     if (!h) return null;
     const hClass = h.class || 'fighter';
     const hElement = h.element || 'fire';
-    const role = ['assassin', 'fighter', 'mage'].includes(hClass) ? 'DPS' : hClass === 'tank' ? 'Tank' : 'Support';
-    const idealStats = CLASS_IDEAL_STATS[hClass] || CLASS_IDEAL_STATS.fighter;
-    const tiers = CLASS_SET_TIERS[hClass] || CLASS_SET_TIERS.fighter;
-
-    // Resolve ELEMENT_SET placeholders
-    const resolveSet = (sid) => sid === 'ELEMENT_SET' ? ELEMENT_SET_MAP[hElement] : sid;
-    const resolvedTiers = {};
-    for (const tier of ['S', 'A', 'B', 'C']) {
-      resolvedTiers[tier] = (tiers[tier] || []).map(resolveSet).filter(Boolean);
+    const result = analyzeEquipmentShared(hClass, hElement, equipped, inventory);
+    // Override summary with random BERU_ADVICE_DIALOGUES if we have them
+    const gradeDialogues = { S: 'gradeS', A: 'gradeA', B: 'gradeB', C: 'gradeC', D: 'gradeD' };
+    if (BERU_ADVICE_DIALOGUES[gradeDialogues[result.overallGrade]]) {
+      result.summary = randomPick(BERU_ADVICE_DIALOGUES[gradeDialogues[result.overallGrade]]);
     }
-
-    const getSetTier = (setId) => {
-      for (const tier of ['S', 'A', 'B', 'C']) {
-        if (resolvedTiers[tier].includes(setId)) return tier;
-      }
-      return 'B'; // default neutral
-    };
-
-    // Enhanced scoring function
-    const scoreArtifact = (art, slot) => {
-      let score = 0;
-      score += art.rarity === 'mythique' ? 30 : art.rarity === 'legendaire' ? 15 : 0;
-      score += art.level * 2;
-      // Main stat match
-      const idealMain = idealStats.mainStats[slot || art.slot];
-      if (idealMain === art.mainStat) score += 30;
-      else if (['atk_pct', 'hp_pct', 'crit_rate', 'crit_dmg', 'int_pct'].includes(art.mainStat)) score += 10;
-      else score -= 10;
-      // Set tier
-      const st = getSetTier(art.set);
-      score += st === 'S' ? 25 : st === 'A' ? 15 : st === 'B' ? 5 : -10;
-      // Sub-stats
-      art.subs.forEach(sub => {
-        if (idealStats.goodSubs.includes(sub.id)) score += 8;
-        else if (idealStats.badSubs.includes(sub.id)) score -= 5;
-        score += sub.value * 0.3;
-      });
-      // iLevel
-      score += computeArtifactILevel(art) * 0.5;
-      return Math.round(score);
-    };
-
-    // Analyze current sets
-    const setCounts = {};
-    Object.values(equipped).forEach(art => {
-      if (art?.set) setCounts[art.set] = (setCounts[art.set] || 0) + 1;
-    });
-    const currentSetAnalysis = Object.entries(setCounts).map(([setId, count]) => {
-      const tier = getSetTier(setId);
-      const verdict = tier === 'S' ? 'parfait' : tier === 'A' ? 'ok' : 'mauvais';
-      return { setId, count, tier, verdict };
-    });
-
-    // Near-complete set detection — only suggest sets that are S or A tier for this class
-    const nearCompleteSets = [];
-    Object.entries(setCounts).forEach(([setId, count]) => {
-      const tier = getSetTier(setId);
-      if (tier !== 'S' && tier !== 'A') return; // Only recommend completing good sets for this class
-      if (count === 1) nearCompleteSets.push({ setId, count, needed: 1, bonus: '2p', tier });
-      else if (count === 3) nearCompleteSets.push({ setId, count, needed: 1, bonus: '4p', tier });
-      else if (count >= 5 && count < 8 && ALL_ARTIFACT_SETS[setId]?.bonus8Desc) nearCompleteSets.push({ setId, count, needed: 8 - count, bonus: '8p', tier });
-    });
-    // Also check inventory for potential set completions
-    const invSetCounts = {};
-    inventory.forEach(art => { if (art?.set) invSetCounts[art.set] = (invSetCounts[art.set] || 0) + 1; });
-    nearCompleteSets.forEach(ncs => {
-      ncs.availableInInv = invSetCounts[ncs.setId] || 0;
-      ncs.canComplete = ncs.availableInInv >= ncs.needed;
-    });
-
-    // Optimal set plan recommendation based on total available artifacts (equipped + inventory)
-    const allAvailable = [...Object.values(equipped).filter(Boolean), ...inventory];
-    const totalSetCounts = {};
-    allAvailable.forEach(art => { if (art?.set) totalSetCounts[art.set] = (totalSetCounts[art.set] || 0) + 1; });
-    const totalSlotCoverage = {};
-    const allBySlot = {};
-    SLOT_ORDER.forEach(s => { allBySlot[s] = allAvailable.filter(a => a.slot === s); });
-    [...resolvedTiers.S, ...resolvedTiers.A].forEach(setId => {
-      totalSlotCoverage[setId] = SLOT_ORDER.filter(s => allBySlot[s].some(a => a.set === setId)).length;
-    });
-
-    const candidatePlans = [];
-    const recSets = [...resolvedTiers.S, ...resolvedTiers.A];
-    // 8p plans (only for sets that actually have an 8p bonus)
-    for (const s of recSets) {
-      const sDef = ALL_ARTIFACT_SETS[s];
-      if (totalSlotCoverage[s] >= 8 && sDef?.bonus8Desc) candidatePlans.push([{ set: s, n: 8 }]);
-    }
-    // 4p + 4p
-    for (let i = 0; i < recSets.length; i++) {
-      for (let j = i + 1; j < recSets.length; j++) {
-        if (totalSlotCoverage[recSets[i]] >= 4 && totalSlotCoverage[recSets[j]] >= 4) {
-          candidatePlans.push([{ set: recSets[i], n: 4 }, { set: recSets[j], n: 4 }]);
-        }
-      }
-    }
-    // 4p + 2p + 2p
-    for (const s4 of recSets) {
-      if (totalSlotCoverage[s4] < 4) continue;
-      for (let j = 0; j < recSets.length; j++) {
-        if (recSets[j] === s4 || totalSlotCoverage[recSets[j]] < 2) continue;
-        for (let k = j + 1; k < recSets.length; k++) {
-          if (recSets[k] === s4 || totalSlotCoverage[recSets[k]] < 2) continue;
-          candidatePlans.push([{ set: s4, n: 4 }, { set: recSets[j], n: 2 }, { set: recSets[k], n: 2 }]);
-        }
-      }
-    }
-
-    // Pick best plan by S-tier priority
-    const planScore = (plan) => {
-      let sc = 0;
-      for (const p of plan) {
-        const tier = getSetTier(p.set);
-        const tierMult = tier === 'S' ? 3 : tier === 'A' ? 2 : 1;
-        sc += p.n * tierMult;
-      }
-      return sc;
-    };
-    candidatePlans.sort((a, b) => planScore(b) - planScore(a));
-    const optimalPlan = candidatePlans[0] || null;
-
-    // Check reroll needs: for optimal plan, which slots have wrong main stat or wrong set
-    const rerollAdvice = [];
-    if (optimalPlan) {
-      const slotsNeeded = {};
-      for (const p of optimalPlan) {
-        let remaining = p.n;
-        for (const slot of SLOT_ORDER) {
-          if (remaining <= 0 || slotsNeeded[slot]) continue;
-          const hasSet = allBySlot[slot].some(a => a.set === p.set);
-          if (hasSet) { slotsNeeded[slot] = p.set; remaining--; }
-        }
-        // If not enough slots, fill from remaining
-        if (remaining > 0) {
-          for (const slot of SLOT_ORDER) {
-            if (remaining <= 0 || slotsNeeded[slot]) continue;
-            slotsNeeded[slot] = p.set;
-            remaining--;
-          }
-        }
-      }
-      // Check each equipped slot
-      Object.entries(equipped).forEach(([slot, art]) => {
-        if (!art) return;
-        const idealMainStat = idealStats.mainStats[slot];
-        if (idealMainStat && art.mainStat !== idealMainStat) {
-          const curName = MAIN_STAT_VALUES[art.mainStat]?.name || art.mainStat;
-          const idealName = MAIN_STAT_VALUES[idealMainStat]?.name || idealMainStat;
-          rerollAdvice.push({ slot, type: 'mainStat', msg: `${ARTIFACT_SLOTS[slot]?.name}: ${curName} -> ${idealName}` });
-        }
-      });
-    }
-
-    // Mage-specific advice
-    const mageAdvice = hClass === 'mage' ? (() => {
-      const issues = [];
-      Object.entries(equipped).forEach(([slot, art]) => {
-        if (!art) return;
-        if (['plastron', 'collier', 'bracelet', 'boucles'].includes(slot) && art.mainStat === 'atk_pct') {
-          issues.push(`${ARTIFACT_SLOTS[slot].name} : ATK% au lieu de INT% — un mage scale sur INT !`);
-        }
-      });
-      return issues.length > 0 ? issues : null;
-    })() : null;
-
-    // Analyze each slot
-    const slotAdvice = SLOT_ORDER.map(slot => {
-      const current = equipped[slot] || null;
-      const currentScore = current ? scoreArtifact(current, slot) : 0;
-      const currentIssues = [];
-
-      if (current) {
-        const idealMain = idealStats.mainStats[slot];
-        if (idealMain && current.mainStat !== idealMain) {
-          const cur = MAIN_STAT_VALUES[current.mainStat]?.name || current.mainStat;
-          const ideal = MAIN_STAT_VALUES[idealMain]?.name || idealMain;
-          currentIssues.push(`Main stat non optimale (${cur} au lieu de ${ideal})`);
-        }
-        if (getSetTier(current.set) === 'C') {
-          currentIssues.push(`Set pas adapte pour un ${hClass}`);
-        }
-        current.subs.forEach(sub => {
-          if (idealStats.badSubs.includes(sub.id)) {
-            const subName = SUB_STAT_POOL.find(s => s.id === sub.id)?.name || sub.id;
-            currentIssues.push(`Sub ${subName} inutile pour un ${hClass}`);
-          }
-        });
-        if (current.level === 0) {
-          currentIssues.push('Artefact pas monte (Lv0)');
-        }
-      }
-
-      // Find best in inventory for this slot
-      const candidates = inventory.filter(a => a.slot === slot);
-      let bestInInventory = null;
-      let bestScore = 0;
-      candidates.forEach(a => {
-        const s = scoreArtifact(a, slot);
-        if (s > bestScore) { bestScore = s; bestInInventory = a; }
-      });
-
-      const upgrade = bestInInventory && bestScore > currentScore;
-      return {
-        slot, current, currentScore, currentIssues,
-        bestInInventory: upgrade ? bestInInventory : null,
-        bestScore: upgrade ? bestScore : 0,
-        upgrade: !!upgrade,
-        upgradeGain: upgrade ? bestScore - currentScore : 0,
-      };
-    });
-
-    // Overall grade
-    const totalSlots = SLOT_ORDER.length;
-    const equippedSlots = SLOT_ORDER.filter(s => equipped[s]).length;
-    if (equippedSlots === 0) {
-      return {
-        hunterClass: hClass, hunterElement: hElement, role,
-        recommendedSets: { S: resolvedTiers.S, A: resolvedTiers.A },
-        currentSetAnalysis, slotAdvice, nearCompleteSets, mageAdvice,
-        optimalPlan, rerollAdvice,
-        overallGrade: 'D',
-        summary: randomPick(BERU_ADVICE_DIALOGUES.gradeD),
-      };
-    }
-
-    const avgScore = slotAdvice.reduce((sum, sa) => sum + sa.currentScore, 0) / totalSlots;
-    const totalIssues = slotAdvice.reduce((sum, sa) => sum + sa.currentIssues.length, 0);
-    const sSetCount = currentSetAnalysis.filter(s => s.tier === 'S').reduce((sum, s) => sum + s.count, 0);
-
-    let grade;
-    if (avgScore >= 70 && totalIssues <= 2 && sSetCount >= 4) grade = 'S';
-    else if (avgScore >= 50 && totalIssues <= 5) grade = 'A';
-    else if (avgScore >= 30 && totalIssues <= 10) grade = 'B';
-    else grade = 'C';
-
-    const gradeDialogues = { S: 'gradeS', A: 'gradeA', B: 'gradeB', C: 'gradeC' };
-    return {
-      hunterClass: hClass, hunterElement: hElement, role,
-      recommendedSets: { S: resolvedTiers.S, A: resolvedTiers.A },
-      currentSetAnalysis, slotAdvice, nearCompleteSets, mageAdvice,
-      optimalPlan, rerollAdvice,
-      overallGrade: grade,
-      summary: randomPick(BERU_ADVICE_DIALOGUES[gradeDialogues[grade]]),
-    };
+    return result;
   };
 
   // ─── Start Battle ──────────────────────────────────────────
@@ -9129,277 +8812,47 @@ export default function ShadowColosseum() {
                 {data.artifactInventory.length > 0 && (
                   <button
                     onClick={() => {
-                      // Determine role from actual hunter class
-                      const aeClass = HUNTERS[id]?.class || 'fighter';
-                      const role = aeClass === 'mage' ? 'mage' : aeClass === 'tank' ? 'tank' : aeClass === 'support' ? 'support' : 'dps';
+                      const hClass = HUNTERS[id]?.class || 'fighter';
+                      const hElement = c.element || 'fire';
 
-                      // Best sets per role (with class-specific tiers)
-                      const elementSetMap = { fire: 'flamme_maudite', water: 'maree_eternelle', shadow: 'ombre_souveraine' };
-                      const classTiers = CLASS_SET_TIERS[aeClass] || CLASS_SET_TIERS.fighter;
-                      const resolveSet = (sid) => sid === 'ELEMENT_SET' ? elementSetMap[c.element] : sid;
-                      const sTierSets = (classTiers.S || []).map(resolveSet).filter(Boolean);
-                      const aTierSets = (classTiers.A || []).map(resolveSet).filter(Boolean);
-                      const preferredSets = new Set([...sTierSets, ...aTierSets]);
-
-                      // Preferred main stats per slot per role
-                      const mainStatPriority = {
-                        dps: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_dmg', bottes: 'spd_flat', collier: 'atk_pct', bracelet: 'atk_pct', anneau: 'crit_rate', boucles: 'atk_pct' },
-                        mage: { casque: 'hp_pct', plastron: 'int_pct', gants: 'crit_dmg', bottes: 'spd_flat', collier: 'int_pct', bracelet: 'int_pct', anneau: 'crit_rate', boucles: 'int_pct' },
-                        tank: { casque: 'hp_pct', plastron: 'atk_flat', gants: 'crit_rate', bottes: 'def_pct', collier: 'hp_pct', bracelet: 'def_pct', anneau: 'res_flat', boucles: 'hp_pct' },
-                        support: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_rate', bottes: 'spd_flat', collier: 'hp_pct', bracelet: 'def_pct', anneau: 'res_flat', boucles: 'hp_pct' },
-                      };
-                      const idealMain = mainStatPriority[role] || mainStatPriority.dps;
-
-                      // Sub stat priorities per role
-                      const subPriorities = {
-                        dps: ['atk_pct', 'crit_dmg', 'crit_rate', 'atk_flat', 'spd_flat'],
-                        mage: ['int_pct', 'crit_dmg', 'crit_rate', 'int_flat', 'spd_flat'],
-                        tank: ['hp_pct', 'def_pct', 'hp_flat', 'def_flat', 'res_flat'],
-                        support: ['hp_pct', 'spd_flat', 'res_flat', 'def_pct', 'hp_flat'],
-                      };
-                      const subPriority = subPriorities[role] || subPriorities.dps;
-
-                      // Score artifact raw quality (without set bonus)
-                      const scoreRaw = (art) => {
-                        let score = 0;
-                        score += art.rarity === 'mythique' ? 30 : art.rarity === 'legendaire' ? 15 : 0;
-                        score += art.level * 2;
-                        if (idealMain[art.slot] === art.mainStat) score += 25;
-                        score += art.mainValue * 0.5;
-                        art.subs.forEach(sub => {
-                          const idx = subPriority.indexOf(sub.id);
-                          if (idx !== -1) score += (5 - idx) * 2 + sub.value * 0.3;
-                        });
-                        return score;
-                      };
-
-                      // Value of set bonuses (how much a completed set is worth in score points)
-                      const setBonus2Value = (setId) => {
-                        const s = ALL_ARTIFACT_SETS[setId];
-                        if (!s) return 15;
-                        if (s.passive2) return 40; // Passives are very strong
-                        const b = s.bonus2 || {};
-                        let v = 15;
-                        if (b.manaPercent) v += b.manaPercent * 0.8;
-                        if (b.atkPercent) v += b.atkPercent * 1.5;
-                        if (b.defPercent) v += b.defPercent;
-                        if (b.hpPercent) v += b.hpPercent;
-                        if (b.critRate) v += b.critRate * 2;
-                        if (b.spdPercent) v += b.spdPercent * 1.5;
-                        if (b.resFlat) v += b.resFlat;
-                        if (b.manaCostReduce) v += b.manaCostReduce;
-                        return v;
-                      };
-                      const setBonus4Value = (setId) => {
-                        const s = ALL_ARTIFACT_SETS[setId];
-                        if (!s) return 30;
-                        if (s.passive4) return 60;
-                        const b = s.bonus4 || {};
-                        let v = 30;
-                        if (b.critDamage) v += b.critDamage * 1.5;
-                        if (b.fireDamage) v += b.fireDamage * 2;
-                        if (b.waterDamage) v += b.waterDamage * 2;
-                        if (b.shadowDamage) v += b.shadowDamage * 2;
-                        if (b.allDamage) v += b.allDamage * 2.5;
-                        if (b.healBonus) v += b.healBonus;
-                        if (b.hpPercent) v += b.hpPercent;
-                        if (b.defPen) v += b.defPen * 2;
-                        if (b.manaRegen) v += b.manaRegen * 0.5;
-                        if (b.manaCostReduce) v += b.manaCostReduce;
-                        return v;
-                      };
-
-                      // ─── Set-First Auto-Equip ───
-                      setData(prev => {
-                        let inv = [...prev.artifactInventory];
-                        const prevEquipped = { ...(prev.artifacts[id] || {}) };
-                        SLOT_ORDER.forEach(slotId => {
-                          if (prevEquipped[slotId]) {
-                            inv.push(prevEquipped[slotId]);
-                            delete prevEquipped[slotId];
-                          }
-                        });
-
-                        // Index artifacts by slot and set
-                        const bySlot = {};
-                        const bySlotAndSet = {};
-                        SLOT_ORDER.forEach(s => { bySlot[s] = []; });
-                        inv.forEach(a => {
-                          if (bySlot[a.slot]) bySlot[a.slot].push(a);
-                        });
-                        // Sort each slot by raw score descending
-                        SLOT_ORDER.forEach(s => {
-                          bySlot[s].sort((a, b) => scoreRaw(b) - scoreRaw(a));
-                          bySlotAndSet[s] = {};
-                          bySlot[s].forEach(a => {
-                            if (!bySlotAndSet[s][a.set]) bySlotAndSet[s][a.set] = [];
-                            bySlotAndSet[s][a.set].push(a);
-                          });
-                        });
-
-                        // Count how many artifacts per set are available across all slots
-                        const setSlotCoverage = {};
-                        [...preferredSets].forEach(setId => {
-                          setSlotCoverage[setId] = SLOT_ORDER.filter(s => (bySlotAndSet[s][setId] || []).length > 0).length;
-                        });
-
-                        // Generate set plans: list of [setId, targetPieces] tuples
-                        const allSets = [...preferredSets];
-                        const plans = [];
-
-                        // Plan type: 8p (only for sets that actually have an 8p bonus)
-                        for (const s8 of allSets) {
-                          if (setSlotCoverage[s8] >= 8 && ALL_ARTIFACT_SETS[s8]?.bonus8Desc) {
-                            plans.push([{ set: s8, n: 8 }]);
-                          }
-                        }
-                        // Plan type: 4p + 4p
-                        for (let i = 0; i < allSets.length; i++) {
-                          for (let j = i + 1; j < allSets.length; j++) {
-                            if (setSlotCoverage[allSets[i]] >= 4 && setSlotCoverage[allSets[j]] >= 4) {
-                              plans.push([{ set: allSets[i], n: 4 }, { set: allSets[j], n: 4 }]);
-                            }
-                          }
-                        }
-                        // Plan type: 4p + 2p + 2p
-                        for (let i = 0; i < allSets.length; i++) {
-                          if (setSlotCoverage[allSets[i]] < 4) continue;
-                          for (let j = 0; j < allSets.length; j++) {
-                            if (j === i || setSlotCoverage[allSets[j]] < 2) continue;
-                            for (let k = j + 1; k < allSets.length; k++) {
-                              if (k === i || setSlotCoverage[allSets[k]] < 2) continue;
-                              plans.push([{ set: allSets[i], n: 4 }, { set: allSets[j], n: 2 }, { set: allSets[k], n: 2 }]);
-                            }
-                          }
-                        }
-                        // Plan type: 2p + 2p + 2p + 2p
-                        if (allSets.length >= 4) {
-                          const sets2 = allSets.filter(s => setSlotCoverage[s] >= 2);
-                          for (let i = 0; i < sets2.length; i++) {
-                            for (let j = i+1; j < sets2.length; j++) {
-                              for (let k = j+1; k < sets2.length; k++) {
-                                for (let l = k+1; l < sets2.length; l++) {
-                                  plans.push([{ set: sets2[i], n: 2 }, { set: sets2[j], n: 2 }, { set: sets2[k], n: 2 }, { set: sets2[l], n: 2 }]);
-                                }
-                              }
-                            }
-                          }
-                        }
-                        // Plan type: 4p + 2p (remaining 2 slots = best available)
-                        for (const s4 of allSets) {
-                          if (setSlotCoverage[s4] < 4) continue;
-                          for (const s2 of allSets) {
-                            if (s2 === s4 || setSlotCoverage[s2] < 2) continue;
-                            plans.push([{ set: s4, n: 4 }, { set: s2, n: 2 }]);
-                          }
-                        }
-                        // Fallback: greedy (no set constraint)
-                        plans.push([]);
-
-                        // Evaluate each plan: assign artifacts to slots respecting set targets
-                        const evaluatePlan = (plan) => {
-                          const assigned = {};
-                          const usedUids = new Set();
-                          let totalScore = 0;
-
-                          // For each set in the plan, greedily assign best artifact per slot
-                          const slotsRemaining = new Set(SLOT_ORDER);
-                          for (const { set: setId, n: needed } of plan) {
-                            // Find slots that have this set available, sorted by best artifact score
-                            const slotCandidates = [...slotsRemaining]
-                              .map(s => {
-                                const arts = (bySlotAndSet[s][setId] || []).filter(a => !usedUids.has(a.uid));
-                                return { slot: s, best: arts[0] || null, score: arts[0] ? scoreRaw(arts[0]) : -999 };
-                              })
-                              .filter(sc => sc.best)
-                              .sort((a, b) => {
-                                // Prefer slots where the set piece is close in quality to the raw best
-                                const aBestRaw = bySlot[a.slot].find(x => !usedUids.has(x.uid));
-                                const bBestRaw = bySlot[b.slot].find(x => !usedUids.has(x.uid));
-                                const aLoss = (aBestRaw ? scoreRaw(aBestRaw) : 0) - a.score;
-                                const bLoss = (bBestRaw ? scoreRaw(bBestRaw) : 0) - b.score;
-                                return aLoss - bLoss; // Pick slot where using this set costs the least
-                              });
-
-                            let placed = 0;
-                            for (const sc of slotCandidates) {
-                              if (placed >= needed) break;
-                              if (!slotsRemaining.has(sc.slot)) continue;
-                              assigned[sc.slot] = sc.best;
-                              usedUids.add(sc.best.uid);
-                              totalScore += sc.score;
-                              slotsRemaining.delete(sc.slot);
-                              placed++;
-                            }
-                            // Add set bonus value (2p, 4p, 8p = 2p+4p stacked + extra)
-                            if (placed >= 2) totalScore += setBonus2Value(setId);
-                            if (placed >= 4) totalScore += setBonus4Value(setId);
-                            if (placed >= 8 && ALL_ARTIFACT_SETS[setId]?.bonus8Desc) totalScore += 50; // 8p synergy bonus
-                          }
-
-                          // Fill remaining slots with best raw artifacts
-                          for (const slot of slotsRemaining) {
-                            const best = bySlot[slot].find(a => !usedUids.has(a.uid));
-                            if (best) {
-                              assigned[slot] = best;
-                              usedUids.add(best.uid);
-                              totalScore += scoreRaw(best);
-                            }
-                          }
-
-                          return { assigned, totalScore, plan };
-                        };
-
-                        // Find the best plan
-                        let bestResult = { assigned: {}, totalScore: -Infinity, plan: [] };
-                        for (const plan of plans) {
-                          const result = evaluatePlan(plan);
-                          if (result.totalScore > bestResult.totalScore) bestResult = result;
-                        }
-
-                        // Remove equipped from inventory
-                        const equippedUids = new Set(Object.values(bestResult.assigned).map(a => a.uid));
-                        inv = inv.filter(a => !equippedUids.has(a.uid));
-                        return { ...prev, artifacts: { ...prev.artifacts, [id]: bestResult.assigned }, artifactInventory: inv };
+                      // Pool: currently equipped + inventory
+                      const prevEquipped = data.artifacts[id] || {};
+                      let pool = [...data.artifactInventory];
+                      SLOT_ORDER.forEach(slotId => {
+                        if (prevEquipped[slotId]) pool.push(prevEquipped[slotId]);
                       });
 
-                      // Report what set plan was chosen via Beru + reroll advice
-                      setTimeout(() => {
-                        const eq = data.artifacts[id] || {};
-                        const setCnts = {};
-                        Object.values(eq).forEach(a => { if (a?.set) setCnts[a.set] = (setCnts[a.set] || 0) + 1; });
-                        const setLabels = Object.entries(setCnts)
-                          .filter(([, cnt]) => cnt >= 2)
-                          .sort((a, b) => b[1] - a[1])
-                          .map(([sId, cnt]) => {
-                            const sd = ALL_ARTIFACT_SETS[sId];
-                            const bonusTag = cnt >= 8 ? '8p' : cnt >= 4 ? '4p' : '2p';
-                            return `${sd?.icon || ''} ${sd?.name || sId} (${bonusTag})`;
-                          }).join(' + ');
+                      // Run shared set-first algorithm
+                      const { assigned, usedUids, setLabels } = autoEquipSetFirst(hClass, hElement, pool);
 
-                        // Check for reroll advice: artifacts with wrong main stat for this class
-                        const rerollSlots = [];
-                        Object.entries(eq).forEach(([slot, art]) => {
-                          if (!art) return;
-                          if (idealMain[slot] && art.mainStat !== idealMain[slot]) {
-                            const curName = MAIN_STAT_VALUES[art.mainStat]?.name || art.mainStat;
-                            const idealName = MAIN_STAT_VALUES[idealMain[slot]]?.name || idealMain[slot];
-                            rerollSlots.push(`${ARTIFACT_SLOTS[slot]?.name}: ${curName} -> ${idealName}`);
-                          }
-                        });
+                      // Update state
+                      const newInv = pool.filter(a => !usedUids.has(a.uid));
+                      setData(prev => ({
+                        ...prev,
+                        artifacts: { ...prev.artifacts, [id]: assigned },
+                        artifactInventory: newInv,
+                      }));
 
-                        let msg = setLabels
-                          ? `Sets: ${setLabels}`
-                          : (role === 'mage' ? "Full INT ! La magie va tout ravager !" : role === 'tank' ? "Blindage maximal !" : role === 'support' ? "Support optimal !" : "Full DPS !");
-
-                        if (rerollSlots.length > 0) {
-                          msg += ` | Reroll stats: ${rerollSlots.slice(0, 3).join(', ')}${rerollSlots.length > 3 ? '...' : ''}`;
+                      // Check reroll advice
+                      const idealStats = CLASS_IDEAL_STATS[hClass] || CLASS_IDEAL_STATS.fighter;
+                      const rerollSlots = [];
+                      Object.entries(assigned).forEach(([slot, art]) => {
+                        if (!art) return;
+                        if (idealStats.mainStats[slot] && art.mainStat !== idealStats.mainStats[slot]) {
+                          const curName = MAIN_STAT_VALUES[art.mainStat]?.name || art.mainStat;
+                          const idealName = MAIN_STAT_VALUES[idealStats.mainStats[slot]]?.name || idealStats.mainStats[slot];
+                          rerollSlots.push(`${ARTIFACT_SLOTS[slot]?.name}: ${curName} -> ${idealName}`);
                         }
+                      });
 
-                        window.dispatchEvent(new CustomEvent('beru-react', {
-                          detail: { message: msg, mood: rerollSlots.length > 2 ? 'thinking' : 'happy' }
-                        }));
-                      }, 100);
+                      let msg = setLabels || 'Meilleurs artefacts equipes !';
+                      if (rerollSlots.length > 0) {
+                        msg += ` | Reroll: ${rerollSlots.slice(0, 3).join(', ')}${rerollSlots.length > 3 ? '...' : ''}`;
+                      }
+
+                      window.dispatchEvent(new CustomEvent('beru-react', {
+                        detail: { message: msg, mood: rerollSlots.length > 2 ? 'thinking' : 'happy' }
+                      }));
                     }}
                     className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-500/30 text-[10px] font-bold text-cyan-300 hover:from-cyan-600/50 hover:to-blue-600/50 transition-all"
                   >

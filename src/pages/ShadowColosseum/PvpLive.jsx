@@ -25,6 +25,11 @@ import {
   getActivePassives, WEAPONS, ARTIFACT_SETS, ALL_ARTIFACT_SETS,
   ARTIFACT_SLOTS, SLOT_ORDER, MAIN_STAT_VALUES, SUB_STAT_POOL,
 } from './equipmentData';
+import {
+  CLASS_SET_TIERS, CLASS_IDEAL_STATS,
+  getResolvedTiers, getSetTier, getStatColor, scoreArtifact as scoreArtifactUtil,
+  autoEquipSetFirst, analyzeEquipment,
+} from './autoEquipUtils';
 import { MULTIPLAYER_CONFIG } from '../../config/multiplayer';
 
 // ═══════════════════════════════════════════════════════════════
@@ -269,6 +274,7 @@ export default function PvpLive() {
   const [tempArtifactInventory, setTempArtifactInventory] = useState(null);
   const [equipFocusHunter, setEquipFocusHunter] = useState(0); // index 0-2
   const [eqInvFilter, setEqInvFilter] = useState({ slot: null, set: null });
+  const [beruAdvice, setBeruAdvice] = useState(null);
 
   // ─── Battle State ──────────────────────────────────────────
   const [battle, setBattle] = useState(null);
@@ -912,44 +918,13 @@ export default function PvpLive() {
     });
   }, [tempArtifacts]);
 
-  // ─── Auto-Equip PVP: best artifacts from inventory for focused hunter (TEMP only) ───
+  // ─── Auto-Equip PVP: shared set-first algorithm (TEMP only) ───
   const autoEquipPvp = useCallback((hunterId) => {
     const c = allPool[hunterId];
     if (!c || !tempArtifactInventory) return;
 
     const hClass = HUNTERS[hunterId]?.class || 'fighter';
-    const role = hClass === 'mage' ? 'mage' : hClass === 'tank' ? 'tank' : hClass === 'support' ? 'support' : 'dps';
-
-    // Preferred main stats per slot per role
-    const mainStatPriority = {
-      dps: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_dmg', bottes: 'spd_flat', collier: 'atk_pct', bracelet: 'atk_pct', anneau: 'crit_rate', boucles: 'atk_pct' },
-      mage: { casque: 'hp_pct', plastron: 'int_pct', gants: 'crit_dmg', bottes: 'spd_flat', collier: 'int_pct', bracelet: 'int_pct', anneau: 'crit_rate', boucles: 'int_pct' },
-      tank: { casque: 'hp_pct', plastron: 'atk_flat', gants: 'crit_rate', bottes: 'def_pct', collier: 'hp_pct', bracelet: 'def_pct', anneau: 'res_flat', boucles: 'hp_pct' },
-      support: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_rate', bottes: 'spd_flat', collier: 'hp_pct', bracelet: 'def_pct', anneau: 'res_flat', boucles: 'hp_pct' },
-    };
-    const idealMain = mainStatPriority[role] || mainStatPriority.dps;
-
-    const subPriorities = {
-      dps: ['atk_pct', 'crit_dmg', 'crit_rate', 'atk_flat', 'spd_flat'],
-      mage: ['int_pct', 'crit_dmg', 'crit_rate', 'int_flat', 'spd_flat'],
-      tank: ['hp_pct', 'def_pct', 'hp_flat', 'def_flat', 'res_flat'],
-      support: ['hp_pct', 'spd_flat', 'res_flat', 'def_pct', 'hp_flat'],
-    };
-    const subPriority = subPriorities[role] || subPriorities.dps;
-
-    // Score artifact
-    const scoreRaw = (art) => {
-      let score = 0;
-      score += art.rarity === 'mythique' ? 30 : art.rarity === 'legendaire' ? 15 : 0;
-      score += art.level * 2;
-      if (idealMain[art.slot] === art.mainStat) score += 25;
-      score += art.mainValue * 0.5;
-      (art.subs || []).forEach(sub => {
-        const idx = subPriority.indexOf(sub.id);
-        if (idx !== -1) score += (5 - idx) * 2 + sub.value * 0.3;
-      });
-      return score;
-    };
+    const hElement = c.element || 'fire';
 
     // Pool: inventory + currently equipped on this hunter
     const currentEquipped = tempArtifacts?.[hunterId] || {};
@@ -958,43 +933,28 @@ export default function PvpLive() {
       if (currentEquipped[slot]) pool.push(currentEquipped[slot]);
     });
 
-    // For each slot, pick the best artifact from the pool
-    const newEquipped = {};
-    const usedUids = new Set();
+    // Run shared set-first algorithm (with set tiers, 8p/4p/2p plans, etc.)
+    const { assigned, usedUids, setLabels } = autoEquipSetFirst(hClass, hElement, pool);
 
-    SLOT_ORDER.forEach(slot => {
-      const candidates = pool
-        .filter(a => a.slot === slot && !usedUids.has(a.uid))
-        .sort((a, b) => scoreRaw(b) - scoreRaw(a));
-      if (candidates[0]) {
-        newEquipped[slot] = candidates[0];
-        usedUids.add(candidates[0].uid);
+    // Update temp state (NEVER saves to coloData)
+    setTempArtifacts(prev => ({ ...prev, [hunterId]: assigned }));
+    setTempArtifactInventory(pool.filter(a => !usedUids.has(a.uid)));
+
+    // Beru reaction with set info
+    const idealStats = CLASS_IDEAL_STATS[hClass] || CLASS_IDEAL_STATS.fighter;
+    const rerollSlots = [];
+    Object.entries(assigned).forEach(([slot, art]) => {
+      if (!art) return;
+      if (idealStats.mainStats[slot] && art.mainStat !== idealStats.mainStats[slot]) {
+        rerollSlots.push(slot);
       }
     });
 
-    // Update temp state
-    setTempArtifacts(prev => ({
-      ...prev,
-      [hunterId]: newEquipped,
-    }));
-
-    // Remaining pool goes back to inventory
-    const remaining = pool.filter(a => !usedUids.has(a.uid));
-    setTempArtifactInventory(remaining);
-
-    // Beru reaction
-    const setsEquipped = {};
-    Object.values(newEquipped).forEach(a => {
-      if (a?.set) setsEquipped[a.set] = (setsEquipped[a.set] || 0) + 1;
-    });
-    const setLabels = Object.entries(setsEquipped)
-      .filter(([, cnt]) => cnt >= 2)
-      .map(([sId, cnt]) => {
-        const s = ALL_ARTIFACT_SETS[sId];
-        return `${s?.icon || ''} ${s?.name || sId} (${cnt >= 4 ? '4p' : '2p'})`;
-      }).join(' + ');
-
-    beruSay(setLabels ? `Auto-equip ! ${setLabels}` : 'Meilleurs artefacts equipes !', 'excited');
+    let msg = setLabels ? `Auto-equip ! ${setLabels}` : 'Meilleurs artefacts equipes !';
+    if (rerollSlots.length > 0) {
+      msg += ` (${rerollSlots.length} slot${rerollSlots.length > 1 ? 's' : ''} a reroll)`;
+    }
+    beruSay(msg, 'excited');
   }, [tempArtifacts, tempArtifactInventory, allPool, beruSay]);
 
   // Beru auto-equips: assign best weapons to Beru's picks
@@ -1542,6 +1502,7 @@ export default function PvpLive() {
     setTempWeaponCollection(null);
     setTempArtifactInventory(null);
     setEqInvFilter({ slot: null, set: null });
+    setBeruAdvice(null);
     setDraftFilter({ element: null, class: null });
     setHoveredTarget(null);
     setInspectedFighter(null);
@@ -2254,7 +2215,7 @@ export default function PvpLive() {
             const c = allPool[id];
             if (!c) return null;
             return (
-              <button key={id} onClick={() => setEquipFocusHunter(i)}
+              <button key={id} onClick={() => { setEquipFocusHunter(i); setBeruAdvice(null); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all ${
                   i === equipFocusHunter ? 'border-cyan-400 bg-cyan-900/30 text-cyan-300' : 'border-gray-700 bg-gray-800/50 text-gray-400'
                 }`}>
@@ -2419,6 +2380,20 @@ export default function PvpLive() {
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs text-gray-400 font-bold">Inventaire Artefacts ({tempArtifactInventory.length})</p>
               <div className="flex items-center gap-1.5">
+                {/* Conseil Beru button */}
+                <button
+                  onClick={() => {
+                    const hClass = HUNTERS[focusId]?.class || 'fighter';
+                    const hElement = focusChibi?.element || 'fire';
+                    const equipped = tempArtifacts?.[focusId] || {};
+                    const result = analyzeEquipment(hClass, hElement, equipped, tempArtifactInventory || []);
+                    setBeruAdvice(result);
+                    beruSay(result?.summary || 'Hmm...', result?.overallGrade === 'S' || result?.overallGrade === 'A' ? 'confident' : 'panic');
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-600/30 to-yellow-600/30 border border-amber-500/30 text-[10px] font-bold text-amber-300 hover:from-amber-600/50 hover:to-yellow-600/50 transition-all"
+                >
+                  Conseil Beru
+                </button>
                 <button
                   onClick={() => autoEquipPvp(focusId)}
                   className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-500/30 text-[10px] font-bold text-cyan-300 hover:from-cyan-600/50 hover:to-blue-600/50 transition-all"
@@ -2474,6 +2449,75 @@ export default function PvpLive() {
                   className="text-[10px] text-red-400 hover:text-red-300">Reset filtres</button>
               )}
             </div>
+
+            {/* Beru Advisor Panel */}
+            {beruAdvice && (() => {
+              const gradeColors = { S: 'text-yellow-400', A: 'text-green-400', B: 'text-blue-400', C: 'text-red-400', D: 'text-gray-500' };
+              const gradeBg = { S: 'from-yellow-600/20 to-amber-600/20 border-yellow-500/40', A: 'from-green-600/20 to-emerald-600/20 border-green-500/40', B: 'from-blue-600/20 to-cyan-600/20 border-blue-500/40', C: 'from-red-600/20 to-rose-600/20 border-red-500/40', D: 'from-gray-600/20 to-gray-700/20 border-gray-500/40' };
+              return (
+                <div className={`mb-3 p-3 rounded-xl bg-gradient-to-br ${gradeBg[beruAdvice.overallGrade]} border`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xl font-black ${gradeColors[beruAdvice.overallGrade]}`}>{beruAdvice.overallGrade}</span>
+                      <span className="text-[10px] text-gray-300 italic">"{beruAdvice.summary}"</span>
+                    </div>
+                    <button onClick={() => setBeruAdvice(null)} className="text-gray-500 hover:text-white text-xs">&#10005;</button>
+                  </div>
+
+                  {/* Recommended sets */}
+                  {beruAdvice.recommendedSets && (
+                    <div className="mb-2">
+                      <p className="text-[9px] text-gray-500 mb-0.5">Sets recommandes :</p>
+                      <div className="flex flex-wrap gap-1">
+                        {[...(beruAdvice.recommendedSets.S || []), ...(beruAdvice.recommendedSets.A || [])].map(setId => {
+                          const s = ALL_ARTIFACT_SETS[setId];
+                          if (!s) return null;
+                          const tier = getSetTier(setId, beruAdvice.hunterClass, focusChibi?.element || 'fire');
+                          return (
+                            <span key={setId} className={`text-[9px] px-1.5 py-0.5 rounded border ${s.border || 'border-gray-700'} ${s.bg || 'bg-gray-900/30'} ${s.color || 'text-gray-300'}`}>
+                              {s.icon} {s.name} <span className={tier === 'S' ? 'text-yellow-400' : 'text-green-400'}>({tier})</span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Slot issues */}
+                  {beruAdvice.slotAdvice?.filter(sa => sa.currentIssues.length > 0).length > 0 && (
+                    <div className="mb-2">
+                      <p className="text-[9px] text-gray-500 mb-0.5">Problemes :</p>
+                      <div className="space-y-0.5">
+                        {beruAdvice.slotAdvice.filter(sa => sa.currentIssues.length > 0).slice(0, 4).map(sa => (
+                          <div key={sa.slot} className="text-[9px] text-red-400">
+                            {sa.currentIssues[0]}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Reroll advice */}
+                  {beruAdvice.rerollAdvice?.length > 0 && (
+                    <div className="mb-1">
+                      <p className="text-[9px] text-gray-500 mb-0.5">Stats a reroll :</p>
+                      <div className="space-y-0.5">
+                        {beruAdvice.rerollAdvice.slice(0, 3).map((r, i) => (
+                          <div key={i} className="text-[9px] text-orange-400">{r.msg}</div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mage advice */}
+                  {beruAdvice.mageAdvice && (
+                    <div className="mt-1 text-[9px] text-purple-400 italic">
+                      {beruAdvice.mageAdvice[0]}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Inventory grid */}
             {(() => {
