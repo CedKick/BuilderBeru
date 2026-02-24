@@ -329,6 +329,12 @@ export const getElementMult = (atkElem, defElem) => {
   return 1.0;
 };
 
+// Raid-specific: boss has 2 weekly weaknesses instead of element chain
+export const getElementMultRaid = (atkElem, bossWeaknesses) => {
+  if (bossWeaknesses && bossWeaknesses.includes(atkElem)) return 1.3;
+  return 1.0;
+};
+
 export const getEffStat = (base, buffs, stat) => {
   const mult = buffs.filter(b => b.stat === stat).reduce((s, b) => s + b.value, 0);
   return Math.max(1, Math.floor(base * (1 + mult)));
@@ -438,7 +444,10 @@ export const computeAttack = (attacker, skill, defender, tb = {}) => {
 
   if (skill.power > 0) {
     const raw = effAtk * (skill.power / 100);
-    let elemMult = getElementMult(attacker.element, defender.element);
+    // Use weekly weaknesses for raid bosses, standard element chain otherwise
+    let elemMult = defender.weaknesses
+      ? getElementMultRaid(attacker.element, defender.weaknesses)
+      : getElementMult(attacker.element, defender.element);
     if (tb.hasTranscendance && elemMult > 1) elemMult = 1.6;
     if (elemMult > 1 && tb.elementalAdvantageBonus) elemMult += tb.elementalAdvantageBonus / 100;
     // DEF penetration from artifacts + talents

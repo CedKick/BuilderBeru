@@ -10,7 +10,7 @@ import { computeTalentBonuses2 } from './talentTree2Data';
 import {
   SPRITES, ELEMENTS, RARITY, CHIBIS,
   STAT_PER_POINT, STAT_ORDER, STAT_META, POINTS_PER_LEVEL, MAX_LEVEL,
-  statsAt, statsAtFull, xpForLevel, getElementMult, getEffStat,
+  statsAt, statsAtFull, xpForLevel, getElementMult, getElementMultRaid, getEffStat,
   applySkillUpgrades, computeAttack, aiPickSkill, spdToInterval,
   accountLevelFromXp, ACCOUNT_BONUS_INTERVAL, ACCOUNT_BONUS_AMOUNT,
   getBaseMana, BASE_MANA_REGEN, getSkillManaCost,
@@ -25,6 +25,7 @@ import {
   loadRaidData, saveRaidData, getHunterPool, getHunterStars, RAID_SAVE_KEY,
   HUNTER_PASSIVE_EFFECTS, getAwakeningPassives,
   RAID_TIERS, MAX_RAID_TIER, getTierData, getTierArtifactRarity,
+  getWeeklyWeaknesses, getNextWeaknessReset,
 } from './raidData';
 import {
   computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses, HAMMERS, HAMMER_ORDER,
@@ -611,6 +612,7 @@ export default function RaidMode() {
 
     const tierData = getTierData(selectedTier);
     const bossEntity = buildBossEntity(selectedTier);
+    bossEntity.weaknesses = getWeeklyWeaknesses(bossId);
     const state = { chibis, boss: bossEntity };
 
     setBattleState(state);
@@ -1573,11 +1575,10 @@ export default function RaidMode() {
         logEntries.push({ text: `${chibi.name} est étourdi(e) pendant ${skill.selfStunTurns} cycles !`, time: elapsed, type: 'normal' });
       }
 
-      // Add element multiplier info to log
-      const elemMult = getElementMult(chibi.element, state.boss.element);
+      // Add element multiplier info to log (uses weekly weaknesses)
+      const elemMult = getElementMultRaid(chibi.element, state.boss.weaknesses);
       let elemText = '';
       if (elemMult > 1) elemText = ' \uD83D\uDCA5 Super efficace !';
-      else if (elemMult < 1) elemText = ' \uD83D\uDEE1\uFE0F Peu efficace...';
 
       logEntries.push({
         text: result.text + elemText,
@@ -2036,9 +2037,26 @@ export default function RaidMode() {
         </div>
         <div className="text-3xl mb-1">{boss.emoji}</div>
         <h2 className="text-xl font-bold text-red-400">{boss.name}</h2>
+        {/* Weekly weaknesses (2 elements, rotate every Thursday) */}
+        {(() => {
+          const weaknesses = getWeeklyWeaknesses(bossId);
+          const nextReset = getNextWeaknessReset();
+          const daysLeft = Math.ceil((nextReset.getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+          return (
+            <div className="flex flex-col items-center gap-1 mt-1">
+              <div className="flex items-center justify-center gap-2 text-sm">
+                <span className="text-gray-500 text-xs">Faiblesses :</span>
+                {weaknesses.map((elem, i) => (
+                  <span key={i} className={`${ELEMENTS[elem]?.color} font-bold flex items-center gap-0.5`}>
+                    {ELEMENTS[elem]?.icon} {ELEMENTS[elem]?.name}
+                  </span>
+                ))}
+                <span className="text-gray-600 text-[10px] ml-1">({daysLeft}j)</span>
+              </div>
+            </div>
+          );
+        })()}
         <div className="flex items-center justify-center gap-3 text-sm text-gray-400 mt-1">
-          <span className={ELEMENTS[boss.element]?.color}>{ELEMENTS[boss.element]?.icon} {ELEMENTS[boss.element]?.name}</span>
-          <span>|</span>
           <span>{currentTierData.infiniteBars ? '\u221E Barres' : `${boss.totalBars} Barres`}</span>
           <span>|</span>
           <span>HP: {fmt(Math.floor(boss.baseHP * currentTierData.bossHPMult))}{currentTierData.infiniteBars ? '+' : ` \u2192 ${fmt(Math.floor(boss.barScaling(boss.totalBars - 1) * currentTierData.bossHPMult))}`}</span>
@@ -2250,6 +2268,7 @@ export default function RaidMode() {
                     <div className="flex items-center gap-1.5 mb-0.5">
                       <span className="text-[11px] font-bold text-white truncate">{c.name}</span>
                       <span className={`text-[9px] ${ELEMENTS[c.element]?.color}`}>{ELEMENTS[c.element]?.icon}</span>
+                      {getWeeklyWeaknesses(bossId).includes(c.element) && <span className="text-[8px] text-green-400 font-bold">{'\uD83D\uDCA5'}+30%</span>}
                       {stars > 0 && <span className="text-[8px] text-yellow-400 font-bold">A{stars}</span>}
                       <span className="text-[8px] text-gray-500">Lv{lv}</span>
                     </div>
@@ -2296,16 +2315,21 @@ export default function RaidMode() {
           className="bg-white/5 rounded-xl p-3 border border-white/10">
           <h3 className="text-sm font-bold text-center mb-2 text-gray-300">Tes Combattants</h3>
           <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-60 overflow-y-auto">
-            {Object.entries(allPool).filter(([id]) => !selectedIds.includes(id)).map(([id, c]) => (
+            {Object.entries(allPool).filter(([id]) => !selectedIds.includes(id)).map(([id, c]) => {
+              const weaknesses = getWeeklyWeaknesses(bossId);
+              const isWeak = weaknesses.includes(c.element);
+              return (
               <button key={id} onClick={() => handlePickChibi(id)}
-                className="flex flex-col items-center p-2 rounded-lg bg-white/5 border border-white/10 hover:border-purple-400/60 transition-all hover:bg-purple-500/10">
+                className={`flex flex-col items-center p-2 rounded-lg ${isWeak ? 'bg-green-500/10 border-green-400/40' : 'bg-white/5 border-white/10'} border hover:border-purple-400/60 transition-all hover:bg-purple-500/10 relative`}>
+                {isWeak && <span className="absolute -top-1 -right-1 text-[8px] bg-green-500/80 text-white px-1 rounded-full font-bold">{'\uD83D\uDCA5'}</span>}
                 <img loading="lazy" src={c.sprite} alt={c.name} className="w-10 h-10 rounded-full object-cover" />
                 <span className="text-[10px] text-white/80 mt-1 truncate w-full text-center">{c.name}</span>
                 <span className={`text-[9px] ${RARITY[c.rarity]?.color}`}>{RARITY[c.rarity]?.stars}</span>
                 <span className={`text-[9px] ${ELEMENTS[c.element]?.color}`}>{ELEMENTS[c.element]?.icon}</span>
                 <span className="text-[9px] text-yellow-400">Lv.{getChibiLevel(id)}</span>
               </button>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
       )}

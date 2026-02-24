@@ -732,6 +732,44 @@ export const SUNG_SKILLS = [
   },
 ];
 
+// ─── Weekly Boss Weakness Rotation ───────────────────────────
+// Deterministic: all players see the same weaknesses. Resets every Thursday 00:00 UTC.
+
+const WEAKNESS_ELEMENTS = ['shadow', 'fire', 'wind', 'earth', 'water', 'light'];
+
+export const getWeeklyWeaknesses = (bossId) => {
+  const now = new Date();
+  // Epoch: Thursday Jan 1, 2026 00:00 UTC
+  const epoch = new Date('2026-01-01T00:00:00Z');
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const weekNumber = Math.floor((now.getTime() - epoch.getTime()) / msPerWeek);
+
+  // Deterministic hash from weekNumber + bossId
+  let seed = weekNumber * 31;
+  for (let i = 0; i < bossId.length; i++) seed += bossId.charCodeAt(i) * (i + 1);
+  seed = Math.abs(seed);
+
+  // Pick 2 distinct elements
+  const pick1 = seed % WEAKNESS_ELEMENTS.length;
+  const pick2 = (seed * 7 + 13) % (WEAKNESS_ELEMENTS.length - 1);
+  const elem1 = WEAKNESS_ELEMENTS[pick1];
+  const remaining = WEAKNESS_ELEMENTS.filter((_, i) => i !== pick1);
+  const elem2 = remaining[pick2];
+
+  return [elem1, elem2];
+};
+
+export const getNextWeaknessReset = () => {
+  const now = new Date();
+  const next = new Date(now);
+  const dayOfWeek = now.getUTCDay(); // 0=Sun, 4=Thu
+  let daysUntilThursday = (4 - dayOfWeek + 7) % 7;
+  if (daysUntilThursday === 0) daysUntilThursday = 7; // If already Thursday, next one
+  next.setUTCDate(now.getUTCDate() + daysUntilThursday);
+  next.setUTCHours(0, 0, 0, 0);
+  return next;
+};
+
 // ─── Raid Boss — Ant Queen ───────────────────────────────────
 
 export const RAID_BOSSES = {
