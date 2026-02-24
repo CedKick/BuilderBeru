@@ -1,0 +1,14 @@
+{
+  "name": "pvp-live-server",
+  "version": "0.1.0",
+  "description": "PVP Live 3v3 turn-based multiplayer server",
+  "type": "module",
+  "main": "pvpLiveServer.js",
+  "scripts": {
+    "start": "node pvpLiveServer.js",
+    "dev": "node --watch pvpLiveServer.js"
+  },
+  "dependencies": {
+    "socket.io": "^4.8.3"
+  }
+}

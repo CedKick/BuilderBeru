@@ -25,6 +25,7 @@ import {
   computeArtifactBonuses, computeWeaponBonuses, mergeEquipBonuses,
   getActivePassives, WEAPONS, ARTIFACT_SETS,
 } from './equipmentData';
+import { MULTIPLAYER_CONFIG } from '../../config/multiplayer';
 
 // ═══════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -165,12 +166,295 @@ export default function PvpLive() {
   // ─── Result ────────────────────────────────────────────────
   const [result, setResult] = useState(null); // { won, rewards, stats }
 
+  // ─── Online Multiplayer State ──────────────────────────────
+  const socketRef = useRef(null);
+  const [roomCode, setRoomCode] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+  const [opponent, setOpponent] = useState(null);
+  const [myRole, setMyRole] = useState(null); // 'p1' | 'p2'
+  const [onlineStatus, setOnlineStatus] = useState('idle'); // idle | connecting | in_room | in_queue | error
+  const [onlineError, setOnlineError] = useState('');
+  const [displayName, setDisplayName] = useState(() => {
+    try { return localStorage.getItem('pvp_live_name') || ''; } catch { return ''; }
+  });
+
   // ─── SEO + Beru greeting ───────────────────────────────────
   useEffect(() => {
     document.title = 'PVP Live - Shadow Colosseum | BuilderBeru';
     window.dispatchEvent(new CustomEvent('beru-react', {
       detail: { message: 'PVP Live ! 3v3 tour par tour ! Beru va te DETRUIRE !', mood: 'excited', duration: 5000 },
     }));
+  }, []);
+
+  // ═══════════════════════════════════════════════════════════════
+  // ONLINE MULTIPLAYER — SOCKET.IO
+  // ═══════════════════════════════════════════════════════════════
+
+  const connectSocket = useCallback(() => {
+    if (socketRef.current?.connected) return socketRef.current;
+    setOnlineStatus('connecting');
+    setOnlineError('');
+
+    return import('socket.io-client').then(({ io }) => {
+      const socket = io(`${MULTIPLAYER_CONFIG.SOCKET_URL}${MULTIPLAYER_CONFIG.PVP_LIVE_NAMESPACE}`, {
+        reconnectionAttempts: MULTIPLAYER_CONFIG.RECONNECTION_ATTEMPTS,
+        reconnectionDelay: MULTIPLAYER_CONFIG.RECONNECTION_DELAY,
+        reconnectionDelayMax: MULTIPLAYER_CONFIG.RECONNECTION_DELAY_MAX,
+        timeout: MULTIPLAYER_CONFIG.CONNECT_TIMEOUT,
+      });
+
+      socket.on('connect', () => {
+        setOnlineStatus('idle');
+        console.log('[PVP Live] Connected to server');
+      });
+
+      socket.on('connect_error', (err) => {
+        setOnlineStatus('error');
+        setOnlineError('Impossible de se connecter au serveur');
+        console.error('[PVP Live] Connection error:', err.message);
+      });
+
+      // ─── Room events ────────────────────────────────────
+      socket.on('room-created', ({ code }) => {
+        setRoomCode(code);
+        setMyRole('p1');
+        setOnlineStatus('in_room');
+        beruSay('Room creee ! En attente d\'un adversaire...', 'thinking');
+      });
+
+      socket.on('room-joined', ({ code, p1, p2 }) => {
+        setRoomCode(code);
+        setOnlineStatus('in_room');
+        const isP1 = myRole === 'p1';
+        setOpponent({ name: isP1 ? p2.name : p1.name });
+        beruSay(`${isP1 ? p2.name : p1.name} a rejoint ! Le combat se prepare...`, 'excited');
+      });
+
+      socket.on('match-found', ({ code, p1, p2 }) => {
+        setRoomCode(code);
+        setOnlineStatus('in_room');
+        // Determine role — first in queue = p1
+        if (!myRole) setMyRole('p1');
+        const oppName = myRole === 'p1' ? p2.name : p1.name;
+        setOpponent({ name: oppName });
+        beruSay(`Adversaire trouve : ${oppName} !`, 'excited');
+      });
+
+      socket.on('queue-status', ({ position, waiting }) => {
+        setOnlineStatus(waiting ? 'in_queue' : 'idle');
+      });
+
+      // ─── Draft events ───────────────────────────────────
+      socket.on('draft-start', ({ pool }) => {
+        setDraftPool(pool);
+        setBans({ p1: [], p2: [] });
+        setPicks({ p1: [], p2: [] });
+        setDraftStep(0);
+        setSelectedForDraft(null);
+        setPhase('draft');
+        setTimer(DRAFT_TIME);
+        beruSay('Phase de Draft ! Choisis bien tes hunters !', 'excited');
+      });
+
+      socket.on('draft-update', ({ step, bans: b, picks: p, pool, currentPlayer, actionType, isDone }) => {
+        setDraftStep(step);
+        setBans(b);
+        setPicks(p);
+        setDraftPool(pool);
+        if (isDone) {
+          beruSay('Draft termine !', 'excited');
+        }
+      });
+
+      // ─── Equip events ──────────────────────────────────
+      socket.on('equip-start', ({ p1Picks, p2Picks }) => {
+        setPicks({ p1: p1Picks, p2: p2Picks });
+        const artClone = JSON.parse(JSON.stringify(coloData.artifacts || {}));
+        const wpnClone = JSON.parse(JSON.stringify(coloData.weapons || {}));
+        const wpnCollClone = JSON.parse(JSON.stringify(coloData.weaponCollection || {}));
+        setTempArtifacts(artClone);
+        setTempWeapons(wpnClone);
+        setTempWeaponCollection(wpnCollClone);
+        setEquipFocusHunter(0);
+        setPhase('equip');
+        setTimer(EQUIP_TIME);
+        beruSay('Equipe tes hunters !', 'thinking');
+      });
+
+      socket.on('equip-player-ready', ({ role }) => {
+        if (role !== myRole) beruSay('Ton adversaire est pret !', 'excited');
+      });
+
+      // ─── Battle events ─────────────────────────────────
+      socket.on('battle-start', ({ p1Picks, p2Picks }) => {
+        // Build fighters locally — both players use their own data
+        startOnlineBattle(p1Picks, p2Picks);
+      });
+
+      socket.on('battle-action', ({ from, skillIdx, targetIdx, targetSide }) => {
+        // Opponent's action — apply it locally
+        applyOnlineAction(from, skillIdx, targetIdx, targetSide);
+      });
+
+      socket.on('battle-sync', ({ from, ...syncData }) => {
+        // Sync state from opponent (HP, KOs, etc)
+      });
+
+      socket.on('battle-auto-pass', ({ role }) => {
+        if (role === myRole) {
+          beruSay('Temps ecoule ! Tour passe.', 'thinking');
+        }
+      });
+
+      socket.on('battle-timeout', () => {
+        // Global timer expired — compare HP
+        if (battle) {
+          const myTeam = myRole === 'p1' ? battle.playerTeam : battle.beruTeam;
+          const oppTeam = myRole === 'p1' ? battle.beruTeam : battle.playerTeam;
+          const myHpPct = myTeam.filter(f => f.alive).reduce((s, f) => s + f.hp / f.maxHp, 0);
+          const oppHpPct = oppTeam.filter(f => f.alive).reduce((s, f) => s + f.hp / f.maxHp, 0);
+          endBattle(myHpPct >= oppHpPct);
+        }
+      });
+
+      socket.on('battle-end', ({ winner }) => {
+        const won = winner === myRole;
+        endBattle(won);
+      });
+
+      socket.on('opponent-left', ({ winner }) => {
+        const won = winner === myRole;
+        beruSay('Ton adversaire a quitte ! Victoire par forfait !', 'excited');
+        endBattle(won);
+      });
+
+      // ─── Timer events ──────────────────────────────────
+      socket.on('timer-tick', ({ phase: p, remaining }) => {
+        setTimer(remaining);
+      });
+
+      socket.on('turn-tick', ({ remaining }) => {
+        setTurnTimer(remaining);
+      });
+
+      socket.on('error', ({ message }) => {
+        setOnlineError(message);
+        beruSay(message, 'panic');
+      });
+
+      socketRef.current = socket;
+      return socket;
+    });
+  }, [coloData, myRole]);
+
+  // Disconnect socket on unmount
+  useEffect(() => {
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
+  }, []);
+
+  // Online room actions
+  const createOnlineRoom = useCallback(async () => {
+    const name = displayName.trim() || 'Joueur';
+    localStorage.setItem('pvp_live_name', name);
+    const socket = await connectSocket();
+    setMyRole('p1');
+    socket.emit('create-room', { name, pool: Object.keys(allPool) });
+  }, [connectSocket, displayName, allPool]);
+
+  const joinOnlineRoom = useCallback(async () => {
+    const name = displayName.trim() || 'Joueur';
+    localStorage.setItem('pvp_live_name', name);
+    const code = joinCode.trim().toUpperCase();
+    if (!code || code.length !== 6) {
+      setOnlineError('Code invalide (6 caracteres)');
+      return;
+    }
+    const socket = await connectSocket();
+    setMyRole('p2');
+    socket.emit('join-room', { code, name, pool: Object.keys(allPool) });
+  }, [connectSocket, displayName, joinCode, allPool]);
+
+  const startMatchmaking = useCallback(async () => {
+    const name = displayName.trim() || 'Joueur';
+    localStorage.setItem('pvp_live_name', name);
+    const socket = await connectSocket();
+    socket.emit('matchmake', { name, pool: Object.keys(allPool) });
+  }, [connectSocket, displayName, allPool]);
+
+  const cancelMatchmaking = useCallback(() => {
+    socketRef.current?.emit('cancel-matchmake');
+    setOnlineStatus('idle');
+  }, []);
+
+  // Online draft action
+  const onlineDraftAction = useCallback((hunterId) => {
+    socketRef.current?.emit('draft-action', { hunterId });
+  }, []);
+
+  // Online equip ready
+  const onlineEquipReady = useCallback(() => {
+    socketRef.current?.emit('equip-ready');
+  }, []);
+
+  // Online battle action
+  const onlineBattleAction = useCallback((skillIdx, targetIdx, targetSide) => {
+    socketRef.current?.emit('battle-action', { skillIdx, targetIdx, targetSide, expectedRole: myRole });
+  }, [myRole]);
+
+  // Start online battle (build fighters locally)
+  const startOnlineBattle = useCallback((p1Picks, p2Picks) => {
+    const artData = tempArtifacts || coloData.artifacts;
+    const wpnData = tempWeapons || coloData.weapons;
+    const wpnCollData = tempWeaponCollection || coloData.weaponCollection;
+
+    // My picks are the ones matching my role
+    const myPicks = myRole === 'p1' ? p1Picks : p2Picks;
+    const oppPicks = myRole === 'p1' ? p2Picks : p1Picks;
+
+    const myFighters = myPicks.map(id => buildPvpFighter(id, artData, wpnData, wpnCollData, 'player')).filter(Boolean);
+    const oppFighters = oppPicks.map(id => buildPvpFighter(id, artData, wpnData, wpnCollData, 'beru')).filter(Boolean);
+
+    if (myFighters.length === 0 || oppFighters.length === 0) return;
+
+    const entries = [
+      ...myFighters.map((f, i) => ({ ...f, type: 'team', idx: i })),
+      ...oppFighters.map((f, i) => ({ ...f, type: 'enemy', idx: i })),
+    ];
+    const turnOrder = buildSpdTurnOrder(entries);
+
+    const battleState = {
+      playerTeam: myFighters,
+      beruTeam: oppFighters,
+      turnOrder,
+      currentTurn: 0,
+      round: 1,
+      phase: 'advance',
+      globalTimer: BATTLE_TIME,
+    };
+
+    setBattle(battleState);
+    setBattleLog([{ text: 'Le combat commence !', type: 'system' }]);
+    setPendingSkill(null);
+    setPhase('battle');
+    setTimer(BATTLE_TIME);
+    setTurnTimer(TURN_TIME);
+
+    // Sync turn order with server
+    socketRef.current?.emit('battle-sync', { turnOrder: turnOrder.map(e => ({ type: e.type, idx: e.idx, spd: e.spd })), currentTurn: 0, round: 1 });
+
+    setTimeout(() => advanceBattle(battleState), 500);
+  }, [myRole, tempArtifacts, tempWeapons, tempWeaponCollection, coloData, buildPvpFighter]);
+
+  // Apply opponent's action locally
+  const applyOnlineAction = useCallback((from, skillIdx, targetIdx, targetSide) => {
+    // This will be called when opponent sends their action via server
+    // For now, the battle engine handles it similarly to AI turns
+    // In a complete implementation, we'd replay the exact action
   }, []);
 
   // ═══════════════════════════════════════════════════════════════
@@ -340,11 +624,22 @@ export default function PvpLive() {
     beruSay("Phase de Draft ! Beru va constituer la MEILLEURE equipe !", 'excited');
   }, [allPool]);
 
-  const isPlayerTurn = draftStep < DRAFT_SEQUENCE.length && DRAFT_SEQUENCE[draftStep]?.startsWith('p1');
+  // In online mode, my role determines whose turn it is; in AI mode, player is always p1
+  const myDraftRole = mode === 'online' ? (myRole || 'p1') : 'p1';
+  const isPlayerTurn = draftStep < DRAFT_SEQUENCE.length && DRAFT_SEQUENCE[draftStep]?.startsWith(myDraftRole);
   const currentAction = draftStep < DRAFT_SEQUENCE.length ? DRAFT_SEQUENCE[draftStep] : null;
 
   const confirmDraftAction = useCallback((hunterId) => {
     if (!hunterId || draftStep >= DRAFT_SEQUENCE.length) return;
+
+    // Online mode: send action to server, state will update via socket events
+    if (mode === 'online') {
+      onlineDraftAction(hunterId);
+      setSelectedForDraft(null);
+      return;
+    }
+
+    // AI mode: local state update
     const action = DRAFT_SEQUENCE[draftStep];
     const newPool = draftPool.filter(id => id !== hunterId);
 
@@ -356,7 +651,6 @@ export default function PvpLive() {
       const who = action.startsWith('p1') ? 'p1' : 'p2';
       setPicks(prev => ({ ...prev, [who]: [...prev[who], hunterId] }));
       if (who === 'p2') {
-        // Check if Beru "stole" a high-value pick
         const score = scoreHunter(hunterId);
         const topScore = Math.max(...newPool.map(id => scoreHunter(id)), 0);
         if (score > topScore * 0.9) {
@@ -370,10 +664,11 @@ export default function PvpLive() {
     setDraftPool(newPool);
     setSelectedForDraft(null);
     setDraftStep(prev => prev + 1);
-  }, [draftStep, draftPool, scoreHunter]);
+  }, [draftStep, draftPool, scoreHunter, mode, onlineDraftAction]);
 
-  // Beru auto-play on their turn
+  // Beru auto-play on their turn (AI mode only)
   useEffect(() => {
+    if (mode === 'online') return; // Online: server handles opponent turns
     if (phase !== 'draft') return;
     if (draftStep >= DRAFT_SEQUENCE.length) return;
     const action = DRAFT_SEQUENCE[draftStep];
@@ -679,21 +974,19 @@ export default function PvpLive() {
     if (skill.manaCost && unit.mana < skill.manaCost) return;
 
     if (skill.healSelf) {
-      // Self-heal: no target needed
+      if (mode === 'online') onlineBattleAction(skillIdx, entry.idx, 'self');
       executeAction(battle, unit, skill, unit, 'player');
     } else if (skill.buffAtk || skill.buffDef || skill.buffSpd) {
-      // Self-buff: no target needed
+      if (mode === 'online') onlineBattleAction(skillIdx, entry.idx, 'self');
       executeAction(battle, unit, skill, unit, 'player');
     } else if (skill.healAlly || skill.buffAllyAtk || skill.buffAllyDef) {
-      // Ally target needed
       setPendingSkill({ skill, skillIdx, targetType: 'ally' });
       setBattle(prev => prev ? { ...prev, phase: 'pick_ally' } : null);
     } else {
-      // Enemy target needed
       setPendingSkill({ skill, skillIdx, targetType: 'enemy' });
       setBattle(prev => prev ? { ...prev, phase: 'pick_target' } : null);
     }
-  }, [battle]);
+  }, [battle, mode, onlineBattleAction]);
 
   const playerSelectTarget = useCallback((targetIdx) => {
     if (!battle || !pendingSkill) return;
@@ -705,9 +998,10 @@ export default function PvpLive() {
     const target = targetTeam[targetIdx];
     if (!target || !target.alive) return;
 
+    if (mode === 'online') onlineBattleAction(pendingSkill.skillIdx, targetIdx, pendingSkill.targetType);
     executeAction(battle, unit, pendingSkill.skill, target, 'player');
     setPendingSkill(null);
-  }, [battle, pendingSkill]);
+  }, [battle, pendingSkill, mode, onlineBattleAction]);
 
   // Core action execution
   const executeAction = useCallback((state, attacker, skill, target, side) => {
@@ -946,6 +1240,10 @@ export default function PvpLive() {
 
   // Reset to lobby
   const resetToLobby = () => {
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
     setPhase('lobby');
     setMode(null);
     setBattle(null);
@@ -957,6 +1255,12 @@ export default function PvpLive() {
     setTempWeaponCollection(null);
     setBeruMsg('');
     setTimer(0);
+    setRoomCode('');
+    setJoinCode('');
+    setOpponent(null);
+    setMyRole(null);
+    setOnlineStatus('idle');
+    setOnlineError('');
   };
 
   // Scroll battle log
@@ -1106,18 +1410,115 @@ export default function PvpLive() {
 
         <motion.button
           whileHover={{ scale: 1.02 }}
-          className="w-full p-5 rounded-xl border border-gray-700 bg-gray-800/30 opacity-50 cursor-not-allowed"
-          disabled
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setMode('online')}
+          className="w-full p-5 rounded-xl border border-cyan-500/40 bg-gradient-to-r from-cyan-900/30 to-blue-900/30 hover:from-cyan-900/50 hover:to-blue-900/50 transition-all group"
         >
           <div className="flex items-center justify-center gap-3">
             <span className="text-3xl">🌐</span>
             <div className="text-left">
-              <p className="text-lg font-bold text-gray-400">vs Joueur</p>
-              <p className="text-xs text-gray-500">Multiplayer — Bientot disponible !</p>
+              <p className="text-lg font-bold text-cyan-300 group-hover:text-cyan-200">vs Joueur</p>
+              <p className="text-xs text-gray-400">3v3 Multiplayer en ligne !</p>
             </div>
           </div>
         </motion.button>
       </div>
+
+      {/* Online room UI */}
+      <AnimatePresence>
+        {mode === 'online' && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+            className="mb-6 p-4 rounded-xl bg-gray-800/40 border border-cyan-500/30">
+
+            {/* Display name */}
+            <div className="mb-3">
+              <label className="text-[10px] text-gray-400 block mb-1">Ton pseudo</label>
+              <input
+                type="text" maxLength={20} value={displayName}
+                onChange={e => setDisplayName(e.target.value)}
+                placeholder="Joueur"
+                className="w-full px-3 py-1.5 rounded-lg bg-gray-900/50 border border-gray-700 text-sm text-gray-200 focus:border-cyan-400 focus:outline-none"
+              />
+            </div>
+
+            {onlineError && <p className="text-red-400 text-xs mb-2">{onlineError}</p>}
+
+            {onlineStatus === 'idle' && (
+              <div className="space-y-2">
+                {/* Create room */}
+                <button onClick={createOnlineRoom}
+                  className="w-full px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-bold transition-all">
+                  Creer une Room
+                </button>
+
+                {/* Join room */}
+                <div className="flex gap-2">
+                  <input
+                    type="text" maxLength={6} value={joinCode}
+                    onChange={e => setJoinCode(e.target.value.toUpperCase())}
+                    placeholder="CODE"
+                    className="flex-1 px-3 py-1.5 rounded-lg bg-gray-900/50 border border-gray-700 text-sm text-gray-200 uppercase text-center tracking-widest focus:border-cyan-400 focus:outline-none"
+                  />
+                  <button onClick={joinOnlineRoom}
+                    className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all">
+                    Rejoindre
+                  </button>
+                </div>
+
+                {/* Matchmaking */}
+                <button onClick={startMatchmaking}
+                  className="w-full px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold transition-all">
+                  🔍 Matchmaking auto
+                </button>
+
+                <button onClick={() => setMode(null)} className="w-full text-xs text-gray-500 hover:text-gray-300 mt-1">
+                  Annuler
+                </button>
+              </div>
+            )}
+
+            {onlineStatus === 'connecting' && (
+              <div className="text-center py-4">
+                <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                <p className="text-xs text-gray-400">Connexion au serveur...</p>
+              </div>
+            )}
+
+            {onlineStatus === 'in_room' && (
+              <div className="text-center py-3">
+                <p className="text-cyan-400 text-lg font-bold tracking-widest mb-2">{roomCode}</p>
+                <p className="text-xs text-gray-400 mb-1">Partage ce code a ton adversaire !</p>
+                {opponent ? (
+                  <p className="text-green-400 text-sm">🎮 {opponent.name} a rejoint ! Lancement...</p>
+                ) : (
+                  <>
+                    <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                    <p className="text-gray-500 text-xs">En attente d'un adversaire...</p>
+                  </>
+                )}
+              </div>
+            )}
+
+            {onlineStatus === 'in_queue' && (
+              <div className="text-center py-3">
+                <div className="w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                <p className="text-gray-400 text-sm">Recherche d'un adversaire...</p>
+                <button onClick={cancelMatchmaking} className="text-xs text-gray-500 hover:text-gray-300 mt-2">
+                  Annuler
+                </button>
+              </div>
+            )}
+
+            {onlineStatus === 'error' && (
+              <div className="text-center py-3">
+                <p className="text-red-400 text-sm mb-2">{onlineError}</p>
+                <button onClick={() => { setOnlineStatus('idle'); setOnlineError(''); }}
+                  className="text-xs text-gray-400 hover:text-gray-300">Reessayer</button>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Pool info */}
       <div className="text-[10px] text-gray-600">
@@ -1438,10 +1839,13 @@ export default function PvpLive() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={startBattle}
+            onClick={() => {
+              if (mode === 'online') onlineEquipReady();
+              else startBattle();
+            }}
             className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white font-bold transition-all"
           >
-            ⚔️ PRET ! Lancer le combat !
+            ⚔️ PRET ! {mode === 'online' ? 'Pret !' : 'Lancer le combat !'}
           </motion.button>
         </div>
       </motion.div>
