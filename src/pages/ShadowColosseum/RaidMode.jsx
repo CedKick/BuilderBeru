@@ -210,10 +210,7 @@ export default function RaidMode() {
 
   const submitRaidRanking = async (rc, totalDamage, duration, dpsBreakdown) => {
     if (!isLoggedIn() || rc < 1) return;
-    const prevBestRC = raidData.raidStats?.tierBestRC?.[6] || 0;
-    const prevBestDmg = raidData.raidStats?.tierBestDamage?.[6] || 0;
-    // Skip if not improved
-    if (rc < prevBestRC || (rc === prevBestRC && totalDamage <= prevBestDmg)) return;
+    // Server handles dedup (upsert WHERE rc < new OR same rc + more dmg)
 
     try {
       const user = getAuthUser();
