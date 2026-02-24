@@ -1451,6 +1451,12 @@ export default function RaidMode() {
         // Check bar break
         if (state.boss.hp <= 0) {
           state.boss.barsDestroyed++;
+          // Every 5 bars destroyed, boss gains +15% ATK (stacking)
+          if (state.boss.barsDestroyed > 0 && state.boss.barsDestroyed % 5 === 0) {
+            const boost = 0.15;
+            state.boss.atk = Math.floor(state.boss.atk * (1 + boost));
+            logEntries.push({ text: `RAGE ! Le boss gagne +${Math.round(boost * 100)}% ATK !`, time: elapsed, type: 'boss_buff' });
+          }
           if (state.boss.barsDestroyed < state.boss.totalBars) {
             const tierHPMult = state.boss.tierData?.bossHPMult || 1;
             // Infinite bars: bar HP keeps scaling with barScaling formula (uses barIndex % cycle for the scaling function)

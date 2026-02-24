@@ -74,7 +74,7 @@ export const getSkillManaCost = (skill) => {
   if (skill.cdMax === 0) return 0; // Basic attacks always free
   // Heal skills: expensive mana cost based on heal %
   const healValue = (skill.healSelf || 0) + (skill.healAlly || 0);
-  if (healValue > 0) return Math.floor(15 + healValue * 1.5 + skill.cdMax * 4);
+  if (healValue > 0) return Math.floor(25 + healValue * 2.0 + skill.cdMax * 5);
   // Pure buff skills (no damage): moderate mana cost
   const buffValue = (skill.buffAtk || 0) + (skill.buffDef || 0) + (skill.buffSpd || 0)
                   + (skill.buffAllyAtk || 0) + (skill.buffAllyDef || 0);
