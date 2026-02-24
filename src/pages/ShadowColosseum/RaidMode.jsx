@@ -478,6 +478,7 @@ export default function RaidMode() {
       def: Math.floor(b.stats.def * tierData.bossDefMult),
       spd: Math.floor(b.stats.spd * tierData.bossSpdMult),
       crit: b.stats.crit, res: b.stats.res,
+      defPen: b.defPen || 0,
       buffs: [],
       currentBar: 0, totalBars: isInfinite ? 999999 : b.totalBars, barsDestroyed: 0,
       infiniteBars: isInfinite,
@@ -1601,7 +1602,7 @@ export default function RaidMode() {
             }
             return;
           }
-          const dmg = computeAttack(state.boss, bSkill, target);
+          const dmg = computeAttack(state.boss, bSkill, target, { defPen: state.boss.defPen || 0 });
           // Katana V shield: absorb hit entirely
           if (target.passiveState?.katanaVState?.shield && dmg.damage > 0) {
             target.passiveState.katanaVState.shield = false;

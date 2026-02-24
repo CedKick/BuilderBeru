@@ -768,6 +768,7 @@ export const RAID_BOSSES = {
     baseHP: 250000,
     barScaling: (i) => 250000 * (1 + 0.35 * i),
     stats: { atk: 15000, def: 200, spd: 35, crit: 30, res: 20 },
+    defPen: 70, // Boss ignores 70% of hunter DEF
     targeting: 'intelligent',
     lootMult: 1.5,
     skills: [
