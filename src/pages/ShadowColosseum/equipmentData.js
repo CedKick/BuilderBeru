@@ -243,13 +243,13 @@ export const MAX_DAILY_RAIDS = 10;
 
 export const ARTIFACT_SLOTS = {
   casque:   { id: 'casque',   name: 'Casque',              icon: '\u26D1\uFE0F', mainStats: ['hp_flat', 'hp_pct'] },
-  plastron: { id: 'plastron', name: 'Plastron',            icon: '\uD83E\uDDBA', mainStats: ['atk_flat', 'atk_pct'] },
+  plastron: { id: 'plastron', name: 'Plastron',            icon: '\uD83E\uDDBA', mainStats: ['atk_flat', 'atk_pct', 'int_flat', 'int_pct'] },
   gants:    { id: 'gants',    name: 'Gants',               icon: '\uD83E\uDDE4', mainStats: ['crit_rate', 'crit_dmg'] },
   bottes:   { id: 'bottes',   name: 'Bottes',              icon: '\uD83D\uDC62', mainStats: ['spd_flat', 'def_pct'] },
-  collier:  { id: 'collier',  name: 'Collier',             icon: '\uD83D\uDCFF', mainStats: ['hp_pct', 'atk_pct'] },
-  bracelet: { id: 'bracelet', name: 'Bracelet',            icon: '\u231A', mainStats: ['atk_pct', 'def_pct'] },
+  collier:  { id: 'collier',  name: 'Collier',             icon: '\uD83D\uDCFF', mainStats: ['hp_pct', 'atk_pct', 'int_pct', 'fire_dmg_pct', 'water_dmg_pct', 'shadow_dmg_pct', 'light_dmg_pct', 'earth_dmg_pct'] },
+  bracelet: { id: 'bracelet', name: 'Bracelet',            icon: '\u231A', mainStats: ['atk_pct', 'def_pct', 'int_pct'] },
   anneau:   { id: 'anneau',   name: 'Anneau',              icon: '\uD83D\uDC8D', mainStats: ['crit_rate', 'crit_dmg', 'res_flat'] },
-  boucles:  { id: 'boucles',  name: "Boucles d'oreilles",  icon: '\u2728', mainStats: ['hp_pct', 'atk_pct', 'def_pct'] },
+  boucles:  { id: 'boucles',  name: "Boucles d'oreilles",  icon: '\u2728', mainStats: ['hp_pct', 'atk_pct', 'def_pct', 'int_pct'] },
 };
 
 export const SLOT_ORDER = ['casque', 'plastron', 'gants', 'bottes', 'collier', 'bracelet', 'anneau', 'boucles'];
@@ -271,6 +271,16 @@ export const MAIN_STAT_VALUES = {
   def_flat:  { name: 'DEF',       base: 3,   perLevel: 1.5, icon: '\uD83D\uDEE1\uFE0F' },
   int_flat:  { name: 'INT',       base: 3,   perLevel: 2,   icon: '\uD83E\uDDE0' },
   int_pct:   { name: 'INT%',      base: 3,   perLevel: 2,   icon: '\uD83E\uDDE0' },
+  fire_dmg_flat:   { name: 'DMG Feu',      base: 3,  perLevel: 2,   icon: '\uD83D\uDD25' },
+  fire_dmg_pct:    { name: 'DMG Feu%',     base: 3,  perLevel: 1.5, icon: '\uD83D\uDD25' },
+  water_dmg_flat:  { name: 'DMG Eau',      base: 3,  perLevel: 2,   icon: '\uD83D\uDCA7' },
+  water_dmg_pct:   { name: 'DMG Eau%',     base: 3,  perLevel: 1.5, icon: '\uD83D\uDCA7' },
+  shadow_dmg_flat: { name: 'DMG Ombre',    base: 3,  perLevel: 2,   icon: '\uD83C\uDF11' },
+  shadow_dmg_pct:  { name: 'DMG Ombre%',   base: 3,  perLevel: 1.5, icon: '\uD83C\uDF11' },
+  light_dmg_flat:  { name: 'DMG Lumiere',  base: 3,  perLevel: 2,   icon: '\u2728' },
+  light_dmg_pct:   { name: 'DMG Lumiere%', base: 3,  perLevel: 1.5, icon: '\u2728' },
+  earth_dmg_flat:  { name: 'DMG Terre',    base: 3,  perLevel: 2,   icon: '\uD83E\uDEA8' },
+  earth_dmg_pct:   { name: 'DMG Terre%',   base: 3,  perLevel: 1.5, icon: '\uD83E\uDEA8' },
 };
 
 export const SUB_STAT_POOL = [
@@ -286,6 +296,16 @@ export const SUB_STAT_POOL = [
   { id: 'def_pct',   name: 'DEF%',     range: [2, 5] },
   { id: 'int_flat',  name: 'INT',      range: [1, 4] },
   { id: 'int_pct',   name: 'INT%',     range: [2, 5] },
+  { id: 'fire_dmg_flat',   name: 'DMG Feu',      range: [1, 3] },
+  { id: 'fire_dmg_pct',    name: 'DMG Feu%',     range: [2, 5] },
+  { id: 'water_dmg_flat',  name: 'DMG Eau',      range: [1, 3] },
+  { id: 'water_dmg_pct',   name: 'DMG Eau%',     range: [2, 5] },
+  { id: 'shadow_dmg_flat', name: 'DMG Ombre',    range: [1, 3] },
+  { id: 'shadow_dmg_pct',  name: 'DMG Ombre%',   range: [2, 5] },
+  { id: 'light_dmg_flat',  name: 'DMG Lumiere',  range: [1, 3] },
+  { id: 'light_dmg_pct',   name: 'DMG Lumiere%', range: [2, 5] },
+  { id: 'earth_dmg_flat',  name: 'DMG Terre',    range: [1, 3] },
+  { id: 'earth_dmg_pct',   name: 'DMG Terre%',   range: [2, 5] },
 ];
 
 export const RARITY_SUB_COUNT = {
@@ -490,7 +510,7 @@ export function rerollArtifact(artifact) {
 export const ENCHANT_ALKAHEST_COST = 10;
 const ENCHANT_PCT_RANGE = [0.10, 0.30]; // +10% to +30% for percentage stats
 const ENCHANT_FLAT_RANGE = [0.10, 0.50]; // +10% to +50% for flat stats
-const FLAT_STATS = new Set(['hp_flat', 'atk_flat', 'def_flat', 'spd_flat', 'res_flat', 'int_flat']);
+const FLAT_STATS = new Set(['hp_flat', 'atk_flat', 'def_flat', 'spd_flat', 'res_flat', 'int_flat', 'fire_dmg_flat', 'water_dmg_flat', 'shadow_dmg_flat', 'light_dmg_flat', 'earth_dmg_flat']);
 
 // Expanded main stat pool for re-rolling (no slot restriction)
 export const ENCHANT_MAIN_STAT_POOL = [
@@ -498,6 +518,9 @@ export const ENCHANT_MAIN_STAT_POOL = [
   'crit_rate', 'crit_dmg', 'res_flat',
   'def_flat', 'def_pct', 'spd_flat',
   'int_flat', 'int_pct',
+  'fire_dmg_flat', 'fire_dmg_pct', 'water_dmg_flat', 'water_dmg_pct',
+  'shadow_dmg_flat', 'shadow_dmg_pct', 'light_dmg_flat', 'light_dmg_pct',
+  'earth_dmg_flat', 'earth_dmg_pct',
 ];
 
 /** Roll enchant bonus for a stat value. Returns the bonus amount. */
@@ -605,6 +628,9 @@ const EMPTY_BONUSES = () => ({
   hp_flat: 0, hp_pct: 0, atk_flat: 0, atk_pct: 0,
   def_flat: 0, def_pct: 0, spd_flat: 0, spd_pct: 0,
   int_flat: 0, int_pct: 0,
+  fire_dmg_flat: 0, fire_dmg_pct: 0, water_dmg_flat: 0, water_dmg_pct: 0,
+  shadow_dmg_flat: 0, shadow_dmg_pct: 0, light_dmg_flat: 0, light_dmg_pct: 0,
+  earth_dmg_flat: 0, earth_dmg_pct: 0,
   crit_rate: 0, crit_dmg: 0, res_flat: 0,
   // Set bonuses (mapped to talent-bonus-compatible keys)
   atkPercent: 0, defPercent: 0, hpPercent: 0, spdPercent: 0,
@@ -1209,9 +1235,10 @@ export function computeEquipILevel(equippedArtifacts, weaponId, weaponAwakening 
 // ═══════════════════════════════════════════════════════════════
 
 export const ROLE_WEIGHTS = {
-  dps:     { atk_pct: 3, atk_flat: 2, crit_dmg: 3, crit_rate: 2.5, spd_flat: 2, hp_pct: 0.5, hp_flat: 0.3, def_pct: 0.5, def_flat: 0.3, res_flat: 0.3 },
-  support: { spd_flat: 3, hp_pct: 2, hp_flat: 1.5, atk_pct: 1.5, atk_flat: 1, crit_dmg: 1, crit_rate: 1, def_pct: 1.5, def_flat: 1, res_flat: 1.5 },
-  tank:    { def_pct: 3, def_flat: 2.5, hp_pct: 3, hp_flat: 2, res_flat: 2, spd_flat: 1.5, atk_pct: 0.5, atk_flat: 0.5, crit_dmg: 0.5, crit_rate: 0.5 },
+  dps:     { atk_pct: 3, atk_flat: 2, crit_dmg: 3, crit_rate: 2.5, spd_flat: 2, hp_pct: 0.5, hp_flat: 0.3, def_pct: 0.5, def_flat: 0.3, res_flat: 0.3, int_flat: 0.3, int_pct: 0.3 },
+  mage:    { int_pct: 3, int_flat: 2.5, crit_dmg: 3, crit_rate: 2.5, spd_flat: 2, atk_pct: 0.5, atk_flat: 0.3, hp_pct: 0.5, hp_flat: 0.3, def_pct: 0.5, def_flat: 0.3, res_flat: 0.3 },
+  support: { spd_flat: 3, hp_pct: 2, hp_flat: 1.5, atk_pct: 1.5, atk_flat: 1, crit_dmg: 1, crit_rate: 1, def_pct: 1.5, def_flat: 1, res_flat: 1.5, int_flat: 0.3, int_pct: 0.3 },
+  tank:    { def_pct: 3, def_flat: 2.5, hp_pct: 3, hp_flat: 2, res_flat: 2, spd_flat: 1.5, atk_pct: 0.5, atk_flat: 0.5, crit_dmg: 0.5, crit_rate: 0.5, int_flat: 0.3, int_pct: 0.3 },
 };
 
 // Max possible weighted score for normalization (mythique +20, 4 max subs)
@@ -1442,6 +1469,24 @@ export const ULTIME_ARTIFACT_SETS = {
     bonus4: {}, bonus4Desc: 'Degats totaux +25% pour tout le raid (les 2 teams)',
     passive2: { trigger: 'onBattleStart', type: 'shadowPact', selfAtkMult: -0.50, allyAtkBoost: 1.50 },
     passive4: { trigger: 'always', type: 'shadowPactRaid', raidDmgBoost: 0.25 },
+  },
+  esprit_transcendant: {
+    id: 'esprit_transcendant', name: 'Esprit Transcendant', icon: '\uD83E\uDDE0', ultime: true,
+    color: 'text-indigo-400', bg: 'bg-indigo-600/15', border: 'border-indigo-600/30',
+    desc: 'Intelligence pure dechainee — burst arcanique devastateur',
+    bonus2: { manaPercent: 30, manaRegen: 25 }, bonus2Desc: 'INT +30% (Mana), Mana Regen +25%. Chaque skill : stack INT +2% (max 10)',
+    bonus4: {}, bonus4Desc: 'A 10 stacks : prochain skill ignore 25% DEF + DMG x1.5. Reset stacks.',
+    passive2: { trigger: 'afterAttack', type: 'transcendentStack', intPerStack: 0.02, maxStacks: 10 },
+    passive4: { trigger: 'beforeAttack', type: 'transcendentRelease', stackThreshold: 10, defIgnore: 0.25, dmgMult: 1.5 },
+  },
+  resonance_arcanique: {
+    id: 'resonance_arcanique', name: 'Resonance Arcanique', icon: '\uD83D\uDD2E', ultime: true,
+    color: 'text-fuchsia-400', bg: 'bg-fuchsia-600/15', border: 'border-fuchsia-600/30',
+    desc: 'Maitrise du mana — puissance soutenue et adaptative',
+    bonus2: { manaPercent: 20, manaCostReduce: 25 }, bonus2Desc: 'INT +20% (Mana), Cout Mana -25%. Skills mana-scaling : +15% puissance',
+    bonus4: {}, bonus4Desc: 'Mana > 60% : CRIT garanti. Mana < 30% : Regen x3 pendant 3 tours (CD 8)',
+    passive2: { trigger: 'beforeAttack', type: 'arcaneResonance', manaScalingBonus: 0.15 },
+    passive4: { trigger: 'always', type: 'arcaneAdaptive', highManaThreshold: 0.60, autoCrit: true, lowManaThreshold: 0.30, regenMult: 3, regenDuration: 3, cooldown: 8 },
   },
 };
 

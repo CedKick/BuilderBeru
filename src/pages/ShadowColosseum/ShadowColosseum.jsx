@@ -176,8 +176,8 @@ const CLASS_SET_TIERS = {
     C: ['benediction_celeste', 'source_arcanique'],
   },
   mage: {
-    S: ['ELEMENT_SET', 'infamie_chaotique'],
-    A: ['expertise_bestiale', 'echo_temporel', 'source_arcanique'],
+    S: ['source_arcanique', 'tempete_arcane', 'ELEMENT_SET'],
+    A: ['echo_temporel', 'expertise_bestiale', 'infamie_chaotique'],
     B: ['eclat_angelique', 'flamme_interieure'],
     C: ['volonte_de_fer', 'chaines_destin'],
   },
@@ -207,9 +207,9 @@ const CLASS_IDEAL_STATS = {
     badSubs: ['res_flat', 'def_flat'],
   },
   mage: {
-    mainStats: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_dmg', bottes: 'spd_flat', collier: 'atk_pct', bracelet: 'atk_pct', anneau: 'crit_rate', boucles: 'atk_pct' },
-    goodSubs: ['atk_pct', 'crit_dmg', 'crit_rate', 'spd_flat', 'atk_flat'],
-    badSubs: ['hp_flat', 'def_flat', 'def_pct'],
+    mainStats: { casque: 'hp_pct', plastron: 'int_pct', gants: 'crit_dmg', bottes: 'spd_flat', collier: 'int_pct', bracelet: 'int_pct', anneau: 'crit_rate', boucles: 'int_pct' },
+    goodSubs: ['int_pct', 'int_flat', 'crit_dmg', 'crit_rate', 'spd_flat'],
+    badSubs: ['atk_flat', 'atk_pct', 'hp_flat', 'def_flat'],
   },
   tank: {
     mainStats: { casque: 'hp_pct', plastron: 'atk_flat', gants: 'crit_rate', bottes: 'def_pct', collier: 'hp_pct', bracelet: 'def_pct', anneau: 'res_flat', boucles: 'hp_pct' },
@@ -221,6 +221,29 @@ const CLASS_IDEAL_STATS = {
     goodSubs: ['hp_pct', 'spd_flat', 'res_flat', 'def_pct', 'hp_flat'],
     badSubs: ['crit_dmg', 'atk_flat'],
   },
+};
+
+// ─── Stat Color Map by Class ──────────────────────────────
+const STAT_COLOR_MAP = {
+  fighter:  { green: ['atk_flat','atk_pct','crit_dmg','crit_rate','spd_flat'], gray: ['int_flat','int_pct','hp_flat','res_flat'] },
+  assassin: { green: ['atk_flat','atk_pct','crit_dmg','crit_rate','spd_flat'], gray: ['int_flat','int_pct','hp_flat','res_flat'] },
+  mage:     { green: ['int_flat','int_pct','crit_dmg','crit_rate','spd_flat'], gray: ['atk_flat','atk_pct','hp_flat','res_flat'] },
+  support:  { green: ['atk_flat','atk_pct','crit_dmg','crit_rate','spd_flat'], gray: ['int_flat','int_pct'] },
+  tank:     { green: ['hp_flat','hp_pct','def_flat','def_pct','res_flat'], gray: ['atk_flat','crit_dmg','int_flat','int_pct'] },
+};
+
+const getStatColor = (statId, hunterClass, hunterElement) => {
+  const map = STAT_COLOR_MAP[hunterClass] || STAT_COLOR_MAP.fighter;
+  if (map.green.includes(statId)) return 'text-green-400 font-bold';
+  if (map.gray.includes(statId)) return 'text-gray-500';
+  // Elemental dmg matching hunter element → green
+  const elemMap = { fire: ['fire_dmg_flat','fire_dmg_pct'], water: ['water_dmg_flat','water_dmg_pct'], shadow: ['shadow_dmg_flat','shadow_dmg_pct'], light: ['light_dmg_flat','light_dmg_pct'], earth: ['earth_dmg_flat','earth_dmg_pct'] };
+  if (elemMap[hunterElement]?.includes(statId)) return 'text-green-400 font-bold';
+  // Any elemental stat not matching → white (neutral)
+  const allElem = Object.values(elemMap).flat();
+  if (allElem.includes(statId)) return 'text-gray-300';
+  // Default: white (neutral — DEF, RES, HP%, etc.)
+  return 'text-gray-300';
 };
 
 const BERU_ADVICE_DIALOGUES = {
@@ -2782,7 +2805,7 @@ export default function ShadowColosseum() {
       // Main stat match
       const idealMain = idealStats.mainStats[slot || art.slot];
       if (idealMain === art.mainStat) score += 30;
-      else if (['atk_pct', 'hp_pct', 'crit_rate', 'crit_dmg'].includes(art.mainStat)) score += 10;
+      else if (['atk_pct', 'hp_pct', 'crit_rate', 'crit_dmg', 'int_pct'].includes(art.mainStat)) score += 10;
       else score -= 10;
       // Set tier
       const st = getSetTier(art.set);
@@ -2808,6 +2831,35 @@ export default function ShadowColosseum() {
       const verdict = tier === 'S' ? 'parfait' : tier === 'A' ? 'ok' : 'mauvais';
       return { setId, count, tier, verdict };
     });
+
+    // Near-complete set detection
+    const nearCompleteSets = [];
+    Object.entries(setCounts).forEach(([setId, count]) => {
+      const tier = getSetTier(setId);
+      if (tier === 'C') return; // Don't recommend completing bad sets
+      if (count === 1) nearCompleteSets.push({ setId, count, needed: 1, bonus: '2p' });
+      else if (count === 3) nearCompleteSets.push({ setId, count, needed: 1, bonus: '4p' });
+      else if (count >= 5 && count < 8) nearCompleteSets.push({ setId, count, needed: 8 - count, bonus: '8p' });
+    });
+    // Also check inventory for potential set completions
+    const invSetCounts = {};
+    inventory.forEach(art => { if (art?.set) invSetCounts[art.set] = (invSetCounts[art.set] || 0) + 1; });
+    nearCompleteSets.forEach(ncs => {
+      ncs.availableInInv = invSetCounts[ncs.setId] || 0;
+      ncs.canComplete = ncs.availableInInv >= ncs.needed;
+    });
+
+    // Mage-specific advice
+    const mageAdvice = hClass === 'mage' ? (() => {
+      const issues = [];
+      Object.entries(equipped).forEach(([slot, art]) => {
+        if (!art) return;
+        if (['plastron', 'collier', 'bracelet', 'boucles'].includes(slot) && art.mainStat === 'atk_pct') {
+          issues.push(`${ARTIFACT_SLOTS[slot].name} : ATK% au lieu de INT% — un mage scale sur INT !`);
+        }
+      });
+      return issues.length > 0 ? issues : null;
+    })() : null;
 
     // Analyze each slot
     const slotAdvice = SLOT_ORDER.map(slot => {
@@ -2862,7 +2914,7 @@ export default function ShadowColosseum() {
       return {
         hunterClass: hClass, hunterElement: hElement, role,
         recommendedSets: { S: resolvedTiers.S, A: resolvedTiers.A },
-        currentSetAnalysis, slotAdvice,
+        currentSetAnalysis, slotAdvice, nearCompleteSets, mageAdvice,
         overallGrade: 'D',
         summary: randomPick(BERU_ADVICE_DIALOGUES.gradeD),
       };
@@ -2882,7 +2934,7 @@ export default function ShadowColosseum() {
     return {
       hunterClass: hClass, hunterElement: hElement, role,
       recommendedSets: { S: resolvedTiers.S, A: resolvedTiers.A },
-      currentSetAnalysis, slotAdvice,
+      currentSetAnalysis, slotAdvice, nearCompleteSets, mageAdvice,
       overallGrade: grade,
       summary: randomPick(BERU_ADVICE_DIALOGUES[gradeDialogues[grade]]),
     };
@@ -8384,6 +8436,8 @@ export default function ShadowColosseum() {
               const artScoring = scoreAllArtifacts(equipped, artifactScoreRole);
               const equipILv = computeEquipILevel(equipped);
               const roleWeights = ROLE_WEIGHTS[artifactScoreRole] || ROLE_WEIGHTS.dps;
+              const hClass = HUNTERS[id]?.class || 'fighter';
+              const hElement = c.element || 'fire';
               return (
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-1.5">
@@ -8394,7 +8448,7 @@ export default function ShadowColosseum() {
                 {/* Role Toggle + Global Score */}
                 <div className="mb-2 p-2 rounded-lg bg-gray-800/30 border border-gray-700/20">
                   <div className="flex items-center gap-1 mb-1.5">
-                    {[{ key: 'dps', label: 'DPS', icon: '\u2694\uFE0F' }, { key: 'support', label: 'Support', icon: '\uD83D\uDC9A' }, { key: 'tank', label: 'Tank', icon: '\uD83D\uDEE1\uFE0F' }].map(r => (
+                    {[{ key: 'dps', label: 'DPS', icon: '\u2694\uFE0F' }, { key: 'mage', label: 'Mage', icon: '\uD83E\uDDE0' }, { key: 'support', label: 'Support', icon: '\uD83D\uDC9A' }, { key: 'tank', label: 'Tank', icon: '\uD83D\uDEE1\uFE0F' }].map(r => (
                       <button key={r.key} onClick={() => setArtifactScoreRole(r.key)}
                         className={`flex-1 text-[9px] font-bold py-1 rounded transition-all ${artifactScoreRole === r.key ? 'bg-white/15 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}>
                         {r.icon} {r.label}
@@ -8460,20 +8514,18 @@ export default function ShadowColosseum() {
                             {/* Main stat */}
                             <div className="flex items-center gap-1 py-0.5 border-t border-b border-white/5">
                               <span className="text-[10px]">{mainDef?.icon || '?'}</span>
-                              <span className="text-[9px] text-gray-300 font-medium">{mainDef?.name || '?'}</span>
-                              <span className="text-[10px] font-black text-white ml-auto">{art.mainValue}</span>
+                              <span className={`text-[9px] font-medium ${getStatColor(art.mainStat, hClass, hElement)}`}>{mainDef?.name || '?'}</span>
+                              <span className={`text-[10px] font-black ml-auto ${getStatColor(art.mainStat, hClass, hElement)}`}>{art.mainValue}</span>
                               {(art.enchants?.main || 0) > 0 && <span className="text-[8px] text-green-400 font-bold">(+{art.enchants.main.toFixed(1)})</span>}
                             </div>
                             {/* ALL sub stats */}
                             <div className="mt-0.5 grid grid-cols-2 gap-x-1 gap-y-px">
                               {art.subs.map((sub, si) => {
                                 const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
-                                const weight = roleWeights[sub.id] || 0.5;
-                                const isGood = weight >= 2.5;
-                                const isOk = weight >= 1.5;
+                                const subColor = getStatColor(sub.id, hClass, hElement);
                                 const subEnch = art.enchants?.subs?.[sub.id] || 0;
                                 return (
-                                  <div key={si} className={`text-[8px] truncate ${isGood ? 'text-green-400 font-bold' : isOk ? 'text-blue-300' : 'text-gray-500'}`}>
+                                  <div key={si} className={`text-[8px] truncate ${subColor}`}>
                                     {subDef?.name || sub.id} +{sub.value}{subEnch > 0 && <span className="text-green-400"> (+{subEnch.toFixed(1)})</span>}
                                   </div>
                                 );
@@ -8915,49 +8967,42 @@ export default function ShadowColosseum() {
                 {data.artifactInventory.length > 0 && (
                   <button
                     onClick={() => {
-                      // Determine chibi role from stats
-                      const base = c.base;
-                      const hasHeal = c.skills.some(s => s.healSelf || s.healTeam || s.buffAtk || s.buffDef);
-                      const isHighDef = base.def >= base.atk;
-                      const isHighAtk = base.atk > base.def * 1.3;
-                      // Role: dps | tank | support
-                      const role = hasHeal && !isHighAtk ? 'support' : isHighDef ? 'tank' : 'dps';
+                      // Determine role from actual hunter class
+                      const aeClass = HUNTERS[id]?.class || 'fighter';
+                      const role = aeClass === 'mage' ? 'mage' : aeClass === 'tank' ? 'tank' : aeClass === 'support' ? 'support' : 'dps';
 
-                      // Best sets per role
+                      // Best sets per role (with class-specific tiers)
                       const elementSetMap = { fire: 'flamme_maudite', water: 'maree_eternelle', shadow: 'ombre_souveraine' };
-                      const roleSetPriority = {
-                        dps: [elementSetMap[c.element], 'infamie_chaotique', 'expertise_bestiale', 'fureur_desespoir'].filter(Boolean),
-                        tank: ['volonte_de_fer', 'chaines_destin', 'benediction_celeste'],
-                        support: ['benediction_celeste', 'volonte_de_fer', 'echo_temporel'],
-                      };
-                      const preferredSets = new Set(roleSetPriority[role] || roleSetPriority.dps);
+                      const classTiers = CLASS_SET_TIERS[aeClass] || CLASS_SET_TIERS.fighter;
+                      const resolveSet = (sid) => sid === 'ELEMENT_SET' ? elementSetMap[c.element] : sid;
+                      const preferredSets = new Set([...(classTiers.S || []), ...(classTiers.A || [])].map(resolveSet).filter(Boolean));
 
                       // Preferred main stats per slot per role
                       const mainStatPriority = {
                         dps: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_dmg', bottes: 'spd_flat', collier: 'atk_pct', bracelet: 'atk_pct', anneau: 'crit_rate', boucles: 'atk_pct' },
+                        mage: { casque: 'hp_pct', plastron: 'int_pct', gants: 'crit_dmg', bottes: 'spd_flat', collier: 'int_pct', bracelet: 'int_pct', anneau: 'crit_rate', boucles: 'int_pct' },
                         tank: { casque: 'hp_pct', plastron: 'atk_flat', gants: 'crit_rate', bottes: 'def_pct', collier: 'hp_pct', bracelet: 'def_pct', anneau: 'res_flat', boucles: 'hp_pct' },
                         support: { casque: 'hp_pct', plastron: 'atk_pct', gants: 'crit_rate', bottes: 'spd_flat', collier: 'hp_pct', bracelet: 'def_pct', anneau: 'res_flat', boucles: 'hp_pct' },
                       };
-                      const idealMain = mainStatPriority[role];
+                      const idealMain = mainStatPriority[role] || mainStatPriority.dps;
 
-                      // Score each artifact for this chibi
+                      // Sub stat priorities per role
+                      const subPriorities = {
+                        dps: ['atk_pct', 'crit_dmg', 'crit_rate', 'atk_flat', 'spd_flat'],
+                        mage: ['int_pct', 'crit_dmg', 'crit_rate', 'int_flat', 'spd_flat'],
+                        tank: ['hp_pct', 'def_pct', 'hp_flat', 'def_flat', 'res_flat'],
+                        support: ['hp_pct', 'spd_flat', 'res_flat', 'def_pct', 'hp_flat'],
+                      };
+                      const subPriority = subPriorities[role] || subPriorities.dps;
+
+                      // Score each artifact for this chibi (base score)
                       const scoreArtifact = (art) => {
                         let score = 0;
-                        // Rarity bonus
                         score += art.rarity === 'mythique' ? 30 : art.rarity === 'legendaire' ? 15 : 0;
-                        // Level bonus
                         score += art.level * 2;
-                        // Main stat match
                         if (idealMain[art.slot] === art.mainStat) score += 25;
-                        // Main stat value
                         score += art.mainValue * 0.5;
-                        // Set match
                         if (preferredSets.has(art.set)) score += 20;
-                        // Sub stats quality
-                        const dpsSubPriority = ['atk_pct', 'crit_dmg', 'crit_rate', 'atk_flat', 'spd_flat'];
-                        const tankSubPriority = ['hp_pct', 'def_pct', 'hp_flat', 'def_flat', 'res_flat'];
-                        const supportSubPriority = ['hp_pct', 'spd_flat', 'res_flat', 'def_pct', 'hp_flat'];
-                        const subPriority = role === 'tank' ? tankSubPriority : role === 'support' ? supportSubPriority : dpsSubPriority;
                         art.subs.forEach(sub => {
                           const idx = subPriority.indexOf(sub.id);
                           if (idx !== -1) score += (5 - idx) * 2 + sub.value * 0.3;
@@ -8965,31 +9010,77 @@ export default function ShadowColosseum() {
                         return score;
                       };
 
-                      // Pick best artifact per slot from inventory
+                      // 2-pass auto-equip: Pass 1 = best by raw score, Pass 2 = optimize set bonuses
                       setData(prev => {
                         let inv = [...prev.artifactInventory];
                         const prevEquipped = { ...(prev.artifacts[id] || {}) };
-                        // Unequip all current artifacts back to inventory first
                         SLOT_ORDER.forEach(slotId => {
                           if (prevEquipped[slotId]) {
                             inv.push(prevEquipped[slotId]);
                             delete prevEquipped[slotId];
                           }
                         });
-                        const newEquipped = {};
-                        // For each slot, find the best available artifact
+
+                        // Pass 1: Pick top-3 candidates per slot by raw score
+                        const topPerSlot = {};
                         SLOT_ORDER.forEach(slotId => {
                           const candidates = inv.filter(a => a.slot === slotId);
-                          if (candidates.length === 0) return;
                           candidates.sort((a, b) => scoreArtifact(b) - scoreArtifact(a));
-                          const best = candidates[0];
-                          newEquipped[slotId] = best;
-                          inv = inv.filter(a => a.uid !== best.uid);
+                          topPerSlot[slotId] = candidates.slice(0, 3);
                         });
+
+                        // Pick best raw per slot first
+                        let newEquipped = {};
+                        let usedUids = new Set();
+                        SLOT_ORDER.forEach(slotId => {
+                          const best = topPerSlot[slotId].find(a => !usedUids.has(a.uid));
+                          if (best) { newEquipped[slotId] = best; usedUids.add(best.uid); }
+                        });
+
+                        // Pass 2: Check set counts and try to complete sets
+                        const setCounts = {};
+                        Object.values(newEquipped).forEach(art => {
+                          if (art?.set) setCounts[art.set] = (setCounts[art.set] || 0) + 1;
+                        });
+
+                        // Find sets that are close to a bonus threshold (2p, 4p)
+                        Object.entries(setCounts).forEach(([setId, count]) => {
+                          const isPreferred = preferredSets.has(setId);
+                          if (!isPreferred) return;
+                          // Try to complete 4p if at 3, or 2p if at 1
+                          const target = count >= 3 ? 4 : count >= 1 ? 2 : 0;
+                          if (count >= target) return; // Already have bonus
+                          const needed = target - count;
+                          // Find slots where this set is NOT equipped but a candidate exists
+                          const swapSlots = SLOT_ORDER.filter(slotId => {
+                            const cur = newEquipped[slotId];
+                            return cur && cur.set !== setId;
+                          });
+                          let swapped = 0;
+                          for (const slotId of swapSlots) {
+                            if (swapped >= needed) break;
+                            const alt = topPerSlot[slotId].find(a => a.set === setId && !usedUids.has(a.uid));
+                            if (!alt) continue;
+                            const curScore = scoreArtifact(newEquipped[slotId]);
+                            const altScore = scoreArtifact(alt);
+                            // Accept swap if alt is within 15 points of current (set bonus compensates)
+                            if (altScore >= curScore - 15) {
+                              usedUids.delete(newEquipped[slotId].uid);
+                              newEquipped[slotId] = alt;
+                              usedUids.add(alt.uid);
+                              swapped++;
+                            }
+                          }
+                        });
+
+                        // Remove equipped from inventory
+                        const equippedUids = new Set(Object.values(newEquipped).map(a => a.uid));
+                        inv = inv.filter(a => !equippedUids.has(a.uid));
                         return { ...prev, artifacts: { ...prev.artifacts, [id]: newEquipped }, artifactInventory: inv };
                       });
+                      const roleMsg = { dps: "Full DPS ! Que la destruction commence !", mage: "Full INT ! La magie va tout ravager !", tank: "Blindage maximal ! Rien ne passera !", support: "Support optimal ! L'equipe te remercie !" };
                       window.dispatchEvent(new CustomEvent('beru-react', {
-                        detail: { message: role === 'dps' ? "Full DPS ! Que la destruction commence !" : role === 'tank' ? "Blindage maximal ! Rien ne passera !" : "Support optimal ! L'equipe te remercie !", mood: 'happy' }
+                        detail: { message: roleMsg[role] || roleMsg.dps, mood: 'happy' }
                       }));
                     }}
                     className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-500/30 text-[10px] font-bold text-cyan-300 hover:from-cyan-600/50 hover:to-blue-600/50 transition-all"
@@ -9138,6 +9229,33 @@ export default function ShadowColosseum() {
                             <span className="font-bold">{ARTIFACT_SLOTS[sa.slot]?.icon} {ARTIFACT_SLOTS[sa.slot]?.name} :</span>{' '}
                             {sa.currentIssues.join(' | ')}
                           </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Near-complete sets advice */}
+                    {advice.nearCompleteSets?.length > 0 && (
+                      <div className="mb-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                        <div className="text-[9px] text-amber-400 font-bold mb-1">{'\uD83E\uDDE9'} Sets presque complets</div>
+                        {advice.nearCompleteSets.map((ncs, i) => {
+                          const setDef = ALL_ARTIFACT_SETS[ncs.setId];
+                          return (
+                            <div key={i} className="text-[8px] text-amber-300/80 mb-0.5">
+                              <span className={setDef?.color || 'text-gray-400'}>{setDef?.icon || '?'} {setDef?.name || ncs.setId}</span>
+                              <span className="text-gray-400"> — {ncs.count}p, il manque {ncs.needed} piece{ncs.needed > 1 ? 's' : ''} pour le bonus {ncs.bonus} !</span>
+                              {ncs.canComplete && <span className="text-green-400 ml-1 font-bold">(dispo dans l'inventaire !)</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Mage-specific advice */}
+                    {advice.mageAdvice?.length > 0 && (
+                      <div className="mb-2 p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                        <div className="text-[9px] text-indigo-400 font-bold mb-1">{'\uD83E\uDDE0'} Conseil Mage</div>
+                        {advice.mageAdvice.map((tip, i) => (
+                          <div key={i} className="text-[8px] text-indigo-300/80 mb-0.5">{'\u26A0'} {tip}</div>
                         ))}
                       </div>
                     )}

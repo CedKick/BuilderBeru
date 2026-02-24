@@ -268,10 +268,12 @@ export const statsAtFull = (base, growth, level, allocated = {}, tb = {}, equipB
   mergedTb.critRate = (mergedTb.critRate || 0) + (equipBonuses.crit_rate || 0) + (equipBonuses.critRate || 0);
   mergedTb.resFlat = (mergedTb.resFlat || 0) + (equipBonuses.res_flat || 0);
   mergedTb.critDamage = (mergedTb.critDamage || 0) + (equipBonuses.crit_dmg || 0) + (equipBonuses.critDamage || 0);
-  // Pass through set damage bonuses
-  mergedTb.fireDamage = (mergedTb.fireDamage || 0) + (equipBonuses.fireDamage || 0);
-  mergedTb.waterDamage = (mergedTb.waterDamage || 0) + (equipBonuses.waterDamage || 0);
-  mergedTb.shadowDamage = (mergedTb.shadowDamage || 0) + (equipBonuses.shadowDamage || 0);
+  // Pass through set damage bonuses + artifact elemental damage stats
+  mergedTb.fireDamage = (mergedTb.fireDamage || 0) + (equipBonuses.fireDamage || 0) + (equipBonuses.fire_dmg_pct || 0);
+  mergedTb.waterDamage = (mergedTb.waterDamage || 0) + (equipBonuses.waterDamage || 0) + (equipBonuses.water_dmg_pct || 0);
+  mergedTb.shadowDamage = (mergedTb.shadowDamage || 0) + (equipBonuses.shadowDamage || 0) + (equipBonuses.shadow_dmg_pct || 0);
+  mergedTb.lightDamage = (mergedTb.lightDamage || 0) + (equipBonuses.lightDamage || 0) + (equipBonuses.light_dmg_pct || 0);
+  mergedTb.earthDamage = (mergedTb.earthDamage || 0) + (equipBonuses.earthDamage || 0) + (equipBonuses.earth_dmg_pct || 0);
   mergedTb.allDamage = (mergedTb.allDamage || 0) + (equipBonuses.allDamage || 0);
   mergedTb.defPen = (mergedTb.defPen || 0) + (equipBonuses.defPen || 0);
   mergedTb.healBonus = (mergedTb.healBonus || 0) + (equipBonuses.healBonus || 0);
@@ -309,6 +311,12 @@ export const statsAtFull = (base, growth, level, allocated = {}, tb = {}, equipB
   stats.mana = Math.floor((baseMana + manaFromGrowth + manaFromAlloc + manaFromAccount + manaFromIntFlat) * manaPercent);
   stats.manaRegen = BASE_MANA_REGEN + Math.floor(stats.spd / 15) + Math.floor(mergedTb.manaRegen || 0);
   stats.manaCostReduce = Math.min(50, (mergedTb.manaCostReduce || 0) + (equipBonuses.manaCostReduce || 0));
+  // Flat elemental damage from artifact stats
+  stats.fireDmgFlat = (equipBonuses.fire_dmg_flat || 0);
+  stats.waterDmgFlat = (equipBonuses.water_dmg_flat || 0);
+  stats.shadowDmgFlat = (equipBonuses.shadow_dmg_flat || 0);
+  stats.lightDmgFlat = (equipBonuses.light_dmg_flat || 0);
+  stats.earthDmgFlat = (equipBonuses.earth_dmg_flat || 0);
   return stats;
 };
 
@@ -498,8 +506,12 @@ export const computeAttack = (attacker, skill, defender, tb = {}) => {
       executionMult += (tb.executionDmg || 0) / 100;
     }
 
+    // Flat elemental damage from artifact stats (applied per hit)
+    const elemFlatKey = `${attacker.element}DmgFlat`;
+    const flatElemDmg = attacker[elemFlatKey] || 0;
+
     const variance = 0.9 + Math.random() * 0.2;
-    res.damage = Math.max(1, Math.floor(raw * elemMult * defFactor * resFactor * critMult * physMult * elemDmgMult * bossMult * artElemMult * weaponTypeMult * executionMult * variance));
+    res.damage = Math.max(1, Math.floor((raw * elemMult * defFactor * resFactor * critMult * physMult * elemDmgMult * bossMult * artElemMult * weaponTypeMult * executionMult + flatElemDmg) * variance));
   }
   const healBonusMult = 1 + (tb.healBonus || 0) / 100;
   // Mages/Supports: Intel boosts heals (+1% per 10 Intel)
