@@ -1578,11 +1578,40 @@ export default function RaidMode() {
         const origBossAtk = state.boss.atk;
         state.boss.atk = Math.floor(origBossAtk * phaseMult);
 
-        // Boss picks a skill (CD-based)
+        // Boss picks a skill (smart for intelligent bosses, random otherwise)
         const availSkills = state.boss.skills.filter(s => now - s.lastUsedAt >= (s.cdSec || 0) * 1000);
-        const bossSkill = availSkills.length > 1
-          ? availSkills[Math.floor(Math.random() * availSkills.length)]
-          : availSkills[0] || state.boss.skills[0];
+        let bossSkill;
+        if (boss.targeting === 'intelligent' && availSkills.length > 1) {
+          // Priority 1: Finisher — if any target < 25% HP, use highest power single
+          const lowHpTarget = alive.find(c => c.hp / c.maxHp < 0.25);
+          if (lowHpTarget) {
+            const finisher = availSkills.filter(s => s.target === 'single').sort((a, b) => b.power - a.power)[0];
+            if (finisher) bossSkill = finisher;
+          }
+          // Priority 2: AoE when 4+ alive (60% chance)
+          if (!bossSkill && alive.length >= 4) {
+            const aoeSkills = availSkills.filter(s => s.target === 'aoe');
+            if (aoeSkills.length > 0 && Math.random() < 0.6) {
+              bossSkill = aoeSkills[Math.floor(Math.random() * aoeSkills.length)];
+            }
+          }
+          // Priority 3: DOT spread — if < half targets burning, prefer DOT skill (50% chance)
+          if (!bossSkill) {
+            const burnedCount = alive.filter(c => c.burnDot).length;
+            if (burnedCount < alive.length * 0.5) {
+              const dotSkills = availSkills.filter(s => s.dot);
+              if (dotSkills.length > 0 && Math.random() < 0.5) {
+                bossSkill = dotSkills[Math.floor(Math.random() * dotSkills.length)];
+              }
+            }
+          }
+          // Fallback: random
+          if (!bossSkill) bossSkill = availSkills[Math.floor(Math.random() * availSkills.length)];
+        } else {
+          bossSkill = availSkills.length > 1
+            ? availSkills[Math.floor(Math.random() * availSkills.length)]
+            : availSkills[0] || state.boss.skills[0];
+        }
 
         bossSkill.lastUsedAt = now;
 
@@ -1690,27 +1719,50 @@ export default function RaidMode() {
         };
 
         // ─── Intelligent target selection (Manticore) ──────────
+        // Frustration tracker: boss changes target if stuck on same one
+        if (!state.boss._lastTargetId) { state.boss._lastTargetId = null; state.boss._sameTargetCount = 0; }
         const pickSmartTarget = (candidates) => {
           if (!boss.targeting || boss.targeting !== 'intelligent' || candidates.length <= 1) {
             return candidates[Math.floor(Math.random() * candidates.length)];
           }
+          // Frustration: if attacked same target 3+ times in a row, force switch
+          const frustrated = state.boss._sameTargetCount >= 3;
+          const others = frustrated ? candidates.filter(c => c.id !== state.boss._lastTargetId) : candidates;
+          const pool = others.length > 0 ? others : candidates;
+
+          let picked;
           const roll = Math.random();
-          // 60% — target highest DPS
-          if (roll < 0.60) {
-            const sorted = [...candidates].sort((a, b) => (dpsTracker.current[b.id] || 0) - (dpsTracker.current[a.id] || 0));
-            const top = sorted[0];
-            // If top DPS has very high DEF (>50% of boss ATK), 40% chance switch to #2
-            if (sorted.length > 1 && top.def > state.boss.atk * 0.5 && Math.random() < 0.4) return sorted[1];
-            return top;
+          // 40% — target highest DPS
+          if (roll < 0.40) {
+            const sorted = [...pool].sort((a, b) => (dpsTracker.current[b.id] || 0) - (dpsTracker.current[a.id] || 0));
+            picked = sorted[0];
+            // If top DPS has very high DEF (>50% of boss ATK), 60% chance switch to #2
+            if (sorted.length > 1 && picked.def > state.boss.atk * 0.5 && Math.random() < 0.6) picked = sorted[1];
           }
           // 20% — target support/healer
-          if (roll < 0.80) {
-            const supports = candidates.filter(c => c.class === 'support' || c.isMage);
-            if (supports.length > 0) return supports[Math.floor(Math.random() * supports.length)];
+          else if (roll < 0.60) {
+            const supports = pool.filter(c => c.class === 'support' || c.isMage);
+            picked = supports.length > 0 ? supports[Math.floor(Math.random() * supports.length)] : null;
           }
           // 20% — target lowest HP (finish off)
-          const byHp = [...candidates].sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
-          return byHp[0];
+          else if (roll < 0.80) {
+            const byHp = [...pool].sort((a, b) => (a.hp / a.maxHp) - (b.hp / b.maxHp));
+            picked = byHp[0];
+          }
+          // 20% — truly random (unpredictable)
+          else {
+            picked = pool[Math.floor(Math.random() * pool.length)];
+          }
+          if (!picked) picked = pool[Math.floor(Math.random() * pool.length)];
+
+          // Track frustration
+          if (picked.id === state.boss._lastTargetId) {
+            state.boss._sameTargetCount++;
+          } else {
+            state.boss._lastTargetId = picked.id;
+            state.boss._sameTargetCount = 1;
+          }
+          return picked;
         };
 
         if (bossSkill.target === 'aoe') {
@@ -1746,6 +1798,22 @@ export default function RaidMode() {
           vfxEvents.push({ id: now + Math.random() + 0.5, type: 'boss_attack', targetId: target.id, damage: dmg?.damage || 0, timestamp: now });
         }
 
+        // Apply fire DOT if skill has one
+        if (bossSkill.dot) {
+          const dotTargets = bossSkill.target === 'aoe' ? alive : (bossSkill.target === 'multi' ? alive : [alive.find(c => c.id === state.boss._lastTargetId) || alive[0]]);
+          dotTargets.forEach(t => {
+            if (!t || !t.alive) return;
+            // Stronger DOT overwrites weaker; same strength refreshes duration
+            if (!t.burnDot || bossSkill.dot.dmgPct >= t.burnDot.dmgPct) {
+              t.burnDot = { dmgPct: bossSkill.dot.dmgPct, remaining: bossSkill.dot.duration, lastTick: now };
+            } else {
+              t.burnDot.remaining = Math.max(t.burnDot.remaining, bossSkill.dot.duration);
+            }
+          });
+          const dotCount = dotTargets.filter(t => t?.alive).length;
+          if (dotCount > 0) logEntries.push({ text: `\uD83D\uDD25 ${bossSkill.name} enflamme ${dotCount > 1 ? dotCount + ' cibles' : dotTargets[0]?.name} !`, time: elapsed, type: 'boss' });
+        }
+
         // Boss self buff
         if (bossSkill.buffAtk) {
           state.boss.buffs.push({ stat: 'atk', value: bossSkill.buffAtk / 100, turns: 99 });
@@ -1756,6 +1824,24 @@ export default function RaidMode() {
         stateChanged = true;
       }
     }
+
+    // ─── Process burn DOTs (fire tick every 1s) ──────────────
+    state.chibis.forEach(c => {
+      if (!c.alive || !c.burnDot) return;
+      if (now - c.burnDot.lastTick >= 1000) {
+        const dotDmg = Math.max(1, Math.floor(c.maxHp * c.burnDot.dmgPct / 100));
+        c.hp -= dotDmg;
+        c.burnDot.remaining -= 1;
+        c.burnDot.lastTick = now;
+        if (dmgTakenWindowTracker.current[c.id] !== undefined) dmgTakenWindowTracker.current[c.id] += dotDmg;
+        const dtLog = detailedLogsRef.current[c.id];
+        if (dtLog) dtLog.damageTaken = (dtLog.damageTaken || 0) + dotDmg;
+        logEntries.push({ text: `\uD83D\uDD25 ${c.name} brule ! -${fmt(dotDmg)} PV`, time: elapsed, type: 'boss' });
+        if (c.hp <= 0) { c.hp = 0; c.alive = false; }
+        if (c.burnDot.remaining <= 0) c.burnDot = null;
+        stateChanged = true;
+      }
+    });
 
     // ─── Decay chibi buffs (turn-based → time-based: rough approx) ──
     state.chibis.forEach(c => {
