@@ -594,6 +594,17 @@ export default function PvpLive() {
   const turnTimerRef = useRef(null);
 
   // ─── Beru (uses floating mascot only via beru-react event) ──
+  const beruSay = (msg, mood = 'excited') => {
+    const moodMap = { panic: 'scared', confident: 'happy', thinking: 'thinking' };
+    window.dispatchEvent(new CustomEvent('beru-react', {
+      detail: {
+        message: msg,
+        mood: moodMap[mood] || 'excited',
+        duration: mood === 'panic' ? 5000 : 4000,
+        animation: mood === 'panic' ? 'shake' : mood === 'confident' ? 'bounce' : 'bounce',
+      },
+    }));
+  };
 
   // ─── Result ────────────────────────────────────────────────
   const [result, setResult] = useState(null); // { won, rewards, stats }
@@ -1744,22 +1755,6 @@ export default function PvpLive() {
       }));
     }
   }, [battle]);
-
-  // ═══════════════════════════════════════════════════════════════
-  // BERU PERSONALITY
-  // ═══════════════════════════════════════════════════════════════
-
-  const beruSay = (msg, mood = 'excited') => {
-    const moodMap = { panic: 'scared', confident: 'happy', thinking: 'thinking' };
-    window.dispatchEvent(new CustomEvent('beru-react', {
-      detail: {
-        message: msg,
-        mood: moodMap[mood] || 'excited',
-        duration: mood === 'panic' ? 5000 : 4000,
-        animation: mood === 'panic' ? 'shake' : mood === 'confident' ? 'bounce' : 'bounce',
-      },
-    }));
-  };
 
   // ─── Beru Interactive Reactions ─────────────────────────────
   // Listen for beru-hide / beru-calm events from the floating mascot

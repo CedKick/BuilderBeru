@@ -4083,10 +4083,8 @@ export default function ShadowColosseum() {
 
           {/* Boss Selection */}
           <div className="space-y-4">
-            <a
-              href={`http://159.223.225.71:3002/test${(() => { try { const u = JSON.parse(localStorage.getItem('builderberu_auth_user')); const rd = JSON.parse(localStorage.getItem('shadow_colosseum_data')); const rc = JSON.parse(localStorage.getItem('manaya_raid_character') || '{}'); const params = []; if (u?.username) params.push('user=' + encodeURIComponent(u.username)); const hunters = (rd?.hunterCollection || []).map(e => typeof e === 'string' ? e : e.id).filter(Boolean); if (hunters.length > 0) params.push('hunters=' + hunters.join(',')); const raidLvl = raidProfileServer?.level || rc.raidLevel || 1; if (raidLvl > 0) params.push('hlvl=' + raidLvl); if (rc.preferredClass) params.push('class=' + rc.preferredClass); const totalPts = Math.max(0, (raidLvl - 1)) * 3; const sp = rc.statPoints || {}; const usedPts = Object.values(sp).reduce((s, v) => s + v, 0); if (usedPts <= totalPts && usedPts > 0) params.push('sp=' + encodeURIComponent(JSON.stringify(sp))); return params.length > 0 ? '?' + params.join('&') : ''; } catch { return ''; } })()}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              to="/shadow-colosseum/multi-pve"
               className="block p-4 rounded-xl border border-emerald-500/30 bg-gradient-to-r from-emerald-900/20 to-teal-900/20 hover:from-emerald-900/40 hover:to-teal-900/40 transition-all group cursor-pointer"
             >
               <div className="flex items-center gap-4">
@@ -4107,7 +4105,7 @@ export default function ShadowColosseum() {
                 </div>
                 <div className="text-gray-500 group-hover:text-emerald-400 text-xl transition-colors">{'\u2192'}</div>
               </div>
-            </a>
+            </Link>
 
             {/* Coming soon bosses */}
             <div className="p-4 rounded-xl border border-gray-700/30 bg-gray-900/30 opacity-50 cursor-not-allowed">
