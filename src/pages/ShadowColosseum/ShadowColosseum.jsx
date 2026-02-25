@@ -535,6 +535,7 @@ export default function ShadowColosseum() {
   const [equipDetailSlot, setEquipDetailSlot] = useState(null); // slotId for equipment view detail panel
   const [rosterSort, setRosterSort] = useState('ilevel'); // 'ilevel' | 'level' | 'name'
   const [rosterFilterElem, setRosterFilterElem] = useState(null); // element id or null
+  const [searchQuery, setSearchQuery] = useState('"'); // search filter by name
   const [rosterFilterClass, setRosterFilterClass] = useState(null); // class id or null
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [chibisCollapsed, setChibisCollapsed] = useState(false);
@@ -4854,6 +4855,16 @@ export default function ShadowColosseum() {
           {/* Filter / Sort Bar */}
           {(ownedIds.length > 0 || ownedHunterIds.length > 0) && (
             <div className="mb-3 p-2 rounded-xl bg-gray-800/20 border border-gray-700/20">
+              {/* Search bar */}
+              <div className="mb-2">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="🔍 Rechercher par nom..."
+                  className="w-full px-3 py-1.5 rounded-lg bg-gray-900/50 border border-gray-700/30 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/30 transition-all"
+                />
+              </div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {[
                   { key: 'ilevel', label: 'iLevel', icon: '\u2B50' },
@@ -4909,6 +4920,7 @@ export default function ShadowColosseum() {
                 if (!c) return false;
                 if (rosterFilterElem && c.element !== rosterFilterElem) return false;
                 if (rosterFilterClass) return false; // chibis don't have classes
+                if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
                 return true;
               })
               .map(id => ({ id, iLvl: getChibiILevel(id), level: (getChibiLevel(id)).level, name: getChibiData(id)?.name || '' }))
@@ -4971,7 +4983,7 @@ export default function ShadowColosseum() {
                             </div>
                           )}
                         </div>
-                        <div className="mt-1.5 grid grid-cols-3 gap-x-3 gap-y-0.5 text-normal-responsive text-gray-400">
+                        <div className="mt-1.5 grid grid-cols-2 sm:grid-cols-3 gap-x-2 sm:gap-x-3 gap-y-0.5 text-normal-responsive text-gray-400">
                           <span>PV:{s.hp}</span><span>ATK:{s.atk}</span><span>DEF:{s.def}</span>
                           <span>SPD:{s.spd}</span><span>CRT:{s.crit}%</span><span>RES:{s.res}%</span>
                         </div>
@@ -5023,6 +5035,7 @@ export default function ShadowColosseum() {
                 if (!c) return false;
                 if (rosterFilterElem && c.element !== rosterFilterElem) return false;
                 if (rosterFilterClass && c.class !== rosterFilterClass) return false;
+                if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
                 return true;
               })
               .map(id => ({ id, iLvl: getChibiILevel(id), level: (getChibiLevel(id)).level, name: getChibiData(id)?.name || '' }))
