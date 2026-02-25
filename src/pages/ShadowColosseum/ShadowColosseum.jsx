@@ -2180,7 +2180,7 @@ export default function ShadowColosseum() {
   };
 
   const resetStats = (id) => {
-    const newData = { ...data, statPoints: { ...data.statPoints, [id]: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 } } };
+    const newData = { ...data, statPoints: { ...data.statPoints, [id]: { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0, mana: 0 } } };
     setData(newData);
     debouncedSaveAndSync(newData); // localStorage instant, cloud in 10s (was immediate)
   };
@@ -3895,7 +3895,7 @@ export default function ShadowColosseum() {
               <div className="text-base font-bold">{cd.name}</div>
               <div className="text-xs text-gray-400">
                 Lv{getChibiLevel(id).level} {RARITY[cd.rarity].stars} {ELEMENTS[cd.element].icon}
-                {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter]</span>}
+                {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter{HUNTERS[id].class ? ` - ${HUNTERS[id].class}` : ''}]</span>}
               </div>
               {HUNTERS[id] && (() => {
                 const _es = getChibiEveilStars(id);
@@ -6791,7 +6791,7 @@ export default function ShadowColosseum() {
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
               <div className="text-normal-responsive text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon} {ELEMENTS[c.element].name}
-                {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter]</span>}
+                {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter{HUNTERS[id].class ? ` - ${HUNTERS[id].class}` : ''}]</span>}
               </div>
               {HUNTERS[id] && (() => {
                 const _es = getChibiEveilStars(id);
@@ -6858,8 +6858,8 @@ export default function ShadowColosseum() {
                 const m = STAT_META[stat];
                 const isPct = stat === 'crit' || stat === 'res';
                 const baseVal = isPct
-                    ? +(c.base[stat] + c.growth[stat] * (level - 1)).toFixed(1)
-                    : Math.floor(c.base[stat] + c.growth[stat] * (level - 1));
+                    ? +((c.base[stat] || 0) + (c.growth[stat] || 0) * (level - 1)).toFixed(1)
+                    : Math.floor((c.base[stat] || 0) + (c.growth[stat] || 0) * (level - 1));
                 const bonusVal = (alloc[stat] || 0) * (STAT_PER_POINT[stat] || 0);
                 const totalVal = isPct ? +(baseVal + bonusVal).toFixed(1) : Math.floor(baseVal + bonusVal);
                 const allocated = alloc[stat] || 0;
@@ -6986,7 +6986,7 @@ export default function ShadowColosseum() {
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
               <div className="text-normal-responsive text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon} {ELEMENTS[c.element].name}
-                {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter]</span>}
+                {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter{HUNTERS[id].class ? ` - ${HUNTERS[id].class}` : ''}]</span>}
               </div>
               {HUNTERS[id] && (() => {
                 const _es = getChibiEveilStars(id);
@@ -7120,7 +7120,7 @@ export default function ShadowColosseum() {
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
               <div className="text-normal-responsive text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon}
-                {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter]</span>}
+                {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter{HUNTERS[id].class ? ` - ${HUNTERS[id].class}` : ''}]</span>}
               </div>
               {HUNTERS[id] && (() => {
                 const _es = getChibiEveilStars(id);
