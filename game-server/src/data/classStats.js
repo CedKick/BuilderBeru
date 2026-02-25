@@ -52,6 +52,18 @@ export const CLASS_STATS = {
     aggroMult: 1.0,
     color: '#f59e0b',
   },
+  berserker: {
+    label: 'Berserker',
+    hp: 23000,
+    mana: 400,
+    atk: 820,
+    def: 140,
+    spd: 210,
+    crit: 28,
+    res: 18,
+    aggroMult: 1.1,
+    color: '#dc2626',
+  },
 };
 
 // ── Skill Definitions ──
@@ -260,6 +272,63 @@ export const CLASS_SKILLS = {
       coneAngle: 35,
       cooldown: 40,
       manaCost: 160,
+    },
+  },
+
+  berserker: {
+    basic: {
+      name: 'Frappe brutale',
+      power: 170,
+      range: 75,
+      hitbox: 'cone',
+      coneAngle: 70,
+      cooldown: 0.4,
+      manaCost: 0,
+      isBasic: true,
+    },
+    secondary: {
+      name: 'Frappe chargée',
+      type: 'charged_attack',
+      powerBase: 200,
+      powerLevels: [200, 400, 700, 1100], // Level 0-3
+      range: 90,
+      hitbox: 'cone',
+      coneAngle: 60,
+      chargeTime: 4.0,     // Max 4 seconds
+      chargeLevels: 4,     // 0, 1, 2, 3
+      cooldown: 0,         // No cooldown
+      manaCost: 0,
+    },
+    skillA: {
+      name: 'Rage du Berserker',
+      type: 'buff_self',
+      atkBonus: 0.3,       // +30% ATK
+      spdBonus: 0.2,       // +20% SPD
+      duration: 10,
+      cooldown: 20,
+      manaCost: 0,
+      visualEffect: 'rotating_aura',
+    },
+    skillB: {
+      name: 'Assaut dévastateur',
+      type: 'dash_attack',
+      power: 350,
+      dashDistance: 200,
+      hitbox: 'line',
+      lineWidth: 55,
+      cooldown: 6,
+      manaCost: 35,
+    },
+    ultimate: {
+      name: 'Tourbillon de destruction',
+      type: 'whirlwind',
+      power: 140,
+      hits: 6,             // Tick every 0.5s for 3s = 6 hits
+      interval: 0.5,
+      range: 120,
+      cooldown: 30,
+      manaCost: 90,
+      duration: 3,
     },
   },
 };

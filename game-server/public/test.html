@@ -407,7 +407,8 @@
               <b>Tank</b> — Aggro + protection<br>
               <b>Healer</b> — Soins + buffs<br>
               <b>Warrior</b> — DPS corps a corps<br>
-              <b>Archer</b> — DPS a distance
+              <b>Archer</b> — DPS a distance<br>
+              <b>Berserker</b> — DPS rage brutal
             </div>
             <select id="classSelect" onchange="selectClass()" style="font-size:12px;padding:5px;width:100%">
               <option value="">-- Classe --</option>
@@ -415,6 +416,7 @@
               <option value="healer">💚 Healer</option>
               <option value="dps_cac">🗡️ Warrior</option>
               <option value="dps_range">🏹 Archer</option>
+              <option value="berserker">⚔️ Berserker</option>
             </select>
             <select id="diffSelect" onchange="selectDifficulty()" style="font-size:12px;padding:5px;width:100%;margin-top:4px">
               <option value="NORMAL">Normal</option>
@@ -616,8 +618,8 @@
 
     const ELEMENT_ICONS = { fire: '\u{1F525}', water: '\u{1F4A7}', shadow: '\u{1F31F}' };
     const MANAYA_VERSION = 'v1.04';
-    const CLASS_COLORS = { tank: '#3b82f6', healer: '#10b981', dps_cac: '#ef4444', dps_range: '#f59e0b' };
-    const CLASS_LABELS = { tank: 'Tank', healer: 'Healer', dps_cac: 'Warrior', dps_range: 'Archer' };
+    const CLASS_COLORS = { tank: '#3b82f6', healer: '#10b981', dps_cac: '#ef4444', dps_range: '#f59e0b', berserker: '#dc2626' };
+    const CLASS_LABELS = { tank: 'Tank', healer: 'Healer', dps_cac: 'Warrior', dps_range: 'Archer', berserker: 'Berserker' };
     const BAR_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899'];
     const HP_BARS = 150;
 
@@ -921,7 +923,7 @@
       p = {
         username, level: 1, xp: 0, totalXp: 0,
         gamesPlayed: 0, victories: 0, defeats: 0,
-        classStats: { tank: { gp: 0, w: 0 }, healer: { gp: 0, w: 0 }, dps_cac: { gp: 0, w: 0 }, dps_range: { gp: 0, w: 0 } },
+        classStats: { tank: { gp: 0, w: 0 }, healer: { gp: 0, w: 0 }, dps_cac: { gp: 0, w: 0 }, dps_range: { gp: 0, w: 0 }, berserker: { gp: 0, w: 0 } },
         bestTime: null, createdAt: Date.now(),
       };
       // Auto-apply builderberu stat points on new profile too
@@ -1863,7 +1865,7 @@
             const sorted = [...msg.result.stats].sort((a, b) => b.damageDealt - a.damageDealt);
             for (const s of sorted) {
               const isMe = s.id === myId;
-              const classColors = { tank: '#3b82f6', healer: '#10b981', dps_cac: '#ef4444', dps_range: '#f59e0b' };
+              const classColors = { tank: '#3b82f6', healer: '#10b981', dps_cac: '#ef4444', dps_range: '#f59e0b', berserker: '#dc2626' };
               const tr = document.createElement('tr');
               if (isMe) tr.className = 'me';
               tr.innerHTML =
@@ -2329,7 +2331,7 @@
 
     function updatePartyHud() {
       if (!gameState || !gameState.players) return;
-      const classIcon = { tank: '\u{1F6E1}', healer: '\u{1F49A}', dps_cac: '\u2694\uFE0F', dps_range: '\u{1F3AF}' };
+      const classIcon = { tank: '\u{1F6E1}', healer: '\u{1F49A}', dps_cac: '\u2694\uFE0F', dps_range: '\u{1F3AF}', berserker: '\u2694' };
       const BUFF_ICONS = {
         poison: '\u2620', atk_up: '\u2694', shield: '\u{1F6E1}', speed_up: '\u26A1', speed_down: '\u{1F422}',
         invuln: '\u2728', taunt: '\u{1F4E2}', def_up: '\u{1F6E1}',
@@ -3138,7 +3140,7 @@
       // Class icon + Name
       ctx.fillStyle = isMe ? '#fff' : '#bbb';
       ctx.font = (isMe ? 'bold ' : '') + '10px sans-serif'; ctx.textAlign = 'center';
-      const classIcon = { tank: '\u{1F6E1}', healer: '\u{1F49A}', dps_cac: '\u2694\uFE0F', dps_range: '\u{1F3AF}' };
+      const classIcon = { tank: '\u{1F6E1}', healer: '\u{1F49A}', dps_cac: '\u2694\uFE0F', dps_range: '\u{1F3AF}', berserker: '\u2694' };
       const icon = classIcon[p.class] || '';
       const mainH = p.mainHunter ? HUNTER_LIST[p.mainHunter]?.name : null;
       ctx.fillText(icon + ' ' + (mainH || p.username || (isMe ? 'YOU' : p.id.substring(0, 5))), p.x, p.y + 38);
