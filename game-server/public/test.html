@@ -1560,9 +1560,10 @@
     // ── Connection ──
     function connect() {
       const username = document.getElementById('username').value || 'Player';
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = location.hostname;
-      const port = location.port || 3001;
-      ws = new WebSocket('ws://' + host + ':' + port + '/ws?username=' + encodeURIComponent(username));
+      const portSuffix = location.port ? ':' + location.port : '';
+      ws = new WebSocket(protocol + '//' + host + portSuffix + '/ws?username=' + encodeURIComponent(username));
       ws.onopen = () => {
         log('Connected!', 'info');
         document.getElementById('status').textContent = 'Connecte';
