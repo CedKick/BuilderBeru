@@ -231,6 +231,15 @@ export class CombatEngine {
         this._placeHealZone(player, skill, angle);
         break;
 
+      case 'charged_attack': {
+        // Berserker: use mid-level charge power (level 2 = powerLevels[2])
+        if (skill.manaCost > 0 && !player.useMana(skill.manaCost)) return;
+        player.cooldowns.secondary = 1.5; // Short cooldown between charges
+        const chargedSkill = { ...skill, power: skill.powerLevels?.[2] ?? skill.powerBase ?? skill.power };
+        this._coneAttack(player, chargedSkill, angle);
+        break;
+      }
+
       default:
         // Attack-type secondary (charged shot, heavy strike, etc.)
         if (skill.manaCost > 0 && !player.useMana(skill.manaCost)) return;
@@ -296,6 +305,20 @@ export class CombatEngine {
         break;
       case 'channel':
         this._startChannel(player, skill, angle);
+        break;
+      case 'whirlwind':
+        // Berserker: AoE channel around player (360° cone)
+        this._startChannel(player, { ...skill, coneAngle: 360 }, angle);
+        break;
+      case 'buff_self':
+        // Berserker Rage: +ATK and +SPD for duration
+        if (skill.atkBonus > 0) {
+          player.addBuff({ type: 'atk_up', value: skill.atkBonus, dur: skill.duration, source: 'rage' });
+        }
+        if (skill.spdBonus > 0) {
+          player.addBuff({ type: 'speed_up', value: skill.spdBonus, dur: skill.duration, source: 'rage' });
+        }
+        this.gs.addEvent({ type: 'buff', source: player.id, target: player.id, buffType: 'rage', duration: skill.duration });
         break;
       default:
         // Generic attack skill
@@ -401,8 +424,12 @@ export class CombatEngine {
   // ── Damage Calculation ──
 
   calculateDamage(attacker, power, defender) {
-    // Base damage
-    let damage = attacker.atk * (power / 100);
+    // Base damage (apply atk_up buffs, e.g. Berserker Rage)
+    let effectiveAtk = attacker.atk;
+    for (const b of (attacker.buffs || [])) {
+      if (b.type === 'atk_up') effectiveAtk *= (1 + b.value);
+    }
+    let damage = effectiveAtk * (power / 100);
 
     // Defense reduction
     damage *= COMBAT.DEF_FORMULA_CONSTANT / (COMBAT.DEF_FORMULA_CONSTANT + (defender.def || 0));
