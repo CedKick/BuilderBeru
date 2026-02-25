@@ -4789,7 +4789,7 @@ export default function ShadowColosseum() {
           </Link>
 
           {/* Codex, Shop, Artifacts & Members Buttons */}
-          <div className="grid grid-cols-4 gap-2 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2 gap-responsive-tight mb-4">
             <Link
               to="/codex"
               className="p-3 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-900/20 to-teal-900/20 hover:from-cyan-900/40 hover:to-teal-900/40 transition-all text-center group">
