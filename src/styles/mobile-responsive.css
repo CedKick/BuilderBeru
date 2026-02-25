@@ -1,0 +1,217 @@
+/* mobile-responsive.css - Responsive utilities for Shadow Colosseum */
+
+/* ============================================
+   RESPONSIVE TYPOGRAPHY
+   Mobile-first: larger sizes on mobile, precise sizes on desktop
+   ============================================ */
+
+/* Tiny text (labels, badges) */
+.text-responsive-tiny {
+  @apply text-xs;  /* 12px on mobile */
+}
+@media (min-width: 640px) {
+  .text-responsive-tiny {
+    font-size: 8px;  /* 8px on desktop */
+  }
+}
+
+/* Small text (secondary info) */
+.text-responsive-small {
+  @apply text-xs;  /* 12px on mobile */
+}
+@media (min-width: 640px) {
+  .text-responsive-small {
+    font-size: 9px;  /* 9px on desktop */
+  }
+}
+
+/* Normal text (body text) */
+.text-responsive-normal {
+  @apply text-sm;  /* 14px on mobile */
+}
+@media (min-width: 640px) {
+  .text-responsive-normal {
+    font-size: 10px;  /* 10px on desktop */
+  }
+}
+
+/* Medium text (important info) */
+.text-responsive-medium {
+  @apply text-sm;  /* 14px on mobile */
+}
+@media (min-width: 640px) {
+  .text-responsive-medium {
+    font-size: 11px;  /* 11px on desktop */
+  }
+}
+
+/* ============================================
+   TOUCH-FRIENDLY BUTTONS
+   Min 44x44px touch target on mobile
+   ============================================ */
+
+.btn-touch-friendly {
+  @apply min-h-[44px] px-4 py-2;  /* Mobile: 44px min height */
+}
+@media (min-width: 640px) {
+  .btn-touch-friendly {
+    @apply min-h-0 px-2 py-1;  /* Desktop: compact */
+  }
+}
+
+.btn-icon-touch {
+  @apply w-11 h-11;  /* Mobile: 44px square */
+}
+@media (min-width: 640px) {
+  .btn-icon-touch {
+    @apply w-8 h-8;  /* Desktop: 32px */
+  }
+}
+
+/* ============================================
+   SPACING & LAYOUT
+   More breathing room on mobile
+   ============================================ */
+
+.gap-responsive {
+  @apply gap-3;  /* Mobile: 12px gap */
+}
+@media (min-width: 640px) {
+  .gap-responsive {
+    @apply gap-1.5;  /* Desktop: 6px gap */
+  }
+}
+
+.gap-responsive-tight {
+  @apply gap-2;  /* Mobile: 8px gap */
+}
+@media (min-width: 640px) {
+  .gap-responsive-tight {
+    @apply gap-1;  /* Desktop: 4px gap */
+  }
+}
+
+/* ============================================
+   PADDING & MARGINS
+   Larger padding on mobile for better touch
+   ============================================ */
+
+.p-responsive {
+  @apply p-4;  /* Mobile: 16px */
+}
+@media (min-width: 640px) {
+  .p-responsive {
+    @apply p-2;  /* Desktop: 8px */
+  }
+}
+
+.px-responsive {
+  @apply px-4;  /* Mobile: 16px */
+}
+@media (min-width: 640px) {
+  .px-responsive {
+    @apply px-2;  /* Desktop: 8px */
+  }
+}
+
+.py-responsive {
+  @apply py-3;  /* Mobile: 12px */
+}
+@media (min-width: 640px) {
+  .py-responsive {
+    @apply py-1;  /* Desktop: 4px */
+  }
+}
+
+/* ============================================
+   GRID & FLEX LAYOUTS
+   Responsive grids that stack on mobile
+   ============================================ */
+
+.grid-responsive-2 {
+  @apply grid grid-cols-1;  /* Mobile: 1 column */
+}
+@media (min-width: 640px) {
+  .grid-responsive-2 {
+    @apply grid-cols-2;  /* Desktop: 2 columns */
+  }
+}
+
+.grid-responsive-3 {
+  @apply grid grid-cols-1;  /* Mobile: 1 column */
+}
+@media (min-width: 640px) {
+  .grid-responsive-3 {
+    @apply grid-cols-3;  /* Desktop: 3 columns */
+  }
+}
+
+.grid-responsive-4 {
+  @apply grid grid-cols-2;  /* Mobile: 2 columns */
+}
+@media (min-width: 640px) {
+  .grid-responsive-4 {
+    @apply grid-cols-4;  /* Desktop: 4 columns */
+  }
+}
+
+/* ============================================
+   MODAL & OVERLAY
+   Fullscreen on mobile, centered on desktop
+   ============================================ */
+
+.modal-responsive {
+  @apply fixed inset-0 overflow-auto;  /* Mobile: fullscreen */
+}
+@media (min-width: 640px) {
+  .modal-responsive {
+    @apply inset-auto max-w-2xl max-h-[90vh] rounded-lg;  /* Desktop: centered modal */
+  }
+}
+
+/* ============================================
+   STAT CARD & INFO BOXES
+   Larger, more readable on mobile
+   ============================================ */
+
+.stat-card-responsive {
+  @apply p-4 rounded-lg;  /* Mobile: 16px padding */
+}
+@media (min-width: 640px) {
+  .stat-card-responsive {
+    @apply p-2 rounded;  /* Desktop: 8px padding */
+  }
+}
+
+/* ============================================
+   SCROLLABLE CONTAINERS
+   Better scroll on mobile with momentum
+   ============================================ */
+
+.scroll-mobile {
+  @apply overflow-auto;
+  -webkit-overflow-scrolling: touch;  /* iOS momentum scrolling */
+}
+
+/* ============================================
+   HIDE/SHOW ON MOBILE
+   Utilities to hide elements on mobile or desktop
+   ============================================ */
+
+.mobile-only {
+  @apply block;
+}
+@media (min-width: 640px) {
+  .mobile-only {
+    @apply hidden;
+  }
+}
+
+.desktop-only {
+  @apply hidden;
+}
+@media (min-width: 640px) {
+  .desktop-only {
+    @apply block;
+  }
+}

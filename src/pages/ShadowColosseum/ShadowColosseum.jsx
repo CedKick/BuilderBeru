@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ResponsiveText, TouchButton, ResponsiveCard } from '../../components/ResponsiveUI';
 import shadowCoinManager from '../../components/ChibiSystem/ShadowCoinManager';
 import { TALENT_TREES, computeTalentBonuses, getTreeMaxPoints, getNodeDesc } from './talentTreeData';
 import {
@@ -3898,7 +3899,7 @@ export default function ShadowColosseum() {
               {HUNTERS[id] && (() => {
                 const _es = getChibiEveilStars(id);
                 return _es > 0 ? (
-                  <div className="text-[10px] mt-0.5">
+                  <div className="text-normal-responsive mt-0.5">
                     <span className="text-yellow-400 font-bold">A{_es}</span>
                   </div>
                 ) : null;
@@ -3912,7 +3913,7 @@ export default function ShadowColosseum() {
                 ) : (
                   <span className="text-2xl">{weapon.icon}</span>
                 )}
-                <div className="text-[9px] text-amber-400 font-bold">A{weaponAwk}</div>
+                <div className="text-small-responsive text-amber-400 font-bold">A{weaponAwk}</div>
               </div>
             )}
           </div>
@@ -3952,12 +3953,12 @@ export default function ShadowColosseum() {
                         <div className="flex items-center gap-1.5 bg-gray-800/30 rounded-md px-2 py-1.5 cursor-pointer"
                           onClick={() => setStatTooltip(statTooltip === stat ? null : stat)}>
                           <span className="text-xs">{m.icon}</span>
-                          <span className={`text-[11px] font-bold ${m.color}`}>{m.name}</span>
-                          {m.detail && <span className="text-[8px] text-gray-600 hover:text-purple-400">?</span>}
+                          <span className={`text-medium-responsive font-bold ${m.color}`}>{m.name}</span>
+                          {m.detail && <span className="text-tiny-responsive text-gray-600 hover:text-purple-400">?</span>}
                           <span className="text-xs text-white ml-auto font-bold">{s[stat]}{isPct ? '%' : ''}</span>
                         </div>
                         {statTooltip === stat && m.detail && (
-                          <div className="absolute z-20 left-0 right-0 mt-0.5 p-2 rounded-lg bg-[#1a1a2e] border border-purple-500/30 text-[10px] text-purple-200 leading-relaxed shadow-xl">{m.detail}</div>
+                          <div className="absolute z-20 left-0 right-0 mt-0.5 p-2 rounded-lg bg-[#1a1a2e] border border-purple-500/30 text-normal-responsive text-purple-200 leading-relaxed shadow-xl">{m.detail}</div>
                         )}
                       </div>
                     );
@@ -3966,16 +3967,16 @@ export default function ShadowColosseum() {
                 {/* MANA — read-only derived pool */}
                 <div className="flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/15 rounded-md px-2 py-1.5 mb-2">
                   <span className="text-xs">{'\uD83D\uDD2E'}</span>
-                  <span className="text-[11px] font-bold text-blue-400">MANA</span>
+                  <span className="text-medium-responsive font-bold text-blue-400">MANA</span>
                   <span className="text-xs text-white ml-auto font-bold">{s.mana}</span>
                 </div>
                 {derivedLines.length > 0 && (
                   <div className="grid grid-cols-2 gap-1 mb-3">
                     {derivedLines.map(d => (
                       <div key={d.key} className="flex items-center gap-1 bg-gray-800/20 rounded-md px-2 py-1">
-                        <span className="text-[11px]">{d.icon}</span>
-                        <span className={`text-[10px] ${d.color}`}>{d.name}</span>
-                        <span className={`text-[11px] ml-auto font-bold ${d.color}`}>{d.value !== undefined ? d.value : `+${derived[d.key]}`}{d.suffix}</span>
+                        <span className="text-medium-responsive">{d.icon}</span>
+                        <span className={`text-normal-responsive ${d.color}`}>{d.name}</span>
+                        <span className={`text-medium-responsive ml-auto font-bold ${d.color}`}>{d.value !== undefined ? d.value : `+${derived[d.key]}`}{d.suffix}</span>
                       </div>
                     ))}
                   </div>
@@ -3989,20 +3990,20 @@ export default function ShadowColosseum() {
               onClick={(e) => { e.stopPropagation(); goToSubView('stats', id); }}
               className="flex-1 py-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-400 text-sm font-bold hover:bg-amber-500/20 transition-colors"
             >
-              {'\uD83D\uDCCA'} Stats {getAvailStatPts(id) > 0 && <span className="ml-1 px-1 rounded bg-amber-500/30 text-[10px]">{getAvailStatPts(id)}</span>}
+              {'\uD83D\uDCCA'} Stats {getAvailStatPts(id) > 0 && <span className="ml-1 px-1 rounded bg-amber-500/30 text-normal-responsive">{getAvailStatPts(id)}</span>}
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); goToSubView('skilltree', id); }}
               className="flex-1 py-2.5 rounded-lg border border-purple-500/40 bg-purple-500/10 text-purple-400 text-sm font-bold hover:bg-purple-500/20 transition-colors"
             >
-              {'\uD83C\uDF33'} Skills {getAvailSP(id) > 0 && <span className="ml-1 px-1 rounded bg-purple-500/30 text-[10px]">{getAvailSP(id)}</span>}
+              {'\uD83C\uDF33'} Skills {getAvailSP(id) > 0 && <span className="ml-1 px-1 rounded bg-purple-500/30 text-normal-responsive">{getAvailSP(id)}</span>}
             </button>
             {getChibiLevel(id).level >= 10 && (
               <button
                 onClick={(e) => { e.stopPropagation(); goToSubView('talents', id); }}
                 className="flex-1 py-2.5 rounded-lg border border-green-500/40 bg-green-500/10 text-green-400 text-sm font-bold hover:bg-green-500/20 transition-colors"
               >
-                {'\u2728'} Talents {getAvailTalentPts(id) > 0 && <span className="ml-1 px-1 rounded bg-green-500/30 text-[10px]">{getAvailTalentPts(id)}</span>}
+                {'\u2728'} Talents {getAvailTalentPts(id) > 0 && <span className="ml-1 px-1 rounded bg-green-500/30 text-normal-responsive">{getAvailTalentPts(id)}</span>}
               </button>
             )}
             <button
@@ -4038,7 +4039,7 @@ export default function ShadowColosseum() {
 
       {/* Cloud sync indicator */}
       {isLoggedIn() && (
-        <div className="fixed top-2 right-2 z-50 flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/60 backdrop-blur text-[10px]" title={
+        <div className="fixed top-2 right-2 z-50 flex items-center gap-responsive-tight px-responsive py-responsive rounded-full bg-black/60 backdrop-blur" title={
           syncStatus === 'synced' ? 'Sauvegarde cloud OK' :
           syncStatus === 'syncing' ? 'Synchronisation en cours...' :
           syncStatus === 'error' ? 'Erreur de synchronisation' : 'En attente...'
@@ -4048,13 +4049,13 @@ export default function ShadowColosseum() {
             syncStatus === 'syncing' ? 'bg-amber-400 animate-pulse' :
             syncStatus === 'error' ? 'bg-red-400' : 'bg-gray-400'
           }`} />
-          <span className={
+          <ResponsiveText size="tiny" className={
             syncStatus === 'synced' ? 'text-green-400' :
             syncStatus === 'syncing' ? 'text-amber-400' :
             syncStatus === 'error' ? 'text-red-400' : 'text-gray-400'
           }>
             {syncStatus === 'synced' ? 'Cloud' : syncStatus === 'syncing' ? 'Sync...' : syncStatus === 'error' ? 'Erreur' : '...'}
-          </span>
+          </ResponsiveText>
         </div>
       )}
 
@@ -4094,13 +4095,13 @@ export default function ShadowColosseum() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-emerald-400 group-hover:text-emerald-300 text-base">Manaya</span>
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">BETA TEST</span>
+                    <span className="text-small-responsive px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">BETA TEST</span>
                   </div>
                   <p className="text-xs text-gray-400 mt-1">Boss Raid inspir&eacute; de Tera Online. 3-5 joueurs, 6 phases, patterns AoE, laser, poison.</p>
                   <div className="flex gap-2 mt-2">
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/20">3-5 joueurs</span>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/20">Temps reel</span>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/20">4 classes</span>
+                    <span className="text-small-responsive px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/20">3-5 joueurs</span>
+                    <span className="text-small-responsive px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/20">Temps reel</span>
+                    <span className="text-small-responsive px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/20">4 classes</span>
                   </div>
                 </div>
                 <div className="text-gray-500 group-hover:text-emerald-400 text-xl transition-colors">{'\u2192'}</div>
@@ -4116,7 +4117,7 @@ export default function ShadowColosseum() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-gray-500 text-base">Ragnaros</span>
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-gray-700/30 text-gray-500 border border-gray-600/30">BIENTOT</span>
+                    <span className="text-small-responsive px-2 py-0.5 rounded-full bg-gray-700/30 text-gray-500 border border-gray-600/30">BIENTOT</span>
                   </div>
                   <p className="text-xs text-gray-600 mt-1">By Fire Be Purged!</p>
                 </div>
@@ -4225,7 +4226,7 @@ export default function ShadowColosseum() {
                     <div className="h-2 bg-gray-800 rounded-full overflow-hidden mt-1 border border-gray-700">
                       <div className="h-full bg-gradient-to-r from-purple-600 to-violet-400 rounded-full transition-all" style={{ width: `${xpPct}%` }} />
                     </div>
-                    <div className="flex justify-between text-[9px] text-gray-500 mt-0.5">
+                    <div className="flex justify-between text-small-responsive text-gray-500 mt-0.5">
                       <span>Raid XP: {raidXp} / {xpForNext}</span>
                       <span className="text-purple-400">{xpPct}%</span>
                     </div>
@@ -4234,7 +4235,7 @@ export default function ShadowColosseum() {
 
                 {/* Class Selector */}
                 <div className="mb-4">
-                  <div className="text-[10px] text-gray-400 font-bold mb-1.5 uppercase tracking-wider">Classe preferee</div>
+                  <div className="text-normal-responsive text-gray-400 font-bold mb-1.5 uppercase tracking-wider">Classe preferee</div>
                   <div className="grid grid-cols-4 gap-1.5">
                     {Object.entries(classInfo).map(([key, ci]) => (
                       <button key={key}
@@ -4246,28 +4247,28 @@ export default function ShadowColosseum() {
                         }`}
                         style={preferredClass === key ? { borderColor: ci.color + '66', background: ci.color + '15' } : {}}>
                         <div className="text-lg">{ci.icon}</div>
-                        <div className="text-[9px] font-bold mt-0.5" style={{ color: preferredClass === key ? ci.color : '#94a3b8' }}>{ci.label}</div>
+                        <div className="text-small-responsive font-bold mt-0.5" style={{ color: preferredClass === key ? ci.color : '#94a3b8' }}>{ci.label}</div>
                       </button>
                     ))}
                   </div>
                   {/* Selected Class Description */}
                   {classInfo[preferredClass] && (
                     <div className="mt-2 p-3 rounded-lg border bg-gray-900/40" style={{ borderColor: classInfo[preferredClass].color + '33' }}>
-                      <div className="text-[10px] text-gray-400 mb-2 italic">{classInfo[preferredClass].role}</div>
-                      <div className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mb-1.5">Competences</div>
+                      <div className="text-normal-responsive text-gray-400 mb-2 italic">{classInfo[preferredClass].role}</div>
+                      <div className="text-small-responsive text-gray-500 font-bold uppercase tracking-wider mb-1.5">Competences</div>
                       <div className="space-y-1">
                         {classInfo[preferredClass].skills.map((sk, i) => (
-                          <div key={i} className="flex items-start gap-2 text-[10px]">
-                            <span className="px-1 py-0.5 rounded text-[8px] font-bold bg-gray-700/60 text-gray-300 flex-shrink-0 w-7 text-center">{sk.key}</span>
+                          <div key={i} className="flex items-start gap-2 text-normal-responsive">
+                            <span className="px-1 py-0.5 rounded text-tiny-responsive font-bold bg-gray-700/60 text-gray-300 flex-shrink-0 w-7 text-center">{sk.key}</span>
                             <div className="flex-1 min-w-0">
                               <span className="font-bold" style={{ color: classInfo[preferredClass].color }}>{sk.name}</span>
                               <span className="text-gray-500 ml-1">- {sk.desc}</span>
                             </div>
-                            <span className="text-gray-600 text-[8px] flex-shrink-0">{sk.cd}</span>
+                            <span className="text-gray-600 text-tiny-responsive flex-shrink-0">{sk.cd}</span>
                           </div>
                         ))}
                       </div>
-                      <div className="mt-2 text-[9px] text-gray-600">
+                      <div className="mt-2 text-small-responsive text-gray-600">
                         <span className="font-bold">Controles :</span> ZQSD Deplacement | Espace Esquive | 1/2/3 Invoquer Hunter
                       </div>
                     </div>
@@ -4277,8 +4278,8 @@ export default function ShadowColosseum() {
                 {/* Stat Points Allocation */}
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-1.5">
-                    <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Stats Raid (3 pts/lvl)</div>
-                    <div className={`text-[10px] font-bold ${freePoints > 0 ? 'text-yellow-400' : 'text-gray-500'}`}>
+                    <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider">Stats Raid (3 pts/lvl)</div>
+                    <div className={`text-normal-responsive font-bold ${freePoints > 0 ? 'text-yellow-400' : 'text-gray-500'}`}>
                       {freePoints > 0 ? `${freePoints} pts dispo` : `${usedPoints}/${totalPoints} pts`}
                     </div>
                   </div>
@@ -4289,8 +4290,8 @@ export default function ShadowColosseum() {
                       return (
                         <div key={stat} className="flex items-center gap-1 bg-gray-800/40 rounded-lg px-2 py-1.5 border border-gray-700/30">
                           <div className="flex-1">
-                            <div className="text-[9px] font-bold" style={{ color: statColors[stat] }}>{label}</div>
-                            <div className="text-[8px] text-gray-500">+{bonus}</div>
+                            <div className="text-small-responsive font-bold" style={{ color: statColors[stat] }}>{label}</div>
+                            <div className="text-tiny-responsive text-gray-500">+{bonus}</div>
                           </div>
                           <div className="flex items-center gap-0.5">
                             <button
@@ -4301,10 +4302,10 @@ export default function ShadowColosseum() {
                                 setData(prev => ({ ...prev }));
                               }}
                               disabled={pts <= 0}
-                              className="w-5 h-5 rounded bg-red-500/20 text-red-400 text-[10px] font-bold hover:bg-red-500/30 disabled:opacity-30 flex items-center justify-center">
+                              className="w-5 h-5 rounded bg-red-500/20 text-red-400 text-normal-responsive font-bold hover:bg-red-500/30 disabled:opacity-30 flex items-center justify-center">
                               -
                             </button>
-                            <span className="text-[10px] font-bold text-white w-5 text-center">{pts}</span>
+                            <span className="text-normal-responsive font-bold text-white w-5 text-center">{pts}</span>
                             <button
                               onClick={() => {
                                 if (freePoints <= 0) return;
@@ -4313,7 +4314,7 @@ export default function ShadowColosseum() {
                                 setData(prev => ({ ...prev }));
                               }}
                               disabled={freePoints <= 0}
-                              className="w-5 h-5 rounded bg-green-500/20 text-green-400 text-[10px] font-bold hover:bg-green-500/30 disabled:opacity-30 flex items-center justify-center">
+                              className="w-5 h-5 rounded bg-green-500/20 text-green-400 text-normal-responsive font-bold hover:bg-green-500/30 disabled:opacity-30 flex items-center justify-center">
                               +
                             </button>
                           </div>
@@ -4356,8 +4357,8 @@ export default function ShadowColosseum() {
                   const clsLabel = { tank: 'Tank', healer: 'Healer', dps_cac: 'Warrior', dps_range: 'Archer' };
                   return (
                     <div className="mb-3 p-2 rounded-lg border border-purple-500/20 bg-purple-900/10">
-                      <div className="text-[9px] text-purple-400 font-bold mb-1">STATS EN COMBAT ({clsLabel[preferredClass] || preferredClass})</div>
-                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px]">
+                      <div className="text-small-responsive text-purple-400 font-bold mb-1">STATS EN COMBAT ({clsLabel[preferredClass] || preferredClass})</div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-normal-responsive">
                         <span style={{ color: '#10b981' }}>HP {tHp}</span>
                         <span style={{ color: '#ef4444' }}>ATK {tAtk}</span>
                         <span style={{ color: '#3b82f6' }}>DEF {tDef}</span>
@@ -4496,8 +4497,8 @@ export default function ShadowColosseum() {
                     <>
                       {/* ── Équipement Raid ── */}
                       <div className="mb-3">
-                        <div className="text-[10px] text-yellow-400 font-bold uppercase tracking-wider mb-1.5">{'\uD83D\uDEE1\uFE0F'} Equipement Raid</div>
-                        <div className="text-[8px] text-gray-500 mb-2">Equipe armes et artefacts obtenus en battant Manaya.</div>
+                        <div className="text-normal-responsive text-yellow-400 font-bold uppercase tracking-wider mb-1.5">{'\uD83D\uDEE1\uFE0F'} Equipement Raid</div>
+                        <div className="text-tiny-responsive text-gray-500 mb-2">Equipe armes et artefacts obtenus en battant Manaya.</div>
 
                         {/* Weapon */}
                         <div className="mb-1.5 p-1.5 rounded-lg border bg-gray-900/40 flex items-center gap-2" style={{ borderColor: eq.weapon ? (eq.weapon.tierColor || '#f59e0b') + '66' : '#333' }}>
@@ -4505,15 +4506,15 @@ export default function ShadowColosseum() {
                           <div className="flex-1 min-w-0">
                             {eq.weapon ? (
                               <>
-                                <div className="text-[9px] font-bold" style={{ color: eq.weapon.tierColor || '#f59e0b' }}>{eq.weapon.name}</div>
-                                <div className="text-[8px] text-purple-400">{eq.weapon.scalingStat === 'int' ? 'INT' : 'ATK'} +{eq.weapon.atk}{eq.weapon.bonusStat ? ` | ${STAT_LBL[eq.weapon.bonusStat]} +${eq.weapon.bonusValue}` : ''}</div>
+                                <div className="text-small-responsive font-bold" style={{ color: eq.weapon.tierColor || '#f59e0b' }}>{eq.weapon.name}</div>
+                                <div className="text-tiny-responsive text-purple-400">{eq.weapon.scalingStat === 'int' ? 'INT' : 'ATK'} +{eq.weapon.atk}{eq.weapon.bonusStat ? ` | ${STAT_LBL[eq.weapon.bonusStat]} +${eq.weapon.bonusValue}` : ''}</div>
                               </>
                             ) : (
-                              <div className="text-[9px] text-gray-600 italic">Aucune arme</div>
+                              <div className="text-small-responsive text-gray-600 italic">Aucune arme</div>
                             )}
                           </div>
                           {eq.weapon && (
-                            <button onClick={() => doUnequip('weapon')} className="text-[8px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30">Retirer</button>
+                            <button onClick={() => doUnequip('weapon')} className="text-tiny-responsive px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30">Retirer</button>
                           )}
                         </div>
 
@@ -4557,19 +4558,19 @@ export default function ShadowColosseum() {
                         {/* Inventory */}
                         {inv.length > 0 && (
                           <details className="mt-1.5">
-                            <summary className="text-[9px] text-yellow-500 cursor-pointer hover:text-yellow-400">{'\uD83D\uDCE6'} Inventaire ({inv.length} items)</summary>
+                            <summary className="text-small-responsive text-yellow-500 cursor-pointer hover:text-yellow-400">{'\uD83D\uDCE6'} Inventaire ({inv.length} items)</summary>
                             <div className="mt-1 space-y-0.5 max-h-40 overflow-y-auto">
                               {inv.map((item, idx) => {
                                 const isW = item.type === 'weapon';
                                 const tierCol = item.tierColor || '#9ca3af';
                                 return (
-                                  <div key={item.id || idx} className="flex items-center gap-1.5 p-1 rounded border border-gray-700/30 bg-gray-900/30 text-[8px]">
+                                  <div key={item.id || idx} className="flex items-center gap-1.5 p-1 rounded border border-gray-700/30 bg-gray-900/30 text-tiny-responsive">
                                     <span className="text-xs">{isW ? (item.icon || '\u2694\uFE0F') : (SLOTS.find(s => s.id === item.slot)?.icon || '\uD83D\uDCE6')}</span>
                                     <div className="flex-1 min-w-0">
                                       <div className="font-bold truncate" style={{ color: tierCol }}>{item.name || `${item.tierLabel} ${item.slotName || ''}`}</div>
                                       <div className="text-purple-400 truncate">{isW ? `ATK +${item.atk}` : item.mainStat ? `${item.mainStat.label} +${item.mainStat.value}` : ''}</div>
                                     </div>
-                                    <button onClick={() => doEquip(item)} className="px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 text-[8px] flex-shrink-0">Equiper</button>
+                                    <button onClick={() => doEquip(item)} className="px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 text-tiny-responsive flex-shrink-0">Equiper</button>
                                   </div>
                                 );
                               })}
@@ -4581,14 +4582,14 @@ export default function ShadowColosseum() {
                       {/* ── Forge de Manaya ── */}
                       <div className="mb-3 p-2.5 rounded-lg border bg-gray-900/30" style={{ borderColor: MANAYA_COL + '33' }}>
                         <div className="flex items-center justify-between mb-1.5">
-                          <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: MANAYA_COL }}>{'\uD83D\uDD25'} Forge de Manaya</div>
-                          <div className="flex items-center gap-1 text-[10px]">
+                          <div className="text-normal-responsive font-bold uppercase tracking-wider" style={{ color: MANAYA_COL }}>{'\uD83D\uDD25'} Forge de Manaya</div>
+                          <div className="flex items-center gap-1 text-normal-responsive">
                             <span>{'\uD83E\uDEB6'}</span>
                             <span className="font-bold" style={{ color: MANAYA_COL }}>{feathers}</span>
                             <span className="text-gray-500">Plumes</span>
                           </div>
                         </div>
-                        <div className="text-[8px] text-gray-500 mb-2">Forge les pieces du Set Legendaire avec des Plumes (drop rare du boss).</div>
+                        <div className="text-tiny-responsive text-gray-500 mb-2">Forge les pieces du Set Legendaire avec des Plumes (drop rare du boss).</div>
 
                         <div className="space-y-0.5">
                           {['weapon', ...SLOTS.map(s => s.id)].map(slotId => {
@@ -4600,15 +4601,15 @@ export default function ShadowColosseum() {
                               <div key={slotId} className="flex items-center gap-1.5 p-1 rounded" style={{ background: isOwned ? MANAYA_COL + '0D' : 'transparent', border: isOwned ? `1px solid ${MANAYA_COL}33` : '1px solid #333' }}>
                                 <span className="text-xs">{piece.icon}</span>
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-[8px] font-bold" style={{ color: MANAYA_COL }}>{piece.name}</div>
+                                  <div className="text-tiny-responsive font-bold" style={{ color: MANAYA_COL }}>{piece.name}</div>
                                   <div className="text-[7px] text-purple-400">{piece.stat}</div>
                                 </div>
-                                <div className="text-[8px] text-yellow-500 flex-shrink-0">{'\uD83E\uDEB6'}{cost}</div>
+                                <div className="text-tiny-responsive text-yellow-500 flex-shrink-0">{'\uD83E\uDEB6'}{cost}</div>
                                 {isOwned ? (
-                                  <span className="text-[8px] text-green-400 font-bold flex-shrink-0">{'\u2713'}</span>
+                                  <span className="text-tiny-responsive text-green-400 font-bold flex-shrink-0">{'\u2713'}</span>
                                 ) : (
                                   <button onClick={() => doForge(slotId)} disabled={!canForge}
-                                    className={`text-[8px] px-1.5 py-0.5 rounded flex-shrink-0 ${canForge ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30 cursor-pointer' : 'bg-gray-700/30 text-gray-600 cursor-not-allowed'}`}>
+                                    className={`text-tiny-responsive px-1.5 py-0.5 rounded flex-shrink-0 ${canForge ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30 cursor-pointer' : 'bg-gray-700/30 text-gray-600 cursor-not-allowed'}`}>
                                     Forger
                                   </button>
                                 )}
@@ -4620,7 +4621,7 @@ export default function ShadowColosseum() {
                         {/* Set Bonuses */}
                         <div className="mt-2 space-y-0.5">
                           {SET_BONUSES.map(b => (
-                            <div key={b.count} className="text-[8px]" style={{ color: setPieceCount >= b.count ? MANAYA_COL : '#555', fontWeight: setPieceCount >= b.count ? 'bold' : 'normal' }}>
+                            <div key={b.count} className="text-tiny-responsive" style={{ color: setPieceCount >= b.count ? MANAYA_COL : '#555', fontWeight: setPieceCount >= b.count ? 'bold' : 'normal' }}>
                               {setPieceCount >= b.count ? '\u2726 ' : '\u25CB '}{b.label}
                             </div>
                           ))}
@@ -4632,10 +4633,10 @@ export default function ShadowColosseum() {
 
                 {/* Hunters Summary */}
                 <div className="flex items-center justify-between bg-gray-800/30 rounded-lg px-3 py-2 border border-gray-700/20">
-                  <div className="text-[10px] text-gray-400">
+                  <div className="text-normal-responsive text-gray-400">
                     <span className="text-purple-400 font-bold">{hunterCount}</span> hunters debloques
                   </div>
-                  <div className="text-[10px] text-gray-500">
+                  <div className="text-normal-responsive text-gray-500">
                     {data.stats?.wins || 0}W / {(data.stats?.battles || 0) - (data.stats?.wins || 0)}L
                   </div>
                 </div>
@@ -4643,8 +4644,8 @@ export default function ShadowColosseum() {
                 {/* Manaya Raid Stats */}
                 {(raidProfileServer || cloudProfile) && (
                   <div className="flex items-center justify-between bg-gray-800/30 rounded-lg px-3 py-2 border border-emerald-700/20 mt-1.5">
-                    <div className="text-[10px] text-emerald-400 font-bold">{'\uD83D\uDC09'} Manaya Raid</div>
-                    <div className="text-[10px] text-gray-500">
+                    <div className="text-normal-responsive text-emerald-400 font-bold">{'\uD83D\uDC09'} Manaya Raid</div>
+                    <div className="text-normal-responsive text-gray-500">
                       {(raidProfileServer || cloudProfile).victories || 0}W / {(raidProfileServer || cloudProfile).defeats || 0}L
                       <span className="text-gray-600 ml-1">({(raidProfileServer || cloudProfile).gamesPlayed || 0} parties)</span>
                     </div>
@@ -4688,7 +4689,7 @@ export default function ShadowColosseum() {
                     <span className="text-xs font-bold text-indigo-300">Niveau Compte</span>
                     <span className="text-sm font-black text-white">{acc.level}</span>
                   </div>
-                  <span className="text-[9px] text-gray-500">{acc.xpInLevel}/{acc.xpForNext} XP</span>
+                  <span className="text-small-responsive text-gray-500">{acc.xpInLevel}/{acc.xpForNext} XP</span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden">
                   <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
@@ -4698,7 +4699,7 @@ export default function ShadowColosseum() {
                   <div className="flex items-center gap-2 mt-1.5">
                     <div className="flex flex-wrap gap-x-3 gap-y-0.5 flex-1">
                       {STAT_ORDER.filter(k => ab[k] > 0).map(k => (
-                        <span key={k} className="text-[10px] text-gray-400">
+                        <span key={k} className="text-normal-responsive text-gray-400">
                           {STAT_META[k].icon} {STAT_META[k].name} <span className="text-green-400 font-bold">+{ab[k]}</span>
                         </span>
                       ))}
@@ -4712,7 +4713,7 @@ export default function ShadowColosseum() {
                         accountAllocations: 0,
                       }));
                       setPendingAlloc(allocCount);
-                    }} className="text-[9px] text-red-400 hover:text-red-300 px-1.5 py-0.5 rounded border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 transition-all whitespace-nowrap" title="Redistribuer les points">
+                    }} className="text-small-responsive text-red-400 hover:text-red-300 px-1.5 py-0.5 rounded border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 transition-all whitespace-nowrap" title="Redistribuer les points">
                       Reset
                     </button>
                   </div>
@@ -4720,11 +4721,11 @@ export default function ShadowColosseum() {
                 {pendingPoints > 0 && (
                   <button
                     onClick={() => setPendingAlloc(Math.ceil(pendingPoints / ACCOUNT_BONUS_AMOUNT))}
-                    className="mt-1.5 w-full text-center text-[10px] font-bold text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 rounded-lg py-1 hover:bg-yellow-500/20 transition-all animate-pulse">
+                    className="mt-1.5 w-full text-center text-normal-responsive font-bold text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 rounded-lg py-1 hover:bg-yellow-500/20 transition-all animate-pulse">
                     {'\u2B50'} {pendingPoints} points de stats a attribuer !
                   </button>
                 )}
-                <div className="text-[10px] text-gray-600 mt-1 text-center">
+                <div className="text-normal-responsive text-gray-600 mt-1 text-center">
                   Prochain bonus : Lv {nextAllocationLevel(acc.level)} (+{ACCOUNT_BONUS_AMOUNT} pts d'une stat au choix)
                 </div>
               </div>
@@ -4739,7 +4740,7 @@ export default function ShadowColosseum() {
               <span className="font-bold text-red-400 group-hover:text-red-300">MODE RAID</span>
               <span className="text-xs text-gray-400">— Reine des Fourmis</span>
             </div>
-            <p className="text-[10px] text-gray-500 mt-0.5">Jusqu'a 6 chibis vs Raid Boss ! Controle Sung Jinwoo au clavier !</p>
+            <p className="text-normal-responsive text-gray-500 mt-0.5">Jusqu'a 6 chibis vs Raid Boss ! Controle Sung Jinwoo au clavier !</p>
           </Link>
 
           {/* PVE Multi Button */}
@@ -4751,7 +4752,7 @@ export default function ShadowColosseum() {
               <span className="font-bold text-emerald-400 group-hover:text-emerald-300">MODE PVE MULTI</span>
               <span className="text-xs text-gray-400">— Boss Coop en ligne</span>
             </div>
-            <p className="text-[10px] text-gray-500 mt-0.5">3-5 joueurs vs Boss en temps reel ! Beta test</p>
+            <p className="text-normal-responsive text-gray-500 mt-0.5">3-5 joueurs vs Boss en temps reel ! Beta test</p>
           </button>
 
           {/* PVP Button */}
@@ -4762,7 +4763,7 @@ export default function ShadowColosseum() {
               <span className="font-bold text-cyan-400 group-hover:text-cyan-300">MODE PVP</span>
               <span className="text-xs text-gray-400">— Arene Asynchrone</span>
             </div>
-            <p className="text-[10px] text-gray-500 mt-0.5">6v6 contre les equipes des autres joueurs !</p>
+            <p className="text-normal-responsive text-gray-500 mt-0.5">6v6 contre les equipes des autres joueurs !</p>
           </Link>
 
           {/* PVP Live Button */}
@@ -4773,7 +4774,7 @@ export default function ShadowColosseum() {
               <span className="font-bold text-purple-400 group-hover:text-purple-300">MODE PVP LIVE</span>
               <span className="text-xs text-gray-400">— Tour par Tour</span>
             </div>
-            <p className="text-[10px] text-gray-500 mt-0.5">3v3 strategique vs Beru ou vs Joueur !</p>
+            <p className="text-normal-responsive text-gray-500 mt-0.5">3v3 strategique vs Beru ou vs Joueur !</p>
           </Link>
 
           {/* PVE Ranking Button */}
@@ -4784,7 +4785,7 @@ export default function ShadowColosseum() {
               <span className="font-bold text-yellow-400 group-hover:text-yellow-300">RANK PVE</span>
               <span className="text-xs text-gray-400">— Power Score Lv.140</span>
             </div>
-            <p className="text-[10px] text-gray-500 mt-0.5">Classement des meilleurs hunters Level 140 !</p>
+            <p className="text-normal-responsive text-gray-500 mt-0.5">Classement des meilleurs hunters Level 140 !</p>
           </Link>
 
           {/* Codex, Shop, Artifacts & Members Buttons */}
@@ -4796,7 +4797,7 @@ export default function ShadowColosseum() {
                 <span className="text-lg">{'\uD83D\uDCD6'}</span>
                 <span className="font-bold text-cyan-400 group-hover:text-cyan-300 text-sm">CODEX</span>
               </div>
-              <p className="text-[10px] text-gray-500 mt-0.5">Encyclopedie</p>
+              <p className="text-normal-responsive text-gray-500 mt-0.5">Encyclopedie</p>
             </Link>
             <button
               onClick={() => setView('shop')}
@@ -4805,7 +4806,7 @@ export default function ShadowColosseum() {
                 <span className="text-lg">{'\uD83D\uDED2'}</span>
                 <span className="font-bold text-amber-400 group-hover:text-amber-300 text-sm">BOUTIQUE</span>
               </div>
-              <p className="text-[10px] text-gray-500 mt-0.5 relative inline-flex items-center gap-1">
+              <p className="text-normal-responsive text-gray-500 mt-0.5 relative inline-flex items-center gap-1">
                 Forge & Armes {'\uD83D\uDCB0'}{' '}
                 <span className="text-amber-400 font-bold">{fmtNum(coinDisplay)}</span>
                 {coinDelta && (
@@ -4814,7 +4815,7 @@ export default function ShadowColosseum() {
                     initial={{ opacity: 1, y: 0 }}
                     animate={{ opacity: 0, y: -20 }}
                     transition={{ duration: 1.5 }}
-                    className={`absolute -top-3 right-0 text-[10px] font-bold ${coinDelta.amount > 0 ? 'text-green-400' : 'text-red-400'}`}
+                    className={`absolute -top-3 right-0 text-normal-responsive font-bold ${coinDelta.amount > 0 ? 'text-green-400' : 'text-red-400'}`}
                   >{coinDelta.amount > 0 ? '+' : ''}{fmtNum(coinDelta.amount)}</motion.span>
                 )}
               </p>
@@ -4826,7 +4827,7 @@ export default function ShadowColosseum() {
                 <span className="text-lg">{'\uD83D\uDC8E'}</span>
                 <span className="font-bold text-purple-400 group-hover:text-purple-300 text-sm">ARTEFACTS</span>
               </div>
-              <p className="text-[10px] text-gray-500 mt-0.5">
+              <p className="text-normal-responsive text-gray-500 mt-0.5">
                 {data.artifactInventory.length} en inventaire
               </p>
             </button>
@@ -4837,7 +4838,7 @@ export default function ShadowColosseum() {
                 <span className="text-lg">{'\uD83D\uDC65'}</span>
                 <span className="font-bold text-blue-400 group-hover:text-blue-300 text-sm">FACTION</span>
               </div>
-              <p className="text-[10px] text-gray-500 mt-0.5">Membres & Buffs</p>
+              <p className="text-normal-responsive text-gray-500 mt-0.5">Membres & Buffs</p>
             </Link>
           </div>
 
@@ -4860,12 +4861,12 @@ export default function ShadowColosseum() {
                   { key: 'name', label: 'Nom', icon: 'A' },
                 ].map(s => (
                   <button key={s.key} onClick={() => setRosterSort(s.key)}
-                    className={`px-1.5 py-0.5 rounded text-[10px] transition-all ${
+                    className={`px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
                       rosterSort === s.key ? 'bg-amber-500/30 text-amber-300 font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
                     }`}>{s.icon} {s.label}</button>
                 ))}
                 <button onClick={() => setFiltersExpanded(!filtersExpanded)}
-                  className={`ml-auto px-1.5 py-0.5 rounded text-[10px] transition-all ${
+                  className={`ml-auto px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
                     filtersExpanded || rosterFilterElem || rosterFilterClass ? 'bg-purple-500/30 text-purple-300 font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
                   }`}>
                   {'\u2699\uFE0F'} Filtres {(rosterFilterElem || rosterFilterClass) && !filtersExpanded ? '\u2022' : ''} {filtersExpanded ? '\u25B2' : '\u25BC'}
@@ -4874,23 +4875,23 @@ export default function ShadowColosseum() {
               {filtersExpanded && (
                 <div className="mt-1.5 pt-1.5 border-t border-gray-700/20">
                   <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-                    <span className="text-[9px] text-gray-500 font-bold uppercase">Element:</span>
+                    <span className="text-small-responsive text-gray-500 font-bold uppercase">Element:</span>
                     <button onClick={() => setRosterFilterElem(null)}
-                      className={`px-1.5 py-0.5 rounded text-[10px] ${!rosterFilterElem ? 'bg-white/10 text-white font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'}`}>Tous</button>
+                      className={`px-1.5 py-0.5 rounded text-normal-responsive ${!rosterFilterElem ? 'bg-white/10 text-white font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'}`}>Tous</button>
                     {Object.entries(ELEMENTS).map(([eId, e]) => (
                       <button key={eId} onClick={() => setRosterFilterElem(rosterFilterElem === eId ? null : eId)}
-                        className={`px-1.5 py-0.5 rounded text-[10px] transition-all ${
+                        className={`px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
                           rosterFilterElem === eId ? `${e.color} ${e.bg || 'bg-white/10'} font-bold` : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
                         }`}>{e.icon}</button>
                     ))}
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[9px] text-gray-500 font-bold uppercase">Classe:</span>
+                    <span className="text-small-responsive text-gray-500 font-bold uppercase">Classe:</span>
                     <button onClick={() => setRosterFilterClass(null)}
-                      className={`px-1.5 py-0.5 rounded text-[10px] ${!rosterFilterClass ? 'bg-white/10 text-white font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'}`}>Tous</button>
+                      className={`px-1.5 py-0.5 rounded text-normal-responsive ${!rosterFilterClass ? 'bg-white/10 text-white font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'}`}>Tous</button>
                     {['fighter', 'assassin', 'mage', 'tank', 'support'].map(cls => (
                       <button key={cls} onClick={() => setRosterFilterClass(rosterFilterClass === cls ? null : cls)}
-                        className={`px-1.5 py-0.5 rounded text-[10px] capitalize transition-all ${
+                        className={`px-1.5 py-0.5 rounded text-normal-responsive capitalize transition-all ${
                           rosterFilterClass === cls ? 'bg-red-500/30 text-red-300 font-bold' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
                         }`}>{cls}</button>
                     ))}
@@ -4918,7 +4919,7 @@ export default function ShadowColosseum() {
               <button onClick={() => setChibisCollapsed(!chibisCollapsed)}
                 className="w-full flex items-center justify-between text-xs text-gray-400 font-bold uppercase tracking-wider mb-2 hover:text-gray-300 transition-colors">
                 <span>Tes Chibis ({sortedChibis.length})</span>
-                <span className="text-[10px] text-gray-600">{chibisCollapsed ? '\u25BC' : '\u25B2'}</span>
+                <span className="text-normal-responsive text-gray-600">{chibisCollapsed ? '\u25BC' : '\u25B2'}</span>
               </button>
               {!chibisCollapsed && <div className="grid grid-cols-2 gap-2 mb-3">
                 {sortedChibis.map(({ id, iLvl }) => {
@@ -4952,11 +4953,11 @@ export default function ShadowColosseum() {
                           <img loading="lazy" src={getSprite(id)} alt={c.name} className="w-12 h-12 object-contain" style={{ filter: RARITY[c.rarity].glow, imageRendering: 'auto' }} />
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-bold truncate">{c.name}</div>
-                            <div className="flex items-center gap-1 text-[11px]">
+                            <div className="flex items-center gap-1 text-medium-responsive">
                               <span className={RARITY[c.rarity].color}>{RARITY[c.rarity].stars}</span>
                               <span className={ELEMENTS[c.element].color}>{ELEMENTS[c.element].icon}</span>
                               <span className="text-gray-400">Lv{level}</span>
-                              <span className="text-amber-400 font-bold ml-auto text-[10px]">iLv{iLvl}</span>
+                              <span className="text-amber-400 font-bold ml-auto text-normal-responsive">iLv{iLvl}</span>
                             </div>
                           </div>
                           {_weapon && (
@@ -4966,11 +4967,11 @@ export default function ShadowColosseum() {
                               ) : (
                                 <span className="text-base">{_weapon.icon}</span>
                               )}
-                              <span className="text-[8px] text-amber-400 font-bold">A{_weaponAwk}</span>
+                              <span className="text-tiny-responsive text-amber-400 font-bold">A{_weaponAwk}</span>
                             </div>
                           )}
                         </div>
-                        <div className="mt-1.5 grid grid-cols-3 gap-x-3 gap-y-0.5 text-[10px] text-gray-400">
+                        <div className="mt-1.5 grid grid-cols-3 gap-x-3 gap-y-0.5 text-normal-responsive text-gray-400">
                           <span>PV:{s.hp}</span><span>ATK:{s.atk}</span><span>DEF:{s.def}</span>
                           <span>SPD:{s.spd}</span><span>CRT:{s.crit}%</span><span>RES:{s.res}%</span>
                         </div>
@@ -4982,17 +4983,17 @@ export default function ShadowColosseum() {
                         {hasUnspent && !onCd && (
                           <div className="absolute -top-1 -right-1 flex gap-0.5">
                             {availPts > 0 && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                              <span className="px-1.5 py-0.5 rounded text-small-responsive font-bold bg-amber-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
                                 {availPts} PTS
                               </span>
                             )}
                             {availSP > 0 && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/80 text-white" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                              <span className="px-1.5 py-0.5 rounded text-small-responsive font-bold bg-purple-500/80 text-white" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
                                 {availSP} SP
                               </span>
                             )}
                             {availTP > 0 && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                              <span className="px-1.5 py-0.5 rounded text-small-responsive font-bold bg-green-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
                                 {availTP} TP
                               </span>
                             )}
@@ -5000,7 +5001,7 @@ export default function ShadowColosseum() {
                         )}
                         {onCd && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl">
-                            <span className="text-red-400 text-[10px] font-bold">{'\u23F3'} {cooldownMin(id)}min</span>
+                            <span className="text-red-400 text-normal-responsive font-bold">{'\u23F3'} {cooldownMin(id)}min</span>
                           </div>
                         )}
                       </button>
@@ -5031,8 +5032,8 @@ export default function ShadowColosseum() {
             <>
               <button onClick={() => setHuntersCollapsed(!huntersCollapsed)}
                 className="w-full flex items-center justify-between text-xs text-red-400 font-bold uppercase tracking-wider mb-2 hover:text-red-300 transition-colors">
-                <span className="flex items-center gap-1.5">{'\u2694\uFE0F'} Tes Hunters <span className="text-[9px] text-gray-500 font-normal ml-1">({sortedHunters.length})</span></span>
-                <span className="text-[10px] text-gray-600">{huntersCollapsed ? '\u25BC' : '\u25B2'}</span>
+                <span className="flex items-center gap-1.5">{'\u2694\uFE0F'} Tes Hunters <span className="text-small-responsive text-gray-500 font-normal ml-1">({sortedHunters.length})</span></span>
+                <span className="text-normal-responsive text-gray-600">{huntersCollapsed ? '\u25BC' : '\u25B2'}</span>
               </button>
               {!huntersCollapsed && <div className="grid grid-cols-2 gap-2 mb-3">
                 {sortedHunters.map(({ id, iLvl }) => {
@@ -5065,16 +5066,16 @@ export default function ShadowColosseum() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1 text-xs font-bold">
                               <span className="truncate">{c.name}</span>
-                              <span className="text-amber-400 text-[9px] ml-auto font-bold">iLv{iLvl}</span>
+                              <span className="text-amber-400 text-small-responsive ml-auto font-bold">iLv{iLvl}</span>
                             </div>
-                            <div className="flex items-center gap-1 text-[9px]">
+                            <div className="flex items-center gap-1 text-small-responsive">
                               <span className={RARITY[c.rarity].color}>{RARITY[c.rarity].stars}</span>
                               <span className={ELEMENTS[c.element].color}>{ELEMENTS[c.element].icon}</span>
                               <span className="text-gray-400">Lv{level}</span>
-                              <span className="text-red-400/60 text-[10px]">{c.class}</span>
+                              <span className="text-red-400/60 text-normal-responsive">{c.class}</span>
                             </div>
                             {evStars > 0 && (
-                              <div className="text-[9px] mt-0.5 text-yellow-400 font-bold">
+                              <div className="text-small-responsive mt-0.5 text-yellow-400 font-bold">
                                 A{evStars}
                               </div>
                             )}
@@ -5086,11 +5087,11 @@ export default function ShadowColosseum() {
                               ) : (
                                 <span className="text-base">{_weapon.icon}</span>
                               )}
-                              <span className="text-[8px] text-amber-400 font-bold">A{_weaponAwk}</span>
+                              <span className="text-tiny-responsive text-amber-400 font-bold">A{_weaponAwk}</span>
                             </div>
                           )}
                         </div>
-                        <div className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-0.5 text-[10px] text-gray-400">
+                        <div className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-0.5 text-normal-responsive text-gray-400">
                           <span>PV:{s.hp}</span>
                           {(c.class === 'mage' || c.class === 'support' || c.class === 'tank')
                             ? <span className="text-violet-400">INT:{s.mana}</span>
@@ -5106,17 +5107,17 @@ export default function ShadowColosseum() {
                         {hasUnspent && (
                           <div className="absolute -top-1 -right-1 flex gap-0.5">
                             {availPts > 0 && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                              <span className="px-1.5 py-0.5 rounded text-small-responsive font-bold bg-amber-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
                                 {availPts} PTS
                               </span>
                             )}
                             {availSP > 0 && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/80 text-white" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                              <span className="px-1.5 py-0.5 rounded text-small-responsive font-bold bg-purple-500/80 text-white" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
                                 {availSP} SP
                               </span>
                             )}
                             {availTP > 0 && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
+                              <span className="px-1.5 py-0.5 rounded text-small-responsive font-bold bg-green-500/80 text-black" style={{ animation: 'statGlow 2s ease-in-out infinite' }}>
                                 {availTP} TP
                               </span>
                             )}
@@ -5129,7 +5130,7 @@ export default function ShadowColosseum() {
                   );
                 })}
               </div>}
-              {!huntersCollapsed && <div className="text-[9px] text-gray-600 text-center mb-3 italic">Les hunters gagnent de l'XP et montent en niveau dans les Raids.</div>}
+              {!huntersCollapsed && <div className="text-small-responsive text-gray-600 text-center mb-3 italic">Les hunters gagnent de l'XP et montent en niveau dans les Raids.</div>}
             </>
             );
           })()}
@@ -5148,7 +5149,7 @@ export default function ShadowColosseum() {
                 {'\u2694\uFE0F'} ARC I
                 {(() => {
                   const cleared1 = STAGES.filter(s => isStageCleared(s.id)).length;
-                  return cleared1 > 0 ? <span className="ml-1.5 text-[9px] opacity-60">{cleared1}/{STAGES.length}</span> : null;
+                  return cleared1 > 0 ? <span className="ml-1.5 text-small-responsive opacity-60">{cleared1}/{STAGES.length}</span> : null;
                 })()}
               </button>
               <button
@@ -5164,7 +5165,7 @@ export default function ShadowColosseum() {
                 {!arc2Unlocked ? '\uD83D\uDD12' : '\u2694\uFE0F'} ARC II
                 {arc2Unlocked && (() => {
                   const cleared2 = ARC2_STAGES.filter(s => isArc2StageCleared(s.id)).length;
-                  return cleared2 > 0 ? <span className="ml-1.5 text-[9px] opacity-60">{cleared2}/{ARC2_STAGES.length}</span> : null;
+                  return cleared2 > 0 ? <span className="ml-1.5 text-small-responsive opacity-60">{cleared2}/{ARC2_STAGES.length}</span> : null;
                 })()}
                 {!arc2Unlocked && (data.arc2ClickCount || 0) >= 7 && (
                   <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
@@ -5216,31 +5217,31 @@ export default function ShadowColosseum() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
                             <span className="text-sm font-bold truncate">{stage.name}</span>
-                            {stage.isBoss && <span className="text-[10px] bg-red-500/30 text-red-300 px-1.5 rounded">BOSS</span>}
+                            {stage.isBoss && <span className="text-normal-responsive bg-red-500/30 text-red-300 px-1.5 rounded">BOSS</span>}
                             {cleared && <span className="text-green-400 text-xs">{'\u2705'}</span>}
-                            {maxSt > 0 && <span className="text-[10px] text-yellow-400">{'\u2B50'}{maxSt}</span>}
+                            {maxSt > 0 && <span className="text-normal-responsive text-yellow-400">{'\u2B50'}{maxSt}</span>}
                             {stage.id === 'ragnarok' && (data.ragnarokKills || 0) > 0 && (
-                              <span className="text-[10px] bg-orange-500/20 text-orange-300 px-1.5 rounded cursor-pointer hover:bg-orange-500/40 transition-colors"
+                              <span className="text-normal-responsive bg-orange-500/20 text-orange-300 px-1.5 rounded cursor-pointer hover:bg-orange-500/40 transition-colors"
                                 onClick={(e) => { e.stopPropagation(); setRagnarokHistoryOpen(true); }}>
                                 {'\u2620\uFE0F'}{data.ragnarokKills} kills
                               </span>
                             )}
                             {stage.id === 'zephyr' && (data.zephyrKills || 0) > 0 && (
-                              <span className="text-[10px] bg-teal-500/20 text-teal-300 px-1.5 rounded">
+                              <span className="text-normal-responsive bg-teal-500/20 text-teal-300 px-1.5 rounded">
                                 {'\u2620\uFE0F'}{data.zephyrKills} kills
                               </span>
                             )}
                             {stage.id === 'supreme_monarch' && (data.monarchKills || 0) > 0 && (
-                              <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 rounded cursor-pointer hover:bg-purple-500/40 transition-colors"
+                              <span className="text-normal-responsive bg-purple-500/20 text-purple-300 px-1.5 rounded cursor-pointer hover:bg-purple-500/40 transition-colors"
                                 onClick={(e) => { e.stopPropagation(); setMonarchHistoryOpen(true); }}>
                                 {'\u2620\uFE0F'}{data.monarchKills} kills
                               </span>
                             )}
                             {data.lootBoostMs > 0 && LOOT_BOOST_BOSSES.includes(stage.id) && (
-                              <span className="text-[9px] bg-red-500/20 text-red-400 px-1.5 rounded font-bold animate-pulse">{'\uD83D\uDD34'} x2 {(() => { const ms = data.lootBoostMs; const h = Math.floor(ms/3600000); const m = Math.floor((ms%3600000)/60000); return h > 0 ? `${h}h${String(m).padStart(2,'0')}m` : `${m}m`; })()}</span>
+                              <span className="text-small-responsive bg-red-500/20 text-red-400 px-1.5 rounded font-bold animate-pulse">{'\uD83D\uDD34'} x2 {(() => { const ms = data.lootBoostMs; const h = Math.floor(ms/3600000); const m = Math.floor((ms%3600000)/60000); return h > 0 ? `${h}h${String(m).padStart(2,'0')}m` : `${m}m`; })()}</span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2.5 text-[11px] text-gray-400 mt-0.5">
+                          <div className="flex items-center gap-2.5 text-medium-responsive text-gray-400 mt-0.5">
                             <span className={ELEMENTS[stage.element].color}>{ELEMENTS[stage.element].icon} {ELEMENTS[stage.element].name}</span>
                             <span>PV:{selected ? sc.hp : stage.hp}</span>
                             <span>RES:{selected ? Math.round(sc.res) : stage.res}%</span>
@@ -5278,8 +5279,8 @@ export default function ShadowColosseum() {
                           <div className="flex items-center gap-1.5">
                             {diff && (
                               <div className={`flex-shrink-0 text-center px-1.5 py-1 rounded ${diff.color} bg-gray-800/80 border border-current`}>
-                                <div className="text-[10px] leading-none">{diff.icon}</div>
-                                <div className="text-[9px] font-bold leading-tight mt-0.5">{diff.label}</div>
+                                <div className="text-normal-responsive leading-none">{diff.icon}</div>
+                                <div className="text-small-responsive font-bold leading-tight mt-0.5">{diff.label}</div>
                               </div>
                             )}
                             <div className="flex-1 grid grid-cols-11 gap-[3px]">
@@ -5288,7 +5289,7 @@ export default function ShadowColosseum() {
                                 return (
                                   <button key={star} onClick={(e) => { e.stopPropagation(); if (starUnlocked) setSelectedStar(star); }}
                                     disabled={!starUnlocked}
-                                    className={`aspect-square rounded text-[9px] font-bold transition-all ${
+                                    className={`aspect-square rounded text-small-responsive font-bold transition-all ${
                                       selectedStar === star ? 'bg-yellow-500/20 text-yellow-300 font-black ring-1 ring-yellow-400/60 shadow shadow-yellow-500/40' :
                                       !starUnlocked ? 'bg-gray-800/60 text-gray-600 opacity-40' :
                                       'bg-gray-700/50 text-yellow-400 hover:bg-gray-600'
@@ -5302,14 +5303,14 @@ export default function ShadowColosseum() {
                           {/* Info row */}
                           <div className="flex items-center justify-between mt-1">
                             {diff ? (
-                              <span className="text-[9px] text-gray-500">
+                              <span className="text-small-responsive text-gray-500">
                                 <span className="text-blue-400">{playerPower}</span> vs <span className="text-red-400">{enemyPower}</span>
                               </span>
                             ) : <span />}
-                            <span className="text-[9px] text-gray-500">Record {maxSt}{'\u2605'} | Max {Math.min(10, maxSt + 1)}{'\u2605'}</span>
+                            <span className="text-small-responsive text-gray-500">Record {maxSt}{'\u2605'} | Max {Math.min(10, maxSt + 1)}{'\u2605'}</span>
                           </div>
                           {gRarity && (
-                            <div className="mt-1 text-center text-[10px] text-purple-300 bg-purple-900/20 rounded py-0.5 border border-purple-500/20">
+                            <div className="mt-1 text-center text-normal-responsive text-purple-300 bg-purple-900/20 rounded py-0.5 border border-purple-500/20">
                               {'\u2728'} Artefact {gRarity} garanti
                             </div>
                           )}
@@ -5330,7 +5331,7 @@ export default function ShadowColosseum() {
                 <div className="text-sm font-black bg-gradient-to-r from-purple-400 to-red-400 bg-clip-text text-transparent">
                   {'\u2694\uFE0F'} Retrouver Pascal
                 </div>
-                <p className="text-[10px] text-gray-500 mt-0.5">Bebe Machine Boy & Girl partent a la recherche de leur aine...</p>
+                <p className="text-normal-responsive text-gray-500 mt-0.5">Bebe Machine Boy & Girl partent a la recherche de leur aine...</p>
               </div>
 
               {[1, 2, 3, 4, 5, 6].map(tier => {
@@ -5349,7 +5350,7 @@ export default function ShadowColosseum() {
                       {tierUnlocked && ARC2_STORIES[tier]?.scenes?.length > 0 && (
                         <button
                           onClick={() => { setArc2StoryTier(tier); setArc2StoryIdx(0); setView('arc2_story'); }}
-                          className={`text-[9px] border rounded px-2 py-0.5 transition-all ${
+                          className={`text-small-responsive border rounded px-2 py-0.5 transition-all ${
                             storyWatched
                               ? 'text-green-400/70 bg-green-500/5 border-green-500/15 hover:bg-green-500/15'
                               : 'text-purple-400 bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20 animate-pulse'
@@ -5385,10 +5386,10 @@ export default function ShadowColosseum() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5">
                                 <span className="text-sm font-bold truncate">{stage.name}</span>
-                                {stage.isBoss && <span className="text-[10px] bg-red-500/30 text-red-300 px-1.5 rounded">BOSS</span>}
+                                {stage.isBoss && <span className="text-normal-responsive bg-red-500/30 text-red-300 px-1.5 rounded">BOSS</span>}
                                 {cleared && <span className="text-green-400 text-xs">{'\u2705'}</span>}
                               </div>
-                              <div className="flex items-center gap-2.5 text-[11px] text-gray-400 mt-0.5">
+                              <div className="flex items-center gap-2.5 text-medium-responsive text-gray-400 mt-0.5">
                                 <span className={ELEMENTS[stage.element]?.color || 'text-gray-400'}>{ELEMENTS[stage.element]?.icon} {ELEMENTS[stage.element]?.name}</span>
                                 <span>PV:{(stage.hp / 1000).toFixed(0)}K</span>
                                 <span>ATK:{stage.atk}</span>
@@ -5402,7 +5403,7 @@ export default function ShadowColosseum() {
                               const cnt = ec[stage.tier] || { n: 2, b: 2 };
                               const enemyCount = stage.isBoss ? cnt.b : cnt.n;
                               return (
-                                <span className="text-[9px] font-bold bg-gradient-to-r from-red-500/30 to-purple-500/30 text-red-300 px-1.5 py-0.5 rounded border border-red-500/20">
+                                <span className="text-small-responsive font-bold bg-gradient-to-r from-red-500/30 to-purple-500/30 text-red-300 px-1.5 py-0.5 rounded border border-red-500/20">
                                   3v{enemyCount}
                                 </span>
                               );
@@ -5485,7 +5486,7 @@ export default function ShadowColosseum() {
 
             {/* Story header */}
             <div className="text-center pt-5 pb-2 relative z-10">
-              <div className="text-[10px] text-purple-400/50 uppercase tracking-[0.25em] mb-1">Arc II — Retrouver Pascal</div>
+              <div className="text-normal-responsive text-purple-400/50 uppercase tracking-[0.25em] mb-1">Arc II — Retrouver Pascal</div>
               <h2 className="text-base font-black text-white/90">{story.title}</h2>
               {/* Progress bar */}
               <div className="mt-2 mx-auto w-48 h-0.5 bg-gray-800 rounded-full overflow-hidden">
@@ -5542,7 +5543,7 @@ export default function ShadowColosseum() {
                         {currentScene.speaker && (
                           <div className={`flex items-center gap-1.5 mb-3 ${spk.color}`}>
                             <span className="text-sm">{spk.icon}</span>
-                            <span className="text-[11px] font-bold uppercase tracking-wider">{spk.label}</span>
+                            <span className="text-medium-responsive font-bold uppercase tracking-wider">{spk.label}</span>
                           </div>
                         )}
                         {/* Typewriter text */}
@@ -5568,7 +5569,7 @@ export default function ShadowColosseum() {
             {/* Tap hint */}
             {!isLastScene && hasScenes && (
               <motion.div
-                className="text-center pb-1 text-[10px] text-gray-600 relative z-10"
+                className="text-center pb-1 text-normal-responsive text-gray-600 relative z-10"
                 animate={{ opacity: [0.3, 0.7, 0.3] }}
                 transition={{ duration: 2.5, repeat: Infinity }}
               >
@@ -5585,7 +5586,7 @@ export default function ShadowColosseum() {
               >
                 {'\u2190'}
               </button>
-              <span className="text-[10px] text-gray-600 min-w-[40px] text-center">{hasScenes ? `${arc2StoryIdx + 1}/${scenes.length}` : ''}</span>
+              <span className="text-normal-responsive text-gray-600 min-w-[40px] text-center">{hasScenes ? `${arc2StoryIdx + 1}/${scenes.length}` : ''}</span>
 
               {!isLastScene ? (
                 <button
@@ -5606,7 +5607,7 @@ export default function ShadowColosseum() {
               {/* Skip button */}
               <button
                 onClick={(e) => { e.stopPropagation(); finishStory(); }}
-                className="px-3 py-2.5 rounded-xl bg-gray-800/60 text-[10px] text-gray-500 hover:text-gray-300 hover:bg-gray-700/60 transition-colors"
+                className="px-3 py-2.5 rounded-xl bg-gray-800/60 text-normal-responsive text-gray-500 hover:text-gray-300 hover:bg-gray-700/60 transition-colors"
               >
                 Passer
               </button>
@@ -5693,16 +5694,16 @@ export default function ShadowColosseum() {
           <div className="max-w-2xl mx-auto px-4 pt-4 pb-24">
             {/* Header */}
             <div className="text-center mb-4">
-              <div className="text-[10px] text-purple-400/60 uppercase tracking-widest mb-1">Arc II — {ARC2_TIER_NAMES[stage.tier]}</div>
+              <div className="text-normal-responsive text-purple-400/60 uppercase tracking-widest mb-1">Arc II — {ARC2_TIER_NAMES[stage.tier]}</div>
               <h2 className="text-lg font-black text-white">{stage.emoji} {stage.name}</h2>
-              <div className="flex items-center justify-center gap-3 text-[11px] text-gray-400 mt-1">
+              <div className="flex items-center justify-center gap-3 text-medium-responsive text-gray-400 mt-1">
                 <span className={ELEMENTS[stage.element]?.color}>{ELEMENTS[stage.element]?.icon} {ELEMENTS[stage.element]?.name}</span>
                 <span>PV:{(stage.hp / 1000).toFixed(0)}K</span>
                 <span>ATK:{stage.atk}</span>
                 {stage.isBoss && <span className="text-red-400 font-bold">BOSS</span>}
               </div>
               {advantageElement && (
-                <div className="text-[10px] mt-1">
+                <div className="text-normal-responsive mt-1">
                   <span className="text-gray-600">Avantage : </span>
                   <span className={ELEMENTS[advantageElement]?.color}>{ELEMENTS[advantageElement]?.icon} {ELEMENTS[advantageElement]?.name}</span>
                   <span className="text-green-400"> (+30%)</span>
@@ -5713,18 +5714,18 @@ export default function ShadowColosseum() {
             {/* Quick Actions */}
             <div className="flex items-center gap-2 mb-4">
               <button onClick={autoSetup}
-                className="flex-1 py-2 rounded-lg bg-gradient-to-r from-purple-600/20 to-indigo-600/20 border border-purple-500/30 text-[10px] font-bold text-purple-300 hover:bg-purple-500/30 transition-all active:scale-[0.98]">
+                className="flex-1 py-2 rounded-lg bg-gradient-to-r from-purple-600/20 to-indigo-600/20 border border-purple-500/30 text-normal-responsive font-bold text-purple-300 hover:bg-purple-500/30 transition-all active:scale-[0.98]">
                 {'\u26A1'} Auto Setup
               </button>
               {hasLastTeam && (
                 <button onClick={loadPreviousTeam}
-                  className="flex-1 py-2 rounded-lg bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-500/30 text-[10px] font-bold text-blue-300 hover:bg-blue-500/30 transition-all active:scale-[0.98]">
+                  className="flex-1 py-2 rounded-lg bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-500/30 text-normal-responsive font-bold text-blue-300 hover:bg-blue-500/30 transition-all active:scale-[0.98]">
                   {'\uD83D\uDD04'} Equipe prec.
                 </button>
               )}
               {alreadyPicked.length > 0 && (
                 <button onClick={() => { setArc2Team([null, null, null]); setArc2PickSlot(null); }}
-                  className="py-2 px-3 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] font-bold text-red-400 hover:bg-red-500/20 transition-all">
+                  className="py-2 px-3 rounded-lg bg-red-500/10 border border-red-500/20 text-normal-responsive font-bold text-red-400 hover:bg-red-500/20 transition-all">
                   {'\u2716'}
                 </button>
               )}
@@ -5751,14 +5752,14 @@ export default function ShadowColosseum() {
                     {chibi ? (
                       <>
                         <img loading="lazy" src={getChibiSprite(chibiId)} alt={chibi.name} className="w-12 h-12 mx-auto object-contain" style={{ filter: RARITY[chibi.rarity]?.glow }} />
-                        <div className="text-[10px] font-bold mt-1 truncate">{chibi.name}</div>
-                        <div className="text-[9px] text-gray-500">Lv{getChibiLevel(chibiId).level}</div>
-                        <div className={`text-[8px] ${elemColor}`}>{ELEMENTS[chibi.element]?.icon} {ELEMENTS[chibi.element]?.name}</div>
+                        <div className="text-normal-responsive font-bold mt-1 truncate">{chibi.name}</div>
+                        <div className="text-small-responsive text-gray-500">Lv{getChibiLevel(chibiId).level}</div>
+                        <div className={`text-tiny-responsive ${elemColor}`}>{ELEMENTS[chibi.element]?.icon} {ELEMENTS[chibi.element]?.name}</div>
                       </>
                     ) : (
                       <>
                         <div className="text-2xl mb-1">{'\u2795'}</div>
-                        <div className="text-[10px] text-gray-500">Slot {slot + 1}</div>
+                        <div className="text-normal-responsive text-gray-500">Slot {slot + 1}</div>
                       </>
                     )}
                   </button>
@@ -5821,21 +5822,21 @@ export default function ShadowColosseum() {
 
               return (
                 <div className="mb-4 p-3 rounded-xl bg-gray-900/60 border border-purple-500/20 backdrop-blur-sm">
-                  <div className="text-[10px] text-purple-400 font-bold uppercase tracking-wider mb-2">Synergies d'equipe</div>
+                  <div className="text-normal-responsive text-purple-400 font-bold uppercase tracking-wider mb-2">Synergies d'equipe</div>
 
                   {/* Element composition */}
                   <div className="flex items-center gap-2 mb-2.5 pb-2 border-b border-gray-700/30">
-                    <span className="text-[9px] text-gray-500">Elements :</span>
+                    <span className="text-small-responsive text-gray-500">Elements :</span>
                     {Object.entries(elemCounts).map(([elem, cnt]) => (
-                      <span key={elem} className={`flex items-center gap-0.5 text-[10px] font-bold ${ELEMENTS[elem]?.color || 'text-gray-400'}`}>
+                      <span key={elem} className={`flex items-center gap-0.5 text-normal-responsive font-bold ${ELEMENTS[elem]?.color || 'text-gray-400'}`}>
                         {ELEMENTS[elem]?.icon} {cnt > 1 ? `x${cnt}` : ''}
                       </span>
                     ))}
                     {Object.keys(elemCounts).length === 1 && (
-                      <span className="text-[9px] text-emerald-400 ml-1">Mono-element!</span>
+                      <span className="text-small-responsive text-emerald-400 ml-1">Mono-element!</span>
                     )}
                     {advantageElement && Object.keys(elemCounts).includes(advantageElement) && (
-                      <span className="text-[9px] text-green-400 ml-1">+30% avantage</span>
+                      <span className="text-small-responsive text-green-400 ml-1">+30% avantage</span>
                     )}
                   </div>
 
@@ -5849,14 +5850,14 @@ export default function ShadowColosseum() {
                           <img loading="lazy" src={getChibiSprite(m.id)} alt="" className="w-9 h-9 object-contain rounded-lg flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 mb-0.5">
-                              <span className="text-[11px] font-bold text-white truncate">{m.name}</span>
-                              <span className={`text-[9px] ${ELEMENTS[m.element]?.color}`}>{ELEMENTS[m.element]?.icon}</span>
-                              {m.isHunter && m.stars > 0 && <span className="text-[8px] text-yellow-400 font-bold">A{m.stars}</span>}
-                              {elemAdv && <span className="text-[8px] px-1 rounded bg-green-900/50 text-green-400">+30%</span>}
-                              {elemWeak && <span className="text-[8px] px-1 rounded bg-red-900/50 text-red-400">-30%</span>}
+                              <span className="text-medium-responsive font-bold text-white truncate">{m.name}</span>
+                              <span className={`text-small-responsive ${ELEMENTS[m.element]?.color}`}>{ELEMENTS[m.element]?.icon}</span>
+                              {m.isHunter && m.stars > 0 && <span className="text-tiny-responsive text-yellow-400 font-bold">A{m.stars}</span>}
+                              {elemAdv && <span className="text-tiny-responsive px-1 rounded bg-green-900/50 text-green-400">+30%</span>}
+                              {elemWeak && <span className="text-tiny-responsive px-1 rounded bg-red-900/50 text-red-400">-30%</span>}
                             </div>
                             {/* Stats row */}
-                            <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[9px]">
+                            <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 text-small-responsive">
                               <span className="text-red-400">ATK:{m.fs.atk}</span>
                               <span className="text-green-400">HP:{m.fs.hp}</span>
                               <span className="text-blue-400">DEF:{m.fs.def}</span>
@@ -5874,7 +5875,7 @@ export default function ShadowColosseum() {
                                 if (sk.healSelf) tags.push({ t: `Heal`, c: 'text-emerald-300' });
                                 if (sk.debuffDef) tags.push({ t: `DEF-${sk.debuffDef}`, c: 'text-orange-300' });
                                 return (
-                                  <span key={si} className="px-1 py-0.5 rounded bg-gray-700/50 text-[8px] text-gray-400">
+                                  <span key={si} className="px-1 py-0.5 rounded bg-gray-700/50 text-tiny-responsive text-gray-400">
                                     {sk.name}{tags.length > 0 && <span className={`ml-0.5 ${tags[0].c}`}>{tags.map(t => t.t).join(' ')}</span>}
                                   </span>
                                 );
@@ -5889,14 +5890,14 @@ export default function ShadowColosseum() {
                   {/* Team-wide bonuses */}
                   {teamBonuses.length > 0 && (
                     <div className="pt-2 border-t border-gray-700/30">
-                      <div className="text-[9px] text-gray-500 font-bold uppercase mb-1">Passifs actifs</div>
+                      <div className="text-small-responsive text-gray-500 font-bold uppercase mb-1">Passifs actifs</div>
                       <div className="space-y-0.5">
                         {teamBonuses.map((b, i) => (
-                          <div key={i} className="flex items-center gap-2 text-[10px]">
+                          <div key={i} className="flex items-center gap-2 text-normal-responsive">
                             <span className="text-gray-500 w-20 truncate text-right">{b.source}</span>
                             <span className={`font-medium ${b.color}`}>{b.label}</span>
-                            {b.type === 'team' && <span className="text-[8px] px-1 rounded bg-teal-900/40 text-teal-300">EQUIPE</span>}
-                            {b.type === 'conditional' && <span className="text-[8px] px-1 rounded bg-yellow-900/30 text-yellow-400">COND.</span>}
+                            {b.type === 'team' && <span className="text-tiny-responsive px-1 rounded bg-teal-900/40 text-teal-300">EQUIPE</span>}
+                            {b.type === 'conditional' && <span className="text-tiny-responsive px-1 rounded bg-yellow-900/30 text-yellow-400">COND.</span>}
                           </div>
                         ))}
                       </div>
@@ -5924,7 +5925,7 @@ export default function ShadowColosseum() {
             {/* Chibi picker (shown when a slot is being picked) */}
             {arc2PickSlot !== null && (
               <div className="mb-4">
-                <div className="text-[10px] text-gray-500 mb-2 font-bold uppercase">Choisir un combattant :</div>
+                <div className="text-normal-responsive text-gray-500 mb-2 font-bold uppercase">Choisir un combattant :</div>
 
                 {/* Filters */}
                 <div className="flex flex-wrap items-center gap-1.5 mb-3">
@@ -5935,7 +5936,7 @@ export default function ShadowColosseum() {
                     ...Object.entries(ELEMENTS).map(([k, v]) => ({ key: k, label: `${v.icon}`, color: v.color })),
                   ].map(opt => (
                     <button key={opt.key} onClick={() => setArc2Filter(f => ({ ...f, element: opt.key }))}
-                      className={`px-2 py-1 rounded text-[9px] font-bold border transition-all ${
+                      className={`px-2 py-1 rounded text-small-responsive font-bold border transition-all ${
                         arc2Filter.element === opt.key
                           ? 'border-purple-400 bg-purple-500/20 text-white'
                           : 'border-gray-700/30 bg-gray-800/30 hover:border-gray-600 ' + opt.color
@@ -5952,7 +5953,7 @@ export default function ShadowColosseum() {
                     { key: 'element', label: 'Element' },
                   ].map(opt => (
                     <button key={opt.key} onClick={() => setArc2Filter(f => ({ ...f, sort: opt.key }))}
-                      className={`px-2 py-1 rounded text-[9px] font-bold border transition-all ${
+                      className={`px-2 py-1 rounded text-small-responsive font-bold border transition-all ${
                         arc2Filter.sort === opt.key
                           ? 'border-yellow-400/60 bg-yellow-500/10 text-yellow-300'
                           : 'border-gray-700/30 bg-gray-800/30 text-gray-500 hover:border-gray-600'
@@ -5987,8 +5988,8 @@ export default function ShadowColosseum() {
                         }`}
                       >
                         <img loading="lazy" src={getSprite(id)} alt={c.name} className="w-10 h-10 mx-auto object-contain" style={{ filter: RARITY[c.rarity]?.glow }} />
-                        <div className="text-[9px] font-bold truncate mt-1">{c.name}</div>
-                        <div className="text-[8px] text-gray-500">Lv{lv}</div>
+                        <div className="text-small-responsive font-bold truncate mt-1">{c.name}</div>
+                        <div className="text-tiny-responsive text-gray-500">Lv{lv}</div>
                         <div className={`text-[7px] ${cEl?.color || 'text-gray-500'}`}>
                           {cEl?.icon}
                           {isAdvantage && <span className="text-green-400 ml-0.5">+30%</span>}
@@ -6008,13 +6009,13 @@ export default function ShadowColosseum() {
               const sc = getStarScaledStats(stage, arc2Star);
               return (
                 <div className="mb-4 p-3 rounded-xl bg-gray-900/60 border border-purple-500/20">
-                  <div className="text-[10px] text-gray-500 font-bold mb-1.5">Difficulte {'\u2B50'}</div>
+                  <div className="text-normal-responsive text-gray-500 font-bold mb-1.5">Difficulte {'\u2B50'}</div>
                   <div className="grid grid-cols-11 gap-[3px] mb-2">
                     {[0,1,2,3,4,5,6,7,8,9,10].map(s => {
                       const ok = s === 0 || s <= maxSt + 1;
                       return (
                         <button key={s} onClick={() => { if (ok) setArc2Star(s); }} disabled={!ok}
-                          className={`aspect-square rounded text-[9px] font-bold transition-all ${
+                          className={`aspect-square rounded text-small-responsive font-bold transition-all ${
                             arc2Star === s ? 'bg-yellow-500/20 text-yellow-300 ring-1 ring-yellow-400/60' :
                             !ok ? 'bg-gray-800/60 text-gray-600 opacity-40' :
                             'bg-gray-700/50 text-yellow-400 hover:bg-gray-600'
@@ -6024,7 +6025,7 @@ export default function ShadowColosseum() {
                       );
                     })}
                   </div>
-                  <div className="flex items-center justify-between text-[9px] text-gray-500">
+                  <div className="flex items-center justify-between text-small-responsive text-gray-500">
                     <span>PV:{(sc.hp / 1000).toFixed(0)}K ATK:{sc.atk}</span>
                     <span>Record: {maxSt}{'\u2605'}</span>
                   </div>
@@ -6089,8 +6090,8 @@ export default function ShadowColosseum() {
                   const emoji = isPoison ? '☠️' : isAntiHeal ? '🚫' : icon ? (isPos ? icon.pos : icon.neg) : '?';
                   return (
                     <div key={i} className={`flex items-center gap-1.5 px-2 py-0.5 rounded ${isPos || isPoison || isAntiHeal ? (isPoison || isAntiHeal || !isPos ? 'bg-red-900/30' : 'bg-green-900/30') : 'bg-red-900/30'}`}>
-                      <span className="text-[10px]">{emoji}</span>
-                      <span className={`text-[9px] font-medium ${colorClass}`}>{label}</span>
+                      <span className="text-normal-responsive">{emoji}</span>
+                      <span className={`text-small-responsive font-medium ${colorClass}`}>{label}</span>
                     </div>
                   );
                 })}
@@ -6130,7 +6131,7 @@ export default function ShadowColosseum() {
             {/* Header: Turn + Turn Order + Flee */}
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
-                <span className="text-[10px] text-gray-500">Tour {round}</span>
+                <span className="text-normal-responsive text-gray-500">Tour {round}</span>
                 <div className="flex items-center gap-0.5">
                   {turnOrder.map((e, i) => {
                     const isNow = i === currentTurn;
@@ -6150,7 +6151,7 @@ export default function ShadowColosseum() {
                   })}
                 </div>
               </div>
-              <button onClick={fleeArc2} className="text-[10px] text-gray-500 hover:text-red-400 transition-colors px-2 py-1 rounded border border-gray-700/30 hover:border-red-500/30">Fuir</button>
+              <button onClick={fleeArc2} className="text-normal-responsive text-gray-500 hover:text-red-400 transition-colors px-2 py-1 rounded border border-gray-700/30 hover:border-red-500/30">Fuir</button>
             </div>
 
             {/* ─── ARENA — VS Layout ─── */}
@@ -6161,10 +6162,10 @@ export default function ShadowColosseum() {
               <div className="absolute bottom-[14%] left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
 
               {/* Element indicators */}
-              <div className="absolute top-2 left-3 text-[10px]">
+              <div className="absolute top-2 left-3 text-normal-responsive">
                 <span className="text-blue-400">{'\uD83D\uDDE1\uFE0F'} Equipe</span>
               </div>
-              <div className="absolute top-2 right-3 text-[10px]">
+              <div className="absolute top-2 right-3 text-normal-responsive">
                 <span className={mainEl.color}>{mainEl.icon} x{aliveEnemies.length}</span>
               </div>
 
@@ -6176,21 +6177,21 @@ export default function ShadowColosseum() {
               {/* Phase overlay messages */}
               {isPlayerTurn && curEntity?.isExtra && (
                 <div className="absolute top-[8%] left-1/2 -translate-x-1/2 z-20">
-                  <div className="bg-emerald-500/20 border border-emerald-400/50 rounded-lg px-3 py-1 text-[11px] text-emerald-300 font-bold animate-pulse whitespace-nowrap">
+                  <div className="bg-emerald-500/20 border border-emerald-400/50 rounded-lg px-3 py-1 text-medium-responsive text-emerald-300 font-bold animate-pulse whitespace-nowrap">
                     {'\u26A1'} TOUR BONUS
                   </div>
                 </div>
               )}
               {isPickTarget && (
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[120%] z-20">
-                  <div className="bg-red-500/20 border border-red-500/50 rounded-lg px-3 py-1 text-[11px] text-red-300 font-bold animate-pulse whitespace-nowrap">
+                  <div className="bg-red-500/20 border border-red-500/50 rounded-lg px-3 py-1 text-medium-responsive text-red-300 font-bold animate-pulse whitespace-nowrap">
                     {'\uD83C\uDFAF'} Choisis un ennemi !
                   </div>
                 </div>
               )}
               {isPickAlly && (
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[120%] z-20">
-                  <div className="bg-green-500/20 border border-green-500/50 rounded-lg px-3 py-1 text-[11px] text-green-300 font-bold animate-pulse whitespace-nowrap">
+                  <div className="bg-green-500/20 border border-green-500/50 rounded-lg px-3 py-1 text-medium-responsive text-green-300 font-bold animate-pulse whitespace-nowrap">
                     {'\uD83D\uDC9A'} Choisis un alli{'\u00e9'} !
                   </div>
                 </div>
@@ -6220,14 +6221,14 @@ export default function ShadowColosseum() {
                             filter: !f.alive ? 'grayscale(1)' : atkAnim?.idx === i ? 'drop-shadow(0 0 8px rgba(239,68,68,0.8))' : '',
                             transition: 'filter 0.15s',
                           }} />
-                        {!f.alive && <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg"><span className="text-[9px] text-red-400 font-bold">KO</span></div>}
+                        {!f.alive && <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg"><span className="text-small-responsive text-red-400 font-bold">KO</span></div>}
                         {isActive && !isPickAlly && <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />}
                         {canPickAlly && <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />}
                       </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1">
-                          <span className={`text-[9px] font-bold truncate ${isActive ? 'text-yellow-300' : f.alive ? 'text-white' : 'text-gray-600'}`}>{f.name}</span>
+                          <span className={`text-small-responsive font-bold truncate ${isActive ? 'text-yellow-300' : f.alive ? 'text-white' : 'text-gray-600'}`}>{f.name}</span>
                           <span className="text-[7px] text-gray-600">Lv{f.level}</span>
                         </div>
                         {/* HP bar */}
@@ -6261,7 +6262,7 @@ export default function ShadowColosseum() {
                       <AnimatePresence>
                         {lastAction?.type === 'player' && lastAction.idx === i && lastAction.selfDmg > 0 && (
                           <motion.div key={`sd-${round}-${currentTurn}-${i}`} initial={{ opacity: 1, y: 5, scale: 1 }} animate={{ opacity: 0, y: -15 }} exit={{ opacity: 0 }} transition={{ duration: 1.5 }}
-                            className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-bold z-10 text-orange-400">
+                            className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-small-responsive font-bold z-10 text-orange-400">
                             -{fmtNum(lastAction.selfDmg)} HP!
                           </motion.div>
                         )}
@@ -6311,13 +6312,13 @@ export default function ShadowColosseum() {
                             {en.emoji}
                           </span>
                         )}
-                        {!en.alive && <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg"><span className="text-[8px] text-red-400 font-bold">KO</span></div>}
+                        {!en.alive && <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-lg"><span className="text-tiny-responsive text-red-400 font-bold">KO</span></div>}
                         {canTarget && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-400 rounded-full animate-pulse" />}
                       </div>
                       {/* Enemy info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1">
-                          <span className={`text-[8px] font-bold truncate ${!en.alive ? 'text-gray-600' : en.isMain ? 'text-red-300' : 'text-gray-300'}`}>{en.name}</span>
+                          <span className={`text-tiny-responsive font-bold truncate ${!en.alive ? 'text-gray-600' : en.isMain ? 'text-red-300' : 'text-gray-300'}`}>{en.name}</span>
                           {en.isMain && en.alive && <span className="text-[6px] bg-red-500/30 text-red-300 px-1 rounded font-bold">BOSS</span>}
                         </div>
                         {/* HP bar with damage preview overlay */}
@@ -6394,37 +6395,37 @@ export default function ShadowColosseum() {
                         <img loading="lazy" src={f.sprite} alt={f.name} className="w-10 h-10 object-contain" />
                         <div>
                           <div className="text-xs font-bold text-white">{f.name} <span className="text-gray-500 font-normal">Lv{f.level}</span></div>
-                          <div className="text-[9px] text-gray-400">{fEl.icon} {fEl.name}</div>
+                          <div className="text-small-responsive text-gray-400">{fEl.icon} {fEl.name}</div>
                         </div>
                       </div>
                       {/* HP / Mana bars */}
                       <div className="mb-2">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-[9px] text-green-400 font-bold w-6">PV</span>
+                          <span className="text-small-responsive text-green-400 font-bold w-6">PV</span>
                           <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
                             <div className={`h-full rounded-full ${(f.hp / f.maxHp) > 0.5 ? 'bg-green-500' : (f.hp / f.maxHp) > 0.25 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${(f.hp / f.maxHp) * 100}%` }} />
                           </div>
-                          <span className="text-[9px] text-green-300 font-medium w-20 text-right">{f.hp.toLocaleString()}/{f.maxHp.toLocaleString()}</span>
+                          <span className="text-small-responsive text-green-300 font-medium w-20 text-right">{f.hp.toLocaleString()}/{f.maxHp.toLocaleString()}</span>
                         </div>
                         {(f.shield || 0) > 0 && (
                           <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-[9px] text-cyan-400 font-bold w-6">🛡️</span>
+                            <span className="text-small-responsive text-cyan-400 font-bold w-6">🛡️</span>
                             <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
                               <div className="h-full bg-cyan-400/60 rounded-full" style={{ width: `${Math.min(100, (f.shield / f.maxHp) * 100)}%` }} />
                             </div>
-                            <span className="text-[9px] text-cyan-300 font-medium w-20 text-right">{f.shield.toLocaleString()}</span>
+                            <span className="text-small-responsive text-cyan-300 font-medium w-20 text-right">{f.shield.toLocaleString()}</span>
                           </div>
                         )}
                         <div className="flex items-center gap-2">
-                          <span className="text-[9px] text-violet-400 font-bold w-6">MP</span>
+                          <span className="text-small-responsive text-violet-400 font-bold w-6">MP</span>
                           <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
                             <div className="h-full bg-gradient-to-r from-violet-500 to-blue-500 rounded-full" style={{ width: `${Math.min(100, (f.mana || 0) / Math.max(1, f.maxMana || 1) * 100)}%` }} />
                           </div>
-                          <span className="text-[9px] text-violet-300 font-medium w-20 text-right">{f.mana || 0}/{f.maxMana || 0}</span>
+                          <span className="text-small-responsive text-violet-300 font-medium w-20 text-right">{f.mana || 0}/{f.maxMana || 0}</span>
                         </div>
                       </div>
                       {/* Stats grid — show base→eff when buffed/debuffed */}
-                      <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-[9px] mb-2 bg-gray-800/50 rounded-lg p-1.5">
+                      <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-small-responsive mb-2 bg-gray-800/50 rounded-lg p-1.5">
                         <span className={atkChanged ? (effAtk > f.atk ? 'text-green-300 font-bold' : 'text-red-300 font-bold') : 'text-red-400'}>ATK {atkChanged ? <><s className="text-gray-600">{f.atk}</s> {effAtk}</> : effAtk}</span>
                         <span className={defChanged ? (effDef > f.def ? 'text-green-300 font-bold' : 'text-red-300 font-bold') : 'text-blue-400'}>DEF {defChanged ? <><s className="text-gray-600">{f.def}</s> {effDef}</> : effDef}</span>
                         <span className={spdChanged ? (effSpd > f.spd ? 'text-green-300 font-bold' : 'text-red-300 font-bold') : 'text-emerald-400'}>SPD {spdChanged ? <><s className="text-gray-600">{f.spd}</s> {effSpd}</> : effSpd}</span>
@@ -6434,17 +6435,17 @@ export default function ShadowColosseum() {
                       {/* Buffs/Debuffs — detailed mode */}
                       {f.buffs?.length > 0 && (
                         <div className="mb-2">
-                          <div className="text-[8px] text-gray-500 uppercase tracking-wider mb-1 font-bold">Effets actifs</div>
+                          <div className="text-tiny-responsive text-gray-500 uppercase tracking-wider mb-1 font-bold">Effets actifs</div>
                           <BuffBadges buffs={f.buffs} detailed />
                         </div>
                       )}
                       {/* Skills */}
-                      <div className="text-[9px] border-t border-gray-700/50 pt-1.5">
-                        <div className="text-[8px] text-gray-500 uppercase tracking-wider mb-1 font-bold">Skills</div>
+                      <div className="text-small-responsive border-t border-gray-700/50 pt-1.5">
+                        <div className="text-tiny-responsive text-gray-500 uppercase tracking-wider mb-1 font-bold">Skills</div>
                         {f.skills.map((sk, si) => (
                           <div key={si} className={`flex items-center justify-between gap-1 py-0.5 ${sk.cd > 0 ? 'opacity-40' : ''}`}>
                             <span className="text-gray-200 font-medium">{sk.name}</span>
-                            <span className="text-gray-400 text-[8px] flex-shrink-0">{getSkillDesc(sk)}{sk.manaCost > 0 ? ` | ${sk.manaCost}MP` : ''}{sk.cd > 0 ? ` (CD ${sk.cd}t)` : ''}</span>
+                            <span className="text-gray-400 text-tiny-responsive flex-shrink-0">{getSkillDesc(sk)}{sk.manaCost > 0 ? ` | ${sk.manaCost}MP` : ''}{sk.cd > 0 ? ` (CD ${sk.cd}t)` : ''}</span>
                           </div>
                         ))}
                       </div>
@@ -6484,20 +6485,20 @@ export default function ShadowColosseum() {
                       <div className="flex items-center gap-2 mb-2">
                         {en.sprite ? <img loading="lazy" src={en.sprite} alt={en.name} className="w-10 h-10 object-contain" /> : <span className="text-xl">{en.emoji}</span>}
                         <div>
-                          <div className="text-xs font-bold text-white">{en.name} {en.isMain && <span className="text-[8px] bg-red-500/30 text-red-300 px-1.5 rounded font-bold ml-1">BOSS</span>}</div>
-                          <div className="text-[9px] text-gray-400">{enEl.icon} {enEl.name}</div>
+                          <div className="text-xs font-bold text-white">{en.name} {en.isMain && <span className="text-tiny-responsive bg-red-500/30 text-red-300 px-1.5 rounded font-bold ml-1">BOSS</span>}</div>
+                          <div className="text-small-responsive text-gray-400">{enEl.icon} {enEl.name}</div>
                         </div>
                       </div>
                       {/* HP bar */}
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[9px] text-red-400 font-bold w-6">PV</span>
+                        <span className="text-small-responsive text-red-400 font-bold w-6">PV</span>
                         <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
                           <div className="h-full bg-red-500 rounded-full" style={{ width: `${(en.hp / en.maxHp) * 100}%` }} />
                         </div>
-                        <span className="text-[9px] text-red-300 font-medium w-24 text-right">{en.hp.toLocaleString()}/{en.maxHp.toLocaleString()}</span>
+                        <span className="text-small-responsive text-red-300 font-medium w-24 text-right">{en.hp.toLocaleString()}/{en.maxHp.toLocaleString()}</span>
                       </div>
                       {/* Stats grid */}
-                      <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-[9px] mb-2 bg-gray-800/50 rounded-lg p-1.5">
+                      <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-small-responsive mb-2 bg-gray-800/50 rounded-lg p-1.5">
                         <span className={eAtkChanged ? (eEffAtk > en.atk ? 'text-green-300 font-bold' : 'text-red-300 font-bold') : 'text-red-400'}>ATK {eAtkChanged ? <><s className="text-gray-600">{en.atk}</s> {eEffAtk}</> : eEffAtk}</span>
                         <span className={eDefChanged ? (eEffDef > en.def ? 'text-green-300 font-bold' : 'text-red-300 font-bold') : 'text-blue-400'}>DEF {eDefChanged ? <><s className="text-gray-600">{en.def}</s> {eEffDef}</> : eEffDef}</span>
                         <span className={eSpdChanged ? (eEffSpd > en.spd ? 'text-green-300 font-bold' : 'text-red-300 font-bold') : 'text-emerald-400'}>SPD {eSpdChanged ? <><s className="text-gray-600">{en.spd}</s> {eEffSpd}</> : eEffSpd}</span>
@@ -6507,17 +6508,17 @@ export default function ShadowColosseum() {
                       {/* Buffs/Debuffs — detailed */}
                       {en.buffs?.length > 0 && (
                         <div className="mb-2">
-                          <div className="text-[8px] text-gray-500 uppercase tracking-wider mb-1 font-bold">Effets actifs</div>
+                          <div className="text-tiny-responsive text-gray-500 uppercase tracking-wider mb-1 font-bold">Effets actifs</div>
                           <BuffBadges buffs={en.buffs} detailed />
                         </div>
                       )}
                       {/* Skills */}
-                      <div className="text-[9px] border-t border-gray-700/50 pt-1.5">
-                        <div className="text-[8px] text-gray-500 uppercase tracking-wider mb-1 font-bold">Skills</div>
+                      <div className="text-small-responsive border-t border-gray-700/50 pt-1.5">
+                        <div className="text-tiny-responsive text-gray-500 uppercase tracking-wider mb-1 font-bold">Skills</div>
                         {en.skills.map((sk, si) => (
                           <div key={si} className={`flex items-center justify-between gap-1 py-0.5 ${sk.cd > 0 ? 'opacity-40' : ''}`}>
                             <span className="text-gray-200 font-medium">{sk.name}</span>
-                            <span className="text-gray-400 text-[8px] flex-shrink-0">{getEnemySkillDesc(sk)}{sk.cd > 0 ? ` (CD ${sk.cd}t)` : ''}</span>
+                            <span className="text-gray-400 text-tiny-responsive flex-shrink-0">{getEnemySkillDesc(sk)}{sk.cd > 0 ? ` (CD ${sk.cd}t)` : ''}</span>
                           </div>
                         ))}
                       </div>
@@ -6529,9 +6530,9 @@ export default function ShadowColosseum() {
 
             {/* ─── COMBAT LOG ─── */}
             <div className="bg-gray-900/50 rounded-lg p-2 mb-3 max-h-16 overflow-y-auto border border-gray-800/50">
-              {log.length === 0 && <div className="text-[10px] text-gray-600 text-center">Le combat commence...</div>}
+              {log.length === 0 && <div className="text-normal-responsive text-gray-600 text-center">Le combat commence...</div>}
               {log.slice(0, 4).map((l, i) => (
-                <div key={i} className={`text-[10px] leading-relaxed ${
+                <div key={i} className={`text-normal-responsive leading-relaxed ${
                   i === 0 ? 'text-white font-medium' :
                   l.type === 'enemy' ? 'text-red-400/70' : 'text-green-400/70'
                 }`}>{l.msg}</div>
@@ -6563,7 +6564,7 @@ export default function ShadowColosseum() {
             {/* ─── SKILLS ─── */}
             {isPlayerTurn && activeChar && (
               <div>
-                <div className="text-[10px] text-yellow-400 font-bold mb-1.5">{activeChar.name} — Choisis une attaque :</div>
+                <div className="text-normal-responsive text-yellow-400 font-bold mb-1.5">{activeChar.name} — Choisis une attaque :</div>
                 <div className={`grid gap-2 mb-2 ${activeChar.skills.length <= 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
                   {activeChar.skills.map((sk, i) => {
                     const onCd = sk.cd > 0;
@@ -6584,9 +6585,9 @@ export default function ShadowColosseum() {
                           isPureSupport ? 'border-green-500/40 bg-green-500/10 hover:bg-green-500/20 active:scale-95' :
                           'border-purple-500/40 bg-purple-500/10 hover:bg-purple-500/20 active:scale-95'
                         }`}>
-                        <div className="text-[10px] font-bold truncate">{sk.name}</div>
+                        <div className="text-normal-responsive font-bold truncate">{sk.name}</div>
                         {isUlti && <div className="text-[7px] text-blue-400 font-bold">ULTI</div>}
-                        <div className="text-[8px] text-gray-400 mt-0.5">
+                        <div className="text-tiny-responsive text-gray-400 mt-0.5">
                           {sk.manaScaling ? `DMG: ${getManaScaledPower(activeChar.mana || 0, sk)}%` : sk.power > 0 ? `DMG: ${sk.power}%` : ''}
                           {sk.buffAtk ? `${sk.power > 0 || sk.manaScaling ? ' ' : ''}ATK +${sk.buffAtk}%` : ''}
                           {sk.buffDef ? `${sk.power > 0 || sk.buffAtk || sk.manaScaling ? ' ' : ''}DEF +${sk.buffDef}%` : ''}
@@ -6618,7 +6619,7 @@ export default function ShadowColosseum() {
                         )}
                         {!onCd && noMana && (
                           <div className="absolute inset-0 flex items-center justify-center bg-violet-900/40 rounded-lg">
-                            <span className="text-violet-300 text-[9px] font-bold">Mana</span>
+                            <span className="text-violet-300 text-small-responsive font-bold">Mana</span>
                           </div>
                         )}
                       </button>
@@ -6635,8 +6636,8 @@ export default function ShadowColosseum() {
                   <button
                     onClick={arc2PassTurn}
                     className="w-full py-2 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 active:scale-95 transition-all text-center">
-                    <div className="text-[10px] font-bold text-amber-400">Passer le tour</div>
-                    <div className="text-[8px] text-amber-400/60">MP +{activeChar.manaRegen || 5}</div>
+                    <div className="text-normal-responsive font-bold text-amber-400">Passer le tour</div>
+                    <div className="text-tiny-responsive text-amber-400/60">MP +{activeChar.manaRegen || 5}</div>
                   </button>
                 )}
               </div>
@@ -6645,9 +6646,9 @@ export default function ShadowColosseum() {
             {/* ─── Cancel button for target/ally selection ─── */}
             {(isPickTarget || isPickAlly) && (
               <div className="text-center mb-2">
-                <div className="text-[10px] text-gray-400 mb-1.5">{activeChar?.name} — {activeChar?.skills[pendingSkill]?.name}</div>
+                <div className="text-normal-responsive text-gray-400 mb-1.5">{activeChar?.name} — {activeChar?.skills[pendingSkill]?.name}</div>
                 <button onClick={arc2CancelSelection}
-                  className="px-4 py-1.5 bg-gray-800 border border-gray-600/40 rounded-lg text-[10px] text-gray-300 hover:bg-gray-700 hover:text-white transition-all active:scale-95">
+                  className="px-4 py-1.5 bg-gray-800 border border-gray-600/40 rounded-lg text-normal-responsive text-gray-300 hover:bg-gray-700 hover:text-white transition-all active:scale-95">
                   {'\u2715'} Annuler
                 </button>
               </div>
@@ -6667,7 +6668,7 @@ export default function ShadowColosseum() {
                 <div className="text-5xl mb-4">{'\uD83D\uDC80'}</div>
                 <h2 className="text-xl font-black text-red-400 mb-2">Defaite</h2>
                 <p className="text-sm text-gray-400 mb-1">Ton equipe a ete decimee par {r.stageName}.</p>
-                <p className="text-[10px] text-gray-600">Ameliore ton equipe et retente ta chance !</p>
+                <p className="text-normal-responsive text-gray-600">Ameliore ton equipe et retente ta chance !</p>
               </>
             ) : (
               <>
@@ -6698,16 +6699,16 @@ export default function ShadowColosseum() {
                       {r.hunterDrops?.map((hd, hi) => (
                         <div key={`h${hi}`} className="flex-1 min-w-[120px] p-2 rounded-lg border border-blue-500/50 bg-gradient-to-r from-blue-900/30 to-purple-900/30 text-center" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>
                           <img loading="lazy" src={HUNTERS[hd.id]?.sprite || ''} alt="" className="w-8 h-8 mx-auto object-contain" />
-                          <div className="text-blue-300 font-black text-[10px]">{'\uD83C\uDF1F'} {hd.name}</div>
-                          <div className={`text-[8px] ${hd.isDuplicate ? 'text-yellow-400' : 'text-green-400'}`}>
+                          <div className="text-blue-300 font-black text-normal-responsive">{'\uD83C\uDF1F'} {hd.name}</div>
+                          <div className={`text-tiny-responsive ${hd.isDuplicate ? 'text-yellow-400' : 'text-green-400'}`}>
                             {hd.isDuplicate ? `Dupe ! A${hd.newStars}` : 'Nouveau !'}
                           </div>
                         </div>
                       ))}
                       {r.setUltimeDrops?.map((su, si) => (
                         <div key={`s${si}`} className="flex-1 min-w-[120px] p-2 rounded-lg border border-red-500/50 bg-gradient-to-r from-red-900/30 to-black/40 text-center" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>
-                          <div className="text-red-300 font-black text-[10px]">{'\uD83E\uDE78'} SET ULTIME</div>
-                          <div className="text-white font-black text-[10px]" style={{ textShadow: '0 0 8px rgba(239,68,68,0.6)' }}>{su.name}</div>
+                          <div className="text-red-300 font-black text-normal-responsive">{'\uD83E\uDE78'} SET ULTIME</div>
+                          <div className="text-white font-black text-normal-responsive" style={{ textShadow: '0 0 8px rgba(239,68,68,0.6)' }}>{su.name}</div>
                         </div>
                       ))}
                     </div>
@@ -6726,8 +6727,8 @@ export default function ShadowColosseum() {
                         <img loading="lazy" src={r.skinDrop.sprite} alt={r.skinDrop.skinName} className="w-10 h-10 rounded-lg border border-pink-400/40 object-contain" />
                         <div>
                           <div className="text-pink-300 font-black text-xs">{'\uD83C\uDFA8'} SKIN RARE !</div>
-                          <div className="text-white text-[10px]">{r.skinDrop.skinName}</div>
-                          {r.skinDrop.autoUnlockedHunter && <div className="text-green-400 text-[9px]">+ Hunter d{'\u00e9'}bloqu{'\u00e9'} !</div>}
+                          <div className="text-white text-normal-responsive">{r.skinDrop.skinName}</div>
+                          {r.skinDrop.autoUnlockedHunter && <div className="text-green-400 text-small-responsive">+ Hunter d{'\u00e9'}bloqu{'\u00e9'} !</div>}
                         </div>
                       </div>
                     </div>
@@ -6763,14 +6764,14 @@ export default function ShadowColosseum() {
             <div className="text-center mb-5">
               <img loading="lazy" src={getSprite(id)} alt={c.name} className="w-16 h-16 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
-              <div className="text-[10px] text-gray-400">
+              <div className="text-normal-responsive text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon} {ELEMENTS[c.element].name}
                 {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter]</span>}
               </div>
               {HUNTERS[id] && (() => {
                 const _es = getChibiEveilStars(id);
                 return _es > 0 ? (
-                  <div className="text-[10px] mt-0.5">
+                  <div className="text-normal-responsive mt-0.5">
                     <span className="text-yellow-400 font-bold">A{_es}</span>
                   </div>
                 ) : null;
@@ -6781,7 +6782,7 @@ export default function ShadowColosseum() {
                 const active = data.activeSkin?.[id] || 'default';
                 return (
                   <div className="mt-3 p-2 rounded-xl bg-purple-500/5 border border-purple-500/20">
-                    <div className="text-[9px] text-purple-400 font-bold mb-2">{'\uD83C\uDFA8'} Skins</div>
+                    <div className="text-small-responsive text-purple-400 font-bold mb-2">{'\uD83C\uDFA8'} Skins</div>
                     <div className="flex justify-center gap-2 flex-wrap">
                       {HUNTER_SKINS[id].map(skin => {
                         const isOwned = owned.includes(skin.id);
@@ -6823,7 +6824,7 @@ export default function ShadowColosseum() {
               <div className="text-sm font-bold text-amber-400">
                 {available} <span className="text-xs text-gray-400 font-normal">points disponibles</span>
               </div>
-              <div className="text-[9px] text-gray-500">{spent}/{total} utilises ({POINTS_PER_LEVEL} par niveau)</div>
+              <div className="text-small-responsive text-gray-500">{spent}/{total} utilises ({POINTS_PER_LEVEL} par niveau)</div>
             </div>
 
             {/* Stats Allocation */}
@@ -6846,21 +6847,21 @@ export default function ShadowColosseum() {
                         <span className={`text-xs font-bold ${m.color} flex items-center gap-1`}>{m.name}
                           {m.detail && (
                             <span onClick={(e) => { e.stopPropagation(); setStatTooltip(statTooltip === stat ? null : stat); }}
-                              className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-gray-700/60 text-[8px] text-gray-400 cursor-pointer hover:bg-purple-500/30 hover:text-purple-300 transition-all">?</span>
+                              className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-gray-700/60 text-tiny-responsive text-gray-400 cursor-pointer hover:bg-purple-500/30 hover:text-purple-300 transition-all">?</span>
                           )}
                         </span>
                         <div className="text-right">
                           <span className="text-sm font-bold text-white">{totalVal}{isPct ? '%' : ''}</span>
                           {bonusVal > 0 && (
-                            <span className="text-[9px] text-green-400 ml-1">
+                            <span className="text-small-responsive text-green-400 ml-1">
                               (+{isPct ? bonusVal.toFixed(1) : Math.floor(bonusVal)})
                             </span>
                           )}
                         </div>
                       </div>
-                      <div className="text-[10px] text-gray-500 mt-0.5">{m.desc}</div>
+                      <div className="text-normal-responsive text-gray-500 mt-0.5">{m.desc}</div>
                       {statTooltip === stat && m.detail && (
-                        <div className="mt-1 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-[10px] text-purple-200 leading-relaxed">{m.detail}</div>
+                        <div className="mt-1 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-normal-responsive text-purple-200 leading-relaxed">{m.detail}</div>
                       )}
                       {/* Allocation bar */}
                       <div className="mt-1 w-full h-1 bg-gray-800 rounded-full overflow-hidden">
@@ -6877,7 +6878,7 @@ export default function ShadowColosseum() {
                         disabled={allocated <= 0}
                         className="w-7 h-7 rounded-lg bg-gray-700/50 text-gray-300 text-sm font-bold hover:bg-red-500/30 disabled:opacity-20 transition-colors flex items-center justify-center select-none"
                       >-</button>
-                      <span className="text-[10px] text-gray-400 w-5 text-center font-mono">{allocated}</span>
+                      <span className="text-normal-responsive text-gray-400 w-5 text-center font-mono">{allocated}</span>
                       <button
                         onPointerDown={() => startStatHold(id, stat, 1)}
                         onPointerUp={stopStatHold}
@@ -6906,10 +6907,10 @@ export default function ShadowColosseum() {
                         <span className="text-xs font-bold text-blue-400">MANA</span>
                         <div className="text-right">
                           <span className="text-sm font-bold text-white">{totalMana}</span>
-                          {intBonus > 0 && <span className="text-[9px] text-violet-400 ml-1">(+{intBonus} via INT)</span>}
+                          {intBonus > 0 && <span className="text-small-responsive text-violet-400 ml-1">(+{intBonus} via INT)</span>}
                         </div>
                       </div>
-                      <div className="text-[9px] text-gray-500">Pool de mana (base {baseMana} + croissance {manaGrowth} + INT)</div>
+                      <div className="text-small-responsive text-gray-500">Pool de mana (base {baseMana} + croissance {manaGrowth} + INT)</div>
                     </div>
                   </div>
                 );
@@ -6918,8 +6919,8 @@ export default function ShadowColosseum() {
 
             {/* Per-point info */}
             <div className="text-center mb-3 p-2 rounded-lg bg-gray-800/20 border border-gray-700/20">
-              <div className="text-[10px] text-gray-500 mb-1">Valeur par point :</div>
-              <div className="flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-[9px] text-gray-400">
+              <div className="text-normal-responsive text-gray-500 mb-1">Valeur par point :</div>
+              <div className="flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-small-responsive text-gray-400">
                 {STAT_ORDER.map(stat => (
                   <span key={stat}>
                     <span className={STAT_META[stat].color}>{STAT_META[stat].name}</span> +{STAT_PER_POINT[stat]}{(stat === 'crit' || stat === 'res') ? '%' : ''}
@@ -6958,14 +6959,14 @@ export default function ShadowColosseum() {
             <div className="text-center mb-5">
               <img loading="lazy" src={getSprite(id)} alt={c.name} className="w-16 h-16 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
-              <div className="text-[10px] text-gray-400">
+              <div className="text-normal-responsive text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon} {ELEMENTS[c.element].name}
                 {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter]</span>}
               </div>
               {HUNTERS[id] && (() => {
                 const _es = getChibiEveilStars(id);
                 return _es > 0 ? (
-                  <div className="text-[10px] mt-0.5">
+                  <div className="text-normal-responsive mt-0.5">
                     <span className="text-yellow-400 font-bold">A{_es}</span>
                   </div>
                 ) : null;
@@ -6977,7 +6978,7 @@ export default function ShadowColosseum() {
               <div className="text-sm font-bold text-purple-400">
                 {availSP} <span className="text-xs text-gray-400 font-normal">SP disponibles</span>
               </div>
-              <div className="text-[9px] text-gray-500">{spentSP}/{totalSP} utilises (1 SP tous les {SP_INTERVAL} niveaux)</div>
+              <div className="text-small-responsive text-gray-500">{spentSP}/{totalSP} utilises (1 SP tous les {SP_INTERVAL} niveaux)</div>
             </div>
 
             {/* 3 Skill Columns */}
@@ -6995,9 +6996,9 @@ export default function ShadowColosseum() {
                   <div key={skillIdx} className="text-center">
                     {/* Skill Name */}
                     <div className={`p-1.5 rounded-t-lg border border-b-0 ${isReplaced ? 'bg-cyan-500/10 border-cyan-500/30' : 'bg-gray-800/40 border-gray-700/30'}`}>
-                      <div className={`text-[9px] font-bold truncate ${isReplaced ? 'text-cyan-300' : 'text-white'}`}>{displaySkill.name}</div>
-                      {isReplaced && <div className="text-[8px] text-cyan-400/60">Talent Skill</div>}
-                      <div className="text-[9px] text-gray-500 mt-0.5">
+                      <div className={`text-small-responsive font-bold truncate ${isReplaced ? 'text-cyan-300' : 'text-white'}`}>{displaySkill.name}</div>
+                      {isReplaced && <div className="text-tiny-responsive text-cyan-400/60">Talent Skill</div>}
+                      <div className="text-small-responsive text-gray-500 mt-0.5">
                         {upgraded.power > 0 ? `DMG: ${upgraded.power}%` : ''}
                         {upgraded.buffAtk ? `ATK +${upgraded.buffAtk}%` : ''}
                         {upgraded.buffDef ? `DEF +${upgraded.buffDef}%` : ''}
@@ -7030,14 +7031,14 @@ export default function ShadowColosseum() {
                             }`}
                             style={isAvailable ? { animation: 'nodePulse 2s ease-in-out infinite' } : {}}
                           >
-                            <div className={`text-[10px] font-bold ${
+                            <div className={`text-normal-responsive font-bold ${
                               isUnlocked ? 'text-purple-300' : isAvailable ? 'text-amber-400' : 'text-gray-600'
                             }`}>
                               {isUnlocked ? '\u2713 ' : ''}{TIER_NAMES_SKILL[tierIdx]}
                             </div>
-                            <div className="text-[9px] text-gray-400 mt-0.5">{desc}</div>
+                            <div className="text-small-responsive text-gray-400 mt-0.5">{desc}</div>
                             {!isUnlocked && (
-                              <div className={`text-[9px] mt-0.5 ${isAvailable ? 'text-amber-400' : 'text-gray-600'}`}>
+                              <div className={`text-small-responsive mt-0.5 ${isAvailable ? 'text-amber-400' : 'text-gray-600'}`}>
                                 {TIER_COSTS[tierIdx]} SP
                               </div>
                             )}
@@ -7052,8 +7053,8 @@ export default function ShadowColosseum() {
 
             {/* Upgrade descriptions */}
             <div className="p-2 rounded-lg bg-gray-800/20 border border-gray-700/20 mb-3">
-              <div className="text-[10px] text-gray-500 mb-1">Tiers de competence :</div>
-              <div className="space-y-0.5 text-[10px] text-gray-400">
+              <div className="text-normal-responsive text-gray-500 mb-1">Tiers de competence :</div>
+              <div className="space-y-0.5 text-normal-responsive text-gray-400">
                 <div><span className="text-purple-400 font-bold">Eveil</span> — DMG/Effet +30/25% (1 SP)</div>
                 <div><span className="text-purple-400 font-bold">Maitrise</span> — Cooldown -1 tour (1 SP)</div>
                 <div><span className="text-purple-400 font-bold">Transcendance</span> — DMG/Effet +25/30% (2 SP)</div>
@@ -7092,14 +7093,14 @@ export default function ShadowColosseum() {
             <div className="text-center mb-3">
               <img loading="lazy" src={getChibiSprite(id)} alt={c.name} className="w-14 h-14 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
-              <div className="text-[10px] text-gray-400">
+              <div className="text-normal-responsive text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon}
                 {HUNTERS[id] && <span className="ml-1 text-red-400">[Hunter]</span>}
               </div>
               {HUNTERS[id] && (() => {
                 const _es = getChibiEveilStars(id);
                 return _es > 0 ? (
-                  <div className="text-[10px] mt-0.5">
+                  <div className="text-normal-responsive mt-0.5">
                     <span className="text-yellow-400 font-bold">A{_es}</span>
                   </div>
                 ) : null;
@@ -7107,7 +7108,7 @@ export default function ShadowColosseum() {
               <div className="mt-2 px-3 py-1.5 rounded-lg bg-green-500/5 border border-green-500/20 inline-block">
                 <span className="text-sm font-bold text-green-400">{availTP}</span>
                 <span className="text-xs text-gray-400 ml-1">pts dispo</span>
-                <span className="text-[9px] text-gray-500 ml-1">(I:{spent1} + II:{spent2}{data.talentSkills[id] ? ` + S:${TALENT_SKILL_COST}` : ''}{data.ultimateSkills?.[id] ? ` + U:${ULTIMATE_SKILL_COST}` : ''} / {totalTP})</span>
+                <span className="text-small-responsive text-gray-500 ml-1">(I:{spent1} + II:{spent2}{data.talentSkills[id] ? ` + S:${TALENT_SKILL_COST}` : ''}{data.ultimateSkills?.[id] ? ` + U:${ULTIMATE_SKILL_COST}` : ''} / {totalTP})</span>
               </div>
             </div>
 
@@ -7121,7 +7122,7 @@ export default function ShadowColosseum() {
               >
                 <span className="text-base">{'\uD83C\uDF1F'}</span>
                 <span className="text-xs font-bold ml-1">Talents I</span>
-                {spent1 > 0 && <span className="text-[9px] ml-1 text-gray-400">({spent1})</span>}
+                {spent1 > 0 && <span className="text-small-responsive ml-1 text-gray-400">({spent1})</span>}
               </button>
               <button
                 onClick={() => t2Unlocked && setTalentTab(2)}
@@ -7133,8 +7134,8 @@ export default function ShadowColosseum() {
               >
                 <span className="text-base">{'\u26A1'}</span>
                 <span className="text-xs font-bold ml-1">Talents II</span>
-                {!t2Unlocked && <span className="text-[9px] ml-1">(Lv{TALENT2_UNLOCK_LEVEL})</span>}
-                {t2Unlocked && spent2 > 0 && <span className="text-[9px] ml-1 text-gray-400">({spent2})</span>}
+                {!t2Unlocked && <span className="text-small-responsive ml-1">(Lv{TALENT2_UNLOCK_LEVEL})</span>}
+                {t2Unlocked && spent2 > 0 && <span className="text-small-responsive ml-1 text-gray-400">({spent2})</span>}
               </button>
               <button
                 onClick={() => level >= TALENT_SKILL_UNLOCK_LEVEL && setTalentTab(3)}
@@ -7146,8 +7147,8 @@ export default function ShadowColosseum() {
               >
                 <span className="text-base">{'\uD83C\uDFAF'}</span>
                 <span className="text-xs font-bold ml-1">Talent Skill</span>
-                {level < TALENT_SKILL_UNLOCK_LEVEL && <span className="text-[9px] ml-1">(Lv{TALENT_SKILL_UNLOCK_LEVEL})</span>}
-                {level >= TALENT_SKILL_UNLOCK_LEVEL && data.talentSkills[id] && <span className="text-[9px] ml-1 text-gray-400">({TALENT_SKILL_COST})</span>}
+                {level < TALENT_SKILL_UNLOCK_LEVEL && <span className="text-small-responsive ml-1">(Lv{TALENT_SKILL_UNLOCK_LEVEL})</span>}
+                {level >= TALENT_SKILL_UNLOCK_LEVEL && data.talentSkills[id] && <span className="text-small-responsive ml-1 text-gray-400">({TALENT_SKILL_COST})</span>}
               </button>
             </div>
 
@@ -7180,15 +7181,15 @@ export default function ShadowColosseum() {
                           style={isActive ? { borderColor: t.accent + '60', backgroundColor: t.accent + '15' } : {}}
                         >
                           <div className="text-base">{t.icon}</div>
-                          <div className={`text-[10px] font-bold ${isActive ? 'text-white' : 'text-gray-400'}`}>{t.name}</div>
-                          <div className="text-[10px] text-gray-500">{pts}/{max}</div>
+                          <div className={`text-normal-responsive font-bold ${isActive ? 'text-white' : 'text-gray-400'}`}>{t.name}</div>
+                          <div className="text-normal-responsive text-gray-500">{pts}/{max}</div>
                         </button>
                       );
                     })}
                   </div>
 
                   {/* Tree Description */}
-                  <div className="text-center text-[10px] text-gray-500 mb-3" style={{ color: tree.accent + 'aa' }}>
+                  <div className="text-center text-normal-responsive text-gray-500 mb-3" style={{ color: tree.accent + 'aa' }}>
                     {tree.desc}
                   </div>
 
@@ -7204,7 +7205,7 @@ export default function ShadowColosseum() {
                           {row.requiredPoints > 0 && (
                             <div className="flex items-center gap-2 my-2">
                               <div className="flex-1 h-px bg-gray-700/40" />
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              <span className={`text-normal-responsive font-bold px-2 py-0.5 rounded-full ${
                                 locked ? 'text-gray-600 bg-gray-800/30' : 'bg-gray-800/40'
                               }`} style={!locked ? { color: tree.accent } : {}}>
                                 {row.requiredPoints} pts requis
@@ -7253,7 +7254,7 @@ export default function ShadowColosseum() {
                                   )}
 
                                   <div className="text-xl mb-0.5">{node.icon}</div>
-                                  <div className={`text-[10px] font-bold ${isMaxed ? 'text-white' : locked ? 'text-gray-600' : 'text-gray-300'}`}>
+                                  <div className={`text-normal-responsive font-bold ${isMaxed ? 'text-white' : locked ? 'text-gray-600' : 'text-gray-300'}`}>
                                     {node.name}
                                   </div>
 
@@ -7268,12 +7269,12 @@ export default function ShadowColosseum() {
                                     ))}
                                   </div>
 
-                                  <div className="text-[10px] mt-1" style={{ color: isMaxed ? tree.accent : rank > 0 ? '#9CA3AF' : '#6B7280' }}>
+                                  <div className="text-normal-responsive mt-1" style={{ color: isMaxed ? tree.accent : rank > 0 ? '#9CA3AF' : '#6B7280' }}>
                                     {rank}/{node.maxRank}
                                   </div>
 
                                   {/* Description */}
-                                  <div className={`text-[9px] mt-0.5 ${rank > 0 ? 'text-gray-300' : 'text-gray-500'}`}>
+                                  <div className={`text-small-responsive mt-0.5 ${rank > 0 ? 'text-gray-300' : 'text-gray-500'}`}>
                                     {desc}
                                   </div>
 
@@ -7378,7 +7379,7 @@ export default function ShadowColosseum() {
                       const max = Object.values(br.nodes).reduce((s, n) => s + n.maxRank, 0);
                       const pct = pts / max;
                       return (
-                        <div key={br.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] transition-all"
+                        <div key={br.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-normal-responsive transition-all"
                           style={{
                             borderColor: pct > 0 ? br.color + '50' : '#333',
                             backgroundColor: pct > 0 ? br.color + '10' : 'transparent',
@@ -7414,15 +7415,15 @@ export default function ShadowColosseum() {
                     <div className="absolute top-2 right-2 z-30 flex flex-col gap-1">
                       <button onClick={(e) => { e.stopPropagation(); setT2Zoom(z => Math.min(z + 0.25, 3)); }}
                         className="w-8 h-8 rounded-lg bg-black/60 border border-gray-600/40 text-white text-base font-bold hover:bg-gray-700/60 transition-colors flex items-center justify-center backdrop-blur-sm">+</button>
-                      <div className="w-8 h-5 flex items-center justify-center text-[8px] text-gray-500 font-mono">{Math.round(t2Zoom * 100)}%</div>
+                      <div className="w-8 h-5 flex items-center justify-center text-tiny-responsive text-gray-500 font-mono">{Math.round(t2Zoom * 100)}%</div>
                       <button onClick={(e) => { e.stopPropagation(); setT2Zoom(z => Math.max(z - 0.25, 0.3)); }}
                         className="w-8 h-8 rounded-lg bg-black/60 border border-gray-600/40 text-white text-base font-bold hover:bg-gray-700/60 transition-colors flex items-center justify-center backdrop-blur-sm">{'\u2212'}</button>
                       <button onClick={(e) => { e.stopPropagation(); setT2Zoom(1); setT2Pan({ x: 0, y: 0 }); }}
-                        className="w-8 h-6 rounded-lg bg-black/60 border border-gray-600/40 text-gray-500 text-[8px] hover:bg-gray-700/60 hover:text-gray-300 transition-colors flex items-center justify-center backdrop-blur-sm mt-1">Reset</button>
+                        className="w-8 h-6 rounded-lg bg-black/60 border border-gray-600/40 text-gray-500 text-tiny-responsive hover:bg-gray-700/60 hover:text-gray-300 transition-colors flex items-center justify-center backdrop-blur-sm mt-1">Reset</button>
                     </div>
 
                     {/* Hint */}
-                    <div className="absolute bottom-2 left-2 z-30 text-[9px] text-gray-600 pointer-events-none">
+                    <div className="absolute bottom-2 left-2 z-30 text-small-responsive text-gray-600 pointer-events-none">
                       Scroll/pinch pour zoomer {'\u2022'} Glisser pour deplacer
                     </div>
 
@@ -7532,16 +7533,16 @@ export default function ShadowColosseum() {
                           >
                             {maxed && <div className="absolute -inset-2 rounded-full border-2 border-yellow-500/20" style={{ animation: 'nodePulse 3s ease-in-out infinite' }} />}
                             <span className="text-2xl leading-none">{TALENT2_ROOT.icon}</span>
-                            <span className="text-[9px] font-mono mt-0.5" style={{ color: maxed ? '#EAB308' : '#777' }}>{rk}/{TALENT2_ROOT.maxRank}</span>
+                            <span className="text-small-responsive font-mono mt-0.5" style={{ color: maxed ? '#EAB308' : '#777' }}>{rk}/{TALENT2_ROOT.maxRank}</span>
 
                             {/* Root hover tooltip */}
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:block z-50 pointer-events-none"
                               style={{ transform: `translate(-50%, 0) scale(${1 / t2Zoom})` }}>
                               <div className="rounded-xl px-3 py-2 shadow-2xl whitespace-nowrap"
                                 style={{ backgroundColor: 'rgba(10,10,22,0.95)', border: '1px solid rgba(234,179,8,0.4)', backdropFilter: 'blur(8px)' }}>
-                                <div className="text-[11px] font-bold text-yellow-400">{TALENT2_ROOT.icon} {TALENT2_ROOT.name}</div>
-                                <div className="text-[9px] text-gray-400 mt-0.5">{TALENT2_ROOT.desc}</div>
-                                <div className="text-[9px] mt-1.5 pt-1.5 border-t border-gray-700/40 flex justify-between gap-4">
+                                <div className="text-medium-responsive font-bold text-yellow-400">{TALENT2_ROOT.icon} {TALENT2_ROOT.name}</div>
+                                <div className="text-small-responsive text-gray-400 mt-0.5">{TALENT2_ROOT.desc}</div>
+                                <div className="text-small-responsive mt-1.5 pt-1.5 border-t border-gray-700/40 flex justify-between gap-4">
                                   <span className="text-gray-500">Toutes stats</span>
                                   <span style={{ color: rk > 0 ? '#EAB308' : '#666' }}>+{TALENT2_ROOT.perRank.allStats * Math.max(rk, 1)}%</span>
                                 </div>
@@ -7603,7 +7604,7 @@ export default function ShadowColosseum() {
                               )}
 
                               <span className={`leading-none ${isCap ? 'text-xl' : 'text-base'}`}>{node.icon}</span>
-                              <span className="text-[8px] font-mono mt-0.5 leading-none"
+                              <span className="text-tiny-responsive font-mono mt-0.5 leading-none"
                                 style={{ color: maxed ? branch.color : rk > 0 ? '#aaa' : '#555' }}>
                                 {rk}/{node.maxRank}
                               </span>
@@ -7612,7 +7613,7 @@ export default function ShadowColosseum() {
                               {rk === 0 && !canUp && (
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/50"
                                   style={{ borderRadius: isCap ? '16px' : '50%' }}>
-                                  <span className="text-[10px] opacity-50">{'\uD83D\uDD12'}</span>
+                                  <span className="text-normal-responsive opacity-50">{'\uD83D\uDD12'}</span>
                                 </div>
                               )}
 
@@ -7621,12 +7622,12 @@ export default function ShadowColosseum() {
                                 style={{ transform: `translate(-50%, 0) scale(${1 / t2Zoom})` }}>
                                 <div className="rounded-xl px-3 py-2 shadow-2xl whitespace-nowrap min-w-[140px]"
                                   style={{ backgroundColor: 'rgba(10,10,22,0.95)', border: `1px solid ${branch.color}40`, backdropFilter: 'blur(8px)' }}>
-                                  <div className="text-[11px] font-bold" style={{ color: branch.color }}>{node.icon} {node.name}</div>
-                                  <div className="text-[9px] text-gray-400 mt-0.5 max-w-[200px] whitespace-normal">{node.desc}</div>
+                                  <div className="text-medium-responsive font-bold" style={{ color: branch.color }}>{node.icon} {node.name}</div>
+                                  <div className="text-small-responsive text-gray-400 mt-0.5 max-w-[200px] whitespace-normal">{node.desc}</div>
                                   {bonuses.length > 0 && (
                                     <div className="mt-1.5 pt-1.5 border-t border-gray-700/40 space-y-0.5">
                                       {bonuses.map(b => (
-                                        <div key={b.key} className="text-[9px] flex justify-between gap-4">
+                                        <div key={b.key} className="text-small-responsive flex justify-between gap-4">
                                           <span className="text-gray-500">{b.label}</span>
                                           {b.isCap ? (
                                             <span style={{ color: rk > 0 ? branch.color : '#666' }}>{rk > 0 ? '\u2713 Actif' : 'Inactif'}</span>
@@ -7641,12 +7642,12 @@ export default function ShadowColosseum() {
                                     </div>
                                   )}
                                   {node.requiredBranchPts && (
-                                    <div className="text-[8px] mt-1.5 pt-1 border-t border-gray-700/30" style={{ color: branch.color + '80' }}>
+                                    <div className="text-tiny-responsive mt-1.5 pt-1 border-t border-gray-700/30" style={{ color: branch.color + '80' }}>
                                       Requis : {node.requiredBranchPts} pts dans {branch.name}
                                     </div>
                                   )}
                                   {canUp && (
-                                    <div className="text-[8px] mt-1 text-emerald-400/80">Clic pour ameliorer</div>
+                                    <div className="text-tiny-responsive mt-1 text-emerald-400/80">Clic pour ameliorer</div>
                                   )}
                                 </div>
                               </div>
@@ -7662,7 +7663,7 @@ export default function ShadowColosseum() {
                         const pts = getBranchPts(branch.id, t2Alloc);
                         return (
                           <div key={branch.id + '_l'}
-                            className="absolute text-[9px] font-bold pointer-events-none whitespace-nowrap text-center"
+                            className="absolute text-small-responsive font-bold pointer-events-none whitespace-nowrap text-center"
                             style={{
                               left: toX(p.x) - 50, top: toY(p.y), width: 100,
                               color: pts > 0 ? branch.color + 'cc' : branch.color + '50',
@@ -7695,9 +7696,9 @@ export default function ShadowColosseum() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-bold" style={{ color: col }}>{node.name}</div>
-                            <div className="text-[11px] text-gray-400 mt-0.5">{node.desc}</div>
+                            <div className="text-medium-responsive text-gray-400 mt-0.5">{node.desc}</div>
                             {node.requiredBranchPts && (
-                              <div className="text-[9px] mt-0.5" style={{ color: col + '80' }}>
+                              <div className="text-small-responsive mt-0.5" style={{ color: col + '80' }}>
                                 Requis : {node.requiredBranchPts} pts dans {branch?.name}
                               </div>
                             )}
@@ -7715,17 +7716,17 @@ export default function ShadowColosseum() {
                           return (
                             <div className="mt-2.5 pt-2 border-t border-gray-700/30 grid gap-1">
                               {bonuses.map(b => (
-                                <div key={b.key} className="flex justify-between items-center text-[10px]">
+                                <div key={b.key} className="flex justify-between items-center text-normal-responsive">
                                   <span className="text-gray-500">{b.label}</span>
                                   {b.isCap ? (
                                     <span className="font-bold" style={{ color: rk > 0 ? col : '#555' }}>{rk > 0 ? '\u2713 Actif' : 'Inactif'}</span>
                                   ) : (
                                     <div className="flex items-center gap-2">
-                                      <span className="text-gray-600 text-[9px]">+{b.val}%/rang</span>
+                                      <span className="text-gray-600 text-small-responsive">+{b.val}%/rang</span>
                                       <span className="font-bold font-mono" style={{ color: rk > 0 ? col : '#555' }}>
                                         +{b.val * rk}%
                                       </span>
-                                      {!maxed && <span className="text-gray-700 text-[8px]">{'\u2192'} +{b.val * node.maxRank}%</span>}
+                                      {!maxed && <span className="text-gray-700 text-tiny-responsive">{'\u2192'} +{b.val * node.maxRank}%</span>}
                                     </div>
                                   )}
                                 </div>
@@ -7778,8 +7779,8 @@ export default function ShadowColosseum() {
               if (bonuses.length === 0) return null;
               return (
                 <div className="mt-2 p-2 rounded-lg bg-gray-800/20 border border-gray-700/20">
-                  <div className="text-[10px] text-gray-500 mb-1.5 text-center">Bonus actifs (I + II)</div>
-                  <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[9px]">
+                  <div className="text-normal-responsive text-gray-500 mb-1.5 text-center">Bonus actifs (I + II)</div>
+                  <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-small-responsive">
                     {bonuses.map(b => (
                       <span key={b.label}>
                         <span className={b.color}>{b.label}</span> <span className="text-white">{b.value}</span>
@@ -7808,8 +7809,8 @@ export default function ShadowColosseum() {
                   {/* ── ULTIME SECTION ── */}
                   {ultiData && (
                     <div className="mb-4 p-3 rounded-xl bg-blue-500/5 border border-blue-500/20">
-                      <div className="text-[10px] text-blue-400 font-bold mb-1">ULTIME — {ULTIMATE_SKILL_COST} pts</div>
-                      <div className="text-[9px] text-gray-400 mb-2">Un 4eme skill puissant qui s'ajoute a tes 3 skills (ne remplace rien).</div>
+                      <div className="text-normal-responsive text-blue-400 font-bold mb-1">ULTIME — {ULTIMATE_SKILL_COST} pts</div>
+                      <div className="text-small-responsive text-gray-400 mb-2">Un 4eme skill puissant qui s'ajoute a tes 3 skills (ne remplace rien).</div>
                       <div className={`p-3 rounded-xl border transition-all ${
                         ultiEquipped ? 'border-blue-400/60 bg-blue-500/10' : 'border-gray-700/30 bg-gray-800/20'
                       }`}>
@@ -7817,14 +7818,14 @@ export default function ShadowColosseum() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <span className={`text-sm font-bold ${ultiEquipped ? 'text-blue-300' : 'text-white'}`}>{ultiData.name}</span>
-                              {ultiEquipped && <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold">DEBLOQUE</span>}
+                              {ultiEquipped && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold">DEBLOQUE</span>}
                             </div>
-                            <div className="text-[10px] text-gray-400 mt-1">{ultiData.desc}</div>
+                            <div className="text-normal-responsive text-gray-400 mt-1">{ultiData.desc}</div>
                             <div className="flex flex-wrap gap-2 mt-1.5">
-                              {ultiData.shieldTeamPctDef > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400">Shield {Math.round(ultiData.shieldTeamPctDef * 100)}% DEF</span>}
-                              {ultiData.power > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">DMG {ultiData.power}%</span>}
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400">CD {ultiData.cdMax}</span>
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400">Mana {ultiData.manaCost}</span>
+                              {ultiData.shieldTeamPctDef > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400">Shield {Math.round(ultiData.shieldTeamPctDef * 100)}% DEF</span>}
+                              {ultiData.power > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">DMG {ultiData.power}%</span>}
+                              <span className="text-small-responsive px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400">CD {ultiData.cdMax}</span>
+                              <span className="text-small-responsive px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400">Mana {ultiData.manaCost}</span>
                             </div>
                           </div>
                           <div>
@@ -7832,7 +7833,7 @@ export default function ShadowColosseum() {
                               <button
                                 onClick={() => equipUltimateSkill(id)}
                                 disabled={!hasEnoughPtsUlti}
-                                className="px-3 py-1.5 rounded-lg text-[10px] font-bold border border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 disabled:opacity-30 transition-all"
+                                className="px-3 py-1.5 rounded-lg text-normal-responsive font-bold border border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 disabled:opacity-30 transition-all"
                               >
                                 Debloquer
                               </button>
@@ -7840,7 +7841,7 @@ export default function ShadowColosseum() {
                             {ultiEquipped && (
                               <button
                                 onClick={() => unequipUltimateSkill(id)}
-                                className="px-3 py-1.5 rounded-lg text-[10px] font-bold border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all"
+                                className="px-3 py-1.5 rounded-lg text-normal-responsive font-bold border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all"
                               >
                                 Retirer
                               </button>
@@ -7855,14 +7856,14 @@ export default function ShadowColosseum() {
                   {skillChoices.length > 0 && (
                   <>
                   <div className="mb-4 p-2.5 rounded-xl bg-cyan-500/5 border border-cyan-500/20 text-center">
-                    <div className="text-[10px] text-cyan-400 font-bold">Talent Skill — {TALENT_SKILL_COST} pts</div>
-                    <div className="text-[9px] text-gray-400 mt-0.5">Choisis 1 skill unique puissant. Il remplacera un de tes 3 skills par defaut.</div>
-                    <div className="text-[9px] text-gray-500 mt-0.5">Ces skills coutent plus de mana mais sont bien plus puissants.</div>
+                    <div className="text-normal-responsive text-cyan-400 font-bold">Talent Skill — {TALENT_SKILL_COST} pts</div>
+                    <div className="text-small-responsive text-gray-400 mt-0.5">Choisis 1 skill unique puissant. Il remplacera un de tes 3 skills par defaut.</div>
+                    <div className="text-small-responsive text-gray-500 mt-0.5">Ces skills coutent plus de mana mais sont bien plus puissants.</div>
                   </div>
 
                   {replacingSkillIdx !== null && (
                     <div className="mb-4 p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/30">
-                      <div className="text-[10px] text-amber-400 font-bold mb-2 text-center">Quel skill remplacer ?</div>
+                      <div className="text-normal-responsive text-amber-400 font-bold mb-2 text-center">Quel skill remplacer ?</div>
                       <div className="grid grid-cols-3 gap-1.5">
                         {c.skills.map((sk, si) => (
                           <button key={si}
@@ -7872,19 +7873,19 @@ export default function ShadowColosseum() {
                             }}
                             className="p-2 rounded-lg border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/15 transition-all text-center"
                           >
-                            <div className="text-[10px] font-bold text-white truncate">{sk.name}</div>
-                            <div className="text-[9px] text-gray-400">
+                            <div className="text-normal-responsive font-bold text-white truncate">{sk.name}</div>
+                            <div className="text-small-responsive text-gray-400">
                               {sk.power > 0 ? `DMG:${sk.power}%` : ''}
                               {sk.buffAtk ? `ATK+${sk.buffAtk}%` : ''}
                               {sk.buffDef ? `DEF+${sk.buffDef}%` : ''}
                               {sk.healSelf ? `Soin ${sk.healSelf}%` : ''}
                             </div>
-                            <div className="text-[9px] text-amber-400 mt-0.5">Remplacer</div>
+                            <div className="text-small-responsive text-amber-400 mt-0.5">Remplacer</div>
                           </button>
                         ))}
                       </div>
                       <button onClick={() => setReplacingSkillIdx(null)}
-                        className="w-full text-center text-[10px] text-gray-500 hover:text-gray-300 mt-2">Annuler</button>
+                        className="w-full text-center text-normal-responsive text-gray-500 hover:text-gray-300 mt-2">Annuler</button>
                     </div>
                   )}
 
@@ -7900,20 +7901,20 @@ export default function ShadowColosseum() {
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <span className={`text-sm font-bold ${isEquipped ? 'text-cyan-300' : 'text-white'}`}>{ts.name}</span>
-                                {isEquipped && <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 font-bold">EQUIPE</span>}
+                                {isEquipped && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 font-bold">EQUIPE</span>}
                               </div>
-                              <div className="text-[10px] text-gray-400 mt-1">{ts.desc}</div>
+                              <div className="text-normal-responsive text-gray-400 mt-1">{ts.desc}</div>
                               <div className="flex flex-wrap gap-2 mt-1.5">
-                                {ts.power > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">DMG {ts.power}%</span>}
-                                {ts.buffAtk > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400">ATK +{ts.buffAtk}%</span>}
-                                {ts.buffDef > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400">DEF +{ts.buffDef}%</span>}
-                                {ts.healSelf > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400">Soin {ts.healSelf}%</span>}
-                                {ts.debuffDef > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400">DEF -{ts.debuffDef}%</span>}
-                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400">CD {ts.cdMax}</span>
-                                <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400">Mana {ts.manaCost}</span>
+                                {ts.power > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">DMG {ts.power}%</span>}
+                                {ts.buffAtk > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400">ATK +{ts.buffAtk}%</span>}
+                                {ts.buffDef > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-green-500/10 text-green-400">DEF +{ts.buffDef}%</span>}
+                                {ts.healSelf > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400">Soin {ts.healSelf}%</span>}
+                                {ts.debuffDef > 0 && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400">DEF -{ts.debuffDef}%</span>}
+                                <span className="text-small-responsive px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400">CD {ts.cdMax}</span>
+                                <span className="text-small-responsive px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400">Mana {ts.manaCost}</span>
                               </div>
                               {isEquipped && equipped && (
-                                <div className="text-[9px] text-cyan-400/60 mt-1.5">
+                                <div className="text-small-responsive text-cyan-400/60 mt-1.5">
                                   Remplace : <span className="text-white">{c.skills[equipped.replacedSlot]?.name}</span>
                                 </div>
                               )}
@@ -7930,7 +7931,7 @@ export default function ShadowColosseum() {
                                     }
                                   }}
                                   disabled={!hasEnoughPts && !equipped}
-                                  className="px-3 py-1.5 rounded-lg text-[10px] font-bold border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 disabled:opacity-30 transition-all"
+                                  className="px-3 py-1.5 rounded-lg text-normal-responsive font-bold border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 disabled:opacity-30 transition-all"
                                 >
                                   {equipped ? 'Changer' : 'Choisir'}
                                 </button>
@@ -7938,7 +7939,7 @@ export default function ShadowColosseum() {
                               {isEquipped && (
                                 <button
                                   onClick={() => unequipTalentSkill(id)}
-                                  className="px-3 py-1.5 rounded-lg text-[10px] font-bold border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all"
+                                  className="px-3 py-1.5 rounded-lg text-normal-responsive font-bold border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all"
                                 >
                                   Retirer
                                 </button>
@@ -8062,7 +8063,7 @@ export default function ShadowColosseum() {
             <div className="text-center mb-4">
               <img loading="lazy" src={getChibiSprite(id)} alt={c.name} className="w-14 h-14 mx-auto object-contain" style={{ filter: RARITY[c.rarity].glow }} />
               <h2 className="text-lg font-black mt-2">{c.name}</h2>
-              <div className="text-[10px] text-gray-400">
+              <div className="text-normal-responsive text-gray-400">
                 Lv{level} {RARITY[c.rarity].stars} {ELEMENTS[c.element].icon}
                 {evStars > 0 && <span className="ml-1 text-yellow-400 font-bold">A{evStars}</span>}
               </div>
@@ -8070,7 +8071,7 @@ export default function ShadowColosseum() {
 
             {/* Weapon Slot */}
             <div className="mb-4">
-              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1.5">{'\u2694\uFE0F'} Arme</div>
+              <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider mb-1.5">{'\u2694\uFE0F'} Arme</div>
               {weapon ? (() => {
                 const wAw = data.weaponCollection[weaponId] || 0;
                 return (
@@ -8082,19 +8083,19 @@ export default function ShadowColosseum() {
                       <span className="text-xl">{weapon.icon}</span>
                     )}
                     <div className="flex-1">
-                      <div className="text-xs font-bold text-amber-300">{weapon.name} <span className="text-yellow-400 text-[10px]">A{wAw}</span> <span className="text-amber-400/70 text-[9px]">iLv{computeWeaponILevel(weaponId, wAw)}</span></div>
-                      <div className="text-[9px] text-gray-400">
+                      <div className="text-xs font-bold text-amber-300">{weapon.name} <span className="text-yellow-400 text-normal-responsive">A{wAw}</span> <span className="text-amber-400/70 text-small-responsive">iLv{computeWeaponILevel(weaponId, wAw)}</span></div>
+                      <div className="text-small-responsive text-gray-400">
                         {weapon.scalingStat === 'int' ? 'INT' : 'ATK'} +{weapon.atk}{(data.weaponEnchants?.[weaponId]?.atk || 0) > 0 && <span className="text-green-400"> (+{data.weaponEnchants[weaponId].atk.toFixed(1)})</span>}
                         {' | '}{MAIN_STAT_VALUES[weapon.bonusStat]?.name || weapon.bonusStat} +{weapon.bonusValue}{(data.weaponEnchants?.[weaponId]?.bonus || 0) > 0 && <span className="text-green-400"> (+{data.weaponEnchants[weaponId].bonus.toFixed(1)})</span>}
                       </div>
-                      <div className="text-[10px] text-gray-500">{weapon.desc}</div>
+                      <div className="text-normal-responsive text-gray-500">{weapon.desc}</div>
                     </div>
-                    <button onClick={(e) => { e.stopPropagation(); unequipWeapon(); }} className="text-[9px] px-2 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30">Retirer</button>
+                    <button onClick={(e) => { e.stopPropagation(); unequipWeapon(); }} className="text-small-responsive px-2 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30">Retirer</button>
                   </div>
                 </div>
                 );
               })() : (
-                <div className="p-2.5 rounded-xl border border-gray-700/30 bg-gray-800/20 text-center text-[10px] text-gray-500">
+                <div className="p-2.5 rounded-xl border border-gray-700/30 bg-gray-800/20 text-center text-normal-responsive text-gray-500">
                   Aucune arme equipee
                 </div>
               )}
@@ -8122,25 +8123,25 @@ export default function ShadowColosseum() {
                 <div className="mt-2">
                   {/* Filters */}
                   <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                    <span className="text-[9px] text-gray-500">Filtrer :</span>
+                    <span className="text-small-responsive text-gray-500">Filtrer :</span>
                     <button onClick={() => setWeaponFilter(f => ({ ...f, element: null }))}
-                      className={`text-[9px] px-1.5 py-0.5 rounded ${!weaponFilter.element ? 'bg-purple-500/30 text-purple-300' : 'bg-gray-700/30 text-gray-500'}`}>Tous</button>
+                      className={`text-small-responsive px-1.5 py-0.5 rounded ${!weaponFilter.element ? 'bg-purple-500/30 text-purple-300' : 'bg-gray-700/30 text-gray-500'}`}>Tous</button>
                     {[...elemOpts].map(el => {
                       const e = ELEMENTS[el];
                       return (
                         <button key={el} onClick={() => setWeaponFilter(f => ({ ...f, element: f.element === el ? null : el }))}
-                          className={`text-[9px] px-1.5 py-0.5 rounded ${weaponFilter.element === el ? 'bg-purple-500/30 text-purple-300' : 'bg-gray-700/30 text-gray-500'}`}>
+                          className={`text-small-responsive px-1.5 py-0.5 rounded ${weaponFilter.element === el ? 'bg-purple-500/30 text-purple-300' : 'bg-gray-700/30 text-gray-500'}`}>
                           {e?.icon || ''} {e?.name || 'Neutre'}
                         </button>
                       );
                     })}
-                    <span className="text-[9px] text-gray-600 ml-1">|</span>
+                    <span className="text-small-responsive text-gray-600 ml-1">|</span>
                     {[['ilevel', 'iLvl'], ['atk', 'ATK'], ['name', 'Nom']].map(([k, label]) => (
                       <button key={k} onClick={() => setWeaponFilter(f => ({ ...f, sort: k }))}
-                        className={`text-[9px] px-1.5 py-0.5 rounded ${weaponFilter.sort === k ? 'bg-amber-500/30 text-amber-300' : 'bg-gray-700/30 text-gray-500'}`}>{label}</button>
+                        className={`text-small-responsive px-1.5 py-0.5 rounded ${weaponFilter.sort === k ? 'bg-amber-500/30 text-amber-300' : 'bg-gray-700/30 text-gray-500'}`}>{label}</button>
                     ))}
                   </div>
-                  <div className="text-[9px] text-gray-500 mb-1">Armes disponibles ({available.length}) :</div>
+                  <div className="text-small-responsive text-gray-500 mb-1">Armes disponibles ({available.length}) :</div>
                   <div className="space-y-1 max-h-60 overflow-y-auto">
                   {available.map(wId => {
                     const w = WEAPONS[wId];
@@ -8159,10 +8160,10 @@ export default function ShadowColosseum() {
                             <span>{w.icon}</span>
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="text-[10px] font-bold text-gray-300 truncate">
-                              {w.name} <span className="text-yellow-400">A{wAw}</span> <span className="text-amber-400/70 text-[9px]">iLv{computeWeaponILevel(wId, wAw)}</span>
+                            <div className="text-normal-responsive font-bold text-gray-300 truncate">
+                              {w.name} <span className="text-yellow-400">A{wAw}</span> <span className="text-amber-400/70 text-small-responsive">iLv{computeWeaponILevel(wId, wAw)}</span>
                             </div>
-                            <div className="text-[10px] text-gray-500">
+                            <div className="text-normal-responsive text-gray-500">
                               ATK +{w.atk} | {MAIN_STAT_VALUES[w.bonusStat]?.name || w.bonusStat} +{w.bonusValue}
                               {el && <span className={`ml-1 ${el.color}`}>{el.icon}</span>}
                               {!w.element && <span className="ml-1 text-gray-600">-</span>}
@@ -8170,18 +8171,18 @@ export default function ShadowColosseum() {
                             {isEquippedElsewhere && ownerData && (
                               <div className="flex items-center gap-1 mt-0.5">
                                 <img loading="lazy" src={getChibiSprite(ownerChibiId)} alt={ownerData.name} className="w-3.5 h-3.5 object-contain" />
-                                <span className="text-[9px] text-orange-400">Equip. par {ownerData.name}</span>
+                                <span className="text-small-responsive text-orange-400">Equip. par {ownerData.name}</span>
                               </div>
                             )}
                           </div>
                         </button>
-                        <button onClick={() => setWeaponDetailId(wId)} className="text-[10px] text-blue-400 hover:text-blue-300 px-1" title="Details">i</button>
+                        <button onClick={() => setWeaponDetailId(wId)} className="text-normal-responsive text-blue-400 hover:text-blue-300 px-1" title="Details">i</button>
                         {isEquippedElsewhere ? (
-                          <button onClick={() => equipWeapon(wId)} className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 whitespace-nowrap">
+                          <button onClick={() => equipWeapon(wId)} className="text-small-responsive px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 whitespace-nowrap">
                             {hasCurrentWeapon ? 'Echanger' : 'Prendre'}
                           </button>
                         ) : (
-                          <button onClick={() => equipWeapon(wId)} className="text-[10px] text-cyan-400 hover:text-cyan-300">Equiper</button>
+                          <button onClick={() => equipWeapon(wId)} className="text-normal-responsive text-cyan-400 hover:text-cyan-300">Equiper</button>
                         )}
                       </div>
                     );
@@ -8199,33 +8200,33 @@ export default function ShadowColosseum() {
                 if (!swapW || !fromChibi) return null;
                 return (
                   <div className="mt-2 p-3 rounded-xl border border-orange-500/50 bg-orange-500/10 backdrop-blur">
-                    <div className="text-[11px] font-bold text-orange-400 mb-2">{'\u26A0\uFE0F'} Changement d'arme</div>
+                    <div className="text-medium-responsive font-bold text-orange-400 mb-2">{'\u26A0\uFE0F'} Changement d'arme</div>
                     <div className="flex items-center gap-2 mb-1.5">
                       <img loading="lazy" src={getChibiSprite(weaponSwapConfirm.fromChibiId)} alt={fromChibi.name} className="w-6 h-6 object-contain" />
-                      <div className="text-[10px] text-gray-300">
+                      <div className="text-normal-responsive text-gray-300">
                         <span className="font-bold text-orange-300">{fromChibi.name}</span> perdra <span className="font-bold text-amber-300">{swapW.name}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mb-2">
                       <img loading="lazy" src={getChibiSprite(id)} alt={c.name} className="w-6 h-6 object-contain" />
-                      <div className="text-[10px] text-gray-300">
+                      <div className="text-normal-responsive text-gray-300">
                         <span className="font-bold text-cyan-300">{c.name}</span> {'\u2192'} equipera <span className="font-bold text-amber-300">{swapW.name}</span>
                       </div>
                     </div>
                     {currentW ? (
-                      <div className="text-[9px] text-green-400 mb-2 pl-1">
+                      <div className="text-small-responsive text-green-400 mb-2 pl-1">
                         {'\u21C4'} {fromChibi.name} recevra <span className="font-bold">{currentW.name}</span> en echange
                       </div>
                     ) : (
-                      <div className="text-[9px] text-red-400 mb-2 pl-1">
+                      <div className="text-small-responsive text-red-400 mb-2 pl-1">
                         {'\u26A0\uFE0F'} {fromChibi.name} n'aura plus d'arme equipee
                       </div>
                     )}
                     <div className="flex gap-2 justify-end">
                       <button onClick={() => setWeaponSwapConfirm(null)}
-                        className="text-[10px] px-3 py-1 rounded bg-gray-700/50 text-gray-400 hover:bg-gray-700/70">Annuler</button>
+                        className="text-normal-responsive px-3 py-1 rounded bg-gray-700/50 text-gray-400 hover:bg-gray-700/70">Annuler</button>
                       <button onClick={() => { equipWeapon(weaponSwapConfirm.weaponId, true); setWeaponSwapConfirm(null); }}
-                        className="text-[10px] px-3 py-1 rounded bg-orange-500/30 text-orange-300 hover:bg-orange-500/50 font-bold">Confirmer</button>
+                        className="text-normal-responsive px-3 py-1 rounded bg-orange-500/30 text-orange-300 hover:bg-orange-500/50 font-bold">Confirmer</button>
                     </div>
                   </div>
                 );
@@ -8242,8 +8243,8 @@ export default function ShadowColosseum() {
               return (
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-1.5">
-                  <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{'\uD83D\uDEE1\uFE0F'} Artefacts</div>
-                  <span className="text-[10px] text-emerald-400 font-bold">{'\u2697\uFE0F'} {data.alkahest || 0} Alkahest</span>
+                  <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider">{'\uD83D\uDEE1\uFE0F'} Artefacts</div>
+                  <span className="text-normal-responsive text-emerald-400 font-bold">{'\u2697\uFE0F'} {data.alkahest || 0} Alkahest</span>
                 </div>
 
                 {/* Role Toggle + Global Score */}
@@ -8251,21 +8252,21 @@ export default function ShadowColosseum() {
                   <div className="flex items-center gap-1 mb-1.5">
                     {[{ key: 'dps', label: 'DPS', icon: '\u2694\uFE0F' }, { key: 'mage', label: 'Mage', icon: '\uD83E\uDDE0' }, { key: 'support', label: 'Support', icon: '\uD83D\uDC9A' }, { key: 'tank', label: 'Tank', icon: '\uD83D\uDEE1\uFE0F' }].map(r => (
                       <button key={r.key} onClick={() => setArtifactScoreRole(r.key)}
-                        className={`flex-1 text-[9px] font-bold py-1 rounded transition-all ${artifactScoreRole === r.key ? 'bg-white/15 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}>
+                        className={`flex-1 text-small-responsive font-bold py-1 rounded transition-all ${artifactScoreRole === r.key ? 'bg-white/15 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}>
                         {r.icon} {r.label}
                       </button>
                     ))}
                   </div>
                   <div className="flex items-center justify-between">
-                    <div className="text-[10px]">
+                    <div className="text-normal-responsive">
                       <span className="text-gray-400">iLevel Total:</span>{' '}
                       <span className="text-amber-400 font-black">{equipILv.total}</span>
-                      <span className="text-gray-600 text-[8px] ml-1">(moy {equipILv.avg})</span>
+                      <span className="text-gray-600 text-tiny-responsive ml-1">(moy {equipILv.avg})</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <span className="text-[9px] text-gray-400">Note:</span>
+                      <span className="text-small-responsive text-gray-400">Note:</span>
                       <span className={`text-sm font-black ${artScoring.avgGrade.color}`}>{artScoring.avgGrade.grade}</span>
-                      <span className="text-[9px] text-gray-500">{artScoring.avgScore}/100</span>
+                      <span className="text-small-responsive text-gray-500">{artScoring.avgScore}/100</span>
                     </div>
                   </div>
                   {/* Score bar */}
@@ -8292,32 +8293,32 @@ export default function ShadowColosseum() {
                           <button onClick={() => setEquipDetailSlot(equipDetailSlot === slotId ? null : slotId)}
                             className={`w-full p-1.5 rounded-lg border ${equipDetailSlot === slotId ? 'border-purple-400 bg-purple-500/15' : `${setDef?.border || 'border-gray-600/30'} ${setDef?.bg || 'bg-gray-800/20'}`} hover:brightness-125 transition-all text-left relative`}>
                             {art.locked && (
-                              <span className="absolute top-0.5 right-0.5 text-[8px]">{'\uD83D\uDD12'}</span>
+                              <span className="absolute top-0.5 right-0.5 text-tiny-responsive">{'\uD83D\uDD12'}</span>
                             )}
                             {/* Header: Set name + rarity + level */}
                             <div className="flex items-center gap-1 mb-0.5">
-                              <span className="text-[10px]">{setDef?.icon || '?'}</span>
-                              <span className={`text-[8px] font-bold truncate flex-1 ${setDef?.color || 'text-gray-300'}`}>{setDef?.name || '?'}</span>
-                              <span className={`text-[8px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>{RARITY[art.rarity]?.stars || ''}</span>
+                              <span className="text-normal-responsive">{setDef?.icon || '?'}</span>
+                              <span className={`text-tiny-responsive font-bold truncate flex-1 ${setDef?.color || 'text-gray-300'}`}>{setDef?.name || '?'}</span>
+                              <span className={`text-tiny-responsive font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>{RARITY[art.rarity]?.stars || ''}</span>
                             </div>
                             {/* Slot + level + grade */}
                             <div className="flex items-center justify-between mb-0.5">
                               <div className="flex items-center gap-0.5">
-                                <span className="text-[10px]">{slotDef.icon}</span>
-                                <span className="text-[8px] text-gray-400">{slotDef.name}</span>
-                                <span className={`text-[9px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
+                                <span className="text-normal-responsive">{slotDef.icon}</span>
+                                <span className="text-tiny-responsive text-gray-400">{slotDef.name}</span>
+                                <span className={`text-small-responsive font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
                               </div>
                               <div className="flex items-center gap-1">
                                 <span className="text-[7px] text-amber-400/70 font-bold">iLv{computeArtifactILevel(art)}</span>
-                                <span className={`text-[10px] font-black ${artGrade?.color || 'text-gray-400'}`}>{artGrade?.grade || '?'}</span>
+                                <span className={`text-normal-responsive font-black ${artGrade?.color || 'text-gray-400'}`}>{artGrade?.grade || '?'}</span>
                               </div>
                             </div>
                             {/* Main stat */}
                             <div className="flex items-center gap-1 py-0.5 border-t border-b border-white/5">
-                              <span className="text-[10px]">{mainDef?.icon || '?'}</span>
-                              <span className={`text-[9px] font-medium ${getStatColor(art.mainStat, hClass, hElement)}`}>{mainDef?.name || '?'}</span>
-                              <span className={`text-[10px] font-black ml-auto ${getStatColor(art.mainStat, hClass, hElement)}`}>{art.mainValue}</span>
-                              {(art.enchants?.main || 0) > 0 && <span className="text-[8px] text-green-400 font-bold">(+{art.enchants.main.toFixed(1)})</span>}
+                              <span className="text-normal-responsive">{mainDef?.icon || '?'}</span>
+                              <span className={`text-small-responsive font-medium ${getStatColor(art.mainStat, hClass, hElement)}`}>{mainDef?.name || '?'}</span>
+                              <span className={`text-normal-responsive font-black ml-auto ${getStatColor(art.mainStat, hClass, hElement)}`}>{art.mainValue}</span>
+                              {(art.enchants?.main || 0) > 0 && <span className="text-tiny-responsive text-green-400 font-bold">(+{art.enchants.main.toFixed(1)})</span>}
                             </div>
                             {/* ALL sub stats */}
                             <div className="mt-0.5 grid grid-cols-2 gap-x-1 gap-y-px">
@@ -8326,7 +8327,7 @@ export default function ShadowColosseum() {
                                 const subColor = getStatColor(sub.id, hClass, hElement);
                                 const subEnch = art.enchants?.subs?.[sub.id] || 0;
                                 return (
-                                  <div key={si} className={`text-[8px] truncate ${subColor}`}>
+                                  <div key={si} className={`text-tiny-responsive truncate ${subColor}`}>
                                     {subDef?.name || sub.id} +{sub.value}{subEnch > 0 && <span className="text-green-400"> (+{subEnch.toFixed(1)})</span>}
                                   </div>
                                 );
@@ -8336,7 +8337,7 @@ export default function ShadowColosseum() {
                         ) : (
                           <div className="w-full p-1.5 rounded-lg border border-gray-700/20 bg-gray-800/10 text-center" style={{ minHeight: 80 }}>
                             <div className="text-lg opacity-30 mt-2">{slotDef.icon}</div>
-                            <div className="text-[9px] text-gray-600">{slotDef.name}</div>
+                            <div className="text-small-responsive text-gray-600">{slotDef.name}</div>
                           </div>
                         )}
                       </div>
@@ -8434,9 +8435,9 @@ export default function ShadowColosseum() {
                         <div>
                           <div className={`text-sm font-bold ${eqSetDef?.color || 'text-gray-300'}`}>{eqSetDef?.name || '?'}</div>
                           <div className="flex items-center gap-2">
-                            <span className={`text-[10px] ${RARITY[eqArt.rarity]?.color}`}>{RARITY[eqArt.rarity]?.stars} {eqArt.rarity}</span>
-                            <span className="text-[10px] text-gray-400">Lv {eqArt.level}/{MAX_ARTIFACT_LEVEL}</span>
-                            <span className="text-[10px] text-amber-400 font-bold">iLv {computeArtifactILevel(eqArt)}</span>
+                            <span className={`text-normal-responsive ${RARITY[eqArt.rarity]?.color}`}>{RARITY[eqArt.rarity]?.stars} {eqArt.rarity}</span>
+                            <span className="text-normal-responsive text-gray-400">Lv {eqArt.level}/{MAX_ARTIFACT_LEVEL}</span>
+                            <span className="text-normal-responsive text-amber-400 font-bold">iLv {computeArtifactILevel(eqArt)}</span>
                           </div>
                         </div>
                       </div>
@@ -8460,7 +8461,7 @@ export default function ShadowColosseum() {
                                   arts[id] = { ...arts[id], [equipDetailSlot]: art };
                                   return { ...prev, artifacts: arts };
                                 });
-                              }} className={`text-[10px] ${mainLocked ? 'text-yellow-400' : maxLocksReached ? 'text-gray-700' : 'text-gray-600 hover:text-gray-400'} transition-colors`}>
+                              }} className={`text-normal-responsive ${mainLocked ? 'text-yellow-400' : maxLocksReached ? 'text-gray-700' : 'text-gray-600 hover:text-gray-400'} transition-colors`}>
                                 {mainLocked ? '\uD83D\uDD12' : '\uD83D\uDD13'}
                               </button>
                               <div className="flex-1 text-xs font-bold">
@@ -8480,7 +8481,7 @@ export default function ShadowColosseum() {
                                   if (bonus > previousBonus) beruSay(`Enchant UP ! +${bonus.toFixed(1)} (avant: ${previousBonus > 0 ? '+' + previousBonus.toFixed(1) : '0'})`, 'excited');
                                   else beruSay(`Enchant DOWN... +${bonus.toFixed(1)} (avant: +${previousBonus.toFixed(1)})`, 'shocked');
                                 }}
-                                className={`text-[8px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${canEnchantMain ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
+                                className={`text-tiny-responsive px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${canEnchantMain ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
                                 {mainEnchant > 0 ? '\u2697\uFE0F Re-ench' : '\u2697\uFE0F Ench'} {ENCHANT_ALKAHEST_COST}
                               </button>
                             </div>
@@ -8493,7 +8494,7 @@ export default function ShadowColosseum() {
                           const subLocked = eqStatLocks.subs?.[sub.id] || false;
                           const subMaxLock = eqLockCount >= 4 && !subLocked;
                           return (
-                            <div key={i} className="flex items-center gap-1 text-[10px]">
+                            <div key={i} className="flex items-center gap-1 text-normal-responsive">
                               <button onClick={() => {
                                 if (subMaxLock) { beruSay('Max 4 stats verrouillees !', 'thinking'); return; }
                                 setData(prev => {
@@ -8505,7 +8506,7 @@ export default function ShadowColosseum() {
                                   arts[id] = { ...arts[id], [equipDetailSlot]: art };
                                   return { ...prev, artifacts: arts };
                                 });
-                              }} className={`text-[9px] ${subLocked ? 'text-yellow-400' : subMaxLock ? 'text-gray-700' : 'text-gray-600 hover:text-gray-400'} transition-colors`}>
+                              }} className={`text-small-responsive ${subLocked ? 'text-yellow-400' : subMaxLock ? 'text-gray-700' : 'text-gray-600 hover:text-gray-400'} transition-colors`}>
                                 {subLocked ? '\uD83D\uDD12' : '\uD83D\uDD13'}
                               </button>
                               <div className="flex-1">
@@ -8525,13 +8526,13 @@ export default function ShadowColosseum() {
                                   if (bonus > previousBonus) beruSay(`Enchant UP ! +${bonus.toFixed(1)}`, 'excited');
                                   else beruSay(`Enchant DOWN... +${bonus.toFixed(1)} (avant: +${previousBonus.toFixed(1)})`, 'shocked');
                                 }}
-                                className={`text-[8px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${canEnchantSub ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
+                                className={`text-tiny-responsive px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${canEnchantSub ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
                                 {subEnchant > 0 ? '\u2697\uFE0F Re' : '\u2697\uFE0F'} {ENCHANT_ALKAHEST_COST}
                               </button>
                             </div>
                           );
                         })}
-                        {eqIsMilestone && <div className="text-[9px] text-amber-400 mt-1 font-bold">{'\u2B50'} Palier Lv{eqArt.level + 1} — Boost sub-stat !</div>}
+                        {eqIsMilestone && <div className="text-small-responsive text-amber-400 mt-1 font-bold">{'\u2B50'} Palier Lv{eqArt.level + 1} — Boost sub-stat !</div>}
                       </div>
 
                       {/* Actions */}
@@ -8550,7 +8551,7 @@ export default function ShadowColosseum() {
                               }
                             }));
                           }}
-                          className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-colors ${
+                          className={`py-1.5 px-2 rounded-lg text-normal-responsive font-bold transition-colors ${
                             eqArt.locked
                               ? 'bg-yellow-600/30 text-yellow-300 hover:bg-yellow-600/50'
                               : 'bg-gray-600/30 text-gray-400 hover:bg-gray-600/50'
@@ -8561,7 +8562,7 @@ export default function ShadowColosseum() {
 
                         {/* Unequip */}
                         <button onClick={() => { unequipArtifact(equipDetailSlot); setEquipDetailSlot(null); }}
-                          className="py-1.5 px-2 rounded-lg bg-orange-600/30 text-orange-300 text-[10px] font-bold hover:bg-orange-600/50 transition-colors">
+                          className="py-1.5 px-2 rounded-lg bg-orange-600/30 text-orange-300 text-normal-responsive font-bold hover:bg-orange-600/50 transition-colors">
                           Retirer
                         </button>
 
@@ -8578,7 +8579,7 @@ export default function ShadowColosseum() {
                           onPointerLeave={() => { if (enhanceHoldRef.current) { clearTimeout(enhanceHoldRef.current); enhanceHoldRef.current = null; } }}
                           onContextMenu={e => e.preventDefault()}
                           disabled={!eqCanEnhance}
-                          className="flex-1 py-1.5 rounded-lg bg-cyan-600/30 text-cyan-300 text-[10px] font-bold hover:bg-cyan-600/50 disabled:opacity-30 transition-colors select-none">
+                          className="flex-1 py-1.5 rounded-lg bg-cyan-600/30 text-cyan-300 text-normal-responsive font-bold hover:bg-cyan-600/50 disabled:opacity-30 transition-colors select-none">
                           {'\uD83D\uDD28'} +1 ({eqBestHammer ? HAMMERS[eqBestHammer].icon : '?'} {fmtNum(eqCoinCost)}c)
                         </button>
                       </div>
@@ -8586,7 +8587,7 @@ export default function ShadowColosseum() {
                       {/* Reroll button */}
                       <div className="mt-1.5 relative group/eqreroll">
                         <button onClick={doEqReroll}
-                          className={`w-full py-1.5 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
+                          className={`w-full py-1.5 rounded-lg text-normal-responsive font-bold transition-colors cursor-pointer ${
                             eqArt.locked ? 'bg-gray-700/20 text-gray-600' :
                             eqCanReroll ? 'bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600/40' :
                             'bg-emerald-600/15 text-emerald-300/50'
@@ -8596,14 +8597,14 @@ export default function ShadowColosseum() {
                           {eqRerollCount > 0 && <span className="ml-1 text-amber-400">x{eqRerollCount + 1}</span>}
                         </button>
                         {/* Tooltip on hover */}
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2.5 py-1.5 rounded-lg bg-gray-900/95 border border-gray-600/40 text-[9px] text-gray-300 opacity-0 group-hover/eqreroll:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2.5 py-1.5 rounded-lg bg-gray-900/95 border border-gray-600/40 text-small-responsive text-gray-300 opacity-0 group-hover/eqreroll:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                           Reroll les stats NON verrouillees (remet au Lv 0, irreversible)
                           <br/><span className="text-emerald-400">Cout: {eqLockAlkCost} Alkahest + {fmtNum(eqRerollCoinCost)} coins</span>
                           {eqLockCount > 0 && <><br/><span className="text-yellow-400">{eqLockCount} stat{eqLockCount > 1 ? 's' : ''} protegee{eqLockCount > 1 ? 's' : ''}</span></>}
                           {eqArt.locked && <><br/><span className="text-yellow-400">Deverrouille l'artefact d'abord</span></>}
                         </div>
                         {(data.alkahest || 0) < REROLL_ALKAHEST_COST && !eqArt.locked && (
-                          <div className="text-[8px] text-gray-500 mt-0.5 text-center">Pas assez d'Alkahest — Affronte Manaya pour en obtenir</div>
+                          <div className="text-tiny-responsive text-gray-500 mt-0.5 text-center">Pas assez d'Alkahest — Affronte Manaya pour en obtenir</div>
                         )}
                       </div>
                     </motion.div>
@@ -8613,9 +8614,9 @@ export default function ShadowColosseum() {
                 {/* Active Set Bonuses */}
                 {activeSets.length > 0 && (
                   <div className="mt-2 p-2 rounded-lg bg-gray-800/20 border border-gray-700/20">
-                    <div className="text-[9px] text-gray-500 mb-1">Sets actifs :</div>
+                    <div className="text-small-responsive text-gray-500 mb-1">Sets actifs :</div>
                     {activeSets.map((s, i) => (
-                      <div key={i} className="flex items-center gap-1 text-[9px] cursor-pointer hover:bg-white/5 rounded p-0.5 -m-0.5 transition-colors"
+                      <div key={i} className="flex items-center gap-1 text-small-responsive cursor-pointer hover:bg-white/5 rounded p-0.5 -m-0.5 transition-colors"
                         onClick={() => setArtifactSetDetail(s.set.id)}>
                         <span className={s.set.color}>{s.set.icon}</span>
                         <span className={`${s.set.color} underline decoration-dotted`}>{s.set.name}</span>
@@ -8652,10 +8653,10 @@ export default function ShadowColosseum() {
               if (statLines.length === 0 && specialLines.length === 0) return null;
               return (
                 <div className="mb-4 p-2.5 rounded-xl bg-gradient-to-br from-gray-800/40 to-gray-900/40 border border-gray-700/30">
-                  <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">{'\uD83D\uDCCA'} Bonus totaux d'equipement</div>
+                  <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider mb-2">{'\uD83D\uDCCA'} Bonus totaux d'equipement</div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                     {statLines.map((s, i) => (
-                      <div key={i} className="flex items-center justify-between text-[9px]">
+                      <div key={i} className="flex items-center justify-between text-small-responsive">
                         <span className="text-gray-400">{s.icon} {s.label}</span>
                         <span className="text-green-400 font-bold">
                           {s.flat > 0 && `+${Number.isInteger(s.flat) ? s.flat : s.flat.toFixed(1)}`}
@@ -8668,7 +8669,7 @@ export default function ShadowColosseum() {
                   {specialLines.length > 0 && (
                     <div className="mt-1.5 pt-1.5 border-t border-gray-700/20 grid grid-cols-2 gap-x-4 gap-y-1">
                       {specialLines.map((s, i) => (
-                        <div key={i} className="flex items-center justify-between text-[9px]">
+                        <div key={i} className="flex items-center justify-between text-small-responsive">
                           <span className="text-gray-400">{s.label}</span>
                           <span className={`font-bold ${s.color}`}>{s.value}</span>
                         </div>
@@ -8682,7 +8683,7 @@ export default function ShadowColosseum() {
             {/* Artifact Inventory with Filters + Auto-Equip */}
             <div className="mb-4">
               <div className="flex items-center justify-between mb-1.5">
-                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider">
                   Inventaire ({data.artifactInventory.length})
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -8721,7 +8722,7 @@ export default function ShadowColosseum() {
                         }
                       }, 600);
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-600/30 to-yellow-600/30 border border-amber-500/30 text-[10px] font-bold text-amber-300 hover:from-amber-600/50 hover:to-yellow-600/50 transition-all"
+                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-600/30 to-yellow-600/30 border border-amber-500/30 text-normal-responsive font-bold text-amber-300 hover:from-amber-600/50 hover:to-yellow-600/50 transition-all"
                   >
                     {'\uD83D\uDCA1'} Conseil Beru
                   </button>
@@ -8801,7 +8802,7 @@ export default function ShadowColosseum() {
                         beruSay(`BOOM ! ${artsToEnhance.length} artefacts au MAX ! Service Beru, rapide et... pas tres economique. Mais EFFICACE !`, 'happy');
                       }, 800);
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-600/30 to-pink-600/30 border border-purple-500/30 text-[10px] font-bold text-purple-300 hover:from-purple-600/50 hover:to-pink-600/50 transition-all"
+                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-600/30 to-pink-600/30 border border-purple-500/30 text-normal-responsive font-bold text-purple-300 hover:from-purple-600/50 hover:to-pink-600/50 transition-all"
                   >
                     {'\uD83D\uDD28'} Max +20
                   </button>
@@ -8852,7 +8853,7 @@ export default function ShadowColosseum() {
                         detail: { message: msg, mood: rerollSlots.length > 2 ? 'thinking' : 'happy' }
                       }));
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-500/30 text-[10px] font-bold text-cyan-300 hover:from-cyan-600/50 hover:to-blue-600/50 transition-all"
+                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-cyan-600/30 to-blue-600/30 border border-cyan-500/30 text-normal-responsive font-bold text-cyan-300 hover:from-cyan-600/50 hover:to-blue-600/50 transition-all"
                   >
                     {'\u2728'} Auto-Equip
                   </button>
@@ -8875,7 +8876,7 @@ export default function ShadowColosseum() {
                         detail: { message: "Tout desequipe ! L'inventaire recupere tout.", mood: 'normal' }
                       }));
                     }}
-                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-red-600/30 to-rose-600/30 border border-red-500/30 text-[10px] font-bold text-red-300 hover:from-red-600/50 hover:to-rose-600/50 transition-all"
+                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-red-600/30 to-rose-600/30 border border-red-500/30 text-normal-responsive font-bold text-red-300 hover:from-red-600/50 hover:to-rose-600/50 transition-all"
                   >
                     {'\uD83D\uDDD1\uFE0F'} Desequiper
                   </button>
@@ -8895,8 +8896,8 @@ export default function ShadowColosseum() {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="text-sm">{'\uD83D\uDCA1'}</span>
-                        <span className="text-[11px] font-bold text-gray-200">Analyse de {hunterName}</span>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-700/40 text-gray-400">{advice.hunterClass} / {advice.role}</span>
+                        <span className="text-medium-responsive font-bold text-gray-200">Analyse de {hunterName}</span>
+                        <span className="text-small-responsive px-1.5 py-0.5 rounded bg-gray-700/40 text-gray-400">{advice.hunterClass} / {advice.role}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`text-xl font-black ${gradeColors[advice.overallGrade]}`}>{advice.overallGrade}</span>
@@ -8908,11 +8909,11 @@ export default function ShadowColosseum() {
                     <div className="mb-2 space-y-1">
                       {advice.recommendedSets.S.length > 0 && (
                         <div className="flex items-center gap-1 flex-wrap">
-                          <span className="text-[9px] text-green-400 font-bold w-14">Tier S :</span>
+                          <span className="text-small-responsive text-green-400 font-bold w-14">Tier S :</span>
                           {advice.recommendedSets.S.map(sId => {
                             const setDef = ALL_ARTIFACT_SETS[sId];
                             return setDef ? (
-                              <span key={sId} className={`text-[9px] px-1.5 py-0.5 rounded ${setDef.bg} ${setDef.color} border ${setDef.border}`}>
+                              <span key={sId} className={`text-small-responsive px-1.5 py-0.5 rounded ${setDef.bg} ${setDef.color} border ${setDef.border}`}>
                                 {setDef.icon} {setDef.name}
                               </span>
                             ) : null;
@@ -8921,11 +8922,11 @@ export default function ShadowColosseum() {
                       )}
                       {advice.recommendedSets.A.length > 0 && (
                         <div className="flex items-center gap-1 flex-wrap">
-                          <span className="text-[9px] text-blue-400 font-bold w-14">Tier A :</span>
+                          <span className="text-small-responsive text-blue-400 font-bold w-14">Tier A :</span>
                           {advice.recommendedSets.A.map(sId => {
                             const setDef = ALL_ARTIFACT_SETS[sId];
                             return setDef ? (
-                              <span key={sId} className={`text-[9px] px-1.5 py-0.5 rounded ${setDef.bg} ${setDef.color} border ${setDef.border}`}>
+                              <span key={sId} className={`text-small-responsive px-1.5 py-0.5 rounded ${setDef.bg} ${setDef.color} border ${setDef.border}`}>
                                 {setDef.icon} {setDef.name}
                               </span>
                             ) : null;
@@ -8935,12 +8936,12 @@ export default function ShadowColosseum() {
                       {/* Current sets verdict */}
                       {advice.currentSetAnalysis.length > 0 && (
                         <div className="flex items-center gap-1 flex-wrap mt-1">
-                          <span className="text-[9px] text-gray-400 font-bold w-14">Actuel :</span>
+                          <span className="text-small-responsive text-gray-400 font-bold w-14">Actuel :</span>
                           {advice.currentSetAnalysis.map((sa, i) => {
                             const setDef = ALL_ARTIFACT_SETS[sa.setId];
                             const verdictColor = sa.verdict === 'parfait' ? 'text-green-400' : sa.verdict === 'ok' ? 'text-blue-400' : 'text-red-400';
                             return (
-                              <span key={i} className={`text-[9px] px-1.5 py-0.5 rounded bg-gray-800/40 border border-gray-700/30`}>
+                              <span key={i} className={`text-small-responsive px-1.5 py-0.5 rounded bg-gray-800/40 border border-gray-700/30`}>
                                 <span className={setDef?.color || 'text-gray-400'}>{setDef?.icon || '?'} {setDef?.name || sa.setId}</span>
                                 <span className="text-gray-500"> x{sa.count}</span>
                                 <span className={`ml-1 ${verdictColor}`}>({sa.verdict})</span>
@@ -8960,20 +8961,20 @@ export default function ShadowColosseum() {
                         return (
                           <div key={sa.slot} className={`p-1.5 rounded-lg border ${hasIssues ? 'border-red-500/30 bg-red-500/5' : hasUpgrade ? 'border-green-500/30 bg-green-500/5' : 'border-gray-700/30 bg-gray-800/20'}`}>
                             <div className="flex items-center gap-0.5 mb-0.5">
-                              <span className="text-[10px]">{slotDef?.icon}</span>
-                              <span className="text-[8px] text-gray-400 truncate">{slotDef?.name}</span>
+                              <span className="text-normal-responsive">{slotDef?.icon}</span>
+                              <span className="text-tiny-responsive text-gray-400 truncate">{slotDef?.name}</span>
                             </div>
                             {sa.current ? (
                               <>
-                                <div className="text-[9px] text-gray-300 font-bold">{sa.currentScore} pts</div>
+                                <div className="text-small-responsive text-gray-300 font-bold">{sa.currentScore} pts</div>
                                 {hasIssues && sa.currentIssues.slice(0, 2).map((issue, i) => (
-                                  <div key={i} className="text-[8px] text-red-400 truncate" title={issue}>
+                                  <div key={i} className="text-tiny-responsive text-red-400 truncate" title={issue}>
                                     {'\u26A0'} {issue.length > 22 ? issue.slice(0, 20) + '...' : issue}
                                   </div>
                                 ))}
                                 {hasUpgrade && (
                                   <div className="mt-0.5">
-                                    <div className="text-[8px] text-green-400 font-bold">Mieux dispo! (+{sa.upgradeGain})</div>
+                                    <div className="text-tiny-responsive text-green-400 font-bold">Mieux dispo! (+{sa.upgradeGain})</div>
                                     <button
                                       onClick={() => {
                                         const bestArt = sa.bestInInventory;
@@ -8997,7 +8998,7 @@ export default function ShadowColosseum() {
                                         }, 100);
                                         beruSay(`${slotDef?.name || sa.slot} ameliore ! +${sa.upgradeGain} pts, Beru approuve !`, 'happy');
                                       }}
-                                      className="w-full text-[8px] px-1 py-0.5 rounded bg-green-600/20 text-green-300 hover:bg-green-600/40 border border-green-500/30 transition-all font-bold"
+                                      className="w-full text-tiny-responsive px-1 py-0.5 rounded bg-green-600/20 text-green-300 hover:bg-green-600/40 border border-green-500/30 transition-all font-bold"
                                     >
                                       Equiper
                                     </button>
@@ -9005,7 +9006,7 @@ export default function ShadowColosseum() {
                                 )}
                               </>
                             ) : (
-                              <div className="text-[8px] text-gray-600">Vide</div>
+                              <div className="text-tiny-responsive text-gray-600">Vide</div>
                             )}
                           </div>
                         );
@@ -9015,9 +9016,9 @@ export default function ShadowColosseum() {
                     {/* Problematic artifacts summary */}
                     {advice.slotAdvice.some(sa => sa.currentIssues.length >= 2) && (
                       <div className="mb-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
-                        <div className="text-[9px] text-red-400 font-bold mb-1">{'\u26A0'} Artefacts problematiques</div>
+                        <div className="text-small-responsive text-red-400 font-bold mb-1">{'\u26A0'} Artefacts problematiques</div>
                         {advice.slotAdvice.filter(sa => sa.currentIssues.length >= 2).map(sa => (
-                          <div key={sa.slot} className="text-[8px] text-red-300/80 mb-0.5">
+                          <div key={sa.slot} className="text-tiny-responsive text-red-300/80 mb-0.5">
                             <span className="font-bold">{ARTIFACT_SLOTS[sa.slot]?.icon} {ARTIFACT_SLOTS[sa.slot]?.name} :</span>{' '}
                             {sa.currentIssues.join(' | ')}
                           </div>
@@ -9028,11 +9029,11 @@ export default function ShadowColosseum() {
                     {/* Near-complete sets advice */}
                     {advice.nearCompleteSets?.length > 0 && (
                       <div className="mb-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                        <div className="text-[9px] text-amber-400 font-bold mb-1">{'\uD83E\uDDE9'} Sets presque complets</div>
+                        <div className="text-small-responsive text-amber-400 font-bold mb-1">{'\uD83E\uDDE9'} Sets presque complets</div>
                         {advice.nearCompleteSets.map((ncs, i) => {
                           const setDef = ALL_ARTIFACT_SETS[ncs.setId];
                           return (
-                            <div key={i} className="text-[8px] text-amber-300/80 mb-0.5">
+                            <div key={i} className="text-tiny-responsive text-amber-300/80 mb-0.5">
                               <span className={setDef?.color || 'text-gray-400'}>{setDef?.icon || '?'} {setDef?.name || ncs.setId}</span>
                               <span className="text-gray-400"> — {ncs.count}p, il manque {ncs.needed} piece{ncs.needed > 1 ? 's' : ''} pour le bonus {ncs.bonus} !</span>
                               {ncs.canComplete && <span className="text-green-400 ml-1 font-bold">(dispo dans l'inventaire !)</span>}
@@ -9045,9 +9046,9 @@ export default function ShadowColosseum() {
                     {/* Mage-specific advice */}
                     {advice.mageAdvice?.length > 0 && (
                       <div className="mb-2 p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-                        <div className="text-[9px] text-indigo-400 font-bold mb-1">{'\uD83E\uDDE0'} Conseil Mage</div>
+                        <div className="text-small-responsive text-indigo-400 font-bold mb-1">{'\uD83E\uDDE0'} Conseil Mage</div>
                         {advice.mageAdvice.map((tip, i) => (
-                          <div key={i} className="text-[8px] text-indigo-300/80 mb-0.5">{'\u26A0'} {tip}</div>
+                          <div key={i} className="text-tiny-responsive text-indigo-300/80 mb-0.5">{'\u26A0'} {tip}</div>
                         ))}
                       </div>
                     )}
@@ -9055,12 +9056,12 @@ export default function ShadowColosseum() {
                     {/* Optimal Set Plan */}
                     {advice.optimalPlan && (
                       <div className="mb-2 p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-                        <div className="text-[9px] text-cyan-400 font-bold mb-1">{'\uD83C\uDFAF'} Plan de sets optimal</div>
+                        <div className="text-small-responsive text-cyan-400 font-bold mb-1">{'\uD83C\uDFAF'} Plan de sets optimal</div>
                         <div className="flex items-center gap-1 flex-wrap">
                           {advice.optimalPlan.map((p, i) => {
                             const sd = ALL_ARTIFACT_SETS[p.set];
                             return (
-                              <span key={i} className={`text-[9px] px-1.5 py-0.5 rounded ${sd?.bg || 'bg-gray-700/30'} ${sd?.color || 'text-gray-300'} border ${sd?.border || 'border-gray-600/30'}`}>
+                              <span key={i} className={`text-small-responsive px-1.5 py-0.5 rounded ${sd?.bg || 'bg-gray-700/30'} ${sd?.color || 'text-gray-300'} border ${sd?.border || 'border-gray-600/30'}`}>
                                 {sd?.icon || '?'} {sd?.name || p.set} ({p.n}p)
                               </span>
                             );
@@ -9069,7 +9070,7 @@ export default function ShadowColosseum() {
                         {advice.optimalPlan.map((p, i) => {
                           const sd = ALL_ARTIFACT_SETS[p.set];
                           return (
-                            <div key={i} className="text-[8px] text-gray-400 mt-0.5">
+                            <div key={i} className="text-tiny-responsive text-gray-400 mt-0.5">
                               {sd?.icon} {p.n >= 8 && sd?.bonus8Desc ? sd.bonus8Desc : p.n >= 4 ? sd?.bonus4Desc || sd?.bonus2Desc : sd?.bonus2Desc}
                               {p.n >= 4 && sd?.bonus2Desc && <span className="text-gray-500"> + {sd?.bonus2Desc}</span>}
                               {p.n >= 8 && sd?.bonus4Desc && <span className="text-gray-500"> + {sd?.bonus4Desc}</span>}
@@ -9082,9 +9083,9 @@ export default function ShadowColosseum() {
                     {/* Reroll Advice */}
                     {advice.rerollAdvice?.length > 0 && (
                       <div className="mb-2 p-2 rounded-lg bg-rose-500/10 border border-rose-500/20">
-                        <div className="text-[9px] text-rose-400 font-bold mb-1">{'\uD83D\uDD04'} Stats a reroll</div>
+                        <div className="text-small-responsive text-rose-400 font-bold mb-1">{'\uD83D\uDD04'} Stats a reroll</div>
                         {advice.rerollAdvice.map((ra, i) => (
-                          <div key={i} className="text-[8px] text-rose-300/80 mb-0.5">{'\u26A0'} {ra.msg}</div>
+                          <div key={i} className="text-tiny-responsive text-rose-300/80 mb-0.5">{'\u26A0'} {ra.msg}</div>
                         ))}
                       </div>
                     )}
@@ -9094,8 +9095,8 @@ export default function ShadowColosseum() {
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{advice.overallGrade === 'S' ? '\uD83D\uDC51' : advice.overallGrade === 'A' ? '\u2728' : advice.overallGrade === 'B' ? '\uD83D\uDCAA' : advice.overallGrade === 'C' ? '\uD83D\uDE2D' : '\uD83D\uDC80'}</span>
                         <div>
-                          <div className="text-[10px] text-gray-300 italic">"{advice.summary}"</div>
-                          <div className="text-[8px] text-gray-500 mt-0.5">— Beru, Expert en Artefacts</div>
+                          <div className="text-normal-responsive text-gray-300 italic">"{advice.summary}"</div>
+                          <div className="text-tiny-responsive text-gray-500 mt-0.5">— Beru, Expert en Artefacts</div>
                         </div>
                       </div>
                     </div>
@@ -9108,10 +9109,10 @@ export default function ShadowColosseum() {
                 <div className="mb-2 space-y-1">
                   {/* Slot filter */}
                   <div className="flex items-center gap-1 flex-wrap">
-                    <span className="text-[9px] text-gray-500 w-8">Slot</span>
+                    <span className="text-small-responsive text-gray-500 w-8">Slot</span>
                     {SLOT_ORDER.map(sId => (
                       <button key={sId} onClick={() => setEqInvFilter(prev => ({ ...prev, slot: prev.slot === sId ? null : sId }))}
-                        className={`px-1.5 py-0.5 rounded text-[10px] transition-all ${
+                        className={`px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
                           eqInvFilter.slot === sId ? 'text-purple-300 bg-purple-500/15 ring-1 ring-purple-400/50' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
                         }`}>{ARTIFACT_SLOTS[sId]?.icon}</button>
                     ))}
@@ -9122,22 +9123,22 @@ export default function ShadowColosseum() {
                     if (setsInInv.size === 0) return null;
                     return (
                       <div className="flex items-center gap-1 flex-wrap">
-                        <span className="text-[9px] text-gray-500 w-8">Set</span>
+                        <span className="text-small-responsive text-gray-500 w-8">Set</span>
                         {[...setsInInv].map(setId => {
                           const s = ALL_ARTIFACT_SETS[setId];
                           if (!s) return null;
                           return (
                             <div key={setId} className="relative group/set">
                               <button onClick={() => setEqInvFilter(prev => ({ ...prev, set: prev.set === setId ? null : setId }))}
-                                className={`px-1.5 py-0.5 rounded text-[10px] transition-all ${
+                                className={`px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
                                   eqInvFilter.set === setId ? `${s.color} ${s.bg} ring-1 ring-current` : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
                                 }`}>{s.icon}</button>
                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/set:block z-50 pointer-events-none">
                                 <div className="bg-gray-900/95 backdrop-blur-sm border border-gray-600/40 rounded-lg px-2.5 py-1.5 shadow-xl w-max max-w-[200px]">
-                                  <div className={`text-[10px] font-bold ${s.color} mb-1`}>{s.icon} {s.name}</div>
-                                  <div className="text-[9px] text-green-400">2p : {s.bonus2Desc}</div>
-                                  <div className="text-[9px] text-blue-400">4p : {s.bonus4Desc}</div>
-                                  {s.bonus8Desc && <div className="text-[9px] text-orange-400">8p : {s.bonus8Desc}</div>}
+                                  <div className={`text-normal-responsive font-bold ${s.color} mb-1`}>{s.icon} {s.name}</div>
+                                  <div className="text-small-responsive text-green-400">2p : {s.bonus2Desc}</div>
+                                  <div className="text-small-responsive text-blue-400">4p : {s.bonus4Desc}</div>
+                                  {s.bonus8Desc && <div className="text-small-responsive text-orange-400">8p : {s.bonus8Desc}</div>}
                                 </div>
                               </div>
                             </div>
@@ -9148,7 +9149,7 @@ export default function ShadowColosseum() {
                   })()}
                   {(eqInvFilter.slot || eqInvFilter.set) && (
                     <button onClick={() => setEqInvFilter({ slot: null, set: null })}
-                      className="text-[10px] text-red-400 hover:text-red-300">Reset filtres</button>
+                      className="text-normal-responsive text-red-400 hover:text-red-300">Reset filtres</button>
                   )}
                 </div>
               )}
@@ -9163,7 +9164,7 @@ export default function ShadowColosseum() {
                 const invHClass = HUNTERS[id]?.class || 'fighter';
                 const invHElement = c.element || 'fire';
                 return filteredInv.length === 0 ? (
-                  <div className="text-center text-[10px] text-gray-600 py-4">
+                  <div className="text-center text-normal-responsive text-gray-600 py-4">
                     {data.artifactInventory.length === 0 ? "Aucun artefact. Forge-en dans la Boutique !" : "Aucun artefact ne correspond aux filtres."}
                   </div>
                 ) : (
@@ -9179,20 +9180,20 @@ export default function ShadowColosseum() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
                               <span className="text-sm">{slotDef?.icon || '?'}</span>
-                              <span className={`text-[10px] font-bold truncate ${setDef?.color || 'text-gray-300'}`}>{setDef?.name?.split(' ')[0] || '?'}</span>
+                              <span className={`text-normal-responsive font-bold truncate ${setDef?.color || 'text-gray-300'}`}>{setDef?.name?.split(' ')[0] || '?'}</span>
                             </div>
-                            <span className={`text-[9px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
+                            <span className={`text-small-responsive font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
                           </div>
                           <div className="flex items-center gap-1 mt-1">
-                            <span className={`text-[9px] font-bold ${mainColor}`}>{mainDef?.icon} {mainDef?.name || '?'}</span>
-                            <span className={`text-[10px] font-black ml-auto ${mainColor}`}>+{art.mainValue}</span>
+                            <span className={`text-small-responsive font-bold ${mainColor}`}>{mainDef?.icon} {mainDef?.name || '?'}</span>
+                            <span className={`text-normal-responsive font-black ml-auto ${mainColor}`}>+{art.mainValue}</span>
                           </div>
                           {art.subs.length > 0 && (
                             <div className="mt-1 pt-1 border-t border-gray-700/20 space-y-px">
                               {art.subs.map((sub, si) => {
                                 const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
                                 const subColor = getStatColor(sub.id, invHClass, invHElement);
-                                return <div key={si} className={`text-[9px] ${subColor}`}>{subDef?.name || sub.id} +{sub.value}</div>;
+                                return <div key={si} className={`text-small-responsive ${subColor}`}>{subDef?.name || sub.id} +{sub.value}</div>;
                               })}
                             </div>
                           )}
@@ -9217,7 +9218,7 @@ export default function ShadowColosseum() {
                     artifactInventory: prev.artifactInventory.filter(a => a.uid !== worst.uid),
                   }));
                 }}
-                className="w-full text-center text-[10px] text-gray-500 hover:text-yellow-400 transition-colors py-2"
+                className="w-full text-center text-normal-responsive text-gray-500 hover:text-yellow-400 transition-colors py-2"
               >
                 Vendre le pire artefact ({Math.floor(FORGE_COSTS[([...data.artifactInventory].sort((a, b) => a.level - b.level)[0])?.rarity] * SELL_RATIO || 0)} coins)
               </button>
@@ -9310,7 +9311,7 @@ export default function ShadowColosseum() {
 
             {/* Hammer Inventory */}
             <div className="mb-4 p-2.5 rounded-xl bg-gray-800/20 border border-gray-700/20">
-              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1.5">{'\uD83D\uDD28'} Tes Marteaux</div>
+              <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider mb-1.5">{'\uD83D\uDD28'} Tes Marteaux</div>
               <div className="flex justify-center gap-4">
                 {HAMMER_ORDER.map(hId => {
                   const h = HAMMERS[hId];
@@ -9318,7 +9319,7 @@ export default function ShadowColosseum() {
                   return (
                     <div key={hId} className="text-center">
                       <div className="text-xl">{h.icon}</div>
-                      <div className="text-[9px] text-gray-400">{h.name.split(' ').pop()}</div>
+                      <div className="text-small-responsive text-gray-400">{h.name.split(' ').pop()}</div>
                       <div className={`text-sm font-bold ${count > 0 ? 'text-amber-400' : 'text-gray-600'}`}>{count}</div>
                     </div>
                   );
@@ -9326,7 +9327,7 @@ export default function ShadowColosseum() {
                 {/* Red Hammer */}
                 <div className="text-center border-l border-gray-700/30 pl-4">
                   <div className="text-xl">{'\uD83D\uDD34'}</div>
-                  <div className="text-[9px] text-red-400 font-bold">Rouge</div>
+                  <div className="text-small-responsive text-red-400 font-bold">Rouge</div>
                   <div className={`text-sm font-bold ${(hammers.marteau_rouge || 0) > 0 ? 'text-red-400' : 'text-gray-600'}`}>{hammers.marteau_rouge || 0}</div>
                 </div>
               </div>
@@ -9334,7 +9335,7 @@ export default function ShadowColosseum() {
 
             {/* Buy Hammers */}
             <div className="mb-5">
-              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">{'\uD83D\uDEE0\uFE0F'} Acheter des Marteaux</div>
+              <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider mb-2">{'\uD83D\uDEE0\uFE0F'} Acheter des Marteaux</div>
               <div className="grid grid-cols-3 gap-2">
                 {HAMMER_ORDER.map(hId => {
                   const h = HAMMERS[hId];
@@ -9347,15 +9348,15 @@ export default function ShadowColosseum() {
                         onContextMenu={(e) => e.preventDefault()}
                         className="p-2 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/15 active:bg-amber-500/25 disabled:opacity-30 transition-all text-center select-none touch-none">
                         <div className="text-lg">{h.icon}</div>
-                        <div className="text-[9px] font-bold text-amber-300">{h.name.replace('Marteau ', '')}</div>
-                        <div className="text-[10px] text-gray-500">Lv0-{h.maxLevel}</div>
-                        <div className="text-[9px] text-amber-400 mt-0.5">{fmtNum(h.shopPrice)} coins</div>
+                        <div className="text-small-responsive font-bold text-amber-300">{h.name.replace('Marteau ', '')}</div>
+                        <div className="text-normal-responsive text-gray-500">Lv0-{h.maxLevel}</div>
+                        <div className="text-small-responsive text-amber-400 mt-0.5">{fmtNum(h.shopPrice)} coins</div>
                       </button>
                       <div className="flex gap-0.5">
                         {[10, 100, 1000].map(qty => (
                           <button key={qty} onClick={() => buyHammerBulk(hId, qty)}
                             disabled={coins < h.shopPrice}
-                            className="flex-1 py-0.5 rounded-lg text-[8px] font-bold border border-amber-500/15 bg-amber-500/5 hover:bg-amber-500/20 active:bg-amber-500/30 disabled:opacity-30 transition-all text-amber-400 select-none">
+                            className="flex-1 py-0.5 rounded-lg text-tiny-responsive font-bold border border-amber-500/15 bg-amber-500/5 hover:bg-amber-500/20 active:bg-amber-500/30 disabled:opacity-30 transition-all text-amber-400 select-none">
                             x{qty}
                           </button>
                         ))}
@@ -9368,14 +9369,14 @@ export default function ShadowColosseum() {
 
             {/* Forge Section */}
             <div className="mb-5">
-              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">{'\uD83D\uDD2E'} Forge d'Artefacts</div>
+              <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider mb-2">{'\uD83D\uDD2E'} Forge d'Artefacts</div>
               <div className="grid grid-cols-3 gap-2">
                 {[{ rarity: 'rare', color: 'blue', label: 'Rare' }, { rarity: 'legendaire', color: 'purple', label: 'Legendaire' }, { rarity: 'mythique', color: 'amber', label: 'Mythique' }].map(({ rarity, color, label }) => (
                   <button key={rarity} onClick={() => forgeArtifact(rarity)} disabled={coins < FORGE_COSTS[rarity]}
                     className={`p-2.5 rounded-xl border border-${color}-500/30 bg-${color}-500/5 hover:bg-${color}-500/15 disabled:opacity-30 transition-all text-center`}>
                     <div className="text-lg">{'\uD83D\uDD2E'}</div>
-                    <div className={`text-[10px] font-bold text-${color}-400`}>{label}</div>
-                    <div className="text-[9px] text-gray-400 mt-0.5">{FORGE_COSTS[rarity]} coins</div>
+                    <div className={`text-normal-responsive font-bold text-${color}-400`}>{label}</div>
+                    <div className="text-small-responsive text-gray-400 mt-0.5">{FORGE_COSTS[rarity]} coins</div>
                   </button>
                 ))}
               </div>
@@ -9383,24 +9384,24 @@ export default function ShadowColosseum() {
 
             {/* Armory Section */}
             <div className="mb-5">
-              <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">{'\u2694\uFE0F'} Armurerie</div>
+              <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider mb-2">{'\u2694\uFE0F'} Armurerie</div>
               {/* Weapon filters */}
               <div className="flex items-center gap-1.5 mb-2 flex-wrap">
                 <button onClick={() => setWeaponFilter(f => ({ ...f, element: null }))}
-                  className={`text-[9px] px-1.5 py-0.5 rounded ${!weaponFilter.element ? 'bg-purple-500/30 text-purple-300' : 'bg-gray-700/30 text-gray-500'}`}>Tous</button>
+                  className={`text-small-responsive px-1.5 py-0.5 rounded ${!weaponFilter.element ? 'bg-purple-500/30 text-purple-300' : 'bg-gray-700/30 text-gray-500'}`}>Tous</button>
                 {['fire', 'water', 'shadow', 'wind', 'earth', 'light', 'neutral'].map(el => {
                   const e = ELEMENTS[el];
                   return (
                     <button key={el} onClick={() => setWeaponFilter(f => ({ ...f, element: f.element === el ? null : el }))}
-                      className={`text-[9px] px-1.5 py-0.5 rounded ${weaponFilter.element === el ? 'bg-purple-500/30 text-purple-300' : 'bg-gray-700/30 text-gray-500'}`}>
+                      className={`text-small-responsive px-1.5 py-0.5 rounded ${weaponFilter.element === el ? 'bg-purple-500/30 text-purple-300' : 'bg-gray-700/30 text-gray-500'}`}>
                       {e?.icon || '-'} {e?.name || 'Neutre'}
                     </button>
                   );
                 })}
-                <span className="text-[9px] text-gray-600">|</span>
+                <span className="text-small-responsive text-gray-600">|</span>
                 {[['ilevel', 'iLvl'], ['atk', 'ATK'], ['name', 'Nom']].map(([k, label]) => (
                   <button key={k} onClick={() => setWeaponFilter(f => ({ ...f, sort: k }))}
-                    className={`text-[9px] px-1.5 py-0.5 rounded ${weaponFilter.sort === k ? 'bg-amber-500/30 text-amber-300' : 'bg-gray-700/30 text-gray-500'}`}>{label}</button>
+                    className={`text-small-responsive px-1.5 py-0.5 rounded ${weaponFilter.sort === k ? 'bg-amber-500/30 text-amber-300' : 'bg-gray-700/30 text-gray-500'}`}>{label}</button>
                 ))}
               </div>
               <div className="grid grid-cols-2 gap-1.5 max-h-72 overflow-y-auto">
@@ -9429,18 +9430,18 @@ export default function ShadowColosseum() {
                           <span className="text-sm">{w.icon}</span>
                         )}
                         <div className="flex-1 min-w-0">
-                          <div className="text-[10px] font-bold text-gray-200 truncate">{w.name}
+                          <div className="text-normal-responsive font-bold text-gray-200 truncate">{w.name}
                             {owned && <span className="text-yellow-400 ml-1">A{aw}</span>}
                             <span className="text-amber-400/60 ml-1">iLv{computeWeaponILevel(w.id, aw || 0)}</span>
                           </div>
-                          <div className="text-[10px] text-gray-500">
+                          <div className="text-normal-responsive text-gray-500">
                             ATK +{w.atk} | {MAIN_STAT_VALUES[w.bonusStat]?.name || w.bonusStat} +{w.bonusValue}
                             {w.element ? <span className={`ml-1 ${ELEMENTS[w.element]?.color || 'text-gray-400'}`}> {ELEMENTS[w.element]?.icon} {ELEMENTS[w.element]?.name}</span> : <span className="ml-1 text-gray-600">Neutre</span>}
                           </div>
                         </div>
                         <span onClick={(e) => { e.stopPropagation(); setWeaponDetailId(w.id); }} className="text-xs text-blue-400 cursor-pointer hover:text-blue-300" title="Voir details">{'i'}</span>
                       </div>
-                      <div className="mt-1 text-[9px] text-right">
+                      <div className="mt-1 text-small-responsive text-right">
                         {maxed ? <span className="text-yellow-400">MAX A{MAX_WEAPON_AWAKENING}</span> :
                          owned ? <span className="text-amber-400">Eveil A{aw+1} - {fmtNum(price)} coins</span> :
                          <span className="text-amber-400">{fmtNum(price)} coins</span>}
@@ -9478,8 +9479,8 @@ export default function ShadowColosseum() {
                 <div className="mb-5">
                   <div className="p-4 rounded-xl border border-red-500/30 bg-red-500/5">
                     <div className="flex items-center justify-between mb-3">
-                      <div className="text-[10px] text-red-400 font-bold uppercase tracking-wider">{'\uD83D\uDD34'} Forge Rouge</div>
-                      <div className="text-[10px] text-red-300 font-bold">{'\uD83D\uDD34'} {redHammers} marteaux</div>
+                      <div className="text-normal-responsive text-red-400 font-bold uppercase tracking-wider">{'\uD83D\uDD34'} Forge Rouge</div>
+                      <div className="text-normal-responsive text-red-300 font-bold">{'\uD83D\uDD34'} {redHammers} marteaux</div>
                     </div>
 
                     {/* Boost Loot x2 */}
@@ -9488,15 +9489,15 @@ export default function ShadowColosseum() {
                         <div className="text-3xl">{'\u2728'}</div>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-black text-red-300">Boost Loot x2</div>
-                          <div className="text-[10px] text-gray-400 mt-0.5">Double les chances de drop des armes secretes pendant 1h</div>
-                          <div className="text-[9px] text-gray-500 mt-0.5">Sulfuras, Rae'shalare, Katana Z, Katana V</div>
-                          <div className="text-[8px] text-gray-600 mt-0.5 italic">Le timer ne s'ecoule que pendant les combats de boss eligibles</div>
+                          <div className="text-normal-responsive text-gray-400 mt-0.5">Double les chances de drop des armes secretes pendant 1h</div>
+                          <div className="text-small-responsive text-gray-500 mt-0.5">Sulfuras, Rae'shalare, Katana Z, Katana V</div>
+                          <div className="text-tiny-responsive text-gray-600 mt-0.5 italic">Le timer ne s'ecoule que pendant les combats de boss eligibles</div>
                         </div>
                       </div>
 
                       {boostMs > 0 && (
                         <div className="mt-2 px-2 py-1 rounded-lg bg-green-500/10 border border-green-500/30 text-center">
-                          <div className="text-[10px] text-green-400 font-bold">Actif — {fmtBoostTime(boostMs)} restant</div>
+                          <div className="text-normal-responsive text-green-400 font-bold">Actif — {fmtBoostTime(boostMs)} restant</div>
                         </div>
                       )}
 
@@ -9529,8 +9530,8 @@ export default function ShadowColosseum() {
                             <div className="text-3xl">{'\u2697\uFE0F'}</div>
                             <div className="flex-1 min-w-0">
                               <div className="text-sm font-black text-red-300">Alkahest</div>
-                              <div className="text-[10px] text-gray-400 mt-0.5">Echange 100 marteaux rouges contre 1 Alkahest</div>
-                              <div className="text-[9px] text-gray-500 mt-0.5">Actuel : {data.alkahest || 0} alkahest</div>
+                              <div className="text-normal-responsive text-gray-400 mt-0.5">Echange 100 marteaux rouges contre 1 Alkahest</div>
+                              <div className="text-small-responsive text-gray-500 mt-0.5">Actuel : {data.alkahest || 0} alkahest</div>
                             </div>
                           </div>
                           <button onClick={buyAlk} disabled={!canBuyAlk}
@@ -9565,8 +9566,8 @@ export default function ShadowColosseum() {
                             <div className="text-3xl">{'\uD83C\uDF1F'}</div>
                             <div className="flex-1 min-w-0">
                               <div className="text-sm font-black text-red-300">Artefact Ultime</div>
-                              <div className="text-[10px] text-gray-400 mt-0.5">1 piece mythique aleatoire d'un set ultime</div>
-                              <div className="text-[9px] text-gray-500 mt-0.5">{ultSetNames.join(', ')}</div>
+                              <div className="text-normal-responsive text-gray-400 mt-0.5">1 piece mythique aleatoire d'un set ultime</div>
+                              <div className="text-small-responsive text-gray-500 mt-0.5">{ultSetNames.join(', ')}</div>
                             </div>
                           </div>
                           <button onClick={buyUlt} disabled={!canBuyUlt}
@@ -9653,8 +9654,8 @@ export default function ShadowColosseum() {
                 <div className="mb-5">
                   <div className="p-4 rounded-xl border border-orange-500/30 bg-orange-500/5">
                     <div className="flex items-center justify-between mb-3">
-                      <div className="text-[10px] text-orange-400 font-bold uppercase tracking-wider">⚒️ Forge Mystique</div>
-                      <div className="text-[9px] text-orange-300/60">10 fragments = 1 arme</div>
+                      <div className="text-normal-responsive text-orange-400 font-bold uppercase tracking-wider">⚒️ Forge Mystique</div>
+                      <div className="text-small-responsive text-orange-300/60">10 fragments = 1 arme</div>
                     </div>
 
                     <div className="grid grid-cols-1 gap-2">
@@ -9668,8 +9669,8 @@ export default function ShadowColosseum() {
                               <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <div className="text-xl">{item.icon}</div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-[11px] font-bold text-orange-300">{item.name}</div>
-                                  <div className={`text-[10px] font-bold ${count >= 10 ? 'text-green-400' : 'text-gray-500'}`}>
+                                  <div className="text-medium-responsive font-bold text-orange-300">{item.name}</div>
+                                  <div className={`text-normal-responsive font-bold ${count >= 10 ? 'text-green-400' : 'text-gray-500'}`}>
                                     Fragments: {count}/10
                                   </div>
                                 </div>
@@ -9677,7 +9678,7 @@ export default function ShadowColosseum() {
                               <button
                                 onClick={() => forgeWeapon(item.fragmentId, item.weaponId)}
                                 disabled={!canForge}
-                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${canForge
+                                className={`px-3 py-1.5 rounded-lg text-normal-responsive font-bold transition-all ${canForge
                                   ? 'bg-orange-500/30 border border-orange-500/50 text-orange-200 hover:bg-orange-500/40'
                                   : 'bg-gray-800/40 border border-gray-700/20 text-gray-600 cursor-not-allowed'}`}
                               >
@@ -9696,7 +9697,7 @@ export default function ShadowColosseum() {
             {/* Artifacts link */}
             <div className="mb-4 text-center">
               <button onClick={() => { setView('artifacts'); setArtSelected(null); setArtFilter({ set: null, rarity: null, slot: null }); }}
-                className="text-[10px] text-purple-400 hover:text-purple-300 underline">
+                className="text-normal-responsive text-purple-400 hover:text-purple-300 underline">
                 {'\uD83D\uDC8E'} Gerer et ameliorer tes artefacts
               </button>
             </div>
@@ -9739,11 +9740,11 @@ export default function ShadowColosseum() {
                     <span className="text-sm">{statusIcon[m.status]}</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-bold text-white truncate">{m.displayName}</div>
-                      <div className="text-[10px] text-gray-500">{statusLabel[m.status]}</div>
+                      <div className="text-normal-responsive text-gray-500">{statusLabel[m.status]}</div>
                     </div>
                     <div className="text-right">
                       <div className="text-xs font-bold text-amber-400">{m.points}</div>
-                      <div className="text-[9px] text-gray-600">pts contribution</div>
+                      <div className="text-small-responsive text-gray-600">pts contribution</div>
                     </div>
                   </div>
                 ))}
@@ -9944,9 +9945,9 @@ export default function ShadowColosseum() {
               <div>
                 <div className={`text-sm font-bold ${ALL_ARTIFACT_SETS[selArt.set]?.color || 'text-gray-300'}`}>{ALL_ARTIFACT_SETS[selArt.set]?.name || '?'}</div>
                 <div className="flex items-center gap-2">
-                  <span className={`text-[10px] ${RARITY[selArt.rarity]?.color}`}>{RARITY[selArt.rarity]?.stars} {selArt.rarity}</span>
-                  <span className="text-[10px] text-gray-400">Lv {selArt.level}/{MAX_ARTIFACT_LEVEL}</span>
-                  <span className="text-[10px] text-amber-400 font-bold">iLv {computeArtifactILevel(selArt)}</span>
+                  <span className={`text-normal-responsive ${RARITY[selArt.rarity]?.color}`}>{RARITY[selArt.rarity]?.stars} {selArt.rarity}</span>
+                  <span className="text-normal-responsive text-gray-400">Lv {selArt.level}/{MAX_ARTIFACT_LEVEL}</span>
+                  <span className="text-normal-responsive text-amber-400 font-bold">iLv {computeArtifactILevel(selArt)}</span>
                 </div>
               </div>
             </div>
@@ -9974,7 +9975,7 @@ export default function ShadowColosseum() {
                           setData(prev => ({ ...prev, artifactInventory: prev.artifactInventory.map((a, idx) => idx === artSelected ? updateArt(a) : a) }));
                         }
                       }}
-                      className={`text-[10px] px-0.5 rounded transition-colors ${invStatLocks.main ? 'text-yellow-400' : !invStatLocks.main && invLockCount >= 4 ? 'text-gray-700 cursor-not-allowed' : 'text-gray-600 hover:text-gray-400'}`}
+                      className={`text-normal-responsive px-0.5 rounded transition-colors ${invStatLocks.main ? 'text-yellow-400' : !invStatLocks.main && invLockCount >= 4 ? 'text-gray-700 cursor-not-allowed' : 'text-gray-600 hover:text-gray-400'}`}
                       title={invStatLocks.main ? 'Stat verrouillee (protegee du reroll)' : invLockCount >= 4 ? 'Max 4 locks' : 'Verrouiller cette stat'}
                     >
                       {invStatLocks.main ? '\uD83D\uDD12' : '\uD83D\uDD13'}
@@ -10002,7 +10003,7 @@ export default function ShadowColosseum() {
                         if (bonus > previousBonus) beruSay(`Enchant UP ! +${bonus.toFixed(1)} (avant: ${previousBonus > 0 ? '+' + previousBonus.toFixed(1) : '0'})`, 'excited');
                         else beruSay(`Enchant DOWN... +${bonus.toFixed(1)} (avant: +${previousBonus.toFixed(1)})`, 'shocked');
                       }}
-                      className={`text-[8px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${canEnchantMain ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
+                      className={`text-tiny-responsive px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${canEnchantMain ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
                       {mainEnchant > 0 ? '\u2697\uFE0F Re-ench' : '\u2697\uFE0F Ench'} {ENCHANT_ALKAHEST_COST}
                     </button>
                   </div>
@@ -10014,7 +10015,7 @@ export default function ShadowColosseum() {
                 const canEnchantSub = (data.alkahest || 0) >= ENCHANT_ALKAHEST_COST;
                 const subLocked = invStatLocks.subs?.[sub.id] || false;
                 return (
-                  <div key={i} className="flex items-center gap-1 text-[10px]">
+                  <div key={i} className="flex items-center gap-1 text-normal-responsive">
                     <button
                       onClick={() => {
                         if (!subLocked && invLockCount >= 4) { beruSay('Max 4 stats verrouillees ! Deverrouille une autre stat.', 'angry'); return; }
@@ -10030,7 +10031,7 @@ export default function ShadowColosseum() {
                           setData(prev => ({ ...prev, artifactInventory: prev.artifactInventory.map((a, idx) => idx === artSelected ? updateArt(a) : a) }));
                         }
                       }}
-                      className={`text-[10px] px-0.5 rounded transition-colors ${subLocked ? 'text-yellow-400' : !subLocked && invLockCount >= 4 ? 'text-gray-700 cursor-not-allowed' : 'text-gray-600 hover:text-gray-400'}`}
+                      className={`text-normal-responsive px-0.5 rounded transition-colors ${subLocked ? 'text-yellow-400' : !subLocked && invLockCount >= 4 ? 'text-gray-700 cursor-not-allowed' : 'text-gray-600 hover:text-gray-400'}`}
                       title={subLocked ? 'Stat verrouillee (protegee du reroll)' : invLockCount >= 4 ? 'Max 4 locks' : 'Verrouiller cette stat'}
                     >
                       {subLocked ? '\uD83D\uDD12' : '\uD83D\uDD13'}
@@ -10058,13 +10059,13 @@ export default function ShadowColosseum() {
                         if (bonus > previousBonus) beruSay(`Enchant UP ! +${bonus.toFixed(1)}`, 'excited');
                         else beruSay(`Enchant DOWN... +${bonus.toFixed(1)} (avant: +${previousBonus.toFixed(1)})`, 'shocked');
                       }}
-                      className={`text-[8px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${canEnchantSub ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
+                      className={`text-tiny-responsive px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${canEnchantSub ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
                       {subEnchant > 0 ? '\u2697\uFE0F Re' : '\u2697\uFE0F'} {ENCHANT_ALKAHEST_COST}
                     </button>
                   </div>
                 );
               })}
-              {isMilestone && <div className="text-[9px] text-amber-400 mt-1 font-bold">{'\u2B50'} Palier Lv{selArt.level + 1} — Boost sub-stat !</div>}
+              {isMilestone && <div className="text-small-responsive text-amber-400 mt-1 font-bold">{'\u2B50'} Palier Lv{selArt.level + 1} — Boost sub-stat !</div>}
             </div>
 
             {/* Actions */}
@@ -10093,7 +10094,7 @@ export default function ShadowColosseum() {
                     }));
                   }
                 }}
-                className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-colors ${
+                className={`py-1.5 px-2 rounded-lg text-normal-responsive font-bold transition-colors ${
                   selArt.locked
                     ? 'bg-yellow-600/30 text-yellow-300 hover:bg-yellow-600/50'
                     : 'bg-gray-600/30 text-gray-400 hover:bg-gray-600/50'
@@ -10104,13 +10105,13 @@ export default function ShadowColosseum() {
 
               {!isEquipped && (
                 <button onClick={() => setArtEquipPicker(prev => !prev)}
-                  className="flex-1 py-1.5 rounded-lg bg-indigo-600/30 text-indigo-300 text-[10px] font-bold hover:bg-indigo-600/50 transition-colors">
+                  className="flex-1 py-1.5 rounded-lg bg-indigo-600/30 text-indigo-300 text-normal-responsive font-bold hover:bg-indigo-600/50 transition-colors">
                   {'\u2694\uFE0F'} Equiper
                 </button>
               )}
               {isEquipped && (
                 <button onClick={doUnequip}
-                  className="flex-1 py-1.5 rounded-lg bg-orange-600/30 text-orange-300 text-[10px] font-bold hover:bg-orange-600/50 transition-colors">
+                  className="flex-1 py-1.5 rounded-lg bg-orange-600/30 text-orange-300 text-normal-responsive font-bold hover:bg-orange-600/50 transition-colors">
                   Desequiper
                 </button>
               )}
@@ -10126,12 +10127,12 @@ export default function ShadowColosseum() {
                 onPointerLeave={() => { if (enhanceHoldRef.current) { clearTimeout(enhanceHoldRef.current); enhanceHoldRef.current = null; } }}
                 onContextMenu={e => e.preventDefault()}
                 disabled={!canEnhance}
-                className="flex-1 py-1.5 rounded-lg bg-cyan-600/30 text-cyan-300 text-[10px] font-bold hover:bg-cyan-600/50 disabled:opacity-30 transition-colors select-none">
+                className="flex-1 py-1.5 rounded-lg bg-cyan-600/30 text-cyan-300 text-normal-responsive font-bold hover:bg-cyan-600/50 disabled:opacity-30 transition-colors select-none">
                 {'\uD83D\uDD28'} +1 ({bestHammer ? HAMMERS[bestHammer].icon : '?'} {fmtNum(coinCost)}c)
               </button>
               {!isEquipped && (
                 <button onClick={doSell} disabled={selArt.locked}
-                  className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-colors ${
+                  className={`py-1.5 px-2 rounded-lg text-normal-responsive font-bold transition-colors ${
                     selArt.locked
                       ? 'bg-gray-800/40 text-gray-600 cursor-not-allowed'
                       : 'bg-red-600/20 text-red-400 hover:bg-red-600/40'
@@ -10143,7 +10144,7 @@ export default function ShadowColosseum() {
             {/* Reroll button (Alkahest) */}
             <div className="mt-1.5 relative group/reroll">
               <button onClick={doReroll}
-                className={`w-full py-1.5 rounded-lg text-[10px] font-bold transition-colors cursor-pointer ${
+                className={`w-full py-1.5 rounded-lg text-normal-responsive font-bold transition-colors cursor-pointer ${
                   selArt.locked ? 'bg-gray-700/20 text-gray-600' :
                   canReroll ? 'bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600/40' :
                   'bg-emerald-600/15 text-emerald-300/50'
@@ -10153,20 +10154,20 @@ export default function ShadowColosseum() {
                 {rerollCount > 0 && <span className="ml-1 text-amber-400">x{rerollCount + 1}</span>}
               </button>
               {/* Tooltip on hover */}
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2.5 py-1.5 rounded-lg bg-gray-900/95 border border-gray-600/40 text-[9px] text-gray-300 opacity-0 group-hover/reroll:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2.5 py-1.5 rounded-lg bg-gray-900/95 border border-gray-600/40 text-small-responsive text-gray-300 opacity-0 group-hover/reroll:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                 Reroll les stats NON verrouillees (remet au Lv 0, irreversible)
                 <br/><span className="text-emerald-400">Cout: {invLockAlkCost} Alkahest + {fmtNum(rerollCoinCost)} coins</span>
                 {invLockCount > 0 && <><br/><span className="text-yellow-400">{invLockCount} stat{invLockCount > 1 ? 's' : ''} protegee{invLockCount > 1 ? 's' : ''}</span></>}
                 {selArt.locked && <><br/><span className="text-yellow-400">Deverrouille l'artefact d'abord</span></>}
               </div>
               {(data.alkahest || 0) < invLockAlkCost && !selArt.locked && (
-                <div className="text-[8px] text-gray-500 mt-0.5 text-center">Pas assez d'Alkahest — Affronte Manaya pour en obtenir</div>
+                <div className="text-tiny-responsive text-gray-500 mt-0.5 text-center">Pas assez d'Alkahest — Affronte Manaya pour en obtenir</div>
               )}
             </div>
 
             {/* Enhancement details */}
             {selArt.level < MAX_ARTIFACT_LEVEL && (
-              <div className="mt-2 flex items-center gap-2 p-1.5 rounded-lg bg-gray-800/30 border border-gray-700/20 text-[9px] text-gray-400">
+              <div className="mt-2 flex items-center gap-2 p-1.5 rounded-lg bg-gray-800/30 border border-gray-700/20 text-small-responsive text-gray-400">
                 <span>Requis :</span>
                 {bestHammer ? (
                   <span className="text-amber-300">{HAMMERS[bestHammer].icon} {HAMMERS[bestHammer].name} (x1)</span>
@@ -10181,7 +10182,7 @@ export default function ShadowColosseum() {
             {artEquipPicker && !isEquipped && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
                 className="mt-2 p-2 rounded-lg border border-indigo-500/30 bg-indigo-500/5">
-                <div className="text-[10px] text-indigo-300 font-bold mb-1.5">Equiper sur :</div>
+                <div className="text-normal-responsive text-indigo-300 font-bold mb-1.5">Equiper sur :</div>
                 <div className="grid grid-cols-4 gap-1.5">
                   {[...ownedIds, ...ownedHunterIds].map(id => {
                     const c = getChibiData(id);
@@ -10191,9 +10192,9 @@ export default function ShadowColosseum() {
                       <button key={id} onClick={() => doEquip(id)}
                         className="p-1 rounded-lg border border-gray-700/30 bg-gray-800/20 hover:border-indigo-400/50 transition-all text-center">
                         <img loading="lazy" src={getChibiSprite(id)} alt="" className="w-8 h-8 mx-auto object-contain" />
-                        <div className="text-[9px] text-gray-300 truncate">{c.name.split(' ')[0]}</div>
+                        <div className="text-small-responsive text-gray-300 truncate">{c.name.split(' ')[0]}</div>
                         {currentSlotArt && (
-                          <div className="text-[8px] text-yellow-400">{ARTIFACT_SLOTS[selArt.slot]?.icon} Lv{currentSlotArt.level}</div>
+                          <div className="text-tiny-responsive text-yellow-400">{ARTIFACT_SLOTS[selArt.slot]?.icon} Lv{currentSlotArt.level}</div>
                         )}
                       </button>
                     );
@@ -10220,20 +10221,20 @@ export default function ShadowColosseum() {
             <div className="mb-4 space-y-2">
               {/* Rarity filter */}
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[9px] text-gray-500 w-10">Rarete</span>
+                <span className="text-small-responsive text-gray-500 w-10">Rarete</span>
                 {['rare', 'legendaire', 'mythique'].map(r => (
                   <button key={r} onClick={() => setArtFilter(prev => ({ ...prev, rarity: prev.rarity === r ? null : r }))}
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all ${
+                    className={`px-2 py-0.5 rounded-full text-normal-responsive font-bold transition-all ${
                       artFilter.rarity === r ? `${RARITY[r]?.color || 'text-white'} bg-white/10 ring-1 ring-current` : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
                     }`}>{r.charAt(0).toUpperCase() + r.slice(1)}</button>
                 ))}
               </div>
               {/* Slot filter */}
               <div className="flex items-center gap-1 flex-wrap">
-                <span className="text-[9px] text-gray-500 w-10">Slot</span>
+                <span className="text-small-responsive text-gray-500 w-10">Slot</span>
                 {SLOT_ORDER.map(sId => (
                   <button key={sId} onClick={() => setArtFilter(prev => ({ ...prev, slot: prev.slot === sId ? null : sId }))}
-                    className={`px-1.5 py-0.5 rounded text-[10px] transition-all ${
+                    className={`px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
                       artFilter.slot === sId ? 'text-purple-300 bg-purple-500/15 ring-1 ring-purple-400/50' : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
                     }`}>{ARTIFACT_SLOTS[sId]?.icon}</button>
                 ))}
@@ -10241,13 +10242,13 @@ export default function ShadowColosseum() {
               {/* Set filter */}
               {allSetsInUse.size > 0 && (
                 <div className="flex items-center gap-1 flex-wrap">
-                  <span className="text-[9px] text-gray-500 w-10">Set</span>
+                  <span className="text-small-responsive text-gray-500 w-10">Set</span>
                   {[...allSetsInUse].map(setId => {
                     const s = ALL_ARTIFACT_SETS[setId];
                     if (!s) return null;
                     return (
                       <button key={setId} onClick={() => setArtFilter(prev => ({ ...prev, set: prev.set === setId ? null : setId }))}
-                        className={`px-1.5 py-0.5 rounded text-[10px] transition-all ${
+                        className={`px-1.5 py-0.5 rounded text-normal-responsive transition-all ${
                           artFilter.set === setId ? `${s.color} ${s.bg} ring-1 ring-current` : 'text-gray-500 bg-gray-800/30 hover:bg-gray-700/30'
                         }`}>{s.icon} {s.name.split(' ')[0]}</button>
                     );
@@ -10256,7 +10257,7 @@ export default function ShadowColosseum() {
               )}
               {(artFilter.set || artFilter.rarity || artFilter.slot) && (
                 <button onClick={() => setArtFilter({ set: null, rarity: null, slot: null })}
-                  className="text-[10px] text-red-400 hover:text-red-300">Reset filtres</button>
+                  className="text-normal-responsive text-red-400 hover:text-red-300">Reset filtres</button>
               )}
             </div>
 
@@ -10269,7 +10270,7 @@ export default function ShadowColosseum() {
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{'\u26A1'}</span>
                   <span className="text-sm font-bold text-yellow-300">Nettoyage d'Inventaire</span>
-                  <span className="text-[10px] text-gray-500">({inv.length} artefacts)</span>
+                  <span className="text-normal-responsive text-gray-500">({inv.length} artefacts)</span>
                 </div>
                 <span className={`text-gray-400 transition-transform ${cleanupExpanded ? 'rotate-180' : ''}`}>{'\u25BC'}</span>
               </button>
@@ -10283,7 +10284,7 @@ export default function ShadowColosseum() {
                   {/* Keep per set slider */}
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] text-gray-400">Garder par set</span>
+                      <span className="text-normal-responsive text-gray-400">Garder par set</span>
                       <span className="text-sm font-bold text-yellow-300">{cleanupConfig.keepPerSet}</span>
                     </div>
                     <input
@@ -10295,7 +10296,7 @@ export default function ShadowColosseum() {
                       onChange={e => setCleanupConfig(prev => ({ ...prev, keepPerSet: parseInt(e.target.value) }))}
                       className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-500"
                     />
-                    <div className="flex justify-between text-[9px] text-gray-600 mt-0.5">
+                    <div className="flex justify-between text-small-responsive text-gray-600 mt-0.5">
                       <span>Minimal (5)</span>
                       <span>Balanced (10)</span>
                       <span>Hoarder (20)</span>
@@ -10304,7 +10305,7 @@ export default function ShadowColosseum() {
 
                   {/* Protected sets */}
                   <div>
-                    <div className="text-[10px] text-gray-400 mb-1">Sets protégés (ne seront pas supprimés)</div>
+                    <div className="text-normal-responsive text-gray-400 mb-1">Sets protégés (ne seront pas supprimés)</div>
                     <div className="flex flex-wrap gap-1">
                       {Object.values(ALL_ARTIFACT_SETS).map(set => {
                         const isProtected = cleanupConfig.protectedSets.has(set.id);
@@ -10319,7 +10320,7 @@ export default function ShadowColosseum() {
                                 return { ...prev, protectedSets: newProtected };
                               });
                             }}
-                            className={`px-2 py-1 rounded text-[9px] font-bold transition-all ${
+                            className={`px-2 py-1 rounded text-small-responsive font-bold transition-all ${
                               isProtected
                                 ? `${set.color} ${set.bg} ring-1 ring-current`
                                 : 'text-gray-600 bg-gray-800/30 hover:bg-gray-700/30'
@@ -10334,7 +10335,7 @@ export default function ShadowColosseum() {
 
                   {/* Override options */}
                   <div className="space-y-1">
-                    <label className="flex items-center gap-2 text-[10px] text-gray-400 cursor-pointer">
+                    <label className="flex items-center gap-2 text-normal-responsive text-gray-400 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={cleanupConfig.includeHighLevel}
@@ -10343,7 +10344,7 @@ export default function ShadowColosseum() {
                       />
                       <span>Inclure artefacts Lv15+ ({'\u26A0\uFE0F'} risqué)</span>
                     </label>
-                    <label className="flex items-center gap-2 text-[10px] text-gray-400 cursor-pointer">
+                    <label className="flex items-center gap-2 text-normal-responsive text-gray-400 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={cleanupConfig.includeMythic10}
@@ -10357,7 +10358,7 @@ export default function ShadowColosseum() {
                   {/* Preview button */}
                   <button
                     onClick={() => setCleanupPreview(computeCleanupPreview(cleanupConfig))}
-                    className="w-full py-2 rounded-lg bg-blue-600/30 text-blue-300 text-[11px] font-bold hover:bg-blue-600/50 transition-colors"
+                    className="w-full py-2 rounded-lg bg-blue-600/30 text-blue-300 text-medium-responsive font-bold hover:bg-blue-600/50 transition-colors"
                   >
                     {'\uD83D\uDD0D'} Prévisualiser le nettoyage
                   </button>
@@ -10369,14 +10370,14 @@ export default function ShadowColosseum() {
                       animate={{ y: 0, opacity: 1 }}
                       className="p-3 rounded-lg border border-purple-500/30 bg-purple-500/10"
                     >
-                      <div className="text-[11px] font-bold text-purple-300 mb-2">{'\uD83D\uDCCA'} Aperçu du nettoyage</div>
+                      <div className="text-medium-responsive font-bold text-purple-300 mb-2">{'\uD83D\uDCCA'} Aperçu du nettoyage</div>
 
                       {cleanupPreview.totalDelete === 0 ? (
-                        <div className="text-[10px] text-gray-400">Aucun artefact à supprimer avec ces paramètres.</div>
+                        <div className="text-normal-responsive text-gray-400">Aucun artefact à supprimer avec ces paramètres.</div>
                       ) : (
                         <>
                           {/* Summary */}
-                          <div className="grid grid-cols-2 gap-2 mb-2 text-[10px]">
+                          <div className="grid grid-cols-2 gap-2 mb-2 text-normal-responsive">
                             <div className="p-2 rounded bg-red-500/10 border border-red-500/20">
                               <div className="text-red-400 font-bold">À supprimer</div>
                               <div className="text-xl font-black text-red-300">{cleanupPreview.totalDelete}</div>
@@ -10389,8 +10390,8 @@ export default function ShadowColosseum() {
 
                           {/* Breakdown by rarity */}
                           <div className="mb-2 p-2 rounded bg-gray-800/30 border border-gray-700/20">
-                            <div className="text-[9px] text-gray-400 mb-1">Par rareté:</div>
-                            <div className="flex gap-2 text-[10px]">
+                            <div className="text-small-responsive text-gray-400 mb-1">Par rareté:</div>
+                            <div className="flex gap-2 text-normal-responsive">
                               {cleanupPreview.rarityBreakdown.rare > 0 && (
                                 <span className="text-blue-400">{cleanupPreview.rarityBreakdown.rare} Rare</span>
                               )}
@@ -10405,18 +10406,18 @@ export default function ShadowColosseum() {
 
                           {/* Expected coins */}
                           <div className="mb-2 p-2 rounded bg-yellow-500/10 border border-yellow-500/20 text-center">
-                            <div className="text-[9px] text-yellow-400/70">Revenus attendus</div>
+                            <div className="text-small-responsive text-yellow-400/70">Revenus attendus</div>
                             <div className="text-lg font-black text-yellow-300">{'\uD83E\uDE99'} {cleanupPreview.totalCoins} coins</div>
                           </div>
 
                           {/* Execute button */}
                           <button
                             onClick={executeCleanup}
-                            className="w-full py-2 rounded-lg bg-red-600/30 text-red-300 text-[11px] font-bold hover:bg-red-600/50 transition-colors border border-red-500/30"
+                            className="w-full py-2 rounded-lg bg-red-600/30 text-red-300 text-medium-responsive font-bold hover:bg-red-600/50 transition-colors border border-red-500/30"
                           >
                             {'\uD83D\uDDD1\uFE0F'} NETTOYER L'INVENTAIRE ({cleanupPreview.totalDelete} artefacts)
                           </button>
-                          <div className="text-[8px] text-gray-500 text-center mt-1">
+                          <div className="text-tiny-responsive text-gray-500 text-center mt-1">
                             {'\u26A0\uFE0F'} Cette action est irréversible!
                           </div>
                         </>
@@ -10436,7 +10437,7 @@ export default function ShadowColosseum() {
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{'\uD83D\uDD0D'}</span>
                   <span className="text-sm font-bold text-cyan-300">Beru Scout</span>
-                  <span className="text-[10px] text-gray-500">(Detection d'artefacts rares)</span>
+                  <span className="text-normal-responsive text-gray-500">(Detection d'artefacts rares)</span>
                 </div>
                 <span className={`text-gray-400 transition-transform ${scoutExpanded ? 'rotate-180' : ''}`}>{'\u25BC'}</span>
               </button>
@@ -10450,10 +10451,10 @@ export default function ShadowColosseum() {
                   {/* A. Target Sets */}
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] text-gray-400">Sets cibles</span>
+                      <span className="text-normal-responsive text-gray-400">Sets cibles</span>
                       <div className="flex gap-1">
-                        <button onClick={() => setScoutConfig(prev => ({ ...prev, targetSets: new Set(Object.keys(ALL_ARTIFACT_SETS)) }))} className="text-[8px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30">Tout</button>
-                        <button onClick={() => setScoutConfig(prev => ({ ...prev, targetSets: new Set() }))} className="text-[8px] px-1.5 py-0.5 rounded bg-gray-700/40 text-gray-400 hover:bg-gray-700/60">Aucun</button>
+                        <button onClick={() => setScoutConfig(prev => ({ ...prev, targetSets: new Set(Object.keys(ALL_ARTIFACT_SETS)) }))} className="text-tiny-responsive px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30">Tout</button>
+                        <button onClick={() => setScoutConfig(prev => ({ ...prev, targetSets: new Set() }))} className="text-tiny-responsive px-1.5 py-0.5 rounded bg-gray-700/40 text-gray-400 hover:bg-gray-700/60">Aucun</button>
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1">
@@ -10464,7 +10465,7 @@ export default function ShadowColosseum() {
                             ns.has(id) ? ns.delete(id) : ns.add(id);
                             return { ...prev, targetSets: ns };
                           })}
-                          className={`text-[9px] px-1.5 py-0.5 rounded-full border transition-all ${
+                          className={`text-small-responsive px-1.5 py-0.5 rounded-full border transition-all ${
                             scoutConfig.targetSets.has(id)
                               ? `${s.border || 'border-cyan-500/50'} ${s.bg || 'bg-cyan-500/20'} ${s.color || 'text-cyan-300'}`
                               : 'border-gray-700/30 bg-gray-800/20 text-gray-500'
@@ -10474,12 +10475,12 @@ export default function ShadowColosseum() {
                         </button>
                       ))}
                     </div>
-                    {scoutConfig.targetSets.size === 0 && <div className="text-[8px] text-gray-600 italic mt-0.5">Vide = tous les sets (mode IA)</div>}
+                    {scoutConfig.targetSets.size === 0 && <div className="text-tiny-responsive text-gray-600 italic mt-0.5">Vide = tous les sets (mode IA)</div>}
                   </div>
 
                   {/* B. Main Stats per Slot */}
                   <div>
-                    <div className="text-[10px] text-gray-400 mb-1">Main stat par slot <span className="text-gray-600">(optionnel)</span></div>
+                    <div className="text-normal-responsive text-gray-400 mb-1">Main stat par slot <span className="text-gray-600">(optionnel)</span></div>
                     <div className="grid grid-cols-4 gap-1">
                       {SLOT_ORDER.map(sId => {
                         const slotDef = ARTIFACT_SLOTS[sId];
@@ -10493,7 +10494,7 @@ export default function ShadowColosseum() {
                                 if (e.target.value) nm[sId] = e.target.value; else delete nm[sId];
                                 return { ...prev, targetMainStats: nm };
                               })}
-                              className="w-full text-[8px] bg-gray-800 border border-gray-700/30 rounded px-0.5 py-0.5 text-gray-300"
+                              className="w-full text-tiny-responsive bg-gray-800 border border-gray-700/30 rounded px-0.5 py-0.5 text-gray-300"
                             >
                               <option value="">Tous</option>
                               {slotDef?.mainStats?.map(ms => (
@@ -10508,7 +10509,7 @@ export default function ShadowColosseum() {
 
                   {/* C. Desired Sub-stats */}
                   <div>
-                    <div className="text-[10px] text-gray-400 mb-1">Sub-stats recherchees <span className="text-gray-600">(max 4, vide = IA)</span></div>
+                    <div className="text-normal-responsive text-gray-400 mb-1">Sub-stats recherchees <span className="text-gray-600">(max 4, vide = IA)</span></div>
                     <div className="flex flex-wrap gap-1">
                       {SUB_STAT_POOL.map(s => {
                         const active = scoutConfig.targetSubs.includes(s.id);
@@ -10520,7 +10521,7 @@ export default function ShadowColosseum() {
                               const ns = active ? prev.targetSubs.filter(x => x !== s.id) : [...prev.targetSubs, s.id];
                               return { ...prev, targetSubs: ns };
                             })}
-                            className={`text-[9px] px-2 py-0.5 rounded-full border transition-all ${
+                            className={`text-small-responsive px-2 py-0.5 rounded-full border transition-all ${
                               active ? 'border-amber-500/50 bg-amber-500/20 text-amber-300 font-bold' :
                               disabled ? 'border-gray-800/20 bg-gray-900/10 text-gray-700 cursor-not-allowed' :
                               'border-gray-700/30 bg-gray-800/20 text-gray-400 hover:border-gray-500/40'
@@ -10531,14 +10532,14 @@ export default function ShadowColosseum() {
                         );
                       })}
                     </div>
-                    {scoutConfig.targetSubs.length === 0 && <div className="text-[8px] text-gray-600 italic mt-0.5">Mode IA: CRIT%, CRIT DMG, ATK%, SPD</div>}
+                    {scoutConfig.targetSubs.length === 0 && <div className="text-tiny-responsive text-gray-600 italic mt-0.5">Mode IA: CRIT%, CRIT DMG, ATK%, SPD</div>}
                   </div>
 
                   {/* D. Filters */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-[9px] text-gray-400">Level max a scanner</span>
+                        <span className="text-small-responsive text-gray-400">Level max a scanner</span>
                         <span className="text-xs font-bold text-cyan-300">{scoutConfig.maxLevelFilter}</span>
                       </div>
                       <input type="range" min="0" max="10" step="1" value={scoutConfig.maxLevelFilter}
@@ -10547,7 +10548,7 @@ export default function ShadowColosseum() {
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-[9px] text-gray-400">Tolerance mauvais procs</span>
+                        <span className="text-small-responsive text-gray-400">Tolerance mauvais procs</span>
                         <span className="text-xs font-bold text-cyan-300">{scoutConfig.badProcTolerance}</span>
                       </div>
                       <input type="range" min="0" max="3" step="1" value={scoutConfig.badProcTolerance}
@@ -10556,7 +10557,7 @@ export default function ShadowColosseum() {
                     </div>
                   </div>
                   <div>
-                    <span className="text-[9px] text-gray-400 mr-2">Rarete</span>
+                    <span className="text-small-responsive text-gray-400 mr-2">Rarete</span>
                     {['rare', 'legendaire', 'mythique'].map(r => (
                       <button key={r}
                         onClick={() => setScoutConfig(prev => {
@@ -10564,7 +10565,7 @@ export default function ShadowColosseum() {
                           ns.has(r) ? ns.delete(r) : ns.add(r);
                           return { ...prev, rarityFilter: ns };
                         })}
-                        className={`text-[9px] px-2 py-0.5 rounded-full border mr-1 transition-all ${
+                        className={`text-small-responsive px-2 py-0.5 rounded-full border mr-1 transition-all ${
                           scoutConfig.rarityFilter.has(r) ? `${RARITY[r]?.color || 'text-cyan-300'} border-cyan-500/40 bg-cyan-500/10` : 'text-gray-600 border-gray-700/20'
                         }`}
                       >{r.charAt(0).toUpperCase() + r.slice(1)}</button>
@@ -10579,22 +10580,22 @@ export default function ShadowColosseum() {
                       <div className="p-2 rounded-lg bg-gray-800/30 border border-gray-700/20">
                         <div className="grid grid-cols-3 gap-2 text-center">
                           <div>
-                            <div className="text-[8px] text-gray-500">Candidats</div>
+                            <div className="text-tiny-responsive text-gray-500">Candidats</div>
                             <div className="text-sm font-bold text-cyan-300">{est.candidateCount}</div>
                           </div>
                           <div>
-                            <div className="text-[8px] text-gray-500">Cout estime</div>
+                            <div className="text-tiny-responsive text-gray-500">Cout estime</div>
                             <div className="text-sm font-bold text-yellow-300">{est.totalEnhanceCost}</div>
                           </div>
                           <div>
-                            <div className="text-[8px] text-gray-500">Materiaux*</div>
+                            <div className="text-tiny-responsive text-gray-500">Materiaux*</div>
                             <div className="text-sm font-bold text-amber-400">{est.autoBuyCost + est.beruCut}</div>
                           </div>
                         </div>
                         {est.autoBuyCost > 0 && (
-                          <div className="text-[8px] text-gray-600 text-center mt-1 italic">* Tarif special Beru. Prix du marche... plus ou moins.</div>
+                          <div className="text-tiny-responsive text-gray-600 text-center mt-1 italic">* Tarif special Beru. Prix du marche... plus ou moins.</div>
                         )}
-                        <div className="text-[9px] text-gray-400 text-center mt-1">
+                        <div className="text-small-responsive text-gray-400 text-center mt-1">
                           Total: <span className="font-bold text-white">{est.totalCost}</span> coins
                           {est.totalCost > shadowCoinManager.getBalance() && <span className="text-red-400 ml-1">(insuffisant !)</span>}
                         </div>
@@ -10628,15 +10629,15 @@ export default function ShadowColosseum() {
                       {/* Summary cards */}
                       <div className="grid grid-cols-3 gap-1.5">
                         <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
-                          <div className="text-[8px] text-green-400 font-bold">Gardes</div>
+                          <div className="text-tiny-responsive text-green-400 font-bold">Gardes</div>
                           <div className="text-lg font-black text-green-300">{scoutResults.kept.length}</div>
                         </div>
                         <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
-                          <div className="text-[8px] text-red-400 font-bold">Junk</div>
+                          <div className="text-tiny-responsive text-red-400 font-bold">Junk</div>
                           <div className="text-lg font-black text-red-300">{scoutResults.junked.length}</div>
                         </div>
                         <div className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-center">
-                          <div className="text-[8px] text-yellow-400 font-bold">Depense</div>
+                          <div className="text-tiny-responsive text-yellow-400 font-bold">Depense</div>
                           <div className="text-lg font-black text-yellow-300">{scoutResults.totalSpent}</div>
                         </div>
                       </div>
@@ -10644,17 +10645,17 @@ export default function ShadowColosseum() {
                       {/* Kept list */}
                       {scoutResults.kept.length > 0 && (
                         <div>
-                          <div className="text-[9px] text-green-400 font-bold mb-1">{'\u2B50'} Pepites trouvees :</div>
+                          <div className="text-small-responsive text-green-400 font-bold mb-1">{'\u2B50'} Pepites trouvees :</div>
                           <div className="space-y-0.5 max-h-28 overflow-y-auto">
                             {scoutResults.kept.map(r => {
                               const setDef = ALL_ARTIFACT_SETS[r.art.set];
                               return (
                                 <div key={r.art.uid} className="flex items-center gap-2 p-1 rounded bg-green-500/5 border border-green-500/10">
                                   <span className="text-xs">{ARTIFACT_SLOTS[r.art.slot]?.icon}</span>
-                                  <span className={`text-[9px] font-bold ${setDef?.color || 'text-gray-300'}`}>{setDef?.name?.split(' ')[0]}</span>
-                                  <span className="text-[8px] text-gray-400">Lv{r.art.level}</span>
-                                  <span className="text-[8px] text-amber-400 ml-auto">iLv{computeArtifactILevel(r.art)}</span>
-                                  <span className="text-[8px] text-green-400">{r.art.subs.map(s => SUB_STAT_POOL.find(p => p.id === s.id)?.name || s.id).join(', ')}</span>
+                                  <span className={`text-small-responsive font-bold ${setDef?.color || 'text-gray-300'}`}>{setDef?.name?.split(' ')[0]}</span>
+                                  <span className="text-tiny-responsive text-gray-400">Lv{r.art.level}</span>
+                                  <span className="text-tiny-responsive text-amber-400 ml-auto">iLv{computeArtifactILevel(r.art)}</span>
+                                  <span className="text-tiny-responsive text-green-400">{r.art.subs.map(s => SUB_STAT_POOL.find(p => p.id === s.id)?.name || s.id).join(', ')}</span>
                                 </div>
                               );
                             })}
@@ -10665,12 +10666,12 @@ export default function ShadowColosseum() {
                       {/* Junk list + sell */}
                       {scoutResults.junked.length > 0 && !scoutResults.junkSold && (
                         <div>
-                          <div className="text-[9px] text-red-400 font-bold mb-1">{'\uD83D\uDDD1\uFE0F'} A la poubelle :</div>
+                          <div className="text-small-responsive text-red-400 font-bold mb-1">{'\uD83D\uDDD1\uFE0F'} A la poubelle :</div>
                           <div className="space-y-0.5 max-h-20 overflow-y-auto">
                             {scoutResults.junked.map(r => {
                               const setDef = ALL_ARTIFACT_SETS[r.art.set];
                               return (
-                                <div key={r.art.uid} className="flex items-center gap-2 p-1 rounded bg-red-500/5 border border-red-500/10 text-[8px] text-gray-500">
+                                <div key={r.art.uid} className="flex items-center gap-2 p-1 rounded bg-red-500/5 border border-red-500/10 text-tiny-responsive text-gray-500">
                                   <span>{ARTIFACT_SLOTS[r.art.slot]?.icon}</span>
                                   <span className={setDef?.color || ''}>{setDef?.name?.split(' ')[0]}</span>
                                   <span>Lv{r.art.level}</span>
@@ -10680,25 +10681,25 @@ export default function ShadowColosseum() {
                             })}
                           </div>
                           <button onClick={sellScoutJunk}
-                            className="w-full mt-1.5 py-1.5 rounded-lg bg-red-600/30 text-red-300 text-[10px] font-bold hover:bg-red-600/50 transition-colors border border-red-500/30"
+                            className="w-full mt-1.5 py-1.5 rounded-lg bg-red-600/30 text-red-300 text-normal-responsive font-bold hover:bg-red-600/50 transition-colors border border-red-500/30"
                           >
                             {'\uD83D\uDDD1\uFE0F'} Vendre {scoutResults.junked.length} artefacts ({scoutResults.junked.reduce((sum, j) => sum + Math.floor((FORGE_COSTS[j.art.rarity] || 200) * SELL_RATIO), 0)} coins)
                           </button>
                         </div>
                       )}
                       {scoutResults.junkSold && (
-                        <div className="text-[9px] text-green-400 text-center italic">{'\u2705'} Junk vendu !</div>
+                        <div className="text-small-responsive text-green-400 text-center italic">{'\u2705'} Junk vendu !</div>
                       )}
 
                       {/* Beru commission (sneaky) */}
                       {scoutResults.beruCut > 0 && (
-                        <div className="text-[8px] text-cyan-400/40 text-center italic">
+                        <div className="text-tiny-responsive text-cyan-400/40 text-center italic">
                           Frais de service Beru: {scoutResults.beruCut} coins (c'est les taxes, promis !)
                         </div>
                       )}
 
                       <button onClick={() => { setScoutResults(null); setScoutPhase(null); }}
-                        className="w-full py-1.5 rounded-lg bg-gray-700/30 text-gray-400 text-[10px] hover:bg-gray-700/50 transition-colors"
+                        className="w-full py-1.5 rounded-lg bg-gray-700/30 text-gray-400 text-normal-responsive hover:bg-gray-700/50 transition-colors"
                       >Fermer le rapport</button>
                     </motion.div>
                   )}
@@ -10709,9 +10710,9 @@ export default function ShadowColosseum() {
             {/* Inventory Grid */}
             <div className="mb-5">
               <div className="flex items-center justify-between mb-2">
-                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Inventaire ({filtered.length})</div>
+                <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider">Inventaire ({filtered.length})</div>
                 <div className="flex items-center gap-1">
-                  <span className="text-[8px] text-gray-600">Tri:</span>
+                  <span className="text-tiny-responsive text-gray-600">Tri:</span>
                   {[
                     { key: 'level_desc', label: 'Lv\u2193' },
                     { key: 'level_asc', label: 'Lv\u2191' },
@@ -10719,14 +10720,14 @@ export default function ShadowColosseum() {
                     { key: 'rarity', label: '\u2605' },
                   ].map(s => (
                     <button key={s.key} onClick={() => setArtSort(s.key)}
-                      className={`text-[8px] px-1.5 py-0.5 rounded transition-all ${artSort === s.key ? 'bg-purple-500/30 text-purple-300 font-bold' : 'text-gray-500 hover:text-gray-300'}`}>
+                      className={`text-tiny-responsive px-1.5 py-0.5 rounded transition-all ${artSort === s.key ? 'bg-purple-500/30 text-purple-300 font-bold' : 'text-gray-500 hover:text-gray-300'}`}>
                       {s.label}
                     </button>
                   ))}
                 </div>
               </div>
               {filtered.length === 0 ? (
-                <div className="text-center text-[10px] text-gray-600 py-4">
+                <div className="text-center text-normal-responsive text-gray-600 py-4">
                   {inv.length === 0 ? "Aucun artefact. Forge-en dans la Boutique !" : "Aucun artefact ne correspond aux filtres."}
                 </div>
               ) : (
@@ -10749,7 +10750,7 @@ export default function ShadowColosseum() {
                         }`}>
                         {/* Highlighted badge */}
                         {art.highlighted && (
-                          <span className="absolute -top-1 -left-1 text-[10px] bg-yellow-500 text-black rounded-full w-4 h-4 flex items-center justify-center font-black z-10">{'\u2B50'}</span>
+                          <span className="absolute -top-1 -left-1 text-normal-responsive bg-yellow-500 text-black rounded-full w-4 h-4 flex items-center justify-center font-black z-10">{'\u2B50'}</span>
                         )}
                         {/* Lock button */}
                         <button
@@ -10769,29 +10770,29 @@ export default function ShadowColosseum() {
 
                         {/* Header: set icon + name */}
                         <div className="flex items-center gap-1 mb-0.5">
-                          <span className="text-[10px]">{setDef?.icon || '?'}</span>
-                          <span className={`text-[9px] font-bold truncate flex-1 ${setDef?.color || 'text-gray-400'}`}>{setDef?.name || '?'}</span>
+                          <span className="text-normal-responsive">{setDef?.icon || '?'}</span>
+                          <span className={`text-small-responsive font-bold truncate flex-1 ${setDef?.color || 'text-gray-400'}`}>{setDef?.name || '?'}</span>
                         </div>
                         {/* Slot + rarity + level + iLevel */}
                         <div className="flex items-center gap-1 mb-0.5">
-                          <span className="text-[10px]">{ARTIFACT_SLOTS[art.slot]?.icon}</span>
-                          <span className={`text-[8px] ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>{RARITY[art.rarity]?.stars || art.rarity}</span>
-                          <span className={`text-[9px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
+                          <span className="text-normal-responsive">{ARTIFACT_SLOTS[art.slot]?.icon}</span>
+                          <span className={`text-tiny-responsive ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>{RARITY[art.rarity]?.stars || art.rarity}</span>
+                          <span className={`text-small-responsive font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
                           <span className="text-[7px] text-amber-400/70 font-bold ml-auto">iLv{computeArtifactILevel(art)}</span>
                         </div>
                         {/* Main stat */}
                         <div className="flex items-center gap-1 py-0.5 border-t border-white/5">
-                          <span className="text-[9px]">{mainDef?.icon}</span>
-                          <span className="text-[9px] text-gray-300 font-medium">{mainDef?.name}: </span>
-                          <span className="text-[9px] font-black text-white">{art.mainValue}</span>
+                          <span className="text-small-responsive">{mainDef?.icon}</span>
+                          <span className="text-small-responsive text-gray-300 font-medium">{mainDef?.name}: </span>
+                          <span className="text-small-responsive font-black text-white">{art.mainValue}</span>
                         </div>
                         {/* All sub stats */}
                         <div className="mt-0.5 space-y-px">
                           {art.subs.map((sub, si) => {
                             const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
-                            return <div key={si} className="text-[8px] text-gray-400 truncate">{subDef?.name || sub.id} +{sub.value}</div>;
+                            return <div key={si} className="text-tiny-responsive text-gray-400 truncate">{subDef?.name || sub.id} +{sub.value}</div>;
                           })}
-                          {art.subs.length === 0 && <div className="text-[8px] text-gray-600 italic">Aucune sub-stat</div>}
+                          {art.subs.length === 0 && <div className="text-tiny-responsive text-gray-600 italic">Aucune sub-stat</div>}
                         </div>
                       </button>
                     );
@@ -10806,7 +10807,7 @@ export default function ShadowColosseum() {
             {/* Equipped Section */}
             {equippedChibis.length > 0 && (
               <div className="mb-5">
-                <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Equipes</div>
+                <div className="text-normal-responsive text-gray-400 font-bold uppercase tracking-wider mb-2">Equipes</div>
                 {equippedChibis.map(([cId, slots]) => {
                   const chibi = getChibiData(cId);
                   if (!chibi) return null;
@@ -10817,8 +10818,8 @@ export default function ShadowColosseum() {
                       <div className="flex items-center gap-2 mb-1.5">
                         <img loading="lazy" src={getChibiSprite(cId)} alt="" className="w-8 h-8 object-contain" />
                         <span className="text-xs font-bold text-gray-200">{chibi.name}</span>
-                        <span className="text-[10px] text-gray-500">{filledCount}/8</span>
-                        <span className="text-[8px] text-amber-400/70 font-bold ml-auto">iLv {eqILv.total}</span>
+                        <span className="text-normal-responsive text-gray-500">{filledCount}/8</span>
+                        <span className="text-tiny-responsive text-amber-400/70 font-bold ml-auto">iLv {eqILv.total}</span>
                       </div>
                       <div className="grid grid-cols-2 gap-1">
                         {SLOT_ORDER.map(sId => {
@@ -10827,8 +10828,8 @@ export default function ShadowColosseum() {
                           const selected = artSelected === eqKey;
                           if (!art) return (
                             <div key={sId} className="p-1 rounded border border-dashed border-gray-700/20 text-center">
-                              <div className="text-[10px] text-gray-700">{ARTIFACT_SLOTS[sId]?.icon} {ARTIFACT_SLOTS[sId]?.name}</div>
-                              <div className="text-[8px] text-gray-700">vide</div>
+                              <div className="text-normal-responsive text-gray-700">{ARTIFACT_SLOTS[sId]?.icon} {ARTIFACT_SLOTS[sId]?.name}</div>
+                              <div className="text-tiny-responsive text-gray-700">vide</div>
                             </div>
                           );
                           const setDef = ALL_ARTIFACT_SETS[art.set];
@@ -10840,21 +10841,21 @@ export default function ShadowColosseum() {
                                 `${setDef?.border || 'border-gray-700/30'} ${setDef?.bg || 'bg-gray-800/10'} hover:border-gray-500/40`
                               }`}>
                               {art.locked && (
-                                <span className="absolute top-0.5 right-0.5 text-[8px]">{'\uD83D\uDD12'}</span>
+                                <span className="absolute top-0.5 right-0.5 text-tiny-responsive">{'\uD83D\uDD12'}</span>
                               )}
                               {/* Set + slot */}
                               <div className="flex items-center gap-1">
-                                <span className="text-[9px]">{setDef?.icon || '?'}</span>
-                                <span className={`text-[8px] font-bold truncate flex-1 ${setDef?.color || 'text-gray-400'}`}>{setDef?.name || '?'}</span>
+                                <span className="text-small-responsive">{setDef?.icon || '?'}</span>
+                                <span className={`text-tiny-responsive font-bold truncate flex-1 ${setDef?.color || 'text-gray-400'}`}>{setDef?.name || '?'}</span>
                               </div>
                               <div className="flex items-center gap-1">
-                                <span className="text-[9px]">{ARTIFACT_SLOTS[sId]?.icon}</span>
-                                <span className={`text-[8px] ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>{RARITY[art.rarity]?.stars}</span>
-                                <span className={`text-[8px] font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
+                                <span className="text-small-responsive">{ARTIFACT_SLOTS[sId]?.icon}</span>
+                                <span className={`text-tiny-responsive ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>{RARITY[art.rarity]?.stars}</span>
+                                <span className={`text-tiny-responsive font-bold ${RARITY[art.rarity]?.color || 'text-gray-400'}`}>+{art.level}</span>
                                 <span className="text-[7px] text-amber-400/70 font-bold ml-auto">iLv{computeArtifactILevel(art)}</span>
                               </div>
                               {/* Main stat */}
-                              <div className="text-[8px] text-gray-300 mt-0.5">{mainDef?.icon} {mainDef?.name}: <span className="text-white font-bold">{art.mainValue}</span></div>
+                              <div className="text-tiny-responsive text-gray-300 mt-0.5">{mainDef?.icon} {mainDef?.name}: <span className="text-white font-bold">{art.mainValue}</span></div>
                               {/* Subs */}
                               {art.subs.map((sub, si) => {
                                 const subDef = SUB_STAT_POOL.find(s => s.id === sub.id);
@@ -10897,9 +10898,9 @@ export default function ShadowColosseum() {
           <div className="absolute top-1 right-2 z-20 flex flex-col items-end gap-1">
             {autoReplay && autoFarmStats.runs > 0 && (
               <div className="px-2.5 py-1.5 rounded-lg bg-gray-900/90 border border-green-500/30 backdrop-blur-sm text-right">
-                <div className="text-[9px] text-green-400 font-bold uppercase tracking-wider mb-0.5">Auto-Farm</div>
-                <div className="text-[10px] text-white font-bold">{autoFarmStats.runs} runs</div>
-                <div className="flex flex-col gap-0 text-[9px]">
+                <div className="text-small-responsive text-green-400 font-bold uppercase tracking-wider mb-0.5">Auto-Farm</div>
+                <div className="text-normal-responsive text-white font-bold">{autoFarmStats.runs} runs</div>
+                <div className="flex flex-col gap-0 text-small-responsive">
                   {autoFarmStats.levels > 0 && <span className="text-yellow-400">+{autoFarmStats.levels} niveaux</span>}
                   <span className="text-amber-300">+{fmtNum(autoFarmStats.coins)} coins</span>
                   {autoFarmStats.loots > 0 && <span className="text-purple-400">{autoFarmStats.loots} loots</span>}
@@ -10912,8 +10913,8 @@ export default function ShadowColosseum() {
             {/* Loot Boost x2 indicator */}
             {data.lootBoostMs > 0 && LOOT_BOOST_BOSSES.includes(STAGES[selStage]?.id) && (
               <div className="mt-1 px-2.5 py-1 rounded-lg bg-red-500/20 border border-red-500/40 backdrop-blur-sm animate-pulse">
-                <div className="text-[10px] text-red-400 font-bold">{'\uD83D\uDD34'} LOOT x2</div>
-                <div className="text-[9px] text-red-300/70 text-center">{(() => { const ms = data.lootBoostMs; const h = Math.floor(ms/3600000); const m = Math.floor((ms%3600000)/60000); const s = Math.floor((ms%60000)/1000); return h > 0 ? `${h}h${String(m).padStart(2,'0')}m` : `${m}m${String(s).padStart(2,'0')}s`; })()}</div>
+                <div className="text-normal-responsive text-red-400 font-bold">{'\uD83D\uDD34'} LOOT x2</div>
+                <div className="text-small-responsive text-red-300/70 text-center">{(() => { const ms = data.lootBoostMs; const h = Math.floor(ms/3600000); const m = Math.floor((ms%3600000)/60000); const s = Math.floor((ms%60000)/1000); return h > 0 ? `${h}h${String(m).padStart(2,'0')}m` : `${m}m${String(s).padStart(2,'0')}s`; })()}</div>
               </div>
             )}
           </div>
@@ -10966,10 +10967,10 @@ export default function ShadowColosseum() {
               <h2 className="text-lg font-black bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
                 Fiche des Personnages
               </h2>
-              <span className="text-[10px] text-gray-500">{allChars.length} persos</span>
+              <span className="text-normal-responsive text-gray-500">{allChars.length} persos</span>
             </div>
 
-            <div className="text-[10px] text-gray-500 mb-4 p-2 rounded-lg bg-gray-900/40 border border-gray-700/20">
+            <div className="text-normal-responsive text-gray-500 mb-4 p-2 rounded-lg bg-gray-900/40 border border-gray-700/20">
               Les <span className="text-emerald-400">passifs</span> des hunters s'appliquent automatiquement en combat.
               L'<span className="text-yellow-400">awakening</span> (A0-A1000) augmente les stats à chaque duplicate (+1% HP/ATK/DEF tous les 5 niveaux jusqu'à A200, puis tous les 10 niveaux).
             </div>
@@ -10984,9 +10985,9 @@ export default function ShadowColosseum() {
                       <div className="flex items-center gap-1.5">
                         <span className="text-sm font-bold text-white truncate">{ch.name}</span>
                         <span className={`text-xs ${elemColors[ch.element] || 'text-gray-400'}`}>{elemEmoji[ch.element] || ''}</span>
-                        {ch.isHunter && <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-900/50 text-indigo-300 font-bold">HUNTER</span>}
+                        {ch.isHunter && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-indigo-900/50 text-indigo-300 font-bold">HUNTER</span>}
                       </div>
-                      <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                      <div className="flex items-center gap-2 text-normal-responsive text-gray-500">
                         <span>Nv.{ch.level}</span>
                         {ch.isHunter && ch.stars > 0 && (
                           <span className="text-yellow-400 font-bold">A{ch.stars}</span>
@@ -10998,16 +10999,16 @@ export default function ShadowColosseum() {
 
                   {/* Skills */}
                   <div className="mb-2">
-                    <div className="text-[9px] text-gray-500 font-bold uppercase mb-1">Skills</div>
+                    <div className="text-small-responsive text-gray-500 font-bold uppercase mb-1">Skills</div>
                     <div className="space-y-1">
                       {(ch.skills || []).map((sk, si) => {
                         const tags = getSkillTag(sk);
                         return (
-                          <div key={si} className="flex items-center gap-2 text-[10px]">
+                          <div key={si} className="flex items-center gap-2 text-normal-responsive">
                             <span className="text-gray-300 font-medium w-28 truncate">{sk.name}</span>
                             <div className="flex flex-wrap gap-1">
                               {tags.map((t, ti) => (
-                                <span key={ti} className={`px-1 py-0.5 rounded bg-gray-800/60 ${t.color} text-[9px]`}>{t.label}</span>
+                                <span key={ti} className={`px-1 py-0.5 rounded bg-gray-800/60 ${t.color} text-small-responsive`}>{t.label}</span>
                               ))}
                             </div>
                           </div>
@@ -11019,9 +11020,9 @@ export default function ShadowColosseum() {
                   {/* Hunter Passive */}
                   {ch.passive && (
                     <div className="mb-2">
-                      <div className="text-[9px] text-gray-500 font-bold uppercase mb-1">Passif</div>
-                      <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-medium ${passiveTypeColors[ch.passive.type] || 'bg-gray-800/50 text-gray-300'}`}>
-                        <span className="font-bold uppercase text-[8px] opacity-70">{ch.passive.type}</span>
+                      <div className="text-small-responsive text-gray-500 font-bold uppercase mb-1">Passif</div>
+                      <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-normal-responsive font-medium ${passiveTypeColors[ch.passive.type] || 'bg-gray-800/50 text-gray-300'}`}>
+                        <span className="font-bold uppercase text-tiny-responsive opacity-70">{ch.passive.type}</span>
                         <span>{ch.passiveDesc}</span>
                       </div>
                     </div>
@@ -11030,8 +11031,8 @@ export default function ShadowColosseum() {
                   {/* Awakening info */}
                   {ch.isHunter && ch.stars > 0 && (
                     <div>
-                      <div className="text-[9px] text-gray-500 font-bold uppercase mb-1">Awakening</div>
-                      <div className="px-2 py-1 rounded text-[10px] border border-yellow-500/40 bg-yellow-900/30 text-yellow-300 inline-block">
+                      <div className="text-small-responsive text-gray-500 font-bold uppercase mb-1">Awakening</div>
+                      <div className="px-2 py-1 rounded text-normal-responsive border border-yellow-500/40 bg-yellow-900/30 text-yellow-300 inline-block">
                         <span className="font-bold">A{ch.stars}</span>
                         <span className="ml-2 text-gray-400">
                           {ch.stars <= 5
@@ -11049,10 +11050,10 @@ export default function ShadowColosseum() {
                     if (sources.length === 0) return null;
                     return (
                       <div className="mt-2">
-                        <div className="text-[9px] text-gray-500 font-bold uppercase mb-1">Sources de Drop</div>
+                        <div className="text-small-responsive text-gray-500 font-bold uppercase mb-1">Sources de Drop</div>
                         <div className="flex flex-wrap gap-1">
                           {sources.map((s, si) => (
-                            <div key={si} className="px-2 py-1 rounded-lg text-[9px] bg-gray-800/60 border border-gray-700/30" title={s.detail}>
+                            <div key={si} className="px-2 py-1 rounded-lg text-small-responsive bg-gray-800/60 border border-gray-700/30" title={s.detail}>
                               <span style={{ color: s.color }} className="font-bold">{s.label}</span>
                               <span className="text-gray-500 ml-1">{s.detail}</span>
                             </div>
@@ -11080,7 +11081,7 @@ export default function ShadowColosseum() {
                     {[...Array(result.starLevel)].map((_, i) => <span key={i} className="text-yellow-400 text-lg">{'\u2B50'}</span>)}
                   </div>
                   {result.isNewStarRecord && (
-                    <div className="text-[10px] font-bold text-yellow-300 mt-1" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>
+                    <div className="text-normal-responsive font-bold text-yellow-300 mt-1" style={{ animation: 'victoryPulse 2s ease-in-out infinite' }}>
                       Nouveau record ! {result.newMaxStars < 10 && `${result.newMaxStars + 1}\u2605 debloquee !`}
                     </div>
                   )}
@@ -11090,11 +11091,11 @@ export default function ShadowColosseum() {
               <div className="flex justify-center gap-6 mb-6">
                 <div className="text-center">
                   <div className="text-2xl font-black text-blue-400">+{result.xp}</div>
-                  <div className="text-[10px] text-gray-500">XP</div>
+                  <div className="text-normal-responsive text-gray-500">XP</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-black text-yellow-400">+{fmtNum(result.coins)}</div>
-                  <div className="text-[10px] text-gray-500">Coins</div>
+                  <div className="text-normal-responsive text-gray-500">Coins</div>
                 </div>
               </div>
               {result.leveled && (
@@ -11107,7 +11108,7 @@ export default function ShadowColosseum() {
               {(result.newStatPts > 0 || result.newSP > 0 || result.newTP > 0) && (
                 <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }}
                   className="bg-gradient-to-r from-amber-600/15 to-purple-600/15 border border-amber-500/30 rounded-xl p-3 mb-6">
-                  <div className="text-[11px] font-bold text-amber-300 mb-1">Nouveaux points !</div>
+                  <div className="text-medium-responsive font-bold text-amber-300 mb-1">Nouveaux points !</div>
                   <div className="flex justify-center gap-4 text-xs">
                     {result.newStatPts > 0 && (
                       <span className="text-amber-400">+{result.newStatPts} points de stats</span>
@@ -11151,13 +11152,13 @@ export default function ShadowColosseum() {
                       <div className="text-blue-300 font-black text-sm animate-pulse">{'\uD83C\uDF1F'} HUNTER !</div>
                       <img loading="lazy" src={HUNTERS[hd.id]?.sprite || ''} alt="" className="w-14 h-14 mx-auto mt-1 object-contain drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]" />
                       <div className="text-sm font-black text-white mt-1">{hd.name}</div>
-                      <div className={`text-[10px] ${RARITY[hd.rarity]?.color || 'text-gray-400'}`}>
+                      <div className={`text-normal-responsive ${RARITY[hd.rarity]?.color || 'text-gray-400'}`}>
                         {RARITY[hd.rarity]?.stars || ''}
                       </div>
                       {hd.isDuplicate ? (
-                        <div className="text-yellow-400 text-[10px] font-bold mt-1">Dupe ! A{hd.newStars}</div>
+                        <div className="text-yellow-400 text-normal-responsive font-bold mt-1">Dupe ! A{hd.newStars}</div>
                       ) : (
-                        <div className="text-green-400 text-[10px] font-bold mt-1">Nouveau !</div>
+                        <div className="text-green-400 text-normal-responsive font-bold mt-1">Nouveau !</div>
                       )}
                     </div>
                   ))}
@@ -11166,7 +11167,7 @@ export default function ShadowColosseum() {
                       className="flex-1 min-w-[140px] max-w-[200px] bg-gradient-to-b from-red-600/30 to-pink-600/30 border-2 border-red-400/60 rounded-xl p-3 text-center" style={{ boxShadow: '0 0 30px rgba(239, 68, 68, 0.3)' }}>
                       <div className="text-red-300 font-black text-sm animate-pulse">{'\uD83E\uDE78'} SET ULTIME !</div>
                       <div className="text-white font-black text-sm mt-2">{su.name}</div>
-                      <div className="text-red-400 text-[10px] mt-1">Set Manaya T12</div>
+                      <div className="text-red-400 text-normal-responsive mt-1">Set Manaya T12</div>
                     </div>
                   ))}
                 </motion.div>
@@ -11180,7 +11181,7 @@ export default function ShadowColosseum() {
                     <img loading="lazy" src={result.weaponDrop.sprite} alt={result.weaponDrop.name} className="w-10 h-10 object-contain mx-auto" draggable={false} />
                   ) : result.weaponDrop.icon}</div>
                   <div className="text-white font-black text-sm mt-1">{result.weaponDrop.name}</div>
-                  <div className="text-orange-400 text-[10px] mt-0.5">{result.weaponDrop.scalingStat === 'int' ? 'INT' : 'ATK'} +{result.weaponDrop.atk} | {MAIN_STAT_VALUES[result.weaponDrop.bonusStat]?.name} +{result.weaponDrop.bonusValue}</div>
+                  <div className="text-orange-400 text-normal-responsive mt-0.5">{result.weaponDrop.scalingStat === 'int' ? 'INT' : 'ATK'} +{result.weaponDrop.atk} | {MAIN_STAT_VALUES[result.weaponDrop.bonusStat]?.name} +{result.weaponDrop.bonusValue}</div>
                   {result.weaponDrop._redHammers ? (
                     <div className="text-red-400 text-xs mt-1 font-bold">{'\uD83D\uDD34'} Deja A10 ! +{result.weaponDrop._redHammers} Marteau{result.weaponDrop._redHammers > 1 ? 'x' : ''} Rouge{result.weaponDrop._redHammers > 1 ? 's' : ''}</div>
                   ) : result.weaponDrop.isNew ? (
@@ -11194,15 +11195,15 @@ export default function ShadowColosseum() {
                 <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 1.25 }}
                   className="bg-purple-900/20 border border-purple-500/30 rounded-xl p-2 mb-4">
                   <div className="text-purple-300 text-xs font-bold">{'\u2728'} Artefact {result.guaranteedArtifact.rarity} obtenu !</div>
-                  <div className="text-[9px] text-gray-400 mt-0.5">{ARTIFACT_SETS[result.guaranteedArtifact.setId]?.name || 'Artefact'} — {ARTIFACT_SLOTS[result.guaranteedArtifact.slotId]?.name || result.guaranteedArtifact.slotId}</div>
+                  <div className="text-small-responsive text-gray-400 mt-0.5">{ARTIFACT_SETS[result.guaranteedArtifact.setId]?.name || 'Artefact'} — {ARTIFACT_SLOTS[result.guaranteedArtifact.slotId]?.name || result.guaranteedArtifact.slotId}</div>
                 </motion.div>
               )}
               {result.pacteDrop && (
                 <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 1.3, type: 'spring' }}
                   className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border-2 border-purple-500/50 rounded-xl p-3 mb-4 text-center">
                   <div className="text-lg font-black text-purple-300">{'\uD83C\uDF11'} Pacte des Ombres !</div>
-                  <div className="text-[10px] text-gray-400 mt-0.5">Artefact mythique — {ARTIFACT_SLOTS[result.pacteDrop.slotId]?.name || result.pacteDrop.slotId}</div>
-                  <div className="text-[9px] text-purple-400 mt-1">Set ultra-rare obtenu sur Zephyr Ultime !</div>
+                  <div className="text-normal-responsive text-gray-400 mt-0.5">Artefact mythique — {ARTIFACT_SLOTS[result.pacteDrop.slotId]?.name || result.pacteDrop.slotId}</div>
+                  <div className="text-small-responsive text-purple-400 mt-1">Set ultra-rare obtenu sur Zephyr Ultime !</div>
                 </motion.div>
               )}
               {/* Account XP */}
@@ -11216,7 +11217,7 @@ export default function ShadowColosseum() {
                   <div className="mt-1 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border border-indigo-500/40 rounded-xl p-2 text-center">
                     <div className="text-indigo-300 font-black">{'\u2B06\uFE0F'} Compte Lv {result.accountLevelUp} !</div>
                     {result.accountAllocations > 0 && (
-                      <div className="text-yellow-400 text-[10px] mt-0.5">{'\u2B50'} +{result.accountAllocations * ACCOUNT_BONUS_AMOUNT} pts de stats a attribuer !</div>
+                      <div className="text-yellow-400 text-normal-responsive mt-0.5">{'\u2B50'} +{result.accountAllocations * ACCOUNT_BONUS_AMOUNT} pts de stats a attribuer !</div>
                     )}
                   </div>
                 )}
@@ -11229,7 +11230,7 @@ export default function ShadowColosseum() {
               <p className="text-gray-300 text-sm mb-4">{getChibiData(selChibi)?.name} est KO.</p>
               <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 mb-6">
                 <div className="text-red-400 text-sm font-bold">Tu peux retenter immediatement !</div>
-                <div className="text-gray-400 text-[10px] mt-1">
+                <div className="text-gray-400 text-normal-responsive mt-1">
                   Ameliore tes stats ou change de strategie.
                 </div>
               </div>
@@ -11257,28 +11258,28 @@ export default function ShadowColosseum() {
               <div className="w-full max-w-xs mx-auto px-3 py-2.5 rounded-xl bg-gradient-to-r from-orange-900/30 to-red-900/30 border border-orange-500/30 backdrop-blur-sm cursor-pointer hover:border-orange-400/50 transition-colors"
                 onClick={() => setRagnarokHistoryOpen(true)}>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] text-orange-400 font-bold uppercase tracking-wider">{'\u2604\uFE0F'} Ragnarok Tracker</span>
-                  <span className="text-[9px] text-gray-500">Clic pour l'historique</span>
+                  <span className="text-normal-responsive text-orange-400 font-bold uppercase tracking-wider">{'\u2604\uFE0F'} Ragnarok Tracker</span>
+                  <span className="text-small-responsive text-gray-500">Clic pour l'historique</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
                     <div className="text-sm font-black text-red-400">{data.ragnarokKills || 0}</div>
-                    <div className="text-[8px] text-gray-500">kills total</div>
+                    <div className="text-tiny-responsive text-gray-500">kills total</div>
                   </div>
                   <div>
                     <div className="text-sm font-black text-amber-300">{(data.ragnarokDropLog || []).length}</div>
-                    <div className="text-[8px] text-gray-500">armes drop</div>
+                    <div className="text-tiny-responsive text-gray-500">armes drop</div>
                   </div>
                   <div>
                     {data.weaponCollection?.['w_sulfuras'] !== undefined ? (
                       <>
                         <div className="text-sm font-black text-orange-400">{'\uD83D\uDD28'}</div>
-                        <div className="text-[8px] text-orange-300 font-bold">Sulfuras !</div>
+                        <div className="text-tiny-responsive text-orange-300 font-bold">Sulfuras !</div>
                       </>
                     ) : (
                       <>
                         <div className="text-sm font-black text-gray-600">0</div>
-                        <div className="text-[8px] text-gray-500">sulfuras</div>
+                        <div className="text-tiny-responsive text-gray-500">sulfuras</div>
                       </>
                     )}
                   </div>
@@ -11287,7 +11288,7 @@ export default function ShadowColosseum() {
                   const eff = (1/10000) * (data.lootBoostMs > 0 ? 2 : 1) * getFactionLootMult('loot_sulfuras');
                   return (
                     <div className="mt-1.5">
-                      <div className="flex justify-between text-[8px] text-gray-500 mb-0.5">
+                      <div className="flex justify-between text-tiny-responsive text-gray-500 mb-0.5">
                         <span>Proba cumulee (1/{Math.round(1/eff).toLocaleString()})</span>
                         <span>{Math.min(99.99, (1 - Math.pow(1 - eff, data.ragnarokKills)) * 100).toFixed(2)}%</span>
                       </div>
@@ -11305,28 +11306,28 @@ export default function ShadowColosseum() {
               <div className="w-full max-w-xs mx-auto px-3 py-2.5 rounded-xl bg-gradient-to-r from-purple-900/30 to-indigo-900/30 border border-purple-500/30 backdrop-blur-sm cursor-pointer hover:border-purple-400/50 transition-colors"
                 onClick={() => setMonarchHistoryOpen(true)}>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] text-purple-400 font-bold uppercase tracking-wider">{'\uD83D\uDC51'} Monarque Supreme</span>
-                  <span className="text-[9px] text-gray-500">Clic pour l'historique</span>
+                  <span className="text-normal-responsive text-purple-400 font-bold uppercase tracking-wider">{'\uD83D\uDC51'} Monarque Supreme</span>
+                  <span className="text-small-responsive text-gray-500">Clic pour l'historique</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
                     <div className="text-sm font-black text-purple-400">{data.monarchKills || 0}</div>
-                    <div className="text-[8px] text-gray-500">kills total</div>
+                    <div className="text-tiny-responsive text-gray-500">kills total</div>
                   </div>
                   <div>
                     <div className="text-sm font-black text-amber-300">{(data.monarchDropLog || []).length}</div>
-                    <div className="text-[8px] text-gray-500">armes drop</div>
+                    <div className="text-tiny-responsive text-gray-500">armes drop</div>
                   </div>
                   <div>
                     <div className="text-sm font-black text-purple-300">{(data.monarchDropLog || []).filter(d => d.weaponId === 'w_katana_z' || d.weaponId === 'w_katana_v').length}</div>
-                    <div className="text-[8px] text-gray-500">katanas</div>
+                    <div className="text-tiny-responsive text-gray-500">katanas</div>
                   </div>
                 </div>
                 {(data.monarchKills || 0) > 0 && (() => {
                   const eff = (1/50000) * (data.lootBoostMs > 0 ? 2 : 1) * Math.max(getFactionLootMult('loot_katana_z'), getFactionLootMult('loot_katana_v'));
                   return (
                     <div className="mt-1.5">
-                      <div className="flex justify-between text-[8px] text-gray-500 mb-0.5">
+                      <div className="flex justify-between text-tiny-responsive text-gray-500 mb-0.5">
                         <span>Proba cumulee (1/{Math.round(1/eff).toLocaleString()})</span>
                         <span>{Math.min(99.99, (1 - Math.pow(1 - eff, data.monarchKills)) * 100).toFixed(2)}%</span>
                       </div>
@@ -11370,7 +11371,7 @@ export default function ShadowColosseum() {
               {autoReplay ? '\u23F8 Auto ON' : '\u25B6 Auto OFF'}
             </button>
             {autoReplay && autoFarmStats.runs > 0 && (
-              <div className="px-3 py-1.5 rounded-xl bg-gray-900/90 border border-green-500/30 backdrop-blur-sm flex items-center gap-3 text-[10px]">
+              <div className="px-3 py-1.5 rounded-xl bg-gray-900/90 border border-green-500/30 backdrop-blur-sm flex items-center gap-3 text-normal-responsive">
                 <span className="text-white font-bold">{autoFarmStats.runs} runs</span>
                 {autoFarmStats.levels > 0 && <span className="text-yellow-400">+{autoFarmStats.levels} niv</span>}
                 <span className="text-amber-300">+{fmtNum(autoFarmStats.coins)}</span>
@@ -11396,8 +11397,8 @@ export default function ShadowColosseum() {
                 <div className="px-3 py-2 rounded-xl bg-gray-900/90 border border-orange-500/30 backdrop-blur-sm cursor-pointer hover:border-orange-400/50 transition-colors min-w-[280px]"
                   onClick={() => setRagnarokHistoryOpen(true)}>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-orange-400 font-bold">{'\u2604\uFE0F'} Ragnarok</span>
-                    <div className="flex items-center gap-2 text-[10px]">
+                    <span className="text-normal-responsive text-orange-400 font-bold">{'\u2604\uFE0F'} Ragnarok</span>
+                    <div className="flex items-center gap-2 text-normal-responsive">
                       <span className="text-red-300 font-bold">{'\u2620\uFE0F'} {kills} kills</span>
                       <span className="text-gray-600">|</span>
                       <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {drops} drops</span>
@@ -11405,12 +11406,12 @@ export default function ShadowColosseum() {
                   </div>
                   <div className="mt-1 flex items-center gap-2">
                     {has ? (
-                      <span className="text-[9px] text-orange-300 font-bold">{'\uD83D\uDD25'} Sulfuras {'\u2713'}(A{data.weaponCollection['w_sulfuras']}) x{dropCount}</span>
+                      <span className="text-small-responsive text-orange-300 font-bold">{'\uD83D\uDD25'} Sulfuras {'\u2713'}(A{data.weaponCollection['w_sulfuras']}) x{dropCount}</span>
                     ) : (
-                      <span className="text-[9px] text-gray-500">{'\uD83D\uDD28'} Sulfuras — 1/{Math.round(1/eff).toLocaleString()}</span>
+                      <span className="text-small-responsive text-gray-500">{'\uD83D\uDD28'} Sulfuras — 1/{Math.round(1/eff).toLocaleString()}</span>
                     )}
-                    <span className="text-[9px] text-gray-600">|</span>
-                    <span className="text-[9px] text-orange-300 font-bold">{'\uD83D\uDD25'} {frags}/10</span>
+                    <span className="text-small-responsive text-gray-600">|</span>
+                    <span className="text-small-responsive text-orange-300 font-bold">{'\uD83D\uDD25'} {frags}/10</span>
                     <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
                       <div className="h-full bg-gradient-to-r from-orange-500 to-red-400 rounded-full transition-all"
                         style={{ width: `${Math.min(100, frags * 10)}%` }} />
@@ -11418,13 +11419,13 @@ export default function ShadowColosseum() {
                   </div>
                   {kills > 0 && (
                     <div className="mt-1 flex items-center gap-1.5">
-                      <span className="text-[9px] text-gray-500">Chance :</span>
-                      <span className="text-[9px] text-orange-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - eff, kills)) * 100).toFixed(2)}%</span>
+                      <span className="text-small-responsive text-gray-500">Chance :</span>
+                      <span className="text-small-responsive text-orange-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - eff, kills)) * 100).toFixed(2)}%</span>
                       <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-orange-600 to-red-500 rounded-full transition-all"
                           style={{ width: `${Math.min(100, (1 - Math.pow(1 - eff, kills)) * 100)}%` }} />
                       </div>
-                      {(lm > 1 || fm > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2' : ''}{lm > 1 && fm > 1 ? '+' : ''}{fm > 1 ? `F${fm.toFixed(1)}` : ''}</span>}
+                      {(lm > 1 || fm > 1) && <span className="text-tiny-responsive text-yellow-400">{lm > 1 ? 'x2' : ''}{lm > 1 && fm > 1 ? '+' : ''}{fm > 1 ? `F${fm.toFixed(1)}` : ''}</span>}
                     </div>
                   )}
                 </div>
@@ -11443,8 +11444,8 @@ export default function ShadowColosseum() {
               return (
                 <div className="px-3 py-2 rounded-xl bg-gray-900/90 border border-teal-500/30 backdrop-blur-sm min-w-[280px]">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-teal-400 font-bold">{'\uD83C\uDF2C\uFE0F'} Zephyr Ultime</span>
-                    <div className="flex items-center gap-2 text-[10px]">
+                    <span className="text-normal-responsive text-teal-400 font-bold">{'\uD83C\uDF2C\uFE0F'} Zephyr Ultime</span>
+                    <div className="flex items-center gap-2 text-normal-responsive">
                       <span className="text-teal-300 font-bold">{'\u2620\uFE0F'} {kills} kills</span>
                       <span className="text-gray-600">|</span>
                       <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {drops} drops</span>
@@ -11452,12 +11453,12 @@ export default function ShadowColosseum() {
                   </div>
                   <div className="mt-1 flex items-center gap-2">
                     {has ? (
-                      <span className="text-[9px] text-teal-300 font-bold">{'\uD83C\uDFF9'} Rae'shalare {'\u2713'}(A{data.weaponCollection['w_raeshalare']}) x{dropCount}</span>
+                      <span className="text-small-responsive text-teal-300 font-bold">{'\uD83C\uDFF9'} Rae'shalare {'\u2713'}(A{data.weaponCollection['w_raeshalare']}) x{dropCount}</span>
                     ) : (
-                      <span className="text-[9px] text-gray-500">{'\uD83C\uDFF9'} Rae'shalare — 1/{Math.round(1/eff).toLocaleString()}</span>
+                      <span className="text-small-responsive text-gray-500">{'\uD83C\uDFF9'} Rae'shalare — 1/{Math.round(1/eff).toLocaleString()}</span>
                     )}
-                    <span className="text-[9px] text-gray-600">|</span>
-                    <span className="text-[9px] text-teal-300 font-bold">{'\uD83C\uDF00'} {frags}/10</span>
+                    <span className="text-small-responsive text-gray-600">|</span>
+                    <span className="text-small-responsive text-teal-300 font-bold">{'\uD83C\uDF00'} {frags}/10</span>
                     <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
                       <div className="h-full bg-gradient-to-r from-teal-500 to-cyan-400 rounded-full transition-all"
                         style={{ width: `${Math.min(100, frags * 10)}%` }} />
@@ -11465,13 +11466,13 @@ export default function ShadowColosseum() {
                   </div>
                   {kills > 0 && (
                     <div className="mt-1 flex items-center gap-1.5">
-                      <span className="text-[9px] text-gray-500">Chance :</span>
-                      <span className="text-[9px] text-teal-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - eff, kills)) * 100).toFixed(2)}%</span>
+                      <span className="text-small-responsive text-gray-500">Chance :</span>
+                      <span className="text-small-responsive text-teal-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - eff, kills)) * 100).toFixed(2)}%</span>
                       <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-teal-500 to-cyan-400 rounded-full transition-all"
                           style={{ width: `${Math.min(100, (1 - Math.pow(1 - eff, kills)) * 100)}%` }} />
                       </div>
-                      {(lm > 1 || fm > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2' : ''}{lm > 1 && fm > 1 ? '+' : ''}{fm > 1 ? `F${fm.toFixed(1)}` : ''}</span>}
+                      {(lm > 1 || fm > 1) && <span className="text-tiny-responsive text-yellow-400">{lm > 1 ? 'x2' : ''}{lm > 1 && fm > 1 ? '+' : ''}{fm > 1 ? `F${fm.toFixed(1)}` : ''}</span>}
                     </div>
                   )}
                 </div>
@@ -11493,8 +11494,8 @@ export default function ShadowColosseum() {
                 <div className="px-3 py-2 rounded-xl bg-gray-900/90 border border-purple-500/30 backdrop-blur-sm cursor-pointer hover:border-purple-400/50 transition-colors min-w-[320px]"
                   onClick={() => setMonarchHistoryOpen(true)}>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-purple-400 font-bold">{'\uD83D\uDC51'} Monarque Supreme</span>
-                    <div className="flex items-center gap-2 text-[10px]">
+                    <span className="text-normal-responsive text-purple-400 font-bold">{'\uD83D\uDC51'} Monarque Supreme</span>
+                    <div className="flex items-center gap-2 text-normal-responsive">
                       <span className="text-purple-300 font-bold">{'\u2620\uFE0F'} {kills} kills</span>
                       <span className="text-gray-600">|</span>
                       <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {drops} drops</span>
@@ -11516,11 +11517,11 @@ export default function ShadowColosseum() {
                       return (
                         <div key={wId} className="flex items-center gap-1.5">
                           {has ? (
-                            <span className={`text-[9px] ${color} font-bold`}>{emoji} {w?.name} {'\u2713'}(A{data.weaponCollection[wId]}) x{count}</span>
+                            <span className={`text-small-responsive ${color} font-bold`}>{emoji} {w?.name} {'\u2713'}(A{data.weaponCollection[wId]}) x{count}</span>
                           ) : (
-                            <span className="text-[9px] text-gray-500">{emoji} {w?.name} — 1/{Math.round(1/wEff).toLocaleString()}</span>
+                            <span className="text-small-responsive text-gray-500">{emoji} {w?.name} — 1/{Math.round(1/wEff).toLocaleString()}</span>
                           )}
-                          <span className={`text-[9px] ${color} font-bold`}>{frags}/10</span>
+                          <span className={`text-small-responsive ${color} font-bold`}>{frags}/10</span>
                           <div className="w-10 h-1 bg-gray-800 rounded-full overflow-hidden">
                             <div className={`h-full bg-gradient-to-r ${barFrom} ${barTo} rounded-full transition-all`}
                               style={{ width: `${Math.min(100, frags * 10)}%` }} />
@@ -11531,13 +11532,13 @@ export default function ShadowColosseum() {
                   </div>
                   {kills > 0 && (
                     <div className="mt-1 flex items-center gap-1.5">
-                      <span className="text-[9px] text-gray-500">Chance :</span>
-                      <span className="text-[9px] text-purple-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - bestEff, kills)) * 100).toFixed(2)}%</span>
+                      <span className="text-small-responsive text-gray-500">Chance :</span>
+                      <span className="text-small-responsive text-purple-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - bestEff, kills)) * 100).toFixed(2)}%</span>
                       <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-purple-600 to-indigo-500 rounded-full transition-all"
                           style={{ width: `${Math.min(100, (1 - Math.pow(1 - bestEff, kills)) * 100)}%` }} />
                       </div>
-                      {(lm > 1 || fmZ > 1 || fmV > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2' : ''}{lm > 1 && (fmZ > 1 || fmV > 1) ? '+' : ''}{fmZ > 1 ? `Z${fmZ.toFixed(1)}` : ''}{fmV > 1 ? `V${fmV.toFixed(1)}` : ''}</span>}
+                      {(lm > 1 || fmZ > 1 || fmV > 1) && <span className="text-tiny-responsive text-yellow-400">{lm > 1 ? 'x2' : ''}{lm > 1 && (fmZ > 1 || fmV > 1) ? '+' : ''}{fmZ > 1 ? `Z${fmZ.toFixed(1)}` : ''}{fmV > 1 ? `V${fmV.toFixed(1)}` : ''}</span>}
                     </div>
                   )}
                 </div>
@@ -11556,8 +11557,8 @@ export default function ShadowColosseum() {
               return (
                 <div className="px-3 py-2 rounded-xl bg-gray-900/90 border border-green-500/30 backdrop-blur-sm min-w-[280px]">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-green-400 font-bold">{'\uD83D\uDE08'} Archdemon</span>
-                    <div className="flex items-center gap-2 text-[10px]">
+                    <span className="text-normal-responsive text-green-400 font-bold">{'\uD83D\uDE08'} Archdemon</span>
+                    <div className="flex items-center gap-2 text-normal-responsive">
                       <span className="text-green-300 font-bold">{'\u2620\uFE0F'} {kills} kills</span>
                       <span className="text-gray-600">|</span>
                       <span className="text-amber-300 font-bold">{'\u2694\uFE0F'} {drops} drops</span>
@@ -11565,12 +11566,12 @@ export default function ShadowColosseum() {
                   </div>
                   <div className="mt-1 flex items-center gap-2">
                     {has ? (
-                      <span className="text-[9px] text-green-300 font-bold">{'\uD83E\uDE84'} Gul'dan {'\u2713'}(A{data.weaponCollection['w_guldan']}) x{dropCount}</span>
+                      <span className="text-small-responsive text-green-300 font-bold">{'\uD83E\uDE84'} Gul'dan {'\u2713'}(A{data.weaponCollection['w_guldan']}) x{dropCount}</span>
                     ) : (
-                      <span className="text-[9px] text-gray-500">{'\uD83E\uDE84'} Gul'dan — 1/{Math.round(1/eff).toLocaleString()}</span>
+                      <span className="text-small-responsive text-gray-500">{'\uD83E\uDE84'} Gul'dan — 1/{Math.round(1/eff).toLocaleString()}</span>
                     )}
-                    <span className="text-[9px] text-gray-600">|</span>
-                    <span className="text-[9px] text-green-300 font-bold">{'\uD83E\uDE84'} {frags}/10</span>
+                    <span className="text-small-responsive text-gray-600">|</span>
+                    <span className="text-small-responsive text-green-300 font-bold">{'\uD83E\uDE84'} {frags}/10</span>
                     <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
                       <div className="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full transition-all"
                         style={{ width: `${Math.min(100, frags * 10)}%` }} />
@@ -11578,13 +11579,13 @@ export default function ShadowColosseum() {
                   </div>
                   {kills > 0 && (
                     <div className="mt-1 flex items-center gap-1.5">
-                      <span className="text-[9px] text-gray-500">Chance :</span>
-                      <span className="text-[9px] text-green-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - eff, kills)) * 100).toFixed(2)}%</span>
+                      <span className="text-small-responsive text-gray-500">Chance :</span>
+                      <span className="text-small-responsive text-green-400 font-bold">{Math.min(99.99, (1 - Math.pow(1 - eff, kills)) * 100).toFixed(2)}%</span>
                       <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-green-600 to-emerald-400 rounded-full transition-all"
                           style={{ width: `${Math.min(100, (1 - Math.pow(1 - eff, kills)) * 100)}%` }} />
                       </div>
-                      {(lm > 1 || fm > 1) && <span className="text-[8px] text-yellow-400">{lm > 1 ? 'x2' : ''}{lm > 1 && fm > 1 ? '+' : ''}{fm > 1 ? `F${fm.toFixed(1)}` : ''}</span>}
+                      {(lm > 1 || fm > 1) && <span className="text-tiny-responsive text-yellow-400">{lm > 1 ? 'x2' : ''}{lm > 1 && fm > 1 ? '+' : ''}{fm > 1 ? `F${fm.toFixed(1)}` : ''}</span>}
                     </div>
                   )}
                 </div>
@@ -11633,7 +11634,7 @@ export default function ShadowColosseum() {
               <h2 className="text-xl font-black text-orange-300 mb-2">{weaponReveal.name}</h2>
               <div className="text-orange-200 text-xs">ATK +{weaponReveal.atk} | {MAIN_STAT_VALUES[weaponReveal.bonusStat]?.name} +{weaponReveal.bonusValue}</div>
               {weaponReveal.isNew ? <div className="text-green-400 text-xs font-bold mt-2">Nouvelle arme !</div> : weaponReveal.newAwakening !== undefined && <div className="text-yellow-400 text-xs font-bold mt-2">Eveil A{weaponReveal.newAwakening - 1} → A{weaponReveal.newAwakening}</div>}
-              <div className="mt-3 text-gray-400 text-[10px] italic">Clique pour fermer</div>
+              <div className="mt-3 text-gray-400 text-normal-responsive italic">Clique pour fermer</div>
             </motion.div>
           </div>
         );
@@ -11656,7 +11657,7 @@ export default function ShadowColosseum() {
                   <img loading="lazy" src={SPRITES.ragnarok} alt="Ragnarok" className="w-12 h-12 object-contain" />
                   <div>
                     <h3 className="text-lg font-black text-orange-300">{'\u2604\uFE0F'} Ragnarok</h3>
-                    <div className="text-[10px] text-gray-400">Tier 6 — Domaine du Monarque</div>
+                    <div className="text-normal-responsive text-gray-400">Tier 6 — Domaine du Monarque</div>
                   </div>
                 </div>
                 <button onClick={() => setRagnarokHistoryOpen(false)} className="text-gray-500 hover:text-white text-xl">&times;</button>
@@ -11666,15 +11667,15 @@ export default function ShadowColosseum() {
               <div className="grid grid-cols-3 gap-2 mb-4">
                 <div className="bg-red-900/20 border border-red-500/20 rounded-xl p-3 text-center">
                   <div className="text-2xl font-black text-red-400">{kills}</div>
-                  <div className="text-[10px] text-red-300/60 mt-0.5">Kills total</div>
+                  <div className="text-normal-responsive text-red-300/60 mt-0.5">Kills total</div>
                 </div>
                 <div className="bg-amber-900/20 border border-amber-500/20 rounded-xl p-3 text-center">
                   <div className="text-2xl font-black text-amber-400">{log.length}</div>
-                  <div className="text-[10px] text-amber-300/60 mt-0.5">Armes drop</div>
+                  <div className="text-normal-responsive text-amber-300/60 mt-0.5">Armes drop</div>
                 </div>
                 <div className={`border rounded-xl p-3 text-center ${hasSulfuras ? 'bg-orange-900/30 border-orange-400/40' : 'bg-gray-800/30 border-gray-700/20'}`}>
                   <div className={`text-2xl font-black ${hasSulfuras ? 'text-orange-400' : 'text-gray-600'}`}>{sulfurasCount}</div>
-                  <div className="text-[10px] text-gray-400 mt-0.5">{'\uD83D\uDD28'} Sulfuras</div>
+                  <div className="text-normal-responsive text-gray-400 mt-0.5">{'\uD83D\uDD28'} Sulfuras</div>
                 </div>
               </div>
 
@@ -11690,7 +11691,7 @@ export default function ShadowColosseum() {
                     <div className={`text-sm font-bold ${hasSulfuras ? 'text-orange-300' : 'text-gray-500'}`}>
                       Masse de Sulfuras
                     </div>
-                    <div className="text-[10px] text-gray-400">
+                    <div className="text-normal-responsive text-gray-400">
                       {hasSulfuras
                         ? `x${sulfurasCount} drops — A${data.weaponCollection['w_sulfuras']} (1er drop au kill #${log.find(d => d.weaponId === 'w_sulfuras')?.killNumber || '?'})`
                         : kills > 0
@@ -11702,7 +11703,7 @@ export default function ShadowColosseum() {
                 </div>
                 {!hasSulfuras && kills > 0 && (
                   <div className="mt-2">
-                    <div className="flex justify-between text-[9px] text-gray-500 mb-0.5">
+                    <div className="flex justify-between text-small-responsive text-gray-500 mb-0.5">
                       <span>Probabilite cumulee</span>
                       <span>{Math.min(99.99, (1 - Math.pow(1 - 1/10000, kills)) * 100).toFixed(2)}%</span>
                     </div>
@@ -11741,9 +11742,9 @@ export default function ShadowColosseum() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className={`text-xs font-bold truncate ${isSulfuras ? 'text-orange-300' : 'text-white'}`}>{entry.name || wData?.name}</div>
-                            <div className="text-[9px] text-gray-500">Kill #{entry.killNumber} — {dateStr}</div>
+                            <div className="text-small-responsive text-gray-500">Kill #{entry.killNumber} — {dateStr}</div>
                           </div>
-                          <div className={`text-[9px] px-1.5 py-0.5 rounded ${
+                          <div className={`text-small-responsive px-1.5 py-0.5 rounded ${
                             isSulfuras ? 'bg-orange-500/20 text-orange-300' :
                             entry.rarity === 'mythique' ? 'bg-purple-500/20 text-purple-300' :
                             entry.rarity === 'legendaire' ? 'bg-yellow-500/20 text-yellow-300' :
@@ -11776,7 +11777,7 @@ export default function ShadowColosseum() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-black text-purple-300">{'\uD83D\uDC51'} Monarque Supreme</h3>
-                  <div className="text-[10px] text-gray-400">Tier 6 — Domaine du Monarque</div>
+                  <div className="text-normal-responsive text-gray-400">Tier 6 — Domaine du Monarque</div>
                 </div>
                 <button onClick={() => setMonarchHistoryOpen(false)} className="text-gray-500 hover:text-white text-xl">&times;</button>
               </div>
@@ -11784,15 +11785,15 @@ export default function ShadowColosseum() {
               <div className="grid grid-cols-3 gap-2 mb-4">
                 <div className="bg-purple-900/20 border border-purple-500/20 rounded-xl p-3 text-center">
                   <div className="text-2xl font-black text-purple-400">{kills}</div>
-                  <div className="text-[10px] text-purple-300/60 mt-0.5">Kills total</div>
+                  <div className="text-normal-responsive text-purple-300/60 mt-0.5">Kills total</div>
                 </div>
                 <div className="bg-amber-900/20 border border-amber-500/20 rounded-xl p-3 text-center">
                   <div className="text-2xl font-black text-amber-400">{log.length}</div>
-                  <div className="text-[10px] text-amber-300/60 mt-0.5">Armes drop</div>
+                  <div className="text-normal-responsive text-amber-300/60 mt-0.5">Armes drop</div>
                 </div>
                 <div className="bg-indigo-900/20 border border-indigo-500/20 rounded-xl p-3 text-center">
                   <div className="text-2xl font-black text-indigo-400">{katanaZCount + katanaVCount}</div>
-                  <div className="text-[10px] text-indigo-300/60 mt-0.5">Katanas</div>
+                  <div className="text-normal-responsive text-indigo-300/60 mt-0.5">Katanas</div>
                 </div>
               </div>
 
@@ -11806,7 +11807,7 @@ export default function ShadowColosseum() {
                   )}
                   <div>
                     <div className={`text-sm font-bold ${hasZ ? 'text-cyan-300' : 'text-gray-500'}`}>Katana Z</div>
-                    <div className="text-[10px] text-gray-400">
+                    <div className="text-normal-responsive text-gray-400">
                       {hasZ ? `x${katanaZCount} drops — A${data.weaponCollection['w_katana_z']}` : kills > 0 ? `${kills} kills sans Katana Z (1/50 000)` : 'Pas encore de kills'}
                     </div>
                   </div>
@@ -11823,7 +11824,7 @@ export default function ShadowColosseum() {
                   )}
                   <div>
                     <div className={`text-sm font-bold ${hasV ? 'text-emerald-300' : 'text-gray-500'}`}>Katana V</div>
-                    <div className="text-[10px] text-gray-400">
+                    <div className="text-normal-responsive text-gray-400">
                       {hasV ? `x${katanaVCount} drops — A${data.weaponCollection['w_katana_v']}` : kills > 0 ? `${kills} kills sans Katana V (1/50 000)` : 'Pas encore de kills'}
                     </div>
                   </div>
@@ -11833,7 +11834,7 @@ export default function ShadowColosseum() {
               {/* Cumulative chance */}
               {kills > 0 && (
                 <div className="mb-4 p-3 rounded-xl border border-purple-500/20 bg-purple-900/10">
-                  <div className="flex justify-between text-[9px] text-gray-500 mb-0.5">
+                  <div className="flex justify-between text-small-responsive text-gray-500 mb-0.5">
                     <span>Probabilite cumulee (chaque katana)</span>
                     <span>{Math.min(99.99, (1 - Math.pow(1 - 1/50000, kills)) * 100).toFixed(2)}%</span>
                   </div>
@@ -11871,9 +11872,9 @@ export default function ShadowColosseum() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className={`text-xs font-bold truncate ${isKatana ? 'text-purple-300' : 'text-white'}`}>{entry.name || wData?.name}</div>
-                            <div className="text-[9px] text-gray-500">Kill #{entry.killNumber} — {dateStr}</div>
+                            <div className="text-small-responsive text-gray-500">Kill #{entry.killNumber} — {dateStr}</div>
                           </div>
-                          <div className={`text-[9px] px-1.5 py-0.5 rounded ${
+                          <div className={`text-small-responsive px-1.5 py-0.5 rounded ${
                             isKatana ? 'bg-purple-500/20 text-purple-300' :
                             entry.rarity === 'mythique' ? 'bg-purple-500/20 text-purple-300' :
                             entry.rarity === 'legendaire' ? 'bg-yellow-500/20 text-yellow-300' :
@@ -11911,7 +11912,7 @@ export default function ShadowColosseum() {
                   <span className="text-3xl">{wDet.icon}</span>
                   <div>
                     <h3 className="text-lg font-black text-amber-300">{wDet.name}</h3>
-                    <div className="flex items-center gap-2 text-[10px]">
+                    <div className="flex items-center gap-2 text-normal-responsive">
                       <span className={rarCol[wDet.rarity]?.split(' ')[0] || 'text-gray-400'}>{RARITY[wDet.rarity]?.stars}</span>
                       {el && <span className={el.color}>{el.icon} {el.name}</span>}
                       {!el && <span className="text-gray-400">Neutre</span>}
@@ -11938,7 +11939,7 @@ export default function ShadowColosseum() {
                           setData(prev => ({ ...prev, alkahest: (prev.alkahest || 0) - ENCHANT_ALKAHEST_COST, weaponEnchants: newEnc }));
                           if (bonus > previousBonus) beruSay(`Enchant ATK UP ! +${bonus.toFixed(1)}`, 'excited');
                           else beruSay(`Enchant ATK DOWN... +${bonus.toFixed(1)}`, 'shocked');
-                        }} className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${canEnchW ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
+                        }} className={`text-tiny-responsive px-1.5 py-0.5 rounded font-bold ${canEnchW ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
                           {(wEnc.atk || 0) > 0 ? '\u2697\uFE0F Re-ench' : '\u2697\uFE0F Ench'} {ENCHANT_ALKAHEST_COST}
                         </button>
                       )}
@@ -11953,7 +11954,7 @@ export default function ShadowColosseum() {
                           setData(prev => ({ ...prev, alkahest: (prev.alkahest || 0) - ENCHANT_ALKAHEST_COST, weaponEnchants: newEnc }));
                           if (bonus > previousBonus) beruSay(`Enchant UP ! +${bonus.toFixed(1)}`, 'excited');
                           else beruSay(`Enchant DOWN... +${bonus.toFixed(1)}`, 'shocked');
-                        }} className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${canEnchW ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
+                        }} className={`text-tiny-responsive px-1.5 py-0.5 rounded font-bold ${canEnchW ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30' : 'bg-gray-700/20 text-gray-600'}`}>
                           {(wEnc.bonus || 0) > 0 ? '\u2697\uFE0F Re-ench' : '\u2697\uFE0F Ench'} {ENCHANT_ALKAHEST_COST}
                         </button>
                       )}
@@ -11973,7 +11974,7 @@ export default function ShadowColosseum() {
                   const unlocked = owned && wAw >= lvl;
                   return (
                     <div key={i} className={`flex items-center gap-2 p-2 rounded-lg border ${unlocked ? 'border-green-500/40 bg-green-500/10' : 'border-gray-700/30 bg-gray-800/20'}`}>
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black ${unlocked ? 'bg-green-500/30 text-green-300' : 'bg-gray-700/30 text-gray-500'}`}>A{lvl}</div>
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-normal-responsive font-black ${unlocked ? 'bg-green-500/30 text-green-300' : 'bg-gray-700/30 text-gray-500'}`}>A{lvl}</div>
                       <div className="flex-1">
                         <div className={`text-xs font-bold ${unlocked ? 'text-green-300' : 'text-gray-500'}`}>{p.desc}</div>
                       </div>
@@ -11991,7 +11992,7 @@ export default function ShadowColosseum() {
                   const bonus = (lvl - 5) * 3;
                   return (
                     <div key={lvl} className={`flex items-center gap-2 p-2 rounded-lg border ${unlocked ? 'border-indigo-500/40 bg-indigo-500/10' : 'border-gray-700/30 bg-gray-800/20'}`}>
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black ${unlocked ? 'bg-indigo-500/30 text-indigo-300' : 'bg-gray-700/30 text-gray-500'}`}>A{lvl}</div>
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-normal-responsive font-black ${unlocked ? 'bg-indigo-500/30 text-indigo-300' : 'bg-gray-700/30 text-gray-500'}`}>A{lvl}</div>
                       <div className="flex-1">
                         <div className={`text-xs ${unlocked ? 'text-indigo-300' : 'text-gray-500'}`}>ATK +{bonus}%, INT +{bonus}%, DEF +{bonus}%, PV +{bonus}%</div>
                       </div>
@@ -12021,8 +12022,8 @@ export default function ShadowColosseum() {
                   <span className="text-3xl">{s.icon}</span>
                   <div>
                     <h3 className={`text-lg font-black ${s.color}`}>{s.name}</h3>
-                    <div className="text-[10px] text-gray-400">{s.desc}</div>
-                    {s.raid && <span className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-400 font-bold">Raid Exclusif</span>}
+                    <div className="text-normal-responsive text-gray-400">{s.desc}</div>
+                    {s.raid && <span className="text-small-responsive px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-400 font-bold">Raid Exclusif</span>}
                   </div>
                 </div>
                 <button onClick={() => setArtifactSetDetail(null)} className="text-gray-500 hover:text-white text-xl">&times;</button>
@@ -12030,20 +12031,20 @@ export default function ShadowColosseum() {
               {/* 2-piece bonus */}
               <div className={`p-3 rounded-xl border ${s.border} ${s.bg} mb-2`}>
                 <div className="flex items-center gap-2 mb-1">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${s.bg} ${s.color}`}>2</div>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-normal-responsive font-black ${s.bg} ${s.color}`}>2</div>
                   <span className={`text-xs font-bold ${s.color}`}>Bonus 2 Pieces</span>
                 </div>
                 <div className="text-sm text-white font-bold">{s.bonus2Desc}</div>
-                {s.passive2 && <div className="text-[10px] text-purple-300 mt-1 italic">Passif actif en combat</div>}
+                {s.passive2 && <div className="text-normal-responsive text-purple-300 mt-1 italic">Passif actif en combat</div>}
               </div>
               {/* 4-piece bonus */}
               <div className={`p-3 rounded-xl border ${s.border} ${s.bg}`}>
                 <div className="flex items-center gap-2 mb-1">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${s.bg} ${s.color}`}>4</div>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-normal-responsive font-black ${s.bg} ${s.color}`}>4</div>
                   <span className={`text-xs font-bold ${s.color}`}>Bonus 4 Pieces</span>
                 </div>
                 <div className="text-sm text-white font-bold">{s.bonus4Desc}</div>
-                {s.passive4 && <div className="text-[10px] text-purple-300 mt-1 italic">Passif actif en combat</div>}
+                {s.passive4 && <div className="text-normal-responsive text-purple-300 mt-1 italic">Passif actif en combat</div>}
               </div>
             </motion.div>
           </div>
@@ -12058,7 +12059,7 @@ export default function ShadowColosseum() {
             <div className="text-center mb-3">
               <div className="text-3xl mb-1">{'\uD83C\uDFC5'}</div>
               <h3 className="text-lg font-black text-indigo-300">Niveau Compte</h3>
-              <p className="text-[11px] text-gray-400">+{ACCOUNT_BONUS_AMOUNT} pts par allocation</p>
+              <p className="text-medium-responsive text-gray-400">+{ACCOUNT_BONUS_AMOUNT} pts par allocation</p>
               <div className="inline-block mt-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30">
                 <span className="text-xs font-black text-amber-400">{accountLevelUpPending} allocation{accountLevelUpPending > 1 ? 's' : ''} restante{accountLevelUpPending > 1 ? 's' : ''}</span>
               </div>
@@ -12088,7 +12089,7 @@ export default function ShadowColosseum() {
                     <div className="flex gap-1 flex-1 justify-end">
                       {[1, 10, 100, 1000].map(n => (
                         <button key={n} onClick={() => allocN(n)}
-                          className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/40 hover:text-white hover:border-indigo-400/60 transition-all active:scale-95">
+                          className="px-2.5 py-1 rounded-md text-normal-responsive font-bold bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/40 hover:text-white hover:border-indigo-400/60 transition-all active:scale-95">
                           +{n}
                         </button>
                       ))}
@@ -12129,10 +12130,10 @@ export default function ShadowColosseum() {
             <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600/90 border border-red-400/60 shadow-lg shadow-red-500/40 backdrop-blur-sm">
               <span className="text-lg animate-bounce">{'\uD83D\uDD14'}</span>
               <div>
-                <div className="text-[11px] text-red-100 font-bold">{dropToast.username} a obtenu :</div>
+                <div className="text-medium-responsive text-red-100 font-bold">{dropToast.username} a obtenu :</div>
                 <div className="text-[13px] text-white font-black">{dropToast.itemName}</div>
               </div>
-              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ml-1 ${
+              <span className={`text-small-responsive px-1.5 py-0.5 rounded-full font-bold ml-1 ${
                 dropToast.itemRarity === 'secret' ? 'bg-red-900/60 text-red-200' : 'bg-amber-900/60 text-amber-200'
               }`}>{dropToast.itemRarity}</span>
             </div>
@@ -12173,9 +12174,9 @@ export default function ShadowColosseum() {
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-bold text-amber-300 truncate">{drop.username}</div>
                           <div className="text-xs text-gray-300 truncate">{drop.itemName}{awakeLabel}</div>
-                          <div className="text-[10px] text-gray-500">{timeStr}</div>
+                          <div className="text-normal-responsive text-gray-500">{timeStr}</div>
                         </div>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                        <span className={`text-normal-responsive px-1.5 py-0.5 rounded-full font-bold ${
                           drop.itemRarity === 'secret' ? 'bg-red-500/20 text-red-300' :
                           drop.itemRarity === 'legendaire' ? 'bg-amber-500/20 text-amber-300' :
                           'bg-purple-500/20 text-purple-300'
@@ -12211,21 +12212,21 @@ export default function ShadowColosseum() {
               {/* 1. Elements */}
               <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10">
                 <div className="text-sm font-bold text-indigo-300 mb-2">1. Les Elements</div>
-                <p className="text-[10px] text-gray-400 mb-2">Chaque chibi a un element. Exploite les faiblesses pour +30% de degats !</p>
+                <p className="text-normal-responsive text-gray-400 mb-2">Chaque chibi a un element. Exploite les faiblesses pour +30% de degats !</p>
                 <div className="grid grid-cols-2 gap-1">
-                  <div className="text-[10px]"><span className="text-purple-400">{'\uD83C\uDF11'} Ombre</span> &gt; <span className="text-emerald-400">{'\uD83D\uDCA8'} Vent</span></div>
-                  <div className="text-[10px]"><span className="text-red-400">{'\uD83D\uDD25'} Feu</span> &gt; <span className="text-purple-400">{'\uD83C\uDF11'} Ombre</span></div>
-                  <div className="text-[10px]"><span className="text-emerald-400">{'\uD83D\uDCA8'} Vent</span> &gt; <span className="text-amber-400">{'\uD83E\uDEA8'} Terre</span></div>
-                  <div className="text-[10px]"><span className="text-amber-400">{'\uD83E\uDEA8'} Terre</span> &gt; <span className="text-red-400">{'\uD83D\uDD25'} Feu</span></div>
-                  <div className="text-[10px]"><span className="text-blue-400">{'\uD83D\uDCA7'} Eau</span> &gt; <span className="text-red-400">{'\uD83D\uDD25'} Feu</span></div>
-                  <div className="text-[10px]"><span className="text-yellow-300">{'\u2728'} Lumiere</span> &gt; <span className="text-purple-400">{'\uD83C\uDF11'} Ombre</span></div>
+                  <div className="text-normal-responsive"><span className="text-purple-400">{'\uD83C\uDF11'} Ombre</span> &gt; <span className="text-emerald-400">{'\uD83D\uDCA8'} Vent</span></div>
+                  <div className="text-normal-responsive"><span className="text-red-400">{'\uD83D\uDD25'} Feu</span> &gt; <span className="text-purple-400">{'\uD83C\uDF11'} Ombre</span></div>
+                  <div className="text-normal-responsive"><span className="text-emerald-400">{'\uD83D\uDCA8'} Vent</span> &gt; <span className="text-amber-400">{'\uD83E\uDEA8'} Terre</span></div>
+                  <div className="text-normal-responsive"><span className="text-amber-400">{'\uD83E\uDEA8'} Terre</span> &gt; <span className="text-red-400">{'\uD83D\uDD25'} Feu</span></div>
+                  <div className="text-normal-responsive"><span className="text-blue-400">{'\uD83D\uDCA7'} Eau</span> &gt; <span className="text-red-400">{'\uD83D\uDD25'} Feu</span></div>
+                  <div className="text-normal-responsive"><span className="text-yellow-300">{'\u2728'} Lumiere</span> &gt; <span className="text-purple-400">{'\uD83C\uDF11'} Ombre</span></div>
                 </div>
               </div>
 
               {/* 2. Farming & Leveling */}
               <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10">
                 <div className="text-sm font-bold text-emerald-300 mb-2">2. Farming & Leveling</div>
-                <div className="space-y-1 text-[10px] text-gray-400">
+                <div className="space-y-1 text-normal-responsive text-gray-400">
                   <p>{'\u2694\uFE0F'} <b className="text-white">Combats d'etages</b> : Bats des ennemis de plus en plus forts pour gagner de l'XP, des coins et des marteaux.</p>
                   <p>{'\uD83D\uDCC8'} <b className="text-white">Montee en niveau</b> : Chaque niveau donne des points de stats a repartir (PV, ATK, DEF, SPD, CRIT, RES, MANA).</p>
                   <p>{'\uD83C\uDF33'} <b className="text-white">Arbre de competences</b> : Debloque des ameliorations pour les sorts de tes chibis.</p>
@@ -12237,7 +12238,7 @@ export default function ShadowColosseum() {
               {/* 3. Equipment */}
               <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10">
                 <div className="text-sm font-bold text-amber-300 mb-2">3. Equipement</div>
-                <div className="space-y-1 text-[10px] text-gray-400">
+                <div className="space-y-1 text-normal-responsive text-gray-400">
                   <p>{'\uD83D\uDD2E'} <b className="text-white">Artefacts</b> : Forge-les dans la Boutique (rare/legendaire/mythique). Chaque piece a une stat principale et des sub-stats.</p>
                   <p>{'\u2B06\uFE0F'} <b className="text-white">Amelioration</b> : Utilise des Marteaux + coins pour monter tes artefacts (max Lv20). Tous les 5 niveaux, une sub-stat est boostee !</p>
                   <p>{'\uD83D\uDEE1\uFE0F'} <b className="text-white">Sets</b> : Equipe 2 ou 4 pieces du meme set pour des bonus puissants (ATK%, DEF%, SPD...).</p>
@@ -12249,7 +12250,7 @@ export default function ShadowColosseum() {
               {/* 4. Mana */}
               <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10">
                 <div className="text-sm font-bold text-violet-300 mb-2">4. Mana</div>
-                <div className="space-y-1 text-[10px] text-gray-400">
+                <div className="space-y-1 text-normal-responsive text-gray-400">
                   <p>{'\uD83D\uDCA0'} <b className="text-white">Chaque sort coute de la mana</b>. Les sorts basiques sont gratuits, les sorts puissants coutent plus cher.</p>
                   <p>{'\uD83D\uDD04'} <b className="text-white">Regeneration</b> : La mana remonte a chaque tour, bonus avec la SPD.</p>
                   <p>{'\uD83D\uDCA1'} <b className="text-white">Astuce</b> : Investis des points en MANA ou equipe le set "Source Arcanique" pour +30% mana max et -20% cout !</p>
@@ -12259,7 +12260,7 @@ export default function ShadowColosseum() {
               {/* 5. Raid Boss */}
               <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10">
                 <div className="text-sm font-bold text-red-300 mb-2">5. Raid Boss</div>
-                <div className="space-y-1 text-[10px] text-gray-400">
+                <div className="space-y-1 text-normal-responsive text-gray-400">
                   <p>{'\uD83D\uDC1C'} <b className="text-white">Le Raid est un combat en temps reel</b> contre un boss a barres de vie multiples. Compose 2 equipes de 3 combattants.</p>
                   <p>{'\uD83D\uDCA5'} <b className="text-white">Rage Count (RC)</b> : Chaque barre detruite = +1 RC. Plus le RC est haut, meilleures sont les recompenses !</p>
                   <p>{'\u23F1\uFE0F'} <b className="text-white">Limite</b> : 10 tentatives par jour. Utilise-les bien !</p>
@@ -12271,7 +12272,7 @@ export default function ShadowColosseum() {
               {/* 6. Hunters */}
               <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10">
                 <div className="text-sm font-bold text-yellow-300 mb-2">6. Debloquer des Hunters</div>
-                <div className="space-y-1 text-[10px] text-gray-400">
+                <div className="space-y-1 text-normal-responsive text-gray-400">
                   <p>{'\uD83C\uDFC6'} <b className="text-white">Les Hunters</b> sont des combattants speciaux debloques en accumulant du RC total sur le Raid Boss.</p>
                   <p>{'\u2B50'} <b className="text-white">Eveil</b> : Les duplicatas augmentent les etoiles d'un Hunter (+5% stats de base par etoile, max 5).</p>
                   <p>{'\uD83D\uDCAA'} <b className="text-white">Objectif</b> : Farm le Raid, monte ton RC total, et debloque tous les Hunters pour avoir la meilleure equipe !</p>
@@ -12306,9 +12307,9 @@ export default function ShadowColosseum() {
               <div>
                 <div className="text-xs font-bold text-white">{catchToast.name}</div>
                 {catchToast.isNew ? (
-                  <div className="text-[10px] text-green-400">Nouveau chibi debloque !</div>
+                  <div className="text-normal-responsive text-green-400">Nouveau chibi debloque !</div>
                 ) : (
-                  <div className="text-[10px] text-blue-300">Doublon ! +{catchToast.xp} XP</div>
+                  <div className="text-normal-responsive text-blue-300">Doublon ! +{catchToast.xp} XP</div>
                 )}
               </div>
             </div>
