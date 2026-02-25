@@ -4102,7 +4102,7 @@ export default function ShadowColosseum() {
                   <div className="flex gap-2 mt-2">
                     <span className="text-small-responsive px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/20">3-5 joueurs</span>
                     <span className="text-small-responsive px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/20">Temps reel</span>
-                    <span className="text-small-responsive px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/20">4 classes</span>
+                    <span className="text-small-responsive px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/20">5 classes</span>
                   </div>
                 </div>
                 <div className="text-gray-500 group-hover:text-emerald-400 text-xl transition-colors">{'\u2192'}</div>
@@ -4204,6 +4204,17 @@ export default function ShadowColosseum() {
                   { key: 'R', name: 'Barrage', desc: '12 tirs rapides en cone pendant 3s', cd: '40s' },
                 ],
               },
+              berserker: {
+                label: 'Berserker', icon: '\u26A1', color: '#dc2626', desc: 'ATK++, Rage brutale, Tourbillon',
+                role: 'Le guerrier enrage. Frappe brutale en cone, charge progressive et tourbillon devastateur.',
+                skills: [
+                  { key: 'LMB', name: 'Frappe Brutale', desc: 'Cone melee puissant (portee 75)', cd: '0.4s' },
+                  { key: 'RMB', name: 'Frappe Chargee', desc: 'Maintenu pour charger (4 niveaux : 200→1100 dmg)', cd: 'Chargé' },
+                  { key: 'A', name: 'Rage du Berserker', desc: '+30% ATK, +20% SPD pendant 10s', cd: '20s' },
+                  { key: 'E', name: 'Assaut Devastateur', desc: 'Dash + degats sur la trajectoire (35 mana)', cd: '6s' },
+                  { key: 'R', name: 'Tourbillon de Destruction', desc: '6 ticks de degats en zone pendant 3s', cd: '30s' },
+                ],
+              },
             };
 
             const statLabels = { hp: 'PV', atk: 'ATK', def: 'DEF', spd: 'SPD', crit: 'CRIT', res: 'RES' };
@@ -4237,7 +4248,7 @@ export default function ShadowColosseum() {
                 {/* Class Selector */}
                 <div className="mb-4">
                   <div className="text-normal-responsive text-gray-400 font-bold mb-1.5 uppercase tracking-wider">Classe preferee</div>
-                  <div className="grid grid-cols-4 gap-1.5">
+                  <div className="grid grid-cols-5 gap-1.5">
                     {Object.entries(classInfo).map(([key, ci]) => (
                       <button key={key}
                         onClick={() => { saveRaidChar({ preferredClass: key }); setData(prev => ({ ...prev })); }}
@@ -4333,6 +4344,7 @@ export default function ShadowColosseum() {
                     healer:    { hp: 8000,  atk: 120, def: 150, spd: 130, crit: 12, res: 30, mana: 400 },
                     dps_cac:   { hp: 10000, atk: 250, def: 180, spd: 140, crit: 25, res: 15, mana: 250 },
                     dps_range: { hp: 7500,  atk: 220, def: 120, spd: 150, crit: 30, res: 10, mana: 300 },
+                    berserker: { hp: 11500, atk: 410, def: 140, spd: 210, crit: 28, res: 18, mana: 400 },
                   };
                   // Server-side stat per point (from playerStatsAdapter.js)
                   const SERVER_SPP = { hp: 150, atk: 3, def: 4, spd: 2, crit: 0.8, res: 1.5 };
