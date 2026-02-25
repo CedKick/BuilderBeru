@@ -4969,7 +4969,7 @@ export default function ShadowColosseum() {
                               <span className={RARITY[c.rarity].color}>{RARITY[c.rarity].stars}</span>
                               <span className={ELEMENTS[c.element].color}>{ELEMENTS[c.element].icon}</span>
                               <span className="text-gray-400">Lv{level}</span>
-                              <span className="text-amber-400 font-bold ml-auto text-normal-responsive">iLv{iLvl}</span>
+                              <span className="hidden sm:inline text-amber-400 font-bold ml-auto text-normal-responsive">iLv{iLvl}</span>
                             </div>
                           </div>
                           {_weapon && (
@@ -5079,7 +5079,7 @@ export default function ShadowColosseum() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1 text-xs font-bold">
                               <span className="truncate">{c.name}</span>
-                              <span className="text-amber-400 text-small-responsive ml-auto font-bold">iLv{iLvl}</span>
+                              <span className="hidden sm:inline text-amber-400 text-small-responsive ml-auto font-bold">iLv{iLvl}</span>
                             </div>
                             <div className="flex items-center gap-1 text-small-responsive">
                               <span className={RARITY[c.rarity].color}>{RARITY[c.rarity].stars}</span>
