@@ -535,7 +535,7 @@ export default function ShadowColosseum() {
   const [equipDetailSlot, setEquipDetailSlot] = useState(null); // slotId for equipment view detail panel
   const [rosterSort, setRosterSort] = useState('ilevel'); // 'ilevel' | 'level' | 'name'
   const [rosterFilterElem, setRosterFilterElem] = useState(null); // element id or null
-  const [searchQuery, setSearchQuery] = useState('"'); // search filter by name
+  const [searchQuery, setSearchQuery] = useState(''); // search filter by name
   const [rosterFilterClass, setRosterFilterClass] = useState(null); // class id or null
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [chibisCollapsed, setChibisCollapsed] = useState(false);
