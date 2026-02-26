@@ -108,25 +108,45 @@ const getFarmDropRates = (stageId, lootMult, factionBuffs) => {
 };
 
 // ─── FarmTimer — auto-updating elapsed time + cumulative chances ───
-const FarmTimer = ({ stageId, lootMult, factionBuffs }) => {
-  const [elapsed, setElapsed] = useState(getFarmElapsedMinutes());
+const FarmTimer = ({ stageId, lootMult, factionBuffs, lootBoostMs }) => {
+  const [now, setNow] = useState(Date.now());
   useEffect(() => {
-    const id = setInterval(() => setElapsed(getFarmElapsedMinutes()), 30000);
+    const id = setInterval(() => setNow(Date.now()), 10000);
     return () => clearInterval(id);
   }, []);
+  const elapsed = getFarmElapsedMinutes();
   const h = Math.floor(elapsed / 60);
   const m = elapsed % 60;
   const battles = elapsed * 15;
   const drops = getFarmDropRates(stageId, lootMult, factionBuffs);
+
+  // Loot x2 remaining
+  const lootRemainMs = lootBoostMs > 0 ? Math.max(0, lootBoostMs - (now - (now))) : 0;
+  // We only know lootBoostMs as a snapshot; display it statically since it pauses during offline farm
+  const lootRemainMin = lootBoostMs > 0 ? Math.ceil(lootBoostMs / 60000) : 0;
+
   return (
     <div>
       <div className="text-xs text-indigo-300">
         {h > 0 ? `${h}h${m.toString().padStart(2, '0')}` : `${m} min`} — ~{battles} combats
       </div>
+      {/* Active buffs tags */}
+      <div className="flex flex-wrap gap-1 mt-1">
+        {lootMult > 1 && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-800/60 text-green-300 border border-green-600/30 font-semibold">
+            Loot x2 {lootRemainMin > 0 && `(${lootRemainMin}min)`}
+          </span>
+        )}
+        {drops.some(d => d.hasFactionBuff) && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-800/60 text-blue-300 border border-blue-600/30 font-semibold">
+            Faction buff
+          </span>
+        )}
+      </div>
       {drops.map((d, i) => {
         const cumul = battles > 0 ? 1 - Math.pow(1 - d.rate, battles) : 0;
         return (
-          <div key={i} className="text-xs mt-1">
+          <div key={i} className="text-xs mt-1.5">
             <span className="text-yellow-400/90 font-semibold">{d.name}</span>
             <div className="flex items-center gap-1.5 mt-0.5">
               <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
@@ -12647,7 +12667,7 @@ export default function ShadowColosseum() {
               <div className="text-sm font-semibold text-white mb-0.5">
                 {FARMABLE_STAGES[getFarmState()?.stageId]?.name || 'Stage inconnu'}
               </div>
-              <FarmTimer stageId={getFarmState()?.stageId} lootMult={data.lootBoostMs > 0 ? 2 : 1} factionBuffs={factionBuffs} />
+              <FarmTimer stageId={getFarmState()?.stageId} lootMult={data.lootBoostMs > 0 ? 2 : 1} factionBuffs={factionBuffs} lootBoostMs={data.lootBoostMs || 0} />
               <button
                 onClick={() => handleStopFarm('manual')}
                 disabled={farmLoading}
