@@ -1,7 +1,7 @@
 // src/pages/AdminPanel.jsx — Admin panel for managing player data (Kly only)
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Search, User, ChevronLeft, Save, RefreshCw, Package, Sword, Star, TrendingUp, X, Check, AlertTriangle, Activity } from 'lucide-react';
+import { Shield, Search, User, ChevronLeft, Save, RefreshCw, Package, Sword, Star, TrendingUp, X, Check, AlertTriangle, Activity, Eye, Ban, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { isLoggedIn, authHeaders, getAuthUser } from '../utils/auth';
 import { HUNTERS } from './ShadowColosseum/raidData';
 import { WEAPONS } from './ShadowColosseum/equipmentData';
@@ -17,6 +17,7 @@ const TABS = [
   { id: 'weapons', label: 'Armes', icon: Sword },
   { id: 'account', label: 'Compte', icon: TrendingUp },
   { id: 'inventory', label: 'Inventaire', icon: Package },
+  { id: 'anticheat', label: 'Anti-Cheat', icon: ShieldAlert },
   { id: 'diagnostics', label: 'Serveur', icon: Activity },
 ];
 
@@ -325,9 +326,9 @@ export default function AdminPanel() {
           )}
 
           {/* Tabs */}
-          {(selectedUser && playerData || activeTab === 'diagnostics') && (
-            <div className="flex gap-1 px-6 pt-3 border-b border-white/10 bg-[#0a0a15]">
-              {TABS.filter(tab => tab.id === 'diagnostics' || (selectedUser && playerData)).map(tab => (
+          {(selectedUser && playerData || activeTab === 'diagnostics' || activeTab === 'anticheat') && (
+            <div className="flex gap-1 px-6 pt-3 border-b border-white/10 bg-[#0a0a15] overflow-x-auto">
+              {TABS.filter(tab => tab.id === 'diagnostics' || tab.id === 'anticheat' || (selectedUser && playerData)).map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
@@ -356,7 +357,11 @@ export default function AdminPanel() {
               <DiagnosticsTab allUsers={allUsers} />
             )}
 
-            {!selectedUser && !loading && activeTab !== 'diagnostics' && (
+            {activeTab === 'anticheat' && (
+              <AntiCheatTab />
+            )}
+
+            {!selectedUser && !loading && activeTab !== 'diagnostics' && activeTab !== 'anticheat' && (
               <div className="flex items-center justify-center h-64 text-gray-600">
                 <div className="text-center">
                   <Shield size={48} className="mx-auto mb-4 opacity-20" />
@@ -371,7 +376,7 @@ export default function AdminPanel() {
               </div>
             )}
 
-            {selectedUser && playerData && !loading && activeTab !== 'diagnostics' && (
+            {selectedUser && playerData && !loading && activeTab !== 'diagnostics' && activeTab !== 'anticheat' && (
               <>
                 {activeTab === 'overview' && <OverviewTab data={playerData} raidData={raidData} />}
                 {activeTab === 'hunters' && <HuntersTab data={playerData} setField={setField} />}
@@ -383,6 +388,325 @@ export default function AdminPanel() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// TAB: Anti-Cheat Monitoring
+// ═══════════════════════════════════════════════════════════
+
+function AntiCheatTab() {
+  const [players, setPlayers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null); // username being acted on
+  const [actionMsg, setActionMsg] = useState(null);
+  const [suspendDialog, setSuspendDialog] = useState(null); // { username } or null
+  const [suspendReason, setSuspendReason] = useState('');
+
+  const fetchMonitor = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resp = await fetch(`${API}?action=cheat-monitor`, { headers: authHeaders() });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      if (data.success) {
+        setPlayers(data.players);
+      } else {
+        throw new Error(data.error || 'Erreur serveur');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchMonitor(); }, []);
+
+  const handleUnsuspend = async (username) => {
+    setActionLoading(username);
+    setActionMsg(null);
+    try {
+      const resp = await fetch(`${API}?action=unsuspend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ username }),
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setActionMsg({ type: 'success', text: `${username} desuspendu (ancien score: ${data.previousScore})` });
+        fetchMonitor();
+      } else {
+        setActionMsg({ type: 'error', text: data.error || 'Erreur' });
+      }
+    } catch (err) {
+      setActionMsg({ type: 'error', text: err.message });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSuspend = async () => {
+    if (!suspendDialog) return;
+    setActionLoading(suspendDialog.username);
+    setActionMsg(null);
+    try {
+      const resp = await fetch(`${API}?action=manual-suspend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ username: suspendDialog.username, reason: suspendReason || undefined }),
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setActionMsg({ type: 'success', text: `${suspendDialog.username} suspendu` });
+        setSuspendDialog(null);
+        setSuspendReason('');
+        fetchMonitor();
+      } else {
+        setActionMsg({ type: 'error', text: data.error || 'Erreur' });
+      }
+    } catch (err) {
+      setActionMsg({ type: 'error', text: err.message });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const getScoreColor = (score) => {
+    if (score >= 80) return '#ef4444';
+    if (score >= 30) return '#f59e0b';
+    if (score > 0) return '#a855f7';
+    return '#6b7280';
+  };
+
+  const getScoreBg = (score) => {
+    if (score >= 80) return 'rgba(239,68,68,0.1)';
+    if (score >= 30) return 'rgba(245,158,11,0.1)';
+    if (score > 0) return 'rgba(168,85,247,0.1)';
+    return 'rgba(107,114,128,0.05)';
+  };
+
+  if (loading && players.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const suspended = players.filter(p => p.suspended);
+  const flagged = players.filter(p => !p.suspended && p.cheatScore > 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-500 flex items-center gap-2">
+            <ShieldAlert size={20} />
+            Anti-Cheat Monitoring
+          </h2>
+          <p className="text-xs text-gray-500 mt-1">
+            {suspended.length} suspendu{suspended.length > 1 ? 's' : ''} | {flagged.length} sous surveillance
+          </p>
+        </div>
+        <button
+          onClick={fetchMonitor}
+          disabled={loading}
+          className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-gray-300 transition-colors"
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          Rafraichir
+        </button>
+      </div>
+
+      {/* Action message */}
+      {actionMsg && (
+        <div className={`px-4 py-3 rounded-lg text-sm flex items-center gap-2 ${
+          actionMsg.type === 'success' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+        }`}>
+          {actionMsg.type === 'success' ? <ShieldCheck size={16} /> : <AlertTriangle size={16} />}
+          {actionMsg.text}
+          <button onClick={() => setActionMsg(null)} className="ml-auto text-gray-500 hover:text-white">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <div className="px-4 py-3 rounded-lg text-sm bg-red-500/10 text-red-400 border border-red-500/20">
+          {error}
+        </div>
+      )}
+
+      {/* ─── Suspended Accounts ─────────────────────── */}
+      <div className="bg-white/5 rounded-lg p-4 border border-red-500/20">
+        <h3 className="text-sm font-bold text-red-400 mb-3 flex items-center gap-2">
+          <Ban size={16} />
+          Comptes Suspendus ({suspended.length})
+        </h3>
+        {suspended.length === 0 ? (
+          <p className="text-gray-600 text-xs">Aucun compte suspendu</p>
+        ) : (
+          <div className="space-y-2">
+            {suspended.map(p => (
+              <div key={p.username} className="flex items-center justify-between py-3 px-4 rounded-lg bg-red-500/5 border border-red-500/10">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white">{p.displayName || p.username}</span>
+                    {p.displayName && p.displayName !== p.username && (
+                      <span className="text-xs text-gray-500">({p.username})</span>
+                    )}
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+                      SUSPENDU
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1 flex items-center gap-3">
+                    <span>Score: <span className="text-red-400 font-bold">{p.cheatScore}</span></span>
+                    {p.suspendedAt && <span>Depuis: {new Date(p.suspendedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
+                  </div>
+                  {p.reason && (
+                    <div className="text-xs text-orange-400/80 mt-1 font-mono bg-white/5 px-2 py-1 rounded">
+                      {p.reason}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleUnsuspend(p.username)}
+                  disabled={actionLoading === p.username}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 rounded-lg text-sm font-semibold transition-colors ml-3"
+                >
+                  {actionLoading === p.username ? (
+                    <div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <ShieldCheck size={14} />
+                  )}
+                  Desuspendre
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ─── Flagged Accounts (not suspended, score > 0) ── */}
+      <div className="bg-white/5 rounded-lg p-4 border border-amber-500/20">
+        <h3 className="text-sm font-bold text-amber-400 mb-3 flex items-center gap-2">
+          <Eye size={16} />
+          Sous Surveillance ({flagged.length})
+        </h3>
+        {flagged.length === 0 ? (
+          <p className="text-gray-600 text-xs">Aucun joueur sous surveillance</p>
+        ) : (
+          <div className="space-y-2">
+            {flagged.map(p => (
+              <div key={p.username} className="flex items-center justify-between py-3 px-4 rounded-lg" style={{ background: getScoreBg(p.cheatScore), border: `1px solid ${getScoreColor(p.cheatScore)}22` }}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-white">{p.displayName || p.username}</span>
+                    {p.displayName && p.displayName !== p.username && (
+                      <span className="text-xs text-gray-500">({p.username})</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1 flex items-center gap-3">
+                    <span>Score: <span className="font-bold" style={{ color: getScoreColor(p.cheatScore) }}>{p.cheatScore}</span>/80</span>
+                    {p.reason && <span className="text-gray-600">{p.reason}</span>}
+                    {p.lastActivity && <span>Derniere activite: {new Date(p.lastActivity).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>}
+                  </div>
+                  {/* Score bar */}
+                  <div className="mt-2 h-1.5 bg-white/5 rounded-full overflow-hidden w-48">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(100, (p.cheatScore / 80) * 100)}%`,
+                        background: `linear-gradient(90deg, ${getScoreColor(p.cheatScore)}80, ${getScoreColor(p.cheatScore)})`,
+                      }}
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSuspendDialog({ username: p.username })}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-lg text-sm font-semibold transition-colors ml-3"
+                >
+                  <Ban size={14} />
+                  Suspendre
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Score Legend */}
+      <div className="bg-white/5 rounded-lg p-4 border border-white/5">
+        <h3 className="text-sm font-bold text-gray-400 mb-3">Legende des Scores</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{ background: '#a855f7' }} />
+            <span className="text-gray-400">1-29 : Suspect leger</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{ background: '#f59e0b' }} />
+            <span className="text-gray-400">30-79 : Beru averti le joueur</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{ background: '#ef4444' }} />
+            <span className="text-gray-400">80+ : Suspension automatique</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-gray-600" />
+            <span className="text-gray-400">0 : Aucun flag</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Manual Suspend Dialog ──────────────────── */}
+      {suspendDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1a1a2e] rounded-xl border border-red-500/30 p-6 w-full max-w-md mx-4 shadow-2xl">
+            <h3 className="text-lg font-bold text-red-400 mb-4 flex items-center gap-2">
+              <Ban size={20} />
+              Suspendre {suspendDialog.username} ?
+            </h3>
+            <p className="text-sm text-gray-400 mb-4">
+              Le joueur sera immediatement bloque. Il verra le message de suspension de Beru.
+            </p>
+            <div className="mb-4">
+              <label className="text-xs text-gray-500 mb-1 block">Raison (optionnelle)</label>
+              <input
+                type="text"
+                value={suspendReason}
+                onChange={(e) => setSuspendReason(e.target.value)}
+                placeholder="Triche confirmee, comportement suspect..."
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500"
+              />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => { setSuspendDialog(null); setSuspendReason(''); }}
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 rounded-lg text-sm transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSuspend}
+                disabled={actionLoading === suspendDialog.username}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-bold transition-colors"
+              >
+                {actionLoading === suspendDialog.username ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Ban size={14} />
+                )}
+                Confirmer la Suspension
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

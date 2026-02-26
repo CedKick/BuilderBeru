@@ -1,7 +1,7 @@
 // api/admin.js — Admin panel API for managing player data (Kly only)
 import { query } from './_db/neon.js';
 import { extractUser } from './_utils/auth.js';
-import { unsuspendAccount } from './_utils/anticheat.js';
+import { unsuspendAccount, suspendAccount } from './_utils/anticheat.js';
 
 const ADMIN_USERNAME = 'kly';
 
@@ -277,6 +277,77 @@ async function handleListSuspended(req, res) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// CHEAT-MONITOR — All players with cheat scores for monitoring
+// ═══════════════════════════════════════════════════════════════
+
+async function handleCheatMonitor(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+
+  const result = await query(`
+    SELECT username, display_name, device_id, suspended, suspended_at,
+           suspended_reason, cheat_score, updated_at
+    FROM users
+    WHERE cheat_score > 0 OR suspended = true
+    ORDER BY
+      suspended DESC,
+      cheat_score DESC,
+      updated_at DESC
+  `);
+
+  return res.status(200).json({
+    success: true,
+    players: result.rows.map(r => ({
+      username: r.username,
+      displayName: r.display_name,
+      deviceId: r.device_id,
+      suspended: r.suspended || false,
+      suspendedAt: r.suspended_at,
+      reason: r.suspended_reason,
+      cheatScore: r.cheat_score || 0,
+      lastActivity: r.updated_at,
+    })),
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MANUAL SUSPEND — Admin-initiated suspension
+// ═══════════════════════════════════════════════════════════════
+
+async function handleManualSuspend(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+
+  const { username, reason } = req.body;
+  if (!username) return res.status(400).json({ error: 'Missing username' });
+
+  const userResult = await query(
+    'SELECT device_id, suspended FROM users WHERE username_lower = $1',
+    [username.toLowerCase()]
+  );
+  if (userResult.rows.length === 0) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  const { device_id, suspended } = userResult.rows[0];
+  if (suspended) {
+    return res.status(200).json({ success: true, message: 'Already suspended' });
+  }
+
+  const banReason = reason || `Suspension manuelle par ${admin.username}`;
+  await suspendAccount(device_id, banReason, 100, [`MANUAL: ${banReason}`]);
+
+  console.log(`[admin] ${admin.username} MANUALLY SUSPENDED ${username} — reason: ${banReason}`);
+
+  return res.status(200).json({
+    success: true,
+    message: `${username} suspended`,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════════════
 
@@ -302,6 +373,10 @@ export default async function handler(req, res) {
         return await handleUnsuspend(req, res);
       case 'list-suspended':
         return await handleListSuspended(req, res);
+      case 'cheat-monitor':
+        return await handleCheatMonitor(req, res);
+      case 'manual-suspend':
+        return await handleManualSuspend(req, res);
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }
