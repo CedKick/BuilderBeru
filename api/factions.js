@@ -38,6 +38,11 @@ export const FACTION_BUFFS = {
 
 export const FACTION_CHANGE_COST = 5000; // Shadow Coins cost to change faction
 
+// Valid Tier 6 stages for offline farm
+const VALID_FARM_STAGES = new Set(['archdemon', 'ragnarok', 'zephyr', 'supreme_monarch']);
+const MAX_FARM_MINUTES = 240; // 4h cap
+const BATTLES_PER_MINUTE = 15;
+
 // ═══════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════
@@ -76,6 +81,8 @@ export default async function handler(req, res) {
       case 'activity-reward': return await handleActivityReward(req, res);
       case 'heartbeat': return await handleHeartbeat(req, res);
       case 'faction-members': return await handleFactionMembers(req, res);
+      case 'offline-farm-start': return await handleOfflineFarmStart(req, res);
+      case 'offline-farm-end': return await handleOfflineFarmEnd(req, res);
       default:
         return res.status(400).json({ success: false, message: 'Invalid action' });
     }
@@ -138,6 +145,16 @@ async function handleInit(req, res) {
   // Migration: add last_activity column
   await query(`ALTER TABLE player_factions ADD COLUMN IF NOT EXISTS last_activity TIMESTAMPTZ DEFAULT NOW()`);
 
+  // Migration: offline farm columns
+  await query(`
+    ALTER TABLE player_factions
+      ADD COLUMN IF NOT EXISTS farm_active BOOLEAN DEFAULT false,
+      ADD COLUMN IF NOT EXISTS farm_started_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS farm_stage_id VARCHAR(30),
+      ADD COLUMN IF NOT EXISTS last_farm_end_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS last_farm_minutes INT DEFAULT 0
+  `);
+
   return res.json({ success: true, message: 'Faction tables created' });
 }
 
@@ -177,7 +194,7 @@ async function handleStatus(req, res) {
   if (!user) return res.status(401).json({ success: false, message: 'Authentication required' });
 
   const playerData = await query(
-    'SELECT faction, contribution_points, points_spent, joined_at FROM player_factions WHERE username = $1',
+    'SELECT faction, contribution_points, points_spent, joined_at, farm_active, farm_started_at, farm_stage_id FROM player_factions WHERE username = $1',
     [user.username]
   );
 
@@ -211,6 +228,9 @@ async function handleStatus(req, res) {
     pointsAvailable: player.contribution_points - player.points_spent,
     joinedAt: player.joined_at,
     buffs: buffsMap,
+    farmActive: !!player.farm_active,
+    farmStageId: player.farm_stage_id,
+    farmStartedAt: player.farm_started_at,
   });
 }
 
@@ -467,5 +487,100 @@ async function handleFactionMembers(req, res) {
     faction: factionId,
     factionName: FACTIONS[factionId]?.name || factionId,
     members: membersList,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OFFLINE FARM — Server-validated session management
+// ═══════════════════════════════════════════════════════════════
+
+async function handleOfflineFarmStart(req, res) {
+  const user = await extractUser(req);
+  if (!user) return res.status(401).json({ success: false, message: 'Authentication required' });
+
+  const { stageId } = req.body;
+  if (!stageId || !VALID_FARM_STAGES.has(stageId)) {
+    return res.status(400).json({ success: false, message: 'Invalid stage for offline farm' });
+  }
+
+  const playerData = await query(
+    'SELECT faction, contribution_points, points_spent, farm_active FROM player_factions WHERE username = $1',
+    [user.username]
+  );
+
+  if (playerData.rows.length === 0) {
+    return res.status(400).json({ success: false, message: 'Not in a faction' });
+  }
+
+  const player = playerData.rows[0];
+
+  if (player.farm_active) {
+    return res.status(400).json({ success: false, message: 'Farm already active' });
+  }
+
+  const available = player.contribution_points - player.points_spent;
+  if (available < 1) {
+    return res.status(400).json({ success: false, message: 'Not enough contribution points (need at least 1)' });
+  }
+
+  await query(
+    `UPDATE player_factions
+     SET farm_active = true, farm_started_at = NOW(), farm_stage_id = $2
+     WHERE username = $1`,
+    [user.username, stageId]
+  );
+
+  console.log(`[farm] ${user.username} started offline farm on ${stageId}`);
+
+  return res.json({ success: true, farmStartedAt: new Date().toISOString(), stageId });
+}
+
+async function handleOfflineFarmEnd(req, res) {
+  const user = await extractUser(req);
+  if (!user) return res.status(401).json({ success: false, message: 'Authentication required' });
+
+  const playerData = await query(
+    'SELECT faction, contribution_points, points_spent, farm_active, farm_started_at, farm_stage_id FROM player_factions WHERE username = $1',
+    [user.username]
+  );
+
+  if (playerData.rows.length === 0) {
+    return res.status(400).json({ success: false, message: 'Not in a faction' });
+  }
+
+  const player = playerData.rows[0];
+
+  if (!player.farm_active || !player.farm_started_at) {
+    return res.json({ success: true, actualMinutes: 0, maxBattles: 0, stageId: null, message: 'No active farm' });
+  }
+
+  // Server calculates elapsed time — client cannot inflate
+  const elapsed = Math.floor((Date.now() - new Date(player.farm_started_at).getTime()) / 60000);
+  const cappedMinutes = Math.min(elapsed, MAX_FARM_MINUTES);
+  const available = player.contribution_points - player.points_spent;
+  const actualMinutes = Math.min(cappedMinutes, available);
+  const maxBattles = actualMinutes * BATTLES_PER_MINUTE;
+
+  // Deduct faction points and clear farm state
+  await query(
+    `UPDATE player_factions
+     SET farm_active = false,
+         farm_started_at = NULL,
+         farm_stage_id = NULL,
+         points_spent = points_spent + $2,
+         last_farm_end_at = NOW(),
+         last_farm_minutes = $2
+     WHERE username = $1`,
+    [user.username, actualMinutes]
+  );
+
+  console.log(`[farm] ${user.username} ended offline farm: ${actualMinutes}min, ${maxBattles} battles on ${player.farm_stage_id}`);
+
+  return res.json({
+    success: true,
+    actualMinutes,
+    maxBattles,
+    stageId: player.farm_stage_id,
+    pointsDeducted: actualMinutes,
   });
 }

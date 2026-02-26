@@ -191,6 +191,14 @@ class CloudStorageManager {
       });
       if (!resp.ok) return null;
       const json = await resp.json();
+      // Anti-cheat: detect suspension from server
+      if (json.suspended) {
+        try {
+          window.dispatchEvent(new CustomEvent('beru-react', {
+            detail: { type: 'suspended', message: json.beruMessage || json.suspendedReason, reason: json.suspendedReason },
+          }));
+        } catch {}
+      }
       if (json.success && json.data !== null) {
         return json.data;
       }
@@ -213,6 +221,14 @@ class CloudStorageManager {
       const json = await resp.json();
       if (json.success) {
         this._online = true;
+        // Anti-cheat: detect suspension from server
+        if (json.suspended) {
+          try {
+            window.dispatchEvent(new CustomEvent('beru-react', {
+              detail: { type: 'suspended', message: json.beruMessage || json.suspendedReason, reason: json.suspendedReason },
+            }));
+          } catch {}
+        }
         return json.entries || {};
       }
       return null;
@@ -397,6 +413,21 @@ class CloudStorageManager {
         body,
       });
 
+      if (resp.status === 403) {
+        // Anti-cheat: account suspended
+        const errJson = await resp.json().catch(() => ({}));
+        if (errJson.suspended) {
+          console.error(`[CloudStorage] ⚠️ ACCOUNT SUSPENDED — ${errJson.reason || 'cheat detected'}`);
+          try {
+            window.dispatchEvent(new CustomEvent('beru-react', {
+              detail: { type: 'suspended', message: errJson.beruMessage || errJson.reason, reason: errJson.reason },
+            }));
+          } catch {}
+          this._setSyncStatus(key, 'error');
+          return false;
+        }
+      }
+
       if (resp.status === 409) {
         // Server blocked: data corruption or stale timestamp
         const errJson = await resp.json().catch(() => ({}));
@@ -414,6 +445,15 @@ class CloudStorageManager {
       // If server merged our data with another session's, log it
       if (json.merged) {
         console.log(`[CloudStorage] Server MERGED "${key}" — concurrent session detected`);
+      }
+      // Anti-cheat warning (save succeeded but flagged as suspicious)
+      if (json.cheatWarning) {
+        console.warn(`[CloudStorage] ⚠️ CHEAT WARNING — score: ${json.cheatWarning.score}`);
+        try {
+          window.dispatchEvent(new CustomEvent('beru-react', {
+            detail: { type: 'cheat-warning', message: json.cheatWarning.beruMessage, score: json.cheatWarning.score },
+          }));
+        } catch {}
       }
       // Clear pending data + update dirty hash + throttle timestamp after successful sync
       this._pendingData.delete(key);

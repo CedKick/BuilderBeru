@@ -1,5 +1,6 @@
 import { query } from '../_db/neon.js';
 import { extractUser } from '../_utils/auth.js';
+import { checkSuspension, getBeruSuspendMessage } from '../_utils/anticheat.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', 'https://builderberu.com');
@@ -39,6 +40,9 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'Invalid deviceId' });
     }
 
+    // Check suspension status (lightweight — single indexed SELECT)
+    const suspension = await checkSuspension(deviceId);
+
     // Load one key or all keys for this device
     if (key) {
       const result = await query(
@@ -48,11 +52,17 @@ export default async function handler(req, res) {
       if (result.rows.length === 0) {
         return res.status(200).json({ success: true, data: null });
       }
-      return res.status(200).json({
+      const resp = {
         success: true,
         data: result.rows[0].data,
         updatedAt: result.rows[0].updated_at,
-      });
+      };
+      if (suspension) {
+        resp.suspended = true;
+        resp.suspendedReason = suspension.reason;
+        resp.beruMessage = getBeruSuspendMessage();
+      }
+      return res.status(200).json(resp);
     }
 
     // Load all keys for this device
@@ -66,7 +76,13 @@ export default async function handler(req, res) {
       entries[row.storage_key] = { data: row.data, updatedAt: row.updated_at };
     }
 
-    return res.status(200).json({ success: true, entries });
+    const resp = { success: true, entries };
+    if (suspension) {
+      resp.suspended = true;
+      resp.suspendedReason = suspension.reason;
+      resp.beruMessage = getBeruSuspendMessage();
+    }
+    return res.status(200).json(resp);
   } catch (err) {
     console.error('Load error:', err);
     return res.status(500).json({ success: false, error: 'Erreur serveur' });

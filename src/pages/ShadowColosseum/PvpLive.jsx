@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { isFarming, stopFarm } from '../../utils/offlineFarm';
 import { computeTalentBonuses } from './talentTreeData';
 import { computeTalentBonuses2 } from './talentTree2Data';
 import {
@@ -620,6 +621,9 @@ export default function PvpLive() {
   const [displayName, setDisplayName] = useState(() => {
     try { return localStorage.getItem('pvp_live_name') || ''; } catch { return ''; }
   });
+
+  // Stop offline farm when entering PvP Live
+  useEffect(() => { if (isFarming()) stopFarm().catch(() => {}); }, []);
 
   // ─── SEO + Beru greeting ───────────────────────────────────
   useEffect(() => {

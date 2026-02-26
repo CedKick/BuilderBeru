@@ -57,6 +57,7 @@ import {
 import { TALENT_SKILLS, TALENT_SKILL_COST, TALENT_SKILL_UNLOCK_LEVEL, ULTIMATE_SKILLS, ULTIMATE_SKILL_COST } from './talentSkillData';
 import { isLoggedIn, authHeaders, getAuthUser } from '../../utils/auth';
 import { cloudStorage } from '../../utils/CloudStorage';
+import { isFarming, getFarmState, setFarmState, startFarm, stopFarm, calculateFarmRewards, FARMABLE_STAGES, getFarmElapsedMinutes } from '../../utils/offlineFarm';
 import {
   ELEMENT_SET_MAP, CLASS_SET_TIERS, CLASS_IDEAL_STATS, STAT_COLOR_MAP,
   resolveSetId, getResolvedTiers, getSetTier, getStatColor,
@@ -86,6 +87,22 @@ const StoryTypewriter = ({ text, speaker }) => {
       {displayed}
       {!done && <span className="inline-block w-0.5 h-3.5 bg-purple-400 ml-0.5 animate-pulse align-middle" />}
     </p>
+  );
+};
+
+// ─── FarmTimer — auto-updating elapsed time for farm indicator ───
+const FarmTimer = () => {
+  const [elapsed, setElapsed] = useState(getFarmElapsedMinutes());
+  useEffect(() => {
+    const id = setInterval(() => setElapsed(getFarmElapsedMinutes()), 30000);
+    return () => clearInterval(id);
+  }, []);
+  const h = Math.floor(elapsed / 60);
+  const m = elapsed % 60;
+  return (
+    <div className="text-xs text-indigo-300">
+      {h > 0 ? `${h}h${m.toString().padStart(2, '0')}` : `${m} min`} — ~{elapsed * 15} combats
+    </div>
   );
 };
 
@@ -497,6 +514,11 @@ export default function ShadowColosseum() {
   const [collectionVer, setCollectionVer] = useState(0); // bump to re-read collection
   const [autoReplay, setAutoReplay] = useState(false);
   const [autoFarmStats, setAutoFarmStats] = useState({ runs: 0, wins: 0, levels: 0, coins: 0, loots: 0, hunters: 0, weapons: 0, artifacts: 0 });
+  // Offline Auto-Farm
+  const [farmActive, setFarmActive] = useState(() => isFarming());
+  const [farmRewards, setFarmRewards] = useState(null);
+  const [farmLoading, setFarmLoading] = useState(false);
+  const [farmConfirm, setFarmConfirm] = useState(null); // { action: fn, label: string } — confirmation before stopping farm
   const [weaponReveal, setWeaponReveal] = useState(null); // weapon data for epic reveal
   const [artFilter, setArtFilter] = useState({ set: null, rarity: null, slot: null });
   const [artSort, setArtSort] = useState('level_desc'); // 'level_desc' | 'level_asc' | 'ilevel' | 'rarity'
@@ -648,6 +670,7 @@ export default function ShadowColosseum() {
   const [dropToast, setDropToast] = useState(null); // { username, itemName, itemRarity }
   const lastDropCheckRef = useRef(0);
   const [unreadMailCount, setUnreadMailCount] = useState(0);
+  const [accountSuspended, setAccountSuspended] = useState(null); // null or { reason, message }
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -708,6 +731,113 @@ export default function ShadowColosseum() {
     }, 120000);
     return () => clearInterval(id);
   }, []);
+
+  // ═══ OFFLINE AUTO-FARM HANDLERS ══════════════════════════════
+  // Recovery: re-sync farm state from server on mount
+  useEffect(() => {
+    if (isLoggedIn() && !isFarming()) {
+      fetch('/api/factions?action=status', { headers: { ...authHeaders() } })
+        .then(r => r.json())
+        .then(d => {
+          if (d.success && d.farmActive) {
+            // Server has active farm but localStorage lost — re-sync
+            setFarmState({ active: true, stageId: d.farmStageId, startedAt: d.farmStartedAt, clientStartedAt: Date.now() });
+            setFarmActive(true);
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
+
+  const handleStartFarm = async (stageId) => {
+    setFarmLoading(true);
+    try {
+      const result = await startFarm(stageId);
+      if (result.success) {
+        setFarmActive(true);
+      } else {
+        alert(result.message || 'Impossible de demarrer le farm offline');
+      }
+    } catch (e) {
+      console.error('[offlineFarm] Start failed:', e);
+    } finally {
+      setFarmLoading(false);
+    }
+  };
+
+  const handleStopFarm = async (reason = 'manual') => {
+    if (!farmActive && !isFarming()) return;
+    setFarmLoading(true);
+    try {
+      const result = await stopFarm();
+      if (result.success && result.maxBattles > 0) {
+        const lootBoostActive = data.lootBoostMs > 0;
+        const rewards = calculateFarmRewards(
+          result.maxBattles, result.stageId, lootBoostActive, factionBuffs
+        );
+
+        // Resolve hunter drops
+        const hunterIds = Object.keys(HUNTERS);
+        const resolvedHunters = [];
+        const rd = loadRaidData();
+        for (let i = 0; i < rewards.hunterRollSuccesses; i++) {
+          const pickId = hunterIds[Math.floor(Math.random() * hunterIds.length)];
+          const h = HUNTERS[pickId];
+          const res = addHunterOrDuplicate(rd, pickId);
+          rd.hunterCollection = res.collection;
+          resolvedHunters.push({ id: pickId, name: h.name, rarity: h.rarity, isDuplicate: res.isDuplicate, newStars: res.newStars });
+        }
+        if (resolvedHunters.length > 0) saveRaidData(rd);
+        rewards.hunterDrops = resolvedHunters;
+
+        // Apply weapon collection changes
+        setData(prev => {
+          const wc = { ...prev.weaponCollection };
+          for (const sw of rewards.secretWeapons) {
+            for (let c = 0; c < sw.count; c++) {
+              if (wc[sw.id] !== undefined) wc[sw.id] = Math.min(wc[sw.id] + 1, MAX_WEAPON_AWAKENING);
+              else wc[sw.id] = 0;
+            }
+          }
+          const killField = { ragnarok: 'ragnarokKills', zephyr: 'zephyrKills', supreme_monarch: 'monarchKills', archdemon: 'archDemonKills' }[result.stageId];
+          const updated = { ...prev, weaponCollection: wc };
+          if (killField) updated[killField] = (prev[killField] || 0) + result.maxBattles;
+          return updated;
+        });
+
+        setFarmRewards(rewards);
+
+        // Beru announcement
+        const msg = rewards.secretWeapons.length > 0
+          ? `AUTO-FARM TERMINE ! ${rewards.minutesFarmed}min, ${rewards.totalBattles} combats ! ${rewards.secretWeapons[0].name} x${rewards.secretWeapons[0].count} !! BERU EST IMPRESSIONNE !!`
+          : reason === 'combat'
+            ? `Auto-farm interrompu ! ${rewards.minutesFarmed}min, ${rewards.totalBattles} combats.${resolvedHunters.length > 0 ? ` ${resolvedHunters.length} hunter(s) !` : ' Pas d\'arme secrete...'}`
+            : `Auto-farm termine ! ${rewards.minutesFarmed}min, ${rewards.totalBattles} combats.${resolvedHunters.length > 0 ? ` ${resolvedHunters.length} hunter(s) obtenus !` : ''}`;
+        window.dispatchEvent(new CustomEvent('beru-react', {
+          detail: { type: rewards.secretWeapons.length > 0 ? 'excited' : 'farm-end', message: msg },
+        }));
+      }
+      setFarmActive(false);
+    } catch (e) {
+      console.error('[offlineFarm] Stop failed:', e);
+      setFarmActive(false);
+    } finally {
+      setFarmLoading(false);
+      setFarmConfirm(null);
+    }
+  };
+
+  // Confirmation dialog helper — shows dialog before stopping farm
+  const confirmStopFarm = (actionAfterStop, label) => {
+    if (!farmActive && !isFarming()) { actionAfterStop(); return; }
+    setFarmConfirm({
+      label,
+      action: async () => {
+        await handleStopFarm('combat');
+        actionAfterStop();
+      },
+    });
+  };
 
   // Fetch recent legendary drops
   const lastKnownDropIdRef = useRef(0);
@@ -794,6 +924,21 @@ export default function ShadowColosseum() {
         cloudStorage.loadFresh(SAVE_KEY).then(fresh => {
           if (fresh) setData(migrateData({ ...defaultData(), ...fresh }));
         });
+      }
+    };
+    window.addEventListener('beru-react', handler);
+    return () => window.removeEventListener('beru-react', handler);
+  }, []);
+
+  // Anti-cheat: listen for suspension and cheat-warning events from CloudStorage
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.detail?.type === 'suspended') {
+        setAccountSuspended({ reason: e.detail.reason, message: e.detail.message });
+      }
+      if (e.detail?.type === 'cheat-warning') {
+        // Béru gets agitated — show the warning message
+        beruSay(e.detail.message, 'angry');
       }
     };
     window.addEventListener('beru-react', handler);
@@ -2734,6 +2879,7 @@ export default function ShadowColosseum() {
   const LOOT_BOOST_BOSSES = ['ragnarok', 'zephyr', 'supreme_monarch', 'archdemon'];
 
   const startBattle = () => {
+    // Offline farm is stopped via confirmStopFarm BEFORE calling startBattle
     if (!selChibi || selStage === null || isCooldown(selChibi)) return;
     const chibi = getChibiData(selChibi);
     if (!chibi) return;
@@ -4038,6 +4184,33 @@ export default function ShadowColosseum() {
     <div className="min-h-screen bg-[#0a0a1a] text-white pb-20">
       <BattleStyles />
 
+      {/* Anti-cheat: Full-screen suspension overlay */}
+      {accountSuspended && (
+        <div className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4" style={{ backdropFilter: 'blur(12px)' }}>
+          <div className="max-w-lg w-full text-center space-y-6">
+            <div className="text-6xl mb-4">🚫🐜</div>
+            <h1 className="text-2xl font-bold text-red-400">Compte Suspendu</h1>
+            <div className="bg-red-950/50 border border-red-800/50 rounded-xl p-6 text-left space-y-3">
+              <p className="text-red-300 whitespace-pre-line leading-relaxed">{accountSuspended.message}</p>
+            </div>
+            <div className="bg-gray-900/80 rounded-xl p-4 space-y-2">
+              <p className="text-gray-400 text-sm">
+                Si tu penses que c'est une erreur, contacte <span className="text-purple-400 font-semibold">Kly</span> sur Discord.
+              </p>
+              <p className="text-gray-500 text-xs">
+                Seul un administrateur peut lever la suspension.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/')}
+              className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-300 text-sm transition-colors"
+            >
+              Retour a l'accueil
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Cloud sync indicator */}
       {isLoggedIn() && (
         <div className="fixed top-2 right-2 z-50 flex items-center gap-responsive-tight px-responsive py-responsive rounded-full bg-black/60 backdrop-blur" title={
@@ -4746,19 +4919,31 @@ export default function ShadowColosseum() {
           })()}
 
           {/* Raid Button */}
-          <Link to="/shadow-colosseum/raid"
-            className="block mb-4 p-3 rounded-xl border border-red-500/30 bg-gradient-to-r from-red-900/30 to-orange-900/30 hover:from-red-900/50 hover:to-orange-900/50 transition-all text-center group">
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-xl">{'\uD83D\uDC1C'}</span>
-              <span className="font-bold text-red-400 group-hover:text-red-300">MODE RAID</span>
-              <span className="text-xs text-gray-400">— Reine des Fourmis</span>
-            </div>
-            <p className="text-normal-responsive text-gray-500 mt-0.5">Jusqu'a 6 chibis vs Raid Boss ! Controle Sung Jinwoo au clavier !</p>
-          </Link>
+          {farmActive ? (
+            <button onClick={() => confirmStopFarm(() => navigate('/shadow-colosseum/raid'), 'Mode Raid')}
+              className="block w-full mb-4 p-3 rounded-xl border border-red-500/30 bg-gradient-to-r from-red-900/30 to-orange-900/30 hover:from-red-900/50 hover:to-orange-900/50 transition-all text-center group">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xl">{'\uD83D\uDC1C'}</span>
+                <span className="font-bold text-red-400 group-hover:text-red-300">MODE RAID</span>
+                <span className="text-xs text-gray-400">— Reine des Fourmis</span>
+              </div>
+              <p className="text-normal-responsive text-gray-500 mt-0.5">Jusqu'a 6 chibis vs Raid Boss ! Controle Sung Jinwoo au clavier !</p>
+            </button>
+          ) : (
+            <Link to="/shadow-colosseum/raid"
+              className="block mb-4 p-3 rounded-xl border border-red-500/30 bg-gradient-to-r from-red-900/30 to-orange-900/30 hover:from-red-900/50 hover:to-orange-900/50 transition-all text-center group">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xl">{'\uD83D\uDC1C'}</span>
+                <span className="font-bold text-red-400 group-hover:text-red-300">MODE RAID</span>
+                <span className="text-xs text-gray-400">— Reine des Fourmis</span>
+              </div>
+              <p className="text-normal-responsive text-gray-500 mt-0.5">Jusqu'a 6 chibis vs Raid Boss ! Controle Sung Jinwoo au clavier !</p>
+            </Link>
+          )}
 
           {/* PVE Multi Button */}
           <button
-            onClick={() => setView('pve_multi')}
+            onClick={() => farmActive ? confirmStopFarm(() => setView('pve_multi'), 'Mode PVE Multi') : setView('pve_multi')}
             className="block w-full mb-4 p-3 rounded-xl border border-emerald-500/30 bg-gradient-to-r from-emerald-900/30 to-teal-900/30 hover:from-emerald-900/50 hover:to-teal-900/50 transition-all text-center group">
             <div className="flex items-center justify-center gap-2">
               <span className="text-xl">{'\uD83D\uDC09'}</span>
@@ -4769,26 +4954,50 @@ export default function ShadowColosseum() {
           </button>
 
           {/* PVP Button */}
-          <Link to="/shadow-colosseum/pvp"
-            className="block mb-4 p-3 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-900/30 to-blue-900/30 hover:from-cyan-900/50 hover:to-blue-900/50 transition-all text-center group">
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-xl">{'\u2694\uFE0F'}</span>
-              <span className="font-bold text-cyan-400 group-hover:text-cyan-300">MODE PVP</span>
-              <span className="text-xs text-gray-400">— Arene Asynchrone</span>
-            </div>
-            <p className="text-normal-responsive text-gray-500 mt-0.5">6v6 contre les equipes des autres joueurs !</p>
-          </Link>
+          {farmActive ? (
+            <button onClick={() => confirmStopFarm(() => navigate('/shadow-colosseum/pvp'), 'Mode PvP')}
+              className="block w-full mb-4 p-3 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-900/30 to-blue-900/30 hover:from-cyan-900/50 hover:to-blue-900/50 transition-all text-center group">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xl">{'\u2694\uFE0F'}</span>
+                <span className="font-bold text-cyan-400 group-hover:text-cyan-300">MODE PVP</span>
+                <span className="text-xs text-gray-400">— Arene Asynchrone</span>
+              </div>
+              <p className="text-normal-responsive text-gray-500 mt-0.5">6v6 contre les equipes des autres joueurs !</p>
+            </button>
+          ) : (
+            <Link to="/shadow-colosseum/pvp"
+              className="block mb-4 p-3 rounded-xl border border-cyan-500/30 bg-gradient-to-r from-cyan-900/30 to-blue-900/30 hover:from-cyan-900/50 hover:to-blue-900/50 transition-all text-center group">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xl">{'\u2694\uFE0F'}</span>
+                <span className="font-bold text-cyan-400 group-hover:text-cyan-300">MODE PVP</span>
+                <span className="text-xs text-gray-400">— Arene Asynchrone</span>
+              </div>
+              <p className="text-normal-responsive text-gray-500 mt-0.5">6v6 contre les equipes des autres joueurs !</p>
+            </Link>
+          )}
 
           {/* PVP Live Button */}
-          <Link to="/shadow-colosseum/pvp-live"
-            className="block mb-4 p-3 rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-900/30 to-fuchsia-900/30 hover:from-purple-900/50 hover:to-fuchsia-900/50 transition-all text-center group">
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-xl">{'\u2694\uFE0F'}</span>
-              <span className="font-bold text-purple-400 group-hover:text-purple-300">MODE PVP LIVE</span>
-              <span className="text-xs text-gray-400">— Tour par Tour</span>
-            </div>
-            <p className="text-normal-responsive text-gray-500 mt-0.5">3v3 strategique vs Beru ou vs Joueur !</p>
-          </Link>
+          {farmActive ? (
+            <button onClick={() => confirmStopFarm(() => navigate('/shadow-colosseum/pvp-live'), 'Mode PvP Live')}
+              className="block w-full mb-4 p-3 rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-900/30 to-fuchsia-900/30 hover:from-purple-900/50 hover:to-fuchsia-900/50 transition-all text-center group">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xl">{'\u2694\uFE0F'}</span>
+                <span className="font-bold text-purple-400 group-hover:text-purple-300">MODE PVP LIVE</span>
+                <span className="text-xs text-gray-400">— Tour par Tour</span>
+              </div>
+              <p className="text-normal-responsive text-gray-500 mt-0.5">3v3 strategique vs Beru ou vs Joueur !</p>
+            </button>
+          ) : (
+            <Link to="/shadow-colosseum/pvp-live"
+              className="block mb-4 p-3 rounded-xl border border-purple-500/30 bg-gradient-to-r from-purple-900/30 to-fuchsia-900/30 hover:from-purple-900/50 hover:to-fuchsia-900/50 transition-all text-center group">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xl">{'\u2694\uFE0F'}</span>
+                <span className="font-bold text-purple-400 group-hover:text-purple-300">MODE PVP LIVE</span>
+                <span className="text-xs text-gray-400">— Tour par Tour</span>
+              </div>
+              <p className="text-normal-responsive text-gray-500 mt-0.5">3v3 strategique vs Beru ou vs Joueur !</p>
+            </Link>
+          )}
 
           {/* PVE Ranking Button */}
           <Link to="/shadow-colosseum/pve-ranking"
@@ -5448,10 +5657,23 @@ export default function ShadowColosseum() {
           {selChibi && selStage !== null && (
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed bottom-4 left-0 right-0 flex justify-center z-50">
               <button
-                onClick={startBattle}
+                onClick={() => farmActive ? confirmStopFarm(startBattle, 'Lancer un combat') : startBattle()}
                 className="px-8 py-3 bg-gradient-to-r from-purple-600 to-red-600 rounded-xl font-black text-lg shadow-xl shadow-purple-900/40 hover:scale-105 transition-transform active:scale-95"
               >
                 {'\u2694\uFE0F'} COMBAT !
+              </button>
+            </motion.div>
+          )}
+
+          {/* Offline Farm Button — Tier 6 cleared stages only */}
+          {selChibi && selStage !== null && STAGES[selStage]?.tier === 6 && isStageCleared(STAGES[selStage].id) && isLoggedIn() && !farmActive && (
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed bottom-20 left-0 right-0 flex justify-center z-50">
+              <button
+                onClick={() => handleStartFarm(STAGES[selStage].id)}
+                disabled={farmLoading}
+                className="px-6 py-2 bg-gradient-to-r from-indigo-700 to-purple-700 hover:from-indigo-600 hover:to-purple-600 rounded-xl font-bold text-sm shadow-xl shadow-indigo-900/40 transition-all disabled:opacity-50 border border-indigo-500/30"
+              >
+                {farmLoading ? 'Activation...' : '\uD83C\uDF19 Auto-Farm Offline'}
               </button>
             </motion.div>
           )}
@@ -6068,7 +6290,7 @@ export default function ShadowColosseum() {
               </button>
               {arc2Team.filter(Boolean).length > 0 && (
                 <button
-                  onClick={startArc2Battle}
+                  onClick={() => farmActive ? confirmStopFarm(startArc2Battle, 'Combat ARC II') : startArc2Battle()}
                   className="px-8 py-2.5 bg-gradient-to-r from-purple-600 to-red-600 rounded-xl font-black text-lg shadow-xl shadow-purple-900/40 hover:scale-105 transition-transform active:scale-95"
                 >
                   {'\u2694\uFE0F'} COMBAT 3v1 !
@@ -12338,6 +12560,166 @@ export default function ShadowColosseum() {
                 )}
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ OFFLINE FARM STATUS INDICATOR ═══ */}
+      <AnimatePresence>
+        {farmActive && view !== 'battle' && view !== 'arc2_battle' && (
+          <motion.div
+            initial={{ x: 100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 100, opacity: 0 }}
+            className="fixed top-4 right-4 z-[60] max-w-[220px]"
+          >
+            <div className="bg-indigo-950/95 border border-indigo-500/40 rounded-xl px-4 py-3 shadow-xl shadow-indigo-900/30 backdrop-blur-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg">{'\uD83C\uDF19'}</span>
+                <span className="text-xs font-bold text-indigo-300 uppercase tracking-wide">Farm Offline</span>
+              </div>
+              <div className="text-sm font-semibold text-white mb-0.5">
+                {FARMABLE_STAGES[getFarmState()?.stageId]?.name || 'Stage inconnu'}
+              </div>
+              <FarmTimer />
+              <button
+                onClick={() => handleStopFarm('manual')}
+                disabled={farmLoading}
+                className="mt-2 w-full px-3 py-1.5 bg-red-600/80 hover:bg-red-500 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+              >
+                {farmLoading ? '...' : 'Arreter le Farm'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ FARM CONFIRMATION DIALOG ═══ */}
+      <AnimatePresence>
+        {farmConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            onClick={() => setFarmConfirm(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-gray-900 border border-yellow-500/40 rounded-2xl p-6 max-w-sm mx-4 shadow-2xl shadow-yellow-900/20"
+            >
+              <div className="text-center mb-4">
+                <div className="text-3xl mb-2">{'\u26A0\uFE0F'}</div>
+                <h3 className="text-lg font-bold text-yellow-400">Farm Offline Actif</h3>
+                <p className="text-sm text-gray-300 mt-2">
+                  L'action <span className="font-bold text-white">"{farmConfirm.label}"</span> va arreter
+                  ton auto-farm offline en cours.
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Les recompenses accumulees seront calculees avant de continuer.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setFarmConfirm(null)}
+                  className="flex-1 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold text-sm transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={farmConfirm.action}
+                  disabled={farmLoading}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 rounded-xl font-bold text-sm transition-colors disabled:opacity-50"
+                >
+                  {farmLoading ? 'Calcul...' : 'Confirmer'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══ FARM REWARDS POPUP ═══ */}
+      <AnimatePresence>
+        {farmRewards && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            onClick={() => setFarmRewards(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.85, y: 30 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.85, y: 30 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-gray-900 border border-indigo-500/40 rounded-2xl p-6 max-w-md mx-4 shadow-2xl shadow-indigo-900/30 max-h-[80vh] overflow-y-auto"
+            >
+              <div className="text-center mb-4">
+                <div className="text-4xl mb-2">{'\uD83C\uDF19'}</div>
+                <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+                  Farm Offline Termine !
+                </h3>
+              </div>
+
+              {/* Stats */}
+              <div className="flex justify-center gap-6 mb-4 text-center">
+                <div>
+                  <div className="text-2xl font-black text-white">{farmRewards.minutesFarmed}</div>
+                  <div className="text-xs text-gray-400">minutes</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-black text-white">{farmRewards.totalBattles}</div>
+                  <div className="text-xs text-gray-400">combats</div>
+                </div>
+              </div>
+
+              {/* Secret Weapons */}
+              {farmRewards.secretWeapons?.length > 0 && (
+                <div className="mb-4 bg-yellow-900/20 border border-yellow-500/30 rounded-xl p-3">
+                  <div className="text-sm font-bold text-yellow-400 mb-2">{'\u2728'} Armes Secretes</div>
+                  {farmRewards.secretWeapons.map((w, i) => (
+                    <div key={i} className="flex items-center justify-between py-1">
+                      <span className="text-sm text-white font-semibold">{w.name}</span>
+                      <span className="text-xs bg-yellow-600/40 px-2 py-0.5 rounded-full text-yellow-300 font-bold">x{w.count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Hunters */}
+              {farmRewards.hunterDrops?.length > 0 && (
+                <div className="mb-4 bg-purple-900/20 border border-purple-500/30 rounded-xl p-3">
+                  <div className="text-sm font-bold text-purple-400 mb-2">{'\uD83C\uDFAF'} Hunters ({farmRewards.hunterDrops.length})</div>
+                  <div className="grid grid-cols-2 gap-1 max-h-40 overflow-y-auto">
+                    {farmRewards.hunterDrops.map((h, i) => (
+                      <div key={i} className={`text-xs px-2 py-1 rounded-lg ${h.isDuplicate ? 'bg-blue-900/30 text-blue-300' : 'bg-green-900/30 text-green-300'}`}>
+                        <span className="font-semibold">{h.name}</span>
+                        <span className="ml-1 opacity-70">{h.isDuplicate ? `(dupe +${h.newStars || 0}\u2B50)` : '(NEW!)'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Empty results */}
+              {(!farmRewards.secretWeapons?.length && !farmRewards.hunterDrops?.length) && (
+                <div className="text-center text-gray-400 text-sm mb-4 py-4">
+                  Pas de drop cette fois... La prochaine sera la bonne !
+                </div>
+              )}
+
+              <button
+                onClick={() => setFarmRewards(null)}
+                className="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-bold text-base shadow-lg transition-colors"
+              >
+                Fermer
+              </button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

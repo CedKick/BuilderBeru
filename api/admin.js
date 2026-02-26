@@ -1,6 +1,7 @@
 // api/admin.js — Admin panel API for managing player data (Kly only)
 import { query } from './_db/neon.js';
 import { extractUser } from './_utils/auth.js';
+import { unsuspendAccount } from './_utils/anticheat.js';
 
 const ADMIN_USERNAME = 'kly';
 
@@ -209,6 +210,73 @@ async function handlePatchPlayer(req, res) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// UNSUSPEND — Lift an anti-cheat suspension (admin only)
+// ═══════════════════════════════════════════════════════════════
+
+async function handleUnsuspend(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+
+  const { username } = req.body;
+  if (!username) return res.status(400).json({ error: 'Missing username' });
+
+  const userResult = await query(
+    'SELECT device_id, suspended, suspended_reason, cheat_score FROM users WHERE username_lower = $1',
+    [username.toLowerCase()]
+  );
+  if (userResult.rows.length === 0) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  const { device_id, suspended, suspended_reason, cheat_score } = userResult.rows[0];
+
+  if (!suspended) {
+    return res.status(200).json({ success: true, message: 'User is not suspended' });
+  }
+
+  await unsuspendAccount(device_id);
+
+  console.log(`[admin] ${admin.username} UNSUSPENDED ${username} (was: score=${cheat_score}, reason=${suspended_reason})`);
+
+  return res.status(200).json({
+    success: true,
+    message: `${username} unsuspended successfully`,
+    previousScore: cheat_score,
+    previousReason: suspended_reason,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LIST-SUSPENDED — Show all currently suspended accounts
+// ═══════════════════════════════════════════════════════════════
+
+async function handleListSuspended(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+
+  const result = await query(`
+    SELECT username, display_name, device_id, suspended_at, suspended_reason, cheat_score
+    FROM users
+    WHERE suspended = true
+    ORDER BY suspended_at DESC
+  `);
+
+  return res.status(200).json({
+    success: true,
+    suspended: result.rows.map(r => ({
+      username: r.username,
+      displayName: r.display_name,
+      deviceId: r.device_id,
+      suspendedAt: r.suspended_at,
+      reason: r.suspended_reason,
+      cheatScore: r.cheat_score,
+    })),
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════════════
 
@@ -230,6 +298,10 @@ export default async function handler(req, res) {
         return await handleUpdatePlayer(req, res);
       case 'patch-player':
         return await handlePatchPlayer(req, res);
+      case 'unsuspend':
+        return await handleUnsuspend(req, res);
+      case 'list-suspended':
+        return await handleListSuspended(req, res);
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }

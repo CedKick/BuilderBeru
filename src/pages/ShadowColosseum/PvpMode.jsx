@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { isLoggedIn, authHeaders } from '../../utils/auth';
+import { isFarming, stopFarm } from '../../utils/offlineFarm';
 import AuthModal from '../../components/AuthModal';
 import { computeTalentBonuses } from './talentTreeData';
 import { computeTalentBonuses2 } from './talentTree2Data';
@@ -171,6 +172,9 @@ function aiPickSkillPvp(entity, strategy) {
 export default function PvpMode() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [loggedIn, setLoggedIn] = useState(() => isLoggedIn());
+
+  // Stop offline farm when entering PvP
+  useEffect(() => { if (isFarming()) stopFarm().catch(() => {}); }, []);
 
   // Listen for auth changes
   useEffect(() => {

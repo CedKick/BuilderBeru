@@ -313,6 +313,45 @@ const CURIOUS_MESSAGES = [
   "Je detecte du mouvement. Investigation en cours.", "Ta souris est suspecte. Je la surveille.",
 ];
 
+// ─── Anti-Cheat Messages (ambient + reactions) ──────────────
+
+const ANTICHEAT_AMBIENT_MESSAGES = [
+  "Beru veille... Le systeme anti-triche tourne 24h/24. Pas de repos pour les tricheurs.",
+  "Tu savais que chaque drop est verifie par le serveur ? Beru voit TOUT.",
+  "Info du jour : les stats impossibles sont automatiquement detectees. Beru ne rigole pas.",
+  "Petit rappel : tricher ruine l'experience de TOUT LE MONDE. Et Beru n'aime pas ca.",
+  "Le Colisee des Ombres est un sanctuaire sacre. Les tricheurs n'y sont pas les bienvenus.",
+  "Fun fact : l'anti-triche de Beru analyse chaque sauvegarde. Chaque. Sauvegarde.",
+  "Les Katanas, Sulfuras, Rae'shalare... Ca se MERITE. Pas de raccourcis !",
+  "Beru a des yeux partout. Meme dans tes sous-stats. Oui oui.",
+  "Tu sais ce qui est mieux qu'un Sulfuras ? Un Sulfuras obtenu honnêtement. Beru approuve.",
+  "Le drop rate est sacre. Le modifier ? Meme pas en rêve. Beru protege.",
+  "Chaque arme secrete a un taux de drop verifiable. L'integrite, c'est la base.",
+  "Beru bosse dur pour que le jeu soit equitable. Respecte le grind !",
+  "Les vrais chasseurs gagnent leur loot. Les faux... ils rencontrent l'anti-triche.",
+  "Rapport de securite : 0 tricheur actif. Beru est fier de cette communaute !",
+  "J'ai ameliore mes algorithmes de detection. Les exploits n'ont AUCUNE chance.",
+  "Proteger l'economie du Colisee, c'est proteger VOTRE progression. Merci Beru.",
+  "Vous avez vu un comportement suspect ? Signalez-le ! Beru enquête toujours.",
+  "Le fair-play, c'est ce qui rend Shadow Colosseum genial. Gardons ca intact !",
+  "Tricher, c'est comme voler les drops des autres joueurs. Beru ne tolere PAS ca.",
+  "Niveau de securite actuel : MAXIMUM. Beru dors jamais. Enfin si, mais son anti-triche non.",
+  "Les builds legit sont les plus satisfaisants. Drop ton Sulfuras honnêtement, tu verras la JOIE.",
+  "Systeme de verification des deltas actif. Chaque sauvegarde est comparee au cloud. Beru science.",
+  "Pro tip : jouez normalement et vous n'aurez JAMAIS de probleme. Simple comme bonjour.",
+];
+
+const ANTICHEAT_WANTED_MESSAGES = [
+  "AVIS DE RECHERCHE : Un certain 'RandomHero' est activement recherche pour tentative de triche dans le Colisee ! 🐜🔍",
+  "FLASH INFO : Le chasseur 'RandomHero' a ete repere avec des drops... statistiquement impossibles. L'enquête est en cours !",
+  "ALERTE BERU : 'RandomHero' a tente de modifier ses taux de drop. Le systeme l'a detecte en 0.3 secondes. GG no re.",
+  "Wanted : 'RandomHero'. Crime : Math.random() modifie. Recompense : la satisfaction de la justice. 🐜⚖️",
+  "Breaking News : 'RandomHero' pensait qu'on verrait pas 10 Katanas en 1 minute. Spoiler : Beru a TOUT vu.",
+  "Un 'Hero' pas si Random que ca... Beru a les logs, les timestamps, et les preuves. La triche ca paye PAS.",
+  "'RandomHero' a voulu farmer Sulfuras x57 en une session. L'anti-triche a dit non. Beru a dit JAMAIS.",
+  "Moment de silence pour 'RandomHero' qui pensait que modifier le JS local etait invisible... 🐜💀",
+];
+
 // ─── Helpers ────────────────────────────────────────────────
 
 const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -1345,6 +1384,9 @@ const FloatingBeruMascot = () => {
             showBubble(randomFrom(NIGHT_MESSAGES), 5000);
           } else if (tod === 'morning' && Math.random() < 0.3) {
             showBubble(randomFrom(MORNING_MESSAGES), 5000);
+          } else if (Math.random() < 0.12) {
+            // ~12% chance: anti-cheat awareness message
+            showBubble(randomFrom(Math.random() < 0.7 ? ANTICHEAT_AMBIENT_MESSAGES : ANTICHEAT_WANTED_MESSAGES), 6000);
           } else {
             showBubble(randomFrom(AMBIENT_MESSAGES), 5000);
           }
@@ -1422,6 +1464,47 @@ const FloatingBeruMascot = () => {
           setMood('happy');
         }, 19000);
         setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 27000);
+        return;
+      }
+      // ── Anti-Cheat: cheat warning (suspicious activity detected)
+      if (type === 'cheat-warning') {
+        setMood('angry');
+        spawnParticles('🚨', 8);
+        showBubble(message || randomFrom(ANTICHEAT_WANTED_MESSAGES), 10000);
+        setTimeout(() => spawnParticles('👀', 6), 2000);
+        setTimeout(() => {
+          showBubble("Beru surveille... ne me force pas a sevir.", 6000);
+          spawnParticles('🐜', 4);
+        }, 12000);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 20000);
+        return;
+      }
+      // ── Anti-Cheat: account suspended
+      if (type === 'suspended') {
+        setMood('angry');
+        spawnParticles('🚫', 10);
+        showBubble(message || "COMPTE SUSPENDU ! Triche detectee !", 15000);
+        setTimeout(() => spawnParticles('⛔', 8), 2000);
+        setTimeout(() => spawnParticles('🐜', 6), 4000);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 20000);
+        return;
+      }
+      // ── Offline Farm: start
+      if (type === 'farm-start') {
+        setMood('sleepy');
+        spawnParticles('🌙', 4);
+        showBubble(message || "Beru va faire une SIESTE pendant ton farm offline ! Zzz...", 5000);
+        setTimeout(() => spawnParticles('💤', 3), 2000);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 8000);
+        return;
+      }
+      // ── Offline Farm: end
+      if (type === 'farm-end') {
+        setMood('excited');
+        spawnParticles('✨', 5);
+        showBubble(message || "BERU EST DE RETOUR ! Regarde ce que j'ai trouve !", 6000);
+        setTimeout(() => spawnParticles('🎁', 4), 1500);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 10000);
         return;
       }
       if (message) showBubble(message, duration || 4000, isAdmin);

@@ -39,6 +39,7 @@ import {
 } from './equipmentData';
 import { BattleStyles, RaidArena } from './BattleVFX';
 import { isLoggedIn, authHeaders, getAuthUser } from '../../utils/auth';
+import { isFarming, stopFarm } from '../../utils/offlineFarm';
 import { cloudStorage } from '../../utils/CloudStorage';
 import SharedDPSGraph from './SharedBattleComponents/SharedDPSGraph';
 import SharedCombatLogs from './SharedBattleComponents/SharedCombatLogs';
@@ -145,6 +146,9 @@ export default function RaidMode() {
     Object.entries(hunterPool).forEach(([id, h]) => { pool[id] = h; });
     return pool;
   }, [ownedShadows, hunterPool]);
+
+  // Stop offline farm when entering Raid
+  useEffect(() => { if (isFarming()) stopFarm().catch(() => {}); }, []);
 
   // ─── Save effects ──────────────────────────────────────────
   useEffect(() => { saveColoData(coloData); }, [coloData]);

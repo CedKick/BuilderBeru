@@ -2,6 +2,14 @@ import { query } from '../_db/neon.js';
 import { extractUser } from '../_utils/auth.js';
 import { gunzipSync } from 'node:zlib';
 import { sanitizeColoData } from '../_utils/validate.js';
+import {
+  computeCheatScore, checkSuspension, suspendAccount,
+  getBeruWarnMessage, getBeruSuspendMessage,
+  WARN_SCORE, SUSPEND_SCORE,
+} from '../_utils/anticheat.js';
+
+// Keys where anti-cheat delta validation runs
+const ANTICHEAT_KEYS = ['shadow_colosseum_data', 'shadow_colosseum_raid'];
 
 const ALLOWED_KEYS = [
   'builderberu_users', 'shadow_colosseum_data', 'shadow_colosseum_raid',
@@ -298,6 +306,20 @@ export default async function handler(req, res) {
       return res.status(413).json({ error: 'Payload too large', max: MAX_SIZE });
     }
 
+    // ─── CHECK 0: Suspension gate — suspended accounts cannot save game data ──
+    if (ANTICHEAT_KEYS.includes(key)) {
+      const suspension = await checkSuspension(deviceId);
+      if (suspension) {
+        return res.status(403).json({
+          error: 'Account suspended',
+          suspended: true,
+          reason: suspension.reason,
+          since: suspension.since,
+          beruMessage: getBeruSuspendMessage(),
+        });
+      }
+    }
+
     // ─── Fetch existing data for checks + potential merge ──
     const existing = await query(
       'SELECT data, size_bytes, updated_at FROM user_storage WHERE device_id = $1 AND storage_key = $2',
@@ -306,6 +328,7 @@ export default async function handler(req, res) {
 
     let merged = false;
     let finalData = data;
+    let cheatWarning = null;
 
     if (existing.rows.length > 0) {
       const cloudSize = existing.rows[0].size_bytes || 0;
@@ -324,6 +347,50 @@ export default async function handler(req, res) {
           cloudSize,
           newSize: sizeBytes,
         });
+      }
+
+      // CHECK 6: Anti-cheat delta validation — compare RAW incoming vs cloud BEFORE merge
+      // Query recent offline farm session to scale thresholds (prevents false positives)
+      if (ANTICHEAT_KEYS.includes(key)) {
+        let farmMinutes = 0;
+        if (user) {
+          try {
+            const farmResult = await query(
+              `SELECT last_farm_minutes FROM player_factions
+               WHERE username = $1 AND last_farm_end_at > NOW() - INTERVAL '10 minutes'`,
+              [user.username]
+            );
+            if (farmResult.rows.length > 0) {
+              farmMinutes = farmResult.rows[0].last_farm_minutes || 0;
+            }
+          } catch { /* Fail open — don't block saves if faction query fails */ }
+        }
+
+        const cloudForAC = typeof existing.rows[0].data === 'string'
+          ? JSON.parse(existing.rows[0].data)
+          : existing.rows[0].data;
+
+        const { score, flags } = computeCheatScore(cloudForAC, data, key, { farmMinutes });
+
+        if (score >= SUSPEND_SCORE) {
+          const username = await suspendAccount(
+            deviceId,
+            `Auto-suspend cheat score ${score}: ${flags.join('; ')}`,
+            score, flags
+          );
+          console.error(`[save] 🚨 CHEAT DETECTED — ${username || deviceId}: score=${score}`);
+          return res.status(403).json({
+            error: 'Account suspended',
+            suspended: true,
+            reason: 'Comportement suspect détecté par le système anti-triche.',
+            beruMessage: getBeruSuspendMessage(),
+          });
+        }
+
+        if (score >= WARN_SCORE) {
+          cheatWarning = { score, beruMessage: getBeruWarnMessage() };
+          console.warn(`[save] ⚠️ SUSPICIOUS — ${deviceId}: score=${score}, flags=${flags.join(', ')}`);
+        }
       }
 
       // CHECK 2: Concurrent write detection — cloud was updated after client's last sync
@@ -496,12 +563,11 @@ export default async function handler(req, res) {
 
     const serverTimestamp = new Date(result.rows[0].updated_at).getTime();
 
-    return res.status(200).json({
-      success: true,
-      size: sizeBytes,
-      serverTimestamp,
-      merged,
-    });
+    const response = { success: true, size: sizeBytes, serverTimestamp, merged };
+    if (cheatWarning) {
+      response.cheatWarning = cheatWarning;
+    }
+    return res.status(200).json(response);
   } catch (err) {
     console.error('Save error:', err);
     return res.status(500).json({ success: false, error: err.message || 'Erreur serveur' });
