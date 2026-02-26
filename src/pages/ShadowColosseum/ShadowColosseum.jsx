@@ -519,6 +519,7 @@ export default function ShadowColosseum() {
   const [farmRewards, setFarmRewards] = useState(null);
   const [farmLoading, setFarmLoading] = useState(false);
   const [farmConfirm, setFarmConfirm] = useState(null); // { action: fn, label: string } — confirmation before stopping farm
+  const [factionPointsAvailable, setFactionPointsAvailable] = useState(null);
   const [weaponReveal, setWeaponReveal] = useState(null); // weapon data for epic reveal
   const [artFilter, setArtFilter] = useState({ set: null, rarity: null, slot: null });
   const [artSort, setArtSort] = useState('level_desc'); // 'level_desc' | 'level_asc' | 'ilevel' | 'rarity'
@@ -735,18 +736,20 @@ export default function ShadowColosseum() {
   // ═══ OFFLINE AUTO-FARM HANDLERS ══════════════════════════════
   // Recovery: re-sync farm state from server on mount
   useEffect(() => {
-    if (isLoggedIn() && !isFarming()) {
-      fetch('/api/factions?action=status', { headers: { ...authHeaders() } })
-        .then(r => r.json())
-        .then(d => {
-          if (d.success && d.farmActive) {
+    if (!isLoggedIn()) return;
+    fetch('/api/factions?action=status', { headers: { ...authHeaders() } })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          if (typeof d.pointsAvailable === 'number') setFactionPointsAvailable(d.pointsAvailable);
+          if (d.farmActive && !isFarming()) {
             // Server has active farm but localStorage lost — re-sync
             setFarmState({ active: true, stageId: d.farmStageId, startedAt: d.farmStartedAt, clientStartedAt: Date.now() });
             setFarmActive(true);
           }
-        })
-        .catch(() => {});
-    }
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleStartFarm = async (stageId) => {
@@ -805,7 +808,13 @@ export default function ShadowColosseum() {
           return updated;
         });
 
+        rewards.pointsDeducted = result.pointsDeducted || result.actualMinutes || 0;
+        rewards.stageName = FARMABLE_STAGES[result.stageId]?.name || result.stageId;
         setFarmRewards(rewards);
+        // Update local points count
+        if (typeof factionPointsAvailable === 'number') {
+          setFactionPointsAvailable(Math.max(0, factionPointsAvailable - rewards.pointsDeducted));
+        }
 
         // Beru announcement
         const msg = rewards.secretWeapons.length > 0
@@ -5667,14 +5676,17 @@ export default function ShadowColosseum() {
 
           {/* Offline Farm Button — Tier 6 cleared stages only */}
           {selChibi && selStage !== null && STAGES[selStage]?.tier === 6 && isStageCleared(STAGES[selStage].id) && isLoggedIn() && !farmActive && (
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed bottom-20 left-0 right-0 flex justify-center z-50">
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed bottom-20 left-0 right-0 flex flex-col items-center z-50">
               <button
                 onClick={() => handleStartFarm(STAGES[selStage].id)}
-                disabled={farmLoading}
+                disabled={farmLoading || factionPointsAvailable === 0}
                 className="px-6 py-2 bg-gradient-to-r from-indigo-700 to-purple-700 hover:from-indigo-600 hover:to-purple-600 rounded-xl font-bold text-sm shadow-xl shadow-indigo-900/40 transition-all disabled:opacity-50 border border-indigo-500/30"
               >
                 {farmLoading ? 'Activation...' : '\uD83C\uDF19 Auto-Farm Offline'}
               </button>
+              <div className="text-xs text-indigo-400/70 mt-1">
+                Coute 1 pt de contribution/min{factionPointsAvailable != null ? ` — ${factionPointsAvailable} pts dispo` : ''}
+              </div>
             </motion.div>
           )}
         </div>
@@ -12666,8 +12678,13 @@ export default function ShadowColosseum() {
                 </h3>
               </div>
 
+              {/* Stage name */}
+              {farmRewards.stageName && (
+                <div className="text-center text-sm text-gray-400 mb-3">Stage: <span className="text-white font-semibold">{farmRewards.stageName}</span></div>
+              )}
+
               {/* Stats */}
-              <div className="flex justify-center gap-6 mb-4 text-center">
+              <div className="flex justify-center gap-5 mb-3 text-center">
                 <div>
                   <div className="text-2xl font-black text-white">{farmRewards.minutesFarmed}</div>
                   <div className="text-xs text-gray-400">minutes</div>
@@ -12675,6 +12692,10 @@ export default function ShadowColosseum() {
                 <div>
                   <div className="text-2xl font-black text-white">{farmRewards.totalBattles}</div>
                   <div className="text-xs text-gray-400">combats</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-black text-orange-400">{farmRewards.pointsDeducted || 0}</div>
+                  <div className="text-xs text-gray-400">pts depenses</div>
                 </div>
               </div>
 
