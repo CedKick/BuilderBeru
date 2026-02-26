@@ -5000,16 +5000,28 @@ export default function ShadowColosseum() {
             );
           })()}
 
-          {/* Raid Button — farm continues during Raid/Manaya */}
-          <Link to="/shadow-colosseum/raid"
-            className="block mb-4 p-3 rounded-xl border border-red-500/30 bg-gradient-to-r from-red-900/30 to-orange-900/30 hover:from-red-900/50 hover:to-orange-900/50 transition-all text-center group">
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-xl">{'\uD83D\uDC1C'}</span>
-              <span className="font-bold text-red-400 group-hover:text-red-300">MODE RAID</span>
-              <span className="text-xs text-gray-400">— Reine des Fourmis</span>
-            </div>
-            <p className="text-normal-responsive text-gray-500 mt-0.5">Jusqu'a 6 chibis vs Raid Boss ! Controle Sung Jinwoo au clavier !</p>
-          </Link>
+          {/* Raid Button — stops farm (Ant Queen/Manticore are in-app), Manaya is external WebSocket */}
+          {farmActive ? (
+            <button onClick={() => confirmStopFarm(() => navigate('/shadow-colosseum/raid'), 'Raid (Ant Queen / Manticore)')}
+              className="block w-full mb-4 p-3 rounded-xl border border-red-500/30 bg-gradient-to-r from-red-900/30 to-orange-900/30 hover:from-red-900/50 hover:to-orange-900/50 transition-all text-center group">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xl">{'\uD83D\uDC1C'}</span>
+                <span className="font-bold text-red-400 group-hover:text-red-300">MODE RAID</span>
+                <span className="text-xs text-gray-400">— Reine des Fourmis</span>
+              </div>
+              <p className="text-normal-responsive text-gray-500 mt-0.5">Jusqu'a 6 chibis vs Raid Boss ! Controle Sung Jinwoo au clavier !</p>
+            </button>
+          ) : (
+            <Link to="/shadow-colosseum/raid"
+              className="block mb-4 p-3 rounded-xl border border-red-500/30 bg-gradient-to-r from-red-900/30 to-orange-900/30 hover:from-red-900/50 hover:to-orange-900/50 transition-all text-center group">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-xl">{'\uD83D\uDC1C'}</span>
+                <span className="font-bold text-red-400 group-hover:text-red-300">MODE RAID</span>
+                <span className="text-xs text-gray-400">— Reine des Fourmis</span>
+              </div>
+              <p className="text-normal-responsive text-gray-500 mt-0.5">Jusqu'a 6 chibis vs Raid Boss ! Controle Sung Jinwoo au clavier !</p>
+            </Link>
+          )}
 
           {/* PVE Multi Button */}
           <button
