@@ -4593,16 +4593,16 @@ export default function ShadowColosseum() {
 
                 {/* ═══ TOTAL COMBAT STATS ═══ */}
                 {(() => {
-                  // Base stats per class (must match game-server playerStatsAdapter.js CLASS_STATS)
+                  // Base stats per class (synced from game-server classStats.js)
                   const CLASS_BASE = {
-                    tank:      { hp: 15000, atk: 180, def: 300, spd: 120, crit: 10, res: 40, mana: 200 },
-                    healer:    { hp: 8000,  atk: 120, def: 150, spd: 130, crit: 12, res: 30, mana: 400 },
-                    dps_cac:   { hp: 10000, atk: 250, def: 180, spd: 140, crit: 25, res: 15, mana: 250 },
-                    dps_range: { hp: 7500,  atk: 220, def: 120, spd: 150, crit: 30, res: 10, mana: 300 },
-                    berserker: { hp: 11500, atk: 410, def: 140, spd: 210, crit: 28, res: 18, mana: 400 },
+                    tank:      { hp: 25000, atk: 350, def: 300, spd: 160, crit: 10, res: 50, mana: 400 },
+                    healer:    { hp: 18000, atk: 200, def: 120, spd: 180, crit: 12, res: 60, mana: 800 },
+                    dps_cac:   { hp: 22000, atk: 850, def: 150, spd: 200, crit: 32, res: 20, mana: 100 },
+                    dps_range: { hp: 14000, atk: 600, def: 80,  spd: 190, crit: 22, res: 15, mana: 500 },
+                    berserker: { hp: 23000, atk: 820, def: 140, spd: 210, crit: 28, res: 18, mana: 400 },
                   };
-                  // Server-side stat per point (from playerStatsAdapter.js)
-                  const SERVER_SPP = { hp: 150, atk: 3, def: 4, spd: 2, crit: 0.8, res: 1.5 };
+                  // Stat per allocated point (synced from game-server playerStatsAdapter.js STAT_PER_POINT)
+                  const SERVER_SPP = { hp: 8, atk: 1.5, def: 1.5, spd: 1, crit: 0.8, res: 0.8 };
                   const base = CLASS_BASE[preferredClass] || CLASS_BASE.dps_cac;
                   const lvlMult = 1 + (raidLvl - 1) * 0.02;
                   // Gear bonuses from equipped items
