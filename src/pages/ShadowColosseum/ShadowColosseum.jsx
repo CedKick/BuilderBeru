@@ -4405,6 +4405,22 @@ export default function ShadowColosseum() {
             let raidStatPoints = raidChar.statPoints || { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
             // 3 stat points per raid level (same as game server)
             const totalPoints = Math.max(0, (raidLvl - 1)) * 3;
+
+            // ── Shared raid gear data (read ONCE, used by both stats + gear sections) ──
+            const raidEqData = (() => { try { return JSON.parse(localStorage.getItem('manaya_raid_equipped')) || { weapon: null, artifacts: {} }; } catch { return { weapon: null, artifacts: {} }; } })();
+            // Compute gear bonuses once (same algorithm as game-server computeRaidGearBonuses)
+            const raidGearBonuses = { hp_flat: 0, hp_pct: 0, atk_flat: 0, atk_pct: 0, def_flat: 0, def_pct: 0, spd_flat: 0, crit_rate: 0, crit_dmg: 0, res_flat: 0, mana_flat: 0 };
+            if (raidEqData.weapon) {
+              raidGearBonuses.atk_flat += raidEqData.weapon.atk || 0;
+              if (raidEqData.weapon.bonusStat && raidGearBonuses[raidEqData.weapon.bonusStat] !== undefined) {
+                raidGearBonuses[raidEqData.weapon.bonusStat] += raidEqData.weapon.bonusValue || 0;
+              }
+            }
+            for (const art of Object.values(raidEqData.artifacts || {})) {
+              if (!art) continue;
+              if (art.mainStat && raidGearBonuses[art.mainStat.id] !== undefined) raidGearBonuses[art.mainStat.id] += art.mainStat.value;
+              for (const sub of (art.subs || [])) { if (raidGearBonuses[sub.id] !== undefined) raidGearBonuses[sub.id] += sub.value; }
+            }
             let usedPoints = Object.values(raidStatPoints).reduce((s, v) => s + v, 0);
             // Auto-fix: reset if usedPoints exceeds totalPoints (stale localStorage from level desync)
             if (usedPoints > totalPoints) {
@@ -4591,7 +4607,7 @@ export default function ShadowColosseum() {
                   </div>
                 </div>
 
-                {/* ═══ TOTAL COMBAT STATS ═══ */}
+                {/* ═══ TOTAL COMBAT STATS (uses shared raidGearBonuses) ═══ */}
                 {(() => {
                   // Base stats per class (synced from game-server classStats.js)
                   const CLASS_BASE = {
@@ -4605,11 +4621,7 @@ export default function ShadowColosseum() {
                   const SERVER_SPP = { hp: 8, atk: 1.5, def: 1.5, spd: 1, crit: 0.8, res: 0.8 };
                   const base = CLASS_BASE[preferredClass] || CLASS_BASE.dps_cac;
                   const lvlMult = 1 + (raidLvl - 1) * 0.02;
-                  // Gear bonuses from equipped items
-                  const eqData = (() => { try { return JSON.parse(localStorage.getItem('manaya_raid_equipped')) || { weapon: null, artifacts: {} }; } catch { return { weapon: null, artifacts: {} }; } })();
-                  const gb = { hp_flat: 0, hp_pct: 0, atk_flat: 0, atk_pct: 0, def_flat: 0, def_pct: 0, spd_flat: 0, crit_rate: 0, res_flat: 0, mana_flat: 0 };
-                  if (eqData.weapon) { const wStat = eqData.weapon.scalingStat === 'int' ? 'int_flat' : 'atk_flat'; if (!gb[wStat]) gb[wStat] = 0; gb[wStat] += eqData.weapon.atk || 0; if (eqData.weapon.bonusStat && gb[eqData.weapon.bonusStat] !== undefined) gb[eqData.weapon.bonusStat] += eqData.weapon.bonusValue || 0; }
-                  for (const art of Object.values(eqData.artifacts || {})) { if (!art) continue; if (art.mainStat && gb[art.mainStat.id] !== undefined) gb[art.mainStat.id] += art.mainStat.value; for (const sub of (art.subs || [])) { if (gb[sub.id] !== undefined) gb[sub.id] += sub.value; } }
+                  const gb = raidGearBonuses;
 
                   let tHp = Math.floor((base.hp + (raidStatPoints.hp || 0) * SERVER_SPP.hp) * lvlMult) + gb.hp_flat;
                   let tAtk = Math.floor((base.atk + (raidStatPoints.atk || 0) * SERVER_SPP.atk) * lvlMult) + gb.atk_flat;
@@ -4617,12 +4629,12 @@ export default function ShadowColosseum() {
                   const tSpd = Math.floor((base.spd + (raidStatPoints.spd || 0) * SERVER_SPP.spd) * lvlMult) + gb.spd_flat;
                   const tCrit = Math.floor(base.crit + (raidStatPoints.crit || 0) * SERVER_SPP.crit) + gb.crit_rate;
                   const tRes = Math.floor(base.res + (raidStatPoints.res || 0) * SERVER_SPP.res) + gb.res_flat;
-                  // Apply % bonuses
+                  // Apply % bonuses (same as game-server applyGearBonuses)
                   if (gb.hp_pct > 0) tHp += Math.floor(tHp * gb.hp_pct / 100);
                   if (gb.atk_pct > 0) tAtk += Math.floor(tAtk * gb.atk_pct / 100);
                   if (gb.def_pct > 0) tDef += Math.floor(tDef * gb.def_pct / 100);
 
-                  const clsLabel = { tank: 'Tank', healer: 'Healer', dps_cac: 'Warrior', dps_range: 'Archer' };
+                  const clsLabel = { tank: 'Tank', healer: 'Healer', dps_cac: 'Warrior', dps_range: 'Archer', berserker: 'Berserker' };
                   return (
                     <div className="mb-3 p-2 rounded-lg border border-purple-500/20 bg-purple-900/10">
                       <div className="text-small-responsive text-purple-400 font-bold mb-1">STATS EN COMBAT ({clsLabel[preferredClass] || preferredClass})</div>
@@ -4638,7 +4650,7 @@ export default function ShadowColosseum() {
                   );
                 })()}
 
-                {/* ═══ RAID GEAR ═══ */}
+                {/* ═══ RAID GEAR (uses shared raidEqData + raidGearBonuses) ═══ */}
                 {(() => {
                   const INV_KEY = 'manaya_raid_inventory';
                   const EQ_KEY = 'manaya_raid_equipped';
@@ -4646,7 +4658,7 @@ export default function ShadowColosseum() {
                   const MOWN_KEY = 'manaya_set_owned';
 
                   const inv = (() => { try { return JSON.parse(localStorage.getItem(INV_KEY)) || []; } catch { return []; } })();
-                  const eq = (() => { try { return JSON.parse(localStorage.getItem(EQ_KEY)) || { weapon: null, artifacts: {} }; } catch { return { weapon: null, artifacts: {} }; } })();
+                  const eq = raidEqData;
                   const feathers = parseInt(localStorage.getItem(FEATH_KEY)) || 0;
                   const mOwned = (() => { try { return JSON.parse(localStorage.getItem(MOWN_KEY)) || {}; } catch { return {}; } })();
 
@@ -4667,18 +4679,8 @@ export default function ShadowColosseum() {
                     crit_dmg: 'CRIT DMG', res_flat: 'RES', mana_flat: 'Mana',
                   };
 
-                  // Compute gear bonuses
-                  const gearBonuses = {};
-                  if (eq.weapon) {
-                    const wStat = eq.weapon.scalingStat === 'int' ? 'int_flat' : 'atk_flat';
-                    gearBonuses[wStat] = (gearBonuses[wStat] || 0) + (eq.weapon.atk || 0);
-                    if (eq.weapon.bonusStat) gearBonuses[eq.weapon.bonusStat] = (gearBonuses[eq.weapon.bonusStat] || 0) + (eq.weapon.bonusValue || 0);
-                  }
-                  for (const art of Object.values(eq.artifacts || {})) {
-                    if (!art) continue;
-                    if (art.mainStat) gearBonuses[art.mainStat.id] = (gearBonuses[art.mainStat.id] || 0) + art.mainStat.value;
-                    for (const sub of (art.subs || [])) gearBonuses[sub.id] = (gearBonuses[sub.id] || 0) + sub.value;
-                  }
+                  // Use shared gear bonuses (computed once in CHARACTER SHEET scope)
+                  const gearBonuses = raidGearBonuses;
 
                   // Manaya set
                   const MANAYA_COL = '#ff2d55';

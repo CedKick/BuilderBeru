@@ -48,7 +48,7 @@ function generateNewSubs(rarity, mainStatId) {
 export default async function handler(req, res) {
   // CORS
   const origin = req.headers.origin;
-  if (['https://builderberu.com', 'http://localhost:5173'].includes(origin)) {
+  if (['https://builderberu.com', 'https://www.builderberu.com', 'http://localhost:5173'].includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
