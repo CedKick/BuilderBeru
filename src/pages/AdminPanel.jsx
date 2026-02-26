@@ -404,6 +404,7 @@ function AntiCheatTab() {
   const [actionMsg, setActionMsg] = useState(null);
   const [suspendDialog, setSuspendDialog] = useState(null); // { username } or null
   const [suspendReason, setSuspendReason] = useState('');
+  const [resetLoading, setResetLoading] = useState(null); // username being reset
 
   const fetchMonitor = async () => {
     setLoading(true);
@@ -472,6 +473,29 @@ function AntiCheatTab() {
       setActionMsg({ type: 'error', text: err.message });
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleResetScore = async (username) => {
+    setResetLoading(username);
+    setActionMsg(null);
+    try {
+      const resp = await fetch(`${API}?action=reset-score`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ username }),
+      });
+      const data = await resp.json();
+      if (data.success) {
+        setActionMsg({ type: 'success', text: `Score de ${username} remis a zero (ancien: ${data.previousScore})` });
+        fetchMonitor();
+      } else {
+        setActionMsg({ type: 'error', text: data.error || 'Erreur' });
+      }
+    } catch (err) {
+      setActionMsg({ type: 'error', text: err.message });
+    } finally {
+      setResetLoading(null);
     }
   };
 
@@ -627,13 +651,27 @@ function AntiCheatTab() {
                     />
                   </div>
                 </div>
-                <button
-                  onClick={() => setSuspendDialog({ username: p.username })}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-lg text-sm font-semibold transition-colors ml-3"
-                >
-                  <Ban size={14} />
-                  Suspendre
-                </button>
+                <div className="flex gap-2 ml-3">
+                  <button
+                    onClick={() => handleResetScore(p.username)}
+                    disabled={resetLoading === p.username}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    {resetLoading === p.username ? (
+                      <div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <ShieldCheck size={14} />
+                    )}
+                    Reset
+                  </button>
+                  <button
+                    onClick={() => setSuspendDialog({ username: p.username })}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    <Ban size={14} />
+                    Suspendre
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -654,7 +692,7 @@ function AntiCheatTab() {
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full" style={{ background: '#ef4444' }} />
-            <span className="text-gray-400">80+ : Suspension automatique</span>
+            <span className="text-gray-400">80+ : Alerte admin (Discord)</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-gray-600" />

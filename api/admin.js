@@ -348,6 +348,41 @@ async function handleManualSuspend(req, res) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// RESET-SCORE — Clear cheat score without affecting suspension
+// ═══════════════════════════════════════════════════════════════
+
+async function handleResetScore(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  const admin = await requireAdmin(req, res);
+  if (!admin) return;
+
+  const { username } = req.body;
+  if (!username) return res.status(400).json({ error: 'Missing username' });
+
+  const userResult = await query(
+    'SELECT device_id, cheat_score FROM users WHERE username_lower = $1',
+    [username.toLowerCase()]
+  );
+  if (userResult.rows.length === 0) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  const previousScore = userResult.rows[0].cheat_score || 0;
+  await query(
+    'UPDATE users SET cheat_score = 0 WHERE device_id = $1',
+    [userResult.rows[0].device_id]
+  );
+
+  console.log(`[admin] ${admin.username} RESET SCORE for ${username} (was: ${previousScore})`);
+
+  return res.status(200).json({
+    success: true,
+    message: `Score de ${username} remis a zero`,
+    previousScore,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════════════
 
@@ -377,6 +412,8 @@ export default async function handler(req, res) {
         return await handleCheatMonitor(req, res);
       case 'manual-suspend':
         return await handleManualSuspend(req, res);
+      case 'reset-score':
+        return await handleResetScore(req, res);
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }

@@ -435,6 +435,13 @@ export default async function handler(req, res) {
           finalData = { ...finalData, alkahest: cloudAlk };
           patched = true;
         }
+        // AccountXp: always keep MAX (never lose levels on device change)
+        const cloudXp = cloudData.accountXp || 0;
+        const incomingXp = finalData.accountXp || 0;
+        if (cloudXp > incomingXp) {
+          finalData = { ...finalData, accountXp: cloudXp };
+          patched = true;
+        }
         // RerollCounts: always keep MAX per artifact (never lose reroll history)
         const cloudRC = cloudData.rerollCounts || {};
         const incomingRC = finalData.rerollCounts || {};

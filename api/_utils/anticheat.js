@@ -79,6 +79,14 @@ export function computeCheatScore(cloud, incoming, key, options = {}) {
     const cWeapons = cloud.weaponCollection || {};
     const iWeapons = incoming.weaponCollection || {};
 
+    // Device migration protection: cloud nearly empty but incoming is large
+    // → first sync on a new device, not cheating
+    const cloudWeaponCount = Object.keys(cWeapons).length;
+    const incomingWeaponCount = Object.keys(iWeapons).length;
+    if (cloudWeaponCount < 3 && incomingWeaponCount > 15) {
+      return { score: 0, flags: ['DEVICE_MIGRATION: weapons skipped (cloud nearly empty)'] };
+    }
+
     let newWeaponCount = 0;
     for (const [wId, awk] of Object.entries(iWeapons)) {
       if (typeof awk !== 'number') continue;
@@ -113,6 +121,11 @@ export function computeCheatScore(cloud, incoming, key, options = {}) {
     // ─── Hunter Collection Delta ────────────────────────
     const cColl = cloud.hunterCollection || [];
     const iColl = incoming.hunterCollection || [];
+
+    // Device migration protection: cloud nearly empty but incoming is large
+    if (cColl.length < 3 && iColl.length > 10) {
+      return { score: 0, flags: ['DEVICE_MIGRATION: hunters skipped (cloud nearly empty)'] };
+    }
 
     const cloudMap = new Map();
     for (const h of cColl) {

@@ -302,6 +302,11 @@ class CloudStorageManager {
               localData.alkahest = cloudData.alkahest;
               patched = true;
             }
+            // AccountXp: always keep MAX (never lose levels on device change)
+            if ((cloudData.accountXp || 0) > (localData.accountXp || 0)) {
+              localData.accountXp = cloudData.accountXp;
+              patched = true;
+            }
             const cloudRC = cloudData.rerollCounts || {};
             const localRC = localData.rerollCounts || {};
             for (const [uid, count] of Object.entries(cloudRC)) {
