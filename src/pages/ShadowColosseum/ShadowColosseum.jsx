@@ -4621,48 +4621,7 @@ export default function ShadowColosseum() {
                   </div>
                 </div>
 
-                {/* ═══ TOTAL COMBAT STATS (uses shared raidGearBonuses) ═══ */}
-                {(() => {
-                  // Base stats per class (synced from game-server classStats.js)
-                  const CLASS_BASE = {
-                    tank:      { hp: 25000, atk: 350, def: 300, spd: 160, crit: 10, res: 50, mana: 400 },
-                    healer:    { hp: 18000, atk: 200, def: 120, spd: 180, crit: 12, res: 60, mana: 800 },
-                    dps_cac:   { hp: 22000, atk: 850, def: 150, spd: 200, crit: 32, res: 20, mana: 100 },
-                    dps_range: { hp: 14000, atk: 600, def: 80,  spd: 190, crit: 22, res: 15, mana: 500 },
-                    berserker: { hp: 23000, atk: 820, def: 140, spd: 210, crit: 28, res: 18, mana: 400 },
-                  };
-                  // Stat per allocated point (synced from game-server playerStatsAdapter.js STAT_PER_POINT)
-                  const SERVER_SPP = { hp: 8, atk: 1.5, def: 1.5, spd: 1, crit: 0.8, res: 0.8 };
-                  const base = CLASS_BASE[preferredClass] || CLASS_BASE.dps_cac;
-                  const lvlMult = 1 + (raidLvl - 1) * 0.02;
-                  const gb = raidGearBonuses;
-
-                  let tHp = Math.floor((base.hp + (raidStatPoints.hp || 0) * SERVER_SPP.hp) * lvlMult) + gb.hp_flat;
-                  let tAtk = Math.floor((base.atk + (raidStatPoints.atk || 0) * SERVER_SPP.atk) * lvlMult) + gb.atk_flat;
-                  let tDef = Math.floor((base.def + (raidStatPoints.def || 0) * SERVER_SPP.def) * lvlMult) + gb.def_flat;
-                  const tSpd = Math.floor((base.spd + (raidStatPoints.spd || 0) * SERVER_SPP.spd) * lvlMult) + gb.spd_flat;
-                  const tCrit = Math.floor(base.crit + (raidStatPoints.crit || 0) * SERVER_SPP.crit) + gb.crit_rate;
-                  const tRes = Math.floor(base.res + (raidStatPoints.res || 0) * SERVER_SPP.res) + gb.res_flat;
-                  // Apply % bonuses (same as game-server applyGearBonuses)
-                  if (gb.hp_pct > 0) tHp += Math.floor(tHp * gb.hp_pct / 100);
-                  if (gb.atk_pct > 0) tAtk += Math.floor(tAtk * gb.atk_pct / 100);
-                  if (gb.def_pct > 0) tDef += Math.floor(tDef * gb.def_pct / 100);
-
-                  const clsLabel = { tank: 'Tank', healer: 'Healer', dps_cac: 'Warrior', dps_range: 'Archer', berserker: 'Berserker' };
-                  return (
-                    <div className="mb-3 p-2 rounded-lg border border-purple-500/20 bg-purple-900/10">
-                      <div className="text-small-responsive text-purple-400 font-bold mb-1">STATS EN COMBAT ({clsLabel[preferredClass] || preferredClass})</div>
-                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-normal-responsive">
-                        <span style={{ color: '#10b981' }}>HP {tHp}</span>
-                        <span style={{ color: '#ef4444' }}>ATK {tAtk}</span>
-                        <span style={{ color: '#3b82f6' }}>DEF {tDef}</span>
-                        <span style={{ color: '#f59e0b' }}>SPD {tSpd}</span>
-                        <span style={{ color: '#f97316' }}>CRIT {tCrit}</span>
-                        <span style={{ color: '#a78bfa' }}>RES {tRes}</span>
-                      </div>
-                    </div>
-                  );
-                })()}
+                {/* Stats en combat visibles uniquement dans le lobby Manaya (game server fait autorité) */}
 
                 {/* ═══ RAID GEAR (uses shared raidEqData + raidGearBonuses) ═══ */}
                 {(() => {
