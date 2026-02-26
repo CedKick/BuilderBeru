@@ -40,7 +40,7 @@ export const FACTION_CHANGE_COST = 5000; // Shadow Coins cost to change faction
 
 // Valid Tier 6 stages for offline farm
 const VALID_FARM_STAGES = new Set(['archdemon', 'ragnarok', 'zephyr', 'supreme_monarch']);
-const MAX_FARM_MINUTES = 240; // 4h cap
+// No time cap — only limited by available faction points (1 pt/min)
 const BATTLES_PER_MINUTE = 15;
 
 // ═══════════════════════════════════════════════════════════════
@@ -556,9 +556,8 @@ async function handleOfflineFarmEnd(req, res) {
 
   // Server calculates elapsed time — client cannot inflate
   const elapsed = Math.floor((Date.now() - new Date(player.farm_started_at).getTime()) / 60000);
-  const cappedMinutes = Math.min(elapsed, MAX_FARM_MINUTES);
   const available = player.contribution_points - player.points_spent;
-  const actualMinutes = Math.min(cappedMinutes, available);
+  const actualMinutes = Math.min(elapsed, available);
   const maxBattles = actualMinutes * BATTLES_PER_MINUTE;
 
   // Deduct faction points and clear farm state
