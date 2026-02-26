@@ -1062,26 +1062,32 @@
           '</div>';
       }
       // ── Total combat stats (base class + allocated + gear) ──
+      // Synced from game-server classStats.js + playerStatsAdapter.js
       const cls = document.getElementById('classSelect')?.value || 'dps_range';
       const CLASS_BASE = {
-        tank:      { hp: 15000, atk: 180, def: 300, spd: 120, crit: 10, res: 40, mana: 200 },
-        healer:    { hp: 8000,  atk: 120, def: 150, spd: 130, crit: 12, res: 30, mana: 400 },
-        dps_cac:   { hp: 10000, atk: 250, def: 180, spd: 140, crit: 25, res: 15, mana: 250 },
-        dps_range: { hp: 7500,  atk: 220, def: 120, spd: 150, crit: 30, res: 10, mana: 300 },
+        tank:      { hp: 25000, atk: 350, def: 300, spd: 160, crit: 10, res: 50, mana: 400 },
+        healer:    { hp: 18000, atk: 200, def: 120, spd: 180, crit: 12, res: 60, mana: 800 },
+        dps_cac:   { hp: 22000, atk: 850, def: 150, spd: 200, crit: 32, res: 20, mana: 100 },
+        dps_range: { hp: 14000, atk: 600, def: 80,  spd: 190, crit: 22, res: 15, mana: 500 },
+        berserker: { hp: 23000, atk: 820, def: 140, spd: 210, crit: 28, res: 18, mana: 400 },
       };
-      const base = CLASS_BASE[cls] || CLASS_BASE.dps_range;
+      const SPP = { hp: 8, atk: 1.5, def: 1.5, spd: 1, crit: 0.8, res: 0.8 };
+      const base = CLASS_BASE[cls] || CLASS_BASE.dps_cac;
       const lvlMult = 1 + (profile.level - 1) * 0.02;
       const gb = getGearBonuses();
 
-      const totalHp = Math.floor((base.hp + (allocated.hp || 0) * 150) * lvlMult) + (gb.hp_flat || 0);
-      const totalAtk = Math.floor((base.atk + (allocated.atk || 0) * 3) * lvlMult) + (gb.atk_flat || 0);
-      const totalDef = Math.floor((base.def + (allocated.def || 0) * 4) * lvlMult) + (gb.def_flat || 0);
-      const totalSpd = Math.floor((base.spd + (allocated.spd || 0) * 2) * lvlMult) + (gb.spd_flat || 0);
-      const totalCrit = Math.floor(base.crit + (allocated.crit || 0) * 0.8) + (gb.crit_rate || 0);
-      const totalRes = Math.floor(base.res + (allocated.res || 0) * 1.5) + (gb.res_flat || 0);
+      let totalHp = Math.floor((base.hp + (allocated.hp || 0) * SPP.hp) * lvlMult) + (gb.hp_flat || 0);
+      let totalAtk = Math.floor((base.atk + (allocated.atk || 0) * SPP.atk) * lvlMult) + (gb.atk_flat || 0);
+      let totalDef = Math.floor((base.def + (allocated.def || 0) * SPP.def) * lvlMult) + (gb.def_flat || 0);
+      const totalSpd = Math.floor((base.spd + (allocated.spd || 0) * SPP.spd) * lvlMult) + (gb.spd_flat || 0);
+      const totalCrit = Math.floor(base.crit + (allocated.crit || 0) * SPP.crit) + (gb.crit_rate || 0);
+      const totalRes = Math.floor(base.res + (allocated.res || 0) * SPP.res) + (gb.res_flat || 0);
+      if (gb.hp_pct > 0) totalHp += Math.floor(totalHp * gb.hp_pct / 100);
+      if (gb.atk_pct > 0) totalAtk += Math.floor(totalAtk * gb.atk_pct / 100);
+      if (gb.def_pct > 0) totalDef += Math.floor(totalDef * gb.def_pct / 100);
 
       html += '<div style="margin-top:6px;padding:4px 6px;background:#111;border:1px solid #333;border-radius:4px;font-size:8px;color:#94a3b8">' +
-        '<div style="color:#a78bfa;font-weight:bold;margin-bottom:2px;font-size:9px">STATS EN COMBAT (' + (cls === 'dps_range' ? 'Archer' : cls === 'dps_cac' ? 'Warrior' : cls === 'tank' ? 'Tank' : 'Healer') + ')</div>' +
+        '<div style="color:#a78bfa;font-weight:bold;margin-bottom:2px;font-size:9px">STATS EN COMBAT (' + (CLASS_LABELS[cls] || cls) + ')</div>' +
         '<span style="color:#10b981">HP ' + totalHp + '</span> · ' +
         '<span style="color:#ef4444">ATK ' + totalAtk + '</span> · ' +
         '<span style="color:#3b82f6">DEF ' + totalDef + '</span> · ' +
