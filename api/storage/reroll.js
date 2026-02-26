@@ -27,14 +27,17 @@ const ENCHANT_MAIN_STAT_POOL = [
 ];
 
 const RARITY_INITIAL_SUBS = { rare: 1, legendaire: 2, mythique: 3 };
-const REROLL_ALKAHEST_COST = 10;
+const REROLL_LOCK_COSTS = [10, 22, 45, 70, 100]; // index = number of locked stats (0-4)
 
-function generateNewSubs(rarity, mainStatId) {
+function generateNewSubs(rarity, mainStatId, lockedSubs = []) {
   const subCount = RARITY_INITIAL_SUBS[rarity] || 2;
-  const available = SUB_STAT_POOL.filter(s => s.id !== mainStatId);
-  const subs = [];
-  const used = new Set();
-  for (let i = 0; i < subCount; i++) {
+  // Start with locked subs (preserved as-is)
+  const subs = [...lockedSubs];
+  const used = new Set(lockedSubs.map(s => s.id));
+  used.add(mainStatId); // exclude main stat from sub pool
+  const available = SUB_STAT_POOL.filter(s => !used.has(s.id));
+  // Fill remaining slots with random subs
+  for (let i = subs.length; i < subCount; i++) {
     const candidates = available.filter(s => !used.has(s.id));
     if (candidates.length === 0) break;
     const pick = candidates[Math.floor(Math.random() * candidates.length)];
@@ -60,7 +63,7 @@ export default async function handler(req, res) {
     const user = await extractUser(req);
     if (!user) return res.status(401).json({ error: 'Not authenticated' });
 
-    const { artifactUid, fullReroll } = req.body;
+    const { artifactUid, fullReroll, lockedStats = [] } = req.body;
     if (!artifactUid) return res.status(400).json({ error: 'Missing artifactUid' });
 
     // Read current data from Neon
@@ -73,10 +76,12 @@ export default async function handler(req, res) {
     const data = typeof existing.rows[0].data === 'string'
       ? JSON.parse(existing.rows[0].data) : existing.rows[0].data;
 
-    // Validate alkahest balance
+    // Validate alkahest balance (cost scales with locked stat count)
+    const lockCount = Math.min(lockedStats.length, REROLL_LOCK_COSTS.length - 1);
+    const alkahestCost = REROLL_LOCK_COSTS[lockCount];
     const currentAlkahest = data.alkahest || 0;
-    if (currentAlkahest < REROLL_ALKAHEST_COST) {
-      return res.status(400).json({ error: 'Not enough alkahest', have: currentAlkahest, need: REROLL_ALKAHEST_COST });
+    if (currentAlkahest < alkahestCost) {
+      return res.status(400).json({ error: 'Not enough alkahest', have: currentAlkahest, need: alkahestCost });
     }
 
     // Find the artifact (inventory or equipped)
@@ -105,14 +110,28 @@ export default async function handler(req, res) {
     if (!artifact) return res.status(404).json({ error: 'Artifact not found' });
     if (artifact.locked) return res.status(400).json({ error: 'Artifact is locked' });
 
+    const lockedSet = new Set(lockedStats);
+    const mainLocked = lockedSet.has('main');
+
     // Full reroll: main stat + subs. Normal reroll: subs only.
     let newMainStat = artifact.mainStat;
-    if (fullReroll) {
+    let newMainValue = artifact.mainValue;
+    if (fullReroll && !mainLocked) {
       const mainPool = ENCHANT_MAIN_STAT_POOL.filter(s => s !== artifact.mainStat);
       newMainStat = mainPool[Math.floor(Math.random() * mainPool.length)];
+      newMainValue = MAIN_STAT_BASE[newMainStat] || artifact.mainValue;
     }
-    const newSubs = generateNewSubs(artifact.rarity, newMainStat);
-    const newMainValue = MAIN_STAT_BASE[newMainStat] || artifact.mainValue;
+
+    // Preserve locked subs (keep their values + enchant levels)
+    const oldEnchants = artifact.enchants || { main: 0, subs: {} };
+    const lockedSubs = (artifact.subs || []).filter(s => lockedSet.has(s.id));
+    const newSubs = generateNewSubs(artifact.rarity, newMainStat, lockedSubs);
+
+    // Build new enchants: keep enchant levels for locked stats, reset unlocked
+    const newEnchants = { main: mainLocked ? (oldEnchants.main || 0) : 0, subs: {} };
+    for (const s of newSubs) {
+      newEnchants.subs[s.id] = lockedSet.has(s.id) ? (oldEnchants.subs?.[s.id] || 0) : 0;
+    }
 
     const rerolled = {
       ...artifact,
@@ -120,11 +139,11 @@ export default async function handler(req, res) {
       mainStat: newMainStat,
       mainValue: newMainValue,
       subs: newSubs,
-      enchants: { main: 0, subs: {} },
+      enchants: newEnchants,
     };
 
-    // Deduct alkahest
-    data.alkahest = currentAlkahest - REROLL_ALKAHEST_COST;
+    // Deduct alkahest (lock-aware cost)
+    data.alkahest = currentAlkahest - alkahestCost;
 
     // Track reroll count per artifact uid
     if (!data.rerollCounts) data.rerollCounts = {};

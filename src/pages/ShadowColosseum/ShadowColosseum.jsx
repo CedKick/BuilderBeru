@@ -1070,7 +1070,12 @@ export default function ShadowColosseum() {
             if (d.raidData.manayaOwned) localStorage.setItem('manaya_set_owned', JSON.stringify(d.raidData.manayaOwned));
             if (d.raidData.statPoints) {
               const rc = (() => { try { return JSON.parse(localStorage.getItem('manaya_raid_character')) || {}; } catch { return {}; } })();
-              rc.statPoints = d.raidData.statPoints;
+              const cloudPts = d.raidData.statPoints;
+              const localPts = rc.statPoints || {};
+              const cloudTotal = Object.values(cloudPts).reduce((s, v) => s + (v || 0), 0);
+              const localTotal = Object.values(localPts).reduce((s, v) => s + (v || 0), 0);
+              // MAX merge: keep whichever allocation has more total points (never lose progress)
+              rc.statPoints = localTotal >= cloudTotal ? localPts : cloudPts;
               localStorage.setItem('manaya_raid_character', JSON.stringify(rc));
             }
           }
@@ -4399,7 +4404,16 @@ export default function ShadowColosseum() {
             const preferredClass = raidChar.preferredClass || 'dps_cac';
             const saveRaidChar = (updates) => {
               const current = (() => { try { return JSON.parse(localStorage.getItem(RAID_CHAR_KEY)) || {}; } catch { return {}; } })();
-              localStorage.setItem(RAID_CHAR_KEY, JSON.stringify({ ...current, ...updates }));
+              const merged = { ...current, ...updates };
+              localStorage.setItem(RAID_CHAR_KEY, JSON.stringify(merged));
+              // Also sync statPoints to cloud (shadow_colosseum_raid)
+              if (updates.statPoints) {
+                try {
+                  const raidCloud = JSON.parse(localStorage.getItem('shadow_colosseum_raid') || '{}');
+                  raidCloud.statPoints = updates.statPoints;
+                  cloudStorage.saveAndSync('shadow_colosseum_raid', raidCloud);
+                } catch {}
+              }
             };
 
             let raidStatPoints = raidChar.statPoints || { hp: 0, atk: 0, def: 0, spd: 0, crit: 0, res: 0 };
