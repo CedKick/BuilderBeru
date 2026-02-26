@@ -3,7 +3,7 @@ import { extractUser } from '../_utils/auth.js';
 import { gunzipSync } from 'node:zlib';
 import { sanitizeColoData } from '../_utils/validate.js';
 import {
-  computeCheatScore, checkSuspension, suspendAccount,
+  computeCheatScore, checkSuspension, notifyAdmin,
   getBeruWarnMessage, getBeruSuspendMessage,
   WARN_SCORE, SUSPEND_SCORE,
 } from '../_utils/anticheat.js';
@@ -372,24 +372,29 @@ export default async function handler(req, res) {
 
         const { score, flags } = computeCheatScore(cloudForAC, data, key, { farmMinutes });
 
-        if (score >= SUSPEND_SCORE) {
-          const username = await suspendAccount(
-            deviceId,
-            `Auto-suspend cheat score ${score}: ${flags.join('; ')}`,
-            score, flags
-          );
-          console.error(`[save] 🚨 CHEAT DETECTED — ${username || deviceId}: score=${score}`);
-          return res.status(403).json({
-            error: 'Account suspended',
-            suspended: true,
-            reason: 'Comportement suspect détecté par le système anti-triche.',
-            beruMessage: getBeruSuspendMessage(),
-          });
-        }
+        // No auto-suspension — admin reviews manually via Anti-Cheat tab
+        // Just record the score in DB and warn the player via Béru
+        if (score > 0) {
+          // Persist cheat_score in DB for admin monitoring
+          try {
+            await query(
+              `UPDATE users SET cheat_score = GREATEST(COALESCE(cheat_score, 0), $2) WHERE device_id = $1`,
+              [deviceId, score]
+            );
+          } catch { /* non-blocking */ }
 
-        if (score >= WARN_SCORE) {
-          cheatWarning = { score, beruMessage: getBeruWarnMessage() };
-          console.warn(`[save] ⚠️ SUSPICIOUS — ${deviceId}: score=${score}, flags=${flags.join(', ')}`);
+          if (score >= SUSPEND_SCORE) {
+            // Notify admin (Discord + email) but do NOT block the save
+            notifyAdmin(
+              user?.username || deviceId,
+              deviceId, score, flags
+            ).catch(() => {});
+            console.error(`[save] 🚨 HIGH CHEAT SCORE — ${deviceId}: score=${score}, flags=${flags.join(', ')} (NOT auto-suspended, admin review needed)`);
+            cheatWarning = { score, beruMessage: getBeruSuspendMessage() };
+          } else if (score >= WARN_SCORE) {
+            cheatWarning = { score, beruMessage: getBeruWarnMessage() };
+            console.warn(`[save] ⚠️ SUSPICIOUS — ${deviceId}: score=${score}, flags=${flags.join(', ')}`);
+          }
         }
       }
 

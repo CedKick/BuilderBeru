@@ -246,7 +246,7 @@ export async function unsuspendAccount(deviceId) {
 // ADMIN NOTIFICATION — Fire-and-forget, all optional
 // ═══════════════════════════════════════════════════════════════
 
-async function notifyAdmin(username, deviceId, score, flags) {
+export async function notifyAdmin(username, deviceId, score, flags) {
   const timestamp = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
   const flagsList = flags.map(f => `• ${f}`).join('\n');
 
