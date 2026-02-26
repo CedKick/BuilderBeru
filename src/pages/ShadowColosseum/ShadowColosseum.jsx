@@ -147,7 +147,10 @@ const FarmTimer = ({ stageId, lootMult, factionBuffs, lootBoostMs }) => {
         const cumul = battles > 0 ? 1 - Math.pow(1 - d.rate, battles) : 0;
         return (
           <div key={i} className="text-xs mt-1.5">
-            <span className="text-yellow-400/90 font-semibold">{d.name}</span>
+            <div className="flex items-center justify-between">
+              <span className="text-yellow-400/90 font-semibold">{d.name}</span>
+              <span className="text-gray-400 text-[10px]">1/{Math.round(1 / d.rate)}</span>
+            </div>
             <div className="flex items-center gap-1.5 mt-0.5">
               <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-full transition-all" style={{ width: `${Math.min(cumul * 100, 100)}%` }} />
