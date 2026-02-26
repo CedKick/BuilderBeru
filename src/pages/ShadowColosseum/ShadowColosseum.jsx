@@ -5025,7 +5025,7 @@ export default function ShadowColosseum() {
 
           {/* PVE Multi Button */}
           <button
-            onClick={() => farmActive ? confirmStopFarm(() => setView('pve_multi'), 'Mode PVE Multi') : setView('pve_multi')}
+            onClick={() => setView('pve_multi')}
             className="block w-full mb-4 p-3 rounded-xl border border-emerald-500/30 bg-gradient-to-r from-emerald-900/30 to-teal-900/30 hover:from-emerald-900/50 hover:to-teal-900/50 transition-all text-center group">
             <div className="flex items-center justify-center gap-2">
               <span className="text-xl">{'\uD83D\uDC09'}</span>
