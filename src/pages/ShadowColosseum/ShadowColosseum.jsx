@@ -57,7 +57,7 @@ import {
 import { TALENT_SKILLS, TALENT_SKILL_COST, TALENT_SKILL_UNLOCK_LEVEL, ULTIMATE_SKILLS, ULTIMATE_SKILL_COST } from './talentSkillData';
 import { isLoggedIn, authHeaders, getAuthUser } from '../../utils/auth';
 import { cloudStorage } from '../../utils/CloudStorage';
-import { isFarming, getFarmState, setFarmState, startFarm, stopFarm, calculateFarmRewards, FARMABLE_STAGES, getFarmElapsedMinutes } from '../../utils/offlineFarm';
+import { isFarming, getFarmState, setFarmState, startFarm, stopFarm, calculateFarmRewards, FARMABLE_STAGES, getFarmElapsedMinutes, getPendingFarmResult, clearPendingFarmResult } from '../../utils/offlineFarm';
 import {
   ELEMENT_SET_MAP, CLASS_SET_TIERS, CLASS_IDEAL_STATS, STAT_COLOR_MAP,
   resolveSetId, getResolvedTiers, getSetTier, getStatColor,
@@ -793,15 +793,58 @@ export default function ShadowColosseum() {
 
   // ═══ OFFLINE AUTO-FARM HANDLERS ══════════════════════════════
   // Recovery: re-sync farm state from server on mount
+  // Process farm API result into rewards (shared by handleStopFarm + pending recovery)
+  const processFarmResult = (result, lootBoost, buffs) => {
+    const rewards = calculateFarmRewards(result.maxBattles, result.stageId, lootBoost, buffs);
+    // Resolve hunter drops
+    const hunterIds = Object.keys(HUNTERS);
+    const resolvedHunters = [];
+    const rd = loadRaidData();
+    for (let i = 0; i < rewards.hunterRollSuccesses; i++) {
+      const pickId = hunterIds[Math.floor(Math.random() * hunterIds.length)];
+      const h = HUNTERS[pickId];
+      const res = addHunterOrDuplicate(rd, pickId);
+      rd.hunterCollection = res.collection;
+      resolvedHunters.push({ id: pickId, name: h.name, rarity: h.rarity, isDuplicate: res.isDuplicate, newStars: res.newStars });
+    }
+    if (resolvedHunters.length > 0) saveRaidData(rd);
+    rewards.hunterDrops = resolvedHunters;
+    // Apply weapon collection
+    setData(prev => {
+      const wc = { ...prev.weaponCollection };
+      for (const sw of rewards.secretWeapons) {
+        for (let c = 0; c < sw.count; c++) {
+          if (wc[sw.id] !== undefined) wc[sw.id] = Math.min(wc[sw.id] + 1, MAX_WEAPON_AWAKENING);
+          else wc[sw.id] = 0;
+        }
+      }
+      const killField = { ragnarok: 'ragnarokKills', zephyr: 'zephyrKills', supreme_monarch: 'monarchKills', archdemon: 'archDemonKills' }[result.stageId];
+      const updated = { ...prev, weaponCollection: wc };
+      if (killField) updated[killField] = (prev[killField] || 0) + result.maxBattles;
+      return updated;
+    });
+    rewards.pointsDeducted = result.pointsDeducted || result.actualMinutes || 0;
+    rewards.stageName = FARMABLE_STAGES[result.stageId]?.name || result.stageId;
+    return rewards;
+  };
+
   useEffect(() => {
     if (!isLoggedIn()) return;
+    // Check for pending farm result (farm was stopped from another page)
+    const pending = getPendingFarmResult();
+    if (pending && pending.maxBattles > 0) {
+      clearPendingFarmResult();
+      const rewards = processFarmResult(pending, pending.lootBoostActive, pending.factionBuffs);
+      setFarmRewards(rewards);
+      setFarmActive(false);
+    }
+    // Sync farm state + faction points from server
     fetch('/api/factions?action=status', { headers: { ...authHeaders() } })
       .then(r => r.json())
       .then(d => {
         if (d.success) {
           if (typeof d.pointsAvailable === 'number') setFactionPointsAvailable(d.pointsAvailable);
           if (d.farmActive && !isFarming()) {
-            // Server has active farm but localStorage lost — re-sync
             setFarmState({ active: true, stageId: d.farmStageId, startedAt: d.farmStartedAt, clientStartedAt: Date.now() });
             setFarmActive(true);
           }
@@ -813,7 +856,10 @@ export default function ShadowColosseum() {
   const handleStartFarm = async (stageId) => {
     setFarmLoading(true);
     try {
-      const result = await startFarm(stageId);
+      const result = await startFarm(stageId, {
+        lootBoostActive: data.lootBoostMs > 0,
+        factionBuffs: factionBuffs,
+      });
       if (result.success) {
         setFarmActive(true);
       } else {
@@ -830,56 +876,25 @@ export default function ShadowColosseum() {
     if (!farmActive && !isFarming()) return;
     setFarmLoading(true);
     try {
+      const farmState = getFarmState();
       const result = await stopFarm();
       if (result.success && result.maxBattles > 0) {
-        const lootBoostActive = data.lootBoostMs > 0;
-        const rewards = calculateFarmRewards(
-          result.maxBattles, result.stageId, lootBoostActive, factionBuffs
-        );
-
-        // Resolve hunter drops
-        const hunterIds = Object.keys(HUNTERS);
-        const resolvedHunters = [];
-        const rd = loadRaidData();
-        for (let i = 0; i < rewards.hunterRollSuccesses; i++) {
-          const pickId = hunterIds[Math.floor(Math.random() * hunterIds.length)];
-          const h = HUNTERS[pickId];
-          const res = addHunterOrDuplicate(rd, pickId);
-          rd.hunterCollection = res.collection;
-          resolvedHunters.push({ id: pickId, name: h.name, rarity: h.rarity, isDuplicate: res.isDuplicate, newStars: res.newStars });
-        }
-        if (resolvedHunters.length > 0) saveRaidData(rd);
-        rewards.hunterDrops = resolvedHunters;
-
-        // Apply weapon collection changes
-        setData(prev => {
-          const wc = { ...prev.weaponCollection };
-          for (const sw of rewards.secretWeapons) {
-            for (let c = 0; c < sw.count; c++) {
-              if (wc[sw.id] !== undefined) wc[sw.id] = Math.min(wc[sw.id] + 1, MAX_WEAPON_AWAKENING);
-              else wc[sw.id] = 0;
-            }
-          }
-          const killField = { ragnarok: 'ragnarokKills', zephyr: 'zephyrKills', supreme_monarch: 'monarchKills', archdemon: 'archDemonKills' }[result.stageId];
-          const updated = { ...prev, weaponCollection: wc };
-          if (killField) updated[killField] = (prev[killField] || 0) + result.maxBattles;
-          return updated;
-        });
-
-        rewards.pointsDeducted = result.pointsDeducted || result.actualMinutes || 0;
-        rewards.stageName = FARMABLE_STAGES[result.stageId]?.name || result.stageId;
+        // stopFarm() saved pending result; we consume it immediately here
+        clearPendingFarmResult();
+        const lba = farmState?.lootBoostActive || data.lootBoostMs > 0;
+        const fb = farmState?.factionBuffs || factionBuffs;
+        const rewards = processFarmResult(result, lba, fb);
         setFarmRewards(rewards);
-        // Update local points count
         if (typeof factionPointsAvailable === 'number') {
           setFactionPointsAvailable(Math.max(0, factionPointsAvailable - rewards.pointsDeducted));
         }
-
         // Beru announcement
+        const hd = rewards.hunterDrops || [];
         const msg = rewards.secretWeapons.length > 0
           ? `AUTO-FARM TERMINE ! ${rewards.minutesFarmed}min, ${rewards.totalBattles} combats ! ${rewards.secretWeapons[0].name} x${rewards.secretWeapons[0].count} !! BERU EST IMPRESSIONNE !!`
           : reason === 'combat'
-            ? `Auto-farm interrompu ! ${rewards.minutesFarmed}min, ${rewards.totalBattles} combats.${resolvedHunters.length > 0 ? ` ${resolvedHunters.length} hunter(s) !` : ' Pas d\'arme secrete...'}`
-            : `Auto-farm termine ! ${rewards.minutesFarmed}min, ${rewards.totalBattles} combats.${resolvedHunters.length > 0 ? ` ${resolvedHunters.length} hunter(s) obtenus !` : ''}`;
+            ? `Auto-farm interrompu ! ${rewards.minutesFarmed}min, ${rewards.totalBattles} combats.${hd.length > 0 ? ` ${hd.length} hunter(s) !` : ' Pas d\'arme secrete...'}`
+            : `Auto-farm termine ! ${rewards.minutesFarmed}min, ${rewards.totalBattles} combats.${hd.length > 0 ? ` ${hd.length} hunter(s) obtenus !` : ''}`;
         window.dispatchEvent(new CustomEvent('beru-react', {
           detail: { type: rewards.secretWeapons.length > 0 ? 'excited' : 'farm-end', message: msg },
         }));
@@ -4985,28 +5000,16 @@ export default function ShadowColosseum() {
             );
           })()}
 
-          {/* Raid Button */}
-          {farmActive ? (
-            <button onClick={() => confirmStopFarm(() => navigate('/shadow-colosseum/raid'), 'Mode Raid')}
-              className="block w-full mb-4 p-3 rounded-xl border border-red-500/30 bg-gradient-to-r from-red-900/30 to-orange-900/30 hover:from-red-900/50 hover:to-orange-900/50 transition-all text-center group">
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-xl">{'\uD83D\uDC1C'}</span>
-                <span className="font-bold text-red-400 group-hover:text-red-300">MODE RAID</span>
-                <span className="text-xs text-gray-400">— Reine des Fourmis</span>
-              </div>
-              <p className="text-normal-responsive text-gray-500 mt-0.5">Jusqu'a 6 chibis vs Raid Boss ! Controle Sung Jinwoo au clavier !</p>
-            </button>
-          ) : (
-            <Link to="/shadow-colosseum/raid"
-              className="block mb-4 p-3 rounded-xl border border-red-500/30 bg-gradient-to-r from-red-900/30 to-orange-900/30 hover:from-red-900/50 hover:to-orange-900/50 transition-all text-center group">
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-xl">{'\uD83D\uDC1C'}</span>
-                <span className="font-bold text-red-400 group-hover:text-red-300">MODE RAID</span>
-                <span className="text-xs text-gray-400">— Reine des Fourmis</span>
-              </div>
-              <p className="text-normal-responsive text-gray-500 mt-0.5">Jusqu'a 6 chibis vs Raid Boss ! Controle Sung Jinwoo au clavier !</p>
-            </Link>
-          )}
+          {/* Raid Button — farm continues during Raid/Manaya */}
+          <Link to="/shadow-colosseum/raid"
+            className="block mb-4 p-3 rounded-xl border border-red-500/30 bg-gradient-to-r from-red-900/30 to-orange-900/30 hover:from-red-900/50 hover:to-orange-900/50 transition-all text-center group">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-xl">{'\uD83D\uDC1C'}</span>
+              <span className="font-bold text-red-400 group-hover:text-red-300">MODE RAID</span>
+              <span className="text-xs text-gray-400">— Reine des Fourmis</span>
+            </div>
+            <p className="text-normal-responsive text-gray-500 mt-0.5">Jusqu'a 6 chibis vs Raid Boss ! Controle Sung Jinwoo au clavier !</p>
+          </Link>
 
           {/* PVE Multi Button */}
           <button

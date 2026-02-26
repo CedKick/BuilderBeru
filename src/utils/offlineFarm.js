@@ -2,13 +2,13 @@
 // Manages farm state (localStorage), API calls, and reward calculation
 
 import { isLoggedIn, authHeaders } from './auth';
-import { cloudStorage } from './CloudStorage';
 
 // ═══════════════════════════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════════════════════════
 
 const FARM_STATE_KEY = 'beru_offline_farm';
+const PENDING_FARM_KEY = 'beru_pending_farm';
 const BATTLES_PER_MINUTE = 15;
 
 // Valid Tier 6 stages and their secret weapon drops
@@ -74,10 +74,37 @@ export function getFarmElapsedMinutes() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// PENDING FARM RESULTS — for when farm stops outside ShadowColosseum
+// ═══════════════════════════════════════════════════════════════
+
+export function getPendingFarmResult() {
+  try {
+    return JSON.parse(localStorage.getItem(PENDING_FARM_KEY)) || null;
+  } catch { return null; }
+}
+
+export function clearPendingFarmResult() {
+  localStorage.removeItem(PENDING_FARM_KEY);
+}
+
+function savePendingFarmResult(apiResult, farmState) {
+  localStorage.setItem(PENDING_FARM_KEY, JSON.stringify({
+    ...apiResult,
+    lootBoostActive: farmState?.lootBoostActive || false,
+    factionBuffs: farmState?.factionBuffs || null,
+    savedAt: Date.now(),
+  }));
+}
+
+// ═══════════════════════════════════════════════════════════════
 // API CALLS
 // ═══════════════════════════════════════════════════════════════
 
-export async function startFarm(stageId) {
+/**
+ * Start offline farm. Stores lootBoostActive and factionBuffs in farm state
+ * so they can be used for reward calculation even from other pages.
+ */
+export async function startFarm(stageId, options = {}) {
   if (!isLoggedIn()) return { success: false, message: 'Not logged in' };
 
   const resp = await fetch('/api/factions?action=offline-farm-start', {
@@ -93,6 +120,8 @@ export async function startFarm(stageId) {
       stageId,
       startedAt: data.farmStartedAt || new Date().toISOString(),
       clientStartedAt: Date.now(),
+      lootBoostActive: options.lootBoostActive || false,
+      factionBuffs: options.factionBuffs || null,
     });
     window.dispatchEvent(new CustomEvent('beru-react', {
       detail: { type: 'farm-start' },
@@ -117,6 +146,11 @@ export async function stopFarm() {
       body: JSON.stringify({}),
     });
     const data = await resp.json();
+
+    // Save pending result BEFORE clearing state (so buffs are preserved)
+    if (data.success && data.maxBattles > 0) {
+      savePendingFarmResult(data, state);
+    }
 
     // Always clear local state
     setFarmState(null);

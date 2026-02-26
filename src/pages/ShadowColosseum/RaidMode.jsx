@@ -39,7 +39,6 @@ import {
 } from './equipmentData';
 import { BattleStyles, RaidArena } from './BattleVFX';
 import { isLoggedIn, authHeaders, getAuthUser } from '../../utils/auth';
-import { isFarming, stopFarm } from '../../utils/offlineFarm';
 import { cloudStorage } from '../../utils/CloudStorage';
 import SharedDPSGraph from './SharedBattleComponents/SharedDPSGraph';
 import SharedCombatLogs from './SharedBattleComponents/SharedCombatLogs';
@@ -147,8 +146,7 @@ export default function RaidMode() {
     return pool;
   }, [ownedShadows, hunterPool]);
 
-  // Stop offline farm when entering Raid
-  useEffect(() => { if (isFarming()) stopFarm().catch(() => {}); }, []);
+  // Note: Raid does NOT stop offline farm — Manaya/Ant Queen can coexist with farm
 
   // ─── Save effects ──────────────────────────────────────────
   useEffect(() => { saveColoData(coloData); }, [coloData]);
