@@ -90,8 +90,25 @@ const StoryTypewriter = ({ text, speaker }) => {
   );
 };
 
-// ─── FarmTimer — auto-updating elapsed time for farm indicator ───
-const FarmTimer = () => {
+// ─── Farm drop rate helpers ─────────────────────────────────
+const getFarmDropRates = (stageId, lootMult, factionBuffs) => {
+  const stage = FARMABLE_STAGES[stageId];
+  if (!stage) return [];
+  const getFLM = (buffId) => (!factionBuffs || !factionBuffs[buffId]) ? 1 : 1 + factionBuffs[buffId] * 0.05;
+  if (stage.weapons) {
+    return stage.weapons.map(w => ({
+      name: w.name, rate: w.dropRate * lootMult * getFLM(w.lootBuff),
+      baseRate: w.dropRate, hasFactionBuff: !!(factionBuffs?.[w.lootBuff]),
+    }));
+  }
+  return [{
+    name: stage.weaponName, rate: stage.dropRate * lootMult * getFLM(stage.lootBuff),
+    baseRate: stage.dropRate, hasFactionBuff: !!(factionBuffs?.[stage.lootBuff]),
+  }];
+};
+
+// ─── FarmTimer — auto-updating elapsed time + cumulative chances ───
+const FarmTimer = ({ stageId, lootMult, factionBuffs }) => {
   const [elapsed, setElapsed] = useState(getFarmElapsedMinutes());
   useEffect(() => {
     const id = setInterval(() => setElapsed(getFarmElapsedMinutes()), 30000);
@@ -99,9 +116,27 @@ const FarmTimer = () => {
   }, []);
   const h = Math.floor(elapsed / 60);
   const m = elapsed % 60;
+  const battles = elapsed * 15;
+  const drops = getFarmDropRates(stageId, lootMult, factionBuffs);
   return (
-    <div className="text-xs text-indigo-300">
-      {h > 0 ? `${h}h${m.toString().padStart(2, '0')}` : `${m} min`} — ~{elapsed * 15} combats
+    <div>
+      <div className="text-xs text-indigo-300">
+        {h > 0 ? `${h}h${m.toString().padStart(2, '0')}` : `${m} min`} — ~{battles} combats
+      </div>
+      {drops.map((d, i) => {
+        const cumul = battles > 0 ? 1 - Math.pow(1 - d.rate, battles) : 0;
+        return (
+          <div key={i} className="text-xs mt-1">
+            <span className="text-yellow-400/90 font-semibold">{d.name}</span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400 rounded-full transition-all" style={{ width: `${Math.min(cumul * 100, 100)}%` }} />
+              </div>
+              <span className="text-yellow-300/80 font-mono text-[10px]">{(cumul * 100).toFixed(1)}%</span>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -5687,6 +5722,25 @@ export default function ShadowColosseum() {
               <div className="text-xs text-indigo-400/70 mt-1">
                 Coute 1 pt de contribution/min{factionPointsAvailable != null ? ` — ${factionPointsAvailable} pts dispo` : ''}
               </div>
+              {(() => {
+                const stId = STAGES[selStage].id;
+                const lm = data.lootBoostMs > 0 ? 2 : 1;
+                const drops = getFarmDropRates(stId, lm, factionBuffs);
+                const buffs = [];
+                if (lm > 1) buffs.push('Loot x2');
+                if (drops.some(d => d.hasFactionBuff)) buffs.push('Faction buff');
+                return drops.length > 0 && (
+                  <div className="mt-1.5 text-center">
+                    {drops.map((d, i) => (
+                      <div key={i} className="text-xs">
+                        <span className="text-yellow-400/80">{d.name}</span>
+                        <span className="text-gray-400"> : 1/{Math.round(1 / d.rate)}</span>
+                        {d.rate !== d.baseRate && <span className="text-green-400/70 ml-1">({buffs.join(' + ')})</span>}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </motion.div>
           )}
         </div>
@@ -12583,7 +12637,7 @@ export default function ShadowColosseum() {
             initial={{ x: 100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 100, opacity: 0 }}
-            className="fixed top-4 right-4 z-[60] max-w-[220px]"
+            className="fixed top-4 right-4 z-[60] w-[230px]"
           >
             <div className="bg-indigo-950/95 border border-indigo-500/40 rounded-xl px-4 py-3 shadow-xl shadow-indigo-900/30 backdrop-blur-sm">
               <div className="flex items-center gap-2 mb-1">
@@ -12593,7 +12647,7 @@ export default function ShadowColosseum() {
               <div className="text-sm font-semibold text-white mb-0.5">
                 {FARMABLE_STAGES[getFarmState()?.stageId]?.name || 'Stage inconnu'}
               </div>
-              <FarmTimer />
+              <FarmTimer stageId={getFarmState()?.stageId} lootMult={data.lootBoostMs > 0 ? 2 : 1} factionBuffs={factionBuffs} />
               <button
                 onClick={() => handleStopFarm('manual')}
                 disabled={farmLoading}
