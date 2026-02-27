@@ -158,6 +158,12 @@ class CloudStorageManager {
       this._pendingData.set(key, data);
     }
 
+    // Before initialSync completes, don't write cloud keys to localStorage
+    // (initialSync will restore the correct cloud data — writing now would overwrite it)
+    if (!this._initialized && CLOUD_KEYS.includes(key)) {
+      return;
+    }
+
     // Try localStorage (optional cache)
     try {
       localStorage.setItem(key, json);
