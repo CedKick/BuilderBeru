@@ -303,7 +303,7 @@ export default async function handler(req, res) {
 
     // Trim bloated fields server-side (drop logs, orphan rerollCounts)
     if (key === 'shadow_colosseum_data' && data && typeof data === 'object') {
-      const MAX_LOG = 200;
+      const MAX_LOG = 100;
       for (const logKey of ['ragnarokDropLog', 'zephyrDropLog', 'monarchDropLog', 'archDemonDropLog']) {
         if (Array.isArray(data[logKey]) && data[logKey].length > MAX_LOG) {
           data[logKey] = data[logKey].slice(-MAX_LOG);

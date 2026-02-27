@@ -46,7 +46,7 @@ async function _gzipBase64(str) {
 }
 
 // Trim bloated fields to keep data under size limits
-const MAX_DROP_LOG = 200;
+const MAX_DROP_LOG = 100;
 function _trimData(key, data) {
   if (key !== 'shadow_colosseum_data' || !data || typeof data !== 'object') return data;
   const d = { ...data };
