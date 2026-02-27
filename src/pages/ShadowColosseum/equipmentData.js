@@ -242,11 +242,11 @@ export const MAX_DAILY_RAIDS = 10;
 // ═══════════════════════════════════════════════════════════════
 
 export const ARTIFACT_SLOTS = {
-  casque:   { id: 'casque',   name: 'Casque',              icon: '\u26D1\uFE0F', mainStats: ['hp_flat', 'hp_pct'] },
+  casque:   { id: 'casque',   name: 'Casque',              icon: '\u26D1\uFE0F', mainStats: ['hp_flat', 'hp_pct', 'int_flat', 'int_pct', 'atk_flat', 'atk_pct', 'def_flat', 'def_pct'] },
   plastron: { id: 'plastron', name: 'Plastron',            icon: '\uD83E\uDDBA', mainStats: ['atk_flat', 'atk_pct', 'int_flat', 'int_pct'] },
   gants:    { id: 'gants',    name: 'Gants',               icon: '\uD83E\uDDE4', mainStats: ['crit_rate', 'crit_dmg'] },
-  bottes:   { id: 'bottes',   name: 'Bottes',              icon: '\uD83D\uDC62', mainStats: ['spd_flat', 'def_pct'] },
-  collier:  { id: 'collier',  name: 'Collier',             icon: '\uD83D\uDCFF', mainStats: ['hp_pct', 'atk_pct', 'int_pct', 'fire_dmg_pct', 'water_dmg_pct', 'shadow_dmg_pct', 'light_dmg_pct', 'earth_dmg_pct'] },
+  bottes:   { id: 'bottes',   name: 'Bottes',              icon: '\uD83D\uDC62', mainStats: ['crit_dmg', 'crit_rate', 'spd_flat'] },
+  collier:  { id: 'collier',  name: 'Collier',             icon: '\uD83D\uDCFF', mainStats: ['hp_pct', 'atk_pct', 'def_pct', 'int_pct', 'fire_dmg_pct', 'water_dmg_pct', 'shadow_dmg_pct', 'light_dmg_pct', 'earth_dmg_pct'] },
   bracelet: { id: 'bracelet', name: 'Bracelet',            icon: '\u231A', mainStats: ['atk_pct', 'def_pct', 'int_pct'] },
   anneau:   { id: 'anneau',   name: 'Anneau',              icon: '\uD83D\uDC8D', mainStats: ['crit_rate', 'crit_dmg', 'res_flat'] },
   boucles:  { id: 'boucles',  name: "Boucles d'oreilles",  icon: '\u2728', mainStats: ['hp_pct', 'atk_pct', 'def_pct', 'int_pct'] },
@@ -309,9 +309,9 @@ export const SUB_STAT_POOL = [
 ];
 
 export const RARITY_SUB_COUNT = {
-  rare:       { initial: 1, max: 2 },
-  legendaire: { initial: 2, max: 3 },
-  mythique:   { initial: 3, max: 4 },
+  rare:       { initial: 4, max: 4 },
+  legendaire: { initial: 4, max: 4 },
+  mythique:   { initial: 4, max: 4 },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -439,39 +439,31 @@ export function generateArtifact(rarity, slotId = null) {
 
 export function enhanceArtifact(artifact) {
   if (artifact.level >= MAX_ARTIFACT_LEVEL) return artifact;
-  const enhanced = { ...artifact, level: artifact.level + 1, subs: artifact.subs.map(s => ({ ...s })) };
-  const mainDef = MAIN_STAT_VALUES[enhanced.mainStat];
-  enhanced.mainValue = +(mainDef.base + mainDef.perLevel * enhanced.level).toFixed(1);
+  const newLevel = artifact.level + 1;
 
-  // At level 10: add new sub if room
-  if (enhanced.level === 10) {
-    const maxSubs = RARITY_SUB_COUNT[enhanced.rarity].max;
-    if (enhanced.subs.length < maxSubs) {
-      const usedIds = new Set([enhanced.mainStat, ...enhanced.subs.map(s => s.id)]);
-      const candidates = SUB_STAT_POOL.filter(s => !usedIds.has(s.id));
-      if (candidates.length > 0) {
-        const pick = candidates[Math.floor(Math.random() * candidates.length)];
-        const value = pick.range[0] + Math.floor(Math.random() * (pick.range[1] - pick.range[0] + 1));
-        enhanced.subs.push({ id: pick.id, value });
-      }
-    }
-  }
+  // MainStat grows every level (base + perLevel * level)
+  const mainDef = MAIN_STAT_VALUES[artifact.mainStat];
+  const newMainValue = mainDef
+    ? +(mainDef.base + mainDef.perLevel * newLevel).toFixed(1)
+    : artifact.mainValue; // safety: keep current value if mainStat ID unknown
 
-  // Every 5 levels: upgrade a random sub (+% boost)
-  if (enhanced.level % 5 === 0 && enhanced.subs.length > 0) {
-    const idx = Math.floor(Math.random() * enhanced.subs.length);
-    const subDef = SUB_STAT_POOL.find(s => s.id === enhanced.subs[idx].id);
+  // Subs: deep copy, IDs never change
+  const newSubs = artifact.subs.map(s => ({ ...s }));
+
+  // Milestones +5, +10, +15, +20: random sub gets a bonus roll
+  if (newLevel % 5 === 0 && newSubs.length > 0) {
+    const idx = Math.floor(Math.random() * newSubs.length);
+    const subDef = SUB_STAT_POOL.find(s => s.id === newSubs[idx].id);
     if (subDef) {
-      // Milestone bonus: bigger roll at higher milestones
-      const milestone = Math.floor(enhanced.level / 5); // 1, 2, 3, 4
+      const milestone = Math.floor(newLevel / 5); // 1, 2, 3, 4
       const bonusMult = 1 + (milestone - 1) * 0.25; // 1x, 1.25x, 1.5x, 1.75x
       const baseRoll = subDef.range[0] + Math.floor(Math.random() * (subDef.range[1] - subDef.range[0] + 1));
       const roll = Math.ceil(baseRoll * bonusMult);
-      enhanced.subs[idx] = { ...enhanced.subs[idx], value: enhanced.subs[idx].value + roll };
+      newSubs[idx] = { ...newSubs[idx], value: newSubs[idx].value + roll };
     }
   }
 
-  return enhanced;
+  return { ...artifact, level: newLevel, mainValue: newMainValue, subs: newSubs };
 }
 
 // ═══════════════════════════════════════════════════════════════

@@ -8749,8 +8749,8 @@ export default function ShadowColosseum() {
                   };
 
                   return (
-                    <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                      className="mt-2 p-3 rounded-xl border border-purple-500/30 bg-purple-500/5">
+                    <motion.div key={equipDetailSlot} initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} layout="position"
+                      className="mt-2 p-3 rounded-xl border border-purple-500/30 bg-purple-500/5" style={{ minHeight: 280 }}>
                       {/* Close */}
                       <button onClick={() => setEquipDetailSlot(null)}
                         className="float-right text-gray-500 hover:text-gray-300 text-xs">{'\u2715'}</button>
@@ -10259,8 +10259,8 @@ export default function ShadowColosseum() {
 
         // Detail panel JSX — rendered after inventory or after equipped section
         const detailPanelJSX = selArt ? (
-          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} key={artSelected}
-            className="p-3 rounded-xl border border-purple-500/30 bg-purple-500/5 mb-4">
+          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} layout="position" key={artSelected}
+            className="p-3 rounded-xl border border-purple-500/30 bg-purple-500/5 mb-4" style={{ minHeight: 280 }}>
             {/* Close */}
             <button onClick={() => { setArtSelected(null); setArtEquipPicker(false); }}
               className="float-right text-gray-500 hover:text-gray-300 text-xs">{'\u2715'}</button>

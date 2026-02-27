@@ -26,7 +26,7 @@ const ENCHANT_MAIN_STAT_POOL = [
   'def_flat', 'def_pct', 'spd_flat',
 ];
 
-const RARITY_INITIAL_SUBS = { rare: 1, legendaire: 2, mythique: 3 };
+const RARITY_INITIAL_SUBS = { rare: 4, legendaire: 4, mythique: 4 };
 const REROLL_LOCK_COSTS = [10, 22, 45, 70, 100]; // index = number of locked stats (0-4)
 
 function generateNewSubs(rarity, mainStatId, lockedSubs = []) {
@@ -112,19 +112,21 @@ export default async function handler(req, res) {
 
     const lockedSet = new Set(lockedStats);
     const mainLocked = lockedSet.has('main');
+    const lockedSubs = (artifact.subs || []).filter(s => lockedSet.has(s.id));
+    const oldEnchants = artifact.enchants || { main: 0, subs: {} };
 
     // Full reroll: main stat + subs. Normal reroll: subs only.
     let newMainStat = artifact.mainStat;
     let newMainValue = artifact.mainValue;
     if (fullReroll && !mainLocked) {
-      const mainPool = ENCHANT_MAIN_STAT_POOL.filter(s => s !== artifact.mainStat);
-      newMainStat = mainPool[Math.floor(Math.random() * mainPool.length)];
-      newMainValue = MAIN_STAT_BASE[newMainStat] || artifact.mainValue;
+      // Exclude current mainStat AND all locked sub IDs (no duplicates allowed)
+      const lockedSubIds = new Set(lockedSubs.map(s => s.id));
+      const mainPool = ENCHANT_MAIN_STAT_POOL.filter(s => s !== artifact.mainStat && !lockedSubIds.has(s));
+      if (mainPool.length > 0) {
+        newMainStat = mainPool[Math.floor(Math.random() * mainPool.length)];
+        newMainValue = MAIN_STAT_BASE[newMainStat] || artifact.mainValue;
+      }
     }
-
-    // Preserve locked subs (keep their values + enchant levels)
-    const oldEnchants = artifact.enchants || { main: 0, subs: {} };
-    const lockedSubs = (artifact.subs || []).filter(s => lockedSet.has(s.id));
     const newSubs = generateNewSubs(artifact.rarity, newMainStat, lockedSubs);
 
     // Build new enchants: keep enchant levels for locked stats, reset unlocked
