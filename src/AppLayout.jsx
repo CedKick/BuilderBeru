@@ -7,6 +7,7 @@ import FloatingDaijin from './components/FloatingDaijin';
 import FloatingPod042 from './components/FloatingPod042';
 import FloatingShortcuts from './components/FloatingShortcuts';
 import AchievementToast from './components/AchievementToast';
+import IgrisVsBeru from './components/IgrisVsBeru/IgrisVsBeru';
 import shadowAchievementManager from './utils/ShadowAchievementManager';
 import { isLoggedIn } from './utils/auth';
 
@@ -205,6 +206,9 @@ export default function AppLayout({ children }) {
       {location.pathname === '/shadow-colosseum' && (
         <FloatingShortcuts onMascotClick={() => setShowMascotPanel(!showMascotPanel)} />
       )}
+
+      {/* Igris vs Beru — Event rare sur Shadow Colosseum */}
+      <IgrisVsBeru />
 
       {/* Shadow Achievements - Toast Notification */}
       <AchievementToast />

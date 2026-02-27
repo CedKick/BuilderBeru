@@ -1642,6 +1642,24 @@ const FloatingBeruMascot = () => {
         setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 10000);
         return;
       }
+      // ── Igris vs Beru fight events
+      if (type === 'igris-fight-start') {
+        // Hide Beru during the fight (IgrisVsBeru renders its own copy)
+        setBeruMode('hidden');
+        localStorage.setItem('beru_mode_before_fight', beruModeRef.current);
+        return;
+      }
+      if (type === 'igris-fight-end') {
+        // Restore Beru after the fight
+        const prev = localStorage.getItem('beru_mode_before_fight') || 'normal';
+        setBeruMode(prev);
+        localStorage.removeItem('beru_mode_before_fight');
+        if (message) showBubble(message, 5000);
+        setMood('excited');
+        spawnParticles('🏆', 6);
+        setTimeout(() => { if (!isSleepingRef.current) setMood('idle'); }, 5000);
+        return;
+      }
       if (message) showBubble(message, duration || 4000, isAdmin);
       if (newMood) {
         setMood(newMood);
