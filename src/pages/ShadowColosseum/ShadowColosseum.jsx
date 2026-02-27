@@ -303,6 +303,24 @@ const BERU_SCROLL_PHRASES = [
   { msg: "T'as les hunters, t'as les artefacts, maintenant GO COMBAT !", mood: 'excited' },
 ];
 
+const BERU_SHORTCUT_PHRASES = {
+  chibis: [
+    { msg: "Direction les Chibis ! Beru adore ces petites boules de poils.", mood: 'happy' },
+    { msg: "On va checker le roster Chibi ! Qui est le plus fort ?", mood: 'excited' },
+    { msg: "Chibis en vue ! Ils sont mignons mais ils mordent.", mood: 'normal' },
+  ],
+  hunters: [
+    { msg: "Les Hunters ! L'elite de ton armee.", mood: 'excited' },
+    { msg: "Direction les Hunters ! Beru veut voir du lourd.", mood: 'happy' },
+    { msg: "On check les Hunters de Raid ! Prets pour Manaya ?", mood: 'thinking' },
+  ],
+  arc: [
+    { msg: "Les Donjons ARC ! C'est la que ca se joue.", mood: 'excited' },
+    { msg: "Direction les Dungeons ! Beru sent l'aventure.", mood: 'happy' },
+    { msg: "ARC time ! Qui va se faire latter aujourd'hui ?", mood: 'normal' },
+  ],
+};
+
 // ─── Stages ──────────────────────────────────────────────────
 
 const STAGES = [
@@ -709,8 +727,10 @@ export default function ShadowColosseum() {
       setScrollAtBottom(window.innerHeight + window.scrollY >= document.body.scrollHeight - 50);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+    // Delayed initial check — DOM may not have full height on first render
+    const t1 = setTimeout(onScroll, 300);
+    const t2 = setTimeout(onScroll, 800);
+    return () => { window.removeEventListener('scroll', onScroll); clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
   // Fetch faction members when entering the members view
@@ -5273,7 +5293,7 @@ export default function ShadowColosseum() {
             if (sortedChibis.length === 0) return null;
             return (
             <>
-              <button onClick={() => setChibisCollapsed(!chibisCollapsed)}
+              <button id="section-chibis" onClick={() => setChibisCollapsed(!chibisCollapsed)}
                 className="w-full flex items-center justify-between text-xs text-gray-400 font-bold uppercase tracking-wider mb-2 hover:text-gray-300 transition-colors">
                 <span>Tes Chibis ({sortedChibis.length})</span>
                 <span className="text-normal-responsive text-gray-600">{chibisCollapsed ? '\u25BC' : '\u25B2'}</span>
@@ -5388,7 +5408,7 @@ export default function ShadowColosseum() {
             if (sortedHunters.length === 0) return null;
             return (
             <>
-              <button onClick={() => setHuntersCollapsed(!huntersCollapsed)}
+              <button id="section-hunters" onClick={() => setHuntersCollapsed(!huntersCollapsed)}
                 className="w-full flex items-center justify-between text-xs text-red-400 font-bold uppercase tracking-wider mb-2 hover:text-red-300 transition-colors">
                 <span className="flex items-center gap-1.5">{'\u2694\uFE0F'} Tes Hunters <span className="text-small-responsive text-gray-500 font-normal ml-1">({sortedHunters.length})</span></span>
                 <span className="text-normal-responsive text-gray-600">{huntersCollapsed ? '\u25BC' : '\u25B2'}</span>
@@ -5504,7 +5524,7 @@ export default function ShadowColosseum() {
 
           {/* ═══ ARC TABS — ARC I / ARC II / Fiche ═══ */}
           {ownedIds.length > 0 && (
-            <div className="flex items-center gap-1.5 mb-4 p-1 bg-gray-900/60 rounded-xl border border-gray-700/30">
+            <div id="section-arc" className="flex items-center gap-1.5 mb-4 p-1 bg-gray-900/60 rounded-xl border border-gray-700/30">
               <button
                 onClick={() => { setActiveArc(1); setSelStage(null); }}
                 className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${
@@ -12870,12 +12890,13 @@ export default function ShadowColosseum() {
         )}
       </AnimatePresence>
 
-      {/* Floating scroll arrows — rendered via portal on body */}
+      {/* Floating scroll arrows + shortcuts — rendered via portal on body */}
       {createPortal(
-        <div style={{ position: 'fixed', right: 'calc(50% - 380px)', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 10, zIndex: 99999, pointerEvents: 'auto' }}>
+        <div style={{ position: 'fixed', right: 'calc(50% - 380px)', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, zIndex: 99999, pointerEvents: 'auto' }}>
+          {/* Up arrow */}
           <button
             onClick={() => { if (!scrollAtTop) { window.scrollTo({ top: 0, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); } }}
-            style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', color: 'white', cursor: scrollAtTop ? 'default' : 'pointer', transition: 'opacity 0.2s', opacity: 1, padding: 0 }}
+            style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', color: 'white', cursor: scrollAtTop ? 'default' : 'pointer', transition: 'opacity 0.2s', padding: 0 }}
           >
             <svg viewBox="0 0 24 24" style={{ width: 28, height: 28 }}>
               {scrollAtTop
@@ -12884,9 +12905,10 @@ export default function ShadowColosseum() {
               }
             </svg>
           </button>
+          {/* Down arrow */}
           <button
             onClick={() => { if (!scrollAtBottom) { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); } }}
-            style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', color: 'white', cursor: scrollAtBottom ? 'default' : 'pointer', transition: 'opacity 0.2s', opacity: 1, padding: 0 }}
+            style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', color: 'white', cursor: scrollAtBottom ? 'default' : 'pointer', transition: 'opacity 0.2s', padding: 0 }}
           >
             <svg viewBox="0 0 24 24" style={{ width: 28, height: 28 }}>
               {scrollAtBottom
@@ -12895,6 +12917,32 @@ export default function ShadowColosseum() {
               }
             </svg>
           </button>
+          {/* Separator */}
+          <div style={{ width: 22, height: 1, background: 'rgba(255,255,255,0.15)', margin: '2px 0' }} />
+          {/* Chibi shortcut */}
+          <button
+            onClick={() => { const el = document.getElementById('section-chibis'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); const p = randomPick(BERU_SHORTCUT_PHRASES.chibis); beruSay(p.msg, p.mood); } }}
+            title="Chibis"
+            style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s', padding: 0, fontSize: 16 }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}
+          >🐾</button>
+          {/* Hunter shortcut */}
+          <button
+            onClick={() => { const el = document.getElementById('section-hunters'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); const p = randomPick(BERU_SHORTCUT_PHRASES.hunters); beruSay(p.msg, p.mood); } }}
+            title="Hunters"
+            style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s', padding: 0, fontSize: 16 }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}
+          >⚔️</button>
+          {/* ARC Dungeons shortcut */}
+          <button
+            onClick={() => { const el = document.getElementById('section-arc'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); const p = randomPick(BERU_SHORTCUT_PHRASES.arc); beruSay(p.msg, p.mood); } }}
+            title="Donjons ARC"
+            style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s', padding: 0, fontSize: 16 }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}
+          >🏰</button>
         </div>,
         document.body
       )}
