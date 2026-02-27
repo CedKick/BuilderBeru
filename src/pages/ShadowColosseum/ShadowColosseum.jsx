@@ -12945,7 +12945,7 @@ export default function ShadowColosseum() {
         <div style={{ position: 'fixed', right: 'calc(50% - 380px)', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, zIndex: 99999, pointerEvents: 'auto' }}>
           {/* Up arrow */}
           <button
-            onClick={() => { if (!scrollAtTop) { elevatorScroll(0); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); } }}
+            onClick={() => { if (!scrollAtTop) { _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 20000); const isTroll = _shortcutClickCount >= 3 && Math.random() < 0.6; elevatorScroll(0, 900, isTroll); const p = isTroll ? randomPick(BERU_SHORTCUT_PHRASES.troll) : _shortcutClickCount >= 3 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SCROLL_PHRASES); beruSay(p.msg, p.mood); } }}
             style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', color: 'white', cursor: scrollAtTop ? 'default' : 'pointer', transition: 'opacity 0.2s', padding: 0 }}
           >
             <svg viewBox="0 0 24 24" style={{ width: 28, height: 28 }}>
@@ -12957,7 +12957,7 @@ export default function ShadowColosseum() {
           </button>
           {/* Down arrow */}
           <button
-            onClick={() => { if (!scrollAtBottom) { elevatorScroll(document.body.scrollHeight); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); } }}
+            onClick={() => { if (!scrollAtBottom) { _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 20000); const isTroll = _shortcutClickCount >= 3 && Math.random() < 0.6; elevatorScroll(document.body.scrollHeight, 900, isTroll); const p = isTroll ? randomPick(BERU_SHORTCUT_PHRASES.troll) : _shortcutClickCount >= 3 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SCROLL_PHRASES); beruSay(p.msg, p.mood); } }}
             style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', color: 'white', cursor: scrollAtBottom ? 'default' : 'pointer', transition: 'opacity 0.2s', padding: 0 }}
           >
             <svg viewBox="0 0 24 24" style={{ width: 28, height: 28 }}>
