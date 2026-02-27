@@ -45,6 +45,39 @@ async function _gzipBase64(str) {
   } catch { return null; }
 }
 
+// Trim bloated fields to keep data under size limits
+const MAX_DROP_LOG = 200;
+function _trimData(key, data) {
+  if (key !== 'shadow_colosseum_data' || !data || typeof data !== 'object') return data;
+  const d = { ...data };
+  // Cap drop logs to last N entries
+  for (const logKey of ['ragnarokDropLog', 'zephyrDropLog', 'monarchDropLog', 'archDemonDropLog']) {
+    if (Array.isArray(d[logKey]) && d[logKey].length > MAX_DROP_LOG) {
+      d[logKey] = d[logKey].slice(-MAX_DROP_LOG);
+    }
+  }
+  // Clean rerollCounts: only keep UIDs that exist in inventory or equipped
+  if (d.rerollCounts && typeof d.rerollCounts === 'object') {
+    const liveUids = new Set();
+    if (Array.isArray(d.artifactInventory)) {
+      for (const a of d.artifactInventory) { if (a?.uid) liveUids.add(a.uid); }
+    }
+    if (d.artifacts && typeof d.artifacts === 'object') {
+      for (const slots of Object.values(d.artifacts)) {
+        if (slots && typeof slots === 'object') {
+          for (const a of Object.values(slots)) { if (a?.uid) liveUids.add(a.uid); }
+        }
+      }
+    }
+    const trimmed = {};
+    for (const [uid, count] of Object.entries(d.rerollCounts)) {
+      if (liveUids.has(uid)) trimmed[uid] = count;
+    }
+    d.rerollCounts = trimmed;
+  }
+  return d;
+}
+
 // Get auth headers if user is logged in (reads directly from localStorage to avoid circular imports)
 function _getAuthHeaders() {
   const token = localStorage.getItem(AUTH_TOKEN_KEY);
@@ -373,11 +406,14 @@ class CloudStorageManager {
       this._setSyncStatus(key, 'syncing');
 
       // Prefer pending data (freshest), fall back to localStorage
-      const data = this._pendingData.get(key) ?? this.loadLocal(key);
-      if (data === null) {
+      const rawData = this._pendingData.get(key) ?? this.loadLocal(key);
+      if (rawData === null) {
         this._setSyncStatus(key, 'synced');
         return false;
       }
+
+      // Trim bloated fields before sync (drop logs, orphan rerollCounts)
+      const data = _trimData(key, rawData);
 
       // Dirty check: skip sync if data hasn't changed since last successful sync
       const jsonStr = JSON.stringify(data);
@@ -600,8 +636,11 @@ class CloudStorageManager {
 
       for (const key of keysToSync) {
         // Prefer pending data (freshest), fall back to localStorage
-        const data = self._pendingData.get(key) ?? self.loadLocal(key);
-        if (data === null) continue;
+        const rawData = self._pendingData.get(key) ?? self.loadLocal(key);
+        if (rawData === null) continue;
+
+        // Trim bloated fields before sending
+        const data = _trimData(key, rawData);
 
         // Anti-corruption: don't beacon corrupted data
         const localSize = JSON.stringify(data).length;

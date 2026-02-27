@@ -3,7 +3,10 @@ import { extractUser } from '../_utils/auth.js';
 import { checkSuspension, getBeruSuspendMessage } from '../_utils/anticheat.js';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', 'https://builderberu.com');
+  const origin = req.headers.origin;
+  if (['https://builderberu.com', 'https://www.builderberu.com', 'http://localhost:5173'].includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();

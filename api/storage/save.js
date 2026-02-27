@@ -19,7 +19,7 @@ const ALLOWED_KEYS = [
   'lorestory_completed', 'hallofflame_cache', 'pvp_data',
 ];
 
-const MAX_SIZE = 2 * 1024 * 1024; // 2MB max per key
+const MAX_SIZE = 4 * 1024 * 1024; // 4MB max per key
 
 // Anti-corruption thresholds
 const CORRUPTION_RATIO = 0.3;   // new < 30% of existing → suspicious
@@ -254,7 +254,10 @@ async function ensureTable() {
 // ═══════════════════════════════════════════════════════════════
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', 'https://builderberu.com');
+  const origin = req.headers.origin;
+  if (['https://builderberu.com', 'https://www.builderberu.com', 'http://localhost:5173'].includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -296,6 +299,35 @@ export default async function handler(req, res) {
     // Validate deviceId format
     if (!deviceId.startsWith('dev_') || deviceId.length > 50) {
       return res.status(403).json({ error: 'Invalid deviceId' });
+    }
+
+    // Trim bloated fields server-side (drop logs, orphan rerollCounts)
+    if (key === 'shadow_colosseum_data' && data && typeof data === 'object') {
+      const MAX_LOG = 200;
+      for (const logKey of ['ragnarokDropLog', 'zephyrDropLog', 'monarchDropLog', 'archDemonDropLog']) {
+        if (Array.isArray(data[logKey]) && data[logKey].length > MAX_LOG) {
+          data[logKey] = data[logKey].slice(-MAX_LOG);
+        }
+      }
+      // Clean rerollCounts for artifacts that no longer exist
+      if (data.rerollCounts && typeof data.rerollCounts === 'object') {
+        const liveUids = new Set();
+        if (Array.isArray(data.artifactInventory)) {
+          for (const a of data.artifactInventory) { if (a?.uid) liveUids.add(a.uid); }
+        }
+        if (data.artifacts && typeof data.artifacts === 'object') {
+          for (const slots of Object.values(data.artifacts)) {
+            if (slots && typeof slots === 'object') {
+              for (const a of Object.values(slots)) { if (a?.uid) liveUids.add(a.uid); }
+            }
+          }
+        }
+        const trimmed = {};
+        for (const [uid, count] of Object.entries(data.rerollCounts)) {
+          if (liveUids.has(uid)) trimmed[uid] = count;
+        }
+        data.rerollCounts = trimmed;
+      }
     }
 
     let jsonStr = JSON.stringify(data);
