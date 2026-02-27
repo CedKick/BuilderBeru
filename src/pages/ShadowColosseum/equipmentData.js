@@ -473,11 +473,10 @@ export function enhanceArtifact(artifact) {
 export const REROLL_ALKAHEST_COST = 10;
 export const REROLL_LOCK_COSTS = [10, 22, 45, 70, 100]; // index = number of locked stats (0-4)
 export const REROLL_BASE_COIN_COST = 10000;
-export const REROLL_COIN_MULTIPLIER = 4; // x4 each subsequent reroll on same artifact
 
-/** Coin cost for rerolling an artifact (escalates x4 each time). */
+/** Coin cost for rerolling an artifact (linear: 10k + 10k per reroll). */
 export function getRerollCoinCost(rerollCount) {
-  return REROLL_BASE_COIN_COST * Math.pow(REROLL_COIN_MULTIPLIER, rerollCount);
+  return REROLL_BASE_COIN_COST + REROLL_BASE_COIN_COST * rerollCount;
 }
 
 /** Reroll all sub-stats on an artifact. Keeps set/slot/rarity/mainStat. Resets level to 0. */
