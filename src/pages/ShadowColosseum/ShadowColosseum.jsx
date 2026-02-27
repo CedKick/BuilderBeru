@@ -319,6 +319,16 @@ const BERU_SHORTCUT_PHRASES = {
     { msg: "Direction les Dungeons ! Beru sent l'aventure.", mood: 'happy' },
     { msg: "ARC time ! Qui va se faire latter aujourd'hui ?", mood: 'normal' },
   ],
+  troll: [
+    { msg: "Oh pardon, Beru a active le mode escargot. Oups.", mood: 'happy' },
+    { msg: "Vitesse x0.1 activee. Ca t'apprendra a spammer.", mood: 'happy' },
+    { msg: "Beru a mis le frein a main. Profite du paysage !", mood: 'excited' },
+    { msg: "Ahahah tu vois ca ? C'EST LA PUNITION.", mood: 'excited' },
+    { msg: "Mode tortue : ON. Beru rigole. Beaucoup.", mood: 'happy' },
+    { msg: "T'es presse ? Dommage. Beru controle l'ascenseur.", mood: 'normal' },
+    { msg: "Beru a coupe le turbo. Fallait pas abuser des boutons.", mood: 'thinking' },
+    { msg: "Regarde comme c'est lent... Beru savoure ce moment.", mood: 'happy' },
+  ],
   annoyed: [
     { msg: "Hola hola, on se calme avec les boutons la...", mood: 'thinking' },
     { msg: "Tu sais que Beru a le mal de mer a force ?!", mood: 'angry' },
@@ -337,16 +347,21 @@ let _shortcutClickCount = 0;
 let _shortcutResetTimer = null;
 
 // Smooth elevator scroll — accelerates then decelerates like a carousel
-const elevatorScroll = (targetY, duration = 900) => {
+// troll=true → painfully slow scroll to punish spammers
+const elevatorScroll = (targetY, duration = 900, troll = false) => {
   const startY = window.scrollY;
   const diff = targetY - startY;
   if (Math.abs(diff) < 5) return;
-  // Scale duration with distance (min 600ms, max 1400ms)
   const dist = Math.abs(diff);
-  const ms = Math.max(600, Math.min(1400, duration * (dist / 1200)));
+  // Troll mode: 5-8 seconds. Normal: scale 600-1400ms
+  const ms = troll
+    ? Math.max(5000, Math.min(8000, 6000 * (dist / 1200)))
+    : Math.max(600, Math.min(1400, duration * (dist / 1200)));
   let startTime = null;
-  // easeInOutQuart — slow start, fast middle, slow end
-  const ease = t => t < 0.5 ? 8 * t * t * t * t : 1 - 8 * (--t) * t * t * t;
+  // Troll: linear (no acceleration, just painfully constant). Normal: easeInOutQuart
+  const ease = troll
+    ? t => t
+    : t => t < 0.5 ? 8 * t * t * t * t : 1 - 8 * (--t) * t * t * t;
   const step = (time) => {
     if (!startTime) startTime = time;
     const progress = Math.min((time - startTime) / ms, 1);
@@ -12956,7 +12971,7 @@ export default function ShadowColosseum() {
           <div style={{ width: 22, height: 1, background: 'rgba(255,255,255,0.15)', margin: '2px 0' }} />
           {/* Chibi shortcut */}
           <button
-            onClick={() => { const el = document.getElementById('section-chibis'); if (el) { const rect = el.getBoundingClientRect(); elevatorScroll(window.scrollY + rect.top - window.innerHeight / 2 + rect.height / 2); _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 8000); const p = _shortcutClickCount >= 4 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SHORTCUT_PHRASES.chibis); beruSay(p.msg, p.mood); } }}
+            onClick={() => { const el = document.getElementById('section-chibis'); if (el) { _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 8000); const isTroll = _shortcutClickCount >= 4 && Math.random() < 0.4; const rect = el.getBoundingClientRect(); elevatorScroll(window.scrollY + rect.top - window.innerHeight / 2 + rect.height / 2, 900, isTroll); const p = isTroll ? randomPick(BERU_SHORTCUT_PHRASES.troll) : _shortcutClickCount >= 4 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SHORTCUT_PHRASES.chibis); beruSay(p.msg, p.mood); } }}
             title="Chibis"
             style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s', padding: 0, fontSize: 16 }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
@@ -12964,7 +12979,7 @@ export default function ShadowColosseum() {
           >🐾</button>
           {/* Hunter shortcut */}
           <button
-            onClick={() => { const el = document.getElementById('section-hunters'); if (el) { const rect = el.getBoundingClientRect(); elevatorScroll(window.scrollY + rect.top - window.innerHeight / 2 + rect.height / 2); _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 8000); const p = _shortcutClickCount >= 4 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SHORTCUT_PHRASES.hunters); beruSay(p.msg, p.mood); } }}
+            onClick={() => { const el = document.getElementById('section-hunters'); if (el) { _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 8000); const isTroll = _shortcutClickCount >= 4 && Math.random() < 0.4; const rect = el.getBoundingClientRect(); elevatorScroll(window.scrollY + rect.top - window.innerHeight / 2 + rect.height / 2, 900, isTroll); const p = isTroll ? randomPick(BERU_SHORTCUT_PHRASES.troll) : _shortcutClickCount >= 4 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SHORTCUT_PHRASES.hunters); beruSay(p.msg, p.mood); } }}
             title="Hunters"
             style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s', padding: 0, fontSize: 16 }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
@@ -12972,7 +12987,7 @@ export default function ShadowColosseum() {
           >⚔️</button>
           {/* ARC Dungeons shortcut */}
           <button
-            onClick={() => { const el = document.getElementById('section-arc'); if (el) { const rect = el.getBoundingClientRect(); elevatorScroll(window.scrollY + rect.top - window.innerHeight / 2 + rect.height / 2); _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 8000); const p = _shortcutClickCount >= 4 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SHORTCUT_PHRASES.arc); beruSay(p.msg, p.mood); } }}
+            onClick={() => { const el = document.getElementById('section-arc'); if (el) { _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 8000); const isTroll = _shortcutClickCount >= 4 && Math.random() < 0.4; const rect = el.getBoundingClientRect(); elevatorScroll(window.scrollY + rect.top - window.innerHeight / 2 + rect.height / 2, 900, isTroll); const p = isTroll ? randomPick(BERU_SHORTCUT_PHRASES.troll) : _shortcutClickCount >= 4 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SHORTCUT_PHRASES.arc); beruSay(p.msg, p.mood); } }}
             title="Donjons ARC"
             style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s', padding: 0, fontSize: 16 }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
