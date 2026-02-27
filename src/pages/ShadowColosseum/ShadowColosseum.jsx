@@ -529,6 +529,16 @@ export default function ShadowColosseum() {
     return () => { cancelled = true; };
   }, []);
 
+  // Re-read data if cloud sync restores after initial mount (device change / cache clear)
+  useEffect(() => {
+    const onCloudReady = () => {
+      const fresh = loadData();
+      setData(fresh);
+    };
+    window.addEventListener('cloud-sync-ready', onCloudReady);
+    return () => window.removeEventListener('cloud-sync-ready', onCloudReady);
+  }, []);
+
   // Sync status indicator
   useEffect(() => {
     return cloudStorage.onSyncStatus((key, status) => {

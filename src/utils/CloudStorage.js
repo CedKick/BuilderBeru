@@ -377,6 +377,9 @@ class CloudStorageManager {
     this._initialized = true;
     if (this._readyResolve) this._readyResolve();
     console.log('[CloudStorage] Initial sync complete', loginPending ? '(login mode — cloud wins)' : '(normal)');
+
+    // Notify React components that cloud data has been restored to localStorage
+    try { window.dispatchEvent(new CustomEvent('cloud-sync-ready')); } catch {}
   }
 
   /**
@@ -424,13 +427,15 @@ class CloudStorageManager {
         return true; // Already synced, skip
       }
 
-      // Anti-corruption: refuse to overwrite cloud with much smaller data
+      // Anti-corruption: if local is much smaller than cloud, skip push silently
+      // Cloud data is preserved — local just hasn't caught up yet (device change, cache clear)
       const localSize = jsonStr.length;
       const cloudSize = this._cloudSizes[key] || 0;
       if (cloudSize > 200 && localSize < cloudSize * 0.3) {
-        console.warn(`[CloudStorage] BLOCKED sync for "${key}": local (${localSize}B) is much smaller than cloud (${cloudSize}B) — possible data corruption`);
-        this._setSyncStatus(key, 'error');
-        return false;
+        console.log(`[CloudStorage] Skipping sync for "${key}": local (${localSize}B) behind cloud (${cloudSize}B) — cloud preserved`);
+        this._pendingData.delete(key);
+        this._setSyncStatus(key, 'synced');
+        return true;
       }
 
       const deviceId = getDeviceId();
