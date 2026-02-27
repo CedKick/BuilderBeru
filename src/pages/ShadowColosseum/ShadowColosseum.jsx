@@ -3,6 +3,7 @@
 // Fais combattre tes chibis captures, monte de niveaux, bats des boss !
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12869,23 +12870,24 @@ export default function ShadowColosseum() {
         )}
       </AnimatePresence>
 
-      {/* Floating scroll arrows — right side, always visible */}
-      <div style={{ position: 'fixed', right: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 12, zIndex: 9999 }}>
-        <button
-          onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
-          disabled={scrollAtTop}
-          style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12, border: scrollAtTop ? '1px solid rgba(107,114,128,0.2)' : '1px solid rgba(168,85,247,0.4)', background: scrollAtTop ? 'rgba(17,24,39,0.3)' : 'rgba(17,24,39,0.7)', color: scrollAtTop ? 'rgba(107,114,128,0.5)' : 'rgba(216,180,254,1)', cursor: scrollAtTop ? 'default' : 'pointer', backdropFilter: 'blur(8px)', transition: 'all 0.2s' }}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="20" height="20"><polyline points="18 15 12 9 6 15"/></svg>
-        </button>
-        <button
-          onClick={() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
-          disabled={scrollAtBottom}
-          style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12, border: scrollAtBottom ? '1px solid rgba(107,114,128,0.2)' : '1px solid rgba(168,85,247,0.4)', background: scrollAtBottom ? 'rgba(17,24,39,0.3)' : 'rgba(17,24,39,0.7)', color: scrollAtBottom ? 'rgba(107,114,128,0.5)' : 'rgba(216,180,254,1)', cursor: scrollAtBottom ? 'default' : 'pointer', backdropFilter: 'blur(8px)', transition: 'all 0.2s' }}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="20" height="20"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-      </div>
+      {/* Floating scroll arrows — rendered via portal on body */}
+      {createPortal(
+        <div style={{ position: 'fixed', right: 24, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 14, zIndex: 99999, pointerEvents: 'auto' }}>
+          <button
+            onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
+            style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 14, border: scrollAtTop ? '1px solid rgba(75,85,99,0.25)' : '2px solid rgba(168,85,247,0.5)', background: scrollAtTop ? 'rgba(17,24,39,0.4)' : 'rgba(17,24,39,0.85)', color: scrollAtTop ? 'rgba(75,85,99,0.4)' : 'rgba(216,180,254,1)', cursor: scrollAtTop ? 'default' : 'pointer', backdropFilter: 'blur(12px)', transition: 'all 0.2s', boxShadow: scrollAtTop ? 'none' : '0 0 12px rgba(168,85,247,0.2)' }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}><polyline points="18 15 12 9 6 15"/></svg>
+          </button>
+          <button
+            onClick={() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
+            style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 14, border: scrollAtBottom ? '1px solid rgba(75,85,99,0.25)' : '2px solid rgba(168,85,247,0.5)', background: scrollAtBottom ? 'rgba(17,24,39,0.4)' : 'rgba(17,24,39,0.85)', color: scrollAtBottom ? 'rgba(75,85,99,0.4)' : 'rgba(216,180,254,1)', cursor: scrollAtBottom ? 'default' : 'pointer', backdropFilter: 'blur(12px)', transition: 'all 0.2s', boxShadow: scrollAtBottom ? 'none' : '0 0 12px rgba(168,85,247,0.2)' }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 22, height: 22 }}><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
