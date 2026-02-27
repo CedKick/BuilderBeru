@@ -336,6 +336,26 @@ const BERU_SHORTCUT_PHRASES = {
 let _shortcutClickCount = 0;
 let _shortcutResetTimer = null;
 
+// Smooth elevator scroll — accelerates then decelerates like a carousel
+const elevatorScroll = (targetY, duration = 900) => {
+  const startY = window.scrollY;
+  const diff = targetY - startY;
+  if (Math.abs(diff) < 5) return;
+  // Scale duration with distance (min 600ms, max 1400ms)
+  const dist = Math.abs(diff);
+  const ms = Math.max(600, Math.min(1400, duration * (dist / 1200)));
+  let startTime = null;
+  // easeInOutQuart — slow start, fast middle, slow end
+  const ease = t => t < 0.5 ? 8 * t * t * t * t : 1 - 8 * (--t) * t * t * t;
+  const step = (time) => {
+    if (!startTime) startTime = time;
+    const progress = Math.min((time - startTime) / ms, 1);
+    window.scrollTo(0, startY + diff * ease(progress));
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+};
+
 // ─── Stages ──────────────────────────────────────────────────
 
 const STAGES = [
@@ -12910,7 +12930,7 @@ export default function ShadowColosseum() {
         <div style={{ position: 'fixed', right: 'calc(50% - 380px)', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, zIndex: 99999, pointerEvents: 'auto' }}>
           {/* Up arrow */}
           <button
-            onClick={() => { if (!scrollAtTop) { window.scrollTo({ top: 0, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); } }}
+            onClick={() => { if (!scrollAtTop) { elevatorScroll(0); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); } }}
             style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', color: 'white', cursor: scrollAtTop ? 'default' : 'pointer', transition: 'opacity 0.2s', padding: 0 }}
           >
             <svg viewBox="0 0 24 24" style={{ width: 28, height: 28 }}>
@@ -12922,7 +12942,7 @@ export default function ShadowColosseum() {
           </button>
           {/* Down arrow */}
           <button
-            onClick={() => { if (!scrollAtBottom) { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); } }}
+            onClick={() => { if (!scrollAtBottom) { elevatorScroll(document.body.scrollHeight); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); } }}
             style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', color: 'white', cursor: scrollAtBottom ? 'default' : 'pointer', transition: 'opacity 0.2s', padding: 0 }}
           >
             <svg viewBox="0 0 24 24" style={{ width: 28, height: 28 }}>
@@ -12936,7 +12956,7 @@ export default function ShadowColosseum() {
           <div style={{ width: 22, height: 1, background: 'rgba(255,255,255,0.15)', margin: '2px 0' }} />
           {/* Chibi shortcut */}
           <button
-            onClick={() => { const el = document.getElementById('section-chibis'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 8000); const p = _shortcutClickCount >= 4 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SHORTCUT_PHRASES.chibis); beruSay(p.msg, p.mood); } }}
+            onClick={() => { const el = document.getElementById('section-chibis'); if (el) { const rect = el.getBoundingClientRect(); elevatorScroll(window.scrollY + rect.top - window.innerHeight / 2 + rect.height / 2); _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 8000); const p = _shortcutClickCount >= 4 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SHORTCUT_PHRASES.chibis); beruSay(p.msg, p.mood); } }}
             title="Chibis"
             style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s', padding: 0, fontSize: 16 }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
@@ -12944,7 +12964,7 @@ export default function ShadowColosseum() {
           >🐾</button>
           {/* Hunter shortcut */}
           <button
-            onClick={() => { const el = document.getElementById('section-hunters'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 8000); const p = _shortcutClickCount >= 4 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SHORTCUT_PHRASES.hunters); beruSay(p.msg, p.mood); } }}
+            onClick={() => { const el = document.getElementById('section-hunters'); if (el) { const rect = el.getBoundingClientRect(); elevatorScroll(window.scrollY + rect.top - window.innerHeight / 2 + rect.height / 2); _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 8000); const p = _shortcutClickCount >= 4 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SHORTCUT_PHRASES.hunters); beruSay(p.msg, p.mood); } }}
             title="Hunters"
             style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s', padding: 0, fontSize: 16 }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
@@ -12952,7 +12972,7 @@ export default function ShadowColosseum() {
           >⚔️</button>
           {/* ARC Dungeons shortcut */}
           <button
-            onClick={() => { const el = document.getElementById('section-arc'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 8000); const p = _shortcutClickCount >= 4 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SHORTCUT_PHRASES.arc); beruSay(p.msg, p.mood); } }}
+            onClick={() => { const el = document.getElementById('section-arc'); if (el) { const rect = el.getBoundingClientRect(); elevatorScroll(window.scrollY + rect.top - window.innerHeight / 2 + rect.height / 2); _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 8000); const p = _shortcutClickCount >= 4 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SHORTCUT_PHRASES.arc); beruSay(p.msg, p.mood); } }}
             title="Donjons ARC"
             style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s', padding: 0, fontSize: 16 }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
