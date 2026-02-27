@@ -319,7 +319,22 @@ const BERU_SHORTCUT_PHRASES = {
     { msg: "Direction les Dungeons ! Beru sent l'aventure.", mood: 'happy' },
     { msg: "ARC time ! Qui va se faire latter aujourd'hui ?", mood: 'normal' },
   ],
+  annoyed: [
+    { msg: "Hola hola, on se calme avec les boutons la...", mood: 'thinking' },
+    { msg: "Tu sais que Beru a le mal de mer a force ?!", mood: 'angry' },
+    { msg: "STOP. Beru va vomir si tu continues.", mood: 'shocked' },
+    { msg: "C'est bon t'as fini de cliquer partout ?!", mood: 'angry' },
+    { msg: "Beru demande une pause syndicale. MAINTENANT.", mood: 'angry' },
+    { msg: "Tu testes mes limites la... et Beru EN A.", mood: 'angry' },
+    { msg: "Ca y est, Beru a le tournis. Content ?", mood: 'shocked' },
+    { msg: "T'appuies plus vite que Beru reflechit... et c'est PEU DIRE.", mood: 'thinking' },
+    { msg: "Beru va finir par bloquer ces boutons, tu le sais ca ?", mood: 'angry' },
+    { msg: "... Beru te regarde. Beru juge. Beru est decu.", mood: 'normal' },
+  ],
 };
+// Shortcut spam tracker
+let _shortcutClickCount = 0;
+let _shortcutResetTimer = null;
 
 // ─── Stages ──────────────────────────────────────────────────
 
@@ -12921,7 +12936,7 @@ export default function ShadowColosseum() {
           <div style={{ width: 22, height: 1, background: 'rgba(255,255,255,0.15)', margin: '2px 0' }} />
           {/* Chibi shortcut */}
           <button
-            onClick={() => { const el = document.getElementById('section-chibis'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); const p = randomPick(BERU_SHORTCUT_PHRASES.chibis); beruSay(p.msg, p.mood); } }}
+            onClick={() => { const el = document.getElementById('section-chibis'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 8000); const p = _shortcutClickCount >= 4 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SHORTCUT_PHRASES.chibis); beruSay(p.msg, p.mood); } }}
             title="Chibis"
             style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s', padding: 0, fontSize: 16 }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
@@ -12929,7 +12944,7 @@ export default function ShadowColosseum() {
           >🐾</button>
           {/* Hunter shortcut */}
           <button
-            onClick={() => { const el = document.getElementById('section-hunters'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); const p = randomPick(BERU_SHORTCUT_PHRASES.hunters); beruSay(p.msg, p.mood); } }}
+            onClick={() => { const el = document.getElementById('section-hunters'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 8000); const p = _shortcutClickCount >= 4 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SHORTCUT_PHRASES.hunters); beruSay(p.msg, p.mood); } }}
             title="Hunters"
             style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s', padding: 0, fontSize: 16 }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
@@ -12937,7 +12952,7 @@ export default function ShadowColosseum() {
           >⚔️</button>
           {/* ARC Dungeons shortcut */}
           <button
-            onClick={() => { const el = document.getElementById('section-arc'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); const p = randomPick(BERU_SHORTCUT_PHRASES.arc); beruSay(p.msg, p.mood); } }}
+            onClick={() => { const el = document.getElementById('section-arc'); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); _shortcutClickCount++; clearTimeout(_shortcutResetTimer); _shortcutResetTimer = setTimeout(() => { _shortcutClickCount = 0; }, 8000); const p = _shortcutClickCount >= 4 ? randomPick(BERU_SHORTCUT_PHRASES.annoyed) : randomPick(BERU_SHORTCUT_PHRASES.arc); beruSay(p.msg, p.mood); } }}
             title="Donjons ARC"
             style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, cursor: 'pointer', transition: 'all 0.2s', padding: 0, fontSize: 16 }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
