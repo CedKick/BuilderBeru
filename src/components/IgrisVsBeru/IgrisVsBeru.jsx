@@ -194,7 +194,7 @@ export default function IgrisVsBeru() {
     let startTime = null;
     const animateEntrance = (time) => {
       if (!startTime) startTime = time;
-      const progress = Math.min((time - startTime) / 2000, 1);
+      const progress = Math.min((time - startTime) / 6000, 1);
       const ease = progress < 0.5
         ? 4 * progress * progress * progress
         : 1 - Math.pow(-2 * progress + 2, 3) / 2;
@@ -205,10 +205,10 @@ export default function IgrisVsBeru() {
     requestAnimationFrame(animateEntrance);
 
     // Beru reacts
-    delay(() => showBeruBubble("KIIIEK ?! C'est... IGRIS ?!", 2500), 1000);
-    delay(() => showIgrisBubble("Beru. On a un compte a regler.", 2500), 2000);
+    delay(() => showBeruBubble("KIIIEK ?! C'est... IGRIS ?!", 7500), 3000);
+    delay(() => showIgrisBubble("Beru. On a un compte a regler.", 7500), 6000);
 
-    delay(() => setPhase('confrontation'), 5000);
+    delay(() => setPhase('confrontation'), 15000);
   }, [phase, delay, showBeruBubble, showIgrisBubble]);
 
   // ─── Phase: Confrontation (~12s, 6 exchanges) ─────────────
@@ -220,12 +220,12 @@ export default function IgrisVsBeru() {
     for (let i = 0; i < exchanges; i++) {
       delay(() => {
         const pair = pickUnique(CONFRONTATION, usedDialoguesRef.current, 'confront');
-        showBeruBubble(pair.beru, 2000);
-        delay(() => showIgrisBubble(pair.igris, 2000), 1200);
-      }, i * 3000);
+        showBeruBubble(pair.beru, 6000);
+        delay(() => showIgrisBubble(pair.igris, 6000), 3600);
+      }, i * 9000);
     }
 
-    delay(() => setPhase('projectiles'), exchanges * 3000 + 1000);
+    delay(() => setPhase('projectiles'), exchanges * 9000 + 3000);
   }, [phase, delay, showBeruBubble, showIgrisBubble]);
 
   // ─── Phase: Projectiles (~15s) ─────────────────────────────
@@ -240,7 +240,7 @@ export default function IgrisVsBeru() {
     setBeruPos({ x: beruX, y: centerY });
     setIgrisPos({ x: igrisX, y: centerY });
 
-    const interval = isMobile() ? 1800 : 1300;
+    const interval = isMobile() ? 5400 : 3900;
     const count = isMobile() ? 8 : 12;
 
     for (let i = 0; i < count; i++) {
@@ -253,44 +253,44 @@ export default function IgrisVsBeru() {
           const bx = isMobile() ? vw(12) : vw(18);
           const ix = isMobile() ? vw(75) : vw(78);
           launchProjectile({ x: bx + 30, y: centerY }, { x: ix, y: centerY }, emoji, 'beru');
-          showBeruBubble(pickUnique(PROJECTILE_BERU, usedDialoguesRef.current, 'proj_b'), 1500);
+          showBeruBubble(pickUnique(PROJECTILE_BERU, usedDialoguesRef.current, 'proj_b'), 4500);
 
           if (dodges) {
             delay(() => {
               setIgrisAnim('dodgeUp 0.5s ease-out');
-              delay(() => setIgrisAnim('fightIdle 1.5s ease-in-out infinite'), 500);
-              showIgrisBubble(pickUnique(DODGE_IGRIS, usedDialoguesRef.current, 'dodge_i'), 1500);
-            }, 400);
+              delay(() => setIgrisAnim('fightIdle 1.5s ease-in-out infinite'), 1500);
+              showIgrisBubble(pickUnique(DODGE_IGRIS, usedDialoguesRef.current, 'dodge_i'), 4500);
+            }, 1200);
           } else {
             delay(() => {
               setIgrisAnim('hitShake 0.4s ease-out');
-              delay(() => setIgrisAnim('fightIdle 1.5s ease-in-out infinite'), 400);
-            }, 700);
+              delay(() => setIgrisAnim('fightIdle 1.5s ease-in-out infinite'), 1200);
+            }, 2100);
           }
         } else {
           const emoji = randomFrom(['⚔️', '🗡️', '🔥', '⚡']);
           const bx = isMobile() ? vw(12) : vw(18);
           const ix = isMobile() ? vw(75) : vw(78);
           launchProjectile({ x: ix, y: centerY }, { x: bx + 30, y: centerY }, emoji, 'igris');
-          showIgrisBubble(pickUnique(PROJECTILE_IGRIS, usedDialoguesRef.current, 'proj_i'), 1500);
+          showIgrisBubble(pickUnique(PROJECTILE_IGRIS, usedDialoguesRef.current, 'proj_i'), 4500);
 
           if (dodges) {
             delay(() => {
               setBeruAnim('dodgeDown 0.5s ease-out');
-              delay(() => setBeruAnim('fightIdle 1.5s ease-in-out infinite'), 500);
-              showBeruBubble(pickUnique(DODGE_BERU, usedDialoguesRef.current, 'dodge_b'), 1500);
-            }, 400);
+              delay(() => setBeruAnim('fightIdle 1.5s ease-in-out infinite'), 1500);
+              showBeruBubble(pickUnique(DODGE_BERU, usedDialoguesRef.current, 'dodge_b'), 4500);
+            }, 1200);
           } else {
             delay(() => {
               setBeruAnim('hitShake 0.4s ease-out');
-              delay(() => setBeruAnim('fightIdle 1.5s ease-in-out infinite'), 400);
-            }, 700);
+              delay(() => setBeruAnim('fightIdle 1.5s ease-in-out infinite'), 1200);
+            }, 2100);
           }
         }
       }, i * interval);
     }
 
-    delay(() => setPhase('chaos'), count * interval + 1500);
+    delay(() => setPhase('chaos'), count * interval + 4500);
   }, [phase, delay, launchProjectile, showBeruBubble, showIgrisBubble]);
 
   // ─── Phase: Chaos (~15s) ───────────────────────────────────
@@ -300,17 +300,17 @@ export default function IgrisVsBeru() {
 
     // Screen shake
     setShakeClass('fightScreenShake 0.12s linear infinite');
-    delay(() => setShakeClass('fightScreenShakeViolent 0.08s linear infinite'), 5000);
+    delay(() => setShakeClass('fightScreenShakeViolent 0.08s linear infinite'), 15000);
 
     // Break page elements
-    delay(() => breakPageElements(), 1500);
+    delay(() => breakPageElements(), 4500);
 
     // Chase animation — characters zigzag across screen
     let elapsed = 0;
     let chaserIsBeru = true;
     let swapTimer = 0;
     const chaosStart = performance.now();
-    const duration = 14000;
+    const duration = 42000;
 
     const chaseStep = (time) => {
       elapsed = time - chaosStart;
@@ -320,7 +320,7 @@ export default function IgrisVsBeru() {
       }
 
       swapTimer += 16;
-      if (swapTimer > 3500) {
+      if (swapTimer > 10500) {
         chaserIsBeru = !chaserIsBeru;
         swapTimer = 0;
       }
@@ -364,11 +364,11 @@ export default function IgrisVsBeru() {
     for (let i = 0; i < chaosLines; i++) {
       delay(() => {
         if (Math.random() < 0.5) {
-          showBeruBubble(pickUnique(CHAOS_BERU, usedDialoguesRef.current, 'chaos_b'), 2000);
+          showBeruBubble(pickUnique(CHAOS_BERU, usedDialoguesRef.current, 'chaos_b'), 6000);
         } else {
-          showIgrisBubble(pickUnique(CHAOS_IGRIS, usedDialoguesRef.current, 'chaos_i'), 2000);
+          showIgrisBubble(pickUnique(CHAOS_IGRIS, usedDialoguesRef.current, 'chaos_i'), 6000);
         }
-      }, 1000 + i * 1800);
+      }, 3000 + i * 5400);
     }
 
     delay(() => {
@@ -394,7 +394,7 @@ export default function IgrisVsBeru() {
     setIgrisSrc(IGRIS_LEFT);
 
     // Beru charges
-    delay(() => showBeruBubble("ATTAQUE FINALE ! KIIIIIEEEEK !!!", 2500), 500);
+    delay(() => showBeruBubble("ATTAQUE FINALE ! KIIIIIEEEEK !!!", 7500), 1500);
 
     // Mega projectile burst
     delay(() => {
@@ -406,38 +406,38 @@ export default function IgrisVsBeru() {
             randomFrom(['💥', '🐜', '⚡', '🔥']),
             'beru'
           );
-        }, i * 120);
+        }, i * 360);
       }
-    }, 2000);
+    }, 6000);
 
     // White flash
-    delay(() => setShowFlash(true), 2800);
-    delay(() => setShowFlash(false), 3200);
+    delay(() => setShowFlash(true), 8400);
+    delay(() => setShowFlash(false), 9600);
 
     // Igris falls
     delay(() => {
       setIgrisFallen(true);
       setIgrisAnim('igrisFall 1.5s ease-in forwards');
-      showIgrisBubble(pickUnique(DEFEAT_IGRIS, usedDialoguesRef.current, 'defeat'), 3000);
-    }, 3300);
+      showIgrisBubble(pickUnique(DEFEAT_IGRIS, usedDialoguesRef.current, 'defeat'), 9000);
+    }, 9900);
 
     // Beru victory pose
     delay(() => {
       setVictoryGlow(true);
       setBeruAnim('victoryGlow 1.5s ease-in-out infinite');
-      showBeruBubble(pickUnique(VICTORY_BERU, usedDialoguesRef.current, 'victory'), 3500);
-    }, 4000);
+      showBeruBubble(pickUnique(VICTORY_BERU, usedDialoguesRef.current, 'victory'), 10500);
+    }, 12000);
 
     // Second victory line
     delay(() => {
-      showBeruBubble(pickUnique(VICTORY_BERU, usedDialoguesRef.current, 'victory'), 3000);
-    }, 7000);
+      showBeruBubble(pickUnique(VICTORY_BERU, usedDialoguesRef.current, 'victory'), 9000);
+    }, 21000);
 
     // Coin reward
     delay(() => {
       setCoinReward(true);
       try { shadowCoinManager.addCoins(1000, 'igris_vs_beru'); } catch (e) {}
-    }, 8500);
+    }, 25500);
 
     // Cleanup and end
     delay(() => {
@@ -452,8 +452,8 @@ export default function IgrisVsBeru() {
       // Analytics
       try { if (window.umami) window.umami.track('igris-vs-beru-fight'); } catch (e) {}
 
-      delay(() => setPhase(null), 500);
-    }, 11000);
+      delay(() => setPhase(null), 1500);
+    }, 33000);
 
   }, [phase, delay, launchProjectile, showBeruBubble, showIgrisBubble, repairPageElements, notifyBeru]);
 
@@ -466,10 +466,10 @@ export default function IgrisVsBeru() {
     if (fightTriggeredRef.current) return;
     if (sessionStorage.getItem('igris_vs_beru_done') === 'true') return;
 
-    const checkInterval = 60000 + Math.random() * 60000; // 60-120s
+    const checkInterval = 60000 + Math.random() * 60000;
     const timer = setInterval(() => {
       if (fightTriggeredRef.current) return;
-      if (Math.random() < 0.04) { // 4%
+      if (Math.random() < 0.04) {
         fightTriggeredRef.current = true;
         sessionStorage.setItem('igris_vs_beru_done', 'true');
         startFight();

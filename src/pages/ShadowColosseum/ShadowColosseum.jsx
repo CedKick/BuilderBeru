@@ -47,7 +47,7 @@ import {
   ARC2_ARTIFACT_SETS, generateArc2Artifact, generateSetArtifact, ULTIME_ARTIFACT_SETS,
   ROLE_WEIGHTS, scoreArtifact, scoreToGrade, scoreAllArtifacts,
   MAX_ARTIFACT_INVENTORY, trimArtifactInventory,
-  REROLL_ALKAHEST_COST, REROLL_LOCK_COSTS, REROLL_BASE_COIN_COST, REROLL_COIN_MULTIPLIER, getRerollCoinCost, rerollArtifact,
+  REROLL_ALKAHEST_COST, REROLL_LOCK_COSTS, REROLL_BASE_COIN_COST, getRerollCoinCost, rerollArtifact,
   ENCHANT_ALKAHEST_COST, enchantArtifactStat, rerollArtifactMainStat, rerollArtifactFull, enchantWeaponStat, ENCHANT_MAIN_STAT_POOL,
 } from './equipmentData';
 import {
@@ -12978,8 +12978,8 @@ export default function ShadowColosseum() {
         )}
       </AnimatePresence>
 
-      {/* Floating scroll arrows + shortcuts — rendered via portal on body */}
-      {createPortal(
+      {/* Floating scroll arrows + shortcuts — only on hub view */}
+      {view === 'hub' && createPortal(
         <div style={{ position: 'fixed', right: 'calc(50% - 380px)', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, zIndex: 99999, pointerEvents: 'auto' }}>
           {/* Up arrow */}
           <button
