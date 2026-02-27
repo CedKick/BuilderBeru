@@ -12872,7 +12872,7 @@ export default function ShadowColosseum() {
 
       {/* Floating scroll arrows — rendered via portal on body */}
       {createPortal(
-        <div style={{ position: 'fixed', right: 'calc(50% - 350px)', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 10, zIndex: 99999, pointerEvents: 'auto' }}>
+        <div style={{ position: 'fixed', right: 'calc(50% - 380px)', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: 10, zIndex: 99999, pointerEvents: 'auto' }}>
           <button
             onClick={() => { if (!scrollAtTop) { window.scrollTo({ top: 0, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); } }}
             style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', color: 'white', cursor: scrollAtTop ? 'default' : 'pointer', transition: 'opacity 0.2s', opacity: 1, padding: 0 }}
