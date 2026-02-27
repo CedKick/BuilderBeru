@@ -5393,11 +5393,13 @@ export default function ShadowColosseum() {
                         className={`relative p-2 rounded-xl border transition-all text-left ${
                           selected ? 'border-red-400 bg-red-500/15 ring-1 ring-red-400/50' :
                           level >= MAX_LEVEL ? (
-                            c.rarity === 'mythique' ? 'border-red-500/50 bg-red-950/30 hover:border-red-400/60' :
-                            c.rarity === 'legendaire' ? 'border-orange-500/50 bg-orange-950/30 hover:border-orange-400/60' :
-                            'border-blue-500/50 bg-blue-950/30 hover:border-blue-400/60'
+                            c.rarity === 'mythique' ? 'border-red-500/60 bg-red-950/40 hover:border-red-400/70 ring-1 ring-red-500/30' :
+                            c.rarity === 'legendaire' ? 'border-orange-500/60 bg-orange-950/40 hover:border-orange-400/70 ring-1 ring-orange-500/30' :
+                            'border-blue-500/60 bg-blue-950/40 hover:border-blue-400/70 ring-1 ring-blue-500/30'
                           ) :
-                          'border-gray-700/40 bg-gray-800/30 hover:border-red-500/40'
+                          c.rarity === 'mythique' ? 'border-red-500/25 bg-gray-800/30 hover:border-red-500/40' :
+                          c.rarity === 'legendaire' ? 'border-orange-500/25 bg-gray-800/30 hover:border-orange-500/40' :
+                          'border-blue-500/25 bg-gray-800/30 hover:border-blue-500/40'
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -5469,7 +5471,7 @@ export default function ShadowColosseum() {
                   );
                 })}
               </div>}
-              {!huntersCollapsed && sortedHunters.length > 6 && (
+              {!huntersCollapsed && sortedHunters.length > 2 && (
                 <div className="flex justify-center gap-3 mb-2">
                   <button onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
                     className="px-3 py-1.5 rounded-lg bg-gray-800/60 border border-gray-700/40 text-gray-400 text-xs hover:text-white hover:border-gray-500/60 transition-all">
