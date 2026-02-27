@@ -259,6 +259,39 @@ const BERU_ADVICE_DIALOGUES = {
   ],
 };
 
+const BERU_SCROLL_PHRASES = [
+  { msg: "Ascenseur emotionnel en cours...", mood: 'thinking' },
+  { msg: "Oh je m'y attendais pas celui-la !", mood: 'excited' },
+  { msg: "Attends, reviens en haut, j'ai vu un truc !", mood: 'shocked' },
+  { msg: "50 hunters... et toujours pas assez de DPS.", mood: 'thinking' },
+  { msg: "Tu scrolles plus vite que mes pattes !", mood: 'excited' },
+  { msg: "On dirait un inventaire de Pokemon version sombre.", mood: 'happy' },
+  { msg: "Celui-la il est chelou... mais Beru l'aime bien.", mood: 'normal' },
+  { msg: "STOP ! Celui-la a des points a distribuer !", mood: 'angry' },
+  { msg: "Tu sais que tu peux trier par iLevel hein ?", mood: 'thinking' },
+  { msg: "Beru se souvient quand t'avais 0 hunters... snif.", mood: 'thinking' },
+  { msg: "Ca fait beaucoup de chasseurs a nourrir...", mood: 'normal' },
+  { msg: "Le roster de tes reves ! ...ou pas.", mood: 'happy' },
+  { msg: "Psst... t'as oublie d'equiper une arme quelque part.", mood: 'shocked' },
+  { msg: "Beru aimerait bien avoir ses propres stats aussi...", mood: 'thinking' },
+  { msg: "Tu scrolles tellement, Beru a le vertige !", mood: 'excited' },
+  { msg: "Y'a clairement des favoritismes ici. Beru voit tout.", mood: 'angry' },
+  { msg: "Haut... bas... haut... bas... C'EST QUOI CE MANEGE ?!", mood: 'shocked' },
+  { msg: "J'espere que t'as farm assez d'XP pour tout ce beau monde.", mood: 'thinking' },
+  { msg: "Chaque hunter a son utilite ! ...meme les rares.", mood: 'happy' },
+  { msg: "Beru detecte du potentiel inexploite dans ce roster.", mood: 'thinking' },
+  { msg: "T'as essaye de lock tes meilleurs artefacts ?", mood: 'normal' },
+  { msg: "Un jour Beru sera jouable. Un jour.", mood: 'thinking' },
+  { msg: "GG le roster ! T'es un vrai collectionneur.", mood: 'happy' },
+  { msg: "Beru approuve cette armee. Presque.", mood: 'normal' },
+  { msg: "Tu veux que Beru te fasse un tier list ? ...Non ? Ok.", mood: 'thinking' },
+  { msg: "Tant de puissance concentree... CA FAIT PEUR.", mood: 'excited' },
+  { msg: "Rappelle-moi pourquoi t'as pas encore clear le Tier 10 ?", mood: 'angry' },
+  { msg: "Beru note : ce joueur scrolle beaucoup trop.", mood: 'normal' },
+  { msg: "C'est beau toutes ces etoiles... *yeux qui brillent*", mood: 'happy' },
+  { msg: "T'as les hunters, t'as les artefacts, maintenant GO COMBAT !", mood: 'excited' },
+];
+
 // ─── Stages ──────────────────────────────────────────────────
 
 const STAGES = [
@@ -5359,6 +5392,11 @@ export default function ShadowColosseum() {
                         onClick={() => setSelChibi(selected ? null : id)}
                         className={`relative p-2 rounded-xl border transition-all text-left ${
                           selected ? 'border-red-400 bg-red-500/15 ring-1 ring-red-400/50' :
+                          level >= MAX_LEVEL ? (
+                            c.rarity === 'mythique' ? 'border-red-500/50 bg-red-950/30 hover:border-red-400/60' :
+                            c.rarity === 'legendaire' ? 'border-orange-500/50 bg-orange-950/30 hover:border-orange-400/60' :
+                            'border-blue-500/50 bg-blue-950/30 hover:border-blue-400/60'
+                          ) :
                           'border-gray-700/40 bg-gray-800/30 hover:border-red-500/40'
                         }`}
                       >
@@ -5431,6 +5469,18 @@ export default function ShadowColosseum() {
                   );
                 })}
               </div>}
+              {!huntersCollapsed && sortedHunters.length > 6 && (
+                <div className="flex justify-center gap-3 mb-2">
+                  <button onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
+                    className="px-3 py-1.5 rounded-lg bg-gray-800/60 border border-gray-700/40 text-gray-400 text-xs hover:text-white hover:border-gray-500/60 transition-all">
+                    {'\u25B2'} Haut
+                  </button>
+                  <button onClick={() => { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); const p = BERU_SCROLL_PHRASES[Math.floor(Math.random() * BERU_SCROLL_PHRASES.length)]; beruSay(p.msg, p.mood); }}
+                    className="px-3 py-1.5 rounded-lg bg-gray-800/60 border border-gray-700/40 text-gray-400 text-xs hover:text-white hover:border-gray-500/60 transition-all">
+                    {'\u25BC'} Bas
+                  </button>
+                </div>
+              )}
               {!huntersCollapsed && <div className="text-small-responsive text-gray-600 text-center mb-3 italic">Les hunters gagnent de l'XP et montent en niveau dans les Raids.</div>}
             </>
             );
@@ -5720,50 +5770,31 @@ export default function ShadowColosseum() {
             </>
           )}
 
-          {/* Fight Button */}
+          {/* Fight + Offline Farm Buttons */}
           {selChibi && selStage !== null && (
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed bottom-4 left-0 right-0 flex justify-center z-50">
-              <button
-                onClick={() => farmActive ? confirmStopFarm(startBattle, 'Lancer un combat') : startBattle()}
-                className="px-8 py-3 bg-gradient-to-r from-purple-600 to-red-600 rounded-xl font-black text-lg shadow-xl shadow-purple-900/40 hover:scale-105 transition-transform active:scale-95"
-              >
-                {'\u2694\uFE0F'} COMBAT !
-              </button>
-            </motion.div>
-          )}
-
-          {/* Offline Farm Button — Tier 6 cleared stages only */}
-          {selChibi && selStage !== null && STAGES[selStage]?.tier === 6 && isStageCleared(STAGES[selStage].id) && isLoggedIn() && !farmActive && (
-            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed bottom-20 left-0 right-0 flex flex-col items-center z-50">
-              <button
-                onClick={() => handleStartFarm(STAGES[selStage].id)}
-                disabled={farmLoading || factionPointsAvailable === 0}
-                className="px-6 py-2 bg-gradient-to-r from-indigo-700 to-purple-700 hover:from-indigo-600 hover:to-purple-600 rounded-xl font-bold text-sm shadow-xl shadow-indigo-900/40 transition-all disabled:opacity-50 border border-indigo-500/30"
-              >
-                {farmLoading ? 'Activation...' : '\uD83C\uDF19 Auto-Farm Offline'}
-              </button>
-              <div className="text-xs text-indigo-400/70 mt-1">
-                Coute 1 pt de contribution/min{factionPointsAvailable != null ? ` — ${factionPointsAvailable} pts dispo` : ''}
+            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="fixed bottom-4 left-0 right-0 flex flex-col items-center gap-2 z-50">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => farmActive ? confirmStopFarm(startBattle, 'Lancer un combat') : startBattle()}
+                  className="px-8 py-3 bg-gradient-to-r from-purple-600 to-red-600 rounded-xl font-black text-lg shadow-xl shadow-purple-900/40 hover:scale-105 transition-transform active:scale-95"
+                >
+                  {'\u2694\uFE0F'} COMBAT !
+                </button>
+                {STAGES[selStage]?.tier === 6 && isStageCleared(STAGES[selStage].id) && isLoggedIn() && !farmActive && (
+                  <button
+                    onClick={() => handleStartFarm(STAGES[selStage].id)}
+                    disabled={farmLoading || factionPointsAvailable === 0}
+                    className="px-4 py-3 bg-gradient-to-r from-indigo-700 to-purple-700 hover:from-indigo-600 hover:to-purple-600 rounded-xl font-bold text-sm shadow-xl shadow-indigo-900/40 transition-all disabled:opacity-50 border border-indigo-500/30"
+                  >
+                    {farmLoading ? '...' : '\uD83C\uDF19 Auto-Farm'}
+                  </button>
+                )}
               </div>
-              {(() => {
-                const stId = STAGES[selStage].id;
-                const lm = data.lootBoostMs > 0 ? 2 : 1;
-                const drops = getFarmDropRates(stId, lm, factionBuffs);
-                const buffs = [];
-                if (lm > 1) buffs.push('Loot x2');
-                if (drops.some(d => d.hasFactionBuff)) buffs.push('Faction buff');
-                return drops.length > 0 && (
-                  <div className="mt-1.5 text-center">
-                    {drops.map((d, i) => (
-                      <div key={i} className="text-xs">
-                        <span className="text-yellow-400/80">{d.name}</span>
-                        <span className="text-gray-400"> : 1/{Math.round(1 / d.rate)}</span>
-                        {d.rate !== d.baseRate && <span className="text-green-400/70 ml-1">({buffs.join(' + ')})</span>}
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
+              {STAGES[selStage]?.tier === 6 && isStageCleared(STAGES[selStage].id) && isLoggedIn() && !farmActive && (
+                <div className="text-xs text-indigo-400/70">
+                  Coute 1 pt de contribution/min{factionPointsAvailable != null ? ` — ${factionPointsAvailable} pts dispo` : ''}
+                </div>
+              )}
             </motion.div>
           )}
         </div>
