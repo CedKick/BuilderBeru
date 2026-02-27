@@ -31,6 +31,26 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html')
+      },
+      output: {
+        manualChunks(id) {
+          // React core
+          if (id.includes('node_modules/react-dom') ||
+              id.includes('node_modules/react-router') ||
+              id.includes('node_modules/react/')) return 'react-vendor';
+          // Animation
+          if (id.includes('node_modules/framer-motion')) return 'framer-motion';
+          // i18n framework
+          if (id.includes('node_modules/i18next') ||
+              id.includes('node_modules/react-i18next')) return 'i18n';
+          // Translation JSON files (~584KB)
+          if (id.includes('/i18n/') && id.endsWith('.json')) return 'translations';
+          // Charts
+          if (id.includes('node_modules/recharts') ||
+              id.includes('node_modules/d3-')) return 'recharts';
+          // Icons
+          if (id.includes('node_modules/lucide-react')) return 'lucide';
+        }
       }
     }
   }
